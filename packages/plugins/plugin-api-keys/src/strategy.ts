@@ -1,10 +1,8 @@
-import type { AuthConfig } from 'frogbot';
+import type { AuthStrategy } from 'frogbot';
 
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
 
-export type ApiKeyStrategy = NonNullable<AuthConfig['strategies']>[number];
-
-const apiKeyStrategies = new WeakSet<ApiKeyStrategy>();
+const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
 type StrategyOptions = {
   authCollection: string;
@@ -13,12 +11,13 @@ type StrategyOptions = {
   tokenPrefix: string;
 };
 
-export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
+export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
   const { authCollection, collectionSlug, headerNames, tokenPrefix } = options;
-  const strategy: ApiKeyStrategy = {
+  const strategy: AuthStrategy = {
     name: 'api-key',
-    authenticate: async ({ headers, payload }) => {
+    authenticate: async ({ frogbot, headers }) => {
       const token = extractApiKeyToken(headers, { headerNames });
+
       if (
         !token ||
         !new RegExp(
@@ -28,7 +27,7 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
         return { user: null };
       }
 
-      const keys = await payload.find({
+      const keys = await frogbot.find({
         collection: collectionSlug,
         depth: 0,
         limit: 1,
@@ -40,22 +39,23 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
           ],
         },
       });
-      const key = keys.docs[0] as
-        | {
-            id: string | number;
-            owner?: string | number;
-            capture?: boolean | 'disabled' | 'enabled' | 'inherit';
-            captureSampleRate?: number;
-          }
-        | undefined;
-      if (!key?.owner) return { user: null };
+      const key = keys.docs[0];
 
-      const user = await payload
+      if (
+        !key ||
+        (typeof key.id !== 'string' && typeof key.id !== 'number') ||
+        (typeof key.owner !== 'string' && typeof key.owner !== 'number')
+      ) {
+        return { user: null };
+      }
+
+      const user = await frogbot
         .findByID({ collection: authCollection, id: key.owner, depth: 0, overrideAccess: true })
         .catch(() => null);
+
       if (!user) return { user: null };
 
-      await payload.update({
+      await frogbot.update({
         collection: collectionSlug,
         id: key.id,
         data: { lastUsedAt: new Date().toISOString() },
@@ -76,10 +76,12 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
       };
     },
   };
+
   apiKeyStrategies.add(strategy);
+
   return strategy;
 }
 
-export function isApiKeyStrategy(strategy: ApiKeyStrategy): boolean {
+export function isApiKeyStrategy(strategy: AuthStrategy): boolean {
   return apiKeyStrategies.has(strategy);
 }

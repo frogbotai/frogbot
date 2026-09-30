@@ -119,7 +119,8 @@ export const importMap = {
     PreviewContentField_c2f8af9d5473262aa453012227f3a5ab,
   '/__docs-samples__/guide-examples/rendering-on-demand#ControlledEditor':
     ControlledEditor_c2f8af9d5473262aa453012227f3a5ab,
-  '/__docs-samples__/guide-examples/views/views#postViews': postViews_3988be0451eae222f678e8a22803bfe3,
+  '/__docs-samples__/guide-examples/views/views#postViews':
+    postViews_3988be0451eae222f678e8a22803bfe3,
   '@frogbotai/richtext-lexical/client#CodeComponent':
     CodeComponent_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#codeConverterClient':

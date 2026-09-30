@@ -15,71 +15,71 @@ keywords: authentication, config, configuration, overview, documentation, Conten
 
 ### Creating a strategy
 
-At the core, a strategy is a way to authenticate a user making a request. As of `3.0` we moved away from [Passport](https://www.passportjs.org) in favor of pulling back the curtain and putting you in full control.
+A strategy authenticates a user from information in an incoming request.
 
 A strategy is made up of the following:
 
-| Parameter             | Description                                                               |
-| --------------------- | ------------------------------------------------------------------------- |
-| **`name`** \*         | The name of your strategy                                                 |
-| **`authenticate`** \* | A function that takes in the parameters below and returns a user or null. |
+| Parameter             | Description                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| **`name`** \*         | The name of your strategy.                                                                          |
+| **`authenticate`** \* | A function that takes the arguments below and returns an object with `user`, directly or as a promise. |
 
 The `authenticate` function is passed the following arguments:
 
-| Argument               | Description                                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **`canSetHeaders`** \* | Whether or not the strategy is being executed from a context where response headers can be set. Default is `false`. |
-| **`headers`** \*       | The headers on the incoming request. Useful for retrieving identifiable information on a request.                   |
-| **`frogbot`** \*       | The FrogBot class. Useful for authenticating the identifiable information against FrogBot.                          |
-| **`isGraphQL`**        | Whether or not the strategy is being executed within the GraphQL endpoint. Default is `false`.                      |
+| Argument            | Description                                                                                                     |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **`canSetHeaders`** | Whether the calling context can set response headers. Treat an omitted value as `false`.                        |
+| **`frogbot`** \*    | The initialized FrogBot instance. Use its Local API to look up users.                                           |
+| **`headers`** \*    | The incoming request headers.                                                                                   |
+| **`isGraphQL`**     | Whether the strategy is running within the GraphQL endpoint. Treat an omitted value as `false`.                 |
+| **`req`**           | The `FrogBotRequest`, when there is one. Some authentication calls have no request, so read credentials from `headers`. |
+| **`strategyName`**  | The name of the strategy being run.                                                                             |
 
-### Example Strategy
+### Example strategy
 
-At its core a strategy simply takes information from the incoming request and returns a user. This is exactly how FrogBot's built-in strategies function.
+Import `AuthStrategy` from `frogbot` to type your strategy, then add it to an auth collection's `strategies` array.
 
-Your `authenticate` method should return an object containing a FrogBot user document and any optional headers that you'd like FrogBot to set for you when we return a response.
+Return `{ user: null }` when the credentials are missing or do not identify a user. Otherwise, return the user document with its collection slug. You can also return `responseHeaders: new Headers(...)` when `canSetHeaders` is `true`.
+
+This example uses a per-user `code` as a credential. Keep it secret and send it only over HTTPS. With the local strategy disabled, custom user fields such as `email` may be nullable; return the complete document rather than requiring an email address.
 
 ```ts
-import type { CollectionConfig } from 'frogbot'
+import type { AuthStrategy, CollectionConfig } from 'frogbot';
+
+export const codeStrategy: AuthStrategy = {
+  name: 'code-strategy',
+  authenticate: async ({ frogbot, headers, req }) => {
+    const code = headers.get('code');
+
+    if (!code) {
+      return { user: null };
+    }
+
+    const usersQuery = await frogbot.find({
+      collection: 'users',
+      depth: 0,
+      limit: 1,
+      req,
+      where: {
+        code: {
+          equals: code,
+        },
+      },
+    });
+
+    const user = usersQuery.docs[0];
+
+    return {
+      user: user ? { ...user, collection: 'users' } : null,
+    };
+  },
+};
 
 export const Users: CollectionConfig = {
   slug: 'users',
   auth: {
     disableLocalStrategy: true,
-    strategies: [
-      {
-        name: 'custom-strategy',
-        authenticate: async ({ frogbot, headers }) => {
-          const usersQuery = await frogbot.find({
-            collection: 'users',
-            where: {
-              code: {
-                equals: headers.get('code'),
-              },
-              secret: {
-                equals: headers.get('secret'),
-              },
-            },
-          })
-
-          return {
-            // Send the user with the collection slug back to authenticate,
-            // or send null if no user should be authenticated
-            user: usersQuery.docs[0] ? {
-              collection: 'users',
-              ...usersQuery.docs[0],
-            } : null,
-
-            // Optionally, you can return headers
-            // that you'd like FrogBot to set here when
-            // it returns the response
-            responseHeaders: new Headers({
-              'some-header': 'my header value'
-            })
-          }
-        }
-      }
-    ]
+    strategies: [codeStrategy],
   },
   fields: [
     {
@@ -89,9 +89,13 @@ export const Users: CollectionConfig = {
       unique: true,
     },
     {
-      name: 'secret',
+      name: 'email',
       type: 'text',
     },
-  ]
-}
+  ],
+};
 ```
+
+### When a strategy throws
+
+If your strategy throws, FrogBot logs the error on the server with the collection and strategy names, then tries the next strategy. If no strategy authenticates a user, the request remains anonymous and normal access control applies. The authentication response never includes the reason the strategy failed.

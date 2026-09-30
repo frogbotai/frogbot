@@ -1,5 +1,6 @@
-import type { IncomingAuthType } from 'payload';
+import type { AuthStrategyFunctionArgs as PayloadAuthStrategyFunctionArgs } from 'payload';
 
+import type { FrogBot } from '../frogbot.js';
 import type { SignInMethod } from '../pieces/types.js';
 import type { CollectionSlug, TypedCollection, TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
@@ -26,8 +27,27 @@ export interface AuthConfig {
     domain?: string;
   };
   useSessions?: boolean;
-  strategies?: IncomingAuthType['strategies'];
+  strategies?: AuthStrategy[];
 }
+
+export type AuthStrategyFunctionArgs = Omit<PayloadAuthStrategyFunctionArgs, 'payload' | 'req'> & {
+  frogbot: FrogBot;
+  req?: FrogBotRequest;
+};
+
+export type AuthStrategyResult = {
+  responseHeaders?: Headers;
+  user: (TypedUser & { _strategy?: string; collection?: string }) | null;
+};
+
+export type AuthStrategyFunction = (
+  args: AuthStrategyFunctionArgs,
+) => AuthStrategyResult | Promise<AuthStrategyResult>;
+
+export type AuthStrategy = {
+  authenticate: AuthStrategyFunction;
+  name: string;
+};
 
 /** Identifier accepted by ID-keyed operations. Mongo collections key by
  *  string; SQL collections key by number; Payload accepts both. */

@@ -72,9 +72,10 @@ describe('MCP plugin', () => {
       ({ method, path }) => method === 'post' && path === '/mcp',
     );
     const payload = { find: vi.fn() };
+    const frogbot = { find: vi.fn(), logger: { error: vi.fn() } };
 
     await expect(
-      endpoint?.handler({ headers: new Headers(), payload, user: null } as never),
+      endpoint?.handler({ headers: new Headers(), frogbot, payload, user: null } as never),
     ).rejects.toThrow('Unauthorized');
     expect(payload.find).not.toHaveBeenCalled();
     expect(
@@ -96,14 +97,44 @@ describe('MCP plugin', () => {
     const endpoint = result.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',
     );
-    const payload = { find: vi.fn().mockResolvedValue({ docs: [] }) };
+    const frogbot = {
+      find: vi.fn().mockResolvedValue({ docs: [] }),
+      logger: { error: vi.fn() },
+    };
 
     await expect(
       endpoint?.handler({
         headers: new Headers({ authorization: `Bearer ${token}` }),
-        payload,
+        frogbot,
       } as never),
     ).rejects.toThrow('Unauthorized');
+  });
+
+  it('rejects a throwing strategy and logs its collection and name once', async () => {
+    const config = await apiKeysPlugin({ authCollection: 'members' })({
+      collections: [{ slug: 'members', auth: true, fields: [] }],
+    } as FrogBotConfig);
+    const result = await mcpPlugin({})(config);
+    const endpoint = result.endpoints?.find(
+      ({ method, path }) => method === 'post' && path === '/mcp',
+    );
+    const err = new Error('secret key store failure');
+    const frogbot = {
+      find: vi.fn().mockRejectedValue(err),
+      logger: { error: vi.fn() },
+    };
+
+    await expect(
+      endpoint?.handler({
+        headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+        frogbot,
+      } as never),
+    ).rejects.toThrow('Unauthorized');
+
+    expect(frogbot.logger.error).toHaveBeenCalledExactlyOnceWith(
+      { err },
+      "[frogbot] auth strategy 'api-key' on 'members' failed",
+    );
   });
 
   it('registers MCP through the FrogBot config pipeline', async () => {

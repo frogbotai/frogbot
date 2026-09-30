@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.generated.json",
-  "include": ["fallback.test-d.ts"]
+  "include": ["fallback.test-d.ts", "strategy.fallback.test-d.ts"]
 }

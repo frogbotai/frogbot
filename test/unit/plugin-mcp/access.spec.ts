@@ -10,7 +10,8 @@ import { resolveMcpAccess } from '../../../packages/plugins/plugin-mcp/src/acces
 
 function setup({ revoked = false } = {}) {
   const token = createApiKeyToken();
-  const payload = {
+  const frogbot = {
+    logger: { error: vi.fn() },
     find: vi.fn().mockImplementation(({ where }) =>
       Promise.resolve({
         docs:
@@ -30,9 +31,10 @@ function setup({ revoked = false } = {}) {
   const request = (value: string) =>
     ({
       headers: new Headers({ authorization: `Bearer ${value}` }),
-      payload,
+      frogbot,
     }) as never;
-  return { request, strategy, token };
+
+  return { frogbot, request, strategy, token };
 }
 
 const pluginOptions = {
@@ -53,7 +55,7 @@ describe('resolveMcpAccess', () => {
     const { request, strategy, token } = setup();
 
     await expect(
-      resolveMcpAccess({ authenticate: strategy.authenticate, pluginOptions, req: request(token) }),
+      resolveMcpAccess({ collection: 'users', strategy, pluginOptions, req: request(token) }),
     ).resolves.toMatchObject({
       user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' },
       blogPosts: { create: true, find: true },
@@ -71,9 +73,11 @@ describe('resolveMcpAccess', () => {
     ['revoked key', () => setup({ revoked: true }), null],
   ])('rejects %s', async (_name, makeSetup, replacement) => {
     const { request, strategy, token } = makeSetup();
+
     await expect(
       resolveMcpAccess({
-        authenticate: strategy.authenticate,
+        collection: 'users',
+        strategy,
         pluginOptions,
         req: request(replacement ?? token),
       }),

@@ -3,7 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 import type { AuthConfig } from '../../../../packages/frogbot/src/auth/types.js';
 
 describe('AuthConfig', () => {
-  it('accepts Payload authentication strategies', () => {
+  it('accepts FrogBot authentication strategies', () => {
     expectTypeOf<{
       strategies: [{ name: 'custom'; authenticate: () => { user: null } }];
     }>().toMatchTypeOf<AuthConfig>();
