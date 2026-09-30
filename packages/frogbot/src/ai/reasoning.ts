@@ -5,12 +5,9 @@ import {
   resolveReasoningVariants,
 } from '@frogbotai/gateway';
 
+import { isCustomProvider } from './isCustomProvider.js';
 import { resolveModel } from './resolve.js';
-import type { CustomProviderEntry, ProviderConfig, SanitizedAIConfig } from './types.js';
-
-function isCustomProvider(entry: ProviderConfig[string]): entry is CustomProviderEntry {
-  return typeof entry === 'object' && 'type' in entry && entry.type === 'openai-compatible';
-}
+import type { SanitizedAIConfig } from './types.js';
 
 function toCamelCase(name: string): string {
   return name.replace(/[_-]([a-z])/g, (_, letter: string) => letter.toUpperCase());

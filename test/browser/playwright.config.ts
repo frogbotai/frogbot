@@ -207,6 +207,7 @@ export default defineConfig({
       testMatch: [
         'question.browser.spec.ts',
         'reasoningSelector.browser.spec.ts',
+        'modelSelector.browser.spec.ts',
         'modelAllowlist.browser.spec.ts',
         'channelChat.browser.spec.ts',
         'chatErrors.browser.spec.ts',
@@ -218,6 +219,30 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${questionPort}`,
         channel: 'chromium',
+      },
+    },
+    {
+      name: 'question-firefox',
+      testMatch: [
+        'modelSelector.browser.spec.ts',
+        'breadcrumbs.browser.spec.ts',
+        'topBarPhone.browser.spec.ts',
+      ],
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: `http://localhost:${questionPort}`,
+      },
+    },
+    {
+      name: 'question-webkit',
+      testMatch: [
+        'modelSelector.browser.spec.ts',
+        'breadcrumbs.browser.spec.ts',
+        'topBarPhone.browser.spec.ts',
+      ],
+      use: {
+        ...devices['Desktop Safari'],
+        baseURL: `http://localhost:${questionPort}`,
       },
     },
     {
@@ -266,6 +291,10 @@ export default defineConfig({
     question: questionServer,
     'plugin-seo': pluginSeoServer,
   })
-    .filter(([name]) => startAllServers || selectedProjects.has(name))
+    .filter(
+      ([name]) =>
+        startAllServers ||
+        [...selectedProjects].some((project) => project === name || project.startsWith(`${name}-`)),
+    )
     .flatMap(([, server]) => server),
 });

@@ -2,12 +2,17 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { generateAIModelTypes } from './generate-ai-types.mjs';
+import { format, resolveConfig } from 'prettier';
+
+import { renderAIModelTypes } from './generate-ai-types.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const overlaysPath = resolve(root, 'scripts/model-catalog-overlays.json');
 const catalogPath = resolve(root, 'packages/frogbot/src/ai/catalog.json');
 const gatewayPath = resolve(root, 'packages/gateway/src/providers/catalog.data.ts');
+const typesPath = resolve(root, 'packages/frogbot/src/ai/generated.ts');
+const logosPath = resolve(root, 'packages/ui/src/chat/provider-logos.ts');
+const logoProbe = 'frogbot-missing-provider-logo';
 
 const PROVIDERS = {
   'amazon-bedrock': 'bedrock',
@@ -289,17 +294,161 @@ export function renderGatewayCatalog(gateway) {
   return `import { defineModelCatalog, presetFor, type ModelCatalog } from './catalog.js';\n\nconst model = presetFor<string>();\n\nexport const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(\n${entries}\n);\n`;
 }
 
+function logoAttributes(source) {
+  const attributes = {};
+  const pattern = /\s+([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/y;
+  let offset = 0;
+
+  while (source.slice(offset).trim()) {
+    pattern.lastIndex = offset;
+
+    const match = pattern.exec(source);
+
+    if (!match) throw new Error('Malformed SVG attributes');
+
+    const [, name, doubleQuoted, singleQuoted] = match;
+
+    if (Object.hasOwn(attributes, name)) throw new Error(`Duplicate SVG attribute: ${name}`);
+
+    attributes[name] = doubleQuoted ?? singleQuoted;
+    offset = pattern.lastIndex;
+  }
+
+  return attributes;
+}
+
+export function logoNodes(svg) {
+  const root = svg.match(/^\s*<svg\b([^<>]*)>([\s\S]*)<\/svg>\s*$/);
+
+  if (!root) throw new Error('Expected an SVG root');
+
+  const { viewBox } = logoAttributes(root[1]);
+
+  if (!viewBox?.trim()) throw new Error('Missing SVG viewBox');
+
+  const allowed = {
+    d: 'd',
+    fill: 'fill',
+    'fill-rule': 'fillRule',
+    'clip-rule': 'clipRule',
+    opacity: 'opacity',
+  };
+  const nodes = [];
+  let remaining = root[2].trim();
+
+  while (remaining) {
+    const element = remaining.match(/^<([\w:.-]+)\b([^<>]*?)(\/?)>/);
+
+    if (!element) throw new Error('Malformed SVG content');
+
+    const [, name, source, selfClosing] = element;
+
+    if (name !== 'path') throw new Error(`Unsupported SVG element: ${name}`);
+
+    const attributes = logoAttributes(source);
+
+    if (!attributes.d?.trim()) throw new Error('Missing SVG path d');
+
+    const unsafe = Object.keys(allowed).find((attribute) =>
+      /[()\\]/.test(attributes[attribute] ?? ''),
+    );
+
+    if (unsafe) throw new Error(`Unsupported SVG attribute value: ${unsafe}`);
+
+    nodes.push([
+      'path',
+      Object.fromEntries(
+        Object.entries(allowed)
+          .filter(([attribute]) => Object.hasOwn(attributes, attribute))
+          .map(([attribute, prop]) => [prop, attributes[attribute]]),
+      ),
+    ]);
+    remaining = remaining.slice(element[0].length).trim();
+
+    if (!selfClosing) {
+      if (!remaining.startsWith('</path>')) throw new Error('Expected SVG path closing tag');
+
+      remaining = remaining.slice('</path>'.length).trim();
+    }
+  }
+
+  return { viewBox, nodes };
+}
+
+export async function renderProviderLogos(logos) {
+  const sorted = Object.fromEntries(Object.entries(logos).sort(([a], [b]) => a.localeCompare(b)));
+  const source = `import type { IconNode } from '../icons/types.js';\n\nexport const providerLogos: Record<string, { viewBox: string; nodes: IconNode }> = ${JSON.stringify(sorted, null, 2)};\n`;
+  const options = (await resolveConfig(logosPath)) ?? {};
+
+  return format(source, { ...options, filepath: logosPath, parser: 'typescript' });
+}
+
+async function fetchLogo({ fetchImpl, provider }) {
+  try {
+    const response = await fetchImpl(`https://models.dev/logos/${provider}.svg`, {
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (response.status === 404) return undefined;
+
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+
+    return await response.text();
+  } catch (error) {
+    throw new Error(`models.dev logo request for '${provider}' failed: ${error.message}`, {
+      cause: error,
+    });
+  }
+}
+
 export async function syncCatalog({ fetchImpl = fetch } = {}) {
-  const response = await fetchImpl('https://models.dev/api.json');
+  let response;
+
+  try {
+    response = await fetchImpl('https://models.dev/api.json', {
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (error) {
+    throw new Error(`models.dev catalog request failed: ${error.message}`, { cause: error });
+  }
+
   if (!response.ok) {
     throw new Error(`models.dev request failed: ${response.status} ${response.statusText}`);
   }
+
   const source = await response.json();
   const overlays = JSON.parse(await readFile(overlaysPath, 'utf8'));
   const { catalog, gateway } = buildCatalogs({ overlays, source });
-  await writeFile(catalogPath, renderCatalog(catalog));
-  await writeFile(gatewayPath, renderGatewayCatalog(gateway));
-  await generateAIModelTypes();
+  const generic = await fetchLogo({ fetchImpl, provider: logoProbe });
+
+  const logos = {};
+
+  for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
+    if (!Object.hasOwn(source, sourceProvider)) continue;
+
+    const svg = await fetchLogo({ fetchImpl, provider: sourceProvider });
+
+    if (svg === undefined || svg === generic) continue;
+
+    try {
+      logos[provider] = logoNodes(svg);
+    } catch (error) {
+      throw new Error(`Invalid models.dev logo for '${sourceProvider}': ${error.message}`, {
+        cause: error,
+      });
+    }
+  }
+
+  const outputs = [
+    [catalogPath, renderCatalog(catalog)],
+    [gatewayPath, renderGatewayCatalog(gateway)],
+    [typesPath, await renderAIModelTypes(catalog)],
+    [logosPath, await renderProviderLogos(logos)],
+  ];
+
+  for (const [path, content] of outputs) {
+    await writeFile(path, content);
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

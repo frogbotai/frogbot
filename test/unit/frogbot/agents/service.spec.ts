@@ -33,6 +33,7 @@ const config = {
         {
           id: 'thinker',
           mode: 'chat',
+          name: 'Local Thinker',
           reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
         },
         { id: 'plain', mode: 'chat' },
@@ -324,7 +325,10 @@ describe('agent service', () => {
   it('builds a permission-filtered agent manifest', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ options: ['openai/other', 'openai/test'] }),
+        support: makeAgent({
+          model: 'bedrock/us.amazon.nova-micro-v1:0',
+          options: ['openai/other', 'bedrock/us.amazon.nova-micro-v1:0'],
+        }),
         denied: makeAgent({ slug: 'denied', access: () => false }),
       },
     });
@@ -336,11 +340,69 @@ describe('agent service', () => {
           slug: 'support',
           label: 'support',
           source: 'config',
-          defaultModel: 'openai/test',
-          models: ['openai/test', 'openai/other'],
+          defaultModel: 'bedrock/us.amazon.nova-micro-v1:0',
+          models: ['bedrock/us.amazon.nova-micro-v1:0', 'openai/other'],
+          names: { 'bedrock/us.amazon.nova-micro-v1:0': 'Nova Micro (US)' },
         },
       ],
     });
+  });
+
+  it('advertises the configured name of a custom model', async () => {
+    const req = makeRequest({
+      agents: { support: makeAgent({ model: 'my-local/thinker', options: ['my-local/plain'] }) },
+    });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]!.names).toEqual({ 'my-local/thinker': 'Local Thinker' });
+  });
+
+  it.each(['bedrock/anthropic.claude-3-haiku-20240307-v1:0', 'my-local/plain', 'smart'])(
+    'omits names when %s has no display name',
+    async (model) => {
+      const req = makeRequest({ agents: { support: makeAgent({ model }) } });
+
+      const manifest = await getAgentManifest({ req });
+
+      expect(manifest.agents[0]).not.toHaveProperty('names');
+    },
+  );
+
+  it.each(['', '   '])('omits a blank configured custom model name %j', async (name) => {
+    const ai = {
+      ...config,
+      providers: {
+        'my-local': {
+          type: 'openai-compatible',
+          baseUrl: 'http://localhost:11434/v1',
+          models: [{ id: 'blank', mode: 'chat', name }],
+        },
+      },
+    } as unknown as SanitizedAIConfig;
+
+    const req = makeRequest({ agents: { support: makeAgent({ model: 'my-local/blank' }) }, ai });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]).not.toHaveProperty('names');
+  });
+
+  it('computes names only for models allowed for the user', async () => {
+    const req = makeRequest({
+      agents: {
+        support: makeAgent({
+          model: 'bedrock/us.amazon.nova-micro-v1:0',
+          options: ['my-local/thinker'],
+        }),
+      },
+      user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/thinker'] },
+    });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]!.models).toEqual(['my-local/thinker']);
+    expect(manifest.agents[0]!.names).toEqual({ 'my-local/thinker': 'Local Thinker' });
   });
 
   it('filters manifest models in agent order rather than allowlist order', async () => {

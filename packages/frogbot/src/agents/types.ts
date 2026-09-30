@@ -120,6 +120,7 @@ export type AgentManifestEntry = {
   source: 'config' | 'collection';
   defaultModel: AgentModelId;
   models: AgentModelId[];
+  names?: Partial<Record<AgentModelId, string>>;
   reasoning?: Partial<Record<AgentModelId, AgentReasoningOption[]>>;
 };
 
