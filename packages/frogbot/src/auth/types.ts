@@ -1,7 +1,7 @@
-import type { IncomingAuthType, TypeWithID } from 'payload';
+import type { IncomingAuthType } from 'payload';
 
 import type { SignInMethod } from '../pieces/types.js';
-import type { CollectionSlug, TypedCollection } from '../types/generated.js';
+import type { CollectionSlug, TypedCollection, TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 export interface AuthConfig {
@@ -95,5 +95,5 @@ export type AuthArgs = {
 export type AuthResult = {
   permissions: Record<string, unknown>;
   responseHeaders?: Headers;
-  user: (Record<string, unknown> & TypeWithID) | null;
+  user: TypedUser | null;
 };

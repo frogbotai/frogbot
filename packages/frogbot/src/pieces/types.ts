@@ -1,9 +1,10 @@
 import type { Adapter, Author } from 'chat';
-import type { SendEmailOptions, TypeWithID } from 'payload';
+import type { SendEmailOptions } from 'payload';
 import type { z } from 'zod';
 
 import type { PieceChannelQuestions } from '../channels/questions/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
+import type { TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 export type OAuthTokens = Record<string, PieceJSON> & {
@@ -237,7 +238,7 @@ export type PieceChannel<TAuth, TOptions, TClient> = {
     author: Author;
     client: TClient;
     req: FrogBotRequest;
-  }): Promise<TypeWithID | null>;
+  }): Promise<TypedUser | null>;
   questions?: PieceChannelQuestions<TClient>;
 };
 

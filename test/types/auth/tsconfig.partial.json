@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.generated.json",
+  "include": ["partial.test-d.ts"]
+}
