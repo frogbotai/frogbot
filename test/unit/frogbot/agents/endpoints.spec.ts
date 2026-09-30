@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
 import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
+import { assertStoredSelection } from '../../../../packages/frogbot/src/chat/turn/selection.js';
 import type * as StreamTurnModule from '../../../../packages/frogbot/src/chat/turn/streamTurn.js';
 import {
   definePiece,
@@ -128,7 +129,7 @@ function makeRequest({
   body?: unknown;
   signal?: AbortSignal;
   slug?: string;
-  user?: { id: string } | null;
+  user?: { id: string; modelAccess?: 'all' | 'selected'; models?: string[] } | null;
 } = {}): FrogBotRequest {
   const headers = new Headers({ 'content-type': 'application/json' });
 
@@ -209,6 +210,88 @@ describe('agent endpoints', () => {
         },
       ],
     });
+  });
+
+  it('filters the manifest for a restricted user', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/thinker', 'local/plain'];
+    const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
+
+    const response = await listHandler()(req);
+
+    expect(await response.json()).toEqual({
+      defaultAgent: 'support',
+      agents: [
+        {
+          slug: 'support',
+          label: 'support',
+          source: 'config',
+          defaultModel: 'local/plain',
+          models: ['local/plain'],
+        },
+      ],
+    });
+  });
+
+  it('rejects a user-blocked model before creating a chat or saving a message', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/plain'];
+    const req = makeRequest({
+      agent,
+      user: { id: 'user-1', models: ['local/plain'] },
+      body: { prompt: 'Hello', model: 'openai/test' },
+    });
+
+    const response = await postHandler()(req);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Model 'openai/test' is not allowed for this user",
+    });
+    expect(resolveChatContext).not.toHaveBeenCalled();
+    expect(streamTurn).not.toHaveBeenCalled();
+  });
+
+  it('runs an offered model allowed for a restricted user', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/plain'];
+    const req = makeRequest({
+      agent,
+      user: { id: 'user-1', models: ['local/plain'] },
+      body: { prompt: 'Hello', model: 'local/plain' },
+    });
+
+    const response = await postHandler()(req);
+
+    expect(response.status).toBe(200);
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ req, selection: { model: 'local/plain' } }),
+    );
+  });
+
+  it('runs the user fallback when no model is named', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/plain'];
+    const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
+    const runModel = vi.fn();
+
+    streamTurn.mockImplementation(async ({ agent: current, req: request, selection }) => {
+      const resolved = assertStoredSelection({
+        agent: current,
+        config: request.frogbot.config.ai!,
+        selection,
+        user: request.user,
+      });
+
+      runModel(resolved.model);
+
+      return makeTurn();
+    });
+
+    const response = await postHandler()(req);
+
+    expect(response.status).toBe(200);
+    expect(runModel).toHaveBeenCalledWith('local/plain');
   });
 
   it('advertises reasoning options only for allowed models that offer them', async () => {

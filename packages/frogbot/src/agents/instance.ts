@@ -26,6 +26,7 @@ import type { ToolCtx } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ResolvedAgentSelection } from './service.js';
+import { userDefaultModel } from './service.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 import type {
   AgentCallOptions,
@@ -123,6 +124,7 @@ export function createAgentInstance(
               agent: instance,
               config,
               selection: governing.selection,
+              user: req.user,
             });
           }
 
@@ -180,6 +182,7 @@ export function createAgentInstance(
       agent: instance,
       config,
       selection: options.selection ?? {},
+      user: req.user,
     });
 
     const runId = options.runId ?? generateId();
@@ -400,7 +403,6 @@ export function createAgentInstance(
 
     const { claim, uiMessages, selection } = context;
     const lease = holdTurn({ req, claim });
-    const mainModel = resolveModel(selection.model ?? agentConfig.model, config);
 
     try {
       const result = await aiAgent.generate(
@@ -416,6 +418,16 @@ export function createAgentInstance(
           ]),
         }),
       );
+
+      const model = selection.model ?? userDefaultModel({ agent: instance, user: req.user });
+
+      if (model === undefined) {
+        throw new Error(
+          `[frogbot] Agent '${agentConfig.slug}' has no validated model for this user.`,
+        );
+      }
+
+      const mainModel = resolveModel(model, config);
 
       const message = await generateMessage({
         result,

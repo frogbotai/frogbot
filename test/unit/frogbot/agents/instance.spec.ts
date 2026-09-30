@@ -243,7 +243,9 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
   } as never;
 }
 
-function makeReq(user: { id: string } | null = { id: 'user-1' }) {
+function makeReq(
+  user: { id: string; modelAccess?: 'selected'; models?: string[] } | null = { id: 'user-1' },
+) {
   return { user, context: {}, payload: { db: {} } } as unknown as FrogBotRequest;
 }
 
@@ -379,6 +381,103 @@ describe('agent hook lifecycle', () => {
 });
 
 describe('agent generate turns', () => {
+  it('runs and records the agent default for a scheduled-style generate without a user', async () => {
+    const req = makeReq(null);
+    req.context = { source: 'schedule' };
+
+    const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
+      gateway: { chatModel: ReturnType<typeof vi.fn> };
+    };
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: 'openai/test',
+        allowModels: ['openai/allowed'],
+        instructions: 'Help',
+      },
+      deps as never,
+    );
+
+    const result = await agent.generate({ prompt: 'Run report', req, overrideAccess: true });
+
+    expect(result.text).toBe('ok');
+    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/test');
+    expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        req,
+        mainModel: 'openai/test',
+        message: expect.objectContaining({
+          metadata: expect.objectContaining({
+            usage: expect.objectContaining({ model: 'openai/test' }),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('rejects a stored model blocked for the turn user before generating', async () => {
+    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/allowed'] });
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: 'openai/test',
+        allowModels: ['openai/allowed'],
+        instructions: 'Help',
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    turn.resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: history,
+      claim,
+      selection: { model: 'openai/test' },
+    });
+
+    await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      status: 409,
+      message: "Model 'openai/test' is not allowed for this user",
+    });
+
+    expect(agentState.generateCall).toBeUndefined();
+    expect(turn.persistAssistantMessage).not.toHaveBeenCalled();
+    expect(turn.stop).toHaveBeenCalledOnce();
+    expect(turn.releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
+  });
+
+  it('runs on the user fallback and records it as the main model', async () => {
+    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/allowed'] });
+    const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
+      gateway: { chatModel: ReturnType<typeof vi.fn> };
+    };
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: 'openai/test',
+        allowModels: ['openai/allowed'],
+        instructions: 'Help',
+      },
+      deps as never,
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/allowed');
+    expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        req,
+        mainModel: 'openai/allowed',
+        message: expect.objectContaining({
+          metadata: expect.objectContaining({
+            usage: expect.objectContaining({ model: 'openai/allowed' }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it('resolves the chat without queueing and persists the generated reply', async () => {
     const config = makeConfig(emptyHooks());
     const req = makeReq();

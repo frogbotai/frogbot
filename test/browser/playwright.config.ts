@@ -179,6 +179,7 @@ export default defineConfig({
       testMatch: [
         'question.browser.spec.ts',
         'reasoningSelector.browser.spec.ts',
+        'modelAllowlist.browser.spec.ts',
         'channelChat.browser.spec.ts',
         'chatErrors.browser.spec.ts',
         'messagesOverride.browser.spec.ts',

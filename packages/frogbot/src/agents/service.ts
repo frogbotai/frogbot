@@ -1,5 +1,6 @@
 import type { ReasoningVariant } from '@frogbotai/gateway';
 
+import { isTargetAllowed, resolvePolicy } from '../ai/policy.js';
 import { resolveModelReasoning } from '../ai/reasoning.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
@@ -69,6 +70,22 @@ export async function hasAgentAccess({
   }
 }
 
+export async function canUseAgent({
+  req,
+  agent,
+}: {
+  req: FrogBotRequest;
+  agent: AgentInstance;
+}): Promise<{ allowed: true } | { allowed: false; denied: 'access' | 'models' }> {
+  if (!(await hasAgentAccess({ req, agent }))) return { allowed: false, denied: 'access' };
+
+  if (userDefaultModel({ agent, user: req.user }) === undefined) {
+    return { allowed: false, denied: 'models' };
+  }
+
+  return { allowed: true };
+}
+
 export async function listAgents({
   req,
 }: {
@@ -91,6 +108,7 @@ export async function listAgents({
 
 export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promise<AgentManifest> {
   const agents: AgentManifest['agents'] = [];
+
   for (const agent of Object.values(req.frogbot.agents)) {
     try {
       await assertAgentAccess({ req, agent });
@@ -98,18 +116,23 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
       continue;
     }
 
-    const models = agentModels(agent);
+    const models = userAgentModels({ agent, user: req.user });
+    const defaultModel = userDefaultModel({ agent, user: req.user });
+
+    if (defaultModel === undefined) continue;
+
     const reasoning = agentReasoning({ config: req.frogbot.config.ai!, models });
 
     agents.push({
       slug: agent.slug,
       label: agent.config.profile?.name ?? agent.slug,
       source: 'config',
-      defaultModel: agent.config.model,
+      defaultModel,
       models,
       ...(reasoning ? { reasoning } : {}),
     });
   }
+
   return { defaultAgent: agents[0]?.slug ?? '', agents };
 }
 
@@ -139,15 +162,25 @@ export function assertAgentSelection({
   agent,
   config,
   selection,
+  user,
 }: {
   agent: AgentInstance;
   config: SanitizedAIConfig;
   selection: AgentSelection;
+  user: FrogBotRequest['user'] | undefined;
 }): ResolvedAgentSelection {
-  const model = selection.model ?? agent.config.model;
+  const model = selection.model ?? userDefaultModel({ agent, user });
 
-  if (!agentModels(agent).includes(model)) {
+  if (selection.model !== undefined && !agentModels(agent).includes(selection.model)) {
     throw new AgentServiceError(`Model '${model}' is not allowed for agent '${agent.slug}'`, 403);
+  }
+
+  if (model === undefined) {
+    throw new AgentServiceError(`No model on agent '${agent.slug}' is allowed for this user`, 403);
+  }
+
+  if (!isTargetAllowed(resolvePolicy(user), model)) {
+    throw new AgentServiceError(`Model '${model}' is not allowed for this user`, 403);
   }
 
   if (selection.reasoning === undefined) return { model: resolveModel(model, config) };
@@ -168,6 +201,30 @@ export function assertAgentSelection({
 
 function agentModels(agent: AgentInstance): AgentModelId[] {
   return [...new Set([agent.config.model, ...(agent.config.allowModels ?? [])])];
+}
+
+export function userAgentModels({
+  agent,
+  user,
+}: {
+  agent: AgentInstance;
+  user: FrogBotRequest['user'] | undefined;
+}): AgentModelId[] {
+  const policy = resolvePolicy(user);
+
+  return agentModels(agent).filter((model) => isTargetAllowed(policy, model));
+}
+
+export function userDefaultModel({
+  agent,
+  user,
+}: {
+  agent: AgentInstance;
+  user: FrogBotRequest['user'] | undefined;
+}): AgentModelId | undefined {
+  const models = userAgentModels({ agent, user });
+
+  return models.includes(agent.config.model) ? agent.config.model : models[0];
 }
 
 function agentReasoning({

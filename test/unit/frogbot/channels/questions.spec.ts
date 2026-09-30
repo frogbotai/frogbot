@@ -346,6 +346,32 @@ describe('channel question delivery', () => {
     await fixture.host.shutdown();
   });
 
+  it('denies a responder with no usable model and leaves the call pending', async () => {
+    const { fixture, hooks } = await askedFixture();
+
+    fixture.identity.mockResolvedValueOnce({
+      id: 'user-2',
+      collection: 'users',
+      modelAccess: 'selected',
+      models: ['openai/other'],
+    } as never);
+
+    await fixture.interact(click('answer', { author: 'user-2' }));
+
+    expect(fixture.frogbot.logger.info).toHaveBeenCalledExactlyOnceWith(
+      { agent: 'support', piece: 'slack', author: 'user-2' },
+      '[frogbot] Channel question answer denied by model access.',
+    );
+    expect(hooks.denied).toHaveBeenCalledOnce();
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+    expect(fixture.values.get(key('call:chat-1:call-1'))).not.toHaveProperty('settled');
+    expect(fixture.inputs).toHaveLength(1);
+    expect(fixture.streamMessage).toHaveBeenCalledOnce();
+    expect(fixture.frogbot.logger.error).not.toHaveBeenCalled();
+
+    await fixture.host.shutdown();
+  });
+
   it.each([
     ['another thread', { threadId: 'other:thread-1' }],
     ['an unknown card', { messageId: 'card-2' }],

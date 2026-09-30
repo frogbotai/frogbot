@@ -7,6 +7,7 @@ import {
   toUIMessageStream,
 } from 'ai';
 
+import { userDefaultModel } from '../../agents/service.js';
 import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../agents/types.js';
 import { aiErrorMessage } from '../../ai/errorMessage.js';
 import { resolveModel } from '../../ai/resolve.js';
@@ -69,7 +70,6 @@ export async function streamTurn({
   const lease = holdTurn({ req: turnReq, claim });
   const checkpointFailure = new AbortController();
   const signals = [lease.signal, checkpointFailure.signal, ...(abortSignal ? [abortSignal] : [])];
-  const mainModel = resolveModel(selection.model ?? agent.config.model, req.frogbot.config.ai!);
 
   const last = uiMessages.at(-1);
   const messageId = last?.role === 'assistant' ? last.id : generateId();
@@ -79,6 +79,7 @@ export async function streamTurn({
       : undefined) ?? new Date(Date.now() + 2).toISOString();
 
   let result: AgentStreamResult;
+  let mainModel: string;
 
   try {
     result = await agent.aiAgent.stream({
@@ -86,6 +87,14 @@ export async function streamTurn({
       options: { req, overrideAccess: true, chatId, replyCreatedAt, selection, clientTools },
       abortSignal: AbortSignal.any(signals),
     });
+
+    const model = selection.model ?? userDefaultModel({ agent, user: req.user });
+
+    if (model === undefined) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' has no validated model for this user.`);
+    }
+
+    mainModel = resolveModel(model, req.frogbot.config.ai!);
   } catch (error) {
     lease.stop();
 

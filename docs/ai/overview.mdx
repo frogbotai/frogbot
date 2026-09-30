@@ -9,6 +9,8 @@ keywords: ["AI", "providers", "models", "routers", "hooks", "gateway"]
 
 When AI is configured, FrogBot adds policy fields to the auth collection. `modelAccess` defaults to `all`, which includes models and routers configured later. `selected` requires at least one exact target in `models`. Granting a router permits that router slug, not direct calls to the model behind it.
 
+Agent chat applies the same list. A user sees only the agent models they may use, and a request without a model runs the agent's default if allowed, otherwise the first allowed model. Agents with no allowed model are hidden from that user and reject their requests. Turns with no user, such as scheduled tasks and anonymous channel messages, have no per-user limit.
+
 `monthlyBudget` is an optional USD limit. Completed billable usage increments `spendThisPeriodUSD`, including configured custom-provider prices. Requests stop when spend reaches the limit, and FrogBot resets spend at midnight UTC on the first day of each month. Counter updates are serialized within one process; deployments with multiple writers should use database-level serialization if exact concurrent accounting is required.
 
 ### Customizing the fields

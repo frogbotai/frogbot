@@ -162,7 +162,7 @@ function toolLoopGenerate(): MockLanguageModelV4['doGenerate'] {
 function setup({
   access = () => true,
   user = 'user-1',
-  owner = user,
+  owner = typeof user === 'string' ? user : (user?.id ?? null),
   doStream = async () => ({ stream: modelStream(response()) }),
   doGenerate,
   model: agentModel = 'openai/test' as AgentModelId,
@@ -170,7 +170,7 @@ function setup({
   tools,
 }: {
   access?: AgentAccess;
-  user?: string | null;
+  user?: string | { id: string; modelAccess: 'selected'; models: string[] } | null;
   owner?: string | null;
   doStream?: MockLanguageModelV4['doStream'];
   doGenerate?: MockLanguageModelV4['doGenerate'];
@@ -278,7 +278,7 @@ function setup({
   };
 
   const req = {
-    user: user === null ? null : { id: user },
+    user: typeof user === 'string' ? { id: user } : user,
     context: { channel: { piece: 'slack', threadId: 'thread-1', author: { id: 'author-1' } } },
     payload: { db: {} },
     frogbot,
@@ -810,7 +810,117 @@ describe('agent persisted stream with the installed AI SDK', () => {
 
 describe('agent model and reasoning selection with the installed AI SDK', () => {
   beforeEach(() => {
+    turn.claimTurn.mockReset().mockResolvedValue(claim);
+    turn.holdTurn
+      .mockReset()
+      .mockReturnValue({ signal: new AbortController().signal, stop: vi.fn() });
+    turn.promoteQueuedMessage.mockReset();
     turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
+    turn.releaseTurn.mockReset().mockResolvedValue(true);
+  });
+
+  it('rejects a model blocked for the turn user before any model call', async () => {
+    const { agent, calls, finish, req } = setup({
+      model: 'local/thinker',
+      allowModels: ['local/writer'],
+      user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer'] },
+    });
+
+    await expect(
+      agent.aiAgent.stream({
+        prompt: 'Hello',
+        options: { req, selection: { model: 'local/thinker' } },
+      }),
+    ).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      status: 409,
+      message: "Model 'local/thinker' is not allowed for this user",
+    });
+
+    expect(calls).toEqual([]);
+    expect(finish).not.toHaveBeenCalled();
+  });
+
+  it('stops at the next step when a steer model is blocked for the turn author', async () => {
+    const { agent, calls, req } = setup({
+      model: 'local/thinker',
+      allowModels: ['local/writer'],
+      user: { id: 'user-1', modelAccess: 'selected', models: ['local/thinker'] },
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Write it up' }] },
+        selection: { model: 'local/writer' },
+      },
+    ]);
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, chatId: 'chat-1' },
+    });
+
+    const errors: unknown[] = [];
+
+    for await (const part of result.fullStream) {
+      if (part.type === 'error') errors.push(part.error);
+    }
+
+    expect(errors).toEqual([
+      expect.objectContaining({
+        code: 'selection-unavailable',
+        message: "Model 'local/writer' is not allowed for this user",
+      }),
+    ]);
+    expect(calls).toEqual([{ model: 'local/thinker', providerOptions: undefined }]);
+  });
+
+  it('runs and persists the user fallback when the turn names no model', async () => {
+    const { agent, calls, messages, req } = setup({
+      model: 'local/thinker',
+      allowModels: ['local/writer'],
+      user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer'] },
+    });
+
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
+
+    await result.persistence;
+
+    expect(calls).toEqual([{ model: 'local/writer', providerOptions: undefined }]);
+    expect(messages[1]).toMatchObject({
+      usage: { model: 'local/writer', provider: 'local', totalTokens: 3 },
+    });
+  });
+
+  it('runs and persists the agent default when the turn has no user', async () => {
+    const { agent, calls, chat, messages, req } = setup({
+      model: 'local/thinker',
+      allowModels: ['local/writer'],
+      user: null,
+    });
+
+    const channelAccess = createChannelChatAccess({
+      req,
+      agentSlug: agent.slug,
+      chatId: chat.id,
+      channelKey: chat.channelKey,
+    });
+
+    const result = await streamMessage(agent, {
+      req,
+      chatId: chat.id,
+      prompt: 'Hello',
+      channelAccess,
+    });
+
+    await result.persistence;
+
+    expect(calls).toEqual([{ model: 'local/thinker', providerOptions: undefined }]);
+    expect(messages[1]).toMatchObject({
+      usage: { model: 'local/thinker', provider: 'local', totalTokens: 3 },
+    });
   });
 
   it('sends the selected variant on every step of a streamed tool loop', async () => {

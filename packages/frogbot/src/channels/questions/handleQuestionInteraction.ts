@@ -1,7 +1,7 @@
 import type { Author, Thread } from 'chat';
 import { NotFound } from 'payload';
 
-import { AgentServiceError, hasAgentAccess } from '../../agents/service.js';
+import { AgentServiceError, canUseAgent } from '../../agents/service.js';
 import { actorFromRequest } from '../../chat/turn/actor.js';
 import { TurnError } from '../../chat/turn/errors.js';
 import type { ToolPart } from '../../chat/turn/messages.js';
@@ -392,16 +392,19 @@ async function authorize({
   thread: { id: string };
 }): Promise<AuthorizedChannelRequest> {
   const channel = await createChannelRequest({ author, binding, frogbot, thread });
-  const allowed = await hasAgentAccess({ req: channel.req, agent: binding.agent });
 
-  if (!allowed) {
+  const access = await canUseAgent({ req: channel.req, agent: binding.agent });
+
+  if (!access.allowed) {
     frogbot.logger.info(
       { agent: binding.agent.slug, piece: binding.instance.slug, author: author.userId },
-      '[frogbot] Channel question answer denied by agent access.',
+      access.denied === 'access'
+        ? '[frogbot] Channel question answer denied by agent access.'
+        : '[frogbot] Channel question answer denied by model access.',
     );
   }
 
-  return { ...channel, allowed };
+  return { ...channel, allowed: access.allowed };
 }
 
 function channelActor({

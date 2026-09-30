@@ -53,13 +53,15 @@ export function assertStoredSelection({
   agent,
   config,
   selection,
+  user,
 }: {
   agent: AgentInstance;
   config: SanitizedAIConfig;
   selection: AgentSelection;
+  user: FrogBotRequest['user'] | undefined;
 }): ResolvedAgentSelection {
   try {
-    return assertAgentSelection({ agent, config, selection });
+    return assertAgentSelection({ agent, config, selection, user });
   } catch (error) {
     if (error instanceof AgentServiceError) {
       throw new TurnError('selection-unavailable', error.message);

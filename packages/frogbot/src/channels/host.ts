@@ -2,7 +2,7 @@ import { generateId } from 'ai';
 import type { Adapter, Message as ChatMessage, Thread } from 'chat';
 import { Message } from 'chat';
 
-import { hasAgentAccess } from '../agents/service.js';
+import { canUseAgent } from '../agents/service.js';
 import type { AgentInstance } from '../agents/types.js';
 import type { ChatDocument } from '../chat/findChat.js';
 import type { TurnRunnerArgs } from '../chat/turn/queue.js';
@@ -398,10 +398,14 @@ export class ChannelHost {
     const { req } = channel;
     const identity = channelThreadIdentity({ binding, thread });
 
-    if (!(await hasAgentAccess({ req, agent: binding.agent }))) {
+    const access = await canUseAgent({ req, agent: binding.agent });
+
+    if (!access.allowed) {
       this.frogbot.logger.info(
         { agent: binding.agent.slug, piece: binding.instance.slug, author: author.userId },
-        '[frogbot] Channel message denied by agent access.',
+        access.denied === 'access'
+          ? '[frogbot] Channel message denied by agent access.'
+          : '[frogbot] Channel message denied by model access.',
       );
 
       const existing = binding.questions ? await findChannelChat({ req, identity }) : undefined;
