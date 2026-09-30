@@ -8,12 +8,17 @@ import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import {
+  accessObservations,
   countRequests,
   databaseDirectory,
+  fieldArgumentsSlug,
   hookObservations,
   nestedFieldsSlug,
+  observedBlockSlug,
+  payloadHookObservations,
   postsSlug,
   usersSlug,
+  validatorObservations,
 } from './shared.js';
 
 describe('field runtime boundaries', () => {
@@ -33,7 +38,25 @@ describe('field runtime boundaries', () => {
 
     countRequests.length = 0;
     hookObservations.length = 0;
+    validatorObservations.length = 0;
+    accessObservations.length = 0;
+    payloadHookObservations.length = 0;
   });
+
+  const blockData = {
+    id: 'observed-row',
+    blockType: observedBlockSlug,
+    observed: 'Observed',
+    validated: 'Validated',
+    readable: 'Readable',
+  };
+
+  async function createArgumentDoc() {
+    return booted.frogbot.create({
+      collection: fieldArgumentsSlug,
+      data: { blocks: [{ ...blockData }], payloadAuthored: 'Payload authored' },
+    });
+  }
 
   async function createEnabledDraft() {
     const post = await booted.frogbot.create({
@@ -209,5 +232,70 @@ describe('field runtime boundaries', () => {
       phase: 'beforeDuplicate',
       siblingNames: ['value'],
     });
+  });
+
+  it('field hooks receive path, schemaPath, indexPath and blockData in every phase', async () => {
+    const doc = await createArgumentDoc();
+
+    await booted.frogbot.duplicate({ collection: fieldArgumentsSlug, id: doc.id });
+
+    const observations = hookObservations.filter(({ field }) => field === 'observed');
+
+    expect(new Set(observations.map(({ phase }) => phase))).toEqual(
+      new Set(['beforeValidate', 'beforeChange', 'afterChange', 'afterRead', 'beforeDuplicate']),
+    );
+
+    observations.forEach((observation) => {
+      expect(observation).toMatchObject({
+        path: ['blocks', '0', 'observed'],
+        schemaPath: ['blocks', observedBlockSlug, 'observed'],
+        indexPath: [],
+        blockData: {
+          blockType: observedBlockSlug,
+          observed: 'Observed',
+          validated: 'Validated',
+          readable: 'Readable',
+        },
+        globalIsNull: observation.phase !== 'beforeDuplicate',
+        globalIsUndefined: observation.phase === 'beforeDuplicate',
+        fieldNameType: 'string',
+        hasFrogBot: true,
+      });
+    });
+  });
+
+  it('validators receive block data, preferences and field config', async () => {
+    await createArgumentDoc();
+
+    expect(validatorObservations).toEqual([
+      {
+        blockData: expect.objectContaining(blockData),
+        preferences: { fields: {} },
+        collectionSlug: fieldArgumentsSlug,
+        minLength: 3,
+      },
+    ]);
+  });
+
+  it('field read access receives block data', async () => {
+    const doc = await createArgumentDoc();
+
+    accessObservations.length = 0;
+
+    const persisted = await booted.frogbot.findByID({
+      collection: fieldArgumentsSlug,
+      id: doc.id,
+      overrideAccess: false,
+    });
+
+    expect(accessObservations).toEqual([{ blockData: expect.objectContaining(blockData) }]);
+    expect(persisted.blocks).toEqual([expect.objectContaining({ readable: 'Readable' })]);
+  });
+
+  it('a cast Payload-authored field hook receives req.payload', async () => {
+    const doc = await createArgumentDoc();
+
+    expect(payloadHookObservations).toEqual([true]);
+    expect(doc.payloadAuthored).toBe('Payload authored');
   });
 });

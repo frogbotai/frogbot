@@ -105,6 +105,40 @@ export const publishedOnField: DateField = {
 
 Use `FieldHook` when a standalone field callback needs an explicit type.
 
+### Field hook arguments
+
+`FieldHookArgs<TData, TValue, TSiblingData>` includes every argument below. The `?` suffix marks optional properties; `req`, `field`, and `siblingFields` use FrogBot types.
+
+| Argument                 | Type                                         | Meaning                                                                           |
+| ------------------------ | -------------------------------------------- | --------------------------------------------------------------------------------- |
+| `blockData`              | `JsonObject \| undefined`                    | Nearest parent block's data; `undefined` outside a block.                         |
+| `collection`             | `SanitizedCollectionConfig \| null`          | Owning collection; `null` for a global field.                                     |
+| `context`                | `RequestContext`                             | Context shared between hooks.                                                     |
+| `currentDepth?`          | `number`                                     | Current relationship population depth in `afterRead`.                             |
+| `data?`                  | `Partial<TData>`                             | Incoming write data, or the full document in `afterRead`.                         |
+| `depth?`                 | `number`                                     | Requested relationship population depth in `afterRead`.                           |
+| `draft?`                 | `boolean`                                    | Whether the operation requests draft data.                                        |
+| `field`                  | `FieldHookArgs['field']`                     | The field's configuration (any field that stores data), with FrogBot callbacks.   |
+| `findMany?`              | `boolean`                                    | Whether `afterRead` is part of a find-many operation.                             |
+| `global`                 | `SanitizedGlobalConfig \| null`              | Owning global; `null` for a collection field (`undefined` in `beforeDuplicate`).  |
+| `indexPath`              | `number[]`                                   | Indexes of the unnamed layout fields leading here; empty for named fields.        |
+| `operation?`             | `'create' \| 'read' \| 'update' \| 'delete'` | Current operation.                                                                |
+| `originalDoc?`           | `TData`                                      | Original document on update; resulting document in `afterChange`.                 |
+| `overrideAccess?`        | `boolean`                                    | Whether Access Control is bypassed.                                               |
+| `path`                   | `(number \| string)[]`                       | Runtime field path, including array indexes.                                      |
+| `previousDoc?`           | `TData`                                      | Document before changes in `afterChange`.                                         |
+| `previousSiblingDoc?`    | `TSiblingData`                               | Sibling data before changes in write and duplicate hooks.                         |
+| `previousValue?`         | `TValue`                                     | Previous value in write and duplicate hooks.                                      |
+| `req`                    | `FrogBotRequest`                             | Request with `req.user` and `req.frogbot`.                                        |
+| `schemaPath`             | `string[]`                                   | Schema field path without array indexes.                                          |
+| `showHiddenFields?`      | `boolean`                                    | Whether hidden fields are included in `afterRead`.                                |
+| `siblingData`            | `Partial<TSiblingData>`                      | Data adjacent to this field.                                                      |
+| `siblingDocWithLocales?` | `Record<string, unknown>`                    | Unmodified sibling data with all locales in `beforeChange` and `beforeDuplicate`. |
+| `siblingFields?`         | `(Field \| TabAsField)[]`                    | Adjacent field configurations.                                                    |
+| `value?`                 | `TValue`                                     | Current field value.                                                              |
+
+`siblingFields` is required in `afterRead`, `beforeChange`, `beforeDuplicate`, and `beforeValidate`. It is not provided at runtime in `afterChange`, so it remains optional in the base `FieldHookArgs` type. Do not assume it exists in a standalone `FieldHook`.
+
 ## Request context
 
 The same request context flows through hooks in one operation. It can carry computed values and loop-prevention flags.

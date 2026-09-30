@@ -138,6 +138,45 @@ import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
 
 Reusable FrogBot `Block` objects work in Rich Text through `BlocksFeature({ blocks })`. Import server features from `@frogbotai/richtext-lexical`, client features from `@frogbotai/richtext-lexical/client`, and Lexical APIs from the package's Lexical subpaths.
 
+## Validation context
+
+`validate(value, options)` returns `true` or an error-message string, synchronously or asynchronously. Validator values remain loose (`any`) for ordinary field types; Vector field validators retain `number[] | null | undefined`.
+
+`ValidateOptions<TData, TSiblingData, TFieldConfig, TValue>` combines these arguments with the field's own settings. The `?` suffix marks optional properties:
+
+| Argument          | Type                                         | Meaning                                                                    |
+| ----------------- | -------------------------------------------- | -------------------------------------------------------------------------- |
+| `blockData`       | `Partial<TData>`                             | Nearest parent block's data; runtime value is `undefined` outside a block. |
+| `collectionSlug?` | `string`                                     | Owning collection's slug, when available.                                  |
+| `data`            | `Partial<TData>`                             | Top-level operation data; unchanged fields may be absent.                  |
+| `event?`          | `'onChange' \| 'submit'`                     | Validation trigger.                                                        |
+| `id?`             | `number \| string`                           | Current document ID.                                                       |
+| `operation?`      | `'create' \| 'read' \| 'update' \| 'delete'` | Current operation.                                                         |
+| `overrideAccess?` | `boolean`                                    | Whether field Access Control is bypassed.                                  |
+| `path`            | `(number \| string)[]`                       | Runtime field path, including array indexes.                               |
+| `preferences`     | `DocumentPreferences`                        | Document field preferences.                                                |
+| `previousValue?`  | `TValue`                                     | Previous field value.                                                      |
+| `req`             | `FrogBotRequest`                             | Request with `req.user` and `req.frogbot`.                                 |
+| `required?`       | `boolean`                                    | Whether the field is required.                                             |
+| `siblingData`     | `Partial<TSiblingData>`                      | Data adjacent to the field.                                                |
+
+Field settings appear directly on `options`, not under a nested config property. They are specific to the field type: Text validators receive `minLength`, Number validators receive `max`, and so on. The typed settings exclude `hooks`, `access`, and `validate`.
+
+`operation` can be any of the four operations or `undefined`, so a validator that switches on it should handle `read` and `delete` too.
+
+## Field access arguments
+
+Field `access.create`, `access.read`, and `access.update` callbacks receive `FieldAccessArgs<TData, TSiblingData>` and return a boolean or a promise of one. They cannot return query constraints. All three callbacks share these keys:
+
+| Argument       | Type                      | Meaning                                                      |
+| -------------- | ------------------------- | ------------------------------------------------------------ |
+| `blockData?`   | `JsonObject \| undefined` | Nearest parent block's data; `undefined` outside a block.    |
+| `data?`        | `Partial<TData>`          | Incoming create or update data.                              |
+| `doc?`         | `TData`                   | Existing document on read or update; `undefined` on create.  |
+| `id?`          | `number \| string`        | Document ID on read or update; `undefined` on create.        |
+| `req`          | `FrogBotRequest`          | Request with the authenticated `req.user` and `req.frogbot`. |
+| `siblingData?` | `Partial<TSiblingData>`   | Data adjacent to the field.                                  |
+
 ## Conditional fields
 
 `admin.condition` receives top-level form data, sibling data, and a context containing `user`. It does not receive a `FrogBotRequest`. Use top-level data for a document-wide switch and sibling data for a nested group's switch:

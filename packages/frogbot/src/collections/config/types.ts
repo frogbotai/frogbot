@@ -8,7 +8,12 @@
 // Users import this from `'frogbot'`. They never see the underlying Payload
 // type name or import path.
 
-import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payload';
+import type {
+  FieldAccessArgs as PayloadFieldAccessArgs,
+  RequestContext,
+  SanitizedCollectionConfig,
+  TypeWithID,
+} from 'payload';
 
 import type { AdminIcon } from '../../admin/types.js';
 import type { CollectionView, DocumentTabConfig } from '../../admin/views/types.js';
@@ -19,7 +24,7 @@ import type { Field } from '../../fields/config/types.js';
 import type { SearchIndexConfig, SearchIndexDescriptors } from '../../search/types.js';
 import type { CollectionSlug, TypedCollection } from '../../types/generated.js';
 import type { PayloadCollectionConfig, SelectType, Sort, Where } from '../../types/payload.js';
-import type { FrogBotRequest } from '../../types/request.js';
+import type { FrogBotArgs, FrogBotRequest } from '../../types/request.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
@@ -151,13 +156,9 @@ export type CollectionAccess = {
 
 // ── Field-level access ────────────────────────────────────────────────
 
-export type FieldAccessArgs<TData extends TypeWithID = any, TSiblingData = any> = {
-  data?: Partial<TData>;
-  doc?: TData;
-  id?: number | string;
-  req: FrogBotRequest;
-  siblingData?: Partial<TSiblingData>;
-};
+export type FieldAccessArgs<TData extends TypeWithID = any, TSiblingData = any> = FrogBotArgs<
+  PayloadFieldAccessArgs<TData, TSiblingData>
+>;
 
 export type FieldAccess<TData extends TypeWithID = any, TSiblingData = any> = (
   args: FieldAccessArgs<TData, TSiblingData>,

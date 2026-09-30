@@ -376,13 +376,23 @@ Use the context to compare sibling values, inspect the operation, identify the c
 
 | Property | Description |
 | --- | --- |
-| `data` | The complete Document data for the operation. |
-| `siblingData` | Data under the same parent as the field. |
-| `operation` | The current `create` or `update` operation. |
+| `blockData` | The nearest parent block's data, or `undefined` outside a block. Typed as `Partial<TData>`. |
+| `collectionSlug` | The Collection slug (`string`), when available. |
+| `data` | The top-level Document data for the operation (`Partial<TData>`); it may omit unchanged fields. |
+| `siblingData` | Data under the same parent as the field (`Partial<TSiblingData>`). |
+| `operation` | The current `create`, `read`, `update`, or `delete` operation, when available. |
+| `overrideAccess` | An optional boolean indicating whether field Access Control is bypassed. |
 | `path` | The runtime path, including array indexes. |
 | `id` | The current Document ID, or `undefined` during create. |
+| `preferences` | The Document's preferences (`DocumentPreferences`). |
+| `previousValue` | The previous field value, when available. |
 | `req` | The current `FrogBotRequest`; on the server, the authenticated user is `req.user` and the instance is `req.frogbot`. |
-| `event` | `onChange` or `submit`, allowing expensive checks to run only on submission. |
+| `event` | `onChange` or `submit`, when available, allowing expensive checks to run only on submission. |
+| `required` | The field's optional `required` boolean. |
+
+The context also includes the field's own settings as top-level properties, such as `minLength` on a Text field or `max` on a Number field. These settings are typed for that field type and exclude `hooks`, `access`, and `validate`.
+
+`operation` can be any of the four operations or `undefined`, so a validator that switches on it should handle `read` and `delete` too.
 
 ```ts
 import type { Field } from 'frogbot'

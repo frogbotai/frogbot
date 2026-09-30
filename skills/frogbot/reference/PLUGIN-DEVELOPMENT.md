@@ -278,6 +278,59 @@ export function notesFieldsPlugin(options: NotesFieldsOptions): Plugin {
 
 Passing defaults through a callback lets consumers append, remove, or replace fields without the plugin guessing how overrides should merge. This example checks direct field-name collisions; recurse through unnamed layout fields if your plugin injects into collections containing rows, collapsibles, or unnamed tabs.
 
+## Wrapping Payload field factories
+
+Payload-authored fields are not directly assignable to FrogBot's `Field`. Their callback types expect `req.payload`, while FrogBot callbacks expose `req.frogbot`. Adding the complete argument lists does not remove that type difference. Do not widen collection fields to a union of both libraries' field types: that loses inline hook inference.
+
+Prefer a FrogBot-typed wrapper exported by the plugin. Follow the public signature pattern in `packages/frogbot/src/fields/baseFields/slug/index.ts`: derive ordinary options from the upstream factory, retype callback or field options with FrogBot types, and return the concrete FrogBot field type. `slugField` retypes `overrides` and `slugify`; a simpler factory without upstream callback options needs only one cast inside its wrapper.
+
+This self-contained example uses a stand-in for a Payload plugin's text-field factory. In a real plugin, import its upstream factory instead of defining `upstreamTitleField`:
+
+```ts
+import type { CollectionConfig, Field, TextField } from 'frogbot';
+import type { TextField as PayloadTextField } from 'payload';
+
+const upstreamTitleField = ({ name }: { name: string }): PayloadTextField => ({
+  name,
+  type: 'text',
+});
+
+export type TitleFieldOptions = Parameters<typeof upstreamTitleField>[0] & {
+  overrides?: (field: TextField) => TextField;
+};
+
+export function titleField({ overrides, ...options }: TitleFieldOptions): TextField {
+  const field = upstreamTitleField(options) as TextField;
+
+  return overrides ? overrides(field) : field;
+}
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    titleField({ name: 'title' }),
+    upstreamTitleField({ name: 'subtitle' }) as Field,
+    {
+      name: 'summary',
+      type: 'text',
+      hooks: {
+        beforeChange: [
+          ({ req, value }) => {
+            req.frogbot.logger.info('Updating summary');
+
+            return value;
+          },
+        ],
+      },
+    },
+  ],
+};
+```
+
+Consumers use `titleField()` without a cast, and adjacent inline hooks retain FrogBot inference. An **unwrapped** Payload field needs an explicit `as Field` cast at the insertion point, as shown for `subtitle`. The cast changes TypeScript's view of the field, not its runtime behavior. Keep assertions at this integration boundary rather than adding `payload` to `FrogBotRequest`; FrogBot's runtime request supports upstream callbacks without exposing `req.payload` in FrogBot's public callback types.
+
+If the upstream factory accepts `hooks`, `access`, `validate`, nested fields, or callback overrides, omit those options from the inherited options type and provide FrogBot-typed replacements. Translate them deliberately inside the wrapper; do not leak Payload callback types through its public signature. More complex wrappers, such as `slugField`, can require additional internal assertions when passing callbacks back to the upstream factory.
+
 ## Field Components
 
 A field component has two parts: server-side field configuration and a client export.
