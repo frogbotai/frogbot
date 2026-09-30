@@ -537,6 +537,36 @@ describe('ChatViewClient', () => {
     expect((await trigger()).textContent).toBe('opus · Max · 32k');
   });
 
+  it('uses the default when narrowing general removes the saved preference model', async () => {
+    useManifest(agentEntry('general'));
+    mocks.getPreference.mockResolvedValue({
+      agent: 'general',
+      model: 'anthropic/opus',
+      reasoning: { 'anthropic/opus': 'max' },
+    });
+
+    renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    expect(lastChatProps()).toMatchObject({ model: 'openai/test' });
+    expect(lastChatProps().reasoning).toBeUndefined();
+  });
+
+  it('uses the default when narrowing general removes the existing chat selection', async () => {
+    useManifest(agentEntry('general'));
+
+    renderChatView({
+      chatId: 'chat-1',
+      initialSelection: { model: 'anthropic/opus', reasoning: 'max' },
+    });
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    expect(lastChatProps()).toMatchObject({ model: 'openai/test' });
+    expect(lastChatProps().reasoning).toBeUndefined();
+  });
+
   it('ignores the chat selection when starting a new chat', async () => {
     useManifest(reasoningAgent);
 

@@ -81,7 +81,11 @@ const pendingCall = {
 function makeAgent(): AgentInstance {
   return {
     slug: 'support',
-    config: { slug: 'support', model: 'openai/test', instructions: 'Help' },
+    config: {
+      slug: 'support',
+      model: { default: 'openai/test', options: ['openai/test'] },
+      instructions: 'Help',
+    },
     aiAgent: { tools: {} } as unknown as AgentInstance['aiAgent'],
     generate: vi.fn() as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
@@ -214,7 +218,9 @@ describe('agent endpoints', () => {
 
   it('filters the manifest for a restricted user', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/thinker', 'local/plain'];
+
+    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
+
     const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
 
     const response = await listHandler()(req);
@@ -235,7 +241,9 @@ describe('agent endpoints', () => {
 
   it('rejects a user-blocked model before creating a chat or saving a message', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/plain'];
+
+    agent.config.model.options = ['openai/test', 'local/plain'];
+
     const req = makeRequest({
       agent,
       user: { id: 'user-1', models: ['local/plain'] },
@@ -254,7 +262,9 @@ describe('agent endpoints', () => {
 
   it('runs an offered model allowed for a restricted user', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/plain'];
+
+    agent.config.model.options = ['openai/test', 'local/plain'];
+
     const req = makeRequest({
       agent,
       user: { id: 'user-1', models: ['local/plain'] },
@@ -271,7 +281,9 @@ describe('agent endpoints', () => {
 
   it('runs the user fallback when no model is named', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/plain'];
+
+    agent.config.model.options = ['openai/test', 'local/plain'];
+
     const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
     const runModel = vi.fn();
 
@@ -296,7 +308,8 @@ describe('agent endpoints', () => {
 
   it('advertises reasoning options only for allowed models that offer them', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/thinker', 'local/plain'];
+
+    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
 
     const response = await listHandler()(makeRequest({ agent }));
 
@@ -486,21 +499,38 @@ describe('agent endpoints', () => {
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
-  it('rejects a model outside the agent allowlist', async () => {
-    const response = await postHandler()(
-      makeRequest({ body: { prompt: 'Hello', model: 'x/test' } }),
-    );
+  it.each(['local/plain', 'x/test'])('rejects %s outside a single-model agent', async (model) => {
+    const response = await postHandler()(makeRequest({ body: { prompt: 'Hello', model } }));
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: "Model 'x/test' is not allowed for agent 'support'",
+      error: `Model '${model}' is not allowed for agent 'support'`,
     });
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
+  it('rejects a configured chat model outside explicit agent options before creating a chat', async () => {
+    const agent = makeAgent();
+
+    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
+
+    const response = await postHandler()(
+      makeRequest({ agent, body: { prompt: 'Hello', model: 'local/deep' } }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Model 'local/deep' is not allowed for agent 'support'",
+    });
+    expect(resolveChatContext).not.toHaveBeenCalled();
+    expect(streamTurn).not.toHaveBeenCalled();
+  });
+
   it('passes an allowed model to the turn', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['openai/other'];
+
+    agent.config.model.options = ['openai/test', 'openai/other'];
+
     const response = await postHandler()(
       makeRequest({ agent, body: { prompt: 'Hello', model: 'openai/other' } }),
     );
@@ -513,7 +543,8 @@ describe('agent endpoints', () => {
 
   it('stores and runs the selected model and reasoning option', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/thinker'];
+
+    agent.config.model.options = ['openai/test', 'local/thinker'];
 
     const response = await postHandler()(
       makeRequest({ agent, body: { prompt: 'Hello', model: 'local/thinker', reasoning: 'high' } }),
@@ -530,7 +561,8 @@ describe('agent endpoints', () => {
 
   it('runs the selection resolved by the chat context rather than the body', async () => {
     const agent = makeAgent();
-    agent.config.allowModels = ['local/thinker', 'local/plain'];
+
+    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
 
     resolveChatContext.mockResolvedValue({
       status: 'ready',
@@ -558,7 +590,8 @@ describe('agent endpoints', () => {
     'rejects an unavailable reasoning option before the chat is resolved (%s, %o)',
     async (accept, selection, model) => {
       const agent = makeAgent();
-      agent.config.allowModels = ['local/thinker', 'local/deep', 'local/plain'];
+
+      agent.config.model.options = ['openai/test', 'local/thinker', 'local/deep', 'local/plain'];
 
       const response = await postHandler()(
         makeRequest({ accept, agent, body: { prompt: 'Hello', ...selection } }),

@@ -1,39 +1,67 @@
 import { DEFAULT_MODEL_CATALOG } from '@frogbotai/gateway';
 
 import { catalog } from './catalog.js';
-import type { AIConfig, CustomProviderEntry, SanitizedAIConfig } from './types.js';
+import type { AIConfig, CustomProviderEntry, ModelMode, SanitizedAIConfig } from './types.js';
 
 const SMALL_MODEL_RE = /\b(nano|flash|lite|mini|haiku|small|fast)\b/;
 
 function providerName(model: string): string | undefined {
   const separator = model.indexOf('/');
+
   return separator > 0 ? model.slice(0, separator) : undefined;
 }
 
-export function getConfiguredModelIds(ai: AIConfig | SanitizedAIConfig | undefined): string[] {
+function configuredModels(
+  ai: AIConfig | SanitizedAIConfig | undefined,
+): { id: string; mode: ModelMode | undefined }[] {
   if (!ai) return [];
 
-  const modelIds = new Set<string>();
+  const modes = new Map<string, ModelMode>(catalog.map(({ id, mode }) => [id, mode]));
+  const models = new Map<string, ModelMode | undefined>();
+
   for (const [provider, entry] of Object.entries(ai.providers)) {
     if (!entry) continue;
+
     const allowlist =
       (entry as CustomProviderEntry).type === 'openai-compatible'
         ? undefined
         : (entry as { models?: string[] }).models;
+
     for (const model of catalog) {
       const modelName = model.id.slice(model.id.indexOf('/') + 1);
+
       if (model.provider === provider && (!allowlist || allowlist.includes(modelName))) {
-        modelIds.add(`${provider}/${modelName}`);
+        models.set(`${provider}/${modelName}`, model.mode);
       }
     }
+
     if ((entry as CustomProviderEntry).type === 'openai-compatible') {
       for (const model of (entry as CustomProviderEntry).models) {
-        modelIds.add(`${provider}/${model.id}`);
+        const id = `${provider}/${model.id}`;
+
+        modes.set(id, model.mode);
+        models.set(id, model.mode);
       }
     }
   }
-  for (const slug of Object.keys(ai.routers ?? {})) modelIds.add(slug);
-  return [...modelIds].sort();
+
+  for (const [slug, router] of Object.entries(ai.routers ?? {})) {
+    models.set(slug, modes.get(router.model));
+  }
+
+  return [...models]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([id, mode]) => ({ id, mode }));
+}
+
+export function getConfiguredModelIds(ai: AIConfig | SanitizedAIConfig | undefined): string[] {
+  return configuredModels(ai).map(({ id }) => id);
+}
+
+export function getConfiguredChatModelIds(ai: AIConfig | SanitizedAIConfig | undefined): string[] {
+  return configuredModels(ai)
+    .filter(({ mode }) => mode === 'chat')
+    .map(({ id }) => id);
 }
 
 export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: string): string {

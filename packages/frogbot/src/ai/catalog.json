@@ -155,6 +155,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/anthropic.claude-sonnet-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/apac.amazon.nova-lite-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -425,6 +430,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/global.xai.grok-4.7",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/google.gemma-3-12b-it",
     "provider": "bedrock",
     "mode": "chat"
@@ -452,7 +462,7 @@
   {
     "id": "bedrock/google.gemma-4-e2b",
     "provider": "bedrock",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "bedrock/in.openai.gpt-5.6-luna",
@@ -577,12 +587,12 @@
   {
     "id": "bedrock/mistral.voxtral-mini-3b-2507",
     "provider": "bedrock",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "bedrock/mistral.voxtral-small-24b-2507",
     "provider": "bedrock",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "bedrock/moonshot.kimi-k2-thinking",
@@ -895,6 +905,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/us.xai.grok-4.7",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/writer.palmyra-x4-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -1035,11 +1050,6 @@
     "mode": "chat"
   },
   {
-    "id": "deepinfra/deepseek-ai/DeepSeek-V3-0324",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
     "id": "deepinfra/deepseek-ai/DeepSeek-V3.1",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1107,7 +1117,7 @@
   {
     "id": "deepinfra/google/gemma-4-E4B-it",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -1131,11 +1141,6 @@
   },
   {
     "id": "deepinfra/moonshotai/Kimi-K2.6",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
-    "id": "deepinfra/moonshotai/Kimi-K2.7-Code",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -1197,12 +1202,12 @@
   {
     "id": "deepinfra/Qwen/Qwen3.5-122B-A10B",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/Qwen/Qwen3.5-27B",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/Qwen/Qwen3.5-35B-A3B",
@@ -1222,7 +1227,7 @@
   {
     "id": "deepinfra/Qwen/Qwen3.6-27B",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/Qwen/Qwen3.6-35B-A3B",
@@ -1272,32 +1277,22 @@
   {
     "id": "deepinfra/thinkingmachines/Inkling",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/thinkingmachines/Inkling-Small",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
-  },
-  {
-    "id": "deepinfra/XiaomiMiMo/MiMo-V2.5",
-    "provider": "deepinfra",
-    "mode": "audio_transcription"
-  },
-  {
-    "id": "deepinfra/XiaomiMiMo/MiMo-V2.5-Pro",
-    "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/XiaomiMiMo/MiMo-V2.6-Flash",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/XiaomiMiMo/MiMo-V2.6-Pro",
     "provider": "deepinfra",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "deepinfra/zai-org/GLM-4.6",
@@ -1357,7 +1352,7 @@
   {
     "id": "fireworks/accounts/fireworks/models/inkling",
     "provider": "fireworks",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "fireworks/accounts/fireworks/models/kimi-k3",
@@ -1457,7 +1452,7 @@
   {
     "id": "google/gemini-2.5-flash",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-2.5-flash-image",
@@ -1467,7 +1462,7 @@
   {
     "id": "google/gemini-2.5-flash-lite",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-2.5-flash-preview-tts",
@@ -1477,7 +1472,7 @@
   {
     "id": "google/gemini-2.5-pro",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-2.5-pro-preview-tts",
@@ -1487,7 +1482,7 @@
   {
     "id": "google/gemini-3-flash-preview",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-3-pro-image",
@@ -1512,7 +1507,7 @@
   {
     "id": "google/gemini-3.1-flash-lite",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-3.1-flash-lite-image",
@@ -1532,22 +1527,22 @@
   {
     "id": "google/gemini-3.1-pro-preview",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-3.1-pro-preview-customtools",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-3.5-flash",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-3.5-flash-lite",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-3.5-live-translate-preview",
@@ -1555,39 +1550,44 @@
     "mode": "audio_speech"
   },
   {
+    "id": "google/gemini-3.5-transcribe",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
     "id": "google/gemini-3.6-flash",
-    "provider": "google",
-    "mode": "audio_transcription"
-  },
-  {
-    "id": "google/gemini-3.7-flash",
-    "provider": "google",
-    "mode": "audio_transcription"
-  },
-  {
-    "id": "google/gemini-3.8-flash",
-    "provider": "google",
-    "mode": "audio_transcription"
-  },
-  {
-    "id": "google/gemini-embedding-001",
     "provider": "google",
     "mode": "chat"
   },
   {
+    "id": "google/gemini-3.7-flash",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-3.8-flash",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-embedding-001",
+    "provider": "google",
+    "mode": "embedding"
+  },
+  {
     "id": "google/gemini-embedding-2",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "embedding"
   },
   {
     "id": "google/gemini-flash-latest",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-flash-lite-latest",
     "provider": "google",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "google/gemini-omni-flash-preview",
@@ -1732,7 +1732,7 @@
   {
     "id": "mistral/mistral-embed",
     "provider": "mistral",
-    "mode": "chat"
+    "mode": "embedding"
   },
   {
     "id": "mistral/mistral-large-2411",
@@ -1827,7 +1827,7 @@
   {
     "id": "mistral/voxtral-small-latest",
     "provider": "mistral",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "mistral/zai-glm-5-2",
@@ -1985,6 +1985,11 @@
     "mode": "chat"
   },
   {
+    "id": "openai/gpt-6.1-sol",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
     "id": "openai/gpt-daybreak-blue-latest",
     "provider": "openai",
     "mode": "chat"
@@ -2027,17 +2032,17 @@
   {
     "id": "openai/text-embedding-3-large",
     "provider": "openai",
-    "mode": "chat"
+    "mode": "embedding"
   },
   {
     "id": "openai/text-embedding-3-small",
     "provider": "openai",
-    "mode": "chat"
+    "mode": "embedding"
   },
   {
     "id": "openai/text-embedding-ada-002",
     "provider": "openai",
-    "mode": "chat"
+    "mode": "embedding"
   },
   {
     "id": "openrouter/~anthropic/claude-fable-latest",
@@ -2077,12 +2082,12 @@
   {
     "id": "openrouter/~google/gemini-flash-latest",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/~google/gemini-pro-latest",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/~moonshotai/kimi-latest",
@@ -2427,72 +2432,72 @@
   {
     "id": "openrouter/google/gemini-2.5-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-2.5-flash-lite",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-2.5-pro",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-2.5-pro-preview",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3-flash-preview",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.1-flash-lite",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.1-flash-lite-preview",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.1-pro-preview",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.1-pro-preview-customtools",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.5-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.5-flash-lite",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.6-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.7-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemini-3.8-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/google/gemma-2-27b-it",
@@ -2822,7 +2827,7 @@
   {
     "id": "openrouter/mistralai/voxtral-small-24b-2507",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/moonshotai/kimi-k2",
@@ -2902,7 +2907,7 @@
   {
     "id": "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/nvidia/nemotron-3-super-120b-a12b",
@@ -3175,6 +3180,16 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/openai/gpt-6.1-sol",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/openai/gpt-6.1-sol-pro",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/openai/gpt-chat-latest",
     "provider": "openrouter",
     "mode": "chat"
@@ -3247,7 +3262,7 @@
   {
     "id": "openrouter/perceptron/perceptron-mk1.5",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/perplexity/sonar",
@@ -3567,7 +3582,7 @@
   {
     "id": "openrouter/qwen/qwen3.8-omni-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/rekaai/reka-edge",
@@ -3692,22 +3707,22 @@
   {
     "id": "openrouter/thinkingmachines/inkling",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/thinkingmachines/inkling-small",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/thinkingmachines/inkling-small:free",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/thinkingmachines/inkling:free",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/unbiased/pareto",
@@ -3777,7 +3792,7 @@
   {
     "id": "openrouter/xiaomi/mimo-v2.5",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/xiaomi/mimo-v2.5-pro",
@@ -3787,17 +3802,17 @@
   {
     "id": "openrouter/xiaomi/mimo-v2.6-flash",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/xiaomi/mimo-v2.6-pro",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/xiaomi/mimo-v2.6-pro-ultraspeed",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/z-ai/glm-4.5",
@@ -4007,7 +4022,7 @@
   {
     "id": "togetherai/thinkingmachines/Inkling",
     "provider": "togetherai",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "togetherai/zai-org/GLM-5.2",
@@ -4397,7 +4412,7 @@
   {
     "id": "vercel/google/gemini-2.5-flash",
     "provider": "vercel",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "vercel/google/gemini-2.5-flash-lite",
@@ -4407,7 +4422,7 @@
   {
     "id": "vercel/google/gemini-2.5-pro",
     "provider": "vercel",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "vercel/google/gemini-3-flash",
@@ -4510,6 +4525,16 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/inclusionai/ling-3.1-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.1-flash-free",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/inference-net/schematron-v2-small",
     "provider": "vercel",
     "mode": "chat"
@@ -4521,6 +4546,11 @@
   },
   {
     "id": "vercel/interfaze/interfaze-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/liquid/d1",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5005,6 +5035,16 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/openai/gpt-6.1-sol",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6.1-sol-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/openai/gpt-oss-120b",
     "provider": "vercel",
     "mode": "chat"
@@ -5041,6 +5081,11 @@
   },
   {
     "id": "vercel/openai/o4-mini-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/perplexity/sonar",
     "provider": "vercel",
     "mode": "chat"
   },

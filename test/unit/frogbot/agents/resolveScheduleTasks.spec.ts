@@ -112,6 +112,7 @@ describe('agent schedule tasks', () => {
       slug: 'reporter',
       config: {
         ...baseAgent,
+        model: { default: 'openai/test', options: ['openai/test'] },
         triggers: [
           { type: 'schedule', slug: 'prompt', schedule: { every: '1h' }, prompt: 'Run report' },
           { type: 'schedule', slug: 'handler', schedule: { every: '1h' }, handler },
@@ -165,7 +166,12 @@ describe('agent schedule tasks', () => {
   it('no-ops when an agent or trigger was removed', async () => {
     const payload = {};
     const generate = vi.fn();
-    const staleAgent = { ...baseAgent, triggers: [] };
+    const staleAgent = {
+      ...baseAgent,
+      model: { default: 'openai/test', options: ['openai/test'] },
+      triggers: [],
+    };
+
     registerFrogBotInstance(payload, {
       agents: { reporter: { config: staleAgent, generate } },
     } as never);

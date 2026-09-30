@@ -33,6 +33,11 @@ export type AgentAccess = (args: {
 
 export type AgentModelId = FrogBotTypes['models'];
 
+export type AgentModelOptions = {
+  default?: AgentModelId;
+  options: '*' | readonly AgentModelId[];
+};
+
 export type AgentSchedule =
   | { every: `${number}${'s' | 'm' | 'h' | 'd'}`; cron?: never; timezone?: never }
   | { cron: string; every?: never; timezone?: string };
@@ -82,8 +87,7 @@ export type AgentProfile = {
 
 export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerReference> = {
   slug: string;
-  model?: AgentModelId;
-  allowModels?: readonly AgentModelId[];
+  model?: AgentModelId | AgentModelOptions;
   instructions: string;
   profile?: AgentProfile;
   channels?: readonly ChannelPieceInstance[];
@@ -96,7 +100,7 @@ export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerRef
 };
 
 export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {
-  model: AgentModelId;
+  model: { default: AgentModelId; options: readonly AgentModelId[] };
   tools?: readonly AnyTool[];
 };
 

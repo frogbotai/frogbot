@@ -1,9 +1,18 @@
 {
+  "anthropic": {
+    "correct": [
+      {
+        "id": "anthropic/embedding-fixture",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"],
+        "capabilities": {}
+      }
+    ]
+  },
   "voyage": {
     "add": [
       {
         "id": "voyage/voyage-fixture",
-        "mode": "embedding",
         "name": "Voyage Fixture",
         "modalities": { "input": ["text"], "output": ["embedding"] },
         "operations": ["embeddings"],

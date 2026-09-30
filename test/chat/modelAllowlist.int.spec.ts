@@ -9,6 +9,7 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
+import { generalAgentSlug, wildcardAgentSlug } from './config.js';
 import {
   agentSlug,
   chatsSlug,
@@ -93,7 +94,7 @@ describe('per-user agent model allowlists', () => {
     await vi.waitFor(async () => {
       const untitled = await booted.frogbot.count({
         collection: chatsSlug,
-        where: { title: { equals: null } },
+        where: { title: { not_equals: 'Done.' } },
         overrideAccess: true,
       });
 
@@ -209,9 +210,29 @@ describe('per-user agent model allowlists', () => {
   it('GET /api/agents filters models and reasoning, falls back, and hides unusable agents', async () => {
     const result = await manifest(cookie);
 
-    expect(result.agents).toEqual([
-      expect.objectContaining({
-        slug: questionAgentSlug,
+    expect(result.agents).toEqual(
+      [questionAgentSlug, wildcardAgentSlug, generalAgentSlug].map((slug) =>
+        expect.objectContaining({
+          slug,
+          models: ['test/thinker'],
+          defaultModel: 'test/thinker',
+          reasoning: {
+            'test/thinker': [
+              { key: 'low', label: 'Low' },
+              { key: 'high', label: 'High' },
+            ],
+          },
+        }),
+      ),
+    );
+  });
+
+  it.each([wildcardAgentSlug, generalAgentSlug])(
+    'GET /api/agents restricts %s to the exact user subset and fallback',
+    async (slug) => {
+      const result = await manifest(sam);
+
+      expect(result.agents.find((agent) => agent.slug === slug)).toMatchObject({
         models: ['test/thinker'],
         defaultModel: 'test/thinker',
         reasoning: {
@@ -220,9 +241,41 @@ describe('per-user agent model allowlists', () => {
             { key: 'high', label: 'High' },
           ],
         },
-      }),
-    ]);
-  });
+      });
+    },
+  );
+
+  it.each([wildcardAgentSlug, generalAgentSlug])(
+    'POST to %s rejects a blocked model without writes or upstream calls',
+    async (slug) => {
+      const response = await post(`/agents/${slug}`, {
+        prompt: 'Write it.',
+        model: 'test/writer',
+      });
+
+      expect(response).toEqual({
+        status: 403,
+        body: { error: "Model 'test/writer' is not allowed for this user" },
+      });
+      expect(model.requests).toEqual([]);
+      expect(await rowCounts()).toEqual([0, 0, 0]);
+    },
+  );
+
+  it.each([wildcardAgentSlug, generalAgentSlug])(
+    'POST to %s without a model runs and records the user fallback',
+    async (slug) => {
+      const response = await post(`/agents/${slug}`, { prompt: 'Think about paint.' });
+      const messages = await storedMessages(response.body.chatId);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('completed');
+      expect(model.requests.map(({ model }) => model)).toEqual(['thinker']);
+      expect(messages.find(({ role }) => role === 'assistant')).toMatchObject({
+        usage: { model: 'test/thinker', inputTokens: 3, outputTokens: 2, totalTokens: 5 },
+      });
+    },
+  );
 
   it.each(['JWT', 'cookie'])(
     '%s POST rejects a blocked model without writes or model calls',
@@ -445,7 +498,12 @@ describe('per-user agent model allowlists', () => {
 
     const result = await manifest(login.jwt);
 
-    expect(result.agents.map(({ slug }) => slug)).toEqual([agentSlug, questionAgentSlug]);
+    expect(result.agents.map(({ slug }) => slug)).toEqual([
+      agentSlug,
+      questionAgentSlug,
+      wildcardAgentSlug,
+      generalAgentSlug,
+    ]);
     expect(result.agents.find(({ slug }) => slug === questionAgentSlug)).toMatchObject({
       defaultModel: 'test/gpt-4.1-mini',
       models: ['test/gpt-4.1-mini', 'test/thinker', 'test/writer'],
@@ -461,5 +519,16 @@ describe('per-user agent model allowlists', () => {
       defaultModel: 'test/gpt-4.1-mini',
       models: ['test/gpt-4.1-mini'],
     });
+    expect(
+      result.agents.filter(({ slug }) => [wildcardAgentSlug, generalAgentSlug].includes(slug)),
+    ).toEqual(
+      [wildcardAgentSlug, generalAgentSlug].map((slug) =>
+        expect.objectContaining({
+          slug,
+          defaultModel: 'test/gpt-4.1-mini',
+          models: ['test/gpt-4.1-mini', 'test/thinker', 'test/writer'],
+        }),
+      ),
+    );
   });
 });

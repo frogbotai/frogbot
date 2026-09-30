@@ -35,7 +35,7 @@ import {
 } from '../agents/resolveScheduleTasks.js';
 import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../agents/types.js';
 import { isKnownModelId } from '../ai/catalog.js';
-import { getConfiguredModelIds } from '../ai/models.js';
+import { getConfiguredChatModelIds, getConfiguredModelIds } from '../ai/models.js';
 import { createPolicyHooks } from '../ai/policy.js';
 import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { isProviderName } from '../ai/providerNames.js';
@@ -787,11 +787,8 @@ function sanitizeAgents(
     throw new Error('[frogbot] `agents` requires an `ai` configuration block.');
   }
 
-  const providers = new Set<string>(
-    Object.entries(ai.providers)
-      .filter(([, entry]) => entry != null)
-      .map(([provider]) => provider),
-  );
+  const configuredModels = new Set(getConfiguredModelIds(ai));
+  const chatModels = new Set(getConfiguredChatModelIds(ai));
   const slugs = new Set<string>();
   const channelOwners = new Map<PieceInstance, string>();
 
@@ -807,16 +804,37 @@ function sanitizeAgents(
     }
     slugs.add(agent.slug);
 
-    const modelId = agent.model ?? ai.defaultModel;
+    const modelConfig =
+      typeof agent.model === 'object' && agent.model !== null ? agent.model : undefined;
+    const modelId =
+      typeof agent.model === 'string' ? agent.model : (modelConfig?.default ?? ai.defaultModel);
+
+    const allowModels = (agent as AgentConfig & { allowModels?: unknown }).allowModels;
+
+    if (allowModels !== undefined) {
+      const options = Array.isArray(allowModels)
+        ? `[${allowModels.map((model) => `'${model}'`).join(', ')}]`
+        : '[...]';
+
+      throw new Error(
+        `[frogbot] Agent '${agent.slug}' uses \`allowModels\`, which was removed. Use \`model: { default: '${modelId ?? '<default>'}', options: ${options} }\`.`,
+      );
+    }
+
     if (typeof modelId !== 'string' || !modelId.trim()) {
       throw new Error(
         `[frogbot] Agent '${agent.slug}' requires a \`model\` or \`ai.defaultModel\`.`,
       );
     }
-    agent = { ...agent, model: modelId as AgentModelId };
-    if (agent.allowModels !== undefined && !Array.isArray(agent.allowModels)) {
-      throw new Error(`[frogbot] Agent '${agent.slug}' allowModels must be an array.`);
+
+    const options = modelConfig?.options;
+
+    if (modelConfig && options !== '*' && !Array.isArray(options)) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' model.options must be \`'*'\` or an array.`);
     }
+
+    const modelOptions = options === '*' ? [...chatModels] : (options ?? []);
+
     if (typeof agent.instructions !== 'string' || !agent.instructions.trim()) {
       throw new Error(`[frogbot] Agent '${agent.slug}' requires \`instructions\`.`);
     }
@@ -882,20 +900,22 @@ function sanitizeAgents(
     }
 
     for (const [field, candidate] of [
-      ['model', modelId],
-      ...((agent.allowModels ?? []).map((allowed) => ['allowModels', allowed]) as Array<
-        [string, unknown]
-      >),
+      [modelConfig ? 'model.default' : 'model', modelId],
+      ...(options !== '*' ? modelOptions.map((model) => ['model.options', model]) : []),
     ] as Array<[string, unknown]>) {
       if (typeof candidate !== 'string' || !candidate.trim()) {
         throw new Error(`[frogbot] Agent '${agent.slug}' ${field} must contain model IDs.`);
       }
-      const model = ai.routers[candidate]?.model ?? candidate;
-      const separator = model.indexOf('/');
-      const provider = separator > 0 ? model.slice(0, separator) : '';
-      if (!provider || !providers.has(provider)) {
-        const message = `[frogbot] Agent '${agent.slug}' ${field === 'model' ? '' : `${field} `}model '${candidate}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
+
+      const message = !configuredModels.has(candidate)
+        ? `[frogbot] Agent '${agent.slug}' ${field} '${candidate}' is not configured.`
+        : !chatModels.has(candidate)
+          ? `[frogbot] Agent '${agent.slug}' ${field} '${candidate}' is not chat-capable.`
+          : undefined;
+
+      if (message) {
         if (mode === 'runtime') throw new Error(message);
+
         console.warn(message);
       }
     }
@@ -1023,7 +1043,10 @@ function sanitizeAgents(
 
     return {
       ...agent,
-      model: modelId as AgentModelId,
+      model: {
+        default: modelId as AgentModelId,
+        options: [...new Set([modelId, ...modelOptions])] as AgentModelId[],
+      },
       access: agent.access ?? defaultAccessFn,
       tools: agentTools,
     };

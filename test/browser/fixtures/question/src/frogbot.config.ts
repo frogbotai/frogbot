@@ -82,8 +82,7 @@ export default buildConfig({
   agents: [
     {
       slug: agentSlug,
-      model: 'browser/questioner' as AgentModelId,
-      allowModels: ['browser/thinker' as AgentModelId],
+      model: { default: 'browser/questioner' as AgentModelId, options: '*' },
       instructions: 'Ask before acting.',
       access: ({ req }) => Boolean(req.user),
       tools: [question],

@@ -15,6 +15,32 @@
         "reasoning": false,
         "cost": {}
       },
+      "embedding-fixture": {
+        "id": "embedding-fixture",
+        "name": "Embedding Fixture",
+        "release_date": "2026-01-03",
+        "knowledge": "2025-12-01",
+        "modalities": { "input": ["text"], "output": ["text"] },
+        "limit": { "context": 8192, "output": 1024 },
+        "tool_call": false,
+        "structured_output": false,
+        "reasoning": false,
+        "cost": { "input": 0.1, "output": 0 },
+        "provider": {
+          "npm": "@ai-sdk/anthropic",
+          "api": "https://api.anthropic.com/v1"
+        }
+      },
+      "claude-audio-chat": {
+        "id": "claude-audio-chat",
+        "name": "Claude Audio Chat",
+        "modalities": { "input": ["text", "audio"], "output": ["text"] },
+        "limit": { "context": 200000, "output": 64000 },
+        "tool_call": true,
+        "structured_output": false,
+        "reasoning": false,
+        "cost": { "input": 3, "output": 15 }
+      },
       "claude-current": {
         "id": "claude-current",
         "name": "Claude Current",

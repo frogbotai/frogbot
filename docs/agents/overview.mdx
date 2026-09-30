@@ -11,7 +11,7 @@ Agents wrap AI SDK v7 `ToolLoopAgent` with FrogBot model resolution, request con
 
 ## Define one
 
-Provide a URL-safe `slug` and instructions. Set `model` to a provider-prefixed model ID or router alias, or omit it to use `ai.defaultModel`.
+Provide a URL-safe `slug` and instructions. Set `model` to a provider-prefixed model ID or router alias for a single choice, use the object form for selectable models, or omit it to use `ai.defaultModel`.
 
 ```ts
 import { isStepCount } from 'frogbot'
@@ -29,8 +29,10 @@ export const supportAgent: AgentConfig = {
 ```ts
 type AgentConfig = {
   slug: string
-  model?: ModelId
-  allowModels?: readonly ModelId[]
+  model?: ModelId | {
+    default?: ModelId
+    options: '*' | readonly ModelId[]
+  }
   instructions: string
   profile?: AgentProfile
   skills?: readonly SkillConfig[]
@@ -44,7 +46,36 @@ type AgentConfig = {
 
 `stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
 
-`allowModels` adds models the user may select for this agent. FrogBot validates each model against configured providers and routers.
+Use `model: { default, options }` to offer model choices. Omit `default` to use `ai.defaultModel`; if neither is set, startup fails. The default is always included first, and duplicate IDs are removed. An empty `options: []` offers only the default, as does a string `model`.
+
+A provider's `models` list controls what the app can use; an agent's `model.options` controls what users can pick for that agent. `options: '*'` includes every configured chat-capable model:
+
+- For a built-in provider with a `models` list, only chat models from that list.
+- For a built-in provider without a `models` list, every chat model in that provider's catalog.
+- For a custom provider, entries declared with `mode: 'chat'`.
+- For configured routers, aliases whose target is chat-capable.
+
+It excludes unconfigured providers and non-chat models such as embeddings, image generation, and dedicated transcription models. Chat models that also accept audio input remain chat-capable. The wildcard does not guarantee that your provider account, region, or credentials can serve every model.
+
+For example, this agent offers every configured chat model, including the models from your Bedrock provider's `models` list, without copying that list:
+
+```ts
+import type { AgentConfig } from 'frogbot'
+
+export const assistant: AgentConfig = {
+  slug: 'assistant',
+  model: { default: 'bedrock/zai.glm-5', options: '*' },
+  instructions: 'You are a concise and friendly assistant.'
+}
+```
+
+For a curated selector, replace `'*'` with `['bedrock/amazon.nova-lite-v1:0', 'bedrock/us.anthropic.claude-sonnet-4-6']`. You do not need to repeat the default in that array.
+
+Put a `models` list on OpenRouter and Vercel AI Gateway provider entries to keep the picker focused. Without a list, `'*'` includes their entire chat catalogs, which can contain hundreds of models.
+
+FrogBot validates the default and every explicit option. Unknown models or IDs outside a provider's `models` list fail startup with `is not configured`; configured non-chat models fail with `is not chat-capable`. `frogbot dev` and type generation warn for these model checks instead of throwing. Per-user [model allowlists](/ai/overview#user-model-and-budget-policy) further filter the choices each user sees and may use.
+
+`allowModels` has been removed. Configs that still set it fail with a message naming the agent and showing the replacement. Migrate `model: 'provider/id', allowModels: [...]` to `model: { default: 'provider/id', options: [...] }`.
 
 The chat composer shows the active model name and its reasoning level, for example `gpt-5 · High`. Clicking it opens a reasoning slider for that model; clicking the model name inside switches to the list of allowed models. The slider starts at `Default`, which leaves the level to the provider, and offers only the options that model supports. The selector is hidden when the agent allows one model and that model has no reasoning options.
 
@@ -52,7 +83,7 @@ FrogBot saves the chosen model as a user preference and remembers one reasoning 
 
 ### Use the general preset
 
-`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It uses `ai.defaultModel`, so configure that model and its provider.
+`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It sets `model: { options: '*' }`, offering every configured chat model with `ai.defaultModel` as the default, subject to per-user model allowlists. Configure that default and its provider. The chat composer shows a model picker whenever more than one model is available.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -75,6 +106,8 @@ Pass agent fields to override the preset. The `general` slug is fixed, but optio
 ```ts
 agents: [general({ tools: [lookupTicket] })]
 ```
+
+Override `model` to narrow the choices. `general({ model: 'openai/gpt-4o-mini' })` offers only that model; an object form can provide a curated `options` array instead.
 
 ---
 

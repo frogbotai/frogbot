@@ -30,6 +30,8 @@ const agents: FrogBotConfig['agents'] = [general(), assistant];
 
 The surrounding config must also provide the required database, collections, secret, and AI provider settings. An agent without `model` uses the configured default model.
 
+Use `model: { default, options: [...] }` for curated choices or `model: { options: '*' }` for every configured chat model; omitted `default` uses `ai.defaultModel`, and the default is included automatically. `general()` uses `'*'`; a string `model` narrows it to one choice, and per-user model allowlists still apply.
+
 ## Run an agent
 
 Use an initialized FrogBot instance and select the agent by slug:

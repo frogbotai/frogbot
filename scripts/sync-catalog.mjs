@@ -31,15 +31,38 @@ const OVERLAY_PROVIDERS = new Set(['replicate', 'typesafe-ai', 'voyage']);
 const AGGREGATOR_PROVIDERS = new Set(['openrouter', 'vercel']);
 
 const MODALITIES = new Set(['text', 'image', 'audio', 'video', 'embedding']);
+const GATEWAY_FIELDS = new Set([
+  'id',
+  'name',
+  'created',
+  'knowledge',
+  'status',
+  'modalities',
+  'operations',
+  'capabilities',
+  'context',
+  'cost',
+  'sdk',
+  'providers',
+]);
 
 function modeFor(operations, modalities) {
   if (operations.includes('evaluate')) return 'evaluate';
+
   if (operations.includes('rerank')) return 'rerank';
+
   if (modalities.output.includes('embedding')) return 'embedding';
+
   if (modalities.output.includes('image')) return 'image_generation';
+
   if (modalities.output.includes('video')) return 'video_generation';
+
   if (modalities.output.includes('audio')) return 'audio_speech';
+
+  if (modalities.input.includes('text') && modalities.output.includes('text')) return 'chat';
+
   if (modalities.input.includes('audio')) return 'audio_transcription';
+
   return 'chat';
 }
 
@@ -147,34 +170,85 @@ function mapModel({ model, provider }) {
 
 export function buildCatalogs({ overlays, source }) {
   const entries = new Map();
-  const excluded = new Set(
-    Object.entries(overlays).flatMap(([provider, correction]) =>
-      correction.exclude.map((modelId) => `${provider}/${modelId}`),
-    ),
-  );
+  const sourceIds = new Set();
+  const families = new Map();
+  const corrected = new Set();
+
   for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
     const models = source[sourceProvider]?.models ?? {};
+
     for (const model of Object.values(models)) {
+      sourceIds.add(`${provider}/${model.id}`);
+
       if (model.status === 'deprecated') continue;
 
       if (AGGREGATOR_PROVIDERS.has(provider) && !isPricedLanguageModel(model)) continue;
 
       const entry = mapModel({ model, provider });
 
-      if (!excluded.has(entry.id)) entries.set(entry.id, entry);
+      entries.set(entry.id, entry);
+      families.set(entry.id, model.family);
     }
   }
-  for (const [provider, correction] of Object.entries(overlays)) {
+
+  for (const [provider, { exclude = [] }] of Object.entries(overlays)) {
     if (!SYNCED_PROVIDERS.has(provider) && !OVERLAY_PROVIDERS.has(provider)) {
       throw new Error(`Unexpected model catalog overlay provider: ${provider}`);
     }
-    for (const overlay of correction.add) {
+
+    for (const modelId of exclude) {
+      const id = `${provider}/${modelId}`;
+
+      if (!sourceIds.has(id)) {
+        throw new Error(
+          `Model catalog exclude '${id}' for provider '${provider}' is missing from the source`,
+        );
+      }
+
+      entries.delete(id);
+    }
+  }
+
+  for (const [provider, { add = [], correct = [], exclude = [] }] of Object.entries(overlays)) {
+    for (const correction of correct) {
+      const { id } = correction;
+      const label = `Model catalog correction '${id}' for provider '${provider}'`;
+
+      if (typeof id !== 'string' || !id.startsWith(`${provider}/`)) {
+        throw new Error(`${label} has a mismatched provider prefix`);
+      }
+
+      if (add.some((entry) => entry.id === id) || exclude.includes(id.slice(provider.length + 1))) {
+        throw new Error(`${label} is also listed in add or exclude`);
+      }
+
+      const invalidField = Object.keys(correction).find((field) => !GATEWAY_FIELDS.has(field));
+
+      if (invalidField !== undefined) {
+        throw new Error(`${label} sets forbidden field '${invalidField}'`);
+      }
+
+      if (!entries.has(id)) {
+        throw new Error(`${label} is missing from the synced output`);
+      }
+
+      entries.set(id, { ...entries.get(id), ...correction });
+      corrected.add(id);
+    }
+  }
+
+  for (const [, { add = [] }] of Object.entries(overlays)) {
+    for (const overlay of add) {
       const { mode: _mode, ...entry } = overlay;
+
       entries.set(entry.id, entry);
     }
   }
+
   const gateway = [...entries.values()];
+
   gateway.sort((a, b) => a.id.localeCompare(b.id));
+
   const catalog = gateway
     .map((entry) => ({
       id: entry.id,
@@ -182,6 +256,17 @@ export function buildCatalogs({ overlays, source }) {
       mode: modeFor(entry.operations, entry.modalities),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
+
+  for (const entry of catalog) {
+    const embeddingName = /embed/i.test(entry.id) || /embed/i.test(families.get(entry.id) ?? '');
+
+    if (entry.mode === 'chat' && embeddingName && !corrected.has(entry.id)) {
+      console.warn(
+        `Review model catalog entry '${entry.id}': chat mode with 'embed' in its ID or family and no correction`,
+      );
+    }
+  }
+
   return { catalog, gateway };
 }
 

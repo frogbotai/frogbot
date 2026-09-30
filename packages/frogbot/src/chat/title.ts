@@ -61,7 +61,7 @@ export async function suggestChatTitleForChat({
     return await suggestChatTitle({
       req,
       history: messagesToUIMessages(messages.docs),
-      mainModel: resolveModel(agent.config.model, req.frogbot.config.ai!),
+      mainModel: resolveModel(agent.config.model.default, req.frogbot.config.ai!),
     });
   } catch (error) {
     req.frogbot.logger.error({ err: error, chatId }, '[frogbot] Failed to suggest chat title');

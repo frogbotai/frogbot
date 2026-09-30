@@ -579,6 +579,8 @@ declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {
       support: unknown;
+      wildcard: unknown;
+      general: unknown;
     };
     models: 'test/gpt-4.1-mini';
     roles: never;

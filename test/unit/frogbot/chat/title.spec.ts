@@ -48,7 +48,9 @@ function makeReq({ title = null, text = 'Why Frogs Sing at Night' } = {}) {
       find,
       update,
       logger: { error },
-      agents: { helper: { config: { model: 'internal/chat' } } },
+      agents: {
+        helper: { config: { model: { default: 'internal/chat', options: ['internal/chat'] } } },
+      },
     },
     user: { id: 'user-1' },
   } as unknown as FrogBotRequest;
@@ -82,11 +84,12 @@ describe('chat titles', () => {
   });
 
   it('suggests a title from an owned chat history without queued messages', async () => {
-    const { req, find } = makeReq();
+    const { req, find, generateText } = makeReq();
 
     await expect(suggestChatTitleForChat({ req, chatId: 'chat-1' })).resolves.toBe(
       'Why Frogs Sing at Night',
     );
+    expect(generateText).toHaveBeenCalledWith(expect.objectContaining({ model: 'internal/chat' }));
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'messages',
