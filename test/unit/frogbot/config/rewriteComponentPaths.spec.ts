@@ -8,6 +8,69 @@ function makeConfig(admin: Record<string, unknown>): SanitizedConfig {
 }
 
 describe('rewriteComponentPaths', () => {
+  it('rewrites the import-export provider path and preserves its props', () => {
+    const config = makeConfig({
+      components: {
+        providers: [
+          {
+            path: '@payloadcms/plugin-import-export/rsc',
+            exportName: 'ImportExportProvider',
+            clientProps: { collectionSlug: 'posts' },
+          },
+          '@payloadcms/plugin-import-export/rsc#ImportExportProvider',
+        ],
+      },
+    });
+
+    rewriteComponentPaths(config);
+
+    expect(config.admin.components?.providers).toEqual([
+      {
+        path: '@frogbotai/plugin-import-export/rsc',
+        exportName: 'ImportExportProvider',
+        clientProps: { collectionSlug: 'posts' },
+      },
+      '@frogbotai/plugin-import-export/rsc#ImportExportProvider',
+    ]);
+  });
+
+  it.each([
+    [
+      '@payloadcms/plugin-import-export/rsc#CollectionField',
+      '@frogbotai/plugin-import-export/rsc#CollectionField',
+    ],
+    ['@payloadcms/plugin-search/client#LinkToDoc', '@frogbotai/plugin-search/client#LinkToDoc'],
+    [
+      '@payloadcms/plugin-seo/client#MetaTitleComponent',
+      '@frogbotai/plugin-seo/client#MetaTitleComponent',
+    ],
+  ])('rewrites the plugin field component %s', (path, expected) => {
+    const config = {
+      collections: [
+        {
+          fields: [{ name: 'title', type: 'text', admin: { components: { Field: path } } }],
+        },
+      ],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(config.collections[0]?.fields[0]?.admin?.components?.Field).toBe(expected);
+  });
+
+  it.each([
+    '@payloadcms/plugin-form-builder/client#X',
+    '@payloadcms/plugin-import-export/rsc/other#X',
+    '@payloadcms/plugin-search/client-other#X',
+    '@payloadcms/plugin-seo/client/other#X',
+  ])('leaves the unlisted plugin specifier %s unchanged', (path) => {
+    const config = makeConfig({ components: { beforeLogin: [path] } });
+
+    rewriteComponentPaths(config);
+
+    expect(config.admin.components?.beforeLogin).toEqual([path]);
+  });
+
   it('rewrites the CollectionCards dashboard widget to @frogbotai/next', () => {
     const config = makeConfig({
       dashboard: {

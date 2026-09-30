@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
 const richTextFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'rich-text');
+const pluginSeoFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'plugin-wrappers');
 const blankPort = 3111;
 const customFieldPort = 3112;
 const richTextPort = 3113;
@@ -13,6 +14,7 @@ const livePreviewPort = 3114;
 const chatAssetsPort = 3125;
 const chatProviderPort = 3126;
 const questionPort = 3127;
+const pluginSeoPort = 3128;
 const selectedProjects = new Set<string>();
 let collectingProjects = false;
 
@@ -71,6 +73,23 @@ const richTextServer = {
     DATABASE_URL: 'file:./rich-text.browser.db',
     FROGBOT_SECRET: 'browser-test-secret',
     NEXT_TELEMETRY_DISABLED: '1',
+  },
+};
+
+const pluginSeoServer = {
+  command: 'node ../../../../packages/frogbot/bin.js dev',
+  cwd: pluginSeoFixture,
+  url: `http://localhost:${pluginSeoPort}/admin`,
+  reuseExistingServer: false,
+  timeout: 180_000,
+  stdout: 'ignore' as const,
+  stderr: 'pipe' as const,
+  env: {
+    PORT: String(pluginSeoPort),
+    DATABASE_URL: 'file:./plugin-wrappers.browser.db',
+    FROGBOT_SECRET: 'browser-test-secret',
+    NEXT_TELEMETRY_DISABLED: '1',
+    NODE_PATH: '',
   },
 };
 
@@ -166,6 +185,15 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'plugin-seo',
+      testMatch: 'seoFields.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${pluginSeoPort}`,
+        channel: 'chromium',
+      },
+    },
+    {
       name: 'chat-assets',
       testMatch: 'chatAssets.browser.spec.ts',
       use: {
@@ -235,6 +263,7 @@ export default defineConfig({
     'live-preview': livePreviewServer,
     'chat-assets': chatAssetsServers,
     question: questionServer,
+    'plugin-seo': pluginSeoServer,
   })
     .filter(([name]) => startAllServers || selectedProjects.has(name))
     .flatMap(([, server]) => server),

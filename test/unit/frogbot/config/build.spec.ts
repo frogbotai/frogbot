@@ -71,6 +71,36 @@ describe('frogbot buildConfig', () => {
         '[frogbot] `globals` is not a FrogBot concept',
       );
     });
+
+    it('rejects an empty `globals` list in the app config', async () => {
+      const config = { ...makeConfig(), globals: [] } as unknown as FrogBotConfig;
+
+      await expect(buildConfig(config)).rejects.toThrowError(
+        '[frogbot] `globals` is not a FrogBot concept',
+      );
+    });
+  });
+
+  describe('plugin globals', () => {
+    it('builds when a plugin returns an empty `globals` list', async () => {
+      const pluginOutput = { ...makeConfig(), globals: [] } as unknown as FrogBotConfig;
+      const plugin: Plugin = () => pluginOutput;
+
+      const result = await buildConfig(makeConfig({ plugins: [plugin] }));
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(payloadConfig.globals).toHaveLength(0);
+      expect(pluginOutput).toHaveProperty('globals', []);
+    });
+
+    it('rejects a non-empty `globals` list returned by a plugin', async () => {
+      const plugin: Plugin = (config) =>
+        ({ ...config, globals: [{ slug: 'site', fields: [] }] }) as unknown as FrogBotConfig;
+
+      await expect(buildConfig(makeConfig({ plugins: [plugin] }))).rejects.toThrowError(
+        '[frogbot] `globals` is not a FrogBot concept',
+      );
+    });
   });
 
   describe('plugin pipeline', () => {
