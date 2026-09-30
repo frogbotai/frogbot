@@ -42,14 +42,14 @@ Build and start-only workflows must run `frogbot generate:importmap` after addin
 Send the key as a Bearer token or through the `X-API-Key` header:
 
 ```http
-Authorization: Bearer fbt_...
+Authorization: Bearer fb_...
 ```
 
 ```http
-X-API-Key: fbt_...
+X-API-Key: fb_...
 ```
 
-The request authenticates as the user who owns the key. Revoked, malformed, and unknown keys do not authenticate.
+The request authenticates as the user who owns the key. Revoked, malformed, and unknown keys do not authenticate. A Bearer key takes precedence; when the `Authorization` header holds something other than an API key, such as a session token, FrogBot reads the key from the key headers instead. The auth collection's `/me` endpoint returns the key owner and never echoes the key back.
 
 When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`.
 
@@ -72,8 +72,8 @@ apiKeysPlugin({
 | --- | --- | --- |
 | `authCollection` | `users` | Auth-enabled collection whose users own the keys. |
 | `collectionSlug` | `api-keys` | Slug for the generated API-key collection. |
-| `tokenPrefix` | `fbt` | Prefix placed before generated key values. |
-| `headerNames` | `['x-api-key']` | Additional request headers accepted for authentication. |
+| `tokenPrefix` | `fb` | Prefix placed before generated key values. |
+| `headerNames` | `['x-api-key']` | Request headers checked for a key when `Authorization` doesn't carry one. Replaces the default list. |
 | `collection` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
 | `policyAccess` | deny | Field update access for the budget, rate, and model policy fields. |
 | `canRevokeAnyKey` | — | Predicate allowing a request to revoke or rotate a key it does not own. |

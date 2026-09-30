@@ -20,18 +20,18 @@ export function getApiKeyPrefix(token: string): string {
   return token.slice(0, 12);
 }
 
+function isApiKeyToken(value: string, { tokenPrefix = 'fb' }: ApiKeyTokenOptions = {}): boolean {
+  const prefix = tokenPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  return new RegExp(`^${prefix}_[A-Za-z0-9_-]{43}$`).test(value);
+}
+
 export function extractApiKeyToken(
   headers: Headers,
-  { headerNames = ['x-api-key'] }: ApiKeyHeaderOptions = {},
+  { headerNames = ['x-api-key'], tokenPrefix }: ApiKeyHeaderOptions & ApiKeyTokenOptions = {},
 ): string | null {
-  const authorization = headers.get('authorization');
-  const bearer = authorization?.match(/^Bearer ([^\s]+)$/i)?.[1];
-  if (bearer) return bearer;
+  const bearer = headers.get('authorization')?.match(/^Bearer ([^\s]+)$/i)?.[1];
+  const candidates = [bearer, ...headerNames.map((headerName) => headers.get(headerName)?.trim())];
 
-  for (const headerName of headerNames) {
-    const value = headers.get(headerName)?.trim();
-    if (value && !/\s/.test(value)) return value;
-  }
-
-  return null;
+  return candidates.find((value) => value && isApiKeyToken(value, { tokenPrefix })) ?? null;
 }

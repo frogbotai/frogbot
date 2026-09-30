@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApiKeyToken } from '../../../packages/plugins/plugin-api-keys/src/server/token.js';
-import { createApiKeyStrategy } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
+import {
+  apiKeyMeHook,
+  createApiKeyStrategy,
+} from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
 function makeStrategy() {
   return createApiKeyStrategy({
@@ -135,5 +138,33 @@ describe('API key authentication strategy', () => {
     expect(frogbot.update).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'api-keys', id: 0 }),
     );
+  });
+
+  it('authenticates through a key header when the Bearer value is not a key', async () => {
+    const frogbot = makeFrogBot();
+
+    const result = await makeStrategy().authenticate({
+      headers: new Headers({ authorization: 'Bearer not-a-jwt', 'x-api-key': createApiKeyToken() }),
+      frogbot: frogbot as never,
+    });
+
+    expect(result.user).toMatchObject({ id: 'user-1', _strategy: 'api-key' });
+  });
+});
+
+describe('API key me hook', () => {
+  it('returns the current user without a token expiry for API key requests', async () => {
+    const user = { id: 'user-1', collection: 'users', _strategy: 'api-key' };
+
+    const result = await apiKeyMeHook({ args: {} as never, user });
+
+    expect(result).toEqual({ user });
+  });
+
+  it.each([
+    ['another strategy', { id: 'user-1', collection: 'users', _strategy: 'local-jwt' }],
+    ['no user', null],
+  ])('leaves %s to the default handling', async (_name, user) => {
+    expect(await apiKeyMeHook({ args: {} as never, user })).toBeUndefined();
   });
 });

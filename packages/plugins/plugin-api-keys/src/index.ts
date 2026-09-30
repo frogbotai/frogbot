@@ -1,7 +1,7 @@
 import { type CollectionConfig, type FrogBotRequest, type Plugin } from 'frogbot';
 
 import { createApiKeysCollection } from './collection.js';
-import { createApiKeyStrategy } from './strategy.js';
+import { apiKeyMeHook, createApiKeyStrategy } from './strategy.js';
 
 export type {
   MintApiKeyOptions,
@@ -74,6 +74,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
         next = {
           ...next,
           auth: { ...authConfig, strategies: [...(authConfig.strategies ?? []), strategy] },
+          hooks: { ...next.hooks, me: [...(next.hooks?.me ?? []), apiKeyMeHook] },
         };
       }
       if (item === usageLog) next = { ...next, fields: [...next.fields, usageField] };

@@ -1,6 +1,8 @@
-import type { AuthStrategy } from 'frogbot';
+import type { AuthStrategy, CollectionMeHook } from 'frogbot';
 
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
+
+const apiKeyStrategyName = 'api-key';
 
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
 
@@ -14,18 +16,11 @@ type StrategyOptions = {
 export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
   const { authCollection, collectionSlug, headerNames, tokenPrefix } = options;
   const strategy: AuthStrategy = {
-    name: 'api-key',
+    name: apiKeyStrategyName,
     authenticate: async ({ frogbot, headers }) => {
-      const token = extractApiKeyToken(headers, { headerNames });
+      const token = extractApiKeyToken(headers, { headerNames, tokenPrefix });
 
-      if (
-        !token ||
-        !new RegExp(
-          `^${tokenPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_[A-Za-z0-9_-]{43}$`,
-        ).test(token)
-      ) {
-        return { user: null };
-      }
+      if (!token) return { user: null };
 
       const keys = await frogbot.find({
         collection: collectionSlug,
@@ -66,7 +61,7 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
         user: {
           ...user,
           collection: authCollection,
-          _strategy: 'api-key',
+          _strategy: apiKeyStrategyName,
           apiKeyId: key.id,
           ...(key.capture !== undefined ? { capture: key.capture } : {}),
           ...(typeof key.captureSampleRate === 'number'
@@ -85,3 +80,9 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
 export function isApiKeyStrategy(strategy: AuthStrategy): boolean {
   return apiKeyStrategies.has(strategy);
 }
+
+export const apiKeyMeHook: CollectionMeHook = ({ user }) => {
+  if (user?._strategy !== apiKeyStrategyName) return;
+
+  return { user } as Awaited<ReturnType<CollectionMeHook>>;
+};

@@ -2,11 +2,12 @@ import { createServer, type Server } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { GRAPHQL_POST } from '@frogbotai/next/routes';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
-import { agentSlug } from './config.js';
+import config, { agentSlug } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -200,6 +201,108 @@ describe('API keys plugin integration', () => {
       overrideAccess: true,
     });
     expect((await request('test/allowed')).status).toBe(403);
+  });
+
+  describe('current user through API keys', () => {
+    const meCredentials = {
+      email: 'api-key-me-owner@frogbot.local',
+      password: 'frogbot-test-password',
+    };
+    let ownerId: number | string;
+    let token: string;
+
+    beforeAll(async () => {
+      const owner = await booted.frogbot.create({
+        collection: 'accounts',
+        data: meCredentials,
+        overrideAccess: true,
+      });
+
+      ownerId = owner.id;
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        meCredentials,
+      );
+
+      if (login.status !== 200) throw new Error(`Login failed with ${login.status}.`);
+
+      const mint = await booted.restClient.post<{ token: string }>(
+        '/api/credentials/mint',
+        { name: 'Current user' },
+        { headers: { Authorization: `JWT ${login.body.token}` } },
+      );
+
+      if (mint.status !== 201) throw new Error(`Mint failed with ${mint.status}.`);
+
+      token = mint.body.token;
+    });
+
+    afterAll(async () => {
+      await booted.frogbot.delete({
+        collection: 'credentials',
+        where: { owner: { equals: ownerId } },
+        overrideAccess: true,
+      });
+
+      await booted.frogbot.delete({
+        collection: 'accounts',
+        id: ownerId,
+        overrideAccess: true,
+      });
+    });
+
+    it('GET /api/accounts/me returns the key owner for a Bearer API key without echoing it', async () => {
+      const response = await booted.restClient.get<Record<string, unknown>>('/api/accounts/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.user).toMatchObject({ id: ownerId, email: meCredentials.email });
+      expect(response.body).not.toHaveProperty('token');
+      expect(JSON.stringify(response.body)).not.toContain(token);
+    });
+
+    it('GET /api/accounts/me returns the key owner for a configured key header', async () => {
+      const response = await booted.restClient.get<Record<string, unknown>>('/api/accounts/me', {
+        headers: { 'x-service-key': token },
+      });
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.user).toMatchObject({ id: ownerId, email: meCredentials.email });
+      expect(response.body).not.toHaveProperty('token');
+    });
+
+    it('GET /api/accounts/me uses the configured key header when the Bearer value is not a key', async () => {
+      const response = await booted.restClient.get<Record<string, unknown>>('/api/accounts/me', {
+        headers: { Authorization: 'Bearer not-a-jwt', 'x-service-key': token },
+      });
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body.user).toMatchObject({ id: ownerId, email: meCredentials.email });
+      expect(response.body).not.toHaveProperty('token');
+    });
+
+    it('POST /api/graphql meAccount returns the key owner for a Bearer API key', async () => {
+      const response = await GRAPHQL_POST(config)(
+        new Request(`${booted.baseUrl}/api/graphql`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+          body: JSON.stringify({ query: '{ meAccount { user { id email } token } }' }),
+        }),
+      );
+      const body = (await response.json()) as {
+        data: { meAccount: { user: unknown; token: string | null } };
+        errors?: unknown;
+      };
+
+      expect(response.status).toBe(200);
+      expect(body.errors).toBeUndefined();
+      expect(body.data.meAccount).toEqual({
+        user: { id: ownerId, email: meCredentials.email },
+        token: null,
+      });
+    });
   });
 
   describe('agent model policy through API keys', () => {

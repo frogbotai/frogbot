@@ -31,26 +31,50 @@ describe('API key token utilities', () => {
   });
 
   it('extracts Bearer tokens case-insensitively', () => {
-    expect(extractApiKeyToken(new Headers({ authorization: 'bearer fbt_token' }))).toBe(
-      'fbt_token',
-    );
+    const token = createApiKeyToken();
+
+    expect(extractApiKeyToken(new Headers({ authorization: `bearer ${token}` }))).toBe(token);
   });
 
   it('extracts default and configured key headers', () => {
-    expect(extractApiKeyToken(new Headers({ 'x-api-key': 'fbt_default' }))).toBe('fbt_default');
+    const token = createApiKeyToken();
+    const custom = createApiKeyToken({ tokenPrefix: 'acme' });
+
+    expect(extractApiKeyToken(new Headers({ 'x-api-key': token }))).toBe(token);
     expect(
-      extractApiKeyToken(new Headers({ 'x-service-key': 'fbt_custom' }), {
+      extractApiKeyToken(new Headers({ 'x-service-key': custom }), {
         headerNames: ['x-service-key'],
+        tokenPrefix: 'acme',
       }),
-    ).toBe('fbt_custom');
+    ).toBe(custom);
   });
+
+  it('prefers a Bearer key over key headers', () => {
+    const bearer = createApiKeyToken();
+    const header = createApiKeyToken();
+
+    expect(
+      extractApiKeyToken(new Headers({ authorization: `Bearer ${bearer}`, 'x-api-key': header })),
+    ).toBe(bearer);
+  });
+
+  it.each(['Bearer not-a-jwt', 'Bearer eyJhbGciOiJIUzI1NiJ9.e30.signature', 'JWT token'])(
+    'falls back to key headers when the Authorization value %s is not a key',
+    (authorization) => {
+      const token = createApiKeyToken();
+
+      expect(extractApiKeyToken(new Headers({ authorization, 'x-api-key': token }))).toBe(token);
+    },
+  );
 
   it.each([
     {},
-    { authorization: 'Basic fbt_token' },
+    { authorization: 'Basic fb_token' },
     { authorization: 'Bearer' },
-    { authorization: 'Bearer fbt one' },
-    { 'x-api-key': 'fbt one' },
+    { authorization: 'Bearer fb_token' },
+    { authorization: `Bearer ${createApiKeyToken({ tokenPrefix: 'acme' })}` },
+    { 'x-api-key': 'fb one' },
+    { 'x-other-key': createApiKeyToken() },
   ])('rejects missing or malformed values', (values) => {
     expect(extractApiKeyToken(new Headers(values))).toBeNull();
   });
