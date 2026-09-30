@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
+import { apiKeyMeHook } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
 describe('apiKeysPlugin', () => {
   it('provides a FrogBot plugin with zero configuration', async () => {
@@ -53,6 +54,24 @@ describe('apiKeysPlugin', () => {
     expect(
       typeof users?.auth === 'object' && users.auth.strategies?.map((strategy) => strategy.name),
     ).toEqual(['existing', 'api-key']);
+  });
+
+  it('appends the me hook to the auth collection only', async () => {
+    const existing = () => undefined;
+    const config = {
+      secret: 'test',
+      db: {},
+      collections: [
+        { slug: 'users', auth: true, hooks: { me: [existing] }, fields: [] },
+        { slug: 'posts', fields: [] },
+      ],
+    } as FrogBotConfig;
+
+    const result = await apiKeysPlugin()(config);
+
+    expect(result.collections[0]?.hooks?.me).toEqual([existing, apiKeyMeHook]);
+    expect(result.collections[1]?.hooks).toBeUndefined();
+    expect(result.collections.at(-1)?.hooks?.me).toBeUndefined();
   });
 
   it('composes API key attribution into AI usage tracking', async () => {
