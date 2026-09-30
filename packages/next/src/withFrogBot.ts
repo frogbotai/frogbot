@@ -1,11 +1,17 @@
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { relative } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 
 import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
 type WithFrogBotOptions = {
   devBundleServerPackages?: boolean;
+};
+
+type LibsqlPackage = {
+  optionalDependencies?: Record<string, string>;
+  root: string;
 };
 
 const FROGBOT_SERVER_PACKAGES = [
@@ -26,10 +32,51 @@ const require = createRequire(import.meta.url);
 const payloadNextRequire = createRequire(require.resolve('@payloadcms/next/withPayload'));
 const PAYLOAD_UI_ROOT = payloadNextRequire.resolve('@payloadcms/ui');
 
-function getTurbopackPayloadUIRoot(): string {
-  const projectRelativePath = relative(process.cwd(), PAYLOAD_UI_ROOT).replaceAll('\\', '/');
+function getProjectRelativePath(path: string): string {
+  const projectRelativePath = relative(process.cwd(), path).replaceAll('\\', '/');
 
   return projectRelativePath.startsWith('.') ? projectRelativePath : `./${projectRelativePath}`;
+}
+
+// Only the project's own node_modules folders, as a standalone server sees them; NODE_PATH is ignored.
+function findLibsqlPackage(): LibsqlPackage | undefined {
+  const manifestPath = getNodeModulesPaths(process.cwd())
+    .map((path) => join(path, 'libsql', 'package.json'))
+    .find((path) => existsSync(path));
+
+  if (!manifestPath) return undefined;
+
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+  return {
+    optionalDependencies: manifest.optionalDependencies,
+    root: realpathSync(dirname(manifestPath)),
+  };
+}
+
+function getNodeModulesPaths(dir: string): string[] {
+  const parent = dirname(dir);
+  const paths = basename(dir) === 'node_modules' ? [] : [join(dir, 'node_modules')];
+
+  return parent === dir ? paths : [...paths, ...getNodeModulesPaths(parent)];
+}
+
+function getLibsqlTracingIncludes(): string[] {
+  const libsql = findLibsqlPackage();
+
+  if (!libsql) return [];
+
+  const nodeModulesPaths = getNodeModulesPaths(libsql.root);
+
+  return Object.keys(libsql.optionalDependencies || {})
+    .filter((name) => name.startsWith('@libsql/'))
+    .flatMap((name) => {
+      const packageRoot = nodeModulesPaths
+        .map((path) => join(path, name))
+        .find((path) => existsSync(path));
+
+      return packageRoot ? [`${getProjectRelativePath(packageRoot)}/**`] : [];
+    });
 }
 
 export function withFrogBot(
@@ -51,8 +98,15 @@ export function withFrogBot(
       ...nextConfig.turbopack,
       resolveAlias: {
         ...nextConfig.turbopack?.resolveAlias,
-        '@payloadcms/ui': getTurbopackPayloadUIRoot(),
+        '@payloadcms/ui': getProjectRelativePath(PAYLOAD_UI_ROOT),
       },
+    },
+    outputFileTracingIncludes: {
+      ...nextConfig.outputFileTracingIncludes,
+      '**/*': [
+        ...(nextConfig.outputFileTracingIncludes?.['**/*'] || []),
+        ...getLibsqlTracingIncludes(),
+      ],
     },
     webpack: (webpackConfig, webpackOptions) => {
       const incoming =
