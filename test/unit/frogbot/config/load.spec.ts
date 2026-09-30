@@ -57,9 +57,18 @@ describe('frogbot loadConfig', () => {
   it.todo(
     'throws `[frogbot] FROGBOT_CONFIG_PATH points to a missing file:` when the override does not exist',
   );
-  it.todo(
-    'throws `[frogbot] failed to load <path>` wrapping the underlying cause on import failure',
-  );
+  it('throws [frogbot] failed to load <path> wrapping the underlying cause on import failure', async () => {
+    const dir = await makeDir();
+    const path = join(dir, 'src', 'frogbot.config.mjs');
+
+    await mkdir(join(dir, 'src'));
+    await writeFile(path, "throw new Error('config-runtime-error');\n");
+
+    await expect(loadConfig({ cwd: dir })).rejects.toMatchObject({
+      message: `[frogbot] failed to load ${path}`,
+      cause: { message: 'config-runtime-error' },
+    });
+  });
   it.todo('throws `[frogbot] <path> has no default export` when the file has no default export');
   it.todo('awaits a Promise default export');
   it.todo(

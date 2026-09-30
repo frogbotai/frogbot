@@ -97,6 +97,21 @@ describe('migrate', () => {
       await expect(migrate(['migrate:status'])).rejects.toThrow('exit:1');
       expect(error).toHaveBeenCalledWith('[frogbot] migrate:status failed: boom');
     });
+
+    it('prints the driver cause under a migrate failure', async () => {
+      mocks.adapter.migrateStatus.mockRejectedValueOnce(
+        new Error('Failed query: select * from "posts"', {
+          cause: new Error('relation "posts" does not exist'),
+        }),
+      );
+
+      await expect(migrate(['migrate:status'])).rejects.toThrow('exit:1');
+      expect(error).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^\[frogbot\] migrate:status failed: Failed query: select \* from "posts"\n {2}Caused by: Error: relation "posts" does not exist/,
+        ),
+      );
+    });
   });
 
   describe('dev-push marker pre-check', () => {

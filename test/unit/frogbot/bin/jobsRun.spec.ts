@@ -488,4 +488,17 @@ describe('jobs:run lifecycle', () => {
       expect(mocks.payload.destroy).not.toHaveBeenCalled();
     },
   );
+
+  it('prints the Croner reason for an invalid --cron', async () => {
+    await expect(jobsRun(['--cron=bogus'])).rejects.toThrow('exit:2');
+
+    const [[message], [usage]] = error.mock.calls as [[string], [string]];
+
+    expect(message).toContain('[frogbot] jobs:run: Invalid --cron expression: bogus');
+    expect(message).toContain(
+      "\n  Caused by: TypeError: CronPattern: invalid configuration format ('bogus')",
+    );
+    expect(message).not.toContain('croner.js');
+    expect(usage).toContain('FrogBot usage: frogbot jobs:run');
+  });
 });
