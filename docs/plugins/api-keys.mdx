@@ -75,42 +75,17 @@ apiKeysPlugin({
 | `tokenPrefix` | `fb` | Prefix placed before generated key values. |
 | `headerNames` | `['x-api-key']` | Request headers checked for a key when `Authorization` doesn't carry one. Replaces the default list. |
 | `collection` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
-| `policyAccess` | deny | Field update access for the budget, rate, and model policy fields. |
 | `canRevokeAnyKey` | — | Predicate allowing a request to revoke or rotate a key it does not own. |
-| `defaults` | — | Inherited monthly budget, RPM, TPM, model, and blocking defaults. |
-| `alerts` | — | Threshold webhook URL, headers, and threshold fractions. |
 
-Collection overrides merge with the generated configuration and changes made by other plugins. The collection uses the `key-round` icon in the admin sidebar; set `collection.admin.icon` to use a different one. The admin controls use the default admin design system without plugin-specific CSS, so your global admin styles continue to apply.
+Collection overrides merge with the generated configuration and changes made by other plugins. The collection uses the `key-round` icon in the admin sidebar; set `collection.admin.icon` to use a different one. The admin controls use the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
 
 ## Budgets and limits
 
-```ts
-apiKeysPlugin({
-  defaults: {
-    monthlyBudgetUSD: 25,
-    rpm: 60,
-    tpm: 100_000,
-    models: ['openai/gpt-4o-mini'],
-    budgetBehavior: 'block',
-  },
-  alerts: {
-    webhookURL: process.env.BUDGET_WEBHOOK_URL!,
-    thresholds: [0.8, 1],
-  },
-})
-```
-
-Key and user policy fields support `inherit`, `custom`, and `unlimited`. They reject updates unless you pass `policyAccess`, so owning a key does not permit changing its caps.
-
-Budget and RPM checks run before the operation. Model policy runs after the request model is parsed and can only narrow provider model allowlists. Completed usage settles TPM and spend for both the key and owner. A monthly task resets spend and alert state.
-
-Rate windows are process-local. Spend writes are serialized within one process, but concurrent updates from multiple processes can be lost. Streaming and TPM admission can exceed a limit by in-flight requests. These are governance limits, not billing ledgers.
-
-Webhook deliveries include the subject, current spend, configured budget, and newly crossed thresholds. Each threshold fires once per monthly period. Failed deliveries are not retried automatically.
+The plugin has no per-key budgets, rate limits, or model allowlists. A key authenticates as its owner, so requests made with it use the owner's model access and monthly budget, and their spend counts toward the owner's total. See [User model and budget policy](/ai/overview#user-model-and-budget-policy).
 
 ## Role-aware access
 
-The plugin does not require a role system. By default, callers read and update only the keys they own, key policy fields reject updates, and revoke and rotate are limited to the caller's own keys.
+The plugin does not require a role system. By default, callers read and update only the keys they own, and revoke and rotate are limited to the caller's own keys.
 
 To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and list it **after** `apiKeysPlugin()` so it can bind the access clauses:
 
@@ -120,7 +95,6 @@ import { allow, hasRole, rolesPlugin } from '@frogbotai/plugin-roles'
 
 plugins: [
   apiKeysPlugin({
-    policyAccess: allow('admin'),
     canRevokeAnyKey: (req) => hasRole(req, 'admin', 'support'),
     collection: {
       access: {

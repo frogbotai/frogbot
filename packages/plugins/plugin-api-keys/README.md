@@ -17,13 +17,13 @@ export default buildConfig({
 The plugin adds an `api-keys` collection, owner-scoped management endpoints, API-key authentication, and default admin controls. `frogbot dev` generates the admin import map before starting, so the key-creation controls appear on the first load. Create a key in the API Keys admin collection, then authenticate requests with either header:
 
 ```http
-Authorization: Bearer fbt_...
-X-API-Key: fbt_...
+Authorization: Bearer fb_...
+X-API-Key: fb_...
 ```
 
 Plaintext keys are returned only when created. The collection stores SHA-256 hashes and supports multiple independently revoked keys per user.
 
-With AI configured, usage rows include an optional `apiKey` relationship to the authenticating key. Cookie-authenticated requests omit it, and the relationship follows `collectionSlug`.
+A key has no budget or model limits of its own; requests use the owner's AI policy. With AI configured, usage rows include an optional `apiKey` relationship to the authenticating key. Cookie-authenticated requests omit it, and the relationship follows `collectionSlug`.
 
 Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. Add it as a `prebuild` step when CI invokes `next build` directly. If the server console reports a component missing from the import map, run `frogbot generate:importmap` and rebuild, or restart `frogbot dev`.
 
@@ -40,15 +40,14 @@ apiKeysPlugin({
 });
 ```
 
-Collection overrides merge with the generated fields, access, endpoints, hooks, admin components, and transforms applied by other plugins. The manager uses Payload controls without plugin CSS, so global admin styles continue to apply.
+Collection overrides merge with the generated fields, access, endpoints, hooks, admin components, and transforms applied by other plugins. The manager uses the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
 
-The plugin has no role system of its own. Keys are owner-scoped, and budget fields are read-only. To layer roles on top, install `@frogbotai/plugin-roles`, list it after `apiKeysPlugin()`, and pass `policyAccess` and `canRevokeAnyKey`:
+The plugin has no role system of its own. Keys are owner-scoped. To layer roles on top, install `@frogbotai/plugin-roles`, list it after `apiKeysPlugin()`, and pass `canRevokeAnyKey` and collection access:
 
 ```ts
 import { allow, hasRole } from '@frogbotai/plugin-roles';
 
 apiKeysPlugin({
-  policyAccess: allow('admin'),
   canRevokeAnyKey: (req) => hasRole(req, 'admin', 'support'),
   collection: {
     access: {
