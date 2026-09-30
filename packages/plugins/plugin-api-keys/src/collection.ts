@@ -252,6 +252,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       ...collection?.access,
     },
     admin: {
+      icon: 'key-round',
       useAsTitle: 'name',
       ...existing?.admin,
       ...collection?.admin,

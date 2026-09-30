@@ -319,6 +319,10 @@ describe('frogbot sanitize', () => {
 
   it('accepts built-in names and component icons on nav items and settings', () => {
     const config = makeConfig({
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        { slug: 'api-keys', fields: [], admin: { icon: 'key-round' } },
+      ],
       admin: {
         components: {
           navItems: [

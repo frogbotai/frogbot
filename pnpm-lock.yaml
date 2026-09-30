@@ -2170,6 +2170,9 @@ importers:
       '@frogbotai/next':
         specifier: workspace:*
         version: link:../../../../packages/next
+      '@frogbotai/plugin-api-keys':
+        specifier: workspace:*
+        version: link:../../../../packages/plugins/plugin-api-keys
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../../../packages/ui

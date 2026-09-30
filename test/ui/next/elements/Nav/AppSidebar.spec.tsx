@@ -37,6 +37,21 @@ describe('AppSidebar', () => {
     expect(container.querySelectorAll('.frogbot-admin-sidebar__icon')).toHaveLength(2);
   });
 
+  it('renders the key-round icon on a collapsed rail item', () => {
+    render(
+      <AppSidebar
+        {...props}
+        navItems={[{ icon: 'key-round', label: 'API Keys', path: '/admin/collections/api-keys' }]}
+        open={false}
+      />,
+    );
+
+    const icon = screen.getByRole('button', { name: 'API Keys' }).querySelector('svg');
+
+    expect(icon?.getAttribute('class')).toContain('lucide-key-round-icon');
+    expect(icon?.getAttribute('class')).not.toContain('lucide-folder-icon');
+  });
+
   it('opens when a collapsed sidebar is clicked anywhere', () => {
     const onToggle = vi.fn();
     render(<AppSidebar {...props} onToggle={onToggle} open={false} />);

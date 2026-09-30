@@ -9,6 +9,7 @@
   "dependencies": {
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
+    "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
     "next": "15.4.11",

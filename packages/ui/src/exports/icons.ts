@@ -51,6 +51,7 @@ export { default as ImageIcon } from '../icons/icons/ImageIcon.js';
 export { default as InfoCircleIcon } from '../icons/icons/InfoCircleIcon.js';
 export { default as InstagramIcon } from '../icons/icons/InstagramIcon.js';
 export { default as InvalidStepIcon } from '../icons/icons/InvalidStepIcon.js';
+export { default as KeyRoundIcon } from '../icons/icons/KeyRoundIcon.js';
 export { default as LinkedInIcon } from '../icons/icons/LinkedInIcon.js';
 export { default as LinkSquareIcon } from '../icons/icons/LinkSquareIcon.js';
 export { default as ListIcon } from '../icons/icons/ListIcon.js';

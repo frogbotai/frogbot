@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     posts: Post;
+    'api-keys': ApiKey;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
@@ -77,6 +78,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
+    'api-keys': ApiKeysSelect;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
@@ -161,6 +163,21 @@ export interface Post {
   color?: string | null;
   note?: string | null;
   relatedPost?: (number | null) | Post;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-keys".
+ */
+export interface ApiKey {
+  id: number;
+  name: string;
+  owner: number | User;
+  prefix: string;
+  tokenHash: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -293,6 +310,20 @@ export interface PostsSelect {
   color?: boolean;
   note?: boolean;
   relatedPost?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-keys_select".
+ */
+export interface ApiKeysSelect {
+  name?: boolean;
+  owner?: boolean;
+  prefix?: boolean;
+  tokenHash?: boolean;
+  lastUsedAt?: boolean;
+  revokedAt?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

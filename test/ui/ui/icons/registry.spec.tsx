@@ -10,6 +10,7 @@ describe('iconRegistry', () => {
     expect(iconNames).toEqual([...iconNames].sort());
     expect(iconNames).toContain('robot');
     expect(iconNames).toContain('bubble-chat');
+    expect(iconNames).toContain('key-round');
     expect(iconNames).not.toContain('create-lucide');
     expect(iconNames).toEqual(configuredIconNames);
   });

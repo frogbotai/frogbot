@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { buildConfig, type FrogBotConfig } from 'frogbot';
 
 import { Posts } from './collections/Posts';
@@ -8,6 +9,7 @@ const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || '' } }),
   collections: [Users, Posts],
+  plugins: [apiKeysPlugin()],
   admin: {
     dashboard: {
       defaultLayout: ({ req }) => [

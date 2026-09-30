@@ -1,4 +1,4 @@
-import { BubbleChatIcon, FolderIcon } from '@frogbotai/ui/icons';
+import { BubbleChatIcon, FolderIcon, KeyRoundIcon } from '@frogbotai/ui/icons';
 import { render, screen } from '@testing-library/react';
 import type { ServerProps } from 'payload';
 import { isValidElement, type ReactNode } from 'react';
@@ -58,6 +58,7 @@ function props(): ServerProps {
           { admin: { group: 'Content' }, labels: { plural: 'Drafts' }, slug: 'drafts' },
           { admin: { group: false }, labels: { plural: 'Hidden' }, slug: 'hidden' },
           { admin: {}, labels: { plural: 'Files' }, slug: 'files' },
+          { admin: { icon: 'key-round' }, labels: { plural: 'API Keys' }, slug: 'api-keys' },
           { admin: { group: 'Content' }, labels: { plural: 'Secret' }, slug: 'secret' },
         ],
         globals: [],
@@ -67,6 +68,7 @@ function props(): ServerProps {
     },
     permissions: {
       collections: {
+        'api-keys': { read: true },
         chats: { read: true },
         drafts: { read: false },
         files: { read: true },
@@ -78,7 +80,7 @@ function props(): ServerProps {
       globals: {},
     },
     visibleEntities: {
-      collections: ['posts', 'chats', 'pages', 'drafts', 'hidden', 'files'],
+      collections: ['posts', 'chats', 'pages', 'drafts', 'hidden', 'files', 'api-keys'],
       globals: [],
     },
   } as unknown as ServerProps;
@@ -123,6 +125,12 @@ describe('CollectionsSection', () => {
     expect(renderServerComponent).not.toHaveBeenCalledWith(
       expect.objectContaining({ Component: 'bubble-chat' }),
     );
+  });
+
+  it('renders the key-round icon for a collection configured with it', () => {
+    render(<CollectionsSection {...props()} />);
+
+    expect(screen.getByTestId('icon-API Keys').innerHTML).toBe(iconMarkup(KeyRoundIcon));
   });
 
   it('renders a component path icon through the server component renderer', () => {

@@ -305,4 +305,27 @@ describe('API keys collection', () => {
       },
     ]);
   });
+
+  it('uses the key-round icon by default', async () => {
+    const collection = await getCollection();
+
+    expect(collection.admin?.icon).toBe('key-round');
+  });
+
+  it('prefers an explicit collection icon over the default', async () => {
+    const collection = await getCollection({ collection: { admin: { icon: 'lock' } } });
+
+    expect(collection.admin?.icon).toBe('lock');
+  });
+
+  it('keeps the icon of an existing API keys collection', async () => {
+    const config = makeConfig();
+
+    config.collections.push({ slug: 'api-keys', fields: [], admin: { icon: 'square-lock' } });
+
+    const result = await apiKeysPlugin()(config);
+    const collection = result.collections.find((item) => item.slug === 'api-keys')!;
+
+    expect(collection.admin?.icon).toBe('square-lock');
+  });
 });

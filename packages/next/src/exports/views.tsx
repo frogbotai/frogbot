@@ -241,18 +241,6 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
 
 type SettingsViewProps = AdminViewServerProps & { routeSegments?: string[] };
 
-export function CollectionSettingsRedirect({
-  collectionSlug,
-  payload,
-}: AdminViewServerProps & { collectionSlug: string }) {
-  redirect(
-    formatAdminURL({
-      adminRoute: payload.config.routes.admin,
-      path: `/collections/${collectionSlug}`,
-    }),
-  );
-}
-
 export async function SettingsView(props: SettingsViewProps) {
   const { importMap, initPageResult, params, payload } = props;
   const req = initPageResult.req;

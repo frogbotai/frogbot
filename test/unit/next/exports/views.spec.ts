@@ -107,7 +107,6 @@ vi.mock('frogbot', async (importOriginal) => ({
 
 const {
   ChatView,
-  CollectionSettingsRedirect,
   RootPage,
   NotFoundPage,
   SettingsView,
@@ -221,15 +220,6 @@ describe('@frogbotai/next views', () => {
       query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
     });
     expect(element?.props.children).toBe(child);
-  });
-
-  it('redirects collection settings entries through the configured admin route', () => {
-    CollectionSettingsRedirect({
-      collectionSlug: 'service-accounts',
-      payload: { config: { routes: { admin: '/workspace' } } },
-    } as never);
-
-    expect(mocks.redirect).toHaveBeenCalledWith('/workspace/collections/service-accounts');
   });
 
   it('SettingsView resolves the longest exact or prefix entry and enforces access', async () => {
