@@ -47,6 +47,7 @@ import { FrogBotLogo as FrogBotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@fr
 import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { RecentsSection as RecentsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { ChatView as ChatView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
+import { StepNavReset as StepNavReset_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
 import { SettingsView as SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { CollectionCards as CollectionCards_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 
@@ -140,6 +141,7 @@ export const importMap = {
   '@frogbotai/next#CollectionsSection': CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next#RecentsSection': RecentsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next/views#ChatView': ChatView_172b1613d7d7a5cf96731bcb4ca4ed45,
+  '@frogbotai/next/client#StepNavReset': StepNavReset_e1fc65845c25c823b271918436e716b9,
   '@frogbotai/next/views#SettingsView': SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45,
   '@frogbotai/next/rsc#CollectionCards': CollectionCards_0d74ee439e1043043a872b6d428a44d5,
 };

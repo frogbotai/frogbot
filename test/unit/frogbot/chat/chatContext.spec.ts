@@ -66,6 +66,7 @@ function makeReq({
   find = makeFind({ existing, history, turnMessage }),
   findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: 'user-1' })),
   update = vi.fn(() => Promise.resolve({})),
+  error = vi.fn(),
   user = { id: 'user-1', collection: 'users' },
 }: {
   chat?: SanitizedChatConfig;
@@ -78,16 +79,25 @@ function makeReq({
   find?: ReturnType<typeof vi.fn>;
   findByID?: ReturnType<typeof vi.fn>;
   update?: ReturnType<typeof vi.fn>;
+  error?: ReturnType<typeof vi.fn>;
   user?: { id: string; collection: string } | null;
 } = {}) {
   const req = {
     user,
     context: {},
     payload: { db },
-    frogbot: { config: { chat }, create, delete: deleteFn, find, findByID, update },
+    frogbot: {
+      config: { chat },
+      create,
+      delete: deleteFn,
+      find,
+      findByID,
+      update,
+      logger: { error },
+    },
   } as unknown as FrogBotRequest;
 
-  return { req, create, deleteFn, find, findByID, update };
+  return { req, create, deleteFn, find, findByID, update, error };
 }
 
 describe('resolveChatContext', () => {
@@ -108,7 +118,7 @@ describe('resolveChatContext', () => {
       expect(result.chatId).toBe('chat-1');
       expect(create).toHaveBeenNthCalledWith(1, {
         collection: 'chats',
-        data: { user: null, agent: 'support' },
+        data: { user: null, agent: 'support', title: 'One' },
         req,
         overrideAccess: true,
       });
@@ -127,7 +137,7 @@ describe('resolveChatContext', () => {
       expect(create).toHaveBeenCalledTimes(3);
       expect(create).toHaveBeenNthCalledWith(1, {
         collection: 'chats',
-        data: { user: 'user-1', agent: 'support' },
+        data: { user: 'user-1', agent: 'support', title: 'One' },
         req,
         overrideAccess: true,
       });
@@ -147,6 +157,120 @@ describe('resolveChatContext', () => {
         overrideAccess: true,
       });
       expect(result.chatId).toBe('chat-1');
+    });
+
+    it('creates a chat without a title when the first message has no text', async () => {
+      const image = { type: 'file', mediaType: 'image/png', url: 'https://files.test/frog.png' };
+      const { req, create } = makeReq();
+
+      await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        incoming: [{ id: 'u1', role: 'user', parts: [image] }],
+        tools: {},
+      });
+
+      expect(create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ data: { user: 'user-1', agent: 'support' } }),
+      );
+    });
+
+    it('saves the placeholder title on the first turn of an existing untitled chat', async () => {
+      const { req, update } = makeReq();
+
+      await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        tools: {},
+      });
+
+      expect(update).toHaveBeenCalledExactlyOnceWith({
+        collection: 'chats',
+        id: 'chat-1',
+        data: { title: 'One' },
+        req,
+        overrideAccess: true,
+      });
+    });
+
+    it('leaves the title of an existing titled chat untouched', async () => {
+      const findByID = vi.fn(() =>
+        Promise.resolve({ id: 'chat-1', user: 'user-1', title: 'Deploy thread' }),
+      );
+      const { req, update } = makeReq({ findByID });
+
+      await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        tools: {},
+      });
+
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('saves no placeholder title for an untitled chat that already has a reply', async () => {
+      const { req, update } = makeReq({
+        history: [
+          historyDoc,
+          { id: 'm2', role: 'assistant', parts: [{ type: 'text', text: 'Hi' }] },
+        ],
+      });
+
+      await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        tools: {},
+      });
+
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('saves the placeholder title after the message transaction commits', async () => {
+      const db = {
+        beginTransaction: vi.fn(() => Promise.resolve('tx-1')),
+        commitTransaction: vi.fn(() => Promise.resolve()),
+        rollbackTransaction: vi.fn(() => Promise.resolve()),
+      };
+      const { req, update } = makeReq({ db });
+
+      await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        tools: {},
+      });
+
+      expect(db.commitTransaction.mock.invocationCallOrder[0]).toBeLessThan(
+        update.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('logs a failed placeholder title write and still starts the turn', async () => {
+      const update = vi.fn(() => Promise.reject(new Error('title write failed')));
+      const { req, error } = makeReq({ update });
+
+      const result = await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        tools: {},
+      });
+
+      expect(result).toMatchObject({ status: 'ready', chatId: 'chat-1' });
+      expect(error).toHaveBeenCalledWith(
+        expect.objectContaining({ chatId: 'chat-1' }),
+        '[frogbot] Failed to save placeholder chat title',
+      );
+      expect(releaseTurn).not.toHaveBeenCalled();
     });
 
     it('stores the selection on new messages and returns it as the turn selection', async () => {

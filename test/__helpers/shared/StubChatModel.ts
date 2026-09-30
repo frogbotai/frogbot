@@ -13,6 +13,11 @@ export type StubChatResponse = {
   error?: { status: number; body: unknown };
 };
 
+export type StubTitleResponse = {
+  text: string;
+  hold?: Promise<void>;
+};
+
 export type StubChatRequest = {
   model: string;
   reasoning_effort?: string;
@@ -24,6 +29,7 @@ export type StubChatRequest = {
 export type StubChatModel = {
   requests: StubChatRequest[];
   respond: (...responses: StubChatResponse[]) => void;
+  respondTitle: (...responses: StubTitleResponse[]) => void;
   reset: () => void;
   close: () => Promise<void>;
 };
@@ -58,12 +64,14 @@ function listen(server: Server, port: number): Promise<void> {
  * OpenAI-compatible chat completions stub. Each request that offers tools
  * consumes the next scripted response (text by default), is recorded, and
  * can hold its reply until a test releases it or fail with a scripted HTTP
- * error. Requests without tools, such as chat title generation, receive a
- * plain text reply and are not recorded.
+ * error. Requests without tools, such as chat title generation, consume the
+ * next scripted title response ('Done.' by default), can hold it the same
+ * way, and are not recorded.
  */
 export async function startStubChatModel(port: number): Promise<StubChatModel> {
   const requests: StubChatRequest[] = [];
   const responses: StubChatResponse[] = [];
+  const titles: StubTitleResponse[] = [];
 
   const server = createServer(async (req, res) => {
     if (req.method !== 'POST' || !req.url?.endsWith('/chat/completions')) {
@@ -77,7 +85,9 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
 
     if (agentRequest) requests.push(body);
 
-    const response = (agentRequest ? responses.shift() : undefined) ?? { text: 'Done.' };
+    const response: StubChatResponse = (agentRequest ? responses.shift() : titles.shift()) ?? {
+      text: 'Done.',
+    };
 
     await response.hold;
 
@@ -155,9 +165,13 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
     respond: (...next) => {
       responses.push(...next);
     },
+    respondTitle: (...next) => {
+      titles.push(...next);
+    },
     reset: () => {
       requests.length = 0;
       responses.length = 0;
+      titles.length = 0;
     },
     close: () =>
       new Promise((resolve, reject) =>

@@ -124,6 +124,20 @@ export function ReportsView({
 
 Use `initPageResult.req.user` and `initPageResult.permissions` for authorization. The top-level `user` prop is filtered for display and should not decide access.
 
+### Top-bar label
+
+FrogBot clears the top-bar label every time the admin path changes. A view that sets no label shows only the logo, never the label of the page the user came from. To show a label, render `SetStepNav` from `@frogbotai/ui/client` anywhere in the view, for example inside `DefaultTemplate` in the view above:
+
+```tsx
+import { SetStepNav } from '@frogbotai/ui/client'
+
+export function ReportsStepNav() {
+  return <SetStepNav nav={[{ label: 'Reports' }]} />
+}
+```
+
+Each item takes a `label` and an optional `url`, which turns that segment into a link. In a client component, call `setStepNav` from `useStepNav()` inside a normal `useEffect`, not a `useLayoutEffect`: FrogBot clears the label in a layout effect, so a label set there is cleared again. If a view stays mounted while the path changes, include the path in the effect's dependencies so the label is set again.
+
 ## Root Views
 
 Root views are scoped directly under the Admin Panel mount. `account` and `dashboard` replace built-in views; any other key can register a new route.

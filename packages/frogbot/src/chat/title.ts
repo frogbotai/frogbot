@@ -6,7 +6,7 @@ import { resolveModel } from '../ai/resolve.js';
 import type { ModelId } from '../ai/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { firstUserText } from './firstUserText.js';
+import { firstUserText, type TextMessage } from './firstUserText.js';
 import { messagesToUIMessages, type PersistedMessage } from './messagesToUIMessages.js';
 
 type SuggestChatTitleProps = {
@@ -111,6 +111,16 @@ export async function suggestChatTitle({
   return cleanTitle(result.text);
 }
 
+export function placeholderChatTitle(messages: TextMessage[]): string | undefined {
+  return firstUserText(messages, 48);
+}
+
+function canReplaceTitle(chat: ChatDocument, placeholder: string | undefined): boolean {
+  const title = chat.title?.trim();
+
+  return !title || title === placeholder;
+}
+
 export async function generateChatTitle({
   req,
   chatId,
@@ -119,8 +129,13 @@ export async function generateChatTitle({
   assistantMessage,
 }: GenerateChatTitleProps): Promise<void> {
   if (history.some((message) => message.role === 'assistant')) return;
+
   const config = req.frogbot.config.chat;
+
   if (!config.enabled) return;
+
+  const placeholder = placeholderChatTitle(history);
+
   try {
     const chat = (await req.frogbot.findByID({
       collection: config.chatsSlug,
@@ -129,8 +144,11 @@ export async function generateChatTitle({
       req,
       overrideAccess: true,
     })) as ChatDocument;
-    if (chat.title?.trim()) return;
+
+    if (!canReplaceTitle(chat, placeholder)) return;
+
     let title: string | undefined;
+
     try {
       title = await suggestChatTitle({
         req,
@@ -140,8 +158,9 @@ export async function generateChatTitle({
     } catch (error) {
       req.frogbot.logger.error({ err: error, chatId }, '[frogbot] Failed to suggest chat title');
     }
-    title ??= firstUserText(history)?.slice(0, 100).trimEnd();
+
     if (!title) return;
+
     const current = (await req.frogbot.findByID({
       collection: config.chatsSlug,
       id: chatId,
@@ -149,7 +168,9 @@ export async function generateChatTitle({
       req,
       overrideAccess: true,
     })) as ChatDocument;
-    if (current.title?.trim()) return;
+
+    if (!canReplaceTitle(current, placeholder)) return;
+
     await req.frogbot.update({
       collection: config.chatsSlug,
       id: chatId,

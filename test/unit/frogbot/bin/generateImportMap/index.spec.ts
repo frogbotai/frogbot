@@ -328,6 +328,26 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain('ChatListView');
   });
 
+  it('maps the step-nav reset provider', async () => {
+    const dir = await makeDir('frogbot-importmap-step-nav-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain('"@frogbotai/next/client#StepNavReset"');
+    expect(output).toContain("from '@frogbotai/next/client'");
+  });
+
   it('maps dashboard widgets and their field components', async () => {
     const dir = await makeDir('frogbot-importmap-dashboard-');
     const config = sanitize({

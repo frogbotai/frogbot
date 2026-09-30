@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { findTurnState } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { placeholderChatTitle } from '../../packages/frogbot/src/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
@@ -41,6 +42,7 @@ type StoredMessage = {
   id: string;
   role: string;
   status?: string;
+  parts: Array<Record<string, unknown>>;
 };
 
 type CustomModel = { id: string; reasoningOptions?: unknown };
@@ -87,13 +89,22 @@ describe('chat reasoning selection', () => {
     lookupCalls.length = 0;
 
     await vi.waitFor(async () => {
-      const untitled = await booted.frogbot.count({
+      const chats = await booted.frogbot.find({
         collection: chatsSlug,
-        where: { title: { equals: null } },
+        pagination: false,
+        depth: 0,
         overrideAccess: true,
       });
 
-      if (untitled.totalDocs > 0) throw new Error('Chat titles are still being generated');
+      const naming = await Promise.all(
+        chats.docs.map(async ({ id, title }) => {
+          const placeholder = placeholderChatTitle(await storedMessages(id));
+
+          return !title || title === placeholder;
+        }),
+      );
+
+      if (naming.some(Boolean)) throw new Error('Chat titles are still being generated');
     });
   });
 

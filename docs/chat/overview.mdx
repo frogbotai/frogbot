@@ -137,7 +137,7 @@ The helper requires chat persistence and a current chat on `ctx.agent.chatId`; i
 
 ## Use the default chat views
 
-When an agent is configured, the chat collection create route (`/collections/chats/create` by default) opens an empty chat with the first configured agent. Users reach it from the Chats collection in the sidebar. Sending the first message creates the chat and updates the URL to its document route without remounting the conversation.
+When an agent is configured, the chat collection create route (`/collections/chats/create` by default) opens an empty chat with the first configured agent. Users reach it from the Chats collection in the sidebar. Sending the first message creates the chat and changes the URL to the chat's own page without reloading the conversation. New Chat always opens an empty chat.
 
 The chat collection list uses the standard collection list view, so filtering, sorting, and columns behave like any other collection. Selecting a chat opens its document view, restores up to 500 stored messages in chronological order, and continues the same conversation.
 
@@ -145,11 +145,11 @@ These defaults also apply when your own collection uses `chat: true`. FrogBot us
 
 ## Automatic chat titles
 
-FrogBot names a new chat after its first assistant reply. It uses the configured [utility model](/ai/overview#choose-a-utility-model) and records the call through normal usage reporting.
+FrogBot titles a chat as soon as it exists. The first title is the first user message, shortened to 48 characters with "…". After the first assistant reply, FrogBot generates a better title with the configured [utility model](/ai/overview#choose-a-utility-model), replaces the shortened message, and records the call through normal usage reporting. A chat whose first message has no text, such as an image-only message, stays untitled until the generated title arrives.
 
-Naming runs in the background and never delays or fails the assistant response. While naming runs, and if generation fails, FrogBot uses the first user message. Long titles fade at the edge of the chat list instead of showing an ellipsis. A hard process exit can interrupt this best-effort background work and leave the chat untitled.
+Naming runs in the background and never delays or fails the assistant response. If generation fails, or a hard process exit interrupts it, the chat keeps the shortened first message. Long titles fade at the edge of the chat list instead of showing an ellipsis.
 
-FrogBot only names chats whose title is empty. Later turns do not regenerate the title, and a title set by your application or by a user is never overwritten.
+FrogBot only replaces a title that is empty or still equals the shortened first message. Later turns do not regenerate the title, and a title set by your application or by a user is never overwritten, including a rename made while naming runs.
 
 ## Customize admin chat components
 

@@ -10,6 +10,9 @@ import {
   chatsSlug,
   messagesSlug,
   modelPort,
+  reportsPath,
+  robotSettings,
+  tasksSlug,
   turnsSlug,
   usersSlug,
 } from '../shared';
@@ -18,11 +21,42 @@ export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-question-secret',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
-  admin: { importMap: { autoGenerate: false } },
+  admin: {
+    importMap: { autoGenerate: false },
+    components: {
+      navItems: [
+        { label: 'New Chat', path: `/collections/${chatsSlug}/create`, icon: 'pencil-edit' },
+        { label: 'Reports', path: reportsPath, icon: 'home' },
+      ],
+      navSections: ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'],
+      views: {
+        reports: { Component: '/components/ReportsView#ReportsView', path: reportsPath },
+      },
+    },
+  },
   collections: [
     { slug: usersSlug, auth: true, fields: [] },
     { slug: messagesSlug, message: true, admin: { hidden: false }, fields: [] },
+    {
+      slug: tasksSlug,
+      admin: {
+        useAsTitle: 'title',
+        views: [{ type: 'list' }, { type: 'board', groupBy: 'status' }],
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        {
+          name: 'status',
+          type: 'select',
+          options: [
+            { label: 'Backlog', value: 'backlog' },
+            { label: 'Done', value: 'done' },
+          ],
+        },
+      ],
+    },
   ],
+  settings: [{ ...robotSettings, Component: '/components/RobotSettings#RobotSettings' }],
   pieces: [
     definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
       slug: channelChat.channelThread.account,
@@ -62,7 +96,7 @@ export default buildConfig({
       handler: async (req) => {
         if (!req.user) return new Response(null, { status: 401 });
 
-        for (const collection of [messagesSlug, chatsSlug, turnsSlug]) {
+        for (const collection of [messagesSlug, chatsSlug, turnsSlug, tasksSlug]) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
 

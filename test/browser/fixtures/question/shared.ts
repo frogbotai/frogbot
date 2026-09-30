@@ -1,6 +1,9 @@
 export const chatsSlug = 'chats';
 export const messagesSlug = 'messages';
 export const usersSlug = 'users';
+export const tasksSlug = 'tasks';
+export const reportsPath = '/reports';
+export const robotSettings = { label: 'Robot', path: 'robot' };
 export const agentSlug = 'questioner';
 export const modelPort = 3128;
 export const chatPicksPreference = 'frogbot-chat-picks';

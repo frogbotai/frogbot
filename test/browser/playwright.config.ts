@@ -183,6 +183,7 @@ export default defineConfig({
         'channelChat.browser.spec.ts',
         'chatErrors.browser.spec.ts',
         'messagesOverride.browser.spec.ts',
+        'breadcrumbs.browser.spec.ts',
       ],
       use: {
         ...devices['Desktop Chrome'],
