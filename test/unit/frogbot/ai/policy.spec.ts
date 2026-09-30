@@ -110,6 +110,7 @@ describe('AI user policy', () => {
       providers: {
         custom: {
           type: 'openai-compatible',
+          baseUrl: 'http://127.0.0.1/v1',
           models: [{ id: 'priced', mode: 'chat', cost: { input: 2, output: 4 } }],
         },
       },
@@ -154,6 +155,7 @@ describe('AI user policy', () => {
       providers: {
         custom: {
           type: 'openai-compatible',
+          baseUrl: 'http://127.0.0.1/v1',
           models: [{ id: 'priced', mode: 'chat', cost: { input: 2 } }],
         },
       },

@@ -1,8 +1,9 @@
-import { calculateCostUSD, calculateModelCostUSD, type ModelCost } from '@frogbotai/gateway';
+import type { HookUsage } from '@frogbotai/gateway';
 import { BudgetExceededError, ModelNotAllowedError } from '@frogbotai/gateway/errors';
 
 import type { FrogBotRequest } from '../types/request.js';
-import type { CustomProviderEntry } from './types.js';
+import { calculateUsageCostUSD } from './cost.js';
+import type { ProviderConfig } from './types.js';
 
 export type AIUserPolicy = {
   models: { mode: 'all' } | { mode: 'selected'; targets: string[] };
@@ -110,28 +111,10 @@ export function createPolicyHooks({
   providers,
 }: {
   authCollection: string;
-  providers: Record<string, unknown>;
+  providers: ProviderConfig;
 }) {
   const queue = new SerialQueue();
-  const costs = new Map<string, ModelCost>();
-  for (const [provider, entry] of Object.entries(providers)) {
-    if (
-      !entry ||
-      typeof entry !== 'object' ||
-      !('type' in entry) ||
-      entry.type !== 'openai-compatible'
-    ) {
-      continue;
-    }
-    for (const model of (entry as CustomProviderEntry).models) {
-      if (!model.cost) continue;
-      costs.set(`${provider}/${model.id}`, {
-        input: model.cost.input ?? 0,
-        output: model.cost.output ?? 0,
-        ...(model.cost.cache_read !== undefined && { cache_read: model.cost.cache_read }),
-      });
-    }
-  }
+
   return {
     beforeOperation: (args: { req?: FrogBotRequest; context: Record<string, unknown> }) => {
       if (!args.req?.user) return;
@@ -147,16 +130,13 @@ export function createPolicyHooks({
     afterOperation: async (args: {
       req?: FrogBotRequest;
       model: string;
-      usage?: Parameters<typeof calculateModelCostUSD>[1];
+      usage?: HookUsage;
       error?: unknown;
     }) => {
       if (!args.req?.user || args.error || !args.usage) return;
       const user = args.req.user as PolicyDocument;
       if (user.id === undefined) return;
-      const configured = costs.get(args.model);
-      const cost = configured
-        ? calculateCostUSD(args.usage, configured)
-        : calculateModelCostUSD(args.model, args.usage);
+      const cost = calculateUsageCostUSD({ model: args.model, providers, usage: args.usage });
       if (cost <= 0) return;
       await queue.run(String(user.id), async () => {
         const current = (await args.req!.frogbot.findByID({

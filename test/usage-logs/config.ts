@@ -17,7 +17,10 @@ export default await buildTestConfig({
         type: 'openai-compatible',
         baseUrl: 'https://opencode.ai/zen/v1',
         apiKey: 'public',
-        models: [{ id: 'big-pickle', mode: 'chat' }],
+        models: [
+          { id: 'big-pickle', mode: 'chat' },
+          { id: 'priced', mode: 'chat', cost: { input: 1, output: 2 } },
+        ],
       },
     },
   },
