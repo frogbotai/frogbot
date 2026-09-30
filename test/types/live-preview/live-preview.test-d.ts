@@ -53,3 +53,20 @@ const invalidRequestConfig = {
 
 expectTypeOf(invalidRootConfig).toBeObject();
 expectTypeOf(invalidRequestConfig).toBeObject();
+
+function previewPath({ id, req }: { id: unknown; req: FrogBotRequest }): string {
+  return `/preview/${String(id)}?user=${String(req.user?.id)}`;
+}
+
+const sharedHelperCollection = {
+  slug: 'pages',
+  fields: [],
+  admin: {
+    livePreview: {
+      url: ({ data, req }) => previewPath({ id: data.id, req }),
+    },
+    preview: (data, { req }) => previewPath({ id: data.id, req }),
+  },
+} satisfies CollectionConfig;
+
+expectTypeOf(sharedHelperCollection).toMatchTypeOf<CollectionConfig>();

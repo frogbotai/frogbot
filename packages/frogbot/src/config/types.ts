@@ -21,8 +21,13 @@ import type { EmailPiece } from '../pieces/email.js';
 import type { Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
-import type { Locale, PayloadConfig, SanitizedCollectionConfig } from '../types/payload.js';
-import type { FrogBotRequest } from '../types/request.js';
+import type {
+  Locale,
+  PayloadCollectionConfig,
+  PayloadConfig,
+  SanitizedCollectionConfig,
+} from '../types/payload.js';
+import type { FrogBotArgs, FrogBotRequest } from '../types/request.js';
 
 export type LivePreviewURLType = null | string | undefined;
 
@@ -49,6 +54,13 @@ export type LivePreviewConfig = {
 export type RootLivePreviewConfig = LivePreviewConfig & {
   collections?: string[];
 };
+
+type PayloadPreview = NonNullable<NonNullable<PayloadCollectionConfig['admin']>['preview']>;
+
+export type GeneratePreviewURL = (
+  doc: Parameters<PayloadPreview>[0],
+  options: FrogBotArgs<Parameters<PayloadPreview>[1]>,
+) => ReturnType<PayloadPreview>;
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
 

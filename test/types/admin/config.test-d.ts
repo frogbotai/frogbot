@@ -4,6 +4,7 @@ import type {
   DashboardConfig,
   DocumentTabConfig,
   Field,
+  FrogBot,
   FrogBotRequest,
   IconName,
   NavItem,
@@ -11,6 +12,7 @@ import type {
   SettingsEntry,
   Widget,
 } from 'frogbot';
+import type { GeneratePreviewURL } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 expectTypeOf<Widget['fields']>().toEqualTypeOf<Field[] | undefined>();
@@ -87,6 +89,44 @@ const collection = {
   fields: [sharedField],
   slug: 'posts',
 } satisfies CollectionConfig;
+
+const previewCollection = {
+  admin: {
+    preview: (doc, { locale, req, token }) => {
+      expectTypeOf(doc).toEqualTypeOf<Record<string, unknown>>();
+      expectTypeOf(locale).toEqualTypeOf<string>();
+      expectTypeOf(token).toEqualTypeOf<null | string>();
+      expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+      expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
+
+      return req.frogbot ? `/preview/${String(doc.id)}` : null;
+    },
+  },
+  fields: [],
+  slug: 'pages',
+} satisfies CollectionConfig;
+
+const invalidPreviewCollection = {
+  admin: {
+    preview: (_doc, { req }) => {
+      // @ts-expect-error Payload is not exposed on FrogBot requests
+      return req.payload ? '/preview' : null;
+    },
+  },
+  fields: [],
+  slug: 'pages',
+} satisfies CollectionConfig;
+
+type PreviewOptions = Parameters<NonNullable<NonNullable<CollectionConfig['admin']>['preview']>>[1];
+type PayloadPreviewOptions = Parameters<GeneratePreviewURL>[1];
+
+expectTypeOf(previewCollection).toMatchTypeOf<CollectionConfig>();
+expectTypeOf(invalidPreviewCollection).toBeObject();
+expectTypeOf<keyof PreviewOptions>().toEqualTypeOf<keyof PayloadPreviewOptions>();
+expectTypeOf<PreviewOptions['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<
+  ReturnType<NonNullable<NonNullable<CollectionConfig['admin']>['preview']>>
+>().toEqualTypeOf<ReturnType<GeneratePreviewURL>>();
 
 type AdminComponents = NonNullable<NonNullable<CollectionConfig['admin']>['components']>;
 type EditViews = NonNullable<NonNullable<AdminComponents['edit']>['views']>;

@@ -11,6 +11,7 @@ import {
   type LexicalInlineBlockServerProps as PayloadLexicalInlineBlockServerProps,
 } from '@payloadcms/richtext-lexical';
 import type { Field, FrogBotRequest } from 'frogbot';
+import { wrapFieldRequestFunctions } from 'frogbot/internal';
 import type { Block, BlockSlug } from 'payload';
 
 type BlockInput = Omit<Block, 'fields'> & { fields: Field[] };
@@ -27,7 +28,7 @@ function adaptBlocks(blocks: BlocksFeatureProps['blocks']): UpstreamBlocksFeatur
 
     return {
       ...block,
-      fields: block.fields as RuntimeFields,
+      fields: wrapFieldRequestFunctions(block.fields) as RuntimeFields,
     };
   });
 }

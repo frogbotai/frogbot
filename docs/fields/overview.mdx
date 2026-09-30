@@ -298,7 +298,7 @@ See [Field Access Control](/access-control/fields) for the operation-specific ru
 
 ### Default values
 
-Use `defaultValue` to populate a missing value during create or update operations. It can be a static value or a function based on the current locale or authenticated user.
+Use `defaultValue` to populate a missing value during create or update operations and when the Admin Panel opens a create form. It can be a static value or a function based on the current locale or authenticated user.
 
 ```ts
 import type { Field } from 'frogbot'
@@ -316,7 +316,7 @@ A default-value function receives:
 | --- | --- |
 | `user` | The authenticated user, when one is present. |
 | `locale` | The currently selected locale. |
-| `req` | The current framework request. Server code accesses the instance through `req.frogbot`. |
+| `req` | The current `FrogBotRequest`. Server code accesses the instance through `req.frogbot`, which is attached even when the Admin Panel builds a form. |
 
 ```ts
 import type { Field } from 'frogbot'

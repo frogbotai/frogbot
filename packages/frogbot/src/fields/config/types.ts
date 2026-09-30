@@ -119,10 +119,22 @@ type FieldAccessConfig = {
 
 type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 
-type RetypedField<T> = DistributiveOmit<T, 'access' | 'hooks' | 'validate'> &
+type RetypedKey = 'access' | 'defaultValue' | 'filterOptions' | 'hooks' | 'validate';
+
+type SwapReqArg<F> = F extends (args: infer A) => infer R ? (args: FrogBotArgs<A>) => R : F;
+
+type RequestSlots<T> = (T extends { defaultValue?: infer D }
+  ? { defaultValue?: SwapReqArg<D> }
+  : unknown) &
+  (T extends { filterOptions?: infer F } ? { filterOptions?: SwapReqArg<F> } : unknown);
+
+type ValidatorFieldConfig<T> = Omit<T, RetypedKey> & RequestSlots<T>;
+
+type RetypedField<T> = DistributiveOmit<T, RetypedKey> &
+  RequestSlots<T> &
   FieldHooks &
   FieldAccessConfig & {
-    validate?: Validate<any, any, any, Omit<T, 'access' | 'hooks' | 'validate'>>;
+    validate?: Validate<any, any, any, ValidatorFieldConfig<T>>;
   };
 
 interface FieldContainer {

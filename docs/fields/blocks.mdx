@@ -305,7 +305,7 @@ export const heroLayout: BlocksField = {
 
 ## Conditional blocks
 
-`filterOptions` can return `true` for all configured blocks or an array of allowed slugs. It is reevaluated when form state changes, and saving fails if an existing block is no longer allowed.
+`filterOptions` can return `true` for all configured blocks or an array of allowed slugs. It is reevaluated when form state changes, and saving fails if an existing block is no longer allowed. A callback receives `data`, `id`, `siblingData`, `user`, and `req`, the current `FrogBotRequest` with `req.frogbot`.
 
 ```ts
 import type { BlocksField } from 'frogbot'

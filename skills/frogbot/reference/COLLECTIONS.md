@@ -189,19 +189,22 @@ When drafts are enabled, `_status` supports `draft` and `published`. Use collect
 
 ## Live preview
 
-Collection preview functions receive current form data and a `FrogBotRequest`.
+`livePreview.url` and `preview` both receive a `FrogBotRequest`, so one helper can build both URLs. `preview` receives the document and `{ locale, req, token }`.
 
 ```ts
-import type { CollectionConfig } from 'frogbot';
+import type { CollectionConfig, FrogBotRequest } from 'frogbot';
+
+const previewPath = ({ slug, req }: { slug: unknown; req: FrogBotRequest }) =>
+  `/preview/${String(slug)}?locale=${req.locale ?? 'en'}`;
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
     useAsTitle: 'title',
     livePreview: {
-      url: ({ data }) => `/preview/${data.slug}`,
+      url: ({ data, req }) => previewPath({ slug: data.slug, req }),
     },
-    preview: (data) => `/preview/${data.slug}`,
+    preview: (data, { req }) => previewPath({ slug: data.slug, req }),
   },
   fields: [
     {

@@ -29,6 +29,12 @@ export function getFrogBotInstance(payload: object): FrogBot | undefined {
   return instances.get(payload)?.frogbot;
 }
 
+export function getFrogBotInstanceEntry(
+  payload: object,
+): Pick<FrogBotInstanceEntry, 'config' | 'frogbot'> | undefined {
+  return instances.get(payload);
+}
+
 export function ensureFrogBotInstance(
   payload: object,
   init: () => Promise<FrogBot>,

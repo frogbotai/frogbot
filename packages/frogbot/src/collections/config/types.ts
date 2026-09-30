@@ -36,7 +36,7 @@ import type {
 import type { AdminIcon } from '../../admin/types.js';
 import type { CollectionView, DocumentTabConfig } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
-import type { LivePreviewConfig } from '../../config/types.js';
+import type { GeneratePreviewURL, LivePreviewConfig } from '../../config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';
 import type { SearchIndexConfig, SearchIndexDescriptors } from '../../search/types.js';
@@ -81,11 +81,13 @@ export type CollectionAdminConfig = Omit<
   | 'listSearchableFields'
   | 'livePreview'
   | 'pagination'
+  | 'preview'
 > & {
   components?: CollectionAdminComponents;
   group?: PayloadAdmin['group'] | null;
   icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
+  preview?: GeneratePreviewURL;
   views?: CollectionView[];
 };
 
