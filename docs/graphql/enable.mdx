@@ -1,0 +1,59 @@
+---
+title: Enable GraphQL
+sidebarTitle: Enable GraphQL
+description: Turn on FrogBot's GraphQL API and playground by adding two route files to your app.
+keywords: graphql, enable, routes, playground, api, setup, nextjs
+---
+
+GraphQL is opt-in. New FrogBot apps serve only the [REST API](/rest-api/overview) until you add two route files. Everything they need already ships with `@frogbotai/next`, so there's nothing to install.
+
+## Add the routes
+
+Create the GraphQL endpoint:
+
+```ts title="src/app/(frogbot)/api/graphql/route.ts"
+import config from '@frogbot-config'
+import { GRAPHQL_POST, REST_OPTIONS } from '@frogbotai/next/routes'
+
+export const POST = GRAPHQL_POST(config)
+export const OPTIONS = REST_OPTIONS(config)
+```
+
+Then create the GraphQL playground:
+
+```ts title="src/app/(frogbot)/api/graphql-playground/route.ts"
+import config from '@frogbot-config'
+import { GRAPHQL_PLAYGROUND_GET } from '@frogbotai/next/routes'
+
+export const GET = GRAPHQL_PLAYGROUND_GET(config)
+```
+
+Restart your dev server. Your API now answers at `/api/graphql`, and the playground is at `/api/graphql-playground`:
+
+```bash
+curl -X POST http://localhost:3000/api/graphql \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"{ Users { totalDocs } }"}'
+```
+
+GraphQL requests follow the same access control as REST: a query returns only the documents the signed-in user could read over REST. The `OPTIONS` export answers CORS preflight requests with the same headers as your REST routes.
+
+If you change `routes.graphQL` or `routes.graphQLPlayground` in your FrogBot config, rename the route folders to match. For example, `routes: { graphQL: '/gql' }` needs `src/app/(frogbot)/api/gql/route.ts`.
+
+## Production defaults
+
+In production, the playground returns 404 and introspection queries are rejected. Regular queries and mutations keep working. To turn either back on, set `graphQL.disablePlaygroundInProduction` or `graphQL.disableIntrospectionInProduction` to `false` in your FrogBot config. See [GraphQL options](/graphql/overview#graphql-options).
+
+## Turn GraphQL off
+
+Set `graphQL.disable: true` to make `/api/graphql` return 404. This setting doesn't remove the playground page in development, so delete the `graphql-playground` route file as well if you don't want it served. To remove GraphQL completely, delete both route files.
+
+## What's in the schema
+
+The schema includes your collections and FrogBot's public built-in collections, such as `chats`, `messages`, and `files`. FrogBot's internal collections (chat turns, chat assets, trigger subscriptions, and durable waits) and internal records such as admin preferences, document locks, jobs, and key-value storage aren't part of it.
+
+<Warning>
+  Don't point a single-collection `relationship` or `upload` field at one of FrogBot's internal collections, such as `frogbot-chat-assets`. Those collections aren't in the GraphQL schema, so the schema can't be built.
+</Warning>
+
+To write the schema to a file for frontend code generation, see [GraphQL schema](/graphql/graphql-schema).

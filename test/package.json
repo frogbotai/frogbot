@@ -17,6 +17,7 @@
     "@frogbotai/db-postgres": "workspace:*",
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/gateway": "workspace:*",
+    "@frogbotai/graphql": "workspace:*",
     "@frogbotai/kv-redis": "workspace:*",
     "@frogbotai/live-preview-react": "workspace:*",
     "@frogbotai/next": "workspace:*",

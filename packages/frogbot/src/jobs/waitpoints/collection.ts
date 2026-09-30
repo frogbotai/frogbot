@@ -6,6 +6,7 @@ export function defaultWaitpointsCollection(): CollectionConfig {
   return {
     slug: WAITPOINTS_SLUG,
     admin: { hidden: true },
+    graphQL: false,
     access: {
       create: () => false,
       read: () => false,

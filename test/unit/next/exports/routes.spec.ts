@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@payloadcms/next/routes', () => ({
+  GRAPHQL_PLAYGROUND_GET: mocks.handlerBuilder,
+  GRAPHQL_POST: mocks.handlerBuilder,
   REST_DELETE: mocks.handlerBuilder,
   REST_GET: mocks.handlerBuilder,
   REST_OPTIONS: mocks.handlerBuilder,
@@ -32,6 +34,8 @@ describe('@frogbotai/next routes', () => {
     'REST_PATCH',
     'REST_POST',
     'REST_PUT',
+    'GRAPHQL_POST',
+    'GRAPHQL_PLAYGROUND_GET',
   ] as const)(
     '%s passes the unwrapped payload config promise to the payload handler builder',
     async (name) => {

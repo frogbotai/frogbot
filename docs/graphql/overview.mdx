@@ -7,7 +7,7 @@ keywords: graphql, resolvers, mutations, config, configuration, documentation, C
 
 In addition to its REST and Local APIs, FrogBot ships with a fully featured and extensible GraphQL API.
 
-By default, the GraphQL API is exposed via `/api/graphql`, but you can customize this URL via specifying your `routes` within the main FrogBot Config.
+The GraphQL API is served at `/api/graphql` once you add its route files (see [Enable GraphQL](/graphql/enable)). You can customize this URL by specifying `routes` in your FrogBot config.
 
 The labels you provide for your Collections are used to name the GraphQL types that are created to correspond to your config. Special characters and spaces are removed.
 
@@ -41,10 +41,8 @@ import type { CollectionConfig } from 'frogbot'
 
 export const PublicUser: CollectionConfig = {
   slug: 'public-users',
-  auth: true, // Auth is enabled
-  fields: [
-    ...
-  ],
+  auth: true,
+  fields: [{ name: 'name', type: 'text' }],
 }
 ```
 
@@ -72,26 +70,9 @@ export const PublicUser: CollectionConfig = {
 | `logoutPublicUser`         | `logout` auth operation         |
 | `refreshTokenPublicUser`   | `refresh` auth operation        |
 
-## Preferences
-
-User preferences for the Admin Panel are also available to GraphQL the same way as other collection schemas are generated. To query preferences, supply an authorization token in the header; only that user's preferences are accessible.
-
-**FrogBot will open the following query:**
-
-| Query Name   | Operation |
-| ------------ | --------- |
-| `Preference` | `findOne` |
-
-**And the following mutations:**
-
-| Query Name         | Operation |
-| ------------------ | --------- |
-| `updatePreference` | `update`  |
-| `deletePreference` | `delete`  |
-
 ## GraphQL Playground
 
-GraphQL Playground is enabled by default for development purposes, but disabled in production. You can enable it in production by passing `graphQL.disablePlaygroundInProduction` a `false` setting in the main FrogBot Config.
+Once you add the playground route (see [Enable GraphQL](/graphql/enable)), GraphQL Playground is available in development and disabled in production. You can enable it in production by passing `graphQL.disablePlaygroundInProduction` a `false` setting in the main FrogBot Config.
 
 You can even log in using the `login[collection-singular-label-here]` mutation to use the Playground as an authenticated user.
 
@@ -110,15 +91,7 @@ You can add custom validation rules to your GraphQL API by defining a `validatio
 
 ```ts
 import { GraphQL } from '@frogbotai/graphql/types'
-import { buildConfig } from 'frogbot'
-
-export default buildConfig({
-  // ...
-  graphQL: {
-    validationRules: (args) => [NoProductionIntrospection],
-  },
-  // ...
-})
+import type { FrogBotConfig } from 'frogbot'
 
 const NoProductionIntrospection: GraphQL.ValidationRule = (context) => ({
   Field(node) {
@@ -134,7 +107,13 @@ const NoProductionIntrospection: GraphQL.ValidationRule = (context) => ({
     }
   },
 })
+
+export const graphQL: FrogBotConfig['graphQL'] = {
+  validationRules: () => [NoProductionIntrospection],
+}
 ```
+
+Pass `graphQL` to `buildConfig` in your FrogBot config.
 
 ## Query complexity limits
 
@@ -145,12 +124,20 @@ FrogBot comes with a built-in query complexity limiter to prevent abusive querie
 You can define custom complexity for `relationship`, `upload` and `join` type fields. This is useful if you want to assign a higher complexity to a field that is more expensive to resolve. This can help prevent users from running queries that are too complex.
 
 ```ts
-const fieldWithComplexity = {
-  name: 'authors',
-  type: 'relationship',
-  relationship: 'authors',
-  graphQL: {
-    complexity: 100,
-  },
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    {
+      name: 'authors',
+      type: 'relationship',
+      relationTo: 'users',
+      hasMany: true,
+      graphQL: {
+        complexity: 100,
+      },
+    },
+  ],
 }
 ```

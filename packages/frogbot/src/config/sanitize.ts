@@ -109,12 +109,14 @@ import {
   compileCollectionViews,
   getBoardOrderFieldNames,
 } from './collectionViews.js';
+import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type { FrogBotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
 import type { FrogBotConfig, LivePreviewConfig, OnInit } from './types.js';
 import type { ValidationMode } from './validationContext.js';
 import { getValidationMode } from './validationContext.js';
+import { wrapGraphQLExtension } from './wrapGraphQLExtension.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   name: 'frogbot-noop',
@@ -1157,20 +1159,28 @@ function buildPayloadConfig(
     out.endpoints = wrapEndpoints(userEndpoints, attachFrogBot);
   }
 
-  if (searchCollections.length) {
-    const queries = config.graphQL?.queries;
+  if (config.graphQL || searchCollections.length) {
+    const queries = wrapGraphQLExtension(config.graphQL?.queries, attachFrogBot);
+    const mutations = wrapGraphQLExtension(config.graphQL?.mutations, attachFrogBot);
 
-    const searchQueries = buildSearchQueries({
-      attachFrogBot,
-      collections: searchCollections.map(({ slug }) => slug),
-    });
+    const searchQueries = searchCollections.length
+      ? buildSearchQueries({
+          attachFrogBot,
+          collections: searchCollections.map(({ slug }) => slug),
+        })
+      : undefined;
 
     const graphQL: PayloadConfig['graphQL'] = {
       ...config.graphQL,
-      queries: (graphQLModule, context) => ({
-        ...searchQueries(graphQLModule, context),
-        ...queries?.(graphQLModule, context),
-      }),
+      ...(searchQueries || queries
+        ? {
+            queries: (graphQLModule, context) => ({
+              ...searchQueries?.(graphQLModule, context),
+              ...queries?.(graphQLModule, context),
+            }),
+          }
+        : {}),
+      ...(mutations ? { mutations } : {}),
     };
 
     out.graphQL = graphQL;
@@ -1623,6 +1633,8 @@ export function sanitize(
         wrapCollectionAccess(collection, attachFrogBot);
         coordinateAuthEndpoints({ collection, attachFrogBot });
       }
+
+      hideBuiltInGraphQL(built);
 
       return rewriteComponentPaths(built);
     })

@@ -19,7 +19,9 @@ import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof import('payload')>()),
-  buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
+  buildConfig: vi.fn((config: Record<string, unknown>) =>
+    Promise.resolve({ globals: [], ...config }),
+  ),
   handleEndpoints: vi.fn(),
 }));
 
@@ -792,7 +794,7 @@ describe('frogbot sanitize', () => {
         read: defaultRead,
       };
 
-      return config as never;
+      return { globals: [], ...config } as never;
     });
 
     const result = sanitize(makeConfig());

@@ -6,6 +6,7 @@ export function defaultChatTurnsCollection(): CollectionConfig {
   return {
     slug: CHAT_TURNS_SLUG,
     admin: { hidden: true },
+    graphQL: false,
     access: {
       create: () => false,
       read: () => false,

@@ -11,6 +11,7 @@ export interface LocalPackage {
 }
 
 interface PackageJson {
+  bin?: string | Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   name: string;
@@ -124,7 +125,9 @@ function workspaceDependencies(pkg: PackageJson): string[] {
 }
 
 function publishTargets(pkg: PackageJson): string[] {
-  const targets = new Set<string>();
+  const targets = new Set<string>(
+    typeof pkg.bin === 'string' ? [pkg.bin] : Object.values(pkg.bin ?? {}),
+  );
 
   if (pkg.publishConfig?.main) targets.add(pkg.publishConfig.main);
   if (pkg.publishConfig?.types) targets.add(pkg.publishConfig.types);
@@ -173,9 +176,13 @@ export function packLocalClosure({
   repoRoot: string;
 }): LocalPackage[] {
   const workspace = workspacePackageDirectories(repoRoot);
-  const pending = appDirectories.flatMap((directory) =>
-    Object.keys(readPackage(directory).dependencies ?? {}).filter((name) => workspace.has(name)),
-  );
+  const pending = appDirectories.flatMap((directory) => {
+    const { dependencies, devDependencies } = readPackage(directory);
+
+    return Object.keys({ ...dependencies, ...devDependencies }).filter((name) =>
+      workspace.has(name),
+    );
+  });
   const selected = new Map<string, string>();
 
   while (pending.length > 0) {

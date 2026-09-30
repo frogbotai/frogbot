@@ -143,6 +143,7 @@
                 "group": "GraphQL",
                 "expanded": false,
                 "pages": [
+                  "graphql/enable",
                   "graphql/overview",
                   "graphql/graphql-schema",
                   "graphql/extending"
