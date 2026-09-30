@@ -100,6 +100,7 @@ export function defaultMessagesCollection({
     // the chat write rule, because create access runs before the source is merged.
     disableDuplicate: true,
     admin: {
+      hidden: true,
       icon: 'bubble-chat',
       views: [{ type: 'list', defaultFields: ['chat', 'role', 'createdAt'] }],
     },

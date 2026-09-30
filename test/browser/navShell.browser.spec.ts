@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { createMessage, deleteMessage, type SavedMessage } from './__helpers/messages';
+import { expandSidebar } from './__helpers/sidebar';
 import { signIn } from './__helpers/signIn';
 
 const desktop = { width: 1440, height: 900 };
@@ -29,13 +31,6 @@ const noHorizontalOverflow = async (page: Page) => {
   }));
   expect(scrollWidth).toBe(innerWidth);
 };
-
-async function expandSidebar(page: Page) {
-  if ((await shell(page).getAttribute('data-nav-state')) === 'desktop-nav-closed') {
-    await page.click('button[aria-label="Open sidebar"]');
-    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
-  }
-}
 
 test.describe('nav shell on desktop', () => {
   test.use({ viewport: desktop });
@@ -96,6 +91,66 @@ test.describe('nav shell on desktop', () => {
     await expect(shell(page).getByText('Collections', { exact: true })).toHaveCount(1);
     await expect(shell(page).getByRole('button', { name: 'New Chat' })).toHaveCount(0);
     await expect(page.locator('#frogbot-nav-section-recents')).toHaveCount(0);
+  });
+
+  test('default sidebar has no Messages link', async ({ page }) => {
+    await signIn(page);
+    await expandSidebar(page);
+
+    const collections = page.locator('#frogbot-nav-section-collections');
+
+    await expect(collections.getByRole('link', { name: 'Chats' })).toBeVisible();
+    await expect(collections.getByRole('link', { name: 'Messages' })).toHaveCount(0);
+  });
+
+  test('home page has no Messages card', async ({ page }) => {
+    await signIn(page);
+
+    await expect(page.locator('#card-chats')).toHaveCount(1);
+    await expect(page.locator('#card-messages')).toHaveCount(0);
+  });
+
+  test('Settings > Collections has no Messages card', async ({ page }) => {
+    await signIn(page);
+
+    await page.goto('/settings/collections');
+
+    await expect(page.locator('#card-chats')).toHaveCount(1);
+    await expect(page.locator('#card-messages')).toHaveCount(0);
+  });
+
+  test('messages list URL shows the admin not-found page', async ({ page }) => {
+    await signIn(page);
+
+    await page.goto('/collections/messages');
+
+    await expect(page.locator('.not-found')).toBeVisible();
+  });
+
+  test('messages list URL redirects a signed-out visitor to login', async ({ page }) => {
+    await page.goto('/collections/messages');
+
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test.describe('with a saved message', () => {
+    let saved: SavedMessage;
+
+    test.beforeEach(async ({ page }) => {
+      await signIn(page);
+
+      saved = await createMessage(page);
+    });
+
+    test.afterEach(async ({ page }) => {
+      await deleteMessage(page, saved);
+    });
+
+    test('message document URL shows the admin not-found page', async ({ page }) => {
+      await page.goto(`/collections/messages/${saved.messageId}`);
+
+      await expect(page.locator('.not-found')).toBeVisible();
+    });
   });
 
   test('chats create route opens the chat composer', async ({ page }) => {
