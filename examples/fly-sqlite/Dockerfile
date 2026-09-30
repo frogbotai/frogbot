@@ -10,12 +10,14 @@
 #   no full node_modules -- and starts with plain `node server.js`.
 
 ARG NODE_VERSION=22.17.0
+ARG PNPM_VERSION=11
 FROM node:${NODE_VERSION}-slim AS base
 WORKDIR /app
 
 
 # Install dependencies only when needed
 FROM base AS deps
+ARG PNPM_VERSION
 
 # Packages needed to compile native modules (libsql, sharp) in case prebuilt
 # binaries are unavailable for your platform
@@ -23,11 +25,11 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
 
 # Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* bun.lock* bun.lockb* ./
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* bun.lock* bun.lockb* ./
 RUN \
   if [ -f yarn.lock ]; then corepack enable yarn && yarn --frozen-lockfile; \
   elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm@${PNPM_VERSION} && pnpm i --frozen-lockfile; \
   elif [ -f bun.lock ] || [ -f bun.lockb ]; then echo "This Dockerfile does not support Bun yet. Generate an npm, pnpm, or yarn lockfile to build with Docker." && exit 1; \
   else echo "Lockfile not found." && exit 1; \
   fi
@@ -35,6 +37,7 @@ RUN \
 
 # Rebuild the source code only when needed
 FROM base AS builder
+ARG PNPM_VERSION
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -51,7 +54,7 @@ ENV FROGBOT_SECRET="build-time-placeholder"
 RUN \
   if [ -f yarn.lock ]; then corepack enable yarn && yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm@${PNPM_VERSION} && pnpm run build; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
