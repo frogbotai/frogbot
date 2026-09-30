@@ -92,6 +92,37 @@ body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
   justify-content: flex-end;
 }
 
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__controls-wrapper {
+  padding-left: 48px;
+}
+
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__step-nav-wrapper,
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .step-nav {
+  min-width: 0;
+  overflow: hidden;
+}
+
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
+  .step-nav:has(.step-nav__last)
+  > :not(.step-nav__last) {
+  display: none;
+}
+
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .step-nav__last {
+  max-width: none;
+  min-width: 0;
+}
+
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
+  .app-header__step-nav-wrapper:has(
+    .dashboard-breadcrumb-select,
+    .dashboard-breadcrumb-dropdown__editing
+  ),
+body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
+  .step-nav:has(.dashboard-breadcrumb-select, .dashboard-breadcrumb-dropdown__editing) {
+  overflow: visible;
+}
+
 .frogbot-nav-shell {
   background: var(--theme-bg);
   border-right: 1px solid var(--theme-elevation-100);

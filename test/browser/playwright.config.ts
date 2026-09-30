@@ -212,6 +212,7 @@ export default defineConfig({
         'chatErrors.browser.spec.ts',
         'messagesOverride.browser.spec.ts',
         'breadcrumbs.browser.spec.ts',
+        'topBarPhone.browser.spec.ts',
       ],
       use: {
         ...devices['Desktop Chrome'],

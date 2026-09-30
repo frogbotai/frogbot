@@ -25,7 +25,13 @@ vi.mock('@payloadcms/ui', async () => {
     return createElement(StepNavContext.Provider, { value: { setStepNav, stepNav } }, children);
   };
 
-  return { useStepNav: () => useContext(StepNavContext) };
+  return {
+    useConfig: () => ({ config: { admin: { meta: { titleSuffix: '- FrogBot' } } } }),
+    useStepNav: () => useContext(StepNavContext),
+    useTranslation: () => ({
+      i18n: { fallbackLanguage: 'en', language: 'en', t: (key: string) => key },
+    }),
+  };
 });
 
 vi.mock('next/navigation.js', () => ({ usePathname: () => mocks.pathname }));

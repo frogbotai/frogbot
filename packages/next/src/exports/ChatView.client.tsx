@@ -230,7 +230,7 @@ function ChatStepNavInner({
   });
 
   const loaded = chat !== undefined;
-  const title = chat?.title || 'Untitled';
+  const title = chat?.title?.trim() || 'Untitled';
 
   useEffect(() => {
     const chats = { label: chatsLabel, url: documentPath };

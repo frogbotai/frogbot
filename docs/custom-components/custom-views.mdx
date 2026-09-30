@@ -138,6 +138,14 @@ export function ReportsStepNav() {
 
 Each item takes a `label` and an optional `url`, which turns that segment into a link. In a client component, call `setStepNav` from `useStepNav()` inside a normal `useEffect`, not a `useLayoutEffect`: FrogBot clears the label in a layout effect, so a label set there is cleared again. If a view stays mounted while the path changes, include the path in the effect's dependencies so the label is set again.
 
+The browser tab reads `{last label part} {titleSuffix}` and follows label changes live. The suffix comes from `admin.meta.titleSuffix` and defaults to `- FrogBot`, so this example shows `Reports - FrogBot`. An empty or non-text label keeps the page's default tab title.
+
+On phones with the navigation menu closed, only the last label part shows. Long labels shorten with an ellipsis and leave room for the menu button.
+
+To set the tab title before scripts load, optionally add `meta: { title: 'Reports' }` to the view configuration under `admin.components.views`. Use the same text as the label; FrogBot appends the configured title suffix.
+
+Put page controls in the page body, not in the top bar.
+
 ## Root Views
 
 Root views are scoped directly under the Admin Panel mount. `account` and `dashboard` replace built-in views; any other key can register a new route.

@@ -4,6 +4,8 @@ import { useStepNav } from '@payloadcms/ui';
 import { usePathname } from 'next/navigation.js';
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 
+import { TabTitleSync } from './TabTitleSync.js';
+
 export type StepNavResetProps = {
   children: ReactNode;
 };
@@ -20,5 +22,10 @@ export function StepNavReset({ children }: StepNavResetProps) {
     setStepNav([]);
   }, [pathname, setStepNav]);
 
-  return children;
+  return (
+    <>
+      <TabTitleSync />
+      {children}
+    </>
+  );
 }
