@@ -12,8 +12,12 @@ function ControlledSlider({ initial = 0 }: { initial?: number }) {
   return <Slider aria-label="Reasoning" stops={stops} value={value} onValueChange={setValue} />;
 }
 
-function stopLabels(container: HTMLElement) {
-  return [...container.querySelectorAll('.fb-slider__stop')].map((stop) => stop.textContent);
+function dots(container: HTMLElement) {
+  return [...container.querySelectorAll('.fb-slider__dot')];
+}
+
+function title(container: HTMLElement) {
+  return container.querySelector('.fb-slider__value');
 }
 
 describe('Slider', () => {
@@ -28,10 +32,100 @@ describe('Slider', () => {
     expect(slider.getAttribute('step')).toBe('1');
   });
 
-  it('renders every stop label visibly in order', () => {
+  it('renders one dot per stop and no stop labels', () => {
     const { container } = render(<ControlledSlider />);
 
-    expect(stopLabels(container)).toEqual(stops);
+    expect(dots(container)).toHaveLength(stops.length);
+    expect(dots(container).map((dot) => dot.textContent)).toEqual(['', '', '']);
+    expect(container.querySelector('.fb-slider__stops, .fb-slider__stop')).toBeNull();
+  });
+
+  it('shows the current stop as a title hidden from assistive technology', () => {
+    const { container } = render(<ControlledSlider initial={1} />);
+
+    expect(title(container)?.textContent).toBe('Low');
+    expect(title(container)?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('hides the drawn track from assistive technology', () => {
+    const { container } = render(<ControlledSlider />);
+
+    expect(container.querySelector('.fb-slider__track')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('fills only the dots before the current stop', () => {
+    const { container } = render(<ControlledSlider initial={2} />);
+
+    const filled = dots(container).map((dot) => dot.classList.contains('fb-slider__dot--filled'));
+
+    expect(filled).toEqual([true, true, false]);
+  });
+
+  it('places each dot by its stop index', () => {
+    const { container } = render(<ControlledSlider initial={1} />);
+
+    const indexes = dots(container).map((dot) =>
+      (dot as HTMLElement).style.getPropertyValue('--fb-slider-index'),
+    );
+
+    expect(indexes).toEqual(['0', '1', '2']);
+    expect(
+      (container.firstElementChild as HTMLElement).style.getPropertyValue('--fb-slider-last'),
+    ).toBe('2');
+  });
+
+  it('renders one dot for a single stop without error', () => {
+    const { container } = render(
+      <Slider aria-label="Level" stops={['Default']} value={0} onValueChange={() => undefined} />,
+    );
+
+    expect(dots(container)).toHaveLength(1);
+    expect(title(container)?.textContent).toBe('Default');
+    expect(screen.getByRole('slider').getAttribute('max')).toBe('0');
+  });
+
+  it('shows an empty title for a value outside the stops', () => {
+    const { container } = render(
+      <Slider aria-label="Level" stops={stops} value={5} onValueChange={() => undefined} />,
+    );
+
+    expect(title(container)?.textContent).toBe('');
+    expect(dots(container)).toHaveLength(stops.length);
+    expect(screen.getByRole('slider')).toBeTruthy();
+  });
+
+  it.each([
+    [5, '1'],
+    [-1, '0'],
+  ])('clamps the fill for the out-of-range value %i to %s', (value, progress) => {
+    const { container } = render(
+      <Slider aria-label="Level" stops={stops} value={value} onValueChange={() => undefined} />,
+    );
+
+    expect(
+      (container.firstElementChild as HTMLElement).style.getPropertyValue('--fb-slider-progress'),
+    ).toBe(progress);
+  });
+
+  it('re-lays out the dots when the stops change', () => {
+    const { container, rerender } = render(
+      <Slider aria-label="Level" stops={stops} value={2} onValueChange={() => undefined} />,
+    );
+
+    rerender(
+      <Slider
+        aria-label="Level"
+        stops={['Default', 'High']}
+        value={1}
+        onValueChange={() => undefined}
+      />,
+    );
+
+    expect(dots(container)).toHaveLength(2);
+    expect(
+      (container.firstElementChild as HTMLElement).style.getPropertyValue('--fb-slider-last'),
+    ).toBe('1');
+    expect(screen.getByRole('slider').getAttribute('max')).toBe('1');
   });
 
   it('announces the current stop label as the value text', () => {
@@ -40,12 +134,12 @@ describe('Slider', () => {
     expect(screen.getByRole('slider').getAttribute('aria-valuetext')).toBe('High · 16k');
   });
 
-  it('marks only the current stop label as active', () => {
-    const { container } = render(<ControlledSlider initial={1} />);
+  it('updates the title after a controlled change', () => {
+    const { container } = render(<ControlledSlider />);
 
-    const active = container.querySelectorAll('.fb-slider__stop--active');
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '2' } });
 
-    expect([...active].map((stop) => stop.textContent)).toEqual(['Low']);
+    expect(title(container)?.textContent).toBe('High · 16k');
   });
 
   it('reports the chosen stop index when the value changes', () => {
@@ -88,9 +182,9 @@ describe('Slider', () => {
     expect(slider.disabled).toBe(true);
   });
 
-  it('hides the visible stop labels from assistive technology', () => {
-    const { container } = render(<ControlledSlider />);
+  it('names the range input with the caller aria-label', () => {
+    render(<Slider aria-label="Effort" stops={stops} value={0} onValueChange={() => undefined} />);
 
-    expect(container.querySelector('.fb-slider__stops')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByRole('slider', { name: 'Effort' }).getAttribute('type')).toBe('range');
   });
 });

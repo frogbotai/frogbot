@@ -138,11 +138,9 @@
 .fb-model-selector__reasoning {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem 0.625rem;
+  padding: 0.25rem 0.75rem 0.75rem;
 }
 
-.fb-model-selector__caption,
 .fb-model-selector__group-label {
   color: var(--theme-base-600);
   font-size: var(--fb-text-xs);

@@ -132,8 +132,6 @@ function ModelSelectorControls({
   onOpenList: () => void;
   onLevelChange: (index: number) => void;
 }) {
-  const captionId = useId();
-
   return (
     <>
       <button
@@ -148,11 +146,8 @@ function ModelSelectorControls({
       </button>
       {stops.length > 1 ? (
         <div className="fb-model-selector__reasoning">
-          <span id={captionId} className="fb-model-selector__caption">
-            Reasoning
-          </span>
           <Slider
-            aria-labelledby={captionId}
+            aria-label="Reasoning"
             stops={stops}
             value={level}
             onValueChange={onLevelChange}

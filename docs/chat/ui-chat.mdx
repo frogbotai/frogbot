@@ -151,7 +151,7 @@ export function AgentChat() {
 }
 ```
 
-`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. It is fully controlled and renders nothing when `models` is empty.
+`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. The reasoning slider shows the active level's name above a track with one dot per level. It is fully controlled and renders nothing when `models` is empty.
 
 Each row starts with its provider's logo. Logos ship with FrogBot, so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
 

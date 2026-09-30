@@ -224,6 +224,7 @@ export default defineConfig({
     {
       name: 'question-firefox',
       testMatch: [
+        'reasoningSelector.browser.spec.ts',
         'modelSelector.browser.spec.ts',
         'breadcrumbs.browser.spec.ts',
         'topBarPhone.browser.spec.ts',
@@ -236,6 +237,7 @@ export default defineConfig({
     {
       name: 'question-webkit',
       testMatch: [
+        'reasoningSelector.browser.spec.ts',
         'modelSelector.browser.spec.ts',
         'breadcrumbs.browser.spec.ts',
         'topBarPhone.browser.spec.ts',

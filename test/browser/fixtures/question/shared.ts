@@ -10,6 +10,19 @@ export const pickerAgentSlug = 'picker';
 export const modelPort = 3128;
 export const chatPicksPreference = 'frogbot-chat-picks';
 export const turnsSlug = 'frogbot-chat-turns';
+export const sliderPath = '/slider';
+export const sliderFrameWidth = 288;
+
+export const reasoningModels = {
+  deliberator: 'deliberator',
+  sprinter: 'sprinter',
+  verbose: 'verbose',
+};
+
+export const deliberatorEfforts = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
+export const deliberatorLevels = ['Default', 'Off', 'Low', 'Medium', 'High', 'Extra High', 'Max'];
+export const verboseEffort = 'exhaustive-multi-pass-deliberation';
+export const verboseLevel = 'Exhaustive-multi-pass-deliberation';
 
 export const channelQuestion = {
   header: 'Target',

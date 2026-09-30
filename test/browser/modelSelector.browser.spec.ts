@@ -252,14 +252,20 @@ test('custom models show their ID as the name with the fallback icon', async ({ 
 
   const rows = list.locator('.fb-model-selector__option');
 
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(5);
   await expect(rows.locator('.fb-model-selector__option-name')).toHaveText([
     'questioner',
+    'deliberator',
+    'sprinter',
     'thinker',
+    'verbose',
   ]);
   await expect(rows.nth(0)).toHaveAttribute('title', 'browser/questioner');
-  await expect(rows.nth(1)).toHaveAttribute('title', 'browser/thinker');
-  await expect(rows.locator('svg.lucide-sparkle-icon')).toHaveCount(2);
+  await expect(rows.nth(1)).toHaveAttribute('title', 'browser/deliberator');
+  await expect(rows.nth(2)).toHaveAttribute('title', 'browser/sprinter');
+  await expect(rows.nth(3)).toHaveAttribute('title', 'browser/thinker');
+  await expect(rows.nth(4)).toHaveAttribute('title', 'browser/verbose');
+  await expect(rows.locator('svg.lucide-sparkle-icon')).toHaveCount(5);
   await expect(rows.locator('.fb-model-selector__option-id')).toHaveCount(0);
 });
 
@@ -336,7 +342,10 @@ test('logos render while offline, with the fallback for custom models', async ({
   expect(logos.filter(({ logos, paths }) => logos !== 1 || paths === 0)).toEqual([]);
   expect(logos.filter(({ fallback }) => fallback).map(({ id }) => id)).toEqual([
     'browser/questioner',
+    'browser/deliberator',
+    'browser/sprinter',
     'browser/thinker',
+    'browser/verbose',
   ]);
 });
 

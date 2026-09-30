@@ -86,7 +86,18 @@ function openTrigger() {
 }
 
 function stopLabels() {
-  return [...document.querySelectorAll('.fb-slider__stop')].map((stop) => stop.textContent);
+  const slider = screen.getByRole('slider', { name: 'Reasoning' }) as HTMLInputElement;
+  const initial = slider.value;
+
+  const labels = Array.from({ length: Number(slider.max) + 1 }, (_, index) => {
+    fireEvent.change(slider, { target: { value: String(index) } });
+
+    return slider.getAttribute('aria-valuetext');
+  });
+
+  fireEvent.change(slider, { target: { value: initial } });
+
+  return labels;
 }
 
 async function openList(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -744,6 +755,22 @@ describe('ModelSelector', () => {
     expect(screen.getByRole('slider', { name: 'Reasoning' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'GPT-5, change model' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Claude Opus' })).toBeNull();
+  });
+
+  it('the controls show the active level as the only text above the slider', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness initialReasoning="low" />);
+
+    await user.click(trigger());
+
+    const card = document.querySelector('.fb-model-selector__reasoning') as HTMLElement;
+
+    expect(card.textContent).toBe('Low');
+    expect(screen.queryByText('Reasoning')).toBeNull();
+    expect(screen.getByRole('slider', { name: 'Reasoning' }).getAttribute('aria-valuetext')).toBe(
+      'Low',
+    );
   });
 
   it('focuses the model name button when the popover opens', async () => {

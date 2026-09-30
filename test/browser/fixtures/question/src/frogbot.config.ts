@@ -8,15 +8,18 @@ import {
   channelQuestion,
   chatPicksPreference,
   chatsSlug,
+  deliberatorEfforts,
   insightsPath,
   messagesSlug,
   modelPort,
   pickerAgentSlug,
+  reasoningModels,
   reportsPath,
   robotSettings,
   tasksSlug,
   turnsSlug,
   usersSlug,
+  verboseEffort,
 } from '../shared';
 
 export default buildConfig({
@@ -85,6 +88,21 @@ export default buildConfig({
             mode: 'chat',
             reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
           },
+          {
+            id: reasoningModels.deliberator,
+            mode: 'chat',
+            reasoningOptions: [{ type: 'effort', values: deliberatorEfforts }],
+          },
+          {
+            id: reasoningModels.sprinter,
+            mode: 'chat',
+            reasoningOptions: [{ type: 'effort', values: ['high'] }],
+          },
+          {
+            id: reasoningModels.verbose,
+            mode: 'chat',
+            reasoningOptions: [{ type: 'effort', values: [verboseEffort] }],
+          },
         ],
       },
     },
@@ -95,7 +113,11 @@ export default buildConfig({
       profile: { name: 'Questioner agent' },
       model: {
         default: 'browser/questioner' as AgentModelId,
-        options: ['browser/questioner', 'browser/thinker'] as AgentModelId[],
+        options: [
+          'browser/questioner',
+          'browser/thinker',
+          ...Object.values(reasoningModels).map((id) => `browser/${id}`),
+        ] as AgentModelId[],
       },
       instructions: 'Ask before acting.',
       access: ({ req }) => Boolean(req.user),
