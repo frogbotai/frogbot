@@ -4,7 +4,7 @@ import { useIsMobile } from '@frogbotai/ui';
 import { useNav, usePreferences, useRouteTransition } from '@payloadcms/ui';
 import { usePathname, useRouter } from 'next/navigation.js';
 import { PREFERENCE_KEYS } from 'payload/shared';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 
 import type { AppSidebarNavItem } from './AppSidebar.js';
 import { AppSidebar } from './AppSidebar.js';
@@ -62,11 +62,17 @@ export function FrogBotNavClient({
   const { startRouteTransition } = useRouteTransition();
   const { hydrated, navOpen, navRef, setNavOpen } = useNav();
   const isMobile = useIsMobile();
-  const navState = getNavShellState(isMobile, navOpen);
 
-  useEffect(() => {
-    if (!isMobile && initialOpen !== undefined) setNavOpen(initialOpen);
-  }, [initialOpen, isMobile, setNavOpen]);
+  const [desktopOpen, setDesktopOpen] = useState(() =>
+    hydrated && !isMobile ? navOpen : (initialOpen ?? true),
+  );
+
+  const open = isMobile ? navOpen : desktopOpen;
+  const navState = getNavShellState(isMobile, open);
+
+  useLayoutEffect(() => {
+    if (hydrated && !isMobile && navOpen !== desktopOpen) setNavOpen(desktopOpen);
+  }, [desktopOpen, hydrated, isMobile, navOpen, setNavOpen]);
 
   useEffect(() => {
     if (isMobile) setNavOpen(false);
@@ -118,11 +124,18 @@ export function FrogBotNavClient({
                 else startRouteTransition(() => router.push(path));
               }}
               onToggle={() => {
-                const open = !navOpen;
-                setNavOpen(open);
-                void setPreference(PREFERENCE_KEYS.NAV, { open }, true);
+                if (isMobile) {
+                  setNavOpen(!navOpen);
+                  return;
+                }
+
+                const next = !desktopOpen;
+
+                setDesktopOpen(next);
+                setNavOpen(next);
+                void setPreference(PREFERENCE_KEYS.NAV, { open: next }, true);
               }}
-              open={navOpen}
+              open={open}
               sections={sections}
               settingsPath={settingsPath}
             />
