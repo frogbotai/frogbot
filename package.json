@@ -35,6 +35,7 @@
     "sync:catalog": "node scripts/sync-catalog.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:docs-fences": "node scripts/check-docs-fences.mjs",
+    "check:docs-references": "node scripts/check-docs-references.mjs",
     "check:dist-imports": "node scripts/check-dist-imports.mjs",
     "check:single-frogbot": "node scripts/check-single-frogbot.mjs",
     "check:docs-links": "node scripts/check-docs-links.mjs",

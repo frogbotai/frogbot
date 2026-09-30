@@ -10,6 +10,7 @@ import { jobsRun } from './jobsRun.js';
 import { loadEnv } from './loadEnv.js';
 import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
+import { runScript } from './run.js';
 import { start } from './start.js';
 
 type Command = (args: string[], command: string) => Promise<unknown> | unknown;
@@ -19,6 +20,7 @@ const runMigrate: Command = (args, command) => migrate([command, ...args]);
 const commands: Record<string, Command> = {
   start: (args) => start(args),
   dev: (args) => dev(args),
+  run: (args) => runScript(args),
   'generate:types': () => generateTypes(),
   'generate:piece-types': (args) => generatePieceTypesCommand(args),
   'pieces:port': (args) => piecesPort(args),
@@ -41,18 +43,16 @@ export async function bin() {
 
   const command = process.argv[2]?.toLowerCase();
   const args = process.argv.slice(3);
-  const run = command && Object.hasOwn(commands, command) ? commands[command] : undefined;
+  const handler = command && Object.hasOwn(commands, command) ? commands[command] : undefined;
 
-  if (!command || !run) {
-    console.error(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
-    );
+  if (!command || !handler) {
+    console.error(`[frogbot] usage: frogbot <${Object.keys(commands).join('|')}>`);
 
     process.exit(2);
   }
 
   try {
-    await run(args, command);
+    await handler(args, command);
   } catch (error) {
     console.error(formatCliError(error));
 

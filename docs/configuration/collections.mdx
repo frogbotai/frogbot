@@ -155,28 +155,6 @@ When `orderable` is enabled, FrogBot uses [fractional indexing](https://observab
 
 Orderable can also be added to [join fields](/fields/join).
 
-#### Fractional indexing
-
-If you need to generate order keys programmatically (e.g., when creating documents via the Local API with a specific order), you can import the utilities directly:
-
-```ts
-import { generateKeyBetween, generateNKeysBetween } from 'frogbot/shared'
-
-// Generate a key between two existing keys (or null for start/end)
-const newKey = generateKeyBetween('a0', 'a1')
-
-// Generate a key at the start (before 'a0')
-const startKey = generateKeyBetween(null, 'a0')
-
-// Generate a key at the end (after 'a1')
-const endKey = generateKeyBetween('a1', null)
-
-// Generate multiple keys between two existing keys
-const keys = generateNKeysBetween('a0', 'a1', 5)
-```
-
-These utilities are useful when you need fine-grained control over document ordering, such as inserting documents at specific positions or batch-creating documents with predetermined order.
-
 ## Admin Options
 
 The behavior of Collections within the Admin Panel can be customized to fit the needs of your application. This includes grouping or hiding their navigation links, adding custom components, selecting which fields to display in the List View, and more.

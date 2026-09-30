@@ -126,10 +126,10 @@ Use `initPageResult.req.user` and `initPageResult.permissions` for authorization
 
 ### Top-bar label
 
-FrogBot clears the top-bar label every time the admin path changes. A view that sets no label shows only the logo, never the label of the page the user came from. To show a label, render `SetStepNav` from `@frogbotai/ui/client` anywhere in the view, for example inside `DefaultTemplate` in the view above:
+FrogBot clears the top-bar label every time the admin path changes. A view that sets no label shows only the logo, never the label of the page the user came from. To show a label, render `SetStepNav` from `@frogbotai/ui` anywhere in the view, for example inside `DefaultTemplate` in the view above:
 
 ```tsx
-import { SetStepNav } from '@frogbotai/ui/client'
+import { SetStepNav } from '@frogbotai/ui'
 
 export function ReportsStepNav() {
   return <SetStepNav nav={[{ label: 'Reports' }]} />
