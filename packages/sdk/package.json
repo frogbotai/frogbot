@@ -21,19 +21,30 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "sideEffects": false,
   "dependencies": {
+    "qs-esm": "8.0.1"
+  },
+  "peerDependencies": {
     "frogbot": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "frogbot": {
+      "optional": true
+    }
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "test": "vitest run --root ../.. --project=unit test/unit/sdk/index.spec.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && pnpm typecheck:types",
+    "typecheck:types": "tsc --noEmit -p ../../test/types/sdk/tsconfig.generated.json && tsc --noEmit -p ../../test/types/sdk/tsconfig.fallback.json"
   },
   "devDependencies": {
+    "frogbot": "workspace:*",
     "typescript": "5.6.2",
     "vitest": "4.1.2"
   },

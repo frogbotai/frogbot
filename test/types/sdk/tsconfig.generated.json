@@ -1,0 +1,7 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["generated.test-d.ts", "drift.test-d.ts", "../../sdk/frogbot-types.ts"]
+}

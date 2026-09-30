@@ -1618,10 +1618,13 @@ importers:
 
   packages/sdk:
     dependencies:
+      qs-esm:
+        specifier: 8.0.1
+        version: 8.0.1
+    devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
-    devDependencies:
       typescript:
         specifier: 5.6.2
         version: 5.6.2
@@ -2083,6 +2086,9 @@ importers:
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../packages/richtext-lexical
+      '@frogbotai/sdk':
+        specifier: workspace:*
+        version: link:../packages/sdk
       '@frogbotai/storage-azure':
         specifier: workspace:*
         version: link:../packages/storage-azure
@@ -2113,6 +2119,9 @@ importers:
       '@payloadcms/kv-redis':
         specifier: 3.90.1
         version: 3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+      '@payloadcms/sdk':
+        specifier: 3.90.1
+        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
       '@types/node':
         specifier: ^22.9.1
         version: 22.20.1
@@ -6621,6 +6630,12 @@ packages:
       payload: 3.90.1
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
+
+  '@payloadcms/sdk@3.90.1':
+    resolution:
+      {
+        integrity: sha512-YMrf98wSM2SAYxhU8/NRMeqpcnPOl7KOX7Kfz2PQ1nvQEkGs5Hd6qfr8X8+RwM3/JhZfSbBC/CacpRY+LdKPbA==,
+      }
 
   '@payloadcms/storage-azure@3.90.1':
     resolution:
@@ -11800,7 +11815,6 @@ packages:
       {
         integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==,
       }
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:
@@ -18942,6 +18956,18 @@ snapshots:
       - typescript
       - utf-8-validate
       - yjs
+
+  '@payloadcms/sdk@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)':
+    dependencies:
+      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      qs-esm: 8.0.1
+      ts-essentials: 10.0.3(typescript@5.6.2)
+    transitivePeerDependencies:
+      - bufferutil
+      - graphql
+      - supports-color
+      - typescript
+      - utf-8-validate
 
   '@payloadcms/storage-azure@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
     dependencies:
