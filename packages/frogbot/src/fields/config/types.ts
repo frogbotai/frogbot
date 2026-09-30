@@ -1,5 +1,6 @@
 import type {
   ArrayField as PayloadArrayField,
+  BaseValidateOptions as PayloadBaseValidateOptions,
   Block as PayloadBlock,
   BlocksField as PayloadBlocksField,
   CheckboxField as PayloadCheckboxField,
@@ -7,6 +8,8 @@ import type {
   CollapsibleField as PayloadCollapsibleField,
   DateField as PayloadDateField,
   EmailField as PayloadEmailField,
+  FieldBase as PayloadFieldBase,
+  FieldHookArgs as PayloadFieldHookArgs,
   JoinField as PayloadJoinField,
   JSONField as PayloadJSONField,
   NamedGroupField as PayloadNamedGroupField,
@@ -15,10 +18,8 @@ import type {
   PointField as PayloadPointField,
   RadioField as PayloadRadioField,
   RelationshipField as PayloadRelationshipField,
-  RequestContext,
   RichTextField as PayloadRichTextField,
   RowField as PayloadRowField,
-  SanitizedCollectionConfig,
   SelectField as PayloadSelectField,
   TabAsField as PayloadTabAsField,
   TabsField as PayloadTabsField,
@@ -55,47 +56,41 @@ import {
 } from 'payload/shared';
 
 import type { FieldAccess } from '../../collections/config/types.js';
-import type { FrogBotRequest } from '../../types/request.js';
+import type { FrogBotArgs, FrogBotRequest } from '../../types/request.js';
 
-export interface FieldHookArgs<TData extends TypeWithID = any, TValue = any, TSiblingData = any> {
-  collection: null | SanitizedCollectionConfig;
-  context: RequestContext;
-  data?: Partial<TData>;
-  field: any;
-  operation?: 'create' | 'delete' | 'read' | 'update';
-  originalDoc?: TData;
-  overrideAccess?: boolean;
-  previousDoc?: TData;
-  previousSiblingDoc?: TSiblingData;
-  previousValue?: TValue;
+export interface FieldHookArgs<
+  TData extends TypeWithID = any,
+  TValue = any,
+  TSiblingData = any,
+> extends Omit<
+  PayloadFieldHookArgs<TData, TValue, TSiblingData>,
+  'req' | 'field' | 'siblingFields'
+> {
   req: FrogBotRequest;
-  siblingData: Partial<TSiblingData>;
+  field: FieldAffectingData;
   siblingFields?: (Field | TabAsField)[];
-  value?: TValue;
 }
 
 export type FieldHook<TData extends TypeWithID = any, TValue = any, TSiblingData = any> = (
   args: FieldHookArgs<TData, TValue, TSiblingData>,
 ) => Promise<TValue> | TValue;
 
-export type ValidateOptions<TData = any, TSiblingData = any, TValue = any> = {
-  data: Partial<TData>;
-  event?: 'onChange' | 'submit';
-  id?: number | string;
-  operation?: 'create' | 'update';
-  path: (number | string)[];
-  previousValue?: TValue;
-  req: FrogBotRequest;
-  required?: boolean;
-  siblingData: Partial<TSiblingData>;
-};
+export type ValidateOptions<
+  TData = any,
+  TSiblingData = any,
+  TFieldConfig extends object = object,
+  TValue = any,
+> = FrogBotArgs<PayloadBaseValidateOptions<TData, TSiblingData, TValue>> & TFieldConfig;
 
-export type Validate<TValue = any, TData = any, TSiblingData = any> = (
+export type Validate<
+  TValue = any,
+  TData = any,
+  TSiblingData = any,
+  TFieldConfig extends object = object,
+> = (
   value: null | TValue | undefined,
-  options: ValidateOptions<TData, TSiblingData, TValue>,
+  options: ValidateOptions<TData, TSiblingData, TFieldConfig, TValue>,
 ) => Promise<string | true> | string | true;
-
-type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 
 type FieldHookWithSiblingFields = (
   args: FieldHookArgs & { siblingFields: (Field | TabAsField)[] },
@@ -103,11 +98,14 @@ type FieldHookWithSiblingFields = (
 
 type FieldHooks = {
   hooks?: {
+    [
+      TPhase in Exclude<keyof NonNullable<PayloadFieldBase['hooks']>, 'afterChange'>
+    ]?: FieldHookWithSiblingFields[];
+  } & {
+    // Payload types siblingFields as required, but never passes it to afterChange hooks
+    // (afterChange/traverseFields.ts forwards it without setting it from `fields`).
+    // Make it required here once Payload fixes that.
     afterChange?: FieldHook[];
-    afterRead?: FieldHookWithSiblingFields[];
-    beforeChange?: FieldHookWithSiblingFields[];
-    beforeDuplicate?: FieldHookWithSiblingFields[];
-    beforeValidate?: FieldHookWithSiblingFields[];
   };
 };
 
@@ -119,14 +117,13 @@ type FieldAccessConfig = {
   };
 };
 
-type FieldValidateConfig = {
-  validate?: Validate;
-};
+type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 
 type RetypedField<T> = DistributiveOmit<T, 'access' | 'hooks' | 'validate'> &
   FieldHooks &
-  FieldAccessConfig &
-  FieldValidateConfig;
+  FieldAccessConfig & {
+    validate?: Validate<any, any, any, Omit<T, 'access' | 'hooks' | 'validate'>>;
+  };
 
 interface FieldContainer {
   fields: Field[];

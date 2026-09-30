@@ -19,3 +19,5 @@ export interface FrogBotRequest extends Omit<PayloadRequest, 'payload' | 'user'>
   user: TypedUser | null;
   frogbot: FrogBot;
 }
+
+export type FrogBotArgs<TArgs> = Omit<TArgs, 'req'> & { req: FrogBotRequest };

@@ -7,12 +7,6 @@ import { resolveConfig } from '../../../../../utilities/resolveConfig.js';
 import { getFrogBotPopulateFn } from '../../../utilities/frogbotPopulateFn.js';
 
 type Args = Parameters<typeof upstreamLexicalHTMLField>[0];
-type AfterReadArgs = FieldHookArgs & {
-  currentDepth?: number;
-  depth?: number;
-  draft?: boolean;
-  showHiddenFields?: boolean;
-};
 
 export function lexicalHTMLField(args: Args): Field {
   const { converters, hidden = true, htmlFieldName, lexicalFieldName, storeInDB = false } = args;
@@ -24,7 +18,7 @@ export function lexicalHTMLField(args: Args): Field {
     req,
     showHiddenFields,
     siblingData,
-  }: AfterReadArgs) => {
+  }: FieldHookArgs) => {
     const data = siblingData[lexicalFieldName] as SerializedEditorState | undefined;
 
     if (!data) return '';
