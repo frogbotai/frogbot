@@ -100,7 +100,12 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'fr') | ('en' | 'fr')[];
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('en' | 'fr')
+    | ('en' | 'fr')[];
   globals: {};
   globalsSelect: {};
   locale: 'en' | 'fr';

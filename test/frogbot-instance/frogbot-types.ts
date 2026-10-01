@@ -69,14 +69,20 @@ export interface Config {
   collections: {
     posts: Post;
     users: User;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
+    'frogbot-waitpoints': FrogbotWaitpoint;
+    files: File;
   };
   collectionsJoins: {};
   collectionsSelect: {
     posts: PostsSelect;
     users: UsersSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
+    'frogbot-waitpoints': FrogbotWaitpointsSelect;
+    files: FilesSelect;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -87,7 +93,14 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -114,7 +127,7 @@ export interface UserAuthOperations {
  * via the `definition` "posts".
  */
 export interface Post {
-  id: string;
+  id: number;
   title: string;
   content?: string | null;
   status?: ('draft' | 'published') | null;
@@ -127,7 +140,7 @@ export interface Post {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
   name?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -136,6 +149,7 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -147,6 +161,94 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-trigger-subscriptions".
+ */
+export interface FrogbotTriggerSubscription {
+  id: number;
+  agent: string;
+  piece: string;
+  instance: string;
+  trigger: string;
+  inputHash: string;
+  input:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  state?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  webhookUrl?: string | null;
+  status: 'active' | 'error';
+  cleanupPending?: boolean | null;
+  enablePending?: boolean | null;
+  enableAttempt?: string | null;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-waitpoints".
+ */
+export interface FrogbotWaitpoint {
+  id: number;
+  jobId: string;
+  holder?: (number | null) | null;
+  name: string;
+  token: string;
+  kind: 'delay' | 'resumable';
+  ready: boolean;
+  status: 'pending' | 'resumed' | 'expired';
+  expiresAt?: string | null;
+  until?: string | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  dispatched: boolean;
+  dispatchOwner?: string | null;
+  dispatchLeaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files".
+ */
+export interface File {
+  id: number;
+  folder?: (number | null) | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -173,6 +275,7 @@ export interface UsersSelect {
   resetPasswordExpiration?: boolean;
   salt?: boolean;
   hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
   loginAttempts?: boolean;
   lockUntil?: boolean;
   sessions?:
@@ -182,6 +285,67 @@ export interface UsersSelect {
         createdAt?: boolean;
         expiresAt?: boolean;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-trigger-subscriptions_select".
+ */
+export interface FrogbotTriggerSubscriptionsSelect {
+  agent?: boolean;
+  piece?: boolean;
+  instance?: boolean;
+  trigger?: boolean;
+  inputHash?: boolean;
+  input?: boolean;
+  state?: boolean;
+  webhookUrl?: boolean;
+  status?: boolean;
+  cleanupPending?: boolean;
+  enablePending?: boolean;
+  enableAttempt?: boolean;
+  expiresAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-waitpoints_select".
+ */
+export interface FrogbotWaitpointsSelect {
+  jobId?: boolean;
+  holder?: boolean;
+  name?: boolean;
+  token?: boolean;
+  kind?: boolean;
+  ready?: boolean;
+  status?: boolean;
+  expiresAt?: boolean;
+  until?: boolean;
+  data?: boolean;
+  dispatched?: boolean;
+  dispatchOwner?: boolean;
+  dispatchLeaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files_select".
+ */
+export interface FilesSelect {
+  folder?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -195,6 +359,22 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-sweep-jobs".
+ */
+export interface TaskFrogbotSweepJobs {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-cleanup-kv".
+ */
+export interface TaskFrogbotCleanupKv {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
@@ -205,5 +385,6 @@ declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
     models: never;
+    roles: never;
   }
 }

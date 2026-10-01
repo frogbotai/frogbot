@@ -72,8 +72,8 @@ export interface Config {
     'undefined-slug-field-posts': UndefinedSlugFieldPost;
     'draft-field-posts': DraftFieldPost;
     'nested-fields': NestedField;
-    'frogbot-trigger-subscriptions': FrogBotTriggerSubscription;
-    'frogbot-waitpoints': FrogBotWaitpoint;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
+    'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
     users: User;
   };
@@ -84,8 +84,8 @@ export interface Config {
     'undefined-slug-field-posts': UndefinedSlugFieldPostsSelect;
     'draft-field-posts': DraftFieldPostsSelect;
     'nested-fields': NestedFieldsSelect;
-    'frogbot-trigger-subscriptions': FrogBotTriggerSubscriptionsSelect;
-    'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
+    'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
     users: UsersSelect;
   };
@@ -102,8 +102,8 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
-      'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
+      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -226,7 +226,7 @@ export interface NestedField {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface FrogBotTriggerSubscription {
+export interface FrogbotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -264,7 +264,7 @@ export interface FrogBotTriggerSubscription {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
-export interface FrogBotWaitpoint {
+export interface FrogbotWaitpoint {
   id: number;
   jobId: string;
   holder?: (number | null) | null;
@@ -423,7 +423,7 @@ export interface NestedFieldsSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface FrogBotTriggerSubscriptionsSelect {
+export interface FrogbotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;
@@ -444,7 +444,7 @@ export interface FrogBotTriggerSubscriptionsSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
-export interface FrogBotWaitpointsSelect {
+export interface FrogbotWaitpointsSelect {
   jobId?: boolean;
   holder?: boolean;
   name?: boolean;
@@ -516,17 +516,17 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBot-sweep-jobs".
+ * via the `definition` "TaskFrogbot-sweep-jobs".
  */
-export interface TaskFrogBotSweepJobs {
+export interface TaskFrogbotSweepJobs {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBot-cleanup-kv".
+ * via the `definition` "TaskFrogbot-cleanup-kv".
  */
-export interface TaskFrogBotCleanupKv {
+export interface TaskFrogbotCleanupKv {
   input?: unknown;
   output?: unknown;
 }
