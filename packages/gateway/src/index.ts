@@ -48,3 +48,7 @@ export { calculateModelCostUSD } from './providers/cost.js';
 export type { ReasoningVariant, ResolveReasoningVariantsArgs } from './providers/reasoning.js';
 export { resolveReasoningVariants } from './providers/reasoning.js';
 export { canonicalizeModelId, providerKeyEnvVar } from './providers/registry.js';
+
+// Transcription option translation, shared with in-process callers
+export type { ToTranscriptionLanguageOptionsArgs } from './routes/transcriptions/translators/index.js';
+export { toTranscriptionLanguageOptions } from './routes/transcriptions/translators/index.js';

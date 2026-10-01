@@ -123,4 +123,42 @@ describe('transcriptionsRoute', () => {
     expect(emptyRes.status).toBe(400);
     expect(await emptyRes.json()).toHaveProperty('error.param', 'model');
   });
+
+  it.each([
+    ['openai', { openai: { language: 'fr' } }],
+    ['groq', { groq: { language: 'fr' } }],
+    ['assemblyai', { assemblyai: { languageCode: 'fr' } }],
+    ['elevenlabs', { elevenlabs: { languageCode: 'fr' } }],
+    ['google', { google: { languageCodes: ['fr'] } }],
+    ['vertex', { vertex: { languageCodes: ['fr'] } }],
+  ])('sends language in the option %s reads', async (providerName, providerOptions) => {
+    const doGenerate = vi.fn(async () => ({
+      text: 'Bonjour',
+      segments: [],
+      language: 'fr',
+      durationInSeconds: 1,
+      warnings: [],
+      response: { timestamp: new Date(0), modelId: 'stt' },
+    }));
+
+    const app = createApp({
+      registry: {
+        [providerName]: new MockProviderV4({
+          transcriptionModels: { stt: new MockTranscriptionModelV4({ doGenerate }) },
+        }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const form = new FormData();
+    form.set('model', `${providerName}/stt`);
+    form.set('file', new File([new Uint8Array([1, 2, 3])], 'audio.wav', { type: 'audio/wav' }));
+    form.set('language', 'fr');
+
+    const res = await app.request('/v1/audio/transcriptions', { method: 'POST', body: form });
+
+    expect(res.status).toBe(200);
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ audio: new Uint8Array([1, 2, 3]), providerOptions }),
+    );
+  });
 });

@@ -1,6 +1,7 @@
 import type { JSONValue } from 'ai';
 
 import type { TranscriptionRequest } from '../schema.js';
+import { toTranscriptionLanguageOptions } from './toTranscriptionLanguageOptions.js';
 
 export type TranscribeParams = {
   audio: Uint8Array;
@@ -14,10 +15,11 @@ export type ToTranscribeParamsArgs = {
 
 export async function toTranscribeParams(args: ToTranscribeParamsArgs): Promise<TranscribeParams> {
   const { body, providerName } = args;
-  const options: Record<string, JSONValue> = {};
-  if (body.language != null) {
-    options[providerName === 'assemblyai' ? 'languageCode' : 'language'] = body.language;
-  }
+  const options: Record<string, JSONValue> =
+    body.language == null
+      ? {}
+      : toTranscriptionLanguageOptions({ providerName, language: body.language });
+
   if (body.prompt != null) {
     options[providerName === 'gladia' ? 'contextPrompt' : 'prompt'] = body.prompt;
   }

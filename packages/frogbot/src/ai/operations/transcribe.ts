@@ -1,7 +1,7 @@
 // transcribe operation — audio-to-text transcription via AI SDK.
 // Uses ProxyTranscriptionModel pointed at the proxy URL.
 
-import type { Gateway } from '@frogbotai/gateway';
+import { type Gateway, toTranscriptionLanguageOptions } from '@frogbotai/gateway';
 import { transcribe as aiTranscribe } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
@@ -9,7 +9,7 @@ import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
-import type { SanitizedAIConfig, TranscribeOpts } from '../types.js';
+import type { SanitizedAIConfig, TranscribeAudio, TranscribeOpts } from '../types.js';
 
 export type TranscribeDeps = {
   gateway: Gateway;
@@ -22,7 +22,16 @@ export async function transcribeOperation(
   opts: TranscribeOpts,
 ): Promise<Awaited<ReturnType<typeof aiTranscribe>>> {
   const { gateway, config } = deps;
-  const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
+  const {
+    model: input,
+    req,
+    overrideAccess,
+    audio,
+    language,
+    providerOptions,
+    ...aiSdkOpts
+  } = opts;
+
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model.
@@ -39,6 +48,20 @@ export async function transcribeOperation(
     });
   }
 
+  const audioData = await toAudioData(audio);
+  const providerName = modelId.slice(0, modelId.indexOf('/'));
+
+  const resolvedProviderOptions =
+    language == null
+      ? providerOptions
+      : {
+          ...providerOptions,
+          [providerName]: {
+            ...toTranscriptionLanguageOptions({ providerName, language }),
+            ...(providerOptions?.[providerName] as Record<string, unknown> | undefined),
+          },
+        };
+
   const op = gateway.operation({
     operation: 'transcriptions',
     model: modelId,
@@ -49,6 +72,8 @@ export async function transcribeOperation(
   try {
     const result = await aiTranscribe({
       ...aiSdkOpts,
+      audio: audioData,
+      providerOptions: resolvedProviderOptions,
       model: op.transcribeModel(),
     } as unknown as Parameters<typeof aiTranscribe>[0]);
     await op.finish();
@@ -57,4 +82,14 @@ export async function transcribeOperation(
     await op.finish({ error });
     throw error;
   }
+}
+
+async function toAudioData(audio: TranscribeAudio) {
+  if (audio instanceof Blob) return new Uint8Array(await audio.arrayBuffer());
+
+  if (audio instanceof ReadableStream) {
+    return new Uint8Array(await new Response(audio).arrayBuffer());
+  }
+
+  return audio;
 }
