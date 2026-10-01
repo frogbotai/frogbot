@@ -39,7 +39,7 @@ export function useReview() {
 }
 ```
 
-See [Building Custom Components](/custom-components/overview#building-custom-components) for component path and client boundary details.
+See [Building Custom Components](/custom-components/overview#building-custom-components) for component path and client boundary details. Providers nest in array order, with the first entry outermost; `providers` is listed with the other root slots in [Root Components](/custom-components/root-components#config-options).
 
 <Warning>
   React Context is available to Client Components. Keep server-only work in a

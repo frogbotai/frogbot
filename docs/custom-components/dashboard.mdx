@@ -45,13 +45,25 @@ export default buildConfig({
 })
 ```
 
-| Property | Type | Description |
-| --- | --- | --- |
-| `slug` | `string` | Unique widget identifier. |
-| `Component` | `FrogBotComponent` | Component Path, including optional `#ExportName`. |
-| `fields` | `Field[]` | Form fields shown in the edit drawer. |
-| `minWidth` | `WidgetWidth` | Smallest allowed width. Defaults to `x-small`. |
-| `maxWidth` | `WidgetWidth` | Largest allowed width. Defaults to `full`. |
+## Dashboard options
+
+`admin.dashboard` is a `DashboardConfig`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `widgets` | `Widget[]` | Required | Widgets users can add to the dashboard. The built-in `collections` widget is always available in addition to these. |
+| `defaultLayout` | `WidgetInstance[] \| ({ req }) => WidgetInstance[] \| Promise<WidgetInstance[]>` | One full-width `collections` widget | Layout shown until a user saves their own. The function receives the current `FrogBotRequest`. See [Default Layout](#default-layout). |
+
+Each entry in `widgets` is a `Widget`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Unique widget identifier, referenced by `widgetSlug` in layouts. |
+| `Component` | `FrogBotComponent` | Required | Component Path, including optional `#ExportName`. The component receives [`WidgetServerProps`](#widget-component-props). |
+| `label` | `string \| Record<string, string> \| ({ i18n, t }) => string` | `slug` | Name shown in the Add widget drawer. The widget edit drawer shows a string label and falls back to `slug` otherwise. |
+| `fields` | `Field[]` | None | Form fields shown in the edit drawer. Saved values are passed to the component as `widgetData`. |
+| `minWidth` | `WidgetWidth` | `'x-small'` | Smallest width offered by the resize controls. |
+| `maxWidth` | `WidgetWidth` | `'full'` | Largest width offered by the resize controls. |
 
 `WidgetWidth` is `'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full'`.
 
@@ -86,6 +98,18 @@ Use FrogBot theme tokens in the widget stylesheet:
   padding: 1rem;
 }
 ```
+
+### Widget component props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Required | The current request. The FrogBot instance is available at `req.frogbot`. |
+| `widgetSlug` | `string` | Required | Slug of the widget being rendered. [Generated widget types](#generated-widget-types) narrow it to the widget's slug. |
+| `widgetData` | `Record<string, unknown>` | Optional | Values saved from the widget's `fields`, or the `data` from its layout item. Generated widget types narrow it to the widget's data shape. |
+| `permissions` | `SanitizedPermissions` | Required | The current user's permissions. |
+| `user` | `UntypedUser \| null` | Optional | The signed-in user. |
+| `locale` | `Locale` | Optional | The current content locale when localization is enabled. |
+| `cookies` | `Map<string, string>` | Required | Cookies sent with the request. |
 
 ## Default Layout
 
@@ -142,11 +166,11 @@ export default buildConfig({
 
 Each layout item is a `WidgetInstance`:
 
-| Property | Type | Description |
-| --- | --- | --- |
-| `widgetSlug` | `string` | Slug of the registered widget. |
-| `data` | `object` | Initial values passed as `widgetData`. |
-| `width` | `WidgetWidth` | Initial width, constrained by the widget definition. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `widgetSlug` | `string` | Required | Slug of the registered widget. |
+| `width` | `WidgetWidth` | Required | Initial width. It is used as given; `minWidth` and `maxWidth` only limit the resize controls. |
+| `data` | `Record<string, unknown>` | None | Initial values passed to the component as `widgetData` and shown in the edit drawer. |
 
 ## Generated Widget Types
 

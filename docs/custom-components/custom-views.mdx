@@ -63,14 +63,18 @@ export default buildConfig({
 })
 ```
 
-| Property | Description |
-| --- | --- |
-| `Component` | Component Path rendered for the route. |
-| `path` | Route beginning with `/`. |
-| `exact` | Match only the exact pathname. |
-| `strict` | Require trailing slashes to match. |
-| `sensitive` | Match path casing. |
-| `meta` | Override Admin Panel page metadata. |
+### View options
+
+Each `admin.components.views` entry is an `AdminViewConfig`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Component` | `FrogBotComponent` | Required | Component rendered for the route. It receives [`AdminViewServerProps`](#building-custom-views). |
+| `path` | `` `/${string}` `` | None | Route relative to the admin route, beginning with `/`. Dynamic segments such as `/reports/:id` are supported. Required for new views; without it the view never matches. `account` and `dashboard` replacements keep their built-in routes when it is omitted. |
+| `exact` | `boolean` | `false` | Match only the exact pathname. Without it, the view also matches nested paths such as `/reports/2024`. |
+| `strict` | `boolean` | `false` | Treat a trailing slash as significant when matching. |
+| `sensitive` | `boolean` | `false` | Match path casing. |
+| `meta` | Page metadata | Root `admin.meta` | Metadata for this route, merged over the root [page metadata](/admin/overview#page-metadata). |
 
 Routes cascade. Without `exact`, a route also matches paths that begin with its path. Register a more specific nested route before its parent route.
 

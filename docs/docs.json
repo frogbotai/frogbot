@@ -166,7 +166,7 @@
           {
             "group": "Features",
             "pages": [
-              { "group": "Admin", "expanded": false, "pages": ["admin/admin-navigation", "admin/collection-board", "admin/collection-calendar"]},
+              { "group": "Admin", "expanded": false, "pages": ["admin/overview", "admin/admin-navigation", "admin/collection-board", "admin/collection-calendar"]},
               { "group": "Authentication", "expanded": false, "pages": ["authentication/overview", "authentication/sign-in", "authentication/operations", "authentication/jwt", "authentication/cookies", "authentication/email", "authentication/api-keys", "authentication/token-data", "authentication/custom-strategies"]},
               { "group": "Upload", "expanded": false, "pages": ["upload/overview", "upload/storage-adapters", "upload/files"]},
               { "group": "Jobs Queue", "expanded": false, "pages": ["jobs-queue/overview", "jobs-queue/workers"]},

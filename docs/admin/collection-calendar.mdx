@@ -23,6 +23,7 @@ See the complete [Collection views reference](/configuration/collections#collect
 | `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to every calendar query. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial query sort. Prefix a field with `-` for descending order. |
 | `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
+| `pagination` | `ViewPagination` | No | Accepted for consistency with other views, but calendar views ignore it. Each visible range loads at most 1000 events. |
 | `access` | `({ req }) => boolean \| Promise<boolean>` | No; collection access | Controls whether the current user can open the calendar without replacing collection operation access. |
 | `components` | `ViewComponents & CalendarComponents` | No | Configures shared view slots and calendar components. |
 

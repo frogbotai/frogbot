@@ -25,28 +25,40 @@ export default buildConfig({
 
 ## Config Options
 
-| Path | Description |
-| --- | --- |
-| `actions` | Components at the top right of the Admin Panel. |
-| `beforeLogin`, `afterLogin` | Components around the login fields. |
-| `beforeNavLinks`, `afterNavLinks` | Components around sidebar links and sections. |
-| `beforeBottomRail`, `afterBottomRail` | Components around Account and Settings in the sidebar rail. |
-| `beforeSidebarClose` | Components to the left of the sidebar collapse button. |
-| `beforeAccountMenu`, `afterAccountMenu` | Items above and below Settings in the account menu. |
-| `settingsMenu` | Items after `afterAccountMenu` in the account menu. |
-| `logout.Button` | Replaces the account menu's Log out item. |
-| `chat.Chat` | Replaces the chat surface. |
-| `chat.Greeting` | Replaces the empty-chat greeting. |
-| `chat.AssistantMessageActions` | Replaces assistant message actions. |
-| `chat.UserMessageActions` | Replaces user message actions. |
-| `graphics.Icon`, `graphics.Logo` | Replace Admin Panel branding. |
-| `Nav` | Replaces the complete sidebar navigation. |
-| `navItems` | Adds links above collections. |
-| `navSections` | Replaces the default Collections section. |
-| `providers` | Wraps the Admin Panel with custom React context providers. |
-| `views` | Replaces, modifies, or adds top-level routes. |
+`admin.components` is the `RootAdminComponents` type. The other root `admin` options are listed in [Admin panel](/admin/overview#admin-options).
 
-See [Custom Providers](./custom-providers), [Custom Views](./custom-views), and [Dashboard](./dashboard) for those larger extension points.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `actions` | `FrogBotComponent[]` | `[]` | Components at the top right of the Admin Panel, in array order. |
+| `beforeLogin` | `FrogBotComponent[]` | `[]` | Components before the login form's email and password fields. |
+| `afterLogin` | `FrogBotComponent[]` | `[]` | Components after the login form's fields. When the user collection configures `auth.signIn`, FrogBot appends its sign-in buttons after your components. |
+| `beforeNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar above the nav links. |
+| `afterNavLinks` | `FrogBotComponent[]` | `[]` | Components in the sidebar below the nav links and sections. |
+| `beforeBottomRail` | `FrogBotComponent[]` | `[]` | Components in the bottom sidebar rail, above Account and Settings. |
+| `afterBottomRail` | `FrogBotComponent[]` | `[]` | Components in the bottom sidebar rail, below Account and Settings. |
+| `beforeSidebarClose` | `FrogBotComponent[]` | `[]` | Components in the expanded sidebar header, left of the collapse button. |
+| `beforeAccountMenu` | `FrogBotComponent[]` | `[]` | Account menu items above Settings. |
+| `afterAccountMenu` | `FrogBotComponent[]` | `[]` | Account menu items below Settings. |
+| `settingsMenu` | `FrogBotComponent[]` | `[]` | Account menu items after `afterAccountMenu`. |
+| `logout` | `{ Button?: FrogBotComponent }` | Built-in Log out item | `Button` replaces the account menu's Log out item. |
+| `chat` | `{ Chat?, Greeting?, AssistantMessageActions?, UserMessageActions? }` | Built-in chat components | Admin chat slots; each value is a `FrogBotComponent`. See [Chat](#chat). |
+| `graphics` | `{ Icon?: FrogBotComponent, Logo?: FrogBotComponent }` | FrogBot head mark and wordmark | `Icon` replaces the compact mark in navigation. `Logo` replaces the full mark on the login page and the empty-chat greeting fallback. |
+| `Nav` | `FrogBotComponent` | FrogBot sidebar | Replaces the complete sidebar navigation. See [Replace the sidebar](/admin/admin-navigation#replace-the-sidebar). |
+| `navItems` | `NavItem[]` | `[]` | Links above your collections. See [Navigation item options](/admin/admin-navigation#navigation-item-options). |
+| `navSections` | `FrogBotComponent[]` | `['@frogbotai/next#CollectionsSection']` | Sidebar sections below the links. Setting it replaces the default array. See [Configure sections](/admin/admin-navigation#configure-sections). |
+| `providers` | `ProviderComponent[]` | `[]` | Components that wrap the Admin Panel and render `children`, outermost first. See [Custom Providers](./custom-providers). |
+| `views` | `Record<string, AdminViewConfig>` | Built-in views, plus a `settings` view at `/settings` | Replaces built-in root views (`account`, `dashboard`, `settings`) or adds routes under any other key. See [View options](./custom-views#view-options). |
+
+The `chat` slots are:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Chat` | `FrogBotComponent` | Built-in conversation surface | Replaces the complete chat surface. |
+| `Greeting` | `FrogBotComponent` | Built-in greeting | Replaces the empty-chat greeting. It receives `avatar`, `logo`, `name`, and `userName`. |
+| `AssistantMessageActions` | `FrogBotComponent` | Built-in actions | Replaces the controls under assistant messages. |
+| `UserMessageActions` | `FrogBotComponent` | Built-in actions | Replaces the controls under user messages. |
+
+See [Chat persistence](/chat/overview#customize-admin-chat-components) for the props each chat slot receives. See [Custom Providers](./custom-providers), [Custom Views](./custom-views), and [Dashboard](./dashboard) for those larger extension points.
 
 ## Components
 
@@ -173,7 +185,23 @@ export function SupportLink({ req, user }: RootComponentServerProps) {
 }
 ```
 
-The props include `i18n`, `locale`, `params`, `permissions`, `searchParams`, `user`, and `visibleEntities`. `req` is optional:
+Root component props:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Optional | The current request. Use `req?.frogbot` to reach FrogBot. Not passed to login page components. |
+| `user` | `UntypedUser` | Optional | The signed-in user, or `undefined` when nobody is signed in. Use `req.user` for authorization decisions. |
+| `permissions` | `SanitizedPermissions` | Optional | The current user's collection and admin permissions. |
+| `visibleEntities` | `VisibleEntities` | Optional | Slugs of the collections visible to the current user. |
+| `i18n` | `I18nClient` | Required | Translation helpers and the current admin language. |
+| `locale` | `Locale` | Optional | The current content locale when localization is enabled. |
+| `params` | `Params` | Optional | Route parameters of the current admin page. |
+| `searchParams` | `Params` | Optional | Query string parameters of the current admin page. |
+| `viewType` | `ViewTypes` | Optional | The kind of view being rendered, such as `'list'` or `'document'`. |
+| `documentSubViewType` | `DocumentSubViewTypes` | Optional | The document sub-view, such as `'default'` or `'versions'`, on document routes. |
+| `id` | `string \| number` | Optional | Part of the shared type; the built-in root slots don't set it. |
+
+`req` is optional:
 
 - Sidebar, account menu, top bar, and custom `Nav` components receive `req`. Use `req?.frogbot` to reach FrogBot.
 - Login page components (`beforeLogin`, `afterLogin`, and `graphics.Logo`) don't receive `req`. Use `getCachedFrogBot()` from `frogbot` instead.

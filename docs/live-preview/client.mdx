@@ -13,16 +13,17 @@ The Admin Panel sends a `window.postMessage` event whenever document form state 
 
 FrogBot provides `useLivePreview` integrations for React and Vue. Other frameworks can use the framework-independent package described in [Building your own hook](#building-your-own-hook).
 
-| Path               | Description                                                                    |
-| ------------------ | ------------------------------------------------------------------------------ |
-| **`serverURL`** \* | The URL of your FrogBot server.                                                |
-| **`initialData`**  | The initial document data. Live form data is merged into it.                   |
-| **`depth`**        | The relationship population depth. Defaults to `0`.                            |
-| **`apiRoute`**     | The configured API route. Defaults to `/api`.                                  |
+`useLivePreview` accepts these options:
 
-_\* Required._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `serverURL` | `string` | Required | Origin of your FrogBot server, such as `https://cms.example.com`. Messages from any other origin are ignored. |
+| `initialData` | `T` | Required | The document data fetched for the first render. It is returned until the first update arrives. |
+| `depth` | `number` | The server's `defaultDepth` (`2` unless configured) | Relationship population depth for each update. |
+| `apiRoute` | `string` | `'/api'` | Your FrogBot REST API route, used to populate updates. |
+| `requestHandler` | `CollectionPopulationRequestHandler` | A `fetch` with `credentials: 'include'` | Replaces the request that populates each update, for example to route it through your own middleware. See [Custom population requests](#custom-population-requests). |
 
-The hooks return `data`, containing the merged document, and `isLoading`, indicating whether an update is being populated.
+The hooks return `data`, the latest populated document, and `isLoading`, which is `true` until the first update arrives. The Vue composable returns both as refs.
 
 <Note>
   Guard against required fields being removed while editing. Use conditional rendering, optional chaining, or defaults instead of assuming nested data always exists.
@@ -94,12 +95,27 @@ const { data } = useLivePreview<Page>({
 npm install @frogbotai/live-preview
 ```
 
-| Path                     | Description                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------ |
-| **`subscribe`**          | Listens for Admin Panel messages and returns merged document data to a callback.      |
-| **`unsubscribe`**        | Removes a subscription to Admin Panel messages.                                      |
-| **`ready`**              | Tells the Admin Panel that the frontend is ready to receive messages.                 |
-| **`isLivePreviewEvent`** | Checks whether a message contains Live Preview form state.                            |
+| Export | Description |
+| --- | --- |
+| `subscribe(options)` | Listens for Admin Panel messages, populates each update, and passes the merged document to `callback`. Returns the listener to pass to `unsubscribe`. |
+| `unsubscribe(listener)` | Removes a listener returned by `subscribe`. |
+| `ready({ serverURL })` | Tells the Admin Panel that the frontend is ready to receive messages. It posts to the parent frame, or to the opening window when the preview runs in a separate window. |
+| `isLivePreviewEvent(event, serverURL)` | Returns whether a `MessageEvent` came from `serverURL` and contains Live Preview form state. |
+| `handleMessage(options)` | Populates one message event and returns the merged document. `subscribe` calls it for you. It accepts the `subscribe` options with `event` in place of `callback`. |
+| `mergeData(options)` | Sends unsaved form data to the server and returns the populated document. `handleMessage` calls it for you. |
+
+`subscribe` accepts these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `serverURL` | `string` | Required | Origin of your FrogBot server. Messages from any other origin are ignored. |
+| `initialData` | `T` | Required | The document data fetched for the first render. |
+| `callback` | `(data: T) => void` | Required | Receives the merged document after each update. |
+| `depth` | `number` | The server's `defaultDepth` (`2` unless configured) | Relationship population depth for each update. |
+| `apiRoute` | `string` | `'/api'` | Your FrogBot REST API route. |
+| `requestHandler` | `CollectionPopulationRequestHandler` | A `fetch` with `credentials: 'include'` | Replaces the population request. See [Custom population requests](#custom-population-requests). |
+
+Each call to `subscribe` resets the merged data cached by an earlier subscription, so a new page doesn't inherit the previous page's changes.
 
 ```tsx
 import { ready, subscribe, unsubscribe } from '@frogbotai/live-preview'
@@ -140,6 +156,32 @@ export function useLivePreview<T>({
   return { data, isLoading }
 }
 ```
+
+### Custom population requests
+
+Each update is sent back to your FrogBot server so relationships and uploads can be populated to `depth`. Pass `requestHandler` to change how that request is made. It must return a `Response` whose JSON body is the populated document.
+
+```ts
+import type { CollectionPopulationRequestHandler } from '@frogbotai/live-preview'
+
+export const requestHandler: CollectionPopulationRequestHandler = ({ apiPath, data, endpoint, serverURL }) =>
+  fetch(`${serverURL}${apiPath}/${endpoint}`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-HTTP-Method-Override': 'GET',
+    },
+  })
+```
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `serverURL` | `string` | The `serverURL` you passed. |
+| `apiPath` | `string` | The `apiRoute` you passed, or `'/api'`. |
+| `endpoint` | `string` | Path of the document below the API route, such as `pages/123`. |
+| `data` | `{ data, depth, flattenLocales: false, locale }` | Request body: the unsaved form data, the population depth, and the edited locale. |
 
 ## Troubleshooting
 
