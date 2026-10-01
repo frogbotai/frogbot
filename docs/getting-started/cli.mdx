@@ -1,0 +1,78 @@
+---
+title: "CLI"
+sidebarTitle: "CLI"
+description: "Every frogbot command, its arguments, and where each one is documented."
+keywords: ["CLI", "frogbot dev", "frogbot start", "frogbot run", "commands"]
+---
+
+The `frogbot` package installs a `frogbot` command. Run it from your app's root directory through your package manager, for example `pnpm frogbot dev` or `npx frogbot dev`.
+
+```bash
+pnpm frogbot generate:types
+```
+
+Before any command runs, `frogbot` loads `.env*` files from the current directory with Next.js environment-loading rules: development files unless `NODE_ENV` is `production`. Commands that load your app find `frogbot.config.{ts,js,mjs}` in the current directory, its `src` folder, or a parent directory, or at the path in `FROGBOT_CONFIG_PATH`. Command names are not case-sensitive. A missing or unknown command prints the list of commands and exits with code `2`. A command that fails prints the error and exits with code `1`.
+
+## Commands
+
+| Command | Arguments | Description |
+| --- | --- | --- |
+| `dev` | Next.js `dev` arguments | Generates the admin import map, then starts the Next.js development server. See [`dev` and `start`](#dev-and-start). |
+| `start` | Next.js `start` arguments | Warns when the admin import map is stale, then starts the Next.js production server. See [`dev` and `start`](#dev-and-start). |
+| `run` | `<file> [args...]` | Runs a TypeScript or JavaScript file with your app's environment and config alias. See [Outside Next.js](/local-api/outside-nextjs). |
+| `generate:types` | — | Writes `frogbot-types.ts` from your config. See [Generating types](/typescript/generating-types). |
+| `generate:importmap` | — | Writes the admin import map for the custom components your config references. See [Custom components](/custom-components/overview). |
+| `generate:piece-types` | `<module> --export <factory> --output <file> [--check]` | Writes the TypeScript types for a piece's actions and triggers. See [Generate piece types](#generate-piece-types). |
+| `pieces:port` | `<slug>` | Prepares a piece package in the FrogBot repository for porting. See [Port a piece](#port-a-piece). |
+| `jobs:run` | `--cron`, `--limit`, `--queue`, `--all-queues`, `--handle-schedules` | Runs a long-lived jobs worker without Next.js. See [Workers](/jobs-queue/workers). |
+| `channels:run` | — | Holds chat-channel gateway connections, such as Discord's, in their own process. See [Discord](/pieces/discord). |
+| `export:training-data` | `--output`, `--where`, `--page-size` | Exports chats as JSONL training data. See [Training data](/chat/training-data). |
+| `export:captures` | `--output`, `--user`, `--api-key`, `--from`, `--to`, `--operation` | Exports captured AI calls. See [Capture](/plugins/capture). |
+| `migrate` | — | Applies pending database migrations. See [Migrations](/database/migrations). |
+| `migrate:create` | `[name]`, `--name`, `--file`, `--skip-empty`, `--force-accept-warning` | Creates a migration from the current schema. See [Migrations](/database/migrations). |
+| `migrate:status` | — | Lists applied and pending migrations. See [Migrations](/database/migrations). |
+| `migrate:down` | — | Rolls back the last batch of migrations. See [Migrations](/database/migrations). |
+| `migrate:refresh` | — | Rolls back every migration, then applies them all again. See [Migrations](/database/migrations). |
+| `migrate:reset` | — | Rolls back every migration. See [Migrations](/database/migrations). |
+| `migrate:fresh` | `--force-accept-warning` | Drops every table, then applies all migrations. See [Migrations](/database/migrations). |
+
+## `dev` and `start`
+
+```bash
+frogbot dev --port 4000
+```
+
+`frogbot dev` regenerates the admin import map, then runs `next dev`. `frogbot start` checks the import map without writing it, prints a warning to run `frogbot generate:importmap` when it's out of date, then runs `next start`. Set `admin.importMap.autoGenerate` to `false` to skip the import map step in both commands.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| Any Next.js argument | Next.js `dev` or `start` arguments | — | Passed to Next.js unchanged, for example `--port 4000` or `--turbopack`. |
+
+Both commands need a `next.config.{ts,mjs,js,cjs}` file and the `next` package in the current directory. `start` with a `next.config.ts` also needs the `typescript` package installed, because Next.js compiles the file at startup. The command exits with Next.js's exit code and forwards `SIGINT` and `SIGTERM` to it.
+
+## Generate piece types
+
+```bash
+frogbot generate:piece-types src/index.ts --export createResend --output src/piece-types.ts
+```
+
+`frogbot generate:piece-types` loads a piece factory and writes the input and output types of its actions and triggers, formatted with your Prettier config. Piece packages use it to type their own action code.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `<module>` | file path | Required | Module that exports the piece factory, resolved from the current directory. |
+| `--export` | export name | Required | Name of the piece factory export, such as `createResend`. |
+| `--output` | file path | Required | File to write. It's left untouched when the content hasn't changed. |
+| `--check` | flag | off | Fails with `Piece types are stale` instead of writing when the file is out of date. Use it in CI. |
+
+## Port a piece
+
+```bash
+frogbot pieces:port google-sheets
+```
+
+`frogbot pieces:port` is a tool for FrogBot contributors, run from the root of the FrogBot repository. It moves `packages/pieces/piece-<slug>` and its `test/unit/piece-<slug>` tests to `.legacy` folders, then writes a native piece package and test skeleton in their place for porting the upstream integration. It fails without changes when the piece package, its installed upstream source, or `packages/pieces/PORTING.md` is missing, or when a `.legacy` folder already exists.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `<slug>` | lowercase letters, numbers, and single dashes | Required | Piece slug, such as `google-sheets`. |

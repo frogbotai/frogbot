@@ -81,6 +81,10 @@ app.post('/v1/*', (c) =>
 
 This argument only exists on the in-process call — wire traffic hitting the gateway directly can never set it.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `context` | `Record<string, unknown>` | `{}` | Initial value of the `context` bag that every hook phase of this request receives. |
+
 ---
 
 ## Selective route mounting
@@ -102,3 +106,42 @@ const model = gw.chatModel('anthropic/claude-sonnet-4-5')
 ```
 
 `gw.operation({ operation, ... })` exposes the full lifecycle (model resolution, hooks, usage aggregation) for building custom in-process call sites — see [Hooks](/gateway/hooks).
+
+```ts
+import { generateText } from 'ai'
+
+const op = gw.operation({
+  operation: 'chat.completions',
+  model: 'anthropic/claude-sonnet-4-5',
+  context: { userId: 'user-123' }
+})
+
+await op.start()
+
+try {
+  await generateText({ model: op.chatModel(), prompt: 'Hello' })
+} finally {
+  await op.finish()
+}
+```
+
+`gw.operation` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `operation` | `'chat.completions' \| 'messages' \| 'responses' \| 'embeddings' \| 'images' \| 'speech' \| 'transcriptions' \| 'videos' \| 'rerank' \| 'evaluate'` | Required | The `operation` value every hook receives. |
+| `model` | `string` | Required | Canonical `<provider>/<model>` ID. The text before the first `/` becomes the hooks' `provider`. |
+| `context` | `Record<string, unknown>` | `{}` | Initial value of the `context` bag shared by every phase. |
+| `request` | `Request` | — | The HTTP request the operation came from, passed to `beforeOperation`. Omit it for calls that don't start from a request. |
+
+The returned operation has one `requestId` and `context` for the whole lifecycle:
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `requestId` | `string` | The operation's `req_<uuid>` ID. |
+| `context` | `Record<string, unknown>` | The shared hook context bag. |
+| `start()` | `() => Promise<void>` | Runs `beforeOperation` hooks. A throwing hook rejects the promise; call it before any model call. |
+| `finish(result?)` | `(result?: { finishReason?: string; usage?: HookUsage; error?: unknown }) => Promise<void>` | Runs `afterOperation` hooks once; later calls do nothing. Values you pass replace the finish reason, summed usage, and last error collected from the model calls. |
+| `chatModel()`, `embedModel()`, `imageModel()`, `videoModel()`, `speechModel()`, `transcribeModel()`, `rerankModel()`, `evaluationModel()` | `() => Model` | Resolve `model` as an AI SDK model of that kind. Each call through it runs `beforeUpstream`, then `afterUpstream` or `afterError`, with the operation's `requestId` and `context`. |
+
+`gw.operation` runs only the hooks in your config. The gateway's built-in logging, tracing, and metrics hooks run on HTTP requests, not on in-process operations.

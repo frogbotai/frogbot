@@ -36,15 +36,108 @@ const gw = createGateway({
 
 ## Phases
 
-| Phase | Runs |
-| --- | --- |
-| `beforeOperation` | Once, before the AI SDK call. `request` is present for HTTP-originated calls, absent for in-process calls. |
-| `beforeUpstream` | Before each model call, including evaluation's `doEvaluate` — once per round of a tool loop. |
-| `afterUpstream` | After each successful model call. |
-| `afterError` | After a failed model call, with `failedPhase` naming where it happened. |
-| `afterOperation` | Once, when the operation succeeds, fails, or is aborted — with `usage` aggregated across every round. |
+The `hooks` option takes one array per phase. Every key is optional.
 
-Every phase shares `requestId`, `operation`, `startedAt`, a mutable `context` bag, and mutable `otel` attributes (flushed to spans and metrics — low-cardinality only, no user or session IDs).
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `beforeOperation` | `BeforeOperationHook[]` | — | Runs once, before the AI SDK call. `request` is present for HTTP-originated calls, absent for in-process calls. A throw rejects the call. |
+| `beforeUpstream` | `BeforeUpstreamHook[]` | — | Runs before each model call, including evaluation's `doEvaluate` — once per round of a tool loop. |
+| `afterUpstream` | `AfterUpstreamHook[]` | — | Runs after each successful model call. |
+| `afterError` | `AfterErrorHook[]` | — | Runs after a failed model call, with `failedPhase` naming where it happened. |
+| `afterOperation` | `AfterOperationHook[]` | — | Runs once, when the operation succeeds, fails, or is aborted — with `usage` aggregated across every round. |
+
+Each hook receives one argument object and may return a promise; the gateway awaits it before running the next hook. Every phase shares `requestId`, `operation`, `startedAt`, a mutable `context` bag, and mutable `otel` attributes. See [Hook arguments](#hook-arguments) for every field.
+
+---
+
+## Hook arguments
+
+Every phase receives these fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `phase` | `'beforeOperation' \| 'beforeUpstream' \| 'afterUpstream' \| 'afterError' \| 'afterOperation'` | The phase that is running. |
+| `requestId` | `string` | ID shared by every phase of one operation, in the form `req_<uuid>`. HTTP responses return it in the `x-request-id` header. The gateway always creates its own and ignores an incoming `x-request-id`. |
+| `operation` | `'chat.completions' \| 'messages' \| 'responses' \| 'embeddings' \| 'images' \| 'speech' \| 'transcriptions' \| 'videos' \| 'rerank' \| 'evaluate'` | The kind of call. |
+| `startedAt` | `number` | When the operation started, in milliseconds since the Unix epoch. |
+| `context` | `Record<string, unknown>` | Mutable bag shared across every phase of the operation. Seed it with the handler's [`context` option](/gateway/embedding#seed-hook-context-from-a-request). |
+| `otel` | `Attributes` (OpenTelemetry) | Mutable attributes added to the operation's spans and metrics. Every entry becomes a metric dimension, so use low-cardinality values only — no user or session IDs. |
+
+Every phase except `beforeOperation` also receives:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `model` | `string` | The model ID the caller requested, such as `anthropic/claude-sonnet-4-5`. |
+| `provider` | `string` | The provider key the model resolved to, such as `anthropic`. |
+
+The remaining fields depend on the phase.
+
+### `beforeOperation`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `request` | `Request \| undefined` | The incoming HTTP request. Absent for in-process calls. |
+
+### `beforeUpstream`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `resolvedModel` | `LanguageModelV3 \| LanguageModelV4 \| undefined` | The AI SDK model about to be called. Present on the language routes (chat, messages, responses) and in-process language calls. |
+| `messages` | `unknown[] \| undefined` | The prompt messages. Mutable in place. Present on the language routes only. |
+| `system` | `string \| { type: 'text'; text: string; cache_control?: { type: string; ttl?: string \| null } \| null }[] \| undefined` | The system prompt, including any `cache_control` markers. Read-only: it's already part of `messages`. |
+| `tools` | `Record<string, unknown> \| undefined` | The request's tools. Read-only. |
+| `params` | `LanguageParams \| undefined` | Sampling settings. Mutable in place. Present on the language routes only. See [`LanguageParams`](#languageparams). |
+| `headers` | `Headers` | Headers sent to the provider. Mutable on every route. |
+| `providerOptions` | `Record<string, Record<string, unknown>>` | Provider options, keyed by provider namespace. Mutable on every route. |
+
+### `afterUpstream`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `finishReason` | `string \| undefined` | Why the model stopped, such as `stop` or `length`, when the operation reports one. |
+| `usage` | `HookUsage \| undefined` | Token usage for this call. See [`HookUsage`](#hookusage). |
+| `response` | `unknown` | The AI SDK's response metadata for the call. Its shape depends on the operation. |
+| `warnings` | `unknown[] \| undefined` | Warnings the provider returned, when the operation reports them. |
+
+### `afterError`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `failedPhase` | `'beforeOperation' \| 'beforeUpstream' \| 'upstream' \| 'afterUpstream' \| 'afterError' \| 'afterOperation'` | Where the failure happened. `upstream` means the provider call itself failed. |
+| `error` | `unknown` | The error that was thrown. |
+
+### `afterOperation`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `finishReason` | `string \| undefined` | The last finish reason reported. |
+| `usage` | `HookUsage \| undefined` | Token usage summed across every round. See [`HookUsage`](#hookusage). |
+| `durationMs` | `number` | Milliseconds from `startedAt` to the end of the operation. |
+| `error` | `unknown` | The error the operation failed with. Absent on success. |
+
+### `HookUsage`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `inputTokens` | `number` | Input tokens. |
+| `outputTokens` | `number` | Output tokens. |
+| `totalTokens` | `number` | Input plus output tokens. |
+| `cachedInputTokens` | `number \| undefined` | Part of `inputTokens` read from a provider cache, when reported. |
+| `cacheWriteTokens` | `number \| undefined` | Part of `inputTokens` written to a provider cache, when reported. |
+| `reasoningTokens` | `number \| undefined` | Part of `outputTokens` spent on reasoning, when reported. |
+
+### `LanguageParams`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `temperature` | `number \| undefined` | Sampling temperature. |
+| `topP` | `number \| undefined` | Nucleus sampling cutoff. |
+| `topK` | `number \| undefined` | Top-K sampling cutoff. |
+| `maxOutputTokens` | `number \| undefined` | Maximum tokens to generate. |
+| `stopSequences` | `string[] \| undefined` | Sequences that end generation. |
+| `presencePenalty` | `number \| undefined` | Presence penalty. |
+| `frequencyPenalty` | `number \| undefined` | Frequency penalty. |
+| `seed` | `number \| undefined` | Seed for deterministic sampling, where the provider supports it. |
 
 ---
 

@@ -19,7 +19,7 @@ const gw = createGateway({
 })
 ```
 
-Or configure the built-in console logger directly:
+Or configure the built-in console logger directly. It writes one JSON line per entry and defaults to the `LOG_LEVEL` environment variable, or `info`:
 
 ```ts
 createGateway({
@@ -27,6 +27,8 @@ createGateway({
   logger: { level: 'debug' }
 })
 ```
+
+See [Config options](/gateway/configuration#config-options) for the accepted `logger` values.
 
 ---
 
@@ -58,7 +60,17 @@ await flush()
 
 Omit `endpoint` to fall back to the exporter's own env handling: `OTEL_EXPORTER_OTLP_ENDPOINT` (with `/v1/traces` appended) or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` verbatim.
 
-The CLI calls `setupTracing` automatically when `OTEL_EXPORTER_OTLP_ENDPOINT` is set — no extra setup needed for the standalone server.
+`setupTracing` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `endpoint` | `string` | From `OTEL_EXPORTER_OTLP_*` env vars | Full OTLP/HTTP traces URL, used as is. |
+| `shutdownTimeoutMs` | `number` | `10000` | How long the returned `flush` function waits for each exporter to flush before shutting it down anyway. |
+| `metrics` | `{ endpoint?: string; exportIntervalMs?: number } \| false` | Metrics on, with the defaults below | Metrics exporter options, or `false` to skip metrics. See [Metrics](#metrics). |
+
+It also registers a global async context manager and labels exports with `service.name` `@frogbotai/gateway`, the package version, a per-process instance ID, and `NODE_ENV` as the environment; `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES` override them. Only the first call in a process takes effect; later calls log a warning and return a no-op `flush`.
+
+The CLI calls `setupTracing` automatically when `tracing.endpoint`, `OTEL_EXPORTER_OTLP_ENDPOINT`, or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` is set — no extra setup needed for the standalone server.
 
 <Warning>
   `@opentelemetry/*` packages are optional peer dependencies. If a tracing endpoint is configured but the peers aren't installed, the CLI reports which packages to add rather than crashing on boot.
@@ -74,6 +86,13 @@ setupTracing({
   metrics: { endpoint: 'http://otel-collector:4318/v1/metrics' }
 })
 ```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `endpoint` | `string` | `OTEL_EXPORTER_OTLP_ENDPOINT` with `/v1/metrics` appended, or `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | Full OTLP/HTTP metrics URL, used as is. |
+| `exportIntervalMs` | `number` | `60000` | Milliseconds between metric exports. |
+
+The gateway records `gen_ai.client.token.usage` (tokens) and `gen_ai.server.request.duration` (seconds) for each operation when the `gen_ai` [signal level](#signal-levels) is `recommended` or higher.
 
 ---
 
@@ -91,3 +110,24 @@ hooks: {
   ]
 }
 ```
+
+---
+
+## Signal levels
+
+`signalLevel` (or `tracing.signalLevel`, which takes precedence) sets how much telemetry the gateway records. Pass one level for every namespace, or an object with a level per namespace. A namespace you leave out of the object stays at `recommended`.
+
+```ts
+createGateway({
+  providers: { openai: {} },
+  signalLevel: { gen_ai: 'full', frogbot: 'recommended' }
+})
+```
+
+Levels run from least to most: `off`, `required`, `recommended`, and `full`. Each namespace acts at these thresholds:
+
+| Namespace | What the level controls |
+| --- | --- |
+| `frogbot` | `required` or higher records a `gateway.<operation>` span for each upstream call. `recommended` or higher also lets the AI SDK record its own child spans. |
+| `gen_ai` | `off` turns AI SDK spans off. `recommended` or higher records the token usage and request duration [metrics](#metrics). `full` also records prompts and outputs on AI SDK spans, so only use it where that content may be stored. |
+| `http` | Accepted, but no gateway signal reads it yet. |

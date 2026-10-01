@@ -5,7 +5,7 @@ description: "gateway.config.ts, CLI flags, environment auto-discovery, and allo
 keywords: ["configuration", "gateway.config.ts", "defineConfig", "CLI", "enabled_providers", "disabled_providers"]
 ---
 
-The CLI loads `gateway.config.{ts,mjs,js,json}` from the current directory, or a path passed with `--config`. Embedders skip the file entirely and pass a config object straight to `createGateway`.
+The CLI loads `gateway.config.{ts,mts,cts,js,mjs,cjs,json}` from the current directory, or a path passed with `--config`. See [Config file discovery](#config-file-discovery) for every location it reads. Embedders skip the file entirely and pass a config object straight to `createGateway`. Every key the object accepts is listed in [Config options](#config-options).
 
 ---
 
@@ -71,7 +71,7 @@ OPENAI_API_KEY=sk-... ANTHROPIC_API_KEY=sk-ant-... npx @frogbotai/gateway
 | `bedrock` | `AWS_BEARER_TOKEN_BEDROCK`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`) |
 | `vercel` | `AI_GATEWAY_API_KEY`, `AI_GATEWAY_BASE_URL` |
 
-Every built-in provider has an equivalent list. If none resolve, the CLI exits with an error naming every env var it checked. A config file merges on top of env-discovered providers rather than replacing them — the file wins on conflicts.
+Every built-in provider has an equivalent list; see [Built-in provider options](/gateway/providers#built-in-provider-options). If none resolve, the CLI exits with an error naming every env var it checked. A config file merges on top of env-discovered providers rather than replacing them — the file wins on conflicts.
 
 Custom OpenAI-compatible endpoints are never auto-discovered — there's no reasonable way to derive a base URL from env alone, so they always need an explicit `providers` entry.
 
@@ -93,7 +93,50 @@ Options:
   -h, --help             Show this help
 ```
 
-`npx @frogbotai/gateway init` scaffolds a standalone project — `src/server.ts`, `package.json`, `tsconfig.json`, `.env.example`, and a `.gitignore` — for embedding the gateway behind your own Hono server instead of running the bundled CLI server.
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `init [dir]` | command, optional directory path | — | Scaffolds a standalone project in `dir`, or in the current directory when omitted, then exits without starting a server. Refuses to overwrite existing files. |
+| `-p`, `--port` | integer from `1` to `65535` | `PORT`, then `3939` | Port to listen on. Also accepts `--port=<port>`. Any other value exits with `invalid --port`. |
+| `-c`, `--config` | file path | `GATEWAY_CONFIG` | Config file loaded on top of the discovered config files. Relative paths resolve from the current directory. Also accepts `--config=<path>`. |
+| `-q`, `--quiet` | flag | off | Skips the startup banner. |
+| `-h`, `--help` | flag | off | Prints usage and exits. |
+
+Any other argument exits with `unknown flag` or `unknown command`.
+
+The CLI also reads these environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `3939` | Port to listen on when `--port` isn't passed. |
+| `HOST` | `0.0.0.0` | Interface to bind. |
+| `GATEWAY_CONFIG` | — | Config file path, used when `--config` isn't passed. |
+| `GATEWAY_CONFIG_JSON` | — | A JSON config object, merged on top of every config file. |
+| `GATEWAY_CONFIG_ROOT` | nearest directory with `.git` or `package.json` | The highest directory searched for project config files. |
+| `XDG_CONFIG_HOME` | `~/.config` | Parent of the global `frogbotai/` config directory. |
+| `LOG_LEVEL` | `info` | Level of the built-in console logger when `logger.level` isn't set. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | — | Turn on OpenTelemetry export. See [Observability](/gateway/observability#bootstrap-tracing-yourself). |
+
+On `SIGTERM` or `SIGINT`, the server stops accepting connections, waits up to 25 seconds for open requests to finish, flushes telemetry, and exits.
+
+`npx @frogbotai/gateway init` scaffolds a standalone project — `src/server.ts`, `package.json`, `tsconfig.json`, `.env.example`, `.gitignore`, and a `README.md` — for embedding the gateway behind your own Hono server instead of running the bundled CLI server.
+
+---
+
+## Config file discovery
+
+The CLI builds one config from these layers. Each later layer merges on top of the earlier ones:
+
+1. Providers discovered from [environment variables](#auto-discover-from-env).
+2. Global files in `$XDG_CONFIG_HOME/frogbotai/` (or `~/.config/frogbotai/`): every `gateway.*` and `gateway.config.*` file there, with any of the extensions below.
+3. Project files: the first `gateway.config.*` file in each directory from the project root down to the current directory. The project root is `GATEWAY_CONFIG_ROOT`, or the nearest directory above the current one that holds `.git` or `package.json`. Without either, only the current directory is searched.
+4. The file passed with `--config` or `GATEWAY_CONFIG`.
+5. The JSON object in `GATEWAY_CONFIG_JSON`.
+
+Supported extensions are `.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs`, and `.json`. A file can export the config as `default` or as a named `config` export, or export a function, optionally async, that returns it. Loading a TypeScript file needs a runtime that imports `.ts` directly, such as Bun or Node with `--import tsx`.
+
+JSON files and `GATEWAY_CONFIG_JSON` can reference `{env:NAME}` to insert an environment variable, or `{file:path}` to insert a file's trimmed contents. A file path resolves from the config file's directory (or the current directory for `GATEWAY_CONFIG_JSON`), may start with `~/`, and must stay inside that directory. A missing variable or file stops startup.
+
+When layers merge, each `providers` entry merges key by key, so a later layer can add `models` to a provider an earlier layer configured. `logger` and `tracing` merge one level deep. Other keys are replaced by the later layer. The CLI drops `basePath`, `catalog`, and `tracer` while merging, so those keys only take effect when you pass a config to `createGateway` yourself.
 
 ---
 
@@ -115,14 +158,21 @@ export default defineConfig({
 
 ---
 
-## Other options
+## Config options
 
-| Option | Purpose |
-| --- | --- |
-| `basePath` | Extra path prefix routes are also served under (default `/v1`). Bare paths always work. |
-| `catalog` | Authoritative model catalog for routing, `GET /v1/models`, operation validation, and built-in provider allowlist validation. Unlisted built-in models do not route. |
-| `maxBodyBytes` | Request body size cap, enforced on every route. Defaults to 10 MB (25 MB for audio transcriptions). |
-| `upstreamTimeoutMs` | Server-side deadline per upstream call. A fired deadline surfaces as `504 gateway_timeout`. |
-| `logger` | A ready logger instance (pino-compatible) or options for the built-in console logger. |
-| `tracing` | OpenTelemetry endpoint options. See [Observability](/gateway/observability). |
-| `tracer` | A host-provided OpenTelemetry `Tracer`, used instead of the global tracer. |
+`createGateway`, `defineConfig`, and config files accept these keys:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `providers` | `Record<string, ProviderConfig \| ProviderInstance>` | Required | Providers the gateway routes to, keyed by name. A built-in key takes that [provider's options](/gateway/providers#built-in-provider-options); any other key is a [custom OpenAI-compatible endpoint](/gateway/providers#custom-openai-compatible-endpoints). Any key also accepts a [pre-built instance](/gateway/providers#pre-built-instances). Startup fails when no entry is set. |
+| `enabled_providers` | `string[]` | — | Allow list. When non-empty, only these provider names stay in the merged config. See [Allow and deny lists](#allow-and-deny-lists). |
+| `disabled_providers` | `string[]` | — | Deny list, applied after `enabled_providers`. See [Allow and deny lists](#allow-and-deny-lists). |
+| `basePath` | `string` | `'/v1'` | Extra path prefix that routes are also served under. Bare paths such as `/chat/completions` always work. A missing leading `/` is added and trailing `/` are removed. Pass `''` to serve bare paths only. |
+| `catalog` | `ModelCatalog` (`Map<string, ModelCatalogEntry>`) | `DEFAULT_MODEL_CATALOG` | Model catalog used for routing, `GET /v1/models`, operation checks, and validating built-in `models` lists. Built-in provider models that aren't in it don't route. |
+| `maxBodyBytes` | `number` | 10 MB; 25 MB for audio transcriptions | Request body size cap in bytes, applied to every route when set. Larger requests fail with `413 request_entity_too_large`. |
+| `upstreamTimeoutMs` | `number` | No deadline | Deadline in milliseconds for each upstream provider call. When it passes, the request fails with `504 gateway_timeout`. Set one in production. |
+| `hooks` | `Hooks` | — | Lifecycle hooks, one array per phase. See [Hooks](/gateway/hooks#phases). |
+| `logger` | `GatewayLogger \| { level?: 'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' \| 'silent' }` | Built-in JSON console logger at `LOG_LEVEL`, or `info` | A logger instance (any object with `trace`, `debug`, `info`, `warn`, `error`, and `fatal` methods, such as a pino logger), or the level for the built-in logger. See [Logging](/gateway/observability#logging). |
+| `tracing` | `{ endpoint?: string; signalLevel?: SignalLevel \| SignalLevels }` | — | `endpoint` is the OTLP traces URL the CLI exports to; when you embed the gateway, call [`setupTracing`](/gateway/observability#bootstrap-tracing-yourself) instead. `signalLevel` takes precedence over the top-level `signalLevel`. |
+| `tracer` | `Tracer` (OpenTelemetry) | The global tracer | Tracer that records the gateway's spans. Without it, spans go to the globally registered tracer provider, or nowhere when none is registered. |
+| `signalLevel` | `'off' \| 'required' \| 'recommended' \| 'full'`, or `{ gen_ai?, http?, frogbot? }` with those values | `'recommended'` for every namespace | How much telemetry to record. A single value applies to every namespace. See [Signal levels](/gateway/observability#signal-levels). |

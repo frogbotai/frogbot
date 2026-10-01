@@ -24,7 +24,32 @@ For a non-interactive setup with the defaults, use `--yes`:
 npx create-frogbot-app@latest my-agent-platform --yes
 ```
 
-The defaults create a Next.js app using SQLite and OpenAI, which needs an `OPENAI_API_KEY`. Choose another provider with `--ai anthropic`, `--ai google`, `--ai bedrock`, or `--ai zen`, or use `--ai none` for an app without agents. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`. Run `npx create-frogbot-app@latest --help` to see the matching flags for every setup choice.
+The defaults create a Next.js app using SQLite and OpenAI, which needs an `OPENAI_API_KEY`. Choose another provider with `--ai anthropic`, `--ai google`, `--ai bedrock`, or `--ai zen`, or use `--ai none` for an app without agents. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`.
+
+## Command options
+
+```bash
+npx create-frogbot-app@latest [project-name] [options]
+```
+
+Any setup choice you pass as a flag is not asked. The command also skips every prompt when `--yes` is set or when it doesn't run in an interactive terminal, and uses the defaults below for anything you didn't pass.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `[project-name]`, `-n`, `--name` | name | Prompted; required without prompts | Name of the project and of the directory created for it in the current directory. Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number. Pass it once, either positionally or with `--name`. The directory must not exist yet. |
+| `-t`, `--template` | `blank` | `blank` | Starter template. `blank` is the only template, so the setup doesn't ask for one. |
+| `-d`, `--db` | `sqlite`, `postgres`, or `mongodb` | `sqlite` | Database adapter and connection string written to the app. See [Database](/database/overview). |
+| `--ai` | `openai`, `anthropic`, `google`, `bedrock`, `zen`, or `none` | `openai` | AI provider configured in `src/frogbot.config.ts`. `none` leaves out the AI provider, the default agent, and its tools. |
+| `--api-key` | string | Prompted | The provider's API key, written to `.env`. Without it, prompts offer a matching key from your environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `AWS_BEARER_TOKEN_BEDROCK`, or `OPENCODE_API_KEY`), then ask for one. Ignored with `--ai none`. |
+| `--agents` | comma-separated `claude`, `codex`, `cursor`, `opencode`, `copilot`, `gemini` | Prompted; none without prompts | Coding agents that receive the FrogBot skill. Don't put spaces after the commas. See [Coding agents](/skills/coding-agents). |
+| `--no-agents` | flag | off | Installs no coding-agent skill and skips the agents prompt. Overrides `--agents`. |
+| `--use-npm`, `--use-pnpm`, `--use-yarn`, `--use-bun` | flag | The package manager that ran the command, or npm | Package manager for installing dependencies and for the printed dev command. Pass at most one. `--use-pnpm` also writes a `pnpm-workspace.yaml`. |
+| `--no-install`, `--no-deps` | flag | off | Skips installing dependencies. `--no-deps` is an alias. |
+| `--no-git` | flag | off | Skips creating a Git repository and the initial commit. |
+| `-y`, `--yes` | flag | off | Accepts the defaults for every choice you didn't pass, without prompts. |
+| `-h`, `--help` | flag | off | Prints usage and exits. |
+
+An unknown option or a missing value exits with an error. An invalid choice exits with an error that lists the valid values.
 
 ## Run the app
 
@@ -35,7 +60,7 @@ cd my-agent-platform
 npm run dev
 ```
 
-Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). On the first visit, you create the first admin user. The dashboard then shows a card for each collection; open **Chats** in the sidebar and select **Create New** to talk to your agent. To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema.
+Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). On the first visit, you create the first admin user. The dashboard then shows a card for each collection; open **Chats** in the sidebar and select **Create New** to talk to your agent. To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema. See [CLI](/getting-started/cli) for every `frogbot` command.
 
 ## Software requirements
 
