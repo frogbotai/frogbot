@@ -34,6 +34,20 @@ const field = {
 } as const
 ```
 
+Each method takes one object. This table lists every option and the methods that accept it:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `config` | `FrogBotSanitizedConfig \| Promise<FrogBotSanitizedConfig>` | Required, except by `fromField` | The config returned by `buildConfig`, such as the `@frogbot-config` import. Throws if the value did not come from `buildConfig`. |
+| `field` | `{ type: 'richText'; editor }` | Required by `fromField` and `fromUnsanitizedField` | The Rich Text field to read. `fromField` requires a sanitized editor and throws for an editor provider; `fromUnsanitizedField` requires an editor provider and throws otherwise. |
+| `editor` | `ReturnType<typeof lexicalEditor>` | Required by `fromEditor` | The editor provider to build. |
+| `features` | `FeatureProviderServer[] \| (args) => FeatureProviderServer[]` | Recommended defaults | `fromFeatures` only. Same as the `lexicalEditor` [`features` option](/rich-text/overview#editor-options). |
+| `lexical` | `EditorConfig` | Built-in Lexical configuration | `fromFeatures` uses it as the `lexicalEditor` [`lexical` option](/rich-text/overview#editor-options). `fromEditor` accepts it but ignores it; the editor provider's own `lexical` option applies. |
+| `isRoot` | `boolean` | `false` | `fromEditor`, `fromFeatures`, and `fromUnsanitizedField`. Builds the configuration as the root editor, so rich text fields nested in feature fields must set their own `editor`. |
+| `parentIsLocalized` | `boolean` | `false` | Every method except `fromField`. Whether the field sits inside a localized field. |
+
+Every method returns the sanitized editor config. `fromField` returns it directly; the others return a promise.
+
 ### Default editor config
 
 Build the package's default feature set against your FrogBot config:
@@ -108,7 +122,7 @@ const editorConfig = await editorConfigFactory.fromEditor({
 })
 ```
 
-Prefer `fromFeatures` when you only need the feature list. `fromEditor` also accepts `isRoot`, `lexical`, and `parentIsLocalized`.
+Prefer `fromFeatures` when you only need the feature list. `fromEditor` also accepts `isRoot` and `parentIsLocalized`.
 
 ### Config from an unsanitized field
 

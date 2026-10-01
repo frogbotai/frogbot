@@ -14,9 +14,9 @@ keywords: lexical, rich text, editor, render, form, controlled
 
 ## Use an existing form
 
-When the component is rendered inside a FrogBot form, omit `value` and `setValue`. The editor then writes to the form path identified by `field.name`, or by `path` when you explicitly override it. Saving the surrounding form persists that value normally.
+When the component is rendered inside a FrogBot form, omit `value` and `setValue`. The editor then writes to the form path identified by `name`, or by `path` when you explicitly override it. Saving the surrounding form persists that value normally.
 
-This component renders an editor at the `previewContent` form path while using the configured `content` rich text field as its schema. Because `field.name` already matches the JSON field's form path, no `path` override is needed:
+This component renders an editor at the `previewContent` form path while using the configured `content` rich text field as its schema. Because `name` already matches the JSON field's form path, no `path` override is needed:
 
 ```tsx
 'use client'
@@ -28,10 +28,10 @@ import type { JSONFieldClientComponent } from 'frogbot'
 export const PreviewContentField: JSONFieldClientComponent = () => {
   return (
     <RenderLexical
-      field={{ name: 'previewContent' }}
       initialValue={buildEditorState<DefaultNodeTypes>({
         text: 'Start writing.',
       })}
+      name="previewContent"
       schemaPath="collection.posts.content"
     />
   )
@@ -65,13 +65,21 @@ export const Posts: CollectionConfig = {
 }
 ```
 
-`schemaPath` and `path` serve different purposes:
+`RenderLexical` accepts these props. Note that `schemaPath` selects the schema, while `name` and `path` decide where the value is stored:
 
-| Property | Purpose |
-| --- | --- |
-| `schemaPath` | Locates an existing configured rich text field so the server can load its features and nested schemas. |
-| `path` | Overrides the value path in the current form. Omit it when `field.name` is already the correct path. |
-| `field.name` | Supplies the rendered rich text field's name and default value path. It does not select the schema. |
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `schemaPath` | `string` | Required | Locates an existing configured rich text field so the server can load its features and nested schemas. Format: `collection.<collectionSlug>.<fieldPath>`. Throws if no field exists at that path. |
+| `name` | `string` | The schema field's name | Name of the rendered field and its default form path. It does not select the schema. |
+| `path` | `string` | `name` | Overrides the value path in the current form. Omit it when `name` is already the correct path. |
+| `label` | `string \| Record<string, string> \| false` | The schema field's label | Label shown above the editor. Use an object keyed by locale for translations, or `false` to hide it. |
+| `initialValue` | `unknown` | None | Value the server renders the editor with, so nested blocks can render without extra requests. |
+| `value` | `DefaultTypedEditorState` | None | Controlled editor state. When `value` or `setValue` is set, the component manages its own value instead of using the surrounding form. |
+| `setValue` | `(value: unknown, disableModifyingForm?: boolean) => void` | None | Called with the new editor state on every change in controlled mode. |
+| `Loading` | `ReactElement` | Shimmer placeholder | Rendered while the editor is being fetched from the server. |
+| `field` | `Partial<LexicalRichTextField>` | None | Deprecated. Use `name` and `label` instead; `field.name` and `field.label` are used only when those props are not set. |
+
+The editor is always rendered visible, even when the schema field is hidden. The current user must be signed in and allowed to access the Admin Panel.
 
 The schema path format is `collection.<collectionSlug>.<fieldPath>`. A top-level field uses `collection.posts.content`; a field nested in a group uses a path such as `collection.posts.layout.content`.
 
@@ -111,7 +119,8 @@ export function ControlledEditor() {
   return (
     <div>
       <RenderLexical
-        field={{ name: 'draftContent', label: 'Draft content' }}
+        label="Draft content"
+        name="draftContent"
         schemaPath="collection.posts.content"
         setValue={updateValue}
         value={value}

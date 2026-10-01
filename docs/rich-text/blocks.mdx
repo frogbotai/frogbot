@@ -68,6 +68,13 @@ export const contentField: RichTextField = {
 
 See [Blocks fields](/fields/blocks) for every block configuration option.
 
+## BlocksFeature options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `blocks` | `(Block \| string)[]` | `[]` | Block-level blocks editors can insert. A string references a block by slug from the root `blocks` array in your FrogBot config; an unknown slug throws when the config loads. |
+| `inlineBlocks` | `(Block \| string)[]` | `[]` | Inline blocks editors can insert within text. Strings reference root `blocks` by slug, as for `blocks`. |
+
 ## Blocks and inline blocks
 
 Regular blocks are block-level elements. They occupy their own line and work well for call-to-action sections, galleries, code, and embedded content.
@@ -343,6 +350,47 @@ import type {
 | `LexicalInlineBlockLabelClientProps` | Client `admin.components.Label` for an inline block |
 | `LexicalInlineBlockLabelServerProps` | Server `admin.components.Label` for an inline block |
 
+The editor renders block and label components as the custom component of an internal UI field that sits alongside the block's fields. Their `field` and `path` props describe that internal field, not the block. Read block values with `useFormFields` in a Client Component, or from `data` in a Server Component.
+
+The four client types share these props:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `field` | `ClientField` | Always provided | Serializable configuration of the internal UI field. |
+| `path` | `string` | Always provided | Form path of the internal UI field within the block form. |
+| `schemaPath` | `string` | May be `undefined` | Schema path of the internal UI field. |
+| `readOnly` | `boolean` | May be `undefined` | Whether the editor is read-only for the current user or document state. |
+| `permissions` | `SanitizedFieldPermissions` | May be `undefined` | Field permissions for the current user. |
+| `forceRender` | `boolean` | May be `undefined` | Renders nested fields immediately instead of waiting until they scroll into view. |
+| `renderedBlocks` | `RenderedField[]` | May be `undefined` | Pre-rendered nested block components supplied by the form. |
+
+The four server types share these props:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always provided | Current request. Use `req.frogbot` for server operations and `req.user` for access checks. |
+| `data` | `Record<string, unknown>` | Always provided | The block's field values. |
+| `siblingData` | `Record<string, unknown>` | Always provided | Values of the fields next to the internal UI field, which are the block's field values. |
+| `value` | `unknown` | May be `undefined` | Value of the internal UI field. UI fields store no data, so this is normally `undefined`. |
+| `field` | `UIField` | Always provided | Authored configuration of the internal UI field. |
+| `clientField` | `ClientField` | Always provided | Serializable configuration of the internal UI field, for passing to a Client Component. |
+| `path` | `string` | Always provided | Form path of the internal UI field within the block form. |
+| `schemaPath` | `string` | May be `undefined` | Schema path of the internal UI field. |
+| `id` | `string \| number` | May be `undefined` | ID of the document being edited. |
+| `collectionSlug` | `string` | Always provided | Slug of the collection that owns the document. |
+| `operation` | `'create' \| 'read' \| 'update' \| 'delete'` | Always provided | Form operation. Block forms use `'update'`. |
+| `user` | `User` | Always provided | Authenticated user with field read access applied. Use it for values sent to the browser and `req.user` for access checks. |
+| `i18n` | `I18nClient` | Always provided | Admin Panel translations for the current language. |
+| `permissions` | `SanitizedFieldPermissions` | Always provided | Field permissions for the current user. |
+| `preferences` | `DocumentPreferences` | Always provided | Saved Admin Panel preferences for the document. |
+| `formState` | `FormState` | Always provided | Form state of the block's fields. |
+| `fieldSchemaMap` | `FieldSchemaMap` | Always provided | Map from schema paths to authored field configurations. |
+| `clientFieldSchemaMap` | `ClientFieldSchemaMap` | Always provided | Map from schema paths to serializable field configurations. |
+| `customComponents` | `{ AfterInput?, BeforeInput?, Description?, Error?, Field?, Label? }` | May be `undefined` | Rendered custom components of the internal UI field. |
+| `readOnly` | `boolean` | May be `undefined` | Whether the editor is read-only for the current user or document state. |
+| `forceRender` | `boolean` | May be `undefined` | Renders nested fields immediately instead of waiting until they scroll into view. |
+| `renderedBlocks` | `RenderedField[]` | May be `undefined` | Pre-rendered nested block components supplied by the form. |
+
 ## Rendering blocks
 
 Frontend converters map each block slug to its rendered output:
@@ -376,13 +424,13 @@ export const codeFeature = BlocksFeature({
 
 ### CodeBlock options
 
-| Option | Description |
-| --- | --- |
-| `slug` | Overrides the block slug. Defaults to `Code`. |
-| `defaultLanguage` | Initial language. Defaults to the first key in `languages`. |
-| `languages` | Maps language keys to labels. |
-| `typescript` | Configures TypeScript definitions and diagnostics. |
-| `fieldOverrides` | Overrides or extends the default block configuration. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'Code'` | Block slug. |
+| `languages` | `Record<string, string>` | Built-in list of about 80 languages | Maps language keys to labels shown in the language selector. The selected key is passed to the code editor as the block's language. |
+| `defaultLanguage` | `string` | First key in `languages` | Language selected for a new block. |
+| `typescript` | `object` | None | TypeScript definitions and diagnostics for the code editor. See [TypeScript support](#typescript-support). |
+| `fieldOverrides` | `Partial<Block>` | None | Properties shallow-merged over the generated block configuration. A key you set, such as `admin` or `fields`, replaces the generated value entirely. |
 
 ### TypeScript support
 
@@ -426,10 +474,10 @@ export const TypedCodeBlock = CodeBlock({
 
 FrogBot publishes normal package declarations at `dist/index.d.ts`; it does not publish a single bundled declaration file. To offer FrogBot APIs in the editor, pin and load that declaration plus every declaration it imports, or publish a self-contained declaration bundle from your application. Do not point `fetchTypes` at an unverified `index.bundled.d.ts` URL.
 
-| TypeScript option | Description |
-| --- | --- |
-| `fetchTypes` | Declaration URLs and their virtual `filePath` destinations. |
-| `paths` | Module mappings used to resolve imports. |
-| `typeRoots` | Virtual directories searched for type packages. Defaults to `node_modules/@types`. |
-| `target` | TypeScript compilation target. Defaults to `ESNext`. |
-| `enableSemanticValidation` | Enables type checking in addition to syntax validation. Defaults to `false`. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fetchTypes` | `{ url: string; filePath: string }[]` | None | Declaration files downloaded when the editor mounts. Each `url` is fetched and added to the editor's virtual file system at `filePath`. |
+| `paths` | `Record<string, string[]>` | None | Module mappings used to resolve imports, as in a `tsconfig.json` `paths` setting. |
+| `typeRoots` | `string[]` | `['node_modules/@types']` | Virtual directories searched for type packages. |
+| `target` | `string` | `'ESNext'` | TypeScript compilation target, such as `'ES2022'`. |
+| `enableSemanticValidation` | `boolean` | `false` | Enables type checking in addition to syntax validation. |

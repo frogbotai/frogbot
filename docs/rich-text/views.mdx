@@ -162,11 +162,18 @@ When views are configured, the Admin Panel displays a selector beside the field 
 
 ## View configuration
 
-Each view can configure `admin`, `filterFeatures`, `lexical`, and `nodes`.
+Each key of the view map is a view name. Add a `default` key to replace the editor's default rendering; other keys add views editors can switch to. Each view accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `nodes` | `LexicalEditorNodeMap` | Required | Rendering overrides keyed by node type, with custom blocks under `blocks` and `inlineBlocks` keyed by slug. See [Node overrides](#node-overrides). Use `{}` to keep the default rendering. |
+| `admin` | `LexicalFieldAdminClientProps` | The editor's `admin` options | Admin options used while this view is active, replacing the editor's own `admin` options. See [Admin settings](#admin-settings). |
+| `filterFeatures` | `(features: ClientFeaturesMap) => ClientFeaturesMap` | All features | Receives the client features keyed by feature key and returns the features to use in this view. See [Feature filtering](#feature-filtering). |
+| `lexical` | `EditorConfig \| (defaultConfig: EditorConfig) => EditorConfig` | The editor's Lexical configuration | Lexical configuration for this view. See [Lexical configuration](#lexical-configuration). |
 
 ### Admin settings
 
-View-level admin settings use the same options as [rich text admin customization](/rich-text/overview#admin-customization):
+View-level admin settings use the same options as [rich text admin customization](/rich-text/overview#admin-customization), except that `placeholder` must be a plain string because the view map is loaded in the browser:
 
 ```tsx
 {
@@ -223,11 +230,13 @@ Pass an object when the view should replace the configuration entirely:
 
 A node override can use these rendering approaches:
 
-| Property | Admin Panel | JSX converter | Purpose |
+| Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `Component` | Yes | Yes | Render a React component. Use `isEditor` to narrow the node shape. |
-| `createDOM` | Yes | No | Create an element for a Lexical editor node. Narrow the node before calling node-specific methods. |
-| `html` | Yes | Yes | Return an HTML string. |
+| `Component` | `(props) => ReactNode` | None | Renders a React component in the JSX converter, and in the Admin Panel for decorator nodes. Use `isEditor` to narrow the props: the editor variant receives the Lexical `node`, `editor`, and `config`; the converter variant receives the serialized `node` and the converter arguments. Takes priority over `html`. |
+| `createDOM` | `({ node, editor, config }) => HTMLElement` | None | Admin Panel only. Creates the DOM element for a Lexical editor node. Narrow the node before calling node-specific methods. |
+| `html` | `(props) => string` | None | Returns an HTML string, in both the Admin Panel and the JSX converter. Receives the same `isEditor`-narrowed props as `Component`. |
+| `Block` | `React.FC<ViewMapBlockComponentProps>` | None | Entries under `blocks` and `inlineBlocks` only. Replaces the block's content in both the Admin Panel and the JSX converter; see [Customize block chrome](#customize-block-chrome). In the converter, `Component` takes priority over it. |
+| `Label` | `React.FC<ViewMapBlockComponentProps>` | None | Entries under `blocks` and `inlineBlocks` only. Admin Panel only. Replaces the collapsible block label. |
 
 For a decorator node that defines both `createDOM` and `html`, the editor uses `createDOM`; JSX conversion uses `html`.
 
@@ -271,6 +280,22 @@ export function BannerViewBlock(props: ViewMapBlockComponentProps<BannerNode>) {
 
 Assign it to `nodes.blocks.banner.Block`. `Label` replaces only the collapsible block label and is used only in the editor. The equivalent collection-level block customization is documented under [Block custom components](/fields/blocks#custom-components).
 
+`ViewMapBlockComponentProps` is a union narrowed by `isEditor`. `Block` and `Label` components for inline blocks receive the same props, except that the editor variant provides `useInlineBlockComponentContext` instead of `useBlockComponentContext`.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `isEditor` | `boolean` | Always provided | `true` in the Admin Panel editor, `false` in the JSX converter. |
+| `isJSXConverter` | `boolean` | Always provided | The opposite of `isEditor`. |
+| `formData` | `BlockFields` | Always provided | The block's field values. |
+| `useBlockComponentContext` | `() => BlockComponentContextType` | Editor only | Hook that returns the editor's block controls, such as `BlockCollapsible`, `EditButton`, and `RemoveButton`. Call it inside the component. |
+| `nodeKey` | `string` | Editor only | Lexical key of the block node. |
+| `className` | `string` | Editor only | Class name of the default block container. |
+| `node` | `SerializedBlockNode` | Converter only | The serialized block node. |
+| `nodesToJSX` | `({ nodes, converters?, parent?, disableIndent?, disableTextAlign? }) => ReactNode[]` | Converter only | Converts child nodes to JSX. |
+| `converters` | `JSXConverters` | Converter only | The converters in use, for rendering nested content. |
+| `parent` | `SerializedLexicalNode` | Converter only | The parent node. |
+| `childIndex` | `number` | Converter only | Position of the block among its siblings. |
+
 <Warning>
   A top-level import is included in every bundle that imports the view map. An
   `isEditor` branch controls runtime behavior but does not remove an editor-only
@@ -299,6 +324,16 @@ export function ActiveView() {
   )
 }
 ```
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `currentView` | `string` | Always provided | Name of the active view. Falls back to `'default'` when the requested view is not in `views`. |
+| `setCurrentView` | `(view: string) => void` | Always provided | Switches the active view. |
+| `views` | `LexicalEditorViewMap` | May be `undefined` | Every view configured for the editor. |
+| `currentViewMap` | `LexicalEditorNodeMap` | May be `undefined` | The active view's entry from `views`. Although typed as a node map, it holds the whole entry (`admin`, `nodes`, and so on); use `views?.[currentView]?.nodes` for the node map. |
+| `inheritable` | `boolean` | May be `undefined` | Whether nested rich text editors inherit this view state. |
+| `isControlledByParent` | `boolean` | May be `undefined` | `true` when an ancestor editor controls the view. The view selector is hidden in that case. |
+| `hasExplicitCurrentView` | `boolean` | May be `undefined` | `true` when the view was set explicitly rather than defaulting to `'default'`. |
 
 ## Reuse a view on the frontend
 

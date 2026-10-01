@@ -38,6 +38,17 @@ export default buildConfig({
 
 The root editor supplies the default configuration for top-level [Rich Text fields](/fields/rich-text). Override `editor` on an individual field when it needs a different feature set.
 
+### Editor options
+
+`lexicalEditor` accepts one optional object. Call it with no argument or `{}` to use the recommended feature set and the built-in Lexical configuration.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `admin` | `LexicalFieldAdminProps` | `{}` | Admin Panel display options for the editor. See [Admin customization](#admin-customization). |
+| `features` | `FeatureProviderServer[] \| (args) => FeatureProviderServer[]` | Recommended defaults | Features enabled in this editor. An array replaces the defaults entirely. A function receives the values in [Feature function arguments](#feature-function-arguments) and returns the array to use. See [Official features](/rich-text/official-features) for the built-in set. |
+| `lexical` | `EditorConfig` | `{ namespace: 'lexical', theme: <built-in theme> }` | Lexical editor configuration. When set, it replaces the built-in configuration, so `namespace` and `theme` are both required. The Admin Panel editor reads only `namespace` and `theme`; `disableEvents` and `dom` are accepted by the type but not used. |
+| `views` | `string \| { path: string; exportName?: string }` | None | Experimental. [Component path](/custom-components/overview#component-paths) to an export of type `LexicalEditorViewMap`. If the path does not resolve, the editor renders without views. See [Views](/rich-text/views). |
+
 ```ts
 import { lexicalEditor } from '@frogbotai/richtext-lexical'
 import type { CollectionConfig } from 'frogbot'
@@ -99,10 +110,12 @@ const editor = lexicalEditor({
 })
 ```
 
-| Value | Description |
-| --- | --- |
-| `defaultFeatures` | Recommended feature set. Omit it to start with an empty editor. |
-| `rootFeatures` | Features enabled by the root editor. Empty while configuring the root editor. |
+### Feature function arguments
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `defaultFeatures` | `FeatureProviderServer[]` | Always provided | Recommended feature set: every feature marked as a default in [Official features](/rich-text/official-features#features-overview). Omit it from the returned array to start with an empty editor. |
+| `rootFeatures` | `FeatureProviderServer[]` | Always provided | Features enabled by the root `editor` in your FrogBot config. Empty while configuring the root editor itself. |
 
 See [Official features](/rich-text/official-features) for the complete built-in set.
 
@@ -175,13 +188,13 @@ Use types exported by `@frogbotai/richtext-lexical` rather than importing equiva
 
 The editor's `admin` property supports these options:
 
-| Property | Description |
-| --- | --- |
-| `placeholder` | Placeholder shown when the editor is empty. |
-| `hideGutter` | Hides the editor gutter. |
-| `hideInsertParagraphAtEnd` | Hides the add-paragraph control after the last node. |
-| `hideDraggableBlockElement` | Hides the drag control shown beside nodes. |
-| `hideAddBlockButton` | Hides the add-node control shown beside nodes. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string> \| ({ i18n, t }) => string` | Built-in translated placeholder | Placeholder shown when the editor is empty. Use an object keyed by locale or a function for translated text. |
+| `hideGutter` | `boolean` | `false` | Hides the gutter: the left padding and vertical line beside the content. |
+| `hideInsertParagraphAtEnd` | `boolean` | `false` | Hides the add-paragraph control after the last node. |
+| `hideDraggableBlockElement` | `boolean` | `false` | Hides the drag control shown beside nodes. |
+| `hideAddBlockButton` | `boolean` | `false` | Hides the add-node control shown beside nodes. |
 
 ```ts
 import { lexicalEditor } from '@frogbotai/richtext-lexical'
