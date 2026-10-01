@@ -84,7 +84,6 @@ The following options are available:
 | **`strategies`**               | Advanced - an array of custom authentication strategies to extend this collection's authentication with. [More details](/authentication/custom-strategies).                                                                 |
 | **`signIn`**                   | OAuth piece instances that provide interactive login for this collection. [More details](/authentication/sign-in). |
 | **`tokenExpiration`**          | How long (in seconds) to keep the user logged in. JWTs and HTTP-only cookies will both expire at the same time.                                                                                                             |
-| **`useAPIKey`**                | FrogBot Authentication provides for API keys to be set on each user within an Authentication-enabled Collection. [More details](/authentication/api-keys).                                                                  |
 | **`useSessions`**              | True by default. Set to `false` to use stateless JWTs for authentication instead of sessions.                                                                                                                               |
 | **`verify`**                   | Set to `true` or pass an object with verification options to require users to verify by email before they are allowed to log into your app. [More details](/authentication/email#email-verification).                       |
 
@@ -191,7 +190,7 @@ Out of the box FrogBot ships with three powerful Authentication strategies:
 
 - [HTTP-Only Cookies](/authentication/cookies)
 - [JSON Web Tokens (JWT)](/authentication/jwt)
-- [API-Keys](/authentication/api-keys)
+- [API-Keys](/authentication/api-keys), through the [API keys plugin](/plugins/api-keys)
 
 Each of these strategies can work together or independently. You can also create your own custom strategies to fit your specific needs. [More details](/authentication/custom-strategies).
 
@@ -205,7 +204,7 @@ JWT (JSON Web Tokens) can also be utilized to perform authentication. Tokens are
 
 ### API Keys
 
-API Keys can be enabled on auth collections. These are particularly useful when you want to authenticate against FrogBot from a third party service. [More details](/authentication/api-keys).
+API keys come from the [API keys plugin](/plugins/api-keys). They're particularly useful when you want to authenticate against FrogBot from a third-party service. [More details](/authentication/api-keys).
 
 ### Custom Strategies
 

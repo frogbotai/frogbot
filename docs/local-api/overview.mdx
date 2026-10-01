@@ -72,15 +72,22 @@ You can specify more options within the Local API vs. REST or GraphQL due to the
 | `populate`           | Specify [populate](/queries/select#populate) to control which fields to include to the result from populated documents.                                                                                                                                                                                                                                               |
 | `fallbackLocale`     | Specify a [fallback locale](/configuration/localization) to use for any returned documents. This can be a single locale or array of locales.                                                                                                                                                                                                                          |
 | `overrideAccess`     | Skip access control. By default, this property is set to true within all Local API operations.                                                                                                                                                                                                                                                                        |
-| `overrideLock`       | By default, document locks are ignored (`true`). Set to `false` to enforce locks and prevent operations when a document is locked by another user.                                                                                                                                                                                                                     |
 | `user`               | If you set `overrideAccess` to `false`, you can pass a user to use against the access control checks.                                                                                                                                                                                                                                                                 |
 | `showHiddenFields`   | Opt-in to receiving hidden fields. By default, they are hidden from returned documents in accordance to your config.                                                                                                                                                                                                                                                  |
 | `pagination`         | Set to false to return all documents and avoid querying for document counts.                                                                                                                                                                                                                                                                                          |
 | `context`            | [Context](/hooks/context), which will then be passed to `context` and `req.context`, which can be read by hooks. Useful if you want to pass additional information to the hooks which shouldn't be necessarily part of the document, for example a `triggerBeforeChange` option which can be read by the BeforeChange hook to determine if it should run or not.      |
 | `disableErrors`      | When set to `true`, errors will not be thrown. Instead, the `findByID` operation will return `null`, and the `find` operation will return an empty documents array.                                                                                                                                                                                                   |
-| `disableTransaction` | When set to `true`, a [database transactions](/database/transactions) will not be initialized.                                                                                                                                                                                                                                                                        |
 
 _There are more options available on an operation by operation basis outlined below._
+
+### Write options
+
+These options apply only to the operations listed.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `overrideLock` | `boolean` | `true` | `update` and `delete` only. Document locks are ignored by default. Set to `false` to reject the write while another user holds the lock on the document. Writing by ID throws; writing by `where` reports the locked document in `errors`. |
+| `disableTransaction` | `boolean` | `false` | `create`, `update`, `delete`, and `duplicate` only. Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
 
 ## Transactions
 

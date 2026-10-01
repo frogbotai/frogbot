@@ -96,7 +96,6 @@ Each endpoint object needs to have:
 | **`path`**    | A string for the endpoint route after the collection slug                                                                                                                                                                                                  |
 | **`method`**  | The lowercase HTTP verb to use: 'get', 'head', 'post', 'put', 'delete', 'connect' or 'options'                                                                                                                                                             |
 | **`handler`** | A function that accepts **req** - `FrogBotRequest` object which contains [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) properties, currently authenticated `user` and the Local API instance `frogbot`.                          |
-| **`root`**    | When `true`, defines the endpoint on the root Next.js app, bypassing FrogBot handlers and the `routes.api` subpath. Note: this only applies to top-level endpoints of your FrogBot Config; endpoints defined on `collections` cannot be root.              |
 | **`custom`**  | Extension point for adding custom data (e.g. for plugins)                                                                                                                                                                                                  |
 
 Example:

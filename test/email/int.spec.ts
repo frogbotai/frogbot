@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
 import { ConnectionError, definePiece, type FrogBotConfig, type FrogBotRequest } from 'frogbot';
-import { type FrogBot, getFrogBot } from 'frogbot/test';
+import { type FrogBot, getFrogBot, getFrogBotPayload } from 'frogbot/test';
 import { BasePayload } from 'payload';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -467,5 +467,77 @@ describe('email piece boot and runtime isolation', () => {
     ).rejects.toMatchObject({ code: 'missing', piece: 'resend' });
 
     expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('auth email templates', () => {
+  it('builds verification and password-reset emails from the collection auth config', async () => {
+    const runtime = await bootRuntime({
+      email: resend,
+      collections: [
+        Users,
+        {
+          slug: 'customers',
+          auth: {
+            verify: {
+              generateEmailHTML: ({ token }) => `<a href="/verify/${token}">Verify</a>`,
+              generateEmailSubject: ({ user }) => `Verify ${(user as { email: string }).email}`,
+            },
+            forgotPassword: {
+              expiration: 600_000,
+              minRequestInterval: 0,
+              generateEmailHTML: ({ token }) => `<a href="/reset/${token}">Reset</a>`,
+              generateEmailSubject: ({ user }) => `Reset ${(user as { email: string }).email}`,
+            },
+          },
+          fields: [],
+        },
+      ],
+    });
+    const customer = await runtime.create({
+      collection: 'customers',
+      data: { email: 'customer@example.com', password: 'password' },
+    });
+    const verifyToken = requestBody().html.match(
+      /^<a href="\/verify\/([a-f0-9]+)">Verify<\/a>$/,
+    )?.[1];
+
+    expect(requestBody()).toMatchObject({
+      to: customer.email,
+      subject: `Verify ${customer.email}`,
+    });
+    await expect(
+      runtime.verifyEmail({ collection: 'customers', token: verifyToken! }),
+    ).resolves.toBe(true);
+
+    const requestedAt = Date.now();
+    const token = await runtime.forgotPassword({
+      collection: 'customers',
+      data: { email: customer.email },
+    });
+    const stored = await getFrogBotPayload(runtime).db.findOne<{ resetPasswordExpiration: string }>(
+      {
+        collection: 'customers',
+        where: { id: { equals: customer.id } },
+      },
+    );
+
+    expect(requestBody(1)).toMatchObject({
+      to: customer.email,
+      subject: `Reset ${customer.email}`,
+      html: `<a href="/reset/${token}">Reset</a>`,
+    });
+    expect(Date.parse(stored!.resetPasswordExpiration) - requestedAt).toBeGreaterThanOrEqual(
+      600_000,
+    );
+    expect(Date.parse(stored!.resetPasswordExpiration) - requestedAt).toBeLessThan(660_000);
+
+    const repeated = await runtime.forgotPassword({
+      collection: 'customers',
+      data: { email: customer.email },
+    });
+
+    expect(requestBody(2).html).toBe(`<a href="/reset/${repeated}">Reset</a>`);
+    expect(fetch).toHaveBeenCalledTimes(3);
   });
 });

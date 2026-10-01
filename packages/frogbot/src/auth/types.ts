@@ -1,17 +1,31 @@
-import type { AuthStrategyFunctionArgs as PayloadAuthStrategyFunctionArgs } from 'payload';
+import type {
+  AuthStrategyFunctionArgs as PayloadAuthStrategyFunctionArgs,
+  IncomingAuthType,
+} from 'payload';
 
 import type { FrogBot } from '../frogbot.js';
 import type { SignInMethod } from '../pieces/types.js';
 import type { CollectionSlug, TypedCollection, TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 
+type AuthEmailTemplate = (args: { token: string; user: unknown }) => string | Promise<string>;
+
+type AuthEmail = {
+  generateEmailHTML?: AuthEmailTemplate;
+  generateEmailSubject?: AuthEmailTemplate;
+};
+
 export interface AuthConfig {
   signIn?: SignInMethod[];
   depth?: number;
   tokenExpiration?: number;
-  verify?:
-    | boolean
-    | { generateEmailHTML?: (args: { token: string; user: unknown }) => string | Promise<string> };
+  verify?: boolean | AuthEmail;
+  forgotPassword?: Pick<
+    NonNullable<IncomingAuthType['forgotPassword']>,
+    'expiration' | 'minRequestInterval'
+  > &
+    AuthEmail;
+  removeTokenFromResponses?: IncomingAuthType['removeTokenFromResponses'];
   maxLoginAttempts?: number;
   lockTime?: number;
   loginWithUsername?:
