@@ -1,8 +1,10 @@
 import type {
+  AuthArgs,
   CountArgs,
   CreateArgs,
   DeleteByIDArgs,
   DeleteManyArgs,
+  DocID,
   DuplicateArgs,
   FindArgs,
   FindByIDArgs,
@@ -67,4 +69,24 @@ export const distinctTransaction: FindDistinctArgs<Slug> = {
   field: 'title',
   // @ts-expect-error reads don't open a transaction
   disableTransaction: true,
+};
+
+expectTypeOf<CreateArgs<Slug>['duplicateFromID']>().toEqualTypeOf<DocID | undefined>();
+expectTypeOf<CreateArgs<Slug>['overwriteExistingFiles']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<UpdateByIDArgs<Slug>['filePath']>().toEqualTypeOf<string | undefined>();
+expectTypeOf<UpdateManyArgs<Slug>['filePath']>().toEqualTypeOf<string | undefined>();
+expectTypeOf<UpdateByIDArgs<Slug>['overwriteExistingFiles']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<UpdateManyArgs<Slug>['overwriteExistingFiles']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<UpdateByIDArgs<Slug>['publishAllLocales']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<UpdateManyArgs<Slug>['publishAllLocales']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<UpdateByIDArgs<Slug>['unpublishAllLocales']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<UpdateManyArgs<Slug>['unpublishAllLocales']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<AuthArgs['canSetHeaders']>().toEqualTypeOf<boolean | undefined>();
+
+export const duplicateFromUpdate: UpdateByIDArgs<Slug> = {
+  collection: postsSlug,
+  data: {},
+  // @ts-expect-error only create copies another document
+  duplicateFromID: 1,
+  id: 1,
 };

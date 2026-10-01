@@ -40,6 +40,8 @@ export default buildConfig({
 | `dashboard` | `DashboardConfig` | None; the dashboard shows one card per readable collection | Widgets and default layout for the modular dashboard. See [Dashboard Widgets](/custom-components/dashboard#dashboard-options). |
 | `livePreview` | `RootLivePreviewConfig` | None; Live Preview is off | Live Preview URL, breakpoints, and enabled collections. See [Live Preview options](/live-preview/overview#options). |
 | `importMap` | `{ autoGenerate?: boolean }` | `{ autoGenerate: true }` | Controls the generated component import map. See [Import map options](#import-map-options). |
+| `autoLogin` | `false \| { email?: string; username?: string; password?: string; prefillOnly?: boolean }` | `false` | Logs every visitor in as one user, or prefills the login form. For development only. See [Auto-Login](/authentication/overview#auto-login). |
+| `autoRefresh` | `boolean` | `false` | Refreshes the signed-in user's token before it expires, instead of asking them to stay logged in. See [Auto-Refresh](/authentication/overview#auto-refresh). |
 
 ### Import map options
 

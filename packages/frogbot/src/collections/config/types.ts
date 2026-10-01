@@ -321,6 +321,20 @@ type LockedWriteArgs = WriteArgs & {
   overrideLock?: boolean;
 };
 
+type UploadArgs = {
+  /** Upload collections only. Absolute path of a file on disk to store. */
+  filePath?: string;
+  /** Replace a stored file with the same name instead of saving the upload under a new name. */
+  overwriteExistingFiles?: boolean;
+};
+
+type LocalePublishArgs = {
+  /** Publish every locale. Needs `versions.drafts.localizeStatus`. */
+  publishAllLocales?: boolean;
+  /** Unpublish every locale. Needs `versions.drafts.localizeStatus`. */
+  unpublishAllLocales?: boolean;
+};
+
 export type FindArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
   where?: Where;
@@ -338,36 +352,42 @@ export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
   draft?: boolean;
 };
 
-export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs & {
-  collection: TSlug;
-  data: Partial<TypedCollection<TSlug>>;
-  disableVerificationEmail?: boolean;
-  draft?: boolean;
-  file?: {
-    data: Buffer;
-    mimetype: string;
-    name: string;
-    size: number;
-    tempFilePath?: string;
+export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs &
+  UploadArgs & {
+    collection: TSlug;
+    data: Partial<TypedCollection<TSlug>>;
+    disableVerificationEmail?: boolean;
+    draft?: boolean;
+    /** Copy this document's data, and its file in an upload collection, into the new document. `data` overrides copied fields. */
+    duplicateFromID?: DocID;
+    file?: {
+      data: Buffer;
+      mimetype: string;
+      name: string;
+      size: number;
+      tempFilePath?: string;
+    };
   };
-  filePath?: string;
-};
 
-export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
-  collection: TSlug;
-  id: DocID;
-  data: Partial<TypedCollection<TSlug>>;
-  autosave?: boolean;
-  draft?: boolean;
-  publishSpecificLocale?: string;
-};
+export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
+  UploadArgs &
+  LocalePublishArgs & {
+    collection: TSlug;
+    id: DocID;
+    data: Partial<TypedCollection<TSlug>>;
+    autosave?: boolean;
+    draft?: boolean;
+    publishSpecificLocale?: string;
+  };
 
-export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
-  collection: TSlug;
-  where: Where;
-  data: Partial<TypedCollection<TSlug>>;
-  draft?: boolean;
-};
+export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs &
+  UploadArgs &
+  LocalePublishArgs & {
+    collection: TSlug;
+    where: Where;
+    data: Partial<TypedCollection<TSlug>>;
+    draft?: boolean;
+  };
 
 export type UpdateArgs<TSlug extends CollectionSlug> =
   UpdateByIDArgs<TSlug> | UpdateManyArgs<TSlug>;

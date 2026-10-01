@@ -171,20 +171,22 @@ export default buildConfig({
   _disabled_ in production.
 </Warning>
 
-The following options are available:
+`autoLogin` defaults to `false`. To turn it on, pass an object:
 
-| Option            | Description                                                                                                     |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| **`username`**    | The username of the user to login as                                                                            |
-| **`email`**       | The email address of the user to login as                                                                       |
-| **`password`**    | The password of the user to login as. This is only needed if `prefillOnly` is set to true                       |
-| **`prefillOnly`** | If set to true, the login credentials will be prefilled but the user will still need to click the login button. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `email` | `string` | — | Email address of the user to log in as. Set `email` or `username`. |
+| `username` | `string` | — | Username of the user to log in as, for collections with `loginWithUsername`. Used when `email` isn't set. |
+| `password` | `string` | — | The user's password. Only used with `prefillOnly`, to fill in the login form. |
+| `prefillOnly` | `boolean` | `false` | Fills in the login form instead of logging in, so the user still clicks the login button. |
+
+Without `prefillOnly`, every request that has no valid login token is authenticated as this user: the admin panel, REST and GraphQL requests, and `frogbot.auth()`.
 
 ## Auto-Refresh
 
 Turning this property on will allow users to stay logged in indefinitely while their browser is open and on the admin panel, by automatically refreshing their authentication token before it expires.
 
-To enable auto-refresh for user tokens, set `autoRefresh: true` in the FrogBot Config:
+To enable auto-refresh for user tokens, set `autoRefresh: true` in the FrogBot Config. It defaults to `false`, which shows a prompt to stay logged in before the token expires:
 
 ```ts
 import { buildConfig } from 'frogbot'

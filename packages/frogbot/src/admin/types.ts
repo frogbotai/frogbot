@@ -86,6 +86,27 @@ export interface RootAdminComponents {
 }
 
 export interface RootAdminConfig {
+  /**
+   * Log every visitor in as this user, or prefill the login form with `prefillOnly`. Keep it off in production.
+   *
+   * @default false
+   */
+  autoLogin?:
+    | false
+    | {
+        email?: string;
+        /** Only used with `prefillOnly`. */
+        password?: string;
+        /** Fill in the login form instead of logging in. */
+        prefillOnly?: boolean;
+        username?: string;
+      };
+  /**
+   * Refresh the admin user's token before it expires instead of asking them to stay logged in.
+   *
+   * @default false
+   */
+  autoRefresh?: boolean;
   dashboard?: DashboardConfig;
   importMap?: {
     /** Regenerate the admin import map on boot. */

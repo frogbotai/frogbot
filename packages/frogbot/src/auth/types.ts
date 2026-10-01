@@ -122,6 +122,8 @@ export type UnlockArgs<TSlug extends CollectionSlug> = CommonArgs & {
 // ── Auth (headers-based) ──────────────────────────────────────────────
 
 export type AuthArgs = {
+  /** Let auth strategies return `responseHeaders`, such as a refreshed cookie. */
+  canSetHeaders?: boolean;
   headers: Request['headers'];
   req?: FrogBotRequest;
 };
