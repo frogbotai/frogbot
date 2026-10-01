@@ -1,3 +1,4 @@
+@import "./layers.css";
 @import "./utilities.css";
 @import "./board/board.css";
 @import "./calendar/calendar.css";
@@ -67,375 +68,263 @@
 @import "./chat/todo-tool-render.css";
 @import "./chat/tool-selector.css";
 
-html {
-  font-size: 14px;
-}
-
-.fb-portal {
-  display: contents;
-}
-
-[data-fb-ui] {
-  --font-body:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-base-0: rgb(249, 250, 251);
-  --color-base-50: rgb(246, 247, 249);
-  --color-base-100: rgb(243, 244, 246);
-  --color-base-150: rgb(235, 236, 240);
-  --color-base-200: rgb(226, 229, 233);
-  --color-base-250: rgb(217, 221, 226);
-  --color-base-300: rgb(209, 213, 220);
-  --color-base-350: rgb(181, 187, 197);
-  --color-base-400: rgb(153, 161, 175);
-  --color-base-450: rgb(126, 136, 154);
-  --color-base-500: rgb(106, 114, 130);
-  --color-base-550: rgb(90, 100, 114);
-  --color-base-600: rgb(74, 85, 101);
-  --color-base-650: rgb(63, 73, 90);
-  --color-base-700: rgb(54, 65, 83);
-  --color-base-750: rgb(44, 53, 68);
-  --color-base-800: rgb(30, 41, 57);
-  --color-base-850: rgb(22, 31, 49);
-  --color-base-900: rgb(16, 24, 40);
-  --color-base-950: rgb(3, 7, 18);
-  --color-base-1000: rgb(1, 3, 10);
-  --color-blue-350: #78b6fc;
-  font-family: var(--font-body);
-  color: var(--theme-base-900);
-}
-
-:where(html[data-fb-ui-page]),
-html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"],
-[data-fb-ui] {
-  --font-payload: var(--font-body);
-  --fb-text-xs: 0.75rem;
-  --fb-text-xs--line-height: 1rem;
-  --fb-text-sm: 0.875rem;
-  --fb-text-sm--line-height: 1.5rem;
-  --fb-text-base: 1rem;
-  --fb-text-base--line-height: 1.75rem;
-  --fb-text-lg: 1.125rem;
-  --fb-text-lg--line-height: 1.625rem;
-  --fb-text-xl: 1.25rem;
-  --fb-text-xl--line-height: 1.625rem;
-  --fb-text-2xl: 1.5rem;
-  --fb-text-2xl--line-height: 2rem;
-  --fb-text-3xl: 2rem;
-  --fb-text-3xl--line-height: 2.5rem;
-  --fb-text-4xl: 2.25rem;
-  --fb-text-4xl--line-height: 2.75rem;
-  --fb-text-5xl: 3rem;
-  --fb-text-5xl--line-height: 3rem;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: hsl(var(--ring));
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-brand-100: #d1f0db;
-  --color-brand-200: #a0ddb4;
-  --color-brand-300: #67c285;
-  --color-brand-400: #3da55f;
-  --color-brand-500: #2f964f;
-  --color-brand-600: #166d30;
-  --color-brand-700: #0e5523;
-  --color-brand-800: #083d19;
-  --color-brand-900: #042710;
-  --fb-color-red-500: #e74860;
-  --fb-color-red-600: #d32b4d;
-  --fb-color-red-700: #b21e3f;
-  --color-green-350: #66eb96;
-  --color-purple-350: #cb9afe;
-  --color-orange-350: #f6a360;
-  --theme-base-0: var(--color-base-0);
-  --theme-base-50: var(--color-base-50);
-  --theme-base-100: var(--color-base-100);
-  --theme-base-150: var(--color-base-150);
-  --theme-base-200: var(--color-base-200);
-  --theme-base-250: var(--color-base-250);
-  --theme-base-300: var(--color-base-300);
-  --theme-base-350: var(--color-base-350);
-  --theme-base-400: var(--color-base-400);
-  --theme-base-450: var(--color-base-450);
-  --theme-base-500: var(--color-base-500);
-  --theme-base-550: var(--color-base-550);
-  --theme-base-600: var(--color-base-600);
-  --theme-base-650: var(--color-base-650);
-  --theme-base-700: var(--color-base-700);
-  --theme-base-750: var(--color-base-750);
-  --theme-base-800: var(--color-base-800);
-  --theme-base-850: var(--color-base-850);
-  --theme-base-900: var(--color-base-900);
-  --theme-base-950: var(--color-base-950);
-  --theme-base-1000: var(--color-base-1000);
-  --theme-brand-100: var(--color-brand-100);
-  --theme-brand-200: var(--color-brand-200);
-  --theme-brand-300: var(--color-brand-300);
-  --theme-brand-400: var(--color-brand-400);
-  --theme-brand-500: var(--color-brand-500);
-  --theme-brand-600: var(--color-brand-600);
-  --theme-brand-700: var(--color-brand-700);
-  --theme-brand-800: var(--color-brand-800);
-  --theme-brand-900: var(--color-brand-900);
-  --theme-red-500: var(--fb-color-red-500);
-  --theme-red-600: var(--fb-color-red-600);
-  --theme-red-700: var(--fb-color-red-700);
-  --theme-green-350: var(--color-green-350);
-  --theme-orange-350: var(--color-orange-350);
-  --background: var(--color-base-0);
-  --foreground: var(--color-base-900);
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: var(--color-base-50);
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: var(--color-base-850);
-  --primary-foreground: var(--color-base-100);
-  --secondary: var(--color-brand-500);
-  --secondary-foreground: var(--color-base-100);
-  --muted: var(--color-base-50);
-  --muted-foreground: var(--color-base-750);
-  --accent: var(--color-base-100);
-  --accent-foreground: var(--color-base-800);
-  --destructive: var(--fb-color-red-500);
-  --destructive-foreground: 210 40% 98%;
-  --success: var(--theme-green-350);
-  --success-foreground: var(--color-base-900);
-  --warning: var(--theme-orange-350);
-  --warning-foreground: var(--color-base-900);
-  --border: var(--color-base-150);
-  --border-hover: var(--color-base-400);
-  --input: var(--color-base-250);
-  --ring: 240 5.9% 10%;
-  --fb-radius: 0.5rem;
-  --fb-radius-sm: calc(var(--fb-radius) - 4px);
-  --fb-radius-md: calc(var(--fb-radius) - 2px);
-  --fb-radius-lg: var(--fb-radius);
-  --fb-radius-xl: calc(var(--fb-radius) + 4px);
-  --sidebar: var(--color-base-50);
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: rgb(244, 244, 245);
-  --sidebar-accent-foreground: 240 5.9% 10%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
-  --fb-code-block-user-background: var(--theme-base-50);
-}
-
-.gradient-wrapper {
-  position: relative;
-  filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
-    drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
-}
-
-.gradient-container {
-  position: relative;
-  display: inline-block;
-  padding: 5px;
-  border-radius: 20px;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.gradient-container::before {
-  content: "";
-  position: absolute;
-  inset: -5000000px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 150deg,
-    var(--color-green-350) 180deg,
-    var(--color-blue-350) 210deg,
-    #f598a2 270deg,
-    var(--color-purple-350) 300deg,
-    var(--color-blue-350) 330deg,
-    transparent 360deg,
-    var(--color-green-350) 5deg,
-    transparent 15deg,
-    transparent 360deg
-  );
-  border-radius: 50%;
-  animation: rotateVariable 8s linear infinite;
-  z-index: -1;
-}
-
-.gradient-wrapper:has(.gradient-textarea:focus),
-.gradient-wrapper-dragging {
-  filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6))
-    drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
-}
-
-@keyframes rotateVariable {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gradient-container::before {
-    animation: none;
-  }
-}
-
-:where(html[data-fb-ui-page][data-theme="dark"]),
-html[data-fb-ui-page][data-theme="dark"] [data-fb-ui][data-theme="system"],
-[data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
-[data-fb-ui].dark,
-[data-fb-ui][data-theme="dark"] {
-  --theme-base-0: var(--color-base-1000);
-  --theme-base-50: var(--color-base-950);
-  --theme-base-100: var(--color-base-900);
-  --theme-base-150: var(--color-base-850);
-  --theme-base-200: var(--color-base-800);
-  --theme-base-250: var(--color-base-750);
-  --theme-base-300: var(--color-base-700);
-  --theme-base-350: var(--color-base-650);
-  --theme-base-400: var(--color-base-600);
-  --theme-base-450: var(--color-base-550);
-  --theme-base-500: var(--color-base-500);
-  --theme-base-550: var(--color-base-450);
-  --theme-base-600: var(--color-base-400);
-  --theme-base-650: var(--color-base-350);
-  --theme-base-700: var(--color-base-300);
-  --theme-base-750: var(--color-base-250);
-  --theme-base-800: var(--color-base-200);
-  --theme-base-850: var(--color-base-150);
-  --theme-base-900: var(--color-base-100);
-  --theme-base-950: var(--color-base-50);
-  --theme-base-1000: var(--color-base-0);
-  --theme-brand-100: var(--color-brand-900);
-  --theme-brand-200: var(--color-brand-800);
-  --theme-brand-300: var(--color-brand-700);
-  --theme-brand-400: var(--color-brand-600);
-  --theme-brand-600: var(--color-brand-400);
-  --theme-brand-700: var(--color-brand-300);
-  --theme-brand-800: var(--color-brand-200);
-  --theme-brand-900: var(--color-brand-100);
-  --theme-red-500: var(--fb-color-red-500);
-  --theme-red-600: var(--fb-color-red-600);
-  --theme-red-700: var(--fb-color-red-700);
-  --theme-green-350: #149443;
-  --theme-orange-350: #cc4814;
-  --background: var(--color-base-900);
-  --foreground: var(--color-base-0);
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: var(--color-base-850);
-  --popover-foreground: 210 40% 98%;
-  --primary: var(--color-base-50);
-  --primary-foreground: var(--color-base-850);
-  --secondary: var(--color-brand-500);
-  --secondary-foreground: var(--color-base-100);
-  --muted: var(--color-base-850);
-  --muted-foreground: var(--color-base-150);
-  --accent: var(--color-base-800);
-  --accent-foreground: var(--color-base-100);
-  --destructive: var(--fb-color-red-500);
-  --border: var(--color-base-750);
-  --border-hover: var(--color-base-450);
-  --input: var(--color-base-600);
-  --ring: 210 90% 60%;
-  --sidebar: var(--color-base-850);
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: var(--color-base-800);
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
-  --fb-code-block-user-background: var(--color-base-250);
-}
-
-html[data-fb-ui-page][data-theme="dark"] [data-fb-ui][data-theme="system"],
-[data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
-[data-fb-ui].dark,
-[data-fb-ui][data-theme="dark"] {
-  color-scheme: dark;
-}
-
-html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"],
-[data-fb-theme="light"] [data-fb-ui][data-theme="system"] {
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  [data-fb-ui][data-theme="system"] {
-    --theme-base-0: var(--color-base-1000);
-    --theme-base-50: var(--color-base-950);
-    --theme-base-100: var(--color-base-900);
-    --theme-base-150: var(--color-base-850);
-    --theme-base-200: var(--color-base-800);
-    --theme-base-250: var(--color-base-750);
-    --theme-base-300: var(--color-base-700);
-    --theme-base-350: var(--color-base-650);
-    --theme-base-400: var(--color-base-600);
-    --theme-base-450: var(--color-base-550);
+@layer theme.frogbot {
+  :root {
+    --font-payload: var(--font-body);
+    --fb-text-xs: 0.75rem;
+    --fb-text-xs--line-height: 1rem;
+    --fb-text-sm: 0.875rem;
+    --fb-text-sm--line-height: 1.5rem;
+    --fb-text-base: 1rem;
+    --fb-text-base--line-height: 1.75rem;
+    --fb-text-lg: 1.125rem;
+    --fb-text-lg--line-height: 1.625rem;
+    --fb-text-xl: 1.25rem;
+    --fb-text-xl--line-height: 1.625rem;
+    --fb-text-2xl: 1.5rem;
+    --fb-text-2xl--line-height: 2rem;
+    --fb-text-3xl: 2rem;
+    --fb-text-3xl--line-height: 2.5rem;
+    --fb-text-4xl: 2.25rem;
+    --fb-text-4xl--line-height: 2.75rem;
+    --fb-text-5xl: 3rem;
+    --fb-text-5xl--line-height: 3rem;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: hsl(var(--destructive-foreground));
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-brand-100: #d1f0db;
+    --color-brand-200: #a0ddb4;
+    --color-brand-300: #67c285;
+    --color-brand-400: #3da55f;
+    --color-brand-500: #2f964f;
+    --color-brand-600: #166d30;
+    --color-brand-700: #0e5523;
+    --color-brand-800: #083d19;
+    --color-brand-900: #042710;
+    --fb-color-red-500: #e74860;
+    --fb-color-red-600: #d32b4d;
+    --fb-color-red-700: #b21e3f;
+    --fb-color-blue-350: #78b6fc;
+    --color-green-350: #66eb96;
+    --color-purple-350: #cb9afe;
+    --color-orange-350: #f6a360;
+    --theme-base-0: light-dark(var(--color-base-0), var(--color-base-1000));
+    --theme-base-50: light-dark(var(--color-base-50), var(--color-base-950));
+    --theme-base-100: light-dark(var(--color-base-100), var(--color-base-900));
+    --theme-base-150: light-dark(var(--color-base-150), var(--color-base-850));
+    --theme-base-200: light-dark(var(--color-base-200), var(--color-base-800));
+    --theme-base-250: light-dark(var(--color-base-250), var(--color-base-750));
+    --theme-base-300: light-dark(var(--color-base-300), var(--color-base-700));
+    --theme-base-350: light-dark(var(--color-base-350), var(--color-base-650));
+    --theme-base-400: light-dark(var(--color-base-400), var(--color-base-600));
+    --theme-base-450: light-dark(var(--color-base-450), var(--color-base-550));
     --theme-base-500: var(--color-base-500);
-    --theme-base-550: var(--color-base-450);
-    --theme-base-600: var(--color-base-400);
-    --theme-base-650: var(--color-base-350);
-    --theme-base-700: var(--color-base-300);
-    --theme-base-750: var(--color-base-250);
-    --theme-base-800: var(--color-base-200);
-    --theme-base-850: var(--color-base-150);
-    --theme-base-900: var(--color-base-100);
-    --theme-base-950: var(--color-base-50);
-    --theme-base-1000: var(--color-base-0);
-    --theme-brand-100: var(--color-brand-900);
-    --theme-brand-200: var(--color-brand-800);
-    --theme-brand-300: var(--color-brand-700);
-    --theme-brand-400: var(--color-brand-600);
-    --theme-brand-600: var(--color-brand-400);
-    --theme-brand-700: var(--color-brand-300);
-    --theme-brand-800: var(--color-brand-200);
-    --theme-brand-900: var(--color-brand-100);
-    --theme-green-350: #149443;
-    --theme-orange-350: #cc4814;
-    --background: var(--color-base-900);
-    --foreground: var(--color-base-0);
-    --popover: var(--color-base-850);
-    --primary: var(--color-base-50);
-    --primary-foreground: var(--color-base-850);
-    --muted: var(--color-base-850);
-    --muted-foreground: var(--color-base-150);
-    --accent: var(--color-base-800);
-    --accent-foreground: var(--color-base-100);
-    --border: var(--color-base-750);
-    --border-hover: var(--color-base-450);
-    --input: var(--color-base-600);
-    --ring: 210 90% 60%;
-    --sidebar: var(--color-base-850);
-    --sidebar-accent: var(--color-base-800);
-    --fb-code-block-user-background: var(--color-base-250);
+    --theme-base-550: light-dark(var(--color-base-550), var(--color-base-450));
+    --theme-base-600: light-dark(var(--color-base-600), var(--color-base-400));
+    --theme-base-650: light-dark(var(--color-base-650), var(--color-base-350));
+    --theme-base-700: light-dark(var(--color-base-700), var(--color-base-300));
+    --theme-base-750: light-dark(var(--color-base-750), var(--color-base-250));
+    --theme-base-800: light-dark(var(--color-base-800), var(--color-base-200));
+    --theme-base-850: light-dark(var(--color-base-850), var(--color-base-150));
+    --theme-base-900: light-dark(var(--color-base-900), var(--color-base-100));
+    --theme-base-950: light-dark(var(--color-base-950), var(--color-base-50));
+    --theme-base-1000: light-dark(var(--color-base-1000), var(--color-base-0));
+    --theme-brand-100: light-dark(var(--color-brand-100), var(--color-brand-900));
+    --theme-brand-200: light-dark(var(--color-brand-200), var(--color-brand-800));
+    --theme-brand-300: light-dark(var(--color-brand-300), var(--color-brand-700));
+    --theme-brand-400: light-dark(var(--color-brand-400), var(--color-brand-600));
+    --theme-brand-500: var(--color-brand-500);
+    --theme-brand-600: light-dark(var(--color-brand-600), var(--color-brand-400));
+    --theme-brand-700: light-dark(var(--color-brand-700), var(--color-brand-300));
+    --theme-brand-800: light-dark(var(--color-brand-800), var(--color-brand-200));
+    --theme-brand-900: light-dark(var(--color-brand-900), var(--color-brand-100));
+    --theme-red-500: var(--fb-color-red-500);
+    --theme-red-600: var(--fb-color-red-600);
+    --theme-red-700: var(--fb-color-red-700);
+    --theme-green-350: light-dark(var(--color-green-350), #149443);
+    --theme-orange-350: light-dark(var(--color-orange-350), #cc4814);
+    --background: light-dark(var(--color-base-0), var(--color-base-900));
+    --foreground: light-dark(var(--color-base-900), var(--color-base-0));
+    --card: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
+    --card-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+    --popover: light-dark(var(--color-base-50), var(--color-base-850));
+    --popover-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+    --primary: light-dark(var(--color-base-850), var(--color-base-50));
+    --primary-foreground: light-dark(var(--color-base-100), var(--color-base-850));
+    --secondary: var(--color-brand-500);
+    --secondary-foreground: var(--color-base-100);
+    --muted: light-dark(var(--color-base-50), var(--color-base-850));
+    --muted-foreground: light-dark(var(--color-base-750), var(--color-base-150));
+    --accent: light-dark(var(--color-base-100), var(--color-base-800));
+    --accent-foreground: light-dark(var(--color-base-800), var(--color-base-100));
+    --destructive: var(--fb-color-red-500);
+    --destructive-foreground: 210 40% 98%;
+    --success: var(--theme-green-350);
+    --success-foreground: var(--color-base-900);
+    --warning: var(--theme-orange-350);
+    --warning-foreground: var(--color-base-900);
+    --border: light-dark(var(--color-base-150), var(--color-base-750));
+    --border-hover: light-dark(var(--color-base-400), var(--color-base-450));
+    --input: light-dark(var(--color-base-250), var(--color-base-600));
+    --ring: light-dark(hsl(240 5.9% 10%), hsl(210 90% 60%));
+    --fb-radius: 0.5rem;
+    --fb-radius-sm: calc(var(--fb-radius) - 4px);
+    --fb-radius-md: calc(var(--fb-radius) - 2px);
+    --fb-radius-lg: var(--fb-radius);
+    --fb-radius-xl: calc(var(--fb-radius) + 4px);
+    --sidebar: light-dark(var(--color-base-50), var(--color-base-850));
+    --sidebar-foreground: light-dark(hsl(240 5.3% 26.1%), hsl(240 4.8% 95.9%));
+    --sidebar-primary: light-dark(hsl(240 5.9% 10%), hsl(224.3 76.3% 48%));
+    --sidebar-primary-foreground: light-dark(hsl(0 0% 98%), hsl(0 0% 100%));
+    --sidebar-accent: light-dark(rgb(244, 244, 245), var(--color-base-800));
+    --sidebar-accent-foreground: light-dark(hsl(240 5.9% 10%), hsl(240 4.8% 95.9%));
+    --sidebar-border: light-dark(hsl(220 13% 91%), hsl(240 3.7% 15.9%));
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --fb-code-block-user-background: light-dark(var(--theme-base-50), var(--color-base-250));
+  }
+
+  :where(html:not([data-fb-ui-page])) {
+    --font-body:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --color-base-0: rgb(249, 250, 251);
+    --color-base-50: rgb(246, 247, 249);
+    --color-base-100: rgb(243, 244, 246);
+    --color-base-150: rgb(235, 236, 240);
+    --color-base-200: rgb(226, 229, 233);
+    --color-base-250: rgb(217, 221, 226);
+    --color-base-300: rgb(209, 213, 220);
+    --color-base-350: rgb(181, 187, 197);
+    --color-base-400: rgb(153, 161, 175);
+    --color-base-450: rgb(126, 136, 154);
+    --color-base-500: rgb(106, 114, 130);
+    --color-base-550: rgb(90, 100, 114);
+    --color-base-600: rgb(74, 85, 101);
+    --color-base-650: rgb(63, 73, 90);
+    --color-base-700: rgb(54, 65, 83);
+    --color-base-750: rgb(44, 53, 68);
+    --color-base-800: rgb(30, 41, 57);
+    --color-base-850: rgb(22, 31, 49);
+    --color-base-900: rgb(16, 24, 40);
+    --color-base-950: rgb(3, 7, 18);
+    --color-base-1000: rgb(1, 3, 10);
+  }
+}
+
+@layer frogbot {
+  html {
+    font-size: 14px;
+  }
+
+  .fb-portal {
+    display: contents;
+  }
+
+  [data-fb-ui] {
+    font-family: var(--font-body);
+    color: var(--theme-base-900);
+  }
+
+  [data-fb-ui][data-theme="system"] {
+    color-scheme: light dark;
+  }
+
+  [data-fb-ui][data-theme="light"],
+  [data-fb-theme="light"] [data-fb-ui][data-theme="system"],
+  html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"] {
+    color-scheme: light;
+  }
+
+  [data-fb-ui].dark,
+  [data-fb-ui][data-theme="dark"],
+  [data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
+  html[data-fb-ui-page][data-theme="dark"] [data-fb-ui][data-theme="system"] {
     color-scheme: dark;
+  }
+
+  .gradient-wrapper {
+    position: relative;
+    filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
+      drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
+  }
+
+  .gradient-container {
+    position: relative;
+    display: inline-block;
+    padding: 5px;
+    border-radius: 20px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .gradient-container::before {
+    content: "";
+    position: absolute;
+    inset: -5000000px;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 150deg,
+      var(--color-green-350) 180deg,
+      var(--fb-color-blue-350) 210deg,
+      #f598a2 270deg,
+      var(--color-purple-350) 300deg,
+      var(--fb-color-blue-350) 330deg,
+      transparent 360deg,
+      var(--color-green-350) 5deg,
+      transparent 15deg,
+      transparent 360deg
+    );
+    border-radius: 50%;
+    animation: rotateVariable 8s linear infinite;
+    z-index: -1;
+  }
+
+  .gradient-wrapper:has(.gradient-textarea:focus),
+  .gradient-wrapper-dragging {
+    filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6))
+      drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
+  }
+
+  @keyframes rotateVariable {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gradient-container::before {
+      animation: none;
+    }
   }
 }

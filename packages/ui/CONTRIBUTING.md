@@ -23,6 +23,9 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Use existing theme, typography, color, and radius tokens whenever they cover a value.
 - Do not add Tailwind, variant utilities, styling dependencies, component dark-mode selectors, or media-query theme overrides.
 - Preserve external `className` values with plain string concatenation.
+- Wrap every rule in a new CSS file in `@layer frogbot { … }`.
+- Define tokens only in the `@layer theme.frogbot` `:root` block in `src/styles.css`, with `light-dark()` for values that change with the mode. Don't declare tokens on `[data-fb-ui]` or any other wrapper.
+- Don't add top-level `@layer` order statements outside `src/layers.css`.
 
 ## Firmware Ports
 

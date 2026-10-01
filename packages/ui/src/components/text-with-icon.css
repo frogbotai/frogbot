@@ -1,5 +1,7 @@
-.fb-text-with-icon {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+@layer frogbot {
+  .fb-text-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }

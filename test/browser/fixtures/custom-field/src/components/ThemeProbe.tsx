@@ -6,9 +6,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  SearchInput,
 } from '@frogbotai/ui';
 import { CodeBlock } from '@frogbotai/ui/chat';
 import { ThemeProvider } from '@frogbotai/ui/theme';
+
+import { LayerProbe } from './LayerProbe';
 
 export function ThemeProbe() {
   return (
@@ -45,6 +48,17 @@ export function ThemeProbe() {
           </DropdownMenuContent>
         </DropdownMenu>
       </ThemeProvider>
+      <div style={{ bottom: 0, display: 'flex', position: 'fixed', right: 0, zIndex: 40 }}>
+        <LayerProbe />
+        <div className="frogbot-connections__nested">
+          <Button data-testid="theme-probe-nested-button" type="button">
+            Connect
+          </Button>
+        </div>
+        <div className="frogbot-connections__toolbar">
+          <SearchInput onChange={() => {}} value="" />
+        </div>
+      </div>
     </div>
   );
 }

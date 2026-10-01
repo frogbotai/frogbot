@@ -1,9 +1,11 @@
-.fb-data-part {
-  overflow-x: auto;
-  padding: 0.75rem;
-  border: 1px solid var(--theme-base-150);
-  border-radius: var(--fb-radius-lg);
-  background-color: var(--theme-base-50);
-  font-size: var(--fb-text-xs);
-  line-height: var(--fb-text-xs--line-height);
+@layer frogbot {
+  .fb-data-part {
+    overflow-x: auto;
+    padding: 0.75rem;
+    border: 1px solid var(--theme-base-150);
+    border-radius: var(--fb-radius-lg);
+    background-color: var(--theme-base-50);
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+  }
 }

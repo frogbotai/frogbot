@@ -1,11 +1,61 @@
 ---
 title: "Theme and white-label the chat UI"
 sidebarTitle: "Theming"
-description: "Apply build-time and runtime brand tokens without editing components."
-keywords: ["theme", "white-label", "CSS variables", "ThemeProvider"]
+description: "Set FrogBot UI colors with CSS variables and switch light and dark modes."
+keywords: ["theme", "white-label", "CSS variables", "ThemeProvider", "cascade layer"]
 ---
 
-Wrap the UI in `ThemeProvider` and pass semantic CSS tokens. `--primary` controls the brand color used by primary surfaces.
+Set FrogBot's colors with CSS variables on `:root`. A page-level value reaches every FrogBot component on the page, including menus and dialogs, which render outside your layout.
+
+```css
+:root {
+  --theme-base-1000: oklch(0.58 0.18 250);
+  --theme-base-50: oklch(0.97 0.01 250);
+}
+```
+
+With Tailwind CSS v4, set the same tokens in `@theme static`:
+
+```css
+@import "tailwindcss";
+
+@theme static {
+  --theme-base-1000: oklch(0.58 0.18 250);
+  --theme-base-50: oklch(0.97 0.01 250);
+}
+```
+
+Tailwind drops `@theme` values that no utility uses, so FrogBot tokens need `static`.
+
+## Color tokens
+
+Buttons, menus, dialogs, and most other components read the neutral `--theme-base-*` scale. For example, the default `Button` uses `--theme-base-1000` for its background, menus use `--theme-base-50`, and dialogs use `--theme-base-0`.
+
+`--primary` (and `--color-primary`) colors `Alert` and `Dot` only. It doesn't change buttons, menus, or dialogs.
+
+Use `--theme-base-*` for neutral component colors that should invert between light and dark modes. Use `--color-base-*` only when a color must remain fixed, such as a dark overlay or fixed-contrast text on a brand surface.
+
+`--theme-elevation-*` belongs to the FrogBot admin theme. Reusable `@frogbotai/ui` styles should use `--theme-base-*` so they also work outside the admin panel.
+
+### Token names your app may already use
+
+FrogBot's tokens include common names such as `--color-*`, `--primary`, `--background`, and `--sidebar-*`. If your app defines a token with the same name for its own use, it restyles FrogBot too. For example, an app theme that sets `--sidebar-background` changes FrogBot's sidebar. Rename your token or scope it to your own elements.
+
+## Light and dark modes
+
+FrogBot tokens follow the mode of the element that uses them. A value you set on `:root` applies in both modes. To set a different value per mode, write it with `light-dark()`:
+
+```css
+:root {
+  --theme-base-1000: light-dark(oklch(0.58 0.18 250), oklch(0.82 0.12 250));
+}
+```
+
+If your app sets `:root { color-scheme: light dark }`, FrogBot components outside a `ThemeProvider` follow the operating system's mode.
+
+### ThemeProvider
+
+`ThemeProvider` sets the light, dark, or system mode for its children. Menus and dialogs opened inside it use the same mode. It doesn't set colors.
 
 ```tsx
 import { ThemeProvider, ThemeScript } from '@frogbotai/ui/theme'
@@ -14,29 +64,101 @@ export function AppTheme({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ThemeScript />
-      <ThemeProvider theme={{ '--primary': 'oklch(0.58 0.18 250)' }}>
-        {children}
-      </ThemeProvider>
+      <ThemeProvider>{children}</ThemeProvider>
     </>
   )
 }
 ```
 
-Change the `theme` or `brand` prop at runtime to apply tenant-specific values without rebuilding. Explicit `theme` values override matching `brand.tokens` values.
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | Required | Content that uses the provider's mode. |
+| `mode` | `'light' \| 'dark' \| 'system'` | — | Controlled mode. Without it, the provider starts in `system` and uses the stored preference. |
+| `onModeChange` | `(mode: ThemeMode) => void` | — | Called when `setMode` from `useTheme()` changes the mode. |
+| `storage` | `ThemeStorage` | `localStorage` | Reads and saves the preference with `get(key)` and `set(key, mode)`. |
+| `storageKey` | `string` | `'fb-ui-theme'` | Key the preference is stored under. |
+
+`useTheme()` returns `mode`, `resolvedMode` (`light` or `dark`), and `setMode`.
 
 Place `ThemeScript` before themed content during server rendering. It reads the stored `light`, `dark`, or `system` preference before hydration to avoid a mode flash. Pass the same `storageKey` to `ThemeScript` and `ThemeProvider` when using a custom key.
 
-## Admin panel and application pages
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `nonce` | `string` | — | Content Security Policy nonce for the inline script. |
+| `storageKey` | `string` | `'fb-ui-theme'` | Key the preference is read from. |
+
+### Sections
+
+A section of a page can use its own mode: wrap it in `ThemeProvider` with `mode`, and its menus and dialogs follow. Colors set on a section, such as `.billing { --theme-base-50: … }`, apply to the section's own content but not to its menus and dialogs, which render at the end of the page. Set colors on `:root` instead.
+
+## Override FrogBot styles
+
+All FrogBot styles are in a CSS cascade layer named `frogbot`. You can override them three ways:
+
+- Write CSS that isn't in a layer. It beats FrogBot whatever its selector.
+- Add a Tailwind CSS utility to the component, with one of the [Tailwind setups](/chat/ui-installation#use-with-tailwind-css).
+- Put your rules in a layer declared after `frogbot`.
+
+```tsx
+<Button className="checkout-action">Pay</Button>
+```
+
+```css
+.checkout-action {
+  border-radius: 4px;
+}
+```
+
+Global element rules apply to FrogBot components too. A CSS reset, normalize.css, Tailwind CSS v3 Preflight, or a rule such as `button { background: none }` removes FrogBot's button backgrounds, and `a { text-decoration: underline }` underlines link buttons. Scope these rules to your own content if you don't want that.
+
+## Admin panel styles
 
 In the FrogBot admin panel, FrogBot UI components and theme tokens work in every custom component, including views, fields, document controls, drawers, menus, and dialogs, with no wrapper. They follow the admin's light and dark setting and update as soon as a user switches theme.
 
-Use `ThemeProvider` on your application's own pages outside the admin panel. Inside the admin, add one only when a section needs its own mode or tokens; it overrides the admin theme for its children.
+Use `ThemeProvider` on your application's own pages outside the admin panel. Inside the admin, add one only when a section needs its own mode; it overrides the admin theme for its children.
 
-## Choose neutral color tokens
+The admin orders its styles like this, from weakest to strongest:
 
-Use `--theme-base-*` for neutral component colors that should invert between light and dark modes. Use `--color-base-*` only when a color must remain fixed, such as a dark overlay or fixed-contrast text on a brand surface.
+1. `payload-default`: the admin's base styles.
+2. `frogbot`: FrogBot components and screens.
+3. `payload`: an empty layer for your admin overrides.
+4. Layers your CSS declares, such as Tailwind's.
+5. CSS that isn't in a layer.
 
-`--theme-elevation-*` belongs to the FrogBot admin theme. Reusable `@frogbotai/ui` styles should use `--theme-base-*` so they also work outside the admin panel.
+No layer of yours can go between `payload-default` and `frogbot`.
+
+To use Tailwind CSS in the admin, import only its theme and utilities, after `@frogbotai/next/css`. Don't import Preflight (`@import "tailwindcss"` includes it): it resets the admin's own controls and FrogBot's.
+
+```css
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+```
+
+## Upgrade from the `theme` and `brand` props
+
+`ThemeProvider` no longer accepts `theme` or `brand`, and `@frogbotai/ui/theme` no longer exports `ThemeTokens` or `BrandTheme`. `BrandConfig` no longer has `tokens`. Passing either prop is a TypeScript error. Move the values into CSS:
+
+```tsx
+// Before
+<ThemeProvider theme={{ '--primary': 'oklch(0.58 0.18 250)' }}>{children}</ThemeProvider>
+```
+
+```tsx
+// After
+<ThemeProvider>{children}</ThemeProvider>
+```
+
+```css
+/* Page-level, so it reaches menus and dialogs too */
+:root {
+  --primary: oklch(0.58 0.18 250);
+}
+```
+
+`--primary` colors `Alert` and `Dot` only. If you used it to recolor buttons, menus, or dialogs, set the [`--theme-base-*` token](#color-tokens) they read instead.
+
+To change colors at runtime, for example per tenant, set the CSS variables on `document.documentElement` yourself.
 
 <Warning>
   Internal utility classes can change between releases and are not public API. Do not use them for white-label overrides.

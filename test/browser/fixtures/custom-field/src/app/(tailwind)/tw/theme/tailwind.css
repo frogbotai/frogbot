@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@theme static {
+  --theme-base-0: rgb(77, 88, 99);
+  --theme-base-50: rgb(44, 55, 66);
+  --theme-base-1000: rgb(11, 22, 33);
+}

@@ -1,48 +1,50 @@
-.fb-chat-row-actions__row {
-  position: relative;
-}
+@layer frogbot {
+  .fb-chat-row-actions__row {
+    position: relative;
+  }
 
-.fb-chat-row-actions__trigger {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 0.25rem;
-  color: inherit;
-  cursor: pointer;
-  display: flex;
-  height: 1.5rem;
-  inset-inline-end: 0.375rem;
-  justify-content: center;
-  opacity: 0;
-  padding: 0;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.5rem;
-}
+  .fb-chat-row-actions__trigger {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 0.25rem;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    height: 1.5rem;
+    inset-inline-end: 0.375rem;
+    justify-content: center;
+    opacity: 0;
+    padding: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.5rem;
+  }
 
-.fb-chat-row-actions__trigger:focus-visible,
-.fb-chat-row-actions__trigger--open,
-.fb-chat-row-actions__row:hover .fb-chat-row-actions__trigger,
-.fb-chat-row-actions__row:focus-within .fb-chat-row-actions__trigger {
-  opacity: 1;
-}
+  .fb-chat-row-actions__trigger:focus-visible,
+  .fb-chat-row-actions__trigger--open,
+  .fb-chat-row-actions__row:hover .fb-chat-row-actions__trigger,
+  .fb-chat-row-actions__row:focus-within .fb-chat-row-actions__trigger {
+    opacity: 1;
+  }
 
-.fb-chat-row-actions__trigger:hover {
-  background: var(--theme-base-250);
-}
+  .fb-chat-row-actions__trigger:hover {
+    background: var(--theme-base-250);
+  }
 
-.fb-chat-row-actions__trigger svg {
-  height: 1rem;
-  width: 1rem;
-}
+  .fb-chat-row-actions__trigger svg {
+    height: 1rem;
+    width: 1rem;
+  }
 
-.fb-chat-row-actions__delete {
-  color: var(--theme-red-500);
-}
+  .fb-chat-row-actions__delete {
+    color: var(--theme-red-500);
+  }
 
-.fb-chat-row-actions__delete:focus,
-.fb-chat-row-actions__delete[data-highlighted] {
-  color: var(--theme-red-500);
-  background: color-mix(in srgb, var(--theme-red-500) 15%, transparent);
+  .fb-chat-row-actions__delete:focus,
+  .fb-chat-row-actions__delete[data-highlighted] {
+    color: var(--theme-red-500);
+    background: color-mix(in srgb, var(--theme-red-500) 15%, transparent);
+  }
 }

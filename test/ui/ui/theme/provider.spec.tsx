@@ -15,50 +15,50 @@ function Toggle() {
   return <button onClick={() => setMode('dark')}>{resolvedMode}</button>;
 }
 
+function stubSystemMode(dark: boolean) {
+  vi.stubGlobal('matchMedia', () => ({
+    addEventListener: vi.fn(),
+    matches: dark,
+    removeEventListener: vi.fn(),
+  }));
+}
+
 describe('ThemeProvider', () => {
-  it('applies runtime tokens and persists mode changes', () => {
-    vi.stubGlobal('matchMedia', () => ({
-      addEventListener: vi.fn(),
-      matches: false,
-      removeEventListener: vi.fn(),
-    }));
+  it('persists mode changes and sets the dark class', () => {
+    stubSystemMode(false);
+
     const storage = { get: vi.fn(() => null), set: vi.fn() };
     const { container } = render(
-      <ThemeProvider storage={storage} theme={{ '--primary': 'oklch(0.5 0.2 150)' }}>
+      <ThemeProvider storage={storage}>
         <Toggle />
       </ThemeProvider>,
     );
-    expect(container.firstElementChild?.getAttribute('style')).toContain('--primary');
+
     fireEvent.click(screen.getByRole('button'));
+
     expect(storage.set).toHaveBeenCalledWith('fb-ui-theme', 'dark');
     expect(container.firstElementChild?.className).toBe('fb-theme fb-theme--dark');
     expect(container.firstElementChild?.getAttribute('data-theme')).toBe('dark');
   });
 
-  it('reads stored mode before paint and keeps runtime branding', () => {
-    vi.stubGlobal('matchMedia', () => ({
-      addEventListener: vi.fn(),
-      matches: true,
-      removeEventListener: vi.fn(),
-    }));
+  it('reads the stored mode before paint', () => {
+    stubSystemMode(true);
+
     const storage = { get: vi.fn(() => 'dark' as const), set: vi.fn() };
     const { container } = render(
-      <ThemeProvider brand={{ tokens: { '--primary': 'oklch(0.4 0.2 120)' } }} storage={storage}>
+      <ThemeProvider storage={storage}>
         <Toggle />
       </ThemeProvider>,
     );
+
     expect(container.firstElementChild?.getAttribute('data-theme')).toBe('dark');
-    expect(container.firstElementChild?.getAttribute('style')).toContain('oklch(0.4 0.2 120)');
   });
 
-  it('themes portaled overlay content outside the provider subtree', async () => {
-    vi.stubGlobal('matchMedia', () => ({
-      addEventListener: vi.fn(),
-      matches: false,
-      removeEventListener: vi.fn(),
-    }));
+  it('copies the provider mode to portalled overlays', async () => {
+    stubSystemMode(false);
+
     const { container } = render(
-      <ThemeProvider mode="dark" theme={{ '--primary': 'red' }}>
+      <ThemeProvider mode="dark">
         <DropdownMenu>
           <DropdownMenuTrigger>Open</DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -67,41 +67,35 @@ describe('ThemeProvider', () => {
         </DropdownMenu>
       </ThemeProvider>,
     );
+
     await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+
     const item = await screen.findByRole('menuitem', { name: 'Rename' });
-    expect(container.firstElementChild?.contains(item)).toBe(false);
     const frame = item.closest('[data-fb-ui]');
+
+    expect(container.firstElementChild?.contains(item)).toBe(false);
     expect(frame?.getAttribute('data-theme')).toBe('dark');
-    expect(frame?.getAttribute('style')).toContain('--primary: red');
+    expect(frame?.hasAttribute('style')).toBe(false);
+  });
+
+  it('renders no inline style on the provider root', () => {
+    stubSystemMode(false);
+
+    const legacyProps = { theme: { '--primary': 'red' } } as object;
+    const { container } = render(
+      <ThemeProvider mode="light" {...legacyProps}>
+        <button>Action</button>
+      </ThemeProvider>,
+    );
+
+    expect(container.firstElementChild?.getAttribute('data-theme')).toBe('light');
+    expect(container.firstElementChild?.hasAttribute('style')).toBe(false);
   });
 
   it('emits a pre-hydration stored-theme bootstrap', () => {
     const { container } = render(<ThemeScript storageKey="custom-theme" />);
+
     expect(container.querySelector('script')?.textContent).toContain('custom-theme');
     expect(container.querySelector('script')?.textContent).toContain('dataset.fbTheme');
-  });
-
-  it('re-skins from config and runtime tokens without component changes', () => {
-    vi.stubGlobal('matchMedia', () => ({
-      addEventListener: vi.fn(),
-      matches: false,
-      removeEventListener: vi.fn(),
-    }));
-    const { container, rerender } = render(
-      <ThemeProvider mode="light" theme={{ '--primary': 'red' }}>
-        <button>Action</button>
-      </ThemeProvider>,
-    );
-    const surface = container.firstElementChild;
-    const action = screen.getByRole('button');
-
-    expect(surface?.getAttribute('style')).toContain('--primary: red');
-    rerender(
-      <ThemeProvider mode="light" theme={{ '--primary': 'blue' }}>
-        <button>Action</button>
-      </ThemeProvider>,
-    );
-    expect(surface?.getAttribute('style')).toContain('--primary: blue');
-    expect(screen.getByRole('button')).toBe(action);
   });
 });

@@ -1,4 +1,4 @@
-@layer payload-default {
+@layer frogbot {
   .view-switcher {
     align-items: center;
     border-bottom: 1px solid var(--theme-elevation-150);

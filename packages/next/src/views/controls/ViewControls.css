@@ -1,4 +1,4 @@
-@layer payload-default {
+@layer frogbot {
   .list-controls {
     display: flex;
     flex-direction: column;

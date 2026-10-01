@@ -20,8 +20,12 @@ it('matches the canonical Firmware theme foundation', () => {
   expect(styles).toContain('--color-base-0: rgb(249, 250, 251)');
   expect(styles).toContain('--color-base-900: rgb(16, 24, 40)');
   expect(styles).toContain('--color-brand-500: #2f964f');
-  expect(styles).toContain('--theme-base-0: var(--color-base-1000)');
-  expect(styles).toContain('--theme-base-1000: var(--color-base-0)');
+  expect(styles).toContain(
+    '--theme-base-0: light-dark(var(--color-base-0), var(--color-base-1000))',
+  );
+  expect(styles).toContain(
+    '--theme-base-1000: light-dark(var(--color-base-1000), var(--color-base-0))',
+  );
   expect(styles).toContain('--fb-radius: 0.5rem');
   expect(styles).not.toContain('Satoshi');
   expect(styles).not.toContain('oklch(');

@@ -21,6 +21,36 @@ import '@frogbotai/ui/styles.css'
 
 The FrogBot admin panel already loads this stylesheet through `@frogbotai/next/css`, so you only import it for pages outside the admin.
 
+## Cascade layer
+
+FrogBot puts all of its styles in a CSS cascade layer named `frogbot`. Your own CSS that isn't in a layer always beats FrogBot, whatever the selector, so you can restyle components with plain class rules and no `!important`. See [how to override FrogBot styles](/chat/ui-theming#override-frogbot-styles).
+
+## Use with Tailwind CSS
+
+With Tailwind CSS v4, utilities such as `text-red-600` or `underline` on a FrogBot component beat the component's own style. The `frogbot` layer has to sit between Tailwind's `components` and `utilities` layers, and a layer takes its place the first time the page names it. Use one of these setups:
+
+- Import FrogBot's stylesheet before your Tailwind CSS. It declares the order for you.
+
+  ```tsx
+  import '@frogbotai/ui/styles.css'
+  import './tailwind.css'
+  ```
+
+- Or put the layer order above the Tailwind import in your own CSS, then import FrogBot in any order.
+
+  ```css
+  @layer theme, base, components, frogbot, utilities;
+  @import "tailwindcss";
+  ```
+
+If Tailwind loads first without that line, `frogbot` lands after `utilities` and utilities on FrogBot components have no effect. With either setup, FrogBot's component styles beat Tailwind's Preflight reset.
+
+Tailwind CSS v3 output isn't in a layer, so it always beats FrogBot, Preflight included. For Tailwind in the admin panel, see [admin panel styles](/chat/ui-theming#admin-panel-styles).
+
+## Browser support
+
+FrogBot UI needs Chrome or Edge 123, Firefox 120, or Safari 17.5 or later. Older browsers show FrogBot components without their colors.
+
 The package supports React 19 and can be bundled by Next.js or Vite. Its internal UI dependencies are installed with the package; applications do not install or import them directly. It does not require environment-variable shims or platform SDKs.
 
 <Warning>

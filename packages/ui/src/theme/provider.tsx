@@ -1,13 +1,10 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore } from 'react';
-
-import type { BrandTheme } from './brand.js';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedThemeMode = Exclude<ThemeMode, 'system'>;
-export type ThemeTokens = Record<`--${string}`, string>;
 
 export interface ThemeStorage {
   get: (key: string) => ThemeMode | null;
@@ -15,20 +12,17 @@ export interface ThemeStorage {
 }
 
 export interface ThemeProviderProps {
-  brand?: BrandTheme;
   children: ReactNode;
   mode?: ThemeMode;
   onModeChange?: (mode: ThemeMode) => void;
   storage?: ThemeStorage;
   storageKey?: string;
-  theme?: ThemeTokens;
 }
 
 interface ThemeContextValue {
   mode: ThemeMode;
   resolvedMode: ResolvedThemeMode;
   setMode: (mode: ThemeMode) => void;
-  tokens?: CSSProperties;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -54,12 +48,10 @@ function getSystemMode(): ResolvedThemeMode {
 
 export function ThemeProvider({
   children,
-  brand,
   mode: controlledMode,
   onModeChange,
   storage,
   storageKey = 'fb-ui-theme',
-  theme,
 }: ThemeProviderProps) {
   const systemMode = useSyncExternalStore<ResolvedThemeMode>(
     subscribeSystemMode,
@@ -69,7 +61,6 @@ export function ThemeProvider({
   const [internalMode, setInternalMode] = useState<ThemeMode>(controlledMode ?? 'system');
   const mode = controlledMode ?? internalMode;
   const resolvedMode = mode === 'system' ? systemMode : mode;
-  const tokens = { ...brand?.tokens, ...theme } as CSSProperties;
 
   useLayoutEffect(() => {
     if (controlledMode) {
@@ -91,12 +82,11 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={{ mode, resolvedMode, setMode, tokens }}>
+    <ThemeContext.Provider value={{ mode, resolvedMode, setMode }}>
       <div
         className={`fb-theme${mode === 'dark' ? ' fb-theme--dark' : ''}`}
         data-fb-ui=""
         data-theme={mode}
-        style={tokens}
       >
         {children}
       </div>
@@ -124,12 +114,7 @@ export function useTheme() {
 export function PortalTheme({ children }: { children: ReactNode }) {
   const context = useContext(ThemeContext);
   return (
-    <div
-      className="fb-portal"
-      data-fb-ui=""
-      data-theme={context?.mode ?? 'system'}
-      style={context?.tokens}
-    >
+    <div className="fb-portal" data-fb-ui="" data-theme={context?.mode ?? 'system'}>
       {children}
     </div>
   );
