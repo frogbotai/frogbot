@@ -1,8 +1,15 @@
-import { BlocksFeature, lexicalEditor } from '@frogbotai/richtext-lexical';
-import type { CollectionConfig, FrogBotRequest, Plugin } from 'frogbot';
+import {
+  BlocksFeature,
+  lexicalEditor,
+  LinkFeature,
+  UploadFeature,
+} from '@frogbotai/richtext-lexical';
+import type { CollectionConfig, FrogBotRequest, Plugin, TextField } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import {
+  assetHandlerResponse,
+  assetsSlug,
   bodyBlockSlug,
   brokenPagesSlug,
   filesSlug,
@@ -25,6 +32,23 @@ function recordRequest(slot: string, req: FrogBotRequest): void {
   Reflect.deleteProperty(req, 'frogbot');
 }
 
+function recordedTextField(name: string, slot: string): TextField {
+  return {
+    name,
+    type: 'text',
+    defaultValue: ({ req }) => {
+      recordRequest(`${slot}.defaultValue`, req);
+
+      return name;
+    },
+    validate: (_value, { req }) => {
+      recordRequest(`${slot}.validate`, req);
+
+      return true;
+    },
+  };
+}
+
 const Users: CollectionConfig = {
   slug: usersSlug,
   auth: true,
@@ -36,6 +60,11 @@ const Pages: CollectionConfig = {
   slug: pagesSlug,
   access: openAccess,
   admin: {
+    formatDocURL: ({ defaultURL, req }) => {
+      recordRequest('formatDocURL', req);
+
+      return defaultURL;
+    },
     preview: (doc, { req }) => {
       recordRequest('preview', req);
 
@@ -110,6 +139,14 @@ const Pages: CollectionConfig = {
       editor: lexicalEditor({
         features: ({ defaultFeatures }) => [
           ...defaultFeatures,
+          LinkFeature({
+            fields: ({ defaultFields }) => [...defaultFields, recordedTextField('rel', 'link')],
+          }),
+          UploadFeature({
+            collections: {
+              [assetsSlug]: { fields: [recordedTextField('caption', 'uploadNode')] },
+            },
+          }),
           BlocksFeature({
             blocks: [
               {
@@ -139,6 +176,28 @@ const Pages: CollectionConfig = {
   ],
 };
 
+const Assets: CollectionConfig = {
+  slug: assetsSlug,
+  access: {
+    ...openAccess,
+    read: ({ req }) => {
+      recordRequest('assets.access.read', req);
+
+      return true;
+    },
+  },
+  upload: {
+    handlers: [
+      (req) => {
+        recordRequest('upload.handler', req);
+
+        return new Response(assetHandlerResponse);
+      },
+    ],
+  },
+  fields: [],
+};
+
 const BrokenPages: CollectionConfig = {
   slug: brokenPagesSlug,
   access: openAccess,
@@ -152,11 +211,20 @@ const BrokenPages: CollectionConfig = {
 
 export const addPages: Plugin = (config) => ({
   ...config,
-  collections: [...config.collections, Pages, BrokenPages],
+  collections: [...config.collections, Pages, BrokenPages, Assets],
 });
 
 export default await buildTestConfig({
   collections: [Users],
   editor: lexicalEditor(),
+  localization: {
+    defaultLocale: 'en',
+    locales: ['en', 'es'],
+    filterAvailableLocales: ({ locales, req }) => {
+      recordRequest('filterAvailableLocales', req);
+
+      return locales.filter(({ code }) => code === 'en');
+    },
+  },
   plugins: [addPages],
 });

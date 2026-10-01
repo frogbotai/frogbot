@@ -540,4 +540,52 @@ describe('auth email templates', () => {
     expect(requestBody(2).html).toBe(`<a href="/reset/${repeated}">Reset</a>`);
     expect(fetch).toHaveBeenCalledTimes(3);
   });
+
+  it('gives the templates req.frogbot even after a collection hook removes it', async () => {
+    const forgetFrogBot = (req: FrogBotRequest) => Reflect.deleteProperty(req, 'frogbot');
+    const template = ({ req, token }: { req: FrogBotRequest; token: string }) =>
+      req.frogbot ? `token ${token}` : 'missing';
+    const runtime = await bootRuntime({
+      email: resend,
+      collections: [
+        Users,
+        {
+          slug: 'customers',
+          auth: {
+            verify: { generateEmailHTML: template, generateEmailSubject: template },
+            forgotPassword: {
+              minRequestInterval: 0,
+              generateEmailHTML: template,
+              generateEmailSubject: template,
+            },
+          },
+          hooks: {
+            beforeOperation: [({ req }) => void forgetFrogBot(req)],
+            beforeChange: [
+              ({ data, req }) => {
+                forgetFrogBot(req);
+
+                return data;
+              },
+            ],
+          },
+          fields: [],
+        },
+      ],
+    });
+
+    await runtime.create({
+      collection: 'customers',
+      data: { email: 'customer@example.com', password: 'password' },
+    });
+
+    const token = await runtime.forgotPassword({
+      collection: 'customers',
+      data: { email: 'customer@example.com' },
+    });
+
+    expect(requestBody().subject).toMatch(/^token [a-f0-9]+$/);
+    expect(requestBody().html).toBe(requestBody().subject);
+    expect(requestBody(1)).toMatchObject({ html: `token ${token}`, subject: `token ${token}` });
+  });
 });

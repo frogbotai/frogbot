@@ -578,7 +578,7 @@ The `formatDocURL` function receives the following arguments:
 | --- | --- | --- | --- |
 | `doc` | `Record<string, unknown>` | Always set | The document data for the current row. |
 | `defaultURL` | `string` | Always set | The URL FrogBot would normally use for this document. Return it as-is, change it, or replace it. |
-| `req` | Request | Always set | The current request, with the signed-in user and request data. Its type doesn't include `req.frogbot`. |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in user, request data, and `req.frogbot`. |
 | `collectionSlug` | `string` | Always set | The slug of the current collection. |
 | `viewType` | `ViewTypes` | — | The view the link is rendered in, such as `'list'` or `'trash'`. |
 

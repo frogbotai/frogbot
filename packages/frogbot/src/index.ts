@@ -312,6 +312,7 @@ export type {
   UntypedFrogBotTypes,
 } from './types/generated.js';
 export type { FrogBotRequest } from './types/request.js';
+export type { UploadConfig, UploadHandler } from './uploads/types.js';
 export type {
   CountVersionsArgs,
   FindVersionByIDArgs,
@@ -338,7 +339,6 @@ export type {
   KVAdapterResult,
   KVStoreValue,
   SendEmailOptions,
-  UploadConfig,
 } from 'payload';
 export type {
   ApplyDisableErrors,

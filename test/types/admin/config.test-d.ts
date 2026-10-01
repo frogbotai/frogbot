@@ -5,6 +5,7 @@ import type {
   DocumentTabConfig,
   Field,
   FrogBot,
+  FrogBotConfig,
   FrogBotRequest,
   IconName,
   NavItem,
@@ -12,7 +13,12 @@ import type {
   SettingsEntry,
   Widget,
 } from 'frogbot';
-import type { GeneratePreviewURL } from 'payload';
+import type {
+  CollectionAdminOptions,
+  Config as PayloadConfig,
+  GeneratePreviewURL,
+  Locale,
+} from 'payload';
 import { expectTypeOf } from 'vitest';
 
 expectTypeOf<Widget['fields']>().toEqualTypeOf<Field[] | undefined>();
@@ -127,6 +133,60 @@ expectTypeOf<PreviewOptions['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<
   ReturnType<NonNullable<NonNullable<CollectionConfig['admin']>['preview']>>
 >().toEqualTypeOf<ReturnType<GeneratePreviewURL>>();
+
+type FormatDocURL = NonNullable<NonNullable<CollectionConfig['admin']>['formatDocURL']>;
+type PayloadFormatDocURL = NonNullable<CollectionAdminOptions['formatDocURL']>;
+
+const formatDocURLCollection = {
+  admin: {
+    formatDocURL: ({ defaultURL, doc, req }) => {
+      expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+      expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
+
+      // @ts-expect-error Payload is not exposed on FrogBot requests
+      void req.payload;
+
+      return doc.private ? null : defaultURL;
+    },
+  },
+  fields: [],
+  slug: 'pages',
+} satisfies CollectionConfig;
+
+expectTypeOf(formatDocURLCollection).toMatchTypeOf<CollectionConfig>();
+expectTypeOf<keyof Parameters<FormatDocURL>[0]>().toEqualTypeOf<
+  keyof Parameters<PayloadFormatDocURL>[0]
+>();
+expectTypeOf<Parameters<FormatDocURL>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<ReturnType<FormatDocURL>>().toEqualTypeOf<ReturnType<PayloadFormatDocURL>>();
+
+type Localization = Exclude<NonNullable<FrogBotConfig['localization']>, false>;
+type FilterAvailableLocales = NonNullable<Localization['filterAvailableLocales']>;
+type PayloadLocalization = Exclude<NonNullable<PayloadConfig['localization']>, false>;
+
+export const filteredLocalization: FrogBotConfig['localization'] = {
+  defaultLocale: 'en',
+  locales: [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+  ],
+  filterAvailableLocales: async ({ locales, req }) => {
+    expectTypeOf(locales).toEqualTypeOf<Locale[]>();
+    expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
+
+    return locales.filter(({ code }) => code === 'en');
+  },
+};
+
+export const invalidLocalization: FrogBotConfig['localization'] = {
+  defaultLocale: 'en',
+  locales: ['en'],
+  // @ts-expect-error Payload is not exposed on FrogBot requests
+  filterAvailableLocales: ({ locales, req }) => (req.payload ? locales : []),
+};
+
+expectTypeOf<keyof Localization>().toEqualTypeOf<keyof PayloadLocalization>();
+expectTypeOf<Parameters<FilterAvailableLocales>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 
 type AdminComponents = NonNullable<NonNullable<CollectionConfig['admin']>['components']>;
 type EditViews = NonNullable<NonNullable<AdminComponents['edit']>['views']>;

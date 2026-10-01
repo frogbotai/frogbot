@@ -82,7 +82,7 @@ The following options are available:
 | `defaultLocale` | `string` | Required | One of the locale codes. Documents are read and written in this locale when a request doesn't set `locale`. |
 | `fallback` | `boolean` | `true` | When a localized field has no value in the requested locale, returns the value from the fallback locale instead. When `false`, the value stays empty unless the request sets `fallbackLocale`. |
 | `defaultLocalePublishOption` | `'all' \| 'active'` | `'all'` | What the main **Publish** button publishes: every locale (`'all'`) or only the locale being edited (`'active'`). The other option is offered by the secondary button. |
-| `filterAvailableLocales` | `({ locales, req }) => Locale[] \| Promise<Locale[]>` | — | Returns the locales shown in the admin panel's locale selector. [More details](#filter-available-options). |
+| `filterAvailableLocales` | `({ locales, req }) => Locale[] \| Promise<Locale[]>` | — | Returns the locales shown in the admin panel's locale selector. `req` is the current `FrogBotRequest`, with `req.frogbot`. [More details](#filter-available-options). |
 
 ### Locales
 
@@ -101,7 +101,7 @@ The locale codes do not need to be in any specific format. It's up to you to def
 
 #### Filter Available Options
 
-In some projects you may want to filter the available locales shown in the admin UI selector. You can do this by providing a `filterAvailableLocales` function in your FrogBot Config. This is called on the server side and is passed the array of locales. This means that you can determine what locales are visible in the localizer selection menu at the top of the admin panel. You could do this per user, or implement a function that scopes these to tenants and more. Here is an example using request headers in a multi-tenant application:
+In some projects you may want to filter the available locales shown in the admin UI selector. You can do this by providing a `filterAvailableLocales` function in your FrogBot Config. This is called on the server side and is passed the array of locales and `req`, the current `FrogBotRequest` with `req.frogbot`. This means that you can determine what locales are visible in the localizer selection menu at the top of the admin panel. You could do this per user, or implement a function that scopes these to tenants and more. Here is an example using request headers in a multi-tenant application:
 
 ```ts
 // ... rest of FrogBot config

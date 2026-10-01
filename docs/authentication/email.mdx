@@ -33,12 +33,18 @@ The following options are available:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `generateEmailHTML` | `({ token, user }) => string \| Promise<string>` | Built-in verification email | Returns the HTML of the verification email. [More details](#generateemailhtml). |
-| `generateEmailSubject` | `({ token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the verification email. [More details](#generateemailsubject). |
+| `generateEmailHTML` | `({ req, token, user }) => string \| Promise<string>` | Built-in verification email | Returns the HTML of the verification email. [More details](#generateemailhtml). |
+| `generateEmailSubject` | `({ req, token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the verification email. [More details](#generateemailsubject). |
 
 #### generateEmailHTML
 
-Function that accepts one argument, containing `{ token, user }`, that allows for overriding the HTML within emails that are sent to users indicating how to validate their account. The function should return a string that supports HTML, which can optionally be a full HTML email.
+Function that allows for overriding the HTML within emails that are sent to users indicating how to validate their account. The function should return a string that supports HTML, which can optionally be a full HTML email. It receives these arguments:
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The request that created the user, with `req.frogbot`. |
+| `token` | `string` | Always set | The verification token to send to the user. |
+| `user` | `unknown` | Always set | The user document that needs to verify their email. |
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -108,8 +114,8 @@ The following options are available:
 | --- | --- | --- | --- |
 | `expiration` | `number` | `3600000` (1 hour) | How long a password reset token stays valid, in milliseconds. |
 | `minRequestInterval` | `number` | `15000` | Minimum time, in milliseconds, between password reset emails for the same user. A request inside the interval sends no email. Set to `0` to disable. |
-| `generateEmailHTML` | `({ token, user }) => string \| Promise<string>` | Built-in reset email | Returns the HTML of the password reset email. [More details](#forgot-password-generateemailhtml). |
-| `generateEmailSubject` | `({ token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the password reset email. [More details](#forgot-password-generateemailsubject). |
+| `generateEmailHTML` | `({ req, token, user }) => string \| Promise<string>` | Built-in reset email | Returns the HTML of the password reset email. [More details](#forgot-password-generateemailhtml). |
+| `generateEmailSubject` | `({ req, token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the password reset email. [More details](#forgot-password-generateemailsubject). |
 
 <Tip>
   **Tip:** FrogBot provides a built-in password reset page. If you don't need a
@@ -172,6 +178,7 @@ The following arguments are passed to the `generateEmailHTML` function:
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The request that triggered the email, with `req.frogbot`. |
 | `token` | `string` | Always set | The token that is generated for the user to reset their password. |
 | `user` | `unknown` | Always set | The user document that is attempting to reset their password. |
 
@@ -198,5 +205,6 @@ The following arguments are passed to the `generateEmailSubject` function:
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The request that triggered the email, with `req.frogbot`. |
 | `token` | `string` | Always set | The password reset token. |
 | `user` | `unknown` | Always set | The user document that is attempting to reset their password. |
