@@ -29,6 +29,7 @@ import {
   createLogger,
   createLoggingHooks,
   type GatewayLogger,
+  isLoggerInstance,
   logGatewayError,
   type LoggerOptions,
 } from './observability/logger.js';
@@ -91,13 +92,6 @@ export type AppContext = {
   logger?: GatewayLogger | LoggerOptions;
   signalLevel?: SignalLevelInput;
 };
-
-const isLoggerInstance = (
-  logger: GatewayLogger | LoggerOptions | undefined,
-): logger is GatewayLogger =>
-  typeof logger === 'object' &&
-  logger !== null &&
-  typeof (logger as GatewayLogger).info === 'function';
 
 const normalizeBasePath = (basePath: string | undefined): string => {
   const trimmed = (basePath ?? '/v1').replace(/\/+$/, '');

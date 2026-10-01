@@ -38,7 +38,7 @@ describe('parseGatewayConfig — provider credentials', () => {
   ])('rejects an %s explicit API key even when the env fallback exists', (apiKey) => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
     expect(() => parseGatewayConfig({ providers: { openai: { apiKey } } })).toThrow(
-      /providers\.openai\.apiKey.*OPENAI_API_KEY/,
+      'providers.openai.apiKey must be a non-empty string',
     );
   });
 
@@ -57,10 +57,57 @@ describe('parseGatewayConfig — provider credentials', () => {
   });
 
   it('validates each credential shape against its corresponding provider env var', () => {
+    vi.stubEnv('KLINGAI_API_KEY', undefined);
     vi.stubEnv('KLINGAI_ACCESS_KEY', 'access-env');
     vi.stubEnv('KLINGAI_SECRET_KEY', undefined);
     expect(() => parseGatewayConfig(JSON.parse('{"providers":{"klingai":{}}}'))).toThrow(
       /providers\.klingai\.secretKey.*KLINGAI_SECRET_KEY/,
+    );
+  });
+
+  it('accepts a Kling AI apiKey without accessKey and secretKey', () => {
+    vi.stubEnv('KLINGAI_API_KEY', undefined);
+    vi.stubEnv('KLINGAI_ACCESS_KEY', undefined);
+    vi.stubEnv('KLINGAI_SECRET_KEY', undefined);
+
+    const config = parseGatewayConfig({ providers: { klingai: { apiKey: 'kling-key' } } });
+
+    expect(config.providers.klingai).toEqual({ apiKey: 'kling-key' });
+  });
+
+  it('accepts KLINGAI_API_KEY without accessKey and secretKey', () => {
+    vi.stubEnv('KLINGAI_API_KEY', 'kling-env');
+    vi.stubEnv('KLINGAI_ACCESS_KEY', undefined);
+    vi.stubEnv('KLINGAI_SECRET_KEY', undefined);
+
+    const config = parseGatewayConfig(JSON.parse('{"providers":{"klingai":{}}}'));
+
+    expect(config.providers.klingai).toEqual({});
+  });
+
+  it('names every accepted Kling AI credential form when none is set', () => {
+    vi.stubEnv('KLINGAI_API_KEY', undefined);
+    vi.stubEnv('KLINGAI_ACCESS_KEY', undefined);
+    vi.stubEnv('KLINGAI_SECRET_KEY', undefined);
+
+    expect(() => parseGatewayConfig(JSON.parse('{"providers":{"klingai":{}}}'))).toThrow(
+      'providers.klingai credentials are missing: set providers.klingai.apiKey or KLINGAI_API_KEY, or set providers.klingai.accessKey or KLINGAI_ACCESS_KEY and providers.klingai.secretKey or KLINGAI_SECRET_KEY',
+    );
+  });
+
+  it('accepts an Anthropic authToken without an API key', () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', undefined);
+
+    const config = parseGatewayConfig({ providers: { anthropic: { authToken: 'token' } } });
+
+    expect(config.providers.anthropic).toEqual({ authToken: 'token' });
+  });
+
+  it('rejects an empty Anthropic authToken', () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant-env');
+
+    expect(() => parseGatewayConfig({ providers: { anthropic: { authToken: ' ' } } })).toThrow(
+      'providers.anthropic.authToken must be a non-empty string',
     );
   });
 
@@ -142,6 +189,16 @@ describe('parseGatewayConfig — model allowlists', () => {
         providers: { internal: { baseURL: 'https://models.test/v1' } },
       }).providers.internal,
     ).toEqual({ baseURL: 'https://models.test/v1' });
+  });
+});
+
+describe('parseGatewayConfig — catalog', () => {
+  it('rejects a catalog that is not a Map', () => {
+    expect(() =>
+      parseGatewayConfig(
+        JSON.parse('{"providers":{"openai":{"apiKey":"sk-test"}},"catalog":{"openai/gpt-4o":{}}}'),
+      ),
+    ).toThrow('catalog must be a Map of model IDs to catalog entries');
   });
 });
 

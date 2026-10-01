@@ -307,7 +307,7 @@ describe('tracing', () => {
 
   it('parses the body when at least one base signal level is not off', async () => {
     const hooks = createTracingHooks({
-      signalLevel: { gen_ai: 'off', http: 'off', frogbot: 'required' },
+      signalLevel: { gen_ai: 'off', frogbot: 'required' },
     });
     const args = makeArgs();
     const request = new Request('https://gateway.test/v1/responses', {
@@ -333,7 +333,7 @@ describe('tracing', () => {
 
   it('skips the body parse for non-JSON (multipart) requests without re-buffering the upload', async () => {
     const hooks = createTracingHooks({
-      signalLevel: { gen_ai: 'off', http: 'off', frogbot: 'required' },
+      signalLevel: { gen_ai: 'off', frogbot: 'required' },
     });
     const args = makeArgs();
     const form = new FormData();

@@ -24,6 +24,7 @@ import {
   providers,
   type ProvidersInput,
 } from '../providers/registry.js';
+import type { ProviderCredentialForm } from '../providers/types.js';
 
 // ---------------------------------------------------------------------------
 // Public config type
@@ -116,6 +117,10 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
     throw new ConfigError(['at least one provider must be configured']);
   }
 
+  if (input.catalog !== undefined && !(input.catalog instanceof Map)) {
+    throw new ConfigError(['catalog must be a Map of model IDs to catalog entries']);
+  }
+
   const issues: string[] = [];
 
   // Validate each provider entry. Known providers are checked against their
@@ -166,28 +171,59 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
       }
     }
 
-    const requiredKeys = 'requiredKeys' in def ? def.requiredKeys : undefined;
-    if (!requiredKeys || requiredKeys.length === 0) {
+    const credentials = 'credentials' in def ? def.credentials : undefined;
+    if (!credentials || credentials.length === 0) {
       continue;
     }
-    for (const [index, key] of requiredKeys.entries()) {
-      const value = (cfg as Record<string, unknown>)[key];
-      const envVar = def.envVars[index] ?? def.envVars[0];
-      const source = `providers.${name}.${key} or ${envVar}`;
-      if (value === undefined) {
-        if (typeof process.env[envVar] !== 'string' || !process.env[envVar].trim()) {
-          issues.push(`${source} must be a non-empty string`);
-        }
-      } else if (typeof value !== 'string' || !value.trim()) {
-        issues.push(`${source} must be a non-empty string`);
-      }
-    }
+
+    issues.push(...credentialIssues({ name, config: cfg as Record<string, unknown>, credentials }));
   }
 
   if (issues.length > 0) {
     throw new ConfigError(issues);
   }
   return input;
+}
+
+type CredentialIssuesArgs = {
+  name: string;
+  config: Record<string, unknown>;
+  credentials: readonly ProviderCredentialForm[];
+};
+
+function credentialIssues({ name, config, credentials }: CredentialIssuesArgs): string[] {
+  const keys = new Set(credentials.flatMap((form) => Object.keys(form)));
+  const invalid = [...keys].filter(
+    (key) => config[key] !== undefined && !isNonEmptyString(config[key]),
+  );
+
+  if (invalid.length > 0) {
+    return invalid.map((key) => `providers.${name}.${key} must be a non-empty string`);
+  }
+
+  const isSet = (key: string, envVar: string | null): boolean =>
+    config[key] !== undefined || (envVar !== null && isNonEmptyString(process.env[envVar]));
+
+  const satisfied = credentials.some((form) =>
+    Object.entries(form).every(([key, envVar]) => isSet(key, envVar)),
+  );
+
+  if (satisfied) return [];
+
+  const describe = (form: ProviderCredentialForm): string =>
+    Object.entries(form)
+      .map(([key, envVar]) =>
+        envVar ? `providers.${name}.${key} or ${envVar}` : `providers.${name}.${key}`,
+      )
+      .join(' and ');
+
+  return [
+    `providers.${name} credentials are missing: set ${credentials.map(describe).join(', or set ')}`,
+  ];
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 // ---------------------------------------------------------------------------

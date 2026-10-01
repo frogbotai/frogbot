@@ -35,6 +35,13 @@ export type LoggerOptions = {
   level?: LogLevel;
 };
 
+export const isLoggerInstance = (
+  logger: GatewayLogger | LoggerOptions | undefined,
+): logger is GatewayLogger =>
+  typeof logger === 'object' &&
+  logger !== null &&
+  typeof (logger as GatewayLogger).info === 'function';
+
 const LEVEL: Record<LogLevel, number> = {
   trace: 10,
   debug: 20,
