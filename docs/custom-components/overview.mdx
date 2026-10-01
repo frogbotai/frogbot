@@ -85,12 +85,12 @@ export default buildConfig({
 })
 ```
 
-| Property | Description |
-| --- | --- |
-| `clientProps` | Serializable props passed to a Client Component. |
-| `exportName` | Named export to load from `path`. |
-| `path` | Path to the component file. |
-| `serverProps` | Props passed to a Server Component. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `path` | `string` | Required | Path to the component file, resolved like a string [Component Path](#component-paths). It may include `#ExportName`. |
+| `exportName` | `string` | The name after `#` in `path`, otherwise `'default'` | Named export to load from `path`. Takes precedence over a `#ExportName` in `path`. |
+| `clientProps` | `object` | None | Props passed to the component, overriding slot props with the same name. Values must be serializable when the component is a Client Component. |
+| `serverProps` | `object` | None | Props passed only when the component is a Server Component, overriding slot server props with the same name. They may contain server-only values. |
 
 ### Import Map
 
@@ -105,7 +105,7 @@ pnpm frogbot generate:importmap
   and regenerate it instead.
 </Warning>
 
-Plugin authors register public component paths in supported slots. Import helper components directly from the component module that renders them. The public `admin.importMap` option controls `autoGenerate`; `baseDir` and `admin.dependencies` are not supported authoring options.
+Plugin authors register public component paths in supported slots. Import helper components directly from the component module that renders them. The public `admin.importMap` option controls `autoGenerate`; see [Import map options](/admin/overview#import-map-options). `baseDir` and `admin.dependencies` are not supported authoring options.
 
 ## Building Custom Components
 

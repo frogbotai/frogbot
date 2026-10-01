@@ -32,16 +32,18 @@ export default buildConfig({
 
 Once configured, a Live Preview button appears at the top of enabled documents.
 
-| Path                | Description                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------- |
-| **`url`**           | A string or function that returns the iframe `src`. [More details](#url).                      |
-| **`breakpoints`**   | Device sizes available in the preview toolbar. [More details](#breakpoints).                   |
-| **`openByDefault`** | Whether the preview window opens automatically. Defaults to `false`.                           |
-| **`collections`**   | Collection slugs enabled for Live Preview. Available on the root configuration.                |
+A collection is enabled when its slug is in the root `collections` list or when it sets its own `admin.livePreview`. Its options are merged key by key over the root options, so a collection can override only `breakpoints` and keep the root `url`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `url` | `string \| null \| ((args: LivePreviewURLArgs) => string \| null \| undefined \| Promise<…>)` | None; no preview is shown | The iframe `src`. A function runs on the server for saved documents only, so new documents show no preview until they are saved. A function that throws or returns a non-string shows no preview; errors are logged. [More details](#url). |
+| `breakpoints` | `{ label, name, width, height }[]` | `[]`; only Responsive | Device sizes available in the preview toolbar. [More details](#breakpoints). |
+| `openByDefault` | `boolean` | `false` | Opens the preview window when a document loads, until the user toggles it. The user's last choice is saved per collection. |
+| `collections` | `string[]` | `[]` | Root only. Collection slugs that use the root Live Preview options. |
 
 ### URL
 
-The `url` property determines the iframe location. Use a function when it depends on the document, locale, or collection. This function may run often while the form changes, so avoid expensive work inside it.
+The `url` property determines the iframe location. Use a function when it depends on the document, locale, or collection. The function runs on the server when a saved document opens and again after each save, including autosaves, so avoid expensive work inside it.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -54,19 +56,19 @@ export default buildConfig({
           collectionConfig?.slug === 'posts'
             ? `/posts/${data.slug}`
             : `${data.slug !== 'home' ? `/${data.slug}` : ''}`
-        }${locale ? `?locale=${locale.code}` : ''}`,
+        }${locale.code ? `?locale=${locale.code}` : ''}`,
       collections: ['pages'],
     },
   },
 })
 ```
 
-| Path                   | Description                                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **`data`**             | The document data, including unsaved changes.                                                                |
-| **`locale`**           | The locale currently being edited, when localization is enabled.                                             |
-| **`collectionConfig`** | The collection configuration. [More details](/configuration/collections#admin-options).                      |
-| **`req`**              | The FrogBot request. The FrogBot instance is available at `req.frogbot`.                                     |
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `data` | `Record<string, unknown>` | Required | The saved document data. Unsaved form changes are not included. |
+| `locale` | `{ code, label }` | Required | The locale being edited. `code` is the locale code, or `undefined` without localization; `label` is always an empty string. |
+| `collectionConfig` | `SanitizedCollectionConfig` | Optional | The collection's sanitized configuration. [More details](/configuration/collections#admin-options). |
+| `req` | `FrogBotRequest` | Required | The FrogBot request. The FrogBot instance is available at `req.frogbot`. |
 
 The function can return an absolute or relative URL. Relative URLs use the protocol, domain, and port from the browser window.
 
@@ -104,14 +106,12 @@ export default buildConfig({
 })
 ```
 
-| Path            | Description                       |
-| --------------- | --------------------------------- |
-| **`label`** \*  | The label shown in the toolbar.   |
-| **`name`** \*   | The breakpoint name.              |
-| **`width`** \*  | The iframe width.                 |
-| **`height`** \* | The iframe height.                |
-
-_\* Required._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | Required | Label shown in the toolbar's breakpoint menu. |
+| `name` | `string` | Required | Unique key for the breakpoint. |
+| `width` | `number \| string` | Required | Iframe width in pixels. |
+| `height` | `number \| string` | Required | Iframe height in pixels. |
 
 The Responsive option is always available and fills the available area. Editors can also enter custom dimensions or open the preview in a separate resizable window.
 

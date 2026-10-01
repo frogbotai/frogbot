@@ -1,0 +1,115 @@
+---
+title: "Admin panel"
+sidebarTitle: "Overview"
+description: "Configure the root admin block: user collection, theme, avatar, metadata, and component slots."
+keywords: ["admin", "configuration", "meta", "theme", "avatar"]
+---
+
+The root `admin` object in `frogbot.config.ts` configures the admin panel as a whole. Collection-level admin settings, such as `useAsTitle`, `group`, and `views`, live on each collection; see [Admin Options](/configuration/collections#admin-options).
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    user: 'users',
+    theme: 'all',
+    avatar: 'default',
+    meta: {
+      title: 'Support workspace',
+      titleSuffix: '- Acme',
+    },
+    components: {
+      graphics: {
+        Logo: '/components/BrandLogo#BrandLogo',
+      },
+    },
+  },
+})
+```
+
+## Admin options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `user` | `string` | The first collection with `auth` | Slug of the auth collection whose users sign in to the admin panel. Set it when more than one collection has `auth`; FrogBot features that need the user collection, such as AI and connection secrets, stop startup with an error when it is missing or names a collection without `auth`. |
+| `theme` | `'all' \| 'dark' \| 'light'` | `'all'` | `'all'` lets each user choose light, dark, or automatic in their account settings. `'dark'` or `'light'` locks the admin panel to that theme. |
+| `avatar` | `'default' \| 'gravatar' \| { Component: FrogBotComponent }` | `'gravatar'` | Icon on the Account item in the sidebar bottom rail. `'gravatar'` loads the user's Gravatar from their email address. `'default'` shows a generic account icon. A `Component` renders only in the top-bar account link, which FrogBot hides while its default sidebar is shown. With the default sidebar, the Account item then shows no icon; with a custom [`Nav`](/custom-components/root-components#nav), the top-bar link renders your component. |
+| `meta` | `RootAdminMetaConfig` | See [Page metadata](#page-metadata) | Page metadata for admin routes: title suffix, Open Graph image, favicon, and other document head tags. |
+| `components` | `RootAdminComponents` | See [Root Components](/custom-components/root-components#config-options) | Component slots for branding, navigation, the account menu, chat, providers, and top-level views. |
+| `dashboard` | `DashboardConfig` | None; the dashboard shows one card per readable collection | Widgets and default layout for the modular dashboard. See [Dashboard Widgets](/custom-components/dashboard#dashboard-options). |
+| `livePreview` | `RootLivePreviewConfig` | None; Live Preview is off | Live Preview URL, breakpoints, and enabled collections. See [Live Preview options](/live-preview/overview#options). |
+| `importMap` | `{ autoGenerate?: boolean }` | `{ autoGenerate: true }` | Controls the generated component import map. See [Import map options](#import-map-options). |
+
+### Import map options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `autoGenerate` | `boolean` | `true` | When not `false`, `frogbot dev` regenerates the import map before starting Next.js, and `frogbot start` warns when the import map is stale. Run `frogbot generate:importmap` to regenerate it manually. See [Import Map](/custom-components/overview#import-map). |
+
+## Page metadata
+
+`admin.meta` sets the document head for admin routes. Beyond the two FrogBot options, it accepts the `Metadata` type from `next`, so apps that install `next` get its full autocomplete. FrogBot fills in a title suffix, Open Graph site name and description, a FrogBot favicon, and a FrogBot Open Graph image until you set your own.
+
+```ts
+admin: {
+  meta: {
+    titleSuffix: '- Acme',
+    description: 'Internal tools for the Acme support team.',
+    icons: [{ rel: 'icon', type: 'image/png', url: '/acme-favicon.png' }],
+    openGraph: {
+      siteName: 'Acme Support',
+    },
+  },
+}
+```
+
+### FrogBot metadata options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `titleSuffix` | `string` | `'- FrogBot'` | Appended, after a space, to every admin page title and Open Graph title. Live top-bar titles use it too; see [Top-bar label](/custom-components/custom-views#top-bar-label). |
+| `defaultOGImageType` | `'dynamic' \| 'static' \| 'off'` | `'static'` | Open Graph image used when `openGraph.images` is not set. `'static'` uses the FrogBot image. `'dynamic'` renders a 1200×630 image with the page title from the `/api/og` endpoint. `'off'` adds no image and disables the endpoint. |
+
+### Next.js metadata options
+
+Every other key comes from the `next` `Metadata` type and is passed through to the page head. FrogBot computes `metadataBase` from `serverURL`, so a configured value has no effect.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `title` | `string \| { default, template } \| { absolute, template? }` | The view's own title | Base page title. The dashboard, login page, and custom root views use it unless the view sets its own `meta.title`; collection pages use the collection label. `titleSuffix` is appended. |
+| `description` | `string` | None | Page description. List views clear it. |
+| `applicationName` | `string` | None | `application-name` meta tag. |
+| `authors` | `{ name?, url? } \| { name?, url? }[]` | None | Author tags and links. |
+| `generator` | `string` | None | `generator` meta tag. |
+| `keywords` | `string \| string[]` | None | `keywords` meta tag. List views clear it. |
+| `referrer` | Referrer policy string | None | `referrer` meta tag, such as `'origin-when-cross-origin'`. |
+| `themeColor` | `string \| { color, media? } \| { color, media? }[]` | None | Deprecated by Next.js in favor of the `viewport` export; Next.js ignores it and logs a warning. |
+| `colorScheme` | `'normal' \| 'light' \| 'dark' \| 'light dark' \| 'dark light' \| 'only light'` | None | Deprecated by Next.js in favor of the `viewport` export; Next.js ignores it and logs a warning. |
+| `viewport` | `string \| { width?, height?, initialScale?, … }` | None | Deprecated by Next.js in favor of the `viewport` export; Next.js ignores it and logs a warning. |
+| `creator` | `string` | None | `creator` meta tag. |
+| `publisher` | `string` | None | `publisher` meta tag. |
+| `robots` | `string \| { index?, follow?, noarchive?, …, googleBot? }` | None | `robots` meta tag, for example `{ index: false, follow: false }` to keep the admin panel out of search engines. |
+| `alternates` | `{ canonical?, languages?, media?, types? }` | None | Canonical and alternate links. |
+| `icons` | `string \| Icon[] \| { icon?, shortcut?, apple?, other? }` | FrogBot favicon | Favicon and touch icons. Setting it replaces the FrogBot favicon. |
+| `manifest` | `string \| URL` | None | Web app manifest link. |
+| `openGraph` | Open Graph object | `siteName: 'FrogBot'`, a FrogBot description, the page title with `titleSuffix`, and the image chosen by `defaultOGImageType` | Open Graph tags. Keys you set are merged over the defaults; setting `images` replaces the default image. |
+| `twitter` | Twitter card object | None | Twitter (X) card tags. |
+| `facebook` | `{ appId } \| { admins }` | None | Facebook app or admin tags. |
+| `pinterest` | `{ richPin: string \| boolean }` | None | Pinterest rich pin tag. |
+| `verification` | `{ google?, yahoo?, yandex?, me?, other? }` | None | Site ownership verification tags. |
+| `appleWebApp` | `boolean \| { capable?, title?, startupImage?, statusBarStyle? }` | None | Apple web app tags. |
+| `formatDetection` | `{ telephone?, date?, address?, email?, url? }` | None | Controls automatic format detection on iOS. |
+| `itunes` | `{ appId, appArgument? }` | None | Smart App Banner tag. |
+| `abstract` | `string` | None | `abstract` meta tag. |
+| `appLinks` | `{ ios?, iphone?, ipad?, android?, windows_phone?, windows?, windows_universal?, web? }` | None | App Links tags. |
+| `archives` | `string \| string[]` | None | `archives` link tags. |
+| `assets` | `string \| string[]` | None | `assets` link tags. |
+| `bookmarks` | `string \| string[]` | None | `bookmarks` link tags. |
+| `pagination` | `{ previous?, next? }` | None | `prev` and `next` link tags. |
+| `category` | `string` | None | `category` meta tag. |
+| `classification` | `string` | None | `classification` meta tag. |
+| `other` | `Record<string, string \| number \| (string \| number)[]>` | None | Arbitrary `<meta name content>` tags. |
+| `metadataBase` | `URL \| null` | Computed from `serverURL` | Accepted for type compatibility. FrogBot always replaces it with a URL built from `serverURL`, so a configured value has no effect. |
+
+Custom root views can override page metadata with their own `meta` key; see [Adding New Views](/custom-components/custom-views#adding-new-views).

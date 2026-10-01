@@ -59,7 +59,7 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to hide only the navigation link.
+Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to hide only the navigation link. Both options are listed with the other collection admin settings in [Admin Options](/configuration/collections#admin-options).
 
 Component icons receive `size` and `className` props and are added to the generated import map:
 
@@ -111,6 +111,16 @@ Paths include the admin route, which is `/` by default. Use your own admin route
 Component icons receive `size` and `className` props and are added to the generated import map.
 
 Configured items are application-authored links and are not filtered by collection permissions or visibility. Apply any required access behavior in the component or destination.
+
+### Navigation item options
+
+Each `navItems` entry is a `NavItem`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | Required | Text shown in the sidebar and in the collapsed-sidebar tooltip. |
+| `path` | `string` | Required | Link destination, used as is. Include the admin route, such as `/admin/operations` when the admin route is `/admin`. |
+| `icon` | `AdminIcon` | Folder icon | Built-in kebab-case icon name or component import path, following the [icon rules](#collection-icons-and-placement). An unknown built-in name stops startup. |
 
 ## Copy and customize a section
 
@@ -202,6 +212,18 @@ export default buildConfig({
 ```
 
 `icon` and `access` are optional. Set `icon` to a built-in icon name, such as `'robot'`, or a component import path, following the [icon rules](#collection-icons-and-placement). Without `access`, FrogBot allows any authenticated user. The access function runs before FrogBot shows the card or renders the page. The page component and component icons are added to the generated import map.
+
+### Settings entry options
+
+Each `settings` entry is a `SettingsEntry`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | Required | Card and sidebar label in the Settings area, and the page heading. |
+| `path` | `string` | Required | Route relative to `/settings`, such as `usage` or `security/audit`. It must not be empty, start with `/`, contain `\`, `?`, `#`, empty segments, `.`, or `..`, or repeat another entry's path; any of these stops startup. |
+| `Component` | `FrogBotComponent` | Required | Component rendered for the page. Requests to nested paths below `path` also render it. |
+| `icon` | `AdminIcon` | Settings icon | Built-in icon name or component import path, following the [icon rules](#collection-icons-and-placement). |
+| `access` | `Access` | Signed-in users | Called with `{ req }` only; other access arguments are undefined. A truthy result shows the card and allows the page. |
 
 Plugins append entries after existing settings so they compose in plugin order:
 

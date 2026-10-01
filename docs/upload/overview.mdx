@@ -87,56 +87,77 @@ export const Media: CollectionConfig = {
 
 ### Collection Upload Options
 
-_An asterisk denotes that an option is required._
+Set `upload: true` for the defaults, or pass an object with these options. Image processing options require `sharp`; see [Image Sizes](#image-sizes).
 
-| Option                         | Description                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`adminThumbnail`**           | Set the way that the Admin Panel will display thumbnails for this Collection. [More](#admin-thumbnails)                                                                                                                                                                                                                                                         |
-| **`bulkUpload`**               | Allow users to upload in bulk from the list view, default is true                                                                                                                                                                                                                                                                                                |
-| **`cacheTags`**                | Set to `false` to disable the cache tag set in the UI for the admin thumbnail component. Useful for when CDNs don't allow certain cache queries.                                                                                                                                                                                                                 |
-| **`constructorOptions`**       | An object passed to the Sharp image library that accepts any Constructor options and applies them to the upload file. [More](https://sharp.pixelplumbing.com/api-constructor/)                                                                                                                                                                                   |
-| **`crop`**                     | Set to `false` to disable the cropping tool in the Admin Panel. Crop is enabled by default. [More](#crop-and-focal-point-selector)                                                                                                                                                                                                                              |
-| **`disableLocalStorage`**      | Completely disable uploading files to disk locally. [More](#disabling-local-upload-storage)                                                                                                                                                                                                                                                                      |
-| **`displayPreview`**           | Enable displaying preview of the uploaded file in Upload fields related to this Collection. Can be locally overridden by the `displayPreview` option in an Upload field.                                                                                                                                                                                      |
-| **`externalFileHeaderFilter`** | Accepts existing headers and returns the headers after filtering or modifying. If using this option, you should handle the removal of any sensitive cookies (like frogbot-prefixed cookies) to prevent leaking session information to external services. By default, FrogBot automatically filters out frogbot-prefixed cookies when this option is not defined. |
-| **`filesRequiredOnCreate`**    | Mandate file data on creation, default is true.                                                                                                                                                                                                                                                                                                                  |
-| **`filenameCompoundIndex`**    | Field slugs to use for a compound index instead of the default filename index.                                                                                                                                                                                                                                                                                   |
-| **`focalPoint`**               | Set to `false` to disable the focal point selection tool in the Admin Panel. The focal point selector is only available when `imageSizes` or `resizeOptions` are defined. [More](#crop-and-focal-point-selector)                                                                                                                                                  |
-| **`formatOptions`**            | An object with `format` and `options` that are used with the Sharp image library to format the upload file. [More](https://sharp.pixelplumbing.com/api-output#toformat)                                                                                                                                                                                          |
-| **`handlers`**                 | Array of Request handlers to execute when fetching a file, if a handler returns a Response it will be sent to the client. Otherwise FrogBot will retrieve and send back the file.                                                                                                                                                                                |
-| **`imageSizes`**               | If specified, image uploads will be automatically resized in accordance to these image sizes. [More](#image-sizes)                                                                                                                                                                                                                                               |
-| **`mimeTypes`**                | Restrict mimeTypes in the file picker. Array of valid mimetypes or mimetype wildcards [More](#mimetypes)                                                                                                                                                                                                                                                         |
-| **`pasteURL`**                 | Controls whether files can be uploaded from remote URLs by pasting them into the Upload field. **Enabled by default.** Accepts `false` to disable or an object with an `allowList` of valid remote URLs. [More](#uploading-files-from-remote-urls)                                                                                                               |
-| **`resizeOptions`**            | An object passed to the Sharp image library to resize the uploaded file. [More](https://sharp.pixelplumbing.com/api-resize)                                                                                                                                                                                                                                      |
-| **`skipSafeFetch`**            | Set to an `allowList` to skip the safe fetch check when fetching external files. Set to `true` to skip the safe fetch for all documents in this collection. Defaults to `false`.                                                                                                                                                                                 |
-| **`allowRestrictedFileTypes`** | Set to `true` to allow restricted file types. If your Collection has defined [mimeTypes](#mimetypes), restricted file verification will be skipped. Defaults to `false`. [More](#restricted-file-types)                                                                                                                                                          |
-| **`staticDir`**                | The folder directory to use to store media in. Can be either an absolute path or relative to the directory that contains your config. Defaults to your collection slug                                                                                                                                                                                           |
-| **`trimOptions`**              | An object passed to the Sharp image library to trim the uploaded file. [More](https://sharp.pixelplumbing.com/api-resize#trim)                                                                                                                                                                                                                                   |
-| **`withMetadata`**             | If specified, appends metadata to the output image file. Accepts a boolean or a function that receives `metadata` and `req`, returning a boolean.                                                                                                                                                                                                                |
-| **`hideFileInputOnCreate`**    | Set to `true` to prevent the admin UI from showing file inputs during document creation, useful for programmatic file generation.                                                                                                                                                                                                                                |
-| **`hideRemoveFile`**           | Set to `true` to prevent the admin UI having a way to remove an existing file while editing.                                                                                                                                                                                                                                                                     |
-| **`modifyResponseHeaders`**    | Accepts an object with existing `headers` and allows you to manipulate the response headers for media files. [More](#modifying-response-headers)                                                                                                                                                                                                                 |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `staticDir` | `string` | The collection slug | Folder where files are stored, as an absolute path or relative to the directory that contains your config. Ignored when `disableLocalStorage` is `true`. |
+| `mimeTypes` | `string[]` | Any type | MIME types or wildcards the file picker offers and the server accepts, such as `['image/*', 'application/pdf']`. Setting it also skips the [restricted file type](#restricted-file-types) check. [More](#mimetypes) |
+| `imageSizes` | `ImageSize[]` | None | Resized copies to generate for each uploaded image. Adds a `sizes` field to the collection. [More](#image-sizes) |
+| `adminThumbnail` | `string \| ({ doc }) => string \| false \| null` | The original file, for images | Image size name, or a function returning a full URL, used for thumbnails in the Admin Panel. [More](#admin-thumbnails) |
+| `formatOptions` | `{ format, options? }` | None | Converts the original image with `sharp`'s [`toFormat`](https://sharp.pixelplumbing.com/api-output#toformat). Each image size has its own `formatOptions`. |
+| `resizeOptions` | `ResizeOptions` | None | `sharp` [resize options](https://sharp.pixelplumbing.com/api-resize) applied to the original image. |
+| `trimOptions` | `TrimOptions` | None | `sharp` [trim options](https://sharp.pixelplumbing.com/api-resize#trim) applied to the original image. |
+| `constructorOptions` | `SharpOptions` | None | `sharp` [constructor options](https://sharp.pixelplumbing.com/api-constructor/) used when the original image is loaded. |
+| `withMetadata` | `boolean \| ({ metadata, req }) => Promise<boolean>` | `false` | Keeps image metadata, such as EXIF, in processed files. A function receives the image metadata and the request and returns whether to keep it. |
+| `crop` | `boolean` | `true` | Shows the cropping tool in the Admin Panel. Cropping runs before resizing. [More](#crop-and-focal-point-selector) |
+| `focalPoint` | `boolean` | `true` | Shows the focal point selector in the Admin Panel. It appears only when `imageSizes` or `resizeOptions` is set. [More](#crop-and-focal-point-selector) |
+| `bulkUpload` | `boolean` | `true` | Allows uploading several files at once from the list view. |
+| `filesRequiredOnCreate` | `boolean` | `true` | Requires a file when a document is created. |
+| `hideFileInputOnCreate` | `boolean` | `false` | Hides the file input when creating a document in the Admin Panel, for files your code generates. |
+| `hideRemoveFile` | `boolean` | `false` | Hides the control for removing an existing file while editing. |
+| `displayPreview` | `boolean` | `false` | Shows a preview of the selected file in upload fields that relate to this collection. An upload field's own `displayPreview` overrides it. |
+| `cacheTags` | `boolean` | `true` | Appends a cache tag to Admin Panel thumbnail URLs. Disable it when your CDN rejects unknown query parameters. |
+| `pasteURL` | `false \| { allowList: AllowList }` | Client-side fetching enabled | Controls uploading from a pasted URL. `false` disables it; an `allowList` fetches matching URLs on the server instead. [More](#uploading-files-from-remote-urls) |
+| `skipSafeFetch` | `boolean \| AllowList` | `false` | Skips the server's safe-fetch checks, which block requests to private networks, for every URL (`true`) or for matching URLs. |
+| `externalFileHeaderFilter` | `(headers, context?) => Record<string, string>` | Forwards only the request's cookies, without `frogbot`-prefixed cookies for other origins | Builds the headers sent when the server fetches a file from a URL. It receives every incoming request header and `{ isSameOrigin, url }` for each request and redirect. Remove session cookies yourself when you set it. |
+| `filenameCompoundIndex` | `string[]` | A unique index on `filename` | Field names to combine into a compound unique index instead, for example to allow the same filename in different folders. |
+| `modifyResponseHeaders` | `({ headers }) => Headers \| void` | None | Changes the response headers when a file is served. Mutate `headers` or return a new `Headers` object. [More](#modifying-response-headers) |
+| `handlers` | `((req, { doc, headers?, params }) => Response \| void \| Promise<Response \| void>)[]` | None | Run in order when a file is requested. The first handler that returns a `Response` sends it; otherwise the file is served normally. `req` is the incoming request without `req.frogbot`. `params` holds `collection`, `filename`, and optional `prefix` and `clientUploadContext`. |
+| `disableLocalStorage` | `boolean` | `false` | Stops writing files to disk. Storage adapters set this for you. [More](#disabling-local-upload-storage) |
+| `allowRestrictedFileTypes` | `boolean` | `false` | Allows [restricted file types](#restricted-file-types). Has no effect when `mimeTypes` is set, because that already skips the check. |
+| `admin` | `{ components?: { controls?: FrogBotComponent[] } }` | None | `controls` adds components beside the Select file and Paste URL buttons in the upload area. |
+| `adapter` | `string` | None | Name of the storage adapter handling this collection. Storage adapters set it; you don't need to. |
+| `requiresClientUploadReceipt` | `boolean` | `false` | Requires a server-issued receipt before client-upload handlers run. Storage adapters with client uploads set it; you don't need to. |
 
 ### FrogBot-wide Upload Options
 
-Upload options are specifiable on a Collection by Collection basis, you can also control app wide options by passing your base FrogBot Config an `upload` property containing an object supportive of all `Busboy` configuration options.
+The root `upload` option configures how multipart requests are parsed for every upload-enabled collection. It combines file handling options with the options of the [`busboy`](https://github.com/mscdex/busboy#api) parser. Root `bodyParser` options are applied first, and `upload` options override them.
 
-| Option                   | Description                                                                                                                                                                        |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`abortOnLimit`**       | A boolean that, if `true`, returns HTTP 413 if a file exceeds the file size limit. If `false`, the file is truncated. Defaults to `false`.                                         |
-| **`createParentPath`**   | Set to `true` to automatically create a directory path when moving files from a temporary directory or buffer. Defaults to `false`.                                                |
-| **`debug`**              | A boolean that turns upload process logging on if `true`, or off if `false`. Useful for troubleshooting. Defaults to `false`.                                                      |
-| **`limitHandler`**       | A function which is invoked if the file is greater than configured limits.                                                                                                         |
-| **`parseNested`**        | Set to `true` to turn `req.body` and `req.files` into nested structures. By default `req.body` and `req.files` are flat objects. Defaults to `false`.                              |
-| **`preserveExtension`**  | Preserves file extensions with the `safeFileNames` option. Limits file names to 3 characters if `true` or a custom length if a `number`, trimming from the start of the extension. |
-| **`responseOnLimit`**    | A `string` that is sent in the Response to a client if the file size limit is exceeded when used with `abortOnLimit`.                                                              |
-| **`safeFileNames`**      | Set to `true` to strip non-alphanumeric characters except dashes and underscores. Can also be set to a regex to determine what to strip. Defaults to `false`.                      |
-| **`tempFileDir`**        | A `string` path to store temporary files used when the `useTempFiles` option is set to `true`. Defaults to `'tmp'` in the current working directory. Supports absolute paths.      |
-| **`uploadTimeout`**      | A `number` that defines how long to wait for data before aborting, specified in milliseconds. Set to `0` to disable timeout checks. Defaults to `60000`.                           |
-| **`uriDecodeFileNames`** | Set to `true` to apply uri decoding to file names. Defaults to `false`.                                                                                                            |
-| **`useTempFiles`**       | Set to `true` to store files to a temporary directory instead of in RAM, reducing memory usage for large files or many files.                                                      |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `limits` | `Limits` | See [Upload limits](#upload-limits) | Size and count limits for each request. |
+| `requestSizeLimit` | `number` | `52428800` (50 MB) | Maximum size in bytes of the whole multipart request, including files, fields, and boundaries. Larger requests fail with HTTP 413. Must be a non-negative safe integer, or `Infinity` to disable the check. |
+| `abortOnLimit` | `boolean` | `true` | When a file exceeds `limits.fileSize`, fail the request with HTTP 413 and `responseOnLimit`. When `false`, the file is truncated and marked `truncated: true`. |
+| `responseOnLimit` | `string` | `'File size limit has been reached'` | Error message returned when `abortOnLimit` rejects a file. |
+| `limitHandler` | `boolean \| ({ request, size }) => void` | `false` | Called when a file exceeds `limits.fileSize`, before `abortOnLimit` applies. Throwing fails the request. |
+| `useTempFiles` | `boolean` | `false` | Writes incoming files to `tempFileDir` instead of memory, reducing memory use for large files. |
+| `tempFileDir` | `string` | `'tmp'` | Folder for temporary files when `useTempFiles` is `true`, absolute or relative to the working directory. |
+| `uploadTimeout` | `number` | `60000` | Milliseconds to wait for more file data before failing the request. `0` disables the timeout. |
+| `safeFileNames` | `boolean \| RegExp` | `false` | `true` strips every character except letters, numbers, dashes, and underscores from file names. A regular expression strips its matches instead. |
+| `preserveExtension` | `boolean \| number` | `false` | Keeps the extension when `safeFileNames` is set. `true` keeps up to 3 characters; a number sets the maximum length. |
+| `uriDecodeFileNames` | `boolean` | `false` | URI-decodes file names. |
+| `parseNested` | `boolean` | `false` | Turns flat keys such as `hobbies[0]` into nested objects and arrays in the parsed fields and files. |
+| `createParentPath` | `boolean` | `false` | Creates missing parent folders when a parsed file is moved with `mv`. |
+| `debug` | `boolean` | `false` | Logs parsing steps, for troubleshooting. |
+| `defCharset` | `string` | `'utf8'` | Character set for parts that don't declare one. |
+| `defParamCharset` | `string` | `'utf8'` | Character set for part header parameters, such as file names, that don't declare one. |
+| `preservePath` | `boolean` | `false` | Keeps the folder path in file names instead of only the base name. |
+| `highWaterMark` | `number` | Node.js stream default | Buffer size for the parser stream. |
+| `fileHwm` | `number` | Node.js stream default | Buffer size for each file stream. |
+| `headers` | `IncomingHttpHeaders` | The request headers | Accepted for type compatibility. FrogBot always passes the request's own headers to the parser, so a configured value has no effect. |
 
-[Click here](https://github.com/mscdex/busboy#api) for more documentation about what you can control with `Busboy`.
+#### Upload limits
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fileSize` | `number` | `20971520` (20 MB) | Maximum size in bytes of each file. What happens when a file exceeds it depends on `abortOnLimit`. |
+| `files` | `number` | `3` | Maximum number of files per request. More files fail the request with HTTP 413. |
+| `fields` | `number` | `20` | Maximum number of non-file fields per request. More fields fail the request with HTTP 413. |
+| `fieldSize` | `number` | `1048576` (1 MB) | Maximum size in bytes of each field value. A larger value fails the request with HTTP 413. |
+| `fieldNameSize` | `number` | `100` | Maximum size in bytes of each field name. A longer name fails the request with HTTP 413. |
+| `parts` | `number` | Unlimited | Maximum number of fields plus files per request. More parts fail the request with HTTP 413. |
+| `headerPairs` | `number` | `2000` | Maximum number of header key-value pairs parsed for each part. |
 
 A common example of what you might want to customize within FrogBot-wide Upload options would be to increase the allowed `fileSize` of uploads sent to FrogBot:
 
@@ -189,7 +210,41 @@ The Admin Panel will also automatically display all available files, including w
 
 Behind the scenes, FrogBot relies on [`sharp`](https://sharp.pixelplumbing.com/api-resize#resize) to perform its image resizing. You can specify additional options for `sharp` to use while resizing your images.
 
-Note that for image resizing to work, `sharp` must be specified in your [FrogBot Config](../configuration/overview). This is configured by default if you created your FrogBot project with `create-frogbot-app`. See `sharp` in [Config Options](../configuration/overview#config-options).
+Image processing requires the `sharp` package. Install it and pass it to your config with the root `sharp` option; without it, FrogBot stores uploads but skips `imageSizes`, `resizeOptions`, `formatOptions`, `trimOptions`, cropping, and focal points.
+
+```ts
+import { buildConfig } from 'frogbot'
+import sharp from 'sharp'
+
+export default buildConfig({
+  // required options omitted
+  sharp,
+})
+```
+
+### Image size options
+
+Each entry in `imageSizes` is an `ImageSize`. Besides the options below, it accepts every `sharp` [resize option](https://sharp.pixelplumbing.com/api-resize#resize).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Key of this size in the document's `sizes` field. |
+| `width` | `number` | None | Target width in pixels. With only one of `width` or `height`, the other follows the original aspect ratio. |
+| `height` | `number` | None | Target height in pixels. |
+| `fit` | `'cover' \| 'contain' \| 'fill' \| 'inside' \| 'outside'` | `'cover'` | How the image fits both dimensions. |
+| `position` | `string \| number` | `'centre'` | Which part of the image to keep when `fit` is `'cover'` or `'contain'`, such as `'top'` or `'entropy'`. |
+| `background` | `string \| { r, g, b, alpha }` | Black | Fill color when `fit` is `'contain'`. |
+| `kernel` | `'nearest' \| 'linear' \| 'cubic' \| 'mitchell' \| 'lanczos2' \| 'lanczos3' \| 'mks2013' \| 'mks2021'` | `'lanczos3'` | Resampling kernel used when reducing the image. |
+| `withoutEnlargement` | `boolean` | `undefined` | Handles images smaller than the size. See [Handling Image Enlargement](#handling-image-enlargement). |
+| `withoutReduction` | `boolean` | `false` | Don't shrink images larger than the size. When `true`, `fit` defaults to `'contain'` and `position` to `'left top'`. |
+| `fastShrinkOnLoad` | `boolean` | `true` | Lets `sharp` shrink JPEG and WebP images while decoding. Faster, but can produce slightly different results. |
+| `formatOptions` | `{ format, options? }` | The original format | Converts this size with `sharp`'s [`toFormat`](https://sharp.pixelplumbing.com/api-output#toformat). |
+| `trimOptions` | `TrimOptions` | None | `sharp` [trim options](https://sharp.pixelplumbing.com/api-resize#trim) applied after resizing. |
+| `generateImageName` | `({ originalName, sizeName, extension, width, height }) => string` | `` `${originalName}-${width}x${height}.${extension}` `` | Builds the file name of the resized image. [More](#custom-file-name-per-size) |
+| `admin` | `{ disableGroupBy?, disableListColumn?, disableListFilter? }` | All `false` | Hides this size's fields from list view controls. [More](#admin-list-view-options) |
+| `crop` | `string` | None | Deprecated and has no effect. Use `position`. |
+
+When a document has a focal point and the size's aspect ratio differs from the image, FrogBot crops around the focal point instead of applying `position`, unless `fit` is `'contain'` or `'inside'`.
 
 #### Admin List View Options
 
@@ -201,20 +256,18 @@ Each image size also supports `admin` options to control whether it appears in t
   width: 400,
   height: 300,
   admin: {
-    disabled: {
-      groupBy: true,  // hide from list view groupBy options
-      column: true,   // hide from list view columns
-      filter: true,   // hide from list view filters
-    },
+    disableGroupBy: true, // hide from list view groupBy options
+    disableListColumn: true, // hide from list view columns
+    disableListFilter: true, // hide from list view filters
   },
 }
 ```
 
-| Option                 | Description                                                                                                                              |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **`disabled.groupBy`** | If set to `true`, this image size will not be available as a selectable groupBy option in the collection list view. Defaults to `false`. |
-| **`disabled.column`**  | If set to `true`, this image size will not be available as a selectable column in the collection list view. Defaults to `false`.         |
-| **`disabled.filter`**  | If set to `true`, this image size will not be available as a filter option in the collection list view. Defaults to `false`.             |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `disableGroupBy` | `boolean` | `false` | Hides this image size from the list view's group-by options. |
+| `disableListColumn` | `boolean` | `false` | Hides this image size from the list view's selectable columns. |
+| `disableListFilter` | `boolean` | `false` | Hides this image size from the list view's filters. |
 
 This is useful for hiding large or rarely used image sizes from the list view UI while still keeping them available in the API.
 
@@ -612,23 +665,25 @@ export const Media: CollectionConfig = {
 
 ##### Accepted Values for `pasteURL`
 
-| Option          | Description                                                                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`undefined`** | Default behavior. Enables client-side fetching for internal or public URLs.                                                                                    |
-| **`false`**     | Disables the ability to paste URLs into Upload fields.                                                                                                         |
-| **`allowList`** | Enables server-side fetching for specific trusted URLs. Requires an array of objects defining trusted domains. See the table below for details on `AllowItem`. |
+| Value | Description |
+| --- | --- |
+| `undefined` | Default. The browser fetches pasted URLs itself, so URLs blocked by CORS fail. |
+| `false` | Removes the Paste URL option from the upload area. |
+| `{ allowList }` | The server fetches pasted URLs that match an `allowList` entry. Other URLs, and redirects to URLs outside the list, are rejected. |
 
 ##### `AllowItem` Properties
 
-_An asterisk denotes that an option is required._
+A URL is allowed when it matches every property set on at least one entry. Unset properties match anything.
 
-| Option            | Description                                                                                          | Example       |
-| ----------------- | ---------------------------------------------------------------------------------------------------- | ------------- |
-| **`hostname`** \* | The hostname of the allowed URL. This is required to ensure the URL is coming from a trusted source. | `example.com` |
-| **`pathname`**    | The path portion of the URL. Supports wildcards to match multiple paths.                             | `/images/*`   |
-| **`port`**        | The port number of the URL. If not specified, the default port for the protocol will be used.        | `3000`        |
-| **`protocol`**    | The protocol to match. Must be either `http` or `https`. Defaults to `https`.                        | `https`       |
-| **`search`**      | The query string of the URL. If specified, the URL must match this exact query string.               | `?version=1`  |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `hostname` | `string` | Required | Exact hostname, such as `example.com`. |
+| `pathname` | `string` | Any path | Path pattern. `*` matches within one path segment and `**` matches across segments, as in `/images/*`. A trailing `/` also matches without it. |
+| `port` | `string` | Any port | Exact port, such as `'3000'`. A URL that uses the protocol's default port has an empty port. |
+| `protocol` | `'http' \| 'https'` | Any protocol | Required protocol, without the colon. |
+| `search` | `string` | Any query string | Exact query string, including the leading `?`, such as `'?version=1'`. |
+
+`skipSafeFetch` accepts the same `AllowItem` array.
 
 ## Access Control
 
