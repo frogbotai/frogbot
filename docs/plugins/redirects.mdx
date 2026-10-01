@@ -18,3 +18,14 @@ plugins: [redirectsPlugin({ collections: ['pages'] })]
 ```
 
 The adapter preserves FrogBot's redirect types, field override, and redirects collection override. Only FrogBot collection slugs should be supplied as relationship targets.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `string[]` | `[]` | Collections a redirect can point to through its internal-link relationship. |
+| `redirectTypes` | `('301' \| '302' \| '303' \| '307' \| '308')[]` | — | Status codes editors can choose from. When set, the plugin adds a required `type` select field with these options. Unset adds no `type` field. |
+| `redirectTypeFieldOverride` | `Partial<SelectField>` | — | Properties merged over the `type` select field. Applies only when `redirectTypes` is set. |
+| `overrides` | `Partial<CollectionConfig> & { fields?: ({ defaultFields }) => Field[] }` | — | Overrides for the redirects collection. `slug` defaults to `'redirects'`. `access` and `admin` merge with the defaults; other keys replace them. `fields` receives the default fields and returns the fields to use. |
+
+Each redirect has a unique `from` path and a `to` group. `to.type` is `reference` (an internal link to a document in `collections`) or `custom` (a free-form `to.url`). The plugin stores redirects only; your app must read them and send the redirect responses. Redirects are publicly readable unless `overrides.access.read` says otherwise.

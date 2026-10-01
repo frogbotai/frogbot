@@ -1,7 +1,7 @@
 ---
 title: "Postgres"
 sidebarTitle: "Postgres"
-description: "Use Postgres with FrogBot through the @frogbotai/db-postgres adapter, which wraps @frogbotai/db-postgres on top of Drizzle."
+description: "Use Postgres with FrogBot through the @frogbotai/db-postgres adapter, which is built on Drizzle."
 ---
 
 To use FrogBot with Postgres, install the package `@frogbotai/db-postgres`. It leverages Drizzle ORM and `node-postgres` to interact with a Postgres database that you provide.
@@ -37,14 +37,10 @@ export default buildConfig({
 import { vercelPostgresAdapter } from '@frogbotai/db-vercel-postgres'
 
 export default buildConfig({
-  // Automatically uses process.env.POSTGRES_URL if no options are provided.
-  db: vercelPostgresAdapter(),
-  // Optionally, can accept the same options as the @vercel/postgres package.
-  db: vercelPostgresAdapter({
-    pool: {
-      connectionString: process.env.DATABASE_URL,
-    },
-  }),
+  // Without a pool, the adapter uses process.env.POSTGRES_URL.
+  // Pass @vercel/postgres pool options to connect elsewhere:
+  // vercelPostgresAdapter({ pool: { connectionString: process.env.DATABASE_URL } })
+  db: vercelPostgresAdapter({}),
 })
 ```
 
@@ -134,24 +130,40 @@ Hybrid search takes up to the [resolved candidate count](/search/overview#candid
 
 ## Options
 
-| Option                           | Description                                                                                                                                                                                                             |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pool` \*                        | [Pool connection options](https://orm.drizzle.team/docs/quick-postgresql/node-postgres) that will be passed to Drizzle and `node-postgres` or to `@vercel/postgres`                                                     |
-| `push`                           | Disable Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push) in development mode. By default, `push` is enabled for development mode only.                                        |
-| `migrationDir`                   | Customize the directory that migrations are stored.                                                                                                                                                                     |
-| `schemaName` (experimental)      | A string for the postgres schema to use, defaults to 'public'.                                                                                                                                                          |
-| `idType`                         | A string of 'serial', or 'uuid' that is used for the data type given to id columns.                                                                                                                                     |
-| `transactionOptions`             | A PgTransactionConfig object for transactions, or set to `false` to disable using transactions. [More details](https://orm.drizzle.team/docs/transactions)                                                              |
-| `disableCreateDatabase`          | Pass `true` to disable auto database creation if it doesn't exist. Defaults to `false`.                                                                                                                                 |
-| `localesSuffix`                  | A string appended to the end of table names for storing localized fields. Default is '\_locales'.                                                                                                                       |
-| `relationshipsSuffix`            | A string appended to the end of table names for storing relationships. Default is '\_rels'.                                                                                                                             |
-| `versionsSuffix`                 | A string appended to the end of table names for storing versions. Defaults to '\_v'.                                                                                                                                    |
-| `beforeSchemaInit`               | Drizzle schema hook. Runs before the schema is built. [More Details](#beforeschemainit)                                                                                                                                 |
-| `afterSchemaInit`                | Drizzle schema hook. Runs after the schema is built. [More Details](#afterschemainit)                                                                                                                                   |
-| `allowIDOnCreate`                | Set to `true` to use the `id` passed in data on the create API operations without using a custom ID field.                                                                                                              |
-| `readReplicas`                   | An array of DB read replicas connection strings, can be used to offload read-heavy traffic.                                                                                                                             |
-| `readReplicasAfterWriteInterval` | How long (ms) after a write to keep routing reads to the primary instead of a replica. Prevents stale reads caused by replication lag. Only relevant when `readReplicas` is set. Default `2000`. Set to `0` to disable. |
-| `blocksAsJSON`                   | Store blocks as a JSON column instead of using the relational structure which can improve performance with a large amount of blocks                                                                                     |
+Both adapters accept these options. `@frogbotai/db-vercel-postgres` takes a different `pool` and adds two options of its own; see [Vercel Postgres options](#vercel-postgres-options).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pool` | `PoolConfig` | Required | [`node-postgres` pool options](https://node-postgres.com/apis/pool), such as `connectionString`. |
+| `push` | `boolean` | `true` | Pushes schema changes to the database with Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push) on startup. Push never runs when `NODE_ENV` is `production` or during migration commands. Set `false` to rely on migrations only. |
+| `migrationDir` | `string` | First of `src/migrations`, `dist/migrations`, or `migrations` that exists | Directory migrations are written to and read from. See [Migrations](/database/migrations#migrations-directory). |
+| `prodMigrations` | `{ name: string; up: (args: MigrateUpArgs) => Promise<void>; down: (args: MigrateDownArgs) => Promise<void> }[]` | — | Migrations to run on connect when `NODE_ENV` is `production`. See [Running migrations in production](/database/migrations#running-migrations-in-production). |
+| `idType` | `'serial' \| 'uuid' \| 'uuidv7'` | `'serial'` | Column type for document IDs. `serial` IDs are numbers; `uuid` and `uuidv7` IDs are strings. |
+| `allowIDOnCreate` | `boolean` | `false` | Uses an `id` passed in create data, without a custom ID field. |
+| `schemaName` | `string` | `'public'` | Experimental. Postgres schema for FrogBot's tables. Works only when no table or enum with the same name exists in another schema. |
+| `transactionOptions` | `PgTransactionConfig \| false` | — | Options for [transactions](https://orm.drizzle.team/docs/transactions), or `false` to disable them. |
+| `disableCreateDatabase` | `boolean` | `false` | Stops the adapter from creating the database when it doesn't exist. |
+| `extensions` | `string[]` | `[]` | Postgres extensions to create on connect with `CREATE EXTENSION IF NOT EXISTS`. A failure is logged and doesn't stop startup. Listing `postgis` also keeps development push from touching PostGIS tables. |
+| `tablesFilter` | `string[]` | — | Table name patterns development push manages. Tables that don't match are left alone. |
+| `readReplicas` | `string[]` | — | Connection strings of read replicas, to offload read-heavy traffic. |
+| `readReplicasAfterWriteInterval` | `number` | `2000` | How long, in milliseconds, reads go to the primary after a write instead of a replica, to avoid stale reads from replication lag. Applies only with `readReplicas`. Set `0` to disable. |
+| `blocksAsJSON` | `boolean` | `false` | Stores blocks in a JSON column instead of relational tables, which can be faster with many blocks. |
+| `localesSuffix` | `string` | `'_locales'` | Suffix for tables that store localized fields. |
+| `relationshipsSuffix` | `string` | `'_rels'` | Suffix for tables that store relationships. |
+| `versionsSuffix` | `string` | `'_v'` | Suffix for tables that store versions. |
+| `beforeSchemaInit` | `PostgresSchemaHook[]` | `[]` | Drizzle schema hooks that run before the schema is built. See [beforeSchemaInit](#beforeschemainit). |
+| `afterSchemaInit` | `PostgresSchemaHook[]` | `[]` | Drizzle schema hooks that run after the schema is built. See [afterSchemaInit](#afterschemainit). |
+| `logger` | `boolean \| Logger` | `false` | Drizzle query logger. `true` logs every query; pass a Drizzle `Logger` to handle them yourself. |
+| `generateSchemaOutputFile` | `string` | A generated-schema file in `src/`, or in the project root without `src/` | File that `frogbot.db.generateSchema()` writes the typed Drizzle schema to. |
+| `pg` | `typeof import('pg')` | The bundled `pg` module | `node-postgres` module used to create pools. Pass your own to control its version or instrument it. Not available on `@frogbotai/db-vercel-postgres`. |
+
+### Vercel Postgres options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pool` | `VercelPostgresPoolConfig` | — | [`@vercel/postgres` pool options](https://vercel.com/docs/storage/vercel-postgres/sdk). Without it, the adapter connects with `process.env.POSTGRES_URL`. |
+| `forceUseVercelPostgres` | `boolean` | `false` | Uses `@vercel/postgres` even when the connection string points to `localhost` or `127.0.0.1`. By default, local databases connect through `pg` instead. |
+| `connectionString` | `string` | — | Accepted but not read. Set `pool.connectionString` instead. |
 
 ## Access to Drizzle
 

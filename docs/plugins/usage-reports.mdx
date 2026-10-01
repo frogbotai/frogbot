@@ -79,9 +79,9 @@ usageReportsPlugin({ access: allow('admin', 'finance', 'auditor') })
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `pageSize` | `5000` | Number of usage rows read per page during report generation. |
-| `access` | logged in | Access function gating the report endpoint and optionally filtering its rows. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `pageSize` | `number` | `5000` | Number of usage rows read per page during report generation. Must be a positive integer. |
+| `access` | `Access` | Authenticated users | Access function gating the report endpoint. Return `false` to forbid the request or a `Where` to restrict the rows it reads. |
 
 Large date ranges scan every matching usage row. Add rollups only after deployment profiling demonstrates that this portable path is insufficient.

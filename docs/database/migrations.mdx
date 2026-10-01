@@ -110,6 +110,26 @@ adapter.
 
 ## Commands
 
+| Command | Description |
+| --- | --- |
+| `frogbot migrate` | Runs every migration that hasn't run yet. |
+| `frogbot migrate:create [name]` | Creates a migration file from the schema changes since the last migration. |
+| `frogbot migrate:status` | Lists which migrations have run and which haven't. |
+| `frogbot migrate:down` | Rolls back the last batch of migrations. |
+| `frogbot migrate:refresh` | Rolls back every migration that has run, then runs them all again. |
+| `frogbot migrate:reset` | Rolls back every migration. |
+| `frogbot migrate:fresh` | Drops everything in the database, then runs every migration. |
+
+| Flag | Applies to | Description |
+| --- | --- | --- |
+| `--name <name>` | `migrate:create` | Name of the migration file. Same as the positional `name`, and takes precedence over it. Also accepts `--name=<name>`. |
+| `--file <path>` | `migrate:create` | Creates the migration from a predefined migration instead of the schema: a module path or package export that provides `upSQL`, `downSQL`, and `imports`. |
+| `--skip-empty` | `migrate:create` | On Postgres and SQLite, exits without creating a file when no schema changes are detected, instead of asking whether to create a blank one. On MongoDB, which doesn't detect schema changes, no file is written. |
+| `--force-accept-warning` | `migrate:create`, `migrate:fresh` | Answers yes to confirmation prompts. `migrate:fresh` drops the database without asking, and on Postgres and SQLite `migrate:create` writes a blank migration when there are no changes. |
+| `--help`, `-h` | Every command | Prints usage. |
+
+When `frogbot migrate` runs without an interactive terminal, such as in CI, it fails if the database has schema changes pushed in development mode. Run it interactively to confirm those changes first.
+
 ### Migrate
 
 The `migrate` command will run any migrations that have not yet been run.
@@ -127,10 +147,7 @@ default, migrations will be named using a timestamp.
 npm run frogbot migrate:create optional-name-here
 ```
 
-Flags:
-
-- `--skip-empty`: with Postgres, it skips the "no schema changes detected. Would you like to create a blank migration file?" prompt which can be useful for generating migration in CI.
-- `--force-accept-warning`: accepts any command prompts, creates a blank migration even if there weren't any changes to the schema.
+See the [flags table](#commands) for `--name`, `--file`, `--skip-empty`, and `--force-accept-warning`.
 
 ### Status
 

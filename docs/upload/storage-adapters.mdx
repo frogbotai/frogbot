@@ -89,15 +89,14 @@ export default buildConfig({
 
 ### Configuration Options#vercel-blob-configuration
 
-| Option                 | Description                                                                              | Default                       |
-| ---------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| `enabled`              | Whether or not to enable the plugin                                                      | `true`                        |
-| `collections`          | Collections to apply the Vercel Blob adapter to                                          |                               |
-| `addRandomSuffix`      | Add a random suffix to the uploaded file name in Vercel Blob storage                     | `false`                       |
-| `cacheControlMaxAge`   | Cache-Control max-age in seconds                                                         | `365 * 24 * 60 * 60` (1 Year) |
-| `token`                | Vercel Blob storage read/write token                                                     | `''`                          |
-| `clientUploads`        | Do uploads directly on the client to bypass limits on Vercel.                            |                               |
-| `useCompositePrefixes` | Combine collection prefix with document prefix instead of document prefix overriding it. | `false`                       |
+Also accepts the [shared options](#shared-storage-options).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `token` | `string \| undefined` | Required | Vercel Blob read/write token, in the form `vercel_blob_rw_<store_id>_<random>`. Another format throws at startup. When the token is empty or `undefined`, the adapter is disabled. |
+| `access` | `'public'` | `'public'` | Blob access level. Vercel Blob supports only public blobs. |
+| `addRandomSuffix` | `boolean` | `false` | Adds a random suffix to uploaded file names in Vercel Blob. |
+| `cacheControlMaxAge` | `number` | `31536000` (one year) | `Cache-Control` max-age for uploaded files, in seconds. |
 
 ## S3 Storage
 
@@ -157,16 +156,23 @@ export default buildConfig({
 
 ### Configuration Options#s3-configuration
 
-| Option                 | Description                                                                              | Default     |
-| ---------------------- | ---------------------------------------------------------------------------------------- | ----------- |
-| `enabled`              | Whether or not to enable the plugin                                                      | `true`      |
-| `collections`          | Collections to apply the S3 adapter to                                                   |             |
-| `bucket`               | The name of the S3 bucket                                                                |             |
-| `config`               | `S3ClientConfig` object passed to the AWS SDK client                                     |             |
-| `acl`                  | Access control list for uploaded files (e.g. `'public-read'`)                            | `undefined` |
-| `clientUploads`        | Do uploads directly on the client to bypass Vercel's 4.5MB server limit                  |             |
-| `signedDownloads`      | Use presigned URLs for file downloads. Can be overridden per collection                  |             |
-| `useCompositePrefixes` | Combine collection prefix with document prefix instead of document prefix overriding it. | `false`     |
+Also accepts the [shared options](#shared-storage-options). Entries in `collections` also accept `signedDownloads`, which overrides the adapter-level setting for that collection.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `bucket` | `string` | Required | Name of the S3 bucket. |
+| `config` | `S3ClientConfig` | Required | Options for the AWS SDK S3 client. Merged over a default request handler that keeps connections alive, with up to 100 sockets. |
+| `acl` | `'private' \| 'public-read'` | — | Access control list applied to uploaded files and client-upload URLs. Unset uses the bucket's default. |
+| `signedDownloads` | `boolean \| SignedDownloadsConfig` | `false` | Redirects file requests to [presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html) after access control runs. See [Signed downloads](#signed-downloads). |
+| `clientCacheKey` | `string` | `s3:<bucket>` | Key the S3 client is cached under. Adapters with the same key share one client. |
+| `disableLocalStorage` | `boolean` | — | Accepted but not read. Local storage is always disabled for the listed collections; set `disableLocalStorage` on a [collection entry](#collection-specific-options) instead. |
+
+#### Signed downloads
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `expiresIn` | `number` | `900` | Seconds the presigned URL stays valid. `signedDownloads: true` uses `7200`. |
+| `shouldUseSignedURL` | `({ collection, filename, req }) => boolean \| Promise<boolean>` | Always | Return `false` to serve a file through FrogBot instead of redirecting to a presigned URL. |
 
 For full `S3ClientConfig` options, see the [AWS SDK Package](https://github.com/aws/aws-sdk-js-v3) and [`S3ClientConfig`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3) docs.
 
@@ -274,16 +280,17 @@ export default buildConfig({
 
 ### Configuration Options#azure-configuration
 
-| Option                 | Description                                                                              | Default |
-| ---------------------- | ---------------------------------------------------------------------------------------- | ------- |
-| `enabled`              | Whether or not to enable the plugin                                                      | `true`  |
-| `collections`          | Collections to apply the Azure Blob adapter to                                           |         |
-| `allowContainerCreate` | Whether or not to allow the container to be created if it does not exist                 | `false` |
-| `baseURL`              | Base URL for the Azure Blob storage account                                              |         |
-| `connectionString`     | Azure Blob storage connection string                                                     |         |
-| `containerName`        | Azure Blob storage container name                                                        |         |
-| `clientUploads`        | Do uploads directly on the client to bypass limits on Vercel.                            |         |
-| `useCompositePrefixes` | Combine collection prefix with document prefix instead of document prefix overriding it. | `false` |
+Also accepts the [shared options](#shared-storage-options).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `connectionString` | `string` | Required | Azure Blob storage connection string. |
+| `containerName` | `string` | Required | Name of the blob container. |
+| `baseURL` | `string` | Required | Base URL of the storage account. File URLs are built as `<baseURL>/<containerName>/<key>`. |
+| `allowContainerCreate` | `boolean` | Required | Creates the container on startup if it doesn't exist. |
+| `containerAccess` | `'private' \| 'blob' \| 'container'` | `'private'` | Public access level for a container the adapter creates. Applies only with `allowContainerCreate`. |
+| `clientUploads` | `boolean \| { access?: ClientUploadsAccess; chunkLargeFiles?: boolean }` | `false` | Client uploads, as in the [shared options](#shared-storage-options). `chunkLargeFiles` uploads in blocks to lift the roughly 5 GB single-request limit, and needs CORS that allows `OPTIONS`, `PUT`, and `x-ms-*` headers. Client uploads apply only to collections with [`upload.allowRestrictedFileTypes: true`](/upload/overview). |
+| `clientCacheKey` | `string` | — | Accepted but not read. |
 
 ## Google Cloud Storage
 
@@ -328,15 +335,14 @@ export default buildConfig({
 
 ### Configuration Options#gcs-configuration
 
-| Option                 | Description                                                                                         | Default   |
-| ---------------------- | --------------------------------------------------------------------------------------------------- | --------- |
-| `enabled`              | Whether or not to enable the plugin                                                                 | `true`    |
-| `collections`          | Collections to apply the storage to                                                                 |           |
-| `bucket`               | The name of the bucket to use                                                                       |           |
-| `options`              | Google Cloud Storage client configuration. See [Docs](https://github.com/googleapis/nodejs-storage) |           |
-| `acl`                  | Access control list for files that are uploaded                                                     | `Private` |
-| `clientUploads`        | Do uploads directly on the client to bypass limits on Vercel.                                       |           |
-| `useCompositePrefixes` | Combine collection prefix with document prefix instead of document prefix overriding it.            | `false`   |
+Also accepts the [shared options](#shared-storage-options).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `bucket` | `string` | Required | Name of the bucket. |
+| `options` | `StorageOptions` | Required | [Google Cloud Storage client options](https://github.com/googleapis/nodejs-storage), such as `projectId` and credentials. |
+| `acl` | `'Private' \| 'Public'` | — | Makes each uploaded file private or public. Unset leaves the bucket's default. |
+| `clientCacheKey` | `string` | `gcs:<bucket>` | Key the storage client is cached under. Adapters with the same key share one client. |
 
 ## Uploadthing Storage
 
@@ -374,14 +380,20 @@ export default buildConfig({
 
 ### Configuration Options#uploadthing-configuration
 
-| Option           | Description                                                   | Default       |
-| ---------------- | ------------------------------------------------------------- | ------------- |
-| `token`          | Token from Uploadthing. Required.                             |               |
-| `acl`            | Access control list for files that are uploaded               | `public-read` |
-| `logLevel`       | Log level for Uploadthing                                     | `info`        |
-| `fetch`          | Custom fetch function                                         | `fetch`       |
-| `defaultKeyType` | Default key type for file operations                          | `fileKey`     |
-| `clientUploads`  | Do uploads directly on the client to bypass limits on Vercel. |               |
+Uploadthing accepts `collections`, `enabled`, and `alwaysInsertFields` from the [shared options](#shared-storage-options). It doesn't support prefixes or `useCompositePrefixes`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `options` | `object` | Required | Uploadthing settings, below. |
+| `options.token` | `string` | `process.env.UPLOADTHING_TOKEN` | Uploadthing token. |
+| `options.acl` | `'public-read' \| 'private'` | `'public-read'` | Access control list for uploaded files. |
+| `options.logLevel` | `'All' \| 'Fatal' \| 'Error' \| 'Warning' \| 'Info' \| 'Debug' \| 'Trace' \| 'None'` | `'Info'` | Uploadthing log level. |
+| `options.logFormat` | `'json' \| 'logFmt' \| 'structured' \| 'pretty'` | `'pretty'` in development, otherwise `'json'` | Uploadthing log format. |
+| `options.defaultKeyType` | `'fileKey' \| 'customId'` | `'fileKey'` | Whether file operations identify files by file key or custom ID. |
+| `options.fetch` | `typeof fetch` | `globalThis.fetch` | Custom `fetch` implementation. |
+| `options.apiUrl` | `string` | — | Overrides the Uploadthing API server URL. |
+| `options.ingestUrl` | `string` | — | Overrides the Uploadthing ingest server URL. |
+| `clientUploads` | `boolean \| { access?: ClientUploadsAccess; routerInputConfig?: FileRouterInputConfig }` | `false` | Client uploads, as in the [shared options](#shared-storage-options). `routerInputConfig` sets the Uploadthing file route's input config, such as allowed file types and maximum sizes. |
 
 ## R2 Storage
 
@@ -420,24 +432,35 @@ export default buildConfig({
 })
 ```
 
+### Configuration Options#r2-configuration
+
+Also accepts the [shared options](#shared-storage-options).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `bucket` | `R2Bucket` | Required | The R2 bucket binding from your Cloudflare Worker environment. |
+
 ## Shared storage options
 
-Use the shipped `@frogbotai/storage-*` packages listed above. Their shared options configure storage across multiple FrogBot collections; check each adapter's options for service-specific settings. A `*` denotes that the property is required.
+Every storage adapter accepts these options, except where noted.
 
-| Option               | Type                                        | Description                                                                                                       |
-| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `alwaysInsertFields` | `boolean`                                   | With S3 or Vercel Blob, insert fields even when storage is disabled. Other adapters skip field insertion when disabled. Default: `false`. |
-| `collections` \*     | `Record<string, true \| CollectionOptions>` | Object with collection slugs as keys and `true` or collection-specific options as values.                         |
-| `enabled`            | `boolean`                                   | Conditionally enable or disable the storage adapter. Default: `true`.                                             |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `Record<string, true \| CollectionOptions>` | Required | Upload collections that use the adapter, keyed by slug. Use `true` for the defaults or an object of [collection-specific options](#collection-specific-options). Each slug _must_ match an existing upload collection. |
+| `enabled` | `boolean` | `true` | Set `false` to turn the adapter off. When it's off, the collections keep using local storage. |
+| `alwaysInsertFields` | `boolean` | `false` | Adds the adapter's fields, such as `prefix`, to the collection schema even when the adapter is disabled, so the schema is the same in every environment. Only S3 and Vercel Blob read it; other adapters add no fields when disabled. |
+| `clientUploads` | `boolean \| { access?: ClientUploadsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure and Uploadthing accept extra keys. |
+| `useCompositePrefixes` | `boolean` | `false` | Stores the document prefix relative to the collection prefix. See [Prefix composition](#prefix-composition). Not available on Uploadthing. |
 
 ## Collection-specific options
 
-| Option                        | Type              | Description                                                                        |
-| ----------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
-| `disableLocalStorage`         | `boolean`         | Choose to disable local storage on this collection. Defaults to `true`.            |
-| `disablePayloadAccessControl` | `true`            | Set to `true` to disable FrogBot's Access Control. [More](#frogbot-access-control) |
-| `generateFileURL`             | `GenerateFileURL` | Override the generated file URL with one that you create.                          |
-| `prefix`                      | `string`          | Set to `media/images` to upload files inside that folder in the bucket. Uploadthing does not support prefixes. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `prefix` | `string` | — | Folder in the bucket for this collection's files, such as `media/images`. Uploadthing ignores it. |
+| `disableLocalStorage` | `boolean` | `true` | Set `false` to also keep a local copy of each file. |
+| `disablePayloadAccessControl` | `true` | — | Serves files straight from your storage provider instead of through FrogBot's access control. See [FrogBot Access Control](#frogbot-access-control). |
+| `generateFileURL` | `({ collection, filename, prefix, size }) => string \| Promise<string>` | — | Returns the file URL to store, instead of the generated one. `size` is set for image sizes. |
+| `signedDownloads` | `boolean \| SignedDownloadsConfig` | The adapter's `signedDownloads` | S3 only. Overrides [signed downloads](#signed-downloads) for this collection. |
 
 ## Prefix Composition
 
@@ -446,21 +469,24 @@ Storage adapters support two types of prefixes:
 - **Collection prefix**: Set at the adapter configuration level (e.g., `prefix: 'media-folder'`)
 - **Document prefix**: Set per-document via the `prefix` field on the upload collection
 
-By default, if a document has a prefix, it **overrides** the collection prefix entirely.
+New uploads are always stored beneath the collection prefix. `useCompositePrefixes` changes how a document prefix is read and stored:
 
-With `useCompositePrefixes: true`, the prefixes are **combined**:
+- **Default (`false`)**: the document prefix is a full path. If it already starts with the collection prefix, it's used as-is; otherwise it's nested beneath the collection prefix, and the stored `prefix` field holds the combined path.
+- **`true`**: the document prefix is always relative. It's joined to the collection prefix when the file key is built, and the stored `prefix` field holds only the document part.
 
 ```text
-# Without useCompositePrefixes (default)
-Collection prefix: media-folder
-Document prefix: user-123
-Result: user-123/image.jpg
+Collection prefix: uploads
+Document prefix:   user-123
+Default:           uploads/user-123/image.jpg
+Composite:         uploads/user-123/image.jpg
 
-# With useCompositePrefixes: true
-Collection prefix: media-folder
-Document prefix: user-123
-Result: media-folder/user-123/image.jpg
+Collection prefix: uploads
+Document prefix:   uploads/documents
+Default:           uploads/documents/image.jpg
+Composite:         uploads/uploads/documents/image.jpg
 ```
+
+Files uploaded before you change the setting keep the prefix they were stored with, for reads, URLs, and cleanup.
 
 This is useful when you want a base folder structure (collection prefix) while still allowing per-document organization (document prefix).
 

@@ -65,17 +65,26 @@ Export captures as JSON Lines with the FrogBot CLI:
 frogbot export:captures --from 2026-07-01 --to 2026-09-30 --user user-123 --output q3.jsonl
 ```
 
-Filters include `--user`, `--api-key`, `--from`, `--to`, and `--operation`. Without `--output`, JSON Lines are written to stdout.
+Each line is one decompressed capture record, in `requestedAt` order. Every flag takes a value, either as the next argument or as `--flag=value`. Unknown flags and invalid dates fail the command.
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--output` | file path | stdout | File to write JSON Lines to. |
+| `--user` | string | — | Only captures for this user ID. |
+| `--api-key` | string | — | Only captures authenticated with this API key ID. |
+| `--from` | date | — | Only captures requested at or after this date. |
+| `--to` | date | — | Only captures requested at or before this date. |
+| `--operation` | `chat.completions` \| `messages` \| `responses` | — | Only captures for this operation. |
 
 ## Options
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `enabled` | `false` | Enables capture globally. |
-| `storage` | filesystem | Blob storage adapter. |
-| `storageRoot` | `.frogbot/captures` | Filesystem adapter root. |
-| `retentionDays` | unset | Days to retain captures. Unset retains them indefinitely. |
-| `sampleRate` | `1` | Fraction of enabled requests to capture. |
-| `maxBodyBytes` | `10485760` | Maximum serialized request size. |
-| `collectionSlug` | `ai-captures` | Content-free index collection slug. |
-| `access` | unset | Read access for index rows. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Enables capture globally. An API key's `capture` setting overrides it. |
+| `storage` | `CaptureStorage` | Filesystem adapter | Blob storage adapter implementing `put`, `get`, `delete`, and `list`. |
+| `storageRoot` | `string` | `'.frogbot/captures'` | Root directory for the filesystem adapter. Ignored when `storage` is set. |
+| `retentionDays` | `number` | — | Days to retain captures. Must be a positive integer. Registers a daily pruning task; unset retains captures indefinitely. |
+| `sampleRate` | `number` | `1` | Fraction of enabled requests to capture, from `0` to `1`. |
+| `maxBodyBytes` | `number` | `10485760` | Maximum serialized size of the request, response, or error envelope. Larger captures are skipped and logged. Must be a positive integer. |
+| `collectionSlug` | `string` | `'ai-captures'` | Slug for the content-free index collection. |
+| `access` | `Access` | Authenticated users | Read access for index rows. Index rows can't be created, updated, or deleted through the API. |

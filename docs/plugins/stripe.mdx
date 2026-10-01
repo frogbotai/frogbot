@@ -18,3 +18,45 @@ plugins: [stripePlugin({ stripeSecretKey: process.env.STRIPE_SECRET_KEY! })]
 ```
 
 The adapter preserves FrogBot's webhook, REST route, logging, test-key, and collection synchronization options. FrogBot does not choose webhook handlers, payment flows, or synchronized collections for the app.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `stripeSecretKey` | `string` | Required | Stripe secret key used for synchronization, webhooks, and the REST proxy. |
+| `stripeWebhooksEndpointSecret` | `string` | — | Signing secret for `POST /api/stripe/webhooks`. Without it, the endpoint acknowledges events but doesn't process them. Events with an invalid signature return `400`. |
+| `webhooks` | `WebhookHandler \| Record<string, WebhookHandler>` | — | A function that runs for every verified event, or an object of handlers keyed by event type, such as `'customer.subscription.updated'`. See [Webhook handlers](#webhook-handlers). |
+| `sync` | `SyncConfig[]` | `[]` | Collections kept in sync with Stripe customers or products. See [Synchronization](#synchronization). |
+| `rest` | `{ allowedMethods: string[]; access?: ({ req }) => boolean \| Promise<boolean> }` | — | Enables `POST /api/stripe/rest`, which calls a Stripe SDK method by name. See [REST proxy](#rest-proxy). |
+| `isTestKey` | `boolean` | `false` | Links synced documents to the Stripe test-mode dashboard instead of live mode. |
+| `logs` | `boolean` | `false` | Logs synchronization steps and received webhook events. |
+
+### Synchronization
+
+Each `sync` entry links one collection to one Stripe resource type:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `CollectionSlug` | Required | Collection to keep in sync. |
+| `stripeResourceType` | `'customers' \| 'products'` | Required | Stripe resource the collection mirrors. |
+| `stripeResourceTypeSingular` | `'customer' \| 'product'` | Required | Singular form, used to match webhook event types such as `customer.updated`. |
+| `fields` | `{ fieldPath: string; stripeProperty: string }[]` | Required | Field mappings. `fieldPath` is a path in the document and `stripeProperty` is a path on the Stripe object, such as `metadata.plan`. Values are copied both ways. |
+
+The plugin adds a read-only `stripeID` field, a read-only `skipSync` checkbox, and a link to the Stripe dashboard to each synced collection. Creating, updating, or deleting a document creates, updates, or deletes the Stripe resource. With `stripeWebhooksEndpointSecret` set, Stripe `created`, `updated`, and `deleted` events for the resource update the collection too.
+
+### Webhook handlers
+
+Handlers run after the endpoint responds, so a slow handler doesn't make Stripe retry the event. Each handler receives:
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `event` | `Stripe.Event` | The verified Stripe event. |
+| `stripe` | `Stripe` | A Stripe client created with `stripeSecretKey`. |
+| `req` | `FrogBotRequest` | The webhook request. |
+| `pluginConfig` | `StripePluginOptions` | The plugin options. |
+| `config` | — | The internal server config. Read settings from your FrogBot config instead. |
+| `payload` | — | The internal server instance. Use `req.frogbot` instead. |
+
+### REST proxy
+
+`rest` turns on an endpoint that runs a Stripe SDK method on the server, for example `{ "stripeMethod": "subscriptions.list", "stripeArgs": [{ "customer": "cus_123" }] }`. The request must be authenticated. `allowedMethods` must be a non-empty list of exact method names, with no wildcards; any other method returns `400`. `access` decides who may call the endpoint and defaults to users with admin access.

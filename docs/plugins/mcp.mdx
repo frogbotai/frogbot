@@ -41,7 +41,7 @@ export default buildConfig({
 Configure your MCP client to send Streamable HTTP requests to `/api/mcp` with a key from the API Keys admin collection:
 
 ```http
-Authorization: Bearer fbt_...
+Authorization: Bearer fb_...
 ```
 
 Revoked, malformed, and unknown keys are rejected immediately. The MCP endpoint only accepts users authenticated by the API keys plugin.
@@ -51,3 +51,60 @@ Revoked, malformed, and unknown keys are rejected immediately. The MCP endpoint 
 The adapter supports collection, custom-tool, response-override, and handler options. Experimental config, collection-definition, job, and auth-mutation tools cannot be enabled. SSE is not supported.
 
 The adapter adds a `payload-mcp-api-keys` collection to preserve its plugin schema. This collection is dormant in FrogBot: keys stored there cannot authenticate `/api/mcp`.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `Record<CollectionSlug, CollectionEntry>` | `{}` | Collections exposed as MCP tools. See [Collection and global entries](#collection-and-global-entries). |
+| `globals` | `Record<GlobalSlug, GlobalEntry>` | `{}` | Globals exposed as MCP tools. Globals support only `find` and `update`. |
+| `mcp` | `object` | — | Custom tools, prompts, and resources, plus server and handler settings. See [Server options](#server-options). |
+| `disabled` | `boolean` | `false` | Registers no `/api/mcp` endpoint. The dormant `payload-mcp-api-keys` collection is still added, so the database schema doesn't change. |
+| `userCollection` | `CollectionSlug` | The admin user collection, or `'users'` | Collection the dormant `payload-mcp-api-keys` collection relates its keys to. It doesn't affect which keys authenticate `/api/mcp`. |
+| `overrideApiKeyCollection` | `(collection: CollectionConfig) => CollectionConfig` | — | Receives the dormant `payload-mcp-api-keys` collection and returns the collection to add. |
+
+A collection or global slug that converts to `auth`, `config`, or `jobs` in camel case is reserved and throws at startup.
+
+### Collection and global entries
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean \| { find?: boolean; create?: boolean; update?: boolean; delete?: boolean }` | Required | Operations exposed as tools. `true` exposes every operation. Globals accept only `find` and `update`. |
+| `description` | `string` | Built-in tool description | Description MCP clients use to decide when to call the collection's tools. |
+| `overrideResponse` | `(response, doc, req) => response` | — | Rewrites a tool's response before it's sent. `response` is `{ content: { type: string; text: string }[] }`, and `doc` is the document the tool read or wrote. |
+
+### Server options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `mcp.tools` | `McpTool[]` | `[]` | Custom tools. Every listed tool is available to authenticated keys. |
+| `mcp.prompts` | `McpPrompt[]` | `[]` | Custom prompts. Every listed prompt is available to authenticated keys. |
+| `mcp.resources` | `McpResource[]` | `[]` | Custom resources. Every listed resource is available to authenticated keys. |
+| `mcp.serverOptions.serverInfo` | `{ name: string; version: string }` | `{ name: 'mcp-typescript server on vercel', version: '0.1.0' }` | Server name and version reported to MCP clients. |
+| `mcp.serverOptions.instructions` | `string` | — | Instructions sent to MCP clients describing how to use the server. |
+| `mcp.handlerOptions.basePath` | `string` | The API route, `'/api'` | Path prefix the handler expects in front of `/mcp`. It must match the route the endpoint is served on. |
+| `mcp.handlerOptions.verboseLogs` | `boolean` | `false` | Logs which tools, prompts, and resources each request registers, plus handler activity. |
+| `mcp.handlerOptions.onEvent` | `(event: unknown) => void` | — | Receives MCP events, for example to track usage or debug requests. |
+| `mcp.handlerOptions.disableSse` | `boolean` | `true` | Disables SSE. FrogBot doesn't serve an SSE endpoint, so leave it `true`. |
+| `mcp.handlerOptions.maxDuration` | `number` | `60` | Maximum SSE session length in seconds. Has no effect without SSE. |
+| `mcp.handlerOptions.redisUrl` | `string` | — | Redis URL for SSE sessions. Has no effect without SSE. |
+
+Custom tools, prompts, and resources take these fields:
+
+| Item | Field | Type | Description |
+| --- | --- | --- | --- |
+| Tool | `name` | `string` | Tool name clients call. |
+| | `description` | `string` | Description clients use to decide when to call the tool. |
+| | `parameters` | Zod raw shape | Input schema, for example `{ query: z.string() }`. |
+| | `handler` | `(args, req, extra) => { content: { type: 'text'; text: string }[]; role?: string }` | Runs the tool. May return a promise. |
+| Prompt | `name` | `string` | Prompt name. |
+| | `title` | `string` | Title clients show and use to choose the prompt. |
+| | `description` | `string` | Description of the prompt. |
+| | `argsSchema` | Zod raw shape | Arguments the prompt accepts. |
+| | `handler` | `(args, req, extra) => { messages: { role: 'user' \| 'assistant'; content: { type: 'text'; text: string } }[] }` | Builds the prompt messages. May return a promise. |
+| Resource | `name` | `string` | Resource name. |
+| | `title` | `string` | Title clients show and use to choose the resource. |
+| | `description` | `string` | Description of the resource. |
+| | `uri` | `string \| ResourceTemplate` | Resource URI, such as `'data://app'`, or a URI template. |
+| | `mimeType` | `string` | MIME type of the contents, such as `'text/plain'`. |
+| | `handler` | `(...args) => { contents: { uri: string; text: string }[] }` | Reads the resource. May return a promise. |

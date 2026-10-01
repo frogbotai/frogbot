@@ -178,3 +178,14 @@ await frogbot.create({
 ```
 
 For application-managed onboarding, add a userland collection hook that derives the assignment from your own invite, tenant, or deployment rules. Keep that bootstrap condition in application code and remove or disable one-time logic after it succeeds.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `roles` | `(string \| { slug: string; label?: string })[]` | `[]` | Role slugs, optionally with an admin label. Labels default to the slug in title case. Duplicate slugs throw at startup. With no roles, the plugin is inert. |
+| `defaultRole` | `string` | — | Role assigned to new users through the injected field's `defaultValue`. Must be listed in `roles`. |
+| `resolveRoles` | `(req: FrogBotRequest) => RoleSlug[]` | Reads `req.user.roles` | Synchronous resolver for a request's roles. See [Custom role sources](#custom-role-sources). |
+| `rolesFieldAccess` | `{ create?: FieldAccess; read?: FieldAccess; update?: FieldAccess }` | Default field access | Access for the injected `roles` field. See [Role field access](#role-field-access). |
+
+The plugin injects the `roles` field into the `users` collection only, and only when that collection has auth enabled. It throws at startup if `users` already has a field named `roles`, or if an `allow()` clause names a role that isn't listed.
