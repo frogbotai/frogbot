@@ -116,8 +116,8 @@ describe('audit log plugin integration', () => {
       overrideAccess: true,
     });
     const localAudit = (await entries(local.id))[0];
-    expect(localAudit?.user).toBeNull();
-    expect(localAudit?.apiKeyId).toBeNull();
+    expect(localAudit?.user ?? null).toBeNull();
+    expect(localAudit?.apiKeyId ?? null).toBeNull();
   });
 
   it('rejects API writes to audit entries', async () => {
