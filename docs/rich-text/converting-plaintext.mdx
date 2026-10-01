@@ -16,6 +16,11 @@ export function toPlainText(data: SerializedEditorState) {
 }
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `data` | `SerializedEditorState` | Required | The rich text value to convert. An empty editor state returns an empty string. |
+| `converters` | `PlaintextConverters` | `{}` | Converters keyed by node type, with custom blocks under `blocks` and `inlineBlocks` keyed by slug. Each converter is a string or a function that receives the `node` and returns its text. Nodes without a converter follow the rules in [Custom converters](#custom-converters). |
+
 ## Custom converters
 
 Add converters for custom blocks or override standard node handling:

@@ -27,6 +27,17 @@ export function ArticleBody({ data }: { data: SerializedEditorState }) {
 
 Only render trusted content with `dangerouslySetInnerHTML`. Sanitize untrusted HTML according to your application's security requirements.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `data` | `SerializedEditorState` | Required | The rich text value to convert. |
+| `converters` | `HTMLConverters \| ({ defaultConverters }) => HTMLConverters` | Built-in converters | Converters keyed by node type, with custom blocks under `blocks` and `inlineBlocks` keyed by slug, and an optional `unknown` fallback. An object replaces the built-in converters entirely; a function receives them as `defaultConverters` so you can extend them. See [Blocks to HTML](#blocks-to-html). |
+| `className` | `string` | Built-in class name | Class name of the wrapping `div`. |
+| `disableContainer` | `boolean` | `false` | Returns the HTML without the wrapping `div`. |
+| `disableIndent` | `boolean \| string[]` | `false` | Omits indentation styles. `true` disables them for every node; an array disables them for the listed node types. |
+| `disableTextAlign` | `boolean \| string[]` | `false` | Omits text-alignment styles. `true` disables them for every node; an array disables them for the listed node types. |
+
+Empty editor state, including a lone empty paragraph, converts to an empty wrapping `div`, or an empty string with `disableContainer`.
+
 ### Dynamic population
 
 The async converter can populate relationships and files while converting. In a server component, create a FrogBot instance and pass the asynchronous population function:
@@ -51,7 +62,7 @@ export async function ArticleBody({ data }: { data: SerializedEditorState }) {
 }
 ```
 
-Pass an existing FrogBot request instead of `frogbot` when conversion must preserve its user, locale, access, and transaction context.
+Pass an existing FrogBot request instead of `frogbot` when conversion must preserve its user, locale, and transaction context. Population skips access control unless you set `overrideAccess: false`.
 
 ```ts
 const populate = await getFrogBotPopulateFn({
@@ -60,6 +71,25 @@ const populate = await getFrogBotPopulateFn({
   req,
 })
 ```
+
+`convertLexicalToHTMLAsync` accepts every [`convertLexicalToHTML` option](#rich-text-to-html), with async converters, plus `populate`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `populate` | `HTMLPopulateFn` | None | Loads a record by collection slug and ID. Every async converter receives it as `populate`. The built-in file converter uses it when a file node holds an ID instead of a populated record, and renders an empty string without it. |
+
+`getFrogBotPopulateFn` options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `frogbot` | `FrogBot` | Required unless `req` is set | FrogBot instance used to create a request. Pass exactly one of `frogbot` and `req`; passing both or neither throws. |
+| `req` | `FrogBotRequest` | Required unless `frogbot` is set | Existing request whose user, locale, and transaction are reused. |
+| `currentDepth` | `number` | Required | Depth already reached by the caller. Use `0` at the top level. |
+| `depth` | `number` | Required | Maximum population depth. |
+| `locale` | `string \| null` | Default locale | Locale of the request created from `frogbot`. Ignored when `req` is set; the request's locale applies. |
+| `draft` | `boolean` | `false` | Loads draft versions of populated records. |
+| `overrideAccess` | `boolean` | `true` | Skips access control while populating. Set it to `false` to apply the request user's permissions. |
+| `showHiddenFields` | `boolean` | `false` | Includes hidden fields in populated records. |
 
 Client code can use `getRestPopulateFn` from `@frogbotai/richtext-lexical/client`. It makes a request for each node that needs population, so server-side population is preferable for larger documents.
 
@@ -84,6 +114,15 @@ export function ArticleBody({ data }: { data: SerializedEditorState }) {
   return html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : null
 }
 ```
+
+`getRestPopulateFn` sends a `GET` request to `<apiURL>/<collection>/<id>` with the browser's cookies.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `apiURL` | `string` | Required | Base URL of the REST API, such as `/api` or `https://example.com/api`. |
+| `depth` | `number` | `0` | `depth` query parameter for each request. |
+| `draft` | `boolean` | `false` | Requests draft versions. |
+| `locale` | `string` | Default locale | `locale` query parameter for each request. |
 
 ## HTML field
 
@@ -113,6 +152,16 @@ export const Pages: CollectionConfig = {
 ```
 
 The helper generates HTML when the record is read. By default, it removes the generated field before database writes, avoiding duplicate stored content. Set `storeInDB: true` to retain a caller-supplied value, but conversion still occurs on read rather than automatically during writes.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `htmlFieldName` | `string` | Required | Name of the generated code field that holds the HTML. |
+| `lexicalFieldName` | `string` | Required | Name of the sibling Rich Text field to convert. An empty value produces an empty string. |
+| `converters` | `HTMLConvertersAsync \| ({ defaultConverters }) => HTMLConvertersAsync` | Built-in converters | Async converters, as for [`convertLexicalToHTMLAsync`](#dynamic-population). |
+| `hidden` | `boolean` | `true` | Hides the generated field in the Admin Panel. |
+| `storeInDB` | `boolean` | `false` | Keeps a value written to the field instead of removing it before saving. |
+
+The read hook populates file nodes using the read operation's request, depth, draft, access, and hidden-field settings, and wraps the output in a `div` with the class `frogbot-richtext`.
 
 ### Custom HTML field converters
 
@@ -245,6 +294,12 @@ const data = convertHTMLToLexical({
 
 Install `jsdom` and its types in projects that run this conversion on the server.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `html` | `string` | Required | HTML to convert. |
+| `editorConfig` | `SanitizedServerEditorConfig` | Required | Editor config whose features define the nodes the HTML can become. See [Retrieving the editor config](/rich-text/converters#retrieving-the-editor-config). |
+| `JSDOM` | `new (html: string) => { window: { document: Document } }` | Required | DOM implementation used to parse the HTML, such as the `JSDOM` class from `jsdom`. |
+
 <Banner type="warning">
   Image tags are not uploaded automatically. FrogBot cannot choose an upload
   collection or satisfy that collection's required fields without your input.
@@ -314,3 +369,14 @@ const data = buildEditorState({
 ```
 
 Verify that each referenced file ID exists and that `relationTo` matches the upload collection slug. Server-side conversion can only reference saved files, not uploads that are still pending in the admin panel.
+
+### buildEditorState options
+
+`buildEditorState` is exported from both the package root and `@frogbotai/richtext-lexical/client`. Pass the allowed node types as its type argument, such as `buildEditorState<DefaultNodeTypes>(...)`, to type the result.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text` | `string` | None | Creates a first paragraph containing this text. |
+| `nodes` | `SerializedLexicalNode[]` | None | Top-level nodes added after the paragraph created from `text`, or as the only content when `text` is not set. |
+
+With neither option, the result is an editor state with no content.

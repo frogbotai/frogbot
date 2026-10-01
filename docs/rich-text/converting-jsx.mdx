@@ -20,6 +20,16 @@ export function ArticleBody({ data }: { data: SerializedEditorState }) {
 
 The component includes converters for standard nodes. Fetch enough relationship depth to populate links and file nodes before rendering them.
 
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `data` | `SerializedEditorState` | Required | The rich text value to render. An empty editor state renders an empty wrapping `div`; a missing value renders nothing. |
+| `converters` | `JSXConverters \| ({ defaultConverters }) => JSXConverters` | Built-in converters | Converters keyed by node type, with custom blocks under `blocks` and `inlineBlocks` keyed by slug, and an optional `unknown` fallback. An object replaces the built-in converters entirely; a function receives them as `defaultConverters` so you can extend them. |
+| `nodeMap` | `LexicalEditorNodeMap` | None | A view's node map, such as `postViews.preview.nodes`. Its entries override `converters` for the same node type or block slug. See [Views](/rich-text/views#reuse-a-view-on-the-frontend). |
+| `className` | `string` | Built-in class name | Class name of the wrapping `div`. |
+| `disableContainer` | `boolean` | `false` | Renders the content without the wrapping `div`. |
+| `disableIndent` | `boolean \| string[]` | `false` | Omits indentation styles. `true` disables them for every node; an array disables them for the listed node types. |
+| `disableTextAlign` | `boolean \| string[]` | `false` | Omits text-alignment styles. `true` disables them for every node; an array disables them for the listed node types. |
+
 <Banner type="default">
   The JSX converter requires fully populated values for nodes such as files.
   Increase the query depth when those values are still record IDs.
@@ -66,6 +76,12 @@ export function ArticleBody({ data }: { data: SerializedEditorState }) {
   return <RichText<DefaultNodeTypes> converters={converters} data={data} />
 }
 ```
+
+`LinkJSXConverter` returns converters for the `link` and `autolink` node types.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `internalDocToHref` | `({ linkNode }) => string` | None | Returns the URL for an internal link from its serialized node; the linked record is in `linkNode.fields.doc`. Without it, internal links render with `href="#"` and an error is logged. |
 
 ## Lexical blocks
 

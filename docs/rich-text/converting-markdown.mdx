@@ -24,6 +24,11 @@ export async function toMarkdown(data: SerializedEditorState) {
 }
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `data` | `SerializedEditorState` | Required | The rich text value to convert. |
+| `editorConfig` | `SanitizedServerEditorConfig` | Required | Editor config whose features supply the nodes and Markdown transformers. See [Retrieving the editor config](/rich-text/converters#retrieving-the-editor-config). |
+
 Use the configuration from the actual field when it has custom features:
 
 ```ts
@@ -118,6 +123,11 @@ const data = convertMarkdownToLexical({
 ```
 
 The editor config must include every feature whose nodes or transformers appear in the content. A default config does not include your custom blocks.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `markdown` | `string` | Required | Markdown to convert. |
+| `editorConfig` | `SanitizedServerEditorConfig` | Required | Editor config whose features supply the nodes and Markdown transformers. |
 
 ## Converting files
 
@@ -257,9 +267,12 @@ export const Pages: CollectionConfig = {
 
 The `export` callback returns `children` for content between the MDX tags and `props` for attributes on the opening tag. The `import` callback receives those values and returns the block's field data.
 
-| Export value | Description |
-| --- | --- |
-| `children` | Markdown placed between the opening and closing MDX tags. |
-| `props` | Attributes written on the opening MDX tag. |
+The block's `jsx` property accepts:
 
-The import callback receives those parsed `children` and `props`; its return value is the block field data.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `export` | `({ fields, lexicalToMarkdown }) => { children?: string; props?: object } \| string \| false` | Required | Converts the block to MDX. `fields` holds the block's values and `lexicalToMarkdown({ editorState })` converts nested rich text. Return `{ children, props }` to write `<blockType {...props}>children</blockType>`, or a self-closing tag when `children` is empty; return a string to write it as is; return `false` to skip this conversion. |
+| `import` | `({ children, props, markdownToLexical, openMatch, closeMatch, htmlToLexical }) => fields \| false` | Required | Converts matched MDX back to the block's field data. `children` is the text between the tags, `props` the parsed attributes, and `markdownToLexical({ markdown })` converts nested Markdown. `openMatch` and `closeMatch` are the regular-expression matches for the opening and closing tags; `closeMatch` can be `null`, so do not rely on it. `htmlToLexical` is currently always `null`. Return `false` to leave the text unconverted. |
+| `customStartRegex` | `RegExp` | Matches `<blockType` | Overrides the expression that finds the start of the block. |
+| `customEndRegex` | `RegExp \| { regExp: RegExp; optional?: true }` | Matches the closing tag | Overrides the expression that finds the end of the block. With `optional: true`, a missing end match is allowed and the block runs to the end of the document. |
+| `doNotTrimChildren` | `boolean` | `false` | Keeps leading and trailing spaces on every line of `children`, which are removed by default. |

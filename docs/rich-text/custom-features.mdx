@@ -36,6 +36,33 @@ export const DividerFeature = createServerFeature({
 })
 ```
 
+`createServerFeature` returns a function. Call it, as in `DividerFeature()`, to pass the feature's props and get the provider you add to `features`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | Required | Unique feature key. Other features refer to it in dependencies and through `featureProviderMap`, and translations are scoped to it. |
+| `feature` | `ServerFeature \| (args) => ServerFeature \| Promise<ServerFeature>` | Required | The feature definition described in [Server feature properties](#server-feature-properties). A function receives the arguments in [Feature load order](#feature-load-order) and may be async. The object form cannot set `sanitizedServerFeatureProps`. |
+| `dependencies` | `string[]` | `[]` | Feature keys that must be configured in the same editor. They do not have to load first. A missing one throws when the config loads. |
+| `dependenciesPriority` | `string[]` | `[]` | Feature keys that must be configured and load first, so their output is in `resolvedFeatures`. See the warning in [Feature load order](#feature-load-order). |
+| `dependenciesSoft` | `string[]` | `[]` | Feature keys to load first when they are configured. Missing ones are ignored. See the warning in [Feature load order](#feature-load-order). |
+
+### Server feature properties
+
+The `feature` object, or the value the `feature` function returns, accepts these properties:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ClientFeature` | `string \| { path: string; exportName?: string }` | None | [Component path](/custom-components/overview#component-paths) to the [client feature](#client-feature). Omit it when the feature has no editor behavior. |
+| `clientFeatureProps` | `ClientProps` | None | Serializable props sent to the client feature. See [Pass props from server to client](#pass-props-from-server-to-client). |
+| `sanitizedServerFeatureProps` | `ServerProps` | None | The feature's sanitized server props, stored on the resolved feature for other server code to read. Only the function form of `feature` can set it. See [Feature props](#feature-props). |
+| `i18n` | `Partial<Record<language, Record<string, string>>>` | None | Translations keyed by language code. Each key is available as `lexical:<featureKey>:<key>`. See [Internationalization](#internationalization). |
+| `nodes` | `NodeWithHooks[]` | `[]` | Nodes registered on the server, with their converters, hooks, and validation. See [Nodes](#server-feature-nodes). |
+| `markdownTransformers` | `(Transformer \| ({ allNodes, allTransformers }) => Transformer)[]` | `[]` | Transformers used by the [Markdown converters](/rich-text/converting-markdown). A function receives every registered node and the transformers collected so far. See [Markdown transformers](#server-feature-markdown-transformers). |
+| `hooks` | `{ afterChange?, afterRead?, beforeChange?, beforeValidate? }` | None | Arrays of hooks run for the whole rich text field value, in addition to any node hooks. Each hook receives the field hook arguments and returns the field value to use. Every hook receives the original arguments, so when several features set the same hook, the value from the last one is used. |
+| `generateSchemaMap` | `({ config, field, i18n, props, schemaMap, schemaPath }) => FieldSchemaMap \| null` | None | Registers the feature's nested fields, keyed by path, so the Admin Panel can build form state for drawers that edit them. Return `null` when there are none. |
+| `generatedTypes` | `{ modifyOutputSchema: (args) => JSONSchema4 }` | None | Changes the JSON schema used for the rich text field in [generated types](/typescript/generating-types). `args` include `currentSchema`, `field`, `isRequired`, `collectionIDFieldTypes`, `interfaceNameDefinitions` for adding reusable top-level interfaces, and the optional `config` and `i18n`. |
+| `componentImports` | `Record<string, ComponentPath> \| ComponentPath[] \| (args) => void` | None | Components added to the [import map](/custom-components/overview#import-map). With the object form, each component is also passed to client features in `featureClientImportMap` as `<featureKey>.<key>`. |
+
 Add the feature to a rich text editor:
 
 ```ts
@@ -196,15 +223,15 @@ export const DividerFeature = createServerFeature<DividerFeatureInput>({
 
 The component path is resolved from the import-map base directory. Include the named export after `#`.
 
-| Node option | Purpose |
-| --- | --- |
-| `node` | Registers the node class or a [node replacement](https://lexical.dev/docs/concepts/node-replacement). |
-| `converters` | Defines serialization to supported formats. HTML converters belong here; Markdown transformers belong on the feature. |
-| `hooks` | Runs node-specific `beforeValidate`, `beforeChange`, `afterChange`, or `afterRead` hooks. Hook requests expose FrogBot as `req.frogbot`. |
-| `validations` | Validates serialized node data with the containing document. |
-| `getSubFields` | Returns fields embedded in the node so their hooks and population behavior can run. |
-| `getSubFieldsData` | Returns the serialized values corresponding to `getSubFields`. |
-| `graphQLPopulationPromises` | Supplies depth-aware population callbacks to a separately integrated GraphQL runtime. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `node` | `Klass<LexicalNode> \| LexicalNodeReplacement` | Required | Registers the node class or a [node replacement](https://lexical.dev/docs/concepts/node-replacement). |
+| `converters` | `{ html?: HTMLConverter }` | None | Legacy HTML serialization: `html` is `{ converter, nodeTypes }`. The converters in [Converting HTML](/rich-text/converting-html) do not read it; give them a converter for the node through their `converters` option instead. Markdown transformers belong on the feature. |
+| `hooks` | `{ afterChange?, afterRead?, beforeChange?, beforeValidate? }` | None | Arrays of node-specific hooks. Each receives the serialized `node` and a `req` that exposes FrogBot as `req.frogbot`, and returns the node to save or read. |
+| `validations` | `NodeValidation[]` | None | Validates serialized node data with the containing document. Return `true` when valid or an error message string. |
+| `getSubFields` | `({ node, req }) => Field[] \| null` | None | Returns fields embedded in the node so their hooks and population behavior can run. |
+| `getSubFieldsData` | `({ node, req }) => Record<string, unknown>` | None | Returns the serialized values corresponding to `getSubFields`. |
+| `graphQLPopulationPromises` | `PopulationPromise[]` | None | Supplies depth-aware population callbacks to a separately integrated GraphQL runtime. |
 
 FrogBot does not expose or mount a public GraphQL execution runtime by default. `graphQLPopulationPromises` is conditional integration metadata only: it has no effect unless your deployment provides and verifies a compatible public GraphQL runtime. It is not needed for FrogBot's public REST runtime.
 
@@ -233,11 +260,17 @@ export const DividerFeature = createServerFeature({
 
 `featureProviderMap` contains every configured feature, including features that have not loaded. Use `resolvedFeatures` when you need the output of an earlier feature.
 
-| Dependency option | Behavior |
-| --- | --- |
-| `dependenciesSoft` | Declares optional load-order dependencies; see the current limitation below. |
-| `dependencies` | Requires the named features to exist but does not require them to load first. |
-| `dependenciesPriority` | Requires the named features to exist and load first, but currently fails for the paragraph dependency shown below. |
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `props` | `UnSanitizedProps` | May be `undefined` | Props passed when the feature was called, such as `DividerFeature({ style: 'dashed' })`. `undefined` when it was called with no argument. |
+| `config` | `SanitizedConfig` | Always provided | The sanitized app config, including `collections` and `blocks`. |
+| `featureProviderMap` | `Map<string, FeatureProviderServer>` | Always provided | Every feature configured in this editor, keyed by feature key, whether or not it has loaded. |
+| `resolvedFeatures` | `Map<string, ResolvedServerFeature>` | Always provided | Features that have already loaded, keyed by feature key. |
+| `unSanitizedEditorConfig` | `{ features: FeatureProviderServer[]; lexical: EditorConfig }` | Always provided | The editor's configured features and Lexical configuration before sanitization. |
+| `isRoot` | `boolean` | May be `undefined` | `true` while loading the root `editor` from your FrogBot config. |
+| `parentIsLocalized` | `boolean` | Always provided | Whether the rich text field sits inside a localized field. Pass it on when sanitizing nested fields. |
+
+The dependency options on `createServerFeature` are listed in the [options table](#server-feature).
 
 <Warning>
   The editor dependency installed with this release (3.90.1) reverses dependency
@@ -277,6 +310,20 @@ export const DividerClientFeature = createClientFeature({})
 ```
 
 Do not import runtime values from the package root in a client module. Use `@frogbotai/richtext-lexical/client` and `/lexical/*` subpaths. Type-only root imports are safe.
+
+`createClientFeature` accepts an object with these properties, or a function that returns one. The function form is described in [Feature props](#feature-props).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `nodes` | `(Klass<LexicalNode> \| LexicalNodeReplacement)[]` | `[]` | Nodes registered in the editor. Register the same nodes in the server feature. See [Nodes](#client-feature-nodes). |
+| `plugins` | `{ Component, position }[]` | `[]` | React components mounted inside the editor. See [Plugins](#plugins). |
+| `toolbarInline` | `{ groups: ToolbarGroup[] }` | None | Groups added to the inline toolbar shown for selected text. See [Toolbar groups](#toolbar-groups). |
+| `toolbarFixed` | `{ groups: ToolbarGroup[] }` | None | Groups added to the fixed toolbar. They appear only when the editor has `FixedToolbarFeature`. |
+| `slashMenu` | `{ groups?: SlashMenuGroup[]; dynamicGroups?: ({ editor, queryString }) => SlashMenuGroup[] }` | None | Slash-menu entries. `groups` are always present and filtered by what the editor types after `/`. `dynamicGroups` is called again on every keystroke after `/`, and the groups it returns are merged with `groups`. See [Slash-menu groups](#slash-menu-groups). |
+| `markdownTransformers` | `(Transformer \| ({ allNodes, allTransformers }) => Transformer)[]` | `[]` | Markdown shortcuts applied while editors type. See [Markdown transformers](#client-feature-markdown-transformers). |
+| `providers` | `React.FC<{ children: JSX.Element }>[]` | `[]` | React context providers wrapped around the editor. See [Providers](#providers). |
+| `enableFormats` | `TextFormatType[]` | `[]` | Text formats this feature allows, such as `'bold'`. The editor removes any format from text that no configured feature enables. |
+| `sanitizedClientFeatureProps` | `ClientProps` | None | Only in the function form. Props stored on the resolved client feature and passed to its plugins as `clientProps`. Return them explicitly, as in the [client sanitization example](#feature-props); if omitted, plugins receive no props. The object form always uses the incoming props. |
 
 Register the client feature from `feature.server.ts`:
 
@@ -493,6 +540,11 @@ export const DividerClientFeature = createClientFeature({
 })
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Component` | `React.FC<{ clientProps }>` | Required | Plugin component. It receives the feature's sanitized client props as `clientProps`; `floatingAnchorElem` plugins also receive `anchorElem`. |
+| `position` | `'aboveContainer' \| 'top' \| 'normal' \| 'bottom' \| 'belowContainer' \| 'floatingAnchorElem'` | Required | Where the component mounts. `aboveContainer` and `belowContainer` render outside the editor container. Inside it, `top` renders before the content, and `normal` and then `bottom` render after it. `floatingAnchorElem` renders with `anchorElem`, the element that floating UI such as menus is positioned against, and only once that element exists. |
+
 ### Toolbar groups
 
 Toolbar groups are either horizontal icon buttons or dropdowns containing labeled items. Groups with the same key are merged.
@@ -515,13 +567,15 @@ export function dividerButtonGroup(
 }
 ```
 
-| Group option | Purpose |
-| --- | --- |
-| `items` | Toolbar items in the group. |
-| `key` | Unique group identifier and merge key. |
-| `order` | Position relative to other groups. |
-| `type` | `buttons` for horizontal icons or `dropdown` for labeled menu items. |
-| `ChildComponent` | Optional component displayed on a dropdown trigger. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | Required | Unique group identifier. Groups with the same key are merged: their items are combined and the other properties come from the first group registered. |
+| `type` | `'buttons' \| 'dropdown'` | Required | `buttons` shows items horizontally as icons. `dropdown` shows items vertically with icons and labels when opened. |
+| `items` | `ToolbarGroupItem[]` | Required | Toolbar items in the group. See [Toolbar items](#toolbar-items). |
+| `order` | `number` | Unordered | Position relative to other groups, in ascending order. Groups without `order` come after ordered ones. |
+| `ChildComponent` | `React.FC` | None | Dropdown groups only. Component shown on the dropdown trigger, usually an icon. |
+| `isEnabled` | `({ editor, editorConfigContext, selection }) => boolean` | Always enabled | Dropdown groups only. Return `false` to disable the dropdown trigger for the current selection. |
+| `maxActiveItems` | `number` | `1` | Dropdown groups only. Maximum number of items marked active at once. The editor stops calling `isActive` for the remaining items once this many are active, so higher values cost more work. |
 
 The package also exports standard groups from `/client`: `toolbarAddDropdownGroupWithItems`, `toolbarTextDropdownGroupWithItems`, `toolbarFormatGroupWithItems`, and `toolbarFeatureButtonsGroupWithItems`.
 
@@ -580,15 +634,16 @@ export function DividerIcon() {
 }
 ```
 
-| Item option | Purpose |
-| --- | --- |
-| `ChildComponent` | Content inside the default toolbar button, usually an icon. |
-| `Component` | Replaces the default button; when present, `ChildComponent` and `onSelect` are ignored. |
-| `label` | Dropdown label, either text or a function for translated text. |
-| `key` | Unique item identifier. |
-| `onSelect` | Handles selection of the item. |
-| `isEnabled` | Controls whether the item is interactive. |
-| `isActive` | Controls whether the item is highlighted. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | Required | Unique item identifier. |
+| `ChildComponent` | `React.FC` | None | Content inside the default toolbar button, usually an icon. |
+| `Component` | `React.FC<{ active?, anchorElem, editor, enabled?, item }>` | None | Replaces the default button; when present, `ChildComponent` and `onSelect` are ignored. |
+| `label` | `string \| ({ featureClientSchemaMap, i18n, schemaPath }) => string` | None | Label shown when the item is in a dropdown group. Use a function for translated text. |
+| `onSelect` | `({ editor, isActive }) => void` | None | Handles selection of the item. |
+| `isActive` | `({ editor, editorConfigContext, selection }) => boolean` | Never active | Controls whether the item is highlighted for the current selection. |
+| `isEnabled` | `({ editor, editorConfigContext, selection }) => boolean` | Always enabled | Return `false` to gray out the item and make it unclickable. |
+| `order` | `number` | Unordered | Position within the group, in ascending order. Items without `order` come after ordered ones. |
 
 ### Slash-menu groups
 
@@ -611,7 +666,13 @@ export function dividerSlashMenuGroup(
 }
 ```
 
-Groups define `items`, a merge `key`, and an optional text or translated `label`. Use the exported `slashMenuBasicGroupWithItems` helper to add entries to the standard Basic group.
+Use the exported `slashMenuBasicGroupWithItems` helper to add entries to the standard Basic group.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | Required | Unique group identifier. Groups with the same key are merged: their items are combined and the label comes from the first group registered. |
+| `items` | `SlashMenuItem[]` | Required | Items in the group. See [Slash-menu items](#slash-menu-items). |
+| `label` | `string \| ({ featureClientSchemaMap, i18n, schemaPath }) => string` | Group `key` | Group heading in the menu. Use a function for translated text. |
 
 ### Slash-menu items
 
@@ -648,13 +709,13 @@ export const DividerClientFeature = createClientFeature({
 })
 ```
 
-| Item option | Purpose |
-| --- | --- |
-| `Icon` | Component rendered beside the item. |
-| `label` | Displayed text, either static or translated. |
-| `key` | Unique identifier that also participates in search. |
-| `keywords` | Additional terms matched after `/`. |
-| `onSelect` | Handles selection of the item. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | Required | Unique item identifier. Also used as the displayed and searched text when `label` is not set. |
+| `Icon` | `React.FC` | Required | Component rendered beside the item. |
+| `onSelect` | `({ editor, queryString }) => void` | Required | Handles selection of the item. `queryString` is the text typed after `/`. |
+| `label` | `string \| ({ featureClientSchemaMap, i18n, schemaPath }) => string` | Item `key` | Displayed text, either static or translated. It is matched against the text typed after `/` and shortened to 25 characters in the menu. |
+| `keywords` | `string[]` | None | Additional terms matched against the text typed after `/`. |
 
 ### Markdown transformers {#client-feature-markdown-transformers}
 
@@ -769,6 +830,20 @@ export const DividerClientFeature = createClientFeature<
   }
 })
 ```
+
+The client feature function receives:
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `props` | `ClientInput & { featureKey: string; order: number }` | Always provided | The `clientFeatureProps` sent by the server feature, plus the feature's key and its position in the editor's feature list. |
+| `config` | `ClientConfig` | Always provided | The serializable client config. |
+| `field` | `RichTextFieldClient` | May be `undefined` | Client configuration of the rich text field being rendered. |
+| `schemaPath` | `string` | Always provided | Schema path of the rich text field. |
+| `featureProviderMap` | `Map<string, FeatureProviderClient>` | Always provided | Every client feature configured in this editor, keyed by feature key. |
+| `resolvedFeatures` | `Map<string, ResolvedClientFeature>` | Always provided | Client features that have already loaded. |
+| `unSanitizedEditorConfig` | `ClientEditorConfig` | Always provided | The editor's client features and Lexical configuration before sanitization. |
+| `featureClientSchemaMap` | `Record<string, Record<string, ClientField[]>>` | Always provided | Client field schemas registered by features through `generateSchemaMap`, keyed by feature key. |
+| `featureClientImportMap` | `Record<string, unknown>` | Always provided | Components added by object-form `componentImports` on server features, keyed `<featureKey>.<key>`. |
 
 ### Pass props from server to client
 

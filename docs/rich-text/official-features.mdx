@@ -39,6 +39,8 @@ Every feature is configurable. You can use the recommended defaults, remove feat
 | `EXPERIMENTAL_TableFeature` | No | Table editing. Its API may change without a major release. |
 | `TextStateFeature` | No | Key-value text attributes mapped to inline styles. |
 
+Each feature is a function that returns a feature provider, such as `BoldFeature()`. The features with options are documented below. Every other feature takes no arguments: `BoldFeature`, `ItalicFeature`, `UnderlineFeature`, `StrikethroughFeature`, `SubscriptFeature`, `SuperscriptFeature`, `InlineCodeFeature`, `ParagraphFeature`, `AlignFeature`, `UnorderedListFeature`, `OrderedListFeature`, `ChecklistFeature`, `BlockquoteFeature`, `HorizontalRuleFeature`, `InlineToolbarFeature`, `TreeViewFeature`, and `EXPERIMENTAL_TableFeature`.
+
 ## Configure headings
 
 Bold, italic, underline, strikethrough, subscript, superscript, and inline code features add their corresponding formatting controls. Bold, italic, underline, and inline code also support their conventional keyboard shortcuts. Paragraph, heading, list, quote, and horizontal-rule features add slash-menu and toolbar entries, as applicable.
@@ -56,6 +58,10 @@ const editor = lexicalEditor({
 })
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabledHeadingSizes` | `('h1' \| 'h2' \| 'h3' \| 'h4' \| 'h5' \| 'h6')[]` | All six sizes | Heading levels editors can create from the toolbar, slash menu, and Markdown shortcuts. The editor changes a heading at any other level, such as a pasted one, to the smallest enabled level, and validation rejects saved headings at other levels. |
+
 ## Configure indentation
 
 Use `disableTabNode` to reserve Tab for block-level indentation. `disabledNodes` prevents selected node types from being indented.
@@ -68,6 +74,11 @@ IndentFeature({
   disabledNodes: ['heading'],
 })
 ```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `disabledNodes` | `string[]` | `[]` | Node `type` values that cannot be indented, such as `'paragraph'`, `'heading'`, `'listitem'`, or `'quote'`. The indent controls are disabled for them, and the editor resets their indent to zero when another node is converted into one of these types. |
+| `disableTabNode` | `boolean` | `false` | Makes Tab and Shift+Tab indent and outdent the block instead of inserting a tab character. Tab characters are also removed from pasted content. |
 
 ## Configure links
 
@@ -92,6 +103,15 @@ LinkFeature({
 
 Set either `enabledCollections` or `disabledCollections`, not both. `disableAutoLinks: 'creationOnly'` prevents automatic creation while retaining updates to existing auto-links; `true` disables both.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabledCollections` | `string[]` | Visible collections with `admin.enableRichTextLink` (on by default) | Collection slugs editors can link to internally. Replaces each collection's `admin.enableRichTextLink` setting. Cannot be combined with `disabledCollections`. |
+| `disabledCollections` | `string[]` | None | Collection slugs excluded from internal links; every other collection is available. Replaces each collection's `admin.enableRichTextLink` setting. Cannot be combined with `enabledCollections`. |
+| `fields` | `Field[] \| ({ config, defaultFields }) => Field[]` | Default link fields | Fields in the link drawer. An array replaces the default fields. A function receives the sanitized config and `defaultFields` (`text`, `linkType`, `url`, `doc` when internal links are available, and `newTab`) and returns the fields to use. |
+| `maxDepth` | `number` | Remaining query depth | Maximum population depth of the internal link's `doc` field, regardless of the depth remaining when the link is reached. Applies only to the default `doc` field. |
+| `disableAutoLinks` | `true \| 'creationOnly'` | Auto-links enabled | `'creationOnly'` stops URLs from becoming auto-links but keeps existing auto-links editable. `true` also removes auto-link support. |
+| `internalDocToHref` | `({ linkNode }) => string` | None | Builds the URL for an internal link when converting to Markdown. Without it, internal links export with an empty URL, as `[text]()`. For JSX rendering, see [Internal links](/rich-text/converting-jsx#internal-links). |
+
 ## Configure relationships
 
 ```ts
@@ -102,6 +122,14 @@ RelationshipFeature({
   maxDepth: 2,
 })
 ```
+
+Relationships can point to collections without uploads that keep `admin.enableRichTextRelationship` enabled (the default). `enabledCollections` and `disabledCollections` narrow that set further; set one or the other, not both.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabledCollections` | `string[]` | All eligible collections | Only these eligible collections can be selected. |
+| `disabledCollections` | `string[]` | None | These collections cannot be selected. |
+| `maxDepth` | `number` | Remaining query depth | Maximum population depth of the related record, regardless of the depth remaining when the node is reached. |
 
 ## Configure files
 
@@ -126,6 +154,15 @@ UploadFeature({
 
 Set either `enabledCollections` or `disabledCollections`, not both. `maxDepth` limits population of the referenced file itself; it does not limit fields stored directly on the file node.
 
+File nodes can reference upload collections that keep `admin.enableRichTextRelationship` enabled (the default).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `{ [collectionSlug: string]: { fields: Field[] } }` | `{}` | Extra fields stored on file nodes that reference each upload collection. Editors fill them in from the file node's drawer. |
+| `enabledCollections` | `string[]` | All eligible upload collections | Only these eligible upload collections can be selected. |
+| `disabledCollections` | `string[]` | None | These upload collections cannot be selected. |
+| `maxDepth` | `number` | Remaining query depth | Maximum population depth of the referenced file record, regardless of the depth remaining when the node is reached. |
+
 ## Configure toolbars
 
 `InlineToolbarFeature` appears for selected text. `FixedToolbarFeature` stays visible and can follow whichever nested editor is focused.
@@ -138,6 +175,14 @@ FixedToolbarFeature({
   disableIfParentHasFixedToolbar: true,
 })
 ```
+
+`InlineToolbarFeature` takes no options.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `applyToFocusedEditor` | `boolean` | `false` | Applies the toolbar to whichever editor is focused, including a nested editor inside a block, instead of only the editor that has this feature. |
+| `disableIfParentHasFixedToolbar` | `boolean` | `false` | Hides this editor's fixed toolbar when a parent editor already shows one. |
+| `customGroups` | `Record<string, Partial<ToolbarGroup>>` | None | Overrides for fixed-toolbar groups, keyed by group key. Each value is deep-merged into the matching group, commonly to change `order` or switch `type` between `'buttons'` and `'dropdown'`; `items` and `key` cannot be overridden. Values are sent to the browser, so they must be serializable. Built-in group keys are `add`, `text`, `align`, `indent`, `format`, and `features`. See [Toolbar groups](/rich-text/custom-features#toolbar-groups). |
 
 ## Configure blocks
 
@@ -165,7 +210,7 @@ BlocksFeature({
 })
 ```
 
-See [Converting JSX](/rich-text/converting-jsx#lexical-blocks), [Converting HTML](/rich-text/converting-html#blocks-to-html), and [Converting Markdown](/rich-text/converting-markdown#defining-a-custom-block) to render blocks.
+See [Converting JSX](/rich-text/converting-jsx#lexical-blocks), [Converting HTML](/rich-text/converting-html#blocks-to-html), and [Converting Markdown](/rich-text/converting-markdown#defining-a-custom-block) to render blocks. Every `BlocksFeature` option is listed in [BlocksFeature options](/rich-text/blocks#blocksfeature-options).
 
 `TreeViewFeature` adds an editor-state, DOM, and time-travel debugging panel. `EXPERIMENTAL_TableFeature` adds table editing, but may receive breaking changes within a stable release.
 
@@ -189,5 +234,9 @@ TextStateFeature({
   },
 })
 ```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `{ [stateKey: string]: { [value: string]: { label: string; css: StyleObject } } }` | Required | Each top-level key is a text attribute, such as `color`. Its entries are the values editors can choose: `label` is shown in the toolbar and `css` holds the inline styles, written as hyphenated CSS property names, applied in the editor. A text node holds at most one value per key, so put mutually exclusive styles under the same key. `defaultColors.text` and `defaultColors.background` provide colors that work in light and dark themes. |
 
 Lexical serializes text state under the text node's `$` key. Frontend rendering must map those stored state values back to the same CSS configuration. Keep the state object in an import-safe shared module and use it from both `TextStateFeature` and your custom JSX `text` converter.
