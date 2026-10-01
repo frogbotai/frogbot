@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import type { Payload, PayloadRequest } from 'payload';
 import { createLocalReq } from 'payload';
+import { applyLocaleFiltering } from 'payload/shared';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -11,12 +12,16 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { requestCalls } from './config.js';
 import {
+  assetHandlerResponse,
+  assetsSlug,
   bodyBlockSlots,
   bodyBlockSlug,
   brokenPagesSlug,
+  linkFieldSlots,
   pageSlots,
   pagesSlug,
   previewFailureMessage,
+  uploadNodeFieldSlots,
   usersSlug,
 } from './shared.js';
 
@@ -43,6 +48,14 @@ type FieldSchemasToFormState = (args: {
   req: PayloadRequest;
   schemaPath: string;
 }) => Promise<Record<string, unknown>>;
+
+type FormatDocURL = (args: {
+  collectionSlug: string;
+  defaultURL: string;
+  doc: Record<string, unknown>;
+  req: PayloadRequest;
+  viewType: 'list';
+}) => null | string;
 
 type BuildFieldSchemaMap = (args: {
   collectionSlug: string;
@@ -202,6 +215,88 @@ describe('admin request', () => {
 
     expect(state.tone).toMatchObject({ value: 'info' });
     expect(requestCalls).toEqual(slotsSeen(bodyBlockSlots));
+  });
+
+  async function richTextFeatureFormState(schemaPathSuffix: string) {
+    const { fieldSchemaMap } = buildFieldSchemaMap({
+      collectionSlug: pagesSlug,
+      config: booted.payload.config,
+      i18n: req.i18n,
+    });
+    const schemaPath = [...fieldSchemaMap.keys()].find((key) => key.endsWith(schemaPathSuffix))!;
+    const { fields } = fieldSchemaMap.get(schemaPath)!;
+
+    return fieldSchemasToFormState({
+      collectionSlug: pagesSlug,
+      data: {},
+      fields,
+      fieldSchemaMap: undefined,
+      operation: 'create',
+      permissions: true,
+      preferences: { fields: {} },
+      renderAllFields: false,
+      req,
+      schemaPath,
+    });
+  }
+
+  it('rich text link drawer form state gives req.frogbot to added link fields', async () => {
+    expect(req).not.toHaveProperty('frogbot');
+
+    const state = await richTextFeatureFormState('.lexical_internal_feature.link.fields');
+
+    expect(state.rel).toMatchObject({ value: 'rel' });
+    expect(requestCalls).toEqual(slotsSeen(linkFieldSlots));
+  });
+
+  it('rich text upload drawer form state gives req.frogbot to upload node fields', async () => {
+    expect(req).not.toHaveProperty('frogbot');
+
+    const state = await richTextFeatureFormState(`.lexical_internal_feature.upload.${assetsSlug}`);
+
+    expect(state.caption).toMatchObject({ value: 'caption' });
+    expect(requestCalls).toEqual(slotsSeen(uploadNodeFieldSlots));
+  });
+
+  it('the admin.formatDocURL the list view reads gives req.frogbot synchronously', () => {
+    const formatDocURL = booted.payload.collections[pagesSlug].config.admin
+      .formatDocURL as FormatDocURL;
+
+    expect(req).not.toHaveProperty('frogbot');
+
+    const url = formatDocURL({
+      collectionSlug: pagesSlug,
+      defaultURL: `/collections/${pagesSlug}/page-1`,
+      doc: { id: 'page-1' },
+      req,
+      viewType: 'list',
+    });
+
+    expect(url).toBe(`/collections/${pagesSlug}/page-1`);
+    expect(requestCalls).toEqual(slotsSeen(['formatDocURL']));
+  });
+
+  it('admin locale filtering gives localization.filterAvailableLocales req.frogbot', async () => {
+    const clientConfig = { localization: { localeCodes: ['en', 'es'], locales: [] } };
+
+    expect(req).not.toHaveProperty('frogbot');
+
+    await applyLocaleFiltering({
+      clientConfig: clientConfig as never,
+      config: booted.payload.config,
+      req,
+    });
+
+    expect(clientConfig.localization.localeCodes).toEqual(['en']);
+    expect(requestCalls).toEqual(slotsSeen(['filterAvailableLocales']));
+  });
+
+  it('serving an upload gives upload handlers req.frogbot after read access', async () => {
+    const response = await fetch(`${booted.baseUrl}/api/${assetsSlug}/file/photo.png`);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe(assetHandlerResponse);
+    expect(requestCalls).toEqual(slotsSeen(['assets.access.read', 'upload.handler']));
   });
 
   it('create through the local API still gives field functions req.frogbot', async () => {

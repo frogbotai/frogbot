@@ -12,6 +12,7 @@
     "endpoints.test-d.ts",
     "parity.test-d.ts",
     "authConfig.test-d.ts",
-    "localOptions.test-d.ts"
+    "localOptions.test-d.ts",
+    "upload.test-d.ts"
   ]
 }

@@ -62,6 +62,22 @@ export type GeneratePreviewURL = (
   options: FrogBotArgs<Parameters<PayloadPreview>[1]>,
 ) => ReturnType<PayloadPreview>;
 
+type PayloadLocalizationConfig = Exclude<NonNullable<PayloadConfig['localization']>, false>;
+
+type PayloadFilterAvailableLocales = NonNullable<
+  PayloadLocalizationConfig['filterAvailableLocales']
+>;
+
+type LocalizationConfig = PayloadLocalizationConfig extends infer TConfig
+  ? TConfig extends unknown
+    ? Omit<TConfig, 'filterAvailableLocales'> & {
+        filterAvailableLocales?: (
+          args: FrogBotArgs<Parameters<PayloadFilterAvailableLocales>[0]>,
+        ) => ReturnType<PayloadFilterAvailableLocales>;
+      }
+    : never
+  : never;
+
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
 
 export type AfterErrorHook = (
@@ -90,6 +106,7 @@ type FrogBotOverridden =
   | 'globals'
   | 'hooks'
   | 'jobs'
+  | 'localization'
   | 'onInit'
   | 'plugins'
   | 'secret';
@@ -103,6 +120,7 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   /** Database adapter from a third-party package. */
   db: DatabaseAdapter;
   jobs?: JobsConfig;
+  localization?: false | LocalizationConfig;
   /** Collections authored with FrogBot's `CollectionConfig`. */
   collections: CollectionConfig[];
   email?: EmailPiece | Promise<EmailPiece>;

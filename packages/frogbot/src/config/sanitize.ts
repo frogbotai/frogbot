@@ -21,6 +21,7 @@ import type {
   PayloadEmailAdapter,
   PayloadHandler,
   PayloadRequest,
+  UploadConfig as PayloadUploadConfig,
 } from 'payload';
 import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 
@@ -46,7 +47,7 @@ import { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 import { unwrapSessionPayload } from '../auth/operation.js';
 import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
-import type { AuthStrategy } from '../auth/types.js';
+import type { AuthEmail, AuthStrategy } from '../auth/types.js';
 import { buildChannelGatewayEndpoints } from '../channels/endpoints.js';
 import {
   CHANNEL_QUESTION_UPDATE_TASK_SLUG,
@@ -57,7 +58,7 @@ import { buildChatEndpoints } from '../chat/endpoints.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
-import type { CollectionConfig } from '../collections/config/types.js';
+import type { CollectionAdminConfig, CollectionConfig } from '../collections/config/types.js';
 import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
@@ -109,7 +110,8 @@ import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/r
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
-import { attachFrogBotInstance } from './attachFrogBot.js';
+import type { UploadHandler } from '../uploads/types.js';
+import { attachFrogBotInstance, attachRegisteredFrogBot } from './attachFrogBot.js';
 import {
   buildBoardOrderField,
   buildBoardOrderHook,
@@ -230,6 +232,76 @@ function wrapPreview(preview: GeneratePreviewURL, attachFrogBot: AttachFrogBot):
     preview(doc, { ...options, req: await attachFrogBot(options.req) });
 }
 
+type PayloadFormatDocURL = NonNullable<
+  NonNullable<PayloadCollectionConfig['admin']>['formatDocURL']
+>;
+
+function wrapFormatDocURL(
+  formatDocURL: NonNullable<CollectionAdminConfig['formatDocURL']>,
+): PayloadFormatDocURL {
+  return (args) => formatDocURL({ ...args, req: attachRegisteredFrogBot(args.req) });
+}
+
+type PayloadUploadHandler = NonNullable<PayloadUploadConfig['handlers']>[number];
+
+function wrapUploadHandlers(
+  handlers: UploadHandler[],
+  attachFrogBot: AttachFrogBot,
+): PayloadUploadHandler[] {
+  return handlers.map(
+    (handler) =>
+      (async (req, args) => handler(await attachFrogBot(req), args)) as PayloadUploadHandler,
+  );
+}
+
+type AuthEmailTemplate = NonNullable<AuthEmail['generateEmailHTML']>;
+
+type PayloadAuthEmailTemplate = (args: {
+  req: PayloadRequest;
+  token: string;
+  user: unknown;
+}) => Promise<string>;
+
+function wrapAuthEmailTemplate(
+  template: AuthEmailTemplate,
+  attachFrogBot: AttachFrogBot,
+): PayloadAuthEmailTemplate {
+  return async (args) => template({ ...args, req: await attachFrogBot(args.req) });
+}
+
+function wrapAuthEmail(email: AuthEmail, attachFrogBot: AttachFrogBot): Record<string, unknown> {
+  const { generateEmailHTML, generateEmailSubject } = email;
+
+  return {
+    ...email,
+    ...(generateEmailHTML
+      ? { generateEmailHTML: wrapAuthEmailTemplate(generateEmailHTML, attachFrogBot) }
+      : {}),
+    ...(generateEmailSubject
+      ? { generateEmailSubject: wrapAuthEmailTemplate(generateEmailSubject, attachFrogBot) }
+      : {}),
+  };
+}
+
+type PayloadLocalization = Exclude<NonNullable<PayloadConfig['localization']>, false>;
+
+function wrapLocalization(
+  localization: FrogBotConfig['localization'],
+  attachFrogBot: AttachFrogBot,
+): PayloadConfig['localization'] {
+  if (!localization || typeof localization.filterAvailableLocales !== 'function') {
+    return localization as PayloadConfig['localization'];
+  }
+
+  const { filterAvailableLocales } = localization;
+
+  return {
+    ...localization,
+    filterAvailableLocales: async (args) =>
+      filterAvailableLocales({ ...args, req: await attachFrogBot(args.req) }),
+  } as PayloadLocalization;
+}
+
 function wrapEndpoints(
   endpoints: Endpoint[] | false | undefined,
   attachFrogBot: AttachFrogBot,
@@ -317,6 +389,10 @@ function sanitizeCollection(
     admin.preview = wrapPreview(c.admin.preview, attachFrogBot);
   }
 
+  if (admin && typeof c.admin?.formatDocURL === 'function') {
+    admin.formatDocURL = wrapFormatDocURL(c.admin.formatDocURL);
+  }
+
   const views = admin?.components?.views;
   const orderFieldNames = getBoardOrderFieldNames(c);
   const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
@@ -330,6 +406,14 @@ function sanitizeCollection(
       }),
     ),
     ...(admin ? { admin } : {}),
+    ...(typeof c.upload === 'object' && c.upload.handlers
+      ? {
+          upload: {
+            ...c.upload,
+            handlers: wrapUploadHandlers(c.upload.handlers, attachFrogBot),
+          },
+        }
+      : {}),
     ...(orderFieldNames.length
       ? {
           orderable: true,
@@ -371,6 +455,12 @@ function sanitizeCollection(
 
     out.auth = {
       ...collectionAuth,
+      ...(typeof collectionAuth.verify === 'object'
+        ? { verify: wrapAuthEmail(collectionAuth.verify, attachFrogBot) }
+        : {}),
+      ...(collectionAuth.forgotPassword
+        ? { forgotPassword: wrapAuthEmail(collectionAuth.forgotPassword, attachFrogBot) }
+        : {}),
       ...(strategies
         ? { strategies: wrapAuthStrategies({ collection: c.slug, strategies, resolveFrogBot }) }
         : {}),
@@ -1223,6 +1313,9 @@ function buildPayloadConfig(
       : {}),
     collections,
     hooks: wrapRootHooks(config.hooks, attachFrogBot),
+    ...(config.localization !== undefined
+      ? { localization: wrapLocalization(config.localization, attachFrogBot) }
+      : {}),
     routes: {
       ...config.routes,
       admin: config.routes?.admin ?? '/',

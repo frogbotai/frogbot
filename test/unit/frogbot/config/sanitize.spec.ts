@@ -595,6 +595,175 @@ describe('frogbot sanitize', () => {
     });
   });
 
+  describe('collection and localization request functions', () => {
+    type RuntimeFunction = (...args: any[]) => any;
+
+    type RecordedArgs = { req: { frogbot?: unknown } };
+
+    async function sanitizeRequestFunctions(
+      collection: Omit<CollectionConfig, 'fields' | 'slug'>,
+      overrides?: Partial<FrogBotConfig>,
+    ) {
+      const result = sanitize(
+        makeConfig({
+          collections: [{ slug: 'pages', fields: [], ...collection }],
+          ...overrides,
+        }),
+      );
+
+      const payloadConfig = await result._internal.payloadConfig;
+      const payload = makePayload(payloadConfig);
+      const frogbot = { agents: {} };
+
+      registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+
+      const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages')!;
+
+      return {
+        frogbot,
+        localization: payloadConfig.localization as Record<string, any> | false | undefined,
+        pages: pages as unknown as Record<string, any>,
+        req: { payload } as Record<string, unknown>,
+      };
+    }
+
+    it('gives admin.formatDocURL req.frogbot and keeps it synchronous', async () => {
+      const formatDocURL = vi.fn((args: RecordedArgs & { defaultURL: string }) =>
+        args.req.frogbot ? args.defaultURL : null,
+      );
+      const sanitized = await sanitizeRequestFunctions({ admin: { formatDocURL } });
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const url = (sanitized.pages.admin.formatDocURL as RuntimeFunction)({
+        collectionSlug: 'pages',
+        defaultURL: '/collections/pages/1',
+        doc: { id: 1 },
+        req: sanitized.req,
+        viewType: 'list',
+      });
+
+      expect(url).toBe('/collections/pages/1');
+      expect(formatDocURL).toHaveBeenCalledExactlyOnceWith({
+        collectionSlug: 'pages',
+        defaultURL: '/collections/pages/1',
+        doc: { id: 1 },
+        req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+        viewType: 'list',
+      });
+    });
+
+    it('gives every upload handler req.frogbot and returns its response', async () => {
+      const response = new Response('file');
+      const first = vi.fn(() => undefined);
+      const second = vi.fn((req: RecordedArgs['req']) => (req.frogbot ? response : undefined));
+      const sanitized = await sanitizeRequestFunctions({
+        upload: { handlers: [first, second] as never },
+      });
+      const args = { doc: { id: 1 }, params: { collection: 'pages', filename: 'a.png' } };
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const [wrappedFirst, wrappedSecond] = sanitized.pages.upload.handlers as RuntimeFunction[];
+      const results = [
+        await wrappedFirst(sanitized.req, args),
+        await wrappedSecond(sanitized.req, args),
+      ];
+
+      expect(results).toEqual([undefined, response]);
+      expect(first).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ frogbot: sanitized.frogbot }),
+        args,
+      );
+    });
+
+    it('leaves an upload config without handlers untouched', async () => {
+      const sanitized = await sanitizeRequestFunctions({ upload: true });
+
+      expect(sanitized.pages.upload).toBe(true);
+    });
+
+    it('gives verify and forgot-password email templates req.frogbot', async () => {
+      const template = () =>
+        vi.fn((args: RecordedArgs & { token: string }) =>
+          args.req.frogbot ? `token ${args.token}` : 'missing',
+        );
+      const verifyHTML = template();
+      const verifySubject = template();
+      const resetHTML = template();
+      const resetSubject = template();
+      const sanitized = await sanitizeRequestFunctions({
+        auth: {
+          verify: { generateEmailHTML: verifyHTML, generateEmailSubject: verifySubject },
+          forgotPassword: {
+            expiration: 600_000,
+            generateEmailHTML: resetHTML,
+            generateEmailSubject: resetSubject,
+          },
+        },
+      });
+      const { forgotPassword, verify } = sanitized.pages.auth;
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const results = await Promise.all(
+        [
+          verify.generateEmailHTML,
+          verify.generateEmailSubject,
+          forgotPassword.generateEmailHTML,
+          forgotPassword.generateEmailSubject,
+        ].map((fn: RuntimeFunction) => fn({ req: sanitized.req, token: 'abc', user: { id: 1 } })),
+      );
+
+      expect(results).toEqual(['token abc', 'token abc', 'token abc', 'token abc']);
+      expect(forgotPassword.expiration).toBe(600_000);
+      expect(resetHTML).toHaveBeenCalledExactlyOnceWith({
+        req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+        token: 'abc',
+        user: { id: 1 },
+      });
+    });
+
+    it('keeps verify: true and auth configs without templates as they are', async () => {
+      const sanitized = await sanitizeRequestFunctions({
+        auth: { verify: true, forgotPassword: { expiration: 600_000 } },
+      });
+
+      expect(sanitized.pages.auth.verify).toBe(true);
+      expect(sanitized.pages.auth.forgotPassword).toEqual({ expiration: 600_000 });
+    });
+
+    it('gives localization.filterAvailableLocales req.frogbot', async () => {
+      const locales = [{ code: 'en', label: 'English' }];
+      const filterAvailableLocales = vi.fn((args: RecordedArgs & { locales: typeof locales }) =>
+        args.req.frogbot ? args.locales : [],
+      );
+      const sanitized = await sanitizeRequestFunctions(
+        {},
+        { localization: { defaultLocale: 'en', locales: ['en'], filterAvailableLocales } },
+      );
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const filtered = await (
+        (sanitized.localization as Record<string, any>).filterAvailableLocales as RuntimeFunction
+      )({ locales, req: sanitized.req });
+
+      expect(filtered).toBe(locales);
+      expect(filterAvailableLocales).toHaveBeenCalledExactlyOnceWith({
+        locales,
+        req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+      });
+    });
+
+    it('passes localization without filterAvailableLocales through unchanged', async () => {
+      const localization = { defaultLocale: 'en', locales: ['en'] };
+      const sanitized = await sanitizeRequestFunctions({}, { localization });
+
+      expect(sanitized.localization).toBe(localization);
+    });
+  });
+
   describe('field request functions', () => {
     type RuntimeField = Record<string, any>;
 

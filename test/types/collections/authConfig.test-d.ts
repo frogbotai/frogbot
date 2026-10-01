@@ -1,4 +1,4 @@
-import type { AuthConfig, CollectionConfig } from 'frogbot';
+import type { AuthConfig, CollectionConfig, FrogBot, FrogBotRequest } from 'frogbot';
 import type { IncomingAuthType } from 'payload';
 import { expectTypeOf } from 'vitest';
 
@@ -16,6 +16,30 @@ expectTypeOf<ForgotPassword['minRequestInterval']>().toEqualTypeOf<
 expectTypeOf<ForgotPassword['generateEmailHTML']>().toEqualTypeOf<Verify['generateEmailHTML']>();
 expectTypeOf<ForgotPassword['generateEmailSubject']>().toEqualTypeOf<Verify['generateEmailHTML']>();
 expectTypeOf<Verify['generateEmailSubject']>().toEqualTypeOf<Verify['generateEmailHTML']>();
+
+type EmailTemplateArgs = Parameters<NonNullable<Verify['generateEmailHTML']>>[0];
+
+expectTypeOf<keyof EmailTemplateArgs>().toEqualTypeOf<'req' | 'token' | 'user'>();
+expectTypeOf<EmailTemplateArgs['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<EmailTemplateArgs['token']>().toEqualTypeOf<string>();
+
+export const requestAwareTemplates: AuthConfig = {
+  verify: {
+    generateEmailHTML: async ({ req, token }) => {
+      expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
+
+      return `<a href="/verify/${token}">Verify</a>`;
+    },
+  },
+  forgotPassword: {
+    generateEmailSubject: ({ req }) => {
+      // @ts-expect-error FrogBot requests don't expose req.payload.
+      void req.payload;
+
+      return 'Reset your password';
+    },
+  },
+};
 
 export const Customers: CollectionConfig = {
   slug: 'customers',

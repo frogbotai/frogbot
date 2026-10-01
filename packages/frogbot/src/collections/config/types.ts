@@ -43,9 +43,11 @@ import type { SearchIndexConfig, SearchIndexDescriptors } from '../../search/typ
 import type { CollectionSlug, TypedCollection } from '../../types/generated.js';
 import type { PayloadCollectionConfig, SelectType, Sort, Where } from '../../types/payload.js';
 import type { FrogBotArgs, FrogBotRequest } from '../../types/request.js';
+import type { UploadConfig } from '../../uploads/types.js';
 
-type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
+type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin' | 'upload';
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
+type PayloadFormatDocURL = NonNullable<PayloadAdmin['formatDocURL']>;
 type PayloadComponents = NonNullable<PayloadAdmin['components']>;
 type PayloadEditViews = NonNullable<NonNullable<PayloadComponents['views']>['edit']>;
 
@@ -77,6 +79,7 @@ export type CollectionAdminConfig = Omit<
   | 'components'
   | 'defaultColumns'
   | 'defaultSort'
+  | 'formatDocURL'
   | 'group'
   | 'listSearchableFields'
   | 'livePreview'
@@ -84,6 +87,9 @@ export type CollectionAdminConfig = Omit<
   | 'preview'
 > & {
   components?: CollectionAdminComponents;
+  formatDocURL?: (
+    args: FrogBotArgs<Parameters<PayloadFormatDocURL>[0]>,
+  ) => ReturnType<PayloadFormatDocURL>;
   group?: PayloadAdmin['group'] | null;
   icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
@@ -107,6 +113,8 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
 
   /** Field definitions with frogbot's hook/access types. */
   fields: Field[];
+
+  upload?: boolean | UploadConfig;
 
   search?: Record<string, SearchIndexConfig>;
 

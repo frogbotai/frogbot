@@ -13,6 +13,7 @@ export {
 } from './features/blocks/server/index.js';
 export { lexicalHTMLField } from './features/converters/lexicalToHtml/async/field/index.js';
 export { getFrogBotPopulateFn } from './features/converters/utilities/frogbotPopulateFn.js';
+export { LinkFeature, type LinkFeatureServerProps } from './features/link/server/index.js';
 export type {
   ExtractSerializedNode,
   HTMLConverter,
@@ -22,6 +23,7 @@ export type {
   ServerFeature,
 } from './features/typesServer.js';
 export { createNode } from './features/typeUtilities.js';
+export { UploadFeature, type UploadFeatureProps } from './features/upload/server/index.js';
 export {
   createServerFeature,
   type CreateServerFeatureArgs,

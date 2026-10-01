@@ -8,9 +8,13 @@ import type { SignInMethod } from '../pieces/types.js';
 import type { CollectionSlug, TypedCollection, TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 
-type AuthEmailTemplate = (args: { token: string; user: unknown }) => string | Promise<string>;
+type AuthEmailTemplate = (args: {
+  req: FrogBotRequest;
+  token: string;
+  user: unknown;
+}) => string | Promise<string>;
 
-type AuthEmail = {
+export type AuthEmail = {
   generateEmailHTML?: AuthEmailTemplate;
   generateEmailSubject?: AuthEmailTemplate;
 };

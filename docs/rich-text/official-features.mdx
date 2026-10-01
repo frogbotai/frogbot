@@ -107,7 +107,7 @@ Set either `enabledCollections` or `disabledCollections`, not both. `disableAuto
 | --- | --- | --- | --- |
 | `enabledCollections` | `string[]` | Visible collections with `admin.enableRichTextLink` (on by default) | Collection slugs editors can link to internally. Replaces each collection's `admin.enableRichTextLink` setting. Cannot be combined with `disabledCollections`. |
 | `disabledCollections` | `string[]` | None | Collection slugs excluded from internal links; every other collection is available. Replaces each collection's `admin.enableRichTextLink` setting. Cannot be combined with `enabledCollections`. |
-| `fields` | `Field[] \| ({ config, defaultFields }) => Field[]` | Default link fields | Fields in the link drawer. An array replaces the default fields. A function receives the sanitized config and `defaultFields` (`text`, `linkType`, `url`, `doc` when internal links are available, and `newTab`) and returns the fields to use. |
+| `fields` | `Field[] \| ({ config, defaultFields }) => Field[]` | Default link fields | Fields in the link drawer. An array replaces the default fields. A function receives the sanitized config and `defaultFields` (`text`, `linkType`, `url`, `doc` when internal links are available, and `newTab`) and returns the fields to use. Like any [field](/fields/overview), their `validate`, `defaultValue`, `filterOptions`, and `access` functions receive `req` with `req.frogbot`. |
 | `maxDepth` | `number` | Remaining query depth | Maximum population depth of the internal link's `doc` field, regardless of the depth remaining when the link is reached. Applies only to the default `doc` field. |
 | `disableAutoLinks` | `true \| 'creationOnly'` | Auto-links enabled | `'creationOnly'` stops URLs from becoming auto-links but keeps existing auto-links editable. `true` also removes auto-link support. |
 | `internalDocToHref` | `({ linkNode }) => string` | None | Builds the URL for an internal link when converting to Markdown. Without it, internal links export with an empty URL, as `[text]()`. For JSX rendering, see [Internal links](/rich-text/converting-jsx#internal-links). |
@@ -158,7 +158,7 @@ File nodes can reference upload collections that keep `admin.enableRichTextRelat
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `collections` | `{ [collectionSlug: string]: { fields: Field[] } }` | `{}` | Extra fields stored on file nodes that reference each upload collection. Editors fill them in from the file node's drawer. |
+| `collections` | `{ [collectionSlug: string]: { fields: Field[] } }` | `{}` | Extra fields stored on file nodes that reference each upload collection. Editors fill them in from the file node's drawer. Like any [field](/fields/overview), their `validate`, `defaultValue`, `filterOptions`, and `access` functions receive `req` with `req.frogbot`. |
 | `enabledCollections` | `string[]` | All eligible upload collections | Only these eligible upload collections can be selected. |
 | `disabledCollections` | `string[]` | None | These upload collections cannot be selected. |
 | `maxDepth` | `number` | Remaining query depth | Maximum population depth of the referenced file record, regardless of the depth remaining when the node is reached. |
