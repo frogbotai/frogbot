@@ -311,6 +311,16 @@ type CommonArgs = {
   user?: unknown;
 };
 
+type WriteArgs = CommonArgs & {
+  /** Skip the database transaction this operation would otherwise open. */
+  disableTransaction?: boolean;
+};
+
+type LockedWriteArgs = WriteArgs & {
+  /** Set to `false` to reject the write while another user holds the document lock. */
+  overrideLock?: boolean;
+};
+
 export type FindArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
   where?: Where;
@@ -328,7 +338,7 @@ export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
   draft?: boolean;
 };
 
-export type CreateArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs & {
   collection: TSlug;
   data: Partial<TypedCollection<TSlug>>;
   disableVerificationEmail?: boolean;
@@ -343,7 +353,7 @@ export type CreateArgs<TSlug extends CollectionSlug> = CommonArgs & {
   filePath?: string;
 };
 
-export type UpdateByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type UpdateByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
   collection: TSlug;
   id: DocID;
   data: Partial<TypedCollection<TSlug>>;
@@ -352,7 +362,7 @@ export type UpdateByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
   publishSpecificLocale?: string;
 };
 
-export type UpdateManyArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type UpdateManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
   collection: TSlug;
   where: Where;
   data: Partial<TypedCollection<TSlug>>;
@@ -362,12 +372,12 @@ export type UpdateManyArgs<TSlug extends CollectionSlug> = CommonArgs & {
 export type UpdateArgs<TSlug extends CollectionSlug> =
   UpdateByIDArgs<TSlug> | UpdateManyArgs<TSlug>;
 
-export type DeleteByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type DeleteByIDArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
   collection: TSlug;
   id: DocID;
 };
 
-export type DeleteManyArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type DeleteManyArgs<TSlug extends CollectionSlug> = LockedWriteArgs & {
   collection: TSlug;
   where: Where;
 };
@@ -413,7 +423,7 @@ export type DeleteResult<TSlug extends CollectionSlug, TArgs> = TArgs extends {
 
 // ── Duplicate ─────────────────────────────────────────────────────────
 
-export type DuplicateArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type DuplicateArgs<TSlug extends CollectionSlug> = WriteArgs & {
   collection: TSlug;
   id: DocID;
 };

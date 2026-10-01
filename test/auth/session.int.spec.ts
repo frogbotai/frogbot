@@ -170,6 +170,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
           ],
         },
         { slug: 'customers', auth: { signIn: [identity] }, fields: [] },
+        {
+          slug: 'cookie-members',
+          auth: { signIn: [identity], removeTokenFromResponses: true },
+          access: { read: () => true },
+          fields: [],
+        },
       ],
     });
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
@@ -185,7 +191,6 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     collection.hooks.afterLogin = [];
     collection.auth.useSessions = true;
     collection.auth.maxLoginAttempts = 5;
-    collection.auth.removeTokenFromResponses = false;
     const user = await payload.create({
       collection: 'members',
       data: {
@@ -1044,10 +1049,14 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('preserves canonical hook ordering, access arguments, and cookie-only login responses', async () => {
     const order: string[] = [];
-    const collection = payload.collections.members!.config;
-    collection.auth.removeTokenFromResponses = true;
+    const collection = payload.collections['cookie-members']!.config;
+    const credentials = { email: `cookie-${sequence}@example.com`, password: 'test-password' };
+    await payload.create({ collection: 'cookie-members', data: credentials });
+    await expect(
+      frogbot.login({ collection: 'cookie-members', data: credentials }),
+    ).resolves.not.toHaveProperty('token');
     collection.hooks.beforeOperation = [
-      ...initialHooks.beforeOperation,
+      ...collection.hooks.beforeOperation,
       ({ operation, args }) => {
         if (operation === 'login') order.push('beforeOperation');
         return args;
@@ -1077,8 +1086,8 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       },
       checkSessionLease,
     ];
-    const response = await authRequest('members/login?depth=0', '', {
-      email: `SESSION-${sequence}@EXAMPLE.COM `,
+    const response = await authRequest('cookie-members/login?depth=0', '', {
+      email: `COOKIE-${sequence}@EXAMPLE.COM `,
       password: 'test-password',
       _frogbotSessionOperation: { transaction: true },
     });

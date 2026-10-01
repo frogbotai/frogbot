@@ -116,9 +116,9 @@ The following options are available:
 | `dbName`             | Custom table or Collection name depending on the Database Adapter. Auto-generated from slug if not defined.                                                                                                                                                |
 | `endpoints`          | Add custom routes to the REST API. Set to `false` to disable routes. [More details](/rest-api/overview#custom-endpoints).                                                                                                                                |
 | `fields` \*          | Array of field types that determine the structure and functionality of the data stored within this Collection. [More details](/fields/overview).                                                                                                          |
+| `folders`            | Set to `true` to enable folders for this collection, or pass an object to configure them. Defaults to `false`. |
 | `graphQL`            | Manage GraphQL-related properties for this collection. [More](#graphql)                                                                                                                                                                                    |
 | `hooks`              | Entry point for Hooks. [More details](/hooks/overview#collection-hooks).                                                                                                                                                                                 |
-| `hierarchy`          | Enable hierarchical tree structure with automatic parent-child relationships and path generation.                                                                                                                                                         |
 | `orderable`          | If true, enables custom ordering for the collection, and documents can be reordered via drag and drop. Uses [orderable](#orderable) for efficient reordering.                                                                                              |
 | `labels`             | Singular and plural labels for use in identifying this Collection throughout FrogBot. Auto-generated from slug if not defined.                                                                                                                             |
 | `enableQueryPresets` | Enable query presets for this Collection.                                                                                                                                                                                                                   |
@@ -131,7 +131,7 @@ The following options are available:
 | `versions`           | Set to true to enable default options, or configure with object properties. [More details](/versions/overview#collection-config).                                                                                                                        |
 | `defaultPopulate`    | Specify which fields to select when this Collection is populated from another document. [More Details](/queries/select#defaultpopulate-collection-config-property).                                                                                      |
 | `indexes`            | Define compound indexes for this collection. This can be used to either speed up querying/sorting by 2 or more fields at the same time or to ensure uniqueness between several fields.                                                                     |
-| `select`             | Function that receives the current `operation`, `req`, and caller's `select`, and returns the final `select` to apply. Useful for forcing fields to be populated for hooks / access control. [More details](/queries/select#entity-level-select-config). |
+| `forceSelect`        | Fields to always select, whatever `select` the caller passes. Useful when hooks or access control need a field that the caller might not select. [More details](/queries/select#always-selected-fields). |
 | `disableBulkDelete`  | Disable the bulk delete operation for the collection in the admin panel and the REST API                                                                                                                                                                   |
 | `disableBulkEdit`    | Disable the bulk edit operation for the collection in the admin panel and the REST API                                                                                                                                                                     |
 
@@ -185,13 +185,11 @@ The following options are available:
 | `disableCopyToLocale`        | Disables the "Copy to Locale" button while editing documents within this Collection. Only applicable when localization is enabled.                                                                                           |
 | `enableRichTextLink`         | The Rich Text field features a `Link` element which allows users to automatically reference related documents within rich text. Set to `true` by default.                                                                  |
 | `enableRichTextRelationship` | The Rich Text field features a `Relationship` element which allows users to automatically reference related documents within rich text. Set to `true` by default.                                                          |
-| `folders`                    | A boolean to enable folders for a given collection. Defaults to `false`.                                                                                                                                                 |
 | `formatDocURL`               | Function to customize document links in the List View. Return `null` to disable linking, or a string for custom URLs. [More details](#format-document-urls).                                                                 |
 | `meta`                       | Page metadata overrides to apply to this Collection within the Admin Panel.                                                                                                                                              |
 | `preview`                    | Function to generate preview URLs within the Admin Panel that can point to your app. It receives the Document and `{ locale, req, token }`, where `req` is a `FrogBotRequest` with `req.frogbot`.                          |
 | `livePreview`                | Enable real-time editing for instant visual feedback of your front-end application.                                                                                                                                       |
 | `components`                 | Swap in your own React components to be used within this Collection. [More details](#custom-components).                                                                                                                     |
-| `pagination`                 | Set pagination-specific options for this Collection in the List View. [More details](#pagination).                                                                                                                           |
 
 <Warning>
   **Note:** If you set `useAsTitle` to a relationship or join field, it will use
@@ -523,12 +521,12 @@ export const Posts: CollectionConfig = {
 }
 ```
 
-To ensure title is always present, define a top-level [`select`](/queries/select#entity-level-select-config) function on your Collection Config that merges the caller's `select` with the fields you require:
+To ensure title is always present, list it in [`forceSelect`](/queries/select#always-selected-fields) on your Collection Config:
 
 ```ts
 export const Posts: CollectionConfig = {
   // ...
-  select: ({ select }) => ({ ...select, title: true }),
+  forceSelect: { title: true },
 }
 ```
 

@@ -240,6 +240,8 @@ type GenerateTextOpts = BaseAIOpts & (
 type StreamTextOpts = GenerateTextOpts & {
   onFinish?: (event: unknown) => void | Promise<void>
   onEnd?: (event: unknown) => void | Promise<void>
+  onError?: (event: { error: unknown }) => void | Promise<void>
+  onAbort?: (event: unknown) => void | Promise<void>
 }
 ```
 

@@ -10,6 +10,8 @@
     "hooks.test-d.ts",
     "access.test-d.ts",
     "endpoints.test-d.ts",
-    "parity.test-d.ts"
+    "parity.test-d.ts",
+    "authConfig.test-d.ts",
+    "localOptions.test-d.ts"
   ]
 }

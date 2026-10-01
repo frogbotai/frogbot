@@ -70,18 +70,13 @@ console.log(post) // { id: '1' }
   `select` query on the database level. Because of that, your `beforeRead` and
   `afterRead` hooks may not receive the full `doc`. To ensure that some fields
   are always selected for your hooks / access control, regardless of the
-  `select` query you can use the [entity-level `select`](#entity-level-select-config)
-  function on your Collection config.
+  `select` query, use [`forceSelect`](#always-selected-fields) on your
+  Collection config.
 </Warning>
 
-## Entity-level select config
+## Always-selected fields
 
-Collections accept a top-level `select` function that runs before every read and lets you transform the caller's `select` based on request context. It receives `{ operation, req, select }` and returns the final `select` to apply, replacing the caller's. Return `undefined` to leave the caller's `select` untouched.
-
-Common uses:
-
-- Force a field to always be populated so it's available in hooks / access control.
-- Differentiate API requests from admin panel requests to optimize frogbot size.
+Collections accept a top-level `forceSelect` object listing fields that every read, and every write that returns a document, includes. When the caller passes a `select` that includes fields, FrogBot deep-merges `forceSelect` into it. When the caller passes no `select`, the full document is returned anyway. A `select` that excludes fields (uses `false`) is applied as written, so it can still exclude a forced field.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -89,14 +84,12 @@ import type { CollectionConfig } from 'frogbot'
 export const Posts: CollectionConfig = {
   slug: 'posts',
   // Always include `title`, regardless of the caller's `select`.
-  select: ({ select }) => (select ? { ...select, title: true } : undefined),
+  forceSelect: { title: true },
   fields: [
     // ...
   ],
 }
 ```
-
-The function form **replaces** the caller's select rather than deep-merging, so spread the caller's `select` into your returned object when you want to add to it instead of replacing it. Per-document data is not available — this runs before the read.
 
 ## REST API
 

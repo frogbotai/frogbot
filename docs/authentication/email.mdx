@@ -31,10 +31,10 @@ export const Customers: CollectionConfig = {
 
 The following options are available:
 
-| Option                     | Description                                                                                                                                           |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`generateEmailHTML`**    | Allows for overriding the HTML within emails that are sent to users indicating how to validate their account. [More details](#generateemailhtml).     |
-| **`generateEmailSubject`** | Allows for overriding the subject of the email that is sent to users indicating how to validate their account. [More details](#generateemailsubject). |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `generateEmailHTML` | `({ token, user }) => string \| Promise<string>` | Built-in verification email | Returns the HTML of the verification email. [More details](#generateemailhtml). |
+| `generateEmailSubject` | `({ token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the verification email. [More details](#generateemailsubject). |
 
 #### generateEmailHTML
 
@@ -104,11 +104,12 @@ export const Customers: CollectionConfig = {
 
 The following options are available:
 
-| Option                     | Description                                                                                                                                     |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`expiration`**           | Configure how long password reset tokens remain valid, specified in milliseconds.                                                               |
-| **`generateEmailHTML`**    | Allows for overriding the HTML within emails that are sent to users attempting to reset their password. [More details](#generateEmailHTML).     |
-| **`generateEmailSubject`** | Allows for overriding the subject of the email that is sent to users attempting to reset their password. [More details](#generateEmailSubject). |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `expiration` | `number` | `3600000` (1 hour) | How long a password reset token stays valid, in milliseconds. |
+| `minRequestInterval` | `number` | `15000` | Minimum time, in milliseconds, between password reset emails for the same user. A request inside the interval sends no email. Set to `0` to disable. |
+| `generateEmailHTML` | `({ token, user }) => string \| Promise<string>` | Built-in reset email | Returns the HTML of the password reset email. Details below. |
+| `generateEmailSubject` | `({ token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the password reset email. Details below. |
 
 <Tip>
   **Tip:** FrogBot provides a built-in password reset page. If you don't need a
