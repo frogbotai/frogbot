@@ -155,7 +155,7 @@ export async function resolvePlan({
       ).trim() || undefined;
   }
 
-  let agents: AgentTarget[] | string | undefined = args.agents;
+  let agents = args.agents;
 
   if (agents === undefined && interactive) {
     agents = resolvePromptValue<AgentTarget[]>(
@@ -163,11 +163,7 @@ export async function resolvePlan({
     ) as AgentTarget[];
   }
 
-  const resolvedAgents = Array.isArray(agents)
-    ? agents
-    : agents
-      ? agents.split(',').filter(Boolean)
-      : [];
+  const resolvedAgents = agents ?? [];
 
   resolvedAgents.forEach((agent) => validateValue(agent, AGENT_VALUES, 'agent'));
 

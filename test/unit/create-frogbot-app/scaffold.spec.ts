@@ -60,7 +60,7 @@ describe('CLI arguments and plans', () => {
         '--no-deps',
       ]),
     ).toMatchObject({
-      agents: 'claude,codex',
+      agents: ['claude', 'codex'],
       ai: 'none',
       database: 'postgres',
       git: false,
@@ -69,6 +69,18 @@ describe('CLI arguments and plans', () => {
       projectName: 'my-app',
       template: 'blank',
     });
+  });
+
+  it('trims spaces around --agents entries', async () => {
+    const plan = await resolvePlan({
+      args: parseArgs(['my-app', '--agents', ' claude, codex ,']),
+      cwd: '/tmp',
+      detectedPackageManager: 'npm',
+      env: {},
+      tty: false,
+    });
+
+    expect(plan.agents).toEqual(['claude', 'codex']);
   });
 
   it('resolves unattended defaults without coding agents', async () => {
