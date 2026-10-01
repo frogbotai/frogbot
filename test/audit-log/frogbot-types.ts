@@ -63,18 +63,24 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
+    accounts: AccountAuthOperations;
   };
   blocks: {};
   collections: {
-    users: User;
+    accounts: Account;
+    posts: Post;
+    credentials: Credential;
+    'audit-logs': AuditLog;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect;
+    accounts: AccountsSelect;
+    posts: PostsSelect;
+    credentials: CredentialsSelect;
+    'audit-logs': AuditLogsSelect;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
@@ -89,9 +95,10 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: Account;
   jobs: {
     tasks: {
+      'frogbot-prune-audit-logs': TaskFrogbotPruneAuditLogs;
       'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
       'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
@@ -102,7 +109,7 @@ export interface Config {
     workflows: unknown;
   };
 }
-export interface UserAuthOperations {
+export interface AccountAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -122,11 +129,10 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "accounts".
  */
-export interface User {
+export interface Account {
   id: number;
-  name?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -145,7 +151,66 @@ export interface User {
       }[]
     | null;
   password?: string | null;
-  collection: 'users';
+  collection: 'accounts';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  optional?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials".
+ */
+export interface Credential {
+  id: number;
+  name: string;
+  owner: number | Account;
+  prefix: string;
+  tokenHash: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  collection: string;
+  operation: 'create' | 'update' | 'delete';
+  documentId: string;
+  user?: (number | null) | Account;
+  apiKeyId?: string | null;
+  changes:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  snapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  timestamp: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -237,10 +302,9 @@ export interface File {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "accounts_select".
  */
-export interface UsersSelect {
-  name?: boolean;
+export interface AccountsSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -258,6 +322,46 @@ export interface UsersSelect {
         createdAt?: boolean;
         expiresAt?: boolean;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect {
+  title?: boolean;
+  optional?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials_select".
+ */
+export interface CredentialsSelect {
+  name?: boolean;
+  owner?: boolean;
+  prefix?: boolean;
+  tokenHash?: boolean;
+  lastUsedAt?: boolean;
+  revokedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect {
+  collection?: boolean;
+  operation?: boolean;
+  documentId?: boolean;
+  user?: boolean;
+  apiKeyId?: boolean;
+  changes?: boolean;
+  snapshot?: boolean;
+  timestamp?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -329,6 +433,14 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-prune-audit-logs".
+ */
+export interface TaskFrogbotPruneAuditLogs {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -63,18 +63,24 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
+    accounts: AccountAuthOperations;
   };
   blocks: {};
   collections: {
-    users: User;
+    accounts: Account;
+    credentials: Credential;
+    'usage-logs': UsageLog;
+    captures: Capture;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect;
+    accounts: AccountsSelect;
+    credentials: CredentialsSelect;
+    'usage-logs': UsageLogsSelect;
+    captures: CapturesSelect;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
@@ -89,9 +95,10 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: Account;
   jobs: {
     tasks: {
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
       'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
       'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
@@ -102,7 +109,7 @@ export interface Config {
     workflows: unknown;
   };
 }
-export interface UserAuthOperations {
+export interface AccountAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -122,11 +129,15 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "accounts".
  */
-export interface User {
+export interface Account {
   id: number;
-  name?: string | null;
+  apiKeyId?: number | null;
+  modelAccess?: ('all' | 'selected') | null;
+  models?: 'test/priced'[] | null;
+  monthlyBudget?: number | null;
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -145,7 +156,77 @@ export interface User {
       }[]
     | null;
   password?: string | null;
-  collection: 'users';
+  collection: 'accounts';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials".
+ */
+export interface Credential {
+  id: number;
+  name: string;
+  owner: number | Account;
+  prefix: string;
+  tokenHash: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+  totalCostUSD?: number | null;
+  capture?: ('inherit' | 'enabled' | 'disabled') | null;
+  captureSampleRate?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  apiKey?: (number | null) | Credential;
+  user?: (number | null) | Account;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank'
+    | 'evaluate';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "captures".
+ */
+export interface Capture {
+  id: number;
+  captureId: string;
+  requestId: string;
+  user?: string | null;
+  apiKey?: string | null;
+  operation: string;
+  model: string;
+  blobKey: string;
+  sizeBytes: number;
+  status: 'success' | 'error';
+  requestedAt: string;
+  completedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -237,10 +318,14 @@ export interface File {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "accounts_select".
  */
-export interface UsersSelect {
-  name?: boolean;
+export interface AccountsSelect {
+  apiKeyId?: boolean;
+  modelAccess?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -258,6 +343,63 @@ export interface UsersSelect {
         createdAt?: boolean;
         expiresAt?: boolean;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials_select".
+ */
+export interface CredentialsSelect {
+  name?: boolean;
+  owner?: boolean;
+  prefix?: boolean;
+  tokenHash?: boolean;
+  lastUsedAt?: boolean;
+  revokedAt?: boolean;
+  totalCostUSD?: boolean;
+  capture?: boolean;
+  captureSampleRate?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  apiKey?: boolean;
+  user?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "captures_select".
+ */
+export interface CapturesSelect {
+  captureId?: boolean;
+  requestId?: boolean;
+  user?: boolean;
+  apiKey?: boolean;
+  operation?: boolean;
+  model?: boolean;
+  blobKey?: boolean;
+  sizeBytes?: boolean;
+  status?: boolean;
+  requestedAt?: boolean;
+  completedAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -332,6 +474,14 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ */
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskFrogbot-sweep-jobs".
  */
 export interface TaskFrogbotSweepJobs {
@@ -357,7 +507,7 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
-    models: never;
+    models: 'test/priced';
     roles: never;
   }
 }

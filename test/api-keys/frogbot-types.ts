@@ -63,31 +63,33 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
+    accounts: AccountAuthOperations;
   };
   blocks: {};
   collections: {
-    'field-posts': FieldPost;
-    'non-unique-field-posts': NonUniqueFieldPost;
-    'undefined-slug-field-posts': UndefinedSlugFieldPost;
-    'draft-field-posts': DraftFieldPost;
-    'nested-fields': NestedField;
+    accounts: Account;
+    chats: Chat;
+    credentials: Credential;
+    'usage-logs': UsageLog;
+    messages: Message;
+    'frogbot-chat-assets': FrogbotChatAsset;
+    'frogbot-chat-turns': FrogbotChatTurn;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
-    users: User;
   };
   collectionsJoins: {};
   collectionsSelect: {
-    'field-posts': FieldPostsSelect;
-    'non-unique-field-posts': NonUniqueFieldPostsSelect;
-    'undefined-slug-field-posts': UndefinedSlugFieldPostsSelect;
-    'draft-field-posts': DraftFieldPostsSelect;
-    'nested-fields': NestedFieldsSelect;
+    accounts: AccountsSelect;
+    chats: ChatsSelect;
+    credentials: CredentialsSelect;
+    'usage-logs': UsageLogsSelect;
+    messages: MessagesSelect;
+    'frogbot-chat-assets': FrogbotChatAssetsSelect;
+    'frogbot-chat-turns': FrogbotChatTurnsSelect;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
-    users: UsersSelect;
   };
   db: {
     defaultIDType: number;
@@ -99,9 +101,10 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: Account;
   jobs: {
     tasks: {
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
       'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
       'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
@@ -112,7 +115,7 @@ export interface Config {
     workflows: unknown;
   };
 }
-export interface UserAuthOperations {
+export interface AccountAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -132,93 +135,174 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "field-posts".
+ * via the `definition` "accounts".
  */
-export interface FieldPost {
+export interface Account {
   id: number;
-  title: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
+  modelAccess?: ('all' | 'selected') | null;
+  models?: ('test/allowed' | 'test/blocked')[] | null;
+  monthlyBudget?: number | null;
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "non-unique-field-posts".
- */
-export interface NonUniqueFieldPost {
-  id: number;
-  title: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "undefined-slug-field-posts".
- */
-export interface UndefinedSlugFieldPost {
-  id: number;
-  title: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "draft-field-posts".
- */
-export interface DraftFieldPost {
-  id: number;
-  title: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "nested-fields".
- */
-export interface NestedField {
-  id: number;
-  group?: {
-    value?: string | null;
-    accessValue?: string | null;
-    validatedValue?: string | null;
-  };
-  items?:
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
     | {
-        value?: string | null;
-        id?: string | null;
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
       }[]
     | null;
-  details?: {
-    value?: string | null;
-  };
-  content?:
+  password?: string | null;
+  collection: 'accounts';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | Account;
+  agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
+  lastMessageAt?: string | null;
+  todos?: import('frogbot/tools').TodoItem[];
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials".
+ */
+export interface Credential {
+  id: number;
+  name: string;
+  owner: number | Account;
+  prefix: string;
+  tokenHash: string;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+  totalCostUSD?: number | null;
+  environment?: string | null;
+  tenant?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  apiKey?: (number | null) | Credential;
+  user?: (number | null) | Account;
+  chat?: (number | null) | Chat;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank'
+    | 'evaluate';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: string;
+  chat: number | Chat;
+  role: 'user' | 'assistant' | 'system';
+  parts: import('frogbot').UIMessage['parts'];
+  metadata?:
     | {
-        value?: string | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'note';
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
+  status?: ('active' | 'queued') | null;
+  delivery?: ('queue' | 'steer') | null;
+  model?: string | null;
+  reasoning?: string | null;
+  author?: import('frogbot').TurnActor;
+  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
+  version?: number | null;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    cachedInputTokens?: number | null;
+    model?: string | null;
+    provider?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets".
+ */
+export interface FrogbotChatAsset {
+  id: number;
+  owner?: (number | null) | Account;
+  chat?: (number | null) | Chat;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns".
+ */
+export interface FrogbotChatTurn {
+  id: string;
+  state: 'idle' | 'running' | 'awaiting';
+  attempt?: string | null;
+  leaseUntil?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -312,110 +396,151 @@ export interface File {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "accounts_select".
  */
-export interface User {
-  id: number;
-  name?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
+export interface AccountsSelect {
+  modelAccess?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  email?: boolean;
+  resetPasswordToken?: boolean;
+  resetPasswordExpiration?: boolean;
+  salt?: boolean;
+  hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
+  loginAttempts?: boolean;
+  lockUntil?: boolean;
   sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "field-posts_select".
- */
-export interface FieldPostsSelect {
-  title?: boolean;
-  generateSlug?: boolean;
-  slug?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "non-unique-field-posts_select".
- */
-export interface NonUniqueFieldPostsSelect {
-  title?: boolean;
-  generateSlug?: boolean;
-  slug?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "undefined-slug-field-posts_select".
- */
-export interface UndefinedSlugFieldPostsSelect {
-  title?: boolean;
-  generateSlug?: boolean;
-  slug?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "draft-field-posts_select".
- */
-export interface DraftFieldPostsSelect {
-  title?: boolean;
-  generateSlug?: boolean;
-  slug?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-  _status?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "nested-fields_select".
- */
-export interface NestedFieldsSelect {
-  group?:
     | boolean
     | {
-        value?: boolean;
-        accessValue?: boolean;
-        validatedValue?: boolean;
-      };
-  items?:
-    | boolean
-    | {
-        value?: boolean;
         id?: boolean;
+        createdAt?: boolean;
+        expiresAt?: boolean;
       };
-  details?:
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats_select".
+ */
+export interface ChatsSelect {
+  title?: boolean;
+  user?: boolean;
+  agent?: boolean;
+  channel?: boolean;
+  externalId?: boolean;
+  channelKey?: boolean;
+  channelThread?: boolean;
+  channelLabel?: boolean;
+  lastMessageAt?: boolean;
+  todos?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials_select".
+ */
+export interface CredentialsSelect {
+  name?: boolean;
+  owner?: boolean;
+  prefix?: boolean;
+  tokenHash?: boolean;
+  lastUsedAt?: boolean;
+  revokedAt?: boolean;
+  totalCostUSD?: boolean;
+  environment?: boolean;
+  tenant?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  apiKey?: boolean;
+  user?: boolean;
+  chat?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect {
+  id?: boolean;
+  chat?: boolean;
+  role?: boolean;
+  parts?: boolean;
+  metadata?: boolean;
+  status?: boolean;
+  delivery?: boolean;
+  model?: boolean;
+  reasoning?: boolean;
+  author?: boolean;
+  settlements?: boolean;
+  version?: boolean;
+  usage?:
     | boolean
     | {
-        value?: boolean;
+        inputTokens?: boolean;
+        outputTokens?: boolean;
+        totalTokens?: boolean;
+        reasoningTokens?: boolean;
+        cachedInputTokens?: boolean;
+        model?: boolean;
+        provider?: boolean;
       };
-  content?:
-    | boolean
-    | {
-        note?:
-          | boolean
-          | {
-              value?: boolean;
-              id?: boolean;
-              blockName?: boolean;
-            };
-      };
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets_select".
+ */
+export interface FrogbotChatAssetsSelect {
+  owner?: boolean;
+  chat?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns_select".
+ */
+export interface FrogbotChatTurnsSelect {
+  id?: boolean;
+  state?: boolean;
+  attempt?: boolean;
+  leaseUntil?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -482,30 +607,6 @@ export interface FilesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect {
-  name?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-  email?: boolean;
-  resetPasswordToken?: boolean;
-  resetPasswordExpiration?: boolean;
-  salt?: boolean;
-  hash?: boolean;
-  resetPasswordRequestedAt?: boolean;
-  loginAttempts?: boolean;
-  lockUntil?: boolean;
-  sessions?:
-    | boolean
-    | {
-        id?: boolean;
-        createdAt?: boolean;
-        expiresAt?: boolean;
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -513,6 +614,14 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ */
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -540,8 +649,10 @@ export interface Auth {
 
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
-    agents: {};
-    models: never;
+    agents: {
+      'api-key-policy': unknown;
+    };
+    models: 'test/allowed' | 'test/blocked';
     roles: never;
   }
 }
