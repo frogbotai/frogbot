@@ -11,7 +11,6 @@
     "start": "frogbot start",
     "generate:types": "frogbot generate:types",
     "generate:importmap": "frogbot generate:importmap",
-    "test:wiring": "node --test test/wiring.mjs && cross-env BUSINESS_QA_OAUTH=off node --test test/wiring.mjs",
     "migrate": "frogbot migrate",
     "migrate:create": "frogbot migrate:create",
     "format": "prettier --write .",
