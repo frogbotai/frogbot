@@ -1,6 +1,7 @@
 'use client';
 
 import * as Primitive from '@radix-ui/react-select';
+import { Slottable } from '@radix-ui/react-slot';
 import type { ComponentProps } from 'react';
 
 import CheckIcon from '../icons/icons/CheckIcon.js';
@@ -21,19 +22,22 @@ export function SelectTrigger({
       className={`fb-select__trigger${className ? ` ${className}` : ''}`}
       {...props}
     >
-      {children}
+      <Slottable>{children}</Slottable>
       <Primitive.Icon>
         <ChevronDownIcon className="fb-select__trigger-icon" />
       </Primitive.Icon>
     </Primitive.Trigger>
   );
 }
-export function SelectContent({
-  className,
-  children,
-  position = 'popper',
-  ...props
-}: ComponentProps<typeof Primitive.Content>) {
+export function SelectContent(input: Omit<ComponentProps<typeof Primitive.Content>, 'asChild'>) {
+  const {
+    asChild: _asChild,
+    className,
+    children,
+    position = 'popper',
+    ...props
+  } = input as ComponentProps<typeof Primitive.Content>;
+
   return (
     <Primitive.Portal>
       <PortalTheme>
@@ -59,11 +63,14 @@ export function SelectLabel({ className, ...props }: ComponentProps<typeof Primi
     <Primitive.Label className={`fb-select__label${className ? ` ${className}` : ''}`} {...props} />
   );
 }
-export function SelectItem({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof Primitive.Item>) {
+export function SelectItem(input: Omit<ComponentProps<typeof Primitive.Item>, 'asChild'>) {
+  const {
+    asChild: _asChild,
+    className,
+    children,
+    ...props
+  } = input as ComponentProps<typeof Primitive.Item>;
+
   return (
     <Primitive.Item className={`fb-select__item${className ? ` ${className}` : ''}`} {...props}>
       <Primitive.ItemText>{children}</Primitive.ItemText>

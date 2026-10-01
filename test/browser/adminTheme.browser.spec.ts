@@ -311,6 +311,7 @@ const anchorTestIds = [
   'toggle-link',
   'toggle-on-link',
   'accordion-link',
+  'select-link',
 ];
 
 function resolveColor(container: Locator, value: string) {
@@ -421,6 +422,11 @@ test.describe('asChild links', () => {
       expect((await readLinkStyle(contextLink)).textDecorationLine).toBe('none');
       expect((await hoverAndRead(page, contextLink)).textDecorationLine).toBe('none');
 
+      const contextCheckLink = page.getByTestId('context-check-link');
+
+      expect((await readLinkStyle(contextCheckLink)).textDecorationLine).toBe('none');
+      expect((await hoverAndRead(page, contextCheckLink)).textDecorationLine).toBe('none');
+
       const contextSubLink = page.getByTestId('context-sub-link');
 
       expect((await readLinkStyle(contextSubLink)).textDecorationLine).toBe('none');
@@ -449,6 +455,7 @@ test.describe('asChild links', () => {
         'toggle',
         'toggle-on',
         'accordion',
+        'select',
       ]) {
         const button = await readLinkStyle(page.getByTestId(`${name}-button`));
         const link = await readLinkStyle(page.getByTestId(`${name}-link`));
@@ -484,6 +491,11 @@ test.describe('asChild links', () => {
       expect(contextLink.color).toBe(contextDiv.color);
       expect(contextLink.color).toBe(await readParentColor(page.getByTestId('context-link')));
 
+      const contextCheckDiv = await readLinkStyle(page.getByTestId('context-check-div'));
+      const contextCheckLink = await readLinkStyle(page.getByTestId('context-check-link'));
+
+      expect(contextCheckLink.color).toBe(contextCheckDiv.color);
+
       const contextSubDiv = await readLinkStyle(page.getByTestId('context-sub-div'));
       const contextSubLink = await readLinkStyle(page.getByTestId('context-sub-link'));
 
@@ -509,6 +521,13 @@ test.describe('asChild links', () => {
       expect(contextLink.color).toBe(contextDiv.color);
       expect(contextLink.backgroundColor).toBe(contextDiv.backgroundColor);
       expect(contextLink.textDecorationLine).toBe('none');
+
+      const contextCheckDiv = await hoverAndRead(page, page.getByTestId('context-check-div'));
+      const contextCheckLink = await hoverAndRead(page, page.getByTestId('context-check-link'));
+
+      expect(contextCheckLink.color).toBe(contextCheckDiv.color);
+      expect(contextCheckLink.backgroundColor).toBe(contextCheckDiv.backgroundColor);
+      expect(contextCheckLink.textDecorationLine).toBe('none');
 
       const contextSubDiv = await hoverAndRead(page, page.getByTestId('context-sub-div'));
       const contextSubLink = await hoverAndRead(page, page.getByTestId('context-sub-link'));

@@ -1,6 +1,7 @@
 'use client';
 
 import * as Primitive from '@radix-ui/react-dialog';
+import { Slottable } from '@radix-ui/react-slot';
 import type { ComponentProps } from 'react';
 
 import XIcon from '../icons/icons/XIcon.js';
@@ -23,7 +24,7 @@ export function SheetContent({
           className={`fb-sheet__content fb-sheet__content--${side}${className ? ` ${className}` : ''}`}
           {...props}
         >
-          {children}
+          <Slottable>{children}</Slottable>
           <Primitive.Close className="fb-sheet__close">
             <XIcon className="fb-sheet__close-icon" />
             <span className="fb-sheet__close-label">Close</span>
