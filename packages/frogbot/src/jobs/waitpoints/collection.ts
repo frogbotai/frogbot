@@ -15,6 +15,7 @@ export function defaultWaitpointsCollection(): CollectionConfig {
     },
     fields: [
       { name: 'jobId', type: 'text', required: true },
+      { name: 'holder', type: 'relationship', relationTo: 'payload-jobs' },
       { name: 'name', type: 'text', required: true },
       { name: 'token', type: 'text', required: true, unique: true },
       { name: 'kind', type: 'select', options: ['delay', 'resumable'], required: true },
@@ -29,7 +30,6 @@ export function defaultWaitpointsCollection(): CollectionConfig {
       { name: 'expiresAt', type: 'date', index: true },
       { name: 'until', type: 'date' },
       { name: 'data', type: 'json' },
-      { name: 'snapshot', type: 'json', required: true },
       { name: 'dispatched', type: 'checkbox', required: true, defaultValue: false },
       { name: 'dispatchOwner', type: 'text' },
       { name: 'dispatchLeaseUntil', type: 'date' },

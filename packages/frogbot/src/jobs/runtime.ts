@@ -1,17 +1,18 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { type Config, createLocalReq, type Job, type Payload, type PayloadRequest } from 'payload';
 
-import { withJobLease } from './lease.js';
+import { compareAndSet } from '../database/compareAndSet.js';
+import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
+import { getJobLeaseContext, withJobLease } from './lease.js';
+import { type JobLogDatabase, jobLogOperations } from './log.js';
 import type { Jobs, JobsRuntime } from './types.js';
 import { resumeWaitpoint } from './waitpoints/operations.js';
-import type { Waitpoint, WaitpointReplay } from './waitpoints/types.js';
+import type { WaitpointReplay } from './waitpoints/types.js';
 
 type JobQueueSeed = {
   jobId?: string;
-  log?: Job['log'];
-  meta?: Job['meta'];
   waitpoint?: WaitpointReplay;
 };
 
@@ -22,49 +23,6 @@ type JobEnqueue = (
 
 const queueContext = new AsyncLocalStorage<{ payload: Payload; seed: JobQueueSeed } | undefined>();
 const runtimes = new WeakMap<Payload, Jobs>();
-const enqueues = new WeakMap<Payload, JobEnqueue>();
-
-export async function queueWaitpointContinuation({
-  req,
-  waitpoint,
-}: {
-  req: PayloadRequest;
-  waitpoint: Waitpoint;
-}): Promise<Job> {
-  const enqueue = enqueues.get(req.payload);
-
-  if (!enqueue) throw new Error('FrogBot waitpoints require the jobs runtime.');
-
-  const { snapshot } = waitpoint;
-  const result =
-    waitpoint.kind === 'delay'
-      ? null
-      : waitpoint.status === 'expired'
-        ? { expired: true as const }
-        : { expired: false as const, data: waitpoint.data };
-
-  return enqueue(
-    {
-      req,
-      workflow: snapshot.workflow,
-      input: snapshot.input,
-      queue: snapshot.queue,
-      meta: snapshot.meta,
-      waitUntil: waitpoint.kind === 'delay' ? new Date(waitpoint.until!) : undefined,
-    },
-    {
-      jobId: `frogbot-waitpoint:${waitpoint.token}`,
-      log: (snapshot.log ?? [])
-        .filter(({ state, taskSlug }) => state === 'succeeded' && taskSlug === 'inline')
-        .map((entry) => ({ ...entry, id: randomBytes(12).toString('hex') })),
-      meta: snapshot.meta,
-      waitpoint: {
-        jobId: waitpoint.jobId,
-        results: { ...snapshot.results, [waitpoint.name]: result },
-      },
-    },
-  );
-}
 
 export function installJobsRuntime({
   payload,
@@ -82,6 +40,95 @@ export function installJobsRuntime({
   const nativeRunByID = payload.jobs.runByID.bind(payload.jobs);
   const nativeCreate = payload.create.bind(payload);
   const nativeDBCreate = payload.db.create.bind(payload.db);
+  const nativeUpdateJobs = payload.db.updateJobs.bind(payload.db);
+  const nativeDeleteMany = payload.db.deleteMany.bind(payload.db);
+
+  payload.db.updateJobs = async (args) => {
+    const context = getJobLeaseContext();
+    const rearm =
+      context?.payload === payload && args.id !== undefined
+        ? context.rearm.get(args.id)
+        : undefined;
+
+    if (!rearm || !args.data.completedAt) return nativeUpdateJobs(args);
+
+    const id = args.id!;
+    const req = { ...args.req, payload } as PayloadRequest;
+    const operations = (payload.db as JobLogDatabase)[jobLogOperations];
+
+    if (!operations) throw new Error('FrogBot workflow waits require job log operations.');
+
+    const rearmed = await compareAndSet({
+      req,
+      collection: 'payload-jobs',
+      where: {
+        and: [
+          { id: { equals: id } },
+          { completedAt: { exists: false } },
+          { hasError: { not_equals: true } },
+        ],
+      },
+      data: {
+        completedAt: null,
+        hasError: false,
+        error: null,
+        totalTried: 0,
+        waitUntil: rearm.waitUntil,
+        waitpoint: rearm.waitpoint,
+      },
+    });
+
+    if (!rearmed) {
+      context!.rearm.delete(id);
+
+      return nativeUpdateJobs(args);
+    }
+
+    await operations.prune({ id, keep: (rearm.log ?? []).map((entry) => entry.id!), req });
+
+    await compareAndSet({
+      req,
+      collection: 'payload-jobs',
+      where: { and: [{ id: { equals: id } }, { processing: { equals: true } }] },
+      data: { processing: false, leaseOwner: null, leaseUntil: null },
+    });
+
+    if (args.returning === false) return null;
+
+    const result = await payload.db.find({
+      collection: 'payload-jobs',
+      where: { id: { equals: id } },
+      limit: 1,
+      pagination: false,
+      req: args.req,
+    });
+
+    return result.docs as Job[];
+  };
+
+  payload.db.deleteMany = async (args) => {
+    const context = getJobLeaseContext();
+    const idFilter = args.where?.id;
+    const ids = idFilter && !Array.isArray(idFilter) ? idFilter.in : undefined;
+
+    if (
+      args.collection !== 'payload-jobs' ||
+      context?.payload !== payload ||
+      !context.rearm.size ||
+      !Array.isArray(ids)
+    ) {
+      return nativeDeleteMany(args);
+    }
+
+    const completed = ids.filter((id) => !context.rearm.has(id));
+
+    if (!completed.length) return;
+
+    return nativeDeleteMany({
+      ...args,
+      where: { ...args.where, id: { ...idFilter, in: completed } },
+    });
+  };
 
   payload.create = ((args) => {
     const context = queueContext.getStore();
@@ -105,12 +152,67 @@ export function installJobsRuntime({
       return nativeDBCreate(args);
     }
 
-    return queueContext.run(undefined, () =>
-      nativeDBCreate({
-        ...args,
-        data: { ...args.data, ...context.seed },
-      }),
-    );
+    return queueContext.run(undefined, async () => {
+      const insert = () =>
+        nativeDBCreate({
+          ...args,
+          data: { ...args.data, ...context.seed },
+        });
+
+      const { jobId } = context.seed;
+
+      if (jobId === undefined) return insert();
+
+      const findHolder = async () => {
+        const result = await payload.db.find({
+          collection: 'payload-jobs',
+          where: {
+            and: [
+              { jobId: { equals: jobId } },
+              { completedAt: { exists: false } },
+              { hasError: { not_equals: true } },
+            ],
+          },
+          limit: 1,
+          pagination: false,
+          req: args.req,
+        });
+
+        return result.docs[0];
+      };
+
+      const holder = await findHolder();
+
+      if (holder) return holder;
+
+      const operations = (payload.db as JobInsertDatabase)[jobInsertOperations];
+
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await (operations
+            ? operations.insert({ req: args.req as PayloadRequest | undefined, insert })
+            : insert());
+        } catch (error) {
+          const transactionID = await args.req?.transactionID;
+          const sessions = payload.db.sessions as unknown as
+            Record<string, { inTransaction(): boolean }> | undefined;
+
+          if (
+            payload.db.name === 'mongoose' &&
+            transactionID &&
+            sessions?.[transactionID]?.inTransaction()
+          ) {
+            throw error;
+          }
+
+          const liveHolder = await findHolder();
+
+          if (liveHolder) return liveHolder;
+
+          if (attempt === 3) throw error;
+        }
+      }
+    });
   };
 
   const jobs = payload.jobs as JobsRuntime;
@@ -123,8 +225,6 @@ export function installJobsRuntime({
       nativeQueue(args),
     );
   };
-
-  enqueues.set(payload, enqueue);
 
   jobs.queue = ((args) => {
     const { jobId, ...nativeArgs } = args;

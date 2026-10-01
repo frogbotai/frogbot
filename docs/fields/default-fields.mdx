@@ -128,7 +128,7 @@ The jobs collection includes fields used for durable execution and atomic claims
 
 | Field | Purpose |
 | --- | --- |
-| `jobId` | Optional unique external job identifier. |
+| `jobId` | Optional external job identifier, unique among unfinished jobs. |
 | `leaseUntil` | Read-only lease expiration. |
 | `leaseOwner` | Hidden internal lease owner. |
 | `waitpoint` | Hidden internal waitpoint state. |

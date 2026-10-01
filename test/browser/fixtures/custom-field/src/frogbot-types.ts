@@ -226,6 +226,7 @@ export interface FrogbotTriggerSubscription {
 export interface FrogbotWaitpoint {
   id: number;
   jobId: string;
+  holder?: (number | null) | null;
   name: string;
   token: string;
   kind: 'delay' | 'resumable';
@@ -234,15 +235,6 @@ export interface FrogbotWaitpoint {
   expiresAt?: string | null;
   until?: string | null;
   data?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  snapshot:
     | {
         [k: string]: unknown;
       }
@@ -354,6 +346,7 @@ export interface FrogbotTriggerSubscriptionsSelect {
  */
 export interface FrogbotWaitpointsSelect {
   jobId?: boolean;
+  holder?: boolean;
   name?: boolean;
   token?: boolean;
   kind?: boolean;
@@ -362,7 +355,6 @@ export interface FrogbotWaitpointsSelect {
   expiresAt?: boolean;
   until?: boolean;
   data?: boolean;
-  snapshot?: boolean;
   dispatched?: boolean;
   dispatchOwner?: boolean;
   dispatchLeaseUntil?: boolean;

@@ -1,7 +1,9 @@
 import { randomBytes } from 'node:crypto';
 
-import type { Job, JsonObject, PayloadRequest } from 'payload';
+import type { Job, PayloadRequest } from 'payload';
 
+import type { ReArm } from '../lease.js';
+import { updateWaitpoint } from './atomic.js';
 import { isReservedWaitpointKey } from './json.js';
 import {
   createWaitpoint,
@@ -9,13 +11,7 @@ import {
   findWaitpoint,
   markWaitpointReady,
 } from './operations.js';
-import type {
-  WaitFor,
-  Waitpoint,
-  WaitpointOptions,
-  WaitpointReplay,
-  WaitpointSnapshot,
-} from './types.js';
+import type { WaitFor, Waitpoint, WaitpointOptions, WaitpointReplay } from './types.js';
 
 type WaitOptions =
   | { until: Date | string; onWait?: never; expiresIn?: never }
@@ -24,27 +20,6 @@ type WaitOptions =
       expiresIn?: number;
       onWait: (args: { resumeUrl: string }) => void | Promise<void>;
     };
-
-function snapshotJob({
-  job,
-  results,
-}: {
-  job: Job;
-  results: WaitpointReplay['results'];
-}): WaitpointSnapshot {
-  if (!job.workflowSlug) throw new Error('FrogBot waitFor requires a workflow job.');
-
-  return structuredClone({
-    workflow: job.workflowSlug,
-    input: job.input as JsonObject,
-    queue: job.queue ?? 'default',
-    log: (job.log ?? []).filter(
-      ({ state, taskSlug }) => state === 'succeeded' && taskSlug === 'inline',
-    ),
-    meta: job.meta,
-    results,
-  });
-}
 
 function waitDeadline({
   options,
@@ -62,6 +37,10 @@ function waitDeadline({
 
     if (!Number.isFinite(until.getTime())) {
       throw new Error('FrogBot waitFor until must be a valid date.');
+    }
+
+    if (until.getTime() > Date.parse('9999-12-31T23:59:59.999Z')) {
+      throw new Error('FrogBot waitFor until must be on or before 9999-12-31T23:59:59.999Z.');
     }
 
     return { kind: 'delay', until: until.toISOString() };
@@ -85,6 +64,10 @@ function waitDeadline({
     );
   }
 
+  if (expiresAt.getTime() > Date.parse('9999-12-31T23:59:59.999Z')) {
+    throw new Error('FrogBot waitFor expiresAt must be on or before 9999-12-31T23:59:59.999Z.');
+  }
+
   return { kind: 'resumable', expiresAt: expiresAt.toISOString() };
 }
 
@@ -105,12 +88,16 @@ export function createWaitFor({
   job: Job;
   req: PayloadRequest;
   config: WaitpointOptions;
-}): { waitFor: WaitFor; isWaiting: (error: unknown) => boolean } {
+}): { waitFor: WaitFor; isWaiting: (error: unknown) => boolean; getReArm: () => ReArm } {
+  if (!job.workflowSlug) throw new Error('FrogBot waitFor requires a workflow job.');
+
   const replay = (job as Job & { waitpoint?: WaitpointReplay | null }).waitpoint;
   const jobId = replay?.jobId ?? String(job.id);
   const results = { ...replay?.results };
   const names = new Set<string>();
   const signal = Symbol('FrogBot workflow waiting');
+  let waitUntil: string;
+  let waiting: string;
 
   const waitFor = async (name: string, options: WaitOptions) => {
     if (typeof name !== 'string' || !name.trim()) {
@@ -138,6 +125,7 @@ export function createWaitFor({
     }
 
     let waitpoint = await findWaitpoint({ req, jobId, name });
+    const replaying = waitpoint?.ready === true;
 
     if (waitpoint && waitpoint.kind !== kind) {
       throw new Error(`FrogBot waitFor '${name}' changed its wait kind during replay.`);
@@ -153,13 +141,13 @@ export function createWaitFor({
         req,
         data: {
           jobId,
+          holder: job.id,
           name,
           token,
           ...deadline,
           ready: false,
-          status: 'pending',
-          snapshot: snapshotJob({ job, results }),
-          dispatched: false,
+          status: deadline.kind === 'delay' ? 'resumed' : 'pending',
+          dispatched: deadline.kind === 'delay',
         },
       });
     }
@@ -169,17 +157,87 @@ export function createWaitFor({
         await options.onWait({ resumeUrl: resumeURL({ req, token: waitpoint.token }) });
       }
 
-      await markWaitpointReady({ req, waitpoint, snapshot: snapshotJob({ job, results }) });
+      await markWaitpointReady({ req, waitpoint });
 
       waitpoint = await findWaitpoint({ req, token: waitpoint.token });
 
       if (!waitpoint) throw new Error(`FrogBot waitFor '${name}' disappeared before dispatch.`);
     }
 
-    await dispatchWaitpoint({ req, waitpoint });
+    if (
+      waitpoint.kind === 'resumable' &&
+      waitpoint.status === 'pending' &&
+      Date.parse(waitpoint.expiresAt!) <= Date.now()
+    ) {
+      await updateWaitpoint({
+        req,
+        where: {
+          and: [
+            { id: { equals: waitpoint.id } },
+            { kind: { equals: 'resumable' } },
+            { status: { equals: 'pending' } },
+            { expiresAt: { less_than_equal: new Date().toISOString() } },
+          ],
+        },
+        data: { status: 'expired' },
+      });
+
+      waitpoint = await findWaitpoint({ req, token: waitpoint.token });
+
+      if (!waitpoint) throw new Error(`FrogBot waitFor '${name}' disappeared before replay.`);
+    }
+
+    if (
+      replaying &&
+      (waitpoint.kind === 'delay'
+        ? Date.parse(waitpoint.until!) <= Date.now()
+        : waitpoint.status === 'resumed' || waitpoint.status === 'expired')
+    ) {
+      const result =
+        waitpoint.kind === 'delay'
+          ? null
+          : waitpoint.status === 'expired'
+            ? { expired: true as const }
+            : { expired: false as const, data: waitpoint.data };
+
+      results[name] = structuredClone(result);
+
+      if (!waitpoint.dispatched) {
+        await updateWaitpoint({
+          req,
+          where: { and: [{ id: { equals: waitpoint.id } }, { dispatched: { equals: false } }] },
+          data: { dispatched: true },
+        });
+      }
+
+      return result === null ? undefined : structuredClone(result);
+    }
+
+    if (waitpoint.kind !== 'delay') await dispatchWaitpoint({ req, waitpoint });
+
+    waitUntil =
+      waitpoint.kind === 'delay'
+        ? waitpoint.until!
+        : waitpoint.status === 'pending'
+          ? waitpoint.expiresAt!
+          : new Date().toISOString();
+
+    waiting = name;
 
     throw signal;
   };
 
-  return { waitFor: waitFor as WaitFor, isWaiting: (error) => error === signal };
+  return {
+    waitFor: waitFor as WaitFor,
+    isWaiting: (error) => error === signal,
+    getReArm: () => ({
+      waitUntil,
+      log: structuredClone(
+        (job.log ?? []).filter(
+          ({ state, taskSlug }) => state === 'succeeded' && taskSlug === 'inline',
+        ),
+      ),
+      waitpoint: { jobId, results: structuredClone(results), waiting },
+    }),
+  };
 }

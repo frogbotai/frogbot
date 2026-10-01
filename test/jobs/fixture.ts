@@ -45,7 +45,7 @@ function externalRequire() {
   return createRequire(join(directory, 'package.json'));
 }
 
-async function createDatabase() {
+async function createDatabase({ transactions }: { transactions: boolean }) {
   const name = `ticket121_${randomUUID().replaceAll('-', '')}`;
   const cleanups: (() => Promise<void>)[] = [];
   let descriptor: FrogBotConfig['db'];
@@ -57,7 +57,10 @@ async function createDatabase() {
 
     const directory = await mkdtemp(join(tmpdir(), 'frogbot-jobs-acceptance-'));
 
-    descriptor = sqliteAdapter({ client: { url: `file:${join(directory, 'jobs.db')}` } });
+    descriptor = sqliteAdapter({
+      client: { url: `file:${join(directory, 'jobs.db')}` },
+      transactionOptions: transactions ? {} : undefined,
+    });
     cleanups.push(() => rm(directory, { recursive: true, force: true }));
   } else if (adapterName === 'mongodb') {
     const { mongooseAdapter } = sourceAdapters
@@ -150,13 +153,15 @@ async function createDatabase() {
 export async function bootJobsFixture({
   jobs = {},
   config: overrides = {},
+  transactions = false,
 }: {
   jobs?: FrogBotConfig['jobs'];
   config?: Pick<FrogBotConfig, 'agents' | 'ai' | 'routes'>;
+  transactions?: boolean;
 } = {}) {
   process.env.PAYLOAD_DROP_DATABASE = 'false';
 
-  const database = await createDatabase();
+  const database = await createDatabase({ transactions });
   const gates = new Map<string, JobGate>();
   const actions = new Map<string, (req: PayloadRequest) => Promise<void>>();
   const hookEvents: { operation: string; id: string }[] = [];
@@ -215,7 +220,7 @@ export async function bootJobsFixture({
     await frogbot?.destroy();
 
     for (const client of clients) {
-      if (client && '_clients' in client && adapterName === 'postgres') {
+      if (client && '_clients' in client) {
         const idle = new Set(client._idle?.map((entry) => entry.client));
 
         for (const connection of client._clients ?? []) {
@@ -274,6 +279,13 @@ export async function bootJobsFixture({
         leaseDuration: 5_000,
         access: { run: () => true },
         tasks: [
+          {
+            slug: 'fail-for-good',
+            retries: 0,
+            handler: async () => {
+              throw new Error('FrogBot terminal failure fixture');
+            },
+          },
           {
             slug: 'record-effect',
             inputSchema: [{ name: 'marker', type: 'text', required: true }],
@@ -339,6 +351,10 @@ export async function bootJobsFixture({
         ...jobs,
       },
     });
+
+    const payloadConfig = await config._internal.payloadConfig;
+
+    payloadConfig.jobs.autoRun = [];
 
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
 

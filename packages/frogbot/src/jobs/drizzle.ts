@@ -1,15 +1,37 @@
 import {
+  buildIndexName,
   buildQuery,
   type DrizzleAdapter,
   find,
   type GenericColumn,
   type GenericTable,
 } from '@payloadcms/drizzle';
-import { and, asc, eq, getTableName, inArray, max, min, type SQL, sql } from 'drizzle-orm';
-import { type PgTable, QueryBuilder as PgQueryBuilder } from 'drizzle-orm/pg-core';
-import { QueryBuilder as SQLiteQueryBuilder, type SQLiteTable } from 'drizzle-orm/sqlite-core';
+import type { BasePostgresAdapter } from '@payloadcms/drizzle/postgres';
+import {
+  and,
+  asc,
+  eq,
+  getTableName,
+  inArray,
+  max,
+  min,
+  notInArray,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
+import {
+  type PgTable,
+  QueryBuilder as PgQueryBuilder,
+  uniqueIndex as pgUniqueIndex,
+} from 'drizzle-orm/pg-core';
+import {
+  QueryBuilder as SQLiteQueryBuilder,
+  type SQLiteTable,
+  uniqueIndex as sqliteUniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 import type { DatabaseAdapter, Job, PayloadRequest, Sort, Where } from 'payload';
 
+import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import {
   getJobClaimFields,
   getJobLeaseContext,
@@ -17,6 +39,7 @@ import {
   jobLeaseOperations,
   recordJobClaims,
 } from './lease.js';
+import { type JobLogDatabase, jobLogOperations } from './log.js';
 
 type JobSQLDialect = 'postgres' | 'sqlite';
 
@@ -25,6 +48,9 @@ type JobSQLUpdate = PromiseLike<unknown> & {
 };
 
 type JobSQLWriter = {
+  delete: (table: GenericTable) => {
+    where: (predicate: SQL | undefined) => PromiseLike<unknown>;
+  };
   update: (table: GenericTable) => {
     set: (data: Record<string, unknown>) => {
       where: (predicate: SQL | undefined) => JobSQLUpdate;
@@ -196,6 +222,97 @@ export function installSQLJobOperations({
 }): void {
   const adapter = database as unknown as DrizzleAdapter;
   const updateJobs = database.updateJobs;
+  const inserts = new Map<string | number, Promise<void>>();
+
+  (database as JobInsertDatabase)[jobInsertOperations] = {
+    async insert({ req, insert }) {
+      const transactionID = await req?.transactionID;
+
+      if (dialect !== 'postgres' || !transactionID) return insert();
+
+      const db = adapter.sessions[transactionID]?.db as
+        { execute(query: SQL): Promise<unknown> } | undefined;
+
+      if (!db) return insert();
+
+      const previous = inserts.get(transactionID);
+      let release!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+
+      inserts.set(transactionID, pending);
+
+      await previous;
+
+      try {
+        await db.execute(sql`SAVEPOINT frogbot_job_insert`);
+
+        try {
+          const result = await insert();
+
+          await db.execute(sql`RELEASE SAVEPOINT frogbot_job_insert`);
+
+          return result;
+        } catch (error) {
+          await db.execute(sql`ROLLBACK TO SAVEPOINT frogbot_job_insert`);
+          await db.execute(sql`RELEASE SAVEPOINT frogbot_job_insert`);
+
+          throw error;
+        }
+      } finally {
+        release();
+
+        if (inserts.get(transactionID) === pending) inserts.delete(transactionID);
+      }
+    },
+  };
+
+  (database as JobLogDatabase)[jobLogOperations] = {
+    async prune({ id, keep, req }) {
+      const tableName = adapter.tableNameMap.get('payload_jobs');
+      const logTableName = tableName && adapter.tableNameMap.get(`${tableName}_log`);
+      const jobs = tableName && adapter.tables[tableName];
+      const table = logTableName && adapter.tables[logTableName];
+
+      if (!jobs || !table) throw new Error('FrogBot jobs log table is unavailable.');
+
+      const live = sql`exists (select 1 from ${jobs} where ${jobs.id} = ${id} and ${jobs.completedAt} is null and ${jobs.hasError} is not true)`;
+      const db = (await getJobDatabase(adapter, req)) as unknown as JobSQLWriter;
+
+      await db
+        .delete(table)
+        .where(
+          and(eq(table._parentID, id), keep.length ? notInArray(table.id, keep) : undefined, live),
+        );
+
+      adapter.lastWriteTimestamp = Date.now();
+    },
+  };
+
+  const schemaAdapter = database as unknown as BasePostgresAdapter;
+
+  schemaAdapter.afterSchemaInit.push(({ extendTable, schema }) => {
+    const tableName = adapter.tableNameMap.get('payload_jobs');
+
+    if (!tableName) return schema;
+
+    const name = buildIndexName({ adapter, name: 'payload_jobs_job_id_live' });
+    const falseLiteral = sql.raw(dialect === 'sqlite' ? '0' : 'false');
+
+    extendTable({
+      table: schema.tables[tableName],
+      extraConfig: (columns) => ({
+        [name]: (dialect === 'postgres' ? pgUniqueIndex(name) : sqliteUniqueIndex(name))
+          .on(columns.jobId)
+          .where(
+            sql`${columns.jobId} is not null and ${columns.completedAt} is null and coalesce(${columns.hasError}, ${falseLiteral}) = ${falseLiteral}`,
+          ),
+      }),
+    });
+
+    return schema;
+  });
 
   database.updateJobs = async (args) => {
     if (args.data.processing !== true) return updateJobs.call(database, args);

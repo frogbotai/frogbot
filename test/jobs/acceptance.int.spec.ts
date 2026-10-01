@@ -65,6 +65,36 @@ async function enteredOrFinished(entered: Promise<void>, run: Promise<unknown>) 
 }
 
 describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
+  it('a jobId whose job failed for good can be queued again', async () => {
+    const queue = randomUUID();
+    const jobId = `failed-${queue}`;
+    const first = await fixture.frogbot.jobs.queue({ task: 'fail-for-good', queue, jobId });
+
+    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true });
+
+    expect(await readJob(first.id)).toMatchObject({ hasError: true });
+
+    const second = await fixture.frogbot.jobs.queue({ task: 'fail-for-good', queue, jobId });
+
+    expect(second.id).not.toBe(first.id);
+    expect(await readJob(second.id)).toMatchObject({ jobId, hasError: false });
+  });
+
+  it('a jobId whose completed job is kept can be queued again', async () => {
+    const queue = randomUUID();
+    const jobId = `completed-${queue}`;
+    const first = await queueJob(queue, queue, { jobId });
+
+    await fixture.frogbot.jobs.runByID({ id: first.id });
+
+    expect(await readJob(first.id)).toMatchObject({ completedAt: expect.any(String) });
+
+    const second = await queueJob(queue, queue, { jobId });
+
+    expect(second.id).not.toBe(first.id);
+    expect(await readJob(second.id)).toMatchObject({ jobId, hasError: false });
+  });
+
   it('boots the real runtime and enforces concurrent jobId uniqueness, generated IDs and deletion reuse', async () => {
     const queue = randomUUID();
     const jobId = `dedupe-${queue}`;
@@ -73,14 +103,22 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     expect(fixture.worker.jobs).not.toBe(fixture.frogbot.jobs);
 
     const contenders = await Promise.allSettled(
-      Array.from({ length: 8 }, () => queueJob(queue, queue, { jobId })),
+      Array.from({ length: 8 }, (_, index) =>
+        (index < 4 ? fixture.frogbot.jobs : fixture.worker.jobs).queue({
+          task: 'record-effect',
+          queue,
+          input: { marker: queue },
+          jobId,
+        }),
+      ),
     );
 
     const winners = contenders.filter((result) => result.status === 'fulfilled');
     const rejected = contenders.filter((result) => result.status === 'rejected');
 
-    expect(winners).toHaveLength(1);
-    expect(rejected).toHaveLength(7);
+    expect(rejected).toHaveLength(0);
+    expect(winners).toHaveLength(8);
+    expect(new Set(winners.map((result) => result.value.id)).size).toBe(1);
 
     const rows = await fixture.payload.find({
       collection: 'payload-jobs',
@@ -96,14 +134,47 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     await fixture.frogbot.jobs.runByID({ id: rows.docs[0].id });
 
     expect(await readJob(rows.docs[0].id)).toMatchObject({ completedAt: expect.any(String) });
-    await expect(queueJob(queue, queue, { jobId })).rejects.toThrow();
 
-    await fixture.payload.delete({ collection: 'payload-jobs', id: rows.docs[0].id });
+    const completedReuse = await queueJob(queue, queue, { jobId });
+
+    expect(completedReuse.id).not.toBe(rows.docs[0].id);
+
+    await fixture.payload.delete({ collection: 'payload-jobs', id: completedReuse.id });
 
     const reused = await queueJob(queue, queue, { jobId });
 
     expect(reused.id).not.toBe(rows.docs[0].id);
     expect(await readJob(reused.id)).toMatchObject({ jobId });
+  });
+
+  it('a duplicate live jobId resolves with the existing job and ignores its arguments', async () => {
+    const queue = randomUUID();
+    const jobId = `arguments-${queue}`;
+    const first = await queueJob(queue, 'original', { jobId });
+
+    const duplicate = await fixture.worker.jobs.queue({
+      task: 'retry-effect',
+      input: { marker: 'ignored', alwaysFail: true },
+      queue: `ignored-${queue}`,
+      waitUntil: new Date('2099-01-01T00:00:00.000Z'),
+      meta: { ignored: true },
+      jobId,
+    });
+
+    const rows = await fixture.payload.db.find({
+      collection: 'payload-jobs',
+      where: { jobId: { equals: jobId } },
+      pagination: false,
+    });
+
+    expect(duplicate).toEqual(first);
+    expect(rows.docs).toHaveLength(1);
+    expect(rows.docs[0]).toMatchObject({
+      id: first.id,
+      taskSlug: 'record-effect',
+      input: { marker: 'original' },
+      queue,
+    });
   });
 
   it('partitions concurrent native batches with exactly one persisted effect per job', async () => {

@@ -2,6 +2,10 @@ import type { Job, UpdateJobsArgs } from 'payload';
 import { vi } from 'vitest';
 
 import { getJobClaimFields, recordJobClaims } from '../../../../packages/frogbot/src/jobs/lease.js';
+import {
+  type JobLogDatabase,
+  jobLogOperations,
+} from '../../../../packages/frogbot/src/jobs/log.js';
 import type { JobsConfig } from '../../../../packages/frogbot/src/jobs/types.js';
 import { matches, setup } from './helpers.js';
 
@@ -79,9 +83,24 @@ export async function nativeRunner({
   database.findOne = vi.fn(async ({ where }) =>
     structuredClone(rows.find((row) => !where || matches(row, where)) ?? null),
   ) as typeof database.findOne;
-  database.updateOne = vi.fn(async ({ id, data }) =>
-    write({ id: id!, data }),
-  ) as typeof database.updateOne;
+  database.packageName = '@frogbotai/db-mongodb';
+  (database as JobLogDatabase)[jobLogOperations] = {
+    prune: vi.fn(async ({ id, keep }) => {
+      const row = rows.find((candidate) => candidate.id === id)!;
+
+      if (row.completedAt || row.hasError) return;
+
+      row.log = (row.log ?? []).filter((entry) => keep.includes(entry.id!));
+    }),
+  };
+
+  database.updateOne = vi.fn(async ({ id, where, data }) => {
+    const row = rows.find((candidate) =>
+      id === undefined ? matches(candidate, where!) : candidate.id === id,
+    );
+
+    return row ? write({ id: row.id, data }) : null;
+  }) as typeof database.updateOne;
 
   database.updateJobs = vi.fn(async (args: UpdateJobsArgs) => {
     if (args.data.processing === true) {
