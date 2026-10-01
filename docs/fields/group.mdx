@@ -59,29 +59,38 @@ The record has `email` and `phone` at the current level, not inside a `contact` 
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`fields`** * | Fields displayed inside the group. |
-| **`name`** | Property name for a named group. Omit it for a presentational group. |
-| **`label`** | Group heading in the admin panel. |
-| **`validate`** | Custom [validation](/fields/overview#validation) for a named group. |
-| **`hooks`** | [Field hooks](/hooks/fields). |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`hidden`** | Hides a named group from APIs and the admin panel while retaining stored data. |
-| **`defaultValue`** | Initial object value. |
-| **`localized`** | Stores a separate group value for each configured locale. |
-| **`saveToJWT`** | Includes a top-level named auth field in the user token. |
-| **`interfaceName`** | Name of the reusable generated TypeScript interface. Requires `name`. |
-| **`admin`** | Admin-panel appearance and behavior. |
-| **`custom`** | Custom metadata available to extensions. |
-| **`typescriptSchema`** | JSON Schema override used during type generation. |
-| **`virtual`** | Set to `true` to omit a named group from database storage. |
+Options that describe a stored value apply only to named groups: `interfaceName`, `localized`, `defaultValue`, `validate`, `hooks`, `access`, `saveToJWT`, `virtual`, `disableDuplicate`, `unique`, and `index`. FrogBot ignores them on presentational groups.
 
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | `'group'` | Required | Selects the Group field. |
+| `fields` | `Field[]` | Required | Fields displayed inside the group. |
+| `name` | `string` | — | Property name for a named group. Omit it for a presentational group. See [field names](/fields/overview#field-names). |
+| `interfaceName` | `string` | — | Name of a reusable top-level generated TypeScript interface. Named groups only. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name`, if set | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | No built-in effect: groups have no default validator. Mark nested fields `required` or use `validate`. |
+| `unique` | `boolean` | `false` | MongoDB only: creates a unique index on the whole stored value. SQL adapters ignore it. |
+| `index` | `boolean` | `false` | MongoDB only: creates an index on the whole stored value. SQL adapters ignore it. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `object` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | — | Validates the group's object value on save. Groups have no built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
-Groups inherit the standard [field admin options](/fields/overview#admin-options). Set `admin.hideGutter` to `true` to remove the group's vertical gutter and padding.
+Groups inherit the standard [field admin options](/fields/overview#admin-options) and add:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `hideGutter` | `boolean` | `false` | Removes the vertical gutter and padding shown when the group is nested inside another group. |
 
 ## Custom components
 

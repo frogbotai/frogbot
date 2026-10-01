@@ -14,7 +14,7 @@ import type { CollapsibleField } from 'frogbot'
 
 export const advancedFields: CollapsibleField = {
   type: 'collapsible',
-  label: ({ data }) => data.title || 'Advanced settings',
+  label: 'Advanced settings',
   admin: {
     initCollapsed: true,
   },
@@ -31,22 +31,26 @@ export const advancedFields: CollapsibleField = {
 }
 ```
 
-The record contains `title` and `internalNotes` at the current level. The label can be text, localized text, a component path, or a function that receives the current data and path.
+The record contains `title` and `internalNotes` at the current level. The label can be text, localized text keyed by language code, or a function that receives `i18n` and `t`. To build the header from document data, set `admin.components.Label` to a component instead.
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`label`** * | Header shown for the collapsible section. |
-| **`fields`** * | Fields displayed inside the section. |
-| **`admin`** | Admin-panel appearance and behavior. |
-| **`custom`** | Custom metadata available to extensions. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | `'collapsible'` | Required | Selects the Collapsible field. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Required unless `admin.components.Label` is set | Header shown for the section. Use `admin.components.Label` for a header based on document data. |
+| `fields` | `Field[]` | Required | Fields displayed inside the section. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 
 ## Admin options
 
-Collapsible fields inherit applicable [field admin options](/fields/overview#admin-options). Set `admin.initCollapsed` to `true` to close the section initially.
+Collapsible fields inherit the standard [field admin options](/fields/overview#admin-options) and add:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `initCollapsed` | `boolean` | `false` | Closes the section initially. An editor's saved open or closed state takes precedence. |
+| `components.Label` | `FrogBotComponent` | — | Component rendered as the section header. Required when `label` is omitted. |
 
 ## Custom components
 

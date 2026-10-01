@@ -33,13 +33,29 @@ Component paths are resolved through the generated import map. The Field compone
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Unique field identifier. No value is stored under this name. |
-| **`label`** | Human-readable field label. |
-| **`admin.components.Field`** * | React component rendered in the edit view. |
-| **`admin.components.Cell`** | React component rendered in collection list cells. |
-| **`admin.disableListColumn`** | Removes the field from the list-view column selector when `true`. |
-| **`custom`** | Custom metadata available to extensions. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Unique field identifier. No value is stored under this name. |
+| `type` | `'ui'` | Required | Selects the UI field. |
+| `label` | `string \| Record<string, string>` | — | Label used where the admin panel lists fields, such as the list-view column selector. |
+| `admin` | `object` | Required | Components and display settings. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 
-\*_An asterisk denotes a required option._
+## Admin options
+
+UI fields accept these admin options. Unlike data fields, they do not support the rest of the standard [field admin options](/fields/overview#admin-options).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `components.Field` | `FrogBotComponent` | — | Component rendered in the edit view. Without it, the UI field renders nothing. |
+| `components.Cell` | `FrogBotComponent` | — | Component rendered in collection list cells. |
+| `components.Filter` | `FrogBotComponent` | — | Client component rendered in the list view's filter menu. See [Filter](/fields/overview#filter). |
+| `components.Description` | `FrogBotComponent` | — | Component rendered as the field description. |
+| `components.Diff` | `FrogBotComponent` | — | Component rendered in the version diff view. |
+| `components.[key]` | `FrogBotComponent` | — | Any other key renders that component into the field's form state, where your components read it from `customComponents`. |
+| `condition` | `(data, siblingData, ctx) => boolean` | — | Shows the field only when it returns `true`. See [Conditional logic](/fields/overview#conditional-logic). |
+| `position` | `string` | Main form | Set to `'sidebar'` to render the field in the edit view's sidebar. |
+| `width` | `string \| number` | Full width | CSS width, especially within a row. |
+| `disableBulkEdit` | `boolean` | `true` | UI fields are excluded from bulk editing unless set to `false`. |
+| `disableListColumn` | `boolean` | `false` | Removes the field from the list-view column selector. |
+| `custom` | `Record<string, any>` | — | Metadata available on the server and in the browser. |

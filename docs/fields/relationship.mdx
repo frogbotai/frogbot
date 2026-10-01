@@ -21,33 +21,35 @@ export const ProductField: Field = {
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Property name used in stored records and APIs. See [Field names](/fields/overview#field-names). |
-| **`relationTo`** * | One collection slug or an array of collection slugs that records can reference. |
-| **`filterOptions`** | Query or callback that limits selectable records and validates submitted values. See [Filtering relationship options](#filtering-relationship-options). |
-| **`hasMany`** | Set to `true` to store multiple relationships. |
-| **`minRows`** | Minimum number of values when `hasMany` is enabled and a value is present. |
-| **`maxRows`** | Maximum number of values when `hasMany` is enabled and a value is present. |
-| **`maxDepth`** | Maximum population depth for this field, regardless of the remaining request depth. See [Depth](/queries/depth#max-depth). |
-| **`label`** | Field label shown in the admin panel. |
-| **`unique`** | Requires a unique value for this field across the collection and creates a database-level unique index for its path. See [Unique fields](/database/indexes#unique-fields). |
-| **`validate`** | Custom validation function. See [Validation](/fields/overview#validation). |
-| **`index`** | Creates a [database index](/database/indexes) to improve queries against this field. |
-| **`saveToJWT`** | Includes a top-level auth field in the user token. |
-| **`hooks`** | [Field hooks](/hooks/fields) for reading and changing the value. |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
-| **`defaultValue`** | Initial field value. See [Default values](/fields/overview#default-values). |
-| **`localized`** | Stores a value for each configured locale. Requires [localization](/configuration/localization). |
-| **`required`** | Requires a value. |
-| **`admin`** | Admin-panel appearance and behavior. See [Admin options](#admin-options). |
-| **`custom`** | Custom metadata available to extensions. |
-| **`typescriptSchema`** | JSON Schema override used during type generation. |
-| **`virtual`** | Set to `true` to omit this field from database storage, or provide a path that links it to another relationship. See [Linking virtual fields with relationships](#linking-virtual-fields-with-relationships). |
-| **`graphQL`** | GraphQL schema metadata. FrogBot does not currently ship a GraphQL request handler. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `type` | `'relationship'` | Required | Selects the Relationship field. |
+| `relationTo` | `string \| string[]` | Required | One collection slug, or an array of slugs for a polymorphic field. |
+| `filterOptions` | `Where \| (args) => boolean \| Where \| Promise<boolean \| Where>` | — | Limits selectable records and validates submitted values. See [Filtering relationship options](#filtering-relationship-options). |
+| `hasMany` | `boolean` | `false` | Stores an ordered array of relationships instead of one. |
+| `minRows` | `number` | — | Minimum number of relationships when a value is present. Only with `hasMany: true`. |
+| `maxRows` | `number` | — | Maximum number of relationships when a value is present. Only with `hasMany: true`. |
+| `min` | `number` | — | Deprecated alias for `minRows`. Copied to `minRows` with a warning when `minRows` is unset. |
+| `max` | `number` | — | Deprecated alias for `maxRows`. Copied to `maxRows` with a warning when `maxRows` is unset. |
+| `maxDepth` | `number` | Request depth | Maximum population depth for this field, regardless of the remaining request depth. See [depth](/queries/depth#max-depth). |
+| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL request handler. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `string \| number \| { relationTo, value }`, an array of these, or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [Linking virtual fields with relationships](#linking-virtual-fields-with-relationships). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="success">
   Use the [depth parameter](/queries/depth) to populate related records in API
@@ -58,14 +60,14 @@ export const ProductField: Field = {
 
 The `admin` option inherits the standard [field admin options](/fields/overview#admin-options) and adds settings specific to relationships:
 
-| Option | Description |
-| --- | --- |
-| **`isSortable`** | Enables drag-and-drop ordering when `hasMany` is `true`. |
-| **`allowCreate`** | Set to `false` to prevent creating related records from this field. |
-| **`allowEdit`** | Set to `false` to prevent editing related records from this field. |
-| **`sortOptions`** | Default sorting for records in the relationship selector. See [Sort options](#sort-options). |
-| **`placeholder`** | Custom placeholder text or callback. |
-| **`appearance`** | Set to `select` or `drawer`. Defaults to `select`. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `appearance` | `'select' \| 'drawer'` | `'select'` | `select` shows a searchable dropdown; `drawer` opens a list drawer to pick records. |
+| `allowCreate` | `boolean` | `true` | Lets editors create a related record from the field. |
+| `allowEdit` | `boolean` | `true` | Lets editors edit a selected record from the field. |
+| `isSortable` | `boolean` | `true` | Lets editors reorder values when `hasMany` is `true`. |
+| `sortOptions` | `string \| Record<string, string>` | — | Sort for records in the selector: one field name, or one per collection for a polymorphic field. See [Sort options](#sort-options). |
+| `placeholder` | `string \| (({ i18n, t }) => string)` | — | Placeholder text shown when nothing is selected. |
 
 ### Sort options
 
@@ -103,19 +105,19 @@ Without `sortOptions`, the selector uses its default ordering.
 
 ## Filtering relationship options
 
-Use `filterOptions` to limit records in the selector and validate submitted relationships. It accepts a [query constraint](/queries/overview), `true`, `false`, or a callback returning one of those values.
+Use `filterOptions` to limit records in the selector and validate submitted relationships. It accepts a [query constraint](/queries/overview), or a callback that returns a constraint, `true` to allow every record, or `false` to allow none.
 
 The callback receives:
 
-| Property | Description |
-| --- | --- |
-| `blockData` | Data for the nearest parent block. It is `undefined` outside a block and in a list-view filter. |
-| `data` | Full data for the record being edited. It is an empty object in a list-view filter. |
-| `id` | Current record ID, or `undefined` during creation and in a list-view filter. |
-| `relationTo` | Collection slug currently being filtered. |
-| `req` | FrogBot request, including `frogbot`, `user`, `locale`, and request context. |
-| `siblingData` | Data from fields under the same parent. It is an empty object in a list-view filter. |
-| `user` | Current authenticated user. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `blockData` | `any` | — | Data for the nearest parent block. It is `undefined` outside a block and in a list-view filter. |
+| `data` | `any` | — | Full data for the record being edited. It is an empty object in a list-view filter. |
+| `id` | `string \| number` | — | Current record ID, or `undefined` during creation and in a list-view filter. |
+| `relationTo` | `string` | — | Collection slug currently being filtered. |
+| `req` | `FrogBotRequest` | — | Current request, including `req.frogbot`, `req.user`, `req.locale`, and request context. |
+| `siblingData` | `unknown` | — | Data from fields under the same parent. It is an empty object in a list-view filter. |
+| `user` | `Partial<User> \| null` | — | Current authenticated user. |
 
 The callback can return a different constraint for each target collection:
 

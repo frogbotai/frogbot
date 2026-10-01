@@ -49,26 +49,35 @@ Here, `title` remains at the current level while `description` is stored as `seo
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`tabs`** * | Tabs rendered by this field. |
-| **`admin`** | Admin-panel appearance and behavior. |
-| **`custom`** | Custom metadata available to extensions. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | `'tabs'` | Required | Selects the Tabs field. |
+| `tabs` | `Tab[]` | Required | Tabs rendered by this field. See the tab options below. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | — | Accepted, but the Tabs field itself does not display a label. Label each tab instead. |
+| `admin` | `object` | — | Standard [field admin options](/fields/overview#admin-options) except `description`. |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 
 Each tab accepts:
 
-| Option | Description |
-| --- | --- |
-| **`fields`** * | Fields displayed within the tab. |
-| **`name`** | Property name for a named tab. Omit it for a presentational tab. |
-| **`label`** | Tab label. Required when `name` is omitted and otherwise defaults from `name`. |
-| **`description`** | Description displayed above the tab's fields. |
-| **`interfaceName`** | Reusable generated interface name for a named tab. |
-| **`virtual`** | Set to `true` to omit a named tab from storage, or use a relationship path. |
-| **`admin`** | Tab options, including `condition` and `description`. |
-| **`id`** | Stable tab identifier. Unnamed conditional tabs need an identifier; FrogBot generates one when omitted. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fields` | `Field[]` | Required | Fields displayed within the tab. |
+| `name` | `string` | — | Property name for a named tab, which nests its fields under an object. Omit it for a presentational tab. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string)` | Generated from `name` | Tab label. Required when `name` is omitted. |
+| `description` | `string \| Record<string, string> \| (({ i18n, t }) => string)` | — | Deprecated. Use `admin.description`. |
+| `interfaceName` | `string` | — | Name of a reusable top-level generated TypeScript interface. Named tabs only. |
+| `id` | `string` | Generated for conditional tabs | Stable tab identifier. FrogBot generates one from the schema path when `admin.condition` is set. |
+| `localized` | `boolean` | `false` | Stores the tab's value once per configured locale. Named tabs only. |
+| `defaultValue` | `object` or `({ locale, req, user }) => value` | — | Value used when a named tab's value is missing. See [default values](/fields/overview#default-values). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Field hooks for a named tab's value. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | Field access for a named tab's value. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | For a named tab, removes its value from API responses while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | For a named tab in an auth-enabled collection, copies the tab's value into the user's token. A string sets the token key. |
+| `virtual` | `boolean \| string` | `false` | For a named tab, `true` skips database storage; a string reads a value through a relationship path. |
+| `disableDuplicate` | `boolean` | `false` | Leaves a named tab's value out when a document is duplicated. |
+| `admin` | `object` | — | Standard [field admin options](/fields/overview#admin-options), including `condition` and `description`. |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Conditional tabs
 

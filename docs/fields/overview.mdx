@@ -312,11 +312,11 @@ export const Greeting: Field = {
 
 A default-value function receives:
 
-| Property | Description |
-| --- | --- |
-| `user` | The authenticated user, when one is present. |
-| `locale` | The currently selected locale. |
-| `req` | The current `FrogBotRequest`. Server code accesses the instance through `req.frogbot`, which is attached even when the Admin Panel builds a form. |
+| Property | Type | Description |
+| --- | --- | --- |
+| `user` | `User \| null` | The authenticated user, or `null`. |
+| `locale` | `string \| null \| undefined` | The currently selected locale. |
+| `req` | `FrogBotRequest` | The current request. Server code accesses the instance through `req.frogbot`, which is attached even when the Admin Panel builds a form. |
 
 ```ts
 import type { Field } from 'frogbot'
@@ -365,30 +365,30 @@ export const ProductCode: Field = {
 
 A validator returns `true` when the value is valid or an error-message string when it is invalid. It may also return a promise. The context includes:
 
-| Argument | Description |
-| --- | --- |
-| `value` | The field value being validated. |
-| `ctx` | Document, request, operation, and field-path context. |
+| Argument | Type | Description |
+| --- | --- | --- |
+| `value` | `TValue \| null \| undefined` | The field value being validated. |
+| `ctx` | `ValidateOptions` | Document, request, operation, and field-path context, described below. |
 
 #### Validation context
 
 Use the context to compare sibling values, inspect the operation, identify the current Document, or read the authenticated user from `req.user`.
 
-| Property | Description |
-| --- | --- |
-| `blockData` | The nearest parent block's data, or `undefined` outside a block. Typed as `Partial<TData>`. |
-| `collectionSlug` | The Collection slug (`string`), when available. |
-| `data` | The top-level Document data for the operation (`Partial<TData>`); it may omit unchanged fields. |
-| `siblingData` | Data under the same parent as the field (`Partial<TSiblingData>`). |
-| `operation` | The current `create`, `read`, `update`, or `delete` operation, when available. |
-| `overrideAccess` | An optional boolean indicating whether field Access Control is bypassed. |
-| `path` | The runtime path, including array indexes. |
-| `id` | The current Document ID, or `undefined` during create. |
-| `preferences` | The Document's preferences (`DocumentPreferences`). |
-| `previousValue` | The previous field value, when available. |
-| `req` | The current `FrogBotRequest`; on the server, the authenticated user is `req.user` and the instance is `req.frogbot`. |
-| `event` | `onChange` or `submit`, when available, allowing expensive checks to run only on submission. |
-| `required` | The field's optional `required` boolean. |
+| Property | Type | Description |
+| --- | --- | --- |
+| `blockData` | `Partial<TData>` | The nearest parent block's data, or `undefined` outside a block. |
+| `collectionSlug` | `string \| undefined` | The Collection slug, when available. |
+| `data` | `Partial<TData>` | The top-level Document data for the operation; it may omit unchanged fields. |
+| `siblingData` | `Partial<TSiblingData>` | Data under the same parent as the field. |
+| `operation` | `'create' \| 'read' \| 'update' \| 'delete' \| undefined` | The current operation, when available. |
+| `overrideAccess` | `boolean \| undefined` | Whether field Access Control is bypassed. |
+| `path` | `(string \| number)[]` | The runtime path, including array indexes, such as `['items', 0, 'title']`. |
+| `id` | `string \| number \| undefined` | The current Document ID, or `undefined` during create. |
+| `preferences` | `DocumentPreferences` | The Document's saved admin preferences. |
+| `previousValue` | `TValue \| undefined` | The previous field value, when available. |
+| `req` | `FrogBotRequest` | The current request; on the server, the authenticated user is `req.user` and the instance is `req.frogbot`. |
+| `event` | `'onChange' \| 'submit' \| undefined` | Which form event triggered validation, allowing expensive checks to run only on submission. |
+| `required` | `boolean \| undefined` | The field's `required` setting. |
 
 The context also includes the field's own settings as top-level properties, such as `minLength` on a Text field or `max` on a Number field. These settings are typed for that field type and exclude `hooks`, `access`, and `validate`.
 
@@ -500,24 +500,25 @@ export const Summary: Field = {
 }
 ```
 
-Common options include:
+Every data field accepts these options. Each field type's page lists the extra options it adds and any of these it doesn't support.
 
-| Option | Description |
-| --- | --- |
-| `condition` | Shows or hides the field from current form data. |
-| `components` | Replaces the field or one of its component slots. |
-| `description` | Adds editor guidance as text or a translated description function. |
-| `position` | Places supported fields in the main form or sidebar. |
-| `width` | Sets a CSS width, especially within a row. |
-| `style` | Adds inline CSS properties to the field root. |
-| `className` | Adds a CSS class to the field root. |
-| `readOnly` | Prevents editing in the admin panel but does not restrict API writes. |
-| `disabled` | Omits the field from the admin panel. |
-| `hidden` | Hides the input while retaining its submitted value. |
-| `disableBulkEdit` | Excludes the field from bulk editing. |
-| `disableGroupBy` | Excludes the field from list grouping. |
-| `disableListColumn` | Excludes the field from selectable list columns. |
-| `disableListFilter` | Excludes the field from list filters. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `condition` | `(data, siblingData, ctx) => boolean` | — | Shows the field only when it returns `true`. The server also uses it to skip validating hidden fields. See [Conditional logic](#conditional-logic). |
+| `components` | `object` | — | Replaces the field or one of its component slots. See [Custom components](#custom-components). |
+| `description` | `string \| Record<string, string> \| (({ i18n, t }) => string)` | — | Editor guidance shown with the field and written as a comment in generated types. See [Field descriptions](#field-descriptions). |
+| `position` | `'main' \| 'sidebar'` | `'main'` | Places the field in the main form or the edit view's sidebar. |
+| `width` | `string \| number` | Full width | CSS width, especially within a row. |
+| `style` | `CSSProperties` | — | Inline CSS properties added to the field root. |
+| `className` | `string` | — | CSS class added to the field root. |
+| `readOnly` | `boolean` | `false`, or `true` for virtual fields | Prevents editing in the admin panel but does not restrict API writes. |
+| `disabled` | `boolean` | `false` | Omits the field from the admin panel. |
+| `hidden` | `boolean` | `false` | Hides the input while retaining its submitted value. |
+| `disableBulkEdit` | `boolean` | `false` | Excludes the field from bulk editing. |
+| `disableGroupBy` | `boolean` | `false` | Excludes the field from list grouping. |
+| `disableListColumn` | `boolean` | `false` | Excludes the field from selectable list columns. |
+| `disableListFilter` | `boolean` | `false` | Excludes the field from list filters. |
+| `custom` | `Record<string, any>` | — | Metadata available on the server and in the browser. Use the field's top-level `custom` for server-only data. |
 
 ### Field descriptions
 
@@ -546,7 +547,7 @@ export const Articles: CollectionConfig = {
 
 #### Description functions
 
-Description functions run on the server and are useful for simple localized text. They receive `t`, the translation function used by the admin panel.
+Description functions run on the server and are useful for simple localized text. They receive `t`, the translation function used by the admin panel, and the `i18n` object.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -565,9 +566,10 @@ export const Articles: CollectionConfig = {
 }
 ```
 
-| Argument | Description |
-| --- | --- |
-| `t` | Translates a configured key for the current admin locale. |
+| Argument | Type | Description |
+| --- | --- | --- |
+| `t` | `TFunction` | Translates a configured key for the current admin locale. |
+| `i18n` | `I18nClient` | The admin internationalization object, including the current `language`. |
 
 <Info>
   A description function is not reactive to live form changes. Use a client Description component when the content must subscribe to form state.
@@ -577,20 +579,20 @@ export const Articles: CollectionConfig = {
 
 An `admin.condition` function receives the full form data, sibling data, and context about the field's location and current user. Return `true` to display the field.
 
-| Argument | Description |
-| --- | --- |
-| `data` | All data in the Document currently being edited. |
-| `siblingData` | Data belonging to fields under the same parent. |
-| `ctx` | The field location, operation, nearest block, and authenticated user. |
+| Argument | Type | Description |
+| --- | --- | --- |
+| `data` | `Partial<TData>` | All data in the Document currently being edited. |
+| `siblingData` | `Partial<TSiblingData>` | Data belonging to fields under the same parent. |
+| `ctx` | `object` | The field location, operation, nearest block, and authenticated user, described below. |
 
 The context object contains:
 
-| Property | Description |
-| --- | --- |
-| `blockData` | Data for the nearest parent block, or `undefined` outside a block. |
-| `operation` | The operation the field is currently participating in. |
-| `path` | The full runtime field path, including array indexes. |
-| `user` | The authenticated user, when present. |
+| Property | Type | Description |
+| --- | --- | --- |
+| `blockData` | `Partial<TData>` | Data for the nearest parent block, or `undefined` outside a block. |
+| `operation` | `'create' \| 'read' \| 'update' \| 'delete'` | The operation the field is currently participating in. |
+| `path` | `(string \| number)[]` | The full runtime field path, including array indexes. |
+| `user` | `User \| null` | The authenticated user, or `null`. |
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -639,17 +641,19 @@ export const Color: Field = {
 
 The following component options are available:
 
-| Component | Description |
-| --- | --- |
-| `Field` | The form control rendered in the Edit view. [Details](#field). |
-| `Cell` | The value rendered in a List view table. [Details](#cell). |
-| `Filter` | The control rendered in the List view's filter menu. [Details](#filter). |
-| `Label` | Replaces the field label. [Details](#label). |
-| `Description` | Replaces the field description. [Details](#description). |
-| `Error` | Replaces the field validation error. [Details](#error). |
-| `Diff` | Replaces the field's Version Diff rendering. [Details](#diff). |
-| `beforeInput` | Adds components immediately before the input. [Details](#afterinput-and-beforeinput). |
-| `afterInput` | Adds components immediately after the input. [Details](#afterinput-and-beforeinput). |
+| Component | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Field` | `FrogBotComponent` | Built-in | The form control rendered in the Edit view. [Details](#field). |
+| `Cell` | `FrogBotComponent` | Built-in | The value rendered in a List view table. [Details](#cell). |
+| `Filter` | `FrogBotComponent` | Built-in | The control rendered in the List view's filter menu. [Details](#filter). |
+| `Label` | `FrogBotComponent` | Built-in | Replaces the field label. [Details](#label). |
+| `Description` | `FrogBotComponent` | Built-in | Replaces the field description. [Details](#description). |
+| `Error` | `FrogBotComponent` | Built-in | Replaces the field validation error. [Details](#error). |
+| `Diff` | `FrogBotComponent` | Built-in | Replaces the field's Version Diff rendering. [Details](#diff). |
+| `beforeInput` | `FrogBotComponent[]` | — | Adds components immediately before the input. [Details](#afterinput-and-beforeinput). |
+| `afterInput` | `FrogBotComponent[]` | — | Adds components immediately after the input. [Details](#afterinput-and-beforeinput). |
+
+Layout fields support a subset: Row fields, Tabs fields, and individual tabs have only `Field`, `Cell`, `Filter`, `Description`, and `Diff`; Group and Collapsible fields have no `Error` slot; and UI fields are described on the [UI field](/fields/ui#admin-options) page. Array fields add `RowLabel`.
 
 ### Field
 
@@ -675,33 +679,41 @@ export const Color: Field = {
 
 #### Default props
 
-Client and server field components share these concepts. Exact props vary by field family, so use that family's exported prop or component type.
+Exact props vary by field family, so type your component with that family's exported prop or component type. Client field components receive:
 
-| Property | Description |
-| --- | --- |
-| `docPreferences` | Saved preferences for the current Document. |
-| `field` | The serializable client field in a client component and the authored field configuration in a server component. |
-| `locale` | The field's current locale. |
-| `readOnly` | Whether the form control is read-only. |
-| `user` | The authenticated user, when present. |
-| `validate` | The field validation function. |
-| `path` | The dynamic runtime path, such as `settings.items.0.title`. |
-| `schemaPath` | The static configuration path, such as `posts.settings.items.title`. |
-| `indexPath` | The hyphenated position within the nearest named ancestor, such as `0-0`. |
+| Property | Type | Description |
+| --- | --- | --- |
+| `field` | Client field config | The serializable field configuration. Functions such as hooks and access are removed. |
+| `path` | `string` | The dynamic runtime path, such as `settings.items.0.title`. |
+| `schemaPath` | `string \| undefined` | The static configuration path, without array indexes. Defaults to the field name. |
+| `readOnly` | `boolean \| undefined` | Whether the form control is read-only. |
+| `permissions` | `SanitizedFieldPermissions \| undefined` | The current user's permissions for this field. |
+| `validate` | Field validator | The field's validation function, for families that validate a value. |
+| `forceRender` | `boolean \| undefined` | Renders the field immediately instead of waiting until it scrolls into view. |
+| `renderedBlocks` | `RenderedField[] \| undefined` | Server-rendered block rows, used by Blocks fields. |
 
-Server field components additionally receive:
+Some families add props, such as `inputRef` and `onKeyDown` on Text fields.
 
-| Property | Description |
-| --- | --- |
-| `clientField` | The serializable client field configuration. |
-| `field` | The authored field configuration. |
-| `data` | The current Document data. |
-| `i18n` | The admin internationalization object. |
-| `permissions` | Field permissions for the authenticated user. |
-| `req` | The framework-issued `FrogBotRequest`, including `req.frogbot`. |
-| `siblingData` | Data belonging to sibling fields. |
-| `user` | The authenticated user, when present. |
-| `value` | The field value at render time. |
+Server field components receive the same `path`, `schemaPath`, `readOnly`, `permissions`, `forceRender`, and `renderedBlocks` props, plus:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `field` | `Field` | The authored field configuration, including functions. |
+| `clientField` | Client field config | The serializable client field configuration, ready to pass to a client component. |
+| `collectionSlug` | `string` | The Collection being edited. |
+| `data` | `Data` | The current Document data. |
+| `siblingData` | `Data` | Data belonging to sibling fields. |
+| `value` | `unknown` | The field value at render time. |
+| `id` | `string \| number \| undefined` | The current Document ID, or `undefined` during create. |
+| `operation` | `'create' \| 'read' \| 'update' \| 'delete'` | The current operation. |
+| `formState` | `FormState` | The complete form state. |
+| `preferences` | `DocumentPreferences` | The Document's saved admin preferences. |
+| `i18n` | `I18nClient` | The admin internationalization object. |
+| `req` | `FrogBotRequest` | The framework-issued request, including `req.frogbot` and `req.user`. |
+| `user` | `User` | The authenticated user with field read access applied. Use `req.user` for access checks. |
+| `customComponents` | `object \| undefined` | The rendered `AfterInput`, `BeforeInput`, `Description`, `Error`, `Field`, and `Label` slots. |
+| `fieldSchemaMap` | `FieldSchemaMap` | Map of every field configuration in the form, keyed by schema path. |
+| `clientFieldSchemaMap` | `ClientFieldSchemaMap` | The client-safe version of `fieldSchemaMap`. |
 
 FrogBot's server prop types expose `req.frogbot` and do not expose a separate top-level framework instance.
 
@@ -799,22 +811,24 @@ export function PriceCell({ cellData, rowData }: DefaultCellComponentProps) {
 
 Cell props include:
 
-| Property | Description |
-| --- | --- |
-| `cellData` | The value for this field and row. |
-| `collectionSlug` | The collection being listed. |
-| `field` | The field configuration. |
-| `rowData` | All data for the current row. |
-| `className` | An optional CSS class. |
-| `columnIndex` | The optional column index. |
-| `customCellProps` | Additional configured props. |
-| `link` | Whether the cell should be rendered as a link. |
-| `linkURL` | The optional link destination. |
-| `onClick` | An optional click handler. |
-| `viewType` | The current view type. |
+| Property | Type | Description |
+| --- | --- | --- |
+| `cellData` | `any` | The value for this field and row. |
+| `collectionSlug` | `string` | The collection being listed. |
+| `field` | Client field config | The serializable field configuration. Server cells receive the authored `Field` instead. |
+| `rowData` | `RowData` | All data for the current row. |
+| `className` | `string \| undefined` | An optional CSS class. |
+| `columnIndex` | `number \| undefined` | The column's position in the table. |
+| `customCellProps` | `Record<string, any> \| undefined` | Additional props passed by the table. |
+| `link` | `boolean \| undefined` | Whether the cell should be rendered as a link. |
+| `linkURL` | `string \| undefined` | The link destination. |
+| `onClick` | `({ cellData, collectionSlug, rowData }) => void` | An optional click handler. |
+| `viewType` | `ViewTypes \| undefined` | The current view type. |
+
+Server cells additionally receive `collectionConfig`, the sanitized collection configuration, and `i18n`, the admin internationalization object.
 
 <Info>
-  Cell components are optimized for table rendering. They do not receive Field component props such as `docPreferences`, `validate`, or `path`, and they do not receive a request.
+  Cell components are optimized for table rendering. They do not receive Field component props such as `preferences`, `validate`, or `path`, and they do not receive a request.
 </Info>
 
 ### Filter
@@ -835,16 +849,7 @@ export const Status: Field = {
 }
 ```
 
-Filter props include:
-
-| Property | Description |
-| --- | --- |
-| `disabled` | Whether the filter control is disabled. |
-| `onChange` | Updates the filter value. |
-| `operator` | The comparison operator being applied. |
-| `value` | The current filter value. |
-
-Filter components are client-side controls. Use the field family's exported client type for its complete prop contract.
+A Filter component must be a client component. FrogBot renders it without filter-specific props: it receives only the `clientProps` set in its component configuration. Custom filters apply to top-level fields only.
 
 ### Label
 
