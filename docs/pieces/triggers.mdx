@@ -35,6 +35,14 @@ export const ops: AgentConfig<typeof linear.triggers.issueCreated> = {
 
 Add `ops` to your configuration's `agents` array. Use `AgentConfig<typeof piece.triggers.ref>` for contextual inference from the trigger's input and output schemas. Plain `AgentConfig` leaves the handler's `event` as `unknown`. The handler receives the emitted event's `data`, the agent, and a request with `{ piece, trigger, agent }` in `req.context.trigger`; `piece` is the instance slug.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `trigger` | `PieceTriggerReference` | Required | A trigger from a piece instance, such as `linear.triggers.issueCreated`. Its instance is registered from this mount. |
+| `input` | `z.input<trigger.input>` | Required when the trigger's input schema has required fields | Subscription input, validated against the trigger's schema. |
+| `handler` | `({ event, agent, req }) => void \| Promise<void>` | Required | Runs for each delivered event. `event` is the parsed event data, `agent` is the owning agent instance, and `req` carries `req.context.trigger`. |
+
+Piece trigger entries have no `type`; schedule triggers use `type: 'schedule'`. See [Schedule runs](/agents/overview#schedule-runs).
+
 Instance slugs default to the piece slug. Give distinct instances unique slugs when they receive webhooks, including channel mounts. You can share one instance across agents.
 
 ## Routes and lifecycle
@@ -83,5 +91,14 @@ await frogbot.triggers.disable(subscription.id)
 | `list()` | Returns all persisted subscription entries, including errors and pending cleanup. |
 
 Subscription entries store raw input as `{ value: input }`, or `{}` when input was omitted. Input must be JSON data; FrogBot reapplies the trigger schema before each callback so schema transforms are preserved.
+
+`enable` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `agent` | `string` | Required | Slug of the agent that mounts the trigger. |
+| `instance` | `string` | Required | Slug of the piece instance. |
+| `trigger` | `string` | Required | Trigger name on that instance, such as `issueCreated`. |
+| `input` | `unknown` | The mount's `input` | Subscription input, validated against the trigger's schema. |
 
 Runtime changes do not edit your configuration. The next boot restores declarative input and re-enables subscriptions whose mounts remain configured.

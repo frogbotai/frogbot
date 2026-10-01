@@ -28,6 +28,7 @@ An enabled chat configuration returns the resolved collection slugs and the agen
     "messagesSlug": "turns",
     "assetsSlug": "frogbot-chat-assets"
   },
+  "files": { "slug": "files" },
   "agents": [
     {
       "slug": "support",
@@ -47,9 +48,38 @@ When chat persistence is disabled, `chat` contains only `enabled`.
 {
   "ai": { "transcribe": false },
   "chat": { "enabled": false },
+  "files": { "slug": "files" },
   "agents": []
 }
 ```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ai.transcribe` | `{ model: string } \| false` | The first catalog transcription model from a configured provider, or `false` when there is none. The chat composer shows its microphone only when this is set. |
+| `chat.enabled` | `boolean` | Whether chat persistence is enabled. |
+| `chat.chatsSlug` | `string` | Slug of the chats collection. Present when `enabled` is `true`. |
+| `chat.messagesSlug` | `string` | Slug of the messages collection. Present when `enabled` is `true`. |
+| `chat.assetsSlug` | `string` | Slug of the chat assets collection that composer uploads go to. Present when `enabled` is `true`. |
+| `files.slug` | `string` | Slug of the [files collection](/upload/files). |
+| `agents[].slug` | `string` | Slug of an agent the caller may use. |
+| `agents[].profile` | `{ name?: string; avatar?: string; description?: string }` | The agent's configured [profile](/agents/overview#profile-options), when it has one. |
+
+## Agent manifest
+
+`GET /api/agents` returns the agents the caller may use with their model choices. `ChatProvider` loads it alongside this manifest, and `AgentSelector` and `ModelSelector` read from it.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `defaultAgent` | `string` | Slug of the first listed agent, or `''` when none is listed. |
+| `agents[].slug` | `string` | Agent slug. |
+| `agents[].label` | `string` | The profile `name`, or the slug. |
+| `agents[].source` | `'config' \| 'collection'` | Where the agent is defined. Agents from `buildConfig` report `'config'`. |
+| `agents[].defaultModel` | `string` | The model a request without `model` uses for this caller. |
+| `agents[].models` | `string[]` | Models this caller may select, after the [user model policy](/ai/overview#user-model-and-budget-policy) is applied. |
+| `agents[].names` | `Record<string, string>` | Display names for models that have one. Fall back to the ID for the rest. |
+| `agents[].reasoning` | `Record<string, { key: string; label: string }[]>` | Reasoning options per model, for models that have any. |
+
+Agents the caller can't access, and agents with no model the caller may use, are left out.
 
 ## Access behavior
 

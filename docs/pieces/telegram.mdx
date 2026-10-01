@@ -30,12 +30,15 @@ export const support: AgentConfig = {
 }
 ```
 
-| Option | Purpose |
-| --- | --- |
-| `auth.botToken` | The token BotFather gives you for the bot |
-| `webhookSecret` | Required for channels. Telegram sends it with every update, and FrogBot rejects updates without it. Letters, numbers, `_`, and `-` only |
-| `botUsername` | The bot's username without `@`, used to recognize mentions in groups |
-| `allowedUserIds` | Optional numeric Telegram user ids. Updates from anyone else are dropped before they reach FrogBot |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'telegramBot'` | Instance slug. It names the webhook route, `/api/webhooks/<slug>`. |
+| `auth.botToken` | `string` | Required with `auth` | The token BotFather gives you for the bot. Channels require factory `auth`. |
+| `webhookSecret` | `string` | — | Required for channels. Telegram sends it with every update, and FrogBot rejects updates without it. Up to 256 letters, numbers, `_`, and `-`. |
+| `botUsername` | `string` | — | The bot's username without `@`, used to recognize mentions in groups. |
+| `allowedUserIds` | `string[]` | Everyone | Numeric Telegram user IDs. Updates from anyone else are dropped before they reach FrogBot. |
+
+Telegram has no OAuth recipe, so the factory does not accept `oauth`. See [factory options](/pieces/overview#factory-options) for `slug` and `auth`.
 
 The instance slug defaults to `telegramBot`. Give each instance its own slug when you connect more than one bot.
 

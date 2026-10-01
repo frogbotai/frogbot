@@ -9,14 +9,15 @@ Connections let each user supply credentials for a piece. Configure the allowed 
 
 ## Configure linking
 
-The piece factory accepts your credentials and OAuth app. A connection entry controls what users can link:
+The piece factory accepts your developer credential as `auth` and your OAuth app as `oauth`; see [factory options](/pieces/overview#factory-options). Factory `auth` is used when the caller has no connection for the piece, and factory `oauth` is available as `instance.oauth` for reuse. A connection entry controls what users can link:
 
-| Setting | Purpose |
-| --- | --- |
-| Factory `auth` | Your developer credential, used when the caller has no connection for this piece. |
-| Factory `oauth` | Your OAuth app's `clientId`, `clientSecret`, and optional `scopes`. Available as `instance.oauth` for reuse. |
-| Entry `secret: true` | Allow users to enter a credential matching the piece's static `auth` schema. |
-| Entry `oauth: true` | Allow users to authorize through the piece's OAuth recipe and your app. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `piece` | `PieceInstance` | Required | The piece instance users link accounts for. Each piece can appear in only one entry. |
+| `secret` | `true` | — | Allow users to enter a credential matching the piece's static `auth` schema. Only pieces with an `auth` schema accept it. |
+| `oauth` | `true` | — | Allow users to authorize through the piece's OAuth recipe and your app. Only instances created with factory `oauth` accept it. |
+
+Set `secret`, `oauth`, or both.
 
 ```ts
 import { createGmail } from '@frogbotai/piece-gmail'

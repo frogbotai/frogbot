@@ -24,21 +24,12 @@ const stream = frogbot.exportTrainingData({
 await stream.pipeTo(destination)
 ```
 
-<ParamField path="where" type="Where">
-  Filters which chats are exported. Omit it to export every readable chat.
-</ParamField>
-
-<ParamField path="pageSize" type="number" default="100">
-  How many chats and messages are read per query.
-</ParamField>
-
-<ParamField path="req" type="FrogBotRequest">
-  Runs the export as the request's user, so collection access applies.
-</ParamField>
-
-<ParamField path="overrideAccess" type="boolean" default="false">
-  Bypasses access control. Required for unauthenticated server-side exports.
-</ParamField>
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `where` | `Where` | — | Filters which chats are exported. Omit it to export every readable chat. |
+| `pageSize` | `number` | `100` | How many chats and messages are read per query. Must be a positive integer. |
+| `req` | `FrogBotRequest` | — | Runs the export as the request's user, so collection access applies. |
+| `overrideAccess` | `boolean` | `false` | Bypasses access control. Required for unauthenticated server-side exports. |
 
 Access control is enforced by default. If the caller cannot read the chat or message collections, the export fails instead of quietly returning fewer conversations.
 
@@ -51,6 +42,14 @@ frogbot export:training-data --output training.jsonl
 frogbot export:training-data --where '{"agent":{"equals":"support"}}'
 frogbot export:training-data --page-size 500 > training.jsonl
 ```
+
+| Flag | Default | Behavior |
+| --- | --- | --- |
+| `--output <path>` | stdout | Writes the JSONL to this file instead of stdout. |
+| `--where <json>` | Every chat | JSON `where` filter for the chats to export. Invalid JSON exits with an error. |
+| `--page-size <number>` | `100` | Chats and messages read per query. Must be a positive integer. |
+
+Value flags accept `--flag value` and `--flag=value`. Unknown flags or a flag without a value exit with code `1`. The CLI always exports with `overrideAccess: true`.
 
 ## What the export contains
 

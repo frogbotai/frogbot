@@ -55,6 +55,15 @@ export default buildConfig({
 
 For Exa, replace the import and factory with `createExa`, and read `EXA_API_KEY`.
 
+`createBraveSearch` and `createExa` accept the same options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'brave-search'` or `'exa'` | Instance slug. It prefixes tool slugs, such as `brave-search_searchWeb`. |
+| `auth.apiKey` | `string` | Required with `auth` | The provider API key. Without factory `auth`, each caller needs a `secret: true` [connection](/connections/overview). |
+
+Neither piece has an OAuth recipe, so neither factory accepts `oauth`. See [factory options](/pieces/overview#factory-options).
+
 ## Select opt-in Exa actions
 
 Select only the Exa actions the agent needs.

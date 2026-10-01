@@ -36,13 +36,14 @@ Adding it to the root `tools` list offers it to every agent. Questions and answe
 
 The model sends one or more questions in a single call.
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `questions[].header` | `string` | Short label, at most 30 characters, unique within the call |
-| `questions[].question` | `string` | The full question |
-| `questions[].options` | `{ label, description? }[]` | At least one option; labels are unique within a question |
-| `questions[].multiple` | `boolean` | Allow more than one selection |
-| `questions[].custom` | `boolean` | Allow a typed answer; defaults to `true` |
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `questions` | `object[]` | Required | At least one question. |
+| `questions[].header` | `string` | Required | Short label, 1 to 30 characters, unique within the call. |
+| `questions[].question` | `string` | Required | The full question. |
+| `questions[].options` | `{ label: string; description?: string }[]` | Required | At least one option. Labels are non-empty and unique within a question; `description` explains what choosing the option means. |
+| `questions[].multiple` | `boolean` | `false` | Allow more than one selection. |
+| `questions[].custom` | `boolean` | `true` | Allow a typed answer. |
 
 The answer has one entry per question, in the same order.
 
@@ -195,11 +196,19 @@ export const pickFile: ClientTool<typeof pickFileInput, typeof pickFileOutput> =
 }
 ```
 
-| Option | Purpose |
-| --- | --- |
-| `client.kind` | Groups client tools by the kind of answer they need; interactive chat entry points offer every kind |
-| `client.access` | Optional extra check for who may settle a call; return `false` to reject |
-| `client.validate` | Optional check against the stored input; return `true` or an error message |
+A client tool takes the `slug`, `description`, `inputSchema`, and `component` [tool options](/agents/overview#tool-options), plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `outputSchema` | `z.ZodType` | Required | Schema the answer must match. FrogBot validates every settled output against it. |
+| `client` | `ClientToolConfig` | Required | How the call is answered. See the next table. |
+| `execute` | `never` | — | Not allowed: the client supplies the result. |
+
+| `client` option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kind` | `string` | Required | Groups client tools by the kind of answer they need. Must be non-empty. Interactive chat entry points offer every kind; other entry points withhold the tool. |
+| `access` | `({ req, call }) => boolean \| Promise<boolean>` | Anyone who can continue the chat | Extra check for who may settle a call. Return `false` to reject with `403`. `call` is the pending call, with `toolCallId`, `toolName`, `input`, `messageId`, `chatId`, `agentSlug`, and `createdAt`. |
+| `validate` | `({ input, output }) => true \| string` | — | Check of the parsed output against the stored input. Return `true` to accept or an error message to reject with `400` `invalid-output`. |
 
 Render the call with a [tool renderer](/chat/ui-registries#answer-client-tools). The renderer receives `addToolOutput` and `dismiss` while the call is waiting.
 

@@ -38,6 +38,41 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 />
 ```
 
+## Chat props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `agent` | `string` | Required | Slug of the agent to chat with. Changing it while no chat is selected starts a new conversation. |
+| `model` | `string` | The agent's default | Model ID sent with each message. Must be one of the agent's allowed models. See [Composer selectors](#composer-selectors). |
+| `reasoning` | `string` | `Default` level | Reasoning option key sent with each message. |
+| `initialMessages` | `UIMessage[]` | `[]` | Messages to show before history loads. Stored history replaces them once the active chat loads. |
+| `initialChat` | `ChatDocument` | — | The active chat's document, when your server already has it. Used only when its `id` matches the active chat. See [Channel conversations](#channel-conversations). |
+| `chatId` | `string \| number` | — | Controlled active chat ID. Passing the prop, even as `undefined`, makes selection controlled; `undefined` shows a new conversation. |
+| `defaultChatId` | `string \| number` | — | Initial chat ID when selection is uncontrolled. |
+| `onChatIdChange` | `(chatId: string \| number \| undefined) => void` | — | Called when the active chat changes, including when a first message creates a chat. |
+| `throttle` | `number` | No throttling | Milliseconds between UI updates while a reply streams. |
+| `emptyContent` | `ReactNode` | The greeting | Content shown when the conversation has no messages. Replaces `greeting`. |
+| `disabledContent` | `ReactNode` | Nothing | Shown when chat persistence is disabled on the server. |
+| `greeting` | `ComponentType<GreetingProps> \| false` | `Greeting` | Component for the empty state. It receives `avatar`, `logo`, `name`, and `userName`. `false` shows nothing. |
+| `logo` | `ReactNode` | — | Passed to the greeting; shown when the agent has no avatar. |
+| `userName` | `string` | — | Passed to the greeting, which appends it to the time-of-day greeting. |
+| `loadingContent` | `ReactNode` | Nothing | Shown while `ChatProvider` loads the manifest. |
+| `headerSlot` | `ReactNode` | — | Content above the messages. |
+| `composerStartSlot` | `ReactNode` | — | Controls at the start of the composer toolbar, such as selectors. |
+| `composerEndSlot` | `ReactNode` | — | Controls at the end of the composer toolbar, before the microphone and send button. |
+| `submitContent` | `ReactNode` | `'Send'` | Accessible label for the send button. |
+| `stopContent` | `ReactNode` | `'Stop'` | Accessible label for the stop button. |
+| `fallbackTitle` | `string` | `'Untitled'` | Sidebar title for the active chat before it has a title and before its first message has text. |
+| `errorContent` | `((error: Error) => ReactNode) \| false` | An inline alert with `error.message` | Renders errors above the composer, and a manifest failure in place of the chat. `false` hides inline errors. |
+| `onError` | `(error: Error) => void` | — | Called for reply and chat-action failures. Conflicts that `Chat` resolves itself are not reported. |
+| `abortedContent` | `ReactNode` | Nothing | Shown above the composer after the user stops a reply. |
+| `warningContent` | `ReactNode` | — | Shown above the composer whenever it is set. |
+| `renderSidebar` | `(context: ChatSidebarContext) => ReactNode` | No sidebar | Renders a history surface. It receives `chats`, `activeChatId`, `selectChat`, and `actions(chat)`, which returns `rename(title)` and `delete()`. |
+| `renderMessage` | `(message: UIMessage) => ReactNode` | FrogBot's message rendering | Replaces how each message renders, including its actions, avatar, and editor. |
+| `userMessageActions` | `ComponentType<MessageActionsSlotProps> \| false` | Copy and Edit | Actions for user messages. See [Message actions](#message-actions). |
+| `assistantMessageActions` | `ComponentType<MessageActionsSlotProps> \| false` | Copy and Branch | Actions for assistant messages. |
+| `panel` | `ReactNode` | — | A side panel rendered next to the conversation. |
+
 ## Errors
 
 When a reply or a chat action fails, `Chat` shows the error above the composer. Provider failures read as actionable messages, such as `The AI provider rejected the API key. Check OPENAI_API_KEY in .env.` for a rejected key, and never include the provider's raw response. The full error is still logged on the server.
@@ -73,7 +108,59 @@ Pass the SDK and configured collection slugs to add the same actions to a portab
 />
 ```
 
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `chats` | `ChatDocument[]` | Required | Chats to list, in order. Each row shows the chat's `title`. |
+| `activeChatId` | `string \| number` | — | Marks the matching row as current. |
+| `onChatChange` | `(chatId: string \| number) => void` | Required | Called with a row's chat ID when it is clicked. |
+| `fallbackTitle` | `ReactNode` | Required | Shown for chats without a title. |
+| `renderActions` | `(chat: ChatDocument) => ReactNode` | — | Extra content rendered after each row's button. |
+| `className` | `string` | — | Added to the `nav` element. |
+| `sdk` | `FrogBotSDK` | — | With `chatsSlug` and `messagesSlug`, adds Rename and Delete row actions. |
+| `chatsSlug` | `string` | — | Chats collection slug from the manifest. |
+| `messagesSlug` | `string` | — | Messages collection slug from the manifest. Deleting a chat also deletes its messages. |
+| `onNewChat` | `() => void` | — | Called after the active chat is deleted. |
+
 `ChatRowActions`, `ChatRowMenuItems`, `ChatHistoryActions`, and `RenameChatDialog` are independently exported from `@frogbotai/ui/chat` for custom row composition. `suggestChatTitle({ sdk, chatId })` calls the authenticated `POST /frogbot/chat/suggest-title` endpoint and resolves to the suggestion or `undefined` when generation produces no title.
+
+`ChatHistoryActions` wraps one row with the menu, rename dialog, and delete confirmation:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `ReactElement` | Required | The row element to wrap. |
+| `chat` | `ChatDocument` | Required | The chat the actions apply to. |
+| `sdk` | `FrogBotSDK` | Required | Client used for rename and delete requests. |
+| `chatsSlug` | `string` | Required | Chats collection slug. |
+| `messagesSlug` | `string` | Required | Messages collection slug. |
+| `onDeleted` | `(chat: ChatDocument) => void` | — | Called after the chat is deleted. |
+
+`ChatRowActions` adds the hover menu button and right-click menu to a row without any requests of its own:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `ReactElement<{ children?: ReactNode; className?: string }>` | Required | The row element. Its `className` is kept. |
+| `onRename` | `() => void` | Required | Called when Rename is selected. |
+| `onDelete` | `() => void` | Required | Called when Delete is selected. |
+
+`ChatRowMenuItems` renders the Rename and Delete items for a menu you build yourself:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `onRename` | `() => void` | Required | Called when Rename is selected. |
+| `onDelete` | `() => void` | Required | Called when Delete is selected. |
+| `context` | `boolean` | `false` | Render context-menu items instead of dropdown-menu items. |
+
+`RenameChatDialog` requests a title suggestion each time it opens:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `sdk` | `FrogBotSDK` | Required | Client used for the suggestion and rename requests. |
+| `chatsSlug` | `string` | Required | Chats collection slug. |
+| `chatId` | `string \| number` | Required | Chat to rename. |
+| `title` | `string` | Required | Current title, selected when the dialog opens. |
+| `open` | `boolean` | Required | Whether the dialog is open. |
+| `onOpenChange` | `(open: boolean) => void` | Required | Called to open or close the dialog, including after a successful save. |
+| `onRenamed` | `(title: string) => void` | — | Called with the saved title. |
 
 ## Message actions
 
@@ -108,6 +195,14 @@ function SupportMessageActions({ defaultActions, message, pending }: MessageActi
 />
 ```
 
+A message actions component receives:
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `defaultActions` | `ReactNode` | FrogBot's controls and timestamp for this message, or `null` while a reply is streaming. |
+| `message` | `UIMessage` | The message being rendered. |
+| `pending` | `boolean` | `true` while a reply is being sent or streamed. |
+
 The built-in controls are also independently importable for custom compositions:
 
 ```tsx
@@ -123,7 +218,24 @@ import {
 
 `Chat` reads the active chat's document, from the `initialChat` prop when it matches the active chat and otherwise with a request. Pass `initialChat` when your server already has the document, so a channel conversation renders read-only from the first paint. When the chat belongs to a channel, `Chat` shows the conversation [read-only](/chat/questions#channel-conversations): `ChannelConversationNotice` replaces the composer, user messages have no Edit action, and tool renderers receive [`isReadonly`](/chat/ui-registries#read-only-conversations). Branch stays on the notice and on assistant messages.
 
-Custom shells can build the same view from `useChatDocument({ sdk, chatsSlug, chatId })`, which returns `{ chat, error, refresh }` with the chat's `channel` and `channelLabel`, and from `ChannelConversationNotice`, which takes `channelLabel`, `onBranch`, and `branching`.
+Custom shells can build the same view from `useChatDocument` and `ChannelConversationNotice`. `useChatDocument` returns `{ chat, error, refresh }`, where `chat` includes the chat's `channel` and `channelLabel`. It accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `sdk` | `FrogBotSDK` | Required | Client used to read the chat. |
+| `chatsSlug` | `string` | Required | Chats collection slug. |
+| `chatId` | `string \| number` | — | Chat to read. Without it, `chat` is `undefined`. |
+| `initialData` | `ChatDocument` | — | Used instead of a request when its `id` matches `chatId`. |
+| `revalidate` | `boolean` | `false` | Reload the chat when the window regains focus or another component renames or deletes a chat. |
+
+`ChannelConversationNotice` takes:
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `channelLabel` | `string` | Required | Channel name in the notice, such as `Slack`. |
+| `onBranch` | `() => void` | — | Shows a **Branch** button that calls it. Without it, the button is hidden. |
+| `branching` | `boolean` | `false` | Disables the **Branch** button while a branch is being created. |
+| `className` | `string` | — | Added to the notice element. |
 
 ## Composer selectors
 
@@ -151,19 +263,24 @@ export function AgentChat() {
 }
 ```
 
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `selectedAgent` | `string` | Required | Slug of the selected agent. The trigger shows its profile name, or the slug. |
+| `onAgentChange` | `(slug: string) => void` | Required | Called with the slug of the chosen agent. |
+
 `ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. The reasoning slider shows the active level's name above a track with one dot per level. It is fully controlled and renders nothing when `models` is empty.
 
 Each row starts with its provider's logo. Logos ship with FrogBot, so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
 
 A search field above the list filters by name, ID, and provider, ignoring case, spaces, and punctuation. Typing while a row has focus goes straight to the field, Down moves from the field to the first result, and Enter in the field chooses the first result. Escape clears the search first; with an empty search it closes the selector.
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `models` | `ModelSelectorModel[]` | `{ id, name, provider?, reasoning? }` for each model the user may choose. `provider` is the provider slug, such as `bedrock`; it groups the list and picks the row's logo. `reasoning` lists `{ key, label }` options; omit it for models without levels to hide the slider. |
-| `selectedModelId` | `string` | Active model ID. |
-| `selectedReasoning` | `string \| undefined` | Active reasoning key, or `undefined` for `Default`. |
-| `onModelChange` | `(id: string) => void` | Called with the chosen model ID. |
-| `onReasoningChange` | `(key: string \| undefined) => void` | Called with the chosen key, or `undefined` when the slider returns to `Default`. |
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `models` | `ModelSelectorModel[]` | `[]` | `{ id, name, provider?, reasoning? }` for each model the user may choose. `provider` is the provider slug, such as `bedrock`; it groups the list and picks the row's logo. `reasoning` lists `{ key, label }` options; omit it for models without levels to hide the slider. The selector renders nothing when the list is empty. |
+| `selectedModelId` | `string` | Required | Active model ID. |
+| `selectedReasoning` | `string` | `Default` level | Active reasoning key, or `undefined` for `Default`. |
+| `onModelChange` | `(id: string) => void` | Required | Called with the chosen model ID. |
+| `onReasoningChange` | `(key: string \| undefined) => void` | Required | Called with the chosen key, or `undefined` when the slider returns to `Default`. |
 
 Pass the same choice to `<Chat>` through `model` and `reasoning`; each message is sent with them. The agent manifest lists allowed models, their display names in `names`, and each model's reasoning options, so a selector fed from it never offers a choice the server rejects. `names` holds catalog names such as `Nova Micro (US)` and the `name` of custom provider models; a model FrogBot has no name for is left out, so fall back to its ID. When the model changes, reset or restore the level yourself: a key from one model does not apply to another.
 
@@ -221,6 +338,12 @@ export function ModelChat() {
 
 `ToolSelector` accepts a caller-supplied tool list and controlled multi-select state. Place it in `composerStartSlot` or `composerEndSlot`. It renders nothing when its list is empty.
 
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `tools` | `ToolSelectorTool[]` | `[]` | `{ id, name, icon? }` for each tool to list. |
+| `selected` | `string[]` | Required | IDs of the selected tools. |
+| `onToolsChange` | `(ids: string[]) => void` | Required | Called with the new list of selected IDs. |
+
 <Warning>
   Tool selections are currently client-side only. They do not change tool availability or add fields to chat requests.
 </Warning>
@@ -247,6 +370,15 @@ import { PageContextButton } from '@frogbotai/ui/chat'
   }
 />
 ```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `getOpenTabs` | `() => Promise<{ success: boolean; tabs?: PageContextTab[] }>` | Required | Called when the button is clicked. The picker opens only when `success` is `true` and `tabs` is set. Each tab has `id`, `title`, `url`, and `active`. |
+| `addPageContext` | `(tabId: number) => Promise<void>` | Required | Called when an unselected tab is toggled on. |
+| `removePageContext` | `(tabId: number) => void` | Required | Called when a selected tab is toggled off. |
+| `selectedTabIds` | `Set<number>` | Required | IDs of the tabs currently attached. |
+| `isLoading` | `boolean` | Required | Disables the button while `true`. |
+| `isCompact` | `boolean` | `false` | Uses the compact trigger icon. |
 
 The host remains responsible for reading tab content and creating `data-page-context` parts. The button only lists and toggles tab IDs.
 

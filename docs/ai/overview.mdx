@@ -98,6 +98,42 @@ Invoke that model as `internal/legal-summary-v2`. The chat model picker labels i
 
 A provider's `models` list decides what the app can use, while an [agent's `model.options`](/agents/overview#define-one) decides what users can pick for that agent.
 
+### AI options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `providers` | `Record<string, true \| BuiltInProviderEntry \| BedrockProviderEntry \| CustomProviderEntry>` | Required | Providers keyed by name. At least one entry must be set. A built-in key takes `true` or [built-in provider options](#built-in-provider-options), `bedrock` takes `true` or [Bedrock provider options](#bedrock-provider-options), and any other key needs [custom provider options](#custom-provider-options). |
+| `routers` | `Record<string, RouterConfig>` | `{}` | Aliases from a slug to one model ID. See [Router options](#router-options). |
+| `defaultRouter` | `string` | — | Must name a key in `routers`, or startup fails. FrogBot validates it but does not use it to pick a model: every operation still requires `model`. |
+| `defaultModel` | `ModelId` | — | Model or router slug for agents that set no `model` and no `model.default`. Must resolve to a configured provider. |
+| `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must resolve to a configured provider. See [Choose a utility model](#choose-a-utility-model). |
+| `hooks` | `AIHooks` | No hooks | Lifecycle hooks for every operation. See [Observe calls](#observe-calls). |
+| `access` | `AIAccessConfig` | Every category allows signed-in users | Access rules per operation category. See [Control access](#control-access). |
+| `deploymentId` | `string` | `FROGBOT_DEPLOYMENT_ID`, then `'local'` | Added to every AI span as the `frogbot.deployment` attribute. |
+| `telemetry` | `AITelemetryConfig` | Enabled | Span registration settings. See [Trace calls](#trace-calls). |
+
+### Built-in provider options
+
+Pass `true` to use the provider's standard environment credentials, or an object:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `apiKey` | `string \| undefined` | Required | Credential for the provider. Must be a non-empty string; the key is required even though its type admits `undefined`, so `process.env` values type-check. Replicate receives it as its `apiToken`. |
+| `models` | `string[]` | Every catalog model for the provider | Allowlist of the provider's catalog model names, without the provider prefix. Unknown names fail startup, and calls to other models of this provider are rejected. Also limits what an agent's `model.options: '*'` includes. |
+
+### Bedrock provider options
+
+Pass `true` to use bearer tokens or the AWS default credential chain, or an object with `region`, explicit keys, or a `credentialProvider`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `region` | `string` | `AWS_REGION` | AWS region. Required when the entry sets neither explicit keys nor `credentialProvider`. |
+| `accessKeyId` | `string` | — | AWS access key ID. Requires `secretAccessKey`; can't be combined with `credentialProvider`. |
+| `secretAccessKey` | `string` | — | AWS secret access key. Requires `accessKeyId`. |
+| `sessionToken` | `string` | — | Temporary session token for the explicit keys. |
+| `credentialProvider` | `() => Promise<{ accessKeyId: string; secretAccessKey: string; sessionToken?: string }>` | — | Returns AWS credentials for each request. Use it for edge runtimes or custom credential sources; can't be combined with explicit keys. |
+| `models` | `string[]` | Every Bedrock catalog model | Allowlist of Bedrock catalog model names, as for [built-in providers](#built-in-provider-options). |
+
 ### Custom provider options
 
 | Option | Type | Required / default | Description |
@@ -145,6 +181,13 @@ ai: {
 ```
 
 An alias has no fallback chain or access rule. `hidden` exists on `RouterConfig` but is reserved for future admin integration.
+
+### Router options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `model` | `string` | Required | Provider-prefixed model ID the alias resolves to. Must be non-empty. |
+| `hidden` | `boolean` | — | Reserved; FrogBot does not read it yet. |
 
 `defaultRouter` must name a configured alias, but v0 operations still require `model`. Local operations and agents resolve aliases; the mounted gateway HTTP routes expect provider-prefixed model IDs.
 
@@ -199,105 +242,111 @@ rerank(opts: RerankOpts)
 evaluate(opts: EvaluateOpts)
 ```
 
-Every options type includes this base.
+Every options type includes these shared options.
 
-```ts
-type BaseAIOpts = {
-  model: ModelId
-  req?: FrogBotRequest
-  overrideAccess?: boolean
-}
-```
+### Shared options
 
-Generation uses the AI SDK v7 option names exposed below.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `model` | `ModelId` | Required | Provider-prefixed model ID or router slug. A router slug resolves to its target model. |
+| `req` | `Partial<FrogBotRequest>` | — | Request whose user is checked against [access](#control-access) and the [user model and budget policy](#user-model-and-budget-policy). Hooks receive it as `req`. |
+| `overrideAccess` | `boolean` | `false` when `req` is passed, otherwise `true` | Set `true` to skip access and policy checks for a call with `req`. Checks need a request, so a call without `req` always skips them. |
 
-```ts
-type GenerateTextOpts = BaseAIOpts & (
-  | { prompt: string; messages?: never }
-  | { prompt?: never; messages: ModelMessage[] }
-) & {
-  instructions?: string
-  tools?: Tool[]
-  toolChoice?: ToolChoice<ToolSet>
-  output?: AIOutput
-  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
-  maxOutputTokens?: number
-  temperature?: number
-  topP?: number
-  topK?: number
-  presencePenalty?: number
-  frequencyPenalty?: number
-  seed?: number
-  maxRetries?: number
-  timeout?: number
-  stopSequences?: string[]
-  providerOptions?: Record<string, unknown>
-  abortSignal?: AbortSignal
-  headers?: Record<string, string>
-  onStepEnd?: (event: unknown) => void | Promise<void>
-}
+### Text generation options
 
-type StreamTextOpts = GenerateTextOpts & {
-  onFinish?: (event: unknown) => void | Promise<void>
-  onEnd?: (event: unknown) => void | Promise<void>
-  onError?: (event: { error: unknown }) => void | Promise<void>
-  onAbort?: (event: unknown) => void | Promise<void>
-}
-```
+`generateText` and `streamText` accept these options. Text generation uses the AI SDK v7 option names.
 
-The remaining operations expose only the fields implemented by their corresponding AI SDK functions.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `prompt` | `string` | Required unless `messages` is set | A single user prompt. Can't be combined with `messages`. |
+| `messages` | `ModelMessage[]` | Required unless `prompt` is set | The conversation to continue. Can't be combined with `prompt`. |
+| `instructions` | `string` | — | System instructions sent before the prompt or messages. |
+| `tools` | `Tool[]` | — | FrogBot [tools](/agents/overview#tool-options) the model may call. Each runs with a [`ToolCtx`](/agents/overview#tool-context) whose `agent.slug` is `'direct'` and whose `runId` is new for the call. |
+| `toolChoice` | `ToolChoice<ToolSet>` | `'auto'` | Whether and which tool the model must call: `'auto'`, `'none'`, `'required'`, or `{ type: 'tool', toolName }`. |
+| `output` | `AIOutput` | Text | An `Output` specification for structured results. Read the parsed value from `result.output`. See [Request output](#request-output). |
+| `stopWhen` | `StopCondition<ToolSet> \| StopCondition<ToolSet>[]` | `isStepCount(1)` | When to stop the tool loop. With the default, tool results do not trigger another model call. |
+| `maxOutputTokens` | `number` | Provider default | Maximum tokens to generate. |
+| `temperature` | `number` | Provider default | Sampling temperature. |
+| `topP` | `number` | Provider default | Nucleus sampling threshold. |
+| `topK` | `number` | Provider default | Samples only from the top K tokens. |
+| `presencePenalty` | `number` | Provider default | Penalty for repeating content already present in the prompt. |
+| `frequencyPenalty` | `number` | Provider default | Penalty for repeating the same words or phrases. |
+| `seed` | `number` | — | Seed for deterministic sampling, when the provider supports it. |
+| `maxRetries` | `number` | `2` | Retries for failed model calls. Set `0` to disable retries. |
+| `timeout` | `number` | — | Total time limit for the call, in milliseconds. |
+| `stopSequences` | `string[]` | — | Sequences that stop generation when produced. |
+| `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name, passed to the provider unchanged. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+| `headers` | `Record<string, string>` | — | Extra HTTP headers sent to the provider. |
+| `onStepEnd` | `(event: unknown) => void \| Promise<void>` | — | Called after each step with that step's result. |
 
-```ts
-type EmbedOpts = BaseAIOpts & {
-  value: string
-  abortSignal?: AbortSignal
-  headers?: Record<string, string>
-}
+`streamText` also accepts these callbacks:
 
-type EmbedManyOpts = BaseAIOpts & {
-  values: string[]
-  maxParallelCalls?: number
-  abortSignal?: AbortSignal
-  headers?: Record<string, string>
-}
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `onEnd` | `(event: unknown) => void \| Promise<void>` | — | Called once when the stream finishes, after FrogBot records usage and runs `afterOperation`. |
+| `onFinish` | `(event: unknown) => void \| Promise<void>` | — | Alias of `onEnd`. Ignored when `onEnd` is set. |
+| `onError` | `(event: { error: unknown }) => void \| Promise<void>` | — | Called when the stream fails, after `afterOperation` runs with the error. |
+| `onAbort` | `(event: unknown) => void \| Promise<void>` | — | Called when `abortSignal` aborts the stream, after `afterOperation` runs with the abort reason. |
 
-type GenerateImageOpts = BaseAIOpts & {
-  prompt: string
-  n?: number
-  size?: string
-  providerOptions?: Record<string, unknown>
-  abortSignal?: AbortSignal
-  headers?: Record<string, string>
-}
+### Embedding options
 
-type GenerateSpeechOpts = BaseAIOpts & {
-  text: string
-  voice?: string
-  speed?: number
-  providerOptions?: Record<string, unknown>
-  abortSignal?: AbortSignal
-}
+`embed` takes a single `value`; `embedMany` takes `values`.
 
-type TranscribeOpts = BaseAIOpts & {
-  audio: Blob | ArrayBuffer | ReadableStream
-  language?: string
-  providerOptions?: Record<string, unknown>
-  abortSignal?: AbortSignal
-}
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | Required for `embed` | Text to embed. |
+| `values` | `string[]` | Required for `embedMany` | Texts to embed, returned in the same order. |
+| `maxParallelCalls` | `number` | Unlimited | `embedMany` only. Maximum concurrent requests when the values are split across several provider calls. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+| `headers` | `Record<string, string>` | — | Extra HTTP headers sent to the provider. |
 
-type GenerateVideoOpts = BaseAIOpts & {
-  prompt: string
-  providerOptions?: Record<string, unknown>
-  abortSignal?: AbortSignal
-}
+### Image options
 
-type RerankOpts = BaseAIOpts & {
-  query: string
-  documents: string[]
-  topN?: number
-  abortSignal?: AbortSignal
-}
-```
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `prompt` | `string` | Required | Description of the image to generate. |
+| `n` | `number` | `1` | Number of images to generate. |
+| `size` | `string` | Provider default | Image size as `'{width}x{height}'`, such as `'1024x1024'`. |
+| `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+| `headers` | `Record<string, string>` | — | Extra HTTP headers sent to the provider. |
+
+### Speech options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text` | `string` | Required | Text to speak. |
+| `voice` | `string` | Provider default | Voice name or ID. |
+| `speed` | `number` | Provider default | Speaking speed. |
+| `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+
+### Transcription options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `audio` | `Blob \| ArrayBuffer \| ReadableStream` | Required | Audio to transcribe. Pass an `ArrayBuffer`: a `Blob` or `ReadableStream` is accepted by the type but currently fails with `InvalidDataContentError`, so read it first, for example with `await blob.arrayBuffer()`. The media type is detected from the bytes and falls back to `audio/wav`. |
+| `language` | `string` | — | Accepted but not sent to the provider. Pass a language hint through `providerOptions` instead. |
+| `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+
+### Video options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `prompt` | `string` | Required | Description of the video to generate. |
+| `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name. Use it for settings such as duration or resolution. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+
+### Rerank options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `query` | `string` | Required | Query to rank the documents against. |
+| `documents` | `string[]` | Required | Documents to rank. |
+| `topN` | `number` | Every document | Number of top-ranked documents to return. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
 
 Each method returns the result from its AI SDK v7 counterpart. `streamText` performs asynchronous access and hook setup, so await it before consuming `textStream` or another result stream.
 
@@ -338,6 +387,31 @@ const severityScore = result.answers.severity.score
 The result retains inferred answer types for each question, along with SDK usage, warnings, rounding, response, and provider metadata. A boolean probability is an estimate, not an automatic decision. TypeSafe rounds probabilities and scores to two decimal places; `result.rounding` records that precision. When provided, confidence for choice and score questions is separate from their answer probabilities at `result.providerMetadata?.typesafe?.confidence`. Evaluation uses the AI SDK's experimental API, which may change in patch releases.
 
 `typesafe-ai/jev` is FrogBot's shorthand for upstream `jev-latest`; `typesafe-ai/jev-latest` also works. Local router slugs can target either model, while HTTP requests use provider-prefixed IDs.
+
+### Evaluate options
+
+`evaluate` accepts the [shared options](#shared-options) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `string \| JSONObject \| JSONValue[]` | Required | The shared state every question is asked about. An array is one state, not a batch. |
+| `questions` | `Record<string, EvaluationQuestion>` | Required | Named questions. Each key becomes a key of `result.answers`. See [Question options](#question-options). |
+| `maxRetries` | `number` | `2` | Retries for transient provider failures. |
+| `abortSignal` | `AbortSignal` | — | Cancels the call. |
+| `headers` | `Record<string, string>` | — | Extra HTTP headers sent to the provider. |
+| `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name. |
+| `telemetry` | `TelemetryOptions` | — | AI SDK telemetry settings for this call. |
+| `runtimeContext` | `Record<string, unknown>` | — | Values passed through to telemetry callbacks. Treat it as read-only. |
+| `onStart` | `(event) => void \| Promise<void>` | — | Called when the evaluation starts. |
+| `onEnd` | `(event) => void \| Promise<void>` | — | Called when the evaluation completes. |
+
+### Question options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | `'boolean' \| 'choice' \| 'score'` | Required | `boolean` answers with a `probability`, `choice` with one of the `criteria` keys, and `score` with an index into the `criteria` levels. |
+| `instructions` | `string \| JSONObject \| JSONValue[]` | Required | The question to answer about the state. |
+| `criteria` | `Record<string, string \| JSONObject \| JSONValue[] \| null>` for `choice`; `(string \| JSONObject \| JSONValue[] \| null)[]` for `score`; `{ true?, false? }` for `boolean` | Required for `choice` and `score` | `choice`: a non-empty map of option names to descriptions. `score`: at least two ordered levels, indexed from `0`. `boolean`: optional descriptions of what `true` and `false` mean. `null` means no description. |
 
 ---
 
@@ -387,13 +461,15 @@ ai: {
 }
 ```
 
-| Category | Operations |
-| --- | --- |
-| `generate` | `generateText`, `streamText`, `generateImage`, `generateSpeech`, `generateVideo` |
-| `embed` | `embed`, `embedMany` |
-| `transcribe` | `transcribe` |
-| `rerank` | `rerank` |
-| `evaluate` | `evaluate` |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `generate` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `generateText`, `streamText`, `generateImage`, `generateSpeech`, and `generateVideo`. |
+| `embed` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `embed` and `embedMany`. |
+| `transcribe` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `transcribe`. |
+| `rerank` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `rerank`. |
+| `evaluate` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked for `evaluate`. |
+
+A rule that returns `false` rejects the call with `AIAccessError` (status `403`).
 
 An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, following the Local API convention.
 
@@ -422,26 +498,21 @@ ai: {
 }
 ```
 
-| Phase | Runs |
-| --- | --- |
-| `beforeOperation` | Once after alias resolution and access checks, before the AI SDK call |
-| `beforeUpstream` | Before each model's `doGenerate`, `doStream`, or equivalent call |
-| `afterUpstream` | After each successful model call |
-| `afterError` | After a failed model call, with `failedPhase` and `error` |
-| `afterOperation` | Once when the full operation succeeds, fails, ends, or is aborted |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `beforeOperation` | `AIBeforeOperationHook[]` | `[]` | Runs once after alias resolution and access checks, before the AI SDK call. |
+| `beforeUpstream` | `AIBeforeUpstreamHook[]` | `[]` | Runs before each model's `doGenerate`, `doStream`, or equivalent call. |
+| `afterUpstream` | `AIAfterUpstreamHook[]` | `[]` | Runs after each successful model call. |
+| `afterError` | `AIAfterErrorHook[]` | `[]` | Runs after a failed model call, with `failedPhase` and `error`. |
+| `afterOperation` | `AIAfterOperationHook[]` | `[]` | Runs once when the full operation succeeds, fails, ends, or is aborted. |
 
-All phases share `requestId`, `operation`, `startedAt`, mutable `context`, and mutable `otel`. FrogBot intersects every hook argument with this context.
+All phases share `requestId`, `operation`, `startedAt`, mutable `context`, and mutable `otel`. The per-phase arguments match the [gateway hook phases](/gateway/hooks#phases). FrogBot adds these fields to every hook argument:
 
-```ts
-type AIHookContext = {
-  req?: FrogBotRequest
-  user?: FrogBotRequest['user']
-  agent?: {
-    slug: string
-    runId: string
-  }
-}
-```
+| Argument | Type | Description |
+| --- | --- | --- |
+| `req` | `FrogBotRequest \| undefined` | The request passed to the operation or received by the HTTP route. |
+| `user` | `FrogBotRequest['user'] \| undefined` | `req.user`, when a request is present. |
+| `agent` | `{ slug: string; runId: string; chatId?: number \| string } \| undefined` | Set for agent runs. `chatId` is set when the run belongs to a persisted chat. |
 
 FrogBot executes `beforeOperation` and `afterOperation` and does not pass them into the embedded gateway. It passes only `beforeUpstream`, `afterUpstream`, and `afterError` to `createGateway`.
 
@@ -473,6 +544,20 @@ ai: {
 ```
 
 `deploymentId` defaults to `FROGBOT_DEPLOYMENT_ID`, then `local`. When `@ai-sdk/otel` is absent, registration quietly does nothing.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `true` | Set `false` to skip registering `@ai-sdk/otel`. |
+| `enrichSpan` | `(args: AIEnrichSpanArgs) => Record<string, unknown> \| undefined` | — | Returns extra attributes for every AI SDK span. They are merged over FrogBot's `frogbot.deployment` attribute and stringified before they are attached. |
+
+`enrichSpan` receives:
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `spanType` | `'operation' \| 'step' \| 'languageModel' \| 'tool' \| 'embedding' \| 'reranking' \| 'experimental_evaluation'` | The kind of span being created. |
+| `operationId` | `string` | AI SDK operation name, such as `ai.generateText`. |
+| `callId` | `string` | ID of the AI SDK call the span belongs to. |
+| `runtimeContext` | `Record<string, unknown> \| undefined` | The call's runtime context. Agent runs set `{ agent: { slug, runId, chatId? } }`. |
 
 ---
 

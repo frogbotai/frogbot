@@ -32,11 +32,21 @@ export const support: AgentConfig = {
 
 The instance slug defaults to `microsoft-teams`. Give each instance its own slug when you connect more than one bot.
 
-| Option | Default | Use |
-| --- | --- | --- |
-| `botAppType` | `'MultiTenant'` | Set `'SingleTenant'` for a bot registered in one tenant |
-| `botTenantId` | — | Required with `'SingleTenant'` |
-| `botApiUrl` | Public Bot Framework service | Bot Framework service URL for sovereign clouds |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'microsoft-teams'` | Instance slug. It names the webhook route, `/api/webhooks/<slug>`. |
+| `auth.appId` | `string` | — | Required for channels. The Azure Bot's Microsoft Entra application ID. |
+| `auth.appPassword` | `string` | — | Required for channels. A client secret for that application. |
+| `auth.accessToken` | `string` | — | A Microsoft Graph access token. The piece's Graph actions fail without it; a user [OAuth connection](/connections/overview) supplies one. |
+| `auth.cloud` | `'login.microsoftonline.com'` | `'login.microsoftonline.com'` | Sign-in host. `createMicrosoftTeams` accepts only the commercial cloud. |
+| `auth.tenantId` | `'common'` | `'common'` | Tenant for Graph sign-in. `createMicrosoftTeams` accepts only `'common'`. |
+| `oauth` | `OAuthApp` | — | Your Microsoft Entra app, for Graph [user connections](/connections/overview). |
+| `botAppType` | `'MultiTenant' \| 'SingleTenant'` | `'MultiTenant'` | Set `'SingleTenant'` for a bot registered in one tenant. |
+| `botTenantId` | `string` | — | Required with `'SingleTenant'`. |
+| `botApiUrl` | `string` | Public Bot Framework service | Bot Framework service URL for sovereign clouds. |
+| `botUsername` | `string` | `'bot'` | The bot's name in conversations. |
+
+See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
 
 ## Register the bot
 

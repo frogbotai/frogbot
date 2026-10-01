@@ -26,25 +26,28 @@ export const supportAgent: AgentConfig = {
 }
 ```
 
-```ts
-type AgentConfig = {
-  slug: string
-  model?: ModelId | {
-    default?: ModelId
-    options: '*' | readonly ModelId[]
-  }
-  instructions: string
-  profile?: AgentProfile
-  skills?: readonly SkillConfig[]
-  tools?: readonly (AnyTool | PieceAction | PieceInstance)[]
-  inheritTools?: false
-  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
-  access?: AgentAccess
-  triggers?: readonly AgentScheduleTrigger[]
-}
-```
+### Agent options
 
-`stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Unique, URL-safe identifier. It names the agent in `frogbot.agents[slug]`, the HTTP routes, and generated types. |
+| `model` | `ModelId \| AgentModelOptions` | `ai.defaultModel` | A model ID or router slug for a single choice, or [model options](#model-options) for a selectable list. Startup fails when neither `model` nor `ai.defaultModel` sets a default. |
+| `instructions` | `string` | Required | System instructions for every run. Must be non-empty. Agents with [skills](#add-skills) get one discovery line per skill appended. |
+| `profile` | `AgentProfile` | — | Client-facing identity. See [Profile options](#profile-options). |
+| `channels` | `ChannelPieceInstance[]` | — | Channel-capable piece instances, such as [Slack](/pieces/slack), that the agent answers in. Each instance needs factory `auth` and can belong to only one agent. |
+| `skills` | `SkillConfig[]` | — | Playbooks the agent loads on demand. See [Add skills](#add-skills). |
+| `tools` | `(Tool \| ClientTool \| PieceAction \| PieceInstance)[]` | — | Tools for this agent. A piece instance adds all of its actions. See [Add tools](#add-tools). |
+| `inheritTools` | `false` | Inherits root `tools` | Set `false` to skip the root `tools` list. |
+| `stopWhen` | `StopCondition<ToolSet> \| StopCondition<ToolSet>[]` | `isStepCount(20)` | When to stop the tool loop. An array must be non-empty. |
+| `access` | `({ req, agent }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Who may run the agent. See [Control access](#control-access). |
+| `triggers` | `(AgentScheduleTrigger \| AgentPieceTrigger)[]` | — | [Schedule triggers](#schedule-runs) and [piece triggers](/pieces/triggers#mount-a-trigger). |
+
+### Model options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `default` | `ModelId` | `ai.defaultModel` | The model used when a request names none. Always listed first. |
+| `options` | `'*' \| ModelId[]` | Required | Models users may pick. `'*'` includes every configured chat-capable model. An array lists models in addition to the default; duplicates are removed, and `[]` offers only the default. |
 
 Use `model: { default, options }` to offer model choices. Omit `default` to use `ai.defaultModel`; if neither is set, startup fails. The default is always included first, and duplicate IDs are removed. An empty `options: []` offers only the default, as does a string `model`.
 
@@ -130,6 +133,14 @@ export const supportAgent: AgentConfig = {
 
 `avatar` accepts a URL or app-relative path. It is a plain string rather than an admin component or media-document reference. The chat UI uses `name` for avatar alt text and renders initials when `avatar` is omitted. Without a profile, chat messages render as before.
 
+### Profile options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | The agent slug | Display name in the chat UI, the agent selector, and the manifest `label`. |
+| `avatar` | `string` | Initials of `name` | Image URL or app-relative path for the agent's avatar. |
+| `description` | `string` | — | Short description returned in the [chat manifest](/chat/manifest). |
+
 Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/chat/manifest). An agent rejected by its access rule exposes neither its slug nor its profile.
 
 ---
@@ -166,18 +177,25 @@ export const lookupTicket: Tool<
 }
 ```
 
-The execution context has this exact shape.
+### Tool options
 
-```ts
-type ToolCtx = {
-  req: FrogBotRequest
-  frogbot: FrogBot
-  agent: {
-    slug: string
-    runId: string
-  }
-}
-```
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Tool name the model sees. Must be unique in the agent's tool list. |
+| `description` | `string` | Required | Tells the model when to use the tool. Must be non-empty. |
+| `inputSchema` | `z.ZodType` | Required | Zod schema for the input. The model's arguments are validated against it before `execute` runs. |
+| `execute` | `(input, ctx: ToolCtx) => TResult \| Promise<TResult>` | Required | Runs the tool and returns its result to the model. `ctx` is described in [Tool context](#tool-context). |
+| `component` | `FrogBotComponent` | Generic tool render | Import-map component that renders the tool call in chat. See below. |
+
+Client tools replace `execute` with `outputSchema` and `client`; see [Build a client tool](/chat/questions#build-a-client-tool).
+
+### Tool context
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `req` | `FrogBotRequest` | The request for the run. |
+| `frogbot` | `FrogBot` | The FrogBot instance. |
+| `agent` | `{ slug: string; runId: string; chatId?: number \| string }` | The running agent, the run ID shared with [hooks](#follow-hooks), and the chat ID when the run belongs to a persisted chat. Direct `generateText` and `streamText` calls use the slug `'direct'`. |
 
 Attach tools directly to the worker.
 
@@ -248,15 +266,23 @@ export const supportAgent: AgentConfig = {
 
 `instructions` and resource `content` accept a string or a function receiving `{ req, frogbot }`. Function content is evaluated only when the agent loads it. Unknown skill and resource names return the available names so the agent can correct its next call.
 
-| `SkillConfig` field | Agent Skills field |
-| --- | --- |
-| `slug` | `name` |
-| `description` | `description` |
-| `license` | `license` |
-| `compatibility` | `compatibility` |
-| `metadata` | `metadata` |
-| `instructions` | `SKILL.md` body |
-| `resources` | `references/` files |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Skill name, unique and URL-safe within the agent. Maps to the Agent Skills `name` field. |
+| `description` | `string` | — | Shown in the discovery line added to the agent instructions and in `list_skills`. Must be non-empty when set. Maps to `description`. |
+| `license` | `string` | — | Must be non-empty when set. Maps to `license`. |
+| `compatibility` | `string` | — | Must be non-empty when set. Maps to `compatibility`. |
+| `metadata` | `Record<string, string>` | — | Flat string map. Maps to `metadata`. |
+| `instructions` | `string \| ({ req, frogbot }) => string \| Promise<string>` | Required | Returned by `load_skill`. A string must be non-empty. Maps to the `SKILL.md` body. |
+| `resources` | `SkillResource[]` | — | Reference files returned by `load_skill_resource`. Maps to `references/` files. |
+
+Each resource takes these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `path` | `string` | Required | Name the agent passes to `load_skill_resource`. Unique within the skill. |
+| `description` | `string` | — | Listed with the resource in `list_skills`. Must be non-empty when set. |
+| `content` | `string \| ({ req, frogbot }) => string \| Promise<string>` | Required | Resource content. A string must be non-empty. |
 
 `license` and `compatibility` are top-level fields. `metadata` is a flat string map. The three generated tool slugs are reserved when an agent has skills. `inheritTools: false` disables root tool inheritance but does not disable that agent's skill tools.
 
@@ -427,6 +453,19 @@ await frogbot.agents.support.generate({
 
 Chat persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. Local `stream()` calls remain stateless.
 
+### Run options
+
+`generate` and `stream` accept these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `prompt` | `string` | Required unless `messages` is set | A single user message. Can't be combined with `messages`. |
+| `messages` | `UIMessage[] \| ModelMessage[]` | Required unless `prompt` is set | The conversation to continue. UI messages are validated and converted before inference. |
+| `req` | `FrogBotRequest` | A request without a user | Request for the run. Tools, hooks, and the access rule receive it. |
+| `overrideAccess` | `boolean` | `true` | Set `false` to enforce the agent's `access` rule against `req`. |
+| `abortSignal` | `AbortSignal` | — | Cancels the run. |
+| `chatId` | `DocID` | — | `generate` only. Persists the new user message and the reply in this existing chat. |
+
 ---
 
 ## Schedule runs
@@ -462,6 +501,29 @@ export const reportingAgent: AgentConfig = {
 
 `every` accepts positive whole durations in seconds, minutes, hours, or days when they divide evenly into the corresponding cron field. Use `cron` for other intervals. Cron expressions use UTC; timezone-specific schedules are not yet supported.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | `'schedule'` | Required | Marks a schedule trigger. |
+| `slug` | `string` | Required | URL-safe name, unique within the agent. |
+| `schedule` | `{ every } \| { cron, timezone? }` | Required | Exactly one of `every` or `cron`. See the next table. |
+| `prompt` | `string` | Required unless `handler` is set | Non-empty prompt sent to the owning agent in a fresh chat on each occurrence. |
+| `handler` | `(context: AgentScheduleContext) => void \| Promise<void>` | Required unless `prompt` is set | Runs on each occurrence instead of a prompt. |
+
+| `schedule` option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `every` | `` `${number}${'s' \| 'm' \| 'h' \| 'd'}` `` | Required unless `cron` is set | Interval such as `'30m'`, converted to a cron expression. |
+| `cron` | `string` | Required unless `every` is set | Cron expression in UTC, with an optional leading seconds field. Invalid expressions fail startup. |
+| `timezone` | `string` | — | Accepted by the type with `cron`, but any value fails startup because timezones are not supported yet. |
+
+A handler receives:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `frogbot` | `FrogBot` | The FrogBot instance. |
+| `agent` | `AgentInstance` | The owning agent, with `generate` and `stream`. |
+| `req` | `FrogBotRequest` | A request without a user. `req.context` holds `source`, `agentSlug`, `triggerSlug`, and `jobId`. |
+| `job` | `{ id: DocID; scheduledFor: Date }` | The job record ID and the time the occurrence was scheduled for. |
+
 FrogBot runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
 
 Each prompt trigger creates a fresh chat with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
@@ -474,7 +536,7 @@ Configuring at least one worker mounts two FrogBot endpoints at the root API pat
 
 | Method | Path | Result |
 | --- | --- | --- |
-| `GET` | `/api/agents` | Permission-filtered agent manifest with defaults, allowed models, and their reasoning options |
+| `GET` | `/api/agents` | Permission-filtered [agent manifest](/chat/manifest#agent-manifest) with defaults, allowed models, and their reasoning options |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
 POST exactly one non-empty `prompt` or non-empty `messages` array. Add `model` to select one of the agent's allowed models; FrogBot rejects other models with a 403 response. Add `reasoning` to select one of the options the manifest lists under `reasoning` for that model, or for the default model when `model` is omitted; an option the model does not offer returns 400. A request without `model` uses the agent's default model. Each user message keeps the model and reasoning option it was sent with, and every turn it starts uses them. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
@@ -518,7 +580,7 @@ See [Chat persistence](/chat/overview) for collection customization and durabili
 
 ## Control access
 
-`access` receives `{ req }` and may return a boolean or promise. Its default is `Boolean(req.user)`.
+`access` receives `{ req, agent }`, where `agent` is the agent instance being checked, and may return a boolean or promise. Its default is `Boolean(req.user)`.
 
 ```ts
 access: ({ req }) => Boolean(req.user)
@@ -532,7 +594,7 @@ Custom rules may allow anonymous requests by returning `true`. Local calls bypas
 
 ## Follow hooks
 
-Worker runs use the five hooks configured under `ai.hooks`. Every hook receives `agent: { slug, runId }`, plus `req` and `user` when available.
+Worker runs use the five hooks configured under `ai.hooks`. Every hook receives `agent: { slug, runId, chatId? }`, plus `req` and `user` when available.
 
 `beforeOperation` and `afterOperation` run once for the whole generate or stream call. Agent HTTP calls use that same lifecycle rather than adding another one.
 

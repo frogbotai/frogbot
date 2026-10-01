@@ -35,11 +35,14 @@ export default buildConfig({
 });
 ```
 
-| Factory option | Purpose                                                                            |
-| -------------- | ---------------------------------------------------------------------------------- |
-| `auth.apiKey`  | Resend API key used for application email.                                         |
-| `from.address` | Required default sender address when this piece is used for `email`.               |
-| `from.name`    | Sender display name. Defaults to the piece's slug, such as `resend`, when omitted. |
+| Option         | Type     | Default              | Description                                                                                            |
+| -------------- | -------- | -------------------- | ------------------------------------------------------------------------------------------------------ |
+| `slug`         | `string` | `'resend'`           | Instance slug. It prefixes tool slugs and is the default sender name.                                  |
+| `auth.apiKey`  | `string` | Required with `auth` | Resend API key used for application email and the piece's actions.                                     |
+| `from.address` | `string` | —                    | Default sender address. Required when this piece is used for `email`.                                   |
+| `from.name`    | `string` | The instance slug    | Sender display name.                                                                                   |
+
+Resend has no OAuth recipe, so the factory does not accept `oauth`. See [factory options](/pieces/overview#factory-options).
 
 FrogBot uses the factory credentials for application email, including password resets and verification messages. It creates a request without a signed-in user for each send, so user connections do not supply email credentials. Missing factory credentials raise a `ConnectionError` naming the piece when you send.
 
@@ -71,7 +74,21 @@ await frogbot.email.sendEmail({
 });
 ```
 
-Resend email supports `from`, `to`, `cc`, `bcc`, `replyTo`, `subject`, `html`, `text`, and `attachments`. Recipients can be address strings, `{ address, name }` objects, or arrays of either. `replyTo` maps to Resend's `reply_to` field.
+Resend email supports these options. Recipients can be address strings, `{ address, name }` objects, or arrays of either.
+
+| Option        | Type                                                  | Default         | Description                                                                 |
+| ------------- | ----------------------------------------------------- | --------------- | --------------------------------------------------------------------------- |
+| `to`          | Recipient or recipients                               | —               | Primary recipients.                                                         |
+| `cc`          | Recipient or recipients                               | —               | Copied recipients.                                                          |
+| `bcc`         | Recipient or recipients                               | —               | Blind-copied recipients.                                                    |
+| `from`        | `string \| { address: string; name?: string }`        | The factory `from` | Sender for this message.                                                 |
+| `replyTo`     | Recipient or recipients                               | —               | Reply-to addresses, sent as Resend's `reply_to`.                            |
+| `subject`     | `string`                                              | `''`            | Subject line.                                                               |
+| `html`        | `string \| Buffer`                                    | —               | HTML body.                                                                  |
+| `text`        | `string \| Buffer`                                    | —               | Plain-text body.                                                            |
+| `attachments` | `{ filename?: string; content: string \| Buffer; encoding?: string }[]` | — | Files to attach. See [Attach files](#attach-files).                  |
+
+`sendEmail` also accepts the other fields of the standard mail options type, such as `headers`; the Resend piece ignores them.
 
 ## Attach files
 

@@ -39,17 +39,17 @@ export const Articles: CollectionConfig = {
 
 ### Index options
 
-| Option               | Default                     | Meaning                                                                                                   |
-| -------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `lexical.fields`     |                             | Text and textarea fields to rank by text relevance.                                                       |
-| `lexical.language`   | `'simple'`                  | Stemming and tokenizing language. Each adapter lists the languages it supports.                            |
-| `vector.field`       |                             | The vector field to rank by similarity.                                                                    |
-| `vector.metric`      | `'cosine'`                  | `cosine`, `euclidean`, or `dotProduct`.                                                                    |
-| `vector.approximate` | `true`                      | Build an approximate nearest-neighbour index for this field. Set `false` to always search exactly.          |
-| `hybrid.fusion`      | `'rrf'`                     | Reciprocal rank fusion. It is the only method.                                                             |
-| `hybrid.weights`     | `{ lexical: 1, vector: 1 }` | Positive multipliers for each component's contribution to the fused score.                                 |
-| `defaultCandidates`  | `100`                       | The [candidate count](#candidates) when the query does not set `candidates`. Only indexes with `vector` accept it. |
-| `filters`            | every eligible field        | `{ fields }` or `{ exclude }` to choose which stored fields `where` may filter on.                          |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `lexical.fields` | `string[]` | Required with `lexical` | Text and textarea fields to rank by text relevance. |
+| `lexical.language` | `string` | `'simple'` | Stemming and tokenizing language. Each adapter lists the languages it supports. |
+| `vector.field` | `string` | Required with `vector` | The vector field to rank by similarity. |
+| `vector.metric` | `'cosine' \| 'euclidean' \| 'dotProduct'` | `'cosine'` | Similarity metric. |
+| `vector.approximate` | `boolean` | `true` | Build an approximate nearest-neighbour index for this field. Set `false` to always search exactly. |
+| `hybrid.fusion` | `'rrf'` | `'rrf'` | Reciprocal rank fusion. It is the only method. |
+| `hybrid.weights` | `{ lexical: number; vector: number }` | `{ lexical: 1, vector: 1 }` | Positive multipliers for each component's contribution to the fused score. |
+| `defaultCandidates` | `number` | `100` | The [candidate count](#candidates) when the query does not set `candidates`. Only indexes with `vector` accept it. |
+| `filters` | `{ fields: string[] } \| { exclude: string[] }` | Every eligible field | Which stored fields `where` may filter on: only `fields`, or every eligible field except `exclude`. |
 
 An index with both `lexical` and `vector` accepts a `hybrid` object:
 
@@ -108,6 +108,24 @@ export async function searchArticles(req: FrogBotRequest, vector: number[]) {
   return { lexical, semantic, hybrid };
 }
 ```
+
+### Search options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `CollectionSlug` | Required | Collection to search. |
+| `index` | `string` | Required | Name of an index under the collection's `search`. Checked at runtime. |
+| `query` | `{ text?: string; vector?: number[] }` | Required | `text` alone runs lexical search, `vector` alone runs vector search, and both run hybrid search. The index must have the matching components. |
+| `where` | `Where` | — | Filter applied before ranking. Only fields allowed by the index's `filters` can be used. |
+| `limit` | `number` | `10` | Maximum hits. Must be a positive integer. |
+| `candidates` | `number` | The index's `defaultCandidates`, then `100` | See [Candidates](#candidates). Must be a positive integer. |
+| `select` | `SelectType` | Every field | Fields to return on each `doc`. |
+| `depth` | `number` | `0` | Relationship depth for each `doc`. Must be a non-negative integer. |
+| `draft` | `boolean` | `false` | Search and return draft versions. |
+| `locale` | `string` | The request locale | Locale to search and return. `'all'` is rejected because each hit needs one locale. |
+| `fallbackLocale` | `string \| false` | The request fallback | Locale used for missing localized values, or `false` for none. |
+| `overrideAccess` | `boolean` | `false` | Set `true` to skip collection and field read access. Required when `req` is omitted. |
+| `req` | `FrogBotRequest` | Required unless `overrideAccess: true` | Request whose user's access is enforced. |
 
 Search defaults to enforcing access and requires `req` unless you explicitly set `overrideAccess: true`. That default differs from ordinary Local API CRUD. `index` is currently typed as a string; index names are checked against the collection at runtime. The `vector` must match the indexed field's dimensions and contain finite numbers. A text query must be non-empty, and `limit` defaults to 10 (positive integer required). `where`, `select`, `depth` (defaults to `0`), `candidates`, `draft`, `locale`, and `fallbackLocale` are options, but which filters and modes can run depends on the adapter and selected index.
 
