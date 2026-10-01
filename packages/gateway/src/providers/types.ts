@@ -12,6 +12,8 @@
 //   - `TConfig`   — the provider's specific config shape
 //   - `TInstance` — the AI SDK provider instance type returned by `build`
 
+export type ProviderCredentialForm = Readonly<Record<string, string | null>>;
+
 export interface ProviderDefinition<TName extends string, TConfig, TInstance> {
   /** Stable identifier; doubles as the registry key and the `provider/model` ID prefix. */
   readonly name: TName;
@@ -23,14 +25,16 @@ export interface ProviderDefinition<TName extends string, TConfig, TInstance> {
    */
   readonly envVars: readonly string[];
   /**
-   * Config keys that must be present as non-empty strings in a shorthand
-   * config. Validated at `createGateway` time (see `parseGatewayConfig`) so a
-   * typo in a JSON/layered config produces a friendly error at startup instead
-   * of a confusing SDK env-var error at first request. Omit for providers whose
+   * Credential forms the startup check accepts; any one complete form passes.
+   * Each form maps a config key to the env var the SDK falls back to when
+   * that key is omitted, or `null` when the SDK reads no env var for it.
+   * Validated at `createGateway` time (see `parseGatewayConfig`) so a typo in
+   * a JSON/layered config produces a friendly error at startup instead of a
+   * confusing SDK env-var error at first request. Omit for providers whose
    * credentials come from a structural/SigV4/ADC config (bedrock, azure,
    * vertex, anthropic-aws). Instance-passthrough configs bypass this check.
    */
-  readonly requiredKeys?: readonly string[];
+  readonly credentials?: readonly ProviderCredentialForm[];
   /**
    * Translate environment variables into a provider config. Returns `undefined`
    * when the credential gate (`envVars[0]`) is absent — signals the CLI to

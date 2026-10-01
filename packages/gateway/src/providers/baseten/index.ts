@@ -10,7 +10,7 @@ export type BasetenConfig = Omit<BasetenProviderSettings, 'apiKey' | 'fetch'> & 
 
 export const basetenProvider = {
   name: 'baseten',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'BASETEN_API_KEY' }],
   envVars: ['BASETEN_API_KEY', 'BASETEN_BASE_URL'],
   fromEnv: (env) => {
     if (!env.BASETEN_API_KEY) return undefined;

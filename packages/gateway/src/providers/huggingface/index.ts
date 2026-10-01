@@ -18,7 +18,7 @@ export type HuggingFaceConfig = Omit<HuggingFaceProviderSettings, 'apiKey' | 'fe
 
 export const huggingfaceProvider = {
   name: 'huggingface',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'HUGGINGFACE_API_KEY' }],
   envVars: ['HUGGINGFACE_API_KEY', 'HUGGINGFACE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.HUGGINGFACE_API_KEY) return undefined;

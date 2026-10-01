@@ -8,7 +8,7 @@ export type ProdiaConfig = Omit<ProdiaProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const prodiaProvider = {
   name: 'prodia',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'PRODIA_TOKEN' }],
   envVars: ['PRODIA_TOKEN', 'PRODIA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.PRODIA_TOKEN) return undefined;

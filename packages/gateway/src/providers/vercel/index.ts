@@ -28,7 +28,7 @@ function withAttribution(headers: Record<string, string> = {}): Record<string, s
 
 export const vercelProvider = {
   name: 'vercel',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'AI_GATEWAY_API_KEY' }],
   envVars: ['AI_GATEWAY_API_KEY', 'AI_GATEWAY_BASE_URL'],
   fromEnv: (env) => {
     if (!env.AI_GATEWAY_API_KEY) return undefined;

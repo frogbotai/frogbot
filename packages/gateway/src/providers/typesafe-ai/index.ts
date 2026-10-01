@@ -12,7 +12,7 @@ export type TypeSafeAiConfig = Omit<TypeSafeAiProviderSettings, 'apiKey' | 'fetc
 
 export const typeSafeAiProvider = {
   name: 'typesafe-ai',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'TYPESAFE_AI_API_KEY' }],
   envVars: ['TYPESAFE_AI_API_KEY'],
   fromEnv: (env) => {
     if (!env.TYPESAFE_AI_API_KEY) return undefined;

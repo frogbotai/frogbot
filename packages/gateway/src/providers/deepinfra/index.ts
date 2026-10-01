@@ -14,7 +14,7 @@ export type DeepInfraConfig = Omit<DeepInfraProviderSettings, 'apiKey' | 'fetch'
 
 export const deepinfraProvider = {
   name: 'deepinfra',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'DEEPINFRA_API_KEY' }],
   envVars: ['DEEPINFRA_API_KEY', 'DEEPINFRA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.DEEPINFRA_API_KEY) return undefined;

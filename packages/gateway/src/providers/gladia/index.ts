@@ -8,7 +8,7 @@ export type GladiaConfig = Omit<GladiaProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const gladiaProvider = {
   name: 'gladia',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'GLADIA_API_KEY' }],
   envVars: ['GLADIA_API_KEY'],
   fromEnv: (env) => {
     if (!env.GLADIA_API_KEY) return undefined;

@@ -49,7 +49,7 @@ A built-in provider entry takes a config object, an empty object `{}` to use the
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `models` | `string[]` | Every catalog model for the provider | Allow list of unprefixed model IDs. Each one must be in the catalog, or startup fails. See [Restrict built-in models](/gateway/configuration#restrict-built-in-models). |
-| `apiKey` | `string` | The provider's credential variable below | The provider's API key. For providers marked "Startup check", startup fails when neither `apiKey` nor that variable is set, or when `apiKey` is an empty string. Not accepted by `replicate`, which uses `apiToken`. |
+| `apiKey` | `string` | The provider's credential variable below | The provider's API key. For providers marked "Startup check", startup fails when neither `apiKey` nor that variable is set and the provider accepts no other credential form, or when `apiKey` is an empty string. Not accepted by `replicate`, which uses `apiToken`. |
 | `baseURL` | `string` | The provider's public API URL | URL prefix for API calls, for example a proxy or regional endpoint. Not accepted by `assemblyai`, `deepgram`, `elevenlabs`, `gladia`, `hume`, or `lmnt`. |
 | `headers` | `Record<string, string>` | — | Extra headers sent with every request to the provider. |
 
@@ -58,7 +58,7 @@ Each provider's environment variables are listed below. The first one is its cre
 | Key | Provider | Environment variables | Credential check |
 | --- | --- | --- | --- |
 | `alibaba` | Alibaba | `ALIBABA_API_KEY`, `ALIBABA_BASE_URL` | Startup check |
-| `anthropic` | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` | Startup check |
+| `anthropic` | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` | Startup check (`apiKey`, or `authToken`) |
 | `anthropic-aws` | Anthropic (AWS) | `ANTHROPIC_AWS_API_KEY`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`); `ANTHROPIC_AWS_WORKSPACE_ID` | At request time |
 | `assemblyai` | AssemblyAI | `ASSEMBLYAI_API_KEY` | Startup check |
 | `azure` | Azure OpenAI | `AZURE_API_KEY`, plus `AZURE_RESOURCE_NAME` or `AZURE_OPENAI_BASE_URL`; `AZURE_API_VERSION` | At request time |
@@ -79,7 +79,7 @@ Each provider's environment variables are listed below. The first one is its cre
 | `groq` | Groq | `GROQ_API_KEY`, `GROQ_BASE_URL` | Startup check |
 | `huggingface` | Hugging Face | `HUGGINGFACE_API_KEY`, `HUGGINGFACE_BASE_URL` | Startup check |
 | `hume` | Hume | `HUME_API_KEY` | Startup check |
-| `klingai` | Kling AI | `KLINGAI_ACCESS_KEY` + `KLINGAI_SECRET_KEY`, `KLINGAI_BASE_URL` | Startup check (`accessKey` and `secretKey`) |
+| `klingai` | Kling AI | `KLINGAI_API_KEY`, or `KLINGAI_ACCESS_KEY` + `KLINGAI_SECRET_KEY`; `KLINGAI_BASE_URL` | Startup check (`apiKey`, or `accessKey` and `secretKey`) |
 | `lmnt` | LMNT | `LMNT_API_KEY` | Startup check |
 | `luma` | Luma | `LUMA_API_KEY`, `LUMA_BASE_URL` | Startup check |
 | `mistral` | Mistral | `MISTRAL_API_KEY`, `MISTRAL_BASE_URL` | Startup check |
@@ -103,7 +103,7 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `alibaba.videoBaseURL` | `string` | `https://dashscope-intl.aliyuncs.com` | URL prefix for video generation calls. |
 | `alibaba.embeddingBaseURL` | `string` | `https://dashscope-intl.aliyuncs.com/api/v1` | URL prefix for embedding calls. |
 | `alibaba.includeUsage` | `boolean` | `true` | Asks for token usage at the end of streamed responses. |
-| `anthropic.authToken` | `string` | `ANTHROPIC_AUTH_TOKEN` | Token sent as `Authorization: Bearer`. The startup check still needs `apiKey` or `ANTHROPIC_API_KEY`. |
+| `anthropic.authToken` | `string` | — | Token sent as `Authorization: Bearer`, instead of `apiKey`. Satisfies the startup check on its own. It isn't read from an environment variable, and setting both `authToken` and `apiKey` fails on startup; with `ANTHROPIC_API_KEY` set, the CLI discovers an `apiKey`, so unset it to use a token. |
 | `anthropic.name` | `string` | `'anthropic.messages'` | Provider name the AI SDK models report. |
 | `anthropic.generateId` | `() => string` | AI SDK default | Generates IDs for the AI SDK's response items. |
 | `anthropic-aws.region` | `string` | `AWS_REGION` | AWS region. Required; there's no fallback region. |
@@ -127,9 +127,9 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `cohere.generateId`, `google.generateId`, `huggingface.generateId`, `mistral.generateId` | `() => string` | AI SDK default | Generates IDs for the AI SDK's response items. |
 | `elevenlabs.webSocket`, `google.webSocket`, `openai.webSocket`, `vercel.webSocket`, `vertex.webSocket`, `xai.webSocket` | `WebSocketConstructor` | The runtime's `WebSocket` | WebSocket class for streaming connections, for runtimes whose built-in `WebSocket` can't send headers. |
 | `google.name` | `string` | `'google.generative-ai'` | Provider name the AI SDK models report. |
-| `klingai.accessKey` | `string` | `KLINGAI_ACCESS_KEY` | Kling AI access key. Required with `secretKey`. |
+| `klingai.accessKey` | `string` | `KLINGAI_ACCESS_KEY` | Kling AI access key. Used with `secretKey` when there's no `apiKey`. |
 | `klingai.secretKey` | `string` | `KLINGAI_SECRET_KEY` | Kling AI secret key. |
-| `klingai.apiKey` | `string` | `KLINGAI_API_KEY`, read at request time | Kling AI API key. Takes precedence over `accessKey` and `secretKey` at request time, but the startup check still needs them. |
+| `klingai.apiKey` | `string` | `KLINGAI_API_KEY` | Kling AI API key. Satisfies the startup check on its own and takes precedence over `accessKey` and `secretKey`. The CLI discovers it before the access key pair. |
 | `openai.name` | `string` | `'openai'` | Provider name the AI SDK models report. |
 | `openai.organization` | `string` | `OPENAI_ORGANIZATION` in CLI discovery | OpenAI organization ID. |
 | `openai.project` | `string` | `OPENAI_PROJECT` in CLI discovery | OpenAI project ID. |

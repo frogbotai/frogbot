@@ -8,7 +8,7 @@ export type LMNTConfig = Omit<LMNTProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const lmntProvider = {
   name: 'lmnt',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'LMNT_API_KEY' }],
   envVars: ['LMNT_API_KEY'],
   fromEnv: (env) => {
     if (!env.LMNT_API_KEY) return undefined;

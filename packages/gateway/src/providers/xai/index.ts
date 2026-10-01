@@ -46,7 +46,7 @@ export function fixIncompleteFinishReason<
 
 export const xaiProvider = {
   name: 'xai',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'XAI_API_KEY' }],
   envVars: ['XAI_API_KEY', 'XAI_BASE_URL'],
   fromEnv: (env) => {
     if (!env.XAI_API_KEY) return undefined;

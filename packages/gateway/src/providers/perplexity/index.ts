@@ -14,7 +14,7 @@ export type PerplexityConfig = Omit<PerplexityProviderSettings, 'apiKey' | 'fetc
 
 export const perplexityProvider = {
   name: 'perplexity',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'PERPLEXITY_API_KEY' }],
   envVars: ['PERPLEXITY_API_KEY', 'PERPLEXITY_BASE_URL'],
   fromEnv: (env) => {
     if (!env.PERPLEXITY_API_KEY) return undefined;

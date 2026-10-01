@@ -14,7 +14,7 @@ export type CerebrasConfig = Omit<CerebrasProviderSettings, 'apiKey' | 'fetch'> 
 
 export const cerebrasProvider = {
   name: 'cerebras',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'CEREBRAS_API_KEY' }],
   envVars: ['CEREBRAS_API_KEY', 'CEREBRAS_BASE_URL'],
   fromEnv: (env) => {
     if (!env.CEREBRAS_API_KEY) return undefined;

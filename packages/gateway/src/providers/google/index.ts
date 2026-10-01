@@ -10,7 +10,7 @@ export type GoogleConfig = Omit<GoogleProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const googleProvider = {
   name: 'google',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'GOOGLE_GENERATIVE_AI_API_KEY' }],
   envVars: ['GOOGLE_GENERATIVE_AI_API_KEY', 'GOOGLE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.GOOGLE_GENERATIVE_AI_API_KEY) return undefined;

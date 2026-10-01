@@ -10,7 +10,7 @@ export type AlibabaConfig = Omit<AlibabaProviderSettings, 'apiKey' | 'fetch'> & 
 
 export const alibabaProvider = {
   name: 'alibaba',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'ALIBABA_API_KEY' }],
   envVars: ['ALIBABA_API_KEY', 'ALIBABA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.ALIBABA_API_KEY) return undefined;

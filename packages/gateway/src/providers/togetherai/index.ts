@@ -14,7 +14,7 @@ export type TogetherAIConfig = Omit<TogetherAIProviderSettings, 'apiKey' | 'fetc
 
 export const togetheraiProvider = {
   name: 'togetherai',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'TOGETHER_API_KEY' }],
   envVars: ['TOGETHER_API_KEY', 'TOGETHER_BASE_URL'],
   fromEnv: (env) => {
     if (!env.TOGETHER_API_KEY) return undefined;

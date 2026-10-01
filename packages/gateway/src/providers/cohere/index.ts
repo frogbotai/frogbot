@@ -10,7 +10,7 @@ export type CohereConfig = Omit<CohereProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const cohereProvider = {
   name: 'cohere',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'COHERE_API_KEY' }],
   envVars: ['COHERE_API_KEY', 'COHERE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.COHERE_API_KEY) return undefined;

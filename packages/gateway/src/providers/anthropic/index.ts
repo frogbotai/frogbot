@@ -10,7 +10,7 @@ import type { ProviderDefinition } from '../types.js';
 
 /**
  * Gateway config for the Anthropic provider. Same shape as `AnthropicProviderSettings`
- * from `@ai-sdk/anthropic`, but with `apiKey` required and `fetch` excluded.
+ * from `@ai-sdk/anthropic`, with `fetch` excluded.
  */
 export type AnthropicConfig = Omit<AnthropicProviderSettings, 'apiKey' | 'fetch'> & {
   apiKey?: string;
@@ -18,7 +18,7 @@ export type AnthropicConfig = Omit<AnthropicProviderSettings, 'apiKey' | 'fetch'
 
 export const anthropicProvider = {
   name: 'anthropic',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'ANTHROPIC_API_KEY' }, { authToken: null }] as const,
   envVars: ['ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL'],
   fromEnv: (env) => {
     if (!env.ANTHROPIC_API_KEY) return undefined;
