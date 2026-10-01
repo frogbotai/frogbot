@@ -42,6 +42,119 @@ Built-in providers route only models in the catalog. Config also accepts an opti
 
 ---
 
+## Built-in provider options
+
+A built-in provider entry takes a config object, an empty object `{}` to use the defaults, or a [pre-built instance](#pre-built-instances). Most providers accept these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `models` | `string[]` | Every catalog model for the provider | Allow list of unprefixed model IDs. Each one must be in the catalog, or startup fails. See [Restrict built-in models](/gateway/configuration#restrict-built-in-models). |
+| `apiKey` | `string` | The provider's credential variable below | The provider's API key. For providers marked "Startup check", startup fails when neither `apiKey` nor that variable is set, or when `apiKey` is an empty string. Not accepted by `replicate`, which uses `apiToken`. |
+| `baseURL` | `string` | The provider's public API URL | URL prefix for API calls, for example a proxy or regional endpoint. Not accepted by `assemblyai`, `deepgram`, `elevenlabs`, `gladia`, `hume`, or `lmnt`. |
+| `headers` | `Record<string, string>` | — | Extra headers sent with every request to the provider. |
+
+Each provider's environment variables are listed below. The first one is its credential. The CLI builds a provider from these variables when they're set; see [Auto-discover from env](/gateway/configuration#auto-discover-from-env).
+
+| Key | Provider | Environment variables | Credential check |
+| --- | --- | --- | --- |
+| `alibaba` | Alibaba | `ALIBABA_API_KEY`, `ALIBABA_BASE_URL` | Startup check |
+| `anthropic` | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` | Startup check |
+| `anthropic-aws` | Anthropic (AWS) | `ANTHROPIC_AWS_API_KEY`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`); `ANTHROPIC_AWS_WORKSPACE_ID` | At request time |
+| `assemblyai` | AssemblyAI | `ASSEMBLYAI_API_KEY` | Startup check |
+| `azure` | Azure OpenAI | `AZURE_API_KEY`, plus `AZURE_RESOURCE_NAME` or `AZURE_OPENAI_BASE_URL`; `AZURE_API_VERSION` | At request time |
+| `baseten` | Baseten | `BASETEN_API_KEY`, `BASETEN_BASE_URL` | Startup check |
+| `bedrock` | Amazon Bedrock | `AWS_BEARER_TOKEN_BEDROCK`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`), or `AWS_PROFILE`, or `AWS_ROLE_ARN` + `AWS_WEB_IDENTITY_TOKEN_FILE` | At request time |
+| `black-forest-labs` | Black Forest Labs | `BFL_API_KEY`, `BFL_BASE_URL` | Startup check |
+| `bytedance` | ByteDance | `ARK_API_KEY`, `ARK_BASE_URL` | Startup check |
+| `cerebras` | Cerebras | `CEREBRAS_API_KEY`, `CEREBRAS_BASE_URL` | Startup check |
+| `cohere` | Cohere | `COHERE_API_KEY`, `COHERE_BASE_URL` | Startup check |
+| `deepgram` | Deepgram | `DEEPGRAM_API_KEY` | Startup check |
+| `deepinfra` | DeepInfra | `DEEPINFRA_API_KEY`, `DEEPINFRA_BASE_URL` | Startup check |
+| `deepseek` | DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` | Startup check |
+| `elevenlabs` | ElevenLabs | `ELEVENLABS_API_KEY` | Startup check |
+| `fal` | fal | `FAL_API_KEY` (the CLI also reads `FAL_KEY`), `FAL_BASE_URL` | Startup check |
+| `fireworks` | Fireworks | `FIREWORKS_API_KEY`, `FIREWORKS_BASE_URL` | Startup check |
+| `gladia` | Gladia | `GLADIA_API_KEY` | Startup check |
+| `google` | Google | `GOOGLE_GENERATIVE_AI_API_KEY`, `GOOGLE_BASE_URL` | Startup check |
+| `groq` | Groq | `GROQ_API_KEY`, `GROQ_BASE_URL` | Startup check |
+| `huggingface` | Hugging Face | `HUGGINGFACE_API_KEY`, `HUGGINGFACE_BASE_URL` | Startup check |
+| `hume` | Hume | `HUME_API_KEY` | Startup check |
+| `klingai` | Kling AI | `KLINGAI_ACCESS_KEY` + `KLINGAI_SECRET_KEY`, `KLINGAI_BASE_URL` | Startup check (`accessKey` and `secretKey`) |
+| `lmnt` | LMNT | `LMNT_API_KEY` | Startup check |
+| `luma` | Luma | `LUMA_API_KEY`, `LUMA_BASE_URL` | Startup check |
+| `mistral` | Mistral | `MISTRAL_API_KEY`, `MISTRAL_BASE_URL` | Startup check |
+| `moonshotai` | Moonshot AI | `MOONSHOT_API_KEY`, `MOONSHOT_BASE_URL` | Startup check |
+| `openai` | OpenAI | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_ORGANIZATION`, `OPENAI_PROJECT` | Startup check |
+| `openrouter` | OpenRouter | `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL` | Startup check |
+| `perplexity` | Perplexity | `PERPLEXITY_API_KEY`, `PERPLEXITY_BASE_URL` | Startup check |
+| `prodia` | Prodia | `PRODIA_TOKEN`, `PRODIA_BASE_URL` | Startup check |
+| `replicate` | Replicate | `REPLICATE_API_TOKEN`, `REPLICATE_BASE_URL` | Startup check (`apiToken`) |
+| `togetherai` | Together AI | `TOGETHER_API_KEY`, `TOGETHER_BASE_URL` | Startup check |
+| `typesafe-ai` | TypeSafe AI | `TYPESAFE_AI_API_KEY` | Startup check |
+| `vercel` | Vercel AI Gateway | `AI_GATEWAY_API_KEY`, `AI_GATEWAY_BASE_URL` | Startup check |
+| `vertex` | Google Vertex | `GOOGLE_VERTEX_API_KEY`, or `GOOGLE_VERTEX_PROJECT` + `GOOGLE_VERTEX_LOCATION` | At request time |
+| `voyage` | Voyage | `VOYAGE_API_KEY`, `VOYAGE_BASE_URL` | Startup check |
+| `xai` | xAI | `XAI_API_KEY`, `XAI_BASE_URL` | Startup check |
+
+Some providers accept more options. Each row is written as `<key>.<option>` and is set under `providers.<key>`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `alibaba.videoBaseURL` | `string` | `https://dashscope-intl.aliyuncs.com` | URL prefix for video generation calls. |
+| `alibaba.embeddingBaseURL` | `string` | `https://dashscope-intl.aliyuncs.com/api/v1` | URL prefix for embedding calls. |
+| `alibaba.includeUsage` | `boolean` | `true` | Asks for token usage at the end of streamed responses. |
+| `anthropic.authToken` | `string` | `ANTHROPIC_AUTH_TOKEN` | Token sent as `Authorization: Bearer`. The startup check still needs `apiKey` or `ANTHROPIC_API_KEY`. |
+| `anthropic.name` | `string` | `'anthropic.messages'` | Provider name the AI SDK models report. |
+| `anthropic.generateId` | `() => string` | AI SDK default | Generates IDs for the AI SDK's response items. |
+| `anthropic-aws.region` | `string` | `AWS_REGION` | AWS region. Required; there's no fallback region. |
+| `anthropic-aws.workspaceId` | `string` | `ANTHROPIC_AWS_WORKSPACE_ID` | Anthropic workspace ID, sent in the `anthropic-workspace-id` header. |
+| `anthropic-aws.accessKeyId` | `string` | `AWS_ACCESS_KEY_ID` | AWS access key ID for SigV4 signing. Ignored when `apiKey` is set. |
+| `anthropic-aws.secretAccessKey` | `string` | `AWS_SECRET_ACCESS_KEY` | AWS secret access key for SigV4 signing. |
+| `anthropic-aws.sessionToken` | `string` | `AWS_SESSION_TOKEN` | AWS session token for SigV4 signing. |
+| `azure.resourceName` | `string` | — | Azure OpenAI resource name, used to build `https://<resourceName>.openai.azure.com/openai/v1`. Set this or `baseURL`; `baseURL` wins when both are set. |
+| `azure.tokenProvider` | `() => Promise<string>` | — | Returns a Microsoft Entra access token. Called on every request, instead of using `apiKey`. |
+| `azure.apiVersion` | `string` | `'v1'` | Azure API version. |
+| `azure.useDeploymentBasedUrls` | `boolean` | `false` | Uses the older `/deployments/<deployment>` URL format. |
+| `baseten.modelURL` | `string` | — | URL of a custom Baseten model deployment (chat or embeddings), instead of the shared Model APIs. |
+| `baseten.performanceClient` | `BasetenPerformanceClientConstructor` | — | The `PerformanceClient` class from `@basetenlabs/performance-client`, which you install yourself, for batched embedding requests. |
+| `bedrock.region` | `string` | `AWS_REGION` | AWS region. CLI discovery uses `us-east-1` when `AWS_REGION` isn't set with a bearer token or profile. |
+| `bedrock.accessKeyId` | `string` | `AWS_ACCESS_KEY_ID` | AWS access key ID for SigV4 signing. |
+| `bedrock.secretAccessKey` | `string` | `AWS_SECRET_ACCESS_KEY` | AWS secret access key for SigV4 signing. |
+| `bedrock.sessionToken` | `string` | `AWS_SESSION_TOKEN` | AWS session token for SigV4 signing. |
+| `bedrock.credentialProvider` | `() => PromiseLike<{ accessKeyId: string; secretAccessKey: string; sessionToken?: string }>` | The AWS default credential chain | Returns AWS credentials for each request, instead of the static keys. Without `apiKey`, static keys, or this option, the gateway uses the AWS default chain (profiles, SSO, web identity, instance roles), which needs the optional `@aws-sdk/credential-providers` package. |
+| `black-forest-labs.pollIntervalMillis` | `number` | `500` for images, `2000` for video | Milliseconds between job status checks. |
+| `black-forest-labs.pollTimeoutMillis` | `number` | `60000` for images, `600000` for video | How long to wait for a job before failing. |
+| `cohere.generateId`, `google.generateId`, `huggingface.generateId`, `mistral.generateId` | `() => string` | AI SDK default | Generates IDs for the AI SDK's response items. |
+| `elevenlabs.webSocket`, `google.webSocket`, `openai.webSocket`, `vercel.webSocket`, `vertex.webSocket`, `xai.webSocket` | `WebSocketConstructor` | The runtime's `WebSocket` | WebSocket class for streaming connections, for runtimes whose built-in `WebSocket` can't send headers. |
+| `google.name` | `string` | `'google.generative-ai'` | Provider name the AI SDK models report. |
+| `klingai.accessKey` | `string` | `KLINGAI_ACCESS_KEY` | Kling AI access key. Required with `secretKey`. |
+| `klingai.secretKey` | `string` | `KLINGAI_SECRET_KEY` | Kling AI secret key. |
+| `klingai.apiKey` | `string` | `KLINGAI_API_KEY`, read at request time | Kling AI API key. Takes precedence over `accessKey` and `secretKey` at request time, but the startup check still needs them. |
+| `openai.name` | `string` | `'openai'` | Provider name the AI SDK models report. |
+| `openai.organization` | `string` | `OPENAI_ORGANIZATION` in CLI discovery | OpenAI organization ID. |
+| `openai.project` | `string` | `OPENAI_PROJECT` in CLI discovery | OpenAI project ID. |
+| `openrouter.appName` | `string` | `'FrogBot'` | Sent as the `X-OpenRouter-Title` attribution header. |
+| `openrouter.appUrl` | `string` | `'https://www.frogbot.ai'` | Sent as the `HTTP-Referer` attribution header. |
+| `openrouter.compatibility` | `'strict' \| 'compatible'` | `'compatible'` | `strict` sends newer request fields, such as stream options, that only OpenRouter's own API accepts. |
+| `openrouter.extraBody` | `Record<string, unknown>` | — | Extra fields added to every request body. |
+| `openrouter.api_keys` | `Record<string, string>` | — | Your own API keys for upstream providers, keyed by OpenRouter provider slug such as `anthropic`. |
+| `openrouter.decisionsBaseURL` | `string` | `https://openrouter.ai/api/alpha`, or `baseURL` with `/alpha` in place of a trailing `/v1` | URL for OpenRouter's Decisions API, used for evaluation models. Set it when `baseURL` is a proxy path that doesn't end in `/v1`. |
+| `openrouter.baseUrl` | `string` | — | Deprecated spelling of `baseURL`. |
+| `replicate.apiToken` | `string` | `REPLICATE_API_TOKEN` | Replicate API token. Replicate doesn't accept `apiKey`. |
+| `vercel.headers` | `Record<string, string>` | `http-referer` and `x-title` attribution headers | Extra headers. Your `http-referer` or `x-title` value replaces FrogBot's, matched without regard to case. |
+| `vercel.teamIdOrSlug` | `string` | — | Vercel team ID or slug, for tokens that can access more than one team. |
+| `vercel.metadataCacheRefreshMillis` | `number` | `300000` | How often Vercel's model metadata cache refreshes, in milliseconds. |
+| `vertex.project` | `string` | `GOOGLE_VERTEX_PROJECT` | Google Cloud project. |
+| `vertex.location` | `string` | `GOOGLE_VERTEX_LOCATION` | Google Cloud location, such as `us-central1`. |
+| `vertex.apiKey` | `string` | `GOOGLE_VERTEX_API_KEY` | API key for Vertex express mode. Without it, Vertex uses Google Cloud application credentials. |
+| `vertex.googleAuthOptions` | `GoogleAuthOptions` | Application default credentials | Options for `google-auth-library`, such as `credentials` or `keyFile`. |
+| `vertex.headers` | `Record<string, string \| undefined>`, a promise of one, or a function returning either | — | Extra headers. Unlike other providers, Vertex can resolve them per request. |
+| `vertex.toolResultDownloads` | `{ maxBytes?: number }` | `maxBytes`: 7 MiB | Size limit for each remote file downloaded from tool results before it's sent to Vertex inline. |
+
+Custom `fetch` functions aren't accepted in config. Pass a [pre-built instance](#pre-built-instances) instead.
+
+---
+
 ## TypeSafe AI evaluation
 
 TypeSafe AI provides evaluation models for [`POST /v1/evaluate`](/gateway/overview#evaluate-over-http) and [local `frogbot.evaluate()`](/ai/overview#evaluate-state), not chat or embedding models. Set `TYPESAFE_AI_API_KEY` in the server environment and configure `providers: { 'typesafe-ai': {} }` in a standalone gateway, or `ai: { providers: { 'typesafe-ai': true } }` in FrogBot. To use a different server-side secret, set `apiKey` instead:
@@ -164,12 +277,14 @@ providers: {
 
 Custom endpoint config accepts:
 
-| Field | Required | Purpose |
-| --- | --- | --- |
-| `baseURL` | Yes | Base URL of the OpenAI-compatible API, typically ending in `/v1` |
-| `apiKey` | No | Sent as `Authorization: Bearer <apiKey>` |
-| `headers` | No | Extra request headers on every call |
-| `queryParams` | No | Extra query params appended to every request URL |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `baseURL` | `string` | Required | Base URL of the OpenAI-compatible API, typically ending in `/v1`. Must be non-empty. |
+| `apiKey` | `string` | — | Sent as `Authorization: Bearer <apiKey>`. Omit it for endpoints without authentication. |
+| `headers` | `Record<string, string>` | — | Extra request headers on every call. |
+| `queryParams` | `Record<string, string>` | — | Extra query params appended to every request URL. |
+
+The key itself can't contain `/`. Custom entries don't accept `models`.
 
 Custom OpenAI-compatible providers keep their existing routing behavior and are not interpreted as built-in allowlists. In FrogBot's `ai.providers` surface, custom entries use `baseUrl` and a required list of model definitions instead; see [Custom provider options](/ai/overview#custom-provider-options). FrogBot router model strings also remain unchanged.
 
