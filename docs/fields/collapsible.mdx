@@ -41,6 +41,7 @@ The record contains `title` and `internalNotes` at the current level. The label 
 | `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Required unless `admin.components.Label` is set | Header shown for the section. Use `admin.components.Label` for a header based on document data. |
 | `fields` | `Field[]` | Required | Fields displayed inside the section. |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `hidden` | `boolean` | `false` | Hides the section and its fields in the admin panel. Their values are still stored and returned by the API. |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 
 ## Admin options

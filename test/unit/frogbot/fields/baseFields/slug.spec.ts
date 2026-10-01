@@ -6,7 +6,7 @@ function getFields(field = slugField()) {
   const checkbox = field.fields[0];
   const text = field.fields[1];
 
-  if (!('hooks' in checkbox) || !('custom' in text)) {
+  if (!('hooks' in checkbox) || !('hooks' in text) || !('custom' in text)) {
     throw new Error('Unexpected slug field shape');
   }
 
