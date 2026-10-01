@@ -44,6 +44,7 @@ The record contains `firstName` and `lastName` at the current level. Rows can co
 | `type` | `'row'` | Required | Selects the Row field. |
 | `fields` | `Field[]` | Required | Fields arranged within the row. |
 | `admin` | `object` | — | Standard [field admin options](/fields/overview#admin-options) except `description`. |
+| `hidden` | `boolean` | `false` | Hides the row and its fields in the admin panel. Their values are still stored and returned by the API. |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 
 Set `admin.width` on the nested fields to control their relative widths. On narrow screens, the admin panel can stack them to remain usable.

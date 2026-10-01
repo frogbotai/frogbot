@@ -21,7 +21,6 @@ import type {
   RichTextField as PayloadRichTextField,
   RowField as PayloadRowField,
   SelectField as PayloadSelectField,
-  TabAsField as PayloadTabAsField,
   TabsField as PayloadTabsField,
   TextareaField as PayloadTextareaField,
   TextField as PayloadTextField,
@@ -123,19 +122,37 @@ type RetypedKey = 'access' | 'defaultValue' | 'filterOptions' | 'hooks' | 'valid
 
 type SwapReqArg<F> = F extends (args: infer A) => infer R ? (args: FrogBotArgs<A>) => R : F;
 
-type RequestSlots<T> = (T extends { defaultValue?: infer D }
-  ? { defaultValue?: SwapReqArg<D> }
-  : unknown) &
-  (T extends { filterOptions?: infer F } ? { filterOptions?: SwapReqArg<F> } : unknown);
+type KeySlot<T, K extends PropertyKey, S> = K extends keyof T ? S : unknown;
+
+type RequestSlots<T> = KeySlot<
+  T,
+  'defaultValue',
+  { defaultValue?: SwapReqArg<T['defaultValue' & keyof T]> }
+> &
+  KeySlot<T, 'filterOptions', { filterOptions?: SwapReqArg<T['filterOptions' & keyof T]> }>;
 
 type ValidatorFieldConfig<T> = Omit<T, RetypedKey> & RequestSlots<T>;
 
-type RetypedField<T> = DistributiveOmit<T, RetypedKey> &
-  RequestSlots<T> &
-  FieldHooks &
-  FieldAccessConfig & {
-    validate?: Validate<any, any, any, ValidatorFieldConfig<T>>;
-  };
+type RetypedMember<T, TField> = T extends unknown
+  ? Omit<T, RetypedKey> &
+      RequestSlots<T> &
+      KeySlot<T, 'hooks', FieldHooks> &
+      KeySlot<T, 'access', FieldAccessConfig> &
+      KeySlot<T, 'validate', { validate?: Validate<any, any, any, ValidatorFieldConfig<TField>> }>
+  : never;
+
+type RetypedField<T> = RetypedMember<T, T>;
+
+type LayoutIgnoredKey =
+  | 'access'
+  | 'defaultValue'
+  | 'hooks'
+  | 'index'
+  | 'required'
+  | 'saveToJWT'
+  | 'typescriptSchema'
+  | 'unique'
+  | 'validate';
 
 interface FieldContainer {
   fields: Field[];
@@ -155,7 +172,10 @@ export type BlocksField = RetypedField<Omit<PayloadBlocksField, 'blockReferences
   BlockList;
 export type CheckboxField = RetypedField<PayloadCheckboxField>;
 export type CodeField = RetypedField<PayloadCodeField>;
-export type CollapsibleField = RetypedField<Omit<PayloadCollapsibleField, 'fields'>> &
+export type CollapsibleField = DistributiveOmit<
+  PayloadCollapsibleField,
+  'fields' | LayoutIgnoredKey
+> &
   FieldContainer;
 export type DateField = RetypedField<PayloadDateField>;
 export type EmailField = RetypedField<PayloadEmailField>;
@@ -165,7 +185,7 @@ export type NumberField = RetypedField<PayloadNumberField>;
 export type PointField = RetypedField<PayloadPointField>;
 export type RadioField = RetypedField<PayloadRadioField>;
 export type RelationshipField = RetypedField<PayloadRelationshipField>;
-export type RowField = RetypedField<Omit<PayloadRowField, 'fields'>> & FieldContainer;
+export type RowField = Omit<PayloadRowField, 'fields' | LayoutIgnoredKey> & FieldContainer;
 export type SelectField = RetypedField<PayloadSelectField>;
 export type TextareaField = RetypedField<PayloadTextareaField>;
 export type TextField = RetypedField<PayloadTextField>;
@@ -191,11 +211,16 @@ export type UnnamedGroupField = RetypedField<Omit<PayloadUnnamedGroupField, 'fie
   FieldContainer;
 export type GroupField = NamedGroupField | UnnamedGroupField;
 
-export type NamedTab = RetypedField<Omit<PayloadNamedTab, 'fields'>> & FieldContainer;
-export type UnnamedTab = RetypedField<Omit<PayloadUnnamedTab, 'fields'>> & FieldContainer;
+export type NamedTab = RetypedField<Omit<PayloadNamedTab, 'fields' | 'index' | 'unique'>> &
+  FieldContainer;
+type UnnamedTabConfig = Omit<PayloadUnnamedTab, 'fields' | 'hidden' | LayoutIgnoredKey> &
+  FieldContainer;
+export type UnnamedTab = UnnamedTabConfig & {
+  [K in Exclude<keyof NamedTab, keyof UnnamedTabConfig>]?: never;
+};
 export type Tab = NamedTab | UnnamedTab;
-export type TabAsField = RetypedField<Omit<PayloadTabAsField, 'fields'>> & FieldContainer;
-export type TabsField = RetypedField<Omit<PayloadTabsField, 'tabs'>> & TabList;
+export type TabAsField = Tab & { type: 'tab' };
+export type TabsField = Omit<PayloadTabsField, 'label' | 'tabs' | LayoutIgnoredKey> & TabList;
 
 type BlockReference = Exclude<
   NonNullable<PayloadBlocksField['blockReferences']>[number],
@@ -293,7 +318,7 @@ export function fieldIsID<T extends Field>(field: T): field is T & { name: 'id' 
 }
 
 export function fieldIsHiddenOrDisabled(field: Field | TabAsField): boolean {
-  const normalized = field.admin ? field : { ...field, admin: {} };
+  const normalized = field.admin ? field : ({ ...field, admin: {} } as Field | TabAsField);
 
   return Boolean(payloadFieldIsHiddenOrDisabled(asPayloadField(normalized)));
 }

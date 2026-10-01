@@ -35,6 +35,9 @@ const collection: CollectionConfig = {
 expectTypeOf(collection.fields).toMatchTypeOf<CollectionConfig['fields']>();
 
 const html = lexicalHTMLField({ htmlFieldName: 'html', lexicalFieldName: 'content' });
+
+if (html.type !== 'code') throw new Error('lexicalHTMLField returns a code field');
+
 const _afterRead = html.hooks?.afterRead?.[0];
 
 type HookRequest = Parameters<NonNullable<typeof _afterRead>>[0]['req'];
