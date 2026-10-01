@@ -18,3 +18,50 @@ plugins: [importExportPlugin({ collections: [{ slug: 'posts' }] })]
 ```
 
 The adapter preserves FrogBot's collection selection, import and export controls, limits, lifecycle hooks, and collection overrides. It adds the upstream admin provider, import and export collections, and jobs without replacing existing app config.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `CollectionEntry[]` | Required | Collections that get import and export controls. An empty array enables every collection. See [Collection entries](#collection-entries). |
+| `batchSize` | `number` | `100` | Documents processed per batch for imports and exports. A collection's `import.batchSize` or `export.batchSize` takes precedence. |
+| `defaultVersionStatus` | `'draft' \| 'published'` | `'published'` | Status for imported documents that have no `_status` value, in collections with drafts enabled. A collection's `import.defaultVersionStatus` takes precedence. |
+| `exportLimit` | `number \| ({ req }) => number \| Promise<number>` | `0` | Maximum documents per export. `0` is unlimited. A collection's `export.limit` takes precedence. |
+| `importLimit` | `number \| ({ req }) => number \| Promise<number>` | `0` | Maximum documents per import. `0` is unlimited. A collection's `import.limit` takes precedence. |
+| `overrideExportCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Receives the shared `exports` collection and returns the collection to add, for example to change its access or upload settings. |
+| `overrideImportCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Receives the shared `imports` collection and returns the collection to add. |
+| `debug` | `boolean` | `false` | Logs details of import and export runs. |
+
+### Collection entries
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `CollectionSlug` | Required | Collection to add import and export controls to. |
+| `export` | `boolean \| ExportConfig` | `true` | Export settings. `false` removes the export control. |
+| `import` | `boolean \| ImportConfig` | `true` | Import settings. `false` removes the import control. |
+
+`ExportConfig`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `format` | `'csv' \| 'json'` | — | Forces one format and hides the format picker. Unset lets the user choose. |
+| `batchSize` | `number` | Plugin `batchSize` | Documents processed per batch. |
+| `limit` | `number \| ({ req }) => number \| Promise<number>` | Plugin `exportLimit` | Maximum documents per export. `0` is unlimited. |
+| `disableJobsQueue` | `boolean` | `false` | Runs exports synchronously instead of as jobs. |
+| `disableSave` | `boolean` | `false` | Hides the save button in the export preview. |
+| `disableDownload` | `boolean` | `false` | Hides the download button in the export preview. |
+| `hooks.before` | `(args) => Record<string, unknown>[] \| Promise<…>` | — | Runs before each batch is written to the file. Receives `batchNumber`, `totalBatches`, `format`, `data` (rows for CSV, nested documents for JSON), `originalData`, and `req`. The returned array replaces `data`. |
+| `hooks.after` | `(args) => void \| Promise<void>` | — | Runs after each batch is written, with the same arguments. Its return value is ignored. |
+| `overrideCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Overrides the export collection for this collection only. Returning a new slug creates a separate export collection; returning `exports` merges into the shared one. |
+
+`ImportConfig`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `batchSize` | `number` | Plugin `batchSize` | Documents processed per batch. |
+| `limit` | `number \| ({ req }) => number \| Promise<number>` | Plugin `importLimit` | Maximum documents per import. `0` is unlimited. |
+| `defaultVersionStatus` | `'draft' \| 'published'` | Plugin `defaultVersionStatus` | Status for imported documents that have no `_status` value. |
+| `disableJobsQueue` | `boolean` | `false` | Runs imports synchronously instead of as jobs. |
+| `hooks.before` | `(args) => Partial<Doc>[] \| Promise<…>` | — | Runs before each batch is written to the database. Receives `batchNumber`, `totalBatches`, `format`, `data` (the documents to write), `originalData` (the parsed file rows), and `req`. The returned array replaces `data`. |
+| `hooks.after` | `(args) => void \| Promise<void>` | — | Runs after each batch is written. Receives `batchNumber`, `totalBatches`, `format`, `originalData`, `req`, and `result` (`{ imported, updated, total, errors }` for the batch). Its return value is ignored. |
+| `overrideCollection` | `({ collection }) => CollectionConfig \| Promise<CollectionConfig>` | — | Overrides the import collection for this collection only. Returning a new slug creates a separate import collection; returning `imports` merges into the shared one. |

@@ -19,3 +19,30 @@ plugins: [sentryPlugin({ Sentry })]
 ```
 
 The adapter preserves FrogBot's enablement, status capture, context, and debug options. It composes with existing FrogBot `afterError` hooks and admin providers.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Sentry` | `{ captureException(err: Error, hint: any): string }` | — | The Sentry SDK, usually `import * as Sentry from '@sentry/nextjs'`. Without it, the plugin does nothing. |
+| `enabled` | `boolean` | `true` | Set `false` to turn the plugin off. |
+| `options.captureErrors` | `number[]` | `[]` | Extra HTTP status codes to capture. Errors with status `500` or above are always captured, and an error without a status counts as `500`. |
+| `options.context` | `(args) => Partial<ScopeContext> \| Promise<Partial<ScopeContext>>` | — | Returns the Sentry scope context sent with the exception. Receives the `afterError` hook arguments plus `defaultContext`. |
+| `options.debug` | `boolean` | `false` | Logs the Sentry event ID and error message for each captured exception. |
+
+`defaultContext` holds `extra.errorCollectionSlug` and, for signed-in requests, `user` with the user's `id`, `collection`, `email`, `username`, and the `X-Forwarded-For` header as `ip_address`. Return it spread into your own context to keep those values:
+
+```ts
+sentryPlugin({
+  Sentry,
+  options: {
+    captureErrors: [400, 403],
+    context: ({ defaultContext, req }) => ({
+      ...defaultContext,
+      tags: { locale: req.locale },
+    }),
+  },
+})
+```
+
+The plugin also adds an error boundary to the admin panel.

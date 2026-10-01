@@ -18,3 +18,30 @@ plugins: [searchPlugin({ collections: ['posts'] })]
 ```
 
 The adapter preserves FrogBot's synchronization, priorities, localization, draft handling, batching, skip logic, and search collection override. Existing collection hooks remain active.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `string[]` | `[]` | Collections whose documents are indexed. Each save syncs the document, and each delete removes its index entry. |
+| `defaultPriorities` | `Record<string, number \| ((doc) => number \| Promise<number>)>` | `0` | Priority stored on new index entries, per collection. A function receives the source document. |
+| `beforeSync` | `(args) => SearchDoc \| Promise<SearchDoc>` | — | Returns the index entry to save. See [beforeSync arguments](#beforesync-arguments). |
+| `skipSync` | `({ collectionSlug, doc, locale, req }) => boolean \| Promise<boolean>` | — | Return `true` to skip indexing a document, for example for a particular locale. `locale` is `undefined` for collections that aren't localized. If it throws, the error is logged and the document is indexed. |
+| `syncDrafts` | `boolean` | `false` | Indexes draft documents. When `false`, only published documents are indexed. |
+| `deleteDrafts` | `boolean` | `true` | Removes a document's index entry when it's saved as a draft. |
+| `localize` | `boolean` | `true` when localization is configured | Makes the index entries localized. |
+| `reindexBatchSize` | `number` | `50` | Documents read per batch when you reindex. Lower values use less memory. |
+| `searchOverrides` | `Partial<CollectionConfig> & { fields?: ({ defaultFields }) => Field[] }` | — | Overrides for the search collection. `slug` defaults to `'search'`. `access` and `admin` merge with the defaults, `endpoints` are added before the reindex endpoint, and other keys replace the defaults. `fields` receives the default fields and returns the fields to use. |
+| `apiBasePath` | `string` | — | Deprecated and ignored. The plugin uses your configured API route. |
+
+The search collection stores `title`, `priority`, `doc` (a relationship to the source document), and `docUrl`. It's publicly readable and can't be created through the API unless `searchOverrides.access` says otherwise. A **Reindex** button on its list view rebuilds the index for the selected collections.
+
+### beforeSync arguments
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `searchDoc` | `{ title: string; doc: { relationTo: string; value: string }; [key: string]: any }` | The entry about to be saved, with `title` copied from the source document's `title`. Return it with any changes or extra fields. |
+| `originalDoc` | `Record<string, any>` | The source document. With localization enabled, it's re-read in the locale being synced. |
+| `collectionSlug` | `string` | The source document's collection. |
+| `req` | `FrogBotRequest` | The current request. |
+| `payload` | — | The internal server instance. Use `req.frogbot` instead. |

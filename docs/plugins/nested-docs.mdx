@@ -18,3 +18,15 @@ plugins: [nestedDocsPlugin({ collections: ['pages'] })]
 ```
 
 The adapter preserves FrogBot's custom parent and breadcrumb field slugs plus label and URL generators. It extends only the selected FrogBot collections and retains their fields and hooks.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `CollectionSlug[]` | Required | Collections to extend. Add the plugin more than once to use different options for different collections. |
+| `parentFieldSlug` | `string` | `'parent'` | Name of the parent relationship field. When set, the plugin doesn't add the field, so define it yourself. |
+| `breadcrumbsFieldSlug` | `string` | `'breadcrumbs'` | Name of the breadcrumbs array field. When set, the plugin doesn't add the field, so define it yourself. |
+| `generateLabel` | `(docs, currentDoc, collection, req) => string` | The document's `useAsTitle` value | Returns the label for each breadcrumb. `docs` is the chain from the root ancestor to that breadcrumb's document, and `currentDoc` is the last item in it. |
+| `generateURL` | `(docs, currentDoc, collection, req) => string` | — | Returns the URL for each breadcrumb, with the same arguments. Without it, breadcrumbs have no URL. |
+
+Each breadcrumb is stored as `{ doc, label, url }`. Saving a document also re-saves its descendants so their breadcrumbs stay current.

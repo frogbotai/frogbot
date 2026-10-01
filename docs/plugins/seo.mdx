@@ -27,28 +27,37 @@ plugins: [
 ]
 ```
 
-| Option                | Description                                                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| `collections`         | Collection slugs that get SEO fields and may call the generate functions.                            |
-| `uploadsCollection`   | Upload collection for the meta image. Without it, no image field is added.                           |
-| `tabbedUI`            | Uses a tabbed layout, with the `meta` group inside an "SEO" tab.                                      |
-| `interfaceName`       | Names the generated type for the `meta` group.                                                       |
-| `fields`              | Receives `{ defaultFields }` and returns the fields to use in the `meta` group.                      |
-| `generateTitle`       | Returns the meta title.                                                                              |
-| `generateDescription` | Returns the meta description.                                                                        |
-| `generateURL`         | Returns the page URL shown in the search preview.                                                    |
-| `generateImage`       | Returns the meta image, as an upload ID or `{ id }`.                                                 |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `CollectionSlug[]` | — | Collection slugs that get SEO fields and may call the generate functions. |
+| `uploadsCollection` | `CollectionSlug` | — | Upload collection for the meta image. Without it, no image field is added. |
+| `tabbedUI` | `boolean` | `false` | Uses a tabbed layout: the collection's existing fields move into a first tab, labeled with the collection's singular label or "Content", and the `meta` group goes in an "SEO" tab. If the first field is already a tabs field, the "SEO" tab is appended to it. An auth collection's `email` field stays above the tabs. |
+| `interfaceName` | `string` | — | Names the generated type for the `meta` group. |
+| `fields` | `({ defaultFields }: { defaultFields: Field[] }) => Field[]` | Default fields | Receives the default fields and returns the fields to use in the `meta` group. |
+| `generateTitle` | `(args: GenerateArgs) => string \| Promise<string>` | — | Returns the meta title. |
+| `generateDescription` | `(args: GenerateArgs) => string \| Promise<string>` | — | Returns the meta description. |
+| `generateURL` | `(args: GenerateArgs) => string \| Promise<string>` | — | Returns the page URL shown in the search preview. |
+| `generateImage` | `(args: GenerateArgs) => string \| number \| { id: string \| number } \| Promise<…>` | — | Returns the meta image, as an upload ID or `{ id }`. |
 
 An "Auto-generate" button appears only on fields whose generate function you provide.
 
 ## Generate functions
 
-Every generate function receives the same arguments:
+Every generate function receives the same `GenerateArgs` object:
 
-- `collectionSlug`: the listed collection the request came from.
-- `doc`: the document's current form values, typed from your generated types. Every property is optional, because the document may not be saved yet.
-- `req`: the FrogBot request, with `req.frogbot` and `req.user`.
-- `id` and `locale` when they apply.
+| Argument | Type | Description |
+| --- | --- | --- |
+| `collectionSlug` | `CollectionSlug` | The listed collection the request came from. |
+| `doc` | `Partial<TypedCollection<collectionSlug>>` | The document's current form values, typed from your generated types. Every property is optional, because the document may not be saved yet. |
+| `req` | `FrogBotRequest` | The FrogBot request, with `req.frogbot` and `req.user`. |
+| `id` | `string \| number` | The document ID. Unset for a document that hasn't been saved. |
+| `locale` | `string` | The locale being edited, when localization is enabled. |
+| `title` | `string` | The document's current title, from the collection's `useAsTitle` field. |
+| `hasSavePermission` | `boolean` | Whether the user may save the document. |
+| `hasPublishPermission` | `boolean` | Whether the user may publish the document. |
+| `hasPublishedDoc` | `boolean` | Typed, but the admin panel doesn't send it, so it's `undefined`. |
+| `versionCount` | `number` | Typed, but the admin panel doesn't send it, so it's `undefined`. |
+| `preferencesKey` | `string` | Typed, but the admin panel doesn't send it, so it's `undefined`. |
 
 Checking `collectionSlug` narrows `doc` to that collection's type:
 
@@ -108,6 +117,28 @@ plugins: [seoPlugin({ collections: ['posts', 'pages'], generateTitle })]
 ```
 
 Here `posts` gets the automatic `meta` group and `pages` keeps its own layout. Pass `hasGenerateFn: true` to a field whose generate function you provide, to show its "Auto-generate" button; on `PreviewField` it uses `generateURL`.
+
+Each factory takes one argument object. `overrides` is spread over the returned field last, so it can replace any property, including `name` and `admin`.
+
+| Factory | Returns | Argument | Type | Default | Description |
+| --- | --- | --- | --- | --- | --- |
+| `MetaTitleField` | `text` field named `title` | `hasGenerateFn` | `boolean` | `false` | Shows the "Auto-generate" button, backed by `generateTitle`. |
+| | | `overrides` | `Partial<TextField>` | — | Properties merged over the field. |
+| `MetaDescriptionField` | `textarea` field named `description` | `hasGenerateFn` | `boolean` | `false` | Shows the "Auto-generate" button, backed by `generateDescription`. |
+| | | `overrides` | `Partial<TextareaField>` | — | Properties merged over the field. |
+| `MetaImageField` | `upload` field named `image` | `relationTo` | `string` | Required | Upload collection the image comes from. |
+| | | `hasGenerateFn` | `boolean` | `false` | Shows the "Auto-generate" button, backed by `generateImage`. |
+| | | `overrides` | `Partial<UploadField>` | — | Properties merged over the field. |
+| `OverviewField` | `ui` field named `overview` | `titlePath` | `string` | `'meta.title'` | Path of the title field the overview checks. |
+| | | `descriptionPath` | `string` | `'meta.description'` | Path of the description field the overview checks. |
+| | | `imagePath` | `string` | `'meta.image'` | Path of the image field the overview checks. |
+| | | `titleOverrides` | `{ minLength?: number; maxLength?: number }` | `{ minLength: 50, maxLength: 60 }` | Title length the overview counts as complete. |
+| | | `descriptionOverrides` | `{ minLength?: number; maxLength?: number }` | `{ minLength: 100, maxLength: 150 }` | Description length the overview counts as complete. |
+| | | `overrides` | `Partial<UIField>` | — | Properties merged over the field. |
+| `PreviewField` | `ui` field named `preview` | `hasGenerateFn` | `boolean` | `false` | Fetches the preview URL from `generateURL`. |
+| | | `titlePath` | `string` | `'meta.title'` | Path of the title field shown in the preview. |
+| | | `descriptionPath` | `string` | `'meta.description'` | Path of the description field shown in the preview. |
+| | | `overrides` | `Partial<UIField>` | — | Properties merged over the field. |
 
 The factories return FrogBot fields, so they need no casts, and `overrides` accepts FrogBot hooks, access, and validation.
 

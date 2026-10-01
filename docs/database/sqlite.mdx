@@ -1,7 +1,7 @@
 ---
 title: "SQLite"
 sidebarTitle: "SQLite"
-description: "Use SQLite with FrogBot through the @frogbotai/db-sqlite adapter, which wraps @frogbotai/db-sqlite on top of Drizzle."
+description: "Use SQLite with FrogBot through the @frogbotai/db-sqlite adapter, which is built on Drizzle."
 ---
 
 To use FrogBot with SQLite, install the package `@frogbotai/db-sqlite`. It leverages Drizzle ORM and `libSQL` to interact with a SQLite database that you provide.
@@ -120,24 +120,27 @@ Search tables, indexes, and triggers are part of your schema. Development push c
 
 ## Options
 
-| Option                     | Description                                                                                                                                                                      |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `client` \*                | [Client connection options](https://orm.drizzle.team/docs/get-started-sqlite#turso) that will be passed to `createClient` from `@libsql/client`.                                 |
-| `push`                     | Disable Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push) in development mode. By default, `push` is enabled for development mode only. |
-| `migrationDir`             | Customize the directory that migrations are stored.                                                                                                                              |
-| `logger`                   | The instance of the logger to be passed to drizzle. By default FrogBot's will be used.                                                                                           |
-| `idType`                   | A string of 'number', or 'uuid' that is used for the data type given to id columns.                                                                                              |
-| `transactionOptions`       | A SQLiteTransactionConfig object for transactions, or set to `false` to disable using transactions. [More details](https://orm.drizzle.team/docs/transactions)                   |
-| `localesSuffix`            | A string appended to the end of table names for storing localized fields. Default is '\_locales'.                                                                                |
-| `relationshipsSuffix`      | A string appended to the end of table names for storing relationships. Default is '\_rels'.                                                                                      |
-| `versionsSuffix`           | A string appended to the end of table names for storing versions. Defaults to '\_v'.                                                                                             |
-| `beforeSchemaInit`         | Drizzle schema hook. Runs before the schema is built. [More Details](#beforeschemainit)                                                                                          |
-| `afterSchemaInit`          | Drizzle schema hook. Runs after the schema is built. [More Details](#afterschemainit)                                                                                            |
-| `autoIncrement`            | Pass `true` to enable SQLite [AUTOINCREMENT](https://www.sqlite.org/autoinc.html) for primary keys to ensure the same ID cannot be reused from deleted rows                      |
-| `allowIDOnCreate`          | Set to `true` to use the `id` passed in data on the create API operations without using a custom ID field.                                                                       |
-| `blocksAsJSON`             | Store blocks as a JSON column instead of using the relational structure which can improve performance with a large amount of blocks                                              |
-| `busyTimeout`              | Maximum time in milliseconds to wait when the database is locked. Default is `0`.                                                                                                |
-| `wal`                      | Enable Write-Ahead Logging (WAL) mode for improved performance and concurrency. [More Details](#wal-mode)                                                                        |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `client` | `Config` | Required | [libSQL client options](https://orm.drizzle.team/docs/get-started-sqlite#turso) passed to `createClient` from `@libsql/client`, such as `url` and `authToken`. |
+| `push` | `boolean` | `true` | Pushes schema changes to the database with Drizzle's [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push) on startup. Push never runs when `NODE_ENV` is `production` or during migration commands. Set `false` to rely on migrations only. |
+| `migrationDir` | `string` | First of `src/migrations`, `dist/migrations`, or `migrations` that exists | Directory migrations are written to and read from. See [Migrations](/database/migrations#migrations-directory). |
+| `prodMigrations` | `{ name: string; up: (args: MigrateUpArgs) => Promise<void>; down: (args: MigrateDownArgs) => Promise<void> }[]` | — | Migrations to run on connect when `NODE_ENV` is `production`. See [Running migrations in production](/database/migrations#running-migrations-in-production). |
+| `idType` | `'number' \| 'uuid' \| 'uuidv7'` | `'number'` | Column type for document IDs. `number` IDs are integers; `uuid` and `uuidv7` IDs are strings. |
+| `autoIncrement` | `boolean` | `false` | Adds SQLite [AUTOINCREMENT](https://www.sqlite.org/autoinc.html) to primary keys, so IDs from deleted rows are never reused. |
+| `allowIDOnCreate` | `boolean` | `false` | Uses an `id` passed in create data, without a custom ID field. |
+| `transactionOptions` | `SQLiteTransactionConfig \| false` | Transactions off | Options for [transactions](https://orm.drizzle.team/docs/transactions). Transactions are off unless you pass an object, such as `{}`. When a collection sets [`auth.signIn`](/authentication/sign-in) and you leave this unset, FrogBot turns transactions on. See [Transactions](/database/transactions). |
+| `busyTimeout` | `number` | `0` | Milliseconds to wait when the database is locked. |
+| `wal` | `boolean \| { journalSizeLimit?: number; synchronous?: 'EXTRA' \| 'FULL' \| 'NORMAL' \| 'OFF' }` | `false` | Enables Write-Ahead Logging for better concurrency. Applies only to `file:` URLs. See [WAL mode](#wal-mode). |
+| `blocksAsJSON` | `boolean` | `false` | Stores blocks in a JSON column instead of relational tables, which can be faster with many blocks. |
+| `localesSuffix` | `string` | `'_locales'` | Suffix for tables that store localized fields. |
+| `relationshipsSuffix` | `string` | `'_rels'` | Suffix for tables that store relationships. |
+| `versionsSuffix` | `string` | `'_v'` | Suffix for tables that store versions. |
+| `beforeSchemaInit` | `SQLiteSchemaHook[]` | `[]` | Drizzle schema hooks that run before the schema is built. See [beforeSchemaInit](#beforeschemainit). |
+| `afterSchemaInit` | `SQLiteSchemaHook[]` | `[]` | Drizzle schema hooks that run after the schema is built. See [afterSchemaInit](#afterschemainit). |
+| `logger` | `boolean \| Logger` | `false` | Drizzle query logger. `true` logs every query; pass a Drizzle `Logger` to handle them yourself. |
+| `generateSchemaOutputFile` | `string` | A generated-schema file in `src/`, or in the project root without `src/` | File that `frogbot.db.generateSchema()` writes the typed Drizzle schema to. |
+| `schemaName` | `string` | — | Accepted for parity with the Postgres adapter. SQLite has no schemas, so it has no effect. |
 
 ## Access to Drizzle
 
@@ -392,7 +395,14 @@ export default buildConfig({
 })
 ```
 
-It inherits the options from the SQLite adapter above with the exception of the connection options in favour of the `binding`.
+It accepts the [SQLite adapter options](#options) except `client`, `busyTimeout`, and `wal`, plus these:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `binding` | `D1Database` | Required | The D1 database binding from your Cloudflare Worker environment. |
+| `readReplicas` | `'first-primary'` | — | Experimental. Sends reads to D1 read replicas with the `first-primary` strategy. See [D1 Read Replicas](#d1-read-replicas). |
+
+Unlike `@frogbotai/db-sqlite`, the D1 adapter doesn't turn transactions on for collections that set `auth.signIn`.
 
 You can see our [Cloudflare D1 template](https://github.com/frogbot/frogbot/tree/main/templates/with-cloudflare-d1) for a full example of how to set this up.
 
@@ -484,8 +494,9 @@ export default buildConfig({
 })
 ```
 
-Settings for the `wal` option:
-| Setting | Description | Default |
-| ------------------ | ------------------------------------------------------------------------------------------------- | ----------------- |
-| `journalSizeLimit` | Max size of the WAL file before checkpointing to the main DB. | `67108864` (64MB) |
-| `synchronous` | WAL sync mode: `EXTRA`, `FULL`, `NORMAL`, `OFF`. Controls balance of performance vs. data safety. | `'FULL'` |
+WAL needs a file database. With an in-memory or remote `client.url`, the adapter logs a warning and turns WAL off. Pass an object instead of `true` to change the WAL settings:
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| `journalSizeLimit` | `number` | `67108864` (64 MB) | Maximum size of the WAL file, in bytes, before it's checkpointed into the main database. |
+| `synchronous` | `'EXTRA' \| 'FULL' \| 'NORMAL' \| 'OFF'` | `'FULL'` | How often data is synced to disk. `EXTRA` is the safest, `NORMAL` trades some safety for speed, and `OFF` is fastest but can lose data. |

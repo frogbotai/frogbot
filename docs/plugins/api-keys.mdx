@@ -68,14 +68,14 @@ apiKeysPlugin({
 })
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `authCollection` | `users` | Auth-enabled collection whose users own the keys. |
-| `collectionSlug` | `api-keys` | Slug for the generated API-key collection. |
-| `tokenPrefix` | `fb` | Prefix placed before generated key values. |
-| `headerNames` | `['x-api-key']` | Request headers checked for a key when `Authorization` doesn't carry one. Replaces the default list. |
-| `collection` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
-| `canRevokeAnyKey` | — | Predicate allowing a request to revoke or rotate a key it does not own. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `authCollection` | `string` | `'users'` | Auth-enabled collection whose users own the keys. The plugin throws at startup if the collection is missing or doesn't have auth enabled. |
+| `collectionSlug` | `string` | `'api-keys'` | Slug for the generated API-key collection. |
+| `tokenPrefix` | `string` | `'fb'` | Prefix placed before generated key values, joined with `_`. Only tokens with this prefix authenticate. |
+| `headerNames` | `string[]` | `['x-api-key']` | Request headers checked for a key when `Authorization` doesn't carry one. Replaces the default list. |
+| `collection` | `Partial<CollectionConfig>` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
+| `canRevokeAnyKey` | `(req: FrogBotRequest) => boolean \| Promise<boolean>` | — | Predicate allowing a request to revoke or rotate a key it does not own. Without it, callers revoke and rotate only their own keys. |
 
 Collection overrides merge with the generated configuration and changes made by other plugins. The collection uses the `key-round` icon in the admin sidebar; set `collection.admin.icon` to use a different one. The admin controls use the default admin components, and the token dialog ships a small stylesheet built on the admin theme variables.
 
