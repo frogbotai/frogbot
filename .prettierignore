@@ -1,4 +1,5 @@
-**/payload-types.ts
+**/frogbot-types.ts
+**/importMap.js
 **/importMap.json
 .tmp
 **/.git

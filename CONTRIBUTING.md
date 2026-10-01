@@ -193,7 +193,7 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 - Name tests as present-tense statements of observable behavior, e.g. `'POST /api/users/login rejects invalid credentials'`; this repo does not use a `should` prefix.
 - One behavior per test. No `if`/`else` or `try`/`finally` inside a test body; use hooks for cleanup.
 - Keep collection slugs and other shared identifiers in the suite's `config.ts` or a shared constants file and reuse them in fixtures and assertions.
-- Adding a collection to a suite means adding it to that suite's `config.ts`; regenerate the suite's types with `test/generateTypes.ts <suite>` (requires a built `packages/frogbot`) when the shape matters to the test.
+- Adding a collection to a suite means adding it to that suite's `config.ts`; regenerate the suite's types with `pnpm generate:types <suite>` (requires built packages) when the shape matters to the test.
 
 ### When tests find a problem
 
