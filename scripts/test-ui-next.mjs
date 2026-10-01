@@ -45,6 +45,22 @@ try {
     .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
     .join('\n');
   assert.ok(css.length > 0);
+
+  const manifest = fs.readFileSync(
+    path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page_client-reference-manifest.js'),
+    'utf8',
+  );
+  const layoutCss = manifest.match(/"[^"]*\/app\/\(frogbot\)\/layout":(\[[^\]]*\])/);
+  assert.ok(layoutCss, 'No CSS entry for the admin layout');
+
+  const layoutStyles = JSON.parse(layoutCss[1])
+    .map((entry) => fs.readFileSync(path.join(nextRoot, entry.path), 'utf8'))
+    .join('\n');
+  const layerStatements = Array.from(layoutStyles.matchAll(/@layer ([^{;]+);/g), (match) =>
+    match[1].replace(/\s+/g, ''),
+  );
+  assert.equal(layerStatements[0], 'payload-default,frogbot,payload');
+  assert.ok(layerStatements.includes('payload-default,payload'));
   assert.match(css, /\.fb-button/);
   assert.match(css, /var\(--theme-base-/);
   assert.match(css, /data-fb-theme/);

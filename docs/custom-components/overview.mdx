@@ -265,6 +265,8 @@ export function StatusAction() {
 
 FrogBot UI components and theme tokens are available in every admin component without a wrapper and follow the admin's light and dark theme. Use `--theme-base-*` for neutral colors that should invert with the active theme. Use `--color-base-*` only for fixed palette colors that must not invert.
 
+Your component CSS beats FrogBot's styles as long as it isn't in a CSS layer. See [override FrogBot styles](/chat/ui-theming#override-frogbot-styles) and [admin panel styles](/chat/ui-theming#admin-panel-styles).
+
 ```css
 .status-action {
   background: var(--theme-base-100);

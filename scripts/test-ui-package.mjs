@@ -51,11 +51,13 @@ try {
   const cssFiles = fs
     .readdirSync(extractedRoot, { recursive: true })
     .filter((file) => file.endsWith('.css'));
+  assert.ok(cssFiles.includes('src/layers.css'));
   assert.ok(cssFiles.includes('src/styles.css'));
   assert.ok(cssFiles.includes('src/utilities.css'));
   assert.ok(fs.statSync(path.join(extractedRoot, 'src/styles.css')).size > 0);
   assert.ok(fs.statSync(path.join(extractedRoot, 'src/utilities.css')).size > 0);
   const css = fs.readFileSync(path.join(extractedRoot, 'src/styles.css'), 'utf8');
+  assert.ok(css.startsWith('@import "./layers.css";\n'));
   assert.match(css, /@import "\.\/utilities\.css"/);
   assert.match(css, /var\(--background\)/);
 
@@ -125,7 +127,7 @@ import { createRoot } from 'react-dom/client'
 
 void [artifacts, iconNames, tools]
 createRoot(document.getElementById('root')!).render(
-  <ThemeProvider mode="dark" theme={{ '--primary': 'oklch(0.7 0.2 40)' }}>
+  <ThemeProvider mode="dark">
     <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><chat.MessageList messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Bundled chat' }] }]} /><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
   </ThemeProvider>,
 )
@@ -157,7 +159,13 @@ createRoot(document.getElementById('root')!).render(
     .join('\n');
   assert.match(bundle, /Navigation/);
   assert.match(bundle, /Bundled chat/);
-  assert.match(bundle, /oklch\(0\.7 0\.2 40\)/);
+
+  const bundledCss = fs
+    .readdirSync(path.join(appRoot, 'dist/assets'))
+    .filter((file) => file.endsWith('.css'))
+    .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
+    .join('\n');
+  assert.match(bundledCss, /^@layer theme,\s*base,\s*components,\s*frogbot,\s*utilities;/);
   for (const forbidden of [
     'process.env',
     '@payloadcms/',

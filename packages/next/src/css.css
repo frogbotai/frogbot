@@ -1,3 +1,4 @@
+@import "./layers.css";
 @import "@payloadcms/next/css";
 @import "@frogbotai/ui/styles.css";
 @import "./elements/Nav/index.css";
@@ -6,170 +7,124 @@
 @import "./views/SettingsView.css";
 @import "./views/Connections/index.css";
 
-:root {
-  --payload-base-0: var(--color-base-0);
-  --payload-base-50: var(--color-base-50);
-  --payload-base-100: var(--color-base-100);
-  --payload-base-150: var(--color-base-150);
-  --payload-base-200: var(--color-base-200);
-  --payload-base-250: var(--color-base-250);
-  --payload-base-300: var(--color-base-300);
-  --payload-base-350: var(--color-base-350);
-  --payload-base-400: var(--color-base-400);
-  --payload-base-450: var(--color-base-450);
-  --payload-base-500: var(--color-base-500);
-  --payload-base-550: var(--color-base-550);
-  --payload-base-600: var(--color-base-600);
-  --payload-base-650: var(--color-base-650);
-  --payload-base-700: var(--color-base-700);
-  --payload-base-750: var(--color-base-750);
-  --payload-base-800: var(--color-base-800);
-  --payload-base-850: var(--color-base-850);
-  --payload-base-900: var(--color-base-900);
-  --payload-base-950: var(--color-base-950);
-  --payload-base-1000: var(--color-base-1000);
-}
+@layer frogbot {
+  .frogbot-chat-view {
+    color: var(--theme-base-900);
+    height: calc(100dvh - var(--app-header-height));
+  }
 
-.frogbot-chat-view {
-  color: var(--theme-base-900);
-  height: calc(100dvh - var(--app-header-height));
-}
+  .frogbot-chat-view > * {
+    height: 100%;
+  }
 
-[data-fb-ui] {
-  --color-base-0: var(--payload-base-0);
-  --color-base-50: var(--payload-base-50);
-  --color-base-100: var(--payload-base-100);
-  --color-base-150: var(--payload-base-150);
-  --color-base-200: var(--payload-base-200);
-  --color-base-250: var(--payload-base-250);
-  --color-base-300: var(--payload-base-300);
-  --color-base-350: var(--payload-base-350);
-  --color-base-400: var(--payload-base-400);
-  --color-base-450: var(--payload-base-450);
-  --color-base-500: var(--payload-base-500);
-  --color-base-550: var(--payload-base-550);
-  --color-base-600: var(--payload-base-600);
-  --color-base-650: var(--payload-base-650);
-  --color-base-700: var(--payload-base-700);
-  --color-base-750: var(--payload-base-750);
-  --color-base-800: var(--payload-base-800);
-  --color-base-850: var(--payload-base-850);
-  --color-base-900: var(--payload-base-900);
-  --color-base-950: var(--payload-base-950);
-  --color-base-1000: var(--payload-base-1000);
-}
+  .template-default:has(.frogbot-nav-shell) {
+    --frogbot-nav-width: 17rem;
+    grid-template-columns: var(--frogbot-nav-width) minmax(0, 1fr);
+  }
 
-.frogbot-chat-view > * {
-  height: 100%;
-}
+  .template-default:has(.frogbot-nav-shell[data-nav-state="desktop-nav-closed"]) {
+    --frogbot-nav-width: 60px;
+  }
 
-.template-default:has(.frogbot-nav-shell) {
-  --frogbot-nav-width: 17rem;
-  grid-template-columns: var(--frogbot-nav-width) minmax(0, 1fr);
-}
+  .template-default:has(.frogbot-nav-shell[data-nav-state="mobile-nav-open"]),
+  .template-default:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-.template-default:has(.frogbot-nav-shell[data-nav-state="desktop-nav-closed"]) {
-  --frogbot-nav-width: 60px;
-}
+  .template-default:has(.frogbot-nav-shell) > .template-default__wrap {
+    min-width: 0;
+  }
 
-.template-default:has(.frogbot-nav-shell[data-nav-state="mobile-nav-open"]),
-.template-default:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) {
-  grid-template-columns: minmax(0, 1fr);
-}
+  body:has(.frogbot-nav-shell) .template-default__nav-toggler-wrapper,
+  body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
+  body:has(.frogbot-nav-shell) .app-header__account,
+  body:has(.frogbot-nav-shell) .app-header__mobile-nav-toggler {
+    display: none;
+  }
 
-.template-default:has(.frogbot-nav-shell) > .template-default__wrap {
-  min-width: 0;
-}
+  body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
+    justify-content: flex-end;
+  }
 
-body:has(.frogbot-nav-shell) .template-default__nav-toggler-wrapper,
-body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
-body:has(.frogbot-nav-shell) .app-header__account,
-body:has(.frogbot-nav-shell) .app-header__mobile-nav-toggler {
-  display: none;
-}
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__controls-wrapper {
+    padding-left: 48px;
+  }
 
-body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
-  justify-content: flex-end;
-}
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__step-nav-wrapper,
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .step-nav {
+    min-width: 0;
+    overflow: hidden;
+  }
 
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__controls-wrapper {
-  padding-left: 48px;
-}
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
+    .step-nav:has(.step-nav__last)
+    > :not(.step-nav__last) {
+    display: none;
+  }
 
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .app-header__step-nav-wrapper,
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .step-nav {
-  min-width: 0;
-  overflow: hidden;
-}
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .step-nav__last {
+    max-width: none;
+    min-width: 0;
+  }
 
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
-  .step-nav:has(.step-nav__last)
-  > :not(.step-nav__last) {
-  display: none;
-}
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
+    .app-header__step-nav-wrapper:has(
+      .dashboard-breadcrumb-select,
+      .dashboard-breadcrumb-dropdown__editing
+    ),
+  body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
+    .step-nav:has(.dashboard-breadcrumb-select, .dashboard-breadcrumb-dropdown__editing) {
+    overflow: visible;
+  }
 
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) .step-nav__last {
-  max-width: none;
-  min-width: 0;
-}
+  .frogbot-nav-shell {
+    background: var(--theme-bg);
+    border-right: 1px solid var(--theme-elevation-100);
+    flex-shrink: 0;
+    height: 100vh;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    width: 100%;
+  }
 
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
-  .app-header__step-nav-wrapper:has(
-    .dashboard-breadcrumb-select,
-    .dashboard-breadcrumb-dropdown__editing
-  ),
-body:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"])
-  .step-nav:has(.dashboard-breadcrumb-select, .dashboard-breadcrumb-dropdown__editing) {
-  overflow: visible;
-}
+  [dir="rtl"] .frogbot-nav-shell {
+    border-left: 1px solid var(--theme-elevation-100);
+    border-right: 0;
+  }
 
-.frogbot-nav-shell {
-  background: var(--theme-bg);
-  border-right: 1px solid var(--theme-elevation-100);
-  flex-shrink: 0;
-  height: 100vh;
-  overflow: hidden;
-  position: sticky;
-  top: 0;
-  width: 100%;
-}
+  .frogbot-nav-shell:not([data-nav-hydrated]) {
+    visibility: hidden;
+  }
 
-[dir="rtl"] .frogbot-nav-shell {
-  border-left: 1px solid var(--theme-elevation-100);
-  border-right: 0;
-}
+  .frogbot-nav-shell[data-nav-state="mobile-nav-closed"] {
+    display: none;
+  }
 
-.frogbot-nav-shell:not([data-nav-hydrated]) {
-  visibility: hidden;
-}
+  .frogbot-nav-shell[data-nav-state="mobile-nav-open"] {
+    inset: 0 auto 0 0;
+    position: fixed;
+    width: var(--frogbot-nav-width);
+    z-index: 100;
+  }
 
-.frogbot-nav-shell[data-nav-state="mobile-nav-closed"] {
-  display: none;
-}
+  .frogbot-nav-shell .nav__scroll {
+    overflow-x: hidden;
+    padding: 8px;
+  }
 
-.frogbot-nav-shell[data-nav-state="mobile-nav-open"] {
-  inset: 0 auto 0 0;
-  position: fixed;
-  width: var(--frogbot-nav-width);
-  z-index: 100;
-}
+  a.step-nav__home,
+  button[aria-label="Open Menu"],
+  button[aria-label="Close Menu"] {
+    transition: transform 200ms ease-out;
+  }
 
-.frogbot-nav-shell .nav__scroll {
-  overflow-x: hidden;
-  padding: 8px;
-}
+  a.step-nav__home:hover {
+    transform: translateY(-4px);
+  }
 
-a.step-nav__home,
-button[aria-label="Open Menu"],
-button[aria-label="Close Menu"] {
-  transition: transform 200ms ease-out;
-}
-
-a.step-nav__home:hover {
-  transform: translateY(-4px);
-}
-
-button[aria-label="Open Menu"]:hover,
-button[aria-label="Close Menu"]:hover {
-  transform: translateX(4px);
+  button[aria-label="Open Menu"]:hover,
+  button[aria-label="Close Menu"]:hover {
+    transform: translateX(4px);
+  }
 }

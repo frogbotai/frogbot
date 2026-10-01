@@ -1,6 +1,8 @@
-.fb-shortcut {
-  flex-grow: 1;
-  color: var(--theme-base-600);
-  font-size: var(--fb-text-xs);
-  letter-spacing: 0.1em;
+@layer frogbot {
+  .fb-shortcut {
+    flex-grow: 1;
+    color: var(--theme-base-600);
+    font-size: var(--fb-text-xs);
+    letter-spacing: 0.1em;
+  }
 }

@@ -1,45 +1,47 @@
-.fb-chat-shell {
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  color: var(--theme-base-900);
-  background-color: var(--theme-base-0);
-}
-
-.fb-chat-shell__sidebar {
-  display: none;
-  width: 16rem;
-  flex-shrink: 0;
-  padding: 0.75rem;
-  overflow-y: auto;
-  border-right: 1px solid var(--theme-base-150);
-  background-color: var(--theme-base-50);
-}
-
-.fb-chat-shell__main {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  flex: 1 1 0%;
-  flex-direction: column;
-}
-
-.fb-chat-shell__panel {
-  display: none;
-  width: 24rem;
-  flex-shrink: 0;
-  overflow-y: auto;
-  border-left: 1px solid var(--theme-base-150);
-}
-
-@media (min-width: 48rem) {
-  .fb-chat-shell__sidebar {
-    display: block;
+@layer frogbot {
+  .fb-chat-shell {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    color: var(--theme-base-900);
+    background-color: var(--theme-base-0);
   }
-}
 
-@media (min-width: 64rem) {
+  .fb-chat-shell__sidebar {
+    display: none;
+    width: 16rem;
+    flex-shrink: 0;
+    padding: 0.75rem;
+    overflow-y: auto;
+    border-right: 1px solid var(--theme-base-150);
+    background-color: var(--theme-base-50);
+  }
+
+  .fb-chat-shell__main {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+  }
+
   .fb-chat-shell__panel {
-    display: block;
+    display: none;
+    width: 24rem;
+    flex-shrink: 0;
+    overflow-y: auto;
+    border-left: 1px solid var(--theme-base-150);
+  }
+
+  @media (min-width: 48rem) {
+    .fb-chat-shell__sidebar {
+      display: block;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .fb-chat-shell__panel {
+      display: block;
+    }
   }
 }

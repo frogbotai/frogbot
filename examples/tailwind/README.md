@@ -14,7 +14,7 @@ Open [http://localhost:3000](http://localhost:3000). The custom logo and navigat
 
 ## How It Works
 
-[`postcss.config.js`](./postcss.config.js) enables Tailwind's PostCSS plugin. [`tailwind.css`](<./src/app/(frogbot)/tailwind.css>) imports the theme and utility layers without preflight, then maps admin semantic tokens to Tailwind color utilities.
+[`postcss.config.js`](./postcss.config.js) enables Tailwind's PostCSS plugin. [`tailwind.css`](<./src/app/(frogbot)/tailwind.css>) imports the theme and utility layers without preflight, then maps admin semantic tokens to Tailwind color utilities. The layout imports it after `@frogbotai/next/css`, which declares FrogBot's `frogbot` layer before Tailwind's layers, so Tailwind utilities on FrogBot components win over FrogBot's own styles.
 
 The custom components in [`TailwindBrand.tsx`](./src/components/TailwindBrand.tsx) use utilities such as `bg-admin-bg`, `text-admin-text`, and `border-admin-border`. The semantic token values change with the selected admin theme, so no separate dark-mode classes are required.
 

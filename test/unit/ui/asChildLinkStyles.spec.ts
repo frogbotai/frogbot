@@ -88,7 +88,7 @@ function parseRules(css: string): CssRule[] {
 
     index = close + 1;
 
-    if (prelude.startsWith('@media') || prelude.startsWith('@supports')) {
+    if (['@layer', '@media', '@supports'].some((name) => prelude.startsWith(name))) {
       rules.push(...parseRules(body));
       continue;
     }

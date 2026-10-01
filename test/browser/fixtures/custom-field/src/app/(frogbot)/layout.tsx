@@ -1,4 +1,5 @@
 import '@frogbotai/next/css';
+import './tailwind.css';
 
 import config from '@frogbot-config';
 import {

@@ -276,11 +276,31 @@ export default defineConfig({
     },
     {
       name: 'custom-field',
-      testMatch: ['customField.browser.spec.ts', 'adminTheme.browser.spec.ts'],
+      testMatch: [
+        'customField.browser.spec.ts',
+        'adminTheme.browser.spec.ts',
+        'cssLayers.browser.spec.ts',
+      ],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${customFieldPort}`,
         channel: 'chromium',
+      },
+    },
+    {
+      name: 'custom-field-firefox',
+      testMatch: 'cssLayers.browser.spec.ts',
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: `http://localhost:${customFieldPort}`,
+      },
+    },
+    {
+      name: 'custom-field-webkit',
+      testMatch: 'cssLayers.browser.spec.ts',
+      use: {
+        ...devices['Desktop Safari'],
+        baseURL: `http://localhost:${customFieldPort}`,
       },
     },
   ],

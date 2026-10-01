@@ -1,4 +1,4 @@
-@layer payload-default {
+@layer frogbot {
   .collection-view-shell {
     display: flex;
     flex-direction: column;

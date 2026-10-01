@@ -1,58 +1,13 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-type AdminTheme = 'dark' | 'light';
-
-const user = { email: 'custom-field@example.com', password: 'browser-test-password' };
-
-async function signIn(page: Page) {
-  await page.goto('/');
-  await page.waitForURL(/\/(create-first-user|login)/);
-  await page.waitForLoadState('networkidle');
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    const response = await page.request.post('/api/users/first-register', { data: user });
-
-    expect(response.ok()).toBe(true);
-    await page.goto('/');
-
-    return;
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)/.test(url.pathname));
-}
-
-async function openPostCreate(page: Page, theme: AdminTheme) {
-  await page
-    .context()
-    .addCookies([{ name: 'frogbot-theme', value: theme, domain: 'localhost', path: '/' }]);
-
-  await page.goto('/collections/posts/create');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-}
-
-async function readAdminColor(page: Page, token: string) {
-  return page.evaluate((name) => {
-    const sample = document.createElement('div');
-
-    sample.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue(
-      name,
-    );
-    document.body.append(sample);
-
-    const color = getComputedStyle(sample).backgroundColor;
-
-    sample.remove();
-
-    return color;
-  }, token);
-}
-
-function readBackground(locator: Locator) {
-  return locator.evaluate((element) => getComputedStyle(element).backgroundColor);
-}
+import {
+  type AdminTheme,
+  expectBackground,
+  openMenu,
+  openPostCreate,
+  readAdminColor,
+  signIn,
+} from './__helpers/adminTheme';
 
 function readAdminStyles(page: Page) {
   return page.evaluate(() => {
@@ -69,21 +24,6 @@ function readAdminStyles(page: Page) {
       bodyFont: body.fontFamily,
     };
   });
-}
-
-async function openMenu(page: Page, prefix: string) {
-  await page.getByTestId(`${prefix}-trigger`).first().click();
-
-  const menu = page.getByTestId(prefix);
-
-  await expect(menu).toBeVisible();
-
-  return menu;
-}
-
-async function expectBackground(locator: Locator, expected: string) {
-  expect(expected).not.toBe('rgba(0, 0, 0, 0)');
-  await expect.poll(() => readBackground(locator)).toBe(expected);
 }
 
 test.describe('FrogBot UI in the admin', () => {
@@ -149,25 +89,24 @@ test.describe('FrogBot UI in the admin', () => {
     await expectBackground(drawerButton, await readAdminColor(page, '--color-base-1000'));
   });
 
-  for (const theme of ['light', 'dark'] as const) {
-    test(`leaves the ${theme} admin's own styles unchanged`, async ({ page }) => {
+  for (const [theme, pageBackground] of [
+    ['light', 'rgb(255, 255, 255)'],
+    ['dark', 'rgb(20, 20, 20)'],
+  ] as const) {
+    test(`leaves the ${theme} admin's own palette in place`, async ({ page }) => {
       await openPostCreate(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-fb-ui-page', '');
       await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
 
-      const withMarker = await readAdminStyles(page);
+      const styles = await readAdminStyles(page);
 
-      expect(withMarker.base0).not.toBe('');
-      expect(withMarker.fontBody).not.toBe('');
-
-      await page.evaluate(() => document.documentElement.removeAttribute('data-fb-ui-page'));
-
-      expect(
-        await page.evaluate(() =>
-          getComputedStyle(document.documentElement).getPropertyValue('--theme-base-0'),
-        ),
-      ).toBe('');
-      expect(await readAdminStyles(page)).toEqual(withMarker);
+      expect(styles).toMatchObject({
+        base0: 'rgb(255, 255, 255)',
+        base500: 'rgb(128, 128, 128)',
+        base1000: 'rgb(0, 0, 0)',
+      });
+      expect(styles.fontBody).toMatch(/^-apple-system,/);
+      await expect(page.locator('html')).toHaveCSS('background-color', pageBackground);
     });
   }
 
@@ -276,10 +215,18 @@ test('keeps the FrogBot palette on pages outside the admin', async ({ page }) =>
   await expectBackground(button, 'rgb(1, 3, 10)');
   await expect(page.locator('html')).not.toHaveAttribute('data-fb-ui-page');
   expect(
-    await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--theme-base-0'),
-    ),
-  ).toBe('');
+    await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+
+      return {
+        base0: root.getPropertyValue('--color-base-0'),
+        themeBase0: root.getPropertyValue('--theme-base-0'),
+      };
+    }),
+  ).toEqual({
+    base0: 'rgb(249, 250, 251)',
+    themeBase0: 'light-dark(rgb(249, 250, 251), rgb(1, 3, 10))',
+  });
 });
 
 for (const [colorScheme, userBackground, assistantBackground] of [
