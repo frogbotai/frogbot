@@ -171,7 +171,7 @@ Custom endpoint config accepts:
 | `headers` | No | Extra request headers on every call |
 | `queryParams` | No | Extra query params appended to every request URL |
 
-Custom OpenAI-compatible providers keep their existing routing behavior and are not interpreted as built-in allowlists. In FrogBot's `ai.providers` surface, custom entries continue to use their required exhaustive model metadata. FrogBot router model strings also remain unchanged.
+Custom OpenAI-compatible providers keep their existing routing behavior and are not interpreted as built-in allowlists. In FrogBot's `ai.providers` surface, custom entries use `baseUrl` and a required list of model definitions instead; see [Custom provider options](/ai/overview#custom-provider-options). FrogBot router model strings also remain unchanged.
 
 ---
 

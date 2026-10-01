@@ -80,7 +80,9 @@ ai: {
         {
           id: 'legal-summary-v2',
           mode: 'chat',
+          name: 'Legal Summary',
           limit: { context: 128_000, output: 8_000 },
+          cost: { input: 0.5, output: 1.5 },
           modalities: { input: ['text'], output: ['text'] },
           tool_call: true,
           structured_output: true,
@@ -92,11 +94,36 @@ ai: {
 }
 ```
 
-Invoke that model as `internal/legal-summary-v2`. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions.
+Invoke that model as `internal/legal-summary-v2`. The chat model picker labels it `Legal Summary`, and its reasoning selector offers `Default`, `Low`, and `High`; built-in models take their names and reasoning levels from the model catalog. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions.
 
 A provider's `models` list decides what the app can use, while an [agent's `model.options`](/agents/overview#define-one) decides what users can pick for that agent.
 
-`reasoningOptions` lists the reasoning levels the endpoint accepts. Custom providers support `effort` options: the chat selector offers `Default`, `Low`, and `High` for this model, and a selected level is sent as `reasoning_effort`. `Default` sends nothing. Omit `reasoningOptions` for models without reasoning levels. Built-in providers take their levels from the model catalog.
+### Custom provider options
+
+| Option | Type | Required / default | Description |
+| --- | --- | --- | --- |
+| `type` | `'openai-compatible'` | Yes | Marks the entry as a custom endpoint. Its key under `ai.providers` becomes the model ID prefix and must not be a built-in provider key. |
+| `baseUrl` | `string` | Yes | Base URL of the OpenAI-compatible API, usually ending in `/v1`. Must be non-empty. |
+| `apiKey` | `string` | No | Sent as `Authorization: Bearer <apiKey>`. Omit it for endpoints without authentication. |
+| `headers` | `Record<string, string>` | No | Extra headers sent with every request to the endpoint. |
+| `models` | `ModelConfig[]` | Yes; at least one entry | The models the app can call through this endpoint. Each entry is described in [Custom model options](#custom-model-options). |
+
+### Custom model options
+
+| Option | Type | Required / default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | Yes | Model ID sent to the endpoint. Call it as `<provider key>/<id>`, such as `internal/legal-summary-v2`. Must be non-empty. |
+| `mode` | `'chat' \| 'embedding' \| 'image_generation' \| 'audio_speech' \| 'audio_transcription' \| 'rerank' \| 'evaluate' \| 'video_generation'` | Yes | The kind of model. Only `chat` models can serve an agent, and only they are included by an agent's `model.options: '*'`. |
+| `name` | `string` | No; the picker shows `id` | Display label in the chat model picker and in the agent manifest's `names`. |
+| `cost` | `{ input?: number; output?: number; cache_read?: number }` | No; usage costs `0` | Prices in USD per million tokens. FrogBot uses them for `costUSD` in usage logs and for `monthlyBudget` spend. A missing `input` or `output` price counts as `0`. `cache_read` prices cached input tokens and defaults to the `input` price; cache-write tokens are priced as input. |
+| `reasoningOptions` | `ModelReasoningOption[]` | No; no reasoning levels | Reasoning levels the endpoint accepts. Custom providers support `{ type: 'effort', values?: string[] }`: each value becomes a level in the chat selector, `values` defaults to `['low', 'medium', 'high']`, and a selected level is sent as `reasoning_effort`. The selector's `Default` level sends nothing. `{ type: 'budget_tokens', min?, max? }` and `{ type: 'toggle' }` are accepted by the type but add no levels for custom providers. |
+| `limit` | `{ context?: number; input?: number; output?: number }` | No | Token limits for the model's context window, input, and output. Descriptive only: FrogBot does not enforce them or send them to the endpoint. |
+| `modalities` | `{ input: ModelModality[]; output: ModelModality[] }` | No | Content types the model accepts and produces, each one of `'text'`, `'image'`, `'audio'`, `'video'`, or `'file'`. Descriptive only: FrogBot does not filter content by them. |
+| `reasoning` | `boolean` | No | Whether the model reasons. Descriptive only: reasoning levels come from `reasoningOptions`. |
+| `tool_call` | `boolean` | No | Whether the model supports tool calls. Descriptive only: FrogBot sends tools regardless. |
+| `structured_output` | `boolean` | No | Whether the model supports structured output. Descriptive only: FrogBot does not check it before sending an `output` request. |
+| `temperature` | `boolean` | No | Whether the model accepts a `temperature` setting. Descriptive only: FrogBot passes `temperature` through regardless. |
+| `status` | `'alpha' \| 'beta' \| 'deprecated'` | No | Release status of the model. Descriptive only: FrogBot does not hide or reject models by status. |
 
 ---
 

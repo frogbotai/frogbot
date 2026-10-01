@@ -167,6 +167,7 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 ## Constraints
 
 - **CRITICAL — documentation branding:** Never refer to Payload or Payload CMS in user-facing documentation, templates, examples, READMEs, scaffolded comments, or other user-visible copy. FrogBot is the product users interact with: describe behavior, APIs, admin features, adapters, collections, migrations, sessions, and configuration as **FrogBot** behavior. Rewrite underlying-framework references as a FrogBot self-reference or neutral wording. Before finishing documentation work, run the case-sensitive whole-word check: `rg -n -w -F 'Payload' -g '*.mdx' .` and remove every match unless the user explicitly requires a literal upstream package name or attribution.
+- **Complete option tables in docs:** Every config object, option set, argument object, or props type documented in `docs/` gets a table of every field its TypeScript type in `packages/*/src` accepts: name, type, required/default, and behavior. Never a partial list or examples alone; document each object on one page and link to it from the others.
 - **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.
 - Don't assume libraries are available - check first
 - Don't over-engineer solutions
