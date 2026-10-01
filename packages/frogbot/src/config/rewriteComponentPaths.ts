@@ -15,7 +15,6 @@ type SettingsComponents = {
 
 const pluginComponentSpecifiers: Record<string, string> = {
   '@payloadcms/plugin-import-export/rsc': '@frogbotai/plugin-import-export/rsc',
-  '@payloadcms/plugin-search/client': '@frogbotai/plugin-search/client',
   '@payloadcms/plugin-seo/client': '@frogbotai/plugin-seo/client',
 };
 

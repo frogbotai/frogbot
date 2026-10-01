@@ -1,7 +1,6 @@
 import { importExportPlugin } from '@frogbotai/plugin-import-export';
 import { nestedDocsPlugin } from '@frogbotai/plugin-nested-docs';
 import { redirectsPlugin } from '@frogbotai/plugin-redirects';
-import { searchPlugin } from '@frogbotai/plugin-search';
 import { sentryPlugin } from '@frogbotai/plugin-sentry';
 import { stripePlugin } from '@frogbotai/plugin-stripe';
 import { buildConfig, type FrogBotConfig } from 'frogbot';
@@ -101,37 +100,6 @@ describe('Payload plugin adapters', () => {
 
     expect(config.collections.find(({ slug }) => slug === 'posts')).toBeDefined();
     expect(redirects?.admin?.group).toBe('App');
-  });
-
-  it('boots search and preserves search collection and app hook overrides', async () => {
-    const appHook = vi.fn();
-    const config = await payloadConfig(
-      baseConfig({
-        collections: [
-          {
-            slug: 'posts',
-            fields: [{ name: 'title', type: 'text' }],
-            hooks: { afterChange: [appHook] },
-          },
-        ],
-        plugins: [
-          searchPlugin({
-            collections: ['posts'],
-            searchOverrides: {
-              fields: ({ defaultFields }) => [...defaultFields, { name: 'appField', type: 'text' }],
-              slug: 'app-search',
-            },
-          }),
-        ],
-      }),
-    );
-    const posts = config.collections.find(({ slug }) => slug === 'posts');
-    const search = config.collections.find(({ slug }) => slug === 'app-search');
-
-    expect(posts?.hooks?.afterChange).toContain(appHook);
-    expect(search?.fields).toEqual(
-      expect.arrayContaining([expect.objectContaining({ name: 'appField' })]),
-    );
   });
 
   it('boots sentry and preserves app providers and error hooks', async () => {
