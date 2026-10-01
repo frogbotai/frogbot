@@ -79,7 +79,11 @@ export interface Config {
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    'sdk-pages': {
+      children: 'sdk-pages';
+    };
+  };
   collectionsSelect: {
     'sdk-users': SdkUsersSelect;
     'sdk-pages': SdkPagesSelect;
@@ -96,10 +100,10 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'fr') | ('en' | 'fr')[];
   globals: {};
   globalsSelect: {};
-  locale: null;
+  locale: 'en' | 'fr';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -176,6 +180,13 @@ export interface SdkPage {
   slug?: string | null;
   group?: {
     field?: string | null;
+  };
+  summary?: string | null;
+  parent?: (number | null) | SdkPage;
+  children?: {
+    docs?: (number | SdkPage)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
   };
   updatedAt: string;
   createdAt: string;
@@ -460,6 +471,9 @@ export interface SdkPagesSelect {
     | {
         field?: boolean;
       };
+  summary?: boolean;
+  parent?: boolean;
+  children?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   _status?: boolean;

@@ -157,6 +157,8 @@ The REST API accepts the same options through a `joins` query parameter:
 
 Repeat the nested parameters to configure additional Join fields or filters.
 
+To leave a Join field out of the result, set it to `false`, such as `?joins[relatedPosts]=false`. The REST API reads `joins` one field at a time, so `?joins=false` has no effect.
+
 ## GraphQL
 
 Join fields retain GraphQL schema metadata for applications that provide and verify their own GraphQL execution integration. FrogBot does not currently ship or mount a public GraphQL endpoint, so this page does not claim an executable GraphQL query path. Use the Local or REST API examples above in a standard FrogBot application.

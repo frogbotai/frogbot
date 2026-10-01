@@ -15,7 +15,7 @@ const Users: CollectionConfig = {
 
 const Pages: CollectionConfig = {
   slug: pagesSlug,
-  versions: { drafts: true },
+  versions: { drafts: { autosave: true } },
   access: {
     ...openAccess,
     read: ({ req }) => (req.user ? true : { _status: { equals: 'published' } }),
@@ -24,6 +24,9 @@ const Pages: CollectionConfig = {
     { name: 'title', type: 'text', required: true },
     { name: 'slug', type: 'text' },
     { name: 'group', type: 'group', fields: [{ name: 'field', type: 'text' }] },
+    { name: 'summary', type: 'text', localized: true },
+    { name: 'parent', type: 'relationship', relationTo: pagesSlug },
+    { name: 'children', type: 'join', collection: pagesSlug, on: 'parent' },
   ],
 };
 
@@ -36,6 +39,7 @@ const Media: CollectionConfig = {
 
 export default await buildTestConfig({
   collections: [Users, Pages, Media],
+  localization: { defaultLocale: 'en', fallback: true, locales: ['en', 'fr'] },
   ai: {
     providers: {
       test: {

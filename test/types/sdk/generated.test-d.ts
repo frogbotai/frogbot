@@ -100,6 +100,42 @@ export async function updateAndDelete() {
   await automatic.update({ collection: 'sdk-pages', data: { title: 1 }, id: 1 });
 }
 
+export async function optionsTheServerReads() {
+  await automatic.find({
+    collection: 'sdk-pages',
+    fallbackLocale: false,
+    joins: { children: false },
+  });
+  await automatic.update({
+    autosave: true,
+    collection: 'sdk-pages',
+    data: { title: 'x' },
+    draft: true,
+    id: 1,
+    publishSpecificLocale: 'fr',
+  });
+
+  // @ts-expect-error set each join field to false instead
+  await automatic.find({ collection: 'sdk-pages', joins: false });
+
+  // @ts-expect-error the REST update by where doesn't read autosave
+  await automatic.update({ autosave: true, collection: 'sdk-pages', data: {}, where: {} });
+
+  // @ts-expect-error the REST update by where doesn't read publishSpecificLocale
+  await automatic.update({
+    collection: 'sdk-pages',
+    data: {},
+    publishSpecificLocale: 'fr',
+    where: {},
+  });
+
+  await automatic.forgotPassword({
+    collection: 'sdk-users',
+    // @ts-expect-error the REST endpoint ignores disableEmail and expiration
+    data: { disableEmail: true, email: 'frog@example.com', expiration: 60 },
+  });
+}
+
 export async function uploadsAreLimitedToUploadCollections(file: Blob) {
   await automatic.create({ collection: 'sdk-media', data: { alt: 'Frog' }, file });
 

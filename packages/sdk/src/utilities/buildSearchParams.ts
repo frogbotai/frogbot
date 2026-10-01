@@ -4,15 +4,17 @@ import { stringify } from 'qs-esm';
 const stringifyOptions = { addQueryPrefix: true, allowEmptyArrays: true };
 
 export type OperationArgs = {
+  autosave?: boolean;
   depth?: number;
   draft?: boolean;
   fallbackLocale?: unknown;
-  joins?: false | Record<string, unknown>;
+  joins?: Record<string, unknown>;
   limit?: number;
   locale?: unknown;
   page?: number;
   pagination?: boolean;
   populate?: Record<string, unknown>;
+  publishSpecificLocale?: unknown;
   select?: unknown;
   sort?: Sort;
   trash?: boolean;
@@ -38,6 +40,10 @@ export const buildSearchParams = (args: OperationArgs): string => {
     search.draft = String(args.draft);
   }
 
+  if (typeof args.autosave === 'boolean') {
+    search.autosave = String(args.autosave);
+  }
+
   if (typeof args.trash === 'boolean') {
     search.trash = String(args.trash);
   }
@@ -46,12 +52,16 @@ export const buildSearchParams = (args: OperationArgs): string => {
     search.pagination = String(args.pagination);
   }
 
-  if (args.fallbackLocale) {
+  if (args.fallbackLocale !== undefined) {
     search['fallback-locale'] = String(args.fallbackLocale);
   }
 
   if (args.locale) {
     search.locale = args.locale;
+  }
+
+  if (args.publishSpecificLocale) {
+    search.publishSpecificLocale = args.publishSpecificLocale;
   }
 
   if (args.sort) {

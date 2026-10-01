@@ -6,9 +6,7 @@ export type ForgotPasswordOptions<
 > = {
   collection: TSlug;
   data: {
-    disableEmail?: boolean;
     email: string;
-    expiration?: number;
   };
 };
 

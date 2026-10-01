@@ -23,7 +23,12 @@ describe('FrogBot SDK against a running app', () => {
   let sdk: FrogBotSDK<Config>;
   let userID: number;
 
-  const createPage = (data: { title: string; slug?: string; group?: { field?: string } }) =>
+  const createPage = (data: {
+    title: string;
+    slug?: string;
+    group?: { field?: string };
+    summary?: string;
+  }) =>
     booted.frogbot.create({
       collection: pagesSlug,
       data: { ...data, _status: 'published' },
@@ -239,6 +244,118 @@ describe('FrogBot SDK against a running app', () => {
 
       expect(result.docs).toHaveLength(2);
       expect(remaining.docs.map((doc) => doc.title)).toEqual(['Safe']);
+    });
+  });
+
+  describe('locales, joins, and autosave', () => {
+    const createLocalizedPage = async (summaries: { en: string; fr: string }) => {
+      const page = await createPage({ title: 'Localized', summary: summaries.en });
+
+      await booted.frogbot.update({
+        collection: pagesSlug,
+        data: { summary: summaries.fr },
+        id: page.id,
+        locale: 'fr',
+        overrideAccess: true,
+      } as never);
+
+      return page;
+    };
+
+    it('findByID with fallbackLocale false leaves an untranslated field empty', async () => {
+      const page = await createPage({ title: 'English only', summary: 'Hello' });
+
+      const fallback = await sdk.findByID({ collection: pagesSlug, id: page.id, locale: 'fr' });
+      const noFallback = await sdk.findByID({
+        collection: pagesSlug,
+        fallbackLocale: false,
+        id: page.id,
+        locale: 'fr',
+      });
+
+      expect(fallback.summary).toBe('Hello');
+      expect(noFallback.summary).toBeUndefined();
+    });
+
+    it('find with fallbackLocale false leaves an untranslated field empty', async () => {
+      await createPage({ title: 'English only', summary: 'Hello' });
+
+      const result = await sdk.find({ collection: pagesSlug, fallbackLocale: false, locale: 'fr' });
+
+      expect(result.docs[0]?.summary).toBeUndefined();
+    });
+
+    it('find leaves out a join field set to false', async () => {
+      const parent = await createPage({ title: 'Parent' });
+
+      await booted.frogbot.create({
+        collection: pagesSlug,
+        data: { _status: 'published', parent: parent.id, title: 'Child' },
+        overrideAccess: true,
+      } as never);
+
+      const joined = await sdk.findByID({ collection: pagesSlug, id: parent.id });
+      const withoutJoin = await sdk.findByID({
+        collection: pagesSlug,
+        id: parent.id,
+        joins: { children: false },
+      });
+
+      expect(joined.children?.docs).toHaveLength(1);
+      expect(withoutJoin.children).toBeUndefined();
+    });
+
+    it('update by ID with autosave saves an autosave version', async () => {
+      const page = await createPage({ title: 'Published' });
+      const init = { headers: await loginHeaders() };
+
+      await sdk.update(
+        {
+          autosave: true,
+          collection: pagesSlug,
+          data: { title: 'Typing' },
+          draft: true,
+          id: page.id,
+        },
+        init,
+      );
+
+      const versions = await sdk.findVersions(
+        { collection: pagesSlug, sort: '-updatedAt', where: { parent: { equals: page.id } } },
+        init,
+      );
+
+      expect(versions.docs[0]).toMatchObject({ autosave: true, version: { title: 'Typing' } });
+    });
+
+    it('update by ID with publishSpecificLocale publishes only that locale', async () => {
+      const page = await createLocalizedPage({ en: 'Hello', fr: 'Bonjour' });
+
+      await booted.frogbot.update({
+        collection: pagesSlug,
+        data: { summary: 'Hello draft' },
+        draft: true,
+        id: page.id,
+        locale: 'en',
+        overrideAccess: true,
+      } as never);
+
+      await sdk.update(
+        {
+          collection: pagesSlug,
+          data: { _status: 'published', summary: 'Salut' },
+          id: page.id,
+          locale: 'fr',
+          publishSpecificLocale: 'fr',
+        },
+        { headers: await loginHeaders() },
+      );
+
+      const english = await sdk.findByID({ collection: pagesSlug, id: page.id, locale: 'en' });
+      const french = await sdk.findByID({ collection: pagesSlug, id: page.id, locale: 'fr' });
+
+      expect(english.summary).toBe('Hello');
+      expect(french.summary).toBe('Salut');
     });
   });
 
