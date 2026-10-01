@@ -250,7 +250,9 @@ FrogBot supports a method override feature that allows you to send GET requests 
 
 ### How to Use
 
-To use this feature, include the `X-FrogBot-HTTP-Method-Override` header set to `GET` in your POST request. The parameters should be sent in the body of the request with the `Content-Type` set to `application/x-www-form-urlencoded`.
+To use this feature, include the `X-HTTP-Method-Override` header set to `GET` in your POST request. The parameters should be sent in the body of the request with the `Content-Type` set to `application/x-www-form-urlencoded`.
+
+For cross-origin requests from a browser, add the header to the allowed [CORS](/configuration/overview) headers: `cors: { origins: ['https://app.example.com'], headers: ['X-HTTP-Method-Override'] }`.
 
 ### Example
 
@@ -265,7 +267,7 @@ const res = await fetch(`${api}/${collectionSlug}`, {
   headers: {
     'Accept-Language': i18n.language,
     'Content-Type': 'application/x-www-form-urlencoded',
-    'X-FrogBot-HTTP-Method-Override': 'GET',
+    'X-HTTP-Method-Override': 'GET',
   },
   body: qs.stringify({
     depth: 1,
@@ -288,7 +290,7 @@ const res = await fetch(`${api}/${collectionSlug}?depth=1&locale=en`, {
 
 ### Passing as JSON
 
-When using `X-FrogBot-HTTP-Method-Override`, it expects the body to be a query string. If you want to pass JSON instead, you can set the `Content-Type` to `application/json` and include the JSON body in the request.
+When using `X-HTTP-Method-Override`, it expects the body to be a query string. If you want to pass JSON instead, you can set the `Content-Type` to `application/json` and include the JSON body in the request.
 
 #### Example
 
@@ -300,7 +302,7 @@ const res = await fetch(`${api}/${collectionSlug}/${id}`, {
   headers: {
     'Accept-Language': i18n.language,
     'Content-Type': 'application/json',
-    'X-FrogBot-HTTP-Method-Override': 'GET',
+    'X-HTTP-Method-Override': 'GET',
   },
   body: JSON.stringify({
     depth: 1,

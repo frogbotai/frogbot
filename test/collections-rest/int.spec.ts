@@ -147,6 +147,24 @@ describe('collections-rest', () => {
       const res = await booted.restClient.post(`/api/${projectsSlug}`, {});
       expect(res.status).toBe(400);
     });
+
+    it('POST /api/projects with X-HTTP-Method-Override: GET runs a find', async () => {
+      await booted.restClient.post(`/api/${projectsSlug}`, { title: 'Alpha' });
+      await booted.restClient.post(`/api/${projectsSlug}`, { title: 'Beta' });
+
+      const res = await fetch(`${booted.baseUrl}/api/${projectsSlug}`, {
+        body: 'where[title][equals]=Alpha',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-HTTP-Method-Override': 'GET',
+        },
+        method: 'POST',
+      });
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toMatchObject({ docs: [{ title: 'Alpha' }], totalDocs: 1 });
+    });
   });
 
   describe('errors + 404s', () => {
