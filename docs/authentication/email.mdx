@@ -38,7 +38,7 @@ The following options are available:
 
 #### generateEmailHTML
 
-Function that accepts one argument, containing `{ req, token, user }`, that allows for overriding the HTML within emails that are sent to users indicating how to validate their account. The function should return a string that supports HTML, which can optionally be a full HTML email.
+Function that accepts one argument, containing `{ token, user }`, that allows for overriding the HTML within emails that are sent to users indicating how to validate their account. The function should return a string that supports HTML, which can optionally be a full HTML email.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -47,7 +47,7 @@ export const Customers: CollectionConfig = {
   // ...
   auth: {
     verify: {
-      generateEmailHTML: ({ req, token, user }) => {
+      generateEmailHTML: ({ token, user }) => {
         // Use the token provided to allow your user to verify their account
         const url = `https://yourfrontend.com/verify?token=${token}`
 
@@ -77,8 +77,8 @@ export const Customers: CollectionConfig = {
   // ...
   auth: {
     verify: {
-      generateEmailSubject: ({ req, user }) => {
-        return `Hey ${user.email}, reset your password!`
+      generateEmailSubject: ({ user }) => {
+        return `Hey ${user.email}, verify your email address`
       },
     },
   },
@@ -108,8 +108,8 @@ The following options are available:
 | --- | --- | --- | --- |
 | `expiration` | `number` | `3600000` (1 hour) | How long a password reset token stays valid, in milliseconds. |
 | `minRequestInterval` | `number` | `15000` | Minimum time, in milliseconds, between password reset emails for the same user. A request inside the interval sends no email. Set to `0` to disable. |
-| `generateEmailHTML` | `({ token, user }) => string \| Promise<string>` | Built-in reset email | Returns the HTML of the password reset email. Details below. |
-| `generateEmailSubject` | `({ token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the password reset email. Details below. |
+| `generateEmailHTML` | `({ token, user }) => string \| Promise<string>` | Built-in reset email | Returns the HTML of the password reset email. [More details](#forgot-password-generateemailhtml). |
+| `generateEmailSubject` | `({ token, user }) => string \| Promise<string>` | Built-in subject | Returns the subject of the password reset email. [More details](#forgot-password-generateemailsubject). |
 
 <Tip>
   **Tip:** FrogBot provides a built-in password reset page. If you don't need a
@@ -118,7 +118,7 @@ The following options are available:
   `config.admin.routes.reset` respectively.
 </Tip>
 
-#### generateEmailHTML
+#### generateEmailHTML#forgot-password-generateemailhtml
 
 This function allows for overriding the HTML within emails that are sent to users attempting to reset their password. The function should return a string that supports HTML, which can be a full HTML email.
 
@@ -129,7 +129,7 @@ export const Customers: CollectionConfig = {
   // ...
   auth: {
     forgotPassword: {
-      generateEmailHTML: ({ req, token, user }) => {
+      generateEmailHTML: ({ token, user }) => {
         // Use the token provided to allow your user to reset their password
         const resetPasswordURL = `https://yourfrontend.com/reset-password?token=${token}`
 
@@ -170,13 +170,12 @@ export const Customers: CollectionConfig = {
 
 The following arguments are passed to the `generateEmailHTML` function:
 
-| Argument | Description                                                       |
-| -------- | ----------------------------------------------------------------- |
-| `req`    | The request object.                                               |
-| `token`  | The token that is generated for the user to reset their password. |
-| `user`   | The user document that is attempting to reset their password.     |
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `token` | `string` | Always set | The token that is generated for the user to reset their password. |
+| `user` | `unknown` | Always set | The user document that is attempting to reset their password. |
 
-#### generateEmailSubject
+#### generateEmailSubject#forgot-password-generateemailsubject
 
 Similarly to the above `generateEmailHTML`, you can also customize the subject of the email. The function arguments are the same but you can only return a string - not HTML.
 
@@ -187,7 +186,7 @@ export const Customers: CollectionConfig = {
   // ...
   auth: {
     forgotPassword: {
-      generateEmailSubject: ({ req, user }) => {
+      generateEmailSubject: ({ user }) => {
         return `Hey ${user.email}, reset your password!`
       },
     },
@@ -197,7 +196,7 @@ export const Customers: CollectionConfig = {
 
 The following arguments are passed to the `generateEmailSubject` function:
 
-| Argument | Description                                                   |
-| -------- | ------------------------------------------------------------- |
-| `req`    | The request object.                                           |
-| `user`   | The user document that is attempting to reset their password. |
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `token` | `string` | Always set | The password reset token. |
+| `user` | `unknown` | Always set | The user document that is attempting to reset their password. |

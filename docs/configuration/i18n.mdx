@@ -52,11 +52,11 @@ export default buildConfig({
 
 The following options are available:
 
-| Option               | Description                                                                                                        |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `fallbackLanguage`   | The language to fall back to if the user's preferred language is not supported. Default is `'en'`.                 |
-| `translations`       | An object containing the translations. The keys are the language codes and the values are the translations.        |
-| `supportedLanguages` | An object containing the supported languages. The keys are the language codes and the values are the translations. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fallbackLanguage` | `AcceptedLanguages` | `'en'` | Language used when the user's preferred language isn't supported. If it isn't one of `supportedLanguages`, the first supported language is used. |
+| `supportedLanguages` | `Partial<Record<AcceptedLanguages, Language>>` | `{ en }` | Languages the admin panel offers, keyed by language code. Each value is a language object with its translations. [More details](#adding-languages). |
+| `translations` | `Partial<Record<AcceptedLanguages, object>>` | — | Translation overrides and additions, keyed by language code. They are merged into the built-in strings. [More details](#custom-translations). |
 
 ## Adding Languages
 

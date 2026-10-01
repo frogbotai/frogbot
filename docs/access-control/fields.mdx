@@ -52,11 +52,13 @@ export const Posts: CollectionConfig = {
 
 The following options are available:
 
-| Function     | Purpose                                                                                                    |
-| ------------ | ---------------------------------------------------------------------------------------------------------- |
-| **`create`** | Allows or denies the ability to set a field's value when creating a new document. [More details](#create). |
-| **`read`**   | Allows or denies the ability to read a field's value. [More details](#read).                               |
-| **`update`** | Allows or denies the ability to update a field's value [More details](#update).                            |
+| Function | Type | Default | Purpose |
+| --- | --- | --- | --- |
+| `create` | `FieldAccess` | Allowed | Allows or denies the ability to set a field's value when creating a new document. [More details](#create). |
+| `read` | `FieldAccess` | Allowed | Allows or denies the ability to read a field's value. [More details](#read). |
+| `update` | `FieldAccess` | Allowed | Allows or denies the ability to update a field's value [More details](#update). |
+
+Each function returns `boolean` or `Promise<boolean>`. Field access functions don't accept queries. They don't run when an operation sets `overrideAccess: true`.
 
 ### Create
 
@@ -64,12 +66,14 @@ Returns a boolean which allows or denies the ability to set a field's value when
 
 **Available argument properties:**
 
-| Option            | Description                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **`req`**         | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user` |
-| **`data`**        | The full data passed to create the document.                                                                                 |
-| **`blockData`**   | The nearest parent block's data (`JsonObject`), or `undefined` outside a block.                                              |
-| **`siblingData`** | Immediately adjacent field data passed to create the document.                                                               |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `data` | `object` | Always set | The full data passed to create the document. |
+| `siblingData` | `object` | Always set | Immediately adjacent field data passed to create the document. |
+| `blockData` | `JsonObject \| undefined` | — | The nearest parent block's data, or `undefined` outside a block. |
+| `doc` | `object` | — | The existing document. Not meaningful on create. |
+| `id` | `string \| number` | — | Not set on create, because the document doesn't exist yet. |
 
 ### Read
 
@@ -77,13 +81,14 @@ Returns a boolean which allows or denies the ability to read a field's value. If
 
 **Available argument properties:**
 
-| Option            | Description                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **`req`**         | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user` |
-| **`id`**          | `id` of the document being read                                                                                              |
-| **`doc`**         | The full document data.                                                                                                      |
-| **`blockData`**   | The nearest parent block's data (`JsonObject`), or `undefined` outside a block.                                              |
-| **`siblingData`** | Immediately adjacent field data of the document being read.                                                                  |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `id` | `string \| number` | Always set | `id` of the document being read. |
+| `doc` | `object` | Always set | The full document data. |
+| `data` | `object` | Always set | The same value as `doc`. |
+| `siblingData` | `object` | Always set | Immediately adjacent field data of the document being read. |
+| `blockData` | `JsonObject \| undefined` | — | The nearest parent block's data, or `undefined` outside a block. |
 
 ### Update
 
@@ -93,11 +98,11 @@ If `false` is returned and you attempt to update the field's value, the operatio
 
 **Available argument properties:**
 
-| Option            | Description                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **`req`**         | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user` |
-| **`id`**          | `id` of the document being updated                                                                                           |
-| **`data`**        | The full data passed to update the document.                                                                                 |
-| **`blockData`**   | The nearest parent block's data (`JsonObject`), or `undefined` outside a block.                                              |
-| **`siblingData`** | Immediately adjacent field data passed to update the document with.                                                          |
-| **`doc`**         | The full document data, before the update is applied.                                                                        |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `id` | `string \| number` | Always set | `id` of the document being updated. |
+| `data` | `object` | Always set | The full data passed to update the document. |
+| `siblingData` | `object` | Always set | Immediately adjacent field data passed to update the document with. |
+| `doc` | `object` | Always set | The full document data, before the update is applied. |
+| `blockData` | `JsonObject \| undefined` | — | The nearest parent block's data, or `undefined` outside a block. |

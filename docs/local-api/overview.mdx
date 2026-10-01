@@ -52,6 +52,18 @@ import config from '@frogbot-config'
 const frogbot = await getFrogBot({ config })
 ```
 
+`getFrogBot` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `config` | `FrogBotSanitizedConfig \| Promise<FrogBotSanitizedConfig>` | Required | The result of `buildConfig`, usually imported from `@frogbot-config`. |
+| `disableDBConnect` | `boolean` | `false` | Starts FrogBot without connecting to the database. |
+| `disableOnInit` | `boolean` | `false` | Skips the config's `onInit` callbacks, the `onInit` option, trigger reconciliation, and the development-only type and import map generation. |
+| `onInit` | `(frogbot: FrogBot) => void \| Promise<void>` | — | Runs once after startup, before the config's `onInit` callbacks. |
+| `startChannelGateway` | `boolean` | `true` | Opens gateway connections for channels that need one, such as Discord. Set `false` when [`frogbot channels:run`](/pieces/discord) holds the connection in another process. |
+
+`getFrogBot` caches the instance. Later calls with the same config return it and ignore these options.
+
 If you're working in Next.js' development mode, FrogBot will work with Hot Module Replacement (HMR), and as you make changes to your FrogBot Config, your usage of FrogBot will always be in sync with your changes. In production, `getFrogBot` simply disables all HMR functionality so you don't need to write your code any differently. We handle optimization for you in production mode.
 
 If you are accessing FrogBot via function arguments or `req.frogbot`, HMR is automatically supported if you are using it within Next.js.
@@ -62,32 +74,24 @@ For more information about using FrogBot outside of Next.js, [click here](/local
 
 You can specify more options within the Local API vs. REST or GraphQL due to the server-only context that they are executed in.
 
-| Local Option         | Description                                                                                                                                                                                                                                                                                                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `collection`         | Required for Collection operations. Specifies the Collection slug to operate against.                                                                                                                                                                                                                                                                                 |
-| `data`               | The data to use within the operation. Required for `create`, `update`.                                                                                                                                                                                                                                                                                                |
-| `depth`              | [Control auto-population](/queries/depth) of nested relationship and upload fields.                                                                                                                                                                                                                                                                                   |
-| `locale`             | Specify [locale](/configuration/localization) for any returned documents.                                                                                                                                                                                                                                                                                             |
-| `select`             | Specify [select](/queries/select) to control which fields to include to the result.                                                                                                                                                                                                                                                                                   |
-| `populate`           | Specify [populate](/queries/select#populate) to control which fields to include to the result from populated documents.                                                                                                                                                                                                                                               |
-| `fallbackLocale`     | Specify a [fallback locale](/configuration/localization) to use for any returned documents. This can be a single locale or array of locales.                                                                                                                                                                                                                          |
-| `overrideAccess`     | Skip access control. By default, this property is set to true within all Local API operations.                                                                                                                                                                                                                                                                        |
-| `user`               | If you set `overrideAccess` to `false`, you can pass a user to use against the access control checks.                                                                                                                                                                                                                                                                 |
-| `showHiddenFields`   | Opt-in to receiving hidden fields. By default, they are hidden from returned documents in accordance to your config.                                                                                                                                                                                                                                                  |
-| `pagination`         | Set to false to return all documents and avoid querying for document counts.                                                                                                                                                                                                                                                                                          |
-| `context`            | [Context](/hooks/context), which will then be passed to `context` and `req.context`, which can be read by hooks. Useful if you want to pass additional information to the hooks which shouldn't be necessarily part of the document, for example a `triggerBeforeChange` option which can be read by the BeforeChange hook to determine if it should run or not.      |
-| `disableErrors`      | When set to `true`, errors will not be thrown. Instead, the `findByID` operation will return `null`, and the `find` operation will return an empty documents array.                                                                                                                                                                                                   |
-
-_There are more options available on an operation by operation basis outlined below._
-
-### Write options
-
-These options apply only to the operations listed.
-
-| Option | Type | Default | Description |
+| Local Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `overrideLock` | `boolean` | `true` | `update` and `delete` only. Document locks are ignored by default. Set to `false` to reject the write while another user holds the lock on the document. Writing by ID throws; writing by `where` reports the locked document in `errors`. |
-| `disableTransaction` | `boolean` | `false` | `create`, `update`, `delete`, and `duplicate` only. Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+| `collection` | `string` | Required | The slug of the collection to operate against. |
+| `context` | `Record<string, unknown>` | — | [Context](/hooks/context), which will then be passed to `context` and `req.context`, which can be read by hooks. Useful if you want to pass additional information to the hooks which shouldn't be necessarily part of the document, for example a `triggerBeforeChange` option which can be read by the BeforeChange hook to determine if it should run or not. |
+| `depth` | `number` | `defaultDepth` (`2`) | [Control auto-population](/queries/depth) of nested relationship and upload fields. Capped at `maxDepth`. |
+| `disableErrors` | `boolean` | `false` | When set to `true`, errors will not be thrown. Instead, the `findByID` operation will return `null`, and the `find` operation will return an empty documents array. |
+| `fallbackLocale` | `string` | The locale's `fallbackLocale`, then `defaultLocale`, when `localization.fallback` is on | Specify a [fallback locale](/configuration/localization) to use for any returned documents. Pass `'none'` to turn fallback off. |
+| `locale` | `string` | `defaultLocale` | Specify [locale](/configuration/localization) for any returned documents. Pass `'all'` to return every locale. |
+| `overrideAccess` | `boolean` | `true` | Skip access control. Set `false` to check access as `user` or `req.user`. |
+| `populate` | `Record<string, unknown>` | — | Specify [populate](/queries/select#populate) to control which fields to include to the result from populated documents. |
+| `req` | `FrogBotRequest` | Created for the call | The current request. Pass it to run in the same [transaction](#transactions) and give hooks the same `req.user` and `req.context`. |
+| `select` | `SelectType` | — | Specify [select](/queries/select) to control which fields to include to the result. |
+| `showHiddenFields` | `boolean` | `false` | Opt-in to receiving hidden fields. By default, they are hidden from returned documents in accordance to your config. |
+| `user` | `object` | `req.user` | The user to check access against when `overrideAccess` is `false`. |
+
+Every operation below accepts these options, except that auth operations and `restoreVersion` don't accept `select`.
+
+Each operation below lists the options it adds.
 
 ## Transactions
 
@@ -122,7 +126,7 @@ const post = await frogbot.create({
     description: 'maybe',
   },
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUserDoc,
   overrideAccess: true,
   showHiddenFields: false,
@@ -145,6 +149,18 @@ const post = await frogbot.create({
 })
 ```
 
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `data` | `object` | Required | The document data. Typed from your generated types. |
+| `draft` | `boolean` | `false` | Save as a draft. Required fields aren't validated unless `versions.drafts.validate` is on. Needs [drafts](/versions/drafts). |
+| `disableVerificationEmail` | `boolean` | `false` | Skips the verification email when creating a user in a collection with `auth.verify`. |
+| `file` | `{ data: Buffer; mimetype: string; name: string; size: number; tempFilePath?: string }` | — | Upload collections only. The file to store. Takes precedence over `filePath`. |
+| `filePath` | `string` | — | Upload collections only. Absolute path of a file on disk to store. |
+| `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+
 ### Find#collection-find
 
 ```ts
@@ -159,12 +175,24 @@ const result = await frogbot.find({
   where: {}, // pass a `where` query here
   sort: '-title',
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUser,
   overrideAccess: false,
   showHiddenFields: true,
 })
 ```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `where` | `Where` | — | A [query](/queries/overview) that limits the documents. |
+| `sort` | `string \| string[]` | Collection `defaultSort` | [Sort](/queries/sort) by one or more fields. Prefix a field with `-` for descending order. |
+| `limit` | `number` | `10` | Documents per page. `0` returns every document. See [Pagination](/queries/pagination). |
+| `page` | `number` | `1` | The page to return. |
+| `pagination` | `boolean` | `true` | Set `false` to return all matching documents and skip counting them. |
+| `draft` | `boolean` | `false` | Return the latest drafts instead of published documents. Needs [drafts](/versions/drafts). |
 
 <Note>
   `pagination`, `page`, and `limit` are three related properties [documented
@@ -180,12 +208,20 @@ const result = await frogbot.findByID({
   id: '507f1f77bcf86cd799439011', // required
   depth: 2,
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUser,
   overrideAccess: false,
   showHiddenFields: true,
 })
 ```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `id` | `string \| number` | Required | The document ID. |
+| `draft` | `boolean` | `false` | Return the latest drafts instead of published documents. Needs [drafts](/versions/drafts). |
 
 ### Count#collection-count
 
@@ -203,15 +239,26 @@ const result = await frogbot.count({
 })
 ```
 
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `where` | `Where` | — | A [query](/queries/overview) that limits the documents. |
+
 ### FindDistinct#collection-find-distinct
 
 ```ts
 // Result will be an object with:
 // {
-//   values: ['value-1', 'value-2'], // array of distinct values,
-//   field: 'title', // the field
-//   totalDocs: 10, // count of the distinct values satisfies query,
-//   perPage: 10, // count of distinct values per page (based on provided limit)
+//   values: [{ title: 'value-1' }, { title: 'value-2' }], // one object per distinct value
+//   totalDocs: 10, // count of the distinct values that match the query
+//   limit: 10, // values per page
+//   page: 1,
+//   totalPages: 1,
+//   hasNextPage: false,
+//   hasPrevPage: false,
+//   pagingCounter: 1,
 // }
 const result = await frogbot.findDistinct({
   collection: 'posts', // required
@@ -223,6 +270,18 @@ const result = await frogbot.findDistinct({
   sort: 'title',
 })
 ```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `field` | `string` | Required | The field whose distinct values are returned. |
+| `where` | `Where` | — | A [query](/queries/overview) that limits the documents. |
+| `sort` | `string \| string[]` | — | Sort the values. |
+| `limit` | `number` | — | Values per page. |
+| `page` | `number` | `1` | The page to return. |
+| `pagination` | `boolean` | `true` | Set `false` to return every value. |
 
 ### Update by ID#collection-update-by-id
 
@@ -238,7 +297,7 @@ const result = await frogbot.update({
   },
   depth: 2,
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUser,
   overrideAccess: false,
   overrideLock: false, // By default, document locks are ignored. Set to false to enforce locks.
@@ -255,6 +314,19 @@ const result = await frogbot.update({
   overwriteExistingFiles: true,
 })
 ```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `id` | `string \| number` | Required | The document ID. |
+| `data` | `object` | Required | The fields to change. |
+| `autosave` | `boolean` | `false` | Saves the update as an autosave draft. Needs `versions.drafts.autosave`. |
+| `draft` | `boolean` | `false` | Save as a draft. Required fields aren't validated unless `versions.drafts.validate` is on. Needs [drafts](/versions/drafts). |
+| `publishSpecificLocale` | `string` | — | Publishes only this locale. |
+| `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to throw while another user holds the lock on the document. |
+| `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
 
 ### Update Many#collection-update-many
 
@@ -277,7 +349,7 @@ const result = await frogbot.update({
   },
   depth: 0,
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUser,
   overrideAccess: false,
   overrideLock: false, // By default, document locks are ignored. Set to false to enforce locks.
@@ -295,6 +367,17 @@ const result = await frogbot.update({
 })
 ```
 
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `where` | `Where` | Required | A [query](/queries/overview) selecting the documents. |
+| `data` | `object` | Required | The fields to change on every matching document. |
+| `draft` | `boolean` | `false` | Save as a draft. Required fields aren't validated unless `versions.drafts.validate` is on. Needs [drafts](/versions/drafts). |
+| `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to skip documents another user holds the lock on; each is reported in `errors`. |
+| `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+
 ### Delete#collection-delete
 
 ```ts
@@ -304,13 +387,22 @@ const result = await frogbot.delete({
   id: '507f1f77bcf86cd799439011', // required
   depth: 2,
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUser,
   overrideAccess: false,
   overrideLock: false, // By default, document locks are ignored. Set to false to enforce locks.
   showHiddenFields: true,
 })
 ```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `id` | `string \| number` | Required | The document ID. |
+| `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to throw while another user holds the lock on the document. |
+| `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
 
 ### Delete Many#collection-delete-many
 
@@ -328,13 +420,118 @@ const result = await frogbot.delete({
   },
   depth: 0,
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   user: dummyUser,
   overrideAccess: false,
   overrideLock: false, // By default, document locks are ignored. Set to false to enforce locks.
   showHiddenFields: true,
 })
 ```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `where` | `Where` | Required | A [query](/queries/overview) selecting the documents. |
+| `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to skip documents another user holds the lock on; each is reported in `errors`. |
+| `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+
+### Duplicate#collection-duplicate
+
+```ts
+// Result will be the new copy of the Post document.
+const result = await frogbot.duplicate({
+  collection: 'posts', // required
+  id: '507f1f77bcf86cd799439011', // required
+})
+```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `id` | `string \| number` | Required | The ID of the document to copy. |
+| `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
+
+Fails when the collection sets `disableDuplicate`. Field `beforeDuplicate` hooks run on the copied data.
+
+## Versions
+
+If a collection has [Versions](/versions/overview) enabled, these operations are available:
+
+### Find Versions#collection-find-versions
+
+```ts
+// Result will be a paginated set of versions.
+const result = await frogbot.findVersions({
+  collection: 'posts', // required
+  where: { parent: { equals: '507f1f77bcf86cd799439011' } },
+  sort: '-updatedAt',
+  limit: 10,
+})
+```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `where` | `Where` | — | A [query](/queries/overview) on version documents, such as `{ parent: { equals: id } }`. |
+| `sort` | `string \| string[]` | — | Sort by one or more version fields, such as `'-updatedAt'`. |
+| `limit` | `number` | `10` | Versions per page. |
+| `page` | `number` | `1` | The page to return. |
+| `pagination` | `boolean` | `true` | Set `false` to return all matching versions. |
+
+### Find Version by ID#collection-find-version-by-id
+
+```ts
+const version = await frogbot.findVersionByID({
+  collection: 'posts', // required
+  id: '61cf752c19cdf1b1af7b61f1', // required
+})
+```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `id` | `string \| number` | Required | The version ID. |
+
+### Count Versions#collection-count-versions
+
+```ts
+const { totalDocs } = await frogbot.countVersions({
+  collection: 'posts', // required
+  where: { parent: { equals: '507f1f77bcf86cd799439011' } },
+})
+```
+
+Accepts the [common options](#local-options-available) plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `where` | `Where` | — | A [query](/queries/overview) on version documents. |
+
+### Restore Version#collection-restore-version
+
+```ts
+// Result will be the document with the version's data.
+const post = await frogbot.restoreVersion({
+  collection: 'posts', // required
+  id: '61cf752c19cdf1b1af7b61f1', // required
+})
+```
+
+Accepts the [common options](#local-options-available), except `select`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `id` | `string \| number` | Required | The ID of the version to restore. |
 
 ## Auth Operations
 
@@ -362,6 +559,13 @@ available:
 const result = await frogbot.auth({ headers, canSetHeaders: false })
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `headers` | `Headers` | Required | The incoming request headers, read for the auth cookie, `Authorization` header, or API key. |
+| `req` | `FrogBotRequest` | — | The current request, passed to custom strategies. |
+
+`auth` doesn't accept the common options.
+
 ### Login
 
 ```ts
@@ -382,11 +586,18 @@ const result = await frogbot.login({
   req: req, // optional, pass a Request object to be provided to all hooks
   depth: 2,
   locale: 'en',
-  fallbackLocale: false,
+  fallbackLocale: 'none',
   overrideAccess: false,
   showHiddenFields: true,
 })
 ```
+
+Accepts the [common options](#local-options-available), except `select`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `data` | `{ email: string; password: string }` | Required | The user's credentials. |
 
 ### Forgot Password
 
@@ -401,6 +612,15 @@ const token = await frogbot.forgotPassword({
   req: req, // pass a Request object to be provided to all hooks
 })
 ```
+
+Accepts the [common options](#local-options-available), except `select`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `data` | `{ email: string }` | Required | The email address of the user. |
+| `disableEmail` | `boolean` | `false` | Generates the token without sending the reset email. |
+| `expiration` | `number` | `3600000` | How long the token stays valid, in milliseconds. |
 
 ### Reset Password
 
@@ -421,6 +641,13 @@ const result = await frogbot.resetPassword({
 })
 ```
 
+Accepts the [common options](#local-options-available), except `select`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `data` | `{ password: string; token: string }` | Required | The new password and the token from `forgotPassword`. |
+
 ### Unlock
 
 ```ts
@@ -436,6 +663,13 @@ const result = await frogbot.unlock({
 })
 ```
 
+Accepts the [common options](#local-options-available), except `select`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `data` | `{ email: string }` | Required | The email address of the user to unlock. |
+
 ### Verify
 
 ```ts
@@ -445,6 +679,13 @@ const result = await frogbot.verifyEmail({
   token: 'afh3o2jf2p3f...', // the token saved on the user as `_verificationToken`
 })
 ```
+
+Accepts the [common options](#local-options-available), except `select`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug. |
+| `token` | `string` | Required | The user's verification token. |
 
 ## TypeScript
 

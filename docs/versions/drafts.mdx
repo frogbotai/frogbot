@@ -17,11 +17,12 @@ By enabling Versions with Drafts, your collections can maintain newer, unpublish
 
 Collections support two ways to configure drafts. Set `versions.drafts` to `true`, or pass an object to configure draft properties.
 
-| Draft Option      | Description                                                                                                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `autosave`        | Enable `autosave` to automatically save progress while documents are edited. To enable, set to `true` or pass an object with [options](/versions/autosave). |
-| `schedulePublish` | Allow for editors to schedule publish / unpublish events in the future. [More](#scheduled-publish)                                                               |
-| `validate`        | Set `validate` to `true` to validate draft documents when saved. Default is `false`.                                                                             |
+| Draft Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `autosave` | `boolean \| AutosaveConfig` | `false` | Enable `autosave` to automatically save progress while documents are edited. To enable, set to `true` or pass an object with [options](/versions/autosave#options). |
+| `localizeStatus` | `boolean` | `false` | Tracks draft and published status per locale. Experimental; needs root `experimental.localizeStatus`. [More details](/configuration/localization#status-localization). |
+| `schedulePublish` | `boolean \| SchedulePublishConfig` | `false` | Allow for editors to schedule publish / unpublish events in the future. [More](#scheduled-publish) |
+| `validate` | `boolean` | `false` | Validates draft documents when they're saved. |
 
 ## Database changes
 
@@ -292,7 +293,12 @@ The `create` function uses a `data` check instead since there is no existing doc
 
 FrogBot provides for an ability to schedule publishing / unpublishing events in the future, which can be helpful if you need to set certain documents to "go live" at a given date in the future, or, vice versa, revert to a draft state after a certain time has passed.
 
-Enable this functionality on a collection with the `versions.drafts.schedulePublish: true` property.
+Enable this functionality on a collection with the `versions.drafts.schedulePublish: true` property. Pass an object instead to configure the time picker:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `timeFormat` | `string` | `'h:mm aa'` | Time format for the picker, such as `'HH:mm'` for a 24-hour clock. |
+| `timeIntervals` | `number` | `5` | Minutes between the times offered by the picker. |
 
 <Warning>
   **Important:** if you are going to enable scheduled publish / unpublish, you

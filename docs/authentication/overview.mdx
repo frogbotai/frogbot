@@ -18,7 +18,7 @@ Here are some common use cases of Authentication in your own applications:
 
 When Authentication is enabled on a [Collection](/configuration/collections), FrogBot injects all necessary functionality to support the entire user flow. This includes all [auth-related operations](/authentication/operations) like account creation, logging in and out, and resetting passwords, all [auth-related emails](/authentication/email) like email verification and password reset, as well as any necessary UI to manage users from the Admin Panel.
 
-To enable Authentication on a Collection, use the `auth` property in the [Collection Config](/configuration/collections#config-options). Add `auth.signIn` for [OAuth sign-in](/authentication/sign-in).
+To enable Authentication on a Collection, use the `auth` property in the [Collection Config](/configuration/collections#collection-config-options). Add `auth.signIn` for [OAuth sign-in](/authentication/sign-in).
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -71,21 +71,40 @@ export const Admins: CollectionConfig = {
 
 The following options are available:
 
-| Option                         | Description                                                                                                                                                                                                                 |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`cookies`**                  | Set cookie options, including `secure`, `sameSite`, and `domain`. For advanced users.                                                                                                                                       |
-| **`depth`**                    | How many levels deep a `user` document should be populated when creating the JWT and binding the `user` to the `req`. Defaults to `0` and should only be modified if absolutely necessary, as this will affect performance. |
-| **`disableLocalStrategy`**     | Advanced - disable FrogBot's built-in local auth strategy. Only use this property if you have replaced FrogBot's auth mechanisms with your own.                                                                             |
-| **`forgotPassword`**           | Customize the way that the `forgotPassword` operation functions. [More details](/authentication/email#forgot-password).                                                                                                     |
-| **`lockTime`**                 | Set the time (in milliseconds) that a user should be locked out if they fail authentication more times than `maxLoginAttempts` allows for.                                                                                  |
-| **`loginWithUsername`**        | Ability to allow users to login with username/password. [More](/authentication/overview#login-with-username)                                                                                                                |
-| **`maxLoginAttempts`**         | Only allow a user to attempt logging in X amount of times. Automatically locks out a user from authenticating if this limit is passed. Set to `0` to disable.                                                               |
-| **`removeTokenFromResponses`** | Set to true if you want to remove the token from the returned authentication API responses such as login or refresh.                                                                                                        |
-| **`strategies`**               | Advanced - an array of custom authentication strategies to extend this collection's authentication with. [More details](/authentication/custom-strategies).                                                                 |
-| **`signIn`**                   | OAuth piece instances that provide interactive login for this collection. [More details](/authentication/sign-in). |
-| **`tokenExpiration`**          | How long (in seconds) to keep the user logged in. JWTs and HTTP-only cookies will both expire at the same time.                                                                                                             |
-| **`useSessions`**              | True by default. Set to `false` to use stateless JWTs for authentication instead of sessions.                                                                                                                               |
-| **`verify`**                   | Set to `true` or pass an object with verification options to require users to verify by email before they are allowed to log into your app. [More details](/authentication/email#email-verification).                       |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `cookies` | `{ secure?: boolean; sameSite?: 'lax' \| 'strict' \| 'none'; domain?: string }` | `{ sameSite: 'lax', secure: false }` | Options for the auth cookie. [More details](#cookie-options). |
+| `depth` | `number` | `0` | How many levels deep a `user` document should be populated when creating the JWT and binding the `user` to the `req`. Change it only when you must, as this will affect performance. |
+| `disableLocalStrategy` | `true \| { enableFields?: true; optionalPassword?: true }` | — | Advanced - turns off email and password login. Only use it when a [custom strategy](/authentication/custom-strategies) or [sign-in method](/authentication/sign-in) replaces it. [More details](#disable-local-strategy). |
+| `forgotPassword` | `{ expiration?: number; minRequestInterval?: number; generateEmailHTML?: AuthEmailTemplate; generateEmailSubject?: AuthEmailTemplate }` | `{ expiration: 3600000, minRequestInterval: 15000 }` | Customizes the `forgotPassword` operation: token lifetime, the minimum time between reset emails, and the email's HTML and subject. [More details](/authentication/email#forgot-password). |
+| `lockTime` | `number` | `600000` | Time, in milliseconds, that a user stays locked after failing to log in more times than `maxLoginAttempts` allows. |
+| `loginWithUsername` | `boolean \| LoginWithUsernameOptions` | `false` | Lets users log in with a username. [More details](#login-with-username). |
+| `maxLoginAttempts` | `number` | `5` | Failed logins allowed before the user is locked out for `lockTime`. Set to `0` to disable. |
+| `removeTokenFromResponses` | `true` | — | Leaves the token out of the bodies of auth responses such as login, refresh, and reset password. The auth cookie is still set. |
+| `strategies` | `AuthStrategy[]` | `[]` | Advanced - custom authentication strategies for this collection. [More details](/authentication/custom-strategies). |
+| `signIn` | `SignInMethod[]` | — | OAuth piece instances that provide interactive login for this collection. [More details](/authentication/sign-in). |
+| `tokenExpiration` | `number` | `7200` | How long, in seconds, a login lasts. JWTs and HTTP-only cookies expire at the same time. |
+| `useSessions` | `boolean` | `true` | Stores a session for each login, so logging out or resetting a password ends it. Set to `false` to use stateless JWTs instead. |
+| `verify` | `boolean \| { generateEmailHTML?: AuthEmailTemplate; generateEmailSubject?: AuthEmailTemplate }` | `false` | Requires users to verify their email before they can log in. [More details](/authentication/email#email-verification). |
+
+`AuthEmailTemplate` is `({ token, user }) => string | Promise<string>`.
+
+### Cookie options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `secure` | `boolean` | `false` | Sends the cookie only over HTTPS. Set it to `true` in production, and whenever `sameSite` is `'none'`. |
+| `sameSite` | `'lax' \| 'strict' \| 'none'` | `'lax'` | The cookie's `SameSite` attribute. Use `'none'` with `secure: true` when your frontend is on another site. |
+| `domain` | `string` | Current host | Domain the cookie is valid for, such as `.example.com` to share it with subdomains. See [Cookies](/authentication/cookies). |
+
+### Disable local strategy
+
+Set `disableLocalStrategy: true` to remove the email, password, and lockout fields, and to make the login, forgot password, reset password, unlock, and email verification operations fail. Pass an object to change what is kept.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableFields` | `true` | — | Keeps the auth fields, such as `email` and `password`, on the collection, so the database schema and generated types don't change. |
+| `optionalPassword` | `true` | — | Accepted by the type, but has no effect. |
 
 ### Login With Username
 
@@ -116,13 +135,11 @@ Or, you can pass an object with additional options:
 }
 ```
 
-**`allowEmailLogin`**
-
-If set to `true`, users can log in with either their username or email address. If set to `false`, users can only log in with their username.
-
-**`requireEmail`**
-
-If set to `true`, an email address is required when creating a new user. If set to `false`, email is not required upon creation.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `allowEmailLogin` | `boolean` | `false` | When `true`, users can log in with either their username or email address. When `false`, users can only log in with their username. |
+| `requireEmail` | `boolean` | `false` | When `true`, an email address is required when creating a new user. |
+| `requireUsername` | `boolean` | `true` | When `true`, a username is required when creating a new user. It can be `false` only when `allowEmailLogin` is `true`. |
 
 ## Auto-Login
 

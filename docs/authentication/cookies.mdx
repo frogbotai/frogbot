@@ -114,7 +114,7 @@ Cookies can cross subdomains without being considered third party cookies, for e
 
 ##### 2. Configure cookies
 
-If option 1 isn't possible, then you can get around this limitation by [configuring your cookies](/authentication/overview#config-options) on your authentication collection to achieve the following setup:
+If option 1 isn't possible, then you can get around this limitation by [configuring your cookies](/authentication/overview#cookie-options) on your authentication collection to achieve the following setup:
 
 ```txt
 SameSite: None // allows the cookie to cross domains
@@ -129,7 +129,7 @@ Configuration example:
   slug: 'users',
   auth: {
     cookies: {
-      sameSite: 'None',
+      sameSite: 'none',
       secure: true,
     }
   },

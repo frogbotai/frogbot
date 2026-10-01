@@ -33,7 +33,17 @@ export const Users: CollectionConfig = {
 }
 ```
 
-Save this as `collections/Users.ts` and add `Users` to your root `collections`. The Google piece requests `openid`, `https://www.googleapis.com/auth/userinfo.email`, and `https://www.googleapis.com/auth/userinfo.profile`. It has no product actions or product scopes. Its account lookup uses Google's userinfo endpoint and only supplies `account.email` for a provider-verified email.
+Save this as `collections/Users.ts` and add `Users` to your root `collections`.
+
+`createGoogle()` accepts these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `oauth` | `{ clientId: string; clientSecret: string; scopes?: string[] }` | Required for sign-in | Your Google OAuth app. `scopes` replaces the piece's scopes. |
+| `slug` | `string` | `'google'` | Instance slug used in the sign-in routes. Set a different slug to register two Google instances. |
+| `auth` | `{ accessToken: string }` | — | Static credential for the piece's client. Sign-in doesn't use it. |
+
+The Google piece requests `openid`, `https://www.googleapis.com/auth/userinfo.email`, and `https://www.googleapis.com/auth/userinfo.profile`. It has no product actions or product scopes. Its account lookup uses Google's userinfo endpoint and only supplies `account.email` for a provider-verified email.
 
 The admin login page automatically renders methods from the collection selected by `admin.user`. With multiple auth collections, set `admin.user` explicitly. You can reuse the same Google instance in another collection's `auth.signIn`; each collection has its own routes and local users.
 

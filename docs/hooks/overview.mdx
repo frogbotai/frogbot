@@ -49,9 +49,9 @@ export default buildConfig({
 
 The following options are available:
 
-| Option           | Description                                            |
-| ---------------- | ------------------------------------------------------ |
-| **`afterError`** | Runs after an error occurs in the FrogBot application. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `afterError` | `AfterErrorHook[]` | `[]` | Runs after an error occurs in the FrogBot application. [More details](#aftererror). |
 
 ### afterError
 
@@ -74,14 +74,22 @@ export default buildConfig({
 
 The following arguments are provided to the `afterError` Hook:
 
-| Argument            | Description                                                                                                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`error`**         | The error that occurred.                                                                                                                                                                        |
-| **`context`**       | Custom context passed between Hooks. [More details](/hooks/context).                                                                                                                            |
-| **`graphqlResult`** | The GraphQL result object, available if the hook is executed within a GraphQL context.                                                                                                          |
-| **`req`**           | The `FrogBotRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
-| **`collection`**    | The [Collection](/configuration/collections) in which this Hook is running against. This will be `undefined` if the hook is executed from a non-collection endpoint or GraphQL.                 |
-| **`result`**        | The formatted error result object, available if the hook is executed from a REST context.                                                                                                       |
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `error` | `Error` | Always set | The error that occurred. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The `FrogBotRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
+| `collection` | `SanitizedCollectionConfig` | — | The [Collection](/configuration/collections) in which this Hook is running against. This will be `undefined` if the hook is executed from a non-collection endpoint or GraphQL. |
+| `graphqlResult` | `GraphQLFormattedError` | — | The GraphQL result object, available if the hook is executed within a GraphQL context. |
+| `result` | `ErrorResult` | — | The formatted error result object, available if the hook is executed from a REST context. |
+
+The hook can return an object to change the error response, or nothing to keep it:
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `response` | `Partial<ErrorResult> & Record<string, unknown>` | — | Replaces the REST response body. |
+| `status` | `number` | — | Replaces the REST response status code. |
+| `graphqlResult` | `GraphQLFormattedError` | — | Replaces the GraphQL error. |
 
 ## Awaited vs. non-blocking hooks
 
@@ -95,7 +103,7 @@ Non-blocking (sometimes called "fire-and-forget"): If your hook does not return 
 
 <Tip>
   If your hook executes a long-running task that doesn't affect the response in
-  any way, consider [offloading it to the job queue](#offloading-long-running-tasks).
+  any way, consider [offloading it to the job queue](#offloading-to-the-jobs-queue).
   That will free up the request to continue processing without waiting for the
   task to complete.
 </Tip>

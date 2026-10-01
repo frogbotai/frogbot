@@ -9,20 +9,30 @@ You can add your own GraphQL queries and mutations to FrogBot, making use of all
 
 To do so, add your queries and mutations to the main FrogBot Config as follows:
 
-| Config Path         | Description                                                                 |
-| ------------------- | --------------------------------------------------------------------------- |
-| `graphQL.queries`   | Function that returns an object containing keys to custom GraphQL queries   |
-| `graphQL.mutations` | Function that returns an object containing keys to custom GraphQL mutations |
+| Config Path | Type | Default | Description |
+| --- | --- | --- | --- |
+| `graphQL.queries` | `(GraphQL, context) => Record<string, unknown>` | — | Returns an object of custom queries, keyed by query name. |
+| `graphQL.mutations` | `(GraphQL, context) => Record<string, unknown>` | — | Returns an object of custom mutations, keyed by mutation name. |
 
-The above properties each receive a function that is defined with the following arguments:
+Both functions receive these arguments:
 
-**`GraphQL`**
+| Argument | Type | Description |
+| --- | --- | --- |
+| `GraphQL` | `typeof GraphQL` | FrogBot's copy of the `graphql` package. Use it to build types instead of installing your own copy, because GraphQL types from two copies of the package don't work together. |
+| `context` | `object` | The GraphQL types FrogBot generated for your config, plus your sanitized `config`. See the table below. |
 
-This is FrogBot's GraphQL dependency. You should not install your own copy of GraphQL as a dependency due to underlying restrictions based on how GraphQL works. Instead, you can use the FrogBot-provided copy via this argument.
+`context` contains:
 
-**`context`**
+| Property | Type | Description |
+| --- | --- | --- |
+| `collections` | `Record<string, Collection>` | Each collection, keyed by slug. `context.collections.posts.graphQL.type` is the type of a `posts` document. |
+| `config` | `SanitizedConfig` | The sanitized FrogBot config. |
+| `Query` | `{ name: string; fields: Record<string, any> }` | The root query type FrogBot built, including every generated query. |
+| `Mutation` | `{ name: string; fields: Record<string, any> }` | The root mutation type FrogBot built, including every generated mutation. |
+| `types` | `object` | Generated types for named fields: `arrayTypes`, `blockTypes`, `blockInputTypes`, `groupTypes`, `tabTypes`, and the optional `localeInputType` and `fallbackLocaleInputType`. |
+| `globals` | `object` | Always empty, because FrogBot has no globals. |
 
-An object with the GraphQL types FrogBot generated for your config. For example, `context.collections.posts.graphQL.type` is the type of a `posts` document.
+Each returned entry is a GraphQL field config with `type`, optional `args`, and `resolve`. FrogBot attaches `req.frogbot` before each `resolve` runs.
 
 ## Return value
 

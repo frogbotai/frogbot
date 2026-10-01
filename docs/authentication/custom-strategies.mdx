@@ -19,21 +19,28 @@ A strategy authenticates a user from information in an incoming request.
 
 A strategy is made up of the following:
 
-| Parameter             | Description                                                                                         |
-| --------------------- | --------------------------------------------------------------------------------------------------- |
-| **`name`** \*         | The name of your strategy.                                                                          |
-| **`authenticate`** \* | A function that takes the arguments below and returns an object with `user`, directly or as a promise. |
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | The name of your strategy. |
+| `authenticate` | `(args: AuthStrategyFunctionArgs) => AuthStrategyResult \| Promise<AuthStrategyResult>` | Required | A function that takes the arguments below and returns an object with `user`, directly or as a promise. |
 
 The `authenticate` function is passed the following arguments:
 
-| Argument            | Description                                                                                                     |
-| ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **`canSetHeaders`** | Whether the calling context can set response headers. Treat an omitted value as `false`.                        |
-| **`frogbot`** \*    | The initialized FrogBot instance. Use its Local API to look up users.                                           |
-| **`headers`** \*    | The incoming request headers.                                                                                   |
-| **`isGraphQL`**     | Whether the strategy is running within the GraphQL endpoint. Treat an omitted value as `false`.                 |
-| **`req`**           | The `FrogBotRequest`, when there is one. Some authentication calls have no request, so read credentials from `headers`. |
-| **`strategyName`**  | The name of the strategy being run.                                                                             |
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `canSetHeaders` | `boolean` | — | Whether the calling context can set response headers. Treat an omitted value as `false`. |
+| `frogbot` | `FrogBot` | Always set | The initialized FrogBot instance. Use its Local API to look up users. |
+| `headers` | `Headers` | Always set | The incoming request headers. |
+| `isGraphQL` | `boolean` | — | Whether the strategy is running within the GraphQL endpoint. Treat an omitted value as `false`. |
+| `req` | `FrogBotRequest` | — | The `FrogBotRequest`, when there is one. Some authentication calls have no request, so read credentials from `headers`. |
+| `strategyName` | `string` | — | The name of the strategy being run. |
+
+`authenticate` returns an `AuthStrategyResult`:
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `user` | `(TypedUser & { collection?: string; _strategy?: string }) \| null` | Required | The authenticated user document with its `collection` slug, or `null` when the request doesn't identify a user. |
+| `responseHeaders` | `Headers` | — | Headers added to the response. Only return them when `canSetHeaders` is `true`. |
 
 ### Example strategy
 

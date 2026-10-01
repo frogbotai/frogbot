@@ -49,35 +49,45 @@ const FieldWithHooks: Field = {
 }
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `beforeValidate` | `FieldHook[]` | `[]` | Runs on `create` and `update` before validation. [More details](#beforevalidate). |
+| `beforeChange` | `FieldHook[]` | `[]` | Runs on `create` and `update` after validation. [More details](#beforechange). |
+| `beforeDuplicate` | `FieldHook[]` | `[]` | Runs when a document is duplicated. [More details](#beforeduplicate). |
+| `afterChange` | `FieldHook[]` | `[]` | Runs after a document is created or updated. Doesn't receive `siblingFields`. [More details](#afterchange). |
+| `afterRead` | `FieldHook[]` | `[]` | Runs before a document is returned. [More details](#afterread). |
+
+Each hook returns the field's new value, or `undefined` to keep the current value.
+
 Field Hooks receive the following arguments. Optional values depend on the hook phase and operation:
 
-| Option                      | Description                                                                                                                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`blockData`**             | The nearest parent block's data (`JsonObject`), or `undefined` outside a block.                                                                                                                |
-| **`collection`**            | The [Collection](/configuration/collections) in which this Hook is running.                                                                                                                    |
-| **`context`**               | Custom context passed between Hooks. [More details](/hooks/context).                                                                                                                           |
-| **`currentDepth`**          | The current relationship population depth (`number`), available in `afterRead`.                                                                                                                |
-| **`data`**                  | In the `afterRead` hook this is the full Document. In the `create` and `update` operations, this is the incoming data passed through the operation.                                            |
-| **`depth`**                 | The requested relationship population depth (`number`), available in `afterRead`.                                                                                                              |
-| **`draft`**                 | An optional boolean indicating whether the operation requests draft data.                                                                                                                      |
-| **`field`**                 | The [Field](/fields/overview) which the Hook is running against.                                                                                                                               |
-| **`findMany`**              | Boolean to denote if this hook is running against finding one, or finding many within the `afterRead` hook.                                                                                    |
-| **`global`**                | The Global in which this Hook is running, or `null` for a Collection field (`undefined` in `beforeDuplicate`).                                                                                 |
-| **`indexPath`**             | Indexes of the unnamed layout fields that lead to this field (`number[]`). Empty for named fields.                                                                                             |
-| **`operation`**             | The optional operation name: `create`, `read`, `update`, or `delete`.                                                                                                                          |
-| **`originalDoc`**           | In the `update` operation, this is the Document before changes were applied. In the `afterChange` hook, this is the resulting Document.                                                        |
-| **`overrideAccess`**        | A boolean to denote if the current operation is overriding [Access Control](/access-control/overview).                                                                                         |
-| **`path`**                  | The runtime path to the [Field](/fields/overview), including array indexes (`(number \| string)[]`).                                                                                           |
-| **`previousDoc`**           | In the `afterChange` Hook, this is the Document before changes were applied.                                                                                                                   |
-| **`previousSiblingDoc`**    | The sibling data before changes in `beforeChange`, `beforeValidate`, `beforeDuplicate`, and `afterChange`.                                                                                     |
-| **`previousValue`**         | The previous field value in `beforeChange`, `beforeValidate`, `beforeDuplicate`, and `afterChange`.                                                                                            |
-| **`req`**                   | The current `FrogBotRequest`, including `req.user` and `req.frogbot`.                                                                                                                          |
-| **`schemaPath`**            | The path of the Field in the schema, without array indexes (`string[]`).                                                                                                                       |
-| **`showHiddenFields`**      | An optional boolean indicating whether hidden fields are included, available in `afterRead`.                                                                                                   |
-| **`siblingData`**           | The data of sibling [fields](/fields/overview) adjacent to the field that the Hook is running against.                                                                                         |
-| **`siblingDocWithLocales`** | Unmodified sibling data with all [Locales](/configuration/localization) (`Record<string, unknown>`), available in `beforeChange` and `beforeDuplicate`.                                        |
-| **`siblingFields`**         | The sibling field configurations (`(Field \| TabAsField)[]`). Required in `afterRead`, `beforeChange`, `beforeDuplicate`, and `beforeValidate`; not provided in `afterChange`.                 |
-| **`value`**                 | The value of the [Field](/fields/overview).                                                                                                                                                    |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `blockData` | `JsonObject \| undefined` | Always set | The nearest parent block's data, or `undefined` outside a block. |
+| `collection` | `SanitizedCollectionConfig \| null` | Always set | The [Collection](/configuration/collections) in which this Hook is running. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `currentDepth` | `number` | — | The current relationship population depth, available in `afterRead`. |
+| `data` | `object` | — | In the `afterRead` hook this is the full Document. In the `create` and `update` operations, this is the incoming data passed through the operation. |
+| `depth` | `number` | — | The requested relationship population depth, available in `afterRead`. |
+| `draft` | `boolean` | — | An optional boolean indicating whether the operation requests draft data. |
+| `field` | `FieldAffectingData` | Always set | The [Field](/fields/overview) which the Hook is running against. |
+| `findMany` | `boolean` | — | Boolean to denote if this hook is running against finding one, or finding many within the `afterRead` hook. |
+| `global` | `null` | Always set | Always `null`, because FrogBot has no globals. `undefined` in `beforeDuplicate`. |
+| `indexPath` | `number[]` | Always set | Indexes of the unnamed layout fields that lead to this field. Empty for named fields. |
+| `operation` | `'create' \| 'read' \| 'update' \| 'delete'` | — | The optional operation name: `create`, `read`, `update`, or `delete`. |
+| `originalDoc` | `object` | — | In the `update` operation, this is the Document before changes were applied. In the `afterChange` hook, this is the resulting Document. |
+| `overrideAccess` | `boolean` | — | A boolean to denote if the current operation is overriding [Access Control](/access-control/overview). |
+| `path` | `(string \| number)[]` | Always set | The runtime path to the [Field](/fields/overview), including array indexes. |
+| `previousDoc` | `object` | — | In the `afterChange` Hook, this is the Document before changes were applied. |
+| `previousSiblingDoc` | `object` | — | The sibling data before changes in `beforeChange`, `beforeValidate`, `beforeDuplicate`, and `afterChange`. |
+| `previousValue` | `unknown` | — | The previous field value in `beforeChange`, `beforeValidate`, `beforeDuplicate`, and `afterChange`. |
+| `req` | `FrogBotRequest` | Always set | The current `FrogBotRequest`, including `req.user` and `req.frogbot`. |
+| `schemaPath` | `string[]` | Always set | The path of the Field in the schema, without array indexes. |
+| `showHiddenFields` | `boolean` | — | An optional boolean indicating whether hidden fields are included, available in `afterRead`. |
+| `siblingData` | `object` | Always set | The data of sibling [fields](/fields/overview) adjacent to the field that the Hook is running against. |
+| `siblingDocWithLocales` | `Record<string, unknown>` | — | Unmodified sibling data with all [Locales](/configuration/localization), available in `beforeChange` and `beforeDuplicate`. |
+| `siblingFields` | `(Field \| TabAsField)[]` | See description | The sibling field configurations. Required in `afterRead`, `beforeChange`, `beforeDuplicate`, and `beforeValidate`; not provided in `afterChange`. |
+| `value` | `unknown` | — | The value of the [Field](/fields/overview). |
 
 `collection` is `null` for a Global field. `siblingFields` is optional in the base `FieldHookArgs` type because `afterChange` does not receive it.
 

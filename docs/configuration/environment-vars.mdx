@@ -58,15 +58,19 @@ export const envService = defineEnv({
 Then use the resolved values in your FrogBot config:
 
 ```ts
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 import { buildConfig } from 'frogbot'
 
 import { envService } from './env.js'
 
 export default buildConfig({
   secret: envService.frogbotSecret,
-  client: {
-    url: envService.databaseUrl,
-  },
+  db: sqliteAdapter({
+    client: {
+      url: envService.databaseUrl,
+    },
+  }),
+  collections: [],
 })
 ```
 
@@ -76,25 +80,32 @@ This replaces fallback expressions such as `process.env.FROGBOT_SECRET || ''` wi
 
 The `env` factory provides these builders:
 
-| Builder | Result |
-| --- | --- |
-| `env.string()` | String value |
-| `env.number()` | Number value |
-| `env.boolean()` | Boolean value |
-| `env.enum(['one', 'two'])` | One of the listed strings |
-| `env.custom(parse)` | Value returned by your parser |
+| Builder | Type | Result |
+| --- | --- | --- |
+| `env.string()` | `EnvBuilder<string>` | The raw string. |
+| `env.number()` | `EnvBuilder<number>` | The value parsed with `Number()`. A value that isn't a number fails validation. |
+| `env.boolean()` | `EnvBuilder<boolean>` | `true` or `false`. See [Names and parsing](#names-and-parsing) for accepted values. |
+| `env.enum(values)` | `EnvBuilder<T[number]>` | One of the listed strings. Any other value fails validation. `values` needs at least one string. |
+| `env.custom(parse)` | `EnvBuilder<T>` | The value returned by `parse(raw)`. If `parse` throws, the error message is reported as a validation issue. |
 
-Chain builders with `.default(value)`, `.required()`, `.requiredWhen(predicate)`, or `.name('CUSTOM_NAME')`. A variable cannot have both a default and a required modifier. Required predicates receive all values resolved during the first parsing pass.
+Every builder returns an immutable builder, so each modifier returns a new one. Without a modifier, an unset variable resolves to `undefined`.
+
+| Modifier | Argument | Default | Behavior |
+| --- | --- | --- | --- |
+| `.default(value)` | `T` | — | Uses `value` when the variable is unset or empty. The resolved type no longer includes `undefined`. Throws when combined with `.required()` or `.requiredWhen()`. |
+| `.required()` | — | — | Reports the variable as missing when it's unset or empty. Throws when combined with `.default()` or another required modifier. |
+| `.requiredWhen(predicate)` | `(values: Record<string, unknown>) => boolean` | — | Required only when `predicate` returns `true`. The predicate receives all values resolved during the first parsing pass. If it throws, `defineEnv` throws. Same restrictions as `.required()`. |
+| `.name(name)` | `string` | Derived from the property name | Reads this environment variable instead. `name` must match `^[A-Z_][A-Z0-9_]*$`, and each name can be used by only one property. |
 
 `frogbotEnv` includes these common builders:
 
-| Property | Environment variable | Behavior |
-| --- | --- | --- |
-| `nodeEnv` | `NODE_ENV` | `development`, `production`, or `test`; defaults to `production` |
-| `logLevel` | `LOG_LEVEL` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `silent`; defaults to `info` |
-| `port` | `PORT` | Number; defaults to `3000` |
-| `frogbotSecret` | `FROGBOT_SECRET` | Required string |
-| `databaseUrl` | `DATABASE_URL` | Required string |
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `nodeEnv` | `'development' \| 'production' \| 'test'` | `'production'` | Read from `NODE_ENV`. |
+| `logLevel` | `'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' \| 'silent'` | `'info'` | Read from `LOG_LEVEL`. |
+| `port` | `number` | `3000` | Read from `PORT`. |
+| `frogbotSecret` | `string` | Required | Read from `FROGBOT_SECRET`. |
+| `databaseUrl` | `string` | Required | Read from `DATABASE_URL`. |
 
 You can replace a base builder after spreading `frogbotEnv`:
 

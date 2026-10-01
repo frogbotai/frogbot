@@ -34,21 +34,116 @@ export default buildConfig({
 
 ## Set core options
 
-`FrogBotConfig` requires `secret`, `db`, and `collections`. It extends FrogBot's server configuration while replacing the options FrogBot owns.
+`FrogBotConfig` requires `secret`, `db`, and `collections`. `globals` are forbidden; use collections instead.
 
-| Option | Required | Purpose |
-| --- | --- | --- |
-| `secret` | Yes | Signs tokens and cookies |
-| `db` | Yes | Configures a FrogBot database adapter |
-| `collections` | Yes | Registers FrogBot collection configs |
-| `ai` | No | Configures providers, aliases, access, hooks, and telemetry |
-| `agents` | No | Registers an array of code-defined agent configs |
-| `plugins` | No | Transforms the config serially before sanitization |
-| `onInit` | No | Runs one callback or an ordered array after initialization |
-| `admin` | No | Sets `user`, `meta`, or `theme` for the root admin surface |
-| `endpoints` | No | Registers root handlers that receive `FrogBotRequest` |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `secret` | `string` | Required | Signs tokens and cookies and encrypts stored secrets. |
+| `db` | `DatabaseAdapter` | Required | Database adapter, such as `sqliteAdapter()`. See [Database](/database/overview). |
+| `collections` | `CollectionConfig[]` | Required | Collections to register. When none has `auth`, FrogBot adds a `users` auth collection. See [Collections](/configuration/collections). |
+| `admin` | `RootAdminConfig` | — | Root admin panel options, such as `user`, `meta`, `theme`, and `components`. See [Root components](/custom-components/root-components). |
+| `agents` | `AgentConfig[]` | — | Code-defined agents. Requires `ai`. See [Agents](/agents/overview). |
+| `ai` | `AIConfig` | — | Providers, routers, access, hooks, and telemetry. See [AI](/ai/overview). |
+| `auth` | `{ jwtOrder: ('JWT' \| 'Bearer' \| 'cookie')[] }` | `{ jwtOrder: ['JWT', 'Bearer', 'cookie'] }` | Order in which the built-in strategy reads a token from the `Authorization: JWT` header, the `Authorization: Bearer` header, and the auth cookie. Methods left out of `jwtOrder` aren't read. `jwtOrder` is required when you set `auth`. |
+| `bin` | `{ key: string; scriptPath: string }[]` | `[]` | Accepted by the type, but the `frogbot` CLI doesn't run these scripts. Use [`frogbot run`](/local-api/outside-nextjs) instead. |
+| `blocks` | `Block[]` | — | Blocks registered once and referenced by slug from Blocks fields. See [Root block registration](/fields/blocks#root-block-registration). |
+| `bodyParser` | `Partial<BusboyConfig>` | — | Options passed to the [busboy](https://www.npmjs.com/package/busboy) parser for `multipart/form-data` requests, such as `limits`. Experimental. |
+| `compatibility` | `{ allowLocalizedWithinLocalized: true }` | — | Keeps `localized: true` on fields nested in a localized parent. Only for MongoDB databases created before this behavior changed. |
+| `connections` | `ConnectionsConfig` | — | Providers users can link accounts with. See [Connections](/connections/overview#configure-linking). |
+| `cookiePrefix` | `string` | `'frogbot'` | Prefix for every cookie FrogBot sets, such as `frogbot-token`. |
+| `cors` | `'*' \| string[] \| { origins: '*' \| string[]; headers?: string[] }` | `[]` | Origins allowed to make cross-origin requests. `'*'` allows any origin. The object form also adds allowed request `headers`. See [Cookies](/authentication/cookies). |
+| `csrf` | `string[]` | `[]` | Origins whose requests may authenticate with the auth cookie. `serverURL` is added automatically when set. See [Cookies](/authentication/cookies). |
+| `custom` | `Record<string, any>` | `{}` | Your own server-only data. FrogBot doesn't read it. |
+| `debug` | `boolean` | `false` | Returns error messages and stack traces in API responses, including errors that are normally hidden. |
+| `defaultDepth` | `number` | `2` | Relationship population depth used when a request doesn't set `depth`. See [Depth](/queries/depth). |
+| `defaultMaxTextLength` | `number` | `40000` | Maximum length of Text and Textarea values when the field doesn't set `maxLength`. |
+| `editor` | `RichTextAdapterProvider` | — | Default editor for Rich Text fields. Required when any collection has a Rich Text field without its own `editor`. See [Rich Text](/rich-text/overview#configure-the-root-editor). |
+| `email` | `EmailPiece \| Promise<EmailPiece>` | No email | Email piece used to send verification and password-reset messages. Without it, FrogBot warns at startup and logs email sends instead of delivering them. See [Email](/email/overview). |
+| `endpoints` | `Endpoint[]` | — | Root REST endpoints. Handlers receive `FrogBotRequest`. See [Custom endpoints](/rest-api/overview#custom-endpoints). |
+| `experimental` | `{ localizeStatus?: boolean }` | — | Experimental features. `localizeStatus: true` tracks draft and published status per locale; it also needs `localization` and `versions.drafts.localizeStatus` on the collection. |
+| `folders` | `false \| RootFoldersConfiguration` | Enabled when a collection sets `folders` | Folder options for the admin panel. `false` turns folders off everywhere. See [Folders](#folders). |
+| `graphQL` | `GraphQLConfig` | See [GraphQL options](/graphql/overview#graphql-options) | GraphQL API options. |
+| `hooks` | `{ afterError?: AfterErrorHook[] }` | — | Root hooks. See [Root hooks](/hooks/overview#root-hooks). |
+| `i18n` | `I18nOptions` | English only | Admin panel languages and translations. See [I18n](/configuration/i18n#config-options). |
+| `indexSortableFields` | `boolean` | `false` | Adds a database index to every sortable top-level field. Useful for databases that require an index to sort, such as Azure Cosmos DB. |
+| `jobs` | `JobsConfig` | — | Tasks, workflows, queues, and schedules. See [Jobs Queue](/jobs-queue/overview). |
+| `kv` | `KVAdapterResult` | `databaseKVAdapter()` | Key-value store behind `frogbot.kv`. See [Key-value store](#key-value-store). |
+| `localization` | `false \| LocalizationConfig` | `false` | Content locales. See [Localization](/configuration/localization#config-options). |
+| `logger` | `'sync' \| { options: LoggerOptions; destination?: DestinationStream } \| Logger` | Pretty-printed pino logger | Logger behind `frogbot.logger`. Pass [pino options](https://getpino.io/#/docs/api?id=options), options with a destination stream, or a pino logger instance. `'sync'` writes logs synchronously. |
+| `loggingLevels` | `Partial<Record<ErrorName, Level \| false>>` | See description | Log level for each error class, or `false` to not log it. Defaults: `info` for `Forbidden`, `Locked`, `MissingFile`, `NotFound`, and `ValidationError`; `error` for the rest. |
+| `maxDepth` | `number` | `10` | Highest `depth` any request can use. Larger values are lowered to this limit. |
+| `onInit` | `OnInit \| OnInit[]` | — | Runs after initialization with the `FrogBot` instance. See [Run initialization steps](#run-initialization-steps). |
+| `pieces` | `Piece[]` | — | Pieces whose tools, triggers, and sign-in methods FrogBot registers. See [Pieces](/pieces/overview). |
+| `plugins` | `Plugin[]` | — | Functions that transform the config, in order, before sanitization. See [Run plugins](#run-plugins). |
+| `queryPresets` | `QueryPresetsConfig` | — | Access rules for saved list filters, columns, and sorts on collections with `enableQueryPresets`. See [Query presets](#query-presets). |
+| `routes` | `RoutesConfig` | See [Routes](#routes) | URL paths for the admin panel, REST API, and GraphQL. |
+| `serverURL` | `string` | `''` | Absolute URL of your app, such as `https://example.com`, with no path. Used for links in emails and file URLs, and added to `csrf`. |
+| `settings` | `SettingsEntry[]` | — | Pages added to the admin Settings area. See [Register a settings page](/admin/admin-navigation#register-a-settings-page). |
+| `sharp` | `SharpDependency` | — | Your installed `sharp` module, used to resize and crop images. See [Uploads](/upload/overview). |
+| `telemetry` | `boolean` | `true` | Sends anonymous usage events. Set `false` to turn it off. |
+| `tools` | `readonly AnyTool[]` | — | Tools attached to every agent. See [Share tools across agents](/agents/overview#share-tools-across-agents). |
+| `typescript` | `TypeScriptConfig` | See [Type generation options](/typescript/generating-types#type-generation-options) | Type generation options. |
+| `upload` | `FetchAPIFileUploadOptions` | `{}` | Options for parsing uploaded files on every upload collection. See [Uploads](/upload/overview#frogbot-wide-upload-options). |
+| `_roles` | `RolesPrewiring` | — | Internal. Set by the roles plugin; don't set it yourself. |
 
-Other non-overridden FrogBot server options pass through. `globals` are forbidden; use collections instead.
+### Routes
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `admin` | `string` | `'/'` | Path the admin panel is mounted at. |
+| `api` | `string` | `'/api'` | Path prefix for the REST API. |
+| `graphQL` | `string` | `'/graphql'` | Path of the GraphQL endpoint, below `api`. |
+| `graphQLPlayground` | `string` | `'/graphql-playground'` | Path of the GraphQL Playground, below `api`. |
+
+### Folders
+
+Folders are turned on when any collection sets `folders`, including the default files collection.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `browseByFolder` | `boolean` | `true` | Adds the Browse by folder view to the admin panel. |
+| `collectionOverrides` | `(({ collection }) => CollectionConfig \| Promise<CollectionConfig>)[]` | — | Functions that modify the generated folders collection, in order. |
+| `collectionSpecific` | `boolean` | `true` | Lets each folder be limited to certain collections. |
+| `debug` | `boolean` | `false` | Shows the folder collection and its hidden fields in the admin panel. |
+| `fieldName` | `string` | `'folder'` | Name of the folder relationship field added to each collection with `folders`. |
+| `slug` | `string` | `'payload-folders'` | Slug of the generated folders collection. |
+
+### Query presets
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `access` | `{ create?, delete?, read?, update?: Access }` | Required | Access rules for the presets collection, applied to every preset. |
+| `constraints` | `{ create?, delete?, read?, update?: QueryPresetConstraint[] }` | Required | Extra sharing options users can pick per preset, in addition to the built-in ones. Each constraint has a `label`, a `value`, optional `fields` to collect, and an `access` function. |
+| `filterConstraints` | `FilterOptions` | — | Limits which sharing options a user can pick, in the same form as a Select field's `filterOptions`. |
+| `labels` | `{ singular?, plural? }` | — | Labels for the presets collection. |
+
+---
+
+## Key-value store
+
+`frogbot.kv` stores JSON values by key. The default `databaseKVAdapter()` uses a collection in your database. Use `redisKVAdapter()` from `@frogbotai/kv-redis` to keep keys in Redis instead.
+
+```ts
+import { redisKVAdapter } from '@frogbotai/kv-redis'
+
+export default buildConfig({
+  // required options omitted
+  kv: redisKVAdapter({ redisURL: process.env.REDIS_URL })
+})
+```
+
+**`databaseKVAdapter()` options** (imported from `frogbot/kv`)
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kvCollectionOverrides` | `Partial<CollectionConfig>` | — | Changes the generated KV collection, such as its `slug`. Custom fields are merged with the required `key`, `data`, and `expiresAt` fields, which must keep their types. |
+
+**`redisKVAdapter()` options**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `redisURL` | `string` | `process.env.REDIS_URL` | Redis connection URL. Startup fails when neither is set. |
+| `keyPrefix` | `string` | `'payload-kv:'` | Prefix added to every key stored in Redis. |
 
 ---
 
