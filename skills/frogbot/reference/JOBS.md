@@ -35,7 +35,7 @@ await frogbot.jobs.queue({
 });
 ```
 
-Generated FrogBot types connect task and workflow slugs to their input and output. `jobId` may be supplied when queueing to provide an application identifier.
+Generated FrogBot types connect task and workflow slugs to their input and output. An optional `jobId` dedupes unfinished work across all tasks, workflows, and queues, including workflows paused at `waitFor`: a duplicate `queue` call resolves with the existing job and ignores its own arguments. The one exception is MongoDB, where two uncommitted transactions that enqueue the same new ID at once abort the losing transaction with a retryable error. Completion, failure for good, cancellation, or deletion frees the ID, so it is not an "only ever once" key and does not give exactly-once execution.
 
 ## Leases
 
@@ -78,7 +78,9 @@ export const approvalWorkflow: WorkflowConfig = {
 
 Use `{ until: date }` for a delay, or `onWait` with optional `expiresIn` for external resumption. Resumable waits require `serverURL` to produce `/api/jobs/:token/resume`. Resume through `frogbot.jobs.resume({ token, data })` or the generated URL.
 
-Wait names must be non-empty, unique within one workflow run, and stable across replay. The default expiry is seven days and the maximum is thirty days; both can be changed with `jobs.waitpoints.defaultExpiresIn` and `jobs.waitpoints.maxExpiresIn`.
+A wait pauses the same job with `waitUntil` set to `until` or the expiry; resume or expiry continues it in its original queue without a continuation job. Successful local resume returns `{ jobId }`, the original record's ID; HTTP success remains `{ "ok": true }`. Cancel, supersede, or deletion ends a paused wait and its resume link then returns `409`. `runByID` runs it early and pauses again if unresolved; the default schedule check counts a paused workflow and skips overlapping runs.
+
+Wait names must be non-empty, unique within one workflow run, and stable across replay. The default expiry is seven days and the maximum is thirty days; both can be changed with `jobs.waitpoints.defaultExpiresIn` and `jobs.waitpoints.maxExpiresIn`. `until`, computed expiry, and now plus `maxExpiresIn` must not pass `9999-12-31T23:59:59.999Z`.
 
 ## Run workers
 
@@ -111,6 +113,6 @@ export const workerJobs = {
 
 `shouldAutoRun` blocks web-side execution, but scheduling can happen before that guard. Agent schedules and mounted piece triggers can append autorun entries even when you set `autoRun: []`. The CLI itself disables built-in autorun before initialization and runs its own tick loop.
 
-To separate scheduling from execution, run a scheduler with `--handle-schedules --all-queues --limit 0` and workers with `--all-queues`. Keep both scheduling and execution covering `default`: the reserved sweep task recovers expired leases, expires waits, and retries pending continuation dispatch. A scheduler alone cannot execute the sweep or resumed work. CLI `--limit 0` differs from Local API `jobs.run({ limit: 0 })`, which is unlimited.
+To separate scheduling from execution, run a scheduler with `--handle-schedules --all-queues --limit 0` and workers with `--all-queues`. Keep both scheduling and execution covering `default`: the reserved sweep task recovers expired leases, expires waits, and retries pending wakes. A scheduler alone cannot execute the sweep or resumed work. CLI `--limit 0` differs from Local API `jobs.run({ limit: 0 })`, which is unlimited.
 
 On normal `SIGINT`/`SIGTERM` shutdown, workers stop new ticks, drain active work and heartbeat, and close the database. Allow enough shutdown time for the active batch. Forced termination relies on lease recovery; job side effects must tolerate at-least-once execution. See [job workers](https://docs.frogbot.ai/jobs-queue/workers) for deployment and exceptional batch-failure behavior.

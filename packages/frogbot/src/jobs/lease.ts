@@ -1,17 +1,26 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 
-import type { DatabaseAdapter, Payload, PayloadRequest, Where } from 'payload';
+import type { DatabaseAdapter, Job, Payload, PayloadRequest, Where } from 'payload';
 import { createLocalReq } from 'payload';
+
+import type { WaitpointReplay } from './waitpoints/types.js';
 
 export const DEFAULT_JOB_LEASE_DURATION = 300_000;
 export const jobLeaseOperations: unique symbol = Symbol.for('frogbot.jobs.leaseOperations');
+
+export type ReArm = {
+  waitUntil: string;
+  log: Job['log'];
+  waitpoint: WaitpointReplay;
+};
 
 export type JobLeaseContext = {
   owner: string;
   leaseDuration: number;
   ids: Set<number | string>;
   payload: Payload;
+  rearm: Map<number | string, ReArm>;
 };
 
 export type JobLeaseMutation = {
@@ -132,7 +141,13 @@ export async function withJobLease<T>({
 
   getLeaseOperations(leaseReq);
 
-  const context: JobLeaseContext = { owner: randomUUID(), leaseDuration, ids: new Set(), payload };
+  const context: JobLeaseContext = {
+    owner: randomUUID(),
+    leaseDuration,
+    ids: new Set(),
+    payload,
+    rearm: new Map(),
+  };
 
   return leaseContext.run(context, async () => {
     let renewal: Promise<void> | undefined;

@@ -27,6 +27,8 @@ export function matches(row: Record<string, unknown>, where: Where): boolean {
 
       if (operator === 'equals') return actual === expected;
 
+      if (operator === 'not_equals') return actual !== expected;
+
       if (operator === 'in') return (expected as unknown[]).includes(actual);
 
       if (operator === 'exists') return (actual !== undefined && actual !== null) === expected;

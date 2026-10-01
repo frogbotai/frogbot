@@ -1,25 +1,16 @@
-import type { Job, JsonObject } from 'payload';
-
 export type WaitpointResult<T = unknown> = { expired: false; data: T } | { expired: true };
 
 export type WaitpointReplay = {
   jobId: string;
   results: Record<string, WaitpointResult | null>;
-};
-
-export type WaitpointSnapshot = {
-  workflow: string;
-  input: JsonObject;
-  queue: string;
-  log: Job['log'];
-  meta?: Job['meta'];
-  results?: WaitpointReplay['results'];
+  waiting?: string;
 };
 
 export type Waitpoint = {
   id: number | string;
   jobId: string;
   name: string;
+  holder?: number | string | null;
   token: string;
   kind: 'delay' | 'resumable';
   ready: boolean;
@@ -27,7 +18,6 @@ export type Waitpoint = {
   expiresAt?: string;
   until?: string;
   data?: unknown;
-  snapshot: WaitpointSnapshot;
   dispatched: boolean;
   dispatchOwner?: string | null;
   dispatchLeaseUntil?: string | null;

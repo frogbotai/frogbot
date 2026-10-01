@@ -78,8 +78,14 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
     throw new Error('FrogBot jobs.waitpoints.defaultExpiresIn must not exceed maxExpiresIn.');
   }
 
+  if (Date.now() + waitpoints.maxExpiresIn > Date.parse('9999-12-31T23:59:59.999Z')) {
+    throw new Error(
+      'FrogBot jobs.waitpoints.maxExpiresIn must keep expiry on or before 9999-12-31T23:59:59.999Z.',
+    );
+  }
+
   const fields: Field[] = [
-    { name: 'jobId', type: 'text', unique: true, required: false },
+    { name: 'jobId', type: 'text', required: false },
     { name: 'leaseUntil', type: 'date', index: true, admin: { readOnly: true } },
     {
       name: 'leaseOwner',

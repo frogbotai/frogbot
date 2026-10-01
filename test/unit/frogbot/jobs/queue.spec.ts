@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+  type JobInsertDatabase,
+  jobInsertOperations,
+} from '../../../../packages/frogbot/src/jobs/insert.js';
 import { setup } from './helpers.js';
 
 describe('jobs.queue', () => {
@@ -17,6 +21,8 @@ describe('jobs.queue', () => {
         ],
       },
     });
+
+    const deleteMany = vi.mocked(database.deleteMany);
 
     const jobs = install();
     const waitUntil = new Date('2026-09-14T00:00:00.000Z');
@@ -39,7 +45,7 @@ describe('jobs.queue', () => {
       waitUntil: waitUntil.toISOString(),
     });
 
-    expect(database.deleteMany).toHaveBeenCalledOnce();
+    expect(deleteMany).toHaveBeenCalledOnce();
     expect(payload.config.jobs).toMatchObject({ runHooks: false, depth: 0 });
   });
 
@@ -62,7 +68,7 @@ describe('jobs.queue', () => {
       jobs.queue({ task: 'work', input: {}, req }),
     ]);
 
-    expect(results.map((job) => job.id)).toEqual([1, 2, 3]);
+    expect(results.map((job) => job.id).sort()).toEqual([1, 2, 3]);
 
     expect(results.map((job) => (job as unknown as { jobId?: string }).jobId)).toEqual([
       'a',
@@ -86,10 +92,99 @@ describe('jobs.queue', () => {
 
     const duplicate = new Error('unique constraint');
 
-    create.mockRejectedValueOnce(duplicate);
+    create.mockRejectedValue(duplicate);
 
     await expect(jobs.queue({ task: 'work', input: {}, jobId: 'duplicate', req })).rejects.toBe(
       duplicate,
     );
+
+    expect(create).toHaveBeenCalledTimes(4);
+    expect(database.find).toHaveBeenCalledTimes(5);
+  });
+
+  it('resolves a rejected insert with the live holder', async () => {
+    const { req, database, install } = await setup();
+    const holder = { id: 42, taskSlug: 'work', input: { original: true }, jobId: 'duplicate' };
+    const create = vi.mocked(database.create);
+
+    create.mockRejectedValue(new Error('unique constraint'));
+    vi.mocked(database.find)
+      .mockResolvedValueOnce({ docs: [] } as never)
+      .mockResolvedValueOnce({ docs: [holder] } as never);
+
+    const jobs = install();
+
+    const result = await jobs.queue({ task: 'work', input: {}, jobId: 'duplicate', req });
+
+    expect(result).toMatchObject(holder);
+    expect(create).toHaveBeenCalledOnce();
+    expect(database.find).toHaveBeenLastCalledWith({
+      collection: 'payload-jobs',
+      where: {
+        and: [
+          { jobId: { equals: 'duplicate' } },
+          { completedAt: { exists: false } },
+          { hasError: { not_equals: true } },
+        ],
+      },
+      limit: 1,
+      pagination: false,
+      req,
+    });
+  });
+
+  it('returns a live holder without inserting', async () => {
+    const { req, database, install } = await setup();
+    const holder = { id: 42, taskSlug: 'work', input: { original: true }, jobId: 'duplicate' };
+    const create = vi.mocked(database.create);
+
+    vi.mocked(database.find).mockResolvedValue({ docs: [holder] } as never);
+
+    const result = await install().queue({ task: 'work', input: {}, jobId: 'duplicate', req });
+
+    expect(result).toMatchObject(holder);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('rethrows the original error inside a Mongo transaction without a lookup', async () => {
+    const { req, database, install } = await setup();
+    const error = new Error('WriteConflict');
+    const create = vi.mocked(database.create);
+
+    req.transactionID = Promise.resolve('transaction');
+    database.sessions = { transaction: { inTransaction: () => true } } as never;
+    create.mockRejectedValue(error);
+
+    const jobs = install();
+
+    await expect(jobs.queue({ task: 'work', input: {}, jobId: 'race', req })).rejects.toBe(error);
+
+    expect(database.find).toHaveBeenCalledOnce();
+    expect(create).toHaveBeenCalledOnce();
+  });
+
+  it('retries the insert when the holder finished between the conflict and the lookup', async () => {
+    const { req, database, install } = await setup();
+    const create = vi.mocked(database.create);
+
+    create.mockRejectedValueOnce(new Error('unique constraint'));
+
+    const result = await install().queue({ task: 'work', input: {}, jobId: 'race', req });
+
+    expect(result).toMatchObject({ id: 1, jobId: 'race' });
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(database.find).toHaveBeenCalledTimes(2);
+  });
+
+  it('inserts through the adapter operation with the caller request', async () => {
+    const { req, database, install } = await setup();
+    const insert = vi.fn(async ({ insert }) => insert());
+
+    (database as JobInsertDatabase)[jobInsertOperations] = { insert };
+
+    const result = await install().queue({ task: 'work', input: {}, jobId: 'new', req });
+
+    expect(result).toMatchObject({ id: 1, jobId: 'new' });
+    expect(insert).toHaveBeenCalledWith({ req, insert: expect.any(Function) });
   });
 });

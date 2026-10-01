@@ -1,4 +1,6 @@
 export { installSQLJobOperations } from '../jobs/drizzle.js';
+export type { JobInsertDatabase, JobInsertOperations } from '../jobs/insert.js';
+export { jobInsertOperations } from '../jobs/insert.js';
 export type {
   JobLeaseContext,
   JobLeaseDatabase,
@@ -14,6 +16,8 @@ export {
   renewJobLease,
   resetJobLease,
 } from '../jobs/lease.js';
+export type { JobLogDatabase, JobLogOperations } from '../jobs/log.js';
+export { jobLogOperations } from '../jobs/log.js';
 export { sweepJobLeases } from '../jobs/sweep.js';
 export type {
   JobQueueArgs,

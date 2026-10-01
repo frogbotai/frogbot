@@ -24,15 +24,23 @@ Use `workflow` instead of `task` for a registered workflow. Pass `waitUntil: new
 
 ### Reserve a `jobId`
 
-`jobId` is an optional, independently unique string. The database rejects a duplicate insertion, including concurrent attempts, while a record with that value exists. Uniqueness spans all tasks, workflows, and queues.
+`jobId` is an optional string, unique among unfinished jobs across all tasks, workflows, and queues. It stays reserved while the job is waiting (including a future `waitUntil`), processing, failed with retries left, or paused at `waitFor`. A paused workflow keeps it through delays, resumable waits, expiry, and the resumed run.
+
+A duplicate `jobs.queue` with a reserved `jobId` creates nothing, does not throw, and resolves with the existing job record: the same `id`, original task or workflow, input, queue, `waitUntil`, and `meta`. The new call's arguments are ignored, so use an ID that identifies the work, not just the caller. Concurrent calls from many instances end with one job on every supported database, subject to the MongoDB transaction exception below.
 
 - The returned `job.id` remains the generated primary key. Use it for `runByID` and `cancelByID`.
 - Omitting `jobId` preserves ordinary enqueue behavior; multiple jobs can omit it.
-- Completion or cancellation does not itself free the reservation while the record remains. Deleting the record allows reuse, including automatic deletion while `jobs.deleteJobOnComplete` is enabled, which is the default.
+- Completion, failure for good, cancellation, or deletion frees the ID. Completion frees it whether the record is kept or deleted, with either `jobs.deleteJobOnComplete` setting.
 
-When `jobs.enableConcurrencyControl` is enabled, a task or workflow's `concurrency.supersedes` can delete pending jobs with the same concurrency key before inserting their replacement. That deletion frees any reserved `jobId`; uniqueness does not disable replacement.
+`jobId` means “first live job wins; later duplicates are absorbed.” When `jobs.enableConcurrencyControl` is enabled, `concurrency.supersedes` instead deletes older pending jobs with the same `concurrencyKey` first, including paused workflows, freeing their IDs before inserting the replacement. A job that is already processing is not superseded; the duplicate resolves with it.
 
-`jobs.queue` rejects conflicting insertions rather than returning the existing job. Neither uniqueness nor replacement prevents a recovered job from repeating an external side effect.
+`jobId` is not an “only ever once” key and does not give exactly-once execution. After a job finishes, the same ID queues new work; recovery can also repeat an external side effect. Check your own records for side effects that must happen once.
+
+#### Transactions
+
+A duplicate inside your transaction resolves with the existing job and leaves the transaction usable on Postgres and SQLite. On Postgres, a duplicate of a job inserted by another still-open transaction waits until that transaction ends.
+
+On MongoDB, if two uncommitted transactions enqueue the same new `jobId` at the same moment, the server aborts the losing transaction with its retryable transient transaction error. FrogBot passes that error through unchanged; retry the whole transaction. Duplicates of committed jobs and calls outside a transaction do not error because of a duplicate. Unrelated database errors still reject.
 
 ## Run and manage jobs
 
@@ -40,13 +48,13 @@ Access the API through `req.frogbot.jobs` or your initialized `frogbot.jobs` ins
 
 | Method                                                             | Purpose                                                           |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `queue({ task, input, ... })` or `queue({ workflow, input, ... })` | Create a job and return its record.                               |
+| `queue({ task, input, ... })` or `queue({ workflow, input, ... })` | Create a job, or return the unfinished job that holds its `jobId`. |
 | `run({ queue, limit, ... })`                                       | Claim and await one batch; defaults to 10 jobs from `default`.    |
-| `runByID({ id, ... })`                                             | Run one eligible job by its generated record ID.                  |
+| `runByID({ id, ... })`                                             | Run one job by its generated record ID, ignoring `waitUntil`.     |
 | `handleSchedules({ allQueues, queue, req })`                       | Enqueue scheduled jobs without executing them.                    |
 | `cancel({ where, queue, ... })`                                    | Cancel matching incomplete jobs.                                  |
 | `cancelByID({ id, ... })`                                          | Cancel one job by its generated record ID.                        |
-| `resume({ token, data, req? })`                                    | Accept a response to a durable wait and arrange its continuation. |
+| `resume({ token, data, req? })`                                    | Accept a response to a durable wait and wake the paused job.      |
 
 For example, a maintenance loop can schedule and run across every queue:
 
@@ -78,7 +86,7 @@ Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defau
 | `input` | `object` | Required | Input matching the task or workflow `inputSchema`. |
 | `queue` | `string` | The workflow's `queue`, otherwise `'default'` | Queue to add the job to. |
 | `waitUntil` | `Date` | — | The job is not eligible to run before this time. |
-| `jobId` | `string` | — | Reserves a unique ID for the job. See [Reserve a `jobId`](#reserve-a-jobid). |
+| `jobId` | `string` | — | Reserves the ID while the job or its workflow is unfinished. See [Reserve a `jobId`](#reserve-a-jobid). |
 | `meta` | `Record<string, unknown>` | — | Extra data stored on the job record. |
 | `overrideAccess` | `boolean` | `true` | Set `false` to run `jobs.access.queue`. |
 | `req` | `FrogBotRequest` | — | Request used for the access check. |
@@ -115,9 +123,9 @@ Job execution uses atomic claims and direct job-record updates. It does not run 
 
 ## Durable workflow waits
 
-Use `waitFor` from a `jobs.workflows[].handler` to wait for an approval, an external reply, or a date. FrogBot saves the wait, ends the current job cleanly, and later queues a continuation in the original queue. Waiting holds no worker and consumes no retry. `waitFor` is a workflow-handler argument; it is not available to task handlers, piece actions, agent tools, or chat handlers.
+Use `waitFor` from a `jobs.workflows[].handler` to wait for an approval, an external reply, or a date. FrogBot saves the wait and pauses the same job in its original queue; there is no separate continuation job. It stays pending with a future `waitUntil`: `until` for a delay, or the expiry for a resumable wait. Waiting holds no worker and consumes no retry. `waitFor` is a workflow-handler argument; it is not available to task handlers, piece actions, agent tools, or chat handlers.
 
-| Call                                       | Result on continuation                                      |
+| Call                                       | Result on resume                                            |
 | ------------------------------------------ | ----------------------------------------------------------- |
 | `waitFor<T>(name, { onWait, expiresIn? })` | `Promise<{ expired: false; data: T } \| { expired: true }>` |
 | `waitFor(name, { until })`                 | `Promise<void>`                                             |
@@ -125,10 +133,12 @@ Use `waitFor` from a `jobs.workflows[].handler` to wait for an approval, an exte
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `onWait` | `({ resumeUrl }) => void \| Promise<void>` | Required unless `until` is set | Called once the wait is saved, with the one-time URL that resumes it. Makes the wait resumable. |
-| `expiresIn` | `number` | `jobs.waitpoints.defaultExpiresIn` | With `onWait`, milliseconds until the wait expires and returns `{ expired: true }`. Must not exceed `jobs.waitpoints.maxExpiresIn`. |
-| `until` | `Date \| string` | Required unless `onWait` is set | Makes a [durable delay](#durable-delays) that continues at this time. Can't be combined with `onWait` or `expiresIn`. |
+| `expiresIn` | `number` | `jobs.waitpoints.defaultExpiresIn` | With `onWait`, milliseconds until the wait expires and returns `{ expired: true }`. Must not exceed `jobs.waitpoints.maxExpiresIn` or produce an expiry after `9999-12-31T23:59:59.999Z`. |
+| `until` | `Date \| string` | Required unless `onWait` is set | Makes a [durable delay](#durable-delays) that continues at this time, on or before `9999-12-31T23:59:59.999Z`. Can't be combined with `onWait` or `expiresIn`. |
 
 Choose either `onWait` or `until`; there is no `type` field. Call and await `waitFor` directly in the workflow handler, outside an `inlineTask`. Let its internal suspension signal reach FrogBot's wrapper; do not swallow it in a catch-all error handler.
+
+Runners pick up a paused job only once its `waitUntil` is strictly earlier than now. `runByID` runs it early; if the wait is still unresolved, it pauses again with the same `waitUntil`. A paused scheduled workflow counts as the running instance, so the default schedule check does not start an overlapping run.
 
 ### Approval links
 
@@ -157,7 +167,7 @@ const handler: WorkflowHandler<{ requestId: string }> = async ({ job, inlineTask
 };
 ```
 
-FrogBot creates the wait before calling `onWait({ resumeUrl })`. Once the callback finishes, the handler suspends. On continuation, the same named call returns its saved result without calling `onWait` again.
+FrogBot creates the wait before calling `onWait({ resumeUrl })`. Once the callback finishes, the handler suspends. On resume, the same named call returns its saved result without calling `onWait` again.
 
 The generated URL has the shape `/api/jobs/:token/resume` under your configured API prefix. Opening it with `GET` shows confirmation without consuming the token; `HEAD` also leaves it unchanged. Submitting the empty confirmation form uses `POST` with `application/x-www-form-urlencoded` and resumes with `data: {}`. Link previews and scanners that only fetch the URL cannot approve the workflow.
 
@@ -177,30 +187,32 @@ await frogbot.jobs.resume({
 
 Keep the token in your application's private correlation data so the incoming reply can identify its wait. `req` is optional; supply it when you have a request. In the workflow, `waitFor<{ messageId: string }>(name, { onWait })` returns `{ expired: false, data: { messageId } }` for that response. Check `expired` before reading `data`.
 
-`data` must be a JSON value with finite numbers. Object keys named `__proto__`, `constructor`, or `prototype` are rejected at any depth before the token is consumed, preventing storage from silently removing them. Local resume returns `{ jobId?: number | string }`: when present, `jobId` is the continuation's generated record ID, not its internal unique enqueue key. Early acceptance returns `{}` while `onWait` is still finishing; `{}` can also mean another dispatcher holds the claim. A resume call accepts input; it does not wait for the workflow to finish or return its final output.
+`data` must be a JSON value with finite numbers. Object keys named `__proto__`, `constructor`, or `prototype` are rejected at any depth before the token is consumed, preventing storage from silently removing them. A successful local resume returns `{ jobId }`, the original job's generated record ID, not its external `jobId` string, including when the response is accepted before `onWait` finishes. A resume call accepts input; it does not wait for the workflow to finish or return its final output.
 
 ### Resume over HTTP
 
 Send `POST` to the generated URL with `Content-Type: application/json`. The **entire JSON body** becomes the wait's `data`; for example, send `{"messageId":"reply-42"}` to receive `{ expired: false, data: { messageId: 'reply-42' } }`. Do not wrap the body in a `data` property unless you want that property in the result.
 
-JSON success returns HTTP `200` with `{ "ok": true }`, including early acceptance. It does not include a continuation ID. Form success returns an HTML confirmation page. Nonempty forms are rejected with `400`; other content types are rejected with `415`.
+JSON success returns HTTP `200` with `{ "ok": true }`, including early acceptance. It does not include a job ID. Form success returns an HTML confirmation page. Nonempty forms are rejected with `400`; other content types are rejected with `415`.
 
 JSON errors use `{ error: { code, message } }`: malformed JSON returns `400` (`INVALID_JSON`), invalid values or reserved keys return `400` (`INVALID_DATA`), unknown tokens `404` (`WAITPOINT_NOT_FOUND`), consumed tokens `409` (`WAITPOINT_CONSUMED`), expired tokens `410` (`WAITPOINT_EXPIRED`), and unsupported content types `415` (`UNSUPPORTED_MEDIA_TYPE`). Internal failures return `500` (`INTERNAL_ERROR`); a dispatch failure can occur after the response was already accepted.
 
 ### Dispatch and recovery limits
 
-FrogBot atomically consumes each token once. Ordinary concurrent resume attempts have one winner. If a response arrives while `onWait` is still finishing, FrogBot buffers it durably and attempts dispatch after the wait is ready. Dispatch claims guard overlapping workers, and a stable internal `jobId` lets recovery find an existing continuation.
+FrogBot atomically consumes each token once. Ordinary concurrent resume attempts have one winner. If a response arrives while `onWait` or the pausing run's write is still finishing, FrogBot buffers it durably and the sweep retries waking the job. Dispatch claims guard overlapping workers.
 
-Enqueue and saving the wait's `dispatched` marker are separate writes. In a rare crash between them, a continuation can finish and be deleted before recovery sees it; recovery can then enqueue and execute it again. Unique `jobId` does not guarantee exactly-once dispatch across that window.
+Dispatch wakes the original job instead of enqueueing another one. Recovery never recreates a missing or finished job. If a woken run crashes, lease recovery reruns that same job; external side effects still need at-least-once protection.
 
-Continuation enqueue preserves `concurrency.supersedes` replacement behavior. A replacement can delete pending work before its insertion fails, delaying the continuation until recovery. Failed dispatches remain retryable by the scheduled sweep, even if local resume rejected or HTTP returned `500` after token consumption. Resubmitting a consumed token returns a conflict; keep the [scheduler and recovery worker](/jobs-queue/workers#workers-for-durable-waits) running to retry dispatch.
+`cancel` and `cancelByID` end paused workflows, and `concurrency.supersedes` deletes older paused jobs with the same key. These operations free the `jobId` and end the wait; deleting a paused job also closes its wait. Its resume link then returns `409` (`WAITPOINT_CONSUMED`): “This FrogBot waitpoint cannot be resumed.”
+
+Failed dispatches remain retryable by the scheduled sweep, even if local resume rejected or HTTP returned `500` after token consumption. Resubmitting a consumed token returns a conflict; keep the [scheduler and recovery worker](/jobs-queue/workers#workers-for-durable-waits) running to retry dispatch.
 
 ### Replay and side effects
 
-The continuation reruns the workflow handler from the beginning. Arbitrary handler code runs again; FrogBot restores successful `inlineTask` outputs from the prior log and returns saved results for earlier waits.
+The resumed job reruns the workflow handler from the beginning. Arbitrary handler code runs again; FrogBot restores successful `inlineTask` outputs from the prior log and returns saved results for earlier waits.
 
 - Give each wait a nonempty, stable name unique within the workflow run. For loops, use a stable item identity such as `approval:${invoice.id}`. Duplicate names and the reserved names `__proto__`, `constructor`, and `prototype` are rejected.
-- Keep wait names, wait kinds, inline-task IDs, and branching consistent across retries and continuations. Use job input and saved task outputs for decisions rather than fresh randomness or changing external state.
+- Keep wait names, wait kinds, inline-task IDs, and branching consistent across retries and resumed runs. Use job input and saved task outputs for decisions rather than fresh randomness or changing external state.
 - Put external calls and mutations in named `inlineTask`s, including side effects inside `onWait`. Successful saved tasks restore their output by default instead of repeating the work.
 - `onWait` can retry after callback failure or a process crash before readiness is saved. A side effect can also succeed before its task checkpoint is saved. Neither `onWait` nor `inlineTask` guarantees exactly-once external effects; use the destination service's idempotency key when available.
 
@@ -212,7 +224,7 @@ Use an absolute `Date` or date string for `until`, derived from stable workflow 
 await waitFor('cooldown', { until: new Date(job.input.followUpAt) });
 ```
 
-FrogBot schedules the continuation with `waitUntil`; it cannot run before that date. The call returns `void` on continuation. A delay does not use `onWait`, a resume URL, or the resumable-wait expiry settings. Actual execution depends on the next worker batch and queue backlog.
+FrogBot sets the paused job's `waitUntil` to `until`; ordinary runners wait until that date has passed. An early `runByID` pauses again if the delay is not due. The call returns `void` when the workflow continues. A delay does not use `onWait`, a resume URL, or the resumable-wait expiry settings. Dates after `9999-12-31T23:59:59.999Z` are rejected. Actual execution depends on the next worker batch and queue backlog.
 
 ### Expiry
 
@@ -230,11 +242,11 @@ const jobs = {
 | Option                             | Type     | Default                | Description                                       |
 | ---------------------------------- | -------- | ---------------------- | ------------------------------------------------- |
 | `jobs.waitpoints.defaultExpiresIn` | `number` | `604800000` (7 days)   | Lifetime when a resumable wait omits `expiresIn`. |
-| `jobs.waitpoints.maxExpiresIn`     | `number` | `2592000000` (30 days) | Maximum allowed resumable-wait lifetime.          |
+| `jobs.waitpoints.maxExpiresIn`     | `number` | `2592000000` (30 days) | Maximum allowed resumable-wait lifetime; adding it to now must not pass `9999-12-31T23:59:59.999Z`. |
 
-All durations are positive safe-integer milliseconds. The default must not exceed the maximum; per-wait `expiresIn` must not exceed it either and must produce a valid date. The deadline starts when the wait is first created, including time spent in `onWait`.
+All durations are positive safe-integer milliseconds. The default must not exceed the maximum; per-wait `expiresIn` must not exceed it either and must produce a valid date on or before `9999-12-31T23:59:59.999Z`. The deadline starts when the wait is first created, including time spent in `onWait`.
 
-Expiry actively wakes a ready wait with `{ expired: true }`, even if nobody attempts to resume it. The scheduled `frogbot-sweep-jobs` task expires waits and arranges continuations. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/jobs-queue/workers#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and continuation execution.
+Expiry continues the same job with `{ expired: true }`, even if nobody attempts to resume it. Its `jobId` stays reserved if it waits again, until the workflow completes, fails for good, is cancelled, or is deleted. Runners can pick it up after its expiry `waitUntil` passes; the scheduled `frogbot-sweep-jobs` task also expires waits and wakes their jobs. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/jobs-queue/workers#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and execution.
 
 ## Leases and crash recovery
 
@@ -344,7 +356,7 @@ Each rule receives `{ req }` and returns a boolean or a promise of one.
 | --- | --- | --- | --- |
 | `key` | `({ input, queue }) => string` | Required | Groups related jobs. Jobs with the same key follow the rules below. |
 | `exclusive` | `boolean` | `true` | Only one job with the key runs at a time; others stay queued until it completes. |
-| `supersedes` | `boolean` | `false` | Queuing a job deletes older pending jobs with the same key. Running jobs are not affected. |
+| `supersedes` | `boolean` | `false` | Queuing a job deletes older pending jobs with the same key, including paused workflows, freeing their `jobId`s and closing their waits. Processing jobs are not affected. |
 
 ### Schedule options
 
@@ -352,11 +364,11 @@ Each rule receives `{ req }` and returns a boolean or a promise of one.
 | --- | --- | --- | --- |
 | `cron` | `string` | Required | When to queue the job. Accepts an optional leading seconds field. |
 | `queue` | `string` | Required | Queue the scheduled job is added to. A worker must handle schedules for this queue. |
-| `hooks.beforeSchedule` | `(args) => { shouldSchedule: boolean; input?: object; waitUntil?: Date } \| Promise<…>` | Skips while a job of the same task or workflow is running, scheduled, or retryable in the queue | Decides whether to queue each occurrence and with what input. It receives `defaultBeforeSchedule`, `jobStats`, `queueable`, and `req`. |
+| `hooks.beforeSchedule` | `(args) => { shouldSchedule: boolean; input?: object; waitUntil?: Date } \| Promise<…>` | Skips while a scheduled job of the same task or workflow in the queue is unfinished and has no recorded `error`: queued, running, paused at `waitFor`, or retrying without one. A job retrying after an attempt that recorded an `error` does not count | Decides whether to queue each occurrence and with what input. It receives `defaultBeforeSchedule`, `jobStats`, `queueable`, and `req`. |
 | `hooks.afterSchedule` | `(args) => void \| Promise<void>` | — | Runs after each occurrence with `status` `'success'` and `job`, `'error'` and `error`, or `'skipped'`. It also receives `defaultAfterSchedule`, `jobStats`, `queueable`, and `req`. |
 
 ## Database requirements
 
 Use the FrogBot adapters: `@frogbotai/db-postgres`, `@frogbotai/db-vercel-postgres`, `@frogbotai/db-sqlite`, `@frogbotai/db-d1-sqlite`, or `@frogbotai/db-mongodb`. They provide atomic claims and conditional lease updates without Redis.
 
-The jobs collection includes unique `jobId`, indexed `leaseUntil`, and private `leaseOwner` fields. Apply the generated [database migrations](/database/migrations) before starting SQL-backed workers. See [SQLite and D1 requirements](/jobs-queue/workers#sqlite-and-d1) for `RETURNING` support and local development.
+The jobs collection includes a `jobId` field that is unique while its job is unfinished, an indexed `leaseUntil` field, and a private `leaseOwner` field. New SQL projects get the partial unique index through their generated [database migrations](/database/migrations); apply them before starting workers. MongoDB creates its index on connect. See [SQLite and D1 requirements](/jobs-queue/workers#sqlite-and-d1) for `RETURNING` support and local development.

@@ -1,14 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
-import type { PayloadRequest, Where } from 'payload';
+import type { Job, PayloadRequest, Where } from 'payload';
 
-import { queueWaitpointContinuation } from '../runtime.js';
+import { compareAndSet } from '../../database/compareAndSet.js';
 import { updateWaitpoint } from './atomic.js';
 import { WAITPOINTS_SLUG } from './collection.js';
 import { copyResumeData } from './json.js';
-import type { Waitpoint, WaitpointSnapshot } from './types.js';
+import type { Waitpoint, WaitpointReplay } from './types.js';
 
 const DISPATCH_LEASE_DURATION = 60_000;
+
+type WaitpointHolder = Job & { waitpoint?: WaitpointReplay | null };
 
 export class WaitpointResumeError extends Error {
   readonly status: 404 | 409 | 410;
@@ -79,16 +81,14 @@ export async function createWaitpoint({
 export async function markWaitpointReady({
   req,
   waitpoint,
-  snapshot,
 }: {
   req: PayloadRequest;
   waitpoint: Waitpoint;
-  snapshot: WaitpointSnapshot;
 }): Promise<void> {
   await updateWaitpoint({
     req,
     where: { and: [{ id: { equals: waitpoint.id } }, { ready: { equals: false } }] },
-    data: { ready: true, snapshot },
+    data: { ready: true },
   });
 }
 
@@ -99,6 +99,73 @@ function dispatchAvailable(now: string): Where {
       { dispatchLeaseUntil: { less_than_equal: now } },
     ],
   };
+}
+
+async function findHolder({
+  req,
+  waitpoint,
+}: {
+  req: PayloadRequest;
+  waitpoint: Waitpoint;
+}): Promise<WaitpointHolder | undefined> {
+  if (waitpoint.holder == null) return undefined;
+
+  const result = await req.payload.db.find({
+    collection: 'payload-jobs',
+    req,
+    limit: 1,
+    pagination: false,
+    where: { id: { equals: waitpoint.holder } },
+  });
+
+  return result.docs[0] as WaitpointHolder | undefined;
+}
+
+function isLiveHolder(
+  row: WaitpointHolder | undefined,
+  waitpoint: Waitpoint,
+): row is WaitpointHolder {
+  return (
+    !!row &&
+    !row.completedAt &&
+    row.hasError !== true &&
+    row.waitpoint?.jobId === waitpoint.jobId &&
+    !Object.hasOwn(row.waitpoint.results ?? {}, waitpoint.name)
+  );
+}
+
+async function wakeHolder({
+  req,
+  waitpoint,
+  now,
+}: {
+  req: PayloadRequest;
+  waitpoint: Waitpoint;
+  now: string;
+}): Promise<{ jobId?: number | string; retry?: true }> {
+  const row = await findHolder({ req, waitpoint });
+
+  if (!isLiveHolder(row, waitpoint)) return {};
+
+  if (row.processing || row.waitpoint?.waiting !== waitpoint.name) return { retry: true };
+
+  const woken = await compareAndSet({
+    req,
+    collection: 'payload-jobs',
+    where: {
+      and: [
+        { id: { equals: row.id } },
+        { 'waitpoint.jobId': { equals: waitpoint.jobId } },
+        { 'waitpoint.waiting': { equals: waitpoint.name } },
+        { processing: { equals: false } },
+        { completedAt: { exists: false } },
+        { hasError: { not_equals: true } },
+      ],
+    },
+    data: { waitUntil: now },
+  });
+
+  return woken ? { jobId: row.id } : { retry: true };
 }
 
 export async function dispatchWaitpoint({
@@ -186,24 +253,27 @@ export async function dispatchWaitpoint({
       throw new Error('FrogBot waitpoint dispatch claim was lost.');
     }
 
-    const existing = await req.payload.db.find({
-      collection: 'payload-jobs',
-      req,
-      limit: 1,
-      pagination: false,
-      where: { jobId: { equals: `frogbot-waitpoint:${current.token}` } },
-    });
+    const result = await wakeHolder({ req, waitpoint: current, now });
 
-    const job = existing.docs[0] ?? (await queueWaitpointContinuation({ req, waitpoint: current }));
     const marked = await updateWaitpoint({
       req,
       where: owned,
-      data: { dispatched: true, dispatchOwner: null, dispatchLeaseUntil: null },
+      data: {
+        ...(result.retry ? {} : { dispatched: true }),
+        dispatchOwner: null,
+        dispatchLeaseUntil: null,
+      },
     });
 
-    if (!marked) throw new Error('FrogBot waitpoint dispatch claim was lost.');
+    if (!marked) {
+      const closed = (await findWaitpoint({ req, token: current.token }))?.dispatched === true;
 
-    return { jobId: job.id };
+      if (!closed) throw new Error('FrogBot waitpoint dispatch claim was lost.');
+
+      return {};
+    }
+
+    return result.jobId === undefined ? {} : { jobId: result.jobId };
   } catch (error) {
     await updateWaitpoint({
       req,
@@ -241,6 +311,16 @@ export async function resumeWaitpoint({
     });
   }
 
+  const holder = await findHolder({ req, waitpoint });
+
+  if (!isLiveHolder(holder, waitpoint)) {
+    throw new WaitpointResumeError({
+      status: 409,
+      code: 'WAITPOINT_CONSUMED',
+      message: 'This FrogBot waitpoint cannot be resumed.',
+    });
+  }
+
   const now = new Date().toISOString();
   const accepted = await updateWaitpoint({
     req,
@@ -270,9 +350,11 @@ export async function resumeWaitpoint({
     });
   }
 
-  if (!waitpoint.ready) return {};
+  if (waitpoint.ready) {
+    await dispatchWaitpoint({ req, waitpoint: { ...waitpoint, status: 'resumed', data: value } });
+  }
 
-  return dispatchWaitpoint({ req, waitpoint: { ...waitpoint, status: 'resumed', data: value } });
+  return { jobId: holder.id };
 }
 
 export async function sweepWaitpoints({ req }: { req: PayloadRequest }): Promise<void> {

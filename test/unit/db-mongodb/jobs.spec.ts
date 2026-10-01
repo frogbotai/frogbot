@@ -24,7 +24,9 @@ const require = createRequire(
 
 const upstreamRequire = createRequire(require.resolve('@payloadcms/db-mongodb'));
 
-const { buildConfig, BasePayload } = await import(upstreamRequire.resolve('payload'));
+const { buildConfig, BasePayload, createLocalReq } = await import(
+  upstreamRequire.resolve('payload')
+);
 
 const mongoURL = process.env.TICKET121_MONGO_URL;
 
@@ -35,6 +37,8 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
   let jobs: ReturnType<typeof installJobsRuntime>;
 
   const executions: (number | string)[] = [];
+
+  const transactionIDs: (number | string)[] = [];
 
   beforeAll(async () => {
     payload = new BasePayload();
@@ -88,7 +92,13 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     await Model.deleteMany({});
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(async () => {
+    vi.restoreAllMocks();
+
+    await Promise.all(
+      transactionIDs.splice(0).map((transactionID) => adapter.rollbackTransaction(transactionID)),
+    );
+  });
 
   afterAll(async () => {
     if (adapter?.connection) await adapter.connection.dropDatabase();
@@ -491,20 +501,150 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     expect(adapter.sessions[transactionID]).toBeUndefined();
   });
 
-  it('uses the generated optional unique jobId field for concurrent create and deletion reuse', async () => {
+  it('concurrent creates reserve a live jobId once', async () => {
     const results = await Promise.allSettled([
-      seed({ jobId: 'stable' }),
-      seed({ jobId: 'stable' }),
+      seed({ jobId: 'stable', completedAt: null }),
+      seed({ jobId: 'stable', completedAt: null }),
     ]);
 
     expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
     expect(results.filter(({ status }) => status === 'rejected')).toHaveLength(1);
+  });
 
-    await Promise.all([seed(), seed()]);
+  it('terminal failure frees the jobId for a new live row', async () => {
+    await seed({ jobId: 'stable', completedAt: null });
 
-    await Model.deleteOne({ jobId: 'stable' });
+    await Model.updateOne({ jobId: 'stable' }, { $set: { hasError: true } });
 
-    await expect(seed({ jobId: 'stable' })).resolves.toBeTypeOf('string');
+    const afterFailure = await seed({ jobId: 'stable', completedAt: null });
+
+    expect(await read(afterFailure)).toMatchObject({ jobId: 'stable', hasError: false });
+  });
+
+  it('completion frees the jobId for a new live row', async () => {
+    const first = await seed({ jobId: 'stable', completedAt: null });
+
+    await Model.updateOne({ _id: first }, { $set: { completedAt: new Date() } });
+
+    const afterCompletion = await seed({ jobId: 'stable', completedAt: null });
+
+    expect(await read(afterCompletion)).toMatchObject({ jobId: 'stable', completedAt: null });
+  });
+
+  it('deletion frees the jobId for a new live row', async () => {
+    const first = await seed({ jobId: 'stable', completedAt: null });
+
+    await Model.deleteOne({ _id: first });
+
+    await expect(seed({ jobId: 'stable', completedAt: null })).resolves.toBeTypeOf('string');
+  });
+
+  it('creates only the live jobId index and repeats safely on connect', async () => {
+    const indexes = await Model.collection.listIndexes().toArray();
+
+    const jobIdIndexes = indexes.filter(({ key }) => 'jobId' in key);
+
+    expect(jobIdIndexes).toHaveLength(1);
+    expect(jobIdIndexes[0]).toMatchObject({
+      name: 'frogbot_jobId_live',
+      key: { jobId: 1 },
+      unique: true,
+      partialFilterExpression: {
+        jobId: { $type: 'string' },
+        completedAt: { $type: 'null' },
+        hasError: false,
+      },
+    });
+
+    await payload.db.connect();
+
+    expect(await Model.collection.listIndexes().toArray()).toEqual(indexes);
+  });
+
+  it('a raw database insert stores completedAt null and reserves its jobId', async () => {
+    const row = await payload.db.create({
+      collection: 'payload-jobs',
+      data: { taskSlug: 'noop', queue: 'work', jobId: 'raw-create' },
+    });
+
+    expect(await read(String(row.id))).toMatchObject({ completedAt: null });
+
+    await expect(
+      payload.db.create({
+        collection: 'payload-jobs',
+        data: { taskSlug: 'noop', queue: 'work', jobId: 'raw-create' },
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('a racing insert in an uncommitted transaction surfaces MongoDB’s error unchanged', async () => {
+    const jobId = randomUUID();
+
+    const winnerTransaction = (await adapter.beginTransaction())!;
+
+    transactionIDs.push(winnerTransaction);
+
+    const loserTransaction = (await adapter.beginTransaction())!;
+
+    transactionIDs.push(loserTransaction);
+
+    const winnerReq = await createLocalReq({ req: { transactionID: winnerTransaction } }, payload);
+    const loserReq = await createLocalReq({ req: { transactionID: loserTransaction } }, payload);
+
+    const winner = await jobs.queue({
+      task: 'noop',
+      jobId,
+      queue: 'work',
+      input: {},
+      req: winnerReq,
+    });
+
+    expect(await Model.countDocuments({ jobId })).toBe(0);
+    expect(adapter.sessions[winnerTransaction].inTransaction()).toBe(true);
+
+    const lookup = vi.spyOn(adapter, 'find');
+    const create = Model.create.bind(Model);
+
+    let originalError: unknown;
+    let lookupsAtFailure = 0;
+
+    const insert = vi.spyOn(Model, 'create').mockImplementationOnce((...args) =>
+      create(...args).catch((error: unknown) => {
+        originalError = error;
+        lookupsAtFailure = lookup.mock.calls.length;
+
+        throw error;
+      }),
+    );
+
+    const loser = jobs.queue({
+      task: 'noop',
+      jobId,
+      queue: 'work',
+      input: {},
+      req: loserReq,
+    });
+
+    await expect(loser).rejects.toMatchObject({
+      name: 'MongoServerError',
+      code: 112,
+      codeName: 'WriteConflict',
+      errorLabels: expect.arrayContaining(['TransientTransactionError']),
+    });
+
+    await expect(loser).rejects.toBe(originalError);
+
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(lookupsAtFailure).toBe(1);
+    expect(lookup).toHaveBeenCalledTimes(lookupsAtFailure);
+
+    await adapter.commitTransaction(winnerTransaction);
+
+    const rows = await Model.find({ jobId }).lean();
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]._id.toString()).toBe(winner.id);
+    expect(rows[0]).toMatchObject({ jobId, completedAt: null, hasError: false });
   });
 
   it('runs native queue, batch, and runByID through default atomic lease claims', async () => {
