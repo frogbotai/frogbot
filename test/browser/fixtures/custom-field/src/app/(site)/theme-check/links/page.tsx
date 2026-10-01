@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
   Button,
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSub,
@@ -16,6 +17,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Select,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -95,6 +99,18 @@ export default function LinkCheckPage() {
             </AccordionTrigger>
           </AccordionItem>
         </Accordion>
+        <Select>
+          <SelectTrigger data-testid="select-button">
+            <SelectValue placeholder="Pick" />
+          </SelectTrigger>
+        </Select>
+        <Select>
+          <SelectTrigger asChild>
+            <a data-testid="select-link" href="/pick">
+              <SelectValue placeholder="Pick" />
+            </a>
+          </SelectTrigger>
+        </Select>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button data-testid="menu-trigger" type="button" variant="outline">
@@ -123,6 +139,14 @@ export default function LinkCheckPage() {
                 Open
               </a>
             </ContextMenuItem>
+            <ContextMenuCheckboxItem checked data-testid="context-check-div">
+              Pin
+            </ContextMenuCheckboxItem>
+            <ContextMenuCheckboxItem asChild checked>
+              <a data-testid="context-check-link" href="/pinned">
+                Pinned
+              </a>
+            </ContextMenuCheckboxItem>
             <ContextMenuSub>
               <ContextMenuSubTrigger data-testid="context-sub-div">Share</ContextMenuSubTrigger>
               <ContextMenuSubContent>

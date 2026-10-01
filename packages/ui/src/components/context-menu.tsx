@@ -81,7 +81,7 @@ export function ContextMenuCheckboxItem({
           <CheckIcon />
         </Primitive.ItemIndicator>
       </span>
-      {children}
+      <Slottable>{children}</Slottable>
     </Primitive.CheckboxItem>
   );
 }
@@ -100,7 +100,7 @@ export function ContextMenuRadioItem({
           <span className="fb-context-menu__dot" />
         </Primitive.ItemIndicator>
       </span>
-      {children}
+      <Slottable>{children}</Slottable>
     </Primitive.RadioItem>
   );
 }

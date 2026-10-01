@@ -1,6 +1,7 @@
 'use client';
 
 import * as Primitive from '@radix-ui/react-dialog';
+import { Slottable } from '@radix-ui/react-slot';
 import type { ComponentProps } from 'react';
 
 import XIcon from '../icons/icons/XIcon.js';
@@ -38,7 +39,7 @@ export function DialogContent({
           className={`fb-dialog__content${className ? ` ${className}` : ''}`}
           {...props}
         >
-          {children}
+          <Slottable>{children}</Slottable>
           {withCloseButton && (
             <Primitive.Close className="fb-dialog__close">
               <XIcon className="fb-dialog__close-icon" />

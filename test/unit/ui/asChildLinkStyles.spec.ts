@@ -20,6 +20,7 @@ const baseRules = [
   },
   { file: 'components/context-menu.css', selector: '.fb-context-menu__item', inheritsColor: true },
   { file: 'components/tabs.css', selector: '.fb-tabs__trigger', inheritsColor: true },
+  { file: 'components/select.css', selector: '.fb-select__trigger', inheritsColor: true },
   { file: 'components/toggle.css', selector: '.fb-toggle', inheritsColor: false },
   { file: 'components/accordion.css', selector: '.fb-accordion__trigger', inheritsColor: false },
   { file: 'chat/file-part.css', selector: '.fb-file-part--download', inheritsColor: false },

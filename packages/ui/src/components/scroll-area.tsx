@@ -3,23 +3,26 @@ import * as Primitive from '@radix-ui/react-scroll-area';
 import { type ComponentProps, type Ref, useEffect, useRef, useState } from 'react';
 
 import { composeRefs } from '../lib/utils.js';
-export type ScrollAreaProps = ComponentProps<typeof Primitive.Root> & {
+export type ScrollAreaProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'> & {
   viewPortClassName?: string;
   orientation?: 'vertical' | 'horizontal';
   viewPortRef?: Ref<HTMLDivElement>;
   showGradient?: boolean;
   gradientClassName?: string;
 };
-export function ScrollArea({
-  className,
-  children,
-  viewPortClassName,
-  viewPortRef,
-  orientation = 'vertical',
-  showGradient = false,
-  gradientClassName,
-  ...props
-}: ScrollAreaProps) {
+export function ScrollArea(input: ScrollAreaProps) {
+  const {
+    asChild: _asChild,
+    className,
+    children,
+    viewPortClassName,
+    viewPortRef,
+    orientation = 'vertical',
+    showGradient = false,
+    gradientClassName,
+    ...props
+  } = input as ScrollAreaProps & ComponentProps<typeof Primitive.Root>;
+
   const internalRef = useRef<HTMLDivElement>(null);
   const [showBottomGradient, setShowBottomGradient] = useState(false);
 
@@ -60,11 +63,14 @@ export function ScrollArea({
     </Primitive.Root>
   );
 }
-export function ScrollBar({
-  className,
-  orientation = 'vertical',
-  ...props
-}: ComponentProps<typeof Primitive.Scrollbar>) {
+export function ScrollBar(input: Omit<ComponentProps<typeof Primitive.Scrollbar>, 'asChild'>) {
+  const {
+    asChild: _asChild,
+    className,
+    orientation = 'vertical',
+    ...props
+  } = input as ComponentProps<typeof Primitive.Scrollbar>;
+
   return (
     <Primitive.Scrollbar
       orientation={orientation}

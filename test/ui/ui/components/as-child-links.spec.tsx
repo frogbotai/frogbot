@@ -8,8 +8,11 @@ import {
   AccordionTrigger,
   Button,
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
@@ -17,6 +20,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Select,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -30,7 +36,7 @@ function expectAnchor({
 }: {
   className: string;
   name: string;
-  role?: 'link' | 'menuitem' | 'tab';
+  role?: 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'tab';
 }) {
   const link = screen.getByRole(role, { name });
 
@@ -133,6 +139,66 @@ it('ContextMenuSubTrigger asChild puts its class, state, and chevron on the anch
   expect(link.getAttribute('data-state')).toBe('closed');
   expect(link.getAttribute('aria-haspopup')).toBe('menu');
   expect(link.querySelector('.fb-context-menu__icon')).not.toBeNull();
+});
+
+it('ContextMenuCheckboxItem and ContextMenuRadioItem asChild put their class, state, and indicator on the anchor', async () => {
+  render(
+    <ContextMenu>
+      <ContextMenuTrigger>Target</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuCheckboxItem asChild checked>
+          <a href="/pinned">Pinned</a>
+        </ContextMenuCheckboxItem>
+        <ContextMenuRadioGroup value="recent">
+          <ContextMenuRadioItem asChild value="recent">
+            <a href="/recent">Recent</a>
+          </ContextMenuRadioItem>
+        </ContextMenuRadioGroup>
+      </ContextMenuContent>
+    </ContextMenu>,
+  );
+
+  fireEvent.contextMenu(screen.getByText('Target'));
+
+  const checkbox = await screen.findByRole('menuitemcheckbox', { name: 'Pinned' });
+  const radio = screen.getByRole('menuitemradio', { name: 'Recent' });
+
+  expectAnchor({
+    className: 'fb-context-menu__item fb-context-menu__item--indicator',
+    name: 'Pinned',
+    role: 'menuitemcheckbox',
+  });
+  expectAnchor({
+    className: 'fb-context-menu__item fb-context-menu__item--indicator',
+    name: 'Recent',
+    role: 'menuitemradio',
+  });
+  expect(checkbox.getAttribute('aria-checked')).toBe('true');
+  expect(checkbox.querySelector('.fb-context-menu__indicator svg')).not.toBeNull();
+  expect(radio.getAttribute('aria-checked')).toBe('true');
+  expect(radio.querySelector('.fb-context-menu__dot')).not.toBeNull();
+});
+
+it('SelectTrigger asChild puts its class, state, and chevron on the anchor', () => {
+  render(
+    <Select>
+      <SelectTrigger asChild>
+        <a href="/pick">
+          <SelectValue placeholder="Pick" />
+        </a>
+      </SelectTrigger>
+    </Select>,
+  );
+
+  const link = screen.getByRole('combobox');
+
+  expect(link.tagName).toBe('A');
+  expect(link.className).toBe('fb-select__trigger');
+  expect(link.textContent).toBe('Pick');
+  expect(link.closest('button')).toBeNull();
+  expect(link.getAttribute('data-state')).toBe('closed');
+  expect(link.getAttribute('aria-expanded')).toBe('false');
+  expect(link.querySelector('.fb-select__trigger-icon')).not.toBeNull();
 });
 
 it('TabsTrigger and Toggle asChild put their class on the anchor', () => {

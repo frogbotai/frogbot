@@ -6,7 +6,9 @@ export function RadioGroup({ className, ...props }: ComponentProps<typeof Primit
     <Primitive.Root className={`fb-radio-group${className ? ` ${className}` : ''}`} {...props} />
   );
 }
-export function RadioGroupItem({ className, ...props }: ComponentProps<typeof Primitive.Item>) {
+export function RadioGroupItem(input: Omit<ComponentProps<typeof Primitive.Item>, 'asChild'>) {
+  const { asChild: _asChild, className, ...props } = input as ComponentProps<typeof Primitive.Item>;
+
   return (
     <Primitive.Item
       className={`fb-radio-group__item${className ? ` ${className}` : ''}`}

@@ -1,22 +1,25 @@
 'use client';
 import * as Primitive from '@radix-ui/react-switch';
 import type { ComponentProps, ReactNode } from 'react';
-export type SwitchProps = ComponentProps<typeof Primitive.Root> & {
+export type SwitchProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'> & {
   checkedIcon?: ReactNode;
   uncheckedIcon?: ReactNode;
   variant?: 'default' | 'square';
   size?: 'default' | 'sm' | 'lg' | 'xl';
   color?: 'default' | 'secondary';
 };
-export function Switch({
-  className,
-  checkedIcon,
-  uncheckedIcon,
-  variant = 'default',
-  size = 'default',
-  color = 'default',
-  ...props
-}: SwitchProps) {
+export function Switch(input: SwitchProps) {
+  const {
+    asChild: _asChild,
+    className,
+    checkedIcon,
+    uncheckedIcon,
+    variant = 'default',
+    size = 'default',
+    color = 'default',
+    ...props
+  } = input as SwitchProps & ComponentProps<typeof Primitive.Root>;
+
   return (
     <Primitive.Root
       className={`fb-switch fb-switch--${variant} fb-switch--${size} fb-switch--${color}${className ? ` ${className}` : ''}`}

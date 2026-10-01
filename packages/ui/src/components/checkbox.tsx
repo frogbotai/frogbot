@@ -4,10 +4,17 @@ import type { ComponentProps } from 'react';
 
 import CheckIcon from '../icons/icons/CheckIcon.js';
 import MinusIcon from '../icons/icons/MinusIcon.js';
-export type CheckboxProps = ComponentProps<typeof Primitive.Root> & {
+export type CheckboxProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'> & {
   variant?: 'primary' | 'secondary';
 };
-export function Checkbox({ className, variant = 'primary', ...props }: CheckboxProps) {
+export function Checkbox(input: CheckboxProps) {
+  const {
+    asChild: _asChild,
+    className,
+    variant = 'primary',
+    ...props
+  } = input as CheckboxProps & ComponentProps<typeof Primitive.Root>;
+
   return (
     <Primitive.Root
       className={`fb-checkbox fb-checkbox--${variant}${className ? ` ${className}` : ''}`}
