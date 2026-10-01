@@ -32,6 +32,7 @@
     "test:release": "RUN_E2E=1 vitest run && pnpm test:int:db:pg && pnpm test:int:db:mongo",
     "test:services": "docker compose -f test/docker-compose.yml --profile postgres --profile redis --profile mongodb --profile mongodb-search --profile storage up -d --wait --wait-timeout 120",
     "generate:ai-types": "node scripts/generate-ai-types.mjs",
+    "generate:types": "node test/generateTypes.ts",
     "sync:catalog": "node scripts/sync-catalog.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:docs-fences": "node scripts/check-docs-fences.mjs",

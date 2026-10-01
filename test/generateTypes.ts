@@ -24,6 +24,8 @@ function generateForSuite(suiteDir: string): Promise<number> {
       cwd: repoRoot,
       env: {
         ...process.env,
+        FROGBOT_DATABASE: 'sqlite',
+        FROGBOT_SECRET: 'frogbot-generate-types',
         FROGBOT_CONFIG_PATH: configPath,
         FROGBOT_TS_OUTPUT_PATH: outputPath,
       },
@@ -53,7 +55,6 @@ async function run() {
   const suites = [
     ...testSuites,
     path.resolve(repoRoot, 'examples/business-qa'),
-    path.resolve(repoRoot, 'examples/simple'),
     path.resolve(repoRoot, 'templates/blank'),
   ];
 

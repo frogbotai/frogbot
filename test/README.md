@@ -10,9 +10,12 @@ loads as ESM. It mirrors Payload's `test/` layout.
 # Unit tests (no Docker needed)
 pnpm test:unit
 
-# Integration tests with MongoDB (default, needs Docker)
-docker compose -f test/docker-compose.yml --profile mongodb up -d
+# Integration tests with SQLite (default, no Docker needed)
 pnpm test:int
+
+# Integration tests with MongoDB (needs Docker)
+docker compose -f test/docker-compose.yml --profile mongodb up -d
+pnpm test:int:mongo
 
 # MongoDB search suites (test/search/mongodb) also need a search-enabled server
 docker compose -f test/docker-compose.yml --profile mongodb-search up -d
@@ -144,7 +147,7 @@ The `FROGBOT_DATABASE` env var controls which adapter is used at runtime. The me
 
 1. `test/vitest.setup.ts` runs before any test imports
 2. It reads `FROGBOT_DATABASE` and generates `test/databaseAdapter.js` (a codegen'd file, gitignored)
-3. `test/__helpers/shared/buildTestConfig.ts` dynamically imports the generated adapter
+3. `test/__helpers/shared/buildTestConfig.ts` builds the SQLite adapter directly and dynamically imports the generated adapter for the other databases
 4. Each test suite gets a unique DB name (derived from filename) for isolation
 
 This mirrors Payload's adapter swap pattern from their test infrastructure.
@@ -212,7 +215,7 @@ export default buildTestConfig({ collections: [Users, Things] });
 **`buildTestConfig`** injects:
 
 - `secret: 'test-secret'`
-- `db`: adapter from generated `databaseAdapter.js` (controlled by `FROGBOT_DATABASE`)
+- `db`: the adapter selected by `FROGBOT_DATABASE` (SQLite by default)
 - `typescript: { autoGenerate: false }`
 
 You only provide `collections` (and optionally `plugins`, `endpoints`, etc).
@@ -321,7 +324,7 @@ This creates `frogbot-types.ts` in your suite directory. Commit it.
 
 `bootFrogBot(dirname)` does:
 
-1. Reads `FROGBOT_DATABASE` and uses the generated adapter
+1. Reads `FROGBOT_DATABASE` to pick the suite's database
 2. Dynamic-imports `<dirname>/config.ts` (must default-export a `buildTestConfig(...)` call)
 3. Calls `bootPayload({ config })` via `frogbot/test` (thin wrapper around Payload's `getPayload`)
 4. Wraps Payload in a `FrogBotInstance` (same surface as `req.frogbot`)
@@ -364,21 +367,23 @@ FrogBot-branded file with `declare module 'frogbot' { export interface Generated
 ### Generating types
 
 ```sh
-# All suites at once (from repo root):
-pnpm dev:generate-types
+# All suites, plus examples/business-qa and templates/blank (from repo root):
+pnpm generate:types
 
 # Single suite:
-pnpm dev:generate-types database
+pnpm generate:types database
 ```
 
 The script (`test/generateTypes.ts`) finds every suite with a `config.ts`,
 sets `FROGBOT_CONFIG_PATH` and `FROGBOT_TS_OUTPUT_PATH`, and invokes
-`frogbot generate:types` per suite. Requires `packages/frogbot` to be built
-first (`pnpm --filter frogbot build`).
+`frogbot generate:types` per suite. It always generates with SQLite and a
+placeholder `FROGBOT_SECRET`, so the output doesn't depend on
+`FROGBOT_DATABASE`, `test/databaseAdapter.js`, or a previous test run.
+Requires the packages to be built first (`pnpm build`).
 
 ### When to regenerate
 
-Run `pnpm dev:generate-types` after:
+Run `pnpm generate:types` after:
 
 - Editing a suite's `config.ts` (adding/removing collections or fields)
 - Adding a new suite (create config first, then generate)
