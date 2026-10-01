@@ -68,7 +68,6 @@
     "@frogbotai/plugin-nested-docs": "workspace:*",
     "@frogbotai/plugin-redirects": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",
-    "@frogbotai/plugin-search": "workspace:*",
     "@frogbotai/plugin-sentry": "workspace:*",
     "@frogbotai/plugin-seo": "workspace:*",
     "@frogbotai/plugin-stripe": "workspace:*",

@@ -39,7 +39,6 @@ describe('rewriteComponentPaths', () => {
       '@payloadcms/plugin-import-export/rsc#CollectionField',
       '@frogbotai/plugin-import-export/rsc#CollectionField',
     ],
-    ['@payloadcms/plugin-search/client#LinkToDoc', '@frogbotai/plugin-search/client#LinkToDoc'],
     [
       '@payloadcms/plugin-seo/client#MetaTitleComponent',
       '@frogbotai/plugin-seo/client#MetaTitleComponent',
@@ -61,7 +60,6 @@ describe('rewriteComponentPaths', () => {
   it.each([
     '@payloadcms/plugin-form-builder/client#X',
     '@payloadcms/plugin-import-export/rsc/other#X',
-    '@payloadcms/plugin-search/client-other#X',
     '@payloadcms/plugin-seo/client/other#X',
   ])('leaves the unlisted plugin specifier %s unchanged', (path) => {
     const config = makeConfig({ components: { beforeLogin: [path] } });
