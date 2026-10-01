@@ -90,3 +90,24 @@ export const duplicateFromUpdate: UpdateByIDArgs<Slug> = {
   duplicateFromID: 1,
   id: 1,
 };
+
+export const findWithoutJoins: FindArgs<Slug> = { collection: postsSlug, joins: false };
+export const findByIDWithoutJoins: FindByIDArgs<Slug> = {
+  collection: postsSlug,
+  id: 1,
+  joins: false,
+};
+export const findWithJoinQuery: FindArgs<Slug> = {
+  collection: postsSlug,
+  joins: { related: { count: true, limit: 5, page: 2, sort: '-createdAt' }, other: false },
+};
+export const countJoins: CountArgs<Slug> = {
+  collection: postsSlug,
+  // @ts-expect-error only find and findByID return join fields
+  joins: false,
+};
+export const findJoinLimit: FindArgs<Slug> = {
+  collection: postsSlug,
+  // @ts-expect-error a join limit is a number
+  joins: { related: { limit: '5' } },
+};

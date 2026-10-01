@@ -195,6 +195,7 @@ Accepts the [common options](#local-options-available) plus:
 | `page` | `number` | `1` | The page to return. |
 | `pagination` | `boolean` | `true` | Set `false` to return all matching documents and skip counting them. |
 | `draft` | `boolean` | `false` | Return the latest drafts instead of published documents. Needs [drafts](/versions/drafts). |
+| `joins` | `JoinQuery` | — | Pagination, sort, and filters per [join field](/fields/join#query-options), such as `{ relatedPosts: { limit: 5 } }`. Set a join field to `false` to leave it out, or pass `false` to leave every join field out. |
 
 <Note>
   `pagination`, `page`, and `limit` are three related properties [documented
@@ -224,6 +225,7 @@ Accepts the [common options](#local-options-available) plus:
 | `collection` | `string` | Required | The collection slug. |
 | `id` | `string \| number` | Required | The document ID. |
 | `draft` | `boolean` | `false` | Return the latest drafts instead of published documents. Needs [drafts](/versions/drafts). |
+| `joins` | `JoinQuery` | — | Pagination, sort, and filters per [join field](/fields/join#query-options), such as `{ relatedPosts: { limit: 5 } }`. Set a join field to `false` to leave it out, or pass `false` to leave every join field out. |
 
 ### Count#collection-count
 
