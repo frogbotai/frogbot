@@ -28,7 +28,7 @@ npx create-frogbot-app@latest [project-name] [options]
 | `-n, --name <name>`         | Project name                                                     |
 | `-t, --template <template>` | Template (default: blank)                                        |
 | `-d, --db <database>`       | sqlite, postgres, or mongodb                                     |
-| `--ai <provider>`           | openai, anthropic, google, bedrock, zen, or none                 |
+| `--ai <provider>`           | zen, openai, anthropic, google, bedrock, or none                 |
 | `--api-key <key>`           | API key for the chosen provider (written to .env)                |
 | `--agents <targets>`        | Comma-separated claude, codex, cursor, opencode, copilot, gemini |
 | `--no-agents`               | Do not install coding-agent skills                               |
@@ -50,7 +50,7 @@ Pass the project name once, either as the first argument or with `--name`.
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Template        | `blank`                                                                                                                        |
 | Database        | SQLite                                                                                                                         |
-| AI provider     | OpenAI (`openai/gpt-5.4-mini`), which needs `OPENAI_API_KEY`                                                                   |
+| AI provider     | None (no AI provider, agents, or chat)                                                                                         |
 | Package manager | The one that ran the command (npm when you use `npx`)                                                                          |
 | Git             | A new repository whose initial commit includes the lockfile, unless the folder is already inside a Git or Mercurial repository |
 | Dependencies    | Installed                                                                                                                      |
@@ -64,13 +64,13 @@ The questions appear only in an interactive terminal. With `--yes`, or when no t
 npx create-frogbot-app@latest my-frogbot --yes --agents codex
 ```
 
-Pass the provider key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment (such as `OPENAI_API_KEY`) is not copied into the app; the scaffolder says so and reminds you to add the key to `.env`. In an interactive terminal, it asks whether to use that key for the app instead.
+Pass `--ai <provider>` to set up a provider, and its key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment (such as `OPENAI_API_KEY`) is not copied into the app; the scaffolder says so and reminds you to add the key to `.env`. In an interactive terminal, it asks whether to use that key for the app instead.
 
 Project names use lowercase letters, numbers, dots, dashes, and underscores, and start with a letter or number. The name is also the folder the project is created in, inside the current directory.
 
 ## What gets created
 
-- The app, with `src/frogbot.config.ts` configuring the database, the AI provider, and two agents (`general` and `assistant`).
+- The app, with `src/frogbot.config.ts` configuring the database, the AI provider, and two agents (`general` and `assistant`), unless you choose no AI provider.
 - `.env` with a generated `FROGBOT_SECRET`, the database URL, and the provider key line (filled in if you gave a key). Git ignores this file.
 - `.env.example` with the same variable names and no secrets.
 - For each coding agent you choose, the FrogBot skill and an instruction file that points to it:

@@ -22,7 +22,7 @@ Options:
   -n, --name <name>           Project name
   -t, --template <template>   Template (default: blank)
   -d, --db <database>         sqlite, postgres, or mongodb
-      --ai <provider>         openai, anthropic, google, bedrock, zen, or none
+      --ai <provider>         zen, openai, anthropic, google, bedrock, or none
       --api-key <key>         API key for the chosen provider (written to .env)
       --agents <targets>      Comma-separated claude, codex, cursor, opencode, copilot, gemini
       --no-agents             Do not install coding-agent skills

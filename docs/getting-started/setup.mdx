@@ -35,12 +35,12 @@ Would you rather have a coding agent such as Codex or Claude Code do this for yo
     npx create-frogbot-app@latest my-frogbot
     ```
 
-    If it asks to install `create-frogbot-app`, type `y` and press Enter. It then asks a few questions. Press Enter to accept the default for each one. When it asks for `OPENAI_API_KEY`, paste your key if you already have one, or leave it blank and add it in step 5. If it says `Found OPENAI_API_KEY in your environment. Use it for this app?`, press Enter to use that key.
+    If it asks to install `create-frogbot-app`, type `y` and press Enter. It then asks a few questions. Press Enter to accept the default for each one, except the AI provider: choose **OpenAI**. When it asks for `OPENAI_API_KEY`, paste your key if you already have one, or leave it blank and add it in step 5. If it says `Found OPENAI_API_KEY in your environment. Use it for this app?`, press Enter to use that key.
 
     **You should see:** `Created my-frogbot.` followed by the commands to start the app. If you left the key blank, it first prints `Set OPENAI_API_KEY in my-frogbot/.env. The app won't start without it.` Your app is in a new folder named `my-frogbot` in the folder where you ran the command (your home folder, if you just opened the terminal).
   </Step>
   <Step title="Get an AI key">
-    Your agent needs an AI provider to answer. The default is OpenAI. Sign in at [platform.openai.com/api-keys](https://platform.openai.com/api-keys), select **Create new secret key**, and copy the key. OpenAI charges for usage, so you may need to add a payment method first.
+    Your agent needs an AI provider to answer. This guide uses OpenAI. Sign in at [platform.openai.com/api-keys](https://platform.openai.com/api-keys), select **Create new secret key**, and copy the key. OpenAI charges for usage, so you may need to add a payment method first.
 
     **You should see:** a long key that starts with `sk-`. Keep it somewhere safe; OpenAI shows it only once.
 

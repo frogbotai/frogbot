@@ -1,5 +1,5 @@
 import * as p from '@clack/prompts';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { resolvePlan } from '../../../packages/create-frogbot-app/src/prompts.js';
@@ -8,6 +8,7 @@ vi.mock('@clack/prompts', () => ({
   cancel: vi.fn(),
   confirm: vi.fn(),
   password: vi.fn(),
+  select: vi.fn(),
 }));
 
 const args = parseArgs(['my-app', '--db', 'sqlite', '--ai', 'openai', '--no-agents']);
@@ -18,6 +19,62 @@ function resolveInteractivePlan(env: Record<string, string>) {
 
 afterEach(() => {
   vi.resetAllMocks();
+});
+
+describe('AI provider prompt', () => {
+  beforeEach(() => {
+    vi.mocked(p.select).mockImplementation(async ({ options }) => options[0].value);
+    vi.mocked(p.password).mockResolvedValue('');
+  });
+
+  function resolveAIProviderPlan() {
+    return resolvePlan({
+      args: parseArgs(['my-app', '--db', 'sqlite', '--no-agents']),
+      cwd: '/tmp',
+      detectedPackageManager: 'npm',
+      env: {},
+      tty: true,
+    });
+  }
+
+  it('lists OpenCode Zen first and sets no starting choice', async () => {
+    await resolveAIProviderPlan();
+
+    expect(p.select).toHaveBeenCalledTimes(1);
+
+    const arg = vi.mocked(p.select).mock.calls[0][0];
+
+    expect(arg.options.map(({ value }) => value)).toEqual([
+      'zen',
+      'openai',
+      'anthropic',
+      'google',
+      'bedrock',
+      'none',
+    ]);
+    expect(Object.keys(arg)).not.toContain('initialValue');
+  });
+
+  it('labels Zen "OpenCode Zen" with the paid-key hint', async () => {
+    await resolveAIProviderPlan();
+
+    const { options } = vi.mocked(p.select).mock.calls[0][0];
+
+    expect(options[0]).toMatchObject({
+      label: 'OpenCode Zen',
+      hint: 'needs a paid Zen API key',
+    });
+    expect(options.at(-1)).toMatchObject({ label: 'None / add later', value: 'none' });
+  });
+
+  it('choosing the first option asks for OPENCODE_API_KEY', async () => {
+    const plan = await resolveAIProviderPlan();
+
+    expect(plan.ai).toBe('zen');
+    expect(p.password).toHaveBeenCalledExactlyOnceWith({
+      message: 'OPENCODE_API_KEY (leave blank to add it to .env later)',
+    });
+  });
 });
 
 describe('provider key found in the environment', () => {

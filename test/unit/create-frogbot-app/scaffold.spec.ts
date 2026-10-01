@@ -11,7 +11,7 @@ import {
   ENV_ANCHORS,
   PACKAGE_DEPENDENCY_ANCHORS,
 } from '../../../packages/create-frogbot-app/src/lib/anchors.js';
-import { parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
+import { HELP, parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { applyDatabase } from '../../../packages/create-frogbot-app/src/lib/db.js';
 import { CliError } from '../../../packages/create-frogbot-app/src/lib/errors.js';
 import { applyPackageJson } from '../../../packages/create-frogbot-app/src/lib/package-json.js';
@@ -43,6 +43,10 @@ afterEach(() => {
 });
 
 describe('CLI arguments and plans', () => {
+  it('--help lists the AI providers in prompt order', () => {
+    expect(HELP).toContain('zen, openai, anthropic, google, bedrock, or none');
+  });
+
   it('parses matching flags and aliases', () => {
     expect(
       parseArgs([
@@ -94,7 +98,7 @@ describe('CLI arguments and plans', () => {
 
     expect(plan).toMatchObject({
       agents: [],
-      ai: 'openai',
+      ai: 'none',
       database: 'sqlite',
       projectName: 'my-app',
     });
@@ -176,7 +180,11 @@ describe('CLI arguments and plans', () => {
     ],
     [
       ['my-app', '--ai', 'local'],
-      'Unknown AI provider "local". Valid values: openai, anthropic, google, bedrock, zen, none.',
+      'Unknown AI provider "local". Valid values: zen, openai, anthropic, google, bedrock, none.',
+    ],
+    [
+      ['my-app', '--ai', 'opencode'],
+      'Unknown AI provider "opencode". Valid values: zen, openai, anthropic, google, bedrock, none.',
     ],
     [
       ['my-app', '--agents', 'claude,unknown'],

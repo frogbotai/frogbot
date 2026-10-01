@@ -30,7 +30,7 @@ describe('scaffold', () => {
   it('creates the packed blank template with formatting and the canonical src layout', () => {
     const options = createDest('frog.test-app');
 
-    scaffold({ ...options, templateDir });
+    scaffold({ ...options, ai: 'openai', templateDir });
 
     const pkg = JSON.parse(fs.readFileSync(path.join(options.dest, 'package.json'), 'utf8')) as {
       devDependencies?: Record<string, string>;
@@ -87,16 +87,24 @@ describe('scaffold', () => {
     );
   });
 
-  it('defaults to a working OpenAI model, never the Zen free tier', () => {
+  it('scaffolds no AI provider by default, never the Zen free tier', () => {
     const options = createDest();
+
     scaffold({ ...options, templateDir });
 
     const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
-    expect(config).toContain("defaultModel: 'openai/gpt-5.4-mini'");
+    const env = fs.readFileSync(path.join(options.dest, '.env'), 'utf8');
+    const example = fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8');
+
+    expect(config).not.toContain('ai:');
+    expect(config).not.toContain('agents:');
+    expect(config).not.toContain('tools:');
     expect(config).not.toContain("apiKey: 'public'");
-    expect(fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8')).toContain(
-      'OPENAI_API_KEY=\n',
-    );
+    expect(fs.existsSync(path.join(options.dest, 'src', 'agents'))).toBe(false);
+    expect(env).not.toContain('OPENAI_API_KEY');
+    expect(env).not.toContain('OPENCODE_API_KEY');
+    expect(example).not.toContain('OPENAI_API_KEY');
+    expect(example).not.toContain('OPENCODE_API_KEY');
   });
 
   it('writes the provider key to .env only, keeping .env.example secret-free', () => {

@@ -17,7 +17,7 @@ const AGENTS: Array<{ label: string; value: AgentTarget }> = [
   { label: 'Gemini CLI', value: 'gemini' },
 ];
 
-const AI_VALUES: AIProvider[] = ['openai', 'anthropic', 'google', 'bedrock', 'zen', 'none'];
+const AI_VALUES: AIProvider[] = ['zen', 'openai', 'anthropic', 'google', 'bedrock', 'none'];
 const AGENT_VALUES = AGENTS.map(({ value }) => value);
 const PROJECT_NAME = /^[a-z0-9][a-z0-9._-]*$/;
 const PROJECT_NAME_RULE =
@@ -120,7 +120,6 @@ export async function resolvePlan({
     ai = resolvePromptValue<AIProvider>(
       await p.select({
         message: 'AI provider',
-        initialValue: 'openai',
         options: AI_VALUES.map((value) => ({
           label: value === 'none' ? 'None / add later' : AI_PROVIDERS[value].label,
           hint: value === 'none' ? undefined : AI_PROVIDERS[value].hint,
@@ -130,7 +129,7 @@ export async function resolvePlan({
     );
   }
 
-  const resolvedAI = validateValue(ai ?? 'openai', AI_VALUES, 'AI provider');
+  const resolvedAI = validateValue(ai ?? 'none', AI_VALUES, 'AI provider');
   const keyEnv = resolvedAI === 'none' ? undefined : AI_PROVIDERS[resolvedAI].keyEnv;
   const environmentKey = keyEnv ? env[keyEnv]?.trim() || undefined : undefined;
   let apiKey = args.apiKey?.trim() || undefined;

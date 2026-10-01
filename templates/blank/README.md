@@ -9,8 +9,8 @@ The `src/collections/Users.ts` file is an example you can customize, not a frame
 ## Quick Start
 
 `create-frogbot-app` already wrote a `.env` with a generated `FROGBOT_SECRET`.
-Both agents run on the provider you picked (OpenAI's
-`openai/gpt-5.4-mini` by default). If you entered an API key, it is already in
+Both agents run on the provider you picked (for example OpenAI's
+`openai/gpt-5.4-mini`). If you entered an API key, it is already in
 `.env`; otherwise set it there (for example `OPENAI_API_KEY=...`) before you
 start the app. Choose another provider with the `create-frogbot-app --ai` option.
 
