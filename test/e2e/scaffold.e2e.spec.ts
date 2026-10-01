@@ -119,13 +119,14 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     });
     expect(res.status).toBe(200);
     // `reasoning` levels vary by model; assert the agent/model wiring only.
+    // `general()` offers the whole configured catalog, so only its default is fixed.
     expect(await res.json()).toMatchObject({
       defaultAgent: 'general',
       agents: [
         expect.objectContaining({
           slug: 'general',
           defaultModel: 'openai/gpt-5.4-mini',
-          models: ['openai/gpt-5.4-mini'],
+          models: expect.arrayContaining(['openai/gpt-5.4-mini']),
         }),
         expect.objectContaining({
           slug: 'assistant',
