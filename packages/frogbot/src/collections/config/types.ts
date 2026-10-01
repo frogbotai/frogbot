@@ -343,6 +343,20 @@ type LocalePublishArgs = {
   unpublishAllLocales?: boolean;
 };
 
+export type JoinQuery =
+  | false
+  | Record<
+      string,
+      | {
+          count?: boolean;
+          limit?: number;
+          page?: number;
+          sort?: string;
+          where?: Where;
+        }
+      | false
+    >;
+
 export type FindArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
   where?: Where;
@@ -351,6 +365,7 @@ export type FindArgs<TSlug extends CollectionSlug> = CommonArgs & {
   page?: number;
   pagination?: boolean;
   draft?: boolean;
+  joins?: JoinQuery;
 };
 
 export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
@@ -358,6 +373,7 @@ export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
   id: DocID;
   disableErrors?: boolean;
   draft?: boolean;
+  joins?: JoinQuery;
 };
 
 export type CreateArgs<TSlug extends CollectionSlug> = WriteArgs &

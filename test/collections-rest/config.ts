@@ -24,6 +24,8 @@ const Projects: CollectionConfig = {
         { name: 'budget', type: 'number' },
       ],
     },
+    { name: 'parent', type: 'relationship', relationTo: projectsSlug },
+    { name: 'subprojects', type: 'join', collection: projectsSlug, on: 'parent' },
   ],
 };
 

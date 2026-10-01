@@ -39,8 +39,8 @@ export const Posts: CollectionConfig = {
 Here, `relatedPosts` finds records whose `category` field refers to the current category. `on` also accepts a nested path such as `details.category`.
 
 <Banner type="info">
-  Join fields are populated when query depth is at least `1`. Set `joins: false`
-  when a query does not need reverse relationships.
+  Join fields are populated when query depth is at least `1`. In the Local API,
+  set `joins: false` when a query does not need reverse relationships.
 </Banner>
 
 ## Schema design
@@ -124,7 +124,17 @@ For a polymorphic Join, each item contains `relationTo` and `value`.
 
 ## Query options
 
-Join queries accept `limit`, `where`, `sort`, and `count`. Configure them by field name in the Local API:
+`find` and `findByID` accept a `joins` option. Pass `false` to leave every Join field out of the result, or configure each Join field by name:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `count` | `boolean` | `false` | Include `totalDocs`, the number of related documents. |
+| `limit` | `number` | Field `defaultLimit` (`10`) | The maximum number of related documents to return. `0` returns all of them. |
+| `page` | `number` | `1` | The page of related documents to return. |
+| `sort` | `string` | Field `defaultSort` | Order related documents by a field. Prefix it with `-` for descending order. |
+| `where` | `Where` | — | A [query](/queries/overview) that filters related documents. It's combined with the field's own `where`. |
+
+Set a field to `false` instead of an object to leave just that field out.
 
 ```ts
 const result = await frogbot.find({
@@ -139,6 +149,12 @@ const result = await frogbot.find({
       },
     },
   },
+})
+
+const withoutJoins = await frogbot.findByID({
+  collection: 'categories',
+  id: 'category-1',
+  joins: false,
 })
 ```
 
@@ -157,7 +173,7 @@ The REST API accepts the same options through a `joins` query parameter:
 
 Repeat the nested parameters to configure additional Join fields or filters.
 
-To leave a Join field out of the result, set it to `false`, such as `?joins[relatedPosts]=false`. The REST API reads `joins` one field at a time, so `?joins=false` has no effect.
+To leave a Join field out of the result, set it to `false`, such as `?joins[relatedPosts]=false`. The REST API reads `joins` one field at a time, so `?joins=false` has no effect: list each Join field instead.
 
 ## GraphQL
 

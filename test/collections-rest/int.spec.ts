@@ -167,6 +167,71 @@ describe('collections-rest', () => {
     });
   });
 
+  describe('joins', () => {
+    const createParent = async () => {
+      const parent = await booted.frogbot.create({
+        collection: projectsSlug,
+        data: { title: 'Parent' },
+      });
+
+      await booted.frogbot.create({
+        collection: projectsSlug,
+        data: { title: 'Child', parent: parent.id },
+      });
+
+      return parent;
+    };
+
+    it('Local API find with joins false leaves out every join field', async () => {
+      const parent = await createParent();
+
+      const joined = await booted.frogbot.find({
+        collection: projectsSlug,
+        where: { id: { equals: parent.id } },
+      });
+      const withoutJoins = await booted.frogbot.find({
+        collection: projectsSlug,
+        joins: false,
+        where: { id: { equals: parent.id } },
+      });
+
+      expect(joined.docs[0]?.subprojects?.docs).toHaveLength(1);
+      expect(withoutJoins.docs[0]?.subprojects).toBeUndefined();
+    });
+
+    it('Local API findByID with joins false leaves out every join field', async () => {
+      const parent = await createParent();
+
+      const withoutJoins = await booted.frogbot.findByID({
+        collection: projectsSlug,
+        id: parent.id,
+        joins: false,
+      });
+
+      expect(withoutJoins.subprojects).toBeUndefined();
+    });
+
+    it('GET /api/projects/:id with joins[subprojects]=false leaves out that join field', async () => {
+      const parent = await createParent();
+
+      const res = await booted.restClient.get(
+        `/api/${projectsSlug}/${parent.id}?joins[subprojects]=false`,
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty('subprojects');
+    });
+
+    it('GET /api/projects/:id ignores joins=false and returns join fields', async () => {
+      const parent = await createParent();
+
+      const res = await booted.restClient.get(`/api/${projectsSlug}/${parent.id}?joins=false`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ subprojects: { docs: [expect.anything()] } });
+    });
+  });
+
   describe('errors + 404s', () => {
     it('GET /unknown returns 404', async () => {
       const res = await booted.restClient.get('/unknown');

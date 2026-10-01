@@ -182,6 +182,7 @@ export type {
   FindArgs,
   FindByIDArgs,
   FindDistinctArgs,
+  JoinQuery,
   PaginatedDistinctDocs,
   PaginatedDocs,
   UpdateArgs,
