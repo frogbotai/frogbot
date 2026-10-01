@@ -24,49 +24,51 @@ export const PublishedAt: Field = {
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
-| **`label`** | Admin-panel label. |
-| **`index`** | Creates a database index. |
-| **`validate`** | Custom [validation](/fields/overview#validation). |
-| **`saveToJWT`** | Includes a top-level auth field in the user token. |
-| **`hooks`** | [Field hooks](/hooks/fields). |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`hidden`** | Hides the field while retaining stored data. |
-| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
-| **`localized`** | Stores one value per locale. |
-| **`required`** | Requires a value. |
-| **`timezone`** | Enables timezone selection. See [Timezones](#timezones). |
-| **`admin`** | Admin-panel settings. |
-| **`custom`** | Extension metadata. |
-| **`typescriptSchema`** | Type-generation JSON Schema override. |
-| **`virtual`** | Omits database storage or links a relationship path. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `type` | `'date'` | Required | Selects the Date field. |
+| `timezone` | `true \| { defaultTimezone, supportedTimezones, required, override }` | — | Adds a timezone selector stored in `<name>_tz`. See [Timezones](#timezones). |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `string \| Date` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
 Date fields support the standard [field admin options](/fields/overview#admin-options), plus `placeholder` and a `date` object.
 
-| Option | Description |
-| --- | --- |
-| `date.displayFormat` | Unicode date format used in admin cells. |
-| `date.pickerAppearance` | `dayAndTime`, `dayOnly`, `timeOnly`, or `monthOnly`. Defaults to `dayOnly`. |
-| `date.monthsToShow` | Number of displayed months, up to `2`. |
-| `date.minDate` | Earliest allowed date. |
-| `date.maxDate` | Latest allowed date. |
-| `date.minTime` | Earliest allowed time. |
-| `date.maxTime` | Latest allowed time. |
-| `date.timeIntervals` | Picker interval in minutes. Defaults to `30`. |
-| `date.timeFormat` | Time format. Defaults to `h:mm aa`. |
-| `date.overrides` | Additional supported date-picker properties. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `date.pickerAppearance` | `'default' \| 'dayAndTime' \| 'dayOnly' \| 'timeOnly' \| 'monthOnly'` | `'default'` | Picker style. `default` and `dayOnly` pick a day, `dayAndTime` adds a time list, `timeOnly` shows only the time list, and `monthOnly` picks a month. |
+| `date.displayFormat` | `string` | Depends on `pickerAppearance` | Unicode date format for the picker input and list cells. Defaults to `MM/dd/yyyy` (`default`), `MMM d, yyy h:mm a` (`dayAndTime`), `h:mm a` (`timeOnly`), `MMM dd` (`dayOnly`), or `MMMM` (`monthOnly`). |
+| `date.monthsToShow` | `1 \| 2` | `1` | Number of months shown side by side. Day pickers only. |
+| `date.minDate` | `Date` | — | Earliest selectable date. Day and month pickers only. |
+| `date.maxDate` | `Date` | — | Latest selectable date. Day and month pickers only. |
+| `date.minTime` | `Date` | — | Earliest selectable time. Time pickers only. |
+| `date.maxTime` | `Date` | — | Latest selectable time. Time pickers only. |
+| `date.timeIntervals` | `number` | `30` | Minutes between entries in the time list. Time pickers only. |
+| `date.timeFormat` | `string` | `'h:mm aa'` | Format of entries in the time list. Time pickers only. |
+| `date.overrides` | `DatePickerProps` | — | Extra `react-datepicker` props merged over the generated ones. |
 
 Picker appearance and display format affect only the admin UI. The complete value is stored as an ISO date string.
 
 ### Display format and picker appearance
 
-`displayFormat` accepts a Unicode date format and controls the value shown in admin cells. `pickerAppearance` controls whether the picker displays a day and time, day, time, or month. If only `pickerAppearance` is set, the admin panel uses a matching display format.
+`displayFormat` accepts a Unicode date format and controls the value shown in the picker input and admin cells. `pickerAppearance` controls whether the picker displays a day and time, day, time, or month. If only `pickerAppearance` is set, the admin panel uses a matching display format.
 
 ## Example
 
@@ -195,12 +197,12 @@ export const EventTime: Field = {
 
 The timezone object supports these options:
 
-| Option | Description |
-| --- | --- |
-| **`defaultTimezone`** | Initial timezone value. |
-| **`supportedTimezones`** | Allowed label/value timezone options. |
-| **`required`** | Requires a timezone even when the date itself is optional. |
-| **`override`** | Modifies the generated Select field. See [Timezone override](#timezone-override). |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `defaultTimezone` | `string` | Root `admin.timezones.defaultTimezone` | Initial timezone value. When only one timezone is supported, it becomes the default. |
+| `supportedTimezones` | `{ label: string; value: string }[]` | Root `admin.timezones.supportedTimezones` | Timezones editors can choose. Values are IANA names or fixed offsets. |
+| `required` | `boolean` | `false` | Requires a timezone even when the date itself is optional. A required date always requires a timezone. |
+| `override` | `({ baseField }) => Field` | — | Receives the generated Select field and returns the field to use. See [Timezone override](#timezone-override). |
 
 <Banner type="info">
   Dates are stored in UTC. Convert them to the selected timezone when rendering

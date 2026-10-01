@@ -45,31 +45,32 @@ Each stored item includes `blockType`, whose value is the block's `slug`, and an
 
 ## Field config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Property name used in stored records and APIs. |
-| **`blocks`** * | Block objects available directly to this field. Use an empty array when only references are used. |
-| **`blockReferences`** | Root block objects or slugs registered in the root config. |
-| **`label`** | Heading shown in the admin panel. |
-| **`labels`** | Singular and plural labels for block rows. |
-| **`minRows`** | Minimum number of blocks when a value is present. |
-| **`maxRows`** | Maximum number of blocks when a value is present. |
-| **`filterOptions`** | Selects the block slugs available for the current document. |
-| **`validate`** | Custom [validation](/fields/overview#validation). |
-| **`hooks`** | [Field hooks](/hooks/fields). |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
-| **`defaultValue`** | Initial array of block values. |
-| **`localized`** | Stores a separate block array for each configured locale. |
-| **`required`** | Requires a value. |
-| **`saveToJWT`** | Includes a top-level auth field in the user token. |
-| **`unique`** | Creates a collection-wide database unique index for the field path. |
-| **`admin`** | Admin-panel appearance and behavior. |
-| **`custom`** | Custom metadata available to extensions. |
-| **`typescriptSchema`** | JSON Schema override used during type generation. |
-| **`virtual`** | Set to `true` to omit storage, or use a relationship path. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `type` | `'blocks'` | Required | Selects the Blocks field. |
+| `blocks` | `Block[]` | Required | Block configs available directly to this field. Use an empty array when only references are used. |
+| `blockReferences` | `(Block \| string)[]` | — | Blocks registered in the root `blocks` config, by slug or object. Can't be combined with a non-empty `blocks`. See [Root block registration](#root-block-registration). |
+| `filterOptions` | `string[] \| ({ id, data, req, siblingData, user }) => string[] \| true \| Promise<string[] \| true>` | All blocks | Block slugs available for the current document; `true` allows every block. See [Conditional blocks](#conditional-blocks). |
+| `labels` | `{ singular, plural }` | Generated from `name` | Singular and plural labels for block rows. Each accepts the same values as `label`, except `false`. |
+| `minRows` | `number` | — | Minimum number of blocks when a value is present. |
+| `maxRows` | `number` | — | Maximum number of blocks when a value is present. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
+| `unique` | `boolean` | `false` | MongoDB only: creates a unique index on the whole stored value. SQL adapters ignore it. |
+| `index` | `boolean` | `false` | MongoDB only: creates an index on the whole stored value. SQL adapters ignore it. |
+| `localized` | `boolean` | `false` | Stores a separate block array for each configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `object[]` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Field admin options](#field-admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 <Banner type="warning">
   Setting `unique: true` on a field inside a block creates a collection-wide
@@ -82,10 +83,10 @@ Each stored item includes `blockType`, whose value is the block's `slug`, and an
 
 Blocks fields inherit the standard [field admin options](/fields/overview#admin-options) and add:
 
-| Option | Description |
-| --- | --- |
-| **`initCollapsed`** | Initially collapses each block row. |
-| **`isSortable`** | Set to `false` to prevent block reordering. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `initCollapsed` | `boolean` | `false` | Collapses each block row initially. An editor's saved row state takes precedence. |
+| `isSortable` | `boolean` | `true` | Set to `false` to prevent block reordering. |
 
 ## Copying and pasting blocks
 
@@ -117,32 +118,33 @@ Blocks are separate, reusable configuration objects. Define block objects outsid
 
 ## Block config options
 
-| Option | Description |
-| --- | --- |
-| **`slug`** * | Identifier stored as `blockType`. |
-| **`fields`** * | Recursively configured fields stored in this block. |
-| **`labels`** | Labels shared by every instance of this block type. |
-| **`interfaceName`** | Name of the reusable generated TypeScript interface. |
-| **`dbName`** | Table name used by SQL database adapters. |
-| **`admin`** | Block display, grouping, images, and component settings. |
-| **`custom`** | Custom metadata available to extensions. |
-| **`graphQL.singularName`** | Schema name used only when the application provides a GraphQL execution path. Prefer `interfaceName`. |
-| **`jsx`** | Converts this block to JSX when used by a compatible rich-text converter. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Identifier stored as `blockType`. Must be unique within the field. |
+| `fields` | `Field[]` | Required | Fields stored in this block. |
+| `labels` | `{ singular, plural }` | Generated from `slug` | Singular and plural labels shared by every instance of this block type. Each accepts the same values as `label`, except `false`. |
+| `interfaceName` | `string` | — | Name of a reusable top-level generated TypeScript interface. |
+| `dbName` | `string \| ({ tableName }) => string` | Generated from the slug | Table name used by SQL adapters. |
+| `admin` | `object` | — | Block display, grouping, images, and component settings. See [Block admin options](#block-admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. |
+| `jsx` | `{ export, import, customStartRegex?, customEndRegex?, doNotTrimChildren? }` | — | Converts this block to and from MDX when Rich Text content is converted to or from Markdown. See [Converting MDX](/rich-text/converting-markdown#converting-mdx). |
+| `graphQL.singularName` | `string` | — | Deprecated. Schema name used only when an application mounts its own GraphQL executor. Use `interfaceName`. |
+| `imageURL` | `string` | — | Deprecated. Thumbnail URL for the block-selection drawer. Use `admin.images.thumbnail`. |
+| `imageAltText` | `string` | — | Deprecated. Alternative text for `imageURL`. Use `admin.images.thumbnail.alt`. |
 
 ### Block admin options
 
 Blocks are configuration objects rather than fields, so their admin options are independent of the standard field admin options:
 
-| Option | Description |
-| --- | --- |
-| **`components.Block`** | Replaces the complete block UI, including its header. |
-| **`components.Label`** | Replaces the shared label and each row's displayed name. |
-| **`disableBlockName`** | Hides the editable `blockName` control. |
-| **`group`** | Groups this block under a heading in the block-selection drawer. |
-| **`custom`** | Custom admin metadata available to extensions. |
-| **`images`** | Icon and thumbnail images for editor and selection interfaces. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `components.Block` | `FrogBotComponent` | — | Replaces the complete block UI, including its header. |
+| `components.Label` | `FrogBotComponent` | — | Replaces the shared label and each row's displayed name. |
+| `disableBlockName` | `boolean` | `false` | Hides the editable `blockName` control. |
+| `group` | `string \| Record<string, string>` | — | Groups this block under a heading in the block-selection drawer. |
+| `images` | `{ icon?, thumbnail? }` | Default graphics | Icon and thumbnail images. Each accepts a URL string or `{ url, alt? }`. See [Block images](#block-images). |
+| `jsx` | `FrogBotComponent` | — | Import path to the block's `jsx` converter, used when Markdown conversion runs in the browser. |
+| `custom` | `Record<string, any>` | — | Metadata available on the server and in the browser. |
 
 ### Block images
 

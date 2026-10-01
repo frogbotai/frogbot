@@ -21,41 +21,41 @@ export const Price: Field = {
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
-| **`label`** | Admin-panel label. |
-| **`min`** | Minimum accepted value. |
-| **`max`** | Maximum accepted value. |
-| **`hasMany`** | Stores an ordered array of numbers. |
-| **`minRows`** | Minimum entries when `hasMany` is `true`. |
-| **`maxRows`** | Maximum entries when `hasMany` is `true`. |
-| **`unique`** | Creates a unique database index. |
-| **`index`** | Creates a database index. |
-| **`validate`** | Custom [validation](/fields/overview#validation). |
-| **`saveToJWT`** | Includes a top-level auth field in the user token. |
-| **`hooks`** | [Field hooks](/hooks/fields). |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`hidden`** | Hides the field while retaining stored data. |
-| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
-| **`localized`** | Stores one value per locale. |
-| **`required`** | Requires a value. |
-| **`admin`** | Admin-panel settings. |
-| **`custom`** | Extension metadata. |
-| **`typescriptSchema`** | Type-generation JSON Schema override. |
-| **`virtual`** | Omits database storage or links a relationship path. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `type` | `'number'` | Required | Selects the Number field. |
+| `min` | `number` | — | Minimum accepted value, checked by the built-in validator. |
+| `max` | `number` | — | Maximum accepted value, checked by the built-in validator. |
+| `hasMany` | `boolean` | `false` | Stores an ordered array of numbers instead of one number. |
+| `minRows` | `number` | — | Minimum number of numbers when a value is present. Only with `hasMany: true`. |
+| `maxRows` | `number` | — | Maximum number of numbers when a value is present. Only with `hasMany: true`. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). SQL adapters reject `unique` together with `hasMany: true`. |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `number \| number[]` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
 Number fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
 
-| Option | Description |
-| --- | --- |
-| **`step`** | Amount used by browser controls to increment or decrement the value. |
-| **`placeholder`** | Placeholder text shown in the input. |
-| **`autoComplete`** | Value used for browser autocomplete. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `step` | `number` | `1` | Amount the browser controls add or subtract. |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Value of the input's `autocomplete` attribute. |
 
 ## Example
 

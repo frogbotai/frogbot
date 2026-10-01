@@ -53,34 +53,43 @@ On PostgreSQL and SQLite, polymorphic or many-valued relationships normally use 
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Property name used in API results. |
-| **`collection`** * | Related collection slug, or an array of slugs. |
-| **`on`** * | Relationship or upload field that points to the current collection. |
-| **`where`** | Base filter merged with a query's Join filter. |
-| **`defaultLimit`** | Number of related records returned by default. Use `0` for all records. |
-| **`defaultSort`** | Default sort for related records. |
-| **`maxDepth`** | Maximum population depth below this field. |
-| **`orderable`** | Enables drag-and-drop ordering of joined records. |
-| **`label`** | Field label shown in the admin panel. |
-| **`hooks`** | [Field hooks](/hooks/fields). |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`admin`** | Join-specific admin settings. |
-| **`custom`** | Custom metadata available to extensions. |
-| **`typescriptSchema`** | JSON Schema override used during type generation. |
-| **`graphQL`** | GraphQL schema metadata. This does not mount a GraphQL endpoint. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `type` | `'join'` | Required | Selects the Join field. |
+| `collection` | `string \| string[]` | Required | Slug of the collection to query, or an array of slugs for a polymorphic join. |
+| `on` | `string` | Required | Path of the relationship or upload field, in `collection`, that points to the current collection. FrogBot indexes that field if it is not already indexed. |
+| `where` | `Where` | — | Base filter merged with a query's join filter. |
+| `defaultLimit` | `number` | `10` | Number of related records returned when a query sets no limit. Use `0` for all records. |
+| `defaultSort` | `Sort` | Collection default sort | Default sort for related records. With `orderable`, defaults to the generated order field. |
+| `maxDepth` | `number` | `1` | Maximum population depth below this field. |
+| `orderable` | `boolean` | `false` | Experimental. Lets editors reorder joined records by drag and drop, using a generated order field on the related collection. Requires a single `collection`. |
+| `hasMany` | `boolean` | From the `on` field | Set automatically from the `on` field. A configured value is replaced. |
+| `localized` | `boolean` | From the `on` field | Set automatically from the `on` field. A configured value is replaced. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | Only `read` has an effect: Join values are never written. See [field access control](/access-control/fields). |
+| `hidden` | `false` | `false` | Join fields can't be hidden. Use `access.read` or `admin.hidden` instead. |
+| `required` | `boolean` | `false` | No effect: Join fields have no built-in validator and their values are never written. |
+| `disableDuplicate` | `boolean` | `false` | No effect: Join values are not stored, so there is nothing to copy. |
+| `index` | `undefined` | — | Not supported. |
+| `defaultValue` | `undefined` | — | Not supported. |
+| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL endpoint. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ### Admin options
 
-| Option | Description |
-| --- | --- |
-| **`defaultColumns`** | Fields shown in the related-record table. |
-| **`allowCreate`** | Set to `false` to prevent creating related records from this field. |
-| **`components.Label`** | Custom label component. |
-| **`disableRowTypes`** | Hides collection labels in polymorphic rows when `true`. |
+Join fields support the standard [field admin options](/fields/overview#admin-options) except `disableBulkEdit` and `readOnly`, plus:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `defaultColumns` | `string[]` | Related collection's default columns | Fields shown in the related-record table. |
+| `allowCreate` | `boolean` | `true` | Lets editors create a related record from the field. Only shown on saved documents. |
+| `disableRowTypes` | `boolean` | `false` for polymorphic joins | Hides the collection label on each row. Labels appear only for polymorphic joins by default. |
+| `disableBulkEdit` | `undefined` | — | Not supported. Join fields are never bulk edited. |
+| `readOnly` | `undefined` | — | Not supported. Join fields have no editable value. |
 
 ## Returned data
 

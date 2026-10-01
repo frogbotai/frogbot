@@ -19,41 +19,41 @@ export const PageTitle: Field = {
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`name`** * | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
-| **`label`** | Label shown in the admin panel. |
-| **`unique`** | Creates a unique database index for the field path. |
-| **`minLength`** | Minimum character length enforced by default validation. |
-| **`maxLength`** | Maximum character length enforced by default validation. |
-| **`hasMany`** | Stores an ordered array of strings. |
-| **`minRows`** | Minimum entries when `hasMany` is `true`. |
-| **`maxRows`** | Maximum entries when `hasMany` is `true`. |
-| **`validate`** | Custom [validation](/fields/overview#validation). |
-| **`index`** | Creates a database index for faster queries. |
-| **`saveToJWT`** | Includes a top-level auth field in the user token. |
-| **`hooks`** | [Field hooks](/hooks/fields). |
-| **`access`** | [Field access control](/access-control/fields). |
-| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
-| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
-| **`localized`** | Stores one value for each configured locale. |
-| **`required`** | Requires a value. |
-| **`admin`** | Admin-panel appearance and behavior. |
-| **`custom`** | Custom metadata available to extensions. |
-| **`typescriptSchema`** | JSON Schema override used during type generation. |
-| **`virtual`** | Set to `true` to omit database storage, or to a relationship path. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `type` | `'text'` | Required | Selects the Text field. |
+| `hasMany` | `boolean` | `false` | Stores an ordered array of strings instead of one string. |
+| `minLength` | `number` | — | Minimum length of each string, checked by the built-in validator. |
+| `maxLength` | `number` | Root `defaultMaxTextLength` (`40000`) | Maximum length of each string, checked by the built-in validator. |
+| `minRows` | `number` | — | Minimum number of strings when a value is present. Only with `hasMany: true`. |
+| `maxRows` | `number` | — | Maximum number of strings when a value is present. Only with `hasMany: true`. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). SQL adapters reject `unique` together with `hasMany: true`. |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `string \| string[]` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types). |
 
 ## Admin options
 
 Text fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
 
-| Option | Description |
-| --- | --- |
-| **`placeholder`** | Placeholder text shown in the input. |
-| **`autoComplete`** | Value used for browser autocomplete. |
-| **`rtl`** | Set to `true` to force right-to-left text direction. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Value of the input's `autocomplete` attribute. |
+| `rtl` | `boolean` | Follows the locale | `true` forces right-to-left text. `false` keeps left-to-right text in a right-to-left locale. When unset, right-to-left locales render right-to-left. |
 
 ## Example
 
@@ -162,17 +162,18 @@ export const Pages: CollectionConfig = {
 
 The source named by `useAsSlug` must be a top-level field in the same collection. Nested placement of the returned row does not make slug generation sibling-relative.
 
-| Option | Description |
-| --- | --- |
-| `name` | Slug field name. Defaults to `slug`. |
-| `checkboxName` | Lock checkbox name. Defaults to `generateSlug`. |
-| `disableUnique` | Disables the slug field's unique index. |
-| `useAsSlug` | Top-level source field. Defaults to `title`. |
-| `localized` | Localizes the slug and checkbox fields. Defaults to `false`. |
-| `position` | Row position in the admin form. |
-| `required` | Requires the slug. Defaults to `true`. |
-| `overrides` | Receives and returns the generated `RowField`. |
-| `slugify` | Replaces the default slug-generation function. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | `'slug'` | Name of the generated Text field. |
+| `checkboxName` | `string` | `'generateSlug'` | Name of the generated lock checkbox. |
+| `useAsSlug` | `string` | `'title'` | Top-level field the slug is generated from. |
+| `fieldToUse` | `string` | — | Deprecated alias for `useAsSlug`. When set, it takes precedence over `useAsSlug`. |
+| `disableUnique` | `boolean` | `false` | Removes the slug field's unique index. |
+| `localized` | `boolean` | `false` | Localizes the slug field. |
+| `required` | `boolean` | `true` | Requires a slug value. |
+| `position` | `'main' \| 'sidebar'` | `'sidebar'` | Where the generated row appears in the admin form. |
+| `overrides` | `(field: RowField) => RowField` | — | Receives the generated row and returns the row to use. See [Slug overrides](#slug-overrides). |
+| `slugify` | `({ data, req, valueToSlugify }) => string \| undefined \| Promise<string \| undefined>` | Built-in slugify | Replaces the slug-generation function. See [Custom slugify function](#custom-slugify-function). |
 
 ### Slug overrides
 

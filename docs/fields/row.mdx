@@ -39,13 +39,12 @@ The record contains `firstName` and `lastName` at the current level. Rows can co
 
 ## Config options
 
-| Option | Description |
-| --- | --- |
-| **`fields`** * | Fields arranged within the row. |
-| **`admin`** | Standard [admin options](/fields/overview#admin-options), excluding options that do not apply to a layout-only field. |
-| **`custom`** | Custom metadata available to extensions. |
-
-\*_An asterisk denotes a required option._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `type` | `'row'` | Required | Selects the Row field. |
+| `fields` | `Field[]` | Required | Fields arranged within the row. |
+| `admin` | `object` | — | Standard [field admin options](/fields/overview#admin-options) except `description`. |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 
 Set `admin.width` on the nested fields to control their relative widths. On narrow screens, the admin panel can stack them to remain usable.
 
