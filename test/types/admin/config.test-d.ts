@@ -173,3 +173,20 @@ export const misspelledAccountMenuAdmin: RootAdminConfig = {
     afterAccountMenus: ['@/components/SupportLink'],
   },
 };
+
+expectTypeOf<RootAdminConfig['autoRefresh']>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<RootAdminConfig['autoLogin']>().toEqualTypeOf<
+  | false
+  | { email?: string; password?: string; prefillOnly?: boolean; username?: string }
+  | undefined
+>();
+
+export const autoLoginAdmin: RootAdminConfig = {
+  autoLogin: { email: 'dev@example.com', password: 'dev', prefillOnly: true },
+  autoRefresh: true,
+};
+
+export const misspelledAutoLoginAdmin: RootAdminConfig = {
+  // @ts-expect-error autoLogin takes email or username, not user
+  autoLogin: { user: 'dev@example.com' },
+};

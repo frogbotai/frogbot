@@ -159,6 +159,8 @@ Accepts the [common options](#local-options-available) plus:
 | `disableVerificationEmail` | `boolean` | `false` | Skips the verification email when creating a user in a collection with `auth.verify`. |
 | `file` | `{ data: Buffer; mimetype: string; name: string; size: number; tempFilePath?: string }` | — | Upload collections only. The file to store. Takes precedence over `filePath`. |
 | `filePath` | `string` | — | Upload collections only. Absolute path of a file on disk to store. |
+| `overwriteExistingFiles` | `boolean` | `false` | Upload collections only. When a file with the same name is already stored, replace it instead of saving the upload under a numbered name such as `photo-1.jpg`. |
+| `duplicateFromID` | `string \| number` | — | Copies the data of this document, and its file in an upload collection, into the new document. Fields in `data` override the copied values. |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
 
 ### Find#collection-find
@@ -326,6 +328,10 @@ Accepts the [common options](#local-options-available) plus:
 | `draft` | `boolean` | `false` | Save as a draft. Required fields aren't validated unless `versions.drafts.validate` is on. Needs [drafts](/versions/drafts). |
 | `publishSpecificLocale` | `string` | — | Publishes only this locale. |
 | `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to throw while another user holds the lock on the document. |
+| `filePath` | `string` | — | Upload collections only. Absolute path of a new file on disk to store in place of the current one. |
+| `overwriteExistingFiles` | `boolean` | `false` | Upload collections only. When a file with the same name is already stored, replace it instead of saving the upload under a numbered name such as `photo-1.jpg`. |
+| `publishAllLocales` | `boolean` | — | Publishes every locale. Needs [status localization](/configuration/localization#status-localization). |
+| `unpublishAllLocales` | `boolean` | — | Unpublishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
 
 ### Update Many#collection-update-many
@@ -376,6 +382,10 @@ Accepts the [common options](#local-options-available) plus:
 | `data` | `object` | Required | The fields to change on every matching document. |
 | `draft` | `boolean` | `false` | Save as a draft. Required fields aren't validated unless `versions.drafts.validate` is on. Needs [drafts](/versions/drafts). |
 | `overrideLock` | `boolean` | `true` | Document locks are ignored by default. Set to `false` to skip documents another user holds the lock on; each is reported in `errors`. |
+| `filePath` | `string` | — | Upload collections only. Absolute path of a new file on disk to store in place of the current one. |
+| `overwriteExistingFiles` | `boolean` | `false` | Upload collections only. When a file with the same name is already stored, replace it instead of saving the upload under a numbered name such as `photo-1.jpg`. |
+| `publishAllLocales` | `boolean` | — | Publishes every locale. Needs [status localization](/configuration/localization#status-localization). |
+| `unpublishAllLocales` | `boolean` | — | Unpublishes every locale. Needs [status localization](/configuration/localization#status-localization). |
 | `disableTransaction` | `boolean` | `false` | Set to `true` to skip the [database transaction](/database/transactions) the operation would otherwise open, so its write isn't rolled back if a later step fails. |
 
 ### Delete#collection-delete
@@ -562,6 +572,7 @@ const result = await frogbot.auth({ headers, canSetHeaders: false })
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `headers` | `Headers` | Required | The incoming request headers, read for the auth cookie, `Authorization` header, or API key. |
+| `canSetHeaders` | `boolean` | `false` | Lets [auth strategies](/authentication/custom-strategies) return `responseHeaders`, such as a refreshed cookie. They come back as `result.responseHeaders`. |
 | `req` | `FrogBotRequest` | — | The current request, passed to custom strategies. |
 
 `auth` doesn't accept the common options.
