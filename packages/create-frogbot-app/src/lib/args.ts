@@ -3,7 +3,7 @@ import { parseArgs as parseNodeArgs } from 'node:util';
 import { CliError } from './errors.js';
 
 export interface CliArgs {
-  agents?: string;
+  agents?: string[];
   ai?: string;
   apiKey?: string;
   database?: string;
@@ -85,8 +85,15 @@ export function parseArgs(argv: string[]): CliArgs {
 
   if (managers.length > 1) throw new CliError('Choose only one package manager.');
 
+  const agents = values['no-agents']
+    ? []
+    : values.agents
+        ?.split(',')
+        .map((agent) => agent.trim())
+        .filter(Boolean);
+
   return {
-    agents: values['no-agents'] ? '' : values.agents,
+    agents,
     ai: values.ai,
     apiKey: values['api-key'],
     database: values.db,
