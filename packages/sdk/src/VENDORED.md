@@ -6,7 +6,8 @@ Ported from the Payload monorepo — `packages/sdk/src/`.
 - Version: `@payloadcms/sdk` `3.90.1` (the npm tarball, matching the installed `payload`)
 - License: MIT, reproduced in [`../THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)
 
-Ported so the SDK ships one FrogBot client whose requests match Payload's REST client byte for byte.
+Ported so the SDK ships one FrogBot client whose requests match Payload's REST client byte for byte,
+except for the options upstream drops (see Local modifications).
 `test/unit/sdk/` compares every ported method against the published `@payloadcms/sdk`.
 
 ## Files
@@ -49,6 +50,13 @@ Ported so the SDK ships one FrogBot client whose requests match Payload's REST c
 - Operations receive the client's private `#send` instead of the client. `#send` builds on the existing
   `request()`, so `FrogBotSDKError`, base headers, and per-request header merging apply to every method.
 - `PayloadSDKError` is replaced by the existing `FrogBotSDKError`.
+- `buildSearchParams` sends `fallbackLocale: false` as `fallback-locale=false`, and sends `autosave` and
+  `publishSpecificLocale`. Upstream drops all three, so the server never sees them.
+- `JoinQuery` has no top-level `false`: the REST server reads `joins` per field, so `joins=false` is ignored.
+  Setting one join field to `false` works.
+- `autosave` and `publishSpecificLocale` are on `UpdateByIDOptions` only; the REST update by `where` reads neither.
+- `ForgotPasswordOptions['data']` is `{ email }`. The REST endpoint reads no other field; `disableEmail` and
+  `expiration` are Local API options.
 - JSDoc rewritten in FrogBot wording; comments stripped; house code style (semicolons).
 
 When bumping Payload, diff these files against the new `@payloadcms/sdk` release before updating.

@@ -127,11 +127,10 @@ export type WhereFromCollectionSlug<
 
 export type JoinQuery<T extends FrogBotTypesShape, TSlug extends CollectionSlug<T>> =
   T['collectionsJoins'][TSlug] extends Record<string, string>
-    ? | false
-      | Partial<{
-          [K in keyof T['collectionsJoins'][TSlug]]:
-            { count?: boolean; limit?: number; page?: number; sort?: Sort; where?: Where } | false;
-        }>
+    ? Partial<{
+        [K in keyof T['collectionsJoins'][TSlug]]:
+          { count?: boolean; limit?: number; page?: number; sort?: Sort; where?: Where } | false;
+      }>
     : never;
 
 export type PopulateType<T extends FrogBotTypesShape> = Partial<T['collectionsSelect']>;

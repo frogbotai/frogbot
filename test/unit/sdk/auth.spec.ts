@@ -23,13 +23,7 @@ const calls: { name: string; call: Call }[] = [
   {
     name: 'forgotPassword',
     call: (sdk, init) =>
-      sdk.forgotPassword(
-        {
-          collection: 'sdk-users',
-          data: { disableEmail: true, email: 'frog@example.com', expiration: 60 },
-        },
-        init,
-      ),
+      sdk.forgotPassword({ collection: 'sdk-users', data: { email: 'frog@example.com' } }, init),
   },
   {
     name: 'resetPassword',

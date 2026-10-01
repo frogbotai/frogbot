@@ -34,7 +34,7 @@ export type FindOptions<
    */
   fallbackLocale?: false | TypedLocale<T>;
   /**
-   * Pagination, sort, and filters for join fields. Pass `false` to leave join fields out of the result.
+   * Pagination, sort, and filters per join field. Set a join field to `false` to leave it out of the result.
    */
   joins?: JoinQuery<T, TSlug>;
   /**

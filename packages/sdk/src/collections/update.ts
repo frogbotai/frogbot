@@ -20,10 +20,6 @@ export type UpdateBaseOptions<
   TSelect extends SelectFromCollectionSlug<T, TSlug>,
 > = {
   /**
-   * Mark the update as an autosave. The collection needs `versions.drafts.autosave`.
-   */
-  autosave?: boolean;
-  /**
    * The collection slug to operate against.
    */
   collection: TSlug;
@@ -56,10 +52,6 @@ export type UpdateBaseOptions<
    */
   populate?: PopulateType<T>;
   /**
-   * Publish only this locale.
-   */
-  publishSpecificLocale?: string;
-  /**
    * Which fields to include in the result.
    */
   select?: TSelect;
@@ -76,10 +68,18 @@ export type UpdateByIDOptions<
   TSelect extends SelectFromCollectionSlug<T, TSlug>,
 > = {
   /**
+   * Save the update as an autosave of the current draft. Use with `draft: true`. The collection needs `versions.drafts.autosave`.
+   */
+  autosave?: boolean;
+  /**
    * The ID of the document to update.
    */
   id: number | string;
   limit?: never;
+  /**
+   * Publish only this locale's changes. Other locales keep their published values.
+   */
+  publishSpecificLocale?: TypedLocale<T>;
   where?: never;
 } & UpdateBaseOptions<T, TSlug, TSelect>;
 

@@ -28,7 +28,7 @@ const cases: { name: string; args: Record<string, unknown> }[] = [
       joins: { related: { limit: 5, sort: '-createdAt', where: { title: { exists: true } } } },
     },
   },
-  { name: 'joins disabled', args: { joins: false } },
+  { name: 'one join field disabled', args: { joins: { related: false } } },
   { name: 'sort as a string', args: { sort: '-createdAt' } },
   { name: 'sort as an array', args: { sort: ['title', '-createdAt'] } },
   {
@@ -70,5 +70,51 @@ describe('FrogBotSDK query strings', () => {
 
     expect(frogbotRequests[0]?.url).toBe(payloadRequests[0]?.url);
     expect(frogbotRequests[0]?.url.startsWith(`${baseURL}/sdk-pages`)).toBe(true);
+  });
+
+  it('find sends fallbackLocale false as fallback-locale=false', async () => {
+    const { frogbot, frogbotRequests } = createClients(() => Response.json({ docs: [] }));
+
+    await frogbot.find({ collection: 'sdk-pages', fallbackLocale: false, locale: 'fr' } as never);
+
+    expect(frogbotRequests[0]?.url).toBe(`${baseURL}/sdk-pages?fallback-locale=false&locale=fr`);
+  });
+
+  it('findByID sends fallbackLocale false as fallback-locale=false', async () => {
+    const { frogbot, frogbotRequests } = createClients();
+
+    await frogbot.findByID({ collection: 'sdk-pages', fallbackLocale: false, id: 7 } as never);
+
+    expect(frogbotRequests[0]?.url).toBe(`${baseURL}/sdk-pages/7?fallback-locale=false`);
+  });
+
+  it('update by ID sends autosave and publishSpecificLocale', async () => {
+    const { frogbot, frogbotRequests } = createClients();
+
+    await frogbot.update({
+      autosave: true,
+      collection: 'sdk-pages',
+      data: { title: 'Toads' },
+      draft: true,
+      id: 7,
+      publishSpecificLocale: 'fr',
+    } as never);
+
+    expect(frogbotRequests[0]?.url).toBe(
+      `${baseURL}/sdk-pages/7?draft=true&autosave=true&publishSpecificLocale=fr`,
+    );
+  });
+
+  it('update by ID sends autosave false', async () => {
+    const { frogbot, frogbotRequests } = createClients();
+
+    await frogbot.update({
+      autosave: false,
+      collection: 'sdk-pages',
+      data: { title: 'Toads' },
+      id: 7,
+    } as never);
+
+    expect(frogbotRequests[0]?.url).toBe(`${baseURL}/sdk-pages/7?autosave=false`);
   });
 });
