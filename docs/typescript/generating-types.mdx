@@ -17,33 +17,24 @@ frogbot generate:types
 
 You can run this command whenever you need to regenerate your types. The single generated `frogbot-types.ts` file augments FrogBot with generated collection and agent types.
 
-## Disable declare statement
+## Type generation options
 
-By default, `generate:types` will add a `declare` statement to your types file, which automatically enables type inference within FrogBot.
+Configure type generation with the root `typescript` option.
 
-If you are using your `frogbot-types.ts` file in other repos, though, it might be better to disable this `declare` statement, so that you don't get any TS errors in projects that use your FrogBot types, but do not have FrogBot installed.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `autoGenerate` | `boolean` | `true` | Regenerates types each time FrogBot starts outside production. Startup doesn't wait for it, and a failure is logged as a warning. `frogbot generate:types` always runs. |
+| `outputFile` | `string` | `frogbot-types.ts` next to your config | Path the types are written to. The `FROGBOT_TS_OUTPUT_PATH` environment variable takes precedence; a relative path in it is resolved from the config directory. |
+| `schema` | `(({ collectionIDFieldTypes, config, i18n, jsonSchema }) => JSONSchema4)[]` | — | Functions that modify the JSON schema before it's compiled, in order. See [Custom generated types](#custom-generated-types). |
+| `strictDraftTypes` | `boolean` | `false` | Adds `strictDraftTypes: true` to the generated `Config` interface. FrogBot's Local API types don't read it yet, so `draft` typing doesn't change. |
+| `declare` | `false \| { ignoreTSError?: boolean }` | — | Accepted by the type, but has no effect. The generated file always ends with the `declare module 'frogbot'` block. |
+| `postProcess` | `(({ compiledTypes, config }) => string)[]` | — | Accepted by the type, but has no effect. FrogBot doesn't run these functions on the generated output. |
 
-```ts
-// frogbot.config.ts
-{
-  // ...
-  typescript: {
-    declare: false, // defaults to true if not set
-  },
-}
-```
+## The `declare` block
 
-If you disable the `declare` pattern, manually augment FrogBot so it recognizes the generated collection and agent types:
+The generated file ends with a `declare module 'frogbot'` block that registers your collection, agent, model, and role types with FrogBot. FrogBot always writes this block.
 
-```ts
-import type { Config } from './frogbot-types'
-
-declare module 'frogbot' {
-  export interface GeneratedTypes extends Config {
-    agents: {}
-  }
-}
-```
+If you copy `frogbot-types.ts` into a project that doesn't install `frogbot`, the block reports an error there. Install `frogbot` as a dev dependency of that project, as described in [Using your types](#using-your-types).
 
 ## Custom output file path
 
@@ -126,9 +117,10 @@ External references are resolved relative to your project's working directory (`
 For example, let's look at the following simple FrogBot Config:
 
 ```ts
-import type { Config } from 'frogbot'
+import { buildConfig } from 'frogbot'
 
-const config: Config = {
+export default buildConfig({
+  // secret and db omitted
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
   admin: {
     user: 'users',
@@ -162,7 +154,7 @@ const config: Config = {
       ],
     },
   ],
-}
+})
 ```
 
 By generating types, we'll end up with a file containing the following two TypeScript interfaces:

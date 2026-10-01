@@ -76,12 +76,13 @@ export default buildConfig({
 
 The following options are available:
 
-| Option                       | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`locales`**                | Array of all the languages that you would like to support. [More details](#locales)                                                                                                                                                                                                                                                                                                                                               |
-| **`defaultLocale`**          | Required string that matches one of the locale codes from the array provided. By default, if no locale is specified, documents will be returned in this locale.                                                                                                                                                                                                                                                                   |
-| **`fallback`**               | Boolean enabling "fallback" locale functionality. If a document is requested in a locale, but a field does not have a localized value corresponding to the requested locale, then if this property is enabled, the document will automatically fall back to the fallback locale value. If this property is not enabled, the value will not be populated unless a fallback is explicitly provided in the request. True by default. |
-| **`filterAvailableLocales`** | A function that is called with the array of `locales` and the `req`, it should return locales to show in admin UI selector. [See more](#filter-available-options).                                                                                                                                                                                                                                                                |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `locales` | `(string \| Locale)[]` | Required | Every locale you support, as codes or [locale objects](#locale-object). [More details](#locales). |
+| `defaultLocale` | `string` | Required | One of the locale codes. Documents are read and written in this locale when a request doesn't set `locale`. |
+| `fallback` | `boolean` | `true` | When a localized field has no value in the requested locale, returns the value from the fallback locale instead. When `false`, the value stays empty unless the request sets `fallbackLocale`. |
+| `defaultLocalePublishOption` | `'all' \| 'active'` | `'all'` | What the main **Publish** button publishes: every locale (`'all'`) or only the locale being edited (`'active'`). The other option is offered by the secondary button. |
+| `filterAvailableLocales` | `({ locales, req }) => Locale[] \| Promise<Locale[]>` | — | Returns the locales shown in the admin panel's locale selector. [More details](#filter-available-options). |
 
 ### Locales
 
@@ -91,14 +92,12 @@ The locale codes do not need to be in any specific format. It's up to you to def
 
 #### Locale Object
 
-| Option               | Description                                                                                                                               |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **`code`** \*        | Unique code to identify the language throughout the APIs for `locale` and `fallbackLocale`                                                |
-| **`label`**          | A string to use for the selector when choosing a language, or an object keyed on the i18n keys for different languages in use.            |
-| **`rtl`**            | A boolean that when true will make the admin UI display in Right-To-Left.                                                                 |
-| **`fallbackLocale`** | The code for this language to fallback to when properties of a document are not present. This can be a single locale or array of locales. |
-
-_\* An asterisk denotes that a property is required._
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `code` | `string` | Required | Unique code that identifies the locale in `locale` and `fallbackLocale` arguments. |
+| `label` | `string \| Record<string, string>` | Required | Name shown in the locale selector, or an object of names keyed by admin language. |
+| `rtl` | `boolean` | `false` | Shows text inputs right-to-left while this locale is selected. |
+| `fallbackLocale` | `string \| string[]` | `defaultLocale` | Locale, or ordered locales, to read from when a field has no value in this locale. |
 
 #### Filter Available Options
 
@@ -165,7 +164,7 @@ All field types with a `name` property support the `localized` property—even t
 
 ## Status Localization
 
-When [Localization](/configuration/localization) is enabled and a collection has **drafts enabled** and contains at least one localized field, FrogBot automatically localizes the `_status` field. This means publication status is tracked independently per locale, so you can publish in English while keeping Spanish as a draft.
+Publication status can be tracked per locale, so you can publish in English while keeping Spanish as a draft. This is experimental. It needs [Localization](/configuration/localization), **drafts enabled** with `versions.drafts.localizeStatus: true` on the collection, and `experimental.localizeStatus: true` in your [FrogBot Config](/configuration/overview). Without the root flag, FrogBot logs a warning and keeps a single status.
 
 When the status field is localized, it is stored as an object keyed by locale:
 
@@ -177,7 +176,7 @@ status: {
 }
 ```
 
-If localization is not configured, or the collection has no localized fields, the `status` field remains a single string (`'draft'` or `'published'`) representing document status across all locales.
+If `_status` isn't localized, the `status` field remains a single string (`'draft'` or `'published'`) representing document status across all locales.
 
 ### Publishing and unpublishing per locale
 
@@ -216,8 +215,7 @@ await frogbot.update({
 Passing `locale: 'all'` together with `_status: 'published'` also publishes every locale, and is equivalent to `publishAllLocales: true`.
 
 <Note>
-  When the `_status` field is **not** localized (localization disabled, or no
-  localized fields), publishing and unpublishing always apply to the whole
+  When the `_status` field is **not** localized, publishing and unpublishing always apply to the whole
   document, and `publishAllLocales` / `unpublishAllLocales` have no effect.
 </Note>
 

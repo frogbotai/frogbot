@@ -15,7 +15,7 @@ You can use FrogBot's Local API outside Next.js for seed scripts, one-off mainte
 
 ## Run a standalone script
 
-In your FrogBot app, create `src/seed.ts`. Import your config through the app's `@frogbot-config` alias and initialize FrogBot with `getFrogBot`. This example creates a user in the `users` collection included in a fresh app:
+In your FrogBot app, create `src/seed.ts`. Import your config through the app's `@frogbot-config` alias and initialize FrogBot with `getFrogBot`. Its options are listed in [Importing it](/local-api/overview#importing-it). This example creates a user in the `users` collection included in a fresh app:
 
 ```ts
 import { getFrogBot } from 'frogbot'

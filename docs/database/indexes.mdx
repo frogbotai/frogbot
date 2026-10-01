@@ -62,6 +62,13 @@ export const MyCollection: CollectionConfig = {
 }
 ```
 
+Each entry in `indexes` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fields` | `string[]` | Required | Field paths to index together, in order. Dot notation reaches nested fields, such as `group.title`. |
+| `unique` | `boolean` | `false` | Rejects two documents with the same combination of values. |
+
 ## Unique Fields
 
 Setting `unique: true` on a field creates a **collection-wide** database unique index on that field's path. This means no two documents in the collection can share the same value for that field.

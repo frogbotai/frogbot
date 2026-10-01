@@ -27,7 +27,7 @@ export const CollectionWithHooks: CollectionConfig = {
 
 ## Config Options
 
-All Collection Hooks accept an array of [synchronous or asynchronous functions](/hooks/overview#async-vs-synchronous). Each Collection Hook receives specific arguments based on its own type, and has the ability to modify specific outputs.
+All Collection Hooks accept an array of [synchronous or asynchronous functions](/hooks/overview#awaited-vs-non-blocking-hooks). Each Collection Hook receives specific arguments based on its own type, and has the ability to modify specific outputs.
 
 ```ts
 import type { CollectionConfig } from 'frogbot';
@@ -59,6 +59,27 @@ export const CollectionWithHooks: CollectionConfig = {
 }
 ```
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `beforeOperation` | `CollectionBeforeOperationHook[]` | `[]` | Runs before any operation. Can replace the operation's arguments. [More details](#beforeoperation). |
+| `beforeValidate` | `CollectionBeforeValidateHook[]` | `[]` | Runs on `create` and `update` before validation. Can change the data. [More details](#beforevalidate). |
+| `beforeChange` | `CollectionBeforeChangeHook[]` | `[]` | Runs on `create` and `update` after validation. Can change the data. [More details](#beforechange). |
+| `afterChange` | `CollectionAfterChangeHook[]` | `[]` | Runs after a document is created or updated. Can change the returned document. [More details](#afterchange). |
+| `beforeRead` | `CollectionBeforeReadHook[]` | `[]` | Runs before a document is returned, before field hooks. [More details](#beforeread). |
+| `afterRead` | `CollectionAfterReadHook[]` | `[]` | Runs before a document is returned, after field hooks. [More details](#afterread). |
+| `beforeDelete` | `CollectionBeforeDeleteHook[]` | `[]` | Runs before a document is deleted. [More details](#beforedelete). |
+| `afterDelete` | `CollectionAfterDeleteHook[]` | `[]` | Runs after a document is deleted. [More details](#afterdelete). |
+| `afterOperation` | `CollectionAfterOperationHook[]` | `[]` | Runs after any operation. Can replace the result. [More details](#afteroperation). |
+| `afterError` | `CollectionAfterErrorHook[]` | `[]` | Runs when a request on this collection fails. [More details](#aftererror). |
+| `beforeLogin` | `CollectionBeforeLoginHook[]` | `[]` | Auth collections only. Runs before a login succeeds. [More details](#beforelogin). |
+| `afterLogin` | `CollectionAfterLoginHook[]` | `[]` | Auth collections only. Runs after a login succeeds. [More details](#afterlogin). |
+| `afterLogout` | `CollectionAfterLogoutHook[]` | `[]` | Auth collections only. Runs after a logout. [More details](#afterlogout). |
+| `afterMe` | `CollectionAfterMeHook[]` | `[]` | Auth collections only. Runs after the `me` operation. [More details](#afterme). |
+| `afterRefresh` | `CollectionAfterRefreshHook[]` | `[]` | Auth collections only. Runs after a token is refreshed. [More details](#afterrefresh). |
+| `afterForgotPassword` | `CollectionAfterForgotPasswordHook[]` | `[]` | Auth collections only. Runs after a forgot password request succeeds. [More details](#afterforgotpassword). |
+| `refresh` | `CollectionRefreshHook[]` | `[]` | Auth collections only. Can replace the `refresh` operation. [More details](#refresh). |
+| `me` | `CollectionMeHook[]` | `[]` | Auth collections only. Can replace the `me` operation. [More details](#me). |
+
 ### beforeOperation
 
 The `beforeOperation` hook can be used to modify the arguments that operations accept or execute side-effects that run before an operation begins.
@@ -77,12 +98,14 @@ const beforeOperationHook: CollectionBeforeOperationHook = async ({
 
 The following arguments are provided to the `beforeOperation` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between Hooks. [More details](/hooks/context).                                                                                  |
-| **`operation`**  | The name of the operation that this hook is running within.                                                                                           |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `operation` | `string` | Always set | The operation about to run, such as `'create'`, `'find'`, `'findByID'`, `'update'`, `'updateByID'`, `'delete'`, `'deleteByID'`, `'count'`, `'login'`, or `'forgotPassword'`. Some operations also report the older names `'read'` and `'readDistinct'`. |
+| `args` | `object` | Always set | The arguments the operation was called with. Return a changed copy to replace them. |
+| `overrideAccess` | `boolean` | — | Whether the operation skips access control. |
 
 ### beforeValidate
 
@@ -107,14 +130,14 @@ const beforeValidateHook: CollectionBeforeValidateHook<Post> = async ({
 
 The following arguments are provided to the `beforeValidate` hook:
 
-| Option            | Description                                                                                                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`**  | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**     | Custom context passed between Hooks. [More details](/hooks/context).                                                                                  |
-| **`data`**        | The incoming data passed through the operation.                                                                                                       |
-| **`operation`**   | The name of the operation that this hook is running within.                                                                                           |
-| **`originalDoc`** | The full document before changes are applied. Present on updates; undefined on creates. Use this to read the document id and any unchanged fields.    |
-| **`req`**         | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `data` | `object` | — | The incoming data passed through the operation. |
+| `operation` | `'create' \| 'update'` | Always set | The name of the operation that this hook is running within. |
+| `originalDoc` | `object` | — | The full document before changes are applied. Present on updates; undefined on creates. Use this to read the document id and any unchanged fields. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 **Why isn't id in data?**
 
@@ -153,14 +176,14 @@ export const requireTitleOnUpdate: CollectionBeforeChangeHook = async ({
 
 The following arguments are provided to the `beforeChange` hook:
 
-| Option            | Description                                                                                                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`**  | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**     | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`data`**        | The incoming data passed through the operation.                                                                                                       |
-| **`operation`**   | The name of the operation that this hook is running within.                                                                                           |
-| **`originalDoc`** | The full document before changes are applied. Present on updates; undefined on creates. Use this to read the document id and any unchanged fields.    |
-| **`req`**         | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `data` | `object` | Always set | The incoming data passed through the operation. |
+| `operation` | `'create' \| 'update'` | Always set | The name of the operation that this hook is running within. |
+| `originalDoc` | `object` | — | The full document before changes are applied. Present on updates; undefined on creates. Use this to read the document id and any unchanged fields. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 **Why isn't id in data?**
 
@@ -191,15 +214,16 @@ const afterChangeHook: CollectionAfterChangeHook<Post> = async ({
 
 The following arguments are provided to the `afterChange` hook:
 
-| Option            | Description                                                                                                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`**  | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**     | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`data`**        | The incoming data passed through the operation.                                                                                                       |
-| **`doc`**         | The resulting Document after changes are applied.                                                                                                     |
-| **`operation`**   | The name of the operation that this hook is running within.                                                                                           |
-| **`previousDoc`** | The Document before changes were applied.                                                                                                             |
-| **`req`**         | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `data` | `object` | Always set | The incoming data passed through the operation. |
+| `doc` | `object` | Always set | The resulting Document after changes are applied. |
+| `operation` | `'create' \| 'update'` | Always set | The name of the operation that this hook is running within. |
+| `previousDoc` | `object` | Always set | The Document before changes were applied. |
+| `overrideAccess` | `boolean` | — | Whether the operation skips access control. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 ### beforeRead
 
@@ -218,13 +242,14 @@ const beforeReadHook: CollectionBeforeReadHook<Post> = async ({
 
 The following arguments are provided to the `beforeRead` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`doc`**        | The resulting Document after changes are applied.                                                                                                     |
-| **`query`**      | The [Query](/queries/overview) of the request.                                                                                                        |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `doc` | `object` | Always set | The Document as read from the database, before field hooks and access control run. |
+| `query` | `Record<string, any>` | Always set | The [Query](/queries/overview) of the request. |
+| `overrideAccess` | `boolean` | — | Whether the operation skips access control. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 ### afterRead
 
@@ -243,13 +268,15 @@ const afterReadHook: CollectionAfterReadHook<Post> = async ({
 
 The following arguments are provided to the `afterRead` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`doc`**        | The resulting Document after changes are applied.                                                                                                     |
-| **`query`**      | The [Query](/queries/overview) of the request.                                                                                                        |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `doc` | `object` | Always set | The Document after field hooks and access control run. |
+| `query` | `Record<string, any>` | — | The [Query](/queries/overview) of the request. |
+| `findMany` | `boolean` | — | `true` when the document is one of several returned, such as from `find`. |
+| `overrideAccess` | `boolean` | — | Whether the operation skips access control. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 ### beforeDelete
 
@@ -266,12 +293,12 @@ const beforeDeleteHook: CollectionBeforeDeleteHook = async ({
 
 The following arguments are provided to the `beforeDelete` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`id`**         | The ID of the Document being deleted.                                                                                                                 |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `id` | `string \| number` | Always set | The ID of the Document being deleted. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 ### afterDelete
 
@@ -289,13 +316,13 @@ const afterDeleteHook: CollectionAfterDeleteHook = async ({
 
 The following arguments are provided to the `afterDelete` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`doc`**        | The resulting Document after changes are applied.                                                                                                     |
-| **`id`**         | The ID of the Document that was deleted.                                                                                                              |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `doc` | `object` | Always set | The Document that was deleted. |
+| `id` | `string \| number` | Always set | The ID of the Document that was deleted. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 ### afterOperation
 
@@ -311,13 +338,14 @@ const afterOperationHook: CollectionAfterOperationHook = async ({ result }) => {
 
 The following arguments are provided to the `afterOperation` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`args`**       | The arguments passed into the operation.                                                                                                              |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
-| **`operation`**  | The name of the operation that this hook is running within.                                                                                           |
-| **`result`**     | The result of the operation, before modifications.                                                                                                    |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `args` | `object` | Always set | The arguments passed into the operation. |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `operation` | `string` | Always set | The name of the operation that this hook is running within, with the same values as `beforeOperation`. |
+| `result` | `unknown` | Always set | The result of the operation, before modifications. Return a value to replace it. |
+| `overrideAccess` | `boolean` | — | Whether the operation skips access control. |
 
 ### afterError
 
@@ -327,22 +355,22 @@ The `afterError` Hook is triggered when an error occurs in the FrogBot applicati
 import type { CollectionAfterErrorHook } from 'frogbot';
 
 const afterErrorHook: CollectionAfterErrorHook = async ({
+  error,
   req,
-  id,
-  doc,
+  collection,
 }) => {...}
 ```
 
 The following arguments are provided to the `afterError` Hook:
 
-| Argument            | Description                                                                                                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`error`**         | The error that occurred.                                                                                                                                                                        |
-| **`context`**       | Custom context passed between Hooks. [More details](/hooks/context).                                                                                                                            |
-| **`graphqlResult`** | The GraphQL result object, available if the hook is executed within a GraphQL context.                                                                                                          |
-| **`req`**           | The `FrogBotRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
-| **`collection`**    | The [Collection](/configuration/collections) in which this Hook is running against.                                                                                                             |
-| **`result`**        | The formatted error result object, available if the hook is executed from a REST context.                                                                                                       |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `error` | `Error` | Always set | The error that occurred. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `graphqlResult` | `GraphQLFormattedError` | — | The GraphQL result object, available if the hook is executed within a GraphQL context. |
+| `req` | `FrogBotRequest` | Always set | The `FrogBotRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `result` | `ErrorResult` | — | The formatted error result object, available if the hook is executed from a REST context. |
 
 ### beforeLogin
 
@@ -358,12 +386,12 @@ const beforeLoginHook: CollectionBeforeLoginHook = async ({ user }) => {
 
 The following arguments are provided to the `beforeLogin` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
-| **`user`**       | The user being logged in.                                                                                                                             |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `user` | `object` | Always set | The user being logged in. |
 
 ### afterLogin
 
@@ -380,13 +408,13 @@ const afterLoginHook: CollectionAfterLoginHook = async ({
 
 The following arguments are provided to the `afterLogin` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
-| **`token`**      | The token generated for the user.                                                                                                                     |
-| **`user`**       | The user being logged in.                                                                                                                             |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `token` | `string` | Always set | The token generated for the user. |
+| `user` | `object` | Always set | The user being logged in. |
 
 ### afterLogout
 
@@ -402,11 +430,11 @@ const afterLogoutHook: CollectionAfterLogoutHook = async ({
 
 The following arguments are provided to the `afterLogout` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
 
 ### afterMe
 
@@ -423,12 +451,12 @@ const afterMeHook: CollectionAfterMeHook = async ({
 
 The following arguments are provided to the `afterMe` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
-| **`response`**   | The response to return.                                                                                                                               |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `response` | `unknown` | Always set | The response to return. |
 
 ### afterRefresh
 
@@ -444,13 +472,13 @@ const afterRefreshHook: CollectionAfterRefreshHook = async ({
 
 The following arguments are provided to the `afterRefresh` hook:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.                                                                   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                                                                                  |
-| **`exp`**        | The expiration time of the token.                                                                                                                     |
-| **`req`**        | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.   |
-| **`token`**      | The newly refreshed user token.                                                                                                                       |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
+| `exp` | `number` | Always set | The expiration time of the token, as a Unix timestamp in seconds. |
+| `req` | `FrogBotRequest` | Always set | The request, with the signed-in `user` and `req.frogbot`. For [Local API](/local-api/overview) operations without a `req`, FrogBot creates one. |
+| `token` | `string` | Always set | The newly refreshed user token. |
 
 ### afterForgotPassword
 
@@ -468,11 +496,11 @@ const afterForgotPasswordHook: CollectionAfterForgotPasswordHook = async ({
 
 The following arguments are provided to the `afterForgotPassword` hook:
 
-| Option           | Description                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| **`args`**       | The arguments passed into the operation.                                              |
-| **`collection`** | The [Collection](/configuration/collections) in which this Hook is running against.   |
-| **`context`**    | Custom context passed between hooks. [More details](/hooks/context).                  |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `args` | `object` | — | The arguments passed into the operation. |
+| `collection` | `SanitizedCollectionConfig` | Always set | The [Collection](/configuration/collections) in which this Hook is running against. |
+| `context` | `RequestContext` | Always set | Custom context passed between Hooks. [More details](/hooks/context). |
 
 ### refresh
 
@@ -487,12 +515,12 @@ const myRefreshHook: CollectionRefreshHook = async ({
 }) => {...}
 ```
 
-The following arguments are provided to the `afterRefresh` hook:
+The following arguments are provided to the `refresh` hook:
 
-| Option     | Description                              |
-| ---------- | ---------------------------------------- |
-| **`args`** | The arguments passed into the operation. |
-| **`user`** | The user being logged in.                |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `args` | `object` | Always set | The arguments passed into the operation, including `req`. |
+| `user` | `object` | Always set | The user whose token is being refreshed. |
 
 ### me
 
@@ -509,10 +537,10 @@ const meHook: CollectionMeHook = async ({
 
 The following arguments are provided to the `me` hook:
 
-| Option     | Description                              |
-| ---------- | ---------------------------------------- |
-| **`args`** | The arguments passed into the operation. |
-| **`user`** | The user being logged in.                |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `args` | `object` | Always set | The arguments passed into the operation, including `req`. |
+| `user` | `object` | Always set | The signed-in user. |
 
 ## TypeScript
 

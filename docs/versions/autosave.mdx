@@ -15,10 +15,10 @@ Extending FrogBot's [Draft](/versions/drafts) functionality, you can configure c
 
 Collections support two ways to configure autosave. Set `versions.drafts.autosave` to `true`, or pass an object to configure autosave properties.
 
-| Drafts Autosave Options | Description                                                                                                                                                           |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `interval`              | Define an `interval` in milliseconds to automatically save progress while documents are edited. Document updates are "debounced" at this interval. Defaults to `800`. |
-| `showSaveDraftButton`   | Set this to `true` to show the "Save as draft" button even while autosave is enabled. Defaults to `false`.                                                            |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `interval` | `number` | `2000` | Define an `interval` in milliseconds to automatically save progress while documents are edited. Document updates are "debounced" at this interval. |
+| `showSaveDraftButton` | `boolean` | `false` | Set this to `true` to show the "Save as draft" button even while autosave is enabled. |
 
 **Example config with versions, drafts, and autosave enabled:**
 

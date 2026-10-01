@@ -106,7 +106,7 @@ query {
 
 ## Login
 
-Accepts an `email` and `password`. On success, it will return the logged in user as well as a token that can be used to authenticate. In the GraphQL and REST APIs, this operation also automatically sets an HTTP-only cookie including the user's token. If you pass a `res` to the Local API operation, FrogBot will set a cookie there as well.
+Accepts an `email` and `password`. On success, it will return the logged in user as well as a token that can be used to authenticate. In the GraphQL and REST APIs, this operation also automatically sets an HTTP-only cookie including the user's token. The Local API returns the token without setting a cookie.
 
 **Example REST API login**:
 
@@ -165,11 +165,13 @@ const result = await frogbot.login({
 })
 ```
 
+See [Login options](/local-api/overview#login) for every Local API argument.
+
 <Tip>
   **Server Functions:** FrogBot offers a ready-to-use `login` server function
   that utilizes the Local API. For integration details and examples, check out
   the [Server Function
-  docs](/local-api/server-functions#reusable-frogbot-server-functions).
+  docs](/local-api/server-functions).
 </Tip>
 
 ## Logout
@@ -202,7 +204,7 @@ mutation {
   **Server Functions:** FrogBot provides a ready-to-use `logout` server function
   that manages the user's cookie for a seamless logout. For integration details
   and examples, check out the [Server Function
-  docs](/local-api/server-functions#reusable-frogbot-server-functions).
+  docs](/local-api/server-functions).
 </Tip>
 
 #### Logging out with sessions enabled
@@ -264,7 +266,7 @@ mutation {
   **Server Functions:** FrogBot exports a ready-to-use `refresh` server function
   that automatically renews the user's token and updates the associated cookie.
   For integration details and examples, check out the [Server Function
-  docs](/local-api/server-functions#reusable-frogbot-server-functions).
+  docs](/local-api/server-functions).
 </Tip>
 
 ## Verify by Email
@@ -302,6 +304,8 @@ const result = await frogbot.verifyEmail({
 })
 ```
 
+See [Verify options](/local-api/overview#verify) for every Local API argument.
+
 **Note:** the token you need to pass to the `verifyEmail` function is unique to verification and is not the same as the token that you can retrieve from the `forgotPassword` operation. It can be found on the user document, as a hidden `_verificationToken` field. If you'd like to retrieve this token, you can use the Local API's `find` or `findByID` methods, setting `showHiddenFields: true`.
 
 **Note:** if you do not have a `config.serverURL` set, FrogBot will attempt to create one for you if the user was created via REST or GraphQL by looking at the incoming `req`. But this is not supported if you are creating the user via the Local API's `frogbot.create()` method. If this applies to you, and you do not have a `serverURL` set, you may want to override your `verify.generateEmailHTML` function to provide a full URL to link the user to a proper verification page.
@@ -320,6 +324,9 @@ const res = await fetch(`http://localhost:3000/api/[collection-slug]/unlock`, {
   headers: {
     'Content-Type': 'application/json',
   },
+  body: JSON.stringify({
+    email: 'dev@frogbot.com',
+  }),
 })
 ```
 
@@ -336,8 +343,13 @@ mutation {
 ```ts
 const result = await frogbot.unlock({
   collection: 'collection-slug',
+  data: {
+    email: 'dev@frogbot.com',
+  },
 })
 ```
+
+See [Unlock options](/local-api/overview#unlock) for every Local API argument.
 
 ## Forgot Password
 
@@ -384,6 +396,8 @@ const token = await frogbot.forgotPassword({
 })
 ```
 
+See [Forgot Password options](/local-api/overview#forgot-password) for every Local API argument.
+
 <Note>
   **Note:** if you do not have a `config.serverURL` set, FrogBot will attempt to
   create one for you if the `forgot-password` operation was triggered via REST
@@ -418,7 +432,7 @@ const res = await fetch(`http://localhost:3000/api/[collection-slug]/reset-passw
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    token: 'TOKEN_GOES_HERE'
+    token: 'TOKEN_GOES_HERE',
     password: 'not-today',
   }),
 });
@@ -447,3 +461,5 @@ mutation {
   resetPassword[collection-singular-label](token: "TOKEN_GOES_HERE", password: "not-today")
 }
 ```
+
+See [Reset Password options](/local-api/overview#reset-password) for the Local API arguments.

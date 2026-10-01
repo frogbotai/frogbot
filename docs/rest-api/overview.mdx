@@ -30,8 +30,8 @@ To enhance DX, you can use [FrogBot SDK](#frogbot-rest-api-sdk) to query your RE
 - [fallback-locale](/configuration/localization#retrieving-localized-docs) - specifies a fallback locale if no locale value exists
 - [select](/queries/select) - specifies which fields to include in the result
 - [populate](/queries/select#populate) - specifies which fields to include in the result from populated documents
-- [limit](/queries/pagination#pagination-controls) - limits the number of documents returned
-- [page](/queries/pagination#pagination-controls) - specifies which page to get documents from when used with a limit
+- [limit](/queries/pagination#options) - limits the number of documents returned
+- [page](/queries/pagination#options) - specifies which page to get documents from when used with a limit
 - [sort](/queries/sort#rest-api) - specifies the field(s) to use to sort the returned documents by
 - [where](/queries/overview) - specifies advanced filters to use to query documents
 - [joins](/fields/join#rest-api) - specifies the custom request for each join field by name of the field
@@ -91,12 +91,12 @@ Additional REST API endpoints can be added to your application by providing an a
 
 Each endpoint object needs to have:
 
-| Property      | Description                                                                                                                                                                                                                                                |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`path`**    | A string for the endpoint route after the collection slug                                                                                                                                                                                                  |
-| **`method`**  | The lowercase HTTP verb to use: 'get', 'head', 'post', 'put', 'delete', 'connect' or 'options'                                                                                                                                                             |
-| **`handler`** | A function that accepts **req** - `FrogBotRequest` object which contains [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) properties, currently authenticated `user` and the Local API instance `frogbot`.                          |
-| **`custom`**  | Extension point for adding custom data (e.g. for plugins)                                                                                                                                                                                                  |
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `path` | `string` | Required | The route after the collection slug, or after `routes.api` for root endpoints. Supports path parameters such as `/:id/tracking`, read from `req.routeParams`. |
+| `method` | `'get' \| 'head' \| 'post' \| 'put' \| 'patch' \| 'delete' \| 'connect' \| 'options'` | Required | The lowercase HTTP verb to use. |
+| `handler` | `(req: FrogBotRequest) => Response \| Promise<Response>` | Required | A function that accepts **req** - `FrogBotRequest` object which contains [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) properties, currently authenticated `user` and the Local API instance `frogbot`. |
+| `custom` | `Record<string, any>` | — | Extension point for adding custom data (e.g. for plugins). |
 
 Example:
 
@@ -343,6 +343,14 @@ const sdk = createFrogBotSDK({
 })
 ```
 
+`createFrogBotSDK()` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `baseURL` | `string` | Required | URL of your app's REST API, including `routes.api`, such as `https://example.com/api`. A trailing slash is removed. |
+| `fetch` | `typeof fetch` | `globalThis.fetch` | Function used to send every request. Wrap `fetch` to add options such as `credentials`. |
+| `headers` | `HeadersInit` | — | Headers sent with every request. Headers passed to a method override them. |
+
 To pick the types explicitly, for example when a frontend talks to more than one FrogBot app, pass the generated `Config`:
 
 ```ts
@@ -529,3 +537,203 @@ const response = await sdk.request('/send-data', {
 
 const result = await response.json()
 ```
+
+### Options reference
+
+Every method's last argument, `init`, takes standard `RequestInit` options that are merged into the request. Its headers override the configured `headers`.
+
+**`find(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | `false` | Query the latest drafts instead of published documents. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `joins` | `JoinQuery` | — | Pagination, sort, and filters for join fields. `false` isn't sent, so it has no effect. |
+| `limit` | `number` | `10` | The maximum number of documents to return. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
+| `page` | `number` | `1` | The page of results to return. |
+| `pagination` | `boolean` | `true` | Set to `false` to skip the document count. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+| `sort` | `string \| string[]` | — | Sort by one or more fields. Prefix a field with `-` to sort descending. |
+| `trash` | `boolean` | `false` | Include trashed documents. Has no effect unless the collection has `trash` enabled. |
+| `where` | `Where` | — | A filter query. |
+
+**`findByID(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `id` | `string \| number` | Required | The ID of the document to find. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `disableErrors` | `boolean` | `false` | Return `null` instead of throwing when the document isn't found or the request fails. |
+| `draft` | `boolean` | `false` | Return the latest draft instead of the published document. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `joins` | `JoinQuery` | — | Pagination, sort, and filters for join fields. `false` isn't sent, so it has no effect. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+| `trash` | `boolean` | `false` | Return the document even if it's trashed. Has no effect unless the collection has `trash` enabled. |
+
+**`count(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
+| `trash` | `boolean` | `false` | Include trashed documents in the count. Has no effect unless the collection has `trash` enabled. |
+| `where` | `Where` | — | A filter query. |
+
+**`create(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `data` | `object` | Required | The data for the document to create. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | `false` | Create the document as a draft. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `file` | `Blob \| string` | — | Upload collections only. The file, or a URL to fetch it from. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the data and the returned document. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+
+**`update(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `data` | `object` | Required | The fields to update. |
+| `id` | `string \| number` | Required without `where` | The ID of the document to update. Returns the document. |
+| `where` | `Where` | Required without `id` | Selects the documents to update. Returns `{ docs, errors }`. |
+| `limit` | `number` | — | With `where`, the maximum number of documents to update. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | `false` | Save the update as a draft. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `file` | `Blob \| string` | — | Upload collections only. The new file, or a URL to fetch it from. |
+| `locale` | `TypedLocale` | — | The locale of the data and the returned documents. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+| `trash` | `boolean` | `false` | Allow the update to target trashed documents. Has no effect unless the collection has `trash` enabled. |
+| `autosave` | `boolean` | — | Accepted by the type, but not sent to the server. |
+| `publishSpecificLocale` | `string` | — | Accepted by the type, but not sent to the server. |
+
+**`delete(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `id` | `string \| number` | Required without `where` | The ID of the document to delete. Returns the document. |
+| `where` | `Where` | Required without `id` | Selects the documents to delete. Returns `{ docs, errors }`. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | — | Sent as the `draft` query parameter. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `locale` | `TypedLocale` | — | The locale of the returned documents. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+| `trash` | `boolean` | `false` | Allow the delete to target trashed documents. Has no effect unless the collection has `trash` enabled. |
+
+**`findVersions(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | — | Include draft versions. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `limit` | `number` | `10` | The maximum number of versions to return. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
+| `page` | `number` | `1` | The page of results to return. |
+| `pagination` | `boolean` | `true` | Set to `false` to skip the version count. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+| `sort` | `string \| string[]` | — | Sort by one or more fields, such as `'-version.createdAt'`. |
+| `trash` | `boolean` | `false` | Include versions of trashed documents. Has no effect unless the collection has `trash` enabled. |
+| `where` | `Where` | — | A filter query, for example `{ parent: { equals: id } }`. |
+
+**`findVersionByID(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `id` | `string \| number` | Required | The ID of the version to find. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `disableErrors` | `boolean` | `false` | Return `null` instead of throwing when the version isn't found or the request fails. |
+| `draft` | `boolean` | — | Include draft versions. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+| `select` | `SelectType` | — | Which fields to include in the result. |
+| `trash` | `boolean` | `false` | Return the version even if its document is trashed. Has no effect unless the collection has `trash` enabled. |
+
+**`restoreVersion(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `id` | `string \| number` | Required | The ID of the version to restore. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | — | Restore the version as a draft. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+| `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
+| `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
+
+**`search(collection, options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `index` | `string` | Required | The name of the collection's search index to query. |
+| `query` | `SearchQuery` | Required | The text, vector, or both to search for. |
+| `where` | `Where` | — | A filter query applied to the hits. |
+| `limit` | `number` | Server default | The maximum number of hits to return. |
+| `candidates` | `number` | Server default | How many candidates each ranking method considers before the final hits are chosen. |
+| `select` | `SelectType` | — | Which fields to include in each hit's document. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+| `draft` | `boolean` | `false` | Search the latest drafts instead of published documents. |
+| `locale` | `string` | — | The locale of the returned documents. |
+| `fallbackLocale` | `TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` isn't sent, so it has no effect. |
+
+**`login(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `data` | `{ email: string; password: string }` | Required | The user's credentials. |
+
+**`me(options, init?)` and `refreshToken(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+
+**`forgotPassword(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `data.email` | `string` | Required | The email address to send the reset link to. |
+| `data.disableEmail` | `boolean` | — | Accepted by the type, but the REST endpoint ignores it. Use the [Local API](/local-api/overview#forgot-password) to skip the email. |
+| `data.expiration` | `number` | — | Accepted by the type, but the REST endpoint ignores it. |
+
+**`resetPassword(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `data` | `{ password: string; token: string }` | Required | The new password and the token from `forgotPassword`. |
+
+**`verifyEmail(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to operate against. |
+| `token` | `string` | Required | The verification token. |
+
+**`request(path, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `path` | `string` | Required | Path below `baseURL`. A leading `/` is added when missing. |
+| `init` | `RequestInit & { json?: unknown }` | `{}` | Standard fetch options. `json` is serialized as the body and sets `Content-Type: application/json`. Headers are merged over the configured `headers`. |

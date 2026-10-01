@@ -38,6 +38,8 @@ const request = await fetch('http://localhost:3000', {
 })
 ```
 
+FrogBot reads a token from the `Authorization: JWT` header, the `Authorization: Bearer` header, and the auth cookie, in that order. Set the root [`auth.jwtOrder`](/configuration/overview#set-core-options) option to change the order or leave a method out.
+
 ### Omitting The Token
 
 In some cases you may want to prevent the token from being returned from the auth operations. You can do that by setting `removeTokenFromResponses` to `true` like so:
@@ -62,7 +64,7 @@ import crypto from 'node:crypto'
 
 const secret = crypto
   .createHash('sha256')
-  .update(process.env.PAYLOAD_SECRET)
+  .update(process.env.FROGBOT_SECRET)
   .digest('hex')
   .slice(0, 32)
 ```

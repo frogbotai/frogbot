@@ -72,10 +72,10 @@ export const Posts: CollectionConfig = {
 
 The available options are:
 
-| Option      | Description                                                                                                                                                        |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `maxPerDoc` | Use this setting to control how many versions to keep on a document by document basis. Must be an integer. Defaults to 100, use 0 to save all versions.            |
-| `drafts`    | Enable [Drafts](/versions/drafts) mode for this collection. To enable, set to `true` or pass an object with `draft` [options](/versions/drafts#options). |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `maxPerDoc` | `number` | `100` | How many versions to keep for each document. Older versions are deleted. Use `0` to keep every version. |
+| `drafts` | `boolean \| DraftsConfig` | `false` | Enable [Drafts](/versions/drafts) mode for this collection. To enable, set to `true` or pass an object with draft [options](/versions/drafts#options). |
 
 ### Database impact
 

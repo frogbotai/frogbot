@@ -5,7 +5,7 @@ description: With Collection-level Access Control you can define which users can
 keywords: collections, access control, permissions, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Collection Access Control is [Access Control](/access-control/overview) used to restrict access to Documents within a [Collection](/getting-started/concepts#collections), as well as what users can see in the Admin Panel for that Collection.
+Collection Access Control is [Access Control](/access-control/overview) used to restrict access to Documents within a [Collection](/getting-started/concepts#collections-hold-application-data), as well as what users can see in the Admin Panel for that Collection.
 
 To add Access Control to a Collection, use the `access` property in your [Collection Config](/configuration/collections):
 
@@ -49,25 +49,17 @@ export const CollectionWithAccessControl: CollectionConfig = {
 
 The following options are available:
 
-| Function     | Allows/Denies Access                                                 |
-| ------------ | -------------------------------------------------------------------- |
-| **`create`** | Used in the `create` operation. [More details](#create).             |
-| **`read`**   | Used in the `find` and `findByID` operations. [More details](#read). |
-| **`update`** | Used in the `update` operation. [More details](#update).             |
-| **`delete`** | Used in the `delete` operation. [More details](#delete).             |
+| Function | Type | Default | Allows/Denies Access |
+| --- | --- | --- | --- |
+| `create` | `Access` | Signed-in users | Used in the `create` operation. [More details](#create). |
+| `read` | `Access` | Signed-in users | Used in the `find`, `findByID`, `count`, and `findDistinct` operations, and for file downloads. [More details](#read). |
+| `update` | `Access` | Signed-in users | Used in the `update` operation. [More details](#update). |
+| `delete` | `Access` | Signed-in users | Used in the `delete` operation, and when trashing a document. [More details](#delete). |
+| `admin` | `({ req }) => boolean \| Promise<boolean>` | Users of the `admin.user` collection | Auth collections only. Restricts access to the Admin Panel. [More details](#admin). |
+| `unlock` | `Access` | Signed-in users of the `admin.user` collection | Auth collections only. Restricts which users can run the `unlock` operation. [More details](#unlock). |
+| `readVersions` | `Access` | Signed-in users | Version-enabled collections only. Controls who can read versions. Will automatically restrict the Admin UI version viewing access. [More details](#read-versions). |
 
-If a Collection supports [`Authentication`](/authentication/overview), the following additional options are available:
-
-| Function     | Allows/Denies Access                                                                     |
-| ------------ | ---------------------------------------------------------------------------------------- |
-| **`admin`**  | Used to restrict access to the Admin Panel. [More details](#admin). |
-| **`unlock`** | Used to restrict which users can access the `unlock` operation. [More details](#unlock). |
-
-If a Collection supports [Versions](/versions/overview), the following additional options are available:
-
-| Function           | Allows/Denies Access                                                                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`readVersions`** | Used to control who can read versions, and who can't. Will automatically restrict the Admin UI version viewing access. [More details](#read-versions). |
+Every function except `admin` returns `true`, `false`, or a [query](/queries/overview) that limits which documents the operation applies to.
 
 ### Create
 
@@ -90,10 +82,13 @@ export const CollectionWithCreateAccess: CollectionConfig = {
 
 The following arguments are provided to the `create` function:
 
-| Option     | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **`req`**  | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user`. |
-| **`data`** | The data passed to create the document with.                                                                                  |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `data` | `object` | Set on `create` | The data passed to create the document with. |
+| `id` | `string \| number` | — | Not set for `create`. |
+| `collectionConfig` | `SanitizedCollectionConfig` | — | The sanitized config of this collection. |
+| `isReadingStaticFile` | `boolean` | `false` | `true` when the check runs for a request to download an upload collection's file. |
 
 ### Read
 
@@ -144,10 +139,13 @@ export const canReadPage: Access<Page> = ({ req: { user } }) => {
 
 The following arguments are provided to the `read` function:
 
-| Option    | Description                                                                                                                   |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **`req`** | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user`. |
-| **`id`**  | `id` of document requested, if within `findByID`.                                                                             |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `id` | `string \| number` | Set in `findByID` | `id` of the requested document. Not set in `find`, so return a query to limit which documents are returned. |
+| `data` | `object` | Set for file downloads | `{ filename }` when an upload collection's file is requested. |
+| `collectionConfig` | `SanitizedCollectionConfig` | — | The sanitized config of this collection. |
+| `isReadingStaticFile` | `boolean` | `false` | `true` when the check runs for a request to download an upload collection's file. |
 
 ### Update
 
@@ -193,11 +191,13 @@ export const canUpdateUser: Access<User> = ({ req: { user }, id }) => {
 
 The following arguments are provided to the `update` function:
 
-| Option     | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **`req`**  | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user`. |
-| **`id`**   | `id` of document requested to update.                                                                                         |
-| **`data`** | The data passed to update the document with.                                                                                  |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `id` | `string \| number` | Set for update by ID | `id` of the document to update. Not set for bulk updates. |
+| `data` | `object` | Always set | The data passed to update the document with. |
+| `collectionConfig` | `SanitizedCollectionConfig` | — | The sanitized config of this collection. |
+| `isReadingStaticFile` | `boolean` | `false` | `true` when the check runs for a request to download an upload collection's file. |
 
 <Tip>
   For Collections with [Drafts](/versions/drafts) enabled, you can use `update`
@@ -252,11 +252,13 @@ export const canDeleteCustomer: Access<Customer> = async ({ req, id }) => {
 
 The following arguments are provided to the `delete` function:
 
-| Option     | Description                                                                                                                                                                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`req`**  | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object with additional `user` property, which is the currently logged in user.                               |
-| **`id`**   | `id` of document requested to delete.                                                                                                                                                |
-| **`data`** | The data being set on the document. For [Trash-enabled](/trash/overview) collections, check `data.deletedAt` to differentiate between soft delete and permanent delete operations. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `id` | `string \| number` | Set for delete by ID | `id` of the document to delete. Not set for bulk deletes, or when the admin panel checks permissions without a document. |
+| `data` | `object` | Set when trashing | The data being set on the document. For [Trash-enabled](/trash/overview) collections, `delete` access also runs during updates; check `data.deletedAt` to differentiate between soft delete and permanent delete operations. |
+| `collectionConfig` | `SanitizedCollectionConfig` | — | The sanitized config of this collection. |
+| `isReadingStaticFile` | `boolean` | `false` | `true` when the check runs for a request to download an upload collection's file. |
 
 <Tip>
   For Collections with [Trash](/trash/overview) enabled, you can use the `data`
@@ -286,9 +288,9 @@ export const CollectionWithAdminAccess: CollectionConfig = {
 
 The following arguments are provided to the `admin` function:
 
-| Option    | Description                                                                                                                   |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **`req`** | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user`. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
 
 ### Unlock
 
@@ -311,9 +313,13 @@ export const CollectionWithUnlockAccess: CollectionConfig = {
 
 The following arguments are provided to the `unlock` function:
 
-| Option    | Description                                                                                                                   |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **`req`** | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user`. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `collectionConfig` | `SanitizedCollectionConfig` | Always set | The sanitized config of this collection. |
+| `id` | `string \| number` | — | Not set for `unlock`. |
+| `data` | `object` | — | Not set for `unlock`. |
+| `isReadingStaticFile` | `boolean` | `false` | `true` when the check runs for a request to download an upload collection's file. |
 
 ### Read Versions
 
@@ -342,6 +348,10 @@ export const CollectionWithVersionsAccess: CollectionConfig = {
 
 The following arguments are provided to the `readVersions` function:
 
-| Option    | Description                                                                                                                   |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **`req`** | The [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object containing the currently authenticated `user`. |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Always set | The current request, with the signed-in `user` and `req.frogbot`. |
+| `id` | `string \| number` | Set in `findVersionByID` | `id` of the requested version. |
+| `data` | `object` | — | Not set for `readVersions`. |
+| `collectionConfig` | `SanitizedCollectionConfig` | — | The sanitized config of this collection. |
+| `isReadingStaticFile` | `boolean` | `false` | `true` when the check runs for a request to download an upload collection's file. |
