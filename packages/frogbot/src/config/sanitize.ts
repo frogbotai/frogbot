@@ -645,9 +645,6 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     throw new Error('[frogbot] `ai.routers` must be an object.');
   }
   const routers: Record<string, RouterConfig> = ai.routers ?? {};
-  if (ai.defaultRouter && !routers[ai.defaultRouter]) {
-    throw new Error(`[frogbot] defaultRouter '${ai.defaultRouter}' does not exist in ai.routers.`);
-  }
 
   for (const [slug, router] of Object.entries(routers)) {
     if (!isRecord(router) || typeof router.model !== 'string' || !router.model.trim()) {
@@ -707,7 +704,6 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
   return {
     providers: ai.providers,
     routers,
-    defaultRouter: ai.defaultRouter,
     defaultModel: ai.defaultModel,
     smallModel: ai.smallModel,
     hooks,
