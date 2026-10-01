@@ -59,7 +59,7 @@ import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
 import { assistant } from './agents/assistant';
-import { Users } from './collections';
+import { Users } from './collections/Users';
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
@@ -226,12 +226,15 @@ src/
 │       ├── api/[...slug]/route.ts
 │       └── layout.tsx
 ├── collections/
-│   ├── index.ts
-│   ├── posts.ts
-│   └── users.ts
+│   ├── Posts/
+│   │   ├── hooks/
+│   │   └── index.ts
+│   └── Users.ts
 ├── frogbot-types.ts
 └── frogbot.config.ts
 ```
+
+Each collection is a TitleCase file with a named export, imported by its own path; when it grows hooks, access rules, or endpoints, move it to `<Name>/index.ts` — the config import doesn't change.
 
 Use `frogbot.config.ts` as the configuration entry, `req.frogbot` in request callbacks, and `frogbot-types.ts` for generated application types.
 

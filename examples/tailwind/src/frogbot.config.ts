@@ -3,7 +3,7 @@ import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { assistant } from './agents';
-import { Users } from './collections';
+import { Users } from './collections/Users';
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',

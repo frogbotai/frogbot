@@ -86,7 +86,7 @@ Use it as `Authorization: Bearer $FROGBOT_API_KEY` or `X-API-Key: $FROGBOT_API_K
 
 This section requires real Google OAuth credentials. Create a Web application OAuth client, enable the Sheets, Drive, and Calendar APIs, and set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
 
-`src/pieces.ts` creates `google` for identity and shares `google.oauth` with `createGoogleSheets`, `createGoogleDrive`, and `createGoogleCalendar`. `src/frogbot.config.ts` enables a separate `{ piece, oauth: true }` connection for each product; `src/collections/users.ts` uses `google` only in `auth.signIn`. Google sign-in and these linking entries are enabled only when both OAuth environment variables are set. Product actions remain mounted without them, but cannot run without credentials.
+`src/pieces.ts` creates `google` for identity and shares `google.oauth` with `createGoogleSheets`, `createGoogleDrive`, and `createGoogleCalendar`. `src/frogbot.config.ts` enables a separate `{ piece, oauth: true }` connection for each product; `src/collections/Users.ts` uses `google` only in `auth.signIn`. Google sign-in and these linking entries are enabled only when both OAuth environment variables are set. Product actions remain mounted without them, but cannot run without credentials.
 
 Register these callback URLs:
 

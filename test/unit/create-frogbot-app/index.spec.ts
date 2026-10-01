@@ -50,7 +50,7 @@ describe('scaffold', () => {
     expect(fs.existsSync(path.join(options.dest, 'gitignore'))).toBe(false);
     expect(fs.existsSync(path.join(options.dest, 'src', 'agents', 'assistant.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'app'))).toBe(true);
-    expect(fs.existsSync(path.join(options.dest, 'src', 'collections', 'index.ts'))).toBe(true);
+    expect(fs.readdirSync(path.join(options.dest, 'src', 'collections'))).toEqual(['Users.ts']);
     expect(fs.existsSync(path.join(options.dest, 'src', 'frogbot.config.ts'))).toBe(true);
     const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
     expect(config).toContain("import { todoTools } from 'frogbot/tools'");

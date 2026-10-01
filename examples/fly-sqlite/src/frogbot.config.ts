@@ -4,7 +4,7 @@ import { buildConfig } from 'frogbot';
 import { todoTools } from 'frogbot/tools';
 
 import { assistant } from './agents';
-import { Users } from './collections';
+import { Users } from './collections/Users';
 import { migrations } from './migrations';
 
 const config: FrogBotConfig = {
