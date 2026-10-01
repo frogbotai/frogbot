@@ -8,7 +8,7 @@ export type FalConfig = Omit<FalProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const falProvider = {
   name: 'fal',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'FAL_API_KEY' }],
   envVars: ['FAL_API_KEY', 'FAL_KEY', 'FAL_BASE_URL'],
   fromEnv: (env) => {
     const apiKey = env.FAL_API_KEY ?? env.FAL_KEY;

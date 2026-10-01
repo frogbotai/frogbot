@@ -8,7 +8,7 @@ export type HumeConfig = Omit<HumeProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const humeProvider = {
   name: 'hume',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'HUME_API_KEY' }],
   envVars: ['HUME_API_KEY'],
   fromEnv: (env) => {
     if (!env.HUME_API_KEY) return undefined;

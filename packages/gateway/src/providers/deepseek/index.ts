@@ -14,7 +14,7 @@ export type DeepSeekConfig = Omit<DeepSeekProviderSettings, 'apiKey' | 'fetch'> 
 
 export const deepseekProvider = {
   name: 'deepseek',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'DEEPSEEK_API_KEY' }],
   envVars: ['DEEPSEEK_API_KEY', 'DEEPSEEK_BASE_URL'],
   fromEnv: (env) => {
     if (!env.DEEPSEEK_API_KEY) return undefined;

@@ -14,7 +14,7 @@ export type ByteDanceConfig = Omit<ByteDanceProviderSettings, 'apiKey' | 'fetch'
 
 export const bytedanceProvider = {
   name: 'bytedance',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'ARK_API_KEY' }],
   envVars: ['ARK_API_KEY', 'ARK_BASE_URL'],
   fromEnv: (env) => {
     if (!env.ARK_API_KEY) return undefined;

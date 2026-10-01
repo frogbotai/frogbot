@@ -14,7 +14,7 @@ export type FireworksConfig = Omit<FireworksProviderSettings, 'apiKey' | 'fetch'
 
 export const fireworksProvider = {
   name: 'fireworks',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'FIREWORKS_API_KEY' }],
   envVars: ['FIREWORKS_API_KEY', 'FIREWORKS_BASE_URL'],
   fromEnv: (env) => {
     if (!env.FIREWORKS_API_KEY) return undefined;

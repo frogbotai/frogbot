@@ -10,7 +10,7 @@ export type GroqConfig = Omit<GroqProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const groqProvider = {
   name: 'groq',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'GROQ_API_KEY' }],
   envVars: ['GROQ_API_KEY', 'GROQ_BASE_URL'],
   fromEnv: (env) => {
     if (!env.GROQ_API_KEY) return undefined;

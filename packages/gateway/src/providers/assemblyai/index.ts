@@ -12,7 +12,7 @@ export type AssemblyAIConfig = Omit<AssemblyAIProviderSettings, 'apiKey' | 'fetc
 
 export const assemblyaiProvider = {
   name: 'assemblyai',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'ASSEMBLYAI_API_KEY' }],
   envVars: ['ASSEMBLYAI_API_KEY'],
   fromEnv: (env) => {
     if (!env.ASSEMBLYAI_API_KEY) return undefined;

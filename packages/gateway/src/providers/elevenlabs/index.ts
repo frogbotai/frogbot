@@ -12,7 +12,7 @@ export type ElevenLabsConfig = Omit<ElevenLabsProviderSettings, 'apiKey' | 'fetc
 
 export const elevenlabsProvider = {
   name: 'elevenlabs',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'ELEVENLABS_API_KEY' }],
   envVars: ['ELEVENLABS_API_KEY'],
   fromEnv: (env) => {
     if (!env.ELEVENLABS_API_KEY) return undefined;

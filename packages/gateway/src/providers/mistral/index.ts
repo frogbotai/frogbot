@@ -10,7 +10,7 @@ export type MistralConfig = Omit<MistralProviderSettings, 'apiKey' | 'fetch'> & 
 
 export const mistralProvider = {
   name: 'mistral',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'MISTRAL_API_KEY' }],
   envVars: ['MISTRAL_API_KEY', 'MISTRAL_BASE_URL'],
   fromEnv: (env) => {
     if (!env.MISTRAL_API_KEY) return undefined;

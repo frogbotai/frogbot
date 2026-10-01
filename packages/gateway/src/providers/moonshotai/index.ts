@@ -14,7 +14,7 @@ export type MoonshotAIConfig = Omit<MoonshotAIProviderSettings, 'apiKey' | 'fetc
 
 export const moonshotaiProvider = {
   name: 'moonshotai',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'MOONSHOT_API_KEY' }],
   envVars: ['MOONSHOT_API_KEY', 'MOONSHOT_BASE_URL'],
   fromEnv: (env) => {
     if (!env.MOONSHOT_API_KEY) return undefined;

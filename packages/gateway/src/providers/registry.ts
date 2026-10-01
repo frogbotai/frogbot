@@ -131,10 +131,10 @@ export const PROVIDER_NAMES = Object.keys(providers) as ProviderName[];
 export function providerKeyEnvVar(provider: string): string | undefined {
   if (!Object.hasOwn(providers, provider)) return undefined;
 
-  const definition: { envVars: readonly string[]; requiredKeys?: readonly string[] } =
+  const definition: { envVars: readonly string[]; credentials?: readonly unknown[] } =
     providers[provider as ProviderName];
 
-  return definition.requiredKeys?.length ? definition.envVars[0] : undefined;
+  return definition.credentials?.length ? definition.envVars[0] : undefined;
 }
 
 export type GatewayLanguageModel = LanguageModelV4 | LanguageModelV3;

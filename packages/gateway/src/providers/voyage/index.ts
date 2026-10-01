@@ -8,7 +8,7 @@ export type VoyageConfig = Omit<VoyageProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const voyageProvider = {
   name: 'voyage',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'VOYAGE_API_KEY' }],
   envVars: ['VOYAGE_API_KEY', 'VOYAGE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.VOYAGE_API_KEY) return undefined;

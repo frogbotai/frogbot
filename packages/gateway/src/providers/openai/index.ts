@@ -16,7 +16,7 @@ export type OpenAIConfig = Omit<OpenAIProviderSettings, 'fetch'>;
 
 export const openaiProvider = {
   name: 'openai',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'OPENAI_API_KEY' }],
   /**
    * Env vars this provider reads. First entry is the credential gate — its
    * presence enables the provider. Remaining entries are optional overrides.

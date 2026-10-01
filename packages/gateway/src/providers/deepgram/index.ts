@@ -12,7 +12,7 @@ export type DeepgramConfig = Omit<DeepgramProviderSettings, 'apiKey' | 'fetch'> 
 
 export const deepgramProvider = {
   name: 'deepgram',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'DEEPGRAM_API_KEY' }],
   envVars: ['DEEPGRAM_API_KEY'],
   fromEnv: (env) => {
     if (!env.DEEPGRAM_API_KEY) return undefined;

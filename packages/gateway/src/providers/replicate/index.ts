@@ -12,7 +12,7 @@ export type ReplicateConfig = Omit<ReplicateProviderSettings, 'apiToken' | 'fetc
 
 export const replicateProvider = {
   name: 'replicate',
-  requiredKeys: ['apiToken'],
+  credentials: [{ apiToken: 'REPLICATE_API_TOKEN' }],
   envVars: ['REPLICATE_API_TOKEN', 'REPLICATE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.REPLICATE_API_TOKEN) return undefined;

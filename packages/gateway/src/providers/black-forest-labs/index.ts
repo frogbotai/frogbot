@@ -12,7 +12,7 @@ export type BlackForestLabsConfig = Omit<BlackForestLabsProviderSettings, 'apiKe
 
 export const blackForestLabsProvider = {
   name: 'black-forest-labs',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'BFL_API_KEY' }],
   envVars: ['BFL_API_KEY', 'BFL_BASE_URL'],
   fromEnv: (env) => {
     if (!env.BFL_API_KEY) return undefined;

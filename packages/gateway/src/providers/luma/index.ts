@@ -8,7 +8,7 @@ export type LumaConfig = Omit<LumaProviderSettings, 'apiKey' | 'fetch'> & {
 
 export const lumaProvider = {
   name: 'luma',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'LUMA_API_KEY' }],
   envVars: ['LUMA_API_KEY', 'LUMA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.LUMA_API_KEY) return undefined;

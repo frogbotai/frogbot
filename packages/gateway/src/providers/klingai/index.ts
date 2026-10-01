@@ -9,15 +9,21 @@ export type KlingAIConfig = Omit<KlingAIProviderSettings, 'accessKey' | 'secretK
 
 export const klingaiProvider = {
   name: 'klingai',
-  requiredKeys: ['accessKey', 'secretKey'],
-  envVars: ['KLINGAI_ACCESS_KEY', 'KLINGAI_SECRET_KEY', 'KLINGAI_BASE_URL'],
+  credentials: [
+    { apiKey: 'KLINGAI_API_KEY' },
+    { accessKey: 'KLINGAI_ACCESS_KEY', secretKey: 'KLINGAI_SECRET_KEY' },
+  ] as const,
+  envVars: ['KLINGAI_API_KEY', 'KLINGAI_ACCESS_KEY', 'KLINGAI_SECRET_KEY', 'KLINGAI_BASE_URL'],
   fromEnv: (env) => {
+    const baseURL = env.KLINGAI_BASE_URL ? { baseURL: env.KLINGAI_BASE_URL } : {};
+
+    if (env.KLINGAI_API_KEY) {
+      return { apiKey: env.KLINGAI_API_KEY, ...baseURL };
+    }
+
     if (!env.KLINGAI_ACCESS_KEY || !env.KLINGAI_SECRET_KEY) return undefined;
-    return {
-      accessKey: env.KLINGAI_ACCESS_KEY,
-      secretKey: env.KLINGAI_SECRET_KEY,
-      ...(env.KLINGAI_BASE_URL && { baseURL: env.KLINGAI_BASE_URL }),
-    };
+
+    return { accessKey: env.KLINGAI_ACCESS_KEY, secretKey: env.KLINGAI_SECRET_KEY, ...baseURL };
   },
   build: (cfg) => createKlingAI(cfg),
 } satisfies ProviderDefinition<'klingai', KlingAIConfig, KlingAIProvider>;

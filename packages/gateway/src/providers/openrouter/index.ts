@@ -14,7 +14,7 @@ export type OpenRouterConfig = Omit<OpenRouterProviderSettings, 'apiKey' | 'fetc
 
 export const openrouterProvider = {
   name: 'openrouter',
-  requiredKeys: ['apiKey'],
+  credentials: [{ apiKey: 'OPENROUTER_API_KEY' }],
   envVars: ['OPENROUTER_API_KEY', 'OPENROUTER_BASE_URL'],
   fromEnv: (env) => {
     if (!env.OPENROUTER_API_KEY) return undefined;
