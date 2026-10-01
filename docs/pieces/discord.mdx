@@ -32,14 +32,19 @@ export const support: AgentConfig = {
 
 The instance slug defaults to `discord`. Give each instance its own slug when you connect more than one application.
 
-| Option | Purpose |
-| --- | --- |
-| `applicationId`, `publicKey` | Required for channels. Copy both from the application's **General Information** page |
-| `botUsername` | The name the bot answers to in plain-text mentions |
-| `mentionRoleIds` | Roles whose mention also counts as mentioning the bot |
-| `respondToChannelIds` | Channels where the bot replies to every message, without a mention |
-| `respondToGlobalMentions` | Treat `@everyone` and `@here` as a mention |
-| `apiUrl` | Base URL for the piece's Discord API requests, such as a proxy. The bot token is sent there. Defaults to `https://discord.com/api/v10`; replies that attach files always go to Discord |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'discord'` | Instance slug. It names the webhook route, `/api/webhooks/<slug>`. |
+| `auth.botToken` | `string` | Required with `auth` | The bot token. Channels require factory `auth`. |
+| `applicationId` | `string` | — | Required for channels. Copy it from the application's **General Information** page. |
+| `publicKey` | `string` | — | Required for channels. The 64-character hexadecimal public key from **General Information**. FrogBot verifies interactions with it. |
+| `botUsername` | `string` | — | The name the bot answers to in plain-text mentions. |
+| `mentionRoleIds` | `string[]` | `[]` | Roles whose mention also counts as mentioning the bot. |
+| `respondToChannelIds` | `string[]` | `[]` | Channels where the bot replies to every message, without a mention. |
+| `respondToGlobalMentions` | `boolean` | `false` | Treat `@everyone` and `@here` as a mention. |
+| `apiUrl` | `string` | `https://discord.com/api/v10` | Base URL for the piece's Discord API requests, such as a proxy. The bot token is sent there. Replies that attach files always go to Discord. |
+
+Discord has no OAuth recipe, so the factory does not accept `oauth`. See [factory options](/pieces/overview#factory-options) for `slug` and `auth`.
 
 ## Where the bot replies
 

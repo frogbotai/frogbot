@@ -32,3 +32,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ```
 
 The manifest carries renamed chat and message collection slugs. Do not duplicate those slugs in consumer code.
+
+## Provider props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `adapter` | `ChatPlatformAdapter` | Required | How the UI reaches your FrogBot server. See [Adapter options](#adapter-options). Pass a stable object; a new object recreates the client and reloads the manifest. |
+| `children` | `ReactNode` | Required | The components that use the chat context. |
+| `toolRenderers` | `ToolRenderer[]` | `[]` | Custom renderers for tool calls. See [Register tools and artifacts](/chat/ui-registries). |
+| `artifactKinds` | `ArtifactRegistryItem[]` | `[]` | Artifact kinds the chat can render. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
+| `artifactPersistence` | `ArtifactPersistence` | — | `load` and `save` functions for artifacts. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
+
+`ChatProvider` reads `/api/frogbot` and `/api/agents` once per client. Until both load, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`.
+
+## Adapter options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fetch` | `typeof fetch` | Required | Performs every request. Use `cookieFetch()` for same-origin cookies or `bearerFetch(getToken)` for tokens. |
+| `apiBase` | `string` | `'/api'` | Base URL of the FrogBot API. |
+| `headers` | `HeadersInit \| () => HeadersInit \| Promise<HeadersInit>` | — | Headers added to every request. Headers set on an individual request take precedence. |
+| `buildMetadata` | `(message: UIMessage) => Record<string, unknown> \| Promise<Record<string, unknown>>` | — | Returns metadata to attach to each message the user sends or edits. |
+| `executeClientTool` | `(name: string, input: unknown) => unknown` | — | Runs a client tool call in the browser as it arrives and submits its return value as the output. Without it, client tools wait for a [tool renderer](/chat/ui-registries#answer-client-tools) to answer. |

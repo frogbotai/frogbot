@@ -46,6 +46,24 @@ Pieces expose actions directly. Pass only the actions your agent needs in `tools
 
 Tool slugs combine the instance slug and action name, such as `google-sheets_getRows`, so tools from different pieces do not collide. See [Google actions](/pieces/index#google-actions) for the action inventory and key input details.
 
+## Factory options
+
+Every piece factory accepts these options. Each piece page lists the full set for its factory, including the piece's own options.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | The piece slug, such as `google-sheets` | Instance slug. It prefixes tool slugs and names webhook routes. Must be URL-safe. Give each instance of the same piece its own slug. |
+| `auth` | The piece's auth input | — | Developer credential, validated against the piece's auth schema when the factory runs. Used when the caller has no [connection](/connections/overview) for the piece. Only pieces with an auth schema accept it. |
+| `oauth` | `OAuthApp` | — | Your OAuth app. Only pieces with an OAuth recipe accept it. It enables `oauth: true` connection entries and is exposed as `instance.oauth` for reuse. |
+
+`OAuthApp` takes:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `clientId` | `string` | Required | OAuth client ID. Must be non-empty. |
+| `clientSecret` | `string` | Required | OAuth client secret. Must be non-empty. |
+| `scopes` | `string[]` | The piece's default scopes | Scopes to request instead of the piece's defaults. |
+
 ## Keep tool sets focused
 
 Configure only the tools an agent needs. About 20 to 40 tools per agent is a practical ceiling for reliable selection by the model. Prefer explicit action subsets when combining several pieces.

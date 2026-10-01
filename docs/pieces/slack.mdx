@@ -29,6 +29,17 @@ export const support: AgentConfig = {
 
 The instance slug defaults to `slack`. Give each instance its own slug when you connect more than one workspace.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'slack'` | Instance slug. It names the webhook route, `/api/webhooks/<slug>`. |
+| `auth.botToken` | `string` | Required with `auth` | The bot token. Channels require factory `auth`. |
+| `auth.userToken` | `string` | — | A user token, for actions that act as a user. Those actions fail without it. |
+| `auth.teamId` | `string` | Looked up with `auth.test` | The workspace ID. |
+| `oauth` | `OAuthApp` | — | Your Slack app's OAuth credentials, for [user connections](/connections/overview). An OAuth connection stores the bot token, user token, and workspace ID. |
+| `signingSecret` | `string` | — | Required for channels. The app's signing secret; FrogBot rejects requests, including trigger events, that are not signed with it. |
+
+See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
+
 ## Create the Slack app
 
 Create the app from the bundled manifest, `node_modules/@frogbotai/piece-slack/slack-manifest.yaml`. Replace `{{FROGBOT_URL}}` with your public server URL and `{{SLACK_INSTANCE_SLUG}}` with the instance slug.

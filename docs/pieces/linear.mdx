@@ -29,6 +29,18 @@ export const triage: AgentConfig = {
 
 The instance slug defaults to `linear`. Give each instance its own slug when you connect more than one workspace.
 
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'linear'` | Instance slug. It names the webhook route, `/api/webhooks/<slug>`. |
+| `auth.apiKey` | `string` | Required unless `accessToken` is set | A personal API key. Suits [comments mode](#channel-modes). |
+| `auth.accessToken` | `string` | Required unless `apiKey` is set | An OAuth access token, such as the app user's token from installing your OAuth application. |
+| `oauth` | `OAuthApp` | — | Your Linear OAuth application, for [user connections](/connections/overview). |
+| `webhookSecret` | `string` | — | Required for channels. The webhook signing secret; FrogBot rejects deliveries, including trigger events, that are not signed with it. |
+| `channelMode` | `'agent-sessions' \| 'comments'` | `'agent-sessions'` | Where the agent converses. See [Channel modes](#channel-modes). |
+| `botUsername` | `string` | — | The bot's name in conversations. |
+
+`auth` takes either `apiKey` or `accessToken`. See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
+
 ## Create the Linear app
 
 Create an OAuth application under **Settings > API > Applications** in Linear, and have a workspace admin install it as an app user. The built-in OAuth recipe requests `actor=app`.

@@ -15,9 +15,22 @@ Install the package for your integration and create an instance with its factory
 | Google Sheets | `@frogbotai/piece-google-sheets` | `createGoogleSheets` | OAuth app or `{ accessToken, refreshToken? }`. |
 | Google Drive | `@frogbotai/piece-google-drive` | `createGoogleDrive` | OAuth app or `{ accessToken, refreshToken? }`. |
 | Google Calendar | `@frogbotai/piece-google-calendar` | `createGoogleCalendar` | OAuth app or `{ accessToken, refreshToken? }`. |
-| Gmail | `@frogbotai/piece-gmail` | `createGmail` | OAuth app or token credentials matching its auth schema. |
-| Linear | `@frogbotai/piece-linear` | `createLinear` | `{ apiKey }`. |
+| Gmail | `@frogbotai/piece-gmail` | `createGmail` | OAuth app or `{ accessToken, refreshToken? }`. |
+| Linear | `@frogbotai/piece-linear` | `createLinear` | OAuth app, `{ apiKey }`, or `{ accessToken }`. |
 | Resend | `@frogbotai/piece-resend` | `createResend` | `{ apiKey }`. |
+
+### Google factory options
+
+`createGoogleSheets`, `createGoogleDrive`, `createGoogleCalendar`, and `createGmail` accept the same options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | `'google-sheets'`, `'google-drive'`, `'google-calendar'`, or `'gmail'` | Instance slug. It prefixes tool slugs, such as `google-sheets_appendRow`. |
+| `auth.accessToken` | `string` | Required with `auth` | A Google OAuth access token with the product's scopes. |
+| `auth.refreshToken` | `string` | — | Accepted with the access token. FrogBot refreshes only tokens stored by OAuth [connections](/connections/overview), so keep a factory `accessToken` current yourself. |
+| `oauth` | `OAuthApp` | — | Your Google OAuth app, usually `google.oauth`. Enables `oauth: true` connection entries. |
+
+`createGoogle` accepts `slug` (default `'google'`), `oauth` for [sign-in](/authentication/sign-in), and `auth: { accessToken }`. It has no actions, so its `auth` is not used for API calls. See [factory options](/pieces/overview#factory-options) for the shared options. Linear and Resend options are on the [Linear](/pieces/linear#connect-an-agent) and [Email](/email/overview#configure-resend) pages.
 
 ### Link Linear
 

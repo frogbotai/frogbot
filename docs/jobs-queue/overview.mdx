@@ -28,7 +28,7 @@ Use `workflow` instead of `task` for a registered workflow. Pass `waitUntil: new
 
 - The returned `job.id` remains the generated primary key. Use it for `runByID` and `cancelByID`.
 - Omitting `jobId` preserves ordinary enqueue behavior; multiple jobs can omit it.
-- Completion or cancellation does not itself free the reservation while the record remains. Deleting the record allows reuse, including automatic deletion when `jobs.deleteJobOnComplete` is enabled.
+- Completion or cancellation does not itself free the reservation while the record remains. Deleting the record allows reuse, including automatic deletion while `jobs.deleteJobOnComplete` is enabled, which is the default.
 
 When `jobs.enableConcurrencyControl` is enabled, a task or workflow's `concurrency.supersedes` can delete pending jobs with the same concurrency key before inserting their replacement. That deletion frees any reserved `jobId`; uniqueness does not disable replacement.
 
@@ -65,6 +65,46 @@ An exceptional completion or database-write failure can reject a batch before al
   `--limit 0` as “run no jobs.”
 </Note>
 
+### Method options
+
+Every method that accepts `req` takes a `FrogBotRequest`. `overrideAccess` defaults to `true`; set it to `false` with `req` to run the matching [`jobs.access`](#access-options) rule.
+
+`queue` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `task` | `string` | Required unless `workflow` is set | Slug of a registered task. Can't be combined with `workflow`. |
+| `workflow` | `string` | Required unless `task` is set | Slug of a registered workflow. |
+| `input` | `object` | Required | Input matching the task or workflow `inputSchema`. |
+| `queue` | `string` | The workflow's `queue`, otherwise `'default'` | Queue to add the job to. |
+| `waitUntil` | `Date` | — | The job is not eligible to run before this time. |
+| `jobId` | `string` | — | Reserves a unique ID for the job. See [Reserve a `jobId`](#reserve-a-jobid). |
+| `meta` | `Record<string, unknown>` | — | Extra data stored on the job record. |
+| `overrideAccess` | `boolean` | `true` | Set `false` to run `jobs.access.queue`. |
+| `req` | `FrogBotRequest` | — | Request used for the access check. |
+
+`run` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `queue` | `string` | `'default'` | Queue to claim jobs from. |
+| `allQueues` | `boolean` | `false` | Claim from every queue; `queue` is ignored. |
+| `limit` | `number` | `10` | Maximum jobs to claim in this batch. `0` means unlimited. |
+| `where` | `Where` | — | Extra filter on which jobs are claimed. |
+| `processingOrder` | `Sort` | [`jobs.processingOrder`](#jobs-options) | Sort for this batch, such as `'createdAt'` for oldest first. |
+| `sequential` | `boolean` | `false` | Run the claimed jobs one at a time instead of in parallel. |
+| `silent` | `boolean \| { info?: boolean; error?: boolean }` | `false` | Suppress the job system's info logs, error logs, or both. Your own logging is unaffected. |
+| `overrideAccess` | `boolean` | `true` | Set `false` to run `jobs.access.run`. |
+| `req` | `FrogBotRequest` | — | Request used for the access check and passed to handlers. |
+
+| Method | Options |
+| --- | --- |
+| `runByID` | `id` (required), `overrideAccess`, `req`, and `silent`, as for `run`. |
+| `handleSchedules` | `allQueues` (default `false`), `queue` (default `'default'`), and `req`. Enqueues due jobs for tasks and workflows with a `schedule` in the selected queues. |
+| `cancel` | `where` (required), `queue`, `overrideAccess`, and `req`. `overrideAccess: false` runs `jobs.access.cancel`. |
+| `cancelByID` | `id` (required), `overrideAccess`, and `req`. |
+| `resume` | `token` (required), `data` (required JSON value), and `req`. See [Resume from code](#resume-from-code). |
+
 ## Task callbacks and retries
 
 Task definitions support `onSuccess` and `onFail`. Both callbacks are awaited: `onSuccess` runs after a successful handler, before its success checkpoint is saved; `onFail` runs when a task attempt fails, including attempts that will retry. It is not a final-failure-only callback.
@@ -81,6 +121,12 @@ Use `waitFor` from a `jobs.workflows[].handler` to wait for an approval, an exte
 | ------------------------------------------ | ----------------------------------------------------------- |
 | `waitFor<T>(name, { onWait, expiresIn? })` | `Promise<{ expired: false; data: T } \| { expired: true }>` |
 | `waitFor(name, { until })`                 | `Promise<void>`                                             |
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `onWait` | `({ resumeUrl }) => void \| Promise<void>` | Required unless `until` is set | Called once the wait is saved, with the one-time URL that resumes it. Makes the wait resumable. |
+| `expiresIn` | `number` | `jobs.waitpoints.defaultExpiresIn` | With `onWait`, milliseconds until the wait expires and returns `{ expired: true }`. Must not exceed `jobs.waitpoints.maxExpiresIn`. |
+| `until` | `Date \| string` | Required unless `onWait` is set | Makes a [durable delay](#durable-delays) that continues at this time. Can't be combined with `onWait` or `expiresIn`. |
 
 Choose either `onWait` or `until`; there is no `type` field. Call and await `waitFor` directly in the workflow handler, outside an `inlineTask`. Let its internal suspension signal reach FrogBot's wrapper; do not swallow it in a catch-all error handler.
 
@@ -181,10 +227,10 @@ const jobs = {
 };
 ```
 
-| Setting                            | Default                | Meaning                                           |
-| ---------------------------------- | ---------------------- | ------------------------------------------------- |
-| `jobs.waitpoints.defaultExpiresIn` | `604800000` (7 days)   | Lifetime when a resumable wait omits `expiresIn`. |
-| `jobs.waitpoints.maxExpiresIn`     | `2592000000` (30 days) | Maximum allowed resumable-wait lifetime.          |
+| Option                             | Type     | Default                | Description                                       |
+| ---------------------------------- | -------- | ---------------------- | ------------------------------------------------- |
+| `jobs.waitpoints.defaultExpiresIn` | `number` | `604800000` (7 days)   | Lifetime when a resumable wait omits `expiresIn`. |
+| `jobs.waitpoints.maxExpiresIn`     | `number` | `2592000000` (30 days) | Maximum allowed resumable-wait lifetime.          |
 
 All durations are positive safe-integer milliseconds. The default must not exceed the maximum; per-wait `expiresIn` must not exceed it either and must produce a valid date. The deadline starts when the wait is first created, including time spent in `onWait`.
 
@@ -207,6 +253,107 @@ The sweep releases expired, still-processing, incomplete jobs so workers can cla
 **Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. Workers that only process a custom queue do not run recovery maintenance; lease expiry alone does not release a job. Recovery timing includes lease expiry, the next sweep's scheduling and execution, and a subsequent worker tick; queue backlog can extend it.
 
 Recovery is **at least once**. A crash, database outage, or event-loop stall can lose the lease after an external action has already happened. Ownership checks protect lease mutations, not external effects or stale completion writes. Make external operations idempotent, for example with the destination service's idempotency key.
+
+## Configuration reference
+
+### Jobs options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `tasks` | `TaskConfig[]` | `[]` | Tasks that can be queued or run inside workflows. See [Task options](#task-options). The slug `frogbot-sweep-jobs` is reserved. |
+| `workflows` | `WorkflowConfig[]` | `[]` | Workflows that orchestrate tasks. See [Workflow options](#workflow-options). |
+| `access` | `{ queue?, run?, cancel? }` | Signed-in users | Access rules checked when a call sets `overrideAccess: false`. See [Access options](#access-options). |
+| `autoRun` | `AutorunCronConfig[] \| (() => AutorunCronConfig[] \| Promise<AutorunCronConfig[]>)` | No runners | In-process cron runners that claim queued jobs. They do not queue new jobs, apart from handling schedules. FrogBot appends its own all-queues runner when agents have schedules or piece triggers. Avoid on serverless platforms. See [Autorun options](#autorun-options). |
+| `shouldAutoRun` | `() => boolean \| Promise<boolean>` | Always run | Checked on each autorun tick before jobs are claimed. Return `false` to skip the tick. See [Disable web autorun](/jobs-queue/workers#disable-web-autorun). |
+| `deleteJobOnComplete` | `boolean` | `true` | Delete each job record once it completes successfully. Set `false` to keep completed records. |
+| `enableConcurrencyControl` | `boolean` | `false` | Adds an indexed concurrency key to the jobs collection so tasks and workflows can use `concurrency`. May need a database migration. |
+| `processingOrder` | `Sort \| { default?: Sort; queues: Record<string, Sort> } \| ((args) => Sort \| Promise<Sort>)` | `'createdAt'` (oldest first) | Order jobs are claimed in, globally, per queue, or computed from the `run` arguments. `'-createdAt'` claims newest first. |
+| `addParentToTaskLog` | `boolean` | `false` | Records the parent task in each task log entry, for tracing nested tasks. |
+| `jobsCollectionOverrides` | `({ defaultJobsCollection }) => CollectionConfig` | — | Returns a modified jobs collection. FrogBot still adds its `jobId`, `leaseUntil`, `leaseOwner`, and `waitpoint` fields, replacing any with those names. |
+| `leaseDuration` | `number` | `300000` | Job lease length in milliseconds, from `5` to `2147483647`. See [Leases and crash recovery](#leases-and-crash-recovery). |
+| `waitpoints` | `{ defaultExpiresIn?: number; maxExpiresIn?: number }` | 7 and 30 days | Resumable-wait lifetimes. See [Expiry](#expiry). |
+
+`runHooks` and `depth` are not accepted; see [Task callbacks and retries](#task-callbacks-and-retries).
+
+### Access options
+
+Each rule receives `{ req }` and returns a boolean or a promise of one.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `queue` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked by `queue` with `overrideAccess: false`. |
+| `run` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked by `run` and `runByID` with `overrideAccess: false`, and by the jobs collection's REST `run` endpoint. |
+| `cancel` | `({ req }) => boolean \| Promise<boolean>` | `Boolean(req.user)` | Checked by `cancel` and `cancelByID` with `overrideAccess: false`. |
+
+### Autorun options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `cron` | `string` | `'* * * * *'` | When the runner ticks. Accepts an optional leading seconds field. |
+| `queue` | `string` | `'default'` | Queue to schedule and claim from. |
+| `allQueues` | `boolean` | `false` | Schedule and claim from every queue; `queue` is ignored. |
+| `limit` | `number` | `10` | Maximum jobs claimed per tick. |
+| `disableScheduling` | `boolean` | `false` | Skip enqueueing scheduled jobs on each tick. |
+| `silent` | `boolean \| { info?: boolean; error?: boolean }` | `false` | Suppress the job system's info logs, error logs, or both. |
+
+### Task options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Unique among all tasks and workflows. |
+| `handler` | `(args) => { output } \| { state: 'failed'; errorMessage? } \| Promise<…> \| string` | Required | Runs the task. It receives `input`, `job`, `req`, `inlineTask`, and `tasks`, and returns `{ output }`, or `{ state: 'failed', errorMessage? }` to fail without throwing. A string is a module path, `'path#exportName'`, loaded when the task runs. |
+| `inputSchema` | `Field[]` | — | Fields describing `input`, used for generated types. |
+| `outputSchema` | `Field[]` | — | Fields describing `output`, used for generated types. |
+| `interfaceName` | `string` | `Task` plus the capitalized slug | Name of the generated input and output interface. |
+| `label` | `string` | — | Human-friendly name for the task or workflow. |
+| `retries` | `number \| RetryConfig` | No retries, unless a workflow sets them | Retries after a failure. See [Retry options](#retry-options). |
+| `concurrency` | `ConcurrencyConfig` | — | Keeps related jobs from running at once. Requires `jobs.enableConcurrencyControl`. See [Concurrency options](#concurrency-options). |
+| `schedule` | `ScheduleConfig[]` | — | Queues the task on a cron schedule. See [Schedule options](#schedule-options). |
+| `onSuccess` | `({ input, job, req, taskStatus }) => void \| Promise<void>` | — | Awaited after a successful handler, before its checkpoint is saved. |
+| `onFail` | `({ input, job, req, taskStatus }) => void \| Promise<void>` | — | Awaited after every failed attempt, including attempts that will retry. |
+
+### Workflow options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `slug` | `string` | Required | Unique among all tasks and workflows. |
+| `handler` | `WorkflowHandler \| WorkflowJSON \| string` | Required | A function receiving `job`, `req`, `tasks`, `inlineTask`, and [`waitFor`](#durable-workflow-waits); a string module path, `'path#exportName'`, loaded when the workflow runs; or a JSON array of task steps, which has no `waitFor`. |
+| `inputSchema` | `Field[]` | — | Fields describing `input`, used for generated types. |
+| `interfaceName` | `string` | `Workflow` plus the capitalized slug | Name of the generated input interface. |
+| `label` | `string` | — | Human-friendly name for the task or workflow. |
+| `queue` | `string` | `'default'` | Default queue for jobs of this workflow. An explicit `queue` when queuing takes precedence. |
+| `retries` | `number \| RetryConfig` | Each task's own retries | Maximum retries for the whole workflow, inherited by tasks without their own. `0` fails the workflow on any task failure. |
+| `concurrency` | `ConcurrencyConfig` | — | As for tasks. |
+| `schedule` | `ScheduleConfig[]` | — | As for tasks. |
+
+### Retry options
+
+`retries` takes a number of attempts or an object:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `attempts` | `number` | Inherited from the workflow, otherwise `0` | Number of retries after a failure. |
+| `backoff` | `{ type: 'fixed' \| 'exponential'; delay?: number }` | No delay | Wait before each retry. `delay` is the base in milliseconds; `exponential` doubles it after each retry. The longest task backoff sets when the whole workflow retries. |
+| `shouldRestore` | `boolean \| (args) => boolean \| Promise<boolean>` | `true` | Whether a task that already succeeded restores its saved output on retry instead of running again. A function receives `input`, `job`, `req`, and `taskStatus`. |
+
+### Concurrency options
+
+`concurrency` takes a key function, which makes the key exclusive, or an object:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `key` | `({ input, queue }) => string` | Required | Groups related jobs. Jobs with the same key follow the rules below. |
+| `exclusive` | `boolean` | `true` | Only one job with the key runs at a time; others stay queued until it completes. |
+| `supersedes` | `boolean` | `false` | Queuing a job deletes older pending jobs with the same key. Running jobs are not affected. |
+
+### Schedule options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `cron` | `string` | Required | When to queue the job. Accepts an optional leading seconds field. |
+| `queue` | `string` | Required | Queue the scheduled job is added to. A worker must handle schedules for this queue. |
+| `hooks.beforeSchedule` | `(args) => { shouldSchedule: boolean; input?: object; waitUntil?: Date } \| Promise<…>` | Skips while a job of the same task or workflow is running, scheduled, or retryable in the queue | Decides whether to queue each occurrence and with what input. It receives `defaultBeforeSchedule`, `jobStats`, `queueable`, and `req`. |
+| `hooks.afterSchedule` | `(args) => void \| Promise<void>` | — | Runs after each occurrence with `status` `'success'` and `job`, `'error'` and `error`, or `'skipped'`. It also receives `defaultAfterSchedule`, `jobStats`, `queueable`, and `req`. |
 
 ## Database requirements
 

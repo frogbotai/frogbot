@@ -33,6 +33,34 @@ export function CustomShell() {
 
 `Message`, `MessagePart`, `TextPart`, `ReasoningPart`, `ToolPart`, `FilePart`, `SourcePart`, `DataPart`, `ChatHistory`, `ChatShell`, and `ChatStatus` are also exported from `@frogbotai/ui/chat` for deeper composition.
 
+## Composer props
+
+`Composer` also accepts any `textarea` attribute except `value`, `defaultValue`, and `onSubmit`, which it replaces below. `className` goes on the surrounding form; other attributes go on the `textarea`.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `onSubmit` | `(value: string, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the draft and its uploaded files and pasted texts when the user sends. Enter sends; Shift+Enter adds a line. Nothing is sent while `pending`, `disabled`, or uploading. |
+| `submitContent` | `ReactNode` | Required | Accessible label for the send button. |
+| `stopContent` | `ReactNode` | Required | Accessible label for the stop button. |
+| `value` | `string` | — | Controlled draft text. |
+| `defaultValue` | `string` | `''` | Initial draft text when uncontrolled. |
+| `onValueChange` | `(value: string) => void` | — | Called when the draft changes, including when it is cleared after sending. |
+| `onStop` | `() => void` | — | Called by the stop button, which replaces the send button while `pending`. |
+| `pending` | `boolean` | `false` | A reply is in progress: shows the stop button and blocks sending. |
+| `startSlot` | `ReactNode` | — | Controls at the start of the toolbar. |
+| `endSlot` | `ReactNode` | — | Controls at the end of the toolbar, before the microphone and send button. |
+| `sdk` | `FrogBotSDK` | — | With `assetsSlug`, enables file attachments. |
+| `assetsSlug` | `string` | — | Chat assets collection slug from the manifest. With `sdk`, enables file attachments. |
+
+## Message list props
+
+`MessageList` also accepts any `div` attribute; `className` and the rest go on the scrolling element.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `messages` | `UIMessage[]` | Required | Messages to render, in order. The list scrolls to the newest message while the reader is at the bottom. |
+| `renderMessage` | `(message: UIMessage) => ReactNode` | Each part rendered with `MessagePart` | Replaces how each message renders. |
+
 If custom message parts can appear, pass a `fallback` to `MessagePart`. Unknown standard parts otherwise render a safe unsupported-part fallback.
 
 <Warning>

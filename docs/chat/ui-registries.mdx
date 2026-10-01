@@ -35,25 +35,51 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 Tool kinds without a registration use the generic tool renderer. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
 
+## Tool renderer options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kind` | `string` | Required | Tool name to render, matched exactly against the call's tool name, such as `question`. |
+| `render` | `ComponentType<ToolRendererProps>` | Required | Component that renders the call. |
+
+The component receives:
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `part` | `DynamicToolUIPart \| ToolUIPart` | The tool call part, with its `state`, `input`, and either `output` or `errorText`. |
+| `addToolOutput` | `(output: unknown) => Promise<void>` | Set only while a [client tool](#answer-client-tools) call waits for an answer. Submits the answer. |
+| `dismiss` | `() => Promise<void>` | Set only while a client tool call waits for an answer. Declines the call. |
+| `isReadonly` | `boolean` | `true` in a [read-only conversation](#read-only-conversations). |
+| `channelLabel` | `string` | The channel's name in a read-only conversation, such as `Slack`. |
+
+## Artifact options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kind` | `string` | Required | Artifact kind, matched exactly against `artifact.kind`. A `data-<kind>` stream part is routed to the same registration. |
+| `render` | `ComponentType<ArtifactRendererProps>` | Required | Component that renders the artifact. It receives `artifact` (`{ kind, content, id?, title? }`) and `setArtifact`. |
+| `initialize` | `() => Artifact` | — | Creates the artifact before the first stream part is applied, when none is open. |
+| `onStreamPart` | `({ setArtifact, streamPart }) => void` | — | Applies each matching `data-<kind>` part to the open artifact. |
+| `description` | `string` | — | Accepted but not rendered by the built-in components. |
+| `actions` | `ReactNode[]` | — | Accepted but not rendered by the built-in components. |
+| `toolbar` | `ReactNode[]` | — | Accepted but not rendered by the built-in components. |
+
+`artifactPersistence` on `ChatProvider` takes:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `load` | `(id: string) => Promise<Artifact \| undefined>` | Required | Loads an artifact by ID when an artifact viewer opens it. |
+| `save` | `(artifact: Artifact) => Promise<Artifact>` | Required | Saves the open artifact when the viewer's **Save** button is clicked, then shows the returned artifact. |
+
 ## Answer client tools
 
-A renderer for a [client tool](/chat/questions#build-a-client-tool) receives two extra props while its call is waiting for an answer in the latest assistant message.
-
-| Prop | Purpose |
-| --- | --- |
-| `addToolOutput(output)` | Submit the answer; the chat resubmits once every call in the step has one |
-| `dismiss()` | Decline the call without calling the model again |
+A renderer for a [client tool](/chat/questions#build-a-client-tool) receives `addToolOutput(output)` and `dismiss()` while its call is waiting for an answer in the latest assistant message. `addToolOutput` submits the answer, and the chat resubmits once every call in the step has one. `dismiss` declines the call without calling the model again.
 
 Both props are absent while the reply is streaming and for calls that were already answered, so render the part read-only when they are missing. `QuestionToolRender` is the built-in renderer for the `question` tool. Custom chat surfaces that render `ToolPart` outside `Chat` can supply the same actions through `ToolActionsContext`.
 
 ## Read-only conversations
 
-In a [channel conversation](/chat/questions#channel-conversations), `Chat` is read-only, and every tool renderer receives two more props instead of the answer callbacks.
-
-| Prop | Purpose |
-| --- | --- |
-| `isReadonly` | `true` in a read-only conversation. `addToolOutput` and `dismiss` are never passed, even for a call that is still waiting |
-| `channelLabel` | The channel's name, such as `Slack`, for copy like "Waiting for an answer in Slack" |
+In a [channel conversation](/chat/questions#channel-conversations), `Chat` is read-only, and every tool renderer receives `isReadonly: true` and `channelLabel` instead of the answer callbacks. `addToolOutput` and `dismiss` are never passed, even for a call that is still waiting. Use `channelLabel`, such as `Slack`, for copy like "Waiting for an answer in Slack".
 
 ```tsx
 import type { ToolRendererProps } from '@frogbotai/ui/chat/tools'
