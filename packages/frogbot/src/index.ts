@@ -133,6 +133,7 @@ export type {
   RerankOpts,
   RouterConfig,
   StreamTextOpts,
+  TranscribeAudio,
   TranscribeOpts,
 } from './ai/types.js';
 export type {

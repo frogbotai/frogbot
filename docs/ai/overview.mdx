@@ -326,8 +326,8 @@ Every options type includes these shared options.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `audio` | `Blob \| ArrayBuffer \| ReadableStream` | Required | Audio to transcribe. Pass an `ArrayBuffer`: a `Blob` or `ReadableStream` is accepted by the type but currently fails with `InvalidDataContentError`, so read it first, for example with `await blob.arrayBuffer()`. The media type is detected from the bytes and falls back to `audio/wav`. |
-| `language` | `string` | — | Accepted but not sent to the provider. Pass a language hint through `providerOptions` instead. |
+| `audio` | `Blob \| ReadableStream<Uint8Array> \| ArrayBuffer \| Uint8Array \| string \| URL` | Required | Audio to transcribe. A `File`, `Buffer`, or base64 string works too, and a `URL` is downloaded first. FrogBot reads a `Blob` or stream fully before calling the provider. The media type is detected from the bytes and falls back to `audio/wav`. |
+| `language` | `string` | — | Language spoken in the audio, such as `'en'` or `'fr'`. Sent in the option the model's provider reads: `languageCode` for AssemblyAI and ElevenLabs, `languageCodes` for Google and Vertex, and `language` for the rest. A value set for that provider in `providerOptions` wins. |
 | `providerOptions` | `Record<string, unknown>` | — | Provider-specific options keyed by provider name. |
 | `abortSignal` | `AbortSignal` | — | Cancels the call. |
 

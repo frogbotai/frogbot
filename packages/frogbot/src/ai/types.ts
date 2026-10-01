@@ -5,6 +5,7 @@
 
 import type { ModelReasoningOption } from '@frogbotai/gateway';
 import type {
+  DataContent,
   Experimental_EvaluationQuestion,
   Experimental_EvaluationResult,
   ModelMessage,
@@ -301,8 +302,10 @@ export type GenerateSpeechOpts = BaseAIOpts & {
   abortSignal?: AbortSignal;
 };
 
+export type TranscribeAudio = DataContent | URL | Blob | ReadableStream<Uint8Array>;
+
 export type TranscribeOpts = BaseAIOpts & {
-  audio: Blob | ArrayBuffer | ReadableStream;
+  audio: TranscribeAudio;
   language?: string;
   providerOptions?: Record<string, unknown>;
   abortSignal?: AbortSignal;
