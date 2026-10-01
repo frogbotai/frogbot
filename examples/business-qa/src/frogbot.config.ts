@@ -5,7 +5,9 @@ import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { qaAnalyst, releaseManager } from './agents';
-import { Media, Releases, Users } from './collections';
+import { Media } from './collections/Media';
+import { Releases } from './collections/Releases';
+import { Users } from './collections/Users';
 import { googleConnections, linear, pieces } from './pieces';
 
 const config: FrogBotConfig = {

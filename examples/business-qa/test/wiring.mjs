@@ -31,7 +31,7 @@ const network = mock.method(globalThis, 'fetch', () => {
 });
 const { default: pendingConfig } = await import('../src/frogbot.config.ts');
 const { qaAnalyst, releaseManager } = await import('../src/agents/index.ts');
-const { Users } = await import('../src/collections/users.ts');
+const { Users } = await import('../src/collections/Users.ts');
 const { google, googleSheets, googleDrive, googleCalendar, linear } =
   await import('../src/pieces.ts');
 const { getFrogBot } = await import('frogbot');

@@ -6,7 +6,7 @@ import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
 import { assistant } from './agents/assistant';
-import { Users } from './collections';
+import { Users } from './collections/Users';
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',

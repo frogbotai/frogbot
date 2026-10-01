@@ -4,7 +4,7 @@ import { buildConfig } from 'frogbot';
 
 import { toolDemo } from './agents/toolDemo';
 import { braveSearch, braveSearchAgent, exa, exaSearchAgent } from './agents/webSearch';
-import { Users } from './collections/users';
+import { Users } from './collections/Users';
 
 const model = process.env.E2E_ZEN_MODEL ?? 'zen/deepseek-v4.1-flash';
 

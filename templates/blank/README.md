@@ -4,7 +4,7 @@ The minimum FrogBot setup: a `users` auth collection, database storage, two agen
 (`general` and `assistant`), and the admin panel served by Next.js. No Docker is
 required.
 
-The `users` file is an example you can customize, not a framework requirement. Configuring the agent automatically adds `chats` and `messages`, where your chats are saved.
+The `src/collections/Users.ts` file is an example you can customize, not a framework requirement. Configuring the agent automatically adds `chats` and `messages`, where your chats are saved.
 
 ## Quick Start
 

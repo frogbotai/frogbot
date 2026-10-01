@@ -1,8 +1,8 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { buildConfig } from 'frogbot';
 
-import { Pages } from './collections/pages';
-import { Users } from './collections/users';
+import { Pages } from './collections/Pages';
+import { Users } from './collections/Users';
 import { pagesSlug, serverURL } from './shared';
 
 export default buildConfig({

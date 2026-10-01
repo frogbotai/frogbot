@@ -149,14 +149,15 @@ export default buildConfig({
 
 ## Assemble an app
 
-Keep collections and agents in separate modules, then register their exported arrays.
+Keep collections and agents in separate modules and import them into the config.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite'
 import { buildConfig } from 'frogbot'
 
 import { agents } from './src/agents'
-import { Posts, Users } from './src/collections'
+import { Posts } from './src/collections/Posts'
+import { Users } from './src/collections/Users'
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,

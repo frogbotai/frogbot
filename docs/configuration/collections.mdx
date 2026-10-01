@@ -11,7 +11,11 @@ To define a Collection Config, use the `collections` property in your [FrogBot C
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { Users, Projects, Files, Chats, Messages } from './collections'
+import { Users } from './collections/Users'
+import { Projects } from './collections/Projects'
+import { Files } from './collections/Files'
+import { Chats } from './collections/Chats'
+import { Messages } from './collections/Messages'
 
 export default buildConfig({
   collections: [Users, Projects, Files, Chats, Messages],
@@ -21,6 +25,33 @@ export default buildConfig({
 <Tip>
   FrogBot does not support Globals. Model singleton content as a Collection and enforce the single-document constraint in your application.
 </Tip>
+
+## Organize collection files
+
+Give each collection its own TitleCase file with a named export, such as `export const Posts` in `src/collections/Posts.ts`, and import it into your config by its own path. Adding a collection means creating its file and adding it to `collections`; there is no `index.ts` to update.
+
+When a collection gains hooks, access rules, or endpoints, turn its file into a folder with the same name:
+
+```text
+src/
+├── collections/
+│   ├── Posts.ts
+│   └── Users/
+│       ├── access/
+│       │   └── isAdminOrSelf.ts
+│       ├── endpoints/
+│       │   └── exportUsers.ts
+│       ├── hooks/
+│       │   └── setLastLogin.ts
+│       └── index.ts
+└── frogbot.config.ts
+```
+
+Move `Users.ts` to `Users/index.ts`, then put its helpers in subfolders beside it. `import { Users } from './collections/Users'` resolves to either form, so the config doesn't change.
+
+Move the file rather than copying it. If `Users.ts` and `Users/index.ts` both exist, `./collections/Users` resolves to `Users.ts` and the folder is ignored.
+
+Match the casing of each import to its file name. `./collections/users` finds `Users.ts` on macOS but fails with "Cannot find module" on Linux, for example in Docker or a deployment.
 
 ## FrogBot collection model
 
