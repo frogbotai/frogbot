@@ -1,6 +1,6 @@
 export type SignalLevel = 'off' | 'required' | 'recommended' | 'full';
 
-export type SignalNamespace = 'gen_ai' | 'http' | 'frogbot';
+export type SignalNamespace = 'gen_ai' | 'frogbot';
 
 export type SignalLevels = Partial<Record<SignalNamespace, SignalLevel>>;
 
@@ -18,7 +18,6 @@ const order: Record<SignalLevel, number> = {
 
 export const defaultSignalLevels: Required<SignalLevels> = {
   gen_ai: 'recommended',
-  http: 'recommended',
   frogbot: 'recommended',
 };
 
@@ -35,15 +34,18 @@ export function resolveSignalLevels(
       return defaultSignalLevels;
     }
     if (typeof input === 'string') {
-      return { gen_ai: input, http: input, frogbot: input };
+      return { gen_ai: input, frogbot: input };
     }
-    return { ...defaultSignalLevels, ...input };
+    return {
+      gen_ai: input.gen_ai ?? defaultSignalLevels.gen_ai,
+      frogbot: input.frogbot ?? defaultSignalLevels.frogbot,
+    };
   }
   if (!input) {
     return base;
   }
   const override: SignalLevels =
-    typeof input === 'string' ? { gen_ai: input, http: input, frogbot: input } : input;
+    typeof input === 'string' ? { gen_ai: input, frogbot: input } : input;
   return Object.fromEntries(
     (Object.keys(base) as SignalNamespace[]).map((ns) => {
       const overrideLevel = override[ns];

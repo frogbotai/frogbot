@@ -57,6 +57,31 @@ describe('loadLayeredConfig', () => {
     ]);
   });
 
+  it('keeps basePath from a JSON file and catalog and tracer from a JavaScript file', async () => {
+    const dir = scratch();
+    const project = join(dir, 'project');
+    mkdirSync(project);
+    writeFileSync(
+      join(project, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'x' } }, basePath: '/api' }),
+    );
+    const explicit = join(dir, 'gateway.config.mjs');
+    writeFileSync(
+      explicit,
+      `export default {
+        providers: {},
+        catalog: new Map([['openai/gpt-4o', { id: 'openai/gpt-4o' }]]),
+        tracer: { name: 'file-tracer' },
+      };\n`,
+    );
+
+    const result = await loadLayeredConfig({ cwd: project, configPath: explicit, env: {} });
+
+    expect(result.config.basePath).toBe('/api');
+    expect([...(result.config.catalog?.keys() ?? [])]).toEqual(['openai/gpt-4o']);
+    expect(result.config.tracer).toEqual({ name: 'file-tracer' });
+  });
+
   it('lets explicit config win over project config on a conflicting key (P2-D6e)', async () => {
     const dir = scratch();
     const project = join(dir, 'project');

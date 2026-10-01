@@ -12,7 +12,12 @@ import { extname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ConfigError } from '../errors/gatewayError.js';
-import { PROVIDER_NAMES, type ProviderConfigMap } from '../providers/registry.js';
+import { isLoggerInstance } from '../observability/logger.js';
+import {
+  isProviderInstance,
+  PROVIDER_NAMES,
+  type ProviderConfigMap,
+} from '../providers/registry.js';
 import { type GatewayConfig, parseGatewayConfig } from './schema.js';
 import { interpolateConfigText } from './variable.js';
 
@@ -105,29 +110,53 @@ function pickExport(mod: Record<string, unknown>, abs: string): unknown {
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 export function mergeConfigs(base: GatewayConfig, overlay: GatewayConfig): GatewayConfig {
-  const providers: ProviderConfigMap = { ...base.providers };
-  for (const [name, cfg] of Object.entries(overlay.providers ?? {})) {
-    if (cfg == null || UNSAFE_KEYS.has(name)) {
-      continue;
+  const merged: Record<string, unknown> = { ...base };
+
+  for (const [key, value] of Object.entries(overlay)) {
+    if (value !== undefined && !UNSAFE_KEYS.has(key)) {
+      merged[key] = value;
     }
-    const existing = (providers as Record<string, unknown>)[name];
-    (providers as Record<string, unknown>)[name] =
-      existing && typeof existing === 'object' && typeof cfg === 'object'
-        ? { ...existing, ...(cfg as object) }
-        : cfg;
   }
 
   return {
-    providers,
-    enabled_providers: overlay.enabled_providers ?? base.enabled_providers,
-    disabled_providers: overlay.disabled_providers ?? base.disabled_providers,
-    maxBodyBytes: overlay.maxBodyBytes ?? base.maxBodyBytes,
-    upstreamTimeoutMs: overlay.upstreamTimeoutMs ?? base.upstreamTimeoutMs,
-    hooks: overlay.hooks ?? base.hooks,
-    logger: shallowMerge(base.logger, overlay.logger),
+    ...(merged as GatewayConfig),
+    providers: mergeProviders(base.providers, overlay.providers),
+    logger: mergeLogger(base.logger, overlay.logger),
     tracing: shallowMerge(base.tracing, overlay.tracing),
-    signalLevel: overlay.signalLevel ?? base.signalLevel,
   };
+}
+
+function mergeLogger(
+  base: GatewayConfig['logger'],
+  overlay: GatewayConfig['logger'],
+): GatewayConfig['logger'] {
+  if (isLoggerInstance(base) || isLoggerInstance(overlay)) return overlay ?? base;
+
+  return shallowMerge(base, overlay);
+}
+
+function mergeProviders(
+  base: ProviderConfigMap | undefined,
+  overlay: ProviderConfigMap | undefined,
+): ProviderConfigMap {
+  const providers: ProviderConfigMap = { ...base };
+
+  for (const [name, cfg] of Object.entries(overlay ?? {})) {
+    if (cfg == null || UNSAFE_KEYS.has(name)) {
+      continue;
+    }
+
+    const existing = (providers as Record<string, unknown>)[name];
+    const mergeable = isProviderConfig(existing) && isProviderConfig(cfg);
+
+    (providers as Record<string, unknown>)[name] = mergeable ? { ...existing, ...cfg } : cfg;
+  }
+
+  return providers;
+}
+
+function isProviderConfig(value: unknown): value is Record<string, unknown> {
+  return isPlainObject(value) && !isProviderInstance(value);
 }
 
 // One-level merge: overlay's own keys replace base's. Not recursive — nested
@@ -140,7 +169,11 @@ function shallowMerge<T>(base: T | undefined, overlay: T | undefined): T | undef
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return isRecord(value);
+  if (!isRecord(value)) return false;
+
+  const proto = Object.getPrototypeOf(value);
+
+  return proto === Object.prototype || proto === null;
 }
 
 /** Non-null, non-array object. Shared shape guard for pre-validation layer checks. */

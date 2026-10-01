@@ -2,6 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { trace } from '@opentelemetry/api';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +12,7 @@ import {
   mergeConfigs,
 } from '../../../../packages/gateway/src/config/parse.js';
 import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
+import { createLogger } from '../../../../packages/gateway/src/observability/logger.js';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'frogbotai-gateway-config-'));
 
@@ -57,6 +59,43 @@ describe('mergeConfigs', () => {
     );
     expect(merged.logger).toEqual({ level: 'debug' });
     expect(merged.tracing).toEqual({ endpoint: 'http://base' });
+  });
+
+  it('keeps basePath, catalog, and tracer from either layer', () => {
+    const catalog = new Map();
+    const tracer = trace.getTracer('test');
+
+    const fromOverlay = mergeConfigs(
+      { providers: {} },
+      { providers: {}, basePath: '/api', catalog, tracer },
+    );
+    const fromBase = mergeConfigs(
+      { providers: {}, basePath: '/api', catalog, tracer },
+      { providers: {} },
+    );
+
+    expect(fromOverlay).toMatchObject({ basePath: '/api', catalog, tracer });
+    expect(fromBase).toMatchObject({ basePath: '/api', catalog, tracer });
+  });
+
+  it('lets an overlay basePath of an empty string replace the base', () => {
+    const merged = mergeConfigs(
+      { providers: {}, basePath: '/api' },
+      { providers: {}, basePath: '' },
+    );
+
+    expect(merged.basePath).toBe('');
+  });
+
+  it('replaces a logger instance instead of merging it with logger options', () => {
+    const logger = createLogger({ level: 'warn' });
+
+    const merged = mergeConfigs(
+      { providers: {}, logger: { level: 'debug' } },
+      { providers: {}, logger },
+    );
+
+    expect(merged.logger).toBe(logger);
   });
 });
 

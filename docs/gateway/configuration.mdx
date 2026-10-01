@@ -136,7 +136,9 @@ Supported extensions are `.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs`, and `.jso
 
 JSON files and `GATEWAY_CONFIG_JSON` can reference `{env:NAME}` to insert an environment variable, or `{file:path}` to insert a file's trimmed contents. A file path resolves from the config file's directory (or the current directory for `GATEWAY_CONFIG_JSON`), may start with `~/`, and must stay inside that directory. A missing variable or file stops startup.
 
-When layers merge, each `providers` entry merges key by key, so a later layer can add `models` to a provider an earlier layer configured. `logger` and `tracing` merge one level deep. Other keys are replaced by the later layer. The CLI drops `basePath`, `catalog`, and `tracer` while merging, so those keys only take effect when you pass a config to `createGateway` yourself.
+When layers merge, each `providers` entry merges key by key, so a later layer can add `models` to a provider an earlier layer configured. `tracing` and `logger` options merge one level deep; a logger instance replaces the earlier `logger`. Other keys are replaced by the later layer.
+
+Every [config option](#config-options) works in a config file. JSON files and `GATEWAY_CONFIG_JSON` hold only JSON values, so options that take a function, a `Map`, or an object instance need a `.ts` or `.js` file: `hooks`, `catalog`, `tracer`, a logger instance, [pre-built provider instances](/gateway/providers#pre-built-instances), and function provider options such as `azure.tokenProvider`. A JSON `catalog` fails validation on startup.
 
 ---
 
@@ -173,6 +175,6 @@ export default defineConfig({
 | `upstreamTimeoutMs` | `number` | No deadline | Deadline in milliseconds for each upstream provider call. When it passes, the request fails with `504 gateway_timeout`. Set one in production. |
 | `hooks` | `Hooks` | — | Lifecycle hooks, one array per phase. See [Hooks](/gateway/hooks#phases). |
 | `logger` | `GatewayLogger \| { level?: 'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' \| 'silent' }` | Built-in JSON console logger at `LOG_LEVEL`, or `info` | A logger instance (any object with `trace`, `debug`, `info`, `warn`, `error`, and `fatal` methods, such as a pino logger), or the level for the built-in logger. See [Logging](/gateway/observability#logging). |
-| `tracing` | `{ endpoint?: string; signalLevel?: SignalLevel \| SignalLevels }` | — | `endpoint` is the OTLP traces URL the CLI exports to; when you embed the gateway, call [`setupTracing`](/gateway/observability#bootstrap-tracing-yourself) instead. `signalLevel` takes precedence over the top-level `signalLevel`. |
+| `tracing` | `{ endpoint?: string; signalLevel?: SignalLevel \| SignalLevels }` | — | `endpoint` is the OTLP traces URL. Only the CLI reads it, to start exporting; `createGateway` ignores it, so when you embed the gateway call [`setupTracing`](/gateway/observability#bootstrap-tracing-yourself) instead. `signalLevel` takes precedence over the top-level `signalLevel`. |
 | `tracer` | `Tracer` (OpenTelemetry) | The global tracer | Tracer that records the gateway's spans. Without it, spans go to the globally registered tracer provider, or nowhere when none is registered. |
-| `signalLevel` | `'off' \| 'required' \| 'recommended' \| 'full'`, or `{ gen_ai?, http?, frogbot? }` with those values | `'recommended'` for every namespace | How much telemetry to record. A single value applies to every namespace. See [Signal levels](/gateway/observability#signal-levels). |
+| `signalLevel` | `'off' \| 'required' \| 'recommended' \| 'full'`, or `{ gen_ai?, frogbot? }` with those values | `'recommended'` for every namespace | How much telemetry to record. A single value applies to every namespace. See [Signal levels](/gateway/observability#signal-levels). |
