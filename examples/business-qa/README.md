@@ -200,15 +200,14 @@ Chats are owner-scoped. SSE responses expose the persisted chat ID in the `X-Fro
 
 ## Scripts
 
-| Command                   | Purpose                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm dev`                | Start local development                                                      |
-| `pnpm build`              | Build the Next.js application                                                |
-| `pnpm start`              | Serve the production build                                                   |
-| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts`                                            |
-| `pnpm generate:importmap` | Regenerate the tracked admin import map                                      |
-| `pnpm test:wiring`        | Verify native mounts, login, and authorization routes with dummy credentials |
-| `pnpm typecheck`          | Type-check the example                                                       |
+| Command                   | Purpose                                 |
+| ------------------------- | --------------------------------------- |
+| `pnpm dev`                | Start local development                 |
+| `pnpm build`              | Build the Next.js application           |
+| `pnpm start`              | Serve the production build              |
+| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts`       |
+| `pnpm generate:importmap` | Regenerate the tracked admin import map |
+| `pnpm typecheck`          | Type-check the example                  |
 
 ## Security and production
 
