@@ -53,7 +53,7 @@ export const AI_PROVIDERS: Record<
       "  ai: {\n    defaultModel: 'bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0',\n    providers: { bedrock: { region: process.env.AWS_REGION || 'us-east-1' } },\n  },\n",
   },
   zen: {
-    label: 'opencode Zen',
+    label: 'OpenCode Zen',
     hint: 'needs a paid Zen API key',
     keyEnv: 'OPENCODE_API_KEY',
     keyRequiredToStart: false,

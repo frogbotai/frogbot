@@ -24,7 +24,7 @@ For a non-interactive setup with the defaults, use `--yes`:
 npx create-frogbot-app@latest my-agent-platform --yes
 ```
 
-The defaults create a Next.js app using SQLite and OpenAI, which needs an `OPENAI_API_KEY`. Choose another provider with `--ai anthropic`, `--ai google`, `--ai bedrock`, or `--ai zen`, or use `--ai none` for an app without agents. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`.
+The defaults create a Next.js app using SQLite with no AI provider, agents, or chat. Choose a provider with `--ai zen`, `--ai openai`, `--ai anthropic`, `--ai google`, or `--ai bedrock`. Pass the key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment is not copied into the app; the scaffolder tells you it found the key and did not copy it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`.
 
 ## Command options
 
@@ -39,7 +39,7 @@ Any setup choice you pass as a flag is not asked. The command also skips every p
 | `[project-name]`, `-n`, `--name` | name | Prompted; required without prompts | Name of the project and of the directory created for it in the current directory. Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number. Pass it once, either positionally or with `--name`. The directory must not exist yet. |
 | `-t`, `--template` | `blank` | `blank` | Starter template. `blank` is the only template, so the setup doesn't ask for one. |
 | `-d`, `--db` | `sqlite`, `postgres`, or `mongodb` | `sqlite` | Database adapter and connection string written to the app. See [Database](/database/overview). |
-| `--ai` | `openai`, `anthropic`, `google`, `bedrock`, `zen`, or `none` | `openai` | AI provider configured in `src/frogbot.config.ts`. `none` leaves out the AI provider, the default agent, and its tools. |
+| `--ai` | `zen`, `openai`, `anthropic`, `google`, `bedrock`, or `none` | `none` | AI provider configured in `src/frogbot.config.ts`. `none` leaves out the AI provider, the default agent, and its tools. |
 | `--api-key` | string | Prompted | The provider's API key, written to `.env`. Without it, prompts offer a matching key from your environment (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `AWS_BEARER_TOKEN_BEDROCK`, or `OPENCODE_API_KEY`), then ask for one. Ignored with `--ai none`. |
 | `--agents` | comma-separated `claude`, `codex`, `cursor`, `opencode`, `copilot`, `gemini` | Prompted; none without prompts | Coding agents that receive the FrogBot skill. Spaces around each name are ignored; quote the list if it contains spaces, as in `--agents "claude, codex"`. See [Coding agents](/skills/coding-agents). |
 | `--no-agents` | flag | off | Installs no coding-agent skill and skips the agents prompt. Overrides `--agents`. |

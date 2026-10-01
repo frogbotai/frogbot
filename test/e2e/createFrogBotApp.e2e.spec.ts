@@ -486,7 +486,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app CLI', () => {
     ],
     [
       ['invalid-ai', '--yes', '--no-git', '--no-install', '--ai', 'local'],
-      'Valid values: openai, anthropic, google, bedrock, zen, none',
+      'Valid values: zen, openai, anthropic, google, bedrock, none',
     ],
     [
       ['invalid-agent', '--yes', '--no-git', '--no-install', '--agents', 'unknown'],

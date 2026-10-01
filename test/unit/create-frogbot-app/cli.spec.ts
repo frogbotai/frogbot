@@ -51,6 +51,30 @@ function git(directory: string, args: string[]): string {
   }).trim();
 }
 
+function readScaffoldFiles(directory: string): Record<string, string> {
+  const files = fs.readdirSync(directory, { recursive: true, withFileTypes: true });
+
+  return Object.fromEntries(
+    files
+      .filter((file) => file.isFile())
+      .map((file) => {
+        const filePath = path.join(file.parentPath, file.name);
+        const relativePath = path.relative(directory, filePath);
+        const content = fs.readFileSync(filePath, 'utf8');
+
+        if (relativePath === 'package.json') {
+          const pkg = JSON.parse(content) as Record<string, unknown>;
+
+          delete pkg.name;
+
+          return [relativePath, JSON.stringify(pkg)];
+        }
+
+        return [relativePath, content.replace(/^FROGBOT_SECRET=.*$/m, 'FROGBOT_SECRET=')];
+      }),
+  );
+}
+
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-cli-'));
   fakeBin = path.join(root, 'bin');
@@ -148,7 +172,7 @@ describe.skipIf(process.platform === 'win32')('create-frogbot-app command', () =
   });
 
   it('reports an environment key without copying it to .env', () => {
-    const result = createApp(['my-app', '--yes', '--no-install', '--no-git'], {
+    const result = createApp(['my-app', '--yes', '--ai', 'openai', '--no-install', '--no-git'], {
       OPENAI_API_KEY: 'sk-env',
     });
 
@@ -163,7 +187,7 @@ describe.skipIf(process.platform === 'win32')('create-frogbot-app command', () =
 
   it('writes --api-key to .env even when the environment has a key', () => {
     const result = createApp(
-      ['my-app', '--yes', '--no-install', '--no-git', '--api-key', 'sk-flag'],
+      ['my-app', '--yes', '--ai', 'openai', '--no-install', '--no-git', '--api-key', 'sk-flag'],
       { OPENAI_API_KEY: 'sk-env' },
     );
 
@@ -172,5 +196,63 @@ describe.skipIf(process.platform === 'win32')('create-frogbot-app command', () =
     expect(fs.readFileSync(path.join(root, 'my-app', '.env'), 'utf8')).toContain(
       'OPENAI_API_KEY=sk-flag\n',
     );
+  });
+
+  it('--yes --ai zen writes an empty Zen key and warns before chatting', () => {
+    const result = createApp(['my-app', '--yes', '--ai', 'zen', '--no-install', '--no-git']);
+
+    const app = path.join(root, 'my-app');
+    const env = fs.readFileSync(path.join(app, '.env'), 'utf8');
+    const config = fs.readFileSync(path.join(app, 'src', 'frogbot.config.ts'), 'utf8');
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(env).toContain('OPENCODE_API_KEY=\n');
+    expect(config).toContain("defaultModel: 'zen/deepseek-v4.1-flash'");
+    expect(config).toContain("type: 'openai-compatible'");
+    expect(config).toContain("baseUrl: 'https://opencode.ai/zen/v1'");
+    expect(config).toContain('apiKey: process.env.OPENCODE_API_KEY');
+    expect(config).not.toContain("apiKey: 'public'");
+    expect(result.stdout).toContain('Set OPENCODE_API_KEY in my-app/.env before chatting.');
+  });
+
+  it('--yes without --ai creates an app with no AI provider and ignores --api-key', () => {
+    const result = createApp(
+      ['my-app', '--yes', '--no-install', '--no-git', '--api-key', 'sk-flag'],
+      { OPENAI_API_KEY: 'sk-env' },
+    );
+
+    const app = path.join(root, 'my-app');
+    const env = fs.readFileSync(path.join(app, '.env'), 'utf8');
+    const config = fs.readFileSync(path.join(app, 'src', 'frogbot.config.ts'), 'utf8');
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).not.toContain('Found OPENAI_API_KEY');
+    expect(result.stdout).toContain('https://docs.frogbot.ai/ai/overview');
+    expect(env).not.toContain('OPENAI_API_KEY');
+    expect(env).not.toContain('sk-flag');
+    expect(config).not.toContain('ai:');
+  });
+
+  it('a run without a terminal and without --ai creates an app with no AI provider', () => {
+    const result = createApp(['my-app', '--no-install', '--no-git']);
+
+    const config = fs.readFileSync(path.join(root, 'my-app', 'src', 'frogbot.config.ts'), 'utf8');
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(config).not.toContain('ai:');
+  });
+
+  it('--yes without --ai creates the same files as --ai none', () => {
+    const defaultResult = createApp(['default-app', '--yes', '--no-install', '--no-git']);
+    const noneResult = createApp(['none-app', '--yes', '--ai', 'none', '--no-install', '--no-git']);
+
+    expect(defaultResult.status, defaultResult.stderr).toBe(0);
+    expect(noneResult.status, noneResult.stderr).toBe(0);
+
+    const defaultFiles = readScaffoldFiles(path.join(root, 'default-app'));
+    const noneFiles = readScaffoldFiles(path.join(root, 'none-app'));
+
+    expect(Object.keys(defaultFiles).sort()).toEqual(Object.keys(noneFiles).sort());
+    expect(defaultFiles).toEqual(noneFiles);
   });
 });

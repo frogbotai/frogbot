@@ -63,7 +63,7 @@ function readDatabaseDependencies(): DatabaseDependencies {
 export function scaffold(options: ScaffoldOptions): void {
   const packageManager = options.packageManager ?? detectPackageManager();
   const database = options.database ?? 'sqlite';
-  const ai = options.ai ?? 'openai';
+  const ai = options.ai ?? 'none';
 
   if (fs.existsSync(options.dest)) {
     throw new CliError(`Directory "${options.projectName}" already exists.`);
