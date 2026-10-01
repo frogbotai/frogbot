@@ -196,7 +196,6 @@ export type AITelemetryConfig = {
 export type AIConfig = {
   providers: ProviderConfig;
   routers?: Record<string, RouterConfig>;
-  defaultRouter?: string;
   defaultModel?: ModelId;
   smallModel?: ModelId;
   hooks?: AIHooks;
@@ -216,7 +215,6 @@ export type SanitizedAITelemetryConfig = {
 export type SanitizedAIConfig = {
   providers: ProviderConfig;
   routers: Record<string, RouterConfig>;
-  defaultRouter?: string;
   defaultModel?: ModelId;
   smallModel?: ModelId;
   hooks: SanitizedAIHooks;

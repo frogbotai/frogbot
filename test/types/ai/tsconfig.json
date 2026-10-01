@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["evaluate.test-d.ts", "transcribe.test-d.ts"]
+  "include": ["config.test-d.ts", "evaluate.test-d.ts", "transcribe.test-d.ts"]
 }

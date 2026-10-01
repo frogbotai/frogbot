@@ -104,7 +104,6 @@ A provider's `models` list decides what the app can use, while an [agent's `mode
 | --- | --- | --- | --- |
 | `providers` | `Record<string, true \| BuiltInProviderEntry \| BedrockProviderEntry \| CustomProviderEntry>` | Required | Providers keyed by name. At least one entry must be set. A built-in key takes `true` or [built-in provider options](#built-in-provider-options), `bedrock` takes `true` or [Bedrock provider options](#bedrock-provider-options), and any other key needs [custom provider options](#custom-provider-options). |
 | `routers` | `Record<string, RouterConfig>` | `{}` | Aliases from a slug to one model ID. See [Router options](#router-options). |
-| `defaultRouter` | `string` | — | Must name a key in `routers`, or startup fails. FrogBot validates it but does not use it to pick a model: every operation still requires `model`. |
 | `defaultModel` | `ModelId` | — | Model or router slug for agents that set no `model` and no `model.default`. Must resolve to a configured provider. |
 | `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must resolve to a configured provider. See [Choose a utility model](#choose-a-utility-model). |
 | `hooks` | `AIHooks` | No hooks | Lifecycle hooks for every operation. See [Observe calls](#observe-calls). |
@@ -176,7 +175,7 @@ ai: {
     fast: { model: 'openai/gpt-4o-mini' },
     careful: { model: 'openai/o3' }
   },
-  defaultRouter: 'fast'
+  defaultModel: 'fast'
 }
 ```
 
@@ -189,7 +188,7 @@ An alias has no fallback chain or access rule. `hidden` exists on `RouterConfig`
 | `model` | `string` | Required | Provider-prefixed model ID the alias resolves to. Must be non-empty. |
 | `hidden` | `boolean` | — | Reserved; FrogBot does not read it yet. |
 
-`defaultRouter` must name a configured alias, but v0 operations still require `model`. Local operations and agents resolve aliases; the mounted gateway HTTP routes expect provider-prefixed model IDs.
+Local operations, agents, `defaultModel`, and `smallModel` resolve aliases; the mounted gateway HTTP routes expect provider-prefixed model IDs.
 
 ---
 
