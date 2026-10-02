@@ -6,6 +6,7 @@
 // operator-credential fragments stripped unconditionally (G34), exactly like
 // the JSON envelope path in `errors/envelope.ts`.
 
+import { isGatewayError } from '../errors/gatewayError.js';
 import { maybeMaskMessage, redactKeyFragments } from '../errors/maskMessage.js';
 import {
   isUpstreamSuccessStatus,
@@ -44,11 +45,21 @@ function maskStreamErrorMessage(
 }
 
 function errorStatusCode(error: Error): number | undefined {
+  if (isGatewayError(error)) return error.status;
+
   const { statusCode } = error as { statusCode?: unknown };
 
   if (typeof statusCode !== 'number') return undefined;
 
   return isUpstreamSuccessStatus(statusCode) ? 502 : statusCode;
+}
+
+// A gateway error keeps its own code (e.g. `structured_output_invalid`) so a
+// client can tell it apart from a plain upstream status.
+function errorCode(error: Error, statusCode: number | undefined): string | null {
+  if (isGatewayError(error)) return error.code;
+
+  return statusCode !== undefined ? String(statusCode) : null;
 }
 
 export function extractOpenAIStreamErrorInfo(
@@ -67,7 +78,7 @@ export function extractOpenAIStreamErrorInfo(
         opts,
       ),
       type: statusCode !== undefined ? statusToOpenAIType(statusCode) : 'server_error',
-      code: statusCode !== undefined ? String(statusCode) : null,
+      code: errorCode(cause, statusCode),
     };
   }
 
@@ -111,7 +122,7 @@ export function extractAnthropicStreamErrorInfo(
         opts,
       ),
       type: statusCode ? statusToAnthropicType(statusCode) : 'api_error',
-      code: statusCode !== undefined ? String(statusCode) : null,
+      code: errorCode(cause, statusCode),
     };
   }
 

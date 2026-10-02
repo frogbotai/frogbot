@@ -1,4 +1,4 @@
-export { toResponsesOutput } from './output.js';
+export { isStrictResponsesOutput, toResponsesOutput } from './output.js';
 export { createResponsesStreamTransform } from './stream.js';
 export { toModelMessages } from './toModelMessages.js';
 export { toResponsesToolChoice, toResponsesTools } from './tools.js';

@@ -252,18 +252,46 @@ async function findAsset({
     return { error: new AgentServiceError(`File '${part.id}' is unavailable`, 404) };
   }
 
-  if (chatId !== undefined && !doc.chat) {
+  if (chatId !== undefined && !doc.chat) await linkAsset({ req, collection, id: doc.id, chatId });
+
+  return { doc: { ...doc, filename, mimeType } };
+}
+
+async function linkAsset({
+  req,
+  collection,
+  id,
+  chatId,
+}: {
+  req: FrogBotRequest;
+  collection: AssetsCollection;
+  id: string | number;
+  chatId: string | number;
+}) {
+  const transactionID = await req.transactionID;
+
+  try {
     await req.frogbot.update({
       collection: collection.slug,
-      id: doc.id,
+      id,
       data: { chat: chatId },
       depth: 0,
       req,
       overrideAccess: true,
     });
-  }
+  } catch (error) {
+    if (transactionID) throw error;
 
-  return { doc: { ...doc, filename, mimeType } };
+    const current = (await req.frogbot.findByID({
+      collection: collection.slug,
+      id,
+      depth: 0,
+      req,
+      overrideAccess: true,
+    })) as AssetDocument;
+
+    if (!current.chat) throw error;
+  }
 }
 
 function certainKind(file: { mediaType: string; filename: string }): AttachmentKind | undefined {

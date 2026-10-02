@@ -39,6 +39,7 @@ import {
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
+import { withStrictOutput } from '../../shared/strictOutput.js';
 import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { guardedDownload } from '../../utils/downloadGuard.js';
@@ -50,6 +51,7 @@ import { withInstructionsCache } from './instructionsCache.js';
 import { parseResponsesRequest, type ResponsesRequest } from './schema.js';
 import {
   createResponsesStreamTransform,
+  isStrictResponsesOutput,
   toModelMessages,
   toResponsesOutput,
   toResponsesResponse,
@@ -158,7 +160,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
 
       const upstream = createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs);
       const aiOptions = {
-        model,
+        model: isStrictResponsesOutput(body.text) ? withStrictOutput(model) : model,
         messages,
         // `instructions` maps to the Responses `instructions` field; passed as
         // a top-level AI SDK option (system messages in `messages` are rejected

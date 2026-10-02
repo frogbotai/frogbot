@@ -19,7 +19,8 @@ export type GatewayErrorCode =
   | 'resource_not_found'
   | 'budget_exceeded'
   | 'model_not_allowed'
-  | 'rate_limit_exceeded';
+  | 'rate_limit_exceeded'
+  | 'structured_output_invalid';
 
 export const gatewayErrorMarker = Symbol.for('@frogbotai/gateway/GatewayError');
 
@@ -221,6 +222,25 @@ export class InvalidToolArgumentsError extends GatewayError {
       status: 400,
       code: 'invalid_tool_arguments',
       param: args.param,
+    });
+  }
+}
+
+/**
+ * Thrown when a request asks for a strict JSON schema and the model's reply
+ * still does not match it after one retry. Some providers cannot enforce a
+ * schema (Bedrock rejects it for the newest Claude models), so the gateway
+ * checks the reply itself. Maps to 502: the request was valid, the upstream
+ * reply was not.
+ */
+export class StructuredOutputError extends GatewayError {
+  override readonly name = 'StructuredOutputError';
+
+  constructor(args: { issues: string }) {
+    super({
+      message: `The model's reply did not match the requested JSON schema: ${args.issues}`,
+      status: 502,
+      code: 'structured_output_invalid',
     });
   }
 }
