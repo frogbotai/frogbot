@@ -76,8 +76,13 @@ import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
 import type { FrogBotLocalAPI } from './localAPI.js';
 import { createFrogBotLocalAPI } from './localAPI.js';
-import { searchOperation } from './search/operation.js';
-import type { SearchOptions, SearchResult } from './search/types.js';
+import { searchManyOperation, searchOperation } from './search/operation.js';
+import type {
+  SearchManyOptions,
+  SearchManyResult,
+  SearchOptions,
+  SearchResult,
+} from './search/types.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
 import { readTrainingData } from './training/readTrainingData.js';
 import type { ReadTrainingDataOptions } from './training/types.js';
@@ -391,6 +396,10 @@ export class FrogBot {
 
   search = <T extends CollectionSlug>(options: SearchOptions<T>): Promise<SearchResult<T>> =>
     searchOperation(this, state(this).payload, options);
+
+  searchMany = <const C extends readonly CollectionSlug[]>(
+    options: SearchManyOptions<C>,
+  ): Promise<SearchManyResult<C>> => searchManyOperation(this, state(this).payload, options);
 
   evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
     opts: EvaluateOpts<QUESTIONS>,

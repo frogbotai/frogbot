@@ -316,6 +316,44 @@ describe('GraphQL routes', () => {
     expect(body.data?.searchPosts.hits.map(({ doc }) => doc.title)).toEqual(['Orchard']);
   });
 
+  it('POST /api/graphql runs aliased search queries that match Local API search', async () => {
+    for (const title of [
+      'Orchard apple trees',
+      'Apple orchard harvest',
+      'Pear orchard',
+      'Apple pie',
+    ]) {
+      await booted.frogbot.create({ collection: postsSlug, data: { title }, overrideAccess: true });
+    }
+
+    const { body } = await query<
+      Record<'orchard' | 'apple', { hits: { doc: { id: number | string }; score: number }[] }>
+    >(`{
+      orchard: searchPosts(index: "content", text: "orchard", limit: 2) { hits { doc { id } score } }
+      apple: searchPosts(index: "content", text: "apple", limit: 3) { hits { doc { id } score } }
+    }`);
+
+    const local = async (text: string, limit: number) => {
+      const { hits } = await booted.frogbot.search({
+        collection: postsSlug,
+        index: 'content',
+        query: { text },
+        limit,
+        req: await booted.frogbot.createRequest(),
+      });
+
+      return hits.map(({ doc, score }) => ({ doc: { id: doc.id }, score }));
+    };
+
+    expect(body.errors).toBeUndefined();
+    expect(body.data!.orchard.hits).toHaveLength(2);
+    expect(body.data!.apple.hits).toHaveLength(3);
+    expect(body.data).toEqual({
+      orchard: { hits: await local('orchard', 2) },
+      apple: { hits: await local('apple', 3) },
+    });
+  });
+
   it('POST /api/graphql rejects queries for hidden internal collections', async () => {
     const { body } = await query(
       '{ FrogbotChatAssets { docs { id } } PayloadPreferences { totalDocs } }',

@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { CollectionConfig, FrogBotConfig } from 'frogbot';
+import type { Access, CollectionConfig, FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 export const databasePath = fileURLToPath(new URL('./search.db', import.meta.url));
@@ -10,17 +10,20 @@ export const articlesSlug = 'search-articles';
 export const pagesSlug = 'search-pages';
 export const notesSlug = 'search-notes';
 export const usersSlug = 'search-users';
+export const noNotesTenant = 'no-notes';
 
 type SearchUser = { tenant?: string };
+
+const readTenant: Access = ({ req }) => {
+  const tenant = (req.user as SearchUser | null)?.tenant;
+
+  return tenant ? { tenant: { equals: tenant } } : true;
+};
 
 const tenantAccess: CollectionConfig['access'] = {
   create: () => true,
   delete: () => true,
-  read: ({ req }) => {
-    const tenant = (req.user as SearchUser | null)?.tenant;
-
-    return tenant ? { tenant: { equals: tenant } } : true;
-  },
+  read: readTenant,
   update: () => true,
 };
 
@@ -94,7 +97,11 @@ export const Pages: CollectionConfig = {
 
 export const Notes: CollectionConfig = {
   slug: notesSlug,
-  access: tenantAccess,
+  access: {
+    ...tenantAccess,
+    read: (args) =>
+      (args.req.user as SearchUser | null)?.tenant === noNotesTenant ? false : readTenant(args),
+  },
   fields: [
     { name: 'id', type: 'text' },
     { name: 'title', type: 'text' },

@@ -92,7 +92,7 @@ import {
   type PieceInstance,
   type SanitizedPiecesConfig,
 } from '../pieces/types.js';
-import { buildSearchEndpoints } from '../search/endpoints.js';
+import { buildSearchEndpoints, buildSearchManyEndpoint } from '../search/endpoints.js';
 import { buildSearchQueries } from '../search/graphQL.js';
 import { withSearchRuntime } from '../search/runtime.js';
 import { sanitizeSearchIndexes } from '../search/sanitize.js';
@@ -1851,6 +1851,7 @@ export function sanitize(
       ...(chat.enabled ? buildChatEndpoints() : []),
       ...(Object.keys(triggers).length ? buildTriggerEndpoints() : []),
       ...(hasChannelAdapters ? buildChannelGatewayEndpoints() : []),
+      ...(searchCollections.length ? [buildSearchManyEndpoint()] : []),
     ],
     attachFrogBot,
     resolveFrogBot,

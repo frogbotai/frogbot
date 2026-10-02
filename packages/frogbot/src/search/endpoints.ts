@@ -1,11 +1,13 @@
 import type { Endpoint } from '../endpoints/types.js';
 import type { CollectionSlug } from '../types/generated.js';
 import { SearchValidationError } from './errors.js';
-import type { SearchOptions } from './types.js';
+import type { SearchManyOptions, SearchOptions } from './types.js';
 
 type SearchBody = Omit<SearchOptions, 'collection' | 'overrideAccess' | 'req'>;
 
-const bodyKeys = new Set<string>([
+type SearchManyBody = Omit<SearchManyOptions, 'overrideAccess' | 'req'>;
+
+const searchBodyKeys = new Set<string>([
   'candidates',
   'depth',
   'draft',
@@ -18,7 +20,19 @@ const bodyKeys = new Set<string>([
   'where',
 ] satisfies (keyof SearchBody)[]);
 
-async function readBody(json: (() => Promise<unknown>) | undefined): Promise<SearchBody> {
+const searchManyBodyKeys = new Set<string>([
+  'collections',
+  'draft',
+  'fallbackLocale',
+  'limit',
+  'locale',
+  'query',
+] satisfies (keyof SearchManyBody)[]);
+
+async function readBody<T>(
+  json: (() => Promise<unknown>) | undefined,
+  keys: ReadonlySet<string>,
+): Promise<T> {
   let body: unknown;
 
   try {
@@ -32,12 +46,12 @@ async function readBody(json: (() => Promise<unknown>) | undefined): Promise<Sea
   }
 
   for (const key of Object.keys(body)) {
-    if (!bodyKeys.has(key)) {
+    if (!keys.has(key)) {
       throw new SearchValidationError(`Search does not support the '${key}' option.`);
     }
   }
 
-  return body as SearchBody;
+  return body as T;
 }
 
 export function buildSearchEndpoints({ collection }: { collection: string }): Endpoint[] {
@@ -46,7 +60,7 @@ export function buildSearchEndpoints({ collection }: { collection: string }): En
       method: 'post',
       path: '/search',
       handler: async (req) => {
-        const body = await readBody(req.json?.bind(req));
+        const body = await readBody<SearchBody>(req.json?.bind(req), searchBodyKeys);
 
         const result = await req.frogbot.search({
           ...body,
@@ -59,4 +73,18 @@ export function buildSearchEndpoints({ collection }: { collection: string }): En
       },
     },
   ];
+}
+
+export function buildSearchManyEndpoint(): Endpoint {
+  return {
+    method: 'post',
+    path: '/frogbot/search',
+    handler: async (req) => {
+      const body = await readBody<SearchManyBody>(req.json?.bind(req), searchManyBodyKeys);
+
+      const result = await req.frogbot.searchMany({ ...body, overrideAccess: false, req });
+
+      return Response.json(result);
+    },
+  };
 }

@@ -2,7 +2,7 @@ import type { PayloadRequest, SanitizedCollectionConfig, Where } from 'payload';
 import { executeAccess, Forbidden } from 'payload';
 
 import type { FrogBotRequest } from '../types/request.js';
-import { SearchFilterUnsupportedError } from './errors.js';
+import { describeSearchIndex, SearchFilterUnsupportedError } from './errors.js';
 import type { SearchIndexDescriptor } from './types.js';
 
 const operators = new Set([
@@ -32,22 +32,22 @@ function validValue(
   return typeof value === 'boolean' && type === 'boolean';
 }
 
-function validateWhere(where: unknown, index: SearchIndexDescriptor): asserts where is Where {
+function validateWhere(
+  where: unknown,
+  index: SearchIndexDescriptor,
+  label: string,
+): asserts where is Where {
   if (!where || typeof where !== 'object' || Array.isArray(where)) {
-    throw new SearchFilterUnsupportedError(
-      `Search index '${index.name}' requires an object where predicate.`,
-    );
+    throw new SearchFilterUnsupportedError(`${label} requires an object where predicate.`);
   }
 
   for (const [path, constraint] of Object.entries(where)) {
     if (path === 'and' || path === 'or') {
       if (!Array.isArray(constraint) || !constraint.length) {
-        throw new SearchFilterUnsupportedError(
-          `Search index '${index.name}' requires a non-empty ${path} predicate.`,
-        );
+        throw new SearchFilterUnsupportedError(`${label} requires a non-empty ${path} predicate.`);
       }
 
-      for (const item of constraint) validateWhere(item, index);
+      for (const item of constraint) validateWhere(item, index, label);
 
       continue;
     }
@@ -55,9 +55,7 @@ function validateWhere(where: unknown, index: SearchIndexDescriptor): asserts wh
     const field = Object.hasOwn(index.filterFields, path) ? index.filterFields[path] : undefined;
 
     if (!field || field.many) {
-      throw new SearchFilterUnsupportedError(
-        `Search index '${index.name}' cannot filter path '${path}'.`,
-      );
+      throw new SearchFilterUnsupportedError(`${label} cannot filter path '${path}'.`);
     }
 
     if (
@@ -66,9 +64,7 @@ function validateWhere(where: unknown, index: SearchIndexDescriptor): asserts wh
       Array.isArray(constraint) ||
       !Object.keys(constraint).length
     ) {
-      throw new SearchFilterUnsupportedError(
-        `Search index '${index.name}' requires operators on '${path}'.`,
-      );
+      throw new SearchFilterUnsupportedError(`${label} requires operators on '${path}'.`);
     }
 
     for (const [operator, value] of Object.entries(constraint)) {
@@ -85,7 +81,7 @@ function validateWhere(where: unknown, index: SearchIndexDescriptor): asserts wh
         (operator.includes('than') && (field.type === 'boolean' || field.type === 'id'))
       ) {
         throw new SearchFilterUnsupportedError(
-          `Search index '${index.name}' cannot filter '${path}' with '${operator}'.`,
+          `${label} cannot filter '${path}' with '${operator}'.`,
         );
       }
     }
@@ -125,7 +121,7 @@ export async function resolveSearchPredicate({
 
   const predicate: Where = clauses.length ? { and: clauses } : {};
 
-  validateWhere(predicate, index);
+  validateWhere(predicate, index, describeSearchIndex(collection.slug, index.name));
 
   return predicate;
 }

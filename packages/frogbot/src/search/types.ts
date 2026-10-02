@@ -119,3 +119,24 @@ export type SearchResult<T extends CollectionSlug = CollectionSlug> = {
   ranking: SearchRanking;
   hits: SearchHit<T>[];
 };
+
+export type SearchManyCollection<T extends CollectionSlug = CollectionSlug> = Pick<
+  SearchOptions<T>,
+  'collection' | 'index' | 'where' | 'select' | 'candidates' | 'depth'
+>;
+
+export type SearchManyOptions<C extends readonly CollectionSlug[] = readonly CollectionSlug[]> =
+  Pick<
+    SearchOptions,
+    'query' | 'limit' | 'draft' | 'locale' | 'fallbackLocale' | 'overrideAccess' | 'req'
+  > & {
+    collections: { [K in keyof C]: SearchManyCollection<C[K]> };
+  };
+
+export type SearchManyCollectionResult<T extends CollectionSlug = CollectionSlug> = {
+  collection: T;
+} & SearchResult<T>;
+
+export type SearchManyResult<C extends readonly CollectionSlug[] = readonly CollectionSlug[]> = {
+  results: { [K in keyof C]: SearchManyCollectionResult<C[K]> };
+};

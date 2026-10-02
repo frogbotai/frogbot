@@ -2,6 +2,10 @@ import { APIError } from 'payload';
 
 import type { SearchMode } from './types.js';
 
+export function describeSearchIndex(collection: string, index: string): string {
+  return `Search index '${index}' in collection '${collection}'`;
+}
+
 export class SearchValidationError extends APIError {
   name = 'SearchValidationError';
 

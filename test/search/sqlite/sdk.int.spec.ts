@@ -8,7 +8,7 @@ import { createFrogBotSDK, type FrogBotSDK } from '../../../packages/sdk/src/ind
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import { articlesSlug, databasePath } from './shared.js';
+import { articlesSlug, databasePath, pagesSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,7 +50,8 @@ describe('SQLite search through the FrogBot SDK', () => {
 
     await create({ title: 'Unrelated', body: 'Nothing to see.' });
 
-    const result = await sdk.search(articlesSlug, {
+    const result = await sdk.search({
+      collection: articlesSlug,
       index: 'content',
       query: { text: 'account recovery' },
     });
@@ -70,7 +71,8 @@ describe('SQLite search through the FrogBot SDK', () => {
     await create({ title: 'Frog ponds', body: 'Frogs live in ponds.', rating: 5 });
     await create({ title: 'Frog legs', body: 'Frogs have strong legs.', rating: 1 });
 
-    const result = await sdk.search(articlesSlug, {
+    const result = await sdk.search({
+      collection: articlesSlug,
       index: 'content',
       limit: 1,
       query: { text: 'frogs' },
@@ -80,5 +82,38 @@ describe('SQLite search through the FrogBot SDK', () => {
 
     expect(result.hits).toHaveLength(1);
     expect(result.hits[0]!.doc).toEqual({ id: expect.any(Number), title: 'Frog ponds' });
+  });
+
+  it('searchMany returns the same lists as the Local API', async () => {
+    await create({ title: 'Frog ponds', body: 'Frogs live in ponds.', rating: 5 });
+    await create({ title: 'Frog legs', body: 'Frogs have strong legs.', rating: 1 });
+
+    await booted.frogbot.create({
+      collection: pagesSlug,
+      data: { title: 'Frog facts', summary: 'All about frogs' },
+      overrideAccess: true,
+    });
+
+    const options = {
+      collections: [
+        { collection: articlesSlug, index: 'content', select: { title: true } },
+        { collection: pagesSlug, index: 'content' },
+      ],
+      limit: 1,
+      query: { text: 'frogs' },
+    };
+
+    const result = await sdk.searchMany(options);
+
+    const local = await booted.frogbot.searchMany({
+      ...options,
+      req: await booted.frogbot.createRequest(),
+    });
+
+    expect(result).toEqual(local);
+    expect(result.results.map(({ collection, hits }) => [collection, hits.length])).toEqual([
+      [articlesSlug, 1],
+      [pagesSlug, 1],
+    ]);
   });
 });
