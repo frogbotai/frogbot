@@ -113,18 +113,34 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
         { key: 'xhigh', label: 'Extra High' },
       ],
     };
+    const names = { [model]: 'GPT-5.4 mini' };
+    const inputs = { [model]: ['text', 'image'] };
     const agent = (slug: string) => ({
       slug,
       label: slug,
       source: 'config',
       defaultModel: model,
       models: [model],
+      names,
       reasoning,
+      inputs,
     });
 
-    expect(await listResponse.json()).toEqual({
+    const body = (await listResponse.json()) as { agents: { models: string[] }[] };
+
+    expect(body).toEqual({
       defaultAgent: 'general',
-      agents: [agent('general'), agent('assistant')],
+      agents: [
+        {
+          ...agent('general'),
+          models: expect.arrayContaining([model]),
+          names: expect.objectContaining(names),
+          reasoning: expect.objectContaining(reasoning),
+          inputs: expect.objectContaining(inputs),
+        },
+        agent('assistant'),
+      ],
     });
+    expect(body.agents[0]!.models.every((id) => id.startsWith('openai/'))).toBe(true);
   });
 });

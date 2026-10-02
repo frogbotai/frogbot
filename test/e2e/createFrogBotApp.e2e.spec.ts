@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { createPostgresDatabase } from '../__helpers/shared/db/postgres';
 import {
   applyLocalOverrides,
   copyCLIWithoutSkill,
@@ -38,27 +39,31 @@ async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
     {
       cwd: directory,
       env: subprocessEnvironment(directory, databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
-      stdout: 'ignore',
     },
   );
-  let errors = '';
+  let output = '';
 
-  child.stderr?.on('data', (chunk: Buffer) => {
-    errors += chunk.toString();
-  });
+  for (const stream of [child.stdout, child.stderr]) {
+    stream?.on('data', (chunk: Buffer) => {
+      output += chunk.toString();
+    });
+  }
 
   try {
     const deadline = Date.now() + 90000;
 
     for (;;) {
       if (child.exitCode !== null)
-        throw new Error(`Generated app exited with ${child.exitCode}:\n${errors}`);
+        throw new Error(`Generated app exited with ${child.exitCode}:\n${output}`);
 
-      const response = await fetch(`http://127.0.0.1:${port}/api/users/me`).catch(() => undefined);
+      // A request can hang while the app waits on startup, so each attempt has its own limit.
+      const response = await fetch(`http://127.0.0.1:${port}/api/users/me`, {
+        signal: AbortSignal.timeout(10000),
+      }).catch(() => undefined);
 
       if (response?.status === 200) return;
 
-      if (Date.now() > deadline) throw new Error(`Generated app did not become ready:\n${errors}`);
+      if (Date.now() > deadline) throw new Error(`Generated app did not become ready:\n${output}`);
 
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
@@ -80,10 +85,18 @@ const cases: AppCase[] = [
   { ai: 'none', database: 'mongodb', name: 'mongodb-none' },
 ];
 
+// The generated Postgres app pushes its schema in dev. On a shared database holding other
+// tests' tables, Drizzle stops at an interactive data-loss prompt, so it gets its own database.
+let postgresDatabase: Awaited<ReturnType<typeof createPostgresDatabase>> | undefined;
+
+function postgresURL(): string {
+  if (!postgresDatabase) throw new Error('The Postgres test database was not created');
+
+  return postgresDatabase.url.toString();
+}
+
 function databaseEnvironment(appCase: AppCase): NodeJS.ProcessEnv {
-  if (appCase.database === 'postgres') {
-    return { DATABASE_URL: 'postgres://frogbot:frogbot@127.0.0.1:5433/frogbot' };
-  }
+  if (appCase.database === 'postgres') return { DATABASE_URL: postgresURL() };
 
   if (appCase.database === 'mongodb') {
     return {
@@ -99,8 +112,10 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   let localPackages: LocalPackage[];
   const appDirectories = new Map<string, string>();
 
-  beforeAll(() => {
+  beforeAll(async () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-e2e-'));
+
+    if (postgresAvailable) postgresDatabase = await createPostgresDatabase('create_frogbot_app');
 
     for (const appCase of cases) {
       const result = run(
@@ -142,7 +157,10 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     for (const directory of appDirectories.values()) applyLocalOverrides(directory, localPackages);
   }, 240000);
 
-  afterAll(() => {
+  afterAll(async () => {
+    await postgresDatabase?.drop();
+    postgresDatabase = undefined;
+
     if (root) fs.rmSync(root, { recursive: true, force: true });
   });
 
@@ -295,7 +313,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
       const directory = appDirectories.get('postgres-none')!;
       const result = run('pnpm', ['generate:types'], {
         cwd: directory,
-        env: { DATABASE_URL: 'postgres://frogbot:frogbot@127.0.0.1:5433/frogbot' },
+        env: { DATABASE_URL: postgresURL() },
       });
 
       expect(result.status, result.output).toBe(0);
@@ -361,10 +379,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   it.skipIf(!postgresAvailable)(
     'boots the generated Postgres application',
     async () => {
-      await bootApp(
-        appDirectories.get('postgres-none')!,
-        'postgres://frogbot:frogbot@127.0.0.1:5433/frogbot',
-      );
+      await bootApp(appDirectories.get('postgres-none')!, postgresURL());
     },
     120000,
   );
