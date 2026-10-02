@@ -8,11 +8,23 @@ import { findTurnState } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
+import {
+  CHAT_ASSETS_SLUG,
+  SKIP_ASSET_TEXT_CONTEXT_KEY,
+} from '../../packages/frogbot/src/chat/collections/assets.js';
 import { placeholderChatTitle } from '../../packages/frogbot/src/chat/title.js';
+import { createFrogBotSDK } from '../../packages/sdk/src/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import {
+  budgetText,
+  budgetXlsx,
+  encryptedOfficeFile,
+  reportDocx,
+  reportText,
+  xlsxFile,
+} from '../__helpers/shared/office.js';
 import type { StubChatModel, StubChatRequest } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import { chatsSlug, messagesSlug, questionAgentSlug, turnsSlug, usersSlug } from './shared.js';
@@ -29,6 +41,10 @@ const PNG = Buffer.from(
 );
 
 const ZIP = Buffer.concat([Buffer.from('PK\x05\x06', 'latin1'), Buffer.alloc(18)]);
+
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const PPTX_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
 const questionInput = {
   questions: [
@@ -52,6 +68,8 @@ const noop: Tool<typeof noopInput, string> = {
 const imageMarker = "[Can't read photo.png: this model doesn't accept images]";
 
 type Asset = { id: number | string; filename: string; mimeType: string };
+
+type StoredAsset = Asset & { owner?: number | string | null; text?: string | null };
 
 type Part = Record<string, unknown>;
 
@@ -198,6 +216,37 @@ describe('chat attachments reach the agent model', () => {
     if (!response.ok) throw new Error(`Upload failed: ${await response.text()}`);
 
     return ((await response.json()) as { doc: Asset }).doc;
+  }
+
+  function reportUpload(): Promise<Asset> {
+    return upload({ name: 'report.docx', type: DOCX_TYPE, data: Buffer.from(reportDocx()) });
+  }
+
+  function budgetUpload(): Promise<Asset> {
+    return upload({ name: 'budget.xlsx', type: XLSX_TYPE, data: Buffer.from(budgetXlsx()) });
+  }
+
+  async function withoutText(asset: Asset): Promise<Asset> {
+    await booted.frogbot.db.updateOne({
+      collection: CHAT_ASSETS_SLUG,
+      id: asset.id,
+      data: { text: null },
+    });
+
+    return asset;
+  }
+
+  async function storedAsset(asset: Asset): Promise<StoredAsset> {
+    return (await booted.frogbot.findByID({
+      collection: CHAT_ASSETS_SLUG,
+      id: asset.id,
+      depth: 0,
+      overrideAccess: true,
+    })) as StoredAsset;
+  }
+
+  function attached(asset: Asset, text: string): string {
+    return `Attached file "${asset.filename}":\n${text}`;
   }
 
   function reference(asset: Asset, part: Part = {}): Part {
@@ -686,6 +735,305 @@ describe('chat attachments reach the agent model', () => {
         `Attached file "${latin.filename}":\ncaf\ufffd`,
         `[Can't read ${wide.filename}: this file type isn't supported]`,
       ],
+    ]);
+  });
+
+  it('sends Word and Excel attachments as their labelled text', async () => {
+    const report = await reportUpload();
+    const budget = await budgetUpload();
+
+    const response = await post({
+      messages: [
+        userMessage({ type: 'text', text: 'Compare.' }, reference(report), reference(budget)),
+      ],
+      model: 'test/text-only',
+    });
+
+    expect(response.status).toBe(200);
+    expect(userContent(model.requests[0]!)).toEqual([
+      ['Compare.', attached(report, reportText), attached(budget, budgetText)],
+    ]);
+  });
+
+  it('sends the same Word and Excel text through the Local API as through REST', async () => {
+    const report = await reportUpload();
+    const budget = await budgetUpload();
+
+    const message = () =>
+      userMessage({ type: 'text', text: 'Compare.' }, reference(report), reference(budget));
+
+    await post({ messages: [message()], model: 'test/text-only' });
+
+    const req = await booted.frogbot.createRequest({
+      user: { ...user, collection: usersSlug },
+    } as never);
+
+    await booted.frogbot.agents[questionAgentSlug]!.generate({ req, messages: [message()] });
+
+    expect(userContent(model.requests[1]!)).toEqual(userContent(model.requests[0]!));
+  });
+
+  it('reads a Word document stored without text once and keeps its text', async () => {
+    const report = await withoutText(await reportUpload());
+
+    const opened = await post({
+      messages: [userMessage({ type: 'text', text: 'Summarize.' }, reference(report))],
+      model: 'test/text-only',
+    });
+
+    const stored = await storedAsset(report);
+
+    await fs.rm(path.resolve(CHAT_ASSETS_SLUG, report.filename));
+
+    const followUp = await post({ chatId: opened.body.chatId, prompt: 'And now?' });
+
+    expect(stored.text).toBe(reportText);
+    expect(followUp.status).toBe(200);
+    expect(userContent(model.requests[1]!)).toEqual([
+      ['Summarize.', attached(report, reportText)],
+      ['And now?'],
+    ]);
+  });
+
+  it('reads a Word document stored without text on a queued turn', async () => {
+    const report = await withoutText(await reportUpload());
+    const { chatId, hold, running } = await startSlowTurn();
+
+    await post({
+      chatId,
+      messages: [userMessage({ type: 'text', text: 'And this?' }, reference(report))],
+      model: 'test/text-only',
+    });
+
+    hold.resolve();
+    await running;
+
+    await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
+
+    expect(userContent(model.requests[1]!)).toEqual([
+      ['Start.'],
+      ['And this?', attached(report, reportText)],
+    ]);
+    await vi.waitFor(async () => expect((await storedAsset(report)).text).toBe(reportText));
+  });
+
+  it('stores the text when two turns at once read a Word document already in a chat', async () => {
+    const report = await reportUpload();
+
+    await post({
+      messages: [userMessage({ type: 'text', text: 'Link.' }, reference(report))],
+      model: 'test/text-only',
+    });
+
+    await withoutText(report);
+
+    const message = () => userMessage({ type: 'text', text: 'Summarize.' }, reference(report));
+
+    const responses = await Promise.all([
+      post({ messages: [message()], model: 'test/text-only' }),
+      post({ messages: [message()], model: 'test/text-only' }),
+    ]);
+
+    expect(responses.map(({ status }) => status)).toEqual([200, 200]);
+    expect((await storedAsset(report)).text).toBe(reportText);
+  });
+
+  it('sends the same text on two turns that read a Word document at once', async () => {
+    const report = await reportUpload();
+
+    await post({
+      messages: [userMessage({ type: 'text', text: 'Link.' }, reference(report))],
+      model: 'test/text-only',
+    });
+
+    await withoutText(report);
+
+    const message = () => userMessage({ type: 'text', text: 'Summarize.' }, reference(report));
+
+    const responses = await Promise.all([
+      post({ messages: [message()], model: 'test/text-only' }),
+      post({ messages: [message()], model: 'test/text-only' }),
+    ]);
+
+    expect(responses.map(({ status }) => status)).toEqual([200, 200]);
+    expect(model.requests.slice(1).map(userContent)).toEqual([
+      [['Summarize.', attached(report, reportText)]],
+      [['Summarize.', attached(report, reportText)]],
+    ]);
+    expect((await storedAsset(report)).text).toBe(reportText);
+  });
+
+  it('keeps the owner when a chat reader’s turn stores the text', async () => {
+    const report = await reportUpload();
+    const opened = await post({
+      messages: [userMessage(reference(report))],
+      model: 'test/text-only',
+    });
+
+    await withoutText(report);
+
+    const reader = await signIn();
+
+    await booted.frogbot.update({
+      collection: chatsSlug,
+      id: opened.body.chatId,
+      data: { sharedWith: [reader.user.id] },
+      overrideAccess: true,
+    });
+
+    const req = await booted.frogbot.createRequest({
+      user: { ...reader.user, collection: usersSlug },
+    } as never);
+
+    await booted.frogbot.agents[questionAgentSlug]!.generate({
+      req,
+      messages: [userMessage({ type: 'text', text: 'Read.' }, reference(report))],
+    });
+
+    const stored = await storedAsset(report);
+
+    expect(userContent(model.requests[1]!)).toEqual([['Read.', attached(report, reportText)]]);
+    expect(stored).toMatchObject({ owner: user.id, text: reportText });
+  });
+
+  it('replaces an unreadable workbook stored without text with a marker', async () => {
+    const data = Buffer.from(encryptedOfficeFile());
+
+    const locked = (await booted.frogbot.create({
+      collection: CHAT_ASSETS_SLUG,
+      data: { owner: user.id },
+      file: { data, mimetype: XLSX_TYPE, name: 'locked.xlsx', size: data.byteLength },
+      context: { [SKIP_ASSET_TEXT_CONTEXT_KEY]: true },
+      overrideAccess: true,
+    })) as Asset;
+
+    const response = await post({
+      messages: [userMessage({ type: 'text', text: 'Total?' }, reference(locked))],
+      model: 'test/text-only',
+    });
+
+    expect(response.status).toBe(200);
+    expect(userContent(model.requests[0]!)).toEqual([
+      ['Total?', `[Can't read ${locked.filename}: the file couldn't be read]`],
+    ]);
+    expect((await storedAsset(locked)).text ?? null).toBeNull();
+  });
+
+  it('answers a turn with a workbook stored without text that holds an out-of-range date', async () => {
+    const data = Buffer.from(
+      xlsxFile({
+        sheets: [
+          {
+            name: 'Q1',
+            xml: '<sheetData><row r="1"><c r="A1" s="1"><v>1e300</v></c></row></sheetData>',
+          },
+        ],
+        styles:
+          '<cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/></cellXfs>',
+      }),
+    );
+
+    const dates = (await booted.frogbot.create({
+      collection: CHAT_ASSETS_SLUG,
+      data: { owner: user.id },
+      file: { data, mimetype: XLSX_TYPE, name: 'dates.xlsx', size: data.byteLength },
+      context: { [SKIP_ASSET_TEXT_CONTEXT_KEY]: true },
+      overrideAccess: true,
+    })) as Asset;
+
+    const response = await post({
+      messages: [userMessage({ type: 'text', text: 'When?' }, reference(dates))],
+      model: 'test/text-only',
+    });
+
+    expect(response.status).toBe(200);
+  });
+
+  it('replaces a PowerPoint file with the unsupported marker', async () => {
+    const deck = await upload({
+      name: 'deck.pptx',
+      type: PPTX_TYPE,
+      data: Buffer.from(reportDocx()),
+    });
+
+    const response = await post({
+      messages: [userMessage({ type: 'text', text: 'Present.' }, reference(deck))],
+      model: 'test/text-only',
+    });
+
+    expect(response.status).toBe(200);
+    expect(userContent(model.requests[0]!)).toEqual([
+      ['Present.', `[Can't read ${deck.filename}: this file type isn't supported]`],
+    ]);
+  });
+
+  it('sends a Word document’s stored text on three turns without reading the file', async () => {
+    const report = await reportUpload();
+
+    await fs.rm(path.resolve(CHAT_ASSETS_SLUG, report.filename));
+
+    const opened = await post({
+      messages: [userMessage({ type: 'text', text: 'One.' }, reference(report))],
+      model: 'test/text-only',
+    });
+
+    await post({ chatId: opened.body.chatId, prompt: 'Two.' });
+
+    const third = await post({ chatId: opened.body.chatId, prompt: 'Three.' });
+
+    expect(third.status).toBe(200);
+    expect(model.requests.map(userContent)).toEqual([
+      [['One.', attached(report, reportText)]],
+      [['One.', attached(report, reportText)], ['Two.']],
+      [['One.', attached(report, reportText)], ['Two.'], ['Three.']],
+    ]);
+  });
+
+  it('sends the same text for a Word document uploaded through REST, the SDK and the Local API', async () => {
+    const sdk = createFrogBotSDK({
+      baseURL: `${booted.baseUrl}/api`,
+      headers: { authorization: `JWT ${token}` },
+    });
+
+    const data = Buffer.from(reportDocx());
+
+    const assets = [
+      await reportUpload(),
+      (await sdk.upload(
+        CHAT_ASSETS_SLUG,
+        new File([data], 'report.docx', { type: DOCX_TYPE }),
+      )) as Asset,
+      (await booted.frogbot.create({
+        collection: CHAT_ASSETS_SLUG,
+        data: { owner: user.id },
+        file: { data, mimetype: DOCX_TYPE, name: 'report.docx', size: data.byteLength },
+        overrideAccess: true,
+      })) as Asset,
+    ];
+
+    for (const asset of assets) {
+      await post({
+        messages: [userMessage({ type: 'text', text: 'Read.' }, reference(asset))],
+        model: 'test/text-only',
+      });
+    }
+
+    expect(model.requests.map(userContent)).toEqual(
+      assets.map((asset) => [['Read.', attached(asset, reportText)]]),
+    );
+  });
+
+  it('sends one copy of a Word document attached twice', async () => {
+    const first = await reportUpload();
+    const second = await reportUpload();
+
+    await post({
+      messages: [userMessage({ type: 'text', text: 'Read.' }, reference(first), reference(second))],
+      model: 'test/text-only',
+    });
+
+    expect(userContent(model.requests[0]!)).toEqual([
+      ['Read.', `[File repeated later: ${first.filename}]`, attached(second, reportText)],
     ]);
   });
 

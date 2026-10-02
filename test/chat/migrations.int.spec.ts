@@ -15,15 +15,37 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
 import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
 import { closePostgresPool, createPostgresDatabase } from '../__helpers/shared/db/postgres.js';
+import { reportDocx, reportText } from '../__helpers/shared/office.js';
 import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const adapterName = getCurrentDatabaseAdapter();
 const migrationDir = fileURLToPath(new URL(`./migrations-${adapterName}`, import.meta.url));
 const assetsTable = 'frogbot_chat_assets';
-const sha256Column = /\n\s*\\?[`"]sha256\\?[`"] (?:text|varchar),/;
 const oldAssetId = 1000;
+const oldDocumentId = 1001;
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-type Asset = { id: number | string; filename: string; sha256?: string | null };
+type Asset = {
+  id: number | string;
+  filename: string;
+  sha256?: string | null;
+  text?: string | null;
+};
+
+type AssetColumn = 'sha256' | 'text';
+
+const quoted = (name: string) => `\\\\?["\`]${name}\\\\?["\`]`;
+
+const createAssetsTable = new RegExp(`CREATE TABLE ${quoted(assetsTable)}[\\s\\S]+?;`);
+
+const columnLine = (column: AssetColumn) =>
+  new RegExp(`\\n\\s*${quoted(column)} (?:text|varchar),`);
+
+const addColumnStatement = (column: AssetColumn) => {
+  const statement = `ALTER TABLE ${quoted(assetsTable)} ADD (?:COLUMN )?${quoted(column)}[^;]*;`;
+
+  return new RegExp(`\\n\\s*(?:await db\\.run\\(sql\`${statement}\`\\)|${statement})`);
+};
 
 describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
   `chat assets migrations: ${adapterName}`,
@@ -34,6 +56,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
     let db: SQLiteAdapter | PostgresAdapter;
     let initialSQL: string;
     let hashSQL: string;
+    let textSQL: string;
     let cleanupDatabase: (() => Promise<void>) | undefined;
     let adapterImport: string | undefined;
 
@@ -50,10 +73,13 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
     const upSQL = (source: string) =>
       source.split('export async function down')[0]!.replace(/\\`/g, '`');
 
+    const readMigration = async (name: string) =>
+      readFile(await migrationFile({ name, extension: '.ts' }), 'utf8');
+
     const createMigration = async (name: string) => {
       await db.createMigration({ forceAcceptWarning: true, migrationName: name, payload });
 
-      return readFile(await migrationFile({ name, extension: '.ts' }), 'utf8');
+      return readMigration(name);
     };
 
     const fixMigrationImports = async () => {
@@ -72,13 +98,23 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       }
     };
 
-    const removeHashFromInitialMigration = async () => {
-      const sourcePath = await migrationFile({ name: 'initial', extension: '.ts' });
+    const removeColumn = async ({
+      migration,
+      column,
+    }: {
+      migration: string;
+      column: AssetColumn;
+    }) => {
+      const sourcePath = await migrationFile({ name: migration, extension: '.ts' });
       const source = await readFile(sourcePath, 'utf8');
 
-      await writeFile(sourcePath, source.replace(sha256Column, ''));
+      const removed = source
+        .replace(createAssetsTable, (statement) => statement.replace(columnLine(column), ''))
+        .replace(addColumnStatement(column), '');
 
-      const snapshotPath = await migrationFile({ name: 'initial', extension: '.json' });
+      await writeFile(sourcePath, removed);
+
+      const snapshotPath = await migrationFile({ name: migration, extension: '.json' });
       const snapshot = JSON.parse(await readFile(snapshotPath, 'utf8')) as {
         tables: Record<string, { columns: Record<string, unknown> }>;
       };
@@ -86,17 +122,25 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
         name.endsWith(assetsTable),
       )?.[1];
 
-      delete table?.columns.sha256;
+      delete table?.columns[column];
 
       await writeFile(snapshotPath, JSON.stringify(snapshot, null, 2));
     };
 
-    const insertOldAsset = async () => {
+    const insertOldAsset = async ({
+      id,
+      filename,
+      mimeType,
+    }: {
+      id: number;
+      filename: string;
+      mimeType: string;
+    }) => {
       const createdAt = '2026-01-01T00:00:00.000Z';
 
       await db.execute({
         drizzle: db.drizzle,
-        raw: `INSERT INTO "${assetsTable}" ("id", "filename", "mime_type", "filesize", "updated_at", "created_at") VALUES (${oldAssetId}, 'old.txt', 'text/plain', 3, '${createdAt}', '${createdAt}')`,
+        raw: `INSERT INTO "${assetsTable}" ("id", "filename", "mime_type", "filesize", "updated_at", "created_at") VALUES (${id}, '${filename}', '${mimeType}', 3, '${createdAt}', '${createdAt}')`,
       });
     };
 
@@ -173,12 +217,22 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
 
       initialSQL = upSQL(await createMigration('initial'));
 
-      await removeHashFromInitialMigration();
+      await removeColumn({ migration: 'initial', column: 'sha256' });
+      await removeColumn({ migration: 'initial', column: 'text' });
       await fixMigrationImports();
       await db.migrate();
-      await insertOldAsset();
+      await insertOldAsset({ id: oldAssetId, filename: 'old.txt', mimeType: 'text/plain' });
 
-      hashSQL = upSQL(await createMigration('sha256'));
+      await createMigration('sha256');
+      await removeColumn({ migration: 'sha256', column: 'text' });
+
+      hashSQL = upSQL(await readMigration('sha256'));
+
+      await fixMigrationImports();
+      await db.migrate();
+      await insertOldAsset({ id: oldDocumentId, filename: 'old.docx', mimeType: DOCX_TYPE });
+
+      textSQL = upSQL(await createMigration('text'));
 
       await fixMigrationImports();
       await db.migrate();
@@ -193,12 +247,11 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       await rm(path.resolve(CHAT_ASSETS_SLUG), { recursive: true, force: true });
     });
 
-    it('the generated initial migration creates the hash column on chat assets', () => {
-      const table = initialSQL.match(
-        new RegExp(`CREATE TABLE ["\`]${assetsTable}["\`][\\s\\S]+?;`),
-      )?.[0];
+    it('the generated initial migration creates the hash and text columns on chat assets', () => {
+      const table = initialSQL.match(createAssetsTable)?.[0];
 
       expect(table).toMatch(/["`]sha256["`] (?:text|varchar)/);
+      expect(table).toMatch(/["`]text["`] (?:text|varchar)/);
     });
 
     it('a migration for an existing database only adds the hash column', () => {
@@ -208,6 +261,17 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       expect(statements[0]).toMatch(
         new RegExp(
           `ALTER TABLE ["\`]${assetsTable}["\`] ADD (?:COLUMN )?["\`]sha256["\`] (?:text|varchar)`,
+        ),
+      );
+    });
+
+    it('a migration for a database with chat-asset hashes only adds the text column', () => {
+      const statements = textSQL.match(/(?:CREATE|ALTER|DROP)[^;]+;/g) ?? [];
+
+      expect(statements).toHaveLength(1);
+      expect(statements[0]).toMatch(
+        new RegExp(
+          `ALTER TABLE ["\`]${assetsTable}["\`] ADD (?:COLUMN )?["\`]text["\`] (?:text|varchar)`,
         ),
       );
     });
@@ -230,6 +294,17 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       expect(asset.sha256 ?? null).toBeNull();
     });
 
+    it('a Word document saved before the text migration still reads with no text', async () => {
+      const asset = (await frogbot.findByID({
+        collection: CHAT_ASSETS_SLUG,
+        id: oldDocumentId,
+        overrideAccess: true,
+      })) as Asset;
+
+      expect(asset.filename).toBe('old.docx');
+      expect(asset.text ?? null).toBeNull();
+    });
+
     it('a new upload stores the hash of its contents after migrating', async () => {
       const data = Buffer.from('fresh upload');
 
@@ -248,6 +323,25 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       })) as Asset;
 
       expect(stored.sha256).toBe(createHash('sha256').update(data).digest('hex'));
+    });
+
+    it('a new Word upload stores its text after migrating', async () => {
+      const data = Buffer.from(reportDocx());
+
+      const created = (await frogbot.create({
+        collection: CHAT_ASSETS_SLUG,
+        data: {},
+        file: { data, mimetype: DOCX_TYPE, name: 'fresh.docx', size: data.byteLength },
+        overrideAccess: true,
+      })) as Asset;
+
+      const stored = (await frogbot.findByID({
+        collection: CHAT_ASSETS_SLUG,
+        id: created.id,
+        overrideAccess: true,
+      })) as Asset;
+
+      expect(stored.text).toBe(reportText);
     });
   },
 );

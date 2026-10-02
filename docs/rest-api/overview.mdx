@@ -547,6 +547,8 @@ This example requires an upload-enabled `media` collection with an `alt` field. 
 const uploaded = await sdk.upload('files', file)
 ```
 
+`upload()` returns the stored document, typed as `FrogBotUpload`: its `id`, `filename`, and `mimeType`, plus every other field the collection returns, such as `url`, `filesize`, or a chat asset's [`text`](/chat/overview#chat-assets). Those other fields are typed `unknown`, so check their type before use. A rejected upload throws `FrogBotSDKError`.
+
 ### Custom endpoints
 
 Use `request(path, init)` for [custom endpoints](#custom-endpoints). It returns a Web `Response` and throws `FrogBotSDKError` for non-success responses. The `json` option serializes the body and sets `Content-Type`:

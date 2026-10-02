@@ -1,8 +1,13 @@
 import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer';
+
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -15,6 +20,7 @@ function deferred<T>() {
 
 function uploadServer() {
   const files: File[] = [];
+  const texts = new Map<string, string>();
 
   const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
     const file = (init?.body as FormData).get('file') as File;
@@ -22,12 +28,37 @@ function uploadServer() {
     files.push(file);
 
     return Response.json({
-      doc: { id: `asset-${files.length}`, filename: file.name, mimeType: file.type },
+      doc: {
+        id: `asset-${files.length}`,
+        filename: file.name,
+        mimeType: file.type,
+        text: texts.get(file.name) ?? null,
+      },
       message: 'Document successfully created.',
     });
   });
 
-  return { fetch, files };
+  return { fetch, files, texts };
+}
+
+function fileRefusal(name: string) {
+  return Response.json(
+    {
+      errors: [
+        {
+          name: 'ValidationError',
+          message: 'The following field is invalid: file',
+          data: {
+            collection: 'assets',
+            errors: [
+              { path: 'file', message: `${name} couldn't be read: it is password-protected.` },
+            ],
+          },
+        },
+      ],
+    },
+    { status: 400 },
+  );
 }
 
 function renderComposer(props: Partial<ComposerProps> = {}) {
@@ -196,7 +227,9 @@ describe('Composer', () => {
     const accept = () =>
       container.querySelector('input[type="file"]')?.getAttribute('accept') ?? '';
 
-    expect(accept().split(',')).toEqual(expect.arrayContaining(['text/*', '.md', 'image/png']));
+    expect(accept().split(',')).toEqual(
+      expect.arrayContaining(['text/*', '.md', '.docx', '.xlsx', 'image/png']),
+    );
     expect(accept()).not.toContain('application/pdf');
     expect(accept()).not.toContain('audio/*');
 
@@ -315,6 +348,164 @@ describe('Composer', () => {
         filename: expect.stringMatching(/^pasted-\d+\.txt$/),
       },
     ]);
+  });
+
+  it('uploads a Word document as itself and previews the text the server read', async () => {
+    const { drop, onSubmit, server } = renderComposer({ modelInputs: ['text'] });
+    const upload = deferred<Response>();
+    const file = binary('report.docx', DOCX_TYPE);
+    const read = vi.spyOn(file, 'text');
+    const slice = vi.spyOn(file, 'slice');
+
+    server.fetch.mockImplementationOnce(() => upload.promise);
+
+    drop(file);
+
+    const card = await screen.findByRole('group', { name: 'report.docx, DOCX, uploading' });
+
+    await act(async () => {
+      upload.resolve(
+        Response.json({
+          doc: { id: 'asset-1', filename: 'report.docx', mimeType: DOCX_TYPE, text: '# Report' },
+        }),
+      );
+    });
+
+    const sent = (server.fetch.mock.calls[0]?.[1]?.body as FormData).get('file') as File;
+
+    expect(card.dataset.state).toBe('text');
+    expect(card.getAttribute('aria-label')).toBe('report.docx, DOCX, ready');
+    expect(card.querySelector('.fb-attachment-card__snippet')?.textContent).toBe('# Report');
+    expect(status()).toBe('report.docx attached as text');
+    expect({ name: sent.name, type: sent.type }).toEqual({ name: 'report.docx', type: DOCX_TYPE });
+    expect(read).not.toHaveBeenCalled();
+    expect(slice).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('', [
+      { id: 'asset-1', filename: 'report.docx', mediaType: DOCX_TYPE },
+    ]);
+  });
+
+  it('opens the text the server read from a workbook, with its note about rows left out', async () => {
+    const user = userEvent.setup();
+    const { drop, server } = renderComposer();
+    const text =
+      'Sheet "Export":\nid\n1\n[export.xlsx: showing the first 1,000 of 1,001 rows of sheet Export]';
+
+    server.texts.set('export.xlsx', text);
+
+    drop(binary('export.xlsx', XLSX_TYPE));
+
+    await screen.findByRole('group', { name: 'export.xlsx, XLSX, ready' });
+    await user.click(screen.getByRole('button', { name: 'Open export.xlsx' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'export.xlsx' });
+
+    expect(dialog.querySelector('pre')?.textContent).toBe(text);
+  });
+
+  it.each([
+    { name: 'report', type: DOCX_TYPE, label: 'DOCX' },
+    { name: 'budget', type: XLSX_TYPE, label: 'XLSX' },
+  ])('labels $name, a $label file with no extension, $label', async ({ name, type, label }) => {
+    const { drop, server } = renderComposer();
+
+    server.texts.set(name, '# Read');
+
+    drop(binary(name, type));
+
+    expect(await screen.findByRole('group', { name: `${name}, ${label}, ready` })).toBeTruthy();
+  });
+
+  it('shows the large-file hint on a large text file but not on a large Word document', async () => {
+    const { drop, server } = renderComposer();
+    const notes = new File(['# Notes'], 'notes.md', { type: 'text/markdown' });
+    const report = binary('report.docx', DOCX_TYPE);
+
+    Object.defineProperty(notes, 'size', { value: 11_200_000 });
+    Object.defineProperty(report, 'size', { value: 11_200_000 });
+    server.texts.set('report.docx', '# Report');
+
+    drop(notes, report);
+
+    const text = await screen.findByRole('group', { name: 'notes.md, MD, ready' });
+    const word = await screen.findByRole('group', { name: 'report.docx, DOCX, ready' });
+
+    expect(text.className).toContain('fb-attachment-card--large');
+    expect(description(text)).toBe(
+      'Large file (11.2 MB). In long chats, older files may be left out to keep requests small.',
+    );
+    expect(word.className).not.toContain('fb-attachment-card--large');
+    expect(word.getAttribute('aria-describedby')).toBeNull();
+    expect(within(word).queryByText('Large file')).toBeNull();
+  });
+
+  it('shows a Word document the server refuses as red, without Retry', async () => {
+    const { drop, onSubmit, server } = renderComposer();
+
+    server.fetch.mockImplementationOnce(async () => fileRefusal('report.docx'));
+
+    drop(binary('report.docx', DOCX_TYPE));
+
+    const card = await screen.findByRole('group', { name: "report.docx, DOCX, won't be sent" });
+
+    expect(card.dataset.state).toBe('refused');
+    expect(description(card)).toBe("Won't be sent. This file couldn't be read.");
+    expect(within(card).queryByRole('button', { name: /Retry/ })).toBeNull();
+    expect(status()).toBe("report.docx won't be sent: this file couldn't be read");
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Summarise it' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('Summarise it', []);
+    expect(server.fetch).toHaveBeenCalledOnce();
+  });
+
+  it('offers Retry when a Word document fails to upload for another reason', async () => {
+    const { drop, server } = renderComposer();
+
+    server.texts.set('report.docx', '# Report');
+    server.fetch.mockImplementationOnce(async () =>
+      Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
+    );
+
+    drop(binary('report.docx', DOCX_TYPE));
+
+    const card = await screen.findByRole('group', { name: 'report.docx, DOCX, upload failed' });
+
+    expect(description(card)).toBe('Upload failed. Storage is unavailable.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry uploading report.docx' }));
+
+    expect(await screen.findByRole('group', { name: 'report.docx, DOCX, ready' })).toBeTruthy();
+    expect(server.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    {
+      name: 'slides.pptx',
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    },
+    { name: 'old.doc', type: 'application/msword' },
+    { name: 'old.xls', type: 'application/vnd.ms-excel' },
+    { name: 'notes.odt', type: 'application/vnd.oasis.opendocument.text' },
+    { name: 'macros.docm', type: 'application/vnd.ms-word.document.macroEnabled.12' },
+  ])('never uploads $name, an office file FrogBot does not read', async ({ name, type }) => {
+    const { drop, server } = renderComposer();
+
+    const extension = name.slice(name.lastIndexOf('.') + 1).toUpperCase();
+
+    drop(binary(name, type));
+
+    const card = await screen.findByRole('group', {
+      name: `${name}, ${extension}, won't be sent`,
+    });
+
+    expect(description(card)).toBe("Won't be sent. This file type isn't supported.");
+    expect(status()).toBe(`${name} won't be sent: this file type isn't supported`);
+    expect(server.fetch).not.toHaveBeenCalled();
   });
 
   it('retries a failed upload', async () => {

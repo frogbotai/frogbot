@@ -1,4 +1,5 @@
 import type { AttachmentKind } from '../../../../packages/frogbot/src/uploads/attachmentParts.js';
+import type { OfficeKind } from '../../../../packages/frogbot/src/uploads/office/officeText.js';
 
 export type AttachmentKindCase = {
   name: string;
@@ -6,6 +7,7 @@ export type AttachmentKindCase = {
   filename: string;
   head?: Uint8Array;
   kind: AttachmentKind;
+  office?: OfficeKind;
 };
 
 const text = (value: string) => new TextEncoder().encode(value);
@@ -13,6 +15,10 @@ const text = (value: string) => new TextEncoder().encode(value);
 const bytes = (...values: number[]) => Uint8Array.from(values);
 
 const binary = bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00);
+
+const zip = bytes(0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00);
+
+const ole = bytes(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00, 0x00);
 
 export const attachmentKindCases: AttachmentKindCase[] = [
   { name: 'PNG', mediaType: 'image/png', filename: 'photo.png', head: binary, kind: 'image' },
@@ -116,7 +122,7 @@ export const attachmentKindCases: AttachmentKindCase[] = [
     name: 'zip',
     mediaType: 'application/zip',
     filename: 'archive.zip',
-    head: bytes(0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00),
+    head: zip,
     kind: 'binary',
   },
   {
@@ -124,6 +130,141 @@ export const attachmentKindCases: AttachmentKindCase[] = [
     mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     filename: 'report.docx',
     kind: 'binary',
+    office: 'docx',
+  },
+  {
+    name: 'Excel workbook',
+    mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    filename: 'budget.xlsx',
+    head: zip,
+    kind: 'binary',
+    office: 'xlsx',
+  },
+  {
+    name: 'Word document sent as octet-stream',
+    mediaType: 'application/octet-stream',
+    filename: 'REPORT.DOCX',
+    head: zip,
+    kind: 'binary',
+    office: 'docx',
+  },
+  {
+    name: 'Excel workbook with no extension',
+    mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    filename: 'budget',
+    kind: 'binary',
+    office: 'xlsx',
+  },
+  {
+    name: 'macro-enabled Word document',
+    mediaType: 'application/vnd.ms-word.document.macroEnabled.12',
+    filename: 'macros.docm',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: 'legacy Word document',
+    mediaType: 'application/msword',
+    filename: 'old.doc',
+    head: ole,
+    kind: 'binary',
+  },
+  {
+    name: 'legacy Excel workbook',
+    mediaType: 'application/vnd.ms-excel',
+    filename: 'old.xls',
+    head: ole,
+    kind: 'binary',
+  },
+  {
+    name: 'PowerPoint presentation',
+    mediaType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    filename: 'slides.pptx',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: 'OpenDocument text',
+    mediaType: 'application/vnd.oasis.opendocument.text',
+    filename: 'notes.odt',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: 'macro-enabled Excel workbook',
+    mediaType: 'application/vnd.ms-excel.sheet.macroEnabled.12',
+    filename: 'macros.xlsm',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: 'OpenDocument spreadsheet',
+    mediaType: 'application/vnd.oasis.opendocument.spreadsheet',
+    filename: 'sheet.ods',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: '.docm sent with the Word type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: 'macros.docm',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: '.xlsm sent with the Excel type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    filename: 'macros.XLSM',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: '.doc sent with the Word type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: 'old.doc',
+    head: ole,
+    kind: 'binary',
+  },
+  {
+    name: '.xls sent with the Excel type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    filename: 'old.xls',
+    head: ole,
+    kind: 'binary',
+  },
+  {
+    name: '.pptx sent with the Word type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: 'slides.pptx',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: '.odt sent with the Word type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: 'notes.odt',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: '.ods sent with the Excel type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    filename: 'sheet.ods',
+    head: zip,
+    kind: 'binary',
+  },
+  {
+    name: 'Word template sent with the Word type',
+    mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: 'letter.dotx',
+    kind: 'binary',
+  },
+  {
+    name: 'Word document with an unknown extension',
+    mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    filename: 'report v1.2',
+    kind: 'binary',
+    office: 'docx',
   },
   {
     name: 'empty file',

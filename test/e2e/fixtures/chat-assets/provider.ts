@@ -21,20 +21,39 @@ export type ModelRequest = {
   tools?: Array<{ type: string; function: { name: string; parameters: unknown } }>;
 };
 
+const titleInstructions = 'Create a concise chat title';
+
+const chatTitle = 'Chat assets';
+
+function isTitleRequest(body: ModelRequest): boolean {
+  const system = body.messages[0];
+
+  return (
+    system?.role === 'system' &&
+    typeof system.content === 'string' &&
+    system.content.startsWith(titleInstructions)
+  );
+}
+
 export async function startModelProvider() {
   const requests: ModelRequest[] = [];
+  const titleRequests: ModelRequest[] = [];
   const unexpected: string[] = [];
   const app = new Hono();
 
   app.post('/v1/chat/completions', async (context) => {
     const body = await context.req.json<ModelRequest>();
+    const title = isTitleRequest(body);
 
-    requests.push(body);
+    if (title) titleRequests.push(body);
+    else requests.push(body);
 
     const lastMessage = body.messages.at(-1);
     const finished =
+      title ||
       lastMessage?.role === 'tool' ||
       (lastMessage?.role === 'user' && lastMessage.content === followUp);
+    const content = title ? chatTitle : answer;
 
     const toolCall = {
       id: toolCallId,
@@ -42,12 +61,12 @@ export async function startModelProvider() {
       function: { name: toolSlug, arguments: JSON.stringify({ content: report }) },
     };
     const message = finished
-      ? { role: 'assistant', content: answer }
+      ? { role: 'assistant', content }
       : { role: 'assistant', content: null, tool_calls: [toolCall] };
     const finishReason = finished ? 'stop' : 'tool_calls';
     const usage = { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 };
     const completion = {
-      id: `chat-assets-${requests.length}`,
+      id: `chat-assets-${requests.length + titleRequests.length}`,
       created: 1,
       model: body.model,
     };
@@ -62,7 +81,7 @@ export async function startModelProvider() {
     }
 
     const delta = finished
-      ? { role: 'assistant', content: answer }
+      ? { role: 'assistant', content }
       : { role: 'assistant', tool_calls: [{ index: 0, ...toolCall }] };
     const chunks = [
       { choices: [{ index: 0, delta, finish_reason: null }] },
@@ -98,6 +117,7 @@ export async function startModelProvider() {
   return {
     url: `http://127.0.0.1:${address.port}`,
     requests,
+    titleRequests,
     unexpected,
     close: () =>
       new Promise<void>((resolve, reject) => {

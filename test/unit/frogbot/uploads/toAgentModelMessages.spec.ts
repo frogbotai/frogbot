@@ -4,6 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { toAgentModelMessages } from '../../../../packages/frogbot/src/uploads/toAgentModelMessages.js';
+import {
+  budgetText,
+  budgetXlsx,
+  encryptedOfficeFile,
+  reportDocx,
+  reportText,
+} from '../../../__helpers/shared/office.js';
 
 const { getFileByPath } = vi.hoisted(() => ({ getFileByPath: vi.fn() }));
 
@@ -13,6 +20,9 @@ vi.mock('payload', async (importOriginal) => ({
 }));
 
 const MiB = 1024 * 1024;
+
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const ai = {
   providers: {
@@ -34,6 +44,7 @@ type Asset = {
   mimeType?: string;
   filesize?: number;
   sha256?: string | null;
+  text?: string | null;
   chat?: string | number | null;
   prefix?: string;
 };
@@ -44,12 +55,16 @@ function request({
   upload = { staticDir: '/files' },
   chat = { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages', assetsSlug: 'assets' },
   createRequest = vi.fn().mockResolvedValue({ headers: new Headers(), handler: true }),
+  logger = { warn: vi.fn() },
+  transactionID,
 }: {
   findByID?: ReturnType<typeof vi.fn>;
   update?: ReturnType<typeof vi.fn>;
   upload?: Record<string, unknown>;
   chat?: Record<string, unknown>;
   createRequest?: ReturnType<typeof vi.fn>;
+  logger?: { warn: ReturnType<typeof vi.fn> };
+  transactionID?: string;
 } = {}) {
   return Object.assign(
     new Request('http://localhost/api/agents/support', {
@@ -58,6 +73,7 @@ function request({
     {
       user: { id: 'user-1' },
       context: {},
+      transactionID,
       frogbot: {
         config: {
           ai,
@@ -69,6 +85,7 @@ function request({
         createRequest,
         findByID,
         update,
+        logger,
       },
     },
   ) as unknown as FrogBotRequest;
@@ -129,6 +146,8 @@ function texts(messages: ModelMessage[]): string[] {
 }
 
 const png = { mimeType: 'image/png', filesize: 4 };
+
+const docx = { mimeType: DOCX_TYPE, filesize: 2048 };
 
 describe('toAgentModelMessages', () => {
   beforeEach(() => {
@@ -530,6 +549,205 @@ describe('toAgentModelMessages', () => {
     const messages = await load(req, [user(reference('a'))], { onUnavailable: 'marker' });
 
     expect(texts(messages)).toEqual(["[Can't read gone.png: the file couldn't be loaded]"]);
+  });
+
+  it('sends the stored text of a Word document without reading the file', async () => {
+    const update = vi.fn();
+    const req = request({
+      findByID: assets({ id: 'report', filename: 'report-1.docx', text: reportText, ...docx }),
+      update,
+    });
+
+    storedFiles({});
+
+    const messages = await load(req, [user(reference('report', { filename: 'report.docx' }))]);
+
+    expect(texts(messages)).toEqual([`Attached file "report.docx":\n${reportText}`]);
+    expect(getFileByPath).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('sends stored empty text as an empty attachment', async () => {
+    const req = request({
+      findByID: assets({ id: 'blank', filename: 'blank.docx', text: '', ...docx }),
+    });
+
+    storedFiles({});
+
+    const messages = await load(req, [user(reference('blank'))]);
+
+    expect(texts(messages)).toEqual(['Attached file "blank.docx":\n']);
+  });
+
+  it('reads a Word document without stored text once and stores its text', async () => {
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({
+      findByID: assets({ id: 'report', filename: 'report.docx', text: null, ...docx }),
+      update,
+    });
+
+    storedFiles({ 'report.docx': Buffer.from(reportDocx()) });
+
+    const messages = await load(req, [user(reference('report'))]);
+
+    expect(texts(messages)).toEqual([`Attached file "report.docx":\n${reportText}`]);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith({
+      collection: 'assets',
+      id: 'report',
+      data: { text: reportText },
+      depth: 0,
+      req,
+      overrideAccess: true,
+    });
+  });
+
+  it('recognizes an Excel workbook by its stored name when its type is generic', async () => {
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({
+      findByID: assets({
+        id: 'budget',
+        filename: 'budget.xlsx',
+        mimeType: 'application/octet-stream',
+      }),
+      update,
+    });
+
+    storedFiles({ 'budget.xlsx': Buffer.from(budgetXlsx()) });
+
+    const messages = await load(req, [user(reference('budget'))]);
+
+    expect(texts(messages)).toEqual([`Attached file "budget.xlsx":\n${budgetText}`]);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'budget', data: { text: budgetText } }),
+    );
+  });
+
+  it('replaces an unreadable Word document with a marker and stores nothing', async () => {
+    const update = vi.fn();
+    const req = request({
+      findByID: assets({ id: 'locked', filename: 'locked.docx', ...docx }),
+      update,
+    });
+
+    storedFiles({ 'locked.docx': Buffer.from(encryptedOfficeFile()) });
+
+    const messages = await load(req, [user(reference('locked'))]);
+
+    expect(texts(messages)).toEqual(["[Can't read locked.docx: the file couldn't be read]"]);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('reads a repeated Word document once, as its newest copy', async () => {
+    const update = vi.fn().mockResolvedValue({});
+    const req = request({
+      findByID: assets(
+        { id: 'old', filename: 'report-1.docx', sha256: 'same', ...docx },
+        { id: 'new', filename: 'report-2.docx', sha256: 'same', ...docx },
+      ),
+      update,
+    });
+
+    storedFiles({
+      'report-1.docx': Buffer.from(reportDocx()),
+      'report-2.docx': Buffer.from(reportDocx()),
+    });
+
+    const messages = await load(req, [
+      user(reference('old', { filename: 'report.docx' })),
+      user(reference('new', { filename: 'report.docx' })),
+    ]);
+
+    expect(texts(messages)).toEqual([
+      '[File repeated later: report.docx]',
+      `Attached file "report.docx":\n${reportText}`,
+    ]);
+    expect(getFileByPath).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ id: 'new' }));
+  });
+
+  it('stores the text of several files one at a time', async () => {
+    let writing = 0;
+    let overlapped = false;
+
+    const update = vi.fn(async () => {
+      writing += 1;
+      overlapped ||= writing > 1;
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      writing -= 1;
+
+      return {};
+    });
+
+    const req = request({
+      findByID: assets(
+        { id: 'report', filename: 'report.docx', ...docx },
+        { id: 'budget', filename: 'budget.xlsx', mimeType: XLSX_TYPE },
+      ),
+      update,
+    });
+
+    storedFiles({
+      'report.docx': Buffer.from(reportDocx()),
+      'budget.xlsx': Buffer.from(budgetXlsx()),
+    });
+
+    await load(req, [user(reference('report'), reference('budget'))]);
+
+    expect(update).toHaveBeenCalledTimes(2);
+    expect(overlapped).toBe(false);
+  });
+
+  it('sends the text and stores the next file when storing one file’s text fails', async () => {
+    const conflict = new Error('WriteConflict');
+    const update = vi.fn().mockRejectedValueOnce(conflict).mockResolvedValue({});
+    const logger = { warn: vi.fn() };
+
+    const req = request({
+      findByID: assets(
+        { id: 'report', filename: 'report.docx', ...docx },
+        { id: 'budget', filename: 'budget.xlsx', mimeType: XLSX_TYPE },
+      ),
+      update,
+      logger,
+    });
+
+    storedFiles({
+      'report.docx': Buffer.from(reportDocx()),
+      'budget.xlsx': Buffer.from(budgetXlsx()),
+    });
+
+    const messages = await load(req, [user(reference('report'), reference('budget'))]);
+
+    expect(texts(messages)).toEqual([
+      `Attached file "report.docx":\n${reportText}`,
+      `Attached file "budget.xlsx":\n${budgetText}`,
+    ]);
+    expect(update).toHaveBeenCalledTimes(2);
+    expect(update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'budget', data: { text: budgetText } }),
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      { err: conflict, id: 'report' },
+      '[frogbot] Failed to store the text of a file',
+    );
+  });
+
+  it('fails when storing the text fails inside the caller’s transaction', async () => {
+    const conflict = new Error('WriteConflict');
+
+    const req = request({
+      findByID: assets({ id: 'report', filename: 'report.docx', ...docx }),
+      update: vi.fn().mockRejectedValue(conflict),
+      transactionID: 'transaction-1',
+    });
+
+    storedFiles({ 'report.docx': Buffer.from(reportDocx()) });
+
+    await expect(load(req, [user(reference('report'))])).rejects.toBe(conflict);
   });
 
   it('does not read local files outside the configured static directory', async () => {

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { UIMessage } from 'ai';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +10,7 @@ import { placeholderChatTitle } from '../../packages/frogbot/src/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import { reportDocx, reportText } from '../__helpers/shared/office.js';
 import type { StubChatModel, StubChatRequest } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import {
@@ -30,6 +31,8 @@ const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
   'base64',
 );
+
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 type Asset = { id: number | string; filename: string; mimeType: string };
 
@@ -129,11 +132,19 @@ describe('chat attachments stored in S3', () => {
     await fs.rm(path.resolve(chatAssetsSlug), { recursive: true, force: true });
   });
 
-  async function upload(): Promise<Asset> {
+  async function upload({
+    name = 'photo.png',
+    type = 'image/png',
+    data = PNG,
+  }: {
+    name?: string;
+    type?: string;
+    data?: Uint8Array;
+  } = {}): Promise<Asset> {
     const body = new FormData();
 
     body.set('_payload', '{}');
-    body.set('file', new Blob([PNG], { type: 'image/png' }), 'photo.png');
+    body.set('file', new Blob([new Uint8Array(data)], { type }), name);
 
     const response = await fetch(`${booted.baseUrl}/api/${chatAssetsSlug}`, {
       method: 'POST',
@@ -146,7 +157,7 @@ describe('chat attachments stored in S3', () => {
     return ((await response.json()) as { doc: Asset }).doc;
   }
 
-  function photoMessage(asset: Asset, text: string): UIMessage {
+  function fileMessage(asset: Asset, text: string): UIMessage {
     return {
       id: `user-${++sequence}`,
       role: 'user',
@@ -160,6 +171,21 @@ describe('chat attachments stored in S3', () => {
         },
       ],
     } as UIMessage;
+  }
+
+  function reportUpload(): Promise<Asset> {
+    return upload({ name: 'report.docx', type: DOCX_TYPE, data: reportDocx() });
+  }
+
+  async function storedText(asset: Asset): Promise<string | null | undefined> {
+    const doc = await booted.frogbot.findByID({
+      collection: chatAssetsSlug,
+      id: asset.id,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    return (doc as { text?: string | null }).text;
   }
 
   async function post(body: unknown) {
@@ -193,7 +219,7 @@ describe('chat attachments stored in S3', () => {
   it('sends an image stored only in S3 on Send', async () => {
     const photo = await upload();
 
-    const response = await post({ messages: [photoMessage(photo, 'What is this?')] });
+    const response = await post({ messages: [fileMessage(photo, 'What is this?')] });
 
     await expect(fs.access(path.resolve(chatAssetsSlug, photo.filename))).rejects.toThrow();
     expect(response.status).toBe(200);
@@ -204,7 +230,7 @@ describe('chat attachments stored in S3', () => {
     const photo = await upload();
     const { chatId, hold, running } = await startSlowTurn();
 
-    await post({ chatId, messages: [photoMessage(photo, 'And this?')] });
+    await post({ chatId, messages: [fileMessage(photo, 'And this?')] });
 
     hold.resolve();
     await running;
@@ -225,7 +251,7 @@ describe('chat attachments stored in S3', () => {
     const turn = (await booted.frogbot.agents[agentSlug]!.streamMessage({
       req,
       chatId: opened.body.chatId,
-      messages: [photoMessage(photo, 'What is this?')],
+      messages: [fileMessage(photo, 'What is this?')],
     })) as { persistence: Promise<void> };
 
     await turn.persistence;
@@ -240,7 +266,7 @@ describe('chat attachments stored in S3', () => {
 
     const { chatId, hold, running } = await startSlowTurn();
 
-    await post({ chatId, messages: [photoMessage(photo, 'And this?')] });
+    await post({ chatId, messages: [fileMessage(photo, 'And this?')] });
 
     hold.resolve();
     await running;
@@ -251,5 +277,42 @@ describe('chat attachments stored in S3', () => {
       ['Start.'],
       ['And this?', `[Can't read ${photo.filename}: the file couldn't be loaded]`],
     ]);
+  });
+
+  it('keeps an uploaded Word document in S3 and its text in the database', async () => {
+    const report = await reportUpload();
+
+    const object = await client.send(
+      new GetObjectCommand({ Bucket: bucket, Key: report.filename }),
+    );
+
+    await expect(fs.access(path.resolve(chatAssetsSlug, report.filename))).rejects.toThrow();
+    expect(await object.Body!.transformToByteArray()).toEqual(reportDocx());
+    expect(await storedText(report)).toBe(reportText);
+  });
+
+  it('reads a Word document stored in S3 without text on a queued turn and keeps its text', async () => {
+    const report = await reportUpload();
+
+    await booted.frogbot.db.updateOne({
+      collection: chatAssetsSlug,
+      id: report.id,
+      data: { text: null },
+    });
+
+    const { chatId, hold, running } = await startSlowTurn();
+
+    await post({ chatId, messages: [fileMessage(report, 'Summarize.')] });
+
+    hold.resolve();
+    await running;
+
+    await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
+
+    expect(userContent(model.requests[1]!)).toEqual([
+      ['Start.'],
+      ['Summarize.', `Attached file "${report.filename}":\n${reportText}`],
+    ]);
+    await vi.waitFor(async () => expect(await storedText(report)).toBe(reportText));
   });
 });

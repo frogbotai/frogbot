@@ -120,6 +120,8 @@ FrogBot injects the collection whenever chat persistence is enabled and hides it
 
 Because read access follows the chat collection's own rule, sharing a chat also shares its attachments. A [storage adapter](/upload/storage-adapters) covers `frogbot-chat-assets` automatically, so assets go to cloud storage without listing the collection. Set `'frogbot-chat-assets': false` in the adapter's `collections` to keep them on local disk.
 
+Word and Excel assets also carry a `text` field: the text FrogBot read from the file when it was uploaded, exactly as the model receives it after the file's label (see [Word and Excel files](#word-and-excel-files)). Other assets have `text: null`. Anyone who can read the asset can read `text`; FrogBot ignores a value sent by the client, and no one can change it through the API. The upload response includes it, so a client can show the text without a second request. Because `text` can hold about 60,000 characters, leave it out of reads that don't need it with [`select`](/queries/select), such as `select: { text: false }`.
+
 Tools can save files against the current chat with `saveChatAsset`:
 
 ```ts
@@ -133,7 +135,7 @@ const asset = await saveChatAsset({
 })
 ```
 
-The helper requires chat persistence and a current chat on `ctx.agent.chatId`; it records the requesting user as the owner.
+The helper requires chat persistence and a current chat on `ctx.agent.chatId`; it records the requesting user as the owner. It doesn't read Word or Excel files when saving them, so a tool can save any file, including one that can't be read. FrogBot reads such a file the first time a turn sends it to a model.
 
 ### How attachments reach the agent
 
@@ -145,13 +147,100 @@ FrogBot sorts each attachment into one kind:
 | --- | --- | --- |
 | Image | PNG, JPEG, GIF, or WebP, by type, or by extension when the upload has no specific type | The image, when the model accepts images |
 | PDF | `application/pdf`, or a `.pdf` extension when the upload has no specific type | The PDF, when the model accepts PDFs |
+| Word, Excel | A `.docx` or `.xlsx` extension, or the Word or Excel media type on a file without another Office extension | A label, a line break, then the text FrogBot read from the file; see [Word and Excel files](#word-and-excel-files) |
 | Text | Any other file whose first 4 KB read as UTF-8 text, whatever type it was uploaded with | A label, a line break, then the full contents |
 | Audio, video | `audio/*` or `video/*` that doesn't read as text | The file, when the model accepts that kind |
-| Unsupported | Everything else, such as archives, Word documents, UTF-16 text, and HEIC images | A marker |
+| Unsupported | Everything else, such as archives, PowerPoint files, older `.doc` and `.xls` files, UTF-16 text, and HEIC images | A marker |
 
 The label is `Attached file "notes.md":`, using the file name in the message part, or the stored name when the part has none, or `Pasted text:` for a `file-reference` part with `origin: 'paste'` and for `data-paste` parts. SVG files are text. A leading byte-order mark is dropped, and bytes that aren't valid UTF-8 become `�`. FrogBot sets no size limit on text.
 
 Which image, audio, video, and PDF attachments a model accepts comes from its [input types](/ai/overview#custom-model-options). A model with unknown input types receives every image, audio, video, and PDF attachment. The chat composer applies the same rules when a file is picked, so it refuses unsupported files and files the selected model can't read before they are uploaded; see [Attachments](/chat/ui-chat#attachments).
+
+#### Word and Excel files
+
+FrogBot reads Word (`.docx`) and Excel (`.xlsx`) files once, when they are uploaded, and stores the result in the asset's [`text` field](#chat-assets). Every model receives that text after the file's label, including models that only read text. The original file stays in storage and is never sent to the model.
+
+A file is read as Word or Excel when its name ends in `.docx` or `.xlsx`, or, for any other name, when its media type is `application/vnd.openxmlformats-officedocument.wordprocessingml.document` or `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`. Macro-enabled `.docm` and `.xlsm` files, templates such as `.dotx`, older `.doc` and `.xls` files, PowerPoint, and OpenDocument files are unsupported, even when sent with the Word or Excel media type.
+
+A Word document becomes plain text that keeps its structure:
+
+- Headings start with one `#` per level, list items with `-` or `1.`, and nested items are indented.
+- Each table row is one line, such as `| North | 1,200 |`, with a `| --- | --- |` line after the first row. A merged cell's text appears in its first cell, and the cells it covers stay empty so the columns line up.
+- Links become `text (url)`. Footnotes and endnotes follow the body as a numbered list. Tracked insertions are kept and tracked deletions left out.
+- Images, charts, comments, headers, footers, bold, and italics are left out.
+
+```text
+Attached file "q3-report.docx":
+# Quarterly report
+
+Intro paragraph.
+
+- First bullet
+- Second bullet
+
+| Region | Total |
+| --- | --- |
+| North | 1,200 |
+```
+
+An Excel workbook becomes one CSV section per sheet, in workbook order, each starting with `Sheet "<name>":` and separated by a blank line. Empty sheets and chart sheets are left out; hidden sheets are included. Each cell holds its stored value:
+
+- A formula gives the result saved with the workbook, and is empty when the workbook was saved without results.
+- Number formats aren't applied, so a cell shown as `25%` arrives as `0.25` and `$1,200.00` as `1200`.
+- Dates arrive as `2026-01-15`, or `2026-01-15 09:30:00` when they have a time, in UTC. A date outside the years 0 to 9999 arrives as its serial number, such as `2958466`, and one too far out to convert arrives empty. Booleans arrive as `TRUE` and `FALSE`.
+- Error cells, such as `#DIV/0!`, are empty. A merged cell's value appears once, in its first cell.
+- Fields containing a comma, a quote, or a line break are quoted, with quotes doubled.
+
+```text
+Attached file "budget.xlsx":
+Sheet "Q1":
+Item,Amount,Date
+Rent,1200,2026-01-15
+"Food, drinks",300.5,2026-02-01
+Total,1500.5,
+Merged note,,
+
+Sheet "Q2":
+Region,Target
+North,5000
+```
+
+Large files are cut so that one file can't fill the model's context on every turn:
+
+- Each sheet sends its first 1,000 rows, counting the header row. A longer sheet ends with a note such as `[budget.xlsx: showing the first 1,000 of 52,340 rows of sheet Q1]`.
+- A file's text is limited to 60,000 characters. Longer text is cut at the last line break before the limit and ends with a note such as `[report.docx: showing the first 59,982 of 182,400 characters]`. Notes don't count toward the limit.
+
+The notes are part of the stored text, so the model sees them and the composer's text viewer shows them in the same place.
+
+A Word or Excel upload that can't be read is refused with `400`, and nothing is stored:
+
+| Cause | Error message |
+| --- | --- |
+| The file is corrupt or truncated, or isn't really a Word or Excel file, such as a renamed PDF or a workbook named `.docx` | `report.docx couldn't be read: it isn't a valid Word or Excel file.` |
+| The file is password-protected | `report.docx couldn't be read: it is password-protected.` |
+| Unzipped, the file would grow by more than 50 MiB, it holds more than 10,000 entries, or two of its entries share the same stored data | `report.docx couldn't be read: it is too large when expanded.` |
+| A workbook's sheets span more than 20 million cells in total, counting every cell from `A1` to each sheet's last row and column, plus 16 for each row | `budget.xlsx couldn't be read: it is too large when expanded.` |
+
+The REST response is a validation error on the `file` field, naming the file:
+
+```json
+{
+  "errors": [
+    {
+      "name": "ValidationError",
+      "message": "The following field is invalid: file",
+      "data": {
+        "collection": "frogbot-chat-assets",
+        "errors": [{ "path": "file", "message": "report.docx couldn't be read: it is password-protected." }]
+      }
+    }
+  ]
+}
+```
+
+The [SDK](/rest-api/overview#frogbot-rest-api-sdk) throws a `FrogBotSDKError` with status `400` and this `errors` array, and the Local API throws the validation error. The composer shows the file as a red card; see [Attachment cards](/chat/ui-chat#attachment-cards).
+
+An asset without stored text, such as one saved with `saveChatAsset` or stored before FrogBot read these files on upload, is read the first time a turn sends it, and the text is saved to the asset for later turns. If it can't be read, the model receives the "couldn't be read" marker below, and FrogBot tries again on the next turn.
 
 #### Markers
 
@@ -161,6 +250,7 @@ An attachment that isn't sent is replaced by a marker in the model's input. Mark
 | --- | --- |
 | `[Can't read photo.png: this model doesn't accept images]` | The model's input types leave out that kind. The marker names images, PDFs, audio, or video. |
 | `[Can't read archive.zip: this file type isn't supported]` | The attachment is unsupported. |
+| `[Can't read report.docx: the file couldn't be read]` | A Word or Excel asset without stored text can't be read when a turn sends it. |
 | `[Can't read report.pdf: the file couldn't be loaded]` | The asset is missing, the user can't read it, or its file can't be read from storage, on any turn other than sending a message. |
 | `[File repeated later: shot.png]` | The same file appears again later in the conversation. Only its newest copy is sent. |
 | `[Image removed: photo.png]`, `[File removed: report.pdf]` | The request is over the size limit, or over the provider's image count. |

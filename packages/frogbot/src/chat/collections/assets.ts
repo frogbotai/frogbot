@@ -1,11 +1,25 @@
-import type { PayloadRequest } from 'payload';
+import { readFile } from 'node:fs/promises';
+
+import { type PayloadRequest, ValidationError } from 'payload';
 
 import type { Access, AccessResult, CollectionConfig } from '../../collections/config/types.js';
 import type { Where } from '../../types/payload.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { hashUpload } from '../../uploads/hashUpload.js';
+import { officeKind, officeText } from '../../uploads/office/officeText.js';
+import { OfficeFileError, type OfficeFileErrorReason } from '../../uploads/office/zipGuard.js';
 
 export const CHAT_ASSETS_SLUG = 'frogbot-chat-assets';
+
+export const SKIP_ASSET_TEXT_CONTEXT_KEY = 'frogbotSkipAssetText';
+
+const REFUSAL_CAUSES: Record<OfficeFileErrorReason, string> = {
+  invalid: "it isn't a valid Word or Excel file",
+  encrypted: 'it is password-protected',
+  'too-large': 'it is too large when expanded',
+};
+
+type UploadedFile = NonNullable<PayloadRequest['file']>;
 
 export type DefaultChatAssetsCollectionProps = {
   chatsSlug: string;
@@ -42,6 +56,38 @@ async function readableChats({
   return read({ req: req as unknown as PayloadRequest });
 }
 
+async function uploadBytes({ data, tempFilePath }: UploadedFile): Promise<Uint8Array> {
+  if (data?.byteLength || !tempFilePath) return data ?? new Uint8Array();
+
+  return readFile(tempFilePath);
+}
+
+async function uploadText({
+  req,
+  collection,
+}: {
+  req: FrogBotRequest;
+  collection: string;
+}): Promise<string | null> {
+  const file = req.file;
+
+  if (!file || req.context[SKIP_ASSET_TEXT_CONTEXT_KEY]) return null;
+
+  const kind = officeKind({ mediaType: file.mimetype, filename: file.name });
+
+  if (!kind) return null;
+
+  const bytes = await uploadBytes(file);
+
+  return officeText({ bytes, filename: file.name, kind }).catch((error: unknown) => {
+    if (!(error instanceof OfficeFileError)) throw error;
+
+    const message = `${file.name} couldn't be read: ${REFUSAL_CAUSES[error.reason]}.`;
+
+    throw new ValidationError({ collection, errors: [{ path: 'file', message }] });
+  });
+}
+
 export function defaultChatAssetsCollection({
   chatsSlug,
   userSlug,
@@ -74,9 +120,12 @@ export function defaultChatAssetsCollection({
     },
     hooks: {
       beforeChange: [
-        async ({ data, req }) => ({
+        async ({ collection, data, operation, req }) => ({
           ...data,
           sha256: req.file ? await hashUpload(req.file) : undefined,
+          ...(operation === 'create'
+            ? { text: await uploadText({ req, collection: collection.slug }) }
+            : {}),
         }),
       ],
     },
@@ -92,6 +141,7 @@ export function defaultChatAssetsCollection({
       },
       { name: 'chat', type: 'relationship', relationTo: chatsSlug, index: true },
       { name: 'sha256', type: 'text', hidden: true },
+      { name: 'text', type: 'textarea' },
     ],
   };
 }

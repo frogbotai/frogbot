@@ -114,6 +114,7 @@ export type FrogBotUpload = {
   id: string | number;
   filename: string;
   mimeType: string;
+  [key: string]: unknown;
 };
 
 export type FrogBotUploadResponse = {

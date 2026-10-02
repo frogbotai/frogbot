@@ -10,6 +10,7 @@ import {
   textAttachment,
   textLabel,
   unavailableMarker,
+  unreadableFileMarker,
   unreadableMarker,
   unsupportedMarker,
 } from '../../../../packages/frogbot/src/uploads/attachmentParts.js';
@@ -110,11 +111,14 @@ describe('markers', () => {
   });
 
   it('names each marker after the file', () => {
-    expect(unsupportedMarker({ filename: 'report.docx' })).toBe(
-      "[Can't read report.docx: this file type isn't supported]",
+    expect(unsupportedMarker({ filename: 'report.pptx' })).toBe(
+      "[Can't read report.pptx: this file type isn't supported]",
     );
     expect(unavailableMarker({ kind: 'pdf', filename: 'report.pdf' })).toBe(
       "[Can't read report.pdf: the file couldn't be loaded]",
+    );
+    expect(unreadableFileMarker({ filename: 'report.docx' })).toBe(
+      "[Can't read report.docx: the file couldn't be read]",
     );
     expect(repeatedMarker({ kind: 'pdf', filename: 'report.pdf' })).toBe(
       '[File repeated later: report.pdf]',
@@ -135,6 +139,7 @@ describe('markers', () => {
       "[Can't read file: this file type isn't supported]",
     );
     expect(unavailableMarker({})).toBe("[Can't read file: the file couldn't be loaded]");
+    expect(unreadableFileMarker({})).toBe("[Can't read file: the file couldn't be read]");
     expect(repeatedMarker({ kind: 'text' })).toBe('[File repeated later: text]');
     expect(removedMarker({ kind: 'image' })).toBe('[Image removed: image]');
     expect(removedMarker({ kind: 'video' })).toBe('[File removed: video]');

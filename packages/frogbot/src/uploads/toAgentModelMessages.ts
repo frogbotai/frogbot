@@ -16,7 +16,10 @@ import {
   sentMediaType,
   textAttachment,
   unavailableMarker,
+  unreadableFileMarker,
 } from './attachmentParts.js';
+import { type OfficeKind, officeKind, officeText } from './office/officeText.js';
+import { OfficeFileError } from './office/zipGuard.js';
 import type { AttachmentSlot } from './toModelInput.js';
 import { boundMedia, markRepeated } from './toModelInput.js';
 
@@ -35,6 +38,7 @@ type AssetDocument = {
   mimeType?: string;
   filesize?: number;
   sha256?: string | null;
+  text?: string | null;
   prefix?: string;
   chat?: string | number | { id: string | number } | null;
 };
@@ -63,6 +67,11 @@ type AssetsCollection = {
 };
 
 type FileReader = (doc: LoadedAsset) => Promise<Uint8Array>;
+
+type ResolvedPart = {
+  part: UIPart;
+  writeBack?: { id: string | number; text: string };
+};
 
 export async function toAgentModelMessages({
   req,
@@ -152,14 +161,40 @@ async function resolveReferences({
 
   const read = fileReader({ req, collection });
 
-  const entries = await Promise.all(
-    references.map(async (reference): Promise<[UIPart, UIPart]> => [
-      reference.part as unknown as UIPart,
-      await resolvePart({ reference, read, onUnavailable }),
-    ]),
+  const resolved = await Promise.all(
+    references.map((reference) => resolvePart({ reference, read, onUnavailable })),
   );
 
-  return new Map(entries);
+  const transactionID = await req.transactionID;
+
+  for (const { writeBack } of resolved) {
+    if (!writeBack) continue;
+
+    try {
+      await req.frogbot.update({
+        collection: collection.slug,
+        id: writeBack.id,
+        data: { text: writeBack.text },
+        depth: 0,
+        req,
+        overrideAccess: true,
+      });
+    } catch (error) {
+      if (transactionID) throw error;
+
+      req.frogbot.logger.warn(
+        { err: error, id: writeBack.id },
+        '[frogbot] Failed to store the text of a file',
+      );
+    }
+  }
+
+  return new Map(
+    references.map((reference, index) => [
+      reference.part as unknown as UIPart,
+      resolved[index]!.part,
+    ]),
+  );
 }
 
 async function assetsCollection(req: FrogBotRequest): Promise<AssetsCollection> {
@@ -244,6 +279,39 @@ function assetSlot({ doc, filename }: { doc: LoadedAsset; filename: string }): A
   };
 }
 
+function textPart(text: string): ResolvedPart {
+  return { part: { type: 'text', text } };
+}
+
+async function officePart({
+  doc,
+  bytes,
+  kind,
+  filename,
+  origin,
+}: {
+  doc: LoadedAsset;
+  bytes: Uint8Array;
+  kind: OfficeKind;
+  filename: string;
+  origin?: 'paste';
+}): Promise<ResolvedPart> {
+  let text: string;
+
+  try {
+    text = await officeText({ bytes, filename: doc.filename, kind });
+  } catch (error) {
+    if (!(error instanceof OfficeFileError)) throw error;
+
+    return textPart(unreadableFileMarker({ filename }));
+  }
+
+  return {
+    ...textPart(textAttachment({ filename, origin, text })),
+    writeBack: { id: doc.id, text },
+  };
+}
+
 async function resolvePart({
   reference,
   read,
@@ -252,14 +320,18 @@ async function resolvePart({
   reference: Reference;
   read: FileReader;
   onUnavailable: 'throw' | 'marker';
-}): Promise<UIPart> {
+}): Promise<ResolvedPart> {
   if ('error' in reference) {
-    return { type: 'text', text: unavailableMarker({ filename: reference.part.filename }) };
+    return textPart(unavailableMarker({ filename: reference.part.filename }));
   }
 
   const { part, doc, name: filename, slot } = reference;
 
-  if (slot.replacement !== undefined) return { type: 'text', text: slot.replacement };
+  if (slot.replacement !== undefined) return textPart(slot.replacement);
+
+  if (typeof doc.text === 'string') {
+    return textPart(textAttachment({ filename, origin: part.origin, text: doc.text }));
+  }
 
   let bytes: Uint8Array;
 
@@ -268,8 +340,12 @@ async function resolvePart({
   } catch (error) {
     if (onUnavailable === 'throw') throw error;
 
-    return { type: 'text', text: unavailableMarker({ kind: slot.kind, filename }) };
+    return textPart(unavailableMarker({ kind: slot.kind, filename }));
   }
+
+  const office = officeKind({ mediaType: doc.mimeType, filename: doc.filename });
+
+  if (office) return officePart({ doc, bytes, kind: office, filename, origin: part.origin });
 
   const kind = attachmentKind({
     mediaType: doc.mimeType,
@@ -278,19 +354,18 @@ async function resolvePart({
   });
 
   if (kind === 'text') {
-    return {
-      type: 'text',
-      text: textAttachment({ filename, origin: part.origin, text: decodeText(bytes) }),
-    };
+    return textPart(textAttachment({ filename, origin: part.origin, text: decodeText(bytes) }));
   }
 
   const mediaType = sentMediaType({ mediaType: doc.mimeType, filename }) ?? doc.mimeType;
 
   return {
-    type: 'file',
-    filename,
-    mediaType,
-    url: `data:${mediaType};base64,${Buffer.from(bytes).toString('base64')}`,
+    part: {
+      type: 'file',
+      filename,
+      mediaType,
+      url: `data:${mediaType};base64,${Buffer.from(bytes).toString('base64')}`,
+    },
   };
 }
 

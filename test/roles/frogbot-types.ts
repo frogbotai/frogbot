@@ -241,6 +241,7 @@ export interface FrogbotChatAsset {
   owner?: (number | null) | User;
   chat?: (number | null) | Chat;
   sha256?: string | null;
+  text?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -483,6 +484,7 @@ export interface FrogbotChatAssetsSelect {
   owner?: boolean;
   chat?: boolean;
   sha256?: boolean;
+  text?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   url?: boolean;
