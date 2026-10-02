@@ -5,7 +5,7 @@ description: Rank collection records with lexical, vector, and hybrid search.
 keywords: [search, lexical, vector, hybrid, indexes, rag]
 ---
 
-Collection search ranks records of one collection by text relevance, vector similarity, or both. You declare named indexes on the collection and query them with `frogbot.search()`, REST, or GraphQL. Ranking runs in the database.
+Collection search ranks records of one collection by text relevance, vector similarity, or both. You declare named indexes on the collection and query them with `frogbot.search()`, REST, or GraphQL, or [search several collections](#search-several-collections) in one call with `frogbot.searchMany()`. Ranking runs in the database.
 
 The [Postgres and Vercel Postgres](/database/postgres#collection-search), [SQLite](/database/sqlite#collection-search), and [MongoDB](/database/mongodb#collection-search) adapters implement search, and every option on this page works the same way on each. The [Cloudflare D1](/database/sqlite#d1-collection-search) adapter implements lexical search; D1 has no native vector search, so an index with `vector` fails setup with reason `engine-gap`. Adapter pages list engine-specific details such as supported metrics and languages. On other adapters, any configured search index fails database initialization with `SearchCapabilityError` and reason `not-implemented`; leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
 
@@ -131,7 +131,7 @@ Search defaults to enforcing access and requires `req` unless you explicitly set
 
 The database ranks only documents the caller can read: collection read access and your `where` filter are applied before ranking. FrogBot then reads the ranked documents in one ordinary collection read, so collection and field read hooks run on each result as they do for any other read. A ranked document that this read does not return, for example because it was deleted or is no longer readable, is left out; `hits` can therefore be shorter than `limit`. Field-level read access on a ranked or filtered field stops the query with `SearchFilterUnsupportedError` while access is enforced, because scores computed over a hidden value would reveal it.
 
-The result is `{ mode, ranking, hits }`: `mode` is `lexical`, `vector`, or `hybrid`; `ranking` contains `method`, `higherIsBetter`, and `approximate`; each hit has `{ doc, score }`, in ranked order. Hybrid results add component details, described below. Scores are ordering values, not probabilities; scores from different methods are not directly comparable. An empty `hits` array is a successful no-match result. Ranking and hybrid fusion run in the database, with no JavaScript similarity or fusion fallback.
+The result is `{ mode, ranking, hits }`: `mode` is `lexical`, `vector`, or `hybrid`; `ranking` contains `method`, `higherIsBetter`, and `approximate`; each hit has `{ doc, score }`, in ranked order. Hybrid results add component details, described below. Scores are ordering values, not probabilities; scores from different methods are not directly comparable, and neither are [scores from different collections](#scores-across-collections). An empty `hits` array is a successful no-match result. Results hold only the top hits: there are no totals, pages, or cursors. Ranking and hybrid fusion run in the database, with no JavaScript similarity or fusion fallback.
 
 ### Candidates
 
@@ -178,6 +178,136 @@ const hit = {
 
 Component scores use the same scale as a lexical-only or vector-only search on the same index. `ranking.components` describes each one with `method`, `higherIsBetter`, and `approximate`, so you can, for example, drop hits whose vector similarity is below a threshold. Lexical and vector results do not include `components`.
 
+## Search several collections
+
+`frogbot.searchMany()` runs one query against several collections and returns one ranked list per collection. Each entry names a collection and one of its indexes, plus the options that depend on that collection's fields:
+
+```ts
+import type { FrogBotRequest } from 'frogbot';
+
+export async function siteSearch(req: FrogBotRequest, text: string) {
+  const { results } = await req.frogbot.searchMany({
+    collections: [
+      { collection: 'articles', index: 'content', select: { title: true } },
+      { collection: 'faqs', index: 'answers', select: { question: true } },
+    ],
+    query: { text },
+    limit: 5,
+    req,
+  });
+
+  const [articles, faqs] = results;
+
+  return { articles: articles.hits, faqs: faqs.hits };
+}
+```
+
+`results` follows the order of `collections`. Each list holds up to `limit` hits from its collection, in the same order and with the same scores as a `frogbot.search()` of that collection alone. A search box can show the lists as sections, such as "Articles" and "FAQs". FrogBot doesn't order hits from different collections against each other, because their [scores aren't comparable](#scores-across-collections). When you need one list, [merge the results with rerank](#merge-results-with-rerank).
+
+### Search many options
+
+These options apply to every collection in the call:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `SearchManyCollection[]` | Required | Collections to search, each with the [entry options](#collection-entries) below. Must not be empty, and a collection can appear only once. |
+| `query` | `{ text?: string; vector?: number[] }` | Required | Searched in every collection and selects the mode as in `search()`. Every listed index must have the matching components, and a `vector` must match each index's dimensions. |
+| `limit` | `number` | `10` | Maximum hits per collection. Must be a positive integer. |
+| `draft` | `boolean` | `false` | Search and return draft versions. |
+| `locale` | `string` | The request locale | Locale to search and return. `'all'` is rejected because each hit needs one locale. |
+| `fallbackLocale` | `string \| false` | The request fallback | Locale used for missing localized values, or `false` for none. |
+| `overrideAccess` | `boolean` | `false` | Set `true` to skip collection and field read access in every collection. Required when `req` is omitted. |
+| `req` | `FrogBotRequest` | Required unless `overrideAccess: true` | Request whose user's access is enforced in every collection. |
+
+#### Collection entries
+
+Each entry in `collections` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `CollectionSlug` | Required | Collection to search. |
+| `index` | `string` | Required | Name of an index under this collection's `search`. Checked at runtime. |
+| `where` | `Where` | — | Filter applied before ranking. Only fields allowed by this index's `filters` can be used. |
+| `select` | `SelectType` | Every field | Fields to return on each `doc`. |
+| `candidates` | `number` | The index's `defaultCandidates`, then `100` | See [Candidates](#candidates). Must be a positive integer. |
+| `depth` | `number` | `0` | Relationship depth for each `doc`. Must be a non-negative integer. |
+
+Any other key on an entry, such as its own `query` or `limit`, fails with `SearchValidationError`.
+
+### Search many results
+
+The result is `{ results }`, with one item per entry:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `collection` | `CollectionSlug` | The entry's collection. |
+| `mode` | `'lexical' \| 'vector' \| 'hybrid'` | The mode selected by the shared query, the same for every item. |
+| `ranking` | `{ method, higherIsBetter, approximate, components? }` | How this collection's index ranked, as in a single search. It can differ between collections, for example when one index is approximate and another is exact. |
+| `hits` | `{ doc, score, components? }[]` | This collection's ranked hits, as in a single search. Can be empty or shorter than `limit`. |
+
+Each item is typed by its collection: in the example above, `articles.hits[0].doc` is an article and `faqs.hits[0].doc` is a FAQ. When you loop over `results`, checking `item.collection` narrows the document type.
+
+### Failures
+
+The call succeeds or fails as a whole. Before running any query, FrogBot checks the list and every entry: an empty list, an entry that isn't an object or lacks `collection` or `index`, an unknown entry key, a repeated collection, an index that isn't configured, an index without the query's mode, a vector of the wrong length, or an invalid option fails with `SearchValidationError`. `locale: 'all'` fails with `SearchFilterUnsupportedError`, also with status `400`.
+
+FrogBot then searches the collections one after another, in list order, on the same request, so the call also works inside a database transaction. If any collection fails, the whole call fails and returns no results. A collection the user can't read fails the call with `403`, as a single search of it would, rather than being left out. Errors about one entry's index, query, options, or filters name its collection and index, for example `Search index 'answers' in collection 'faqs' requires a vector of 768 finite numbers.`
+
+### Scores across collections
+
+Within one collection, a hit ranked higher is a better match. Across collections the scores don't line up:
+
+- **Text scores are relative to each collection.** On SQLite, D1, and MongoDB, BM25 weighs each word by how rare it is in that collection's records, so the same word scores differently in 40 FAQs than in 8,000 articles. On every adapter, the score also depends on which fields and language the index ranks.
+- **Vector scores depend on each index's metric.** Cosine and dot product are similarities where higher is better; Euclidean is a distance where lower is better. Two vector fields with the same dimensions can still hold embeddings from different models, and FrogBot doesn't record which model produced a vector, so it can't tell whether two similarities are comparable.
+- **Hybrid scores come from rank positions.** Reciprocal rank fusion scores a document by where it ranked within its own collection, so comparing fused scores across collections compares positions, not how well each document matched.
+
+### Merge results with rerank
+
+To get one list, for example to choose passages for an AI answer, merge the lists and order them with [`frogbot.rerank()`](/ai/overview#rerank-options). It scores each text against the query with your rerank model, so the scores are comparable regardless of which collection a hit came from:
+
+```ts
+import type { FrogBotRequest } from 'frogbot';
+
+export async function retrieve(req: FrogBotRequest, question: string) {
+  const { results } = await req.frogbot.searchMany({
+    collections: [
+      { collection: 'articles', index: 'content' },
+      { collection: 'faqs', index: 'answers' },
+    ],
+    query: { text: question },
+    limit: 20,
+    req,
+  });
+
+  const [articles, faqs] = results;
+
+  const passages = [
+    ...articles.hits.map(({ doc }) => ({
+      collection: 'articles',
+      id: doc.id,
+      text: `${doc.title}\n${doc.body ?? ''}`,
+    })),
+    ...faqs.hits.map(({ doc }) => ({
+      collection: 'faqs',
+      id: doc.id,
+      text: `${doc.question}\n${doc.answer}`,
+    })),
+  ];
+
+  const { ranking } = await req.frogbot.rerank({
+    model: 'voyage/rerank-2.5',
+    query: question,
+    documents: passages.map(({ text }) => text),
+    topN: 5,
+    req,
+  });
+
+  return ranking.map(({ originalIndex, score }) => ({ ...passages[originalIndex], score }));
+}
+```
+
+`ranking` is sorted by relevance, and `originalIndex` points back into `documents`. Reranking calls a model on every search, which adds cost and delay, and needs a configured rerank model.
+
 ## REST API
 
 Every collection with a search index gets a `POST /api/{collection-slug}/search` endpoint. The JSON body accepts the same options as `frogbot.search()` except `collection`, `overrideAccess`, and `req`: the endpoint always searches as the requesting user with access enforced.
@@ -199,6 +329,28 @@ const { mode, ranking, hits } = await response.json();
 ```
 
 The response body is the same `{ mode, ranking, hits }` object that `frogbot.search()` returns. See the [REST API](/rest-api/overview) for authentication.
+
+`POST /api/frogbot/search` runs [`frogbot.searchMany()`](#search-several-collections). It exists when at least one collection has a search index. The body accepts `collections`, `query`, `limit`, `draft`, `locale`, and `fallbackLocale`, and each entry accepts the same keys as in `searchMany()`; any other key fails with `400`. It also searches as the requesting user with access enforced, and a collection that user can't read fails the whole request with `403`.
+
+```ts
+const response = await fetch('/api/frogbot/search', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    collections: [
+      { collection: 'articles', index: 'content' },
+      { collection: 'faqs', index: 'answers' },
+    ],
+    query: { text: 'reset password' },
+    limit: 5,
+  }),
+});
+
+const { results } = await response.json();
+```
+
+The response body is the same `{ results }` object that `frogbot.searchMany()` returns. Both endpoints report errors with the statuses in [Setup and errors](#setup-and-errors).
 
 ## GraphQL
 
@@ -228,6 +380,39 @@ Hybrid hits expose `components { lexical { rank score } vector { rank score } }`
 
 The query accepts `index`, `text`, `vector`, `where`, `limit`, `candidates`, `draft`, and, when localization is enabled, `locale` and `fallbackLocale`. `doc` uses the collection's GraphQL type. Like the REST endpoint, the query always enforces the requesting user's access. See the [GraphQL API](/graphql/overview).
 
+GraphQL has no query that searches several collections. Call each collection's search query in one request instead, using aliases to name the results and to call the same query more than once:
+
+```graphql
+query {
+  articles: searchArticles(index: "content", text: "reset password", limit: 5) {
+    hits {
+      score
+      doc {
+        id
+        title
+      }
+    }
+  }
+  faqs: searchFaqs(index: "answers", text: "reset password", limit: 5) {
+    hits {
+      score
+      doc {
+        id
+        question
+      }
+    }
+  }
+  titles: searchArticles(index: "titles", text: "reset password", limit: 5) {
+    hits {
+      doc {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
 ## Setup and errors
 
 FrogBot checks every configured index when the database initializes, including when you create or run migrations. The check is silent when a configured index is compatible. On an adapter without search, **any configured index fails initialization** with `SearchCapabilityError` (`reason: 'not-implemented'`), naming the collection, index, and mode. An adapter also stops setup when the engine cannot run an option (`engine-gap`) or a database prerequisite is missing; see the [Postgres](/database/postgres#prerequisites) and [SQLite](/database/sqlite#prerequisites) prerequisites and the [D1 limits](/database/sqlite#d1-collection-search).
@@ -247,4 +432,4 @@ A caller without collection read access receives `403`. `SearchCapabilityError` 
 
 Database adapters add search through a `search` object on the adapter. `capabilities` declares which modes an index supports. `buildSchema` receives every collection's normalized indexes while the database initializes, before tables and indexes are created, so native search indexes are part of schema push and migrations. `readiness` can reject a query while an index is still building, and `search` returns ranked `{ id, score }` rows for FrogBot to read back. The Postgres, SQLite, MongoDB, and D1 adapters implement this contract. `search` receives the resolved `candidates` count for vector and hybrid queries.
 
-You can optionally call the existing `frogbot.rerank()` on readable hits, or compose retrieval and answer generation in your own application. There is no automatic embedding or built-in RAG preset for this collection search API.
+You can optionally call the existing `frogbot.rerank()` on readable hits, as in [Merge results with rerank](#merge-results-with-rerank), or compose retrieval and answer generation in your own application. There is no automatic embedding or built-in RAG preset for this collection search API.

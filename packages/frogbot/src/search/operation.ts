@@ -6,6 +6,7 @@ import type { FrogBot } from '../frogbot.js';
 import type { CollectionSlug, TypedCollection } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
+  describeSearchIndex,
   SearchFilterUnsupportedError,
   SearchReadinessError,
   SearchValidationError,
@@ -19,12 +20,36 @@ import type {
   SearchHitComponent,
   SearchHitComponents,
   SearchIndexDescriptor,
+  SearchManyCollection,
+  SearchManyCollectionResult,
+  SearchManyOptions,
+  SearchManyResult,
   SearchMode,
   SearchOptions,
   SearchQuery,
   SearchRanking,
   SearchResult,
 } from './types.js';
+
+type PreparedSearch<T extends CollectionSlug> = {
+  options: SearchOptions<T>;
+  collection: SanitizedCollectionConfig;
+  index: SearchIndexDescriptor;
+  query: SearchQuery;
+  mode: SearchMode;
+  limit: number;
+  candidates: number | undefined;
+  depth: number;
+};
+
+const searchManyCollectionKeys = new Set<string>([
+  'candidates',
+  'collection',
+  'depth',
+  'index',
+  'select',
+  'where',
+] satisfies (keyof SearchManyCollection)[]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -112,20 +137,20 @@ function getCollectionIndex(
   return indexes && Object.hasOwn(indexes, index) ? indexes[index] : undefined;
 }
 
-export async function searchOperation<T extends CollectionSlug>(
+function prepareSearch<T extends CollectionSlug>(
   frogbot: FrogBot,
   payload: Payload,
   options: SearchOptions<T>,
-): Promise<SearchResult<T>> {
+): PreparedSearch<T> {
+  const label = describeSearchIndex(options.collection, options.index);
+
   const collection: SanitizedCollectionConfig | undefined =
     payload.collections[options.collection]?.config;
 
   const index = collection && getCollectionIndex(frogbot, options.collection, options.index);
 
   if (!collection || !index) {
-    throw new SearchValidationError(
-      `Search index '${options.index}' is not configured in collection '${options.collection}'.`,
-    );
+    throw new SearchValidationError(`${label} is not configured.`);
   }
 
   const input: unknown = options.query;
@@ -135,25 +160,29 @@ export async function searchOperation<T extends CollectionSlug>(
     Object.keys(input).some((key) => key !== 'text' && key !== 'vector') ||
     (input.text === undefined && input.vector === undefined)
   ) {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires text and/or vector query input.`,
-    );
+    throw new SearchValidationError(`${label} requires text and/or vector query input.`);
   }
 
   if (input.text !== undefined && (typeof input.text !== 'string' || !input.text.trim())) {
-    throw new SearchValidationError(`Search index '${index.name}' requires non-empty query text.`);
+    throw new SearchValidationError(`${label} requires non-empty query text.`);
   }
 
-  if (
-    input.vector !== undefined &&
-    (!Array.isArray(input.vector) ||
-      !index.vector ||
-      input.vector.length !== index.vector.dimensions ||
-      input.vector.some((value) => typeof value !== 'number' || !Number.isFinite(value)))
-  ) {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires a vector of ${index.vector?.dimensions ?? 'configured'} finite numbers.`,
-    );
+  if (input.vector !== undefined) {
+    const dimensions = index.vector?.dimensions;
+
+    if (dimensions === undefined) {
+      throw new SearchValidationError(`${label} does not configure vector search.`);
+    }
+
+    if (
+      !Array.isArray(input.vector) ||
+      input.vector.length !== dimensions ||
+      input.vector.some((value) => typeof value !== 'number' || !Number.isFinite(value))
+    ) {
+      throw new SearchValidationError(
+        `${label} requires a vector of ${dimensions} finite numbers.`,
+      );
+    }
   }
 
   const query: SearchQuery = {
@@ -165,26 +194,20 @@ export async function searchOperation<T extends CollectionSlug>(
     query.text !== undefined ? (query.vector !== undefined ? 'hybrid' : 'lexical') : 'vector';
 
   if (!index[mode]) {
-    throw new SearchValidationError(
-      `Search index '${index.name}' does not configure ${mode} search.`,
-    );
+    throw new SearchValidationError(`${label} does not configure ${mode} search.`);
   }
 
   const limit = options.limit ?? 10;
 
   if (!Number.isSafeInteger(limit) || limit < 1) {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires a positive integer limit.`,
-    );
+    throw new SearchValidationError(`${label} requires a positive integer limit.`);
   }
 
   if (
     options.candidates !== undefined &&
     (!Number.isSafeInteger(options.candidates) || options.candidates < 1)
   ) {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires a positive integer candidates count.`,
-    );
+    throw new SearchValidationError(`${label} requires a positive integer candidates count.`);
   }
 
   const candidates =
@@ -195,62 +218,74 @@ export async function searchOperation<T extends CollectionSlug>(
   const depth = options.depth ?? 0;
 
   if (!Number.isSafeInteger(depth) || depth < 0) {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires a non-negative integer depth.`,
-    );
+    throw new SearchValidationError(`${label} requires a non-negative integer depth.`);
   }
 
   if (options.select !== undefined && !isRecord(options.select)) {
-    throw new SearchValidationError(`Search index '${index.name}' requires an object select.`);
+    throw new SearchValidationError(`${label} requires an object select.`);
   }
 
   if (options.draft !== undefined && typeof options.draft !== 'boolean') {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires a boolean draft option.`,
-    );
+    throw new SearchValidationError(`${label} requires a boolean draft option.`);
   }
 
   if (options.overrideAccess !== undefined && typeof options.overrideAccess !== 'boolean') {
-    throw new SearchValidationError(
-      `Search index '${index.name}' requires a boolean overrideAccess option.`,
-    );
+    throw new SearchValidationError(`${label} requires a boolean overrideAccess option.`);
   }
 
   if (options.locale === 'all' || options.locale === '*' || options.req?.locale === 'all') {
-    throw new SearchFilterUnsupportedError(
-      `Search index '${index.name}' requires one locale per ranked result.`,
-    );
+    throw new SearchFilterUnsupportedError(`${label} requires one locale per ranked result.`);
   }
 
-  if (options.overrideAccess !== true && !options.req) {
+  return { options, collection, index, query, mode, limit, candidates, depth };
+}
+
+async function createSearchRequest(
+  frogbot: FrogBot,
+  payload: Payload,
+  {
+    fallbackLocale,
+    locale,
+    overrideAccess,
+    req,
+  }: Pick<SearchOptions, 'fallbackLocale' | 'locale' | 'overrideAccess' | 'req'>,
+): Promise<FrogBotRequest> {
+  if (overrideAccess !== true && !req) {
     throw new SearchValidationError('Search requires req unless overrideAccess: true is explicit.');
   }
 
-  const overrideAccess = options.overrideAccess === true;
-  const draft = options.draft === true;
-
   const payloadReq = await createLocalReq(
     {
-      req: (options.req ?? (await frogbot.createRequest())) as unknown as PayloadRequest,
-      locale: options.locale,
-      fallbackLocale: options.fallbackLocale,
+      req: (req ?? (await frogbot.createRequest())) as unknown as PayloadRequest,
+      locale,
+      fallbackLocale,
     },
     payload,
   );
 
-  const req = Object.assign(payloadReq, { frogbot }) as FrogBotRequest;
+  return Object.assign(payloadReq, { frogbot }) as FrogBotRequest;
+}
+
+async function runSearch<T extends CollectionSlug>(
+  payload: Payload,
+  { candidates, collection, depth, index, limit, mode, options, query }: PreparedSearch<T>,
+  req: FrogBotRequest,
+): Promise<SearchResult<T>> {
+  const label = describeSearchIndex(collection.slug, index.name);
 
   if (req.locale === 'all') {
-    throw new SearchFilterUnsupportedError(
-      `Search index '${index.name}' requires one locale per ranked result.`,
-    );
+    throw new SearchFilterUnsupportedError(`${label} requires one locale per ranked result.`);
   }
+
+  const payloadReq = req as unknown as PayloadRequest;
+  const overrideAccess = options.overrideAccess === true;
+  const draft = options.draft === true;
 
   const nodes = overrideAccess ? undefined : getFieldNodes(collection.fields as unknown as Field[]);
 
   if (nodes && getRankedPaths(index, mode).some((path) => isReadGuarded(nodes, path))) {
     throw new SearchFilterUnsupportedError(
-      `Search index '${index.name}' cannot verify conditional visibility of ranked fields.`,
+      `${label} cannot verify conditional visibility of ranked fields.`,
     );
   }
 
@@ -266,7 +301,7 @@ export async function searchOperation<T extends CollectionSlug>(
   if (nodes) {
     if (getFilterPaths(where).some((path) => isReadGuarded(nodes, path))) {
       throw new SearchFilterUnsupportedError(
-        `Search index '${index.name}' cannot filter a field with document-dependent read access.`,
+        `${label} cannot filter a field with document-dependent read access.`,
       );
     }
 
@@ -279,9 +314,7 @@ export async function searchOperation<T extends CollectionSlug>(
           where: options.where,
         });
       } catch {
-        throw new SearchFilterUnsupportedError(
-          `Search index '${index.name}' cannot authorize the requested filters.`,
-        );
+        throw new SearchFilterUnsupportedError(`${label} cannot authorize the requested filters.`);
       }
     }
   }
@@ -314,7 +347,7 @@ export async function searchOperation<T extends CollectionSlug>(
   });
 
   const invalidResult = () =>
-    new SearchReadinessError(`Search index '${index.name}' returned an invalid ranked result.`);
+    new SearchReadinessError(`${label} returned an invalid ranked result.`);
 
   if (
     !result ||
@@ -401,4 +434,83 @@ export async function searchOperation<T extends CollectionSlug>(
   });
 
   return { mode, ranking, hits };
+}
+
+function assertSearchManyCollections(
+  value: unknown,
+): asserts value is readonly SearchManyCollection[] {
+  if (!Array.isArray(value) || !value.length) {
+    throw new SearchValidationError('Search requires a non-empty collections list.');
+  }
+
+  const collections = new Set<unknown>();
+
+  for (const entry of value) {
+    if (!isRecord(entry)) {
+      throw new SearchValidationError('Search requires every collections entry to be an object.');
+    }
+
+    if (typeof entry.collection !== 'string' || typeof entry.index !== 'string') {
+      throw new SearchValidationError(
+        'Search requires a collection and an index on every collections entry.',
+      );
+    }
+
+    const key = Object.keys(entry).find((name) => !searchManyCollectionKeys.has(name));
+
+    if (key !== undefined) {
+      const label = describeSearchIndex(String(entry.collection), String(entry.index));
+
+      throw new SearchValidationError(`${label} does not accept a per-collection '${key}' option.`);
+    }
+
+    if (collections.has(entry.collection)) {
+      throw new SearchValidationError(
+        `Search lists collection '${String(entry.collection)}' more than once.`,
+      );
+    }
+
+    collections.add(entry.collection);
+  }
+}
+
+export async function searchOperation<T extends CollectionSlug>(
+  frogbot: FrogBot,
+  payload: Payload,
+  options: SearchOptions<T>,
+): Promise<SearchResult<T>> {
+  const prepared = prepareSearch(frogbot, payload, options);
+
+  const req = await createSearchRequest(frogbot, payload, options);
+
+  return runSearch(payload, prepared, req);
+}
+
+export async function searchManyOperation<const C extends readonly CollectionSlug[]>(
+  frogbot: FrogBot,
+  payload: Payload,
+  options: SearchManyOptions<C>,
+): Promise<SearchManyResult<C>> {
+  const { collections, draft, fallbackLocale, limit, locale, overrideAccess, query, req } = options;
+  const shared = { draft, fallbackLocale, limit, locale, overrideAccess, query, req };
+
+  const entries: unknown = collections;
+
+  assertSearchManyCollections(entries);
+
+  const searches = entries.map((entry) => prepareSearch(frogbot, payload, { ...entry, ...shared }));
+
+  const request = await createSearchRequest(frogbot, payload, shared);
+
+  const results: SearchManyCollectionResult[] = [];
+
+  for (const prepared of searches) {
+    const { hits, mode, ranking } = await runSearch(payload, prepared, request);
+
+    results.push({ collection: prepared.options.collection, mode, ranking, hits });
+  }
+
+  const result: SearchManyResult = { results };
+
+  return result as SearchManyResult<C>;
 }

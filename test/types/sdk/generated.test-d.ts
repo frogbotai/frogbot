@@ -4,9 +4,11 @@ import { expectTypeOf } from 'vitest';
 import {
   createFrogBotSDK,
   type FrogBotSDK,
+  type SearchManyCollectionResult,
+  type SearchManyOptions,
   type WhereFromCollectionSlug,
 } from '../../../packages/sdk/src/index.js';
-import type { Config, Message, SdkPage, SdkUser } from '../../sdk/frogbot-types.js';
+import type { Config, Message, SdkMedia, SdkPage, SdkUser } from '../../sdk/frogbot-types.js';
 
 const automatic = createFrogBotSDK({ baseURL: '/api' });
 const explicit = createFrogBotSDK<Config>({ baseURL: '/api' });
@@ -37,8 +39,18 @@ export async function misspelledSlugs() {
   // @ts-expect-error sdk-pages is not an auth collection
   await automatic.login({ collection: 'sdk-pages', data: { email: 'a', password: 'b' } });
 
-  // @ts-expect-error unknown collection slug
-  await automatic.search('sdk-pagez', { index: 'content', query: { text: 'frogs' } });
+  await automatic.search({
+    // @ts-expect-error unknown collection slug
+    collection: 'sdk-pagez',
+    index: 'content',
+    query: { text: 'frogs' },
+  });
+
+  await automatic.searchMany({
+    // @ts-expect-error unknown collection slug
+    collections: [{ collection: 'sdk-pagez', index: 'content' }],
+    query: { text: 'frogs' },
+  });
 }
 
 export async function selectNarrowsTheResult() {
@@ -144,10 +156,101 @@ export async function uploadsAreLimitedToUploadCollections(file: Blob) {
 }
 
 export async function searchHits() {
-  const result = await automatic.search('sdk-pages', { index: 'content', query: { text: 'x' } });
+  const result = await automatic.search({
+    collection: 'sdk-pages',
+    index: 'content',
+    query: { text: 'x' },
+  });
 
   expectTypeOf(result.hits[0]!.doc).toEqualTypeOf<SdkPage>();
 }
+
+export async function searchManyResultsFollowTheRequestOrder() {
+  const { results } = await automatic.searchMany({
+    collections: [
+      { collection: 'sdk-pages', index: 'content', where: { title: { equals: 'x' } } },
+      { collection: 'sdk-media', index: 'captions', select: { alt: true }, depth: 1 },
+    ],
+    query: { text: 'x' },
+    limit: 5,
+  });
+
+  expectTypeOf(results).toEqualTypeOf<
+    readonly [
+      SearchManyCollectionResult<GeneratedTypes, 'sdk-pages'>,
+      SearchManyCollectionResult<GeneratedTypes, 'sdk-media'>,
+    ]
+  >();
+
+  const [pages, media] = results;
+
+  expectTypeOf(pages.collection).toEqualTypeOf<'sdk-pages'>();
+  expectTypeOf(pages.hits[0]!.doc).toEqualTypeOf<SdkPage>();
+  expectTypeOf(media.collection).toEqualTypeOf<'sdk-media'>();
+  expectTypeOf(media.hits[0]!.doc).toEqualTypeOf<SdkMedia>();
+}
+
+export async function searchManyCollectionNarrowsTheDocument() {
+  const { results } = await automatic.searchMany({
+    collections: [
+      { collection: 'sdk-pages', index: 'content' },
+      { collection: 'sdk-media', index: 'captions' },
+    ],
+    query: { text: 'x' },
+  });
+
+  for (const group of results) {
+    if (group.collection === 'sdk-media') {
+      expectTypeOf(group.hits[0]!.doc).toEqualTypeOf<SdkMedia>();
+    }
+  }
+}
+
+export async function searchManyDocumentsKeepTheirCollectionType() {
+  const { results } = await automatic.searchMany({
+    collections: [{ collection: 'sdk-media', index: 'captions' }],
+    query: { text: 'x' },
+  });
+
+  // @ts-expect-error media hits hold media documents
+  const page: SdkPage = results[0].hits[0]!.doc;
+
+  return page;
+}
+
+export async function searchManyOptionsBelongToTheirPlace() {
+  await automatic.searchMany({
+    // @ts-expect-error the query is shared by every collection
+    collections: [{ collection: 'sdk-pages', index: 'content', query: { text: 'x' } }],
+    query: { text: 'x' },
+  });
+
+  await automatic.searchMany({
+    // @ts-expect-error searchMany names its collections in entries
+    collection: 'sdk-pages',
+    collections: [{ collection: 'sdk-pages', index: 'content' }],
+    query: { text: 'x' },
+  });
+
+  await automatic.searchMany({
+    collections: [{ collection: 'sdk-pages', index: 'content' }],
+    // @ts-expect-error the REST endpoint always applies the user's access
+    overrideAccess: true,
+    query: { text: 'x' },
+  });
+}
+
+type SearchManyPagesAndMedia = SearchManyOptions<
+  GeneratedTypes,
+  readonly ['sdk-pages', 'sdk-media']
+>['collections'];
+
+expectTypeOf<SearchManyPagesAndMedia[0]['where']>().toEqualTypeOf<
+  WhereFromCollectionSlug<GeneratedTypes, 'sdk-pages'> | undefined
+>();
+expectTypeOf<SearchManyPagesAndMedia[1]['where']>().toEqualTypeOf<
+  WhereFromCollectionSlug<GeneratedTypes, 'sdk-media'> | undefined
+>();
 
 export async function fieldsAreNotAny() {
   const messages = await automatic.find({ collection: 'messages' });

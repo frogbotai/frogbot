@@ -444,7 +444,8 @@ await sdk.restoreVersion({ collection: 'posts', id: version.id })
 Run a [search](/search/overview) against one of the collection's search indexes. Hits are typed documents with their score:
 
 ```ts
-const { mode, hits } = await sdk.search('posts', {
+const { mode, hits } = await sdk.search({
+  collection: 'posts',
   index: 'content',
   query: { text: 'frogs' },
   where: { slug: { exists: true } },
@@ -453,6 +454,25 @@ const { mode, hits } = await sdk.search('posts', {
 
 hits[0]?.doc.title
 ```
+
+Search several collections with one query using `searchMany`. This example also uses a `pages` collection with a `content` index. Results come back in the order you list the collections, one ranked list each, with `limit` applied per collection:
+
+```ts
+const { results } = await sdk.searchMany({
+  collections: [
+    { collection: 'posts', index: 'content', where: { slug: { exists: true } } },
+    { collection: 'pages', index: 'content', select: { title: true } },
+  ],
+  query: { text: 'frogs' },
+  limit: 5,
+})
+
+const [posts, pages] = results
+
+posts.hits[0]?.doc.title
+```
+
+Each entry's `where` suggests that collection's fields, and each list's hits are typed as that collection's documents. When you loop over `results`, checking `result.collection` narrows them. FrogBot doesn't order hits from different collections against each other; see [Search several collections](/search/overview#search-several-collections).
 
 Every method takes standard `RequestInit` options, such as `headers` or `credentials`, as its last argument. Non-success responses throw `FrogBotSDKError`, with the HTTP `status` and the server's `errors`:
 
@@ -682,10 +702,11 @@ Every method's last argument, `init`, takes standard `RequestInit` options that 
 | `locale` | `'all' \| TypedLocale` | — | The locale of the returned documents. |
 | `populate` | `PopulateType` | — | Which fields to include from populated documents, per collection. |
 
-**`search(collection, options, init?)`**
+**`search(options, init?)`**
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to search. |
 | `index` | `string` | Required | The name of the collection's search index to query. |
 | `query` | `SearchQuery` | Required | The text, vector, or both to search for. |
 | `where` | `Where` | — | A filter query applied to the hits. |
@@ -696,6 +717,30 @@ Every method's last argument, `init`, takes standard `RequestInit` options that 
 | `draft` | `boolean` | `false` | Search the latest drafts instead of published documents. |
 | `locale` | `string` | — | The locale of the returned documents. |
 | `fallbackLocale` | `false \| TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` turns fallback off, so untranslated fields come back empty. |
+
+**`searchMany(options, init?)`**
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `SearchManyCollection[]` | Required | The collections to search, each with the options below. Results follow this order. Must not be empty, and a collection can appear only once. |
+| `query` | `SearchQuery` | Required | The text, vector, or both to search for in every collection. |
+| `limit` | `number` | Server default | The maximum number of hits per collection. |
+| `draft` | `boolean` | `false` | Search the latest drafts instead of published documents. |
+| `locale` | `string` | — | The locale of the returned documents. |
+| `fallbackLocale` | `false \| TypedLocale` | — | The locale to fall back to when a localized field has no value. `false` turns fallback off, so untranslated fields come back empty. |
+
+Each entry in `collections` accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collection` | `string` | Required | The collection slug to search. |
+| `index` | `string` | Required | The name of this collection's search index to query. |
+| `where` | `Where` | — | A filter query applied to this collection's hits. |
+| `select` | `SelectType` | — | Which fields to include in each hit's document. |
+| `candidates` | `number` | Server default | How many candidates each ranking method considers before the final hits are chosen. |
+| `depth` | `number` | Server default | How many levels of relationship and upload fields to populate. |
+
+The server always enforces the caller's access. A collection the caller can't read fails the whole call with a `403` `FrogBotSDKError`.
 
 **`login(options, init?)`**
 

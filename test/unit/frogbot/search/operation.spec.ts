@@ -591,6 +591,76 @@ describe('search errors', () => {
     expect(error.isPublic).toBe(true);
     expect(error.name).toBe(error.constructor.name);
   });
+
+  it.each([
+    [
+      'an unconfigured index',
+      SearchValidationError,
+      {},
+      { index: 'absent' },
+      "Search index 'absent' in collection 'articles' is not configured.",
+    ],
+    [
+      'a vector of the wrong length',
+      SearchValidationError,
+      {},
+      { query: { vector: [1, 2] } },
+      "Search index 'content' in collection 'articles' requires a vector of 3 finite numbers.",
+    ],
+    [
+      'an all-locales request',
+      SearchFilterUnsupportedError,
+      {},
+      { locale: 'all' },
+      "Search index 'content' in collection 'articles' requires one locale per ranked result.",
+    ],
+    [
+      'a filter on a field the index does not store',
+      SearchFilterUnsupportedError,
+      {},
+      { where: { unknownField: { equals: 1 } } },
+      "Search index 'content' in collection 'articles' cannot filter path 'unknownField'.",
+    ],
+    [
+      'a malformed adapter result',
+      SearchReadinessError,
+      { rows: [{ id: 1, score: NaN }] },
+      {},
+      "Search index 'content' in collection 'articles' returned an invalid ranked result.",
+    ],
+  ])('names the collection and index for %s', async (_, ErrorClass, fixture, options, message) => {
+    const { frogbot, payload, req } = searchFixture(fixture);
+
+    const searching = searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: { text: 'hello' },
+      req,
+      ...options,
+    });
+
+    await expect(searching).rejects.toThrow(ErrorClass);
+    await expect(searching).rejects.toThrow(message);
+  });
+
+  it('names the collection and index for an unsupported adapter mode', async () => {
+    const { adapter, frogbot, payload, req } = searchFixture();
+
+    adapter.capabilities = () => ({
+      lexical: { unsupported: 'engine-gap', detail: 'No text engine' },
+      vector: 'supported',
+      hybrid: 'supported',
+    });
+
+    await expect(
+      searchOperation(frogbot, payload, {
+        collection: 'articles',
+        index: 'content',
+        query: { text: 'hello' },
+        req,
+      }),
+    ).rejects.toThrow("Search index 'content' in collection 'articles' (lexical): engine-gap");
+  });
 });
 
 describe('search capability and schema lifecycle', () => {

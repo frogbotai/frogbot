@@ -29,7 +29,14 @@ import {
   type UpdateManyOptions,
   type UpdateOptions,
 } from './collections/update.js';
-import { search, type SearchOptions, type SearchResult } from './search.js';
+import {
+  search,
+  searchMany,
+  type SearchManyOptions,
+  type SearchManyResult,
+  type SearchOptions,
+  type SearchResult,
+} from './search.js';
 import type {
   AuthCollectionSlug,
   BulkOperationResult,
@@ -68,7 +75,15 @@ export type {
   UpdateManyOptions,
   UpdateOptions,
 } from './collections/update.js';
-export type { SearchHit, SearchOptions, SearchResult } from './search.js';
+export type {
+  SearchHit,
+  SearchManyCollection,
+  SearchManyCollectionResult,
+  SearchManyOptions,
+  SearchManyResult,
+  SearchOptions,
+  SearchResult,
+} from './search.js';
 export type {
   AuthCollectionSlug,
   BulkOperationResult,
@@ -347,11 +362,17 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
   }
 
   search<TSlug extends CollectionSlug<T>>(
-    collection: TSlug,
     options: SearchOptions<T, TSlug>,
     init?: RequestInit,
   ): Promise<SearchResult<T, TSlug>> {
-    return search(this.#send, collection, options, init);
+    return search(this.#send, options, init);
+  }
+
+  searchMany<const C extends readonly CollectionSlug<T>[]>(
+    options: SearchManyOptions<T, C>,
+    init?: RequestInit,
+  ): Promise<SearchManyResult<T, C>> {
+    return searchMany(this.#send, options, init);
   }
 
   update<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
