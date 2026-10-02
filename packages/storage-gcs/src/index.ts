@@ -1,9 +1,11 @@
 import { gcsStorage as _gcsStorage } from '@payloadcms/storage-gcs';
 import type { Plugin } from 'frogbot';
+import type { StorageAdapterOptions } from 'frogbot/internal';
+import { storageAdapter } from 'frogbot/internal';
 
-export type { GcsStorageOptions } from '@payloadcms/storage-gcs';
+type PayloadGcsStorageOptions = Parameters<typeof _gcsStorage>[0];
 
-type GcsStorageOptions = Parameters<typeof _gcsStorage>[0];
+export type GcsStorageOptions = StorageAdapterOptions<PayloadGcsStorageOptions>;
 
 export const gcsStorage = (options: GcsStorageOptions): Plugin =>
-  _gcsStorage(options) as unknown as Plugin;
+  storageAdapter<PayloadGcsStorageOptions>({ options, plugin: _gcsStorage });

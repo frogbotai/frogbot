@@ -15,18 +15,17 @@ import { buildConfig } from 'frogbot';
 import { gcsStorage } from '@frogbotai/storage-gcs';
 
 export default buildConfig({
-  storage: [
+  plugins: [
     gcsStorage({
       bucket: process.env.GCS_BUCKET,
       options: {
         projectId: process.env.GCS_PROJECT_ID,
         credentials: JSON.parse(process.env.GCS_CREDENTIALS),
       },
-      collections: {
-        media: true,
-      },
     }),
   ],
   // ...rest of config
 });
 ```
+
+The adapter stores files for FrogBot's files collection and chat assets automatically. List your own upload collections in `collections`, for example `collections: { media: true }`. See [Storage Adapters](https://docs.frogbot.ai/upload/storage-adapters) for every option.

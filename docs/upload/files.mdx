@@ -38,7 +38,7 @@ Folders are enabled on the default collection. Set `folders: false` on an adopte
 
 ## Storage
 
-FrogBot stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, configure an [upload storage adapter](/upload/storage-adapters) for the resolved collection slug, `files` by default.
+FrogBot stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, add an [upload storage adapter](/upload/storage-adapters) to `plugins`. The adapter covers the files collection, `files` or your collection marked `file: true`, automatically; you don't list it in the adapter's `collections`.
 
 ## Access
 

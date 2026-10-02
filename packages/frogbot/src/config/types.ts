@@ -28,6 +28,7 @@ import type {
   SanitizedCollectionConfig,
 } from '../types/payload.js';
 import type { FrogBotArgs, FrogBotRequest } from '../types/request.js';
+import type { StorageAdapterRegistration } from '../uploads/types.js';
 
 export type LivePreviewURLType = null | string | undefined;
 
@@ -148,4 +149,6 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   ai?: AIConfig;
   /** Internal. Set by plugin-roles; not authored by users. */
   _roles?: RolesPrewiring;
+  /** Internal. Set by storage adapters; not authored by users. */
+  _storage?: StorageAdapterRegistration[];
 };

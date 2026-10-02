@@ -33,7 +33,7 @@ Use the adapter package's exported option types instead of recreating its config
 
 ## Storage
 
-Register storage adapters in `plugins`. Each storage adapter selects upload collections through its `collections` option.
+Register storage adapters in `plugins`. Each adapter stores files for FrogBot's own upload collections automatically: the files collection (`files`, or the collection marked `file: true`) and `frogbot-chat-assets` when chat persistence is enabled. List only your own extra upload collections in `collections`.
 
 | Service                              | Package                          | Factory              |
 | ------------------------------------ | -------------------------------- | -------------------- |
@@ -65,7 +65,7 @@ export default buildConfig({
 });
 ```
 
-The keys in `collections` must match configured upload collection slugs. Use `enabled` when an adapter supports optional local configuration.
+The keys in `collections` must match configured upload collection slugs. Set one of FrogBot's collections to `false`, such as `'frogbot-chat-assets': false`, to keep it on local disk. With several adapters, FrogBot's collections go to the first one unless another adapter lists them; listing a collection in two adapters is an error. Use `enabled` when an adapter supports optional local configuration.
 
 ## Email Pieces
 

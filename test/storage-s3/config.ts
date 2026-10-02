@@ -2,7 +2,7 @@ import { s3Storage } from '@frogbotai/storage-s3';
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
-import { mediaSlug, usersSlug } from './shared.js';
+import { bucket, chatsSlug, mediaSlug, s3ClientConfig, usersSlug } from './shared.js';
 
 const Users: CollectionConfig = {
   slug: usersSlug,
@@ -18,18 +18,19 @@ const Media: CollectionConfig = {
   fields: [{ name: 'alt', type: 'text' }],
 };
 
+const Chats: CollectionConfig = {
+  slug: chatsSlug,
+  chat: true,
+  fields: [],
+};
+
 export default await buildTestConfig({
-  collections: [Users, Media],
+  collections: [Users, Media, Chats],
   plugins: [
     s3Storage({
       collections: { [mediaSlug]: true },
-      bucket: 'frogbot-test-bucket',
-      config: {
-        credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
-        endpoint: 'http://localhost:4566',
-        forcePathStyle: true,
-        region: 'us-east-1',
-      },
+      bucket,
+      config: s3ClientConfig,
     }),
   ],
 });

@@ -243,6 +243,7 @@ export interface FrogbotWaitpoint {
  */
 export interface File {
   id: number;
+  _objectKey?: string | null;
   folder?: (number | null) | null;
   updatedAt: string;
   createdAt: string;
@@ -347,6 +348,7 @@ export interface FrogbotWaitpointsSelect {
  * via the `definition` "files_select".
  */
 export interface FilesSelect {
+  _objectKey?: boolean;
   folder?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;

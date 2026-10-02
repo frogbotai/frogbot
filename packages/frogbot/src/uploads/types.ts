@@ -1,4 +1,4 @@
-import type { UploadConfig as PayloadUploadConfig } from 'payload';
+import type { Plugin as PayloadPlugin, UploadConfig as PayloadUploadConfig } from 'payload';
 
 import type { FrogBotRequest } from '../types/request.js';
 
@@ -15,4 +15,13 @@ export type UploadConfig = Omit<PayloadUploadConfig, 'handlers'> & {
 
 export type SanitizedFilesConfig = {
   slug: string;
+};
+
+export type StorageAdapterCollections<TOptions = unknown> = Partial<
+  Record<string, TOptions | true | false>
+>;
+
+export type StorageAdapterRegistration = {
+  collections: StorageAdapterCollections;
+  plugin: (collections: Record<string, unknown>) => PayloadPlugin;
 };
