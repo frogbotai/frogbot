@@ -1,13 +1,13 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { FrogBotSDKError } from '@frogbotai/sdk';
+import { type AgentManifestEntry, FrogBotSDKError } from '@frogbotai/sdk';
 import { isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from 'ai';
 import type { TurnErrorCode } from 'frogbot';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state.js';
-import type { ComposerAttachment } from './attachments.js';
+import type { ComposerAttachment, ComposerModelInput } from './attachments.js';
 import { ChannelConversationNotice } from './channel-conversation-notice.js';
 import { deriveChatTitle } from './chat-history.js';
 import { ChatShell } from './chat-shell.js';
@@ -99,6 +99,16 @@ function isSilentTurnError(error: Error) {
   return code !== undefined && SILENT_TURN_ERRORS.has(code);
 }
 
+function displayModelName({
+  entry,
+  model,
+}: {
+  entry: AgentManifestEntry;
+  model: AgentManifestEntry['defaultModel'];
+}) {
+  return entry.names?.[model] ?? model.slice(model.indexOf('/') + 1);
+}
+
 function messageText(message: UIMessage) {
   return message.parts
     .filter(
@@ -115,9 +125,15 @@ export function Chat(props: ChatProps) {
   if (provider.loading) return props.loadingContent;
   if (provider.error) return props.errorContent ? props.errorContent(provider.error) : null;
   if (!provider.manifest || !provider.manifest.chat.enabled) return props.disabledContent;
+
+  const entry = provider.agentManifest?.agents.find(({ slug }) => slug === props.agent);
+  const model = entry?.models.find((id) => id === props.model) ?? entry?.defaultModel;
+
   return (
     <ChatInner
       {...props}
+      modelInputs={entry && model ? entry.inputs?.[model] : undefined}
+      modelName={entry && model ? displayModelName({ entry, model }) : undefined}
       chatIdControlled={Object.prototype.hasOwnProperty.call(props, 'chatId')}
       adapter={provider.adapter}
       sdk={provider.sdk}
@@ -137,6 +153,8 @@ type ChatInnerProps = ChatProps & {
   messagesSlug: string;
   chatsSlug: string;
   chatIdControlled: boolean;
+  modelInputs?: ComposerModelInput[];
+  modelName?: string;
 };
 
 function ChatInner({
@@ -159,6 +177,8 @@ function ChatInner({
   messagesSlug,
   assistantMessageActions: AssistantMessageActions,
   model,
+  modelInputs,
+  modelName,
   onChatIdChange,
   onError,
   panel,
@@ -722,6 +742,8 @@ function ChatInner({
             <Composer
               sdk={sdk}
               assetsSlug={assetsSlug}
+              modelInputs={modelInputs}
+              modelName={modelName}
               pending={pending}
               onStop={stop}
               onSubmit={submit}

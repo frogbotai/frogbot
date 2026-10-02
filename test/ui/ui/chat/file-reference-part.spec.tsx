@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MessagePart } from '../../../../packages/ui/src/chat/message-part';
@@ -8,6 +9,8 @@ const apiBase = 'https://frogbot.example/custom-api';
 const assetsSlug = 'private-assets';
 const metadataPath = `/${assetsSlug}/asset-1?depth=0`;
 const filePath = `/${assetsSlug}/file/chart%20one.png`;
+const largeHint =
+  'Large file (11.2 MB). In long chats, older files may be left out to keep requests small.';
 const reference = {
   type: 'file-reference',
   id: 'asset-1',
@@ -134,9 +137,9 @@ describe('file references', () => {
   it('renders an authenticated document as the existing downloadable link', async () => {
     const adapter = createAdapter({
       [metadataPath]: () =>
-        Response.json({ id: 'asset-1', filename: 'notes.txt', mimeType: 'text/plain' }),
-      [`/${assetsSlug}/file/notes.txt`]: () =>
-        new Response('Private notes', { headers: { 'content-type': 'text/plain' } }),
+        Response.json({ id: 'asset-1', filename: 'report.pdf', mimeType: 'application/pdf' }),
+      [`/${assetsSlug}/file/report.pdf`]: () =>
+        new Response('%PDF-1.7', { headers: { 'content-type': 'application/pdf' } }),
     });
 
     render(
@@ -145,17 +148,119 @@ describe('file references', () => {
       </ChatProvider>,
     );
 
-    const link = await screen.findByRole('link', { name: 'notes.txt' });
+    const link = await screen.findByRole('link', { name: 'report.pdf' });
 
     expect(link.getAttribute('href')).toBe('blob:chat-asset');
-    expect(link.getAttribute('download')).toBe('notes.txt');
+    expect(link.getAttribute('download')).toBe('report.pdf');
     expect(link.className).toBe('fb-file-part fb-file-part--download');
-    expect(await readBlob(createObjectURL.mock.calls[0][0])).toBe('Private notes');
+    expect(await readBlob(createObjectURL.mock.calls[0][0])).toBe('%PDF-1.7');
+    expect(screen.queryByText('Large file')).toBeNull();
 
     link.focus();
 
     expect(document.activeElement).toBe(link);
   });
+
+  it('renders a text asset as a text card under the name in the message', async () => {
+    const user = userEvent.setup();
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({ id: 'asset-1', filename: 'app.js.txt', mimeType: 'text/plain' }),
+      [`/${assetsSlug}/file/app.js.txt`]: () =>
+        new Response("console.log('hi');", { headers: { 'content-type': 'text/plain' } }),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'app.js' }} />
+      </ChatProvider>,
+    );
+
+    const card = await screen.findByRole('group', { name: 'app.js, JS, ready' });
+
+    expect(card.dataset.state).toBe('text');
+    expect(card.querySelector('.fb-attachment-card__snippet')?.textContent).toBe(
+      "console.log('hi');",
+    );
+    expect(createObjectURL).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Open app.js' }));
+
+    expect(screen.getByRole('dialog', { name: 'app.js' }).querySelector('pre')?.textContent).toBe(
+      "console.log('hi');",
+    );
+  });
+
+  it('labels a pasted text asset PASTED', async () => {
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({ id: 'asset-1', filename: 'pasted-1.txt', mimeType: 'text/plain' }),
+      [`/${assetsSlug}/file/pasted-1.txt`]: () => new Response('Long pasted text'),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'Pasted text', origin: 'paste' }} />
+      </ChatProvider>,
+    );
+
+    expect(await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+  });
+
+  it('shows the large-file hint on a text card over 10 MB', async () => {
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({
+          id: 'asset-1',
+          filename: 'notes.md',
+          mimeType: 'text/markdown',
+          filesize: 11_200_000,
+        }),
+      [`/${assetsSlug}/file/notes.md`]: () => new Response('# Notes'),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'notes.md' }} />
+      </ChatProvider>,
+    );
+
+    const card = await screen.findByRole('group', { name: 'notes.md, MD, ready' });
+
+    expect(card.className).toContain('fb-attachment-card--large');
+    expect(document.getElementById(card.getAttribute('aria-describedby')!)?.textContent).toBe(
+      largeHint,
+    );
+  });
+
+  it.each([
+    { filesize: 11_200_000, large: true },
+    { filesize: 9_000_000, large: false },
+  ])(
+    'shows the large-file hint on an image of $filesize bytes: $large',
+    async ({ filesize, large }) => {
+      const adapter = createAdapter({
+        [metadataPath]: () =>
+          Response.json({
+            id: 'asset-1',
+            filename: 'chart one.png',
+            mimeType: 'image/png',
+            filesize,
+          }),
+      });
+
+      render(
+        <ChatProvider adapter={adapter}>
+          <MessagePart part={reference} />
+        </ChatProvider>,
+      );
+
+      await screen.findByRole('img', { name: 'chart one.png' });
+
+      expect(Boolean(screen.queryByText('Large file'))).toBe(large);
+      expect(Boolean(screen.queryByText(largeHint))).toBe(large);
+    },
+  );
 
   it.each([
     { path: metadataPath, status: 403 },

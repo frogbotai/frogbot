@@ -39,7 +39,7 @@ export function CustomShell() {
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `onSubmit` | `(value: string, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the draft and its uploaded files and pasted texts when the user sends. Enter sends; Shift+Enter adds a line. Nothing is sent while `pending`, `disabled`, or uploading. |
+| `onSubmit` | `(value: string, attachments: ComposerAttachment[]) => void \| Promise<void>` | Required | Called with the draft and its [attachments](#composer-attachments) when the user sends. Only ready and text attachments are included; refused, failed, and too-large files never are. Enter sends; Shift+Enter adds a line. Nothing is sent while `pending`, `disabled`, or uploading. |
 | `submitContent` | `ReactNode` | Required | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | Required | Accessible label for the stop button. |
 | `value` | `string` | — | Controlled draft text. |
@@ -49,8 +49,33 @@ export function CustomShell() {
 | `pending` | `boolean` | `false` | A reply is in progress: shows the stop button and blocks sending. |
 | `startSlot` | `ReactNode` | — | Controls at the start of the toolbar. |
 | `endSlot` | `ReactNode` | — | Controls at the end of the toolbar, before the microphone and send button. |
-| `sdk` | `FrogBotSDK` | — | With `assetsSlug`, enables file attachments. |
-| `assetsSlug` | `string` | — | Chat assets collection slug from the manifest. With `sdk`, enables file attachments. |
+| `sdk` | `FrogBotSDK` | — | With `assetsSlug`, enables file attachments and stores long pastes as text assets. |
+| `assetsSlug` | `string` | — | Chat assets collection slug from the manifest. With `sdk`, enables file attachments and stores long pastes as text assets. |
+| `modelInputs` | `('text' \| 'image' \| 'audio' \| 'video' \| 'pdf')[]` | All file kinds accepted | Input types of the selected model, usually the agent's [`inputs`](/chat/manifest) entry for it. Images, PDFs, audio, and video the model doesn't read are refused when picked; text files are always accepted. See [which files the composer accepts](/chat/ui-chat#which-files-the-composer-accepts). |
+| `modelName` | `string` | `'This model'` | Display name of the selected model, used in refusals such as "Text Only can't read images." |
+
+Without `sdk` and `assetsSlug`, the composer has no attachment control, ignores dropped files, and keeps pastes over 650 characters in the browser as `PasteAttachment`s. `<Chat>` sets all four props from the manifest and the selected model.
+
+## Composer attachments
+
+`ComposerAttachment` is a `FileReference` or a `PasteAttachment`. Both types are exported from `@frogbotai/ui/chat`.
+
+A `FileReference` is an uploaded file or a pasted text stored as a text asset. Send it as a [`file-reference` part](/chat/ui-chat#attachments).
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `id` | `string \| number` | Yes | ID of the stored asset. |
+| `filename` | `string` | Yes | Name of the file the user picked, such as `app.js` for a code file stored as `app.js.txt`, or `Pasted text`. |
+| `mediaType` | `string` | Yes | Media type of the stored file, such as `image/png` or `text/plain`. |
+| `origin` | `'paste'` | No | Set for pasted text. |
+
+A `PasteAttachment` is pasted text kept in the browser because the composer has no upload storage. Send it as a [`data-paste` part](/chat/ui-chat#message-data-parts) with `{ text, filename }`.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `type` | `'paste'` | Yes | Marks the attachment as inline pasted text. |
+| `text` | `string` | Yes | The pasted text. |
+| `filename` | `string` | Yes | Generated name, `pasted-<time>.txt`. |
 
 ## Message list props
 

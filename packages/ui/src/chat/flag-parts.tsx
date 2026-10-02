@@ -1,3 +1,4 @@
+import { AttachmentCard } from './attachment-card.js';
 import type { DataPartValue } from './data-part.js';
 
 export type PastePartData = { filename?: string; text: string };
@@ -19,12 +20,8 @@ export function isFlagPart(part: { type: string }) {
 export function renderFlagPart(part: DataPartValue) {
   if (part.type === 'data-paste') {
     const data = part.data as PastePartData;
-    return (
-      <div data-testid="data-paste" className="fb-flag-part fb-flag-part--paste">
-        <div className="fb-flag-part__preview">{data.text}</div>
-        <div className="fb-flag-part__label">PASTED</div>
-      </div>
-    );
+
+    return <AttachmentCard name="Pasted text" state="text" typeLabel="PASTED" text={data.text} />;
   }
   if (part.type === 'data-page-context') {
     const data = part.data as PageContextPartData;

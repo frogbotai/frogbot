@@ -45,6 +45,7 @@ export function MessagePart({ fallback, part, renderData, role }: MessagePartPro
       <FileReferencePart
         id={part.id}
         filename={typeof part.filename === 'string' ? part.filename : undefined}
+        origin={part.origin === 'paste' ? 'paste' : undefined}
       />
     );
   }

@@ -43,7 +43,7 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `agent` | `string` | Required | Slug of the agent to chat with. Changing it while no chat is selected starts a new conversation. |
-| `model` | `string` | The agent's default | Model ID sent with each message. Must be one of the agent's allowed models. See [Composer selectors](#composer-selectors). |
+| `model` | `string` | The agent's default | Model ID sent with each message. Must be one of the agent's allowed models. It also decides which files the composer accepts; see [Attachments](#attachments) and [Composer selectors](#composer-selectors). |
 | `reasoning` | `string` | `Default` level | Reasoning option key sent with each message. |
 | `initialMessages` | `UIMessage[]` | `[]` | Messages to show before history loads. Stored history replaces them once the active chat loads. |
 | `initialChat` | `ChatDocument` | — | The active chat's document, when your server already has it. Used only when its `id` matches the active chat. See [Channel conversations](#channel-conversations). |
@@ -386,7 +386,7 @@ The host remains responsible for reading tab content and creating `data-page-con
 
 Dropping or selecting files in the composer uploads each one to the chat assets collection advertised by the manifest as `chat.assetsSlug`, then sends a `file-reference` part carrying the stored id. The server links the asset to the chat on the first message that references it, and on every agent turn sends the file in a form the selected model can read. See [chat assets](/chat/overview#chat-assets) for storage and access rules, and [how attachments reach the agent](/chat/overview#how-attachments-reach-the-agent) for what the model receives.
 
-Pass `assetsSlug` to a standalone `Composer` to enable the attachment control; `<Chat>` supplies it from the manifest automatically.
+Pass `assetsSlug` to a standalone `Composer` to enable the attachment control; `<Chat>` supplies it from the manifest automatically, along with the selected model's input types and display name (`modelInputs` and `modelName`, see [Composer props](/chat/ui-custom-shell#composer-props)).
 
 A `file-reference` part has these fields:
 
@@ -394,9 +394,74 @@ A `file-reference` part has these fields:
 | --- | --- | --- | --- |
 | `type` | `'file-reference'` | Yes | Marks the part as a reference to a chat asset. |
 | `id` | `string \| number` | Yes | ID of the asset in the chat assets collection. The sender must be able to read it. |
-| `filename` | `string` | Yes | File name shown in the chat and used in the agent's text label, such as `Attached file "app.js":`. It can differ from the stored file name. |
-| `mediaType` | `string` | Yes | Media type of the file, such as `image/png` or `text/plain`. |
+| `filename` | `string` | Yes | File name shown in the chat and used in the agent's text label, such as `Attached file "app.js":`. It can differ from the stored file name: the composer sends the name of the file the user picked, so a code file stored as `app.js.txt` is sent as `app.js`. |
+| `mediaType` | `string` | Yes | Media type of the stored file, such as `image/png` or `text/plain`. |
 | `origin` | `'paste'` | No | Marks a text asset made from pasted text, so the agent receives it as `Pasted text:` instead of a file label. |
+
+### Which files the composer accepts
+
+The composer sorts each picked, dropped, or pasted file with the same rules the server uses when it [prepares attachments for the agent](/chat/overview#how-attachments-reach-the-agent):
+
+| File | Accepted |
+| --- | --- |
+| Text: any file whose first 4 KB read as UTF-8 text, such as `.md`, `.csv`, `.json`, `.svg`, or source code | Always |
+| Images (PNG, JPEG, GIF, WebP), PDFs, audio, and video | When the selected model reads that kind. A model with unknown input types accepts all of them. |
+| Anything else, such as archives, Word documents, and HEIC images | Never |
+
+The file picker offers only the accepted types. A file that isn't accepted, for example one dropped onto the composer, gets a red card and is never uploaded.
+
+Code files that FrogBot's [restricted file types](/upload/overview#restricted-file-types) would block, such as `app.js`, `main.py`, or `page.html`, are read in the browser and uploaded as plain text named `app.js.txt`. The message still refers to the real name, so the agent receives `Attached file "app.js":` followed by the code. A restricted file that isn't text is refused.
+
+A file's state is decided when it is added. Switching models afterwards changes nothing: files already in the composer keep their cards and are sent, and the server replaces any the new model can't read with a [marker](/chat/overview#markers).
+
+### Attachment cards
+
+Each file in the composer shows one card in one state:
+
+| State | When | Card | Actions | Sent |
+| --- | --- | --- | --- | --- |
+| Uploading | The upload is in progress | Spinner labelled "Uploading notes.md" | Remove | Send waits for it |
+| Ready | An image, PDF, audio, or video file has uploaded | The image, or the file name and its extension | Remove | Yes |
+| Text | A text file, code file, or pasted text has uploaded | The start of the text and a type tag | Open, Remove | Yes, as a label and the full text |
+| Won't be sent | The file type isn't accepted | **Won't be sent.** This file type isn't supported. | Remove | No, never uploaded |
+| Won't be sent | The selected model can't read this kind of file | **Won't be sent.** Text Only can't read images. (or PDFs, audio, video) | Remove | No, never uploaded |
+| Upload failed | The server rejected the upload, or the connection dropped | **Upload failed.** The server's message, or "Check your connection and try again." | Retry, Remove | No, unless Retry succeeds |
+| Too large to upload | The file is over the app's [upload size limit](/upload/overview#upload-limits) | **Too large to upload.** This file is larger than this app allows. | Remove | No |
+
+The model name in a refusal is the model's display name from the [manifest](/chat/manifest), or its ID without the provider when it has none. A file the browser can't read at all, such as one changed on disk after it was picked, shows **Upload failed.** "This file couldn't be read." without Retry.
+
+The three red states have a red border and icon; their text keeps the normal text colour in light and dark themes. Text cards are tagged with the file's extension in capitals when it has five characters or fewer (`MD`, `JS`, `JSON`, `YAML`), `TEXT` otherwise, and `PASTED` for pasted text. Click a text card, or focus it and press Enter, to open the full text in a viewer with Copy and Close buttons.
+
+You can send while red cards are showing. Only ready and text attachments are sent, and every card that was in the composer when you sent, red ones included, clears with the draft. The send button appears once there is text or at least one ready or text attachment, and stays hidden while files are uploading or being checked.
+
+### Large files
+
+An attachment over 10 MB (10,000,000 bytes) that isn't red gets an amber edge and a **Large file** tag. Its tooltip, also read by screen readers as the card's description, says "Large file (11.2 MB). In long chats, older files may be left out to keep requests small." The file is still sent; the hint refers to the server's [size limit](/chat/overview#size-limit) on each model request.
+
+### Sent messages
+
+A sent `file-reference` part shows the same text card for text attachments, named by the part's `filename` and opening the same viewer. Images show the image; PDFs, audio, and video show a download link with the file name. Either kind gets the large-file tag over 10 MB. While the file loads, the part shows "Loading attachment"; if it can't be loaded, "Attachment unavailable".
+
+### Screen readers
+
+Each card is a group named after the file, its type tag, and its state, such as "app.js, JS, ready" or "photo.png, PNG, won't be sent". Red cards are described by their heading and reason. The buttons are named "Open notes.md", "Remove notes.md", and "Retry uploading notes.md". One polite status region per composer announces each change:
+
+| Change | Announcement |
+| --- | --- |
+| A text file is ready | `notes.md attached as text` |
+| An image, PDF, audio, or video file is ready | `photo.png attached` |
+| Pasted text is ready | `Pasted text attached` |
+| A file type isn't accepted | `report.zip won't be sent: this file type isn't supported` |
+| The model can't read the file | `photo.png won't be sent: Text Only can't read images` |
+| An upload failed | `Upload failed: notes.md` |
+| A file is over the upload limit | `Too large to upload: big.mov` |
+| A card is removed | `notes.md removed` |
+
+Several refusals in one drop are announced together, separated by full stops.
+
+### Pasted text
+
+Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`; a paste of 650 characters or fewer stays in the textarea. With upload storage (`sdk` and `assetsSlug`), the text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. FrogBot sets no size limit on pasted text. A standalone `Composer` without upload storage keeps the text in the browser and sends it as a [`data-paste` part](#message-data-parts) instead. Either way, the agent receives `Pasted text:` followed by the text.
 
 ## Message data parts
 
@@ -410,7 +475,7 @@ Chat renders these AI SDK v7 data part types:
 
 Use a new `data-<name>` type for application-specific structured content. With the lower-level `MessagePart` component, pass `renderData` to render that type; otherwise `DataPart` displays its JSON payload.
 
-Pasting more than 650 characters into FrogBot's composer creates a removable pasted-text preview and sends a `data-paste` part. A paste of exactly 650 characters remains in the textarea. Pasted text stays client-side until message submission and is never uploaded as a file. The agent receives it as `Pasted text:` followed by the text.
+A `data-paste` part holds pasted text inline. The composer sends one only when it has no upload storage; see [Pasted text](#pasted-text). Chat shows it as a **Pasted text** card that opens the full text, and the agent receives it as `Pasted text:` followed by the text.
 
 ## Voice input
 

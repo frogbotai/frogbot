@@ -39,6 +39,8 @@
 @import "./components/toggle.css";
 @import "./chat/agent-selector.css";
 @import "./chat/artifact.css";
+@import "./chat/attachment-card.css";
+@import "./chat/attachment-viewer.css";
 @import "./chat/attachments.css";
 @import "./chat/audio-waveform.css";
 @import "./chat/channel-conversation-notice.css";
@@ -50,6 +52,7 @@
 @import "./chat/composer.css";
 @import "./chat/data-part.css";
 @import "./chat/file-part.css";
+@import "./chat/file-reference-part.css";
 @import "./chat/flag-parts.css";
 @import "./chat/greeting.css";
 @import "./chat/markdown.css";

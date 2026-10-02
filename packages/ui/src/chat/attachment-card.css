@@ -1,0 +1,244 @@
+@layer frogbot {
+  .fb-attachment-card {
+    position: relative;
+    flex-shrink: 0;
+    width: 7.5rem;
+    height: 7.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--theme-base-150);
+    border-radius: var(--fb-radius-lg);
+    color: var(--theme-base-900);
+    background-color: var(--theme-base-200);
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+  }
+
+  .fb-attachment-card--refused,
+  .fb-attachment-card--failed,
+  .fb-attachment-card--too-large {
+    border-color: var(--color-destructive);
+    background-color: color-mix(in srgb, var(--color-destructive) 10%, var(--theme-base-0));
+  }
+
+  .fb-attachment-card--large {
+    border-color: var(--color-warning);
+    background-color: color-mix(in srgb, var(--color-warning) 10%, var(--theme-base-0));
+  }
+
+  .fb-attachment-card__body,
+  .fb-attachment-card__preview {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: inherit;
+  }
+
+  .fb-attachment-card__body {
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .fb-attachment-card__preview > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .fb-attachment-card__open {
+    margin: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .fb-attachment-card__open:focus-visible,
+  .fb-attachment-card__retry:focus-visible,
+  .fb-attachment-card__remove:focus-visible {
+    outline: 2px solid var(--theme-base-900);
+    outline-offset: 2px;
+  }
+
+  .fb-attachment-card__snippet {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    font-family: monospace;
+    font-size: 0.625rem;
+    line-height: 1.375;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+  }
+
+  .fb-attachment-card__file {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fb-attachment-card__file-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .fb-attachment-card__name {
+    max-width: 100%;
+    overflow: hidden;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fb-attachment-card__problem .fb-attachment-card__name {
+    flex-shrink: 0;
+    padding-right: 1.25rem;
+  }
+
+  .fb-attachment-card__status {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+  }
+
+  .fb-attachment-card__icon {
+    flex-shrink: 0;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--color-destructive);
+  }
+
+  .fb-attachment-card__icon > * {
+    opacity: 1;
+  }
+
+  .fb-attachment-card__reason {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.625rem;
+    line-height: 1.375;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .fb-attachment-card--failed .fb-attachment-card__reason {
+    -webkit-line-clamp: 2;
+  }
+
+  .fb-attachment-card__retry {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.25rem;
+    margin-top: auto;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--color-destructive);
+    border-radius: 9999px;
+    color: inherit;
+    background-color: var(--theme-base-0);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .fb-attachment-card__retry:hover {
+    background-color: var(--theme-base-150);
+  }
+
+  .fb-attachment-card__retry-icon,
+  .fb-attachment-card__remove-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .fb-attachment-card__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: color-mix(in srgb, var(--theme-base-0) 50%, transparent);
+  }
+
+  .fb-attachment-card__spinner {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--theme-base-500);
+    animation: fb-attachment-card-spin 1s linear infinite;
+  }
+
+  .fb-attachment-card__tags {
+    position: absolute;
+    bottom: -0.5rem;
+    left: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    pointer-events: none;
+  }
+
+  .fb-attachment-card__tag,
+  .fb-attachment-card__hint {
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.5625rem;
+    font-weight: 600;
+    line-height: normal;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+  }
+
+  .fb-attachment-card__tag {
+    background-color: var(--theme-base-300);
+  }
+
+  .fb-attachment-card__hint {
+    border: 1px solid var(--color-warning);
+    background-color: color-mix(in srgb, var(--color-warning) 20%, var(--theme-base-0));
+    pointer-events: auto;
+  }
+
+  .fb-attachment-card__remove {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    color: inherit;
+    background-color: var(--theme-base-150);
+    cursor: pointer;
+  }
+
+  .fb-attachment-card__remove:hover {
+    background-color: var(--color-destructive);
+  }
+
+  .fb-attachment-card__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @keyframes fb-attachment-card-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

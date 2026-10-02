@@ -15,11 +15,12 @@ import {
 
 import ArrowUpIcon from '../icons/icons/ArrowUpIcon.js';
 import SquareIcon from '../icons/icons/SquareIcon.js';
+import { acceptFor } from './attachment-kind.js';
 import {
   AttachmentControl,
-  AttachmentPreviews,
+  AttachmentList,
   type ComposerAttachment,
-  PastePreviews,
+  type ComposerModelInput,
   useAttachments,
 } from './attachments.js';
 import { AudioWaveform } from './audio-waveform.js';
@@ -41,6 +42,8 @@ export type ComposerProps = Omit<
   stopContent: ReactNode;
   sdk?: FrogBotSDK;
   assetsSlug?: string;
+  modelInputs?: readonly ComposerModelInput[];
+  modelName?: string;
 };
 
 export function Composer({
@@ -49,6 +52,8 @@ export function Composer({
   disabled,
   endSlot,
   assetsSlug,
+  modelInputs,
+  modelName,
   onKeyDown,
   onPaste,
   onStop,
@@ -66,9 +71,10 @@ export function Composer({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [dragging, setDragging] = useState(false);
   const [audioData, setAudioData] = useState<Float32Array | null>();
-  const [pastes, setPastes] = useState<Extract<ComposerAttachment, { type: 'paste' }>[]>([]);
+  const submitting = useRef(false);
   const currentValue = value ?? internalValue;
-  const attachments = useAttachments({ assetsSlug, sdk });
+  const attachments = useAttachments({ assetsSlug, modelInputs, modelName, sdk });
+  const sendable = Boolean(currentValue.trim()) || attachments.toSend.length > 0;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -80,18 +86,19 @@ export function Composer({
   const submit = (event?: FormEvent) => {
     event?.preventDefault();
     const next = value ?? internalValue;
-    if (
-      (!next.trim() && !attachments.references.length && !pastes.length) ||
-      pending ||
-      disabled ||
-      attachments.uploading
-    ) {
-      return;
-    }
-    void Promise.resolve(onSubmit(next, [...attachments.references, ...pastes])).then(() => {
-      attachments.clear();
-      setPastes([]);
-    });
+
+    if (!sendable || pending || disabled || attachments.uploading || submitting.current) return;
+
+    const sent = attachments.items.map(({ key }) => key);
+
+    submitting.current = true;
+
+    void Promise.resolve(onSubmit(next, attachments.toSend))
+      .then(() => attachments.clear(sent))
+      .finally(() => {
+        submitting.current = false;
+      });
+
     if (value === undefined) setInternalValue('');
     onValueChange?.('');
   };
@@ -121,10 +128,7 @@ export function Composer({
     const text = event.clipboardData.getData('text');
     if (text.length <= 650) return;
     event.preventDefault();
-    setPastes((current) => [
-      ...current,
-      { type: 'paste', text, filename: `pasted-${Date.now()}.txt` },
-    ]);
+    attachments.addPaste(text);
   };
 
   return (
@@ -139,19 +143,14 @@ export function Composer({
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        if (!disabled && !pending) attachments.add(Array.from(event.dataTransfer.files));
+        if (!disabled && !pending) void attachments.add(Array.from(event.dataTransfer.files));
       }}
     >
-      <AttachmentPreviews
+      <AttachmentList
         items={attachments.items}
         remove={attachments.remove}
         retry={attachments.retry}
-      />
-      <PastePreviews
-        items={pastes}
-        remove={(index) =>
-          setPastes((current) => current.filter((_, currentIndex) => currentIndex !== index))
-        }
+        status={attachments.status}
       />
       <div
         className={['fb-composer__gradient', dragging && 'fb-composer__gradient--dragging']
@@ -177,8 +176,12 @@ export function Composer({
             />
             <div className="fb-composer__controls">
               <div className="fb-composer__start">
-                {sdk && assetsSlug && (
-                  <AttachmentControl add={attachments.add} disabled={disabled || pending} />
+                {attachments.storage && (
+                  <AttachmentControl
+                    accept={acceptFor(modelInputs)}
+                    add={(files) => void attachments.add(files)}
+                    disabled={disabled || pending}
+                  />
                 )}
                 {startSlot}
               </div>
@@ -206,9 +209,7 @@ export function Composer({
                       <span className="fb-composer__sr-only">{stopContent}</span>
                     </button>
                   ) : (
-                    (currentValue.trim() ||
-                      attachments.references.length > 0 ||
-                      pastes.length > 0) &&
+                    sendable &&
                     !attachments.uploading && (
                       <button
                         type="submit"

@@ -329,6 +329,12 @@ function body(call: Parameters<typeof fetch>) {
   return JSON.parse(String(call[1]?.body));
 }
 
+async function queuedIndicator() {
+  const label = await screen.findByText('Queued');
+
+  return label.closest<HTMLElement>('[role="status"]')!;
+}
+
 function renderChat() {
   return render(
     <ChatProvider
@@ -542,7 +548,7 @@ describe('QuestionToolRender in Chat', () => {
     fireEvent.change(composer, { target: { value: 'Also check the logs' } });
     fireEvent.keyDown(composer, { key: 'Enter' });
 
-    const queued = await screen.findByRole('status');
+    const queued = await queuedIndicator();
 
     expect(within(queued).getByText('Queued')).toBeTruthy();
     expect(within(queued).getByText('Also check the logs')).toBeTruthy();
@@ -551,7 +557,7 @@ describe('QuestionToolRender in Chat', () => {
     fireEvent.click(screen.getByRole('button', { name: /Staging/ }));
 
     expect(await screen.findByText('The logs are clean.')).toBeTruthy();
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText('Queued')).toBeNull();
     expect(within(screen.getByRole('log')).getByText('Also check the logs')).toBeTruthy();
     expect(requests(`/api/agents/${agent}`)).toHaveLength(2);
     expect(requests(`/api/agents/${agent}/chats/${chatId}/pending`, 'GET')).toHaveLength(1);
@@ -597,7 +603,7 @@ describe('QuestionToolRender in Chat', () => {
     fireEvent.change(composer, { target: { value: 'Anything else?' } });
     fireEvent.keyDown(composer, { key: 'Enter' });
 
-    expect(await screen.findByRole('status')).toBeTruthy();
+    expect(await queuedIndicator()).toBeTruthy();
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull());
     await act(() => new Promise((resolve) => setTimeout(resolve)));
@@ -620,7 +626,7 @@ describe('QuestionToolRender in Chat', () => {
 
     renderChat();
 
-    const queued = await screen.findByRole('status');
+    const queued = await queuedIndicator();
 
     expect(within(queued).getByText('Waiting in line')).toBeTruthy();
     expect(within(screen.getByRole('log')).queryByText('Waiting in line')).toBeNull();
