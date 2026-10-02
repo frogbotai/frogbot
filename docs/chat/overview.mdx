@@ -151,7 +151,7 @@ FrogBot sorts each attachment into one kind:
 
 The label is `Attached file "notes.md":`, using the file name in the message part, or the stored name when the part has none, or `Pasted text:` for a `file-reference` part with `origin: 'paste'` and for `data-paste` parts. SVG files are text. A leading byte-order mark is dropped, and bytes that aren't valid UTF-8 become `�`. FrogBot sets no size limit on text.
 
-Which image, audio, video, and PDF attachments a model accepts comes from its [input types](/ai/overview#custom-model-options). A model with unknown input types receives every image, audio, video, and PDF attachment.
+Which image, audio, video, and PDF attachments a model accepts comes from its [input types](/ai/overview#custom-model-options). A model with unknown input types receives every image, audio, video, and PDF attachment. The chat composer applies the same rules when a file is picked, so it refuses unsupported files and files the selected model can't read before they are uploaded; see [Attachments](/chat/ui-chat#attachments).
 
 #### Markers
 

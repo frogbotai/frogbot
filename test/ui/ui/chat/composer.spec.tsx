@@ -1,10 +1,105 @@
 import { createFrogBotSDK } from '@frogbotai/sdk';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Composer } from '../../../../packages/ui/src/chat/composer';
+import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer';
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+
+  return { promise, resolve };
+}
+
+function uploadServer() {
+  const files: File[] = [];
+
+  const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const file = (init?.body as FormData).get('file') as File;
+
+    files.push(file);
+
+    return Response.json({
+      doc: { id: `asset-${files.length}`, filename: file.name, mimeType: file.type },
+      message: 'Document successfully created.',
+    });
+  });
+
+  return { fetch, files };
+}
+
+function renderComposer(props: Partial<ComposerProps> = {}) {
+  const server = uploadServer();
+  const onSubmit = vi.fn();
+  const sdk = createFrogBotSDK({ baseURL: '/api', fetch: server.fetch });
+
+  const element = (next: Partial<ComposerProps>) => (
+    <Composer
+      aria-label="Message"
+      sdk={sdk}
+      assetsSlug="assets"
+      onSubmit={onSubmit}
+      submitContent="Send"
+      stopContent="Stop"
+      {...next}
+    />
+  );
+
+  const view = render(element(props));
+
+  const drop = (...files: File[]) =>
+    fireEvent.drop(view.container.querySelector('form') as HTMLFormElement, {
+      dataTransfer: { files },
+    });
+
+  const update = (next: Partial<ComposerProps>) => view.rerender(element({ ...props, ...next }));
+
+  return { ...view, drop, onSubmit, server, update };
+}
+
+function binary(name: string, type: string) {
+  return new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00])], name, { type });
+}
+
+function png(name: string) {
+  return new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], name, {
+    type: 'image/png',
+  });
+}
+
+function pdf(name: string) {
+  return new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], name, { type: 'application/pdf' });
+}
+
+function description(element: HTMLElement) {
+  return (element.getAttribute('aria-describedby') ?? '')
+    .split(' ')
+    .filter(Boolean)
+    .map((id) => document.getElementById(id)?.textContent)
+    .join(' ');
+}
+
+function status() {
+  return document.querySelector('.fb-attachments__status')?.textContent;
+}
 
 describe('Composer', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'URL',
+      class extends URL {
+        static createObjectURL = vi.fn(() => 'blob:preview');
+        static revokeObjectURL = vi.fn();
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('submits with Enter, preserves Shift+Enter, and renders slots', () => {
     const onSubmit = vi.fn();
     render(
@@ -32,51 +127,6 @@ describe('Composer', () => {
       <Composer endSlot={undefined} onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
     );
     expect(screen.queryByRole('button', { name: 'Add tab context' })).toBeNull();
-  });
-
-  it('keeps 650 characters in the textarea and attaches 651', () => {
-    const { rerender } = render(
-      <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
-    );
-    const input = screen.getByLabelText('Message') as HTMLTextAreaElement;
-    fireEvent.paste(input, { clipboardData: { getData: () => 'a'.repeat(650) } });
-    fireEvent.change(input, { target: { value: 'a'.repeat(650) } });
-    expect(input.value).toBe('a'.repeat(650));
-    rerender(
-      <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
-    );
-    fireEvent.change(input, { target: { value: '' } });
-    fireEvent.paste(input, { clipboardData: { getData: () => 'b'.repeat(651) } });
-    expect(input.value).toBe('');
-    expect(screen.getByTestId('paste-attachment')).toBeTruthy();
-    expect(screen.getByTestId('paste-attachment').className).not.toContain('aspect-video');
-  });
-
-  it('submits pasted text without uploading it', async () => {
-    const fetch = vi.fn();
-    const onSubmit = vi.fn();
-    render(
-      <Composer
-        aria-label="Message"
-        sdk={createFrogBotSDK({ baseURL: '/api', fetch })}
-        assetsSlug="files"
-        onSubmit={onSubmit}
-        submitContent="Send"
-        stopContent="Stop"
-      />,
-    );
-    fireEvent.paste(screen.getByLabelText('Message'), {
-      clipboardData: { getData: () => 'p'.repeat(651) },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(onSubmit).toHaveBeenCalledWith('', [
-      {
-        type: 'paste',
-        text: 'p'.repeat(651),
-        filename: expect.stringMatching(/^pasted-\d+\.txt$/),
-      },
-    ]);
-    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('stops while pending', () => {
@@ -124,6 +174,7 @@ describe('Composer', () => {
     expect(container.querySelector('.fb-composer__gradient')?.classList).not.toContain(
       'fb-composer__gradient--dragging',
     );
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
 
     rerender(
       <Composer
@@ -139,67 +190,284 @@ describe('Composer', () => {
     expect((screen.getByLabelText('Message') as HTMLTextAreaElement).disabled).toBe(true);
   });
 
-  it('uploads dropped files immediately and submits stable references', async () => {
-    const fetch = vi.fn(() =>
-      Promise.resolve(
-        Response.json({
-          doc: { id: 'file-1', filename: 'notes.txt', mimeType: 'text/plain' },
-          message: 'Document successfully created.',
-        }),
-      ),
-    );
-    const onSubmit = vi.fn();
-    const { container } = render(
-      <Composer
-        aria-label="Message"
-        sdk={createFrogBotSDK({ baseURL: '/api', fetch })}
-        assetsSlug="documents"
-        onSubmit={onSubmit}
-        submitContent="Send"
-        stopContent="Stop"
-      />,
-    );
+  it('limits the file picker to text and the media the model reads', () => {
+    const { container, update } = renderComposer({ modelInputs: ['text', 'image'] });
 
-    fireEvent.drop(container.querySelector('form') as HTMLFormElement, {
-      dataTransfer: { files: [new File(['notes'], 'notes.txt', { type: 'text/plain' })] },
-    });
+    const accept = () =>
+      container.querySelector('input[type="file"]')?.getAttribute('accept') ?? '';
 
-    expect(fetch).toHaveBeenCalledOnce();
-    expect(fetch.mock.calls[0]?.[0]).toBe('/api/documents');
-    await screen.findByRole('button', { name: 'Send' });
+    expect(accept().split(',')).toEqual(expect.arrayContaining(['text/*', '.md', 'image/png']));
+    expect(accept()).not.toContain('application/pdf');
+    expect(accept()).not.toContain('audio/*');
+
+    update({ modelInputs: undefined });
+
+    expect(accept().split(',')).toEqual(
+      expect.arrayContaining(['image/png', 'application/pdf', 'audio/*', 'video/*']),
+    );
+  });
+
+  it('uploads a dropped PDF and submits a stable reference', async () => {
+    const { drop, onSubmit, server } = renderComposer();
+
+    drop(pdf('report.pdf'));
+
+    expect(await screen.findByRole('group', { name: 'report.pdf, PDF, ready' })).toBeTruthy();
+    expect(server.fetch.mock.calls[0]?.[0]).toBe('/api/assets');
+    expect(status()).toBe('report.pdf attached');
+
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
     expect(onSubmit).toHaveBeenCalledWith('', [
-      { id: 'file-1', filename: 'notes.txt', mediaType: 'text/plain' },
+      { id: 'asset-1', filename: 'report.pdf', mediaType: 'application/pdf' },
     ]);
     expect(JSON.stringify(onSubmit.mock.calls)).not.toContain('base64');
   });
 
-  it('shows upload errors and retries', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValueOnce(new Response('failed', { status: 500, statusText: 'Failed' }))
-      .mockResolvedValueOnce(
-        Response.json({
-          doc: { id: 'file-2', filename: 'retry.txt', mimeType: 'text/plain' },
-          message: 'Document successfully created.',
-        }),
-      );
-    const { container } = render(
-      <Composer
-        sdk={createFrogBotSDK({ baseURL: '/api', fetch })}
-        assetsSlug="files"
-        onSubmit={vi.fn()}
-        submitContent="Send"
-        stopContent="Stop"
-      />,
+  it('never uploads unsupported files or media the model cannot read', async () => {
+    const { drop, server } = renderComposer({ modelInputs: ['text'], modelName: 'Text Reader' });
+
+    drop(binary('report.zip', 'application/zip'), png('photo.png'));
+
+    const zip = await screen.findByRole('group', { name: "report.zip, ZIP, won't be sent" });
+    const photo = screen.getByRole('group', { name: "photo.png, PNG, won't be sent" });
+
+    expect(zip.dataset.state).toBe('refused');
+    expect(description(zip)).toBe("Won't be sent. This file type isn't supported.");
+    expect(description(photo)).toBe("Won't be sent. Text Reader can't read images.");
+    expect(status()).toBe(
+      "report.zip won't be sent: this file type isn't supported. photo.png won't be sent: Text Reader can't read images",
+    );
+    expect(server.fetch).not.toHaveBeenCalled();
+  });
+
+  it('uploads a code file as plain text under its real name', async () => {
+    const { drop, onSubmit, server } = renderComposer();
+
+    drop(new File(["console.log('hi');"], 'app.js', { type: 'text/javascript' }));
+
+    const card = await screen.findByRole('group', { name: 'app.js, JS, ready' });
+
+    expect(card.dataset.state).toBe('text');
+    expect(screen.getByRole('button', { name: 'Open app.js' })).toBeTruthy();
+    expect(status()).toBe('app.js attached as text');
+    expect(server.files.map(({ name, type }) => ({ name, type }))).toEqual([
+      { name: 'app.js.txt', type: 'text/plain' },
+    ]);
+    expect(await server.files[0]?.text()).toBe("console.log('hi');");
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('', [
+      { id: 'asset-1', filename: 'app.js', mediaType: 'text/plain' },
+    ]);
+  });
+
+  it('uploads a long paste as a text asset marked as pasted', async () => {
+    const { onSubmit, server } = renderComposer();
+    const text = 'p'.repeat(651);
+
+    fireEvent.paste(screen.getByLabelText('Message'), { clipboardData: { getData: () => text } });
+
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, uploading' })).toBeTruthy();
+    expect(await screen.findByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+    expect(server.files[0]?.name).toMatch(/^pasted-\d+\.txt$/);
+    expect(await server.files[0]?.text()).toBe(text);
+    expect(status()).toBe('Pasted text attached');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('', [
+      { id: 'asset-1', filename: 'Pasted text', mediaType: 'text/plain', origin: 'paste' },
+    ]);
+  });
+
+  it('keeps 650 characters in the textarea and keeps a longer paste inline without storage', () => {
+    const onSubmit = vi.fn();
+
+    render(
+      <Composer aria-label="Message" onSubmit={onSubmit} submitContent="Send" stopContent="Stop" />,
     );
 
-    fireEvent.drop(container.querySelector('form') as HTMLFormElement, {
-      dataTransfer: { files: [new File(['retry'], 'retry.txt', { type: 'text/plain' })] },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: 'Retry retry.txt' }));
+    const input = screen.getByLabelText('Message') as HTMLTextAreaElement;
 
-    await screen.findByRole('button', { name: 'Send' });
-    expect(fetch).toHaveBeenCalledTimes(2);
+    fireEvent.paste(input, { clipboardData: { getData: () => 'a'.repeat(650) } });
+    fireEvent.change(input, { target: { value: 'a'.repeat(650) } });
+
+    expect(input.value).toBe('a'.repeat(650));
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.paste(input, { clipboardData: { getData: () => 'b'.repeat(651) } });
+
+    expect(input.value).toBe('');
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' }).dataset.state).toBe(
+      'text',
+    );
+    expect(screen.queryByRole('button', { name: 'Add files' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('', [
+      {
+        type: 'paste',
+        text: 'b'.repeat(651),
+        filename: expect.stringMatching(/^pasted-\d+\.txt$/),
+      },
+    ]);
+  });
+
+  it('retries a failed upload', async () => {
+    const { drop, onSubmit, server } = renderComposer();
+
+    server.fetch.mockImplementationOnce(async () =>
+      Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
+    );
+
+    drop(new File(['retry'], 'retry.txt', { type: 'text/plain' }));
+
+    const card = await screen.findByRole('group', { name: 'retry.txt, TXT, upload failed' });
+
+    expect(description(card)).toBe('Upload failed. Storage is unavailable.');
+    expect(status()).toBe('Upload failed: retry.txt');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry uploading retry.txt' }));
+
+    expect(await screen.findByRole('group', { name: 'retry.txt, TXT, ready' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(server.fetch).toHaveBeenCalledTimes(2);
+    expect(onSubmit).toHaveBeenCalledWith('', [
+      { id: 'asset-1', filename: 'retry.txt', mediaType: 'text/plain' },
+    ]);
+  });
+
+  it('shows a file over the upload limit as too large, without Retry', async () => {
+    const { drop, server } = renderComposer();
+
+    server.fetch.mockImplementationOnce(async () =>
+      Response.json({ errors: [{ message: 'File size limit has been reached' }] }, { status: 413 }),
+    );
+
+    drop(binary('big.mov', 'video/quicktime'));
+
+    const card = await screen.findByRole('group', { name: 'big.mov, MOV, too large to upload' });
+
+    expect(card.dataset.state).toBe('too-large');
+    expect(description(card)).toBe(
+      'Too large to upload. This file is larger than this app allows.',
+    );
+    expect(within(card).queryByRole('button', { name: /Retry/ })).toBeNull();
+    expect(status()).toBe('Too large to upload: big.mov');
+  });
+
+  it('sends only the good files while red cards show, then clears every card', async () => {
+    const { drop, onSubmit, server } = renderComposer({ modelInputs: ['text'] });
+
+    drop(new File(['# Notes'], 'notes.md', { type: 'text/markdown' }), binary('report.zip', ''));
+
+    await screen.findByRole('group', { name: 'notes.md, MD, ready' });
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Here' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('Here', [
+      { id: 'asset-1', filename: 'notes.md', mediaType: 'text/markdown' },
+    ]);
+    await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+    expect(server.fetch).toHaveBeenCalledOnce();
+  });
+
+  it('hides Send when only red cards remain and there is no text', async () => {
+    const { drop } = renderComposer();
+
+    drop(binary('report.zip', 'application/zip'));
+
+    await screen.findByRole('group', { name: "report.zip, ZIP, won't be sent" });
+
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+  });
+
+  it('leaves every card as it was when the model changes', async () => {
+    const { drop, onSubmit, update } = renderComposer({
+      modelInputs: ['text', 'image'],
+      modelName: 'Vision',
+    });
+
+    drop(
+      png('photo.png'),
+      new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], 'scan.pdf', {
+        type: 'application/pdf',
+      }),
+    );
+
+    const photo = await screen.findByRole('group', { name: 'photo.png, ready' });
+    const scan = screen.getByRole('group', { name: "scan.pdf, PDF, won't be sent" });
+
+    update({ modelInputs: ['text', 'pdf'], modelName: 'Reader' });
+
+    expect(within(photo).getByRole('img', { name: 'photo.png' }).getAttribute('src')).toBe(
+      'blob:preview',
+    );
+    expect(photo.dataset.state).toBe('ready');
+    expect(scan.dataset.state).toBe('refused');
+    expect(description(scan)).toBe("Won't be sent. Vision can't read PDFs.");
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('', [
+      { id: 'asset-1', filename: 'photo.png', mediaType: 'image/png' },
+    ]);
+  });
+
+  it('waits for an upload before Send and forgets a file removed while uploading', async () => {
+    const { drop, onSubmit, server } = renderComposer();
+    const upload = deferred<Response>();
+
+    server.fetch.mockImplementationOnce(() => upload.promise);
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Hi' } });
+    drop(new File(['notes'], 'notes.txt', { type: 'text/plain' }));
+
+    await screen.findByRole('group', { name: 'notes.txt, TXT, uploading' });
+
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove notes.txt' }));
+
+    expect(status()).toBe('notes.txt removed');
+
+    await act(async () => {
+      upload.resolve(
+        Response.json({ doc: { id: 'late', filename: 'notes.txt', mimeType: 'text/plain' } }),
+      );
+    });
+
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
+    expect(status()).toBe('notes.txt removed');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onSubmit).toHaveBeenCalledWith('Hi', []);
+  });
+
+  it('sends once when Enter is pressed twice before the submit settles', async () => {
+    const submitted = deferred<void>();
+    const { drop, onSubmit } = renderComposer();
+
+    onSubmit.mockReturnValue(submitted.promise);
+    drop(pdf('report.pdf'));
+
+    await screen.findByRole('group', { name: 'report.pdf, PDF, ready' });
+
+    fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+
+    await act(async () => submitted.resolve());
+
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
   });
 });

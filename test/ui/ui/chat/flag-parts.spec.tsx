@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { validateChatMessages } from '../../../../packages/frogbot/src/chat/validateMessages';
@@ -22,6 +23,25 @@ describe('flag parts', () => {
     expect(container.querySelector('pre')).toBeNull();
   });
 
+  it('renders a legacy inline paste as a text card that opens', async () => {
+    const user = userEvent.setup();
+    const { renderFlagPart } = await loadFlagParts();
+
+    render(
+      <MessagePart
+        part={{ type: 'data-paste', data: { text: 'Pasted content', filename: 'pasted-1.txt' } }}
+        renderData={renderFlagPart}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: 'Pasted text, PASTED, ready' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Open Pasted text' }));
+
+    expect(screen.getByRole('dialog', { name: 'Pasted text' })).toBeTruthy();
+    expect(screen.getByRole('dialog').querySelector('pre')?.textContent).toBe('Pasted content');
+  });
+
   it('renders paste, page context, and prompt data distinctly', async () => {
     const { renderFlagPart } = await loadFlagParts();
     const { rerender } = render(
@@ -30,7 +50,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
-    expect(screen.getByTestId('data-paste')).toBeTruthy();
+    expect(screen.getByTestId('attachment-card').dataset.state).toBe('text');
     rerender(
       <MessagePart
         part={{
@@ -58,9 +78,11 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
-    expect(screen.getByTestId('data-paste').className).toBe('fb-flag-part fb-flag-part--paste');
-    expect(screen.getByText('Pasted content').className).toBe('fb-flag-part__preview');
-    expect(screen.getByText('PASTED').className).toBe('fb-flag-part__label');
+    expect(screen.getByTestId('attachment-card').className).toBe(
+      'fb-attachment-card fb-attachment-card--text',
+    );
+    expect(screen.getByText('Pasted content').className).toBe('fb-attachment-card__snippet');
+    expect(screen.getByText('PASTED').className).toBe('fb-attachment-card__tag');
 
     rerender(
       <MessagePart

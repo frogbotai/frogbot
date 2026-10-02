@@ -4,24 +4,16 @@
     border-radius: var(--fb-radius-lg);
   }
 
-  .fb-flag-part--paste,
   .fb-flag-part--prompt {
     position: relative;
     width: 120px;
+    max-height: 120px;
     margin-bottom: 0.5rem;
     padding: 0.5rem;
     color: var(--theme-base-900);
     background-color: var(--theme-base-200);
     font-size: var(--fb-text-xs);
     line-height: var(--fb-text-xs--line-height);
-  }
-
-  .fb-flag-part--paste {
-    height: 120px;
-  }
-
-  .fb-flag-part--prompt {
-    max-height: 120px;
   }
 
   .fb-flag-part__preview {

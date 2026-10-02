@@ -1,18 +1,25 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
+import { type FrogBotSDK, FrogBotSDKError } from '@frogbotai/sdk';
 import { type ChangeEvent, useRef, useState } from 'react';
 
-import CloseIcon from '../icons/icons/CloseIcon.js';
-import FileIcon from '../icons/icons/FileIcon.js';
-import LoadingIcon from '../icons/icons/LoadingIcon.js';
 import PlusSignIcon from '../icons/icons/PlusSignIcon.js';
-import RefreshIcon from '../icons/icons/RefreshIcon.js';
+import { AttachmentCard, type AttachmentCardState } from './attachment-card.js';
+import {
+  type AttachmentKind,
+  attachmentKind,
+  type AttachmentMediaKind,
+  extensionLabel,
+  isMediaKind,
+  isUploadBlocked,
+  typeLabel,
+} from './attachment-kind.js';
 
 export type FileReference = {
   id: string | number;
   filename: string;
   mediaType: string;
+  origin?: 'paste';
 };
 
 export type PasteAttachment = {
@@ -23,117 +30,269 @@ export type PasteAttachment = {
 
 export type ComposerAttachment = FileReference | PasteAttachment;
 
-type UploadItem = {
+export type ComposerModelInput = AttachmentMediaKind | 'text';
+
+type AttachmentItem = {
   key: number;
-  file: File;
+  name: string;
+  size: number;
+  kind: AttachmentKind;
+  state: AttachmentCardState;
+  origin?: 'paste';
+  reason?: string;
   preview?: string;
-  reference?: FileReference;
-  error?: string;
-  uploading: boolean;
+  text?: string;
+  source?: File;
+  attachment?: ComposerAttachment;
 };
 
-export function useAttachments({ assetsSlug, sdk }: { assetsSlug?: string; sdk?: FrogBotSDK }) {
+type AttachmentDraft = Omit<AttachmentItem, 'key'>;
+
+const PASTE_NAME = 'Pasted text';
+
+const MEDIA_WORDS: Record<AttachmentMediaKind, string> = {
+  image: 'images',
+  audio: 'audio',
+  video: 'video',
+  pdf: 'PDFs',
+};
+
+const UNSUPPORTED = "this file type isn't supported";
+
+function attachedMessage({ name, kind, origin }: AttachmentDraft): string {
+  if (origin === 'paste') return `${name} attached`;
+
+  return kind === 'text' ? `${name} attached as text` : `${name} attached`;
+}
+
+function uploadErrorReason(error: unknown): string | undefined {
+  return error instanceof FrogBotSDKError && error.message ? error.message : undefined;
+}
+
+function cardLabel({ name, kind, origin }: AttachmentItem): string | undefined {
+  return kind === 'text' ? typeLabel({ filename: name, origin }) : extensionLabel(name);
+}
+
+export function useAttachments({
+  assetsSlug,
+  modelInputs,
+  modelName,
+  sdk,
+}: {
+  assetsSlug?: string;
+  modelInputs?: readonly ComposerModelInput[];
+  modelName?: string;
+  sdk?: FrogBotSDK;
+}) {
   const nextKey = useRef(0);
-  const [items, setItems] = useState<UploadItem[]>([]);
+  const removed = useRef(new Set<number>());
+  const [items, setItems] = useState<AttachmentItem[]>([]);
+  const [classifying, setClassifying] = useState(0);
+  const [status, setStatus] = useState('');
+  const storage = Boolean(sdk && assetsSlug);
 
-  const upload = async (item: UploadItem) => {
-    if (!sdk || !assetsSlug) return;
-
+  const update = (key: number, changes: Partial<AttachmentItem>) =>
     setItems((current) =>
-      current.map((entry) =>
-        entry.key === item.key ? { ...entry, error: undefined, uploading: true } : entry,
-      ),
+      current.map((item) => (item.key === key ? { ...item, ...changes } : item)),
     );
 
+  const upload = async (item: AttachmentItem) => {
+    if (!sdk || !assetsSlug || !item.source) return;
+
+    update(item.key, { state: 'uploading', reason: undefined });
+
     try {
-      const uploaded = await sdk.upload(assetsSlug, item.file);
-      setItems((current) =>
-        current.map((entry) =>
-          entry.key === item.key
-            ? {
-                ...entry,
-                reference: {
-                  id: uploaded.id,
-                  filename: uploaded.filename,
-                  mediaType: uploaded.mimeType,
-                },
-                uploading: false,
-              }
-            : entry,
-        ),
-      );
+      const uploaded = await sdk.upload(assetsSlug, item.source);
+
+      if (removed.current.has(item.key)) return;
+
+      const reference: FileReference = {
+        id: uploaded.id,
+        filename: item.name,
+        mediaType: uploaded.mimeType,
+        ...(item.origin ? { origin: item.origin } : {}),
+      };
+
+      update(item.key, {
+        state: item.kind === 'text' ? 'text' : 'ready',
+        attachment: reference,
+      });
+
+      setStatus(attachedMessage(item));
     } catch (error) {
-      setItems((current) =>
-        current.map((entry) =>
-          entry.key === item.key
-            ? {
-                ...entry,
-                error: error instanceof Error ? error.message : 'Upload failed',
-                uploading: false,
-              }
-            : entry,
-        ),
-      );
+      if (removed.current.has(item.key)) return;
+
+      if (error instanceof FrogBotSDKError && error.status === 413) {
+        update(item.key, { state: 'too-large' });
+        setStatus(`Too large to upload: ${item.name}`);
+
+        return;
+      }
+
+      update(item.key, { state: 'failed', reason: uploadErrorReason(error) });
+      setStatus(`Upload failed: ${item.name}`);
     }
   };
 
-  const add = (files: File[]) => {
-    const added = files.map((file) => ({
-      key: nextKey.current++,
-      file,
-      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
-      uploading: true,
-    }));
+  const describe = async (file: File): Promise<AttachmentDraft> => {
+    const kind = await attachmentKind(file);
+    const draft = { name: file.name, size: file.size, kind };
+    const blocked = isUploadBlocked(file);
 
-    setItems((current) => [...current, ...added]);
-    for (const item of added) void upload(item);
+    if (kind === 'binary' || (blocked && kind !== 'text')) {
+      return { ...draft, state: 'refused' };
+    }
+
+    if (isMediaKind(kind) && modelInputs && !modelInputs.includes(kind)) {
+      return {
+        ...draft,
+        state: 'refused',
+        reason: `${modelName ?? 'This model'} can't read ${MEDIA_WORDS[kind]}.`,
+      };
+    }
+
+    if (kind !== 'text') {
+      return {
+        ...draft,
+        state: 'uploading',
+        source: file,
+        preview: kind === 'image' ? URL.createObjectURL(file) : undefined,
+      };
+    }
+
+    const text = await file.text();
+    const source = blocked ? new File([text], `${file.name}.txt`, { type: 'text/plain' }) : file;
+
+    return { ...draft, state: 'uploading', text, source };
   };
 
-  const remove = (key: number) =>
-    setItems((current) => {
-      const item = current.find((entry) => entry.key === key);
-      if (item?.preview) URL.revokeObjectURL(item.preview);
-      return current.filter((entry) => entry.key !== key);
-    });
+  const classify = (file: File) =>
+    describe(file).catch((): AttachmentDraft => ({
+      name: file.name,
+      size: file.size,
+      kind: 'binary',
+      state: 'failed',
+      reason: "This file couldn't be read.",
+    }));
 
-  const clear = () =>
-    setItems((current) => {
-      for (const item of current) if (item.preview) URL.revokeObjectURL(item.preview);
-      return [];
-    });
+  const announcement = ({ name, kind, reason, state }: AttachmentDraft) => {
+    if (state === 'failed') return `Upload failed: ${name}`;
+
+    if (state !== 'refused') return undefined;
+
+    if (!reason || !isMediaKind(kind)) return `${name} won't be sent: ${UNSUPPORTED}`;
+
+    return `${name} won't be sent: ${modelName ?? 'this model'} can't read ${MEDIA_WORDS[kind]}`;
+  };
+
+  const insert = (drafts: AttachmentDraft[]) => {
+    const added = drafts.map((draft) => ({ ...draft, key: nextKey.current++ }));
+
+    setItems((current) => [...current, ...added]);
+
+    const messages = added.flatMap((item) => announcement(item) ?? []);
+
+    if (messages.length) setStatus(messages.join('. '));
+
+    for (const item of added) {
+      if (item.state === 'uploading') void upload(item);
+    }
+  };
+
+  const add = async (files: File[]) => {
+    if (!storage || !files.length) return;
+
+    setClassifying((count) => count + 1);
+
+    const drafts = await Promise.all(files.map(classify));
+
+    setClassifying((count) => count - 1);
+    insert(drafts);
+  };
+
+  const addPaste = (text: string) => {
+    const filename = `pasted-${Date.now()}.txt`;
+    const source = new File([text], filename, { type: 'text/plain' });
+
+    const draft: AttachmentDraft = {
+      name: PASTE_NAME,
+      size: source.size,
+      kind: 'text',
+      origin: 'paste',
+      text,
+      state: storage ? 'uploading' : 'text',
+      source,
+      attachment: storage ? undefined : { type: 'paste', text, filename },
+    };
+
+    insert([draft]);
+
+    if (!storage) setStatus(attachedMessage(draft));
+  };
+
+  const discard = (keys: number[]) => {
+    const gone = new Set(keys);
+
+    for (const key of keys) removed.current.add(key);
+
+    for (const item of items) {
+      if (gone.has(item.key) && item.preview) URL.revokeObjectURL(item.preview);
+    }
+
+    setItems((current) => current.filter((item) => !gone.has(item.key)));
+  };
+
+  const remove = (key: number) => {
+    const item = items.find((entry) => entry.key === key);
+
+    discard([key]);
+
+    if (item) setStatus(`${item.name} removed`);
+  };
+
+  const retry = (key: number) => {
+    const item = items.find((entry) => entry.key === key);
+
+    if (item?.state === 'failed') void upload(item);
+  };
 
   return {
     add,
-    clear,
+    addPaste,
+    clear: discard,
     items,
-    references: items.flatMap((item) => (item.reference ? [item.reference] : [])),
     remove,
-    retry: (key: number) => {
-      const item = items.find((entry) => entry.key === key);
-      if (item) void upload(item);
-    },
-    uploading: items.some((item) => item.uploading),
+    retry,
+    status,
+    storage,
+    toSend: items.flatMap((item) => (item.attachment ? [item.attachment] : [])),
+    uploading: classifying > 0 || items.some((item) => item.state === 'uploading'),
   };
 }
 
 export function AttachmentControl({
+  accept,
   add,
   disabled,
 }: {
+  accept?: string;
   add: (files: File[]) => void;
   disabled?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
+
   const select = (event: ChangeEvent<HTMLInputElement>) => {
     add(Array.from(event.target.files ?? []));
     event.target.value = '';
   };
+
   return (
     <>
       <input
         ref={input}
         type="file"
         multiple
+        accept={accept}
         tabIndex={-1}
         className="fb-attachments__input"
         onChange={select}
@@ -151,89 +310,45 @@ export function AttachmentControl({
   );
 }
 
-export function AttachmentPreviews({
+export function AttachmentList({
   items,
   remove,
   retry,
+  status,
 }: {
-  items: UploadItem[];
+  items: AttachmentItem[];
   remove: (key: number) => void;
   retry: (key: number) => void;
+  status: string;
 }) {
-  if (!items.length) return null;
   return (
-    <div className="fb-attachments__previews">
-      <div className="fb-attachments__scroll">
-        {items.map((item) => (
-          <div key={item.key} className="fb-attachments__item">
-            <div className="fb-attachments__preview">
-              {item.preview ? (
-                <img src={item.preview} alt={item.file.name} className="fb-attachments__image" />
-              ) : (
-                <>
-                  <FileIcon className="fb-attachments__file-icon" />
-                  <p className="fb-attachments__filename">{item.file.name}</p>
-                </>
-              )}
-              {item.uploading && (
-                <LoadingIcon
-                  aria-label={`Uploading ${item.file.name}`}
-                  className="fb-attachments__loader"
+    <>
+      <div role="status" className="fb-attachments__status">
+        {status}
+      </div>
+      {items.length > 0 && (
+        <div className="fb-attachments__previews">
+          <ul role="list" aria-label="Attachments" className="fb-attachments__scroll">
+            {items.map((item) => (
+              <li key={item.key} className="fb-attachments__card">
+                <AttachmentCard
+                  name={item.name}
+                  state={item.state}
+                  typeLabel={item.preview ? undefined : cardLabel(item)}
+                  preview={item.preview ? <img src={item.preview} alt={item.name} /> : undefined}
+                  text={item.text}
+                  size={item.size}
+                  reason={item.reason}
+                  onRemove={() => remove(item.key)}
+                  onRetry={
+                    item.state === 'failed' && item.source ? () => retry(item.key) : undefined
+                  }
                 />
-              )}
-              {item.error && (
-                <button
-                  type="button"
-                  aria-label={`Retry ${item.file.name}`}
-                  title={item.error}
-                  onClick={() => retry(item.key)}
-                  className="fb-attachments__retry"
-                >
-                  <RefreshIcon className="fb-attachments__retry-icon" />
-                </button>
-              )}
-              <button
-                type="button"
-                aria-label={`Remove ${item.file.name}`}
-                onClick={() => remove(item.key)}
-                className="fb-attachments__remove"
-              >
-                <CloseIcon className="fb-attachments__remove-icon" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function PastePreviews({
-  items,
-  remove,
-}: {
-  items: PasteAttachment[];
-  remove: (index: number) => void;
-}) {
-  if (!items.length) return null;
-  return (
-    <div className="fb-attachments__previews">
-      <div className="fb-attachments__scroll">
-        {items.map((item, index) => (
-          <div key={item.filename} data-testid="paste-attachment" className="fb-attachments__paste">
-            <div className="fb-attachments__paste-text">{item.text}</div>
-            <button
-              type="button"
-              aria-label={`Remove ${item.filename}`}
-              onClick={() => remove(index)}
-              className="fb-attachments__remove fb-attachments__remove--paste"
-            >
-              <CloseIcon className="fb-attachments__remove-icon" />
-            </button>
-            <div className="fb-attachments__paste-label">PASTED</div>
-          </div>
-        ))}
-      </div>
-    </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
   );
 }

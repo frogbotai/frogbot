@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
   },
   sdk: undefined as unknown as ReturnType<typeof createFrogBotSDK>,
   agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
+  assetsSlug: undefined as string | undefined,
+  agentManifest: undefined as import('@frogbotai/sdk').AgentManifest | undefined,
   history: {
     messages: [] as import('ai').UIMessage[],
     queued: [] as import('ai').UIMessage[],
@@ -42,10 +44,16 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
     loading: false,
     manifest: {
       ai: { transcribe: false },
-      chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+      chat: {
+        enabled: true,
+        assetsSlug: state.assetsSlug,
+        chatsSlug: 'chats',
+        messagesSlug: 'messages',
+      },
       files: { slug: 'files' },
       agents: state.agents,
     },
+    agentManifest: state.agentManifest,
   }),
 }));
 vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
@@ -124,6 +132,8 @@ describe('Chat', () => {
     state.adapter.fetch.mockReset();
     state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
     state.agents = [];
+    state.assetsSlug = undefined;
+    state.agentManifest = undefined;
   });
 
   it('seeds AI SDK chat state with prefetched messages', () => {
@@ -207,7 +217,75 @@ describe('Chat', () => {
     );
   });
 
-  it('submits long pasted text as data-paste', async () => {
+  it('uploads long pasted text and sends it as a pasted file reference', async () => {
+    state.assetsSlug = 'assets';
+    state.adapter.fetch.mockResolvedValue(
+      Response.json({ doc: { id: 'asset-1', filename: 'pasted-1.txt', mimeType: 'text/plain' } }),
+    );
+
+    render(<Chat agent="support" />);
+
+    fireEvent.paste(screen.getByRole('textbox'), {
+      clipboardData: { getData: () => 'p'.repeat(651) },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
+
+    await waitFor(() =>
+      expect(state.sendMessage).toHaveBeenCalledWith({
+        parts: [
+          {
+            type: 'file-reference',
+            id: 'asset-1',
+            filename: 'Pasted text',
+            mediaType: 'text/plain',
+            origin: 'paste',
+          },
+        ],
+        metadata: { source: 'ui' },
+      }),
+    );
+    expect(String(state.adapter.fetch.mock.calls[0]?.[0])).toBe('/api/assets');
+  });
+
+  it("gives the composer the selected model's file types and name", async () => {
+    state.assetsSlug = 'assets';
+    state.agentManifest = {
+      defaultAgent: 'support',
+      agents: [
+        {
+          slug: 'support',
+          label: 'Support',
+          source: 'config',
+          defaultModel: 'test/vision',
+          models: ['test/vision', 'test/text-only'],
+          names: { 'test/text-only': 'Text Only' },
+          inputs: { 'test/text-only': ['text'] },
+        },
+      ],
+    };
+
+    const { container, rerender } = render(<Chat agent="support" />);
+    const accept = () => container.querySelector('input[type="file"]')?.getAttribute('accept');
+
+    expect(accept()).toContain('image/png');
+
+    rerender(<Chat agent="support" model="test/text-only" />);
+
+    expect(accept()).not.toContain('image/png');
+
+    fireEvent.drop(container.querySelector('form') as HTMLFormElement, {
+      dataTransfer: {
+        files: [new File([new Uint8Array([0x89, 0x50])], 'photo.png', { type: 'image/png' })],
+      },
+    });
+
+    const card = await screen.findByRole('group', { name: "photo.png, PNG, won't be sent" });
+
+    expect(card.textContent).toContain("Text Only can't read images.");
+    expect(state.adapter.fetch).not.toHaveBeenCalled();
+  });
+
+  it('submits long pasted text as data-paste without upload storage', async () => {
     render(<Chat agent="support" />);
     fireEvent.paste(screen.getByRole('textbox'), {
       clipboardData: { getData: () => 'p'.repeat(651) },

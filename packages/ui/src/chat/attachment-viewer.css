@@ -1,0 +1,44 @@
+@layer frogbot {
+  .fb-attachment-viewer {
+    max-width: 48rem;
+  }
+
+  .fb-attachment-viewer__title {
+    overflow-wrap: anywhere;
+    line-height: var(--fb-text-lg--line-height);
+  }
+
+  .fb-attachment-viewer__text {
+    max-height: 60vh;
+    margin: 0;
+    padding: 0.75rem;
+    overflow: auto;
+    border: 1px solid var(--theme-base-150);
+    border-radius: var(--fb-radius-md);
+    color: var(--theme-base-900);
+    background-color: var(--theme-base-50);
+    font-family: monospace;
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .fb-attachment-viewer__text:focus-visible {
+    outline: 2px solid var(--theme-base-900);
+    outline-offset: 2px;
+  }
+
+  .fb-attachment-viewer__status {
+    align-self: center;
+    margin-right: auto;
+    color: var(--theme-base-900);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .fb-attachment-viewer__copy-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+}
