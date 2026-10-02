@@ -118,7 +118,7 @@ FrogBot injects the collection whenever chat persistence is enabled and hides it
 | Read | The owner, or anyone who can read the linked chat under that collection's `read` access rule |
 | Update, delete | No one through the API |
 
-Because read access follows the chat collection's own rule, sharing a chat also shares its attachments. The collection uses the same storage configuration as any other upload collection; target `frogbot-chat-assets` in a [storage adapter](/upload/storage-adapters) to keep assets in cloud storage.
+Because read access follows the chat collection's own rule, sharing a chat also shares its attachments. A [storage adapter](/upload/storage-adapters) covers `frogbot-chat-assets` automatically, so assets go to cloud storage without listing the collection. Set `'frogbot-chat-assets': false` in the adapter's `collections` to keep them on local disk.
 
 Tools can save files against the current chat with `saveChatAsset`:
 

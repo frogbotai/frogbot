@@ -110,6 +110,7 @@ import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/r
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
+import { applyStorageAdapters } from '../uploads/storage.js';
 import type { UploadHandler } from '../uploads/types.js';
 import { attachFrogBotInstance, attachRegisteredFrogBot } from './attachFrogBot.js';
 import {
@@ -1749,13 +1750,21 @@ export function sanitize(
     agents,
     collections: usageCollections,
   });
-  const { collections, files } = resolveFilesCollection({
+  const { collections: resolvedCollections, files } = resolveFilesCollection({
     collections: [
       ...connectionsResult.collections,
       defaultTriggerSubscriptionsCollection(),
       defaultWaitpointsCollection(),
     ],
   });
+
+  config = applyStorageAdapters({
+    config: { ...config, collections: resolvedCollections, onInit: normalizeOnInit(config.onInit) },
+    builtInSlugs: [files.slug, ...(chatResult.chat.enabled ? [chatResult.chat.assetsSlug] : [])],
+  });
+
+  const collections = config.collections;
+
   const connections = connectionsResult.connections;
   if (connections.enabled) {
     if (settings.some(({ path }) => path === 'connections' || path.startsWith('connections/'))) {

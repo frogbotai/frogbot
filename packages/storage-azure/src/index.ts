@@ -1,10 +1,13 @@
 import { azureStorage as _azureStorage, getStorageClient } from '@payloadcms/storage-azure';
 import type { Plugin } from 'frogbot';
+import type { StorageAdapterOptions } from 'frogbot/internal';
+import { storageAdapter } from 'frogbot/internal';
 
 export { getStorageClient };
-export type { AzureStorageOptions } from '@payloadcms/storage-azure';
 
-type AzureStorageOptions = Parameters<typeof _azureStorage>[0];
+type PayloadAzureStorageOptions = Parameters<typeof _azureStorage>[0];
+
+export type AzureStorageOptions = StorageAdapterOptions<PayloadAzureStorageOptions>;
 
 export const azureStorage = (options: AzureStorageOptions): Plugin =>
-  _azureStorage(options) as unknown as Plugin;
+  storageAdapter<PayloadAzureStorageOptions>({ options, plugin: _azureStorage });

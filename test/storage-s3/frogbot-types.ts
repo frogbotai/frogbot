@@ -69,6 +69,10 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    chats: Chat;
+    messages: Message;
+    'frogbot-chat-assets': FrogbotChatAsset;
+    'frogbot-chat-turns': FrogbotChatTurn;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
@@ -77,6 +81,10 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect;
     media: MediaSelect;
+    chats: ChatsSelect;
+    messages: MessagesSelect;
+    'frogbot-chat-assets': FrogbotChatAssetsSelect;
+    'frogbot-chat-turns': FrogbotChatTurnsSelect;
     'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
@@ -171,6 +179,97 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | User;
+  agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
+  lastMessageAt?: string | null;
+  todos?: import('frogbot/tools').TodoItem[];
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: string;
+  chat: number | Chat;
+  role: 'user' | 'assistant' | 'system';
+  parts: import('frogbot').UIMessage['parts'];
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status?: ('active' | 'queued') | null;
+  delivery?: ('queue' | 'steer') | null;
+  model?: string | null;
+  reasoning?: string | null;
+  author?: import('frogbot').TurnActor;
+  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
+  version?: number | null;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    cachedInputTokens?: number | null;
+    model?: string | null;
+    provider?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets".
+ */
+export interface FrogbotChatAsset {
+  id: number;
+  owner?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  _objectKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns".
+ */
+export interface FrogbotChatTurn {
+  id: string;
+  state: 'idle' | 'running' | 'awaiting';
+  attempt?: string | null;
+  leaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions".
  */
 export interface FrogbotTriggerSubscription {
@@ -243,6 +342,7 @@ export interface FrogbotWaitpoint {
  */
 export interface File {
   id: number;
+  _objectKey?: string | null;
   folder?: (number | null) | null;
   updatedAt: string;
   createdAt: string;
@@ -302,6 +402,89 @@ export interface MediaSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats_select".
+ */
+export interface ChatsSelect {
+  title?: boolean;
+  user?: boolean;
+  agent?: boolean;
+  channel?: boolean;
+  externalId?: boolean;
+  channelKey?: boolean;
+  channelThread?: boolean;
+  channelLabel?: boolean;
+  lastMessageAt?: boolean;
+  todos?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect {
+  id?: boolean;
+  chat?: boolean;
+  role?: boolean;
+  parts?: boolean;
+  metadata?: boolean;
+  status?: boolean;
+  delivery?: boolean;
+  model?: boolean;
+  reasoning?: boolean;
+  author?: boolean;
+  settlements?: boolean;
+  version?: boolean;
+  usage?:
+    | boolean
+    | {
+        inputTokens?: boolean;
+        outputTokens?: boolean;
+        totalTokens?: boolean;
+        reasoningTokens?: boolean;
+        cachedInputTokens?: boolean;
+        model?: boolean;
+        provider?: boolean;
+      };
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets_select".
+ */
+export interface FrogbotChatAssetsSelect {
+  owner?: boolean;
+  chat?: boolean;
+  _objectKey?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns_select".
+ */
+export interface FrogbotChatTurnsSelect {
+  id?: boolean;
+  state?: boolean;
+  attempt?: boolean;
+  leaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions_select".
  */
 export interface FrogbotTriggerSubscriptionsSelect {
@@ -347,6 +530,7 @@ export interface FrogbotWaitpointsSelect {
  * via the `definition` "files_select".
  */
 export interface FilesSelect {
+  _objectKey?: boolean;
   folder?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;

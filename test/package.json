@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@ai-sdk/mcp": "^2.0.60",
+    "@aws-sdk/client-s3": "3.1090.0",
     "@frogbotai/db-d1-sqlite": "workspace:*",
     "@frogbotai/db-mongodb": "workspace:*",
     "@frogbotai/db-postgres": "workspace:*",

@@ -18,17 +18,19 @@ FrogBot offers additional storage adapters to handle file uploads. These adapter
 
 ## Configuration
 
-Storage adapters are registered under the top-level `storage` key in your FrogBot config. This placement ensures that upload hooks, static file handlers, and presigned-URL endpoints are wired up before any plugin modifies the config.
+Add a storage adapter to `plugins`. Without further configuration, it stores the files for FrogBot's own upload collections:
+
+- The [files collection](/upload/files): `files`, or the collection you marked `file: true`.
+- `frogbot-chat-assets`, when [chat persistence](/chat/overview#chat-assets) is enabled.
 
 ```ts
 import { s3Storage } from '@frogbotai/storage-s3'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
-  storage: [
+  plugins: [
     s3Storage({
       bucket: process.env.S3_BUCKET,
-      collections: { media: true },
       config: { region: process.env.S3_REGION },
     }),
   ],
@@ -36,15 +38,46 @@ export default buildConfig({
 })
 ```
 
-<Banner type="info">
-  **Migrating from an older version?** If you previously placed storage adapter packages inside
-  `plugins`, run the codemod to migrate automatically:
+List your own upload collections in `collections`. To keep one of FrogBot's collections on local disk, set it to `false`:
 
-```sh
-npx @frogbotai/codemod --transform migrate-storage-adapters-to-config
+```ts
+s3Storage({
+  bucket: process.env.S3_BUCKET,
+  config: { region: process.env.S3_REGION },
+  collections: {
+    media: true,
+    'frogbot-chat-assets': false,
+  },
+})
 ```
 
-</Banner>
+FrogBot applies storage adapters after every other plugin has run, so an adapter also covers collections that other plugins add, wherever it sits in `plugins`.
+
+### Multiple adapters
+
+FrogBot's collections go to the first storage adapter in `plugins`. To store one of them with a different adapter, list it in that adapter's `collections`. Setting one to `false` only takes effect in the first adapter. Listing the same collection in two adapters stops FrogBot at startup with an error.
+
+```ts
+import { s3Storage } from '@frogbotai/storage-s3'
+import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  plugins: [
+    s3Storage({
+      bucket: process.env.S3_BUCKET,
+      config: { region: process.env.S3_REGION },
+    }),
+    vercelBlobStorage({
+      collections: { files: true },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    }),
+  ],
+  // ... rest of config
+})
+```
+
+Here `files` uses Vercel Blob and `frogbot-chat-assets` uses S3.
 
 ## Vercel Blob Storage
 
@@ -58,7 +91,7 @@ pnpm add @frogbotai/storage-vercel-blob
 
 ### Usage#vercel-blob-usage
 
-- Configure the `collections` object to specify which collections should use the Vercel Blob adapter. The slug _must_ match one of your existing collection slugs.
+- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
 - Ensure you have `BLOB_READ_WRITE_TOKEN` set in your Vercel environment variables. This is usually set by Vercel automatically after adding blob storage to your project.
 - When enabled, this package will automatically set `disableLocalStorage` to `true` for each collection.
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client.
@@ -70,10 +103,10 @@ import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix],
-  storage: [
+  plugins: [
     vercelBlobStorage({
       enabled: true, // Optional, defaults to true
-      // Specify which collections should use Vercel Blob
+      // Your own upload collections; FrogBot's are included automatically
       collections: {
         media: true,
         'media-with-prefix': {
@@ -110,28 +143,29 @@ pnpm add @frogbotai/storage-s3
 
 ### Usage#s3-usage
 
-- Configure the `collections` object to specify which collections should use the S3 Storage adapter. The slug _must_ match one of your existing collection slugs.
+- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
 - The `config` object can be any [`S3ClientConfig`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3) object (from [`@aws-sdk/client-s3`](https://github.com/aws/aws-sdk-js-v3)). _This is highly dependent on your AWS setup_. Check the AWS documentation for more information.
 - When enabled, this package will automatically set `disableLocalStorage` to `true` for each collection.
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client. You must allow CORS PUT method for the bucket to your website.
 - Configure `signedDownloads` (either globally or per-collection in `collections`) to use [presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html) for files downloading. This can improve performance for large files (like videos) while still respecting your access control. Additionally, with `signedDownloads.shouldUseSignedURL` you can specify a condition whether FrogBot should use a presigned URL, if you want to use this feature only for specific files.
-- You can conditionally enable the plugin using the `enabled` option. For example, `enabled: Boolean(process.env.S3_BUCKET)` skips the plugin in local development when credentials are not set.
+- You can conditionally enable the adapter using the `enabled` option. For example, `enabled: Boolean(process.env.S3_BUCKET)` skips the adapter in local development when credentials are not set.
 
 ```ts
 import { s3Storage } from '@frogbotai/storage-s3'
 import { Media } from './collections/Media'
 import { MediaWithPrefix } from './collections/MediaWithPrefix'
+import { Videos } from './collections/Videos'
 
 export default buildConfig({
-  collections: [Media, MediaWithPrefix],
-  storage: [
+  collections: [Media, MediaWithPrefix, Videos],
+  plugins: [
     s3Storage({
       collections: {
         media: true,
         'media-with-prefix': {
           prefix,
         },
-        'media-with-presigned-downloads': {
+        videos: {
           // Filter only mp4 files
           signedDownloads: {
             shouldUseSignedURL: ({ collection, filename, req }) => {
@@ -165,7 +199,7 @@ Also accepts the [shared options](#shared-storage-options). Entries in `collecti
 | `acl` | `'private' \| 'public-read'` | — | Access control list applied to uploaded files and client-upload URLs. Unset uses the bucket's default. |
 | `signedDownloads` | `boolean \| SignedDownloadsConfig` | `false` | Redirects file requests to [presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html) after access control runs. See [Signed downloads](#signed-downloads). |
 | `clientCacheKey` | `string` | `s3:<bucket>` | Key the S3 client is cached under. Adapters with the same key share one client. |
-| `disableLocalStorage` | `boolean` | — | Accepted but not read. Local storage is always disabled for the listed collections; set `disableLocalStorage` on a [collection entry](#collection-specific-options) instead. |
+| `disableLocalStorage` | `boolean` | — | Accepted but not read. Local storage is always disabled for the collections the adapter covers; set `disableLocalStorage` on a [collection entry](#collection-specific-options) instead. |
 
 #### Signed downloads
 
@@ -193,7 +227,7 @@ import { s3Storage } from '@frogbotai/storage-s3'
 
 export default buildConfig({
   collections: [Media],
-  storage: [
+  plugins: [
     s3Storage({
       enabled: Boolean(process.env.R2_BUCKET),
       collections: {
@@ -249,7 +283,7 @@ pnpm add @frogbotai/storage-azure
 
 ### Usage#azure-usage
 
-- Configure the `collections` object to specify which collections should use the Azure Blob adapter. The slug _must_ match one of your existing collection slugs.
+- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
 - When enabled, this package will automatically set `disableLocalStorage` to `true` for each collection.
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client. You must allow CORS PUT method to your website.
 
@@ -260,7 +294,7 @@ import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix],
-  storage: [
+  plugins: [
     azureStorage({
       collections: {
         media: true,
@@ -304,7 +338,7 @@ pnpm add @frogbotai/storage-gcs
 
 ### Usage#gcs-usage
 
-- Configure the `collections` object to specify which collections should use the Google Cloud Storage adapter. The slug _must_ match one of your existing collection slugs.
+- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
 - When enabled, this package will automatically set `disableLocalStorage` to `true` for each collection.
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client. You must allow CORS PUT method for the bucket to your website.
 
@@ -315,7 +349,7 @@ import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
 export default buildConfig({
   collections: [Media, MediaWithPrefix],
-  storage: [
+  plugins: [
     gcsStorage({
       collections: {
         media: true,
@@ -356,7 +390,7 @@ pnpm add @frogbotai/storage-uploadthing
 
 ### Usage#uploadthing-usage
 
-- Configure the `collections` object to specify which collections should use uploadthing. The slug _must_ match one of your existing collection slugs and be an `upload` type.
+- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
 - Get a token from Uploadthing and set it as `token` in the `options` object.
 - `acl` is optional and defaults to `public-read`.
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client.
@@ -364,7 +398,7 @@ pnpm add @frogbotai/storage-uploadthing
 ```ts
 export default buildConfig({
   collections: [Media],
-  storage: [
+  plugins: [
     uploadthingStorage({
       collections: {
         media: true,
@@ -414,14 +448,14 @@ pnpm add @frogbotai/storage-r2
 
 ### Usage#r2-usage
 
-- Configure the `collections` object to specify which collections should use r2. The slug _must_ match one of your existing collection slugs and be an `upload` type.
+- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
 - Pass in the R2 bucket binding to the `bucket` option, this should be done in the environment where FrogBot is running (e.g. Cloudflare Worker).
-- You can conditionally determine whether or not to enable the plugin with the `enabled` option.
+- You can conditionally enable the adapter with the `enabled` option.
 
 ```ts
 export default buildConfig({
   collections: [Media],
-  storage: [
+  plugins: [
     r2Storage({
       collections: {
         media: true,
@@ -446,7 +480,7 @@ Every storage adapter accepts these options, except where noted.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `collections` | `Record<string, true \| CollectionOptions>` | Required | Upload collections that use the adapter, keyed by slug. Use `true` for the defaults or an object of [collection-specific options](#collection-specific-options). Each slug _must_ match an existing upload collection. |
+| `collections` | `Record<string, true \| false \| CollectionOptions>` | `{}` | Your own upload collections that use the adapter, keyed by slug. FrogBot's files collection and `frogbot-chat-assets` are [included automatically](#configuration) in the first adapter. Use `true` for the defaults, an object of [collection-specific options](#collection-specific-options), or `false` to keep one of FrogBot's collections on local disk. Each slug _must_ match an existing upload collection. |
 | `enabled` | `boolean` | `true` | Set `false` to turn the adapter off. When it's off, the collections keep using local storage. |
 | `alwaysInsertFields` | `boolean` | `false` | Adds the adapter's fields, such as `prefix`, to the collection schema even when the adapter is disabled, so the schema is the same in every environment. Only S3 and Vercel Blob read it; other adapters add no fields when disabled. |
 | `clientUploads` | `boolean \| { access?: ClientUploadsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure and Uploadthing accept extra keys. |
@@ -491,7 +525,7 @@ Files uploaded before you change the setting keep the prefix they were stored wi
 This is useful when you want a base folder structure (collection prefix) while still allowing per-document organization (document prefix).
 
 ```ts
-storage: [
+plugins: [
   s3Storage({
     collections: {
       media: {
@@ -526,7 +560,7 @@ import { Media } from './collections/Media'
 
 export default buildConfig({
   collections: [Media],
-  storage: [
+  plugins: [
     s3Storage({
       enabled: Boolean(process.env.S3_BUCKET),
       collections: { media: true },
