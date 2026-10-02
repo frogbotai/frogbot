@@ -14,7 +14,17 @@ type JsonSchemaConfig = {
   name?: string;
   description?: string;
   schema?: Record<string, unknown>;
+  strict?: boolean | null;
 };
+
+/** Whether `response_format` asks for a strict JSON schema the reply must match. */
+export function isStrictChatOutput(responseFormat: unknown): boolean {
+  if (responseFormat == null || typeof responseFormat !== 'object') return false;
+
+  const format = responseFormat as { type?: unknown; json_schema?: JsonSchemaConfig };
+
+  return format.type === 'json_schema' && format.json_schema?.strict === true;
+}
 
 export function toChatOutput(responseFormat: unknown): Output.Output | undefined {
   if (responseFormat == null) return undefined;

@@ -47,6 +47,7 @@ import { normalizeServiceTier } from '../../shared/normalizeServiceTier.js';
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
+import { withStrictOutput } from '../../shared/strictOutput.js';
 import { type ReasoningDetail, toReasoningDetail } from '../../shared/toReasoningDetail.js';
 import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
@@ -62,6 +63,7 @@ import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { type ChatCompletionRequest, parseChatCompletionRequest } from './schema.js';
 import {
+  isStrictChatOutput,
   type OpenAIMessage,
   type OpenAITool,
   toChatOutput,
@@ -199,7 +201,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       const upstream = createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs);
       const aiOptions = {
-        model,
+        model: isStrictChatOutput(body.response_format) ? withStrictOutput(model) : model,
         messages,
         allowSystemInMessages: true,
         tools,

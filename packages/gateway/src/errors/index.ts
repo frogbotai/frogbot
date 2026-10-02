@@ -30,6 +30,7 @@ export {
   ProviderNotConfiguredError,
   RateLimitExceededError,
   RequestValidationError,
+  StructuredOutputError,
   UnsupportedModalityError,
 } from './gatewayError.js';
 export { headersForError, isRetryableError } from './normalizeAiSdkError.js';

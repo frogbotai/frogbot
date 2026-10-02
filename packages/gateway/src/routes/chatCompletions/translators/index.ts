@@ -1,4 +1,4 @@
-export { toChatOutput } from './output.js';
+export { isStrictChatOutput, toChatOutput } from './output.js';
 export { toModelMessages } from './toModelMessages/index.js';
 export { toOpenAIResponse } from './toOpenAIResponse.js';
 export type {

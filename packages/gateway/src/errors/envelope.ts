@@ -155,6 +155,7 @@ const GATEWAY_CODE_TO_TYPE: Record<GatewayErrorCode, OpenAIErrorType> = {
   invalid_tool_arguments: 'invalid_request_error',
   request_entity_too_large: 'invalid_request_error',
   resource_not_found: 'not_found_error',
+  structured_output_invalid: 'server_error',
 };
 
 // ---------------------------------------------------------------------------

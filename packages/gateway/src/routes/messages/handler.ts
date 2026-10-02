@@ -42,6 +42,7 @@ import {
 } from '../../providers/registry.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
+import { withStrictOutput } from '../../shared/strictOutput.js';
 import { toAnthropicReasoning } from '../../shared/toAnthropicReasoning.js';
 import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
@@ -213,7 +214,9 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       // Shared AI SDK options.
       const upstream = createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs);
       const aiOptions = {
-        model,
+        // Anthropic's `output_config.format` is always strict, so every
+        // schema reply is checked.
+        model: output ? withStrictOutput(model) : model,
         messages,
         allowSystemInMessages: true,
         tools,

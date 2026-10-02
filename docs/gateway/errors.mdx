@@ -37,6 +37,19 @@ Same-provider upstream errors — an invalid OpenAI key on an OpenAI call, for e
 | `request_entity_too_large` | Request exceeded `maxBodyBytes` |
 | `invalid_tool_arguments` | Tool call arguments failed to parse |
 | `resource_not_found` | Unknown route |
+| `structured_output_invalid` | A strict JSON-schema reply still didn't match the schema after one retry (502). See [Strict structured output](#strict-structured-output) |
+
+---
+
+## Strict structured output
+
+A request that asks for a strict JSON schema gets a reply that matches it, whichever provider serves the request. That means `response_format.json_schema.strict: true` on `/v1/chat/completions`, `text.format.strict: true` on `/v1/responses`, or any `output_config.format` on `/v1/messages`. Some providers can't enforce a schema themselves. Amazon Bedrock rejects it for the newest Claude models, for example. So the gateway checks every such reply:
+
+- A reply that doesn't match is sent back to the model once, with the problems listed, and the corrected reply is returned. Usage covers both calls.
+- If the second reply doesn't match either, the request fails with `502` and `structured_output_invalid`.
+- A streamed reply has already been sent when the check runs, so it isn't retried. The stream ends with an error event carrying `structured_output_invalid`.
+
+Replies that call a tool or stop at the token limit aren't checked. Requests without `strict: true` are passed through unchanged.
 
 ---
 
@@ -63,4 +76,4 @@ try {
 
 ## Error classes
 
-`ConfigError`, `ModelIdError`, `ProviderNotConfiguredError`, `UnsupportedModalityError`, `RequestValidationError`, `BodyTooLargeError`, `InvalidToolArgumentsError`, `ModelNotFoundError`, `ModelUnsupportedOperationError`, `NotFoundError`, and `NoProvidersError` all extend `GatewayError` and carry a `code` matching the table above.
+`ConfigError`, `ModelIdError`, `ProviderNotConfiguredError`, `UnsupportedModalityError`, `RequestValidationError`, `BodyTooLargeError`, `InvalidToolArgumentsError`, `ModelNotFoundError`, `ModelUnsupportedOperationError`, `NotFoundError`, `NoProvidersError`, and `StructuredOutputError` all extend `GatewayError` and carry a `code` matching the table above.
