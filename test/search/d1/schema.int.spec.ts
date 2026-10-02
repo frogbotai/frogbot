@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
+import { sqlitePushChanges } from '../../__helpers/shared/db/sqlitePushChanges.js';
 import { type BootedSearch, createSearchDatabase, type SearchDatabase } from './fixture.js';
 import { articlesSlug } from './shared.js';
 
@@ -68,7 +69,7 @@ describe('D1 search schema push', () => {
     const before = await database.objects();
     const result = await push();
 
-    expect(result.statementsToExecute).toEqual([]);
+    expect(sqlitePushChanges(result.statementsToExecute)).toEqual([]);
     expect(await database.objects()).toEqual(before);
   });
 

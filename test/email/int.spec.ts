@@ -390,7 +390,7 @@ describe('email piece boot and runtime isolation', () => {
       },
     });
 
-    await runtime.payload.sendEmail(message);
+    await getFrogBotPayload(runtime).sendEmail(message);
 
     expect(resolutions).toBe(1);
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -407,16 +407,18 @@ describe('email piece boot and runtime isolation', () => {
     const { piece, clients, deliveries } = instrumentedPiece();
     const first = await bootRuntime({ email: piece });
     const second = await bootRuntime({ email: piece });
+    const firstPayload = getFrogBotPayload(first);
+    const secondPayload = getFrogBotPayload(second);
 
     expect(first).not.toBe(second);
     expect(clients).toHaveLength(0);
 
     await Promise.all([
-      first.payload.sendEmail(message),
-      first.payload.sendEmail(message),
-      second.payload.sendEmail(message),
+      firstPayload.sendEmail(message),
+      firstPayload.sendEmail(message),
+      secondPayload.sendEmail(message),
     ]);
-    await first.payload.sendEmail(message);
+    await firstPayload.sendEmail(message);
 
     expect(clients).toHaveLength(2);
     expect(fetch).toHaveBeenCalledTimes(4);
@@ -429,17 +431,17 @@ describe('email piece boot and runtime isolation', () => {
     expect(secondDeliveries).toHaveLength(1);
     expect(new Set(firstDeliveries.map(({ client }) => client)).size).toBe(1);
     expect(firstDeliveries[0]!.client).not.toBe(secondDeliveries[0]!.client);
-    expect(firstDeliveries.every(({ req }) => req.payload === first.payload && !req.user)).toBe(
+    expect(firstDeliveries.every(({ req }) => req.payload === firstPayload && !req.user)).toBe(
       true,
     );
-    expect(secondDeliveries[0]!.req.payload).toBe(second.payload);
+    expect(secondDeliveries[0]!.req.payload).toBe(secondPayload);
     expect(requestBody().from).toBe('"transactional" <sender@example.com>');
   });
 
   it('fails with a named ConnectionError when only a user connection has credentials', async () => {
     const piece = createResend({ from: { address: 'sender@example.com' } });
     const runtime = await bootRuntime({ email: piece, connections: [{ piece, secret: true }] });
-    const user = await runtime.payload.create({
+    const user = await runtime.create({
       collection: usersSlug,
       disableVerificationEmail: true,
       data: { email: 'linked@example.com', password: 'password' },
@@ -457,9 +459,11 @@ describe('email piece boot and runtime isolation', () => {
 
     expect(await runtime.connections.resolve({ piece, req })).toEqual({ apiKey: 'user-only-key' });
 
-    await expect(runtime.payload.sendEmail(message)).rejects.toBeInstanceOf(ConnectionError);
+    await expect(getFrogBotPayload(runtime).sendEmail(message)).rejects.toBeInstanceOf(
+      ConnectionError,
+    );
     await expect(
-      runtime.payload.forgotPassword({
+      runtime.forgotPassword({
         collection: usersSlug,
         data: { email: user.email },
         req,

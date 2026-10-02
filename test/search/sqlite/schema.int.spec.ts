@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
+import { sqlitePushChanges } from '../../__helpers/shared/db/sqlitePushChanges.js';
 import { articlesSlug, databasePath } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,7 +65,7 @@ describe('SQLite search schema push', () => {
 
     const result = await push();
 
-    expect(result.statementsToExecute).toEqual([]);
+    expect(sqlitePushChanges(result.statementsToExecute)).toEqual([]);
     expect(result.warnings).toEqual([]);
     expect(result.hasDataLoss).toBe(false);
     expect(await objects()).toEqual(before);
@@ -88,7 +89,7 @@ describe('SQLite search schema push', () => {
 
     const result = await push();
 
-    expect(result.statementsToExecute).toEqual([]);
+    expect(sqlitePushChanges(result.statementsToExecute)).toEqual([]);
     expect(result.warnings).toEqual([]);
     expect(result.hasDataLoss).toBe(false);
     expect(await objects()).toEqual(before);

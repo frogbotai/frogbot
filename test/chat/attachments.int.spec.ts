@@ -69,7 +69,11 @@ const imageMarker = "[Can't read photo.png: this model doesn't accept images]";
 
 type Asset = { id: number | string; filename: string; mimeType: string };
 
-type StoredAsset = Asset & { owner?: number | string | null; text?: string | null };
+type StoredAsset = Asset & {
+  chat?: number | string | null;
+  owner?: number | string | null;
+  text?: string | null;
+};
 
 type Part = Record<string, unknown>;
 
@@ -689,6 +693,22 @@ describe('chat attachments reach the agent model', () => {
     expect(userContent(model.requests[0]!)).toEqual([
       ['Summarize.', `[File removed: ${report.filename}]`],
     ]);
+  });
+
+  it('links a new file once when two turns send it at the same time', async () => {
+    const shot = await upload({ name: 'shot.png', type: 'image/png', data: PNG });
+    const message = () => userMessage({ type: 'text', text: 'Describe.' }, reference(shot));
+
+    const responses = await Promise.all([
+      post({ messages: [message()], model: 'test/media' }),
+      post({ messages: [message()], model: 'test/media' }),
+    ]);
+
+    expect(responses.map(({ status, body }) => [status, body.error])).toEqual([
+      [200, undefined],
+      [200, undefined],
+    ]);
+    expect(responses.map(({ body }) => body.chatId)).toContain((await storedAsset(shot)).chat);
   });
 
   it('sends one of two identical files uploaded at the same time', async () => {

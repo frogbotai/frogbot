@@ -8,11 +8,21 @@ const allProjects = [
   'live-preview',
   'chat-assets',
   'question',
+  'plugin-seo',
 ];
 
 const dependencyURLs: Record<string, string[]> = {
   'chat-assets': ['http://localhost:3126/health'],
 };
+
+// The plugin-wrappers fixture has no front-end page, so its server is ready once /admin answers.
+const readyPaths: Record<string, string> = {
+  'plugin-seo': '/admin',
+};
+
+function serverURL(baseURL: string | undefined, name: string) {
+  return baseURL && `${baseURL}${readyPaths[name] ?? ''}`;
+}
 
 afterEach(() => {
   process.argv = originalArgv;
@@ -28,6 +38,11 @@ describe('browser project servers', () => {
       name: 'project with a dependency server',
       args: ['--project=chat-assets'],
       projects: ['chat-assets'],
+    },
+    {
+      name: 'project whose server is ready on /admin',
+      args: ['--project=plugin-seo'],
+      projects: ['plugin-seo'],
     },
     {
       name: 'repeated equals flags',
@@ -98,7 +113,7 @@ describe('browser project servers', () => {
     const servers = Array.isArray(config.webServer) ? config.webServer : [config.webServer];
     const expectedURLs = projects.flatMap((name) => [
       ...(dependencyURLs[name] ?? []),
-      config.projects?.find((project) => project.name === name)?.use?.baseURL,
+      serverURL(config.projects?.find((project) => project.name === name)?.use?.baseURL, name),
     ]);
 
     expect(expectedURLs).not.toContain(undefined);

@@ -82,7 +82,9 @@ describe('frogbot-graphql bin', () => {
     const result = await runBin({ cwd, configPath: 'bin/unconfiguredProvider.config.ts' });
 
     expect(result.code, result.stderr).toBe(0);
-    expect(result.stderr).toContain('does not resolve to a configured provider');
+    expect(result.stderr).toContain(
+      "[frogbot] Agent 'assistant' model 'unconfigured/model' is not configured.",
+    );
     await expect(readFile(join(cwd, 'schema.graphql'), 'utf8')).resolves.toContain('type User {');
   });
 
