@@ -40,11 +40,20 @@ for (const argument of process.argv.slice(2)) {
   if (collectingProjects) selectedProjects.add(argument.toLocaleLowerCase());
 }
 
+// Each server starts from an empty database, like Payload's PAYLOAD_DROP_DATABASE.
+// The reset runs as part of the server command, so a reused server keeps its data.
+const resetDatabaseScript = path.join(dirname, 'resetDatabase.mjs');
+const freshDatabase = (databaseFile: string, command: string) =>
+  `node ${JSON.stringify(resetDatabaseScript)} ${JSON.stringify(databaseFile)} && ${command}`;
+
 const startAllServers =
   selectedProjects.size === 0 || [...selectedProjects].some((project) => project.includes('*'));
 
 const blankServer = {
-  command: 'pnpm --filter blank dev',
+  command: freshDatabase(
+    path.join(repoRoot, 'templates', 'blank', 'frogbot.browser.db'),
+    'pnpm --filter blank dev',
+  ),
   cwd: repoRoot,
   url: `http://localhost:${blankPort}`,
   reuseExistingServer: !process.env.CI,
@@ -61,7 +70,10 @@ const blankServer = {
 };
 
 const richTextServer = {
-  command: 'node ../../../../packages/frogbot/bin.js dev',
+  command: freshDatabase(
+    path.join(richTextFixture, 'rich-text.browser.db'),
+    'node ../../../../packages/frogbot/bin.js dev',
+  ),
   cwd: richTextFixture,
   url: `http://localhost:${richTextPort}`,
   reuseExistingServer: !process.env.CI,
@@ -77,7 +89,10 @@ const richTextServer = {
 };
 
 const pluginSeoServer = {
-  command: 'node ../../../../packages/frogbot/bin.js dev',
+  command: freshDatabase(
+    path.join(pluginSeoFixture, 'plugin-wrappers.browser.db'),
+    'node ../../../../packages/frogbot/bin.js dev',
+  ),
   cwd: pluginSeoFixture,
   url: `http://localhost:${pluginSeoPort}/admin`,
   reuseExistingServer: false,
@@ -94,7 +109,10 @@ const pluginSeoServer = {
 };
 
 const livePreviewServer = {
-  command: 'pnpm --filter frogbot-browser-live-preview dev',
+  command: freshDatabase(
+    path.join(dirname, 'fixtures', 'live-preview', 'frogbot.browser.db'),
+    'pnpm --filter frogbot-browser-live-preview dev',
+  ),
   cwd: repoRoot,
   url: `http://localhost:${livePreviewPort}`,
   reuseExistingServer: !process.env.CI,
@@ -110,7 +128,10 @@ const livePreviewServer = {
 };
 
 const customFieldServer = {
-  command: 'pnpm --filter frogbot-browser-custom-field dev',
+  command: freshDatabase(
+    path.join(dirname, 'fixtures', 'custom-field', 'frogbot.custom-field.browser.db'),
+    'pnpm --filter frogbot-browser-custom-field dev',
+  ),
   cwd: repoRoot,
   url: `http://localhost:${customFieldPort}`,
   reuseExistingServer: !process.env.CI,
@@ -135,7 +156,10 @@ const chatAssetsServers = [
     env: { PORT: String(chatProviderPort) },
   },
   {
-    command: 'node ../../../node_modules/next/dist/bin/next dev',
+    command: freshDatabase(
+      path.join(dirname, 'fixtures', 'chat-assets', 'frogbot.db'),
+      'node ../../../node_modules/next/dist/bin/next dev',
+    ),
     cwd: path.join(dirname, 'fixtures', 'chat-assets'),
     url: `http://localhost:${chatAssetsPort}`,
     reuseExistingServer: false,
@@ -153,7 +177,10 @@ const chatAssetsServers = [
 ];
 
 const questionServer = {
-  command: 'node ../../../node_modules/next/dist/bin/next dev',
+  command: freshDatabase(
+    path.join(dirname, 'fixtures', 'question', 'frogbot.db'),
+    'node ../../../node_modules/next/dist/bin/next dev',
+  ),
   cwd: path.join(dirname, 'fixtures', 'question'),
   url: `http://localhost:${questionPort}`,
   reuseExistingServer: false,
