@@ -1,5 +1,6 @@
 import type { ReasoningVariant } from '@frogbotai/gateway';
 
+import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModelName } from '../ai/modelName.js';
 import { isTargetAllowed, resolvePolicy } from '../ai/policy.js';
 import { resolveModelReasoning } from '../ai/reasoning.js';
@@ -124,6 +125,7 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
 
     const names = agentNames({ config: req.frogbot.config.ai!, models });
     const reasoning = agentReasoning({ config: req.frogbot.config.ai!, models });
+    const inputs = agentInputs({ config: req.frogbot.config.ai!, models });
 
     agents.push({
       slug: agent.slug,
@@ -133,6 +135,7 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
       models,
       ...(names ? { names } : {}),
       ...(reasoning ? { reasoning } : {}),
+      ...(inputs ? { inputs } : {}),
     });
   }
 
@@ -264,4 +267,22 @@ function agentReasoning({
   }
 
   return Object.keys(reasoning).length === 0 ? undefined : reasoning;
+}
+
+function agentInputs({
+  config,
+  models,
+}: {
+  config: SanitizedAIConfig;
+  models: AgentModelId[];
+}): AgentManifestEntry['inputs'] {
+  const inputs: NonNullable<AgentManifestEntry['inputs']> = {};
+
+  for (const model of models) {
+    const resolved = resolveModelInputs({ config, model }).inputs;
+
+    if (resolved) inputs[model] = resolved;
+  }
+
+  return Object.keys(inputs).length === 0 ? undefined : inputs;
 }

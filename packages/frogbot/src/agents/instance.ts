@@ -6,10 +6,11 @@ import type {
   TextStreamPart,
   UIMessage,
 } from 'ai';
-import { convertToModelMessages, generateId, ToolLoopAgent, validateUIMessages } from 'ai';
+import { generateId, ToolLoopAgent } from 'ai';
 
 import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
+import { resolveModelInputs } from '../ai/modelInputs.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
@@ -21,10 +22,14 @@ import { promoteQueuedMessage, promoteSteerMessages } from '../chat/turn/queue.j
 import { assertStoredSelection } from '../chat/turn/selection.js';
 import { holdTurn, releaseTurn } from '../chat/turn/state.js';
 import { streamTurn } from '../chat/turn/streamTurn.js';
+import { validateChatMessages } from '../chat/validateMessages.js';
 import type { FrogBot } from '../frogbot.js';
 import type { ToolCtx } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { toAgentModelMessages } from '../uploads/toAgentModelMessages.js';
+import type { AttachmentHashes } from '../uploads/toModelInput.js';
+import { toModelInput } from '../uploads/toModelInput.js';
 import type { ResolvedAgentSelection } from './service.js';
 import { userDefaultModel } from './service.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
@@ -50,6 +55,7 @@ export type AgentInstanceDeps = {
 type AgentRun = {
   selection: ResolvedAgentSelection;
   models: string[];
+  hashes: AttachmentHashes;
 };
 
 export function createAgentInstance(
@@ -132,20 +138,29 @@ export function createAgentInstance(
 
           const { model, variant } = run.selection;
 
+          const steeredMessages =
+            steered.length === 0
+              ? []
+              : await toAgentModelMessages({
+                  req,
+                  messages: steered.map(({ message }) => message),
+                  chatId,
+                  model,
+                  tools,
+                  onUnavailable: 'marker',
+                });
+
+          const { inputs, provider } = resolveModelInputs({ config, model });
+
           return {
             model: gateway.chatModel(model),
             ...(variant ? { providerOptions: variant.providerOptions } : {}),
-            ...(steered.length === 0
-              ? {}
-              : {
-                  messages: [
-                    ...messages,
-                    ...(await convertToModelMessages(
-                      steered.map(({ message }) => message),
-                      { tools },
-                    )),
-                  ],
-                }),
+            messages: toModelInput({
+              messages: steeredMessages.length === 0 ? messages : [...messages, ...steeredMessages],
+              inputs,
+              provider,
+              hashes: run.hashes,
+            }),
           };
         },
       };
@@ -155,18 +170,53 @@ export function createAgentInstance(
   type Call = AgentCallParameters<AgentCallOptions, typeof tools, Record<string, unknown>>;
   type StreamCall = AgentStreamParameters<AgentCallOptions, typeof tools, Record<string, unknown>>;
 
+  const buildPrompt = async (
+    opts: AgentStreamOpts &
+      Pick<AgentCallOptions, 'chatId' | 'selection'> & { req: FrogBotRequest },
+  ): Promise<{ prompt: string } | { messages: ModelMessage[] }> => {
+    if ('prompt' in opts && opts.prompt !== undefined) return { prompt: opts.prompt };
+
+    const messages = opts.messages ?? [];
+
+    if (!messages.some((message) => 'parts' in message)) {
+      return { messages: messages as ModelMessage[] };
+    }
+
+    const { model } = assertStoredSelection({
+      agent: instance,
+      config,
+      selection: opts.selection ?? {},
+      user: opts.req.user,
+    });
+
+    return {
+      messages: await toAgentModelMessages({
+        req: opts.req,
+        messages: messages as UIMessage[],
+        chatId: opts.chatId,
+        model,
+        tools,
+        onUnavailable: 'marker',
+      }),
+    };
+  };
+
   const buildCall = async (
     opts: AgentStreamOpts & Pick<AgentCallOptions, 'chatId' | 'selection'>,
-  ) => ({
-    ...(await buildPrompt(opts, tools)),
-    options: {
-      req: opts.req,
-      overrideAccess: opts.overrideAccess ?? true,
-      ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
-      ...(opts.selection ? { selection: opts.selection } : {}),
-    },
-    abortSignal: opts.abortSignal,
-  });
+  ) => {
+    const req = await frogbot.createRequest(opts.req);
+
+    return {
+      ...(await buildPrompt({ ...opts, req })),
+      options: {
+        req,
+        overrideAccess: opts.overrideAccess ?? true,
+        ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
+        ...(opts.selection ? { selection: opts.selection } : {}),
+      },
+      abortSignal: opts.abortSignal,
+    };
+  };
 
   const prepareRun = async <T extends Call>(call: T) => {
     const options = call.options;
@@ -187,7 +237,7 @@ export function createAgentInstance(
 
     const runId = options.runId ?? generateId();
     const preparedOptions = { ...options, req, overrideAccess, runId };
-    const run: AgentRun = { selection, models: [] };
+    const run: AgentRun = { selection, models: [], hashes: new Map() };
 
     runs.set(preparedOptions, run);
 
@@ -516,26 +566,6 @@ export function createAgentInstance(
   return instance;
 }
 
-async function buildPrompt(
-  opts: AgentStreamOpts,
-  tools: ReturnType<typeof toAISDKTools>,
-): Promise<{ prompt: string } | { messages: Awaited<ReturnType<typeof convertToModelMessages>> }> {
-  if ('prompt' in opts && opts.prompt !== undefined) {
-    return { prompt: opts.prompt };
-  }
-
-  const messages = opts.messages ?? [];
-  if (messages.some((message) => 'parts' in message)) {
-    return {
-      messages: await convertToModelMessages(messages as never[], { tools }),
-    };
-  }
-
-  return {
-    messages: messages as Awaited<ReturnType<typeof convertToModelMessages>>,
-  };
-}
-
 async function toPersistentMessages(
   opts: AgentStreamOpts,
   tools: ReturnType<typeof toAISDKTools>,
@@ -557,5 +587,5 @@ async function toPersistentMessages(
     });
   }
 
-  return validateUIMessages({ messages, tools: tools as never });
+  return validateChatMessages(messages, tools as never);
 }

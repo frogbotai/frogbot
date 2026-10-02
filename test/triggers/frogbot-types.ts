@@ -269,6 +269,7 @@ export interface FrogbotChatAsset {
   id: number;
   owner?: (number | null) | User;
   chat?: (number | null) | Chat;
+  sha256?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -514,6 +515,7 @@ export interface MessagesSelect {
 export interface FrogbotChatAssetsSelect {
   owner?: boolean;
   chat?: boolean;
+  sha256?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   url?: boolean;

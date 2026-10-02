@@ -167,7 +167,25 @@ describe('chat reasoning selection', () => {
         { key: 'high', label: 'High' },
       ],
       'test/writer': [{ key: 'max', label: 'Max' }],
+      'test/reasoner': [
+        { key: 'low', label: 'Low' },
+        { key: 'medium', label: 'Medium' },
+        { key: 'high', label: 'High' },
+      ],
     });
+  });
+
+  it('a custom model with reasoning: true sends the chosen level as reasoning_effort', async () => {
+    model.respond({ text: 'Thought it through.' });
+
+    const response = await post({
+      prompt: 'Think it through.',
+      model: 'test/reasoner',
+      reasoning: 'medium',
+    });
+
+    expect(response.status).toBe(200);
+    expect(choices()).toEqual([['reasoner', 'medium']]);
   });
 
   it('an SSE request runs every tool-loop step with the reasoning option it sends', async () => {

@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload';
 import type { Access, AccessResult, CollectionConfig } from '../../collections/config/types.js';
 import type { Where } from '../../types/payload.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { hashUpload } from '../../uploads/hashUpload.js';
 
 export const CHAT_ASSETS_SLUG = 'frogbot-chat-assets';
 
@@ -71,6 +72,14 @@ export function defaultChatAssetsCollection({
       update: () => false,
       delete: () => false,
     },
+    hooks: {
+      beforeChange: [
+        async ({ data, req }) => ({
+          ...data,
+          sha256: req.file ? await hashUpload(req.file) : undefined,
+        }),
+      ],
+    },
     fields: [
       {
         name: 'owner',
@@ -82,6 +91,7 @@ export function defaultChatAssetsCollection({
         },
       },
       { name: 'chat', type: 'relationship', relationTo: chatsSlug, index: true },
+      { name: 'sha256', type: 'text', hidden: true },
     ],
   };
 }

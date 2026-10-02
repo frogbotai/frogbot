@@ -2445,6 +2445,50 @@ describe('frogbot sanitize', () => {
         "[frogbot] Custom provider 'internal' requires a non-empty models array.",
       );
     });
+
+    it.each(['input', 'output'] as const)(
+      "rejects the removed 'file' type in custom model %s modalities",
+      (direction) => {
+        const modalities = { input: ['text'], output: ['text'], [direction]: ['text', 'file'] };
+        const config = makeConfig({
+          ai: {
+            providers: {
+              internal: {
+                type: 'openai-compatible',
+                baseUrl: 'https://models.test',
+                models: [{ id: 'reader', mode: 'chat', modalities }],
+              },
+            },
+          },
+        } as never);
+
+        expect(() => sanitize(config)).toThrow(
+          "[frogbot] Model 'reader' for custom provider 'internal' uses the type 'file'. Rename it to 'pdf'.",
+        );
+      },
+    );
+
+    it("accepts the 'pdf' type in custom model modalities", () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            internal: {
+              type: 'openai-compatible',
+              baseUrl: 'https://models.test',
+              models: [
+                {
+                  id: 'reader',
+                  mode: 'chat',
+                  modalities: { input: ['text', 'image', 'pdf'], output: ['text'] },
+                },
+              ],
+            },
+          },
+        },
+      });
+
+      expect(() => sanitize(config)).not.toThrow();
+    });
   });
 
   describe('ai.defaultModel', () => {

@@ -78,6 +78,7 @@ When chat persistence is disabled, `chat` contains only `enabled`.
 | `agents[].models` | `string[]` | Models this caller may select, after the [user model policy](/ai/overview#user-model-and-budget-policy) is applied. |
 | `agents[].names` | `Record<string, string>` | Display names for models that have one. Fall back to the ID for the rest. |
 | `agents[].reasoning` | `Record<string, { key: string; label: string }[]>` | Reasoning options per model, for models that have any. |
+| `agents[].inputs` | `Record<string, ('text' \| 'image' \| 'audio' \| 'video' \| 'pdf')[]>` | Input types per model, for models whose types are known: built-in models from the model catalog, custom models that set [`modalities`](/ai/overview#custom-model-options). A model missing from `inputs` has unknown input types. Omitted when no listed model has known types. |
 
 Agents the caller can't access, and agents with no model the caller may use, are left out.
 

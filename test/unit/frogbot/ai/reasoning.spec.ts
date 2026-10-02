@@ -28,6 +28,19 @@ const config = {
           reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
         },
         { id: 'plain', mode: 'chat' },
+        { id: 'reasoner', mode: 'chat', reasoning: true },
+        {
+          id: 'tuned',
+          mode: 'chat',
+          reasoning: true,
+          reasoningOptions: [{ type: 'effort', values: ['high'] }],
+        },
+        {
+          id: 'muted',
+          mode: 'chat',
+          reasoning: false,
+          reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+        },
       ],
     },
   },
@@ -48,6 +61,24 @@ describe('resolveModelReasoning', () => {
       { key: 'low', label: 'Low', providerOptions: { local: { reasoningEffort: 'low' } } },
       { key: 'high', label: 'High', providerOptions: { local: { reasoningEffort: 'high' } } },
     ]);
+  });
+
+  it('offers Low, Medium and High for a custom model with reasoning: true', () => {
+    expect(resolveModelReasoning({ config, model: 'local/reasoner' })).toEqual([
+      { key: 'low', label: 'Low', providerOptions: { local: { reasoningEffort: 'low' } } },
+      { key: 'medium', label: 'Medium', providerOptions: { local: { reasoningEffort: 'medium' } } },
+      { key: 'high', label: 'High', providerOptions: { local: { reasoningEffort: 'high' } } },
+    ]);
+  });
+
+  it('keeps declared options for a custom model with reasoning: true', () => {
+    expect(resolveModelReasoning({ config, model: 'local/tuned' })).toEqual([
+      { key: 'high', label: 'High', providerOptions: { local: { reasoningEffort: 'high' } } },
+    ]);
+  });
+
+  it('offers no levels for a custom model with reasoning: false, even with declared options', () => {
+    expect(resolveModelReasoning({ config, model: 'local/muted' })).toEqual([]);
   });
 
   it.each(['local/plain', 'local/undeclared', 'openai/unknown', 'fast'])(

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +10,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
 import type { ToolCtx } from '../../packages/frogbot/src/tools/types.js';
-import { resolveChatAttachments } from '../../packages/frogbot/src/uploads/resolveChatAttachments.js';
+import type { AgentModelMessagesProps } from '../../packages/frogbot/src/uploads/toAgentModelMessages.js';
+import { toAgentModelMessages } from '../../packages/frogbot/src/uploads/toAgentModelMessages.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { agentSlug, chatsSlug, usersSlug } from './shared.js';
@@ -24,9 +26,14 @@ type Asset = {
   mimeType: string;
   owner: number | string | null;
   chat: number | string | null;
+  sha256?: string | null;
 };
 
 const password = 'frogbot-int-password';
+
+function sha256(content: string): string {
+  return createHash('sha256').update(content).digest('hex');
+}
 
 describe('chat assets', () => {
   let booted: BootedFrogBot;
@@ -56,11 +63,15 @@ describe('chat assets', () => {
     return { user, token };
   }
 
-  async function upload(token: string | undefined, content = 'hello'): Promise<Response> {
+  async function upload(
+    token: string | undefined,
+    content = 'hello',
+    data: Record<string, unknown> = {},
+  ): Promise<Response> {
     sequence += 1;
 
     const body = new FormData();
-    body.set('_payload', '{}');
+    body.set('_payload', JSON.stringify(data));
     body.set('file', new Blob([content], { type: 'text/plain' }), `note-${sequence}.txt`);
 
     return booted.frogbot.handleRequest(
@@ -113,7 +124,17 @@ describe('chat assets', () => {
       id,
       depth: 0,
       overrideAccess: true,
+      showHiddenFields: true,
     })) as Asset;
+  }
+
+  function loadMessages(props: Pick<AgentModelMessagesProps, 'req' | 'messages' | 'chatId'>) {
+    return toAgentModelMessages({
+      ...props,
+      model: 'test/gpt-4.1-mini',
+      tools: {},
+      onUnavailable: 'throw',
+    });
   }
 
   beforeAll(async () => {
@@ -163,6 +184,51 @@ describe('chat assets', () => {
     expect(response.status).toBe(403);
   });
 
+  it('stores the SHA-256 of the uploaded contents', async () => {
+    const doc = await uploadAsset(ownerToken);
+
+    expect((await readAsset(doc.id)).sha256).toBe(sha256('hello'));
+  });
+
+  it('stores the real hash when the upload sends its own', async () => {
+    const response = await upload(ownerToken, 'real contents', { sha256: sha256('forged') });
+    const { doc } = (await response.json()) as { doc: Asset };
+
+    expect(response.status).toBe(201);
+    expect((await readAsset(doc.id)).sha256).toBe(sha256('real contents'));
+  });
+
+  it('keeps the hash out of REST responses', async () => {
+    const response = await upload(ownerToken);
+    const { doc: created } = (await response.json()) as { doc: Asset };
+
+    const record = await get(`/api/${CHAT_ASSETS_SLUG}/${created.id}`, ownerToken);
+    const doc = (await record.json()) as Asset;
+
+    expect(created).not.toHaveProperty('sha256');
+    expect(doc.id).toBe(created.id);
+    expect(doc).not.toHaveProperty('sha256');
+  });
+
+  it('hashes agent-generated files', async () => {
+    const chatId = await createChat(owner);
+    const req = await requestFor(owner);
+    const ctx: ToolCtx = {
+      req,
+      frogbot: booted.frogbot as never,
+      agent: { slug: agentSlug, runId: 'run-hash', chatId },
+    };
+
+    const asset = await saveChatAsset({
+      ctx,
+      filename: 'report.txt',
+      mimeType: 'text/plain',
+      data: Buffer.from('generated'),
+    });
+
+    expect((await readAsset(asset.id)).sha256).toBe(sha256('generated'));
+  });
+
   it('lets the owner read and download an unlinked asset', async () => {
     const doc = await uploadAsset(ownerToken);
 
@@ -207,7 +273,7 @@ describe('chat assets', () => {
     expect(remove.status).toBe(403);
   });
 
-  it('links referenced assets to the chat on the first message and inlines their data', async () => {
+  it('links referenced assets to the chat on the first message and inlines their text', async () => {
     const doc = await uploadAsset(ownerToken);
     const chatId = await createChat(owner);
     const req = await requestFor(owner);
@@ -222,15 +288,30 @@ describe('chat assets', () => {
       },
     ];
 
-    const resolved = await resolveChatAttachments({ req, messages, chatId });
+    const resolved = await loadMessages({ req, messages, chatId });
 
-    expect(resolved[0]?.parts[1]).toEqual({
-      type: 'file',
-      filename: doc.filename,
-      mediaType: 'text/plain',
-      url: `data:text/plain;base64,${Buffer.from('hello').toString('base64')}`,
-    });
+    expect(resolved[0]?.content).toEqual([
+      { type: 'text', text: 'Read this' },
+      { type: 'text', text: `Attached file "${doc.filename}":\nhello` },
+    ]);
     expect((await readAsset(doc.id)).chat).toBe(chatId);
+  });
+
+  it('keeps the hash when an asset is linked to a chat', async () => {
+    const doc = await uploadAsset(ownerToken);
+    const chatId = await createChat(owner);
+
+    await booted.frogbot.update({
+      collection: CHAT_ASSETS_SLUG,
+      id: doc.id,
+      data: { chat: chatId },
+      overrideAccess: true,
+    });
+
+    const stored = await readAsset(doc.id);
+
+    expect(stored.chat).toBe(chatId);
+    expect(stored.sha256).toBe(sha256('hello'));
   });
 
   it('refuses to attach another user’s asset', async () => {
@@ -241,7 +322,7 @@ describe('chat assets', () => {
       { id: 'm1', role: 'user', parts: [{ type: 'file-reference', id: doc.id } as never] },
     ];
 
-    await expect(resolveChatAttachments({ req, messages, chatId })).rejects.toMatchObject({
+    await expect(loadMessages({ req, messages, chatId })).rejects.toMatchObject({
       status: 404,
     });
     expect((await readAsset(doc.id)).chat ?? null).toBeNull();
@@ -252,7 +333,7 @@ describe('chat assets', () => {
     const chatId = await createChat(owner);
     const req = await requestFor(owner);
 
-    await resolveChatAttachments({
+    await loadMessages({
       req,
       chatId,
       messages: [

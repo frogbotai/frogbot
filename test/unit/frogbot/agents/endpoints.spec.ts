@@ -13,14 +13,12 @@ import {
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
-const { listPendingCalls, releaseTurn, resolveChatAttachments, resolveChatContext, streamTurn } =
-  vi.hoisted(() => ({
-    listPendingCalls: vi.fn(),
-    releaseTurn: vi.fn(),
-    resolveChatAttachments: vi.fn(),
-    resolveChatContext: vi.fn(),
-    streamTurn: vi.fn(),
-  }));
+const { listPendingCalls, releaseTurn, resolveChatContext, streamTurn } = vi.hoisted(() => ({
+  listPendingCalls: vi.fn(),
+  releaseTurn: vi.fn(),
+  resolveChatContext: vi.fn(),
+  streamTurn: vi.fn(),
+}));
 
 vi.mock('../../../../packages/frogbot/src/chat/chatContext.js', () => ({ resolveChatContext }));
 
@@ -31,10 +29,6 @@ vi.mock('../../../../packages/frogbot/src/chat/turn/settle.js', () => ({ listPen
 vi.mock('../../../../packages/frogbot/src/chat/turn/streamTurn.js', async (importOriginal) => ({
   ...(await importOriginal<typeof StreamTurnModule>()),
   streamTurn,
-}));
-
-vi.mock('../../../../packages/frogbot/src/uploads/resolveChatAttachments.js', () => ({
-  resolveChatAttachments,
 }));
 
 const { buildAgentEndpoints } =
@@ -179,9 +173,6 @@ describe('agent endpoints', () => {
   beforeEach(() => {
     listPendingCalls.mockReset().mockResolvedValue([]);
     releaseTurn.mockReset().mockResolvedValue(true);
-    resolveChatAttachments
-      .mockReset()
-      .mockImplementation(({ messages }) => Promise.resolve(messages));
 
     resolveChatContext.mockReset().mockImplementation(async ({ selection }) => ({
       status: 'ready',
@@ -480,7 +471,7 @@ describe('agent endpoints', () => {
         agent,
         claim,
         uiMessages: history,
-        providerMessages: history,
+        strictAttachments: true,
         selection: {},
         clientTools: { kinds: ['question'] },
         abortSignal: req.signal,
@@ -638,23 +629,12 @@ describe('agent endpoints', () => {
     expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
-  it('accepts stable file references and resolves them for the provider only', async () => {
+  it('accepts stable file references and loads them strictly in the turn', async () => {
     const parts = [
       { type: 'text', text: 'Read' },
       { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' },
     ] as UIMessage['parts'];
     const uiMessages: UIMessage[] = [{ id: 'one', role: 'user', parts }];
-
-    const resolved: UIMessage[] = [
-      {
-        id: 'one',
-        role: 'user',
-        parts: [
-          { type: 'text', text: 'Read' },
-          { type: 'file', mediaType: 'text/plain', url: 'data:text/plain;base64,ZmlsZQ==' },
-        ],
-      },
-    ];
 
     resolveChatContext.mockResolvedValue({
       status: 'ready',
@@ -663,7 +643,6 @@ describe('agent endpoints', () => {
       claim,
       selection: {},
     });
-    resolveChatAttachments.mockResolvedValue(resolved);
 
     const request = makeRequest({
       accept: 'text/event-stream',
@@ -675,27 +654,18 @@ describe('agent endpoints', () => {
     expect(resolveChatContext).toHaveBeenCalledWith(
       expect.objectContaining({ incoming: [expect.objectContaining({ parts })] }),
     );
-    expect(resolveChatAttachments).toHaveBeenCalledWith({
-      req: request,
-      messages: uiMessages,
-      chatId: 'chat-1',
-    });
     expect(streamTurn).toHaveBeenCalledWith(
-      expect.objectContaining({ uiMessages, providerMessages: resolved }),
+      expect.objectContaining({ uiMessages, strictAttachments: true }),
     );
   });
 
-  it('releases the claimed turn when attachments cannot be resolved', async () => {
-    resolveChatAttachments.mockRejectedValue(
-      Object.assign(new Error('missing file'), { status: 404 }),
-    );
+  it('returns the attachment error status when the turn cannot load a file', async () => {
+    streamTurn.mockRejectedValue(Object.assign(new Error('missing file'), { status: 404 }));
 
-    const req = makeRequest();
-    const response = await postHandler()(req);
+    const response = await postHandler()(makeRequest());
 
     expect(response.status).toBe(404);
-    expect(releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
-    expect(streamTurn).not.toHaveBeenCalled();
+    expect(await response.json()).toEqual({ error: 'missing file' });
   });
 
   it('returns 202 with the queued message when the chat is busy', async () => {

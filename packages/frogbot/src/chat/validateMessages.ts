@@ -8,6 +8,7 @@ const fileReferenceSchema = z
     id: z.union([z.string(), z.number()]),
     filename: z.string(),
     mediaType: z.string(),
+    origin: z.literal('paste').optional(),
   })
   .strict();
 
@@ -41,17 +42,17 @@ export async function validateChatMessages(
     }
     return {
       ...message,
-      parts: message.parts.filter((_, partIndex) => !references[index]?.[partIndex]),
+      parts: message.parts.map((part, partIndex) =>
+        references[index]?.[partIndex] ? { type: 'text', text: '' } : part,
+      ),
     };
   });
   const validated = await validateUIMessages({ messages: filtered, tools });
-  return validated.map((message, index) => {
-    let partIndex = 0;
-    return {
-      ...message,
-      parts:
-        references[index]?.map((reference) => reference ?? message.parts[partIndex++]!) ??
-        message.parts,
-    } as UIMessage;
-  });
+  return validated.map(
+    (message, index) =>
+      ({
+        ...message,
+        parts: message.parts.map((part, partIndex) => references[index]?.[partIndex] ?? part),
+      }) as UIMessage,
+  );
 }

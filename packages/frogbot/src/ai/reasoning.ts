@@ -7,10 +7,24 @@ import {
 
 import { isCustomProvider } from './isCustomProvider.js';
 import { resolveModel } from './resolve.js';
-import type { SanitizedAIConfig } from './types.js';
+import type { ModelConfig, SanitizedAIConfig } from './types.js';
+
+const DEFAULT_CUSTOM_REASONING_OPTIONS: ModelConfig['reasoningOptions'] = [
+  { type: 'effort', values: ['low', 'medium', 'high'] },
+];
 
 function toCamelCase(name: string): string {
   return name.replace(/[_-]([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function customReasoningOptions(model: ModelConfig | undefined): ModelConfig['reasoningOptions'] {
+  if (model?.reasoning === false) return undefined;
+
+  if (model?.reasoning === true && model.reasoningOptions === undefined) {
+    return DEFAULT_CUSTOM_REASONING_OPTIONS;
+  }
+
+  return model?.reasoningOptions;
 }
 
 export function resolveModelReasoning({
@@ -33,7 +47,7 @@ export function resolveModelReasoning({
 
     return resolveReasoningVariants({
       modelId: id,
-      options: custom?.reasoningOptions,
+      options: customReasoningOptions(custom),
       outputLimit: custom?.limit?.output,
       providerOptionsName: toCamelCase(provider),
     });

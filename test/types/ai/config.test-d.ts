@@ -16,3 +16,40 @@ const withDefaultRouter: AIConfig = {
 };
 
 void withDefaultRouter;
+
+const withPdfInput = {
+  providers: {
+    local: {
+      type: 'openai-compatible',
+      baseUrl: 'http://localhost:11434/v1',
+      models: [
+        {
+          id: 'reader',
+          mode: 'chat',
+          modalities: { input: ['text', 'image', 'pdf'], output: ['text'] },
+        },
+      ],
+    },
+  },
+} satisfies AIConfig;
+
+void withPdfInput;
+
+const withFileInput: AIConfig = {
+  providers: {
+    local: {
+      type: 'openai-compatible',
+      baseUrl: 'http://localhost:11434/v1',
+      models: [
+        {
+          id: 'reader',
+          mode: 'chat',
+          // @ts-expect-error `'file'` was renamed to `'pdf'`.
+          modalities: { input: ['text', 'file'], output: ['text'] },
+        },
+      ],
+    },
+  },
+};
+
+void withFileInput;
