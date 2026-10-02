@@ -384,9 +384,19 @@ The host remains responsible for reading tab content and creating `data-page-con
 
 ## Attachments
 
-Dropping or selecting files in the composer uploads each one to the chat assets collection advertised by the manifest as `chat.assetsSlug`, then sends a `file-reference` part carrying the stored id. The server links the asset to the chat on the first message that references it and inlines its content for the model. See [chat assets](/chat/overview#chat-assets) for storage and access rules.
+Dropping or selecting files in the composer uploads each one to the chat assets collection advertised by the manifest as `chat.assetsSlug`, then sends a `file-reference` part carrying the stored id. The server links the asset to the chat on the first message that references it, and on every agent turn sends the file in a form the selected model can read. See [chat assets](/chat/overview#chat-assets) for storage and access rules, and [how attachments reach the agent](/chat/overview#how-attachments-reach-the-agent) for what the model receives.
 
 Pass `assetsSlug` to a standalone `Composer` to enable the attachment control; `<Chat>` supplies it from the manifest automatically.
+
+A `file-reference` part has these fields:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `type` | `'file-reference'` | Yes | Marks the part as a reference to a chat asset. |
+| `id` | `string \| number` | Yes | ID of the asset in the chat assets collection. The sender must be able to read it. |
+| `filename` | `string` | Yes | File name shown in the chat and used in the agent's text label, such as `Attached file "app.js":`. It can differ from the stored file name. |
+| `mediaType` | `string` | Yes | Media type of the file, such as `image/png` or `text/plain`. |
+| `origin` | `'paste'` | No | Marks a text asset made from pasted text, so the agent receives it as `Pasted text:` instead of a file label. |
 
 ## Message data parts
 
@@ -400,7 +410,7 @@ Chat renders these AI SDK v7 data part types:
 
 Use a new `data-<name>` type for application-specific structured content. With the lower-level `MessagePart` component, pass `renderData` to render that type; otherwise `DataPart` displays its JSON payload.
 
-Pasting more than 650 characters into FrogBot's composer creates a removable pasted-text preview and sends a `data-paste` part. A paste of exactly 650 characters remains in the textarea. Pasted text stays client-side until message submission and is never uploaded as a file.
+Pasting more than 650 characters into FrogBot's composer creates a removable pasted-text preview and sends a `data-paste` part. A paste of exactly 650 characters remains in the textarea. Pasted text stays client-side until message submission and is never uploaded as a file. The agent receives it as `Pasted text:` followed by the text.
 
 ## Voice input
 

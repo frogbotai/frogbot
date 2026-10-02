@@ -425,6 +425,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/global.openai.gpt-6.1-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/global.xai.grok-4.6",
     "provider": "bedrock",
     "mode": "chat"
@@ -665,6 +670,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/openai.gpt-6.1-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/openai.gpt-oss-120b",
     "provider": "bedrock",
     "mode": "chat"
@@ -886,6 +896,11 @@
   },
   {
     "id": "bedrock/us.openai.gpt-6-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-6.1-sol",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -2266,6 +2281,11 @@
   },
   {
     "id": "openrouter/anthropic/claude-sonnet-5.5",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/apodex/apodex-1.1-mini:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3730,6 +3750,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/unbiased/pareto-26.10-preview",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/undi95/remm-slerp-l2-13b",
     "provider": "openrouter",
     "mode": "chat"
@@ -4550,11 +4575,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/liquid/d1",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/meituan/longcat-2.5-preview",
     "provider": "vercel",
     "mode": "chat"
@@ -5181,11 +5201,6 @@
   },
   {
     "id": "vercel/spacexai/grok-build-0.1",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/stealth/pixel-canary",
     "provider": "vercel",
     "mode": "chat"
   },

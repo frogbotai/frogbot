@@ -364,6 +364,30 @@ describe('catalog sync corrections and modes', () => {
   });
 });
 
+describe('catalog sync modalities', () => {
+  it('keeps PDF input and drops modalities outside the catalog set', () => {
+    const reader = {
+      ...model,
+      id: 'reader',
+      modalities: { input: ['text', 'image', 'pdf', 'hologram'], output: ['text'] },
+    };
+
+    const { gateway } = buildCatalogs({
+      overlays: {},
+      source: { anthropic: { models: { reader } } },
+    });
+
+    expect(gateway[0]?.modalities).toEqual({ input: ['text', 'image', 'pdf'], output: ['text'] });
+  });
+
+  it.each([
+    ['anthropic/claude-sonnet-4-5', ['text', 'image', 'pdf']],
+    ['openai/gpt-5', ['text', 'image']],
+  ])('publishes the models.dev input types for %s', (id, input) => {
+    expect(DEFAULT_MODEL_CATALOG.get(id)?.modalities.input).toEqual(input);
+  });
+});
+
 describe('catalog sync reasoning options', () => {
   const reasoningModel = (reasoning_options: unknown) => ({
     ...model,

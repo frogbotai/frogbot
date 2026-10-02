@@ -1,18 +1,11 @@
 import type { UIMessage, UIMessageChunk } from 'ai';
-import {
-  consumeStream,
-  convertToModelMessages,
-  createUIMessageStream,
-  generateId,
-  toUIMessageStream,
-} from 'ai';
+import { consumeStream, createUIMessageStream, generateId, toUIMessageStream } from 'ai';
 
-import { userDefaultModel } from '../../agents/service.js';
 import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../agents/types.js';
 import { aiErrorMessage } from '../../ai/errorMessage.js';
-import { resolveModel } from '../../ai/resolve.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { toAgentModelMessages } from '../../uploads/toAgentModelMessages.js';
 import { createMessageUsage, persistAssistantMessage } from '../messagePersistence.js';
 import { TurnError } from './errors.js';
 import {
@@ -22,6 +15,7 @@ import {
   repairInterruptedParts,
 } from './messages.js';
 import { promoteQueuedMessage } from './queue.js';
+import { assertStoredSelection } from './selection.js';
 import { holdTurn, releaseTurn } from './state.js';
 import type { ClientToolsOption, TurnClaim } from './types.js';
 
@@ -30,7 +24,7 @@ export type StreamTurnProps = {
   agent: AgentInstance;
   claim: TurnClaim;
   uiMessages: UIMessage[];
-  providerMessages?: UIMessage[];
+  strictAttachments?: boolean;
   selection: AgentSelection;
   clientTools?: ClientToolsOption;
   abortSignal?: AbortSignal;
@@ -59,7 +53,7 @@ export async function streamTurn({
   agent,
   claim,
   uiMessages,
-  providerMessages = uiMessages,
+  strictAttachments,
   selection,
   clientTools,
   abortSignal,
@@ -82,19 +76,27 @@ export async function streamTurn({
   let mainModel: string;
 
   try {
+    mainModel = assertStoredSelection({
+      agent,
+      config: req.frogbot.config.ai!,
+      selection,
+      user: req.user,
+    }).model;
+
+    const messages = await toAgentModelMessages({
+      req,
+      messages: uiMessages,
+      chatId,
+      model: mainModel,
+      tools: agent.aiAgent.tools,
+      onUnavailable: strictAttachments ? 'throw' : 'marker',
+    });
+
     result = await agent.aiAgent.stream({
-      messages: await convertToModelMessages(providerMessages, { tools: agent.aiAgent.tools }),
+      messages,
       options: { req, overrideAccess: true, chatId, replyCreatedAt, selection, clientTools },
       abortSignal: AbortSignal.any(signals),
     });
-
-    const model = selection.model ?? userDefaultModel({ agent, user: req.user });
-
-    if (model === undefined) {
-      throw new Error(`[frogbot] Agent '${agent.slug}' has no validated model for this user.`);
-    }
-
-    mainModel = resolveModel(model, req.frogbot.config.ai!);
   } catch (error) {
     lease.stop();
 

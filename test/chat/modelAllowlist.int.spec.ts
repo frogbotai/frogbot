@@ -506,7 +506,14 @@ describe('per-user agent model allowlists', () => {
     ]);
     expect(result.agents.find(({ slug }) => slug === questionAgentSlug)).toMatchObject({
       defaultModel: 'test/gpt-4.1-mini',
-      models: ['test/gpt-4.1-mini', 'test/thinker', 'test/writer'],
+      models: [
+        'test/gpt-4.1-mini',
+        'test/thinker',
+        'test/writer',
+        'test/reasoner',
+        'test/text-only',
+        'test/media',
+      ],
       reasoning: {
         'test/thinker': [
           { key: 'low', label: 'Low' },
@@ -526,7 +533,14 @@ describe('per-user agent model allowlists', () => {
         expect.objectContaining({
           slug,
           defaultModel: 'test/gpt-4.1-mini',
-          models: ['test/gpt-4.1-mini', 'test/thinker', 'test/writer'],
+          models: [
+            'test/gpt-4.1-mini',
+            'test/media',
+            'test/reasoner',
+            'test/text-only',
+            'test/thinker',
+            'test/writer',
+          ],
         }),
       ),
     );

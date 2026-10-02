@@ -135,6 +135,52 @@ const asset = await saveChatAsset({
 
 The helper requires chat persistence and a current chat on `ctx.agent.chatId`; it records the requesting user as the owner.
 
+### How attachments reach the agent
+
+Every agent turn sends the chat's attachments to the model again, prepared for the model that turn uses. This covers sending a message, continuing after a question, queued and steered messages, channel conversations, and the agent's Local API `generate`, `stream`, and `streamMessage`. Saved messages never change: the preparation applies only to what the model receives.
+
+FrogBot sorts each attachment into one kind:
+
+| Kind | How FrogBot recognises it | What the model receives |
+| --- | --- | --- |
+| Image | PNG, JPEG, GIF, or WebP, by type, or by extension when the upload has no specific type | The image, when the model accepts images |
+| PDF | `application/pdf`, or a `.pdf` extension when the upload has no specific type | The PDF, when the model accepts PDFs |
+| Text | Any other file whose first 4 KB read as UTF-8 text, whatever type it was uploaded with | A label, a line break, then the full contents |
+| Audio, video | `audio/*` or `video/*` that doesn't read as text | The file, when the model accepts that kind |
+| Unsupported | Everything else, such as archives, Word documents, UTF-16 text, and HEIC images | A marker |
+
+The label is `Attached file "notes.md":`, using the file name in the message part, or the stored name when the part has none, or `Pasted text:` for a `file-reference` part with `origin: 'paste'` and for `data-paste` parts. SVG files are text. A leading byte-order mark is dropped, and bytes that aren't valid UTF-8 become `�`. FrogBot sets no size limit on text.
+
+Which image, audio, video, and PDF attachments a model accepts comes from its [input types](/ai/overview#custom-model-options). A model with unknown input types receives every image, audio, video, and PDF attachment.
+
+#### Markers
+
+An attachment that isn't sent is replaced by a marker in the model's input. Markers state facts only; the agent decides what to tell the user.
+
+| Marker | When |
+| --- | --- |
+| `[Can't read photo.png: this model doesn't accept images]` | The model's input types leave out that kind. The marker names images, PDFs, audio, or video. |
+| `[Can't read archive.zip: this file type isn't supported]` | The attachment is unsupported. |
+| `[Can't read report.pdf: the file couldn't be loaded]` | The asset is missing, the user can't read it, or its file can't be read from storage, on any turn other than sending a message. |
+| `[File repeated later: shot.png]` | The same file appears again later in the conversation. Only its newest copy is sent. |
+| `[Image removed: photo.png]`, `[File removed: report.pdf]` | The request is over the size limit, or over the provider's image count. |
+
+A marker for a file without a name uses its kind instead, such as `[Image removed: image]`.
+
+#### Repeated files
+
+Files are the same when their contents match. FrogBot stores a SHA-256 hash of each asset's contents in a hidden `sha256` field when the file is uploaded; a value sent by the client is ignored. An asset without a hash is matched by its ID. Files embedded directly in model messages are matched by their contents.
+
+#### Size limit
+
+When the images, PDFs, audio, and video in one model request add up to more than 25 MiB, measured as base64, FrogBot replaces the oldest of them, in message order, until 15 MiB or less remain. A single file over 15 MiB is replaced even when it is the newest. Earlier copies of repeated files, files given by URL, and text don't count. On Amazon Bedrock, only the newest 20 images in a request are sent, and older ones get the image marker.
+
+#### Missing files
+
+When a user sends a message, an attachment that doesn't exist or that the user can't read fails the request with `404` or `403`, and the chat stays free for the next message. On every other turn, such as a queued message or a continued turn, the attachment becomes the "couldn't be loaded" marker and the turn goes on.
+
+Direct [AI operations](/ai/overview#call-operations) such as `req.frogbot.generateText` and the [gateway endpoints](/gateway/overview) send content as given; none of the above applies to them.
+
 ## Use the default chat views
 
 When an agent is configured, the chat collection create route (`/collections/chats/create` by default) opens an empty chat with the first configured agent. Users reach it from the Chats collection in the sidebar. Sending the first message creates the chat and changes the URL to the chat's own page without reloading the conversation. New Chat always opens an empty chat.

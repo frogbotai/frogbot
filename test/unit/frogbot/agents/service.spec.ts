@@ -37,6 +37,11 @@ const config = {
           reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
         },
         { id: 'plain', mode: 'chat' },
+        {
+          id: 'viewer',
+          mode: 'chat',
+          modalities: { input: ['text', 'image', 'pdf'], output: ['text'] },
+        },
       ],
     },
   },
@@ -343,6 +348,7 @@ describe('agent service', () => {
           defaultModel: 'bedrock/us.amazon.nova-micro-v1:0',
           models: ['bedrock/us.amazon.nova-micro-v1:0', 'openai/other'],
           names: { 'bedrock/us.amazon.nova-micro-v1:0': 'Nova Micro (US)' },
+          inputs: { 'bedrock/us.amazon.nova-micro-v1:0': ['text'] },
         },
       ],
     });
@@ -619,6 +625,35 @@ describe('agent service', () => {
     expect(manifest.agents[0]!.reasoning?.smart).toEqual(
       expect.arrayContaining([{ key: 'high', label: 'High' }]),
     );
+  });
+
+  it('advertises input types only for models whose types are known', async () => {
+    const req = makeRequest({
+      agents: {
+        support: makeAgent({
+          model: 'openai/gpt-5',
+          options: ['smart', 'my-local/viewer', 'my-local/plain', 'openai/unknown'],
+        }),
+      },
+    });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]!.inputs).toEqual({
+      'openai/gpt-5': ['text', 'image'],
+      smart: ['text', 'image'],
+      'my-local/viewer': ['text', 'image', 'pdf'],
+    });
+  });
+
+  it('omits inputs when no offered model has known types', async () => {
+    const req = makeRequest({
+      agents: { support: makeAgent({ model: 'my-local/plain', options: ['openai/unknown'] }) },
+    });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]).not.toHaveProperty('inputs');
   });
 
   it('resolves the agent default model without reasoning when nothing is selected', () => {

@@ -552,6 +552,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function usesFileModality(modalities: unknown): boolean {
+  if (!isRecord(modalities)) return false;
+
+  return [modalities.input, modalities.output].some(
+    (list) => Array.isArray(list) && list.includes('file'),
+  );
+}
+
 type SanitizedAIBase = Omit<SanitizedAIConfig, 'usage'>;
 
 function sanitizeAI(ai: AIConfig): SanitizedAIBase {
@@ -595,6 +603,12 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
         if (!isRecord(model) || typeof model.id !== 'string' || !model.id.trim() || !model.mode) {
           throw new Error(
             `[frogbot] Every model for custom provider '${key}' requires an id and mode.`,
+          );
+        }
+
+        if (usesFileModality(model.modalities)) {
+          throw new Error(
+            `[frogbot] Model '${model.id}' for custom provider '${key}' uses the type 'file'. Rename it to 'pdf'.`,
           );
         }
       }

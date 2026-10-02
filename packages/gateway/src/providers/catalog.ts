@@ -7,7 +7,7 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type Modality = 'text' | 'image' | 'audio' | 'video' | 'embedding';
+export type Modality = 'text' | 'image' | 'audio' | 'video' | 'pdf' | 'embedding';
 
 export type ModelReasoningOption =
   | { type: 'effort'; values?: readonly string[] }

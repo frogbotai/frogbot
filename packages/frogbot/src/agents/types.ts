@@ -10,6 +10,7 @@ import type {
 } from 'ai';
 import type { z } from 'zod';
 
+import type { ModelModality } from '../ai/types.js';
 import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
@@ -122,6 +123,7 @@ export type AgentManifestEntry = {
   models: AgentModelId[];
   names?: Partial<Record<AgentModelId, string>>;
   reasoning?: Partial<Record<AgentModelId, AgentReasoningOption[]>>;
+  inputs?: Partial<Record<AgentModelId, ModelModality[]>>;
 };
 
 export type AgentManifest = {

@@ -139,7 +139,16 @@ export interface User {
   id: number;
   name?: string | null;
   modelAccess?: ('all' | 'selected') | null;
-  models?: ('test/gpt-4.1-mini' | 'test/thinker' | 'test/writer')[] | null;
+  models?:
+    | (
+        | 'test/gpt-4.1-mini'
+        | 'test/media'
+        | 'test/reasoner'
+        | 'test/text-only'
+        | 'test/thinker'
+        | 'test/writer'
+      )[]
+    | null;
   monthlyBudget?: number | null;
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
@@ -229,6 +238,7 @@ export interface FrogbotChatAsset {
   id: number;
   owner?: (number | null) | User;
   chat?: (number | null) | Chat;
+  sha256?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -462,6 +472,7 @@ export interface MessagesSelect {
 export interface FrogbotChatAssetsSelect {
   owner?: boolean;
   chat?: boolean;
+  sha256?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   url?: boolean;
@@ -620,7 +631,13 @@ declare module 'frogbot' {
       wildcard: unknown;
       general: unknown;
     };
-    models: 'test/gpt-4.1-mini' | 'test/thinker' | 'test/writer';
+    models:
+      | 'test/gpt-4.1-mini'
+      | 'test/media'
+      | 'test/reasoner'
+      | 'test/text-only'
+      | 'test/thinker'
+      | 'test/writer';
     roles: never;
   }
 }

@@ -5,11 +5,9 @@ import { z } from 'zod';
 import type { ChatContext } from '../chat/chatContext.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { buildTurnEndpoints } from '../chat/turn/endpoints.js';
-import { releaseTurn } from '../chat/turn/state.js';
 import { allClientTools, streamTurn } from '../chat/turn/streamTurn.js';
 import { validateChatMessages } from '../chat/validateMessages.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
 import { agentResult, errorResponse } from './responses.js';
 import {
   assertAgentAccess,
@@ -103,22 +101,12 @@ export function buildAgentEndpoints() {
 
           if (context.status === 'queued') return queuedResponse({ context, eventStream });
 
-          const providerMessages = await resolveChatAttachments({
-            req,
-            messages: context.uiMessages,
-            chatId: context.chatId,
-          }).catch(async (error: unknown) => {
-            await releaseTurn({ req, claim: context.claim, state: 'idle' });
-
-            throw error;
-          });
-
           const turn = await streamTurn({
             req,
             agent,
             claim: context.claim,
             uiMessages: context.uiMessages,
-            providerMessages,
+            strictAttachments: true,
             selection: context.selection,
             clientTools: allClientTools(agent),
             abortSignal: req.signal ?? undefined,

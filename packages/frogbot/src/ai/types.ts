@@ -96,7 +96,7 @@ export type ModelMode =
   | 'evaluate'
   | 'video_generation';
 
-export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'file';
+export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'pdf';
 
 export type ModelConfig = {
   id: string;

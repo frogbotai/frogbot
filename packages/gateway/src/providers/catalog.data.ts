@@ -7,7 +7,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Claude Fable 5',
     created: '2026-06-07',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -42,7 +42,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-01',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -77,7 +77,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -112,7 +112,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -147,7 +147,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-24',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -186,7 +186,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-24',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -225,7 +225,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-04',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -264,7 +264,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-14',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -299,7 +299,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -334,7 +334,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -369,7 +369,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -404,7 +404,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -439,7 +439,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -474,7 +474,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -513,7 +513,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-29',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -551,7 +551,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-28',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -586,7 +586,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -639,7 +639,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -666,7 +666,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-09',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -700,7 +700,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-01',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -734,7 +734,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -772,7 +772,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-01',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -814,7 +814,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -856,7 +856,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -893,7 +893,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -930,7 +930,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -967,7 +967,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1001,7 +1001,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1039,7 +1039,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1081,7 +1081,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1118,7 +1118,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-28',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1152,7 +1152,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1205,7 +1205,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1232,7 +1232,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1270,7 +1270,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1312,7 +1312,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1349,7 +1349,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1386,7 +1386,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1423,7 +1423,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1457,7 +1457,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1495,7 +1495,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1537,7 +1537,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1574,7 +1574,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1683,7 +1683,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-02',
     knowledge: '2025-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1720,7 +1720,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1773,7 +1773,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1800,7 +1800,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-09',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1834,7 +1834,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1872,7 +1872,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-01',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1914,7 +1914,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1956,7 +1956,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -1993,7 +1993,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2030,7 +2030,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2067,7 +2067,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2101,7 +2101,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2139,7 +2139,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2181,7 +2181,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2265,7 +2265,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-09',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2299,7 +2299,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-01',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2333,7 +2333,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2371,7 +2371,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-01',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2413,7 +2413,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2455,7 +2455,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2492,7 +2492,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2529,7 +2529,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2566,7 +2566,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2600,7 +2600,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2638,7 +2638,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2680,7 +2680,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2717,7 +2717,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-28',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -2982,6 +2982,41 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/global.openai.gpt-6.1-sol', {
+    name: 'GPT-6.1 Sol (Global)',
+    created: '2026-09-29',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.1,
+      cache_write: 2.5,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/global.xai.grok-4.6', {
     name: 'Grok 4.6 (Global)',
     created: '2026-08-12',
@@ -3020,7 +3055,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-21',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3233,7 +3268,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3268,7 +3303,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3302,7 +3337,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-02',
     knowledge: '2025-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3339,7 +3374,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3377,7 +3412,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3414,7 +3449,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3451,7 +3486,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3488,7 +3523,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3522,7 +3557,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3560,7 +3595,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3602,7 +3637,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4148,7 +4183,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4187,7 +4222,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4226,7 +4261,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4266,7 +4301,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4306,7 +4341,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4346,7 +4381,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-04',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4386,7 +4421,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-05-18',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4426,7 +4461,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-04-20',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4452,6 +4487,46 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2.2,
       output: 11,
       cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-6.1-sol', {
+    name: 'GPT-6.1 Sol',
+    created: '2026-09-29',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 11,
+      cache_read: 0.11,
       cache_write: 2.75,
     },
     sdk: {
@@ -4890,7 +4965,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-02',
     knowledge: '2025-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4927,7 +5002,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -4980,7 +5055,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5007,7 +5082,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-09',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5041,7 +5116,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-01',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5075,7 +5150,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5113,7 +5188,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-01',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5155,7 +5230,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5197,7 +5272,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5234,7 +5309,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5271,7 +5346,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5308,7 +5383,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5342,7 +5417,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5380,7 +5455,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5422,7 +5497,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -5853,6 +5928,41 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/us.openai.gpt-6.1-sol', {
+    name: 'GPT-6.1 Sol (US)',
+    created: '2026-09-29',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 11,
+      cache_read: 0.11,
+      cache_write: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/us.writer.palmyra-x4-v1:0', {
     name: 'Palmyra X4 (US)',
     created: '2024-10-09',
@@ -5937,7 +6047,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-21',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -7111,8 +7221,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 32768,
     },
     cost: {
-      input: 0.13,
-      output: 0.38,
+      input: 0.15,
+      output: 0.4,
     },
     providers: ['deepinfra'],
   }),
@@ -7878,7 +7988,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen3.8 Max',
     created: '2026-08-03',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -8270,7 +8380,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GLM-5.3-Flash',
     created: '2026-08-26',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -8330,9 +8440,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 384000,
     },
     cost: {
-      input: 0.22,
-      output: 0.66,
-      cache_read: 0.007,
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.006,
     },
     providers: ['fireworks'],
   }),
@@ -8475,10 +8585,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Inkling',
     created: '2026-07-15',
     modalities: {
-      input: ['text', 'image', 'audio'],
+      input: ['text', 'image'],
       output: ['text'],
     },
-    operations: ['chat.completions', 'audio.transcriptions'],
+    operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
       reasoning: true,
@@ -8723,9 +8833,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 384000,
     },
     cost: {
-      input: 0.22,
-      output: 0.66,
-      cache_read: 0.007,
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.006,
     },
     providers: ['fireworks'],
   }),
@@ -9045,7 +9155,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-21',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text', 'image'],
     },
     operations: ['chat.completions', 'images.generations', 'audio.transcriptions'],
@@ -9072,7 +9182,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-21',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text', 'image'],
     },
     operations: ['chat.completions', 'images.generations', 'audio.transcriptions'],
@@ -9124,7 +9234,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9188,7 +9298,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9246,7 +9356,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9301,7 +9411,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9389,7 +9499,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text', 'image'],
     },
     operations: ['chat.completions', 'images.generations'],
@@ -9419,7 +9529,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-26',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text', 'image'],
     },
     operations: ['chat.completions', 'images.generations'],
@@ -9449,7 +9559,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-07',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9567,7 +9677,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9601,7 +9711,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9635,7 +9745,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9669,7 +9779,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9746,7 +9856,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9780,7 +9890,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-13',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9813,7 +9923,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Gemini 3.8 Flash',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9892,7 +10002,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-13',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -9926,7 +10036,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -11172,7 +11282,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11199,7 +11309,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11226,7 +11336,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-05-13',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11307,7 +11417,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-07-18',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11567,7 +11677,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11601,7 +11711,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11635,7 +11745,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11768,7 +11878,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11802,7 +11912,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11834,7 +11944,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11869,7 +11979,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11904,7 +12014,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11939,7 +12049,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -11974,7 +12084,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-04',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12009,7 +12119,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-05-18',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12044,7 +12154,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-04-20',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12079,7 +12189,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-29',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12114,7 +12224,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-07',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12276,7 +12386,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12407,7 +12517,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Claude Fable Latest',
     created: '2026-06-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12441,7 +12551,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Claude Haiku Latest',
     created: '2026-04-27',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12474,7 +12584,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Claude Opus Latest',
     created: '2026-04-21',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12509,7 +12619,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-27',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12569,9 +12679,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.02,
+      input: 0.0264,
       output: 0.6,
-      cache_read: 0.02,
+      cache_read: 0.0264,
     },
     providers: ['openrouter'],
   }),
@@ -12604,9 +12714,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 393216,
     },
     cost: {
-      input: 0.2,
-      output: 3.5,
-      cache_read: 0.2,
+      input: 0.15312,
+      output: 0.45936,
+      cache_read: 0.004872,
     },
     providers: ['openrouter'],
   }),
@@ -12639,9 +12749,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.01,
+      input: 0.0108,
       output: 1.28,
-      cache_read: 0.01,
+      cache_read: 0.0108,
     },
     providers: ['openrouter'],
   }),
@@ -12650,7 +12760,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-27',
     knowledge: '2025-01-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'pdf', 'audio'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -12685,7 +12795,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-27',
     knowledge: '2025-01',
     modalities: {
-      input: ['audio', 'image', 'text', 'video'],
+      input: ['audio', 'pdf', 'image', 'text', 'video'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -12745,9 +12855,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.4,
-      output: 9,
-      cache_read: 0.4,
+      input: 0.415,
+      output: 10,
+      cache_read: 0.415,
     },
     providers: ['openrouter'],
   }),
@@ -12755,7 +12865,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT Astra Latest',
     created: '2026-09-11',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12790,7 +12900,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-11',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12825,7 +12935,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-27',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12859,7 +12969,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-11',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12894,7 +13004,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-11',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -12928,7 +13038,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Latest',
     created: '2026-07-08',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13013,12 +13123,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 131072,
+      output: 943718,
     },
     cost: {
-      input: 0.12,
-      output: 4,
-      cache_read: 0.12,
+      input: 0.106,
+      output: 2.653,
+      cache_read: 0.176,
     },
     providers: ['openrouter'],
   }),
@@ -13185,7 +13295,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Nova 2 Lite',
     created: '2025-12-02',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13334,7 +13444,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-09',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13369,7 +13479,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-01',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13404,7 +13514,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13438,7 +13548,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-05',
     knowledge: '2025-03-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13471,7 +13581,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-24',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13505,7 +13615,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13546,7 +13656,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13584,7 +13694,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13622,7 +13732,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13660,7 +13770,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13695,7 +13805,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-05-22',
     knowledge: '2025-01-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13728,7 +13838,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13762,7 +13872,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13800,7 +13910,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13838,7 +13948,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-28',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -13865,6 +13975,35 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 10,
       cache_read: 0.2,
       cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/apodex/apodex-1.1-mini:free', {
+    name: 'Apodex 1.1 Mini (free)',
+    created: '2026-10-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0,
+      output: 0,
     },
     providers: ['openrouter'],
   }),
@@ -14573,9 +14712,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.14,
-      output: 0.28,
-      cache_read: 0.028,
+      input: 0.04186,
+      output: 0.08372,
+      cache_read: 0.008372,
     },
     providers: ['openrouter'],
   }),
@@ -14609,9 +14748,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.01,
+      input: 0.0108,
       output: 1.28,
-      cache_read: 0.01,
+      cache_read: 0.0108,
     },
     providers: ['openrouter'],
   }),
@@ -14681,9 +14820,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 384000,
     },
     cost: {
-      input: 0.95526,
-      output: 1.91052,
-      cache_read: 0.079605,
+      input: 0.2088,
+      output: 0.4176,
+      cache_read: 0.0174,
     },
     providers: ['openrouter'],
   }),
@@ -14753,9 +14892,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.3,
-      output: 1.2,
-      cache_read: 0.006,
+      input: 0.03,
+      output: 0.5,
+      cache_read: 0.01,
     },
     providers: ['openrouter'],
   }),
@@ -14830,7 +14969,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -14864,7 +15003,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -14898,7 +15037,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -14934,7 +15073,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-05',
     knowledge: '2025-01-31',
     modalities: {
-      input: ['image', 'text', 'audio'],
+      input: ['pdf', 'image', 'text', 'audio'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -14970,7 +15109,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15008,7 +15147,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-07',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15046,7 +15185,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-03',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15084,7 +15223,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15119,7 +15258,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15154,7 +15293,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15189,7 +15328,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15224,7 +15363,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15259,7 +15398,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-13',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -15293,7 +15432,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Gemini 3.8 Flash',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image', 'video', 'audio'],
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -16187,7 +16326,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.1',
     created: '2026-04-08',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'pdf', 'video'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16220,7 +16359,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.2',
     created: '2026-08-05',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16253,7 +16392,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.2 Contributor',
     created: '2026-08-21',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16286,7 +16425,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.3',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16319,7 +16458,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.3 Contributor',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16440,7 +16579,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 40000,
     },
     cost: {
-      input: 0.4,
+      input: 0.55,
       output: 2.2,
     },
     providers: ['openrouter'],
@@ -16606,7 +16745,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-01',
     knowledge: '2025-03-31',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16632,7 +16771,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-09',
     knowledge: '2025-12',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16736,7 +16875,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-02-26',
     knowledge: '2024-11-30',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16762,7 +16901,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-11-19',
     knowledge: '2024-03-31',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16788,7 +16927,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-02',
     knowledge: '2024-11',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16815,7 +16954,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-05-07',
     knowledge: '2025-03-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16841,7 +16980,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Mistral Medium 3.5',
     created: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16873,7 +17012,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-13',
     knowledge: '2025-06-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -16924,7 +17063,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-02-17',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -17056,7 +17195,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-04-17',
     knowledge: '2024-01-31',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -17081,7 +17220,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Voxtral Small 24B 2507',
     created: '2025-07-15',
     modalities: {
-      input: ['text', 'audio'],
+      input: ['text', 'audio', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -17162,17 +17301,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
-      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 262144,
-      output: 98304,
+      output: 235929,
     },
     cost: {
       input: 0.6,
       output: 2.5,
-      cache_read: 0.15,
     },
     providers: ['openrouter'],
   }),
@@ -17236,9 +17373,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.65,
-      output: 3.41,
-      cache_read: 0.15,
+      input: 0.43415,
+      output: 1.828,
+      cache_read: 0.07312,
     },
     providers: ['openrouter'],
   }),
@@ -17300,9 +17437,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
+      input: 0.415,
+      output: 10,
+      cache_read: 0.415,
     },
     providers: ['openrouter'],
   }),
@@ -17774,12 +17911,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 32768,
+      output: 131072,
     },
     cost: {
-      input: 0.06,
-      output: 0.16,
-      cache_read: 0.03,
+      input: 0.0595,
+      output: 0.17,
+      cache_read: 0.02975,
     },
     providers: ['openrouter'],
   }),
@@ -17960,7 +18097,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -17987,7 +18124,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18014,7 +18151,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18041,7 +18178,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-05-13',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18068,7 +18205,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-05-13',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18093,7 +18230,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-08-06',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18120,7 +18257,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-11-20',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18147,7 +18284,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-07-18',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18174,7 +18311,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-07-18',
     knowledge: '2023-10-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18201,7 +18338,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-07',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18235,7 +18372,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-07',
     knowledge: '2024-05-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18269,7 +18406,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-07',
     knowledge: '2024-05-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18303,7 +18440,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-06',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18335,7 +18472,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-13',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18474,7 +18611,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-11',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18508,7 +18645,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-10',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18569,7 +18706,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-11',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18601,7 +18738,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18635,7 +18772,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18669,7 +18806,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18703,7 +18840,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18737,7 +18874,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18769,7 +18906,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18803,7 +18940,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18835,7 +18972,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18870,7 +19007,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18905,7 +19042,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18940,7 +19077,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -18975,7 +19112,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19010,7 +19147,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19045,7 +19182,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-04',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19079,7 +19216,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT-6 Astra Pro',
     created: '2026-09-04',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19114,7 +19251,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-05-18',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19148,7 +19285,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT-6 Luna Pro',
     created: '2026-09-22',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19183,7 +19320,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-04-20',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19217,7 +19354,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT-6 Sol Pro',
     created: '2026-09-22',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19252,7 +19389,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-29',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19286,7 +19423,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT-6.1 Sol Pro',
     created: '2026-09-29',
     modalities: {
-      input: ['image', 'text'],
+      input: ['pdf', 'image', 'text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19320,7 +19457,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT Chat Latest',
     created: '2026-05-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19441,7 +19578,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-05',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19474,7 +19611,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-03-19',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19504,7 +19641,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19537,7 +19674,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-20',
     knowledge: '2024-05',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19569,7 +19706,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-02-12',
     knowledge: '2023-10-31',
     modalities: {
-      input: ['text'],
+      input: ['text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19602,7 +19739,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-10',
     knowledge: '2024-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'pdf', 'image'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19633,7 +19770,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-05',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -19666,7 +19803,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-06-30',
     modalities: {
-      input: ['image', 'text'],
+      input: ['image', 'text', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -20332,11 +20469,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 131072,
-      output: 8192,
+      output: 16384,
     },
     cost: {
-      input: 0.13,
-      output: 0.52,
+      input: 0.12,
+      output: 0.5,
     },
     providers: ['openrouter'],
   }),
@@ -21696,7 +21833,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Fugu Max',
     created: '2026-09-11',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -21763,7 +21900,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-11',
     knowledge: '2026-08-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -21796,7 +21933,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Sakana Namazu',
     created: '2026-08-03',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22103,9 +22240,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 0.132,
-      output: 0.528,
-      cache_read: 0.033,
+      input: 0.0825,
+      output: 0.33,
+      cache_read: 0.020625,
     },
     providers: ['openrouter'],
   }),
@@ -22166,9 +22303,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 64000,
     },
     cost: {
-      input: 0.834,
-      output: 2.501,
-      cache_read: 0.042,
+      input: 0.7506,
+      output: 2.2509,
+      cache_read: 0.0378,
     },
     providers: ['openrouter'],
   }),
@@ -22394,6 +22531,31 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
+  model('openrouter/unbiased/pareto-26.10-preview', {
+    name: 'Pareto 26.10 Preview',
+    created: '2026-10-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.8,
+      output: 3.2,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
   model('openrouter/undi95/remm-slerp-l2-13b', {
     name: 'ReMM SLERP 13B',
     created: '2023-07-22',
@@ -22539,7 +22701,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-31',
     knowledge: '2025-09-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22572,7 +22734,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-31',
     knowledge: '2025-09-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22604,7 +22766,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.3',
     created: '2026-04-17',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22637,7 +22799,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.5',
     created: '2026-07-08',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22671,7 +22833,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-12',
     knowledge: '2026-02-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22705,7 +22867,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-21',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22738,7 +22900,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Build 0.1',
     created: '2026-04-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -22848,7 +23010,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 1048576,
+      input: 1050000,
       output: 131072,
     },
     cost: {
@@ -23076,7 +23238,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.3,
       output: 0.9,
-      cache_read: 0.055,
+      cache_read: 0.05,
     },
     providers: ['openrouter'],
   }),
@@ -23228,9 +23390,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 1.4,
-      output: 4.4,
-      cache_read: 0.26,
+      input: 0.9646,
+      output: 3.0316,
+      cache_read: 0.17914,
     },
     providers: ['openrouter'],
   }),
@@ -23263,9 +23425,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.25,
+      input: 0.14,
       output: 3.99,
-      cache_read: 0.2,
+      cache_read: 0.112,
     },
     providers: ['openrouter'],
   }),
@@ -23292,12 +23454,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943717,
+      output: 943718,
     },
     cost: {
-      input: 1.4,
-      output: 4.4,
-      cache_read: 0.26,
+      input: 0.2219,
+      output: 3.39,
+      cache_read: 0.1775,
     },
     providers: ['openrouter'],
   }),
@@ -24448,7 +24610,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-23',
     knowledge: '2025-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -24764,7 +24926,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-23',
     knowledge: '2025-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -24795,7 +24957,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen 3.5 Flash',
     created: '2026-02-23',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -24835,7 +24997,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-16',
     knowledge: '2025-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -24873,7 +25035,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen 3.6 27B',
     created: '2026-04-22',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -24909,7 +25071,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-02',
     knowledge: '2025-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -24947,7 +25109,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen 3.7 Flash',
     created: '2026-07-15',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25022,7 +25184,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-02',
     knowledge: '2025-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25093,7 +25255,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen3.8 27B',
     created: '2026-08-14',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25127,7 +25289,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen 3.8 Flash',
     created: '2026-08-26',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25207,7 +25369,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Qwen3.8 Max 0902',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25324,7 +25486,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-02',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25359,7 +25521,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25412,7 +25574,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-12-03',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25466,7 +25628,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-09',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25503,7 +25665,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-01',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25540,7 +25702,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-15',
     knowledge: '2025-02-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25577,7 +25739,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-05-22',
     knowledge: '2025-03-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25614,7 +25776,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-24',
     knowledge: '2025-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25651,7 +25813,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-05-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25688,7 +25850,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-16',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25725,7 +25887,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25762,7 +25924,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-28',
     knowledge: '2026-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25799,7 +25961,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25836,7 +25998,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-24',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25873,7 +26035,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25907,7 +26069,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25941,7 +26103,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-05-22',
     knowledge: '2025-03-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -25978,7 +26140,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-29',
     knowledge: '2025-07-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26013,7 +26175,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26050,7 +26212,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-30',
     knowledge: '2026-01-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26087,7 +26249,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-28',
     knowledge: '2026-06',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26649,7 +26811,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -26687,7 +26849,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26724,7 +26886,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-17',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image', 'audio', 'video'],
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions', 'audio.transcriptions'],
@@ -26759,7 +26921,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-17',
     knowledge: '2025-03',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26792,7 +26954,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-07',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26826,7 +26988,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26860,7 +27022,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-05-19',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26894,7 +27056,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26949,7 +27111,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-21',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -26983,7 +27145,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-13',
     knowledge: '2026-03',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27016,7 +27178,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Gemini 3.8 Flash',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27049,7 +27211,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Gemini Omni Flash Preview',
     created: '2026-06-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27078,7 +27240,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Gemma 4 26B A4B IT',
     created: '2026-04-02',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27105,7 +27267,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Gemma 4 31B IT',
     created: '2026-04-02',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27466,7 +27628,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Interfaze Beta',
     created: '2025-10-07',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27488,27 +27650,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 1.5,
       output: 3.5,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/liquid/d1', {
-    name: 'Liquid d1',
-    created: '2026-09-29',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      streaming: true,
-    },
-    context: {
-      input: 32000,
-      output: 0,
-    },
-    cost: {
-      input: 0,
-      output: 0,
     },
     providers: ['vercel'],
   }),
@@ -27698,7 +27839,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.1',
     created: '2026-04-08',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27731,7 +27872,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.2',
     created: '2026-08-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27764,7 +27905,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.2 Contributor',
     created: '2026-08-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27796,7 +27937,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.3',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -27829,7 +27970,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Muse Spark 1.3 Contributor',
     created: '2026-09-02',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28079,7 +28220,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'MiniMax M3',
     created: '2026-06-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28136,7 +28277,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-02',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28455,7 +28596,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-12',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28489,7 +28630,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-06-12',
     knowledge: '2025-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28522,7 +28663,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Kimi K3',
     created: '2026-07-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28555,7 +28696,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Kimi K3 Fast',
     created: '2026-07-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28834,7 +28975,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28861,7 +29002,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28888,7 +29029,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28915,7 +29056,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28942,7 +29083,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-14',
     knowledge: '2024-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28969,7 +29110,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-05-13',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -28996,7 +29137,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-05-13',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29023,7 +29164,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-07-18',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29050,7 +29191,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2024-07-18',
     knowledge: '2023-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29153,7 +29294,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-09-15',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29187,7 +29328,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-07',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29255,7 +29396,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-08-07',
     knowledge: '2024-05-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29323,7 +29464,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-10-06',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29355,7 +29496,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-13',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29389,7 +29530,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-13',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29423,7 +29564,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-13',
     knowledge: '2024-09-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29457,7 +29598,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-11-12',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29489,7 +29630,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT 5.1 Thinking (Fast)',
     created: '2025-11-12',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29522,7 +29663,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-11',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29556,7 +29697,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-11',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29590,7 +29731,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-11',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29624,7 +29765,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-12-11',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29655,7 +29796,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29689,7 +29830,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-02-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29723,7 +29864,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29757,7 +29898,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29791,7 +29932,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29825,7 +29966,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29859,7 +30000,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-17',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29893,7 +30034,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-03-05',
     knowledge: '2025-08-31',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29924,7 +30065,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29958,7 +30099,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -29992,7 +30133,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-04-23',
     knowledge: '2025-12-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30024,7 +30165,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30059,7 +30200,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30094,7 +30235,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30129,7 +30270,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30164,7 +30305,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30199,7 +30340,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-07-09',
     knowledge: '2026-02-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30234,7 +30375,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-04',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30268,7 +30409,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GPT-6 Astra (Fast)',
     created: '2026-09-04',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30303,7 +30444,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-05-18',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30338,7 +30479,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-05-18',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30373,7 +30514,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-04-20',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30408,7 +30549,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-22',
     knowledge: '2026-04-20',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30443,7 +30584,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-29',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30478,7 +30619,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-29',
     knowledge: '2026-04-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30635,7 +30776,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30669,7 +30810,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30703,7 +30844,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-06-10',
     knowledge: '2024-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30735,7 +30876,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2025-04-16',
     knowledge: '2024-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30948,7 +31089,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Sakana Namazu',
     created: '2026-08-03',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -30980,7 +31121,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.1 Fast Non-Reasoning',
     created: '2025-11-19',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31005,7 +31146,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.1 Fast Reasoning',
     created: '2025-11-19',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31038,7 +31179,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Multi-Agent',
     created: '2026-03-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31070,7 +31211,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Multi Agent Beta',
     created: '2026-03-11',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31102,7 +31243,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Non-Reasoning',
     created: '2026-03-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31127,7 +31268,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Beta Non-Reasoning',
     created: '2026-03-11',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31152,7 +31293,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Reasoning',
     created: '2026-03-10',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31184,7 +31325,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Beta Reasoning',
     created: '2026-03-11',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31216,7 +31357,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.3',
     created: '2026-04-17',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31249,7 +31390,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.5',
     created: '2026-07-08',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31376,35 +31517,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1,
       output: 2,
       cache_read: 0.2,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/stealth/pixel-canary', {
-    name: 'Pixel Canary',
-    created: '2026-09-25',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['none', 'low', 'medium', 'xhigh'],
-        },
-      ],
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131072,
-    },
-    cost: {
-      input: 0,
-      output: 0,
     },
     providers: ['vercel'],
   }),
@@ -31628,7 +31740,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Inkling',
     created: '2026-07-15',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31660,7 +31772,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Inkling Small',
     created: '2026-07-30',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -31777,9 +31889,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.14,
-      output: 0.28,
-      cache_read: 0.0028,
+      input: 0.04,
+      output: 1.28,
+      cache_read: 0.04,
     },
     providers: ['vercel'],
   }),
@@ -32349,7 +32461,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'GLM 5V Turbo',
     created: '2026-04-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32422,7 +32534,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 (Non-Reasoning)',
     created: '2026-03-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32448,7 +32560,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 (Reasoning)',
     created: '2026-03-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32475,7 +32587,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.20 Multi-Agent',
     created: '2026-03-09',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32507,7 +32619,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.3',
     created: '2026-04-17',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32540,7 +32652,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok 4.5',
     created: '2026-07-08',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32574,7 +32686,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-08-12',
     knowledge: '2026-02-01',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32608,7 +32720,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     created: '2026-09-21',
     knowledge: '2026-05',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32641,7 +32753,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Build 0.1',
     created: '2026-04-16',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text', 'image', 'pdf'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -32668,8 +32780,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Imagine Image',
     created: '2026-01-28',
     modalities: {
-      input: ['text', 'image'],
-      output: ['image'],
+      input: ['text', 'image', 'pdf'],
+      output: ['image', 'pdf'],
     },
     operations: ['images.generations'],
     capabilities: {
@@ -32685,8 +32797,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Imagine Image Quality',
     created: '2026-04-03',
     modalities: {
-      input: ['text', 'image'],
-      output: ['image'],
+      input: ['text', 'image', 'pdf'],
+      output: ['image', 'pdf'],
     },
     operations: ['images.generations'],
     capabilities: {
@@ -32702,7 +32814,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Imagine Video',
     created: '2026-01-28',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image', 'video', 'pdf'],
       output: ['video'],
     },
     operations: ['video.generations'],
@@ -32719,7 +32831,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Imagine Video 1.5',
     created: '2026-05-30',
     modalities: {
-      input: ['text', 'image', 'audio'],
+      input: ['text', 'image', 'audio', 'pdf'],
       output: ['video'],
     },
     operations: ['video.generations'],

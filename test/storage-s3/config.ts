@@ -1,8 +1,9 @@
 import { s3Storage } from '@frogbotai/storage-s3';
 import type { CollectionConfig } from 'frogbot';
+import { todoTools } from 'frogbot/tools';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
-import { bucket, chatsSlug, mediaSlug, s3ClientConfig, usersSlug } from './shared.js';
+import { agentSlug, bucket, chatsSlug, mediaSlug, s3ClientConfig, usersSlug } from './shared.js';
 
 const Users: CollectionConfig = {
   slug: usersSlug,
@@ -21,11 +22,38 @@ const Media: CollectionConfig = {
 const Chats: CollectionConfig = {
   slug: chatsSlug,
   chat: true,
+  access: { read: ({ req }) => (req.user ? { user: { equals: req.user.id } } : false) },
   fields: [],
 };
 
 export default await buildTestConfig({
   collections: [Users, Media, Chats],
+  ai: {
+    defaultModel: 'test/vision',
+    providers: {
+      test: {
+        type: 'openai-compatible',
+        baseUrl: 'http://127.0.0.1:3988/v1',
+        apiKey: 'test-key',
+        models: [
+          {
+            id: 'vision',
+            mode: 'chat',
+            modalities: { input: ['text', 'image'], output: ['text'] },
+          },
+        ],
+      },
+    },
+  },
+  agents: [
+    {
+      slug: agentSlug,
+      model: 'test/vision',
+      instructions: 'Help the user.',
+      access: () => true,
+      tools: [...todoTools],
+    },
+  ],
   plugins: [
     s3Storage({
       collections: { [mediaSlug]: true },

@@ -72,6 +72,13 @@ export default await buildTestConfig({
             reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
           },
           { id: 'writer', mode: 'chat', reasoningOptions: [{ type: 'effort', values: ['max'] }] },
+          { id: 'reasoner', mode: 'chat', reasoning: true },
+          { id: 'text-only', mode: 'chat', modalities: { input: ['text'], output: ['text'] } },
+          {
+            id: 'media',
+            mode: 'chat',
+            modalities: { input: ['text', 'image', 'audio', 'video', 'pdf'], output: ['text'] },
+          },
         ],
       },
     },
@@ -86,7 +93,10 @@ export default await buildTestConfig({
     },
     {
       slug: questionAgentSlug,
-      model: { default: 'test/gpt-4.1-mini', options: ['test/thinker', 'test/writer'] },
+      model: {
+        default: 'test/gpt-4.1-mini',
+        options: ['test/thinker', 'test/writer', 'test/reasoner', 'test/text-only', 'test/media'],
+      },
       instructions: 'Ask before acting.',
       access: () => true,
       tools: [question, lookup],

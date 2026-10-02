@@ -838,9 +838,13 @@ describe('agent steer messages', () => {
 
     const prepareStep = agentState.prepared?.prepareStep as (args: {
       messages: ModelMessage[];
-    }) => Promise<unknown>;
+    }) => Promise<{ messages: ModelMessage[] }>;
+    const messages: ModelMessage[] = [{ role: 'user', content: 'Hello' }];
 
-    await expect(prepareStep({ messages: [] })).resolves.toEqual({ model: expect.anything() });
+    const step = await prepareStep({ messages });
+
+    expect(step).toEqual({ model: expect.anything(), messages });
+    expect(step.messages).toBe(messages);
   });
 
   it('does not steer runs without a chat', async () => {
@@ -863,5 +867,154 @@ describe('agent steer messages', () => {
     await prepareStep({ messages: [] });
 
     expect(turn.promoteSteerMessages).not.toHaveBeenCalled();
+  });
+});
+
+describe('agent model input pass', () => {
+  type PrepareStep = (args: {
+    messages: ModelMessage[];
+    stepNumber?: number;
+  }) => Promise<{ messages: ModelMessage[] }>;
+
+  const photo: ModelMessage = {
+    role: 'user',
+    content: [
+      { type: 'text', text: 'What is this?' },
+      { type: 'file', data: 'aGVsbG8=', mediaType: 'image/png', filename: 'photo.png' },
+    ],
+  };
+
+  const photoMarker: ModelMessage = {
+    role: 'user',
+    content: [
+      { type: 'text', text: 'What is this?' },
+      { type: 'text', text: "[Can't read photo.png: this model doesn't accept images]" },
+    ],
+  };
+
+  function mediaConfig(): SanitizedAIConfig {
+    return {
+      ...makeConfig(emptyHooks()),
+      providers: {
+        local: {
+          type: 'openai-compatible',
+          baseUrl: 'http://localhost:11434/v1',
+          models: [
+            {
+              id: 'media',
+              mode: 'chat',
+              modalities: { input: ['text', 'image', 'audio', 'video', 'pdf'], output: ['text'] },
+            },
+            { id: 'text-only', mode: 'chat', modalities: { input: ['text'], output: ['text'] } },
+          ],
+        },
+      },
+    } as SanitizedAIConfig;
+  }
+
+  async function startRun({
+    model,
+    tools,
+  }: {
+    model: string;
+    tools?: Parameters<typeof createAgentInstance>[0]['tools'];
+  }) {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: model, options: ['local/media', 'local/text-only'] },
+        instructions: 'Help',
+        tools,
+      },
+      makeDeps(mediaConfig(), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    return { agent, prepareStep: agentState.prepared?.prepareStep as PrepareStep };
+  }
+
+  it("replaces media the step's model can't read with a marker", async () => {
+    const { prepareStep } = await startRun({ model: 'local/text-only' });
+
+    const step = await prepareStep({ messages: [photo], stepNumber: 0 });
+
+    expect(step.messages).toEqual([photoMarker]);
+  });
+
+  it('sends the same messages when the model reads every attachment', async () => {
+    const { prepareStep } = await startRun({ model: 'local/media' });
+    const messages = [photo];
+
+    const step = await prepareStep({ messages, stepNumber: 0 });
+
+    expect(step.messages).toBe(messages);
+  });
+
+  it('replaces images from the step a steer switches to a text-only model', async () => {
+    const { prepareStep } = await startRun({ model: 'local/media' });
+    const messages = [photo];
+
+    const before = await prepareStep({ messages, stepNumber: 0 });
+
+    turn.promoteSteerMessages.mockResolvedValue([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Shorter' }] },
+        selection: { model: 'local/text-only' },
+      },
+    ]);
+
+    const after = await prepareStep({ messages, stepNumber: 1 });
+
+    expect(before.messages).toBe(messages);
+    expect(after.messages).toEqual([
+      photoMarker,
+      { role: 'user', content: [{ type: 'text', text: 'Shorter' }] },
+    ]);
+  });
+
+  it('loads steered pasted text with its label', async () => {
+    const { prepareStep } = await startRun({ model: 'local/media' });
+
+    turn.promoteSteerMessages.mockResolvedValue([
+      {
+        message: {
+          id: 'steer-1',
+          role: 'user',
+          parts: [{ type: 'data-paste', data: { text: 'line one' } }],
+        },
+        selection: {},
+      },
+    ]);
+
+    const step = await prepareStep({ messages: [], stepNumber: 0 });
+
+    expect(step.messages).toEqual([
+      { role: 'user', content: [{ type: 'text', text: 'Pasted text:\nline one' }] },
+    ]);
+  });
+
+  it('still skips server tools in a client-tool step whose messages the pass replaced', async () => {
+    const { agent, prepareStep } = await startRun({
+      model: 'local/text-only',
+      tools: [lookup, question],
+    });
+
+    const toolApproval = agentState.prepared?.toolApproval as (args: {
+      toolCall: { toolName: string };
+      messages: ModelMessage[];
+    }) => string;
+    const execute = agent.aiAgent.tools.lookup!.execute!;
+
+    const { messages } = await prepareStep({ messages: [photo], stepNumber: 0 });
+
+    toolApproval({ toolCall: { toolName: 'question' }, messages });
+
+    expect(messages).not.toEqual([photo]);
+    expect(
+      await execute({ query: 'a' }, { toolCallId: 'call-1', messages, context: {} } as never),
+    ).toEqual(SKIPPED_FOR_CLIENT_INPUT);
+    expect(lookup.execute).not.toHaveBeenCalled();
   });
 });
