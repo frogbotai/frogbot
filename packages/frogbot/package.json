@@ -113,11 +113,15 @@
     "chat": "^4.40.0",
     "croner": "10.0.1",
     "drizzle-orm": "0.45.2",
+    "fflate": "0.8.3",
     "json-schema-to-typescript": "^15.0.3",
+    "mammoth": "1.13.0",
     "payload": "3.90.1",
     "prettier": "^3.2.5",
+    "read-excel-file": "9.3.10",
     "to-snake-case": "1.0.0",
     "tsx": "^4.19.2",
+    "yauzl": "3.4.0",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
@@ -132,6 +136,7 @@
     "@ai-sdk/otel": "1.0.116",
     "@types/node": "^22.10.2",
     "@types/to-snake-case": "1.0.0",
+    "@types/yauzl": "3.4.0",
     "eslint": "^9.16.0",
     "next": "15.4.10",
     "pino": "^9.14.0",

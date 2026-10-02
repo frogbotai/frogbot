@@ -8,6 +8,7 @@ import {
   test,
 } from '@playwright/test';
 
+import { encryptedOfficeFile, reportDocx, reportText, xlsxFile } from '../__helpers/shared/office';
 import { signIn } from './__helpers/signIn';
 import {
   agentSlug,
@@ -37,11 +38,19 @@ const photo = {
   buffer: Buffer.from(imageBase64, 'base64'),
 };
 
-const docx = {
-  name: 'report.docx',
-  mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  buffer: Buffer.concat([Buffer.from('PK\u0003\u0004', 'latin1'), Buffer.alloc(64)]),
+const docxType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+const xlsxType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+const brokenZip = Buffer.concat([Buffer.from('PK\u0003\u0004', 'latin1'), Buffer.alloc(64)]);
+
+const pptx = {
+  name: 'report.pptx',
+  mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  buffer: brokenZip,
 };
+
+const brokenDocx = { name: 'report.docx', mimeType: docxType, buffer: brokenZip };
 
 test.setTimeout(120_000);
 
@@ -58,6 +67,29 @@ test.beforeEach(async ({ page, request }) => {
 test.afterEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 });
+
+function exportXlsx(rows: number) {
+  const data = Array.from(
+    { length: rows },
+    (_, index) => `<row r="${index + 1}"><c r="A${index + 1}"><v>${index + 1}</v></c></row>`,
+  );
+
+  return Buffer.from(
+    xlsxFile({ sheets: [{ name: 'Export', xml: `<sheetData>${data.join('')}</sheetData>` }] }),
+  );
+}
+
+function trackDownloads(page: Page) {
+  const downloads: Request[] = [];
+
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.startsWith(`/api/${assetsSlug}/file/`)) {
+      downloads.push(request);
+    }
+  });
+
+  return downloads;
+}
 
 function trackUploads(page: Page) {
   const uploads: Request[] = [];
@@ -365,15 +397,15 @@ test('an unsupported file shows a red card, is never uploaded, and the message s
 }) => {
   const uploads = trackUploads(page);
 
-  await pickFiles({ page, files: [docx] });
+  await pickFiles({ page, files: [pptx] });
 
   const card = composerCard(page);
 
   await expect(card).toHaveAttribute('data-state', 'refused');
-  await expect(card).toHaveAccessibleName("report.docx, DOCX, won't be sent");
+  await expect(card).toHaveAccessibleName("report.pptx, PPTX, won't be sent");
   await expect(card).toHaveAccessibleDescription("Won't be sent. This file type isn't supported.");
   await expect(composerStatus(page)).toHaveText(
-    "report.docx won't be sent: this file type isn't supported",
+    "report.pptx won't be sent: this file type isn't supported",
   );
 
   const parts = await send({ page, prompt: 'Summarise the report.' });
@@ -386,7 +418,232 @@ test('an unsupported file shows a red card, is never uploaded, and the message s
   const texts = await providerUserTexts(request);
 
   expect(texts).toContain('Summarise the report.');
+  expect(texts.join('\n')).not.toContain('report.pptx');
+});
+
+test('a Word document becomes a DOCX text card that opens, and the agent receives its text', async ({
+  page,
+  request,
+}) => {
+  const downloads = trackDownloads(page);
+  const uploadResponse = waitForUpload(page);
+
+  await pickFiles({
+    page,
+    files: [{ name: 'report.docx', mimeType: docxType, buffer: Buffer.from(reportDocx()) }],
+  });
+
+  const uploaded = await uploadResponse;
+
+  expect(uploaded.status()).toBe(201);
+
+  const { doc: asset } = await uploaded.json();
+
+  expect(asset).toMatchObject({ filename: 'report.docx', mimeType: docxType, text: reportText });
+
+  const card = composerCard(page);
+
+  await expect(card).toHaveAttribute('data-state', 'text');
+  await expect(card).toHaveAccessibleName('report.docx, DOCX, ready');
+  await expect(composerStatus(page)).toHaveText('report.docx attached as text');
+
+  await card.getByRole('button', { name: 'Open report.docx', exact: true }).click();
+
+  const viewer = page.getByRole('dialog', { name: 'report.docx' });
+
+  await expect(viewer.locator('pre')).toHaveText(reportText);
+
+  await viewer.getByRole('button', { name: 'Close', exact: true }).click();
+
+  await expect(viewer).toHaveCount(0);
+
+  const parts = await send({ page, prompt: 'Summarise the report.' });
+
+  expect(parts).toContainEqual({
+    type: 'file-reference',
+    id: asset.id,
+    filename: 'report.docx',
+    mediaType: docxType,
+  });
+
+  expect(await providerUserTexts(request)).toContain(`Attached file "report.docx":\n${reportText}`);
+
+  const sentCard = page.locator('.fb-message').getByTestId('attachment-card');
+
+  await expect(sentCard).toHaveAttribute('data-state', 'text');
+  await expect(sentCard).toHaveAccessibleName('report.docx, DOCX, ready');
+
+  expect(downloads).toHaveLength(0);
+});
+
+test("a Word document that can't be read shows a red card without Retry, and the rest of the message sends", async ({
+  page,
+  request,
+}) => {
+  const notesUpload = waitForUpload(page);
+
+  await pickFiles({
+    page,
+    files: [{ name: 'notes.md', mimeType: 'text/markdown', buffer: Buffer.from('# Notes\n') }],
+  });
+
+  expect((await notesUpload).status()).toBe(201);
+
+  await expect(composerCard(page)).toHaveAttribute('data-state', 'text');
+
+  const refusalResponse = waitForUpload(page);
+
+  await pickFiles({ page, files: [brokenDocx] });
+
+  const refusal = await refusalResponse;
+
+  expect(refusal.status()).toBe(400);
+  expect((await refusal.json()).errors[0]).toMatchObject({
+    name: 'ValidationError',
+    data: {
+      errors: [
+        {
+          path: 'file',
+          message: "report.docx couldn't be read: it isn't a valid Word or Excel file.",
+        },
+      ],
+    },
+  });
+
+  const card = page
+    .locator('.fb-composer')
+    .getByRole('group', { name: "report.docx, DOCX, won't be sent", exact: true });
+
+  await expect(card).toHaveAttribute('data-state', 'refused');
+  await expect(card).toHaveAccessibleDescription("Won't be sent. This file couldn't be read.");
+  await expect(card.getByRole('button', { name: /Retry/ })).toHaveCount(0);
+  await expect(card.getByRole('button', { name: 'Remove report.docx', exact: true })).toBeVisible();
+  await expect(composerStatus(page)).toHaveText(
+    "report.docx won't be sent: this file couldn't be read",
+  );
+
+  const parts = await send({ page, prompt: 'Summarise my notes.' });
+
+  expect(parts.filter(({ type }) => type === 'file-reference')).toEqual([
+    expect.objectContaining({ filename: 'notes.md' }),
+  ]);
+
+  await expect(composerCard(page)).toHaveCount(0);
+
+  const texts = await providerUserTexts(request);
+
+  expect(texts).toContain('Attached file "notes.md":\n# Notes\n');
   expect(texts.join('\n')).not.toContain('report.docx');
+
+  const assets = await page.request.get(`/api/${assetsSlug}`);
+
+  expect(await assets.json()).toMatchObject({ totalDocs: 1 });
+});
+
+test('a Word document removed while it uploads is left out of the message', async ({
+  page,
+  request,
+}) => {
+  let release!: () => void;
+
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  await page.route(`**/api/${assetsSlug}`, async (route) => {
+    if (route.request().method() === 'POST') await held;
+
+    await route.continue();
+  });
+
+  await pickFiles({
+    page,
+    files: [{ name: 'report.docx', mimeType: docxType, buffer: Buffer.from(reportDocx()) }],
+  });
+
+  const card = composerCard(page);
+
+  await expect(card).toHaveAccessibleName('report.docx, DOCX, uploading');
+
+  await card.getByRole('button', { name: 'Remove report.docx', exact: true }).click();
+
+  await expect(composerCard(page)).toHaveCount(0);
+  await expect(composerStatus(page)).toHaveText('report.docx removed');
+
+  const uploaded = waitForUpload(page);
+
+  release();
+
+  expect((await uploaded).status()).toBe(201);
+
+  await expect(composerCard(page)).toHaveCount(0);
+
+  const parts = await send({ page, prompt: 'Anything attached?' });
+
+  expect(parts).toEqual([{ type: 'text', text: 'Anything attached?' }]);
+  expect((await providerUserTexts(request)).join('\n')).not.toContain('report.docx');
+});
+
+test('a password-protected workbook shows a red card without Retry', async ({ page }) => {
+  const refusalResponse = waitForUpload(page);
+
+  await pickFiles({
+    page,
+    files: [
+      { name: 'locked.xlsx', mimeType: xlsxType, buffer: Buffer.from(encryptedOfficeFile()) },
+    ],
+  });
+
+  const refusal = await refusalResponse;
+
+  expect(refusal.status()).toBe(400);
+  expect((await refusal.json()).errors[0].data.errors).toEqual([
+    { path: 'file', message: "locked.xlsx couldn't be read: it is password-protected." },
+  ]);
+
+  const card = composerCard(page);
+
+  await expect(card).toHaveAccessibleName("locked.xlsx, XLSX, won't be sent");
+  await expect(card).toHaveAccessibleDescription("Won't be sent. This file couldn't be read.");
+  await expect(card.getByRole('button', { name: /Retry/ })).toHaveCount(0);
+});
+
+test('a spreadsheet over 1,000 rows opens with the note the agent also receives', async ({
+  page,
+  request,
+}) => {
+  const note = '[export.xlsx: showing the first 1,000 of 1,001 rows of sheet Export]';
+  const uploadResponse = waitForUpload(page);
+
+  await pickFiles({
+    page,
+    files: [{ name: 'export.xlsx', mimeType: xlsxType, buffer: exportXlsx(1_001) }],
+  });
+
+  const uploaded = await uploadResponse;
+
+  expect(uploaded.status()).toBe(201);
+
+  const { doc: asset } = await uploaded.json();
+
+  expect(asset.text).toMatch(/^Sheet "Export":\n1\n2\n/);
+  expect(asset.text.endsWith(`\n1000\n${note}`)).toBe(true);
+
+  const card = composerCard(page);
+
+  await expect(card).toHaveAccessibleName('export.xlsx, XLSX, ready');
+
+  await card.getByRole('button', { name: 'Open export.xlsx', exact: true }).click();
+
+  const viewer = page.getByRole('dialog', { name: 'export.xlsx' });
+
+  expect(await viewer.locator('pre').textContent()).toBe(asset.text);
+
+  await viewer.getByRole('button', { name: 'Close', exact: true }).click();
+
+  await send({ page, prompt: 'Total the export.' });
+
+  expect(await providerUserTexts(request)).toContain(`Attached file "export.xlsx":\n${asset.text}`);
 });
 
 test('a code file becomes a JS text card that opens, and the agent receives it under its real name', async ({
@@ -493,7 +750,9 @@ test('a model that reads only text refuses an image and leaves images out of the
 
   const accept = await page.locator('.fb-composer input[type="file"]').getAttribute('accept');
 
-  expect(accept?.split(',')).toEqual(expect.arrayContaining(['text/*', '.md', '.js']));
+  expect(accept?.split(',')).toEqual(
+    expect.arrayContaining(['text/*', '.md', '.js', '.docx', '.xlsx']),
+  );
   expect(accept?.split(',')).not.toContain('image/png');
 
   await pickFiles({ page, files: [photo] });
@@ -632,7 +891,7 @@ for (const theme of ['light', 'dark'] as const) {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
-    await pickFiles({ page, files: [docx] });
+    await pickFiles({ page, files: [pptx] });
 
     const card = composerCard(page);
 

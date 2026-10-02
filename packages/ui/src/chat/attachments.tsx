@@ -12,6 +12,7 @@ import {
   extensionLabel,
   isMediaKind,
   isUploadBlocked,
+  officeKind,
   typeLabel,
 } from './attachment-kind.js';
 
@@ -35,7 +36,7 @@ export type ComposerModelInput = AttachmentMediaKind | 'text';
 type AttachmentItem = {
   key: number;
   name: string;
-  size: number;
+  size?: number;
   kind: AttachmentKind;
   state: AttachmentCardState;
   origin?: 'paste';
@@ -59,6 +60,8 @@ const MEDIA_WORDS: Record<AttachmentMediaKind, string> = {
 
 const UNSUPPORTED = "this file type isn't supported";
 
+const UNREADABLE = "This file couldn't be read.";
+
 function attachedMessage({ name, kind, origin }: AttachmentDraft): string {
   if (origin === 'paste') return `${name} attached`;
 
@@ -69,8 +72,22 @@ function uploadErrorReason(error: unknown): string | undefined {
   return error instanceof FrogBotSDKError && error.message ? error.message : undefined;
 }
 
-function cardLabel({ name, kind, origin }: AttachmentItem): string | undefined {
-  return kind === 'text' ? typeLabel({ filename: name, origin }) : extensionLabel(name);
+function isFileRefusal(error: unknown): boolean {
+  if (!(error instanceof FrogBotSDKError) || error.status !== 400) return false;
+
+  const [detail] = error.errors;
+
+  if (detail?.name !== 'ValidationError') return false;
+
+  const data = detail.data as { errors?: { path?: unknown }[] } | undefined;
+
+  return Boolean(data?.errors?.some((entry) => entry.path === 'file'));
+}
+
+function cardLabel({ name, kind, origin, source }: AttachmentItem): string | undefined {
+  if (kind !== 'text') return extensionLabel(name);
+
+  return typeLabel({ filename: name, mediaType: source?.type, origin });
 }
 
 export function useAttachments({
@@ -96,6 +113,18 @@ export function useAttachments({
       current.map((item) => (item.key === key ? { ...item, ...changes } : item)),
     );
 
+  const refusalMessage = ({
+    name,
+    kind,
+    reason,
+  }: Pick<AttachmentDraft, 'name' | 'kind' | 'reason'>) => {
+    if (reason === UNREADABLE) return `${name} won't be sent: this file couldn't be read`;
+
+    if (!reason || !isMediaKind(kind)) return `${name} won't be sent: ${UNSUPPORTED}`;
+
+    return `${name} won't be sent: ${modelName ?? 'this model'} can't read ${MEDIA_WORDS[kind]}`;
+  };
+
   const upload = async (item: AttachmentItem) => {
     if (!sdk || !assetsSlug || !item.source) return;
 
@@ -115,12 +144,20 @@ export function useAttachments({
 
       update(item.key, {
         state: item.kind === 'text' ? 'text' : 'ready',
+        text: typeof uploaded.text === 'string' ? uploaded.text : item.text,
         attachment: reference,
       });
 
       setStatus(attachedMessage(item));
     } catch (error) {
       if (removed.current.has(item.key)) return;
+
+      if (isFileRefusal(error)) {
+        update(item.key, { state: 'refused', reason: UNREADABLE });
+        setStatus(refusalMessage({ ...item, reason: UNREADABLE }));
+
+        return;
+      }
 
       if (error instanceof FrogBotSDKError && error.status === 413) {
         update(item.key, { state: 'too-large' });
@@ -135,6 +172,10 @@ export function useAttachments({
   };
 
   const describe = async (file: File): Promise<AttachmentDraft> => {
+    if (officeKind({ mediaType: file.type, filename: file.name })) {
+      return { name: file.name, kind: 'text', state: 'uploading', source: file };
+    }
+
     const kind = await attachmentKind(file);
     const draft = { name: file.name, size: file.size, kind };
     const blocked = isUploadBlocked(file);
@@ -172,17 +213,13 @@ export function useAttachments({
       size: file.size,
       kind: 'binary',
       state: 'failed',
-      reason: "This file couldn't be read.",
+      reason: UNREADABLE,
     }));
 
-  const announcement = ({ name, kind, reason, state }: AttachmentDraft) => {
-    if (state === 'failed') return `Upload failed: ${name}`;
+  const announcement = (draft: AttachmentDraft) => {
+    if (draft.state === 'failed') return `Upload failed: ${draft.name}`;
 
-    if (state !== 'refused') return undefined;
-
-    if (!reason || !isMediaKind(kind)) return `${name} won't be sent: ${UNSUPPORTED}`;
-
-    return `${name} won't be sent: ${modelName ?? 'this model'} can't read ${MEDIA_WORDS[kind]}`;
+    return draft.state === 'refused' ? refusalMessage(draft) : undefined;
   };
 
   const insert = (drafts: AttachmentDraft[]) => {

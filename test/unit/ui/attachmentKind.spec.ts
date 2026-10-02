@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 
 import { attachmentKind as serverKind } from '../../../packages/frogbot/src/uploads/attachmentParts.js';
+import { officeKind as serverOfficeKind } from '../../../packages/frogbot/src/uploads/office/officeText.js';
 import {
   acceptFor,
   attachmentKind,
@@ -13,6 +14,7 @@ import {
   extensionLabel,
   isUploadBlocked,
   kindFrom,
+  officeKind,
   TEXT_EXTENSIONS,
   typeLabel,
 } from '../../../packages/ui/src/chat/attachment-kind.js';
@@ -39,6 +41,14 @@ describe('browser attachment kinds', () => {
     ({ kind, ...file }) => {
       expect(kindFrom(file)).toBe(kind);
       expect(serverKind(file)).toBe(kind);
+    },
+  );
+
+  it.each(attachmentKindCases)(
+    'matches the server on whether $name is a Word or Excel file',
+    ({ office, ...file }) => {
+      expect(officeKind(file)).toBe(office);
+      expect(serverOfficeKind(file)).toBe(office);
     },
   );
 
@@ -129,6 +139,13 @@ describe('typeLabel', () => {
     expect(typeLabel({ filename })).toBe(label);
   });
 
+  it.each(attachmentKindCases.filter((entry) => entry.office))(
+    'labels $name by its Office kind',
+    ({ filename, mediaType, office }) => {
+      expect(typeLabel({ filename, mediaType })).toBe(office!.toUpperCase());
+    },
+  );
+
   it('labels pastes PASTED whatever their name', () => {
     expect(typeLabel({ filename: 'pasted-1.txt', origin: 'paste' })).toBe('PASTED');
   });
@@ -167,6 +184,25 @@ describe('acceptFor', () => {
     expect(accept).not.toContain('audio/*');
     expect(accept).not.toContain('video/*');
     expect(accept).not.toContain('image/heic');
+  });
+
+  it.each([
+    { model: 'a text-only model', modelInputs: ['text'] as const },
+    { model: 'an unknown model', modelInputs: undefined },
+  ])('accepts Word and Excel files for $model', ({ modelInputs }) => {
+    const accept = accepted(modelInputs);
+
+    expect(accept).toEqual(
+      expect.arrayContaining([
+        '.docx',
+        '.xlsx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ]),
+    );
+    expect(accept).not.toContain('.pptx');
+    expect(accept).not.toContain('.doc');
+    expect(accept).not.toContain('.xls');
   });
 
   it('accepts text and every media kind when the model is unknown', () => {

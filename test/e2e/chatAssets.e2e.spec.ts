@@ -8,6 +8,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { generateDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
+import { reportDocx, reportText } from '../__helpers/shared/office.js';
 import { startModelProvider } from './fixtures/chat-assets/provider.js';
 import {
   agentSlug,
@@ -26,6 +27,8 @@ import {
   usersSlug,
 } from './fixtures/chat-assets/shared.js';
 
+const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
 type User = { id: number | string; token: string };
 
 type Asset = {
@@ -36,6 +39,7 @@ type Asset = {
   url: string;
   owner: number | string;
   chat: number | string | null;
+  text: string | null;
 };
 
 type Message = {
@@ -236,6 +240,7 @@ describe('chat assets HTTP e2e', () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
     provider.requests.length = 0;
+    provider.titleRequests.length = 0;
     provider.unexpected.length = 0;
 
     owner = await createUser('owner');
@@ -289,7 +294,7 @@ describe('chat assets HTTP e2e', () => {
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            { type: 'text', text: note },
+            { type: 'text', text: `Attached file "note.txt":\n${note}` },
             {
               type: 'image_url',
               image_url: { url: `data:image/png;base64,${image.toString('base64')}` },
@@ -430,6 +435,29 @@ describe('chat assets HTTP e2e', () => {
     expect(messages.map(({ role }) => role)).toEqual(['user', 'assistant', 'user', 'assistant']);
     expect(messages[0]).toEqual(firstTranscript[0]);
     expect(await readAsset(asset)).toMatchObject({ owner: owner.id, chat: chatId });
+  });
+
+  it('sends an uploaded Word document to the model as labelled text', async () => {
+    const document = await upload({
+      filename: 'report.docx',
+      mimeType: DOCX_TYPE,
+      data: Buffer.from(reportDocx()),
+    });
+
+    await submit({ incoming: message([document]), accept: 'application/json' });
+
+    expect(document).toMatchObject({
+      filename: 'report.docx',
+      mimeType: DOCX_TYPE,
+      text: reportText,
+    });
+    expect(provider.requests[0]?.messages[1]).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        { type: 'text', text: `Attached file "report.docx":\n${reportText}` },
+      ],
+    });
   });
 
   it('rejects another user’s uploaded reference before calling the model', async () => {

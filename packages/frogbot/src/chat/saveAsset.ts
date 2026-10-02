@@ -1,4 +1,5 @@
 import type { ToolCtx } from '../tools/types.js';
+import { SKIP_ASSET_TEXT_CONTEXT_KEY } from './collections/assets.js';
 
 export type SaveChatAssetProps = {
   ctx: ToolCtx;
@@ -30,15 +31,22 @@ export async function saveChatAsset({
   const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
   const owner = ctx.req.user?.id;
+  const skipText = ctx.req.context?.[SKIP_ASSET_TEXT_CONTEXT_KEY];
 
-  const doc = await ctx.req.frogbot.create({
-    collection: chat.assetsSlug,
-    data: { chat: ctx.agent.chatId, ...(owner !== undefined ? { owner } : {}) },
-    file: { data: buffer, mimetype: mimeType, name: filename, size: buffer.byteLength },
-    depth: 0,
-    req: ctx.req,
-    overrideAccess: true,
-  });
+  try {
+    const doc = await ctx.req.frogbot.create({
+      collection: chat.assetsSlug,
+      data: { chat: ctx.agent.chatId, ...(owner !== undefined ? { owner } : {}) },
+      file: { data: buffer, mimetype: mimeType, name: filename, size: buffer.byteLength },
+      context: { [SKIP_ASSET_TEXT_CONTEXT_KEY]: true },
+      depth: 0,
+      req: ctx.req,
+      overrideAccess: true,
+    });
 
-  return doc as unknown as ChatAsset;
+    return doc as unknown as ChatAsset;
+  } finally {
+    if (skipText === undefined) delete ctx.req.context[SKIP_ASSET_TEXT_CONTEXT_KEY];
+    else ctx.req.context[SKIP_ASSET_TEXT_CONTEXT_KEY] = skipText;
+  }
 }

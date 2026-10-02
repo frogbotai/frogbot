@@ -17,7 +17,8 @@ type FileReferencePartProps = {
 };
 
 type LoadedAttachment = { size?: number } & (
-  { kind: 'text'; filename: string; text: string } | { kind: 'file'; part: FileUIPart }
+  | { kind: 'text'; filename: string; mediaType: string; text: string }
+  | { kind: 'file'; part: FileUIPart }
 );
 
 function AttachmentStatus({ filename, loading }: { filename?: string; loading: boolean }) {
@@ -77,6 +78,7 @@ function FileReferencePartInner({
         filename: string;
         mimeType: string;
         filesize?: number | null;
+        text?: string | null;
       }>(sdk, `${collectionPath}/${encodeURIComponent(String(id))}?depth=0`, {
         signal: controller.signal,
       });
@@ -84,6 +86,20 @@ function FileReferencePartInner({
       if (controller.signal.aborted) return;
 
       if (!asset.filename || !asset.mimeType) throw new Error('Attachment unavailable');
+
+      if (typeof asset.text === 'string') {
+        setState({
+          sdk,
+          attachment: {
+            kind: 'text',
+            filename: asset.filename,
+            mediaType: asset.mimeType,
+            text: asset.text,
+          },
+        });
+
+        return;
+      }
 
       const response = await sdk.request(
         `${collectionPath}/file/${encodeURIComponent(asset.filename)}`,
@@ -102,7 +118,13 @@ function FileReferencePartInner({
 
         setState({
           sdk,
-          attachment: { kind: 'text', filename: asset.filename, size, text },
+          attachment: {
+            kind: 'text',
+            filename: asset.filename,
+            mediaType: asset.mimeType,
+            size,
+            text,
+          },
         });
 
         return;
@@ -147,7 +169,7 @@ function FileReferencePartInner({
       <AttachmentCard
         name={name}
         state="text"
-        typeLabel={typeLabel({ filename: name, origin })}
+        typeLabel={typeLabel({ filename: name, mediaType: attachment.mediaType, origin })}
         text={attachment.text}
         size={attachment.size}
       />

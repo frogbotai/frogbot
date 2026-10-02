@@ -2,6 +2,8 @@ export type AttachmentKind = 'image' | 'audio' | 'video' | 'pdf' | 'text' | 'bin
 
 export type AttachmentMediaKind = Extract<AttachmentKind, 'image' | 'audio' | 'video' | 'pdf'>;
 
+export type OfficeKind = 'docx' | 'xlsx';
+
 export type AttachmentFile = {
   mediaType?: string;
   filename?: string;
@@ -28,6 +30,31 @@ const TEXT_TYPES = new Set([
   'application/x-yaml',
   'application/xml',
   'application/yaml',
+]);
+
+const OFFICE_TYPES = new Map<string, OfficeKind>([
+  ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx'],
+  ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx'],
+]);
+
+const OTHER_OFFICE_EXTENSIONS = new Set([
+  'doc',
+  'docm',
+  'dot',
+  'dotm',
+  'dotx',
+  'odp',
+  'ods',
+  'odt',
+  'ppt',
+  'pptm',
+  'pptx',
+  'xls',
+  'xlsb',
+  'xlsm',
+  'xlt',
+  'xltm',
+  'xltx',
 ]);
 
 export const TEXT_EXTENSIONS = new Set([
@@ -170,6 +197,8 @@ const MEDIA_ACCEPT: Record<AttachmentMediaKind, string[]> = {
 
 const MEDIA_KINDS: AttachmentMediaKind[] = ['image', 'audio', 'video', 'pdf'];
 
+const OFFICE_ACCEPT = [...OFFICE_TYPES.keys(), '.docx', '.xlsx'];
+
 function normalizeType(mediaType: string | undefined): string {
   const type = mediaType?.split(';', 1)[0]?.trim().toLowerCase() ?? '';
 
@@ -249,6 +278,16 @@ export function kindFrom({
   return isTextType(type) || TEXT_EXTENSIONS.has(fileExtension(filename)) ? 'text' : 'binary';
 }
 
+export function officeKind({ mediaType, filename }: AttachmentFile): OfficeKind | undefined {
+  const extension = fileExtension(filename);
+
+  if (extension === 'docx' || extension === 'xlsx') return extension;
+
+  if (OTHER_OFFICE_EXTENSIONS.has(extension)) return undefined;
+
+  return OFFICE_TYPES.get(normalizeType(mediaType));
+}
+
 export async function attachmentKind(file: File): Promise<AttachmentKind> {
   const certain = certainKind({ mediaType: file.type, filename: file.name });
 
@@ -269,15 +308,19 @@ export function extensionLabel(filename?: string): string | undefined {
   return extension && extension.length <= 5 ? extension.toUpperCase() : undefined;
 }
 
-export function typeLabel({ filename, origin }: { filename?: string; origin?: 'paste' }): string {
+export function typeLabel({
+  filename,
+  mediaType,
+  origin,
+}: AttachmentFile & { origin?: 'paste' }): string {
   if (origin === 'paste') return 'PASTED';
 
-  return extensionLabel(filename) ?? 'TEXT';
+  return officeKind({ mediaType, filename })?.toUpperCase() ?? extensionLabel(filename) ?? 'TEXT';
 }
 
 export function acceptFor(modelInputs?: readonly (AttachmentMediaKind | 'text')[]): string {
   const extensions = [...TEXT_EXTENSIONS].map((extension) => `.${extension}`);
-  const text = ['text/*', ...TEXT_TYPES, '.svg', ...extensions];
+  const text = ['text/*', ...TEXT_TYPES, '.svg', ...extensions, ...OFFICE_ACCEPT];
   const media = modelInputs
     ? MEDIA_KINDS.filter((kind) => modelInputs.includes(kind))
     : MEDIA_KINDS;

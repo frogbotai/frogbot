@@ -9,6 +9,7 @@ const apiBase = 'https://frogbot.example/custom-api';
 const assetsSlug = 'private-assets';
 const metadataPath = `/${assetsSlug}/asset-1?depth=0`;
 const filePath = `/${assetsSlug}/file/chart%20one.png`;
+const docxType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const largeHint =
   'Large file (11.2 MB). In long chats, older files may be left out to keep requests small.';
 const reference = {
@@ -189,6 +190,95 @@ describe('file references', () => {
     expect(screen.getByRole('dialog', { name: 'app.js' }).querySelector('pre')?.textContent).toBe(
       "console.log('hi');",
     );
+  });
+
+  it('renders a Word asset as a text card from its stored text, without downloading the file', async () => {
+    const user = userEvent.setup();
+    const text = '# Quarterly report\n\nIntro paragraph.';
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({ id: 'asset-1', filename: 'report.docx', mimeType: docxType, text }),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'report.docx', mediaType: docxType }} />
+      </ChatProvider>,
+    );
+
+    const card = await screen.findByRole('group', { name: 'report.docx, DOCX, ready' });
+
+    expect(card.dataset.state).toBe('text');
+    expect(card.querySelector('.fb-attachment-card__snippet')?.textContent).toBe(text);
+    expect(adapter.fetch.mock.calls.some(([url]) => String(url).includes('/file/'))).toBe(false);
+
+    await user.click(screen.getByRole('button', { name: 'Open report.docx' }));
+
+    expect(
+      screen.getByRole('dialog', { name: 'report.docx' }).querySelector('pre')?.textContent,
+    ).toBe(text);
+  });
+
+  it('labels a Word asset with no extension DOCX', async () => {
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({ id: 'asset-1', filename: 'report', mimeType: docxType, text: '# Report' }),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'report', mediaType: docxType }} />
+      </ChatProvider>,
+    );
+
+    expect(await screen.findByRole('group', { name: 'report, DOCX, ready' })).toBeTruthy();
+  });
+
+  it('shows no large-file hint on a Word asset over 10 MB, since only its text is sent', async () => {
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({
+          id: 'asset-1',
+          filename: 'report.docx',
+          mimeType: docxType,
+          filesize: 11_200_000,
+          text: '# Report',
+        }),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'report.docx', mediaType: docxType }} />
+      </ChatProvider>,
+    );
+
+    const card = await screen.findByRole('group', { name: 'report.docx, DOCX, ready' });
+
+    expect(card.className).not.toContain('fb-attachment-card--large');
+    expect(card.getAttribute('aria-describedby')).toBeNull();
+    expect(screen.queryByText('Large file')).toBeNull();
+  });
+
+  it('shows a Word asset stored without text as a download link', async () => {
+    const adapter = createAdapter({
+      [metadataPath]: () =>
+        Response.json({ id: 'asset-1', filename: 'report.docx', mimeType: docxType, text: null }),
+      [`/${assetsSlug}/file/report.docx`]: () =>
+        new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00]), {
+          headers: { 'content-type': docxType },
+        }),
+    });
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={{ ...reference, filename: 'report.docx', mediaType: docxType }} />
+      </ChatProvider>,
+    );
+
+    const link = await screen.findByRole('link', { name: 'report.docx' });
+
+    expect(link.getAttribute('href')).toBe('blob:chat-asset');
+    expect(screen.queryByTestId('attachment-card')).toBeNull();
   });
 
   it('labels a pasted text asset PASTED', async () => {

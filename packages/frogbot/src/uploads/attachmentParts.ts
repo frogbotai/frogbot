@@ -220,6 +220,10 @@ export function unavailableMarker(file: { kind?: AttachmentKind; filename?: stri
   return `[Can't read ${markerName(file)}: the file couldn't be loaded]`;
 }
 
+export function unreadableFileMarker(file: { filename?: string }): string {
+  return `[Can't read ${markerName(file)}: the file couldn't be read]`;
+}
+
 export function repeatedMarker(file: { kind?: AttachmentKind; filename?: string }): string {
   return `[File repeated later: ${markerName(file)}]`;
 }
