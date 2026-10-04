@@ -1,7 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
-import { signIn } from './__helpers/signIn';
 import { chatsSlug, modelPort, usersSlug } from './fixtures/question/shared';
 
 let model: StubChatModel;
@@ -44,7 +43,6 @@ async function setModelPolicy({
 test.beforeEach(async ({ page }) => {
   model.reset();
 
-  await signIn(page);
   await setModelPolicy({ page, modelAccess: 'all', models: [] });
 
   await setModelPolicy({ page, modelAccess: 'selected', models: ['browser/thinker'] });

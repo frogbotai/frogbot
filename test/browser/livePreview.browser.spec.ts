@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { signIn } from './__helpers/signIn';
+import { signedOut } from './__helpers/signIn';
 
 const viewport = { width: 1440, height: 900 };
 
@@ -24,8 +24,6 @@ test.describe('live preview', () => {
   test.beforeEach(async ({ page }) => {
     id = undefined;
     slug = '';
-
-    await signIn(page);
 
     slug = `home-${Date.now()}`;
 
@@ -81,7 +79,7 @@ test.describe('live preview', () => {
   });
 
   test('anonymous visitors cannot read the preview page directly', async ({ browser, baseURL }) => {
-    anonymousPage = await browser.newPage();
+    anonymousPage = await browser.newPage({ storageState: signedOut });
 
     const response = await anonymousPage.goto(`${baseURL}/pages/${slug}`);
 

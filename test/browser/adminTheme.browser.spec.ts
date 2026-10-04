@@ -7,7 +7,7 @@ import {
   openPostCreate,
   readAdminColor,
 } from './__helpers/adminTheme';
-import { signIn } from './__helpers/signIn';
+import { signedOut } from './__helpers/signIn';
 
 function readAdminStyles(page: Page) {
   return page.evaluate(() => {
@@ -27,10 +27,6 @@ function readAdminStyles(page: Page) {
 }
 
 test.describe('FrogBot UI in the admin', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page);
-  });
-
   test('styles admin slot components with the light admin palette', async ({ page }) => {
     await openPostCreate(page, 'light');
 
@@ -555,10 +551,6 @@ test.describe('asChild links', () => {
   });
 
   test.describe('in the admin', () => {
-    test.beforeEach(async ({ page }) => {
-      await signIn(page);
-    });
-
     for (const theme of ['light', 'dark'] as const) {
       test(`a custom logout.Button link matches the built-in Settings item in the ${theme} admin`, async ({
         page,
@@ -615,21 +607,23 @@ test.describe('asChild links', () => {
     });
   });
 
-  test('a beforeLogin asChild Button link has no underline and matches the normal button', async ({
-    page,
-  }) => {
-    await signIn(page);
-    await page.context().clearCookies();
-    await page.goto('/login');
+  test.describe('signed out', () => {
+    test.use({ storageState: signedOut });
 
-    const link = page.getByTestId('login-link-probe');
+    test('a beforeLogin asChild Button link has no underline and matches the normal button', async ({
+      page,
+    }) => {
+      await page.goto('/login');
 
-    await expect(link).toBeVisible();
+      const link = page.getByTestId('login-link-probe');
 
-    const linkStyle = await readLinkStyle(link);
-    const buttonStyle = await readLinkStyle(page.getByTestId('login-button-probe'));
+      await expect(link).toBeVisible();
 
-    expect(linkStyle.textDecorationLine).toBe('none');
-    expect(linkStyle.color).toBe(buttonStyle.color);
+      const linkStyle = await readLinkStyle(link);
+      const buttonStyle = await readLinkStyle(page.getByTestId('login-button-probe'));
+
+      expect(linkStyle.textDecorationLine).toBe('none');
+      expect(linkStyle.color).toBe(buttonStyle.color);
+    });
   });
 });

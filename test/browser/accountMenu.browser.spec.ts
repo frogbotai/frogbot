@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { expandSidebar } from './__helpers/sidebar';
-import { signIn } from './__helpers/signIn';
+import { expandSidebar, waitForNavSettled } from './__helpers/sidebar';
 
 test.describe('account menu slots', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -9,7 +8,8 @@ test.describe('account menu slots', () => {
   test('account menu renders custom items around Settings and replaces Log out', async ({
     page,
   }) => {
-    await signIn(page);
+    await page.goto('/');
+    await waitForNavSettled(page);
     await expandSidebar(page);
 
     await page.getByRole('button', { name: 'Account' }).click();

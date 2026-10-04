@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
-import { signIn } from './__helpers/signIn';
 import {
   agentSlug,
   chatPicksPreference,
@@ -43,8 +42,6 @@ test.afterAll(async () => {
 
 test.beforeEach(async ({ page }) => {
   model.reset();
-
-  await signIn(page);
 
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 

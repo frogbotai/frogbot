@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-import { signIn } from './__helpers/signIn';
 import { apiKeysSlug, costKeyName, usageLogsSlug, usersSlug } from './fixtures/question/shared';
 
 let seeded: {
@@ -10,8 +9,6 @@ let seeded: {
 };
 
 test.beforeEach(async ({ page }) => {
-  await signIn(page);
-
   const seededResponse = await page.request.post('/api/browser/costs');
 
   expect(seededResponse.ok()).toBe(true);

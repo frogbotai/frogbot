@@ -8,11 +8,6 @@ import {
   expectTwoPixelStroke,
   iconStroke,
 } from './__helpers/sidebar';
-import { signIn } from './__helpers/signIn';
-
-test.beforeEach(async ({ page }) => {
-  await signIn(page);
-});
 
 test('renders a user-local client field built with useField and saves its value', async ({
   page,

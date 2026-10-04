@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { signIn } from './__helpers/signIn';
 import { agentSlug, chatsSlug, tasksSlug } from './fixtures/question/shared';
 
 const chatTitle = 'Quarterly enterprise refund requests and customer support follow-up planning';
@@ -11,8 +10,6 @@ test.setTimeout(120_000);
 test.use({ viewport: { width: 375, height: 667 } });
 
 test.beforeEach(async ({ page }) => {
-  await signIn(page);
-
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 });
 

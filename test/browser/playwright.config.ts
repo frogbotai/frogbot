@@ -201,6 +201,8 @@ const questionServer = {
   },
 };
 
+const authFile = (server: string) => path.join(dirname, '.auth', `${server}.json`);
+
 const setupProject = (server: string, port: number, signInOptions: SignInOptions = {}) => ({
   name: `${server}-setup`,
   testMatch: 'auth.setup.ts',
@@ -209,10 +211,11 @@ const setupProject = (server: string, port: number, signInOptions: SignInOptions
     baseURL: `http://localhost:${port}`,
     channel: 'chromium',
     signInOptions,
+    authFile: authFile(server),
   },
 });
 
-export default defineConfig<{ signInOptions: SignInOptions }>({
+export default defineConfig<{ signInOptions: SignInOptions; authFile: string }>({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
   outputDir: path.join(dirname, 'test-results'),
@@ -244,6 +247,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${pluginSeoPort}`,
         channel: 'chromium',
+        storageState: authFile('plugin-seo'),
       },
     },
     {
@@ -254,6 +258,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${chatAssetsPort}`,
         channel: 'chromium',
+        storageState: authFile('chat-assets'),
       },
     },
     {
@@ -275,6 +280,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${questionPort}`,
         channel: 'chromium',
+        storageState: authFile('question'),
       },
     },
     {
@@ -289,6 +295,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
       use: {
         ...devices['Desktop Firefox'],
         baseURL: `http://localhost:${questionPort}`,
+        storageState: authFile('question'),
       },
     },
     {
@@ -303,6 +310,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
       use: {
         ...devices['Desktop Safari'],
         baseURL: `http://localhost:${questionPort}`,
+        storageState: authFile('question'),
       },
     },
     {
@@ -317,6 +325,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${blankPort}`,
         channel: 'chromium',
+        storageState: authFile('blank'),
       },
     },
     {
@@ -327,6 +336,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${richTextPort}`,
         channel: 'chromium',
+        storageState: authFile('rich-text'),
       },
     },
     {
@@ -337,6 +347,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${livePreviewPort}`,
         channel: 'chromium',
+        storageState: authFile('live-preview'),
       },
     },
     {
@@ -351,6 +362,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${customFieldPort}`,
         channel: 'chromium',
+        storageState: authFile('custom-field'),
       },
     },
     {
@@ -360,6 +372,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
       use: {
         ...devices['Desktop Firefox'],
         baseURL: `http://localhost:${customFieldPort}`,
+        storageState: authFile('custom-field'),
       },
     },
     {
@@ -369,6 +382,7 @@ export default defineConfig<{ signInOptions: SignInOptions }>({
       use: {
         ...devices['Desktop Safari'],
         baseURL: `http://localhost:${customFieldPort}`,
+        storageState: authFile('custom-field'),
       },
     },
   ],

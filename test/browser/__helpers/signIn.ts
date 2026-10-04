@@ -4,6 +4,8 @@ export type SignInOptions = { adminRoute?: string; timeout?: number };
 
 export const user = { email: 'browser@example.com', password: 'browser-test-password' };
 
+export const signedOut = { cookies: [], origins: [] };
+
 async function waitForHydratedForm(page: Page) {
   await page.waitForFunction(() => {
     const form = document.querySelector('form');
