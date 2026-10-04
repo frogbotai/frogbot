@@ -1,3 +1,4 @@
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import {
@@ -284,11 +285,8 @@ export const getFile = defineAction({
       'name' in file && typeof file.name === 'string' ? file.name : `slack-${input.fileId}`;
     const mimeType =
       downloaded.headers.get('content-type')?.split(';')[0] || 'application/octet-stream';
-    const collection = req.frogbot.config.files?.slug;
 
-    if (!collection) {
-      throw new Error('[frogbot] Slack file downloads require the files collection.');
-    }
+    const collection = filesCollectionSlug(req, 'Slack');
 
     req.signal?.throwIfAborted();
 

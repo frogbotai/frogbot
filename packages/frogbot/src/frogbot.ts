@@ -469,11 +469,13 @@ async function initialize(
   }
 
   if (!options.disableOnInit) {
-    void frogbot.triggers.reconcile().catch((error: unknown) => {
-      frogbot.logger.warn(
-        `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
+    if (Object.keys(frogbot.config._internal.triggers).length) {
+      void frogbot.triggers.reconcile().catch((error: unknown) => {
+        frogbot.logger.warn(
+          `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+    }
 
     if (options.onInit) {
       await options.onInit(frogbot);

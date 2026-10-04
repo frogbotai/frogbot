@@ -99,9 +99,9 @@ describe('native Google Drive contract', () => {
           {
             slug: 'uploadFile',
             input: { file: { fileId: 'source' } },
-            expect: { error: 'requires the files collection' },
+            expect: { error: 'requires a files collection' },
           },
-          { slug: 'downloadFile', input: file, expect: { error: 'requires the files collection' } },
+          { slug: 'downloadFile', input: file, expect: { error: 'requires a files collection' } },
           { slug: 'getFile', input: file, expect: { result: metadata } },
           {
             slug: 'listFiles',
@@ -132,7 +132,7 @@ describe('native Google Drive contract', () => {
           {
             slug: 'setPublicAccess',
             input: file,
-            expect: { error: 'requires the files collection' },
+            expect: { error: 'requires a files collection' },
           },
           {
             slug: 'moveFile',

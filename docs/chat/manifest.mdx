@@ -42,13 +42,12 @@ An enabled chat configuration returns the resolved collection slugs and the agen
 }
 ```
 
-When chat persistence is disabled, `chat` contains only `enabled`.
+When chat persistence is disabled, `chat` contains only `enabled`. This app also marks no collection `file: true`, so `files` is absent.
 
 ```json
 {
   "ai": { "transcribe": false },
   "chat": { "enabled": false },
-  "files": { "slug": "files" },
   "agents": []
 }
 ```
@@ -60,7 +59,7 @@ When chat persistence is disabled, `chat` contains only `enabled`.
 | `chat.chatsSlug` | `string` | Slug of the chats collection. Present when `enabled` is `true`. |
 | `chat.messagesSlug` | `string` | Slug of the messages collection. Present when `enabled` is `true`. |
 | `chat.assetsSlug` | `string` | Slug of the chat assets collection that composer uploads go to. Present when `enabled` is `true`. |
-| `files.slug` | `string` | Slug of the [files collection](/upload/files). |
+| `files.slug` | `string` | Slug of the [files collection](/upload/files). `files` is present only when a collection is marked `file: true`. |
 | `agents[].slug` | `string` | Slug of an agent the caller may use. |
 | `agents[].profile` | `{ name?: string; avatar?: string; description?: string }` | The agent's configured [profile](/agents/overview#profile-options), when it has one. |
 

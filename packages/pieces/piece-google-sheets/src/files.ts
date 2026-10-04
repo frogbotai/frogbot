@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const fileReference = z.object({
@@ -18,10 +19,8 @@ export async function loadFile({
   req: FrogBotRequest;
   file: z.output<typeof fileReference>;
 }) {
-  const collection = req.frogbot.config.files?.slug;
-  if (!collection) {
-    throw new Error('Google Sheets file uploads require a configured files collection.');
-  }
+  const collection = filesCollectionSlug(req, 'Google Sheets');
+
   const doc = await req.frogbot.findByID({
     collection,
     id: file.fileId,
@@ -68,10 +67,8 @@ export async function saveFile({
   name: string;
   mimeType: string;
 }) {
-  const collection = req.frogbot.config.files?.slug;
-  if (!collection) {
-    throw new Error('Google Sheets file downloads require a configured files collection.');
-  }
+  const collection = filesCollectionSlug(req, 'Google Sheets');
+
   req.signal?.throwIfAborted();
   const doc = await req.frogbot.create({
     collection,

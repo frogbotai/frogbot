@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { type gmail_v1 } from 'googleapis';
 import { z } from 'zod';
 
@@ -63,8 +64,8 @@ export async function saveAttachments(
   req: FrogBotRequest,
   message: gmail_v1.Schema$Message,
 ) {
-  const collection = req.frogbot.config.files?.slug;
-  if (!collection || !message.id) return message;
+  if (!message.id) return message;
+
   const parts: gmail_v1.Schema$MessagePart[] = [];
   const visit = (items?: gmail_v1.Schema$MessagePart[]) => {
     for (const part of items ?? []) {
@@ -72,7 +73,13 @@ export async function saveAttachments(
       visit(part.parts);
     }
   };
+
   visit(message.payload?.parts);
+
+  if (parts.length === 0) return { ...message, attachments: [] };
+
+  const collection = filesCollectionSlug(req, 'Gmail');
+
   const attachments = await Promise.all(
     parts.map(async (part) => {
       const attachmentId = part.body?.attachmentId;

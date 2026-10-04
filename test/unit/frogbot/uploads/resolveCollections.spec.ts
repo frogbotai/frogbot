@@ -1,16 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
-import {
-  DEFAULT_FILES_SLUG,
-  resolveFilesCollection,
-} from '../../../../packages/frogbot/src/uploads/resolveCollections.js';
+import { resolveFilesCollection } from '../../../../packages/frogbot/src/uploads/resolveCollections.js';
 
 describe('resolveFilesCollection', () => {
-  it('injects the default collection', () => {
-    const result = resolveFilesCollection({ collections: [] });
-    expect(result.files.slug).toBe(DEFAULT_FILES_SLUG);
-    expect(result.collections.map((collection) => collection.slug)).toEqual(['files']);
+  it('returns collections unchanged and no files config when nothing is marked', () => {
+    const collections: CollectionConfig[] = [{ slug: 'posts', fields: [] }];
+    const result = resolveFilesCollection({ collections });
+
+    expect(result.files).toBeUndefined();
+    expect(result.collections).toEqual(collections);
   });
 
   it('adopts a marked collection and preserves overrides', () => {
@@ -26,7 +25,7 @@ describe('resolveFilesCollection', () => {
       },
     ];
     const result = resolveFilesCollection({ collections });
-    expect(result.files.slug).toBe('documents');
+    expect(result.files).toEqual({ slug: 'documents' });
     expect(result.collections).toHaveLength(1);
     expect(result.collections[0]).toMatchObject({
       slug: 'documents',
@@ -37,10 +36,7 @@ describe('resolveFilesCollection', () => {
     expect(result.collections[0]?.fields).toEqual([{ name: 'category', type: 'text' }]);
   });
 
-  it('rejects collisions and duplicate markers', () => {
-    expect(() => resolveFilesCollection({ collections: [{ slug: 'files', fields: [] }] })).toThrow(
-      'Add `file: true`',
-    );
+  it('rejects duplicate markers', () => {
     expect(() =>
       resolveFilesCollection({
         collections: [
@@ -49,6 +45,17 @@ describe('resolveFilesCollection', () => {
         ],
       }),
     ).toThrow('Multiple collections marked `file: true`');
+  });
+
+  it('accepts an ordinary collection named files without file: true', () => {
+    const result = resolveFilesCollection({
+      collections: [{ slug: 'files', upload: true, fields: [] }],
+    });
+
+    expect(result.files).toBeUndefined();
+    expect(result.collections[0]).toEqual({ slug: 'files', upload: true, fields: [] });
+    expect(result.collections[0]?.folders).toBeUndefined();
+    expect(result.collections[0]?.access).toBeUndefined();
   });
 
   it('rejects disabled uploads and multiple roles', () => {

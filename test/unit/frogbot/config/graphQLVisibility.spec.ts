@@ -7,7 +7,6 @@ import { getPayloadConfig } from '../../../../packages/frogbot/src/exports/inter
 const hiddenCollections = [
   'frogbot-chat-turns',
   'frogbot-chat-assets',
-  'frogbot-trigger-subscriptions',
   'frogbot-waitpoints',
   'payload-jobs',
   'payload-kv',
@@ -25,6 +24,7 @@ async function buildPayloadConfig() {
     collections: [
       { slug: 'users', auth: true, fields: [{ name: 'name', type: 'text' }] },
       { slug: 'chats', chat: true, fields: [] },
+      { slug: 'files', file: true, fields: [] },
     ],
   });
 

@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const discordAttachment = z.object({
@@ -10,11 +11,7 @@ export async function loadDiscordAttachment(
   req: FrogBotRequest,
   attachment: z.output<typeof discordAttachment>,
 ) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('[frogbot] Discord attachments require the files collection to be configured.');
-  }
+  const collection = filesCollectionSlug(req, 'Discord');
 
   const file = await req.frogbot.findByID({
     collection,

@@ -10,12 +10,14 @@ import { createCsv } from '@frogbotai/piece-csv';
 export const csv = createCsv();
 ```
 
+`convertExcelToCsv` reads from the [files collection](https://docs.frogbot.ai/upload/files), the upload collection marked `file: true`. Without one, it fails with an error that asks you to add it.
+
 ## Actions
 
-| Upstream action slug   | Previous wrapper export | Native action       | Notes                                                                                            |
-| ---------------------- | ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
-| `convert_csv_to_json`  | `convertCsvToJson`      | `convertCsvToJson`  | Supports comma- and tab-delimited text, with optional headers.                                   |
-| `convert_json_to_csv`  | `convertJsonToCsv`      | `convertJsonToCsv`  | Flattens nested objects into dotted column names.                                                |
-| `convert_excel_to_csv` | `convertExcelToCsv`     | `convertExcelToCsv` | Loads `.xlsx` or `.xls` files from the configured files collection and supports sheet selection. |
+| Upstream action slug   | Previous wrapper export | Native action       | Notes                                                                                 |
+| ---------------------- | ----------------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| `convert_csv_to_json`  | `convertCsvToJson`      | `convertCsvToJson`  | Supports comma- and tab-delimited text, with optional headers.                        |
+| `convert_json_to_csv`  | `convertJsonToCsv`      | `convertJsonToCsv`  | Flattens nested objects into dotted column names.                                     |
+| `convert_excel_to_csv` | `convertExcelToCsv`     | `convertExcelToCsv` | Loads `.xlsx` or `.xls` files from the files collection and supports sheet selection. |
 
 The upstream piece registers no triggers.

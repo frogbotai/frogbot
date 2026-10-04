@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { createMessage, encrypt, readKey } from 'openpgp';
 import { z } from 'zod';
 
@@ -15,11 +16,7 @@ const output = z.discriminatedUnion('success', [
 ]);
 
 async function loadFile(req: FrogBotRequest, id: string | number) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('Crypto file encryption requires a configured files collection.');
-  }
+  const collection = filesCollectionSlug(req, 'Crypto');
 
   const doc = await req.frogbot.findByID({ collection, id, depth: 0, req, overrideAccess: false });
 
@@ -74,11 +71,7 @@ export const encryptFile = defineAction({
       });
       const filename = `${source.name}.pgp`;
       const data = Buffer.from(encrypted);
-      const collection = req.frogbot.config.files?.slug;
-
-      if (!collection) {
-        throw new Error('Crypto file encryption requires a configured files collection.');
-      }
+      const collection = filesCollectionSlug(req, 'Crypto');
 
       req.signal?.throwIfAborted();
 

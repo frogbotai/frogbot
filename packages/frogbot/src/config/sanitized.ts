@@ -35,7 +35,7 @@ export type FrogBotSanitizedConfig = {
   agents?: SanitizedAgentConfig[];
   chat: SanitizedChatConfig;
   connections: SanitizedConnectionsConfig;
-  files: SanitizedFilesConfig;
+  files?: SanitizedFilesConfig;
   pieces: SanitizedPiecesConfig;
   roles: string[];
   settings: SettingsEntry[];

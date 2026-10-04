@@ -56,6 +56,12 @@ const Users: CollectionConfig = {
   fields: [{ name: 'name', type: 'text' }],
 };
 
+const Files: CollectionConfig = {
+  slug: filesSlug,
+  file: true,
+  fields: [],
+};
+
 const Pages: CollectionConfig = {
   slug: pagesSlug,
   access: openAccess,
@@ -215,7 +221,7 @@ export const addPages: Plugin = (config) => ({
 });
 
 export default await buildTestConfig({
-  collections: [Users],
+  collections: [Users, Files],
   editor: lexicalEditor(),
   localization: {
     defaultLocale: 'en',

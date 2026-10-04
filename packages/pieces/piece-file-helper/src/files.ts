@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { lookup } from 'mime-types';
 import { z } from 'zod';
 
@@ -19,9 +20,7 @@ function resolveMimeType(value: unknown, filename: string) {
 }
 
 export async function loadFile({ req, id }: { req: FrogBotRequest; id: string | number }) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) throw new Error('File Helper requires a configured files collection.');
+  const collection = filesCollectionSlug(req, 'Files Helper');
 
   const doc = await req.frogbot.findByID({
     collection,
@@ -76,9 +75,7 @@ export async function saveFile({
   filename: string;
   mimeType?: string;
 }) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) throw new Error('File Helper requires a configured files collection.');
+  const collection = filesCollectionSlug(req, 'Files Helper');
 
   req.signal?.throwIfAborted();
 

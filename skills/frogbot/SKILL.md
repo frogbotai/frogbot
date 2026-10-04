@@ -59,6 +59,7 @@ import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
 import { assistant } from './agents/assistant';
+import { Files } from './collections/Files';
 import { Users } from './collections/Users';
 
 const config: FrogBotConfig = {
@@ -67,7 +68,7 @@ const config: FrogBotConfig = {
     client: { url: process.env.DATABASE_URL || '' },
   }),
   editor: lexicalEditor(),
-  collections: [Users],
+  collections: [Users, Files],
   tools: [...todoTools],
   ai: {
     defaultModel: 'openai/gpt-5.4-mini',
@@ -226,6 +227,7 @@ src/
 │       ├── api/[...slug]/route.ts
 │       └── layout.tsx
 ├── collections/
+│   ├── Files.ts
 │   ├── Posts/
 │   │   ├── hooks/
 │   │   └── index.ts

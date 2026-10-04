@@ -75,7 +75,7 @@ describe('s3 storage for built-in collections', () => {
     }
   });
 
-  it('stores uploads to the default files collection in the bucket', async () => {
+  it('stores uploads to the file: true collection in the bucket', async () => {
     const { filename } = await upload(filesSlug);
 
     const object = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: filename }));

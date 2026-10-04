@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { type GoogleDriveClient, requestOptions } from './client.js';
@@ -11,12 +12,6 @@ export const fileReference = z.object({
 
 type FileContent = { data: Buffer; name: string; mimeType: string };
 
-function filesCollection(req: FrogBotRequest): string {
-  const collection = req.frogbot.config?.files?.slug;
-  if (!collection) throw new Error('[frogbot] Google Drive requires the files collection.');
-  return collection;
-}
-
 export async function loadFile({
   req,
   file,
@@ -28,7 +23,7 @@ export async function loadFile({
 }): Promise<FileContent> {
   signal?.throwIfAborted();
   const doc = await req.frogbot.findByID({
-    collection: filesCollection(req),
+    collection: filesCollectionSlug(req, 'Google Drive'),
     id: file.fileId,
     depth: 0,
     req,
@@ -78,7 +73,7 @@ export async function saveFile({
 }: FileContent & { req: FrogBotRequest }): Promise<SavedFile> {
   req.signal?.throwIfAborted();
   const doc = await req.frogbot.create({
-    collection: filesCollection(req),
+    collection: filesCollectionSlug(req, 'Google Drive'),
     data: {},
     file: { data, name, mimetype: mimeType, size: data.length },
     req,
@@ -132,7 +127,8 @@ export async function downloadDriveFile({
   includeSharedDrives: boolean;
   metadata?: DriveFile;
 }): Promise<SavedFile> {
-  filesCollection(req);
+  filesCollectionSlug(req, 'Google Drive');
+
   const file =
     metadata ??
     fileOutput.parse(

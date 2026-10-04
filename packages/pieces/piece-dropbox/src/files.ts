@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { SavedFile } from './schemas.js';
@@ -7,14 +8,6 @@ export const fileReference = z.object({
   fileId: z.union([z.string().min(1), z.number()]),
   name: z.string().min(1).optional(),
 });
-
-function filesCollection(req: FrogBotRequest): string {
-  const collection = req.frogbot.config?.files?.slug;
-
-  if (!collection) throw new Error('[frogbot] Dropbox requires the files collection.');
-
-  return collection;
-}
 
 export async function loadFile({
   req,
@@ -26,7 +19,7 @@ export async function loadFile({
   req.signal?.throwIfAborted();
 
   const doc = await req.frogbot.findByID({
-    collection: filesCollection(req),
+    collection: filesCollectionSlug(req, 'Dropbox'),
     id: file.fileId,
     depth: 0,
     req,
@@ -80,7 +73,7 @@ export async function saveFile({
   req.signal?.throwIfAborted();
 
   const doc = await req.frogbot.create({
-    collection: filesCollection(req),
+    collection: filesCollectionSlug(req, 'Dropbox'),
     data: {},
     file: { data, name, mimetype: mimeType, size: data.length },
     req,

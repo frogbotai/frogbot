@@ -167,7 +167,7 @@ describe('native Airtable', () => {
             fileId: 'file1',
             contentType: 'text/plain',
           },
-          expect: { error: "reading 'files'" },
+          expect: { error: 'requires a files collection' },
         },
         {
           slug: 'addRecordComment',

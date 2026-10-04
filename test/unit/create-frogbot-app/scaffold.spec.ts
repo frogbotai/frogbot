@@ -293,7 +293,7 @@ describe('template reconciliation', () => {
     expect(config).not.toContain('agents:');
     expect(config).not.toContain('tools:');
     expect(config).toContain('editor: lexicalEditor()');
-    expect(config).toContain('collections: [Users]');
+    expect(config).toContain('collections: [Users, Files]');
     expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
   });
 

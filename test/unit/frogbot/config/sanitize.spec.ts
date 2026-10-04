@@ -104,12 +104,12 @@ describe('frogbot sanitize', () => {
     );
   });
 
-  it('keeps the subscription ledger available without mounted triggers', async () => {
+  it('omits the subscription ledger without agent triggers or channels', async () => {
     const config = sanitize(makeConfig());
     const payloadConfig = await config._internal.payloadConfig;
     expect(
       payloadConfig.collections?.find(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
-    ).toMatchObject({ admin: { hidden: true } });
+    ).toBeUndefined();
     expect(Object.keys(config._internal.triggers)).toEqual([]);
     expect(payloadConfig.endpoints).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ path: '/webhooks/:instance' })]),
@@ -1108,9 +1108,7 @@ describe('frogbot sanitize', () => {
     expect(result.collections).toEqual([
       { slug: 'users', auth: true },
       { slug: 'projects', auth: false },
-      { slug: 'frogbot-trigger-subscriptions', auth: false },
       { slug: 'frogbot-waitpoints', auth: false },
-      { slug: 'files', auth: false },
     ]);
   });
 
@@ -1211,10 +1209,10 @@ describe('frogbot sanitize', () => {
     expect(result.secret).toBe('test-secret');
   });
 
-  it('injects and configures the default files collection', () => {
+  it('omits the files collection when nothing is marked file: true', () => {
     const result = sanitize(makeConfig());
-    expect(result.collections.map((collection) => collection.slug)).toContain('files');
-    expect(result.files).toEqual({ slug: 'files' });
+    expect(result.collections.map((collection) => collection.slug)).not.toContain('files');
+    expect(result.files).toBeUndefined();
   });
 
   it('propagates an adopted files collection slug', () => {
@@ -2324,14 +2322,7 @@ describe('frogbot sanitize', () => {
     });
     const result = sanitize(config);
     const slugs = result.collections.map((c) => c.slug);
-    expect(slugs).toEqual([
-      'alpha',
-      'beta',
-      'gamma',
-      'frogbot-trigger-subscriptions',
-      'frogbot-waitpoints',
-      'files',
-    ]);
+    expect(slugs).toEqual(['alpha', 'beta', 'gamma', 'frogbot-waitpoints']);
   });
 
   describe('ai.providers', () => {
@@ -3669,6 +3660,56 @@ describe('frogbot sanitize', () => {
       expect(removed.pieces.instances).toContain(example);
     });
 
+    it('adds the subscription ledger for an agent trigger', async () => {
+      const createExample = definePiece({
+        slug: 'trigger-example',
+        label: 'Trigger example',
+        actions: [],
+        webhook: {
+          verify: async () => true,
+          parse: () => ({ event: 'created' }),
+        },
+        triggers: [
+          {
+            slug: 'created',
+            type: 'app',
+            event: 'created',
+            description: 'Created',
+            input: z.object({}),
+            async run() {
+              return [];
+            },
+          },
+        ],
+      });
+      const example = createExample({});
+      const trigger = {
+        trigger: example.triggers.created,
+        handler: vi.fn(),
+      };
+      const result = sanitize(
+        makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] } as never),
+      );
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(
+        payloadConfig.collections?.find(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
+      ).toMatchObject({ admin: { hidden: true } });
+    });
+
+    it('keeps the subscription ledger for an agent with only a channel', async () => {
+      const channel = createChannel({ auth: { token: 'secret' } });
+      const result = sanitize(
+        makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] } as never),
+      );
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(Object.keys(result._internal.triggers)).toEqual(['channel']);
+      expect(
+        payloadConfig.collections?.find(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
+      ).toMatchObject({ admin: { hidden: true } });
+    });
+
     it('lets agent tools override root tools', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const rootExecute = vi.fn();
@@ -4406,9 +4447,7 @@ describe('frogbot sanitize', () => {
         'frogbot-chat-assets',
         'frogbot-chat-turns',
         'usage-logs',
-        'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
-        'files',
       ]);
       const payloadConfig = await result._internal.payloadConfig;
       const payloadSlugs = (payloadConfig as any).collections.map((c: any) => c.slug);
@@ -4419,9 +4458,7 @@ describe('frogbot sanitize', () => {
         'frogbot-chat-assets',
         'frogbot-chat-turns',
         'usage-logs',
-        'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
-        'files',
       ]);
     });
 

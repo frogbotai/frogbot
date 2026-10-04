@@ -113,7 +113,7 @@ export const Media: CollectionConfig = {
 };
 ```
 
-Set `file: true` to adopt a collection as FrogBot's managed file store. FrogBot keeps its slug and merges required upload, folder, soft-delete, admin, and authenticated-access configuration.
+Set `file: true` to adopt a collection as FrogBot's managed file store. FrogBot adds no files collection otherwise, and pieces that create files fail without one. FrogBot keeps its slug and merges required upload, folder, soft-delete, admin, and authenticated-access configuration.
 
 ## Managed collection roles
 

@@ -33,7 +33,7 @@ Use the adapter package's exported option types instead of recreating its config
 
 ## Storage
 
-Register storage adapters in `plugins`. Each adapter stores files for FrogBot's own upload collections automatically: the files collection (`files`, or the collection marked `file: true`) and `frogbot-chat-assets` when chat persistence is enabled. List only your own extra upload collections in `collections`.
+Register storage adapters in `plugins`. Each adapter stores files for FrogBot's own upload collections automatically: the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat persistence is enabled. List only your own extra upload collections in `collections`.
 
 | Service                              | Package                          | Factory              |
 | ------------------------------------ | -------------------------------- | -------------------- |

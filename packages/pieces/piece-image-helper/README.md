@@ -1,6 +1,6 @@
 # `@frogbotai/piece-image-helper`
 
-Inspect, transform, compress, and convert images stored in FrogBot's files collection.
+Inspect, transform, compress, and convert images stored in the files collection.
 
 ## Usage
 
@@ -9,6 +9,8 @@ import { createImageHelper } from '@frogbotai/piece-image-helper';
 
 export const imageHelper = createImageHelper();
 ```
+
+Every action uses the [files collection](https://docs.frogbot.ai/upload/files), the upload collection marked `file: true`. Without one, they fail with an error that asks you to add it.
 
 ## Actions
 

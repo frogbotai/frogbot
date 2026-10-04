@@ -37,12 +37,20 @@ const req = {
   },
 } as never;
 
+const reqWithoutFiles = {
+  ...(req as object),
+  frogbot: {
+    ...(req as { frogbot: object }).frogbot,
+    config: { _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://app.test' }) } },
+  },
+} as never;
+
 function response(data: unknown, config: unknown) {
   return { data, config, headers: new Headers(), status: 200, statusText: 'OK' };
 }
-async function fixture() {
+async function fixture(request = req) {
   const gmail = createGmail({ auth });
-  const client = await gmail.client({ req });
+  const client = await gmail.client({ req: request });
   const transport = vi.fn(async (config: any) => {
     const url = String(config.url);
     if (url.endsWith('/profile')) return response({ emailAddress: 'user@example.com' }, config);
@@ -211,6 +219,26 @@ describe('gmail', () => {
           config.params.view === 'full',
       ),
     ).toBe(true);
+  });
+
+  it('getEmail returns a full message without attachments when no files collection exists', async () => {
+    const { gmail } = await fixture(reqWithoutFiles);
+
+    const email = await gmail.getEmail({ input: { messageId: 'found' }, req: reqWithoutFiles });
+
+    expect(email).toEqual({ id: 'found', threadId: 'thread', snippet: 'Result', attachments: [] });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('getEmail rejects with the shared message when a message has attachments and no files collection exists', async () => {
+    const { gmail } = await fixture(reqWithoutFiles);
+
+    await expect(
+      gmail.getEmail({ input: { messageId: 'original' }, req: reqWithoutFiles }),
+    ).rejects.toThrow(
+      '[frogbot] Gmail requires a files collection. Add an upload collection with `file: true`.',
+    );
+    expect(create).not.toHaveBeenCalled();
   });
 
   it('resolves verified identity through the shared Google userinfo recipe', async () => {

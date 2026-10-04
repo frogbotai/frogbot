@@ -71,8 +71,10 @@ export interface Config {
     tasks: Task;
     chats: Chat;
     messages: Message;
+    'frogbot-chat-assets': FrogbotChatAsset;
+    'frogbot-chat-turns': FrogbotChatTurn;
     'usage-logs': UsageLog;
-    files: File;
+    'frogbot-waitpoints': FrogbotWaitpoint;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -80,8 +82,10 @@ export interface Config {
     tasks: TasksSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
+    'frogbot-chat-assets': FrogbotChatAssetsSelect;
+    'frogbot-chat-turns': FrogbotChatTurnsSelect;
     'usage-logs': UsageLogsSelect;
-    files: FilesSelect;
+    'frogbot-waitpoints': FrogbotWaitpointsSelect;
   };
   db: {
     defaultIDType: number;
@@ -96,7 +100,9 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -162,6 +168,9 @@ export interface User {
         | 'openai/gpt-6-astra'
         | 'openai/gpt-6-luna'
         | 'openai/gpt-6-sol'
+        | 'openai/gpt-6.1-sol'
+        | 'openai/gpt-daybreak-blue-latest'
+        | 'openai/gpt-daybreak-red-latest'
         | 'openai/gpt-image-1-mini'
         | 'openai/gpt-image-1.5'
         | 'openai/gpt-image-2'
@@ -182,6 +191,7 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -218,6 +228,11 @@ export interface Chat {
   title?: string | null;
   user?: (number | null) | User;
   agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
   lastMessageAt?: string | null;
   todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
@@ -242,6 +257,13 @@ export interface Message {
     | number
     | boolean
     | null;
+  status?: ('active' | 'queued') | null;
+  delivery?: ('queue' | 'steer') | null;
+  model?: string | null;
+  reasoning?: string | null;
+  author?: import('frogbot').TurnActor;
+  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
+  version?: number | null;
   usage?: {
     inputTokens?: number | null;
     outputTokens?: number | null;
@@ -254,6 +276,40 @@ export interface Message {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets".
+ */
+export interface FrogbotChatAsset {
+  id: number;
+  owner?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  sha256?: string | null;
+  text?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns".
+ */
+export interface FrogbotChatTurn {
+  id: string;
+  state: 'idle' | 'running' | 'awaiting';
+  attempt?: string | null;
+  leaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -275,7 +331,8 @@ export interface UsageLog {
     | 'speech'
     | 'transcriptions'
     | 'videos'
-    | 'rerank';
+    | 'rerank'
+    | 'evaluate';
   inputTokens: number;
   outputTokens: number;
   cachedInputTokens?: number | null;
@@ -290,23 +347,33 @@ export interface UsageLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "files".
+ * via the `definition` "frogbot-waitpoints".
  */
-export interface File {
+export interface FrogbotWaitpoint {
   id: number;
-  folder?: (number | null) | null;
+  jobId: string;
+  holder?: (number | null) | null;
+  name: string;
+  token: string;
+  kind: 'delay' | 'resumable';
+  ready: boolean;
+  status: 'pending' | 'resumed' | 'expired';
+  expiresAt?: string | null;
+  until?: string | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  dispatched: boolean;
+  dispatchOwner?: string | null;
+  dispatchLeaseUntil?: string | null;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -325,6 +392,7 @@ export interface UsersSelect {
   resetPasswordExpiration?: boolean;
   salt?: boolean;
   hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
   loginAttempts?: boolean;
   lockUntil?: boolean;
   sessions?:
@@ -357,6 +425,11 @@ export interface ChatsSelect {
   title?: boolean;
   user?: boolean;
   agent?: boolean;
+  channel?: boolean;
+  externalId?: boolean;
+  channelKey?: boolean;
+  channelThread?: boolean;
+  channelLabel?: boolean;
   lastMessageAt?: boolean;
   todos?: boolean;
   updatedAt?: boolean;
@@ -373,6 +446,13 @@ export interface MessagesSelect {
   role?: boolean;
   parts?: boolean;
   metadata?: boolean;
+  status?: boolean;
+  delivery?: boolean;
+  model?: boolean;
+  reasoning?: boolean;
+  author?: boolean;
+  settlements?: boolean;
+  version?: boolean;
   usage?:
     | boolean
     | {
@@ -387,6 +467,39 @@ export interface MessagesSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets_select".
+ */
+export interface FrogbotChatAssetsSelect {
+  owner?: boolean;
+  chat?: boolean;
+  sha256?: boolean;
+  text?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns_select".
+ */
+export interface FrogbotChatTurnsSelect {
+  id?: boolean;
+  state?: boolean;
+  attempt?: boolean;
+  leaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -413,22 +526,24 @@ export interface UsageLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "files_select".
+ * via the `definition` "frogbot-waitpoints_select".
  */
-export interface FilesSelect {
-  folder?: boolean;
+export interface FrogbotWaitpointsSelect {
+  jobId?: boolean;
+  holder?: boolean;
+  name?: boolean;
+  token?: boolean;
+  kind?: boolean;
+  ready?: boolean;
+  status?: boolean;
+  expiresAt?: boolean;
+  until?: boolean;
+  data?: boolean;
+  dispatched?: boolean;
+  dispatchOwner?: boolean;
+  dispatchLeaseUntil?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
-  deletedAt?: boolean;
-  url?: boolean;
-  thumbnailURL?: boolean;
-  filename?: boolean;
-  mimeType?: boolean;
-  filesize?: boolean;
-  width?: boolean;
-  height?: boolean;
-  focalX?: boolean;
-  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -442,9 +557,25 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBot-reset-ai-budgets".
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
  */
-export interface TaskFrogBotResetAiBudgets {
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-sweep-jobs".
+ */
+export interface TaskFrogbotSweepJobs {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-cleanup-kv".
+ */
+export interface TaskFrogbotCleanupKv {
   input?: unknown;
   output?: unknown;
 }
@@ -491,6 +622,9 @@ declare module 'frogbot' {
       | 'openai/gpt-6-astra'
       | 'openai/gpt-6-luna'
       | 'openai/gpt-6-sol'
+      | 'openai/gpt-6.1-sol'
+      | 'openai/gpt-daybreak-blue-latest'
+      | 'openai/gpt-daybreak-red-latest'
       | 'openai/gpt-image-1-mini'
       | 'openai/gpt-image-1.5'
       | 'openai/gpt-image-2'

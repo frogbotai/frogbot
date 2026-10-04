@@ -56,6 +56,8 @@ Both paths use your configured `routes.api` prefix instead of `/api` when custom
 
 Boot reconciliation reuses unchanged subscriptions, replaces changed subscriptions, and cleans up removed mounts. If an instance is missing during cleanup, FrogBot retains its subscription ledger entry and logs a warning: credentials cannot be reconstructed from the database. Restore the instance and its credentials to retry cleanup.
 
+Boot reconciliation and the subscription ledger exist only while an agent declares a trigger or channel. Removing the last trigger and channel stops automatic deregistration, so delete those webhooks at the provider.
+
 If registration succeeds but saving its state fails, FrogBot attempts provider cleanup and retains recovery state when cleanup fails. An unresolved registration blocks another enable attempt rather than creating a duplicate. A process crash before state is persisted can require manual provider cleanup.
 
 Polling triggers and automatic subscription renewal are not supported yet.
@@ -70,7 +72,7 @@ Delivery is not exactly once: if enqueue succeeds but persisting the dedupe mark
 
 ## Runtime subscriptions
 
-Use `frogbot.triggers` to manage mounted `webhook` subscriptions:
+Use `frogbot.triggers` to manage mounted `webhook` subscriptions. It works only while an agent declares a trigger or channel; without one, its methods reject.
 
 ```ts
 const subscription = await frogbot.triggers.enable({

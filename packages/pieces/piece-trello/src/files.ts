@@ -1,14 +1,11 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 
 export async function loadAttachment(
   req: FrogBotRequest,
   value: { fileId: number | string; name?: string },
 ) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('[frogbot] Trello attachments require the files collection to be configured.');
-  }
+  const collection = filesCollectionSlug(req, 'Trello');
 
   const doc = await req.frogbot.findByID({
     collection,

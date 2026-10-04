@@ -74,7 +74,26 @@ The HTTP and GraphQL pieces can request arbitrary URLs without an allowlist. Onl
 
 ## File output
 
-Pieces that create files buffer the complete result in memory and write it to the default `files` collection. Set upload size limits appropriate for your deployment. See [Files](/upload/files) to adopt another collection.
+Pieces that create files buffer the complete result in memory and write it to the collection marked [`file: true`](/upload/files). Set upload size limits appropriate for your deployment. Without a marked collection, those actions fail when they run:
+
+```text
+[frogbot] QR Code requires a files collection. Add an upload collection with `file: true`.
+```
+
+A custom piece gets the same check from `filesCollectionSlug`, which returns the marked collection's slug or throws that error:
+
+```ts
+import { filesCollectionSlug } from 'frogbot/pieces'
+
+const collection = filesCollectionSlug(req, 'QR Code')
+```
+
+| Argument | Type | Required | Description |
+| --- | --- | --- | --- |
+| `req` | `FrogBotRequest` | Required | The request passed to the action. |
+| `piece` | `string` | Required | The piece label shown in the error, such as `'QR Code'`. |
+
+Pass `collection` to `req.frogbot.create` with the file to store it.
 
 ## Credentials and linked accounts
 

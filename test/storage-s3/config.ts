@@ -7,6 +7,7 @@ import {
   agentSlug,
   bucket,
   chatsSlug,
+  filesSlug,
   mediaSlug,
   modelPort,
   s3ClientConfig,
@@ -34,8 +35,14 @@ const Chats: CollectionConfig = {
   fields: [],
 };
 
+const Files: CollectionConfig = {
+  slug: filesSlug,
+  file: true,
+  fields: [],
+};
+
 export default await buildTestConfig({
-  collections: [Users, Media, Chats],
+  collections: [Users, Media, Chats, Files],
   ai: {
     defaultModel: 'test/vision',
     providers: {

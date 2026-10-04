@@ -541,7 +541,7 @@ const file = new File(['Hello'], 'hello.txt', { type: 'text/plain' })
 const media = await sdk.create({ collection: 'media', file, data: { alt: 'File description' } })
 ```
 
-This example requires an upload-enabled `media` collection with an `alt` field. For an upload that needs no data, `upload(collection, file)` is a shorthand:
+This example requires an upload-enabled `media` collection with an `alt` field. For an upload that needs no data, `upload(collection, file)` is a shorthand. This example targets your app's `files` collection:
 
 ```ts
 const uploaded = await sdk.upload('files', file)

@@ -1,3 +1,4 @@
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { TwilioClient } from './client.js';
@@ -143,9 +144,7 @@ export const downloadRecording = defineAction({
       binary: true,
     });
 
-    const collection = req.frogbot.config.files?.slug;
-
-    if (!collection) throw new Error('[frogbot] Twilio recordings require the files collection.');
+    const collection = filesCollectionSlug(req, 'Twilio');
 
     const name = `${input.recordingSid}.${input.format}`;
     const mimeType = input.format === 'mp3' ? 'audio/mpeg' : 'audio/wav';

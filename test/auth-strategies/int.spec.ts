@@ -178,4 +178,30 @@ describe('auth strategies', () => {
     expect(result.user?.id).toBe(user.id);
     expect(result.user?.email).toBeNull();
   });
+
+  it('POST /api/files with a header-token user returns 404 when no collection is marked file: true', async () => {
+    const formData = new FormData();
+
+    formData.set('_payload', '{}');
+    formData.set('file', new Blob([new Uint8Array([1, 2, 3])], { type: 'text/plain' }), 'a.txt');
+
+    const response = await fetch(`${booted.baseUrl}/api/files`, {
+      method: 'POST',
+      headers: { [tokenHeader]: testUserCode },
+      body: formData,
+      signal: AbortSignal.timeout(20000),
+    });
+
+    expect(response.status).toBe(404);
+  });
+
+  it('DELETE /api/files/1 with a header-token user returns 404 when no collection is marked file: true', async () => {
+    const response = await fetch(`${booted.baseUrl}/api/files/1`, {
+      method: 'DELETE',
+      headers: { [tokenHeader]: testUserCode },
+      signal: AbortSignal.timeout(20000),
+    });
+
+    expect(response.status).toBe(404);
+  });
 });

@@ -1,4 +1,4 @@
-import { definePiece } from 'frogbot/pieces';
+import { definePiece, filesCollectionSlug } from 'frogbot/pieces';
 import { toBuffer } from 'qrcode';
 import { z } from 'zod';
 
@@ -23,11 +23,7 @@ const createQrCodeAction = defineAction({
   output: outputSchema,
   idempotent: false,
   async run({ input, req }) {
-    const collection = req.frogbot.config.files?.slug;
-
-    if (!collection) {
-      throw new Error('[frogbot] QR Code requires the files collection.');
-    }
+    const collection = filesCollectionSlug(req, 'QR Code');
 
     req.signal?.throwIfAborted();
 

@@ -19,7 +19,7 @@ describe('GraphQL schema from a FrogBot config', () => {
     const queries = Object.keys(schema.getQueryType()!.getFields());
 
     expect(queries).toEqual(
-      expect.arrayContaining(['Posts', 'Users', 'Chats', 'Messages', 'Files', 'searchPosts']),
+      expect.arrayContaining(['Posts', 'Users', 'Chats', 'Messages', 'searchPosts']),
     );
   });
 

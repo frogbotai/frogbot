@@ -106,7 +106,6 @@ test('lists ungrouped collections directly under one Collections heading', async
   await expect(collections.locator('.frogbot-nav-section__scroll > .frogbot-nav-item')).toHaveText([
     'Users',
     'API Keys',
-    'Files',
   ]);
   await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
     'Content',
@@ -128,7 +127,6 @@ test('lists ungrouped collection cards directly under the Collections settings p
   await expect(content.getByRole('heading', { level: 3 })).toHaveText([
     'Users',
     'API Keys',
-    'Files',
     'Posts',
   ]);
 });
