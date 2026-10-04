@@ -14,8 +14,8 @@ import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/confi
 import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import { definePiece } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
-import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { TriggerSubscriptions } from '../../../packages/frogbot/src/triggers/subscriptions.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { defineEchoPiece } from './triggers/fixtures/piece-echo.js';
 
 vi.mock('payload', () => {
