@@ -1,23 +1,23 @@
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig, devices } from '@playwright/test';
 
 import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
+import type { QuestionOptions } from './__helpers/questionTest';
 import type { SignInOptions } from './__helpers/signIn';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
-const richTextFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'rich-text');
-const pluginSeoFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'plugin-wrappers');
-const blankPort = testPort(3111);
-const customFieldPort = testPort(3112);
-const richTextPort = testPort(3113);
-const livePreviewPort = testPort(3114);
-const chatAssetsPort = testPort(3125);
-const chatProviderPort = testPort(3126);
-const questionPort = testPort(3127);
-const pluginSeoPort = testPort(3128);
+const frogbotBin = path.join(repoRoot, 'packages', 'frogbot', 'bin.js');
+const resetDatabaseScript = path.join(dirname, 'resetDatabase.mjs');
+const buildFixturesScript = path.join(dirname, 'buildFixtures.mjs');
+
+// FROGBOT_BROWSER_DEV=1 runs every project in series against `next dev`, with each browser
+// variant reusing its Chromium server, for debugging. The default builds each fixture once and
+// runs the projects in parallel, each on its own `next start` server and database.
+const dev = process.env.FROGBOT_BROWSER_DEV === '1';
 
 process.env.FROGBOT_TEST_PORT_OFFSET = String(testPortOffset);
 
@@ -46,181 +46,319 @@ for (const argument of process.argv.slice(2)) {
   if (collectingProjects) selectedProjects.add(argument.toLocaleLowerCase());
 }
 
-// Each server starts from an empty database, like Payload's PAYLOAD_DROP_DATABASE.
-// The reset runs as part of the server command, so a reused server keeps its data.
-const resetDatabaseScript = path.join(dirname, 'resetDatabase.mjs');
-const freshDatabase = (databaseFile: string, command: string) =>
-  `node ${JSON.stringify(resetDatabaseScript)} ${JSON.stringify(databaseFile)} && ${command}`;
-
 const startAllServers =
   selectedProjects.size === 0 || [...selectedProjects].some((project) => project.includes('*'));
 
-const blankServer = {
-  command: freshDatabase(
-    path.join(repoRoot, 'templates', 'blank', 'frogbot.browser.db'),
-    'pnpm --filter blank dev',
-  ),
-  cwd: repoRoot,
-  url: `http://localhost:${blankPort}`,
-  reuseExistingServer: !process.env.CI,
-  timeout: 180_000,
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
-  env: {
-    PORT: String(blankPort),
-    DATABASE_URL: 'file:./frogbot.browser.db',
-    FROGBOT_SECRET: 'browser-test-secret',
-    OPENAI_API_KEY: 'browser-test-key',
-    NEXT_TELEMETRY_DISABLED: '1',
+type Fixture = {
+  dir: string;
+  cli: 'frogbot' | 'next';
+  env: Record<string, string>;
+};
+
+const fixtures = {
+  question: {
+    dir: path.join(dirname, 'fixtures', 'question'),
+    cli: 'next',
+    env: { FROGBOT_SECRET: 'browser-question-secret' },
+  },
+  'custom-field': {
+    dir: path.join(dirname, 'fixtures', 'custom-field'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret' },
+  },
+  blank: {
+    dir: path.join(repoRoot, 'templates', 'blank'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret', OPENAI_API_KEY: 'browser-test-key' },
+  },
+  'rich-text': {
+    dir: path.join(repoRoot, 'test', 'e2e', 'fixtures', 'rich-text'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret' },
+  },
+  'chat-assets': {
+    dir: path.join(dirname, 'fixtures', 'chat-assets'),
+    cli: 'next',
+    env: { FROGBOT_SECRET: 'browser-chat-assets-secret' },
+  },
+  'live-preview': {
+    dir: path.join(dirname, 'fixtures', 'live-preview'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret' },
+  },
+  'plugin-wrappers': {
+    dir: path.join(repoRoot, 'test', 'e2e', 'fixtures', 'plugin-wrappers'),
+    cli: 'frogbot',
+    env: { FROGBOT_SECRET: 'browser-test-secret', NODE_PATH: '' },
+  },
+} satisfies Record<string, Fixture>;
+
+type Server = {
+  fixture: keyof typeof fixtures;
+  port: number;
+  database: string;
+  // In dev mode a browser variant reuses this server instead of starting its own.
+  devServer?: string;
+  // The plugin-wrappers fixture has no front-end page, so its server is ready once /admin answers.
+  readyPath?: string;
+  env?: Record<string, string>;
+  modelPort?: number;
+};
+
+const chatProviderPort = testPort(3126);
+
+const questionServer = (port: number, database: string, modelPort: number): Server => ({
+  fixture: 'question',
+  port,
+  database,
+  modelPort,
+  env: { BROWSER_MODEL_URL: `http://127.0.0.1:${modelPort}/v1` },
+});
+
+const servers: Record<string, Server> = {
+  question: questionServer(testPort(3127), 'frogbot.db', testPort(3129)),
+  'question-firefox': {
+    ...questionServer(testPort(3130), 'frogbot.firefox.db', testPort(3131)),
+    devServer: 'question',
+  },
+  'question-webkit': {
+    ...questionServer(testPort(3132), 'frogbot.webkit.db', testPort(3133)),
+    devServer: 'question',
+  },
+  'custom-field': {
+    fixture: 'custom-field',
+    port: testPort(3112),
+    database: 'frogbot.custom-field.browser.db',
+  },
+  'custom-field-firefox': {
+    fixture: 'custom-field',
+    port: testPort(3134),
+    database: 'frogbot.custom-field-firefox.browser.db',
+    devServer: 'custom-field',
+  },
+  'custom-field-webkit': {
+    fixture: 'custom-field',
+    port: testPort(3135),
+    database: 'frogbot.custom-field-webkit.browser.db',
+    devServer: 'custom-field',
+  },
+  blank: { fixture: 'blank', port: testPort(3111), database: 'frogbot.browser.db' },
+  'rich-text': { fixture: 'rich-text', port: testPort(3113), database: 'rich-text.browser.db' },
+  'chat-assets': {
+    fixture: 'chat-assets',
+    port: testPort(3125),
+    database: 'frogbot.db',
+    env: { BROWSER_PROVIDER_URL: `http://localhost:${chatProviderPort}/v1` },
+  },
+  'live-preview': { fixture: 'live-preview', port: testPort(3114), database: 'frogbot.browser.db' },
+  'plugin-seo': {
+    fixture: 'plugin-wrappers',
+    port: testPort(3128),
+    database: 'plugin-wrappers.browser.db',
+    readyPath: '/admin',
   },
 };
 
-const richTextServer = {
-  command: freshDatabase(
-    path.join(richTextFixture, 'rich-text.browser.db'),
-    'node ../../../../packages/frogbot/bin.js dev',
-  ),
-  cwd: richTextFixture,
-  url: `http://localhost:${richTextPort}`,
-  reuseExistingServer: !process.env.CI,
-  timeout: 180_000,
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
-  env: {
-    PORT: String(richTextPort),
-    DATABASE_URL: 'file:./rich-text.browser.db',
-    FROGBOT_SECRET: 'browser-test-secret',
-    NEXT_TELEMETRY_DISABLED: '1',
-  },
-};
+const serverFor = (project: string) => (dev && servers[project].devServer) || project;
 
-const pluginSeoServer = {
-  command: freshDatabase(
-    path.join(pluginSeoFixture, 'plugin-wrappers.browser.db'),
-    'node ../../../../packages/frogbot/bin.js dev',
-  ),
-  cwd: pluginSeoFixture,
-  url: `http://localhost:${pluginSeoPort}/admin`,
-  reuseExistingServer: false,
-  timeout: 180_000,
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
-  env: {
-    PORT: String(pluginSeoPort),
-    DATABASE_URL: 'file:./plugin-wrappers.browser.db',
-    FROGBOT_SECRET: 'browser-test-secret',
-    NEXT_TELEMETRY_DISABLED: '1',
-    NODE_PATH: '',
-  },
-};
-
-const livePreviewServer = {
-  command: freshDatabase(
-    path.join(dirname, 'fixtures', 'live-preview', 'frogbot.browser.db'),
-    'pnpm --filter frogbot-browser-live-preview dev',
-  ),
-  cwd: repoRoot,
-  url: `http://localhost:${livePreviewPort}`,
-  reuseExistingServer: !process.env.CI,
-  timeout: 180_000,
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
-  env: {
-    PORT: String(livePreviewPort),
-    DATABASE_URL: 'file:./frogbot.browser.db',
-    FROGBOT_SECRET: 'browser-test-secret',
-    NEXT_TELEMETRY_DISABLED: '1',
-  },
-};
-
-const customFieldServer = {
-  command: freshDatabase(
-    path.join(dirname, 'fixtures', 'custom-field', 'frogbot.custom-field.browser.db'),
-    'pnpm --filter frogbot-browser-custom-field dev',
-  ),
-  cwd: repoRoot,
-  url: `http://localhost:${customFieldPort}`,
-  reuseExistingServer: !process.env.CI,
-  timeout: 180_000,
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
-  env: {
-    PORT: String(customFieldPort),
-    DATABASE_URL: 'file:./frogbot.custom-field.browser.db',
-    FROGBOT_SECRET: 'browser-test-secret',
-    NEXT_TELEMETRY_DISABLED: '1',
-  },
-};
-
-const chatAssetsServers = [
-  {
-    command: 'node test/browser/fixtures/chat-assets/provider.mjs',
-    cwd: repoRoot,
-    url: `http://localhost:${chatProviderPort}/health`,
-    reuseExistingServer: false,
-    timeout: 30_000,
-    env: { PORT: String(chatProviderPort) },
-  },
-  {
-    command: freshDatabase(
-      path.join(dirname, 'fixtures', 'chat-assets', 'frogbot.db'),
-      'node ../../../node_modules/next/dist/bin/next dev',
-    ),
-    cwd: path.join(dirname, 'fixtures', 'chat-assets'),
-    url: `http://localhost:${chatAssetsPort}`,
-    reuseExistingServer: false,
-    timeout: 180_000,
-    stdout: 'ignore' as const,
-    stderr: 'pipe' as const,
-    env: {
-      PORT: String(chatAssetsPort),
-      DATABASE_URL: 'file:./frogbot.db',
-      FROGBOT_SECRET: 'browser-chat-assets-secret',
-      BROWSER_PROVIDER_URL: `http://localhost:${chatProviderPort}/v1`,
-      NEXT_TELEMETRY_DISABLED: '1',
-    },
-  },
-];
-
-const questionServer = {
-  command: freshDatabase(
-    path.join(dirname, 'fixtures', 'question', 'frogbot.db'),
-    'node ../../../node_modules/next/dist/bin/next dev',
-  ),
-  cwd: path.join(dirname, 'fixtures', 'question'),
-  url: `http://localhost:${questionPort}`,
-  reuseExistingServer: false,
-  timeout: 180_000,
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
-  env: {
-    PORT: String(questionPort),
-    DATABASE_URL: 'file:./frogbot.db',
-    FROGBOT_SECRET: 'browser-question-secret',
-    NEXT_TELEMETRY_DISABLED: '1',
-  },
+const browsers = {
+  chromium: { ...devices['Desktop Chrome'], channel: 'chromium' },
+  firefox: devices['Desktop Firefox'],
+  webkit: devices['Desktop Safari'],
 };
 
 const authFile = (server: string) => path.join(dirname, '.auth', `${server}.json`);
 
-const setupProject = (server: string, port: number, signInOptions: SignInOptions = {}) => ({
+const setupProject = (server: string, signInOptions: SignInOptions = {}) => ({
   name: `${server}-setup`,
   testMatch: 'auth.setup.ts',
   use: {
-    ...devices['Desktop Chrome'],
-    baseURL: `http://localhost:${port}`,
-    channel: 'chromium',
+    ...browsers.chromium,
+    baseURL: `http://localhost:${servers[server].port}`,
     signInOptions,
     authFile: authFile(server),
   },
 });
 
-export default defineConfig<{ signInOptions: SignInOptions; authFile: string }>({
+const project = ({
+  name,
+  browser = 'chromium',
+  testMatch,
+}: {
+  name: string;
+  browser?: keyof typeof browsers;
+  testMatch: string | string[];
+}) => {
+  const server = serverFor(name);
+  const { port, modelPort } = servers[server];
+
+  return {
+    name,
+    testMatch,
+    dependencies: [`${server}-setup`],
+    workers: 1,
+    use: {
+      ...browsers[browser],
+      baseURL: `http://localhost:${port}`,
+      storageState: authFile(server),
+      ...(modelPort ? { modelPort } : {}),
+    },
+  };
+};
+
+const crossBrowserQuestionSpecs = [
+  'reasoningSelector.browser.spec.ts',
+  'modelSelector.browser.spec.ts',
+  'breadcrumbs.browser.spec.ts',
+  'topBarPhone.browser.spec.ts',
+];
+
+const signInOptions: Record<string, SignInOptions> = {
+  'rich-text': { adminRoute: '/admin' },
+  'plugin-seo': { adminRoute: '/admin' },
+};
+
+// Longest first, so the slowest projects start as soon as their servers sign in.
+const testProjects = [
+  project({
+    name: 'question',
+    testMatch: [
+      'question.browser.spec.ts',
+      'reasoningSelector.browser.spec.ts',
+      'modelSelector.browser.spec.ts',
+      'modelAllowlist.browser.spec.ts',
+      'channelChat.browser.spec.ts',
+      'chatErrors.browser.spec.ts',
+      'messagesOverride.browser.spec.ts',
+      'breadcrumbs.browser.spec.ts',
+      'topBarPhone.browser.spec.ts',
+      'costUSD.browser.spec.ts',
+    ],
+  }),
+  project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),
+  project({ name: 'question-webkit', browser: 'webkit', testMatch: crossBrowserQuestionSpecs }),
+  project({ name: 'rich-text', testMatch: 'richText.browser.spec.ts' }),
+  project({
+    name: 'custom-field',
+    testMatch: [
+      'customField.browser.spec.ts',
+      'adminTheme.browser.spec.ts',
+      'cssLayers.browser.spec.ts',
+    ],
+  }),
+  project({
+    name: 'blank',
+    testMatch: [
+      'generalPicker.browser.spec.ts',
+      'iconGeometry.browser.spec.ts',
+      'navShell.browser.spec.ts',
+    ],
+  }),
+  project({ name: 'chat-assets', testMatch: 'chatAssets.browser.spec.ts' }),
+  project({
+    name: 'custom-field-firefox',
+    browser: 'firefox',
+    testMatch: 'cssLayers.browser.spec.ts',
+  }),
+  project({
+    name: 'custom-field-webkit',
+    browser: 'webkit',
+    testMatch: 'cssLayers.browser.spec.ts',
+  }),
+  project({
+    name: 'live-preview',
+    testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
+  }),
+  project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
+];
+
+const selectedServers = [
+  ...new Set(
+    testProjects
+      .filter(
+        ({ name }) =>
+          startAllServers ||
+          selectedProjects.has(name) ||
+          selectedProjects.has(`${serverFor(name)}-setup`),
+      )
+      .map(({ name }) => serverFor(name)),
+  ),
+];
+
+const quoted = (...parts: string[]) => parts.map((part) => JSON.stringify(part)).join(' ');
+
+const nextBin = (fixture: Fixture) =>
+  createRequire(path.join(fixture.dir, 'package.json')).resolve('next/dist/bin/next');
+
+const schemaDatabase = (fixture: Fixture) =>
+  path.join(fixture.dir, '.next', 'frogbot-browser', 'schema.db');
+
+// Each server starts from an empty database, like Payload's PAYLOAD_DROP_DATABASE. The reset runs
+// as part of the server command, so a reused dev server keeps its data. Production servers run
+// `next start` directly: the build already generated the import map, and the frogbot CLI would
+// stay up as a parent process holding the config it loaded.
+const webServer = (name: string) => {
+  const { fixture: fixtureName, port, database, readyPath = '', env } = servers[name];
+  const fixture: Fixture = fixtures[fixtureName];
+  const reset = dev ? [database] : [database, schemaDatabase(fixture)];
+  const serve = dev
+    ? [fixture.cli === 'frogbot' ? frogbotBin : nextBin(fixture), 'dev']
+    : [nextBin(fixture), 'start'];
+
+  return {
+    name,
+    command: `node ${quoted(resetDatabaseScript, ...reset)} && node ${quoted(...serve)}`,
+    cwd: fixture.dir,
+    url: `http://localhost:${port}${readyPath}`,
+    reuseExistingServer: dev && !process.env.CI,
+    timeout: dev ? 180_000 : 60_000,
+    stdout: 'ignore' as const,
+    stderr: 'pipe' as const,
+    env: {
+      ...fixture.env,
+      ...env,
+      PORT: String(port),
+      DATABASE_URL: `file:./${database}`,
+      NEXT_TELEMETRY_DISABLED: '1',
+    },
+  };
+};
+
+const chatProvider = {
+  name: 'chat-provider',
+  command: 'node test/browser/fixtures/chat-assets/provider.mjs',
+  cwd: repoRoot,
+  url: `http://localhost:${chatProviderPort}/health`,
+  reuseExistingServer: false,
+  timeout: 30_000,
+  env: { PORT: String(chatProviderPort) },
+};
+
+const selectedFixtures = [...new Set(selectedServers.map((name) => servers[name].fixture))].map(
+  (name) => {
+    const { dir, cli, env } = fixtures[name];
+
+    return { name, dir, generatesImportMap: cli === 'frogbot', env };
+  },
+);
+
+const buildServer = {
+  name: 'build',
+  command: `node ${quoted(buildFixturesScript)}`,
+  cwd: repoRoot,
+  wait: { stdout: /^ready$/m },
+  timeout: 20 * 60_000,
+  stdout: 'pipe' as const,
+  stderr: 'pipe' as const,
+  env: { FROGBOT_BROWSER_FIXTURES: JSON.stringify(selectedFixtures), NEXT_TELEMETRY_DISABLED: '1' },
+};
+
+export default defineConfig<{ signInOptions: SignInOptions; authFile: string }, QuestionOptions>({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
   outputDir: path.join(dirname, 'test-results'),
   fullyParallel: false,
-  workers: 1,
+  workers: dev ? 1 : 4,
   maxFailures: process.env.CI ? undefined : 3,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list', { printSteps: true }]],
@@ -232,173 +370,15 @@ export default defineConfig<{ signInOptions: SignInOptions; authFile: string }>(
     video: 'off',
   },
   projects: [
-    setupProject('plugin-seo', pluginSeoPort, { adminRoute: '/admin' }),
-    setupProject('chat-assets', chatAssetsPort),
-    setupProject('question', questionPort),
-    setupProject('blank', blankPort),
-    setupProject('rich-text', richTextPort, { adminRoute: '/admin' }),
-    setupProject('live-preview', livePreviewPort),
-    setupProject('custom-field', customFieldPort),
-    {
-      name: 'plugin-seo',
-      testMatch: 'seoFields.browser.spec.ts',
-      dependencies: ['plugin-seo-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${pluginSeoPort}`,
-        channel: 'chromium',
-        storageState: authFile('plugin-seo'),
-      },
-    },
-    {
-      name: 'chat-assets',
-      testMatch: 'chatAssets.browser.spec.ts',
-      dependencies: ['chat-assets-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${chatAssetsPort}`,
-        channel: 'chromium',
-        storageState: authFile('chat-assets'),
-      },
-    },
-    {
-      name: 'question',
-      testMatch: [
-        'question.browser.spec.ts',
-        'reasoningSelector.browser.spec.ts',
-        'modelSelector.browser.spec.ts',
-        'modelAllowlist.browser.spec.ts',
-        'channelChat.browser.spec.ts',
-        'chatErrors.browser.spec.ts',
-        'messagesOverride.browser.spec.ts',
-        'breadcrumbs.browser.spec.ts',
-        'topBarPhone.browser.spec.ts',
-        'costUSD.browser.spec.ts',
-      ],
-      dependencies: ['question-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${questionPort}`,
-        channel: 'chromium',
-        storageState: authFile('question'),
-      },
-    },
-    {
-      name: 'question-firefox',
-      testMatch: [
-        'reasoningSelector.browser.spec.ts',
-        'modelSelector.browser.spec.ts',
-        'breadcrumbs.browser.spec.ts',
-        'topBarPhone.browser.spec.ts',
-      ],
-      dependencies: ['question-setup'],
-      use: {
-        ...devices['Desktop Firefox'],
-        baseURL: `http://localhost:${questionPort}`,
-        storageState: authFile('question'),
-      },
-    },
-    {
-      name: 'question-webkit',
-      testMatch: [
-        'reasoningSelector.browser.spec.ts',
-        'modelSelector.browser.spec.ts',
-        'breadcrumbs.browser.spec.ts',
-        'topBarPhone.browser.spec.ts',
-      ],
-      dependencies: ['question-setup'],
-      use: {
-        ...devices['Desktop Safari'],
-        baseURL: `http://localhost:${questionPort}`,
-        storageState: authFile('question'),
-      },
-    },
-    {
-      name: 'blank',
-      testMatch: [
-        'generalPicker.browser.spec.ts',
-        'iconGeometry.browser.spec.ts',
-        'navShell.browser.spec.ts',
-      ],
-      dependencies: ['blank-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${blankPort}`,
-        channel: 'chromium',
-        storageState: authFile('blank'),
-      },
-    },
-    {
-      name: 'rich-text',
-      testMatch: 'richText.browser.spec.ts',
-      dependencies: ['rich-text-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${richTextPort}`,
-        channel: 'chromium',
-        storageState: authFile('rich-text'),
-      },
-    },
-    {
-      name: 'live-preview',
-      testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
-      dependencies: ['live-preview-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${livePreviewPort}`,
-        channel: 'chromium',
-        storageState: authFile('live-preview'),
-      },
-    },
-    {
-      name: 'custom-field',
-      testMatch: [
-        'customField.browser.spec.ts',
-        'adminTheme.browser.spec.ts',
-        'cssLayers.browser.spec.ts',
-      ],
-      dependencies: ['custom-field-setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${customFieldPort}`,
-        channel: 'chromium',
-        storageState: authFile('custom-field'),
-      },
-    },
-    {
-      name: 'custom-field-firefox',
-      testMatch: 'cssLayers.browser.spec.ts',
-      dependencies: ['custom-field-setup'],
-      use: {
-        ...devices['Desktop Firefox'],
-        baseURL: `http://localhost:${customFieldPort}`,
-        storageState: authFile('custom-field'),
-      },
-    },
-    {
-      name: 'custom-field-webkit',
-      testMatch: 'cssLayers.browser.spec.ts',
-      dependencies: ['custom-field-setup'],
-      use: {
-        ...devices['Desktop Safari'],
-        baseURL: `http://localhost:${customFieldPort}`,
-        storageState: authFile('custom-field'),
-      },
-    },
+    ...[...new Set(testProjects.map(({ name }) => serverFor(name)))].map((server) =>
+      setupProject(server, signInOptions[server]),
+    ),
+    ...testProjects,
   ],
-  webServer: Object.entries({
-    blank: blankServer,
-    'custom-field': customFieldServer,
-    'rich-text': richTextServer,
-    'live-preview': livePreviewServer,
-    'chat-assets': chatAssetsServers,
-    question: questionServer,
-    'plugin-seo': pluginSeoServer,
-  })
-    .filter(
-      ([name]) =>
-        startAllServers ||
-        [...selectedProjects].some((project) => project === name || project.startsWith(`${name}-`)),
-    )
-    .flatMap(([, server]) => server),
+  webServer: [
+    ...(dev || selectedFixtures.length === 0 ? [] : [buildServer]),
+    ...selectedServers.flatMap((name) =>
+      name === 'chat-assets' ? [chatProvider, webServer(name)] : [webServer(name)],
+    ),
+  ],
 });

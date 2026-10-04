@@ -1,12 +1,12 @@
-import { expect, type Locator, type Page, test } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { test } from './__helpers/questionTest';
 import {
   agentSlug,
   chatPicksPreference,
   chatsSlug,
   deliberatorLevels,
-  modelPort,
   reasoningModels,
   sliderPath,
   verboseEffort,
@@ -32,7 +32,7 @@ let model: StubChatModel;
 
 test.setTimeout(120_000);
 
-test.beforeAll(async () => {
+test.beforeAll(async ({ modelPort }) => {
   model = await startStubChatModel(modelPort);
 });
 

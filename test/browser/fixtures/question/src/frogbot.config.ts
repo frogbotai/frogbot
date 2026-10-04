@@ -93,7 +93,7 @@ export default buildConfig({
       openrouter: { apiKey: 'browser-openrouter-key' },
       browser: {
         type: 'openai-compatible',
-        baseUrl: `http://127.0.0.1:${modelPort}/v1`,
+        baseUrl: process.env.BROWSER_MODEL_URL || `http://127.0.0.1:${modelPort}/v1`,
         apiKey: 'browser-provider-key',
         models: [
           { id: 'questioner', mode: 'chat' },

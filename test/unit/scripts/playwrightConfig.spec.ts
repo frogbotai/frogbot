@@ -1,3 +1,4 @@
+import type { PlaywrightTestConfig } from '@playwright/test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { testPort, testPortOffset } from '../../__helpers/shared/testPorts';
@@ -6,10 +7,14 @@ const originalArgv = process.argv;
 const allProjects = [
   'blank',
   'custom-field',
+  'custom-field-firefox',
+  'custom-field-webkit',
   'rich-text',
   'live-preview',
   'chat-assets',
   'question',
+  'question-firefox',
+  'question-webkit',
   'plugin-seo',
 ];
 
@@ -26,8 +31,24 @@ function serverURL(baseURL: string | undefined, name: string) {
   return baseURL && `${baseURL}${readyPaths[name] ?? ''}`;
 }
 
+function webServers(config: PlaywrightTestConfig) {
+  return [config.webServer ?? []].flat();
+}
+
+function builtFixtures(config: PlaywrightTestConfig) {
+  const build = webServers(config).find((server) => server.name === 'build');
+
+  return (
+    build &&
+    JSON.parse(build.env?.FROGBOT_BROWSER_FIXTURES ?? '[]').map(
+      ({ name }: { name: string }) => name,
+    )
+  );
+}
+
 afterEach(() => {
   process.argv = originalArgv;
+  vi.unstubAllEnvs();
 });
 
 describe('browser project servers', () => {
@@ -45,6 +66,17 @@ describe('browser project servers', () => {
       name: 'project whose server is ready on /admin',
       args: ['--project=plugin-seo'],
       projects: ['plugin-seo'],
+    },
+    { name: 'chromium project', args: ['--project', 'question'], projects: ['question'] },
+    {
+      name: 'browser variant with its own server',
+      args: ['--project=question-firefox'],
+      projects: ['question-firefox'],
+    },
+    {
+      name: 'setup project',
+      args: ['--project', 'custom-field-webkit-setup'],
+      projects: ['custom-field-webkit'],
     },
     {
       name: 'repeated equals flags',
@@ -112,14 +144,17 @@ describe('browser project servers', () => {
     vi.resetModules();
 
     const { default: config } = await import('../../browser/playwright.config.js');
-    const servers = Array.isArray(config.webServer) ? config.webServer : [config.webServer];
     const expectedURLs = projects.flatMap((name) => [
       ...(dependencyURLs[name] ?? []),
       serverURL(config.projects?.find((project) => project.name === name)?.use?.baseURL, name),
     ]);
 
     expect(expectedURLs).not.toContain(undefined);
-    expect(servers.map((server) => server?.url)).toEqual(expectedURLs);
+    expect(
+      webServers(config)
+        .flatMap((server) => server.url ?? [])
+        .sort(),
+    ).toEqual(expectedURLs.sort());
   });
 
   it('serves projects from offset ports and shares the offset with servers and workers', async () => {
@@ -131,5 +166,52 @@ describe('browser project servers', () => {
 
     expect(blank?.use?.baseURL).toBe(`http://localhost:${testPort(3111)}`);
     expect(process.env.FROGBOT_TEST_PORT_OFFSET).toBe(String(testPortOffset));
+  });
+
+  it('gives every project its own server and runs its tests one at a time', async () => {
+    process.argv = [process.execPath, 'playwright', 'test'];
+    vi.resetModules();
+
+    const { default: config } = await import('../../browser/playwright.config.js');
+    const projects = config.projects?.filter((project) => !project.name?.endsWith('-setup')) ?? [];
+
+    expect(new Set(projects.map((project) => project.use?.baseURL)).size).toBe(projects.length);
+    expect(projects.filter((project) => project.workers !== 1).map(({ name }) => name)).toEqual([]);
+  });
+
+  it('builds each fixture the selected projects need once, before starting their servers', async () => {
+    process.argv = [
+      process.execPath,
+      'playwright',
+      'test',
+      '--project',
+      'question',
+      'question-webkit',
+      'plugin-seo',
+    ];
+    vi.resetModules();
+
+    const { default: config } = await import('../../browser/playwright.config.js');
+
+    expect(webServers(config)[0]?.name).toBe('build');
+    expect(builtFixtures(config)).toEqual(['question', 'plugin-wrappers']);
+  });
+
+  it('runs every project in series on dev servers shared by browser variants with FROGBOT_BROWSER_DEV=1', async () => {
+    process.argv = [process.execPath, 'playwright', 'test', '--project', 'question-firefox'];
+    vi.stubEnv('FROGBOT_BROWSER_DEV', '1');
+    vi.resetModules();
+
+    const { default: config } = await import('../../browser/playwright.config.js');
+    const project = (name: string) => config.projects?.find((entry) => entry.name === name);
+
+    expect(config.workers).toBe(1);
+    expect(builtFixtures(config)).toBeUndefined();
+    expect(project('question-firefox')?.use?.baseURL).toBe(project('question')?.use?.baseURL);
+    expect(project('question-firefox')?.dependencies).toEqual(['question-setup']);
+    expect(webServers(config).map((server) => server.url)).toEqual([
+      `http://localhost:${testPort(3127)}`,
+    ]);
+    expect(webServers(config)[0]?.command).toMatch(/"dev"$/);
   });
 });

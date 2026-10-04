@@ -1,14 +1,14 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
 import { fetchMetadata, metadataValues } from './__helpers/metadata';
+import { test } from './__helpers/questionTest';
 import { signedOut } from './__helpers/signIn';
 import {
   agentSlug,
   chatsSlug,
   hiddenSettings,
   insightsPath,
-  modelPort,
   reportsPath,
   robotSettings,
   tasksSlug,
@@ -39,7 +39,7 @@ test.setTimeout(120_000);
 
 test.use({ viewport: { width: 1600, height: 900 } });
 
-test.beforeAll(async () => {
+test.beforeAll(async ({ modelPort }) => {
   model = await startStubChatModel(modelPort);
 });
 

@@ -230,15 +230,19 @@ test.describe('nav shell on desktop', () => {
 });
 
 test.describe('nav shell keeps the saved desktop state', () => {
+  const hydrationError = /Hydration failed|did not match|Minified React error #(418|423|425)\b/;
+
   let hydrationErrors: string[];
 
   test.beforeEach(async ({ page }) => {
     hydrationErrors = [];
 
     page.on('console', (message) => {
-      if (/Hydration failed|did not match/.test(message.text())) {
-        hydrationErrors.push(message.text());
-      }
+      if (hydrationError.test(message.text())) hydrationErrors.push(message.text());
+    });
+
+    page.on('pageerror', (error) => {
+      if (hydrationError.test(error.message)) hydrationErrors.push(error.message);
     });
 
     await setNavPreference(page, true);
