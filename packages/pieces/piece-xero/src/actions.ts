@@ -1,3 +1,4 @@
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { XeroClient, XeroJSON } from './client.js';
@@ -460,8 +461,8 @@ const uploadAttachment = defineAction({
   description: 'Upload an attachment to a Xero resource.',
   input: uploadAttachmentInput,
   async run({ input, client, req }) {
-    const collection = req.frogbot.config.files?.slug;
-    if (!collection) throw new Error('FrogBot files are not configured.');
+    const collection = filesCollectionSlug(req, 'Xero');
+
     const file = await req.frogbot.findByID({
       collection,
       id: input.file,

@@ -1,11 +1,8 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 
 export async function loadFile(req: FrogBotRequest, fileId: string | number) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('[frogbot] Excel conversion requires the files collection to be configured.');
-  }
+  const collection = filesCollectionSlug(req, 'CSV');
 
   const file = await req.frogbot.findByID({
     collection,

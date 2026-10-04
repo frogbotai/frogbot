@@ -50,7 +50,7 @@ Set `graphQL.disable: true` to make `/api/graphql` return 404. This setting does
 
 ## What's in the schema
 
-The schema includes your collections and FrogBot's public built-in collections, such as `chats`, `messages`, and `files`. FrogBot's internal collections (chat turns, chat assets, trigger subscriptions, and durable waits) and internal records such as admin preferences, document locks, jobs, and key-value storage aren't part of it.
+The schema includes your collections and FrogBot's public built-in collections, such as `chats` and `messages`. A `files` collection appears when your app marks one with `file: true`. FrogBot's internal collections (chat turns, chat assets, trigger subscriptions, and durable waits) and internal records such as admin preferences, document locks, jobs, and key-value storage aren't part of it.
 
 <Warning>
   Don't point a single-collection `relationship` or `upload` field at one of FrogBot's internal collections, such as `frogbot-chat-assets`. Those collections aren't in the GraphQL schema, so the schema can't be built.

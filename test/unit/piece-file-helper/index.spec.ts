@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/pieces/definePiece.js'));
+vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import { pieceInstanceTools } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createFileHelper } from '../../../packages/pieces/piece-file-helper/src/index.js';

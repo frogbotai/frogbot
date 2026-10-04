@@ -260,56 +260,56 @@ Return the matched user with its `collection`, or `null` when the platform ident
 
 Build the inventory from the upstream piece's registered `actions` and `triggers`, not FrogBot's previous default-action list or wrapper exports. Those narrower surfaces may omit supported actions, custom API calls, or every trigger.
 
-| Activepieces                                                                         | Native FrogBot contract                                                                                   |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `displayName`, `logoUrl`, `description`, `categories`, `authors`                     | `label` and `admin.{description,icon,group}`; drop authors.                                               |
-| Auth variants and `validate`                                                         | `auth` zod schema and, for OAuth2/OIDC, an `oauth` recipe. Validation belongs in schemas or client calls. |
-| `action.props`                                                                       | `input` zod schema with `.meta({ label, description })`.                                                  |
-| `Dropdown.options`, `DynamicProperties`                                              | `action.options`.                                                                                         |
-| `action.test`, `requireAuth`, `audience`                                             | Drop.                                                                                                     |
-| `errorHandlingOptions`                                                               | Drop; retries and continuation are workflow settings.                                                     |
-| `outputSchema`, `aiMetadata.idempotent`                                              | Re-author a real `output` schema when useful; map idempotence to `idempotent`.                            |
-| `ctx.auth`, `ctx.propsValue`                                                         | `client`, `input`; auth is passed only to `client`.                                                       |
-| `ctx.store`                                                                          | Trigger `state` or polling `cursor`; actions may use `req.frogbot.kv`.                                    |
-| `ctx.files.write`                                                                    | `req.frogbot` and the configured files collection.                                                        |
-| `ctx.connections.get`                                                                | Drop; credential resolution produces `client`.                                                            |
-| `ctx.server`                                                                         | Drop; use the in-process local API. `webhookUrl` is explicit where needed.                                |
-| `ctx.run.id`, `stop`, `respond`                                                      | Drop; these belong to the workflow host.                                                                  |
-| Waitpoints, `executionType`, `resumePayload`, `run.pause`, `generateResumeUrl`       | Drop; durable waits belong to workflows. Accept resume URLs as action input when needed.                  |
-| `ctx.output.update`, `ctx.flows`, `ctx.step`, `ctx.project`, `ctx.tags`, `ctx.agent` | Drop.                                                                                                     |
-| `TriggerStrategy.WEBHOOK`, `webhookUrl`                                              | `type: 'webhook'` with `onEnable` and `onDisable`.                                                        |
-| `APP_WEBHOOK`, listeners, event parse/verify                                         | `type: 'app'` plus `piece.webhook`; do not port account identifiers.                                      |
-| `POLLING`, `setSchedule`                                                             | `type: 'polling'`, optional `schedule`, and returned cursor.                                              |
-| `MANUAL`                                                                             | Drop.                                                                                                     |
-| Handshake configuration                                                              | `piece.webhook.handshake`.                                                                                |
-| Renewal configuration                                                                | `trigger.renew`.                                                                                          |
-| `_dedupe_key`                                                                        | `event.dedupeKey`.                                                                                        |
-| `sampleData`, `testStrategy`                                                         | `sample`; native tests call `run`.                                                                        |
-| Context versions, compatibility shims, i18n                                          | Drop.                                                                                                     |
+| Activepieces                                                                         | Native FrogBot contract                                                                                       |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `displayName`, `logoUrl`, `description`, `categories`, `authors`                     | `label` and `admin.{description,icon,group}`; drop authors.                                                   |
+| Auth variants and `validate`                                                         | `auth` zod schema and, for OAuth2/OIDC, an `oauth` recipe. Validation belongs in schemas or client calls.     |
+| `action.props`                                                                       | `input` zod schema with `.meta({ label, description })`.                                                      |
+| `Dropdown.options`, `DynamicProperties`                                              | `action.options`.                                                                                             |
+| `action.test`, `requireAuth`, `audience`                                             | Drop.                                                                                                         |
+| `errorHandlingOptions`                                                               | Drop; retries and continuation are workflow settings.                                                         |
+| `outputSchema`, `aiMetadata.idempotent`                                              | Re-author a real `output` schema when useful; map idempotence to `idempotent`.                                |
+| `ctx.auth`, `ctx.propsValue`                                                         | `client`, `input`; auth is passed only to `client`.                                                           |
+| `ctx.store`                                                                          | Trigger `state` or polling `cursor`; actions may use `req.frogbot.kv`.                                        |
+| `ctx.files.write`                                                                    | `req.frogbot.create` on `filesCollectionSlug(req, '<Piece label>')`, which throws without a files collection. |
+| `ctx.connections.get`                                                                | Drop; credential resolution produces `client`.                                                                |
+| `ctx.server`                                                                         | Drop; use the in-process local API. `webhookUrl` is explicit where needed.                                    |
+| `ctx.run.id`, `stop`, `respond`                                                      | Drop; these belong to the workflow host.                                                                      |
+| Waitpoints, `executionType`, `resumePayload`, `run.pause`, `generateResumeUrl`       | Drop; durable waits belong to workflows. Accept resume URLs as action input when needed.                      |
+| `ctx.output.update`, `ctx.flows`, `ctx.step`, `ctx.project`, `ctx.tags`, `ctx.agent` | Drop.                                                                                                         |
+| `TriggerStrategy.WEBHOOK`, `webhookUrl`                                              | `type: 'webhook'` with `onEnable` and `onDisable`.                                                            |
+| `APP_WEBHOOK`, listeners, event parse/verify                                         | `type: 'app'` plus `piece.webhook`; do not port account identifiers.                                          |
+| `POLLING`, `setSchedule`                                                             | `type: 'polling'`, optional `schedule`, and returned cursor.                                                  |
+| `MANUAL`                                                                             | Drop.                                                                                                         |
+| Handshake configuration                                                              | `piece.webhook.handshake`.                                                                                    |
+| Renewal configuration                                                                | `trigger.renew`.                                                                                              |
+| `_dedupe_key`                                                                        | `event.dedupeKey`.                                                                                            |
+| `sampleData`, `testStrategy`                                                         | `sample`; native tests call `run`.                                                                            |
+| Context versions, compatibility shims, i18n                                          | Drop.                                                                                                         |
 
 ## Property mapping
 
 Apply `required`, defaults, bounds, and labels from the source. Optional properties use `.optional()`.
 
-| Property type                  | Zod/native mapping                                                                                                      |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `SHORT_TEXT`                   | `z.string()`                                                                                                            |
-| `LONG_TEXT`                    | `z.string()`                                                                                                            |
-| `MARKDOWN`                     | `z.string()`; markdown is presentation metadata, not a distinct value type.                                             |
-| `DROPDOWN`                     | Schema for the option value plus `action.options[key]`.                                                                 |
-| `STATIC_DROPDOWN`              | `z.enum`, `z.literal` union, or the exact option-value schema.                                                          |
-| `NUMBER`                       | `z.number()` with applicable bounds.                                                                                    |
-| `CHECKBOX`                     | `z.boolean()`                                                                                                           |
-| `ARRAY`                        | `z.array(itemSchema)`                                                                                                   |
-| `OBJECT`                       | `z.object(...)` when fields are known; otherwise `z.record(z.string(), z.unknown())`.                                   |
-| `JSON`                         | A recursive JSON schema or the narrow known shape.                                                                      |
-| `MULTI_SELECT_DROPDOWN`        | `z.array(optionValueSchema)` plus `action.options[key]`.                                                                |
-| `STATIC_MULTI_SELECT_DROPDOWN` | `z.array()` of the exact static option-value schema.                                                                    |
-| `DYNAMIC`                      | Re-author stable fields in `input`; supply choices through `action.options`.                                            |
-| `DATE_TIME`                    | `z.string()` with datetime validation when the vendor requires ISO 8601.                                                |
-| `FILE`                         | The configured files collection's id type, commonly `z.union([z.string(), z.number()])`; load it through `req.frogbot`. |
-| `COLOR`                        | `z.string()` with the vendor's color format validation when defined.                                                    |
-| `CUSTOM`                       | Re-author its value schema and dynamic choices through `action.options`; do not port UI components.                     |
+| Property type                  | Zod/native mapping                                                                                                                                            |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SHORT_TEXT`                   | `z.string()`                                                                                                                                                  |
+| `LONG_TEXT`                    | `z.string()`                                                                                                                                                  |
+| `MARKDOWN`                     | `z.string()`; markdown is presentation metadata, not a distinct value type.                                                                                   |
+| `DROPDOWN`                     | Schema for the option value plus `action.options[key]`.                                                                                                       |
+| `STATIC_DROPDOWN`              | `z.enum`, `z.literal` union, or the exact option-value schema.                                                                                                |
+| `NUMBER`                       | `z.number()` with applicable bounds.                                                                                                                          |
+| `CHECKBOX`                     | `z.boolean()`                                                                                                                                                 |
+| `ARRAY`                        | `z.array(itemSchema)`                                                                                                                                         |
+| `OBJECT`                       | `z.object(...)` when fields are known; otherwise `z.record(z.string(), z.unknown())`.                                                                         |
+| `JSON`                         | A recursive JSON schema or the narrow known shape.                                                                                                            |
+| `MULTI_SELECT_DROPDOWN`        | `z.array(optionValueSchema)` plus `action.options[key]`.                                                                                                      |
+| `STATIC_MULTI_SELECT_DROPDOWN` | `z.array()` of the exact static option-value schema.                                                                                                          |
+| `DYNAMIC`                      | Re-author stable fields in `input`; supply choices through `action.options`.                                                                                  |
+| `DATE_TIME`                    | `z.string()` with datetime validation when the vendor requires ISO 8601.                                                                                      |
+| `FILE`                         | The files collection's id type, commonly `z.union([z.string(), z.number()])`; load it from `filesCollectionSlug(req, '<Piece label>')` through `req.frogbot`. |
+| `COLOR`                        | `z.string()` with the vendor's color format validation when defined.                                                                                          |
+| `CUSTOM`                       | Re-author its value schema and dynamic choices through `action.options`; do not port UI components.                                                           |
 
 ## Auth mapping
 

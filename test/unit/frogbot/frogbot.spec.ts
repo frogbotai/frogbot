@@ -1,10 +1,22 @@
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  expectTypeOf,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest';
 
 import { buildManifestEndpoint } from '../../../packages/frogbot/src/chat/manifest.js';
 import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
+import { definePiece } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
 import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import { TriggerSubscriptions } from '../../../packages/frogbot/src/triggers/subscriptions.js';
+import { defineEchoPiece } from './triggers/fixtures/piece-echo.js';
 
 vi.mock('payload', () => {
   let mockPayload = createMockPayload();
@@ -305,6 +317,55 @@ describe('FrogBot class', () => {
       await frogbot.init({ config, onInit: optionOnInit, disableOnInit: true });
       expect(optionOnInit).not.toHaveBeenCalled();
       expect(configOnInit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('trigger reconciliation', () => {
+    let reconcile: MockInstance<TriggerSubscriptions['reconcile']>;
+
+    beforeEach(() => {
+      reconcile = vi
+        .spyOn(TriggerSubscriptions.prototype, 'reconcile')
+        .mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      reconcile.mockRestore();
+    });
+
+    it('skips trigger reconciliation at boot without agent triggers or channels', async () => {
+      const frogbot = new FrogBot();
+
+      await frogbot.init({ config: makeConfig() });
+
+      expect(reconcile).not.toHaveBeenCalled();
+      expect(frogbot.logger.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('Trigger reconciliation failed'),
+      );
+    });
+
+    it('reconciles triggers at boot when an agent declares a trigger', async () => {
+      const config = makeConfig();
+
+      config._internal.triggers = {
+        echo: { instance: defineEchoPiece(definePiece)({ prefix: '' }), subscribers: [] },
+      };
+
+      await new FrogBot().init({ config });
+
+      expect(reconcile).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not reconcile when disableOnInit is true', async () => {
+      const config = makeConfig();
+
+      config._internal.triggers = {
+        echo: { instance: defineEchoPiece(definePiece)({ prefix: '' }), subscribers: [] },
+      };
+
+      await new FrogBot().init({ config, disableOnInit: true });
+
+      expect(reconcile).not.toHaveBeenCalled();
     });
   });
 

@@ -18,6 +18,8 @@ export const slack = createSlack({
 
 Static credentials use `{ botToken, userToken?, teamId? }`. OAuth uses Slack OAuth v2 and stores the bot token, workspace ID, and optional authed-user token returned by Slack.
 
+`uploadFile`, `getFile`, and file attachments on `sendChannelMessage` use the [files collection](https://docs.frogbot.ai/upload/files), the upload collection marked `file: true`. Without one, they fail with an error that asks you to add it.
+
 To attach the app to an agent, use the static bot token and add the piece instance to `channels`:
 
 ```ts
@@ -53,7 +55,7 @@ export default buildConfig({
 | `request_action_direct_message`   | `requestActionDirectMessage`   | Omitted                  | Workflow waitpoint action selection.                                                 |
 | `request_action_message`          | `requestActionMessage`         | Omitted                  | Workflow waitpoint action selection.                                                 |
 | `uploadFile`                      | `uploadFile`                   | `uploadFile`             | Uses Slack's external upload flow.                                                   |
-| `get-file`                        | `getFile`                      | `getFile`                | Safely persists downloaded bytes in the FrogBot files collection.                    |
+| `get-file`                        | `getFile`                      | `getFile`                | Safely persists downloaded bytes in the files collection.                            |
 | `searchMessages`                  | `searchMessages`               | `searchMessages`         | Requires a user token.                                                               |
 | `slack-find-user-by-email`        | `slackFindUserByEmail`         | `findUserByEmail`        |                                                                                      |
 | `slack-find-user-by-handle`       | `slackFindUserByHandle`        | `findUserByHandle`       |                                                                                      |

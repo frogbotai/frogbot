@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const fileId = z.union([z.string(), z.number()]);
@@ -10,9 +11,7 @@ export const savedFile = z.object({
 });
 
 export async function loadFile(req: FrogBotRequest, id: z.output<typeof fileId>) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) throw new Error('PDF actions require a configured files collection.');
+  const collection = filesCollectionSlug(req, 'PDF');
 
   const doc = await req.frogbot.findByID({
     collection,
@@ -68,9 +67,7 @@ export async function saveFile({
   name: string;
   mimeType: string;
 }) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) throw new Error('PDF actions require a configured files collection.');
+  const collection = filesCollectionSlug(req, 'PDF');
 
   req.signal?.throwIfAborted();
 

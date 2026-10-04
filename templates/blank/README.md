@@ -4,7 +4,7 @@ The minimum FrogBot setup: a `users` auth collection, database storage, two agen
 (`general` and `assistant`), and the admin panel served by Next.js. No Docker is
 required.
 
-The `src/collections/Users.ts` file is an example you can customize, not a framework requirement. Configuring the agent automatically adds `chats` and `messages`, where your chats are saved.
+The `src/collections/Users.ts` file is an example you can customize, not a framework requirement. Configuring the agent automatically adds `chats` and `messages`, where your chats are saved. `src/collections/Files.ts` defines `files`, the upload collection marked `file: true` that pieces save files to; see [Files](https://docs.frogbot.ai/upload/files).
 
 ## Quick Start
 

@@ -27,4 +27,4 @@ export default buildConfig({
 });
 ```
 
-The adapter stores files for FrogBot's files collection and chat assets automatically. List your own upload collections in `collections`, for example `collections: { media: true }`. See [Storage Adapters](https://docs.frogbot.ai/upload/storage-adapters) for every option.
+The adapter stores files for the collection marked `file: true`, if any, and chat assets automatically. List your own upload collections in `collections`, for example `collections: { media: true }`. See [Storage Adapters](https://docs.frogbot.ai/upload/storage-adapters) for every option.

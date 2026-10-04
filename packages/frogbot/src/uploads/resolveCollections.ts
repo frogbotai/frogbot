@@ -4,15 +4,13 @@ import { validateCollectionMarkers } from '../collections/config/validateMarkers
 import { defaultFilesCollection } from './collection.js';
 import type { SanitizedFilesConfig } from './types.js';
 
-export const DEFAULT_FILES_SLUG = 'files';
-
 export type ResolveFilesCollectionProps = {
   collections: CollectionConfig[];
 };
 
 export function resolveFilesCollection({ collections }: ResolveFilesCollectionProps): {
   collections: CollectionConfig[];
-  files: SanitizedFilesConfig;
+  files?: SanitizedFilesConfig;
 } {
   validateCollectionMarkers(collections);
   const marked = collections.filter((collection) => collection.file === true);
@@ -23,11 +21,13 @@ export function resolveFilesCollection({ collections }: ResolveFilesCollectionPr
   }
 
   const existing = marked[0];
-  const slug = existing?.slug ?? DEFAULT_FILES_SLUG;
   if (existing) {
+    const slug = existing.slug;
+
     if (existing.upload === false) {
       throw new Error(`[frogbot] Files collection '${slug}' cannot set \`upload: false\`.`);
     }
+
     const resolved = [...collections];
     resolved[collections.indexOf(existing)] = mergeCollection({
       user: existing,
@@ -35,16 +35,9 @@ export function resolveFilesCollection({ collections }: ResolveFilesCollectionPr
       reservedFields: [],
       feature: 'files',
     });
+
     return { collections: resolved, files: { slug } };
   }
 
-  if (collections.some((collection) => collection.slug === slug)) {
-    throw new Error(
-      `[frogbot] Collection slug '${slug}' conflicts with the default files collection. Add \`file: true\` to adopt it, or rename it.`,
-    );
-  }
-  return {
-    collections: [...collections, defaultFilesCollection({ slug })],
-    files: { slug },
-  };
+  return { collections, files: undefined };
 }

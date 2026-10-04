@@ -1,4 +1,4 @@
-import type { PieceJSON } from 'frogbot/pieces';
+import { filesCollectionSlug, type PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { defineAction } from '../define.js';
@@ -66,12 +66,9 @@ export const customApiCall = defineAction({
       headers: Record<string, string>;
       status: number;
     };
-    const collection = req.frogbot.config.files?.slug;
-    if (!collection) {
-      throw new Error(
-        '[frogbot] Piece file output requires the files collection to be configured.',
-      );
-    }
+
+    const collection = filesCollectionSlug(req, 'Resend');
+
     const contentType = response.headers['content-type'] ?? 'application/octet-stream';
     const extension = contentType.split('/')[1]?.split(';')[0] || 'bin';
     const doc = await req.frogbot.create({

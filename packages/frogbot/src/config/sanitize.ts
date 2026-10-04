@@ -1800,14 +1800,17 @@ export function sanitize(
   const { collections: resolvedCollections, files } = resolveFilesCollection({
     collections: [
       ...connectionsResult.collections,
-      defaultTriggerSubscriptionsCollection(),
+      ...(Object.keys(triggers).length ? [defaultTriggerSubscriptionsCollection()] : []),
       defaultWaitpointsCollection(),
     ],
   });
 
   config = applyStorageAdapters({
     config: { ...config, collections: resolvedCollections, onInit: normalizeOnInit(config.onInit) },
-    builtInSlugs: [files.slug, ...(chatResult.chat.enabled ? [chatResult.chat.assetsSlug] : [])],
+    builtInSlugs: [
+      ...(files ? [files.slug] : []),
+      ...(chatResult.chat.enabled ? [chatResult.chat.assetsSlug] : []),
+    ],
   });
 
   const collections = config.collections;

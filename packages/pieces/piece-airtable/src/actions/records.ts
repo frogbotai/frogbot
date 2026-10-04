@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import type { PieceRunArgs } from 'frogbot/pieces';
+import { filesCollectionSlug, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { AirtableClient } from '../client.js';
@@ -193,11 +193,7 @@ const uploadInput = z.object({
 });
 
 async function loadFile(req: FrogBotRequest, fileId: string | number) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('Airtable attachment uploads require a configured files collection.');
-  }
+  const collection = filesCollectionSlug(req, 'Airtable');
 
   const doc = await req.frogbot.findByID({
     collection,

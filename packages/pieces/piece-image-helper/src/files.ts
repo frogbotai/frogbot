@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { lookup } from 'mime-types';
 import { z } from 'zod';
 
@@ -19,21 +20,11 @@ export type LoadedImage = {
   mimeType: string;
 };
 
-function filesCollection(req: FrogBotRequest) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('[frogbot] Image Helper requires the files collection to be configured.');
-  }
-
-  return collection;
-}
-
 export async function loadImage(req: FrogBotRequest, id: string | number): Promise<LoadedImage> {
   req.signal?.throwIfAborted();
 
   const doc = await req.frogbot.findByID({
-    collection: filesCollection(req),
+    collection: filesCollectionSlug(req, 'Image Helper'),
     id,
     depth: 0,
     req,
@@ -106,7 +97,7 @@ export async function saveImage({
   req.signal?.throwIfAborted();
 
   const doc = await req.frogbot.create({
-    collection: filesCollection(req),
+    collection: filesCollectionSlug(req, 'Image Helper'),
     data: {},
     file: { data, name, mimetype: mimeType, size: data.length },
     req,

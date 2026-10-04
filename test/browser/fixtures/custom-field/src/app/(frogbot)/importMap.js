@@ -4,9 +4,6 @@ import { OwnerNote as OwnerNote_29347ead89d170393c0abfd48123a474 } from '../../c
 import { ThemeProbe as ThemeProbe_c2e8c6c315f6348c3c4b5b282e48f48f } from '../../components/ThemeProbe'
 import { ApiKeysManager as ApiKeysManager_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client'
 import { RevokeApiKey as RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client'
-import { FolderTableCell as FolderTableCell_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc'
-import { FolderField as FolderField_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc'
-import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client'
 import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc'
 import { LogoutLinkProbe as LogoutLinkProbe_f722bdb6190f85f323c47de2bf414a56 } from '../../components/LinkProbe'
 import { FrogBotIcon as FrogBotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc'
@@ -30,9 +27,6 @@ export const importMap = {
   "/components/ThemeProbe#ThemeProbe": ThemeProbe_c2e8c6c315f6348c3c4b5b282e48f48f,
   "@frogbotai/plugin-api-keys/client#ApiKeysManager": ApiKeysManager_da5b1e8ed1210a079e514867fb7c4ae9,
   "@frogbotai/plugin-api-keys/client#RevokeApiKey": RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9,
-  "@frogbotai/next/rsc#FolderTableCell": FolderTableCell_0d74ee439e1043043a872b6d428a44d5,
-  "@frogbotai/next/rsc#FolderField": FolderField_0d74ee439e1043043a872b6d428a44d5,
-  "@frogbotai/next/client#FolderTypeField": FolderTypeField_e1fc65845c25c823b271918436e716b9,
   "@frogbotai/next/rsc#FrogBotNav": FrogBotNav_0d74ee439e1043043a872b6d428a44d5,
   "/components/LinkProbe#LogoutLinkProbe": LogoutLinkProbe_f722bdb6190f85f323c47de2bf414a56,
   "@frogbotai/next/rsc#FrogBotIcon": FrogBotIcon_0d74ee439e1043043a872b6d428a44d5,

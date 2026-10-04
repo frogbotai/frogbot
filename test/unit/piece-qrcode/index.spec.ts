@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
-vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/pieces/definePiece.js'));
+vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import {
   pieceFactoryDefinition,
@@ -79,11 +79,11 @@ describe('QR Code', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('requires the FrogBot files collection', async () => {
+  it('rejects without a files collection', async () => {
     const { create, qrCode, req } = fixture(null);
 
     await expect(qrCode.createQrCode({ input: { text: 'FrogBot' }, req })).rejects.toThrow(
-      '[frogbot] QR Code requires the files collection.',
+      '[frogbot] QR Code requires a files collection. Add an upload collection with `file: true`.',
     );
     expect(create).not.toHaveBeenCalled();
   });

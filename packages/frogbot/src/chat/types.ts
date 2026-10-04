@@ -11,6 +11,6 @@ export type SanitizedChatConfig =
 export type ManifestResponse = {
   ai: { transcribe: { model: string } | false };
   chat: SanitizedChatConfig;
-  files: { slug: string };
+  files?: { slug: string };
   agents: { slug: string; profile?: AgentProfile }[];
 };

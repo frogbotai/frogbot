@@ -29,11 +29,13 @@ function makeRequest({
   chat = { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' } as const,
   ai = {},
   user = { id: 'user-1' },
+  files = { slug: 'uploads' },
 }: {
   agents?: AgentInstance[];
   chat?: { enabled: false } | { enabled: true; chatsSlug: string; messagesSlug: string };
   ai?: Record<string, unknown>;
   user?: Record<string, unknown> | null;
+  files?: { slug: string } | undefined;
 } = {}): FrogBotRequest {
   return {
     frogbot: {
@@ -46,7 +48,7 @@ function makeRequest({
           ...ai,
         },
         chat,
-        files: { slug: 'uploads' },
+        files,
       },
     },
     user,
@@ -95,6 +97,17 @@ describe('manifest endpoint', () => {
       files: { slug: 'uploads' },
       agents: [{ slug: 'support' }],
     });
+  });
+
+  it('omits files when no files collection exists', async () => {
+    const req = makeRequest();
+
+    delete (req.frogbot.config as { files?: unknown }).files;
+
+    const response = await buildManifestEndpoint().handler(req);
+    const body = await response.json();
+
+    expect('files' in body).toBe(false);
   });
 
   it('filters agents with the request access rules', async () => {

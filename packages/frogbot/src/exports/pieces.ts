@@ -18,6 +18,7 @@ export type {
 export type { TurnActor } from '../chat/turn/types.js';
 export { createPieceHelpers, definePiece } from '../pieces/definePiece.js';
 export type { EmailPiece } from '../pieces/email.js';
+export { filesCollectionSlug } from '../pieces/files.js';
 export type * from '../pieces/types.js';
 export type { QuestionInput, QuestionOutput } from '../tools/question.js';
 export type { TriggerEvent } from '../triggers/types.js';

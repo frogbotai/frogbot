@@ -163,7 +163,7 @@ This mirrors Payload's adapter swap pattern from their test infrastructure.
 Storage adapters are wrapped in `@frogbotai/storage-*` packages. Each wrapper is a plugin that records its options on the config; FrogBot applies it later. The execution flow:
 
 1. `runPlugins` (frogbot) executes plugins on `FrogBotConfig`; storage plugins only register themselves
-2. `sanitize()` adds FrogBot's collections, then applies each storage adapter with the files collection and `frogbot-chat-assets` added to the first adapter's `collections`
+2. `sanitize()` adds FrogBot's collections, then applies each storage adapter with the collection marked `file: true` (if any) and `frogbot-chat-assets` (when chat is enabled) added to the first adapter's `collections`
 3. The adapters inject `upload.handlers` and hooks before `sanitize()` builds the final collections
 4. Payload receives config with handlers already wired — no re-run needed
 

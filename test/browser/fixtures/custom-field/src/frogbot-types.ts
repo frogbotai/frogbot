@@ -70,18 +70,14 @@ export interface Config {
     users: User;
     posts: Post;
     'api-keys': ApiKey;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
-    files: File;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
     'api-keys': ApiKeysSelect;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
-    files: FilesSelect;
   };
   db: {
     defaultIDType: number;
@@ -183,44 +179,6 @@ export interface ApiKey {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frogbot-trigger-subscriptions".
- */
-export interface FrogbotTriggerSubscription {
-  id: number;
-  agent: string;
-  piece: string;
-  instance: string;
-  trigger: string;
-  inputHash: string;
-  input:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  state?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  webhookUrl?: string | null;
-  status: 'active' | 'error';
-  cleanupPending?: boolean | null;
-  enablePending?: boolean | null;
-  enableAttempt?: string | null;
-  expiresAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
 export interface FrogbotWaitpoint {
@@ -248,26 +206,6 @@ export interface FrogbotWaitpoint {
   dispatchLeaseUntil?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "files".
- */
-export interface File {
-  id: number;
-  folder?: (number | null) | null;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -321,27 +259,6 @@ export interface ApiKeysSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frogbot-trigger-subscriptions_select".
- */
-export interface FrogbotTriggerSubscriptionsSelect {
-  agent?: boolean;
-  piece?: boolean;
-  instance?: boolean;
-  trigger?: boolean;
-  inputHash?: boolean;
-  input?: boolean;
-  state?: boolean;
-  webhookUrl?: boolean;
-  status?: boolean;
-  cleanupPending?: boolean;
-  enablePending?: boolean;
-  enableAttempt?: boolean;
-  expiresAt?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
 export interface FrogbotWaitpointsSelect {
@@ -360,25 +277,6 @@ export interface FrogbotWaitpointsSelect {
   dispatchLeaseUntil?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "files_select".
- */
-export interface FilesSelect {
-  folder?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-  deletedAt?: boolean;
-  url?: boolean;
-  thumbnailURL?: boolean;
-  filename?: boolean;
-  mimeType?: boolean;
-  filesize?: boolean;
-  width?: boolean;
-  height?: boolean;
-  focalX?: boolean;
-  focalY?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

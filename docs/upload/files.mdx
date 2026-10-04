@@ -1,17 +1,29 @@
 ---
 title: "Files"
 sidebarTitle: "Files"
-description: "Use FrogBot's default upload collection or adopt your own."
+description: "Mark one upload collection as FrogBot's file store."
 keywords: ["files", "uploads", "folders", "storage", "collections"]
 ---
 
-FrogBot adds a `files` collection to every app. It supports uploads, soft deletion, and FrogBot's folder browser without additional configuration.
-
-The default collection appears under **Collections** in the admin panel and defines no custom fields. FrogBot supplies upload metadata such as the filename, MIME type, size, and URL.
+FrogBot adds no files collection. Mark one upload collection with `file: true` to give pieces a place to store files. The collection appears under **Collections** in the admin panel and defines no custom fields unless you add them. FrogBot supplies upload metadata such as the filename, MIME type, size, and URL.
 
 ## Adopt your collection
 
-Mark one upload collection with `file: true` to use its slug and configuration instead of injecting `files`.
+Give one upload collection the `file: true` marker to use it as FrogBot's file store:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Files: CollectionConfig = {
+  slug: 'files',
+  file: true,
+  fields: [],
+}
+```
+
+That collection gets uploads, folders, soft deletion, admin list defaults, and access that requires an authenticated user. Your own fields, access rules, upload options, and other collection settings take precedence.
+
+A larger example can set its own slug, upload options, and fields:
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -28,26 +40,50 @@ export const Documents: CollectionConfig = {
 }
 ```
 
-Your fields, access rules, upload options, and other collection settings take precedence. A collection marked `file: true` must not set `upload: false`.
-
-Mark only one collection as `file: true`. A collection cannot hold another FrogBot role, such as `chat: true`, at the same time.
+A collection marked `file: true` must not set `upload: false`. Mark only one collection as `file: true`. A collection cannot hold another FrogBot role, such as `chat: true`, at the same time.
 
 ## Folders
 
-Folders are enabled on the default collection. Set `folders: false` on an adopted collection if you do not want the Browse-by-folder view.
+Folders are enabled on a collection marked `file: true`. Set `folders: false` on it if you do not want the Browse-by-folder view.
 
 ## Storage
 
-FrogBot stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, add an [upload storage adapter](/upload/storage-adapters) to `plugins`. The adapter covers the files collection, `files` or your collection marked `file: true`, automatically; you don't list it in the adapter's `collections`.
+FrogBot stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, add an [upload storage adapter](/upload/storage-adapters) to `plugins`. The adapter covers the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat is enabled, automatically; you don't list them in the adapter's `collections`.
 
 ## Access
 
-The default collection requires an authenticated user to create, read, update, or delete files. Adopt a collection and provide `access` rules to change those defaults.
+A collection marked `file: true` requires an authenticated user to create, read, update, or delete files unless you set your own `access` rules.
 
 <Warning>
   Files do not have per-user ownership or sharing rules. Authenticated users can access every file allowed by the collection's access rules.
 </Warning>
 
+## Keep existing files
+
+FrogBot adds no files collection of its own. An app that stores files in `files` keeps them by declaring that collection with `file: true`:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Files: CollectionConfig = {
+  slug: 'files',
+  file: true,
+  fields: [],
+}
+```
+
+Without a marked collection, the next schema change in an existing app drops these tables:
+
+- the `files` table;
+- `payload_folders`, when no other collection enables folders;
+- `frogbot_trigger_subscriptions`, when no agent has a trigger or channel.
+
+In development mode, schema push warns about the data loss and drops the tables only if you confirm. `frogbot migrate:create` writes the `DROP TABLE` statements into the migration for you to review before applying it. Stored files stay on disk or in the storage adapter, but no document references them anymore. On MongoDB the data stays, but FrogBot can't reach it.
+
 ## Piece output
 
-Pieces that produce files write to the resolved files collection automatically. Set `pieceFiles.collection` only when piece output must use a different upload collection.
+[Pieces](/pieces/overview#file-output) that create files write to the collection marked `file: true`. Without one, those actions fail when they run:
+
+```text
+[frogbot] QR Code requires a files collection. Add an upload collection with `file: true`.
+```

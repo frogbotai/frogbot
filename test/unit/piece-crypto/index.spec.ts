@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
-vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/pieces/definePiece.js'));
+vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import {
   pieceFactoryDefinition,
@@ -211,7 +211,8 @@ describe('crypto', () => {
       }),
     ).resolves.toEqual({
       success: false,
-      error: 'Crypto file encryption requires a configured files collection.',
+      error:
+        '[frogbot] Crypto requires a files collection. Add an upload collection with `file: true`.',
     });
   });
 });

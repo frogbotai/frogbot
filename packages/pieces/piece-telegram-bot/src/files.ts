@@ -1,4 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
+import { filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const telegramFile = z.object({
@@ -13,11 +14,7 @@ const storedFile = z.object({
 });
 
 export async function loadTelegramFile(req: FrogBotRequest, value: z.output<typeof telegramFile>) {
-  const collection = req.frogbot.config.files?.slug;
-
-  if (!collection) {
-    throw new Error('[frogbot] Telegram uploads require the files collection to be configured.');
-  }
+  const collection = filesCollectionSlug(req, 'Telegram');
 
   const result = await req.frogbot.findByID({
     collection,

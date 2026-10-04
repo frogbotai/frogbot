@@ -204,6 +204,6 @@ describe('image-helper execution', () => {
 
     await expect(
       imageHelper.imageToBase64({ input: { image: 'source' }, req: req as never }),
-    ).rejects.toThrow('requires the files collection');
+    ).rejects.toThrow('requires a files collection');
   });
 });
