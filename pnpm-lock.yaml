@@ -1612,6 +1612,9 @@ importers:
 
   packages/plugins/plugin-usage-reports:
     devDependencies:
+      '@frogbotai/next':
+        specifier: workspace:*
+        version: link:../../next
       '@frogbotai/plugin-import-export':
         specifier: workspace:*
         version: link:../plugin-import-export

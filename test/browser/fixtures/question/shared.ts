@@ -13,6 +13,20 @@ export const turnsSlug = 'frogbot-chat-turns';
 export const sliderPath = '/slider';
 export const sliderFrameWidth = 288;
 
+export const usageLogsSlug = 'usage-logs';
+export const apiKeysSlug = 'api-keys';
+export const costsPath = '/browser/costs';
+export const costKeyName = 'Browser cost key';
+export const costLogs = {
+  small: {
+    requestId: 'browser-cost-small',
+    model: 'browser/cost-small',
+    costUSD: 0.00017270000000000002,
+  },
+  key: { requestId: 'browser-cost-key', model: 'browser/cost-key', costUSD: 0.016455 },
+};
+export const monthlySpendUSD = 3.25;
+
 export const reasoningModels = {
   deliberator: 'deliberator',
   sprinter: 'sprinter',

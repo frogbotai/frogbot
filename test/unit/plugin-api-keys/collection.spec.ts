@@ -122,8 +122,8 @@ describe('API keys collection', () => {
       admin: {
         readOnly: true,
         components: {
-          Cell: '@frogbotai/plugin-api-keys/client#CostUSDCell',
-          Field: '@frogbotai/plugin-api-keys/client#CostUSDField',
+          Cell: '@frogbotai/next/client#CostUSDCell',
+          Field: '@frogbotai/next/client#CostUSDField',
         },
       },
     });

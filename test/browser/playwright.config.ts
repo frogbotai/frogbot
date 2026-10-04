@@ -246,6 +246,7 @@ export default defineConfig({
         'messagesOverride.browser.spec.ts',
         'breadcrumbs.browser.spec.ts',
         'topBarPhone.browser.spec.ts',
+        'costUSD.browser.spec.ts',
       ],
       use: {
         ...devices['Desktop Chrome'],

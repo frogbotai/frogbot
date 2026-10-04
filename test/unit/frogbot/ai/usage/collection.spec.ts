@@ -34,6 +34,29 @@ describe('resolveUsageCollection', () => {
     }
   });
 
+  it('labels costUSD and renders it with the shared cost cell and field', () => {
+    const base = resolveUsageCollection(makeConfig()).collections.at(-1);
+    const marked = resolveUsageCollection(
+      makeConfig({ collections: [{ slug: 'ai-usage', usageLog: true, fields: [] }] }),
+    ).collections[0];
+
+    for (const collection of [base, marked]) {
+      const costUSD = collection?.fields.find(
+        (field) => 'name' in field && field.name === 'costUSD',
+      );
+
+      expect(costUSD).toMatchObject({
+        label: 'Cost (USD)',
+        admin: {
+          components: {
+            Cell: '@frogbotai/next/client#CostUSDCell',
+            Field: '@frogbotai/next/client#CostUSDField',
+          },
+        },
+      });
+    }
+  });
+
   it('injects usage logs only when AI is configured', () => {
     expect(resolveUsageCollection(makeConfig()).collections.at(-1)?.slug).toBe(USAGE_LOGS_SLUG);
     expect(resolveUsageCollection(makeConfig({ ai: undefined })).collections).toEqual([]);

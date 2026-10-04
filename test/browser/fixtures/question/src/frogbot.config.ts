@@ -1,23 +1,30 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { apiKeysPlugin, mintApiKey } from '@frogbotai/plugin-api-keys';
 import { type AgentModelId, buildConfig, definePiece } from 'frogbot';
 import { question } from 'frogbot/tools';
 
 import {
   agentSlug,
+  apiKeysSlug,
   channelChat,
   channelQuestion,
   chatPicksPreference,
   chatsSlug,
+  costKeyName,
+  costLogs,
+  costsPath,
   deliberatorEfforts,
   insightsPath,
   messagesSlug,
   modelPort,
+  monthlySpendUSD,
   pickerAgentSlug,
   reasoningModels,
   reportsPath,
   robotSettings,
   tasksSlug,
   turnsSlug,
+  usageLogsSlug,
   usersSlug,
   verboseEffort,
 } from '../shared';
@@ -200,5 +207,102 @@ export default buildConfig({
         return Response.json({ chatId: chat.id });
       },
     },
+    {
+      path: costsPath,
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) return new Response(null, { status: 401 });
+
+        await req.frogbot.delete({
+          collection: usageLogsSlug as never,
+          where: { requestId: { in: [costLogs.small.requestId, costLogs.key.requestId] } },
+          overrideAccess: true,
+          req,
+        });
+        await req.frogbot.delete({
+          collection: apiKeysSlug as never,
+          where: { name: { equals: costKeyName } },
+          overrideAccess: true,
+          req,
+        });
+
+        const key = await mintApiKey({
+          req,
+          collectionSlug: apiKeysSlug,
+          tokenPrefix: 'fb',
+          name: costKeyName,
+        });
+
+        const created: Array<{ id: number | string }> = [];
+
+        for (const entry of [costLogs.small, costLogs.key]) {
+          const isKey = entry === costLogs.key;
+          const usageLog = await req.frogbot.create({
+            collection: usageLogsSlug as never,
+            data: {
+              requestId: entry.requestId,
+              user: req.user.id,
+              model: entry.model,
+              operation: 'chat.completions',
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+              costUSD: entry.costUSD,
+              requestedAt: new Date().toISOString(),
+              ...(isKey ? { apiKey: key.id } : {}),
+            } as never,
+            overrideAccess: true,
+            req,
+          });
+
+          created.push(usageLog as { id: number | string });
+        }
+
+        await req.frogbot.update({
+          collection: usersSlug as never,
+          id: req.user.id,
+          data: { spendThisPeriodUSD: monthlySpendUSD } as never,
+          overrideAccess: true,
+          req,
+        });
+
+        return Response.json({
+          userId: req.user.id,
+          apiKeyId: key.id,
+          usageLogIds: { small: created[0]?.id, key: created[1]?.id },
+        });
+      },
+    },
+    {
+      path: costsPath,
+      method: 'delete',
+      handler: async (req) => {
+        if (!req.user) return new Response(null, { status: 401 });
+
+        await req.frogbot.delete({
+          collection: usageLogsSlug as never,
+          where: { requestId: { in: [costLogs.small.requestId, costLogs.key.requestId] } },
+          overrideAccess: true,
+          req,
+        });
+        await req.frogbot.delete({
+          collection: apiKeysSlug as never,
+          where: { name: { equals: costKeyName } },
+          overrideAccess: true,
+          req,
+        });
+
+        await req.frogbot.update({
+          collection: usersSlug as never,
+          id: req.user.id,
+          data: { spendThisPeriodUSD: 0 } as never,
+          overrideAccess: true,
+          req,
+        });
+
+        return Response.json({ reset: true });
+      },
+    },
   ],
+  plugins: [apiKeysPlugin()],
 });

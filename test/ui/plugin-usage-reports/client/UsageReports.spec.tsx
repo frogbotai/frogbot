@@ -9,6 +9,13 @@ vi.mock('@payloadcms/ui', () => ({
   }),
 }));
 
+vi.mock('@frogbotai/next/client', async () => {
+  const { formatCostUSD } =
+    await import('../../../../packages/next/src/elements/CostUSD/index.client.js');
+
+  return { formatCostUSD };
+});
+
 const modelRows = [
   {
     key: 'small',
@@ -83,5 +90,44 @@ describe('UsageReports', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
     expect(screen.getByLabelText('From')).toBeTruthy();
     expect(screen.getByLabelText('To')).toBeTruthy();
+  });
+
+  it('shows sub-cent row costs and the totals in the shared cost format', async () => {
+    const costRows = [
+      { ...modelRows[0], costUSD: 0.0034 },
+      { ...modelRows[1], costUSD: 0.5 },
+    ];
+
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          groupBy: 'model',
+          from: '2026-01-01T00:00:00.000Z',
+          to: '2026-02-01T00:00:00.000Z',
+          rows: costRows,
+          totals: {
+            requestCount: 3,
+            inputTokens: 7,
+            outputTokens: 5,
+            cachedInputTokens: 0,
+            cacheWriteTokens: 0,
+            reasoningTokens: 0,
+            totalTokens: 12,
+            costUSD: 0.5034,
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    vi.stubGlobal('fetch', fetch);
+
+    const { container } = render(<UsageReports />);
+
+    await waitFor(() => expect(screen.getByText('Large')).toBeTruthy());
+
+    expect(screen.getByText('Small').closest('tr')?.textContent).toContain('$0.0034');
+    expect(screen.getByText('Large').closest('tr')?.textContent).toContain('$0.50');
+    expect(container.querySelector('.usage-reports__totals')?.textContent).toContain('$0.50 cost');
   });
 });
