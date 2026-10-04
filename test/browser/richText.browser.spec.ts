@@ -184,7 +184,9 @@ test('documented block components render and server blocks use req.frogbot', asy
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Documented blocks');
 
-  const editor = page.locator('[contenteditable="true"]').nth(1);
+  const editor = page
+    .locator('[data-field-path="documentedBlocks"] [contenteditable="true"]')
+    .first();
 
   await editor.click();
   await page.keyboard.insertText('/banner');
@@ -349,7 +351,7 @@ test('CodeBlock exposes the documented TypeScript language in the editor', async
 
   await expect(editors).toHaveCount(7);
 
-  const editor = editors.nth(5);
+  const editor = page.locator('[data-field-path="typedCode"] [contenteditable="true"]').first();
 
   await editor.click();
   await page.keyboard.insertText('/code');
@@ -365,7 +367,9 @@ test('divider inserts from the slash menu and typed Markdown', async ({ page }) 
 
   await expect(editors).toHaveCount(7);
 
-  const editor = editors.nth(6);
+  const editor = page
+    .locator('[data-field-path="dividerContent"] [contenteditable="true"]')
+    .first();
 
   await editor.click();
   await page.keyboard.insertText('/divider');
@@ -450,7 +454,9 @@ test('view selection preserves saved content and safely renders editor nodes', a
 
   await expect(editors).toHaveCount(7);
 
-  const viewEditor = editors.nth(4);
+  const viewEditor = page
+    .locator('[data-field-path="viewContent"] [contenteditable="true"]')
+    .first();
 
   await expect(viewEditor).toContainText('View paragraph');
   await page.locator('.lexical-view-selector__button').click();

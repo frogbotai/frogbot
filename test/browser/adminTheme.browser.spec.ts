@@ -9,21 +9,19 @@ import {
 } from './__helpers/adminTheme';
 import { signedOut } from './__helpers/signIn';
 
-function readAdminStyles(page: Page) {
-  return page.evaluate(() => {
-    const root = getComputedStyle(document.documentElement);
-    const body = getComputedStyle(document.body);
+function readRootProperty(page: Page, name: string) {
+  return page.evaluate(
+    (property) => getComputedStyle(document.documentElement).getPropertyValue(property),
+    name,
+  );
+}
 
-    return {
-      base0: root.getPropertyValue('--color-base-0'),
-      base500: root.getPropertyValue('--color-base-500'),
-      base1000: root.getPropertyValue('--color-base-1000'),
-      fontBody: root.getPropertyValue('--font-body'),
-      bodyBackground: body.backgroundColor,
-      bodyColor: body.color,
-      bodyFont: body.fontFamily,
-    };
-  });
+async function readAdminPalette(page: Page) {
+  return {
+    base0: await readAdminColor(page, '--color-base-0'),
+    base500: await readAdminColor(page, '--color-base-500'),
+    base1000: await readAdminColor(page, '--color-base-1000'),
+  };
 }
 
 test.describe('FrogBot UI in the admin', () => {
@@ -94,14 +92,12 @@ test.describe('FrogBot UI in the admin', () => {
       await expect(page.locator('html')).toHaveAttribute('data-fb-ui-page', '');
       await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
 
-      const styles = await readAdminStyles(page);
-
-      expect(styles).toMatchObject({
+      expect(await readAdminPalette(page)).toEqual({
         base0: 'rgb(255, 255, 255)',
         base500: 'rgb(128, 128, 128)',
         base1000: 'rgb(0, 0, 0)',
       });
-      expect(styles.fontBody).toMatch(/^-apple-system,/);
+      expect(await readRootProperty(page, '--font-body')).toMatch(/^-apple-system,/);
       await expect(page.locator('html')).toHaveCSS('background-color', pageBackground);
     });
   }
@@ -115,7 +111,7 @@ test.describe('FrogBot UI in the admin', () => {
     );
 
     expect(portalBase0).not.toBe('');
-    expect(portalBase0).toBe((await readAdminStyles(page)).base0);
+    expect(portalBase0).toBe(await readRootProperty(page, '--color-base-0'));
   });
 
   test('ignores a leftover data-fb-theme value in portals', async ({ page }) => {
@@ -212,16 +208,31 @@ test('keeps the FrogBot palette on pages outside the admin', async ({ page }) =>
   await expect(page.locator('html')).not.toHaveAttribute('data-fb-ui-page');
   expect(
     await page.evaluate(() => {
-      const root = getComputedStyle(document.documentElement);
+      const color = (name: string, colorScheme = '') => {
+        const sample = document.createElement('div');
+
+        sample.style.colorScheme = colorScheme;
+        sample.style.backgroundColor = `var(${name})`;
+        document.body.append(sample);
+
+        const value = getComputedStyle(sample).backgroundColor;
+
+        sample.remove();
+
+        return value;
+      };
 
       return {
-        base0: root.getPropertyValue('--color-base-0'),
-        themeBase0: root.getPropertyValue('--theme-base-0'),
+        base0: color('--color-base-0'),
+        themeBase0: {
+          light: color('--theme-base-0', 'light'),
+          dark: color('--theme-base-0', 'dark'),
+        },
       };
     }),
   ).toEqual({
     base0: 'rgb(249, 250, 251)',
-    themeBase0: 'light-dark(rgb(249, 250, 251), rgb(1, 3, 10))',
+    themeBase0: { light: 'rgb(249, 250, 251)', dark: 'rgb(1, 3, 10)' },
   });
 });
 

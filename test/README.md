@@ -442,6 +442,24 @@ pnpm test:e2e                    # Playwright
 pnpm docker:clean                # tear down all containers + volumes
 ```
 
+## Browser tests
+
+`pnpm test:browser` runs the Playwright suite in `test/browser/` against production servers, like Payload's `test:e2e:prod`:
+
+1. **Build.** The first web server, `[build]`, runs `next build` for each fixture the selected projects need, two at a time, then pushes the schema into an empty database (production servers don't push their own). A fixture whose files, workspace package builds, lockfile and build environment are unchanged prints `<fixture> up to date` and is skipped; otherwise it prints `built <fixture> in Ns`. The fixtures load package `dist` output, so run `pnpm build` after changing a package.
+2. **Serve.** Each project gets its own `next start` server, port and SQLite database, reset from the schema database on every start. The Firefox and WebKit projects share their fixture's build.
+3. **Run.** A setup project per server signs in once and saves `test/browser/.auth/<server>.json`. Projects run in parallel, four at a time; tests within a project run one at a time because they share its database.
+
+```sh
+pnpm test:browser                                                              # every project
+pnpm test:browser --project question                                           # builds and starts only the question server
+pnpm test:browser test/browser/breadcrumbs.browser.spec.ts --project question  # one spec in one project
+pnpm test:browser --workers 2                                                  # fewer projects at once
+FROGBOT_BROWSER_DEV=1 pnpm test:browser --project blank                        # next dev, one project at a time
+```
+
+Pass `--project` to narrow a run: a spec path alone still builds and starts every server. `FROGBOT_BROWSER_DEV=1` is for debugging: it runs `next dev`, one project at a time, and the Firefox and WebKit projects reuse their Chromium project's server. `next dev` clears the fixture's production build, so the next normal run rebuilds it. Production builds minify CSS and prefetch links, so assert computed values rather than source text.
+
 ## Live tests (real credentials)
 
 Live tests call real providers and services with your own keys. They run locally only. `pnpm bump` starts Docker Desktop if needed, starts the Docker services (`pnpm test:services`) and runs `pnpm test:release`: every project with live suites on, then the Postgres and MongoDB adapter suites. `pnpm release` only builds and publishes.
