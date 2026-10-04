@@ -315,6 +315,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/eu.anthropic.claude-sonnet-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/eu.mistral.pixtral-large-2502-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -841,6 +846,11 @@
   },
   {
     "id": "bedrock/us.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.anthropic.claude-sonnet-5-5",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -4416,6 +4426,11 @@
   },
   {
     "id": "vercel/deepseek/deepseek-v4.1-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4.1-flash-fast",
     "provider": "vercel",
     "mode": "chat"
   },
