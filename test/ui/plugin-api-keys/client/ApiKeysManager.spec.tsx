@@ -146,4 +146,10 @@ describe('API key controls', () => {
     expect(screen.getByText('Revoked')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Revoke' })).toBeNull();
   });
+
+  it('the client entry exports only the key controls', async () => {
+    const entry = await import('../../../../packages/plugins/plugin-api-keys/src/client.js');
+
+    expect(Object.keys(entry).sort()).toEqual(['ApiKeysManager', 'RevokeApiKey']);
+  });
 });

@@ -2,6 +2,7 @@
 
 import './styles.css';
 
+import { formatCostUSD } from '@frogbotai/next/client';
 import { useConfig } from '@payloadcms/ui';
 import { useEffect, useState } from 'react';
 
@@ -115,7 +116,7 @@ export function UsageReports() {
       label: 'Reasoning',
       value: (row) => formatTokens(row.reasoningTokens),
     },
-    { field: 'costUSD', label: 'Cost', value: (row) => `$${row.costUSD.toFixed(2)}` },
+    { field: 'costUSD', label: 'Cost', value: (row) => formatCostUSD(row.costUSD) },
   ];
 
   function sort(field: SortField) {
@@ -206,7 +207,7 @@ export function UsageReports() {
             <strong>{formatTokens(report?.totals.totalTokens ?? 0)}</strong> tokens
           </span>
           <span>
-            <strong>${(report?.totals.costUSD ?? 0).toFixed(2)}</strong> cost
+            <strong>{formatCostUSD(report?.totals.costUSD)}</strong> cost
           </span>
         </div>
         {loading && <p className="usage-reports__state">Loading usage...</p>}

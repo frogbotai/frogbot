@@ -40,12 +40,14 @@
     "node": ">=22"
   },
   "peerDependencies": {
+    "@frogbotai/next": "workspace:*",
     "@payloadcms/ui": "3.90.1",
     "frogbot": "workspace:*",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
+    "@frogbotai/next": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
     "@payloadcms/ui": "3.90.1",
     "@testing-library/react": "^16.3.0",

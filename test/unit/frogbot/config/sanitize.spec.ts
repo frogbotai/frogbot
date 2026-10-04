@@ -1133,6 +1133,62 @@ describe('frogbot sanitize', () => {
     );
   });
 
+  it('gives Monthly Spend the shared cost cell and field', async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'posts', fields: [] }],
+        ai: { providers: { openai: { apiKey: 'test' } } },
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+    const spend = users?.fields.find(
+      (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
+    );
+
+    expect(spend).toMatchObject({
+      admin: {
+        readOnly: true,
+        components: {
+          Cell: '@frogbotai/next/client#CostUSDCell',
+          Field: '@frogbotai/next/client#CostUSDField',
+        },
+      },
+    });
+  });
+
+  it("keeps an app's own Monthly Spend admin components", async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          {
+            slug: 'users',
+            auth: true,
+            fields: [
+              {
+                name: 'spendThisPeriodUSD',
+                type: 'number',
+                admin: { components: { Cell: '/components/SpendCell#SpendCell' } },
+              },
+            ],
+          },
+        ],
+        ai: { providers: { openai: { apiKey: 'test' } } },
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+    const spend = users?.fields.find(
+      (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
+    ) as { admin?: { readOnly?: boolean; components?: Record<string, unknown> } } | undefined;
+
+    expect(spend?.admin?.components?.Cell).toBe('/components/SpendCell#SpendCell');
+    expect(spend?.admin?.components?.Field).toBeUndefined();
+    expect(spend?.admin?.readOnly).toBe(true);
+  });
+
   it('registers a monthly reset that updates the resolved auth collection', async () => {
     const result = sanitize(makeConfig({ ai: { providers: { openai: { apiKey: 'test' } } } }));
     const payloadConfig = await result._internal.payloadConfig;

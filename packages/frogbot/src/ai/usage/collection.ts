@@ -73,7 +73,19 @@ export function defaultUsageCollection({
       { name: 'cacheWriteTokens', type: 'number' },
       { name: 'reasoningTokens', type: 'number' },
       { name: 'totalTokens', type: 'number', defaultValue: 0, required: true },
-      { name: 'costUSD', type: 'number', defaultValue: 0, required: true },
+      {
+        name: 'costUSD',
+        type: 'number',
+        label: 'Cost (USD)',
+        defaultValue: 0,
+        required: true,
+        admin: {
+          components: {
+            Cell: '@frogbotai/next/client#CostUSDCell',
+            Field: '@frogbotai/next/client#CostUSDField',
+          },
+        },
+      },
       { name: 'finishReason', type: 'text' },
       { name: 'requestedAt', type: 'date', required: true, index: true },
     ],

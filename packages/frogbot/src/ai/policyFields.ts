@@ -31,7 +31,13 @@ export function createPolicyFields(targets: string[]): Field[] {
       type: 'number',
       defaultValue: 0,
       access: { update: () => false },
-      admin: { readOnly: true },
+      admin: {
+        readOnly: true,
+        components: {
+          Cell: '@frogbotai/next/client#CostUSDCell',
+          Field: '@frogbotai/next/client#CostUSDField',
+        },
+      },
     },
   ];
 }
