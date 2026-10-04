@@ -19,6 +19,13 @@ test.beforeAll(async ({ request }) => {
   }
 });
 
+async function choosePickerAgent(page: Page) {
+  await page.locator('.fb-agent-selector__trigger').click();
+  await page.getByRole('menuitem', { name: pickerAgentSlug, exact: true }).click();
+
+  await expect(page.locator('.fb-agent-selector__trigger')).toHaveText(pickerAgentSlug);
+}
+
 test.beforeEach(async ({ page }) => {
   await signIn(page);
 
@@ -27,10 +34,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto(`/collections/${chatsSlug}/create`);
   await expect(page.locator('.fb-composer textarea')).toBeVisible();
 
-  await page.locator('.fb-agent-selector__trigger').click();
-  await page.getByRole('menuitem', { name: pickerAgentSlug, exact: true }).click();
-
-  await expect(page.locator('.fb-agent-selector__trigger')).toHaveText(pickerAgentSlug);
+  await choosePickerAgent(page);
 });
 
 test.afterEach(async ({ context, page }) => {
@@ -39,9 +43,26 @@ test.afterEach(async ({ context, page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 });
 
+function trigger(page: Page) {
+  return page.locator('.fb-model-selector__trigger');
+}
+
+function triggerName(page: Page) {
+  return page.locator('.fb-model-selector__trigger .fb-model-selector__name');
+}
+
+function card(page: Page) {
+  return page.locator('.fb-model-selector__content');
+}
+
+function slider(page: Page) {
+  return page.getByRole('slider', { name: 'Reasoning' });
+}
+
 async function openModelList(page: Page) {
-  await page.locator('.fb-model-selector__trigger').click();
-  await page.locator('.fb-model-selector__model').click();
+  await trigger(page).click();
+
+  await expect(trigger(page)).toHaveText('Select model');
 
   const list = page.locator('.fb-model-selector__list');
 
@@ -169,29 +190,29 @@ test('typing from a row searches, and Down then Enter chooses the first result',
     'browser/questioner',
   );
 
-  await page.keyboard.type('opus');
+  await page.keyboard.type('deliberator');
 
   await expect(searchField(page)).toBeFocused();
-  await expect(searchField(page)).toHaveValue('opus');
+  await expect(searchField(page)).toHaveValue('deliberator');
 
   await page.keyboard.press('ArrowDown');
 
   const first = list.locator('.fb-model-selector__option').first();
 
   await expect(first).toBeFocused();
-
-  const id = await first.getAttribute('title');
-  const name = await first.locator('.fb-model-selector__option-name').textContent();
-
-  expect(id).toMatch(/opus/i);
-  expect(name).toMatch(/opus/i);
+  await expect(first).toHaveAttribute('title', 'browser/deliberator');
 
   await page.keyboard.press('Enter');
 
-  await expect(page.locator('.fb-model-selector__trigger .fb-model-selector__name')).toHaveText(
-    name!,
-  );
-  await expect.poll(() => savedPicks(page)).toMatchObject({ agent: pickerAgentSlug, model: id });
+  await expect(trigger(page)).toHaveText('Select effort');
+  await expect(slider(page)).toBeVisible();
+
+  await page.keyboard.press('Escape');
+
+  await expect(triggerName(page)).toHaveText('deliberator');
+  await expect
+    .poll(() => savedPicks(page))
+    .toMatchObject({ agent: pickerAgentSlug, model: 'browser/deliberator' });
 });
 
 test('Escape clears the query first, then closes the list', async ({ page }) => {
@@ -349,7 +370,12 @@ test('logos render while offline, with the fallback for custom models', async ({
   ]);
 });
 
-type PickerManifest = { slug: string; models: string[]; names?: Record<string, string> };
+type PickerManifest = {
+  slug: string;
+  models: string[];
+  names?: Record<string, string>;
+  reasoning?: Record<string, unknown[]>;
+};
 
 async function pickerManifest(page: Page) {
   const response = page.waitForResponse(
@@ -412,9 +438,7 @@ test('Escape restores a selected model the query hid, with its check and selecti
 
   await page.keyboard.press('Escape');
 
-  await expect(page.locator('.fb-model-selector__trigger .fb-model-selector__name')).toHaveText(
-    'questioner',
-  );
+  await expect(triggerName(page)).toHaveText('questioner');
 });
 
 test('Space on a focused row chooses it instead of typing into the search', async ({ page }) => {
@@ -430,10 +454,13 @@ test('Space on a focused row chooses it instead of typing into the search', asyn
 
   await page.keyboard.press('Space');
 
-  await expect(page.locator('.fb-model-selector__trigger .fb-model-selector__name')).toHaveText(
-    'thinker',
-  );
+  await expect(trigger(page)).toHaveText('Select effort');
   await expect(searchField(page)).toBeHidden();
+  await expect(slider(page)).toBeVisible();
+
+  await page.keyboard.press('Escape');
+
+  await expect(triggerName(page)).toHaveText('thinker');
 });
 
 test('modified keys on a focused row stay with the row', async ({ page }) => {
@@ -450,8 +477,7 @@ test('modified keys on a focused row stay with the row', async ({ page }) => {
 });
 
 async function narrowRowLayout({ page, id, choose }: { page: Page; id: string; choose: boolean }) {
-  await page.locator('.fb-agent-selector__trigger').click();
-  await page.getByRole('menuitem', { name: pickerAgentSlug, exact: true }).click();
+  await choosePickerAgent(page);
   await page.setViewportSize({ width: 320, height: 720 });
 
   const list = await openModelList(page);
@@ -461,7 +487,10 @@ async function narrowRowLayout({ page, id, choose }: { page: Page; id: string; c
 
   if (choose) {
     await row.click();
-    await page.locator('.fb-model-selector__model').click();
+
+    await expect(card(page)).toBeHidden();
+
+    await openModelList(page);
     await searchField(page).fill(id);
   }
 
@@ -500,8 +529,11 @@ async function narrowRowLayout({ page, id, choose }: { page: Page; id: string; c
 test('a 320px viewport keeps the logo, truncated name and check of the selected row inside the card', async ({
   page,
 }) => {
-  const { names = {} } = await pickerManifest(page);
-  const [id] = Object.entries(names).sort(([, a], [, b]) => b.length - a.length)[0];
+  const { names = {}, reasoning = {} } = await pickerManifest(page);
+
+  const [id] = Object.entries(names)
+    .filter(([id]) => !reasoning[id]?.length)
+    .sort(([, a], [, b]) => b.length - a.length)[0];
 
   const layout = await narrowRowLayout({ page, id, choose: true });
 
@@ -533,4 +565,518 @@ test('a 320px viewport keeps the logo, name and secondary ID of a duplicate name
     cardInViewport: true,
     current: null,
   });
+});
+
+test('opening with a model without effort options shows the list with no Back button', async ({
+  page,
+}) => {
+  const list = await openModelList(page);
+
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.locator('.fb-model-selector__model')).toHaveCount(0);
+  await expect(list.locator('.fb-model-selector__option:focus')).toHaveAttribute(
+    'title',
+    'browser/questioner',
+  );
+});
+
+test('choosing the current model without effort options closes the selector', async ({ page }) => {
+  const list = await openModelList(page);
+
+  await list.locator('.fb-model-selector__option[title="browser/questioner"]').click();
+
+  await expect(card(page)).toBeHidden();
+  await expect(trigger(page)).toBeFocused();
+  await expect(trigger(page)).toHaveText('questioner');
+});
+
+test('choosing another model without effort options closes the selector and saves it', async ({
+  page,
+}) => {
+  const { models, names = {}, reasoning = {} } = await pickerManifest(page);
+  const id = models.find((model) => model !== 'browser/questioner' && !reasoning[model])!;
+  const name = names[id] ?? id.slice(id.indexOf('/') + 1);
+
+  await choosePickerAgent(page);
+
+  const list = await openModelList(page);
+
+  await searchField(page).fill(id);
+  await list.locator(`.fb-model-selector__option[title="${id}"]`).click();
+
+  await expect(card(page)).toBeHidden();
+  await expect(trigger(page)).toHaveText(name);
+  await expect.poll(() => savedPicks(page)).toMatchObject({ agent: pickerAgentSlug, model: id });
+});
+
+async function cardBox(page: Page) {
+  return card(page).evaluate((element) => {
+    const { left, right, width } = element.getBoundingClientRect();
+
+    return { left, right, width };
+  });
+}
+
+async function cardWidths(page: Page) {
+  return page.evaluate(() => {
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+    return {
+      cap: Math.min(22 * rem, window.innerWidth - 2 * rem),
+      viewportCap: window.innerWidth - 2 * rem,
+      viewport: window.innerWidth,
+    };
+  });
+}
+
+test('the popover keeps one width across the list, search results, no results and the effort view', async ({
+  page,
+}) => {
+  const list = await openModelList(page);
+  const boxes = [{ state: 'list', ...(await cardBox(page)) }];
+
+  await searchField(page).fill('browser/thinker');
+
+  await expect(list.locator('.fb-model-selector__option')).toHaveCount(1);
+
+  boxes.push({ state: 'one row', ...(await cardBox(page)) });
+
+  await searchField(page).fill('zzzz-no-model');
+
+  await expect(list.locator('.fb-model-selector__empty')).toHaveText('No models found');
+
+  boxes.push({ state: 'no results', ...(await cardBox(page)) });
+
+  await searchField(page).fill('');
+  await list.locator('.fb-model-selector__option[title="browser/thinker"]').click();
+
+  await expect(slider(page)).toBeVisible();
+
+  boxes.push({ state: 'effort', ...(await cardBox(page)) });
+
+  await page.locator('.fb-model-selector__model').click();
+
+  await expect(searchField(page)).toBeVisible();
+
+  boxes.push({ state: 'list again', ...(await cardBox(page)) });
+
+  const { cap } = await cardWidths(page);
+
+  expect(
+    boxes
+      .filter(
+        ({ left, width }) => Math.abs(width - cap) > 0.5 || Math.abs(left - boxes[0].left) > 0.5,
+      )
+      .map(({ state, left, width }) => ({ state, left, width, cap })),
+  ).toEqual([]);
+});
+
+function sliderWidth(page: Page) {
+  return card(page)
+    .locator('.fb-slider')
+    .evaluate((element) => element.getBoundingClientRect().width);
+}
+
+test('the effort slider keeps its width after reopening and after returning from the list', async ({
+  page,
+}) => {
+  const list = await openModelList(page);
+
+  await searchField(page).fill('browser/thinker');
+  await list.locator('.fb-model-selector__option[title="browser/thinker"]').click();
+
+  await expect(slider(page)).toBeVisible();
+
+  const widths = [await sliderWidth(page)];
+
+  await page.keyboard.press('Escape');
+
+  await expect(card(page)).toBeHidden();
+
+  await trigger(page).click();
+
+  await expect(slider(page)).toBeVisible();
+
+  widths.push(await sliderWidth(page));
+
+  await page.locator('.fb-model-selector__model').click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+  await expect(slider(page)).toBeVisible();
+
+  widths.push(await sliderWidth(page));
+
+  expect(widths[0]).toBeGreaterThan(0);
+  expect(widths.filter((width) => Math.abs(width - widths[0]) > 0.5)).toEqual([]);
+});
+
+test('a 280px window caps the popover to the viewport and keeps its width while searching', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 280, height: 720 });
+
+  const list = await openModelList(page);
+  const boxes = [{ state: 'list', ...(await cardBox(page)) }];
+
+  await searchField(page).fill('browser/thinker');
+
+  await expect(list.locator('.fb-model-selector__option')).toHaveCount(1);
+
+  boxes.push({ state: 'one row', ...(await cardBox(page)) });
+
+  await searchField(page).fill('zzzz-no-model');
+
+  await expect(list.locator('.fb-model-selector__empty')).toHaveText('No models found');
+
+  boxes.push({ state: 'no results', ...(await cardBox(page)) });
+
+  const { viewportCap, viewport } = await cardWidths(page);
+
+  expect(
+    boxes
+      .filter(
+        ({ left, right, width }) =>
+          Math.abs(width - viewportCap) > 0.5 ||
+          Math.abs(width - boxes[0].width) > 0.5 ||
+          left < 0 ||
+          right > viewport,
+      )
+      .map((box) => ({ ...box, viewportCap, viewport })),
+  ).toEqual([]);
+});
+
+async function renameModels({ page, names }: { page: Page; names: Record<string, string> }) {
+  await page.route(
+    (url) => url.pathname === '/api/agents',
+    async (route) => {
+      const response = await route.fetch();
+      const body = (await response.json()) as { agents: PickerManifest[] };
+
+      const agents = body.agents.map((agent) => ({
+        ...agent,
+        names: {
+          ...agent.names,
+          ...Object.fromEntries(Object.entries(names).filter(([id]) => agent.models.includes(id))),
+        },
+      }));
+
+      await route.fulfill({ response, json: { ...body, agents } });
+    },
+  );
+
+  await page.reload();
+
+  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+
+  await choosePickerAgent(page);
+}
+
+test('a long model name truncates on one line and keeps its ID in the row title', async ({
+  page,
+}) => {
+  const id = 'browser/deliberator';
+  const name = 'Deliberator Extended Thinking Preview with an Unusually Long Catalog Name';
+
+  await renameModels({ page, names: { [id]: name } });
+
+  const list = await openModelList(page);
+  const row = list.getByRole('button', { name, exact: true });
+
+  await searchField(page).fill(id);
+
+  await expect(row).toHaveAttribute('title', id);
+  expect(
+    await row.locator('.fb-model-selector__option-name').evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return {
+        whiteSpace: style.whiteSpace,
+        textOverflow: style.textOverflow,
+        truncated: element.scrollWidth > element.clientWidth,
+        oneLine: element.getBoundingClientRect().height <= parseFloat(style.lineHeight) + 0.5,
+      };
+    }),
+  ).toEqual({ whiteSpace: 'nowrap', textOverflow: 'ellipsis', truncated: true, oneLine: true });
+
+  const { cap } = await cardWidths(page);
+
+  expect((await cardBox(page)).width).toBeCloseTo(cap, 0);
+});
+
+function searchBoxStyle(search: Locator) {
+  return search.evaluate((element) => {
+    const probe = document.createElement('span');
+
+    probe.style.backgroundColor = 'var(--theme-base-200)';
+    probe.style.color = 'var(--theme-base-300)';
+    probe.style.boxShadow = '0 0 0 2px var(--theme-base-400)';
+    element.parentElement!.append(probe);
+
+    const style = getComputedStyle(element);
+    const token = getComputedStyle(probe);
+
+    const result = {
+      actual: {
+        backgroundColor: style.backgroundColor,
+        borderTopColor: style.borderTopColor,
+        borderTopWidth: style.borderTopWidth,
+        boxShadow: style.boxShadow,
+      },
+      expected: {
+        backgroundColor: token.backgroundColor,
+        borderTopColor: token.color,
+        borderTopWidth: '1px',
+        boxShadow: token.boxShadow,
+      },
+    };
+
+    probe.remove();
+
+    return result;
+  });
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`the ${theme} model search box uses the input background, border and focus ring`, async ({
+    page,
+  }) => {
+    await page.evaluate(
+      (value) => document.documentElement.setAttribute('data-theme', value),
+      theme,
+    );
+
+    await openModelList(page);
+    await searchField(page).focus();
+
+    const { actual, expected } = await searchBoxStyle(page.locator('.fb-model-selector__search'));
+
+    expect(expected.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(actual).toEqual(expected);
+  });
+}
+
+const shortNames = { 'browser/questioner': 'o3', 'browser/sprinter': 'o4' };
+
+async function composerLayout(page: Page) {
+  return page.locator('.fb-composer').evaluate(async (composer) => {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const round = (value: number) => Math.round(value * 2) / 2;
+
+    const box = (element: Element) => {
+      const { left, top, width, height } = element.getBoundingClientRect();
+
+      return [left, top, width, height].map(round);
+    };
+
+    const selector = composer.querySelector('.fb-model-selector__trigger')!.getBoundingClientRect();
+    const start = composer.querySelectorAll(
+      '.fb-composer__start > :not(.fb-model-selector__trigger)',
+    );
+
+    return {
+      textarea: box(composer.querySelector('textarea')!),
+      start: Array.from(start).map(box),
+      end: Array.from(composer.querySelectorAll('.fb-composer__end > *')).map(box),
+      trigger: [round(selector.left), round(selector.top)],
+      controls: round(
+        composer.querySelector('.fb-composer__controls')!.getBoundingClientRect().height,
+      ),
+    };
+  });
+}
+
+async function sweepComposer({ page, label }: { page: Page; label: string }) {
+  const results = [];
+
+  for (let width = 320; width <= 480; width += 10) {
+    await page.setViewportSize({ width, height: 720 });
+
+    const closed = await composerLayout(page);
+
+    await trigger(page).click();
+
+    await expect(trigger(page)).toHaveText(label);
+
+    const open = await composerLayout(page);
+
+    await page.keyboard.press('Escape');
+
+    await expect(card(page)).toBeHidden();
+
+    results.push({ width, closed, open });
+  }
+
+  return results;
+}
+
+test('the open Select model label does not move or wrap the composer from 320 to 480px', async ({
+  page,
+}) => {
+  await renameModels({ page, names: shortNames });
+
+  await expect(triggerName(page)).toHaveText('o3');
+
+  const results = await sweepComposer({ page, label: 'Select model' });
+
+  expect(results.map(({ width, open }) => ({ width, layout: open }))).toEqual(
+    results.map(({ width, closed }) => ({ width, layout: closed })),
+  );
+});
+
+test('the open Select effort label does not move or wrap the composer from 320 to 480px', async ({
+  page,
+}) => {
+  await renameModels({ page, names: shortNames });
+
+  const list = await openModelList(page);
+
+  await searchField(page).fill('browser/sprinter');
+  await list.locator('.fb-model-selector__option[title="browser/sprinter"]').click();
+
+  await expect(trigger(page)).toHaveText('Select effort');
+
+  await page.keyboard.press('Escape');
+
+  await expect(trigger(page)).toHaveText('o4 · Default');
+
+  const results = await sweepComposer({ page, label: 'Select effort' });
+
+  expect(results.map(({ width, open }) => ({ width, layout: open }))).toEqual(
+    results.map(({ width, closed }) => ({ width, layout: closed })),
+  );
+});
+
+async function plainModel(page: Page) {
+  const { models, reasoning = {} } = await pickerManifest(page);
+
+  const id = models.find(
+    (model) =>
+      model !== 'browser/questioner' &&
+      !reasoning[model]?.length &&
+      !models.some((other) => other !== model && other.includes(model)),
+  )!;
+
+  await choosePickerAgent(page);
+
+  return id;
+}
+
+async function searchFor({ page, id }: { page: Page; id: string }) {
+  const list = await openModelList(page);
+
+  await searchField(page).fill(id);
+
+  await expect(list.locator('.fb-model-selector__option').first()).toHaveAttribute('title', id);
+
+  return list;
+}
+
+test('Enter in the search on a model without effort options closes and focuses the trigger', async ({
+  page,
+}) => {
+  const id = await plainModel(page);
+
+  await searchFor({ page, id });
+  await searchField(page).press('Enter');
+
+  await expect(card(page)).toBeHidden();
+  await expect(trigger(page)).toBeFocused();
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect.poll(() => savedPicks(page)).toMatchObject({ agent: pickerAgentSlug, model: id });
+});
+
+test('Space on a row without effort options closes and focuses the trigger', async ({ page }) => {
+  const id = await plainModel(page);
+
+  const list = await searchFor({ page, id });
+
+  await page.keyboard.press('ArrowDown');
+
+  await expect(list.locator('.fb-model-selector__option').first()).toBeFocused();
+
+  await page.keyboard.press('Space');
+
+  await expect(card(page)).toBeHidden();
+  await expect(trigger(page)).toBeFocused();
+  await expect(trigger(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect.poll(() => savedPicks(page)).toMatchObject({ agent: pickerAgentSlug, model: id });
+});
+
+test('reopening after a choice closed the selector shows the full list with an empty search', async ({
+  page,
+}) => {
+  const id = await plainModel(page);
+
+  await searchFor({ page, id });
+  await searchField(page).press('Enter');
+
+  await expect(card(page)).toBeHidden();
+
+  const list = await openModelList(page);
+
+  await expect(searchField(page)).toHaveValue('');
+  await expect(list.locator('.fb-model-selector__option:focus')).toHaveAttribute('title', id);
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
+});
+
+test('a saved pick the agent no longer offers shows the default model and opens on the list', async ({
+  page,
+}) => {
+  const saved = await page.request.post(`/api/payload-preferences/${chatPicksPreference}`, {
+    data: { value: { agent: pickerAgentSlug, model: 'browser/retired', reasoning: {} } },
+  });
+
+  expect(saved.ok()).toBe(true);
+
+  await page.reload();
+
+  await expect(page.locator('.fb-agent-selector__trigger')).toHaveText(pickerAgentSlug);
+  await expect(trigger(page)).toHaveText('questioner');
+
+  const list = await openModelList(page);
+
+  await expect(list.locator('.fb-model-selector__option:focus')).toHaveAttribute(
+    'title',
+    'browser/questioner',
+  );
+});
+
+async function dropModel({ page, id }: { page: Page; id: string }) {
+  await page.route(
+    (url) => url.pathname === '/api/agents',
+    async (route) => {
+      const response = await route.fetch();
+      const body = (await response.json()) as { agents: PickerManifest[] };
+
+      const agents = body.agents.map((agent) =>
+        agent.slug === pickerAgentSlug
+          ? { ...agent, models: agent.models.filter((model) => model !== id) }
+          : agent,
+      );
+
+      await route.fulfill({ response, json: { ...body, agents } });
+    },
+  );
+
+  await page.reload();
+
+  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+
+  await choosePickerAgent(page);
+}
+
+test('an active model missing from the list opens on the list with the search focused', async ({
+  page,
+}) => {
+  await dropModel({ page, id: 'browser/questioner' });
+
+  await expect(trigger(page)).toHaveText('browser/questioner');
+
+  const list = await openModelList(page);
+
+  await expect(searchField(page)).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(list.locator('.fb-model-selector__option[aria-current]')).toHaveCount(0);
 });

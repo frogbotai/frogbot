@@ -1,6 +1,12 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { expectBackground, openMenu, openPostCreate, signIn } from './__helpers/adminTheme';
+import {
+  expectBackground,
+  openMenu,
+  openPostCreate,
+  readAdminColor,
+  signIn,
+} from './__helpers/adminTheme';
 
 const appPage = '/theme-check/layers';
 const buttonOverride = 'rgb(11, 22, 33)';
@@ -197,6 +203,18 @@ test.describe('FrogBot CSS layer in the admin', () => {
     await expect(
       page.locator('.frogbot-connections__toolbar > .fb-search-input').first(),
     ).toHaveCSS('flex-grow', '1');
+  });
+
+  test('the Connections search keeps the shared search look', async ({ page }) => {
+    const search = page.locator('.frogbot-connections__toolbar > .fb-search-input').first();
+
+    await expectBackground(search, await readAdminColor(page, '--theme-base-150'));
+    await expect(search).toHaveCSS('border-top-width', '0px');
+
+    await openPostCreate(page, 'dark');
+
+    await expectBackground(search, await readAdminColor(page, '--theme-base-150'));
+    await expect(search).toHaveCSS('border-top-width', '0px');
   });
 
   test('admin CSS loaded after a client navigation keeps the layer order', async ({ page }) => {

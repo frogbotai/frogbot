@@ -160,9 +160,9 @@ async function providerUserTexts(request: APIRequestContext) {
 
 async function selectModel({ page, id, name }: { page: Page; id: string; name: string }) {
   await page.locator('.fb-model-selector__trigger').click();
-  await page.locator('.fb-model-selector__model').click();
   await page.locator(`.fb-model-selector__option[title="${id}"]`).click();
-  await page.keyboard.press('Escape');
+
+  await expect(page.locator('.fb-model-selector__content')).toBeHidden();
 
   await expect(page.locator('.fb-model-selector__trigger .fb-model-selector__name')).toHaveText(
     name,

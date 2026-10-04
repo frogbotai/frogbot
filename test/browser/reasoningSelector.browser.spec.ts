@@ -10,6 +10,7 @@ import {
   modelPort,
   reasoningModels,
   sliderPath,
+  verboseEffort,
   verboseLevel,
 } from './fixtures/question/shared';
 
@@ -68,11 +69,36 @@ async function send(page: Page, text: string) {
   await page.locator('.fb-composer textarea').press('Enter');
 }
 
+function card(page: Page) {
+  return page.locator('.fb-model-selector__content');
+}
+
 async function chooseModel(page: Page, name: string) {
   await trigger(page).click();
-  await page.locator('.fb-model-selector__model').click();
+
+  await expect(trigger(page)).toHaveText('Select model');
+
   await page.getByRole('button', { name, exact: true }).click();
+
+  await expect(trigger(page)).toHaveText('Select effort');
+
   await page.keyboard.press('Escape');
+
+  await expect(card(page)).toBeHidden();
+}
+
+async function chooseQuestioner(page: Page) {
+  await trigger(page).click();
+
+  await expect(trigger(page)).toHaveText('Select effort');
+
+  await page.locator('.fb-model-selector__model').click();
+
+  await expect(trigger(page)).toHaveText('Select model');
+
+  await page.getByRole('button', { name: 'questioner', exact: true }).click();
+
+  await expect(card(page)).toBeHidden();
 }
 
 async function chooseLevel(page: Page, key: 'Home' | 'End') {
@@ -102,7 +128,7 @@ test('the slider steps through the model levels with the keyboard', async ({ pag
 
   await reasoning.press('End');
   await expect(reasoning).toHaveAttribute('aria-valuetext', 'High');
-  await expect(trigger(page)).toHaveText('thinker · High');
+  await expect(trigger(page)).toHaveText('Select effort');
 
   await reasoning.press('ArrowLeft');
   await expect(reasoning).toHaveAttribute('aria-valuetext', 'Low');
@@ -112,6 +138,10 @@ test('the slider steps through the model levels with the keyboard', async ({ pag
 
   await reasoning.press('ArrowRight');
   await expect(reasoning).toHaveAttribute('aria-valuetext', 'Low');
+  await expect(trigger(page)).toHaveText('Select effort');
+
+  await page.keyboard.press('Escape');
+
   await expect(trigger(page)).toHaveText('thinker · Low');
 });
 
@@ -135,13 +165,15 @@ test('a model without levels hides the slider and sends none, and switching back
 }) => {
   await chooseModel(page, 'thinker');
   await chooseLevel(page, 'End');
-  await chooseModel(page, 'questioner');
+  await chooseQuestioner(page);
 
   await expect(trigger(page)).toHaveText('questioner');
 
   await trigger(page).click();
 
-  await expect(page.locator('.fb-model-selector__model')).toBeVisible();
+  await expect(trigger(page)).toHaveText('Select model');
+  await expect(page.locator('.fb-model-selector__list')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
   await expect(slider(page)).toHaveCount(0);
 
   await page.keyboard.press('Escape');
@@ -258,7 +290,7 @@ test('a message queued behind a question runs with the choice it was sent with',
   await expect(staging).toBeEnabled();
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
 
-  await chooseModel(page, 'questioner');
+  await chooseQuestioner(page);
   await send(page, 'Also check the logs');
 
   await expect(page.locator('.fb-chat__queued')).toContainText('Also check the logs');
@@ -278,10 +310,6 @@ test('a message queued behind a question runs with the choice it was sent with',
     ['browser/questioner', undefined],
   ]);
 });
-
-function card(page: Page) {
-  return page.locator('.fb-model-selector__content');
-}
 
 async function openControls(page: Page, name: string) {
   await chooseModel(page, name);
@@ -520,14 +548,44 @@ test("Slider on its own keeps the thumb on each stop's dot for 2 to 7 stops", as
   expect(offsets).toEqual([]);
 });
 
+const longLevel = `${verboseLevel}-${verboseEffort}`;
+
+async function lengthenVerboseLevel(page: Page) {
+  await page.route(
+    (url) => url.pathname === '/api/agents',
+    async (route) => {
+      const response = await route.fetch();
+
+      const body = (await response.json()) as {
+        agents: Array<{ reasoning?: Record<string, Array<{ key: string; label: string }>> }>;
+      };
+
+      const agents = body.agents.map((agent) => ({
+        ...agent,
+        reasoning: {
+          ...agent.reasoning,
+          [`browser/${reasoningModels.verbose}`]: [{ key: verboseEffort, label: longLevel }],
+        },
+      }));
+
+      await route.fulfill({ response, json: { ...body, agents } });
+    },
+  );
+
+  await page.reload();
+
+  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+}
+
 test('a long custom level name truncates without widening the popover card', async ({ page }) => {
+  await lengthenVerboseLevel(page);
   await openControls(page, reasoningModels.verbose);
 
   const width = await card(page).evaluate((element) => element.getBoundingClientRect().width);
 
   await slider(page).press('End');
 
-  await expect(slider(page)).toHaveAttribute('aria-valuetext', verboseLevel);
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', longLevel);
 
   const title = await card(page).evaluate((element) => {
     const value = element.querySelector('.fb-slider__value')!;

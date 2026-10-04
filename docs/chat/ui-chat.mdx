@@ -268,7 +268,7 @@ export function AgentChat() {
 | `selectedAgent` | `string` | Required | Slug of the selected agent. The trigger shows its profile name, or the slug. |
 | `onAgentChange` | `(slug: string) => void` | Required | Called with the slug of the chosen agent. |
 
-`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. The reasoning slider shows the active level's name above a track with one dot per level. It is fully controlled and renders nothing when `models` is empty.
+`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. While the selector is open, its trigger reads `Select effort` on the slider and `Select model` on the list. A model without reasoning levels opens straight on the list, which then has no Back button, and choosing such a model closes the selector; choosing a model with levels shows its slider. The reasoning slider shows the active level's name above a track with one dot per level. The selector keeps one width in both views and while searching, and long model names are truncated. It is fully controlled and renders nothing when `models` is empty.
 
 Each row starts with its provider's logo. Logos ship with FrogBot, so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
 
