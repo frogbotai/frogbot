@@ -24,6 +24,6 @@ export const imageIcon: IconNode = [
   ],
 ];
 
-const ImageIcon = createLucideIcon('ImageIcon', imageIcon, 1.25, '0 0 20 20');
+const ImageIcon = createLucideIcon('ImageIcon', imageIcon, undefined, '0 0 20 20');
 
 export default ImageIcon;

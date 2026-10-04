@@ -124,6 +124,6 @@ export const amexIcon: IconNode = [
   ],
 ];
 
-const AmexIcon = createLucideIcon('AmexIcon', amexIcon, undefined, '0 0 24 24');
+const AmexIcon = createLucideIcon('AmexIcon', amexIcon, 2, '0 0 24 24');
 
 export default AmexIcon;

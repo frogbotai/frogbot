@@ -20,6 +20,6 @@ export const profileIcon: IconNode = [
   ],
 ];
 
-const ProfileIcon = createLucideIcon('ProfileIcon', profileIcon, 1.5, '0 0 20 20');
+const ProfileIcon = createLucideIcon('ProfileIcon', profileIcon, undefined, '0 0 20 20');
 
 export default ProfileIcon;

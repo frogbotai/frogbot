@@ -205,6 +205,6 @@ export const discoverIcon: IconNode = [
   ],
 ];
 
-const DiscoverIcon = createLucideIcon('DiscoverIcon', discoverIcon, undefined, '0 0 24 24');
+const DiscoverIcon = createLucideIcon('DiscoverIcon', discoverIcon, 2, '0 0 24 24');
 
 export default DiscoverIcon;

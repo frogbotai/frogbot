@@ -33,6 +33,6 @@ export const webIcon: IconNode = [
   ],
 ];
 
-const WebIcon = createLucideIcon('Web', webIcon, 1.25);
+const WebIcon = createLucideIcon('Web', webIcon);
 
 export default WebIcon;

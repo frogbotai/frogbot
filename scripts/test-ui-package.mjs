@@ -144,7 +144,7 @@ createRoot(document.getElementById('root')!).render(
     './chat/tools',
     './chat/artifacts',
     './shared',
-    './icons/check',
+    './icons/menu',
   ]) {
     const specifier = subpath === '.' ? '@frogbotai/ui' : `@frogbotai/ui/${subpath.slice(2)}`;
     run('node', ['--input-type=module', '--eval', `await import('${specifier}')`], appRoot);
@@ -182,7 +182,7 @@ createRoot(document.getElementById('root')!).render(
 
   fs.writeFileSync(
     path.join(appRoot, 'src/icon.ts'),
-    `export { CheckIcon } from '@frogbotai/ui/icons/check'\n`,
+    `export { MenuIcon } from '@frogbotai/ui/icons/menu'\n`,
   );
   fs.writeFileSync(
     path.join(appRoot, 'vite.icon.config.js'),

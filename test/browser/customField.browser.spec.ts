@@ -1,6 +1,13 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { setAdminTheme } from './__helpers/adminTheme';
 import { fetchMetadata, metadataValues } from './__helpers/metadata';
+import {
+  collectionNavIcon,
+  expandSidebar,
+  expectTwoPixelStroke,
+  iconStroke,
+} from './__helpers/sidebar';
 
 const user = { email: 'custom-field@example.com', password: 'browser-test-password' };
 
@@ -316,4 +323,41 @@ test.describe('tab titles with a custom suffix and site name', () => {
     await expect(page).toHaveURL(/\/settings\/usage$/);
     await expect(page).toHaveTitle('Usage - Field Lab');
   });
+});
+
+test.describe('sidebar icon line weight', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`top-level and grouped icons draw 2px in the ${theme} theme`, async ({ page }) => {
+      await setAdminTheme(page, theme);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto('/');
+
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+      await expandSidebar(page);
+
+      await expectTwoPixelStroke(
+        page.getByRole('button', { name: 'New Chat' }).locator('svg.lucide-pencil-edit'),
+      );
+      await expectTwoPixelStroke(
+        page.getByRole('button', { name: 'Reports' }).locator('svg.lucide-home-icon'),
+      );
+      await expectTwoPixelStroke(collectionNavIcon(page, 'posts'));
+      await expectTwoPixelStroke(
+        page.locator('#frogbot-nav-section-collections svg.lucide-key-round-icon'),
+      );
+    });
+
+    test(`a component nav icon keeps its own stroke in the ${theme} theme`, async ({ page }) => {
+      await setAdminTheme(page, theme);
+      await page.goto('/');
+
+      const { widths, effects } = await iconStroke(
+        page.getByRole('button', { name: 'All posts' }).getByTestId('nav-component-icon'),
+      );
+
+      expect(widths).toEqual(['1px']);
+      expect(effects).toEqual(['none']);
+    });
+  }
 });

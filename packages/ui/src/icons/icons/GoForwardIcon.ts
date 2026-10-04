@@ -11,6 +11,6 @@ export const goForwardIcon: IconNode = [
   ],
 ];
 
-const GoForwardIcon = createLucideIcon('GoForwardIcon', goForwardIcon, 1.5);
+const GoForwardIcon = createLucideIcon('GoForwardIcon', goForwardIcon);
 
 export default GoForwardIcon;

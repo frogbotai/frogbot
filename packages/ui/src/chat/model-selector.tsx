@@ -5,7 +5,7 @@ import { type KeyboardEvent, memo, useCallback, useId, useMemo, useRef, useState
 import { Popover, PopoverContent, PopoverTrigger } from '../components/popover.js';
 import { SearchInput } from '../components/search-input.js';
 import { Slider } from '../components/slider.js';
-import { CheckIcon } from '../icons/check.js';
+import CheckIcon from '../icons/icons/CheckIcon.js';
 import ChevronLeftIcon from '../icons/icons/ChevronLeftIcon.js';
 import ChevronRightIcon from '../icons/icons/ChevronRightIcon.js';
 import { compactModelSearch, matchesModelSearch, normalizeModelSearch } from './model-search.js';

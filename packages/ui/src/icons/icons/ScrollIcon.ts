@@ -36,6 +36,6 @@ export const scrollIcon: IconNode = [
   ],
 ];
 
-const ScrollIcon = createLucideIcon('ScrollIcon', scrollIcon, 1.5);
+const ScrollIcon = createLucideIcon('ScrollIcon', scrollIcon);
 
 export default ScrollIcon;

@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 type NavStateWindow = Window & { __frogbotNavStates?: string[] };
 
@@ -13,6 +13,37 @@ export async function expandSidebar(page: Page) {
 
 export const collectionNavIcon = (page: Page, slug: string) =>
   page.locator(`#frogbot-nav-section-collections a[href="/collections/${slug}"] svg`);
+
+export const iconStroke = (icon: Locator) =>
+  icon.evaluate((svg) => {
+    const style = getComputedStyle(svg);
+    const box = (svg as SVGSVGElement).viewBox.baseVal;
+
+    const drawn =
+      svg.getBoundingClientRect().width -
+      parseFloat(style.paddingLeft) -
+      parseFloat(style.paddingRight);
+
+    const shapes = [
+      ...svg.querySelectorAll('circle, ellipse, line, path, polygon, polyline, rect'),
+    ].map((shape) => getComputedStyle(shape));
+
+    return {
+      px: (parseFloat(style.strokeWidth) * drawn) / Math.max(box.width, box.height),
+      root: style.strokeWidth,
+      widths: shapes.map((shape) => shape.strokeWidth),
+      effects: shapes.map((shape) => shape.vectorEffect),
+    };
+  });
+
+export async function expectTwoPixelStroke(icon: Locator) {
+  const { px, root, widths, effects } = await iconStroke(icon);
+  const label = String(icon);
+
+  expect(px, label).toBeCloseTo(2, 2);
+  expect(widths, label).toEqual(widths.map(() => root));
+  expect(effects, label).toEqual(effects.map(() => 'none'));
+}
 
 export async function setNavPreference(page: Page, open: boolean) {
   const response = await page.request.post('/api/payload-preferences/nav', {

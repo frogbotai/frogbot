@@ -12,6 +12,6 @@ export const refreshIcon: IconNode = [
   ],
 ];
 
-const RefreshIcon = createLucideIcon('RefreshIcon', refreshIcon, 1.5);
+const RefreshIcon = createLucideIcon('RefreshIcon', refreshIcon);
 
 export default RefreshIcon;

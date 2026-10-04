@@ -20,6 +20,6 @@ export const uploadIcon: IconNode = [
   ],
 ];
 
-const UploadIcon = createLucideIcon('UploadIcon', uploadIcon, 1.5, '0 0 16 16');
+const UploadIcon = createLucideIcon('UploadIcon', uploadIcon, undefined, '0 0 16 16');
 
 export default UploadIcon;

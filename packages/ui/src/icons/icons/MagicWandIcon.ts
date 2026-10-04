@@ -26,6 +26,6 @@ export const magicWandIcon: IconNode = [
   ],
 ];
 
-const MagicWandIcon = createLucideIcon('MagicWandIcon', magicWandIcon);
+const MagicWandIcon = createLucideIcon('MagicWandIcon', magicWandIcon, 2.1);
 
 export default MagicWandIcon;

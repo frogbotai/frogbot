@@ -8,6 +8,6 @@ export const branchIcon: IconNode = [
   ['path', { d: 'M6 7v10M8 9h4a6 6 0 0 0 6-6' }],
 ];
 
-const BranchIcon = createLucideIcon('BranchIcon', branchIcon, 1.5);
+const BranchIcon = createLucideIcon('BranchIcon', branchIcon);
 
 export default BranchIcon;

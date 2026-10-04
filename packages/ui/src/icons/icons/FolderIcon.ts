@@ -11,6 +11,6 @@ export const folderIcon: IconNode = [
   ],
 ];
 
-const FolderIcon = createLucideIcon('FolderIcon', folderIcon, 2, '0 0 20 20');
+const FolderIcon = createLucideIcon('FolderIcon', folderIcon, undefined, '0 0 20 20');
 
 export default FolderIcon;

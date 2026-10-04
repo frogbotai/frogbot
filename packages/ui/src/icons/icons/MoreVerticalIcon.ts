@@ -31,7 +31,7 @@ export const moreVerticalIcon: IconNode = [
 const MoreVerticalIcon = createLucideIcon(
   'MoreVerticalIcon',
   moreVerticalIcon,
-  1.66667,
+  undefined,
   '0 0 20 20',
 );
 

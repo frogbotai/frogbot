@@ -16,6 +16,6 @@ export const changeScreenModeIcon: IconNode = [
   ],
 ];
 
-const ChangeScreenModeIcon = createLucideIcon('ChangeScreenModeIcon', changeScreenModeIcon, 1.5);
+const ChangeScreenModeIcon = createLucideIcon('ChangeScreenModeIcon', changeScreenModeIcon);
 
 export default ChangeScreenModeIcon;

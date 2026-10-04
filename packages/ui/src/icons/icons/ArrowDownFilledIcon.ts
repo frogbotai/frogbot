@@ -20,6 +20,6 @@ export const arrowDownFilledIcon: IconNode = [
   ],
 ];
 
-const ArrowDownFilledIcon = createLucideIcon('ArrowDownFilledIcon', arrowDownFilledIcon);
+const ArrowDownFilledIcon = createLucideIcon('ArrowDownFilledIcon', arrowDownFilledIcon, 2);
 
 export default ArrowDownFilledIcon;

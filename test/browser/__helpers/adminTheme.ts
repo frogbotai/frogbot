@@ -24,10 +24,14 @@ export async function signIn(page: Page) {
   await page.waitForURL((url) => !/\/(create-first-user|login)/.test(url.pathname));
 }
 
-export async function openPostCreate(page: Page, theme: AdminTheme) {
+export async function setAdminTheme(page: Page, theme: AdminTheme) {
   await page
     .context()
     .addCookies([{ name: 'frogbot-theme', value: theme, domain: 'localhost', path: '/' }]);
+}
+
+export async function openPostCreate(page: Page, theme: AdminTheme) {
+  await setAdminTheme(page, theme);
 
   await page.goto('/collections/posts/create');
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);

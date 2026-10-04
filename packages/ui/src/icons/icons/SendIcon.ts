@@ -20,6 +20,6 @@ export const sendIcon: IconNode = [
   ],
 ];
 
-const SendIcon = createLucideIcon('SendIcon', sendIcon, 1.5, '0 0 16 16');
+const SendIcon = createLucideIcon('SendIcon', sendIcon, undefined, '0 0 16 16');
 
 export default SendIcon;

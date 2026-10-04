@@ -20,6 +20,6 @@ export const bubbleChatIcon: IconNode = [
   ],
 ];
 
-const BubbleChatIcon = createLucideIcon('BubbleChatIcon', bubbleChatIcon, 1.5);
+const BubbleChatIcon = createLucideIcon('BubbleChatIcon', bubbleChatIcon);
 
 export default BubbleChatIcon;

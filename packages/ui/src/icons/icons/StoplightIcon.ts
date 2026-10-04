@@ -62,6 +62,6 @@ export const stoplightIcon: IconNode = [
   ],
 ];
 
-const StoplightIcon = createLucideIcon('StoplightIcon', stoplightIcon);
+const StoplightIcon = createLucideIcon('StoplightIcon', stoplightIcon, undefined, '0 0 26 26');
 
 export default StoplightIcon;

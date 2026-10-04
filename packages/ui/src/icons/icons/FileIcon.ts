@@ -28,6 +28,6 @@ export const fileIcon: IconNode = [
   ],
 ];
 
-const FileIcon = createLucideIcon('File', fileIcon, 1.5);
+const FileIcon = createLucideIcon('File', fileIcon);
 
 export default FileIcon;

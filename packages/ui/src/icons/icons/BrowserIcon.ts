@@ -33,6 +33,6 @@ export const browserIcon: IconNode = [
   ],
 ];
 
-const BrowserIcon = createLucideIcon('BrowserIcon', browserIcon, 1.5);
+const BrowserIcon = createLucideIcon('BrowserIcon', browserIcon);
 
 export default BrowserIcon;
