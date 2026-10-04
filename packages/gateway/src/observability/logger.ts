@@ -191,6 +191,8 @@ function serializeError(error: unknown, seen = new WeakSet<object>()): unknown {
     stack: error.stack === undefined ? undefined : redactKeyFragments(error.stack),
   };
   for (const key of Object.keys(error)) {
+    if (key === 'requestBodyValues') continue;
+
     try {
       const value = (error as unknown as Record<string, unknown>)[key];
       serialized[key] =
