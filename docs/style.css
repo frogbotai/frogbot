@@ -1,7 +1,8 @@
-/* FrogBot docs — dark mode contrast fixes.
-   Background is a dark navy (#101828), so Mintlify's default gray-400
-   secondary text is too dim. Unify secondary text on one brighter color
-   in dark mode only, so the sidebar/body don't show mismatched tiers. */
+/* FrogBot docs — overrides for Mintlify defaults.
+   Dark mode: the background is a dark navy (#101828), so Mintlify's default
+   gray-400 secondary text is too dim. Unify secondary text on one brighter
+   color in dark mode only, so the sidebar/body don't show mismatched tiers.
+   Both modes: restyle the built-in <Prompt> box to match the cards (end of file). */
 
 /* Sidebar: leaf links AND collapsible group toggles (a + button) */
 .dark #sidebar-content a,
@@ -69,4 +70,34 @@
 .dark #content-area h4 *,
 .dark [data-component-part="card-title"] {
   color: #f8fafc !important;
+}
+
+/* <Prompt> box (e.g. the "Start here" starter prompt). Mintlify hardcodes a
+   warm stone palette; match the <Card> surface and border instead
+   (bg-white / dark:bg-background-dark, border-gray-950/10 / dark:border-white/10). */
+.prompt {
+  background-color: #fff !important;
+  border-color: rgb(var(--gray-950) / 0.1) !important;
+  color: rgb(var(--gray-700)) !important;
+}
+.dark .prompt {
+  background-color: rgb(var(--background-dark)) !important;
+  border-color: rgb(255 255 255 / 0.1) !important;
+  color: #cbd5e1 !important;
+}
+
+/* "Copy prompt" button: FrogBot green with a white label in both modes, dimming
+   to 90% on hover like the navbar "Dashboard" CTA. The #content-area selector
+   beats the broad dark-mode span rule above. */
+.prompt [data-component-part="prompt-action-copy-button"] {
+  background-color: rgb(var(--primary-dark)) !important;
+  border-color: transparent !important;
+}
+.prompt [data-component-part="prompt-action-copy-button"]:hover {
+  background-color: rgb(var(--primary-dark) / 0.9) !important;
+}
+.prompt [data-component-part="prompt-action-copy-button"],
+.prompt [data-component-part="prompt-action-copy-button"] *,
+.dark #content-area .prompt [data-component-part="prompt-action-copy-button"] * {
+  color: #fff !important;
 }
