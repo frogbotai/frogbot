@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { signIn, user } from './__helpers/signIn';
+import { signIn } from './__helpers/signIn';
 
 const viewport = { width: 1440, height: 900 };
 
@@ -20,20 +20,6 @@ async function openPreview(page: Page) {
 
 test.describe('live preview', () => {
   test.use({ viewport });
-
-  test.beforeAll(async ({ request }) => {
-    const response = await request.get('/api/users/init');
-
-    expect(response.ok()).toBe(true);
-
-    const { initialized } = await response.json();
-
-    if (!initialized) {
-      const registration = await request.post('/api/users/first-register', { data: user });
-
-      expect(registration.ok()).toBe(true);
-    }
-  });
 
   test.beforeEach(async ({ page }) => {
     id = undefined;

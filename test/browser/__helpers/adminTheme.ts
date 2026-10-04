@@ -2,28 +2,6 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 export type AdminTheme = 'dark' | 'light';
 
-const user = { email: 'custom-field@example.com', password: 'browser-test-password' };
-
-export async function signIn(page: Page) {
-  await page.goto('/');
-  await page.waitForURL(/\/(create-first-user|login)/);
-  await page.waitForLoadState('networkidle');
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    const response = await page.request.post('/api/users/first-register', { data: user });
-
-    expect(response.ok()).toBe(true);
-    await page.goto('/');
-
-    return;
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)/.test(url.pathname));
-}
-
 export async function setAdminTheme(page: Page, theme: AdminTheme) {
   await page
     .context()

@@ -1,23 +1,9 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { signIn, user } from './__helpers/signIn';
+import { signIn } from './__helpers/signIn';
 import { chatPicksPreference, chatsSlug, pickerAgentSlug } from './fixtures/question/shared';
 
 test.setTimeout(120_000);
-
-test.beforeAll(async ({ request }) => {
-  const response = await request.get('/api/users/init');
-
-  expect(response.ok()).toBe(true);
-
-  const { initialized } = await response.json();
-
-  if (!initialized) {
-    const registration = await request.post('/api/users/first-register', { data: user });
-
-    expect(registration.ok()).toBe(true);
-  }
-});
 
 async function choosePickerAgent(page: Page) {
   await page.locator('.fb-agent-selector__trigger').click();

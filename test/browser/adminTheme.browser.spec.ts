@@ -6,8 +6,8 @@ import {
   openMenu,
   openPostCreate,
   readAdminColor,
-  signIn,
 } from './__helpers/adminTheme';
+import { signIn } from './__helpers/signIn';
 
 function readAdminStyles(page: Page) {
   return page.evaluate(() => {
