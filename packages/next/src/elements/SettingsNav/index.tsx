@@ -19,7 +19,7 @@ type SettingsNavProps = {
 export function SettingsNav({ accountPath, activePath, adminRoute, entries }: SettingsNavProps) {
   return (
     <aside className="frogbot-settings-nav">
-      <Link className="frogbot-settings-nav__back" href={adminRoute}>
+      <Link className="frogbot-settings-nav__back" href={adminRoute} prefetch={false}>
         <ChevronLeftIcon size={18} />
         Back to app
       </Link>
@@ -34,6 +34,7 @@ export function SettingsNav({ accountPath, activePath, adminRoute, entries }: Se
               className={`frogbot-settings-nav__item${active ? ' frogbot-settings-nav__item--active' : ''}`}
               href={formatAdminURL({ adminRoute, path: `/settings/${entry.path}` })}
               key={entry.path}
+              prefetch={false}
             >
               <span className="frogbot-settings-nav__icon">{entry.icon}</span>
               {entry.label}
@@ -42,7 +43,7 @@ export function SettingsNav({ accountPath, activePath, adminRoute, entries }: Se
         })}
       </nav>
       <div className="frogbot-settings-nav__footer">
-        <Link className="frogbot-settings-nav__item" href={accountPath}>
+        <Link className="frogbot-settings-nav__item" href={accountPath} prefetch={false}>
           <span className="frogbot-settings-nav__icon">
             <ProfileIcon size={18} />
           </span>
