@@ -77,7 +77,6 @@ export interface Config {
     'frogbot-chat-assets': FrogbotChatAsset;
     'frogbot-chat-turns': FrogbotChatTurn;
     connections: Connection;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
   };
   collectionsJoins: {};
@@ -92,7 +91,6 @@ export interface Config {
     'frogbot-chat-assets': FrogbotChatAssetsSelect;
     'frogbot-chat-turns': FrogbotChatTurnsSelect;
     connections: ConnectionsSelect;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
   };
   db: {
@@ -154,6 +152,8 @@ export interface User {
         | 'openai/gpt-4o-2024-08-06'
         | 'openai/gpt-4o-2024-11-20'
         | 'openai/gpt-4o-mini'
+        | 'openai/gpt-4o-mini-transcribe'
+        | 'openai/gpt-4o-transcribe'
         | 'openai/gpt-5'
         | 'openai/gpt-5-mini'
         | 'openai/gpt-5-nano'
@@ -188,6 +188,7 @@ export interface User {
         | 'openai/text-embedding-3-large'
         | 'openai/text-embedding-3-small'
         | 'openai/text-embedding-ada-002'
+        | 'openai/whisper-1'
       )[]
     | null;
   monthlyBudget?: number | null;
@@ -416,44 +417,6 @@ export interface Connection {
   scopes?: string[] | null;
   expiresAt?: string | null;
   status: 'active' | 'error' | 'revoked';
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frogbot-trigger-subscriptions".
- */
-export interface FrogbotTriggerSubscription {
-  id: number;
-  agent: string;
-  piece: string;
-  instance: string;
-  trigger: string;
-  inputHash: string;
-  input:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  state?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  webhookUrl?: string | null;
-  status: 'active' | 'error';
-  cleanupPending?: boolean | null;
-  enablePending?: boolean | null;
-  enableAttempt?: string | null;
-  expiresAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -693,27 +656,6 @@ export interface ConnectionsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frogbot-trigger-subscriptions_select".
- */
-export interface FrogbotTriggerSubscriptionsSelect {
-  agent?: boolean;
-  piece?: boolean;
-  instance?: boolean;
-  trigger?: boolean;
-  inputHash?: boolean;
-  input?: boolean;
-  state?: boolean;
-  webhookUrl?: boolean;
-  status?: boolean;
-  cleanupPending?: boolean;
-  enablePending?: boolean;
-  enableAttempt?: boolean;
-  expiresAt?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
 export interface FrogbotWaitpointsSelect {
@@ -789,6 +731,8 @@ declare module 'frogbot' {
       | 'openai/gpt-4o-2024-08-06'
       | 'openai/gpt-4o-2024-11-20'
       | 'openai/gpt-4o-mini'
+      | 'openai/gpt-4o-mini-transcribe'
+      | 'openai/gpt-4o-transcribe'
       | 'openai/gpt-5'
       | 'openai/gpt-5-mini'
       | 'openai/gpt-5-nano'
@@ -822,7 +766,8 @@ declare module 'frogbot' {
       | 'openai/o3-pro'
       | 'openai/text-embedding-3-large'
       | 'openai/text-embedding-3-small'
-      | 'openai/text-embedding-ada-002';
+      | 'openai/text-embedding-ada-002'
+      | 'openai/whisper-1';
     roles: never;
   }
 }
