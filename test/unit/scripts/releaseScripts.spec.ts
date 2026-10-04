@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { publishablePackages } from '../../../scripts/lib/workspace.mjs';
+import { publishablePackages, ROOT } from '../../../scripts/lib/workspace.mjs';
 
 const { scripts } = JSON.parse(
   readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'),
@@ -74,19 +75,23 @@ describe('release scripts', () => {
     expect(scripts['check:single-frogbot']).toBe('node scripts/check-single-frogbot.mjs');
   });
 
-  it('every publishable package removes dist before building', () => {
+  it('every publishable package builds with the shared package build', () => {
+    const shared = path.join(ROOT, 'scripts', 'build-package.mjs');
+
     const builds = publishablePackages().map(({ dir, name }) => {
       const manifest = JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
         scripts?: Record<string, string>;
       };
 
-      return { build: manifest.scripts?.build, name };
+      const [command, script] = manifest.scripts?.build?.split(' ') ?? [];
+
+      return { name, shared: command === 'node' && path.resolve(dir, script ?? '') === shared };
     });
 
-    const unclean = builds.filter(({ build }) => !build?.startsWith('rm -rf dist && '));
+    const unshared = builds.filter(({ shared }) => !shared);
 
     expect(builds.length).toBeGreaterThan(0);
-    expect(unclean).toEqual([]);
+    expect(unshared).toEqual([]);
   });
 
   it('test:release runs every project with live suites on, then the Postgres and Mongo suites', () => {
