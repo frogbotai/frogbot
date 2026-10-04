@@ -67,7 +67,6 @@ describe('connection config boot', () => {
     const enabled = combination.secret || combination.oauth;
     const result = sanitize(
       config({
-        pieces: [piece],
         connections: enabled
           ? [{ piece, secret: combination.secret, oauth: combination.oauth }]
           : [],
@@ -134,12 +133,7 @@ describe('connection config boot', () => {
   });
 
   it.each([undefined, []])('keeps linking disabled without entries %j', async (connections) => {
-    const result = sanitize(
-      config({
-        connections,
-        pieces: [createPiece({ auth, slug: 'unused' })],
-      }),
-    );
+    const result = sanitize(config({ connections }));
     const payload = await result._internal.payloadConfig;
     expect(result.connections.enabled).toBe(false);
     expect(payload.collections.some(({ slug }) => slug === 'connections')).toBe(false);

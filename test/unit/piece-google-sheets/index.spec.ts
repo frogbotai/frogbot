@@ -7,6 +7,7 @@ vi.mock(
   () => import('../../../packages/pieces/piece-google/src/index.js'),
 );
 
+import { sanitize } from '../../../packages/frogbot/src/config/sanitize.js';
 import { runKVLock } from '../../../packages/frogbot/src/kv/lock.js';
 import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import {
@@ -1251,5 +1252,81 @@ describe('persistent row cursors', () => {
     expect(await rejection).toBeInstanceOf(Error);
     expect(kv.set).not.toHaveBeenCalled();
     expect(kv.releaseLock).toHaveBeenCalled();
+  });
+
+  it('advances the cursor for an instance used only through selected agent actions', async () => {
+    const { piece, req, state, rows } = await fixture();
+    rows.splice(0, rows.length, ['Name'], ['first'], ['second']);
+    const config = sanitize({
+      secret: 'secret',
+      db: {} as never,
+      collections: [],
+      ai: { providers: { openai: { apiKey: 'sk-test' } } },
+      agents: [
+        {
+          slug: 'importer',
+          model: 'openai/gpt-5.4-mini',
+          instructions: 'Import rows',
+          tools: [piece.getNextRows, piece.getRows],
+        },
+      ],
+    });
+    req.frogbot.config.pieces.instances = config.pieces.instances;
+    const input = { ...selection, startRow: 2, batchSize: 1 };
+
+    const first = await piece.getNextRows({ req, input });
+    const second = await piece.getNextRows({ req, input });
+
+    expect(config.pieces.instances).toEqual([piece]);
+    expect([first, second]).toEqual([
+      [{ row: 2, values: { A: 'first' } }],
+      [{ row: 3, values: { A: 'second' } }],
+    ]);
+    expect([...state.values()]).toEqual([4]);
+  });
+
+  it('keeps a separate cursor for each Sheets instance on the list', async () => {
+    const { piece, req, state, transport } = await fixture();
+    const other = createGoogleSheets({ auth, slug: 'sheets-other' });
+    const otherClient = await other.client({ req });
+    otherClient.auth.transporter.request = transport as typeof otherClient.auth.transporter.request;
+    const config = sanitize({
+      secret: 'secret',
+      db: {} as never,
+      collections: [],
+      ai: { providers: { openai: { apiKey: 'sk-test' } } },
+      agents: [
+        {
+          slug: 'importer',
+          model: 'openai/gpt-5.4-mini',
+          instructions: 'Import rows',
+          tools: [piece.getNextRows],
+        },
+        {
+          slug: 'auditor',
+          model: 'openai/gpt-5.4-mini',
+          instructions: 'Audit rows',
+          tools: [other.getNextRows],
+        },
+      ],
+    });
+    req.frogbot.config.pieces.instances = config.pieces.instances;
+    const input = { ...selection, startRow: 2, batchSize: 1 };
+
+    await piece.getNextRows({ req, input });
+    await piece.getNextRows({ req, input });
+    await other.getNextRows({ req, input });
+
+    expect(config.pieces.instances).toEqual([piece, other]);
+    expect([...state.values()]).toEqual([4, 3]);
+  });
+
+  it('rejects a persistent cursor for an instance used nowhere in config', async () => {
+    const { piece, req } = await fixture();
+    req.frogbot.config.pieces.instances = [];
+
+    await expect(piece.getNextRows({ req, input: selection })).rejects.toThrow(
+      "Use this Google Sheets instance in an agent's tools or triggers, or in `connections`, before using a persistent cursor.",
+    );
   });
 });

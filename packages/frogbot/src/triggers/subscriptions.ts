@@ -474,7 +474,7 @@ async function cleanup(
 
   if (!instance) {
     throw new Error(
-      `[frogbot] Cannot clean up trigger '${subscription.instance}/${subscription.trigger}': its configured instance is unavailable. Credentials cannot be reconstructed from the database; subscription '${subscription.id}' retained. Restore the instance to retry cleanup.`,
+      `[frogbot] Cannot clean up trigger '${subscription.instance}/${subscription.trigger}': its configured instance is unavailable. Credentials cannot be reconstructed from the database; subscription '${subscription.id}' retained. To retry cleanup, use the instance again in an agent's triggers, channels or tools, or in \`connections\`.`,
     );
   }
 

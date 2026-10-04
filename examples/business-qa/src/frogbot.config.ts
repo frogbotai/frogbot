@@ -8,7 +8,7 @@ import { qaAnalyst, releaseManager } from './agents';
 import { Media } from './collections/Media';
 import { Releases } from './collections/Releases';
 import { Users } from './collections/Users';
-import { googleConnections, linear, pieces } from './pieces';
+import { googleConnections, linear } from './pieces';
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',
@@ -18,7 +18,6 @@ const config: FrogBotConfig = {
     },
   }),
   collections: [Users, Media, Releases],
-  pieces,
   connections: [...googleConnections, { piece: linear, secret: true }],
   ai: {
     providers: { openai: true },

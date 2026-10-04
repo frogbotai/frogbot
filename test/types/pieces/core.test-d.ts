@@ -1,5 +1,6 @@
 import {
   createPieceHelpers as rootCreatePieceHelpers,
+  type FrogBotConfig,
   type FrogBotRequest,
   type TriggerEvent,
 } from 'frogbot';
@@ -366,3 +367,13 @@ expectTypeOf(
   createEmptyOptions({ auth: { token: 'token' } }).echo({ input: { text: 'hi' } }),
 ).toEqualTypeOf<Promise<string>>();
 createEmptyOptions();
+
+expectTypeOf<FrogBotConfig>().not.toHaveProperty('pieces');
+
+({
+  secret: 'secret',
+  db: {} as FrogBotConfig['db'],
+  collections: [],
+  // @ts-expect-error root pieces is not a FrogBotConfig key
+  pieces: [],
+}) satisfies FrogBotConfig;

@@ -91,7 +91,7 @@ An OAuth instance is eligible for interactive sign-in only when its recipe defin
 
 ## Trigger lifecycle
 
-Mount an instance's trigger reference in an agent's `triggers` array, then register the agent. Use `AgentConfig<typeof instance.triggers.triggerName>` to infer handler events from the trigger schema. FrogBot discovers the instance through the mount; separate root `pieces` registration is not required. Distinct instances need unique slugs.
+Mount an instance's trigger reference in an agent's `triggers` array, then register the agent. Use `AgentConfig<typeof instance.triggers.triggerName>` to infer handler events from the trigger schema. Distinct instances need unique slugs.
 
 | Type      | Default callback route                            | Lifecycle                                                                                                                                                             |
 | --------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

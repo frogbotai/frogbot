@@ -244,9 +244,13 @@ describe('trigger subscriptions', () => {
     expect(frogbot.logger.warn).toHaveBeenCalledWith(
       expect.stringMatching(/credentials.*database/i),
     );
+    expect(frogbot.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('use the instance again'),
+    );
+    expect(frogbot.logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('pieces'));
   });
 
-  it('can clean removed mounts with an optional legacy configured instance', async () => {
+  it('can clean removed mounts with an instance still used elsewhere in config', async () => {
     const { instance, config, subscriptions, docs } = createHarness();
     await subscriptions.reconcile();
     config._internal.triggers = {};

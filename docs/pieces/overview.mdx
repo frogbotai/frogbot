@@ -5,7 +5,7 @@ description: "Add integration actions to FrogBot agents as tools."
 keywords: ["pieces", "tools", "agents", "Google Sheets", "native actions"]
 ---
 
-Pieces package related actions as FrogBot tools. Register each piece once in the root `pieces` array, then select its tools for individual agents.
+Pieces package related actions as FrogBot tools. Create a piece instance, then select its actions as tools on the agents that need them.
 
 For fetch-based search, see [Web search via pieces](/pieces/web-search).
 
@@ -17,7 +17,7 @@ Install the package for the integration you need. Every shipped piece is native 
 pnpm add @frogbotai/piece-google-sheets
 ```
 
-## Register and select tools
+## Create an instance and select tools
 
 ```ts
 import { createGoogleSheets } from '@frogbotai/piece-google-sheets'
@@ -28,7 +28,6 @@ export const googleSheets = createGoogleSheets({
 })
 
 export const pieceConfig = {
-  pieces: [googleSheets],
   agents: [
     {
       slug: 'assistant',
@@ -37,7 +36,7 @@ export const pieceConfig = {
       tools: [googleSheets.findRows, googleSheets.getRows]
     }
   ]
-} satisfies Pick<FrogBotConfig, 'pieces' | 'agents'>
+} satisfies Pick<FrogBotConfig, 'agents'>
 ```
 
 Merge `pieceConfig` into your root config alongside your database, collections, secret, and AI provider configuration. This example uses a developer access token. For user-owned credentials, reuse the factory instances from the [OAuth connection example](/connections/overview#configure-linking).

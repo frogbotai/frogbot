@@ -66,6 +66,7 @@ import type { CollectionAdminConfig, CollectionConfig } from '../collections/con
 import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
+import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { MapVectorField } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
@@ -88,6 +89,7 @@ import {
   pieceInstanceDefinition,
   pieceInstanceRuntime,
   pieceInstanceTools,
+  pieceToolInstance,
 } from '../pieces/definePiece.js';
 import { pieceEmailAdapter } from '../pieces/email.js';
 import {
@@ -112,6 +114,7 @@ import {
 import { buildTriggerEndpoints } from '../triggers/endpoints.js';
 import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/registry.js';
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
+import type { IngressRegistry } from '../triggers/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
 import { applyStorageAdapters } from '../uploads/storage.js';
@@ -1187,23 +1190,37 @@ function sanitizeAgents(
   });
 }
 
-function sanitizePieces(pieces: PieceInstance[] | undefined): SanitizedPiecesConfig {
-  if (pieces === undefined) {
-    return { instances: [] };
-  }
-  if (!Array.isArray(pieces)) {
-    throw new Error('[frogbot] `pieces` must be an array.');
-  }
-  if (pieces.length === 0) {
-    return { instances: [] };
-  }
+type CollectPieceInstancesProps = {
+  config: FrogBotConfig;
+  agents: SanitizedAgentConfig[] | undefined;
+  rootTools: AnyTool[];
+  triggers: IngressRegistry;
+  connections: SanitizedConnectionsConfig;
+};
 
-  if (pieces.some((piece) => !isPieceInstance(piece))) {
-    throw new Error('[frogbot] Every piece must be a native piece instance.');
-  }
+function collectPieceInstances({
+  config,
+  agents,
+  rootTools,
+  triggers,
+  connections,
+}: CollectPieceInstancesProps): SanitizedPiecesConfig {
+  const configuredTools = [
+    ...(config.tools ?? []),
+    ...(config.agents ?? []).flatMap((agent) => agent.tools ?? []),
+  ];
+  const sanitizedTools = [...rootTools, ...(agents ?? []).flatMap((agent) => agent.tools ?? [])];
 
   return {
-    instances: pieces,
+    instances: [
+      ...new Set([
+        ...Object.values(triggers).map(({ instance }) => instance),
+        ...(config.agents ?? []).flatMap((agent) => agent.channels ?? []),
+        ...configuredTools.filter(isPieceInstance),
+        ...sanitizedTools.flatMap((tool) => pieceToolInstance(tool) ?? []),
+        ...Object.values(connections.entries).map(({ piece }) => piece),
+      ]),
+    ],
   };
 }
 
@@ -1356,7 +1373,6 @@ function buildPayloadConfig(
     'connections',
     'email',
     'onInit',
-    'pieces',
     'plugins',
     'port',
     'settings',
@@ -1778,7 +1794,6 @@ export function sanitize(
     };
   }
 
-  const pieces = sanitizePieces(config.pieces);
   if (config.tools !== undefined && !Array.isArray(config.tools)) {
     throw new Error('[frogbot] Root tools must be an array when configured.');
   }
@@ -1791,17 +1806,6 @@ export function sanitize(
   const hasChannelAdapters = Object.values(triggers).some(
     (entry) => entry.channelAgentSlug || requiresAdapterVerification(entry),
   );
-
-  pieces.instances = [
-    ...new Set([
-      ...pieces.instances,
-      ...Object.values(triggers).map(({ instance }) => instance),
-      ...(config.agents ?? []).flatMap((agent) => [
-        ...(agent.channels ?? []),
-        ...(agent.tools ?? []).filter(isPieceInstance),
-      ]),
-    ]),
-  ];
 
   const hasScheduleTriggers = agents?.some((agent) =>
     agent.triggers?.some((trigger) => 'type' in trigger && trigger.type === 'schedule'),
@@ -1865,6 +1869,15 @@ export function sanitize(
     agents,
     collections: usageCollections,
   });
+
+  const pieces = collectPieceInstances({
+    config,
+    agents,
+    rootTools,
+    triggers,
+    connections: connectionsResult.connections,
+  });
+
   const { collections: resolvedCollections, files } = resolveFilesCollection({
     collections: [
       ...connectionsResult.collections,
@@ -1906,12 +1919,6 @@ export function sanitize(
     ];
   }
 
-  pieces.instances = [
-    ...new Set([
-      ...pieces.instances,
-      ...Object.values(connections.entries).map(({ piece }) => piece),
-    ]),
-  ];
   const chat = chatResult.chat;
   const payloadCollections = chat.enabled
     ? collections.map((collection) =>

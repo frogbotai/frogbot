@@ -69,12 +69,12 @@ describe('Discord Gateway deployment configuration', () => {
         admin: { importMap: { autoGenerate: false } },
         collections: [{ slug: 'users', auth: true, fields: [] }],
         ai: { providers: { openai: { apiKey: 'test-key' } } },
-        pieces: [discord],
         agents: [
           {
             slug: 'ops',
             instructions: 'Handle incoming events.',
             model: 'openai/gpt-4o',
+            tools: [discord],
             triggers: httpTrigger
               ? [{ trigger: telegram.triggers.newUpdate, handler: async () => {} }]
               : [],

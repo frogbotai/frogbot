@@ -39,7 +39,6 @@ export default buildConfig({
       access: ({ req }) => !!req.user || req.context.channel?.piece === 'slack',
     },
   ],
-  pieces: [slack],
 });
 ```
 

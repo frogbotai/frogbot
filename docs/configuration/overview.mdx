@@ -73,7 +73,6 @@ export default buildConfig({
 | `loggingLevels` | `Partial<Record<ErrorName, Level \| false>>` | See description | Log level for each error class, or `false` to not log it. Defaults: `info` for `Forbidden`, `Locked`, `MissingFile`, `NotFound`, and `ValidationError`; `error` for the rest. |
 | `maxDepth` | `number` | `10` | Highest `depth` any request can use. Larger values are lowered to this limit. |
 | `onInit` | `OnInit \| OnInit[]` | — | Runs after initialization with the `FrogBot` instance. See [Run initialization steps](#run-initialization-steps). |
-| `pieces` | `Piece[]` | — | Pieces whose tools, triggers, and sign-in methods FrogBot registers. See [Pieces](/pieces/overview). |
 | `plugins` | `Plugin[]` | — | Functions that transform the config, in order, before sanitization. See [Run plugins](#run-plugins). |
 | `queryPresets` | `QueryPresetsConfig` | — | Access rules for saved list filters, columns, and sorts on collections with `enableQueryPresets`. See [Query presets](#query-presets). |
 | `routes` | `RoutesConfig` | See [Routes](#routes) | URL paths for the admin panel, REST API, and GraphQL. |
