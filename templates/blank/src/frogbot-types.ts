@@ -146,6 +146,8 @@ export interface User {
         | 'openai/gpt-4o-2024-08-06'
         | 'openai/gpt-4o-2024-11-20'
         | 'openai/gpt-4o-mini'
+        | 'openai/gpt-4o-mini-transcribe'
+        | 'openai/gpt-4o-transcribe'
         | 'openai/gpt-5'
         | 'openai/gpt-5-mini'
         | 'openai/gpt-5-nano'
@@ -180,6 +182,7 @@ export interface User {
         | 'openai/text-embedding-3-large'
         | 'openai/text-embedding-3-small'
         | 'openai/text-embedding-ada-002'
+        | 'openai/whisper-1'
       )[]
     | null;
   monthlyBudget?: number | null;
@@ -611,6 +614,8 @@ declare module 'frogbot' {
       | 'openai/gpt-4o-2024-08-06'
       | 'openai/gpt-4o-2024-11-20'
       | 'openai/gpt-4o-mini'
+      | 'openai/gpt-4o-mini-transcribe'
+      | 'openai/gpt-4o-transcribe'
       | 'openai/gpt-5'
       | 'openai/gpt-5-mini'
       | 'openai/gpt-5-nano'
@@ -644,7 +649,8 @@ declare module 'frogbot' {
       | 'openai/o3-pro'
       | 'openai/text-embedding-3-large'
       | 'openai/text-embedding-3-small'
-      | 'openai/text-embedding-ada-002';
+      | 'openai/text-embedding-ada-002'
+      | 'openai/whisper-1';
     roles: never;
   }
 }
