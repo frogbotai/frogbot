@@ -105,7 +105,8 @@ A provider's `models` list decides what the app can use, while an [agent's `mode
 | `providers` | `Record<string, true \| BuiltInProviderEntry \| BedrockProviderEntry \| CustomProviderEntry>` | Required | Providers keyed by name. At least one entry must be set. A built-in key takes `true` or [built-in provider options](#built-in-provider-options), `bedrock` takes `true` or [Bedrock provider options](#bedrock-provider-options), and any other key needs [custom provider options](#custom-provider-options). |
 | `routers` | `Record<string, RouterConfig>` | `{}` | Aliases from a slug to one model ID. See [Router options](#router-options). |
 | `defaultModel` | `ModelId` | — | Model or router slug for agents that set no `model` and no `model.default`. Must resolve to a configured provider. |
-| `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must resolve to a configured provider. See [Choose a utility model](#choose-a-utility-model). |
+| `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must be a configured chat model. See [Choose a utility model](#choose-a-utility-model). |
+| `transcriptionModel` | `ModelId` | — | Model or router slug the chat composer's microphone uses for speech-to-text. Must be a configured transcription model. Unset: no microphone. See [Voice input](/chat/ui-chat#voice-input). |
 | `hooks` | `AIHooks` | No hooks | Lifecycle hooks for every operation. See [Observe calls](#observe-calls). |
 | `access` | `AIAccessConfig` | Every category allows signed-in users | Access rules per operation category. See [Control access](#control-access). |
 | `deploymentId` | `string` | `FROGBOT_DEPLOYMENT_ID`, then `'local'` | Added to every AI span as the `frogbot.deployment` attribute. |
@@ -188,7 +189,7 @@ An alias has no fallback chain or access rule. `hidden` exists on `RouterConfig`
 | `model` | `string` | Required | Provider-prefixed model ID the alias resolves to. Must be non-empty. |
 | `hidden` | `boolean` | — | Reserved; FrogBot does not read it yet. |
 
-Local operations, agents, `defaultModel`, and `smallModel` resolve aliases; the mounted gateway HTTP routes expect provider-prefixed model IDs.
+Local operations, agents, `defaultModel`, and `smallModel` resolve aliases, and the chat manifest advertises the model behind a `transcriptionModel` alias; the mounted gateway HTTP routes expect provider-prefixed model IDs.
 
 ---
 
@@ -210,7 +211,7 @@ ai: {
 }
 ```
 
-The model or alias must resolve to a configured provider. Utility calls use the normal operation lifecycle and appear in usage reporting.
+The model, or the model behind the alias, must be a configured chat model. Utility calls use the normal operation lifecycle and appear in usage reporting.
 
 ---
 

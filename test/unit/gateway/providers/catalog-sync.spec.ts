@@ -343,6 +343,23 @@ describe('catalog sync corrections and modes', () => {
     expect(transcribe?.operations).toEqual(['audio.transcriptions']);
   });
 
+  it.each([
+    ['openai/whisper-1', undefined],
+    ['openai/gpt-4o-transcribe', { input: 2.5, output: 10 }],
+    ['openai/gpt-4o-mini-transcribe', { input: 1.25, output: 5 }],
+  ])('publishes the OpenAI transcription entry %s', (modelId, cost) => {
+    const entry = DEFAULT_MODEL_CATALOG.get(modelId);
+
+    expect(catalog).toContainEqual({
+      id: modelId,
+      provider: 'openai',
+      mode: 'audio_transcription',
+    });
+    expect(entry?.modalities).toEqual({ input: ['audio'], output: ['text'] });
+    expect(entry?.operations).toEqual(['audio.transcriptions']);
+    expect(entry?.cost).toEqual(cost);
+  });
+
   it('publishes chat mode for every committed text-and-audio input model with text-only output', () => {
     const entries = [...DEFAULT_MODEL_CATALOG.values()].filter(
       ({ modalities }) =>

@@ -20,7 +20,7 @@ An enabled chat configuration returns the resolved collection slugs and the agen
 ```json
 {
   "ai": {
-    "transcribe": { "model": "groq/whisper-large-v3" }
+    "transcribe": { "model": "openai/gpt-4o-mini-transcribe" }
   },
   "chat": {
     "enabled": true,
@@ -55,7 +55,7 @@ When chat persistence is disabled, `chat` contains only `enabled`.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `ai.transcribe` | `{ model: string } \| false` | The first catalog transcription model from a configured provider, or `false` when there is none. The chat composer shows its microphone only when this is set. |
+| `ai.transcribe` | `{ model: string } \| false` | The model set in `ai.transcriptionModel`, with an alias resolved to its model, when the caller may transcribe with it; otherwise `false`. The chat composer shows its microphone only when this is set. |
 | `chat.enabled` | `boolean` | Whether chat persistence is enabled. |
 | `chat.chatsSlug` | `string` | Slug of the chats collection. Present when `enabled` is `true`. |
 | `chat.messagesSlug` | `string` | Slug of the messages collection. Present when `enabled` is `true`. |

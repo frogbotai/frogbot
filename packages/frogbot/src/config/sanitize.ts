@@ -36,7 +36,11 @@ import {
 } from '../agents/resolveScheduleTasks.js';
 import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../agents/types.js';
 import { isKnownModelId } from '../ai/catalog.js';
-import { getConfiguredChatModelIds, getConfiguredModelIds } from '../ai/models.js';
+import {
+  getConfiguredChatModelIds,
+  getConfiguredModelIds,
+  getConfiguredTranscriptionModelIds,
+} from '../ai/models.js';
 import { createPolicyHooks } from '../ai/policy.js';
 import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { isProviderName } from '../ai/providerNames.js';
@@ -562,7 +566,7 @@ function usesFileModality(modalities: unknown): boolean {
 
 type SanitizedAIBase = Omit<SanitizedAIConfig, 'usage'>;
 
-function sanitizeAI(ai: AIConfig): SanitizedAIBase {
+function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
   // Validate providers.
   if (!isRecord(ai.providers)) {
     throw new Error('[frogbot] `ai.providers` is required and must be an object.');
@@ -672,20 +676,48 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       .filter(([, entry]) => entry != null)
       .map(([name]) => name),
   );
-  const validateModel = (key: 'defaultModel' | 'smallModel') => {
-    const configuredModel = ai[key];
-    if (configuredModel === undefined) return;
-    const model = routers[configuredModel]?.model ?? configuredModel;
+
+  if (ai.defaultModel !== undefined) {
+    const model = routers[ai.defaultModel]?.model ?? ai.defaultModel;
     const separator = model.indexOf('/');
     const provider = separator > 0 ? model.slice(0, separator) : '';
+
     if (!provider || !providers.has(provider)) {
       throw new Error(
-        `[frogbot] ${key} '${configuredModel}' does not resolve to a configured provider or router.`,
+        `[frogbot] defaultModel '${ai.defaultModel}' does not resolve to a configured provider or router.`,
       );
     }
-  };
-  validateModel('defaultModel');
-  validateModel('smallModel');
+  }
+
+  const configuredModelIds = new Set(getConfiguredModelIds(ai));
+  const modelChecks = [
+    ['smallModel', new Set(getConfiguredChatModelIds(ai)), 'a chat model'],
+    [
+      'transcriptionModel',
+      new Set(getConfiguredTranscriptionModelIds(ai)),
+      'a transcription model',
+    ],
+  ] as const;
+
+  for (const [key, modeModelIds, kind] of modelChecks) {
+    const model = ai[key];
+
+    if (model === undefined) continue;
+
+    const target = routers[model]?.model;
+    const message =
+      !configuredModelIds.has(model) || (target !== undefined && !configuredModelIds.has(target))
+        ? `[frogbot] ai.${key} '${model}' is not configured.`
+        : !modeModelIds.has(model)
+          ? `[frogbot] ai.${key} '${model}' is not ${kind}.`
+          : undefined;
+
+    if (!message) continue;
+
+    if (mode === 'runtime') throw new Error(message);
+
+    console.warn(message);
+  }
 
   // Normalize hooks to arrays.
   const hooks = {
@@ -721,6 +753,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     routers,
     defaultModel: ai.defaultModel,
     smallModel: ai.smallModel,
+    transcriptionModel: ai.transcriptionModel,
     hooks,
     access,
     telemetry,
@@ -1616,7 +1649,7 @@ export function sanitize(
   };
 
   // Sanitize AI config if present.
-  let sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
+  let sanitizedAI = config.ai ? sanitizeAI(config.ai, mode) : undefined;
   if (sanitizedAI) {
     const authCollection = resolveUserSlug(config);
     const policyHooks = createPolicyHooks({

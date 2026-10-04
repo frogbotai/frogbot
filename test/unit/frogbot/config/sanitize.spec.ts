@@ -2526,6 +2526,43 @@ describe('frogbot sanitize', () => {
   });
 
   describe('ai.smallModel', () => {
+    const rejections = [
+      {
+        name: 'a model outside the provider models list',
+        ai: { providers: { openai: { apiKey: 'k', models: ['gpt-5-mini'] } } },
+        smallModel: 'openai/gpt-5-nano',
+        message: "[frogbot] ai.smallModel 'openai/gpt-5-nano' is not configured.",
+      },
+      {
+        name: 'a model of an unconfigured provider',
+        ai: { providers: { anthropic: true } },
+        smallModel: 'openai/gpt-5-nano',
+        message: "[frogbot] ai.smallModel 'openai/gpt-5-nano' is not configured.",
+      },
+      {
+        name: 'a router to an unconfigured provider',
+        ai: { providers: { anthropic: true }, routers: { fast: { model: 'openai/gpt-5-nano' } } },
+        smallModel: 'fast',
+        message: "[frogbot] ai.smallModel 'fast' is not configured.",
+      },
+      {
+        name: 'a transcription model',
+        ai: { providers: { openai: true } },
+        smallModel: 'openai/whisper-1',
+        message: "[frogbot] ai.smallModel 'openai/whisper-1' is not a chat model.",
+      },
+      {
+        name: 'a router to a transcription model',
+        ai: { providers: { openai: true }, routers: { stt: { model: 'openai/whisper-1' } } },
+        smallModel: 'stt',
+        message: "[frogbot] ai.smallModel 'stt' is not a chat model.",
+      },
+    ];
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it('preserves a model that resolves through a configured router', () => {
       const result = sanitize(
         makeConfig({
@@ -2540,22 +2577,306 @@ describe('frogbot sanitize', () => {
       expect(result.ai?.smallModel).toBe('fast');
     });
 
-    it('rejects a model that does not resolve to a configured provider or router', () => {
-      expect(() =>
-        sanitize(
-          makeConfig({
-            ai: { providers: { anthropic: true }, smallModel: 'openai/gpt-5-nano' },
-          }),
-        ),
-      ).toThrow(
-        "[frogbot] smallModel 'openai/gpt-5-nano' does not resolve to a configured provider or router.",
+    it('preserves a configured chat model', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { openai: { apiKey: 'k', models: ['gpt-5-nano'] } },
+            smallModel: 'openai/gpt-5-nano',
+          },
+        }),
       );
+
+      expect(result.ai?.smallModel).toBe('openai/gpt-5-nano');
+    });
+
+    it.each(rejections)('rejects $name', ({ ai, smallModel, message }) => {
+      const config = makeConfig({ ai: { ...ai, smallModel } as never });
+
+      expect(() => sanitize(config)).toThrow(message);
+    });
+
+    it.each(rejections)('warns and keeps $name during codegen', ({ ai, smallModel, message }) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const config = makeConfig({ ai: { ...ai, smallModel } as never });
+
+      const result = sanitize(config, { mode: 'codegen' });
+
+      expect(result.ai?.smallModel).toBe(smallModel);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(message);
     });
 
     it('keeps smallModel absent when omitted', () => {
       const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
 
       expect(result.ai?.smallModel).toBeUndefined();
+    });
+  });
+
+  describe('ai.transcriptionModel', () => {
+    const rejections = [
+      {
+        name: 'a model outside the provider models list',
+        ai: { providers: { groq: { apiKey: 'k', models: ['whisper-large-v3'] } } },
+        transcriptionModel: 'groq/whisper-large-v3-turbo',
+        message: "[frogbot] ai.transcriptionModel 'groq/whisper-large-v3-turbo' is not configured.",
+      },
+      {
+        name: 'a router to an unconfigured provider',
+        ai: { providers: { anthropic: true }, routers: { stt: { model: 'openai/whisper-1' } } },
+        transcriptionModel: 'stt',
+        message: "[frogbot] ai.transcriptionModel 'stt' is not configured.",
+      },
+      {
+        name: 'a chat model',
+        ai: { providers: { openai: true } },
+        transcriptionModel: 'openai/gpt-4o-mini',
+        message:
+          "[frogbot] ai.transcriptionModel 'openai/gpt-4o-mini' is not a transcription model.",
+      },
+      {
+        name: 'a router to a chat model',
+        ai: { providers: { openai: true }, routers: { fast: { model: 'openai/gpt-4o-mini' } } },
+        transcriptionModel: 'fast',
+        message: "[frogbot] ai.transcriptionModel 'fast' is not a transcription model.",
+      },
+    ];
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('keeps transcriptionModel absent when omitted', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
+
+      expect(result.ai?.transcriptionModel).toBeUndefined();
+    });
+
+    it('preserves a configured transcription model', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { openai: true },
+            transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+          },
+        }),
+      );
+
+      expect(result.ai?.transcriptionModel).toBe('openai/gpt-4o-mini-transcribe');
+    });
+
+    it('preserves a router to a transcription model', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { openai: true },
+            routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
+            transcriptionModel: 'stt',
+          },
+        }),
+      );
+
+      expect(result.ai?.transcriptionModel).toBe('stt');
+    });
+
+    it.each(rejections)('rejects $name', ({ ai, transcriptionModel, message }) => {
+      const config = makeConfig({ ai: { ...ai, transcriptionModel } as never });
+
+      expect(() => sanitize(config)).toThrow(message);
+    });
+
+    it.each(rejections)(
+      'warns and keeps $name during codegen',
+      ({ ai, transcriptionModel, message }) => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const config = makeConfig({ ai: { ...ai, transcriptionModel } as never });
+
+        const result = sanitize(config, { mode: 'codegen' });
+
+        expect(result.ai?.transcriptionModel).toBe(transcriptionModel);
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn).toHaveBeenCalledWith(message);
+      },
+    );
+
+    it('preserves a model listed in the provider models list', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { groq: { apiKey: 'k', models: ['whisper-large-v3-turbo'] } },
+            transcriptionModel: 'groq/whisper-large-v3-turbo',
+          },
+        }),
+      );
+
+      expect(result.ai?.transcriptionModel).toBe('groq/whisper-large-v3-turbo');
+    });
+
+    it('preserves a transcription model of a custom provider', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: {
+              internal: {
+                type: 'openai-compatible',
+                baseUrl: 'https://models.test',
+                models: [{ id: 'listen', mode: 'audio_transcription' }],
+              },
+            },
+            transcriptionModel: 'internal/listen',
+          },
+        } as never),
+      );
+
+      expect(result.ai?.transcriptionModel).toBe('internal/listen');
+    });
+
+    it('rejects a chat model of a custom provider', () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            internal: {
+              type: 'openai-compatible',
+              baseUrl: 'https://models.test',
+              models: [{ id: 'talk', mode: 'chat' }],
+            },
+          },
+          transcriptionModel: 'internal/talk',
+        },
+      } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] ai.transcriptionModel 'internal/talk' is not a transcription model.",
+      );
+    });
+
+    it('rejects a model left out of the provider models list', () => {
+      const config = makeConfig({
+        ai: {
+          providers: { openai: { apiKey: 'k', models: ['gpt-4o-mini'] } },
+          transcriptionModel: 'openai/whisper-1',
+        },
+      });
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] ai.transcriptionModel 'openai/whisper-1' is not configured.",
+      );
+    });
+
+    it('rejects a model that the catalog does not list', () => {
+      const config = makeConfig({
+        ai: { providers: { openai: true }, transcriptionModel: 'openai/whisper-2' } as never,
+      });
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] ai.transcriptionModel 'openai/whisper-2' is not configured.",
+      );
+    });
+
+    it('does not warn when both model settings are valid in codegen', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const config = makeConfig({
+        ai: {
+          providers: { openai: true },
+          smallModel: 'openai/gpt-5-nano',
+          transcriptionModel: 'openai/whisper-1',
+        },
+      });
+
+      sanitize(config, { mode: 'codegen' });
+
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('warns once per invalid setting when both are invalid in codegen', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const config = makeConfig({
+        ai: {
+          providers: { openai: true },
+          smallModel: 'openai/whisper-1',
+          transcriptionModel: 'openai/gpt-4o-mini',
+        },
+      });
+
+      sanitize(config, { mode: 'codegen' });
+
+      expect(warn.mock.calls).toEqual([
+        ["[frogbot] ai.smallModel 'openai/whisper-1' is not a chat model."],
+        ["[frogbot] ai.transcriptionModel 'openai/gpt-4o-mini' is not a transcription model."],
+      ]);
+    });
+
+    it('throws without warning in a running app', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const config = makeConfig({
+        ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini' },
+      });
+
+      expect(() => sanitize(config)).toThrow();
+      expect(warn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ai model settings with multi-segment model IDs', () => {
+    it('preserves a chat smallModel whose ID has a nested provider path', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: { providers: { vercel: true }, smallModel: 'vercel/openai/gpt-4o-mini' },
+        } as never),
+      );
+
+      expect(result.ai?.smallModel).toBe('vercel/openai/gpt-4o-mini');
+    });
+
+    it('preserves a transcriptionModel whose ID has a nested provider path', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { vercel: true },
+            transcriptionModel: 'vercel/openai/gpt-4o-mini-transcribe',
+          },
+        } as never),
+      );
+
+      expect(result.ai?.transcriptionModel).toBe('vercel/openai/gpt-4o-mini-transcribe');
+    });
+  });
+
+  describe('ai.smallModel with custom providers', () => {
+    const providers = {
+      internal: {
+        type: 'openai-compatible',
+        baseUrl: 'https://models.test',
+        models: [
+          { id: 'talk', mode: 'chat' },
+          { id: 'listen', mode: 'audio_transcription' },
+        ],
+      },
+    };
+
+    it('preserves a chat model of a custom provider', () => {
+      const result = sanitize(
+        makeConfig({ ai: { providers, smallModel: 'internal/talk' } } as never),
+      );
+
+      expect(result.ai?.smallModel).toBe('internal/talk');
+    });
+
+    it('rejects a transcription model of a custom provider', () => {
+      const config = makeConfig({ ai: { providers, smallModel: 'internal/listen' } } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] ai.smallModel 'internal/listen' is not a chat model.",
+      );
+    });
+
+    it('rejects a model the custom provider does not declare', () => {
+      const config = makeConfig({ ai: { providers, smallModel: 'internal/other' } } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] ai.smallModel 'internal/other' is not configured.",
+      );
     });
   });
 

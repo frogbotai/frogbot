@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveSmallModel } from '../../../../packages/frogbot/src/ai/models.js';
+import {
+  getConfiguredTranscriptionModelIds,
+  resolveSmallModel,
+} from '../../../../packages/frogbot/src/ai/models.js';
 import type { AIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 
 function ai(overrides: Partial<AIConfig> = {}): AIConfig {
@@ -48,5 +51,48 @@ describe('resolveSmallModel', () => {
     });
 
     expect(resolveSmallModel(config, 'internal/chat')).toBe('internal/chat');
+  });
+});
+
+describe('getConfiguredTranscriptionModelIds', () => {
+  it('lists the transcription models of a configured provider', () => {
+    const ids = getConfiguredTranscriptionModelIds(ai());
+
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'openai/gpt-4o-mini-transcribe',
+        'openai/gpt-4o-transcribe',
+        'openai/whisper-1',
+      ]),
+    );
+    expect(ids).not.toContain('openai/gpt-4o-mini');
+  });
+
+  it('honors provider model allowlists', () => {
+    const ids = getConfiguredTranscriptionModelIds(
+      ai({ providers: { openai: { apiKey: 'k', models: ['whisper-1'] } } }),
+    );
+
+    expect(ids).toEqual(['openai/whisper-1']);
+  });
+
+  it('lists a router to a transcription model under its slug', () => {
+    const ids = getConfiguredTranscriptionModelIds(
+      ai({ routers: { stt: { model: 'openai/whisper-1' } } }),
+    );
+
+    expect(ids).toContain('stt');
+  });
+
+  it('omits a router to a chat model', () => {
+    const ids = getConfiguredTranscriptionModelIds(
+      ai({ routers: { fast: { model: 'openai/gpt-4o-mini' } } }),
+    );
+
+    expect(ids).not.toContain('fast');
+  });
+
+  it('returns an empty list without an AI config', () => {
+    expect(getConfiguredTranscriptionModelIds(undefined)).toEqual([]);
   });
 });

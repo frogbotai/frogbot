@@ -60,6 +60,15 @@ describe('createGateway', () => {
     );
   });
 
+  it.each(['openai/whisper-1', 'openai/gpt-4o-transcribe', 'openai/gpt-4o-mini-transcribe'])(
+    'resolves the catalog transcription model %s for a plain OpenAI provider',
+    (modelId) => {
+      const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } } });
+
+      expect(() => gw.transcribeModel(modelId)).not.toThrow();
+    },
+  );
+
   it('enforces model allowlists for HTTP routes', async () => {
     const gw = createGateway({
       providers: { openai: { apiKey: 'test-key', models: ['gpt-4o'] } },

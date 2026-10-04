@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { buildManifestEndpoint } from '../../../packages/frogbot/src/chat/manifest.js';
 import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 
 vi.mock('payload', () => {
   let mockPayload = createMockPayload();
@@ -464,6 +466,45 @@ describe('FrogBot class', () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toMatchObject({ error: { type: 'model_not_allowed' } });
       expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('accepts the transcription model the manifest advertises for a router', async () => {
+      const { frogbot, handler } = await setupGateway({ transcribe: () => true });
+      const payloadMod = await import('payload');
+      const payload = (
+        payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
+      ).__getMockPayload();
+      const user = {
+        id: 'user-1',
+        modelAccess: 'selected',
+        models: ['openai/gpt-4o-transcribe'],
+      };
+
+      payload.auth.mockResolvedValue({ user, permissions: {} });
+
+      Object.assign(frogbot.config.ai!, {
+        routers: { stt: { model: 'openai/gpt-4o-transcribe' } },
+        transcriptionModel: 'stt',
+      });
+
+      const manifestResponse = await buildManifestEndpoint().handler({
+        frogbot,
+        user,
+      } as unknown as FrogBotRequest);
+      const { ai } = await manifestResponse.json();
+
+      const body = new FormData();
+
+      body.set('model', ai.transcribe.model);
+      body.set('file', new Blob(['audio']), 'audio.wav');
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/v1/audio/transcriptions', { method: 'POST', body }),
+      );
+
+      expect(ai.transcribe).toEqual({ model: 'openai/gpt-4o-transcribe' });
+      expect(response.status).toBe(200);
+      expect(handler).toHaveBeenCalledOnce();
     });
 
     it('authorizes a selected router by its raw JSON target', async () => {
