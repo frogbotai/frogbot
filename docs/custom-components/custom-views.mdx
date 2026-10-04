@@ -74,7 +74,7 @@ Each `admin.components.views` entry is an `AdminViewConfig`:
 | `exact` | `boolean` | `false` | Match only the exact pathname. Without it, the view also matches nested paths such as `/reports/2024`. |
 | `strict` | `boolean` | `false` | Treat a trailing slash as significant when matching. |
 | `sensitive` | `boolean` | `false` | Match path casing. |
-| `meta` | Page metadata | Root `admin.meta` | Metadata for this route, merged over the root [page metadata](/admin/overview#page-metadata). |
+| `meta` | Page metadata | Root `admin.meta` | Metadata for this route, merged over the root [page metadata](/admin/overview#page-metadata). Values set here win. Without a title here or in `admin.meta.title`, a view other than `account` and `dashboard` gets the site name as its title (`admin.meta.openGraph.siteName`, `FrogBot` by default) with no suffix. Its Open Graph title, description, and keywords default to the title text. See [Top-bar label](#top-bar-label) for the tab title. |
 
 Routes cascade. Without `exact`, a route also matches paths that begin with its path. Register a more specific nested route before its parent route.
 
@@ -146,7 +146,9 @@ The browser tab reads `{last label part} {titleSuffix}` and follows label change
 
 On phones with the navigation menu closed, only the last label part shows. Long labels shorten with an ellipsis and leave room for the menu button.
 
-To set the tab title before scripts load, optionally add `meta: { title: 'Reports' }` to the view configuration under `admin.components.views`. Use the same text as the label; FrogBot appends the configured title suffix.
+Before scripts load, the tab shows the view's server title. A view without `meta.title` shows only the site name, `admin.meta.openGraph.siteName` or `FrogBot` by default, without the suffix. To show the label from the first paint, add `meta: { title: 'Reports' }` to the view configuration under `admin.components.views`. Use the same text as the label; FrogBot appends the configured title suffix, or the view's own `meta.titleSuffix` when it sets one. `meta.title` also becomes the Open Graph title, description, and keywords unless the view or `admin.meta` sets them.
+
+A view whose path is under `/settings` gets the Settings area's server title instead, such as `Settings - FrogBot`, while the built-in Settings view is in use. FrogBot replaces that view's title, Open Graph title, description, and keywords. Register app views outside `/settings`, or add a [settings page](/admin/admin-navigation#register-a-settings-page).
 
 Put page controls in the page body, not in the top bar.
 

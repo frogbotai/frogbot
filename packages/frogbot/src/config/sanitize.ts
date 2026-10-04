@@ -26,7 +26,7 @@ import type {
 import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
-import type { SettingsEntry } from '../admin/types.js';
+import type { RootAdminMetaConfig, SettingsEntry } from '../admin/types.js';
 import type { CollectionView } from '../admin/views/types.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import {
@@ -1287,6 +1287,59 @@ function sanitizeSettings(settings: SettingsEntry[] | undefined): SettingsEntry[
   });
 }
 
+function viewTitleText(title: unknown): string | undefined {
+  if (typeof title === 'string') {
+    return title === '' ? undefined : title;
+  }
+
+  if (typeof title === 'object' && title !== null) {
+    const { absolute, default: fallback } = title as { absolute?: unknown; default?: unknown };
+
+    if (typeof absolute === 'string' && absolute !== '') return absolute;
+
+    if (typeof fallback === 'string' && fallback !== '') return fallback;
+  }
+
+  return undefined;
+}
+
+function fillViewMeta(
+  view: Record<string, unknown>,
+  adminMeta: RootAdminMetaConfig,
+): Record<string, unknown> {
+  const meta =
+    typeof view.meta === 'object' && view.meta !== null && !Array.isArray(view.meta)
+      ? (view.meta as RootAdminMetaConfig)
+      : {};
+
+  const ownText = viewTitleText(meta.title ?? adminMeta.title);
+  const own = ownText !== undefined;
+  const text = ownText ?? adminMeta.openGraph?.siteName ?? 'FrogBot';
+  const restMeta = { ...meta };
+
+  if (!own) delete restMeta.title;
+
+  return {
+    ...view,
+    meta: {
+      ...(own ? {} : { title: text, titleSuffix: meta.titleSuffix ?? '' }),
+      ...(meta.description === undefined && adminMeta.description === undefined
+        ? { description: text }
+        : {}),
+      ...(meta.keywords === undefined && adminMeta.keywords === undefined
+        ? { keywords: text }
+        : {}),
+      ...restMeta,
+      openGraph: {
+        ...(meta.openGraph?.title === undefined && adminMeta.openGraph?.title === undefined
+          ? { title: text }
+          : {}),
+        ...meta.openGraph,
+      },
+    },
+  };
+}
+
 // ─── Payload Config Building ─────────────────────────────────────────────────
 
 function buildPayloadConfig(
@@ -1486,6 +1539,19 @@ function buildPayloadConfig(
       return Object.keys(components).length > 0 ? [[agent.slug, components]] : [];
     }),
   );
+
+  const adminMeta: RootAdminMetaConfig = {
+    defaultOGImageType: 'static',
+    titleSuffix: '- FrogBot',
+    ...admin?.meta,
+    openGraph: {
+      description:
+        'FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image.',
+      siteName: 'FrogBot',
+      ...admin?.meta?.openGraph,
+    },
+  };
+
   out.admin = {
     ...admin,
     ...(admin?.livePreview
@@ -1521,28 +1587,30 @@ function buildPayloadConfig(
         Logo: '@frogbotai/next/rsc#FrogBotLogo',
         ...admin?.components?.graphics,
       },
-      views: {
-        ...(admin?.components?.views as Record<string, unknown> | undefined),
-        settings:
-          (admin?.components?.views as Record<string, unknown> | undefined)?.settings ??
-          ({
-            Component: '@frogbotai/next/views#SettingsView',
-            exact: false,
-            path: '/settings',
-          } as const),
-      },
+      views: Object.fromEntries(
+        Object.entries({
+          ...(admin?.components?.views as Record<string, unknown> | undefined),
+          settings:
+            (admin?.components?.views as Record<string, unknown> | undefined)?.settings ??
+            ({
+              Component: '@frogbotai/next/views#SettingsView',
+              exact: false,
+              path: '/settings',
+              meta: { title: 'Settings' },
+            } as const),
+        }).map(([key, view]) => [
+          key,
+          key === 'account' ||
+          key === 'dashboard' ||
+          typeof view !== 'object' ||
+          view === null ||
+          Array.isArray(view)
+            ? view
+            : fillViewMeta(view as Record<string, unknown>, adminMeta),
+        ]),
+      ),
     },
-    meta: {
-      defaultOGImageType: 'static',
-      titleSuffix: '- FrogBot',
-      ...admin?.meta,
-      openGraph: {
-        description:
-          'FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image.',
-        siteName: 'FrogBot',
-        ...admin?.meta?.openGraph,
-      },
-    },
+    meta: adminMeta,
     importMap: {
       baseDir: resolveSourceDir(process.cwd()),
       ...admin?.importMap,

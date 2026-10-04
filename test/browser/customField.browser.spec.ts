@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { fetchMetadata, metadataValues } from './__helpers/metadata';
+
 const user = { email: 'custom-field@example.com', password: 'browser-test-password' };
 
 async function signIn(page: Page) {
@@ -190,7 +192,7 @@ test('renders typed default widgets with req.frogbot through the modular dashboa
   await expect(page.getByTestId('welcome-widget')).toContainText('Default dashboard');
   await expect(page.getByTestId('activity-widget')).toContainText('Recent activity');
   await expect(page.locator('.app-header__step-nav .step-nav__last button')).toBeVisible();
-  await expect(page).toHaveTitle('Dashboard - FrogBot');
+  await expect(page).toHaveTitle('Dashboard - Field Lab');
   await expect(page.locator('head title[data-frogbot-tab-title]')).toHaveCount(0);
   await expect
     .poll(async () => Number(await page.getByTestId('welcome-widget-collections').textContent()))
@@ -262,9 +264,56 @@ test('the phone dashboard breadcrumb dropdown keeps its options clickable', asyn
   await edit.click();
 
   await expect(stepNav.locator('.dashboard-breadcrumb-dropdown__editing')).toBeVisible();
-  await expect(page).toHaveTitle('Dashboard - FrogBot');
+  await expect(page).toHaveTitle('Dashboard - Field Lab');
 
   await stepNav.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await expect(stepNav.locator('.dashboard-breadcrumb-select')).toBeVisible();
+});
+
+test.describe('tab titles with a custom suffix and site name', () => {
+  const pages = [
+    { path: '/settings/collections', text: 'Collections', title: 'Collections - Field Lab' },
+    { path: '/settings/robot', text: 'Robot', title: 'Robot - Field Lab' },
+    { path: '/settings/usage', text: 'Usage', title: 'Usage - Field Lab' },
+    { path: '/reports', text: 'Field Lab', title: 'Field Lab' },
+    { path: '/titled-report', text: 'Titled report', title: 'Titled report - Field Lab' },
+  ];
+
+  for (const { path, text, title } of pages) {
+    test(`${path} serves the title ${title} with matching metadata`, async ({ page }) => {
+      const metadata = await fetchMetadata(page.request, path);
+
+      expect(metadata.titles).toEqual([title]);
+      expect(metadata).toMatchObject({ ogTitle: text, description: text, keywords: text });
+    });
+  }
+
+  test('Settings and custom views serve no Payload in their titles or metadata', async ({
+    page,
+  }) => {
+    const values = await Promise.all(
+      pages.map(async ({ path }) => metadataValues(await fetchMetadata(page.request, path))),
+    );
+
+    expect(values.flat().filter((value) => value.includes('Payload'))).toEqual([]);
+  });
+
+  test('the tab follows Settings sidebar clicks with the custom suffix', async ({ page }) => {
+    await page.goto('/settings/collections');
+
+    const settingsNav = page.locator('.frogbot-settings-nav');
+
+    await expect(page).toHaveTitle('Collections - Field Lab');
+
+    await settingsNav.getByRole('link', { name: 'Robot', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/settings\/robot$/);
+    await expect(page).toHaveTitle('Robot - Field Lab');
+
+    await settingsNav.getByRole('link', { name: 'Usage', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/settings\/usage$/);
+    await expect(page).toHaveTitle('Usage - Field Lab');
+  });
 });

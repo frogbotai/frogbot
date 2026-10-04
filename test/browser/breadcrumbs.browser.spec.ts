@@ -1,10 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { fetchMetadata, metadataValues } from './__helpers/metadata';
 import { signIn } from './__helpers/signIn';
 import {
   agentSlug,
   chatsSlug,
+  hiddenSettings,
   insightsPath,
   modelPort,
   reportsPath,
@@ -93,6 +95,10 @@ async function expectLabel(page: Page, ...segments: string[]) {
 
 async function expectTabTitle(page: Page, text: string) {
   await expect.soft(page).toHaveTitle(`${text} - FrogBot`);
+}
+
+async function expectExactTabTitle(page: Page, title: string) {
+  await expect.soft(page).toHaveTitle(title);
 }
 
 async function createChat(page: Page, title: string) {
@@ -283,20 +289,22 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await expect(page).toHaveURL(/\/settings\/collections$/);
   await expect(stepNav(page)).toHaveCount(0);
 
-  await expectTabTitle(page, 'Payload');
+  await expectTabTitle(page, 'Collections');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${threadTitle} - FrogBot`);
 
   await settingsNav(page).getByRole('link', { name: robotSettings.label, exact: true }).click();
 
   await expect(page.getByTestId('robot-settings')).toBeVisible();
+  await expect(stepNav(page)).toHaveCount(0);
 
-  await expectTabTitle(page, 'Payload');
+  await expectTabTitle(page, robotSettings.label);
 
   await settingsNav(page).getByRole('link', { name: 'Collections', exact: true }).click();
 
   await expect(page).toHaveURL(/\/settings\/collections$/);
 
-  await expectTabTitle(page, 'Payload');
+  await expectTabTitle(page, 'Collections');
+  await recordTitles(page);
 
   await page.locator(`#card-${tasksSlug} .card__click`).click();
 
@@ -304,6 +312,7 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await expectLabel(page, 'Tasks');
 
   await expectTabTitle(page, 'Tasks');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Collections - FrogBot');
 
   await viewSwitcher(page).getByRole('link', { name: 'Board', exact: true }).click();
 
@@ -333,7 +342,7 @@ test('a custom view that sets no label shows only the logo', async ({ page }) =>
   await expectLabel(page);
   await expectNoReload(page);
 
-  await expectTabTitle(page, 'Payload');
+  await expectExactTabTitle(page, 'FrogBot');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
 });
 
@@ -358,7 +367,7 @@ test('a labelled custom view follows its label and clears it on an unlabelled vi
 
   await expect(page).toHaveURL(new RegExp(`${reportsPath}$`));
   await expectLabel(page);
-  await expectTabTitle(page, 'Payload');
+  await expectExactTabTitle(page, 'FrogBot');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Insights - FrogBot');
   await expectNoReload(page);
 });
@@ -678,7 +687,7 @@ test('a navigation replaced before it finishes never shows its label', async ({ 
   expect(labels).not.toContainEqual(expect.stringContaining('Tasks'));
   await expectNoReload(page);
 
-  await expectTabTitle(page, 'Payload');
+  await expectExactTabTitle(page, 'FrogBot');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Tasks - FrogBot');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
 });
@@ -857,7 +866,7 @@ test('Back from a new thread returns to the page before the new chat and Forward
   await expect(page.getByRole('heading', { name: 'Reports' })).toBeVisible();
   await expectLabel(page);
 
-  await expectTabTitle(page, 'Payload');
+  await expectExactTabTitle(page, 'FrogBot');
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${placeholderTitle} - FrogBot`);
 
   await recordTitles(page);
@@ -876,5 +885,77 @@ test('Back from a new thread returns to the page before the new chat and Forward
     'Editing - Chat - FrogBot',
   );
   await expectTabTitle(page, placeholderTitle);
-  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Payload - FrogBot');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('FrogBot');
 });
+
+test.describe('server titles', () => {
+  const pages = [
+    { path: '/settings/collections', text: 'Collections', title: 'Collections - FrogBot' },
+    {
+      path: `/settings/${robotSettings.path}`,
+      text: robotSettings.label,
+      title: `${robotSettings.label} - FrogBot`,
+    },
+    { path: `/settings/${hiddenSettings.path}`, text: 'Settings', title: 'Settings - FrogBot' },
+    { path: '/settings/does-not-exist', text: 'Settings', title: 'Settings - FrogBot' },
+    { path: reportsPath, text: 'FrogBot', title: 'FrogBot' },
+    { path: insightsPath, text: 'FrogBot', title: 'FrogBot' },
+  ];
+
+  for (const { path, text, title } of pages) {
+    test(`${path} serves the title ${title} with matching metadata`, async ({ page }) => {
+      const metadata = await fetchMetadata(page.request, path);
+
+      expect(metadata.titles).toEqual([title]);
+      expect(metadata).toMatchObject({ ogTitle: text, description: text, keywords: text });
+    });
+  }
+
+  test('Settings and custom views serve no Payload in their titles or metadata', async ({
+    page,
+  }) => {
+    const values = await Promise.all(
+      pages.map(async ({ path }) => metadataValues(await fetchMetadata(page.request, path))),
+    );
+
+    expect(values.flat().filter((value) => value.includes('Payload'))).toEqual([]);
+  });
+
+  test('a Settings entry the user cannot open keeps its label out of the metadata', async ({
+    page,
+  }) => {
+    const metadata = await fetchMetadata(page.request, `/settings/${hiddenSettings.path}`);
+
+    const leaked = metadataValues(metadata).filter((value) => value.includes(hiddenSettings.label));
+
+    expect(leaked).toEqual([]);
+  });
+
+  test('a signed-out request for a Settings entry reveals neither its label nor Payload', async ({
+    baseURL,
+    playwright,
+  }) => {
+    const request = await playwright.request.newContext({ baseURL });
+    const metadata = await fetchMetadata(request, `/settings/${robotSettings.path}`);
+
+    await request.dispose();
+
+    expect(metadata.titles).toHaveLength(1);
+
+    const leaked = metadataValues(metadata).filter(
+      (value) => value.includes(robotSettings.label) || value.includes('Payload'),
+    );
+
+    expect(leaked).toEqual([]);
+  });
+});
+
+for (const path of [`/settings/${hiddenSettings.path}`, '/settings/does-not-exist']) {
+  test(`opening ${path} shows Page not found under a Settings tab title`, async ({ page }) => {
+    await page.goto(path);
+
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+    await expect(page.locator('.frogbot-settings-template__header')).toHaveText('Settings');
+    await expectTabTitle(page, 'Settings');
+  });
+}

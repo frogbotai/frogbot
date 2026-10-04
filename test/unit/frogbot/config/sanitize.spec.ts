@@ -262,7 +262,239 @@ describe('frogbot sanitize', () => {
     expect(payloadConfig.admin.components.views.settings).toEqual({
       Component: './Settings#Custom',
       path: '/custom-settings',
+      meta: {
+        title: 'FrogBot',
+        titleSuffix: '',
+        description: 'FrogBot',
+        keywords: 'FrogBot',
+        openGraph: { title: 'FrogBot' },
+      },
     });
+  });
+
+  it('gives the default Settings view Settings text', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.settings.meta).toEqual({
+      title: 'Settings',
+      description: 'Settings',
+      keywords: 'Settings',
+      openGraph: { title: 'Settings' },
+    });
+  });
+
+  it('fills a view with no title with FrogBot and an empty suffix', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: { views: { reports: { Component: './Reports#App', path: '/reports' } } },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+      title: 'FrogBot',
+      titleSuffix: '',
+      description: 'FrogBot',
+      keywords: 'FrogBot',
+      openGraph: { title: 'FrogBot' },
+    });
+  });
+
+  it('uses a custom siteName as the fallback text', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          meta: { openGraph: { siteName: 'Field Lab' } },
+          components: {
+            views: { reports: { Component: './Reports#App', path: '/reports' } },
+          },
+        },
+      } as never),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+      title: 'Field Lab',
+      titleSuffix: '',
+      description: 'Field Lab',
+      keywords: 'Field Lab',
+      openGraph: { title: 'Field Lab' },
+    });
+  });
+
+  it.each([
+    { title: 'Reports' },
+    { title: { absolute: 'Reports' } },
+    { title: { default: 'Reports', template: '%s - Field Lab' } },
+  ])('drives og:title, description, and keywords from the view title %j', async (viewMeta) => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: {
+            views: {
+              reports: { Component: './Reports#App', path: '/reports', meta: viewMeta },
+            },
+          },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const meta = payloadConfig.admin.components.views.reports.meta;
+
+    expect(meta.title).toEqual(viewMeta.title);
+    expect(meta.titleSuffix).toBeUndefined();
+    expect(meta.description).toBe('Reports');
+    expect(meta.keywords).toBe('Reports');
+    expect(meta.openGraph?.title).toBe('Reports');
+  });
+
+  it('falls back when the view title is an empty string', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: {
+            views: {
+              reports: { Component: './Reports#App', path: '/reports', meta: { title: '' } },
+            },
+          },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+      title: 'FrogBot',
+      titleSuffix: '',
+      description: 'FrogBot',
+      keywords: 'FrogBot',
+      openGraph: { title: 'FrogBot' },
+    });
+  });
+
+  it('counts a global admin.meta.title as a title and fills og:title from it', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          meta: { title: 'Acme' },
+          components: {
+            views: { reports: { Component: './Reports#App', path: '/reports' } },
+          },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const meta = payloadConfig.admin.components.views.reports.meta;
+
+    expect(meta.title).toBeUndefined();
+    expect(meta.description).toBe('Acme');
+    expect(meta.keywords).toBe('Acme');
+    expect(meta.openGraph?.title).toBe('Acme');
+  });
+
+  it("keeps the view's own titleSuffix, description, keywords, and openGraph.title", async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: {
+            views: {
+              reports: {
+                Component: './Reports#App',
+                path: '/reports',
+                meta: {
+                  title: 'Reports',
+                  titleSuffix: '- Field Lab',
+                  description: 'Custom',
+                  keywords: 'Custom',
+                  openGraph: { title: 'Custom OG' },
+                },
+              },
+            },
+          },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.reports.meta).toEqual({
+      title: 'Reports',
+      titleSuffix: '- Field Lab',
+      description: 'Custom',
+      keywords: 'Custom',
+      openGraph: { title: 'Custom OG' },
+    });
+  });
+
+  it("keeps the view's own titleSuffix when it falls back to the site name", async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: {
+            views: {
+              reports: {
+                Component: './Reports#App',
+                path: '/reports',
+                meta: { titleSuffix: '- Reports' },
+              },
+            },
+          },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const meta = payloadConfig.admin.components.views.reports.meta;
+
+    expect(meta.title).toBe('FrogBot');
+    expect(meta.titleSuffix).toBe('- Reports');
+  });
+
+  it('lets admin.meta.description and admin.meta.openGraph.title suppress the fill', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          meta: { description: 'Global', openGraph: { title: 'Global OG' } },
+          components: {
+            views: {
+              reports: { Component: './Reports#App', path: '/reports', meta: { title: 'Reports' } },
+            },
+          },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const meta = payloadConfig.admin.components.views.reports.meta;
+
+    expect(meta.title).toBe('Reports');
+    expect(meta.description).toBeUndefined();
+    expect(meta.keywords).toBe('Reports');
+    expect(meta.openGraph?.title).toBeUndefined();
+  });
+
+  it('leaves account and dashboard views identical', async () => {
+    const accountView = { Component: './Account#Custom', path: '/account' };
+    const dashboardView = { Component: './Dashboard#Dashboard', path: '/' };
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: { views: { account: accountView, dashboard: dashboardView } },
+        } as never,
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.account).toEqual(accountView);
+    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
   });
 
   it.each(['', '/usage', '../usage', 'billing/../usage', 'billing//usage', 'billing\\usage'])(
