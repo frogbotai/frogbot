@@ -10,7 +10,7 @@ import {
   DropdownMenuItemIndicator,
   DropdownMenuTrigger,
 } from '../components/dropdown-menu.js';
-import { CheckIcon } from '../icons/check.js';
+import CheckIcon from '../icons/icons/CheckIcon.js';
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
 import WrenchIcon from '../icons/icons/WrenchIcon.js';
 

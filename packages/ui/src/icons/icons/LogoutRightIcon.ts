@@ -20,6 +20,11 @@ export const logoutRightIcon: IconNode = [
   ],
 ];
 
-const LogoutRightIcon = createLucideIcon('LogoutRightIcon', logoutRightIcon, 1.5, '0 0 20 20');
+const LogoutRightIcon = createLucideIcon(
+  'LogoutRightIcon',
+  logoutRightIcon,
+  undefined,
+  '0 0 20 20',
+);
 
 export default LogoutRightIcon;

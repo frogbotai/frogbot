@@ -1,8 +1,10 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
+import { setAdminTheme } from './__helpers/adminTheme';
 import { createMessage, deleteMessage, type SavedMessage } from './__helpers/messages';
 import {
   collectionNavIcon,
+  expectTwoPixelStroke,
   navStates,
   recordNavStates,
   setNavPreference,
@@ -222,6 +224,20 @@ test.describe('nav shell on desktop', () => {
     expect(Math.abs(bounds.centreY - 12)).toBeLessThanOrEqual(0.5);
     expect(bounds.width).toBeGreaterThanOrEqual(18);
   });
+
+  for (const theme of ['light', 'dark'] as const) {
+    test(`sidebar collection icons draw 2px in the ${theme} theme`, async ({ page }) => {
+      await setAdminTheme(page, theme);
+      await signIn(page);
+      await loadWithSidebarOpen(page);
+
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+      for (const slug of ['chats', 'users', 'files']) {
+        await expectTwoPixelStroke(collectionNavIcon(page, slug));
+      }
+    });
+  }
 });
 
 test.describe('nav shell keeps the saved desktop state', () => {

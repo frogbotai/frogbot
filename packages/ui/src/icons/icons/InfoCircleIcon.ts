@@ -29,6 +29,6 @@ export const infoCircleIcon: IconNode = [
   ],
 ];
 
-const InfoCircleIcon = createLucideIcon('InfoCircleIcon', infoCircleIcon, 1.25, '0 0 20 20');
+const InfoCircleIcon = createLucideIcon('InfoCircleIcon', infoCircleIcon, undefined, '0 0 20 20');
 
 export default InfoCircleIcon;

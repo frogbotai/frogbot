@@ -25,6 +25,6 @@ export const squareLockIcon: IconNode = [
   ],
 ];
 
-const SquareLockIcon = createLucideIcon('SquareLockIcon', squareLockIcon, 1, '0 0 16 16');
+const SquareLockIcon = createLucideIcon('SquareLockIcon', squareLockIcon, undefined, '0 0 16 16');
 
 export default SquareLockIcon;

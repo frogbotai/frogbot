@@ -25,6 +25,6 @@ export const visaIcon: IconNode = [
   ],
 ];
 
-const VisaIcon = createLucideIcon('VisaIcon', visaIcon, undefined, '0 0 24 24');
+const VisaIcon = createLucideIcon('VisaIcon', visaIcon, 2, '0 0 24 24');
 
 export default VisaIcon;

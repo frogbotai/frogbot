@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../components/dropdown-menu.js';
-import { CheckIcon } from '../icons/check.js';
+import CheckIcon from '../icons/icons/CheckIcon.js';
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
 import RobotIcon from '../icons/icons/RobotIcon.js';
 import { useChatProvider } from './provider.js';

@@ -18,6 +18,6 @@ export const sparkleIcon: IconNode = [
   ],
 ];
 
-const SparkleIcon = createLucideIcon('SparkleIcon', sparkleIcon, 1.25, '0 0 20 20');
+const SparkleIcon = createLucideIcon('SparkleIcon', sparkleIcon, undefined, '0 0 20 20');
 
 export default SparkleIcon;

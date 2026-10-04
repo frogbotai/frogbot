@@ -26,6 +26,6 @@ export const linkedInIcon: IconNode = [
   ],
 ];
 
-const LinkedInIcon = createLucideIcon('LinkedInIcon', linkedInIcon, undefined, '0 0 20 20');
+const LinkedInIcon = createLucideIcon('LinkedInIcon', linkedInIcon, 2, '0 0 20 20');
 
 export default LinkedInIcon;

@@ -20,6 +20,6 @@ export const homeIcon: IconNode = [
   ],
 ];
 
-const HomeIcon = createLucideIcon('HomeIcon', homeIcon, 2, '0 0 20 20');
+const HomeIcon = createLucideIcon('HomeIcon', homeIcon, undefined, '0 0 20 20');
 
 export default HomeIcon;

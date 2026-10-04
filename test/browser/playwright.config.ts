@@ -282,7 +282,11 @@ export default defineConfig({
     },
     {
       name: 'blank',
-      testMatch: ['generalPicker.browser.spec.ts', 'navShell.browser.spec.ts'],
+      testMatch: [
+        'generalPicker.browser.spec.ts',
+        'iconGeometry.browser.spec.ts',
+        'navShell.browser.spec.ts',
+      ],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${blankPort}`,

@@ -11,6 +11,6 @@ export const goBackwardIcon: IconNode = [
   ],
 ];
 
-const GoBackwardIcon = createLucideIcon('GoBackwardIcon', goBackwardIcon, 1.5);
+const GoBackwardIcon = createLucideIcon('GoBackwardIcon', goBackwardIcon);
 
 export default GoBackwardIcon;

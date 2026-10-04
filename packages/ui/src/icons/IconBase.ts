@@ -12,6 +12,12 @@ const hasA11yProp = (props: Record<string, any>): boolean => {
   return Object.keys(props).some((key) => key.startsWith('aria-') || key === 'role');
 };
 
+const gridSize = (viewBox: string) => {
+  const [, , width, height] = viewBox.trim().split(/[\s,]+/);
+
+  return Math.max(Number(width), Number(height));
+};
+
 interface IconComponentProps extends LucideProps {
   iconNode: IconNode;
 }
@@ -21,24 +27,32 @@ const IconBase = forwardRef<SVGSVGElement, IconComponentProps>(
     {
       color = 'currentColor',
       size = 24,
-      strokeWidth = 2,
+      strokeWidth,
       absoluteStrokeWidth,
+      viewBox = defaultAttributes.viewBox,
       className = '',
       children,
       iconNode,
       ...rest
     },
     ref,
-  ) =>
-    createElement(
+  ) => {
+    const grid = gridSize(viewBox);
+
+    const stroke = absoluteStrokeWidth
+      ? (Number(strokeWidth ?? 2) * grid) / Number(size)
+      : (strokeWidth ?? (2 * grid) / 20);
+
+    return createElement(
       'svg',
       {
         ref,
         ...defaultAttributes,
+        viewBox,
         width: size,
         height: size,
         stroke: color,
-        strokeWidth: absoluteStrokeWidth ? (Number(strokeWidth) * 24) / Number(size) : strokeWidth,
+        strokeWidth: stroke,
         className: mergeClasses('lucide', className),
         ...(!children && !hasA11yProp(rest) && { 'aria-hidden': 'true' }),
         ...rest,
@@ -49,7 +63,8 @@ const IconBase = forwardRef<SVGSVGElement, IconComponentProps>(
         // Include any children passed to the component
         ...(Array.isArray(children) ? children : [children]),
       ],
-    ),
+    );
+  },
 );
 
 IconBase.displayName = 'IconBase';

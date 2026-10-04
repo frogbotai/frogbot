@@ -33,6 +33,6 @@ export const peopleIcon: IconNode = [
   ],
 ];
 
-const PeopleIcon = createLucideIcon('PeopleIcon', peopleIcon, 4, '0 0 48 48');
+const PeopleIcon = createLucideIcon('PeopleIcon', peopleIcon, undefined, '0 0 48 48');
 
 export default PeopleIcon;

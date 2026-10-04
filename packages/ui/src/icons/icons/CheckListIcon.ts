@@ -41,6 +41,6 @@ export const checkListIcon: IconNode = [
   ],
 ];
 
-const CheckListIcon = createLucideIcon('CheckListIcon', checkListIcon, 1.5);
+const CheckListIcon = createLucideIcon('CheckListIcon', checkListIcon);
 
 export default CheckListIcon;

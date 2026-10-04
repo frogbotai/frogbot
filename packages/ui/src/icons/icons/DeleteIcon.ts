@@ -38,6 +38,6 @@ export const deleteIcon: IconNode = [
   ],
 ];
 
-const DeleteIcon = createLucideIcon('DeleteIcon', deleteIcon, 1.25, '0 0 20 20');
+const DeleteIcon = createLucideIcon('DeleteIcon', deleteIcon, undefined, '0 0 20 20');
 
 export default DeleteIcon;

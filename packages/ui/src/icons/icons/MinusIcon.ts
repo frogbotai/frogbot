@@ -12,6 +12,6 @@ export const minusIcon: IconNode = [
   ],
 ];
 
-const MinusIcon = createLucideIcon('MinusIcon', minusIcon, 2.5, '0 0 40 40');
+const MinusIcon = createLucideIcon('MinusIcon', minusIcon, undefined, '0 0 40 40');
 
 export default MinusIcon;

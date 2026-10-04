@@ -11,6 +11,6 @@ export const stopIcon: IconNode = [
   ],
 ];
 
-const StopIcon = createLucideIcon('Stop', stopIcon);
+const StopIcon = createLucideIcon('Stop', stopIcon, 2);
 
 export default StopIcon;

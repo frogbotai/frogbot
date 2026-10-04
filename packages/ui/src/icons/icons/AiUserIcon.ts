@@ -28,6 +28,6 @@ export const aiUserIcon: IconNode = [
   ],
 ];
 
-const AiUserIcon = createLucideIcon('AiUserIcon', aiUserIcon, 2, '0 0 20 20');
+const AiUserIcon = createLucideIcon('AiUserIcon', aiUserIcon, undefined, '0 0 20 20');
 
 export default AiUserIcon;

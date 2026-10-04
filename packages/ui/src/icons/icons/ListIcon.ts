@@ -52,6 +52,6 @@ export const listIcon: IconNode = [
   ],
 ];
 
-const ListIcon = createLucideIcon('ListIcon', listIcon, 1.67, '0 0 20 20');
+const ListIcon = createLucideIcon('ListIcon', listIcon, undefined, '0 0 20 20');
 
 export default ListIcon;

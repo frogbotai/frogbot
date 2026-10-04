@@ -36,6 +36,6 @@ export const tileIcon: IconNode = [
   ],
 ];
 
-const TileIcon = createLucideIcon('TileIcon', tileIcon, 1.67, '0 0 20 20');
+const TileIcon = createLucideIcon('TileIcon', tileIcon, undefined, '0 0 20 20');
 
 export default TileIcon;

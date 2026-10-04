@@ -25,6 +25,6 @@ export const mastercardIcon: IconNode = [
   ],
 ];
 
-const MastercardIcon = createLucideIcon('MastercardIcon', mastercardIcon, undefined, '0 0 25 24');
+const MastercardIcon = createLucideIcon('MastercardIcon', mastercardIcon, 2, '0 0 25 24');
 
 export default MastercardIcon;

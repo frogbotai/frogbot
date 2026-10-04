@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip.js';
-import { CheckIcon } from '../icons/check.js';
 import BookOpenIcon from '../icons/icons/BookOpenIcon.js';
+import CheckIcon from '../icons/icons/CheckIcon.js';
 import PlusSignIcon from '../icons/icons/PlusSignIcon.js';
 import XIcon from '../icons/icons/XIcon.js';
 
