@@ -43,9 +43,8 @@
 
   .fb-model-selector__content {
     display: flex;
-    width: max-content;
-    min-width: 16rem;
-    max-width: min(24rem, calc(100vw - 2rem));
+    box-sizing: border-box;
+    width: min(22rem, calc(100vw - 2rem));
     flex-direction: column;
     gap: 0.25rem;
     padding: 0.5rem;
@@ -172,6 +171,8 @@
   }
 
   .fb-model-selector__search {
+    background-color: var(--theme-base-200);
+    border: 1px solid var(--theme-base-300);
     border-radius: var(--fb-radius-lg);
   }
 

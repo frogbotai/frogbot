@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
@@ -267,7 +269,6 @@ describe('ModelSelector', () => {
     render(<Harness choices={choices} initialModel={choices[0].id} />);
 
     await user.click(trigger());
-    await openList(user, choices[0].name);
     await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'model-339');
 
     expect(
@@ -374,11 +375,12 @@ describe('ModelSelector', () => {
       id: 'bedrock/us.amazon.nova-micro-v1:0',
       name: 'Nova Micro (US)',
       provider: 'bedrock',
+      reasoning: [{ key: 'standard', label: 'Standard' }],
     };
 
     render(<Harness choices={[nova]} initialModel={nova.id} />);
 
-    expect(trigger().textContent).toBe(nova.name);
+    expect(trigger().textContent).toBe(`${nova.name} · Default`);
 
     await user.click(trigger());
 
@@ -785,15 +787,20 @@ describe('ModelSelector', () => {
     );
   });
 
-  it('omits the slider for a model without reasoning levels', async () => {
+  it('opens straight on the list for a model without reasoning levels', async () => {
     const user = userEvent.setup();
 
     render(<Harness initialModel={plain.id} />);
 
     await user.click(trigger());
 
-    expect(screen.getByRole('button', { name: 'GPT-4o, change model' })).toBeTruthy();
+    expect(openTrigger().textContent).toBe('Select model');
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'GPT-4o, change model' })).toBeNull();
     expect(screen.queryByRole('slider')).toBeNull();
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'GPT-4o', exact: true }),
+    );
   });
 
   it('offers Default followed by the model levels as slider stops', async () => {
@@ -851,7 +858,11 @@ describe('ModelSelector', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '1' } });
 
     expect(onReasoningChange).toHaveBeenLastCalledWith('high');
-    expect(openTrigger().textContent).toBe('Claude Opus · High · 16k');
+    expect(openTrigger().textContent).toBe('Select effort');
+
+    await user.keyboard('{Escape}');
+
+    expect(trigger().textContent).toBe('Claude Opus · High · 16k');
   });
 
   it('reports undefined when the slider moves to Default', async () => {
@@ -865,7 +876,11 @@ describe('ModelSelector', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '0' } });
 
     expect(onReasoningChange).toHaveBeenLastCalledWith(undefined);
-    expect(openTrigger().textContent).toBe('GPT-5 · Default');
+    expect(openTrigger().textContent).toBe('Select effort');
+
+    await user.keyboard('{Escape}');
+
+    expect(trigger().textContent).toBe('GPT-5 · Default');
   });
 
   it('switches the popover to the model list from the model name', async () => {
@@ -1000,5 +1015,232 @@ describe('ModelSelector', () => {
     await user.keyboard('{Escape}');
 
     expect(document.activeElement).toBe(trigger());
+  });
+
+  it('switches the trigger label between model and level, Select effort and Select model', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    expect(trigger().textContent).toBe('GPT-5 · Default');
+
+    await user.click(trigger());
+
+    expect(openTrigger().textContent).toBe('Select effort');
+
+    await openList(user, 'GPT-5');
+
+    expect(openTrigger().textContent).toBe('Select model');
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(openTrigger().textContent).toBe('Select effort');
+
+    await openList(user, 'GPT-5');
+    await user.click(screen.getByRole('button', { name: 'Claude Opus' }));
+
+    expect(openTrigger().textContent).toBe('Select effort');
+  });
+
+  it('returns to the model and level after Escape, an outside click and a trigger click', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await user.keyboard('{Escape}');
+
+    expect(trigger().textContent).toBe('GPT-5 · Default');
+
+    await user.click(trigger());
+    await user.click(document.body);
+
+    expect(trigger().textContent).toBe('GPT-5 · Default');
+
+    await user.click(trigger());
+    await user.click(openTrigger());
+
+    expect(trigger().textContent).toBe('GPT-5 · Default');
+  });
+
+  it('keeps the Select effort label while the slider changes level', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness initialReasoning="low" />);
+
+    await user.click(trigger());
+
+    fireEvent.change(screen.getByRole('slider', { name: 'Reasoning' }), { target: { value: '3' } });
+
+    expect(openTrigger().textContent).toBe('Select effort');
+
+    fireEvent.change(screen.getByRole('slider', { name: 'Reasoning' }), { target: { value: '0' } });
+
+    expect(openTrigger().textContent).toBe('Select effort');
+  });
+
+  it('exposes the visible label as the button name with expanded and haspopup', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    const closed = screen.getByRole('button', { name: 'GPT-5 · Default', expanded: false });
+
+    expect(closed.getAttribute('aria-haspopup')).toBe('dialog');
+
+    await user.click(trigger());
+
+    const open = screen.getByRole('button', { name: 'Select effort', expanded: true });
+
+    expect(open.getAttribute('aria-haspopup')).toBe('dialog');
+  });
+
+  it('shows the effort view after choosing a model with levels from the list-first view', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness initialModel={plain.id} />);
+
+    await user.click(trigger());
+    await user.click(screen.getByRole('button', { name: 'GPT-5 mini' }));
+
+    expect(openTrigger().textContent).toBe('Select effort');
+    expect(screen.getByRole('slider', { name: 'Reasoning' })).toBeTruthy();
+  });
+
+  it('closes without a change when the current model is chosen from the list-first view', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness initialModel={plain.id} onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await user.click(screen.getByRole('button', { name: 'GPT-4o', exact: true }));
+
+    expect(onModelChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: 'Search models' })).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(trigger().textContent).toBe('GPT-4o');
+  });
+
+  it('chooses a no-effort model with Enter in the search field and closes', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.click(searchBox());
+    await user.keyboard('gpt-4o{Enter}');
+
+    expect(onModelChange).toHaveBeenCalledWith(plain.id);
+    expect(screen.queryByRole('textbox', { name: 'Search models' })).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(trigger().textContent).toBe('GPT-4o');
+  });
+
+  it('chooses a no-effort row with Space, closes and focuses the trigger', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness initialModel={mini.id} onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5 mini');
+    await user.keyboard('{ArrowDown} ');
+
+    expect(onModelChange).toHaveBeenCalledWith(plain.id);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(trigger().textContent).toBe('GPT-4o');
+  });
+
+  it('reopens on the full list with an empty query after a no-effort choice closed it', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), 'gpt-4o{Enter}');
+    await user.click(trigger());
+
+    expect(openTrigger().textContent).toBe('Select model');
+    expect(searchBox().value).toBe('');
+    expect(rowNames()).toEqual(['GPT-5', 'GPT-5 mini', 'GPT-4o', 'Claude Opus']);
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'GPT-4o', current: true }),
+    );
+  });
+
+  it('reopens on the effort view after a model with levels was chosen and the popover closed', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness initialModel={plain.id} />);
+
+    await user.click(trigger());
+    await user.type(searchBox(), 'opus{Enter}');
+    await user.keyboard('{Escape}');
+
+    expect(trigger().textContent).toBe('Claude Opus · Default');
+
+    await user.click(trigger());
+
+    expect(openTrigger().textContent).toBe('Select effort');
+    expect(screen.getByRole('slider', { name: 'Reasoning' })).toBeTruthy();
+    expect(screen.queryByRole('textbox', { name: 'Search models' })).toBeNull();
+  });
+
+  it('lands on the list with the search box focused when the active model is not in the list', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness initialModel="openai/retired" />);
+
+    expect(trigger().textContent).toBe('openai/retired');
+
+    await user.click(trigger());
+
+    expect(openTrigger().textContent).toBe('Select model');
+    expect(document.activeElement).toBe(searchBox());
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(document.querySelectorAll('.fb-model-selector__option[aria-current]')).toHaveLength(0);
+  });
+
+  it('clears the query on the first Escape and closes on the second', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness initialModel={plain.id} />);
+
+    await user.click(trigger());
+    await user.type(searchBox(), 'opus');
+
+    expect(rowNames()).toEqual(['Claude Opus']);
+
+    await user.keyboard('{Escape}');
+
+    expect(searchBox().value).toBe('');
+    expect(screen.getByRole('dialog')).toBeTruthy();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('pins the popover width and search box tokens in CSS', () => {
+    const selector = readFileSync('packages/ui/src/chat/model-selector.css', 'utf8');
+    const content = selector.match(/\.fb-model-selector__content\s*{([^}]*)}/)?.[1] ?? '';
+    const search = selector.match(/\.fb-model-selector__search\s*{([^}]*)}/)?.[1] ?? '';
+
+    const shared = readFileSync('packages/ui/src/components/search-input.css', 'utf8');
+    const input = shared.match(/\.fb-search-input\s*{([^}]*)}/)?.[1] ?? '';
+
+    expect(content).toContain('width: min(22rem, calc(100vw - 2rem))');
+    expect(content).not.toContain('max-content');
+    expect(content).not.toContain('min-width');
+    expect(content).not.toContain('max-width');
+    expect(search).toContain('background-color: var(--theme-base-200)');
+    expect(search).toContain('border: 1px solid var(--theme-base-300)');
+    expect(input).toContain('background: var(--theme-base-150)');
+    expect(input).not.toContain('border:');
   });
 });

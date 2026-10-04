@@ -382,7 +382,6 @@ describe('ChatViewClient', () => {
     expect((await trigger()).textContent).toBe('Nova Micro (US)');
 
     await user.click(await trigger());
-    await user.click(screen.getByRole('button', { name: /change model$/ }));
 
     const list = within(screen.getByRole('dialog'));
 

@@ -44,6 +44,7 @@ export const ModelSelector = memo(function ModelSelector({
   onModelChange,
   onReasoningChange,
 }: ModelSelectorProps) {
+  const [open, setOpen] = useState(false);
   const [view, setView] = useState<ModelSelectorView>('controls');
   const [query, setQuery] = useState('');
 
@@ -54,6 +55,7 @@ export const ModelSelector = memo(function ModelSelector({
   const reasoning = selected?.reasoning ?? [];
   const stops = ['Default', ...reasoning.map(({ label }) => label)];
   const level = reasoning.findIndex(({ key }) => key === selectedReasoning) + 1;
+  const hasReasoning = reasoning.length > 0;
 
   const showView = (next: ModelSelectorView) => {
     setQuery('');
@@ -63,24 +65,43 @@ export const ModelSelector = memo(function ModelSelector({
   const chooseModel = (id: string) => {
     if (id !== selectedModelId) onModelChange(id);
 
-    showView('controls');
+    const chosen = models.find((model) => model.id === id);
+
+    if (chosen?.reasoning?.length) {
+      showView('controls');
+
+      return;
+    }
+
+    setOpen(false);
   };
+
+  const openLabel = view === 'controls' && hasReasoning ? 'Select effort' : 'Select model';
 
   return (
     <Popover
-      onOpenChange={(open) => {
-        if (open) showView('controls');
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+
+        if (next) showView(hasReasoning ? 'controls' : 'list');
       }}
     >
       <PopoverTrigger asChild>
         <button type="button" className="fb-model-selector__trigger">
-          <span className="fb-model-selector__name">{name}</span>
-          {reasoning.length ? (
+          {open ? (
+            <span className="fb-model-selector__name">{openLabel}</span>
+          ) : (
             <>
-              {' '}
-              <span className="fb-model-selector__level">· {stops[level]}</span>
+              <span className="fb-model-selector__name">{name}</span>
+              {hasReasoning ? (
+                <>
+                  {' '}
+                  <span className="fb-model-selector__level">· {stops[level]}</span>
+                </>
+              ) : null}
             </>
-          ) : null}
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -110,7 +131,7 @@ export const ModelSelector = memo(function ModelSelector({
             selectedModelId={selectedModelId}
             query={query}
             onQueryChange={setQuery}
-            onBack={() => showView('controls')}
+            onBack={hasReasoning ? () => showView('controls') : undefined}
             onChoose={chooseModel}
           />
         )}
@@ -170,7 +191,7 @@ function ModelSelectorList({
   selectedModelId: string;
   query: string;
   onQueryChange: (query: string) => void;
-  onBack: () => void;
+  onBack?: () => void;
   onChoose: (id: string) => void;
 }) {
   const groupId = useId();
@@ -178,12 +199,23 @@ function ModelSelectorList({
   const listRef = useRef<HTMLDivElement>(null);
   const hasFocused = useRef(false);
 
-  const focusInitialOption = useCallback((node: HTMLButtonElement | null) => {
+  const hasSelection = models.some(({ id }) => id === selectedModelId);
+
+  const focusInitialOption = useCallback((node: HTMLElement | null) => {
     if (!node || hasFocused.current) return;
 
     hasFocused.current = true;
     node.focus();
   }, []);
+
+  const searchRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      inputRef.current = node;
+
+      if (!hasSelection) focusInitialOption(node);
+    },
+    [hasSelection, focusInitialOption],
+  );
 
   const searchableModels = useMemo(
     () =>
@@ -215,7 +247,6 @@ function ModelSelectorList({
     new Map(),
   );
 
-  const hasSelection = models.some(({ id }) => id === selectedModelId);
   const hasGroups = new Set(models.map(({ provider }) => provider)).size > 1;
   const count = filteredModels.length;
   const status = count ? `${count} ${count === 1 ? 'model' : 'models'}` : 'No models found';
@@ -296,17 +327,14 @@ function ModelSelectorList({
 
   return (
     <div className="fb-model-selector__list-view" onKeyDown={handleKeyDown}>
-      <button
-        ref={hasSelection ? undefined : focusInitialOption}
-        type="button"
-        className="fb-model-selector__back"
-        onClick={onBack}
-      >
-        <ChevronLeftIcon className="fb-model-selector__icon" />
-        <span>Back</span>
-      </button>
+      {onBack ? (
+        <button type="button" className="fb-model-selector__back" onClick={onBack}>
+          <ChevronLeftIcon className="fb-model-selector__icon" />
+          <span>Back</span>
+        </button>
+      ) : null}
       <SearchInput
-        ref={inputRef}
+        ref={searchRef}
         aria-label="Search models"
         placeholder="Search models"
         autoComplete="off"
