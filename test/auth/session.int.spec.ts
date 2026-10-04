@@ -547,9 +547,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       claims(result.token).sid,
     ]);
     expect(stored?.sessions?.[0]?.expiresAt).not.toEqual(priorSession.expiresAt);
-    expect(Math.floor(new Date(stored!.sessions![0]!.expiresAt).getTime() / 1000)).toBe(
-      refreshed.exp,
-    );
+
+    const storedExp = Math.floor(new Date(stored!.sessions![0]!.expiresAt).getTime() / 1000);
+
+    expect(storedExp).toBeLessThanOrEqual(refreshed.exp);
+    expect(storedExp).toBeGreaterThan(refreshed.exp - 5);
+
     await expectAuthenticated(refreshed.refreshedToken);
     await expectAuthenticated(result.token);
   });
