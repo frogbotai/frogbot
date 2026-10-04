@@ -28,6 +28,7 @@ export function NavItem({ active = false, className, icon, label, path }: NavIte
         .filter(Boolean)
         .join(' ')}
       href={path}
+      prefetch={false}
     >
       {icon ? (
         <span aria-hidden="true" className={`${baseClass}__icon`}>

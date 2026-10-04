@@ -121,7 +121,7 @@ export function RecentsSectionClient({
           </div>
         </section>
       ))}
-      <Link className="frogbot-recents-section__view-all" href={collectionPath}>
+      <Link className="frogbot-recents-section__view-all" href={collectionPath} prefetch={false}>
         View all
       </Link>
     </div>
