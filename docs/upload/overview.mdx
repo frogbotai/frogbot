@@ -91,7 +91,7 @@ Set `upload: true` for the defaults, or pass an object with these options. Image
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `staticDir` | `string` | The collection slug | Folder where files are stored, as an absolute path or relative to the directory that contains your config. Ignored when `disableLocalStorage` is `true`. |
+| `staticDir` | `string` | The collection slug | Folder where files are stored: an absolute path, or a path relative to the server's working directory (`/app` in the template `Dockerfile`). Ignored when `disableLocalStorage` is `true`. |
 | `mimeTypes` | `string[]` | Any type | MIME types or wildcards the file picker offers and the server accepts, such as `['image/*', 'application/pdf']`. Setting it also skips the [restricted file type](#restricted-file-types) check. [More](#mimetypes) |
 | `imageSizes` | `ImageSize[]` | None | Resized copies to generate for each uploaded image. Adds a `sizes` field to the collection. [More](#image-sizes) |
 | `adminThumbnail` | `string \| ({ doc }) => string \| false \| null` | The original file, for images | Image size name, or a function returning a full URL, used for thumbnails in the Admin Panel. [More](#admin-thumbnails) |
