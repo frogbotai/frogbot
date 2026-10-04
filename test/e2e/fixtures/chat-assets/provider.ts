@@ -21,7 +21,7 @@ export type ModelRequest = {
   tools?: Array<{ type: string; function: { name: string; parameters: unknown } }>;
 };
 
-const titleInstructions = 'Create a concise chat title';
+const titleInstructions = 'You are a title generator.';
 
 const chatTitle = 'Chat assets';
 
