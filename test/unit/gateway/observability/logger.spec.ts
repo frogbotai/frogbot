@@ -286,6 +286,26 @@ describe('createLoggingHooks', () => {
     expect(() => JSON.stringify(entries[0]?.obj)).not.toThrow();
   });
 
+  it('omits the upstream request body, including on nested causes', async () => {
+    const { entries, logger } = captureLogger();
+    const hooks = createLoggingHooks(logger);
+    const requestBodyValues = { contents: [{ parts: [{ text: 'w0 '.repeat(100_000) }] }] };
+    const wrapped = new Error('wrapped', { cause: apiCallError({ requestBodyValues }) });
+
+    await hooks.afterError?.[0]?.({
+      ...base,
+      phase: 'afterError',
+      failedPhase: 'upstream',
+      error: Object.assign(apiCallError({ requestBodyValues }), { cause: wrapped }),
+    } satisfies AfterErrorHookArgs);
+
+    const line = JSON.stringify(entries[0]?.obj);
+
+    expect(line).not.toContain('requestBodyValues');
+    expect(line).not.toContain('w0 w0');
+    expect(line).toContain('"statusCode":429');
+  });
+
   it('redacts key fragments from messages, stacks, bodies, and nested values', async () => {
     const { entries, logger } = captureLogger();
     const hooks = createLoggingHooks(logger);

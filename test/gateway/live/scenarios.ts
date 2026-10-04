@@ -456,10 +456,8 @@ export async function runChatStreamAbort(
 }
 
 // ---------------------------------------------------------------------------
-// Oversized payload — fill test/gateway/live/fixtures/huge-prompt.txt with a
-// very large prompt (e.g. ~100k tokens of text). Empty/missing file skips the
-// scenario. The contract: the gateway answers with a VALID wire envelope
-// (success or error) and never hangs or crashes.
+// Context overflow — a prompt past every model's context window must come back
+// as a 400 `context_length_exceeded` envelope.
 // ---------------------------------------------------------------------------
 
 const OVERSIZED_PROMPT = Array.from({ length: 1_300_000 }, (_, index) => `w${index % 1000}`).join(
