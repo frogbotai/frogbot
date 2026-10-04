@@ -5,6 +5,7 @@ export const tasksSlug = 'tasks';
 export const reportsPath = '/reports';
 export const insightsPath = '/insights';
 export const robotSettings = { label: 'Robot', path: 'robot' };
+export const hiddenSettings = { label: 'Vault', path: 'vault' };
 export const agentSlug = 'questioner';
 export const pickerAgentSlug = 'picker';
 export const modelPort = Number(process.env.FROGBOT_TEST_PORT_OFFSET ?? 0) + 3129;

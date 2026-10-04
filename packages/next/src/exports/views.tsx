@@ -17,7 +17,7 @@ import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType } from '@payloadcms/ui/shared';
-import type { AdminIcon } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { getCachedFrogBot, messagesToUIMessages } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
 import { redirect } from 'next/navigation';
@@ -31,6 +31,9 @@ import frogbotOGImage from '../assets/frogbot-og.jpg';
 import { splitNavGroups } from '../elements/Nav/buildNavModel.js';
 import { renderNavIcon } from '../elements/Nav/renderNavIcon.js';
 import { SettingsNav } from '../elements/SettingsNav/index.js';
+import { getSettingsTitle } from '../views/Settings/metadata.js';
+import type { SettingsEntry } from '../views/Settings/resolveSection.js';
+import { getSettingsRoutePath, resolveSettingsSection } from '../views/Settings/resolveSection.js';
 export { BoardView } from '../views/Board/index.js';
 export { CalendarView } from '../views/Calendar/index.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
@@ -244,9 +247,9 @@ type SettingsViewProps = AdminViewServerProps & { routeSegments?: string[] };
 export async function SettingsView(props: SettingsViewProps) {
   const { importMap, initPageResult, params, payload } = props;
   const req = initPageResult.req;
-  const routeSegments = props.routeSegments ?? (params?.segments as string[] | undefined) ?? [];
-  const settingsSegments = routeSegments[0] === 'settings' ? routeSegments.slice(1) : routeSegments;
-  const routePath = settingsSegments.join('/');
+  const routePath = getSettingsRoutePath(
+    props.routeSegments ?? (params?.segments as string[] | undefined) ?? [],
+  );
   const adminRoute = payload.config.routes.admin;
 
   if (routePath === '') {
@@ -254,31 +257,18 @@ export async function SettingsView(props: SettingsViewProps) {
   }
 
   const settings = (
-    payload.config.admin as typeof payload.config.admin & {
-      settings?: Array<{
-        access?: (args: { req: typeof req }) => boolean | Promise<boolean>;
-        Component: Parameters<typeof RenderServerComponent>[0]['Component'];
-        icon?: AdminIcon;
-        label: string;
-        path: string;
-      }>;
-    }
+    payload.config.admin as typeof payload.config.admin & { settings?: SettingsEntry[] }
   ).settings;
-  const accessibleSettings = (
-    await Promise.all(
-      (settings ?? []).map(async (entry) => ({
-        allowed: entry.access ? await entry.access({ req }) : Boolean(req.user),
-        entry,
-      })),
-    )
-  ).filter(({ allowed }) => allowed);
-  const matched = accessibleSettings
-    .map(({ entry }) => entry)
-    .sort((a, b) => b.path.length - a.path.length)
-    .find((entry) => routePath === entry.path || routePath.startsWith(`${entry.path}/`));
+
+  const { accessible, matched, title } = await resolveSettingsSection({
+    entries: settings,
+    req: req as unknown as FrogBotRequest,
+    routePath,
+  });
+
   const entries = [
     { icon: <TileIcon size={18} />, label: 'Collections', path: 'collections' },
-    ...accessibleSettings.map(({ entry }) => ({
+    ...accessible.map((entry) => ({
       icon: renderNavIcon({ icon: entry.icon, importMap, serverProps: props, size: 18 }) ?? (
         <SettingIcon size={18} />
       ),
@@ -300,18 +290,18 @@ export async function SettingsView(props: SettingsViewProps) {
   const renderCollectionList = (entities: typeof collectionGroups.ungrouped) => (
     <ul className="frogbot-settings__collection-list">
       {entities.map(({ label, slug }) => {
-        const title = getTranslation(label, req.i18n);
+        const cardTitle = getTranslation(label, req.i18n);
 
         return (
           <li key={slug}>
             <Card
-              buttonAriaLabel={req.i18n.t('general:showAllLabel', { label: title })}
+              buttonAriaLabel={req.i18n.t('general:showAllLabel', { label: cardTitle })}
               href={formatAdminURL({
                 adminRoute: payload.config.routes.admin,
                 path: `/collections/${slug}`,
               })}
               id={`card-${slug}`}
-              title={title}
+              title={cardTitle}
               titleAs="h3"
             />
           </li>
@@ -360,9 +350,7 @@ export async function SettingsView(props: SettingsViewProps) {
         entries={entries}
       />
       <main className="frogbot-settings-template__main">
-        <div className="frogbot-settings-template__header">
-          {routePath === 'collections' ? 'Collections' : (matched?.label ?? 'Settings')}
-        </div>
+        <div className="frogbot-settings-template__header">{title}</div>
         <div className="frogbot-settings-template__content">{content}</div>
       </main>
     </div>
@@ -382,7 +370,23 @@ export async function generatePageMetadata(
   const { config, ...rest } = args;
   const payloadConfig = getPayloadConfig(config);
   const metadata = await payloadGeneratePageMetadata({ ...rest, config: payloadConfig });
-  const meta = (await payloadConfig).admin?.meta;
+  const resolvedConfig = await payloadConfig;
+  const meta = resolvedConfig.admin?.meta;
+
+  const params = await args.params;
+  const settingsTitle = await getSettingsTitle({
+    config: resolvedConfig,
+    segments: Array.isArray(params.segments) ? params.segments : [],
+  });
+
+  if (settingsTitle !== undefined) {
+    const suffix = meta?.titleSuffix;
+
+    metadata.title = suffix ? `${settingsTitle} ${suffix}` : settingsTitle;
+    metadata.description = settingsTitle;
+    metadata.keywords = settingsTitle;
+    metadata.openGraph = { ...metadata.openGraph, title: settingsTitle };
+  }
 
   if (!meta?.icons) {
     metadata.icons = [

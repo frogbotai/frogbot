@@ -14,6 +14,7 @@ import {
   costLogs,
   costsPath,
   deliberatorEfforts,
+  hiddenSettings,
   insightsPath,
   messagesSlug,
   modelPort,
@@ -70,7 +71,14 @@ export default buildConfig({
       ],
     },
   ],
-  settings: [{ ...robotSettings, Component: '/components/RobotSettings#RobotSettings' }],
+  settings: [
+    { ...robotSettings, Component: '/components/RobotSettings#RobotSettings' },
+    {
+      ...hiddenSettings,
+      Component: '/components/RobotSettings#RobotSettings',
+      access: () => false,
+    },
+  ],
   pieces: [
     definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
       slug: channelChat.channelThread.account,

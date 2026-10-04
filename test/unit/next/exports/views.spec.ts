@@ -2,31 +2,46 @@ import { RobotIcon, SettingIcon } from '@frogbotai/ui/icons';
 import type { FrogBotSanitizedConfig } from 'frogbot';
 import { type ComponentProps, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  getCachedFrogBot: vi.fn(() => ({
-    config: {
-      agents: [{ slug: 'general' }],
-      chat: {
-        enabled: true,
-        chatsSlug: 'conversations',
-        messagesSlug: 'turns',
-        assetsSlug: 'frogbot-chat-assets',
+const mocks = vi.hoisted(() => {
+  const frogbot = { attached: true };
+  const i18n = { language: 'en', t: (key: string) => key };
+
+  return {
+    attachRegisteredFrogBot: vi.fn((req: Record<string, unknown>) => ({ ...req, frogbot })),
+    createLocalReq: vi.fn((options: { req?: Record<string, unknown> }) =>
+      Promise.resolve({ ...options.req }),
+    ),
+    executeAuthStrategies: vi.fn(() => Promise.resolve({ user: { id: 'user-1' } })),
+    frogbot,
+    getCachedFrogBot: vi.fn(() => ({
+      config: {
+        agents: [{ slug: 'general' }],
+        chat: {
+          enabled: true,
+          chatsSlug: 'conversations',
+          messagesSlug: 'turns',
+          assetsSlug: 'frogbot-chat-assets',
+        },
       },
-    },
-  })),
-  RootPage: vi.fn(() => null),
-  NotFoundPage: vi.fn(() => null),
-  generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
-  RenderServerComponent: vi.fn(() => 'rendered-setting'),
-  redirect: vi.fn(),
-  ListControls: vi.fn(() => null),
-  ListHeader: vi.fn(() => null),
-  ListQueryProvider: vi.fn(({ children }) => children),
-  listGroupBy: undefined as boolean | undefined,
-  ViewControls: vi.fn(() => null),
-}));
+    })),
+    getNextRequestI18n: vi.fn(() => Promise.resolve(i18n)),
+    getPayload: vi.fn(() => Promise.resolve({})),
+    headers: vi.fn(() => Promise.resolve(new Headers({ host: 'admin.test' }))),
+    i18n,
+    RootPage: vi.fn(() => null),
+    NotFoundPage: vi.fn(() => null),
+    generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
+    RenderServerComponent: vi.fn(() => 'rendered-setting'),
+    redirect: vi.fn(),
+    ListControls: vi.fn(() => null),
+    ListHeader: vi.fn(() => null),
+    ListQueryProvider: vi.fn(({ children }) => children),
+    listGroupBy: undefined as boolean | undefined,
+    ViewControls: vi.fn(() => null),
+  };
+});
 
 vi.mock('@payloadcms/next/views', () => mocks);
 vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
@@ -104,6 +119,18 @@ vi.mock('frogbot', async (importOriginal) => ({
       ...(metadata == null ? {} : { metadata }),
     })),
 }));
+vi.mock('frogbot/internal', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('frogbot/internal')>()),
+  attachRegisteredFrogBot: mocks.attachRegisteredFrogBot,
+}));
+vi.mock('payload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('payload')>()),
+  createLocalReq: mocks.createLocalReq,
+  executeAuthStrategies: mocks.executeAuthStrategies,
+  getPayload: mocks.getPayload,
+}));
+vi.mock('@payloadcms/next/utilities', () => ({ getNextRequestI18n: mocks.getNextRequestI18n }));
+vi.mock('next/headers', () => ({ headers: mocks.headers }));
 
 const {
   ChatView,
@@ -114,6 +141,8 @@ const {
   CollectionViewShell,
   DefaultListView,
 } = await import('../../../../packages/next/src/exports/views.js');
+const { getSettingsTitle } =
+  await import('../../../../packages/next/src/views/Settings/metadata.js');
 
 function makeConfig(admin?: Record<string, unknown>) {
   const payloadConfig = { admin, collections: [] };
@@ -805,5 +834,267 @@ describe('@frogbotai/next views', () => {
 
     expect(a.openGraph).toBeUndefined();
     expect(b.openGraph).toBeUndefined();
+  });
+
+  describe('Settings titles', () => {
+    const settingsView = {
+      Component: '@frogbotai/next/views#SettingsView',
+      exact: false,
+      path: '/settings',
+    };
+
+    const payloadMetadata = {
+      description: 'Upstream',
+      keywords: 'Upstream',
+      openGraph: { title: 'Upstream' },
+      title: 'Upstream - FrogBot',
+    };
+
+    type SettingsMetadata = {
+      description?: unknown;
+      icons?: unknown[];
+      keywords?: unknown;
+      openGraph?: { images?: unknown[]; title?: unknown };
+      title?: unknown;
+    };
+
+    function makeSettingsConfig({
+      meta = { titleSuffix: '- FrogBot' },
+      settings = [],
+      views = { settings: settingsView },
+    }: {
+      meta?: Record<string, unknown>;
+      settings?: Array<Record<string, unknown>>;
+      views?: Record<string, unknown>;
+    } = {}) {
+      return {
+        admin: { components: { views }, meta, routes: { account: '/account' }, settings },
+        collections: [],
+        routes: { admin: '/admin' },
+      };
+    }
+
+    async function readMetadata(
+      payloadConfig: ReturnType<typeof makeSettingsConfig>,
+      segments: string[],
+    ) {
+      const config = {
+        _internal: { payloadConfig: Promise.resolve(payloadConfig) },
+      } as unknown as FrogBotSanitizedConfig;
+
+      return (await generatePageMetadata({
+        config,
+        params: Promise.resolve({ segments }),
+        searchParams,
+      })) as SettingsMetadata;
+    }
+
+    beforeEach(() => {
+      mocks.executeAuthStrategies.mockClear();
+      mocks.generatePageMetadata.mockImplementation(() =>
+        Promise.resolve(structuredClone(payloadMetadata)),
+      );
+    });
+
+    afterEach(() => {
+      mocks.generatePageMetadata.mockImplementation((args: unknown) => Promise.resolve(args));
+    });
+
+    it('generatePageMetadata titles /settings/collections as Collections', async () => {
+      const metadata = await readMetadata(makeSettingsConfig(), ['settings', 'collections']);
+
+      expect(metadata).toMatchObject({
+        description: 'Collections',
+        keywords: 'Collections',
+        openGraph: { title: 'Collections' },
+        title: 'Collections - FrogBot',
+      });
+    });
+
+    it('generatePageMetadata titles a Settings entry with its label', async () => {
+      const config = makeSettingsConfig({
+        settings: [{ Component: 'Billing', label: 'Billing', path: 'billing' }],
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'billing']);
+
+      expect(metadata).toMatchObject({
+        description: 'Billing',
+        keywords: 'Billing',
+        openGraph: { title: 'Billing' },
+        title: 'Billing - FrogBot',
+      });
+    });
+
+    it('generatePageMetadata titles a nested route with the longest matching entry', async () => {
+      const config = makeSettingsConfig({
+        settings: [
+          { Component: 'Billing', label: 'Billing', path: 'billing' },
+          { Component: 'Invoices', label: 'Invoices', path: 'billing/invoices' },
+        ],
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'billing', 'invoices', 'inv-1']);
+
+      expect(metadata.title).toBe('Invoices - FrogBot');
+    });
+
+    it('generatePageMetadata does not match an entry by a shared name prefix', async () => {
+      const config = makeSettingsConfig({
+        settings: [{ Component: 'Billing', label: 'Billing', path: 'billing' }],
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'billing-old']);
+
+      expect(metadata.title).toBe('Settings - FrogBot');
+    });
+
+    it('generatePageMetadata titles an unknown Settings path as Settings', async () => {
+      const metadata = await readMetadata(makeSettingsConfig(), ['settings', 'does-not-exist']);
+
+      expect(metadata).toMatchObject({
+        description: 'Settings',
+        keywords: 'Settings',
+        openGraph: { title: 'Settings' },
+        title: 'Settings - FrogBot',
+      });
+    });
+
+    it('generatePageMetadata never reveals the label of an entry denied by access', async () => {
+      const config = makeSettingsConfig({
+        settings: [{ access: () => false, Component: 'Vault', label: 'Vault', path: 'vault' }],
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'vault']);
+
+      expect(metadata.title).toBe('Settings - FrogBot');
+      expect(JSON.stringify(metadata)).not.toContain('Vault');
+    });
+
+    it('generatePageMetadata titles a default-access entry as Settings without a user', async () => {
+      mocks.executeAuthStrategies.mockResolvedValueOnce({ user: null } as never);
+
+      const config = makeSettingsConfig({
+        settings: [{ Component: 'Usage', label: 'Usage', path: 'usage' }],
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'usage']);
+
+      expect(metadata.title).toBe('Settings - FrogBot');
+      expect(JSON.stringify(metadata)).not.toContain('Usage');
+    });
+
+    it('generatePageMetadata awaits an async access with a FrogBot request', async () => {
+      const access = vi.fn(() => Promise.resolve(false));
+
+      const config = makeSettingsConfig({
+        settings: [{ access, Component: 'Vault', label: 'Vault', path: 'vault' }],
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'vault']);
+
+      expect(metadata.title).toBe('Settings - FrogBot');
+      expect(access).toHaveBeenCalledWith({
+        req: expect.objectContaining({
+          frogbot: mocks.frogbot,
+          i18n: mocks.i18n,
+          user: { id: 'user-1' },
+        }),
+      });
+    });
+
+    it('generatePageMetadata uses the bare section text with an empty titleSuffix', async () => {
+      const config = makeSettingsConfig({ meta: { titleSuffix: '' } });
+
+      const metadata = await readMetadata(config, ['settings', 'collections']);
+
+      expect(metadata.title).toBe('Collections');
+    });
+
+    it('generatePageMetadata appends a custom titleSuffix to the Settings title', async () => {
+      const config = makeSettingsConfig({ meta: { titleSuffix: '- Field Lab' } });
+
+      const metadata = await readMetadata(config, ['settings', 'collections']);
+
+      expect(metadata).toMatchObject({
+        openGraph: { title: 'Collections' },
+        title: 'Collections - Field Lab',
+      });
+    });
+
+    it("generatePageMetadata leaves an app's own Settings view metadata untouched", async () => {
+      const config = makeSettingsConfig({
+        views: { settings: { Component: '/components/MySettings#MySettings', path: '/settings' } },
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'collections']);
+
+      expect(metadata).toMatchObject(payloadMetadata);
+      expect(mocks.executeAuthStrategies).not.toHaveBeenCalled();
+    });
+
+    it('generatePageMetadata gives an app view under /settings the Settings title', async () => {
+      const config = makeSettingsConfig({
+        views: {
+          settings: settingsView,
+          reports: { Component: '/components/Reports#Reports', path: '/settings/reports' },
+        },
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'reports']);
+
+      expect(metadata.title).toBe('Settings - FrogBot');
+    });
+
+    it('generatePageMetadata leaves routes outside Settings untouched', async () => {
+      const metadata = await readMetadata(makeSettingsConfig(), ['collections', 'settings']);
+
+      expect(metadata).toMatchObject(payloadMetadata);
+      expect(mocks.executeAuthStrategies).not.toHaveBeenCalled();
+    });
+
+    it('generatePageMetadata keeps the favicon and OG image patches on a Settings route', async () => {
+      const config = makeSettingsConfig({
+        meta: { defaultOGImageType: 'static', titleSuffix: '- FrogBot' },
+      });
+
+      const metadata = await readMetadata(config, ['settings', 'collections']);
+
+      expect(metadata.icons).toHaveLength(1);
+      expect(metadata.openGraph?.images).toHaveLength(1);
+      expect(metadata.openGraph?.title).toBe('Collections');
+    });
+
+    it.each([
+      ['Collections', ['settings', 'collections'], 'Collections'],
+      ['an entry', ['settings', 'billing'], 'Billing'],
+      ['a denied entry', ['settings', 'vault'], 'Settings'],
+    ])('SettingsView header matches the Settings tab title for %s', async (_, segments, text) => {
+      const config = makeSettingsConfig({
+        settings: [
+          { Component: 'Billing', label: 'Billing', path: 'billing' },
+          { access: () => false, Component: 'Vault', label: 'Vault', path: 'vault' },
+        ],
+      });
+
+      const element = await SettingsView({
+        importMap: {},
+        initPageResult: {
+          permissions: { collections: {} },
+          req: { frogbot: mocks.frogbot, i18n: mocks.i18n, user: { id: 'user-1' } },
+          visibleEntities: { collections: [], globals: [] },
+        },
+        payload: { config },
+        routeSegments: segments,
+      } as never);
+
+      const title = await getSettingsTitle({ config: config as never, segments });
+
+      const header = element.props.children[1].props.children[0];
+
+      expect(header.props.className).toBe('frogbot-settings-template__header');
+      expect(header.props.children).toBe(title);
+      expect(title).toBe(text);
+    });
   });
 });

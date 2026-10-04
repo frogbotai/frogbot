@@ -213,17 +213,19 @@ export default buildConfig({
 
 `icon` and `access` are optional. Set `icon` to a built-in icon name, such as `'robot'`, or a component import path, following the [icon rules](#collection-icons-and-placement). Without `access`, FrogBot allows any authenticated user. The access function runs before FrogBot shows the card or renders the page. The page component and component icons are added to the generated import map.
 
+Each Settings page names itself in the browser tab, followed by `admin.meta.titleSuffix`: `Collections - FrogBot` on the collection cards and the entry's label on its page, such as `Usage - FrogBot`. An unknown path, or an entry the user cannot open, reads `Settings - FrogBot`. The server title already names the page, so the tab doesn't change after it loads.
+
 ### Settings entry options
 
 Each `settings` entry is a `SettingsEntry`:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `label` | `string` | Required | Card and sidebar label in the Settings area, and the page heading. |
+| `label` | `string` | Required | Card and sidebar label in the Settings area, the page heading, and the browser tab title. |
 | `path` | `string` | Required | Route relative to `/settings`, such as `usage` or `security/audit`. It must not be empty, start with `/`, contain `\`, `?`, `#`, empty segments, `.`, or `..`, or repeat another entry's path; any of these stops startup. |
 | `Component` | `FrogBotComponent` | Required | Component rendered for the page. Requests to nested paths below `path` also render it. |
 | `icon` | `AdminIcon` | Settings icon | Built-in icon name or component import path, following the [icon rules](#collection-icons-and-placement). |
-| `access` | `Access` | Signed-in users | Called with `{ req }` only; other access arguments are undefined. A truthy result shows the card and allows the page. |
+| `access` | `Access` | Signed-in users | Called with `{ req }` only; other access arguments are undefined. A truthy result shows the card and allows the page. Otherwise the page shows Page not found under a `Settings` heading, and its tab title and metadata read `Settings`, so the label stays hidden. |
 
 Plugins append entries after existing settings so they compose in plugin order:
 

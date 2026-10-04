@@ -11,6 +11,7 @@ const config: FrogBotConfig = {
   collections: [Users, Posts],
   plugins: [apiKeysPlugin()],
   admin: {
+    meta: { titleSuffix: '- Field Lab', openGraph: { siteName: 'Field Lab' } },
     dashboard: {
       defaultLayout: ({ req }) => [
         {
@@ -53,6 +54,11 @@ const config: FrogBotConfig = {
       ],
       views: {
         reports: { Component: '/components/ReportsView#ReportsView', path: '/reports' },
+        titledReport: {
+          Component: '/components/ReportsView#ReportsView',
+          meta: { title: 'Titled report' },
+          path: '/titled-report',
+        },
       },
     },
   },

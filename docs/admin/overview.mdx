@@ -70,7 +70,7 @@ admin: {
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `titleSuffix` | `string` | `'- FrogBot'` | Appended, after a space, to every admin page title and Open Graph title. Live top-bar titles use it too; see [Top-bar label](/custom-components/custom-views#top-bar-label). |
+| `titleSuffix` | `string` | `'- FrogBot'` | Appended, after a space, to every admin page title. Custom views without a title show only the site name, without the suffix. Live top-bar titles use it too; see [Top-bar label](/custom-components/custom-views#top-bar-label). An empty string adds no suffix. |
 | `defaultOGImageType` | `'dynamic' \| 'static' \| 'off'` | `'static'` | Open Graph image used when `openGraph.images` is not set. `'static'` uses the FrogBot image. `'dynamic'` renders a 1200×630 image with the page title from the `/api/og` endpoint. `'off'` adds no image and disables the endpoint. |
 
 ### Next.js metadata options
@@ -79,12 +79,12 @@ Every other key comes from the `next` `Metadata` type and is passed through to t
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `title` | `string \| { default, template } \| { absolute, template? }` | The view's own title | Base page title. The dashboard, login page, and custom root views use it unless the view sets its own `meta.title`; collection pages use the collection label. `titleSuffix` is appended. |
-| `description` | `string` | None | Page description. List views clear it. |
+| `title` | `string \| { default, template } \| { absolute, template? }` | The view's own title | Base page title. The dashboard, login page, and custom root views use it unless the view sets its own `meta.title`; collection pages use the collection label, and Settings pages their section name. `titleSuffix` is appended. |
+| `description` | `string` | The title text on custom views and Settings pages | Page description. List views clear it. Settings pages always use their section name. |
 | `applicationName` | `string` | None | `application-name` meta tag. |
 | `authors` | `{ name?, url? } \| { name?, url? }[]` | None | Author tags and links. |
 | `generator` | `string` | None | `generator` meta tag. |
-| `keywords` | `string \| string[]` | None | `keywords` meta tag. List views clear it. |
+| `keywords` | `string \| string[]` | The title text on custom views and Settings pages | `keywords` meta tag. List views clear it. Settings pages always use their section name. |
 | `referrer` | Referrer policy string | None | `referrer` meta tag, such as `'origin-when-cross-origin'`. |
 | `themeColor` | `string \| { color, media? } \| { color, media? }[]` | None | Deprecated by Next.js in favor of the `viewport` export; Next.js ignores it and logs a warning. |
 | `colorScheme` | `'normal' \| 'light' \| 'dark' \| 'light dark' \| 'dark light' \| 'only light'` | None | Deprecated by Next.js in favor of the `viewport` export; Next.js ignores it and logs a warning. |
@@ -95,7 +95,7 @@ Every other key comes from the `next` `Metadata` type and is passed through to t
 | `alternates` | `{ canonical?, languages?, media?, types? }` | None | Canonical and alternate links. |
 | `icons` | `string \| Icon[] \| { icon?, shortcut?, apple?, other? }` | FrogBot favicon | Favicon and touch icons. Setting it replaces the FrogBot favicon. |
 | `manifest` | `string \| URL` | None | Web app manifest link. |
-| `openGraph` | Open Graph object | `siteName: 'FrogBot'`, a FrogBot description, the page title with `titleSuffix`, and the image chosen by `defaultOGImageType` | Open Graph tags. Keys you set are merged over the defaults; setting `images` replaces the default image. |
+| `openGraph` | Open Graph object | `siteName: 'FrogBot'`, a FrogBot description, the page title with `titleSuffix`, and the image chosen by `defaultOGImageType` | Open Graph tags. Keys you set are merged over the defaults; setting `images` replaces the default image. The dashboard, custom views, and Settings pages use the page title without `titleSuffix` as the Open Graph title; Settings pages always use their section name. |
 | `twitter` | Twitter card object | None | Twitter (X) card tags. |
 | `facebook` | `{ appId } \| { admins }` | None | Facebook app or admin tags. |
 | `pinterest` | `{ richPin: string \| boolean }` | None | Pinterest rich pin tag. |
