@@ -2,6 +2,65 @@
   "version": "6",
   "dialect": "sqlite",
   "tables": {
+    "users_models": {
+      "name": "users_models",
+      "columns": {
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "users_models_order_idx": {
+          "name": "users_models_order_idx",
+          "columns": ["order"],
+          "isUnique": false
+        },
+        "users_models_parent_idx": {
+          "name": "users_models_parent_idx",
+          "columns": ["parent_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "users_models_parent_fk": {
+          "name": "users_models_parent_fk",
+          "tableFrom": "users_models",
+          "tableTo": "users",
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "users_sessions": {
       "name": "users_sessions",
       "columns": {
@@ -85,6 +144,29 @@
           "notNull": false,
           "autoincrement": false
         },
+        "model_access": {
+          "name": "model_access",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'all'"
+        },
+        "monthly_budget": {
+          "name": "monthly_budget",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "spend_this_period_u_s_d": {
+          "name": "spend_this_period_u_s_d",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
@@ -131,6 +213,13 @@
         },
         "hash": {
           "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reset_password_requested_at": {
+          "name": "reset_password_requested_at",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -205,6 +294,34 @@
           "notNull": false,
           "autoincrement": false
         },
+        "channel": {
+          "name": "channel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "channel_key": {
+          "name": "channel_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "channel_thread": {
+          "name": "channel_thread",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "last_message_at": {
           "name": "last_message_at",
           "type": "text",
@@ -253,6 +370,21 @@
           "name": "chats_agent_idx",
           "columns": ["agent"],
           "isUnique": false
+        },
+        "chats_channel_idx": {
+          "name": "chats_channel_idx",
+          "columns": ["channel"],
+          "isUnique": false
+        },
+        "chats_external_id_idx": {
+          "name": "chats_external_id_idx",
+          "columns": ["external_id"],
+          "isUnique": false
+        },
+        "chats_channel_key_idx": {
+          "name": "chats_channel_key_idx",
+          "columns": ["channel_key"],
+          "isUnique": true
         },
         "chats_last_message_at_idx": {
           "name": "chats_last_message_at_idx",
@@ -327,6 +459,57 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'active'"
+        },
+        "delivery": {
+          "name": "delivery",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reasoning": {
+          "name": "reasoning",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "author": {
+          "name": "author",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "settlements": {
+          "name": "settlements",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
         },
         "usage_input_tokens": {
           "name": "usage_input_tokens",
@@ -407,6 +590,11 @@
           "columns": ["chat_id"],
           "isUnique": false
         },
+        "messages_status_idx": {
+          "name": "messages_status_idx",
+          "columns": ["status"],
+          "isUnique": false
+        },
         "messages_updated_at_idx": {
           "name": "messages_updated_at_idx",
           "columns": ["updated_at"],
@@ -434,6 +622,241 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "frogbot_chat_assets": {
+      "name": "frogbot_chat_assets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "chat_id": {
+          "name": "chat_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "thumbnail_u_r_l": {
+          "name": "thumbnail_u_r_l",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filename": {
+          "name": "filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filesize": {
+          "name": "filesize",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "width": {
+          "name": "width",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "height": {
+          "name": "height",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "focal_x": {
+          "name": "focal_x",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "focal_y": {
+          "name": "focal_y",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "frogbot_chat_assets_owner_idx": {
+          "name": "frogbot_chat_assets_owner_idx",
+          "columns": ["owner_id"],
+          "isUnique": false
+        },
+        "frogbot_chat_assets_chat_idx": {
+          "name": "frogbot_chat_assets_chat_idx",
+          "columns": ["chat_id"],
+          "isUnique": false
+        },
+        "frogbot_chat_assets_updated_at_idx": {
+          "name": "frogbot_chat_assets_updated_at_idx",
+          "columns": ["updated_at"],
+          "isUnique": false
+        },
+        "frogbot_chat_assets_created_at_idx": {
+          "name": "frogbot_chat_assets_created_at_idx",
+          "columns": ["created_at"],
+          "isUnique": false
+        },
+        "frogbot_chat_assets_filename_idx": {
+          "name": "frogbot_chat_assets_filename_idx",
+          "columns": ["filename"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "frogbot_chat_assets_owner_id_users_id_fk": {
+          "name": "frogbot_chat_assets_owner_id_users_id_fk",
+          "tableFrom": "frogbot_chat_assets",
+          "tableTo": "users",
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "frogbot_chat_assets_chat_id_chats_id_fk": {
+          "name": "frogbot_chat_assets_chat_id_chats_id_fk",
+          "tableFrom": "frogbot_chat_assets",
+          "tableTo": "chats",
+          "columnsFrom": ["chat_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "frogbot_chat_turns": {
+      "name": "frogbot_chat_turns",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'idle'"
+        },
+        "attempt": {
+          "name": "attempt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "frogbot_chat_turns_updated_at_idx": {
+          "name": "frogbot_chat_turns_updated_at_idx",
+          "columns": ["updated_at"],
+          "isUnique": false
+        },
+        "frogbot_chat_turns_created_at_idx": {
+          "name": "frogbot_chat_turns_created_at_idx",
+          "columns": ["created_at"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -640,8 +1063,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "files": {
-      "name": "files",
+    "frogbot_waitpoints": {
+      "name": "frogbot_waitpoints",
       "columns": {
         "id": {
           "name": "id",
@@ -650,9 +1073,96 @@
           "notNull": true,
           "autoincrement": false
         },
-        "folder_id": {
-          "name": "folder_id",
+        "job_id": {
+          "name": "job_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "holder_id": {
+          "name": "holder_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ready": {
+          "name": "ready",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "until": {
+          "name": "until",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "data": {
+          "name": "data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "dispatched": {
+          "name": "dispatched",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "dispatch_owner": {
+          "name": "dispatch_owner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "dispatch_lease_until": {
+          "name": "dispatch_lease_until",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -672,111 +1182,51 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "thumbnail_u_r_l": {
-          "name": "thumbnail_u_r_l",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "filename": {
-          "name": "filename",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "mime_type": {
-          "name": "mime_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "filesize": {
-          "name": "filesize",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "width": {
-          "name": "width",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "height": {
-          "name": "height",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "focal_x": {
-          "name": "focal_x",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "focal_y": {
-          "name": "focal_y",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
-        "files_folder_idx": {
-          "name": "files_folder_idx",
-          "columns": ["folder_id"],
+        "frogbot_waitpoints_holder_idx": {
+          "name": "frogbot_waitpoints_holder_idx",
+          "columns": ["holder_id"],
           "isUnique": false
         },
-        "files_updated_at_idx": {
-          "name": "files_updated_at_idx",
+        "frogbot_waitpoints_token_idx": {
+          "name": "frogbot_waitpoints_token_idx",
+          "columns": ["token"],
+          "isUnique": true
+        },
+        "frogbot_waitpoints_expires_at_idx": {
+          "name": "frogbot_waitpoints_expires_at_idx",
+          "columns": ["expires_at"],
+          "isUnique": false
+        },
+        "frogbot_waitpoints_updated_at_idx": {
+          "name": "frogbot_waitpoints_updated_at_idx",
           "columns": ["updated_at"],
           "isUnique": false
         },
-        "files_created_at_idx": {
-          "name": "files_created_at_idx",
+        "frogbot_waitpoints_created_at_idx": {
+          "name": "frogbot_waitpoints_created_at_idx",
           "columns": ["created_at"],
           "isUnique": false
         },
-        "files_deleted_at_idx": {
-          "name": "files_deleted_at_idx",
-          "columns": ["deleted_at"],
-          "isUnique": false
-        },
-        "files_filename_idx": {
-          "name": "files_filename_idx",
-          "columns": ["filename"],
+        "jobId_name_idx": {
+          "name": "jobId_name_idx",
+          "columns": ["job_id", "name"],
           "isUnique": true
+        },
+        "ready_dispatched_status_idx": {
+          "name": "ready_dispatched_status_idx",
+          "columns": ["ready", "dispatched", "status"],
+          "isUnique": false
         }
       },
       "foreignKeys": {
-        "files_folder_id_payload_folders_id_fk": {
-          "name": "files_folder_id_payload_folders_id_fk",
-          "tableFrom": "files",
-          "tableTo": "payload_folders",
-          "columnsFrom": ["folder_id"],
+        "frogbot_waitpoints_holder_id_payload_jobs_id_fk": {
+          "name": "frogbot_waitpoints_holder_id_payload_jobs_id_fk",
+          "tableFrom": "frogbot_waitpoints",
+          "tableTo": "payload_jobs",
+          "columnsFrom": ["holder_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -809,6 +1259,13 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -816,6 +1273,11 @@
           "name": "payload_kv_key_idx",
           "columns": ["key"],
           "isUnique": true
+        },
+        "payload_kv_expires_at_idx": {
+          "name": "payload_kv_expires_at_idx",
+          "columns": ["expires_at"],
+          "isUnique": false
         }
       },
       "foreignKeys": {},
@@ -823,56 +1285,105 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "payload_folders_folder_type": {
-      "name": "payload_folders_folder_type",
+    "payload_jobs_log": {
+      "name": "payload_jobs_log",
       "columns": {
-        "order": {
-          "name": "order",
+        "_order": {
+          "name": "_order",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "parent_id": {
-          "name": "parent_id",
+        "_parent_id": {
+          "name": "_parent_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "value": {
-          "name": "value",
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "executed_at": {
+          "name": "executed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "task_slug": {
+          "name": "task_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "task_i_d": {
+          "name": "task_i_d",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "input": {
+          "name": "input",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
+        "output": {
+          "name": "output",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         }
       },
       "indexes": {
-        "payload_folders_folder_type_order_idx": {
-          "name": "payload_folders_folder_type_order_idx",
-          "columns": ["order"],
+        "payload_jobs_log_order_idx": {
+          "name": "payload_jobs_log_order_idx",
+          "columns": ["_order"],
           "isUnique": false
         },
-        "payload_folders_folder_type_parent_idx": {
-          "name": "payload_folders_folder_type_parent_idx",
-          "columns": ["parent_id"],
+        "payload_jobs_log_parent_id_idx": {
+          "name": "payload_jobs_log_parent_id_idx",
+          "columns": ["_parent_id"],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "payload_folders_folder_type_parent_fk": {
-          "name": "payload_folders_folder_type_parent_fk",
-          "tableFrom": "payload_folders_folder_type",
-          "tableTo": "payload_folders",
-          "columnsFrom": ["parent_id"],
+        "payload_jobs_log_parent_id_fk": {
+          "name": "payload_jobs_log_parent_id_fk",
+          "tableFrom": "payload_jobs_log",
+          "tableTo": "payload_jobs",
+          "columnsFrom": ["_parent_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -882,8 +1393,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "payload_folders": {
-      "name": "payload_folders",
+    "payload_jobs": {
+      "name": "payload_jobs",
       "columns": {
         "id": {
           "name": "id",
@@ -892,16 +1403,104 @@
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "input": {
+          "name": "input",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
-        "folder_id": {
-          "name": "folder_id",
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "total_tried": {
+          "name": "total_tried",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "has_error": {
+          "name": "has_error",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "task_slug": {
+          "name": "task_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "queue": {
+          "name": "queue",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'default'"
+        },
+        "wait_until": {
+          "name": "wait_until",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "processing": {
+          "name": "processing",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "meta": {
+          "name": "meta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lease_owner": {
+          "name": "lease_owner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "waitpoint": {
+          "name": "waitpoint",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -924,38 +1523,64 @@
         }
       },
       "indexes": {
-        "payload_folders_name_idx": {
-          "name": "payload_folders_name_idx",
-          "columns": ["name"],
+        "payload_jobs_completed_at_idx": {
+          "name": "payload_jobs_completed_at_idx",
+          "columns": ["completed_at"],
           "isUnique": false
         },
-        "payload_folders_folder_idx": {
-          "name": "payload_folders_folder_idx",
-          "columns": ["folder_id"],
+        "payload_jobs_total_tried_idx": {
+          "name": "payload_jobs_total_tried_idx",
+          "columns": ["total_tried"],
           "isUnique": false
         },
-        "payload_folders_updated_at_idx": {
-          "name": "payload_folders_updated_at_idx",
+        "payload_jobs_has_error_idx": {
+          "name": "payload_jobs_has_error_idx",
+          "columns": ["has_error"],
+          "isUnique": false
+        },
+        "payload_jobs_task_slug_idx": {
+          "name": "payload_jobs_task_slug_idx",
+          "columns": ["task_slug"],
+          "isUnique": false
+        },
+        "payload_jobs_queue_idx": {
+          "name": "payload_jobs_queue_idx",
+          "columns": ["queue"],
+          "isUnique": false
+        },
+        "payload_jobs_wait_until_idx": {
+          "name": "payload_jobs_wait_until_idx",
+          "columns": ["wait_until"],
+          "isUnique": false
+        },
+        "payload_jobs_processing_idx": {
+          "name": "payload_jobs_processing_idx",
+          "columns": ["processing"],
+          "isUnique": false
+        },
+        "payload_jobs_lease_until_idx": {
+          "name": "payload_jobs_lease_until_idx",
+          "columns": ["lease_until"],
+          "isUnique": false
+        },
+        "payload_jobs_updated_at_idx": {
+          "name": "payload_jobs_updated_at_idx",
           "columns": ["updated_at"],
           "isUnique": false
         },
-        "payload_folders_created_at_idx": {
-          "name": "payload_folders_created_at_idx",
+        "payload_jobs_created_at_idx": {
+          "name": "payload_jobs_created_at_idx",
           "columns": ["created_at"],
           "isUnique": false
+        },
+        "payload_jobs_job_id_live_idx": {
+          "name": "payload_jobs_job_id_live_idx",
+          "columns": ["job_id"],
+          "isUnique": true,
+          "where": "\"payload_jobs\".\"job_id\" is not null and \"payload_jobs\".\"completed_at\" is null and coalesce(\"payload_jobs\".\"has_error\", 0) = 0"
         }
       },
-      "foreignKeys": {
-        "payload_folders_folder_id_payload_folders_id_fk": {
-          "name": "payload_folders_folder_id_payload_folders_id_fk",
-          "tableFrom": "payload_folders",
-          "tableTo": "payload_folders",
-          "columnsFrom": ["folder_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -1068,6 +1693,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "frogbot_chat_assets_id": {
+          "name": "frogbot_chat_assets_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "frogbot_chat_turns_id": {
+          "name": "frogbot_chat_turns_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "usage_logs_id": {
           "name": "usage_logs_id",
           "type": "integer",
@@ -1075,15 +1714,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "files_id": {
-          "name": "files_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "payload_folders_id": {
-          "name": "payload_folders_id",
+        "frogbot_waitpoints_id": {
+          "name": "frogbot_waitpoints_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -1121,19 +1753,24 @@
           "columns": ["messages_id"],
           "isUnique": false
         },
+        "payload_locked_documents_rels_frogbot_chat_assets_id_idx": {
+          "name": "payload_locked_documents_rels_frogbot_chat_assets_id_idx",
+          "columns": ["frogbot_chat_assets_id"],
+          "isUnique": false
+        },
+        "payload_locked_documents_rels_frogbot_chat_turns_id_idx": {
+          "name": "payload_locked_documents_rels_frogbot_chat_turns_id_idx",
+          "columns": ["frogbot_chat_turns_id"],
+          "isUnique": false
+        },
         "payload_locked_documents_rels_usage_logs_id_idx": {
           "name": "payload_locked_documents_rels_usage_logs_id_idx",
           "columns": ["usage_logs_id"],
           "isUnique": false
         },
-        "payload_locked_documents_rels_files_id_idx": {
-          "name": "payload_locked_documents_rels_files_id_idx",
-          "columns": ["files_id"],
-          "isUnique": false
-        },
-        "payload_locked_documents_rels_payload_folders_id_idx": {
-          "name": "payload_locked_documents_rels_payload_folders_id_idx",
-          "columns": ["payload_folders_id"],
+        "payload_locked_documents_rels_frogbot_waitpoints_id_idx": {
+          "name": "payload_locked_documents_rels_frogbot_waitpoints_id_idx",
+          "columns": ["frogbot_waitpoints_id"],
           "isUnique": false
         }
       },
@@ -1174,6 +1811,24 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
+        "payload_locked_documents_rels_frogbot_chat_assets_fk": {
+          "name": "payload_locked_documents_rels_frogbot_chat_assets_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "frogbot_chat_assets",
+          "columnsFrom": ["frogbot_chat_assets_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_frogbot_chat_turns_fk": {
+          "name": "payload_locked_documents_rels_frogbot_chat_turns_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "frogbot_chat_turns",
+          "columnsFrom": ["frogbot_chat_turns_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "payload_locked_documents_rels_usage_logs_fk": {
           "name": "payload_locked_documents_rels_usage_logs_fk",
           "tableFrom": "payload_locked_documents_rels",
@@ -1183,20 +1838,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_locked_documents_rels_files_fk": {
-          "name": "payload_locked_documents_rels_files_fk",
+        "payload_locked_documents_rels_frogbot_waitpoints_fk": {
+          "name": "payload_locked_documents_rels_frogbot_waitpoints_fk",
           "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "files",
-          "columnsFrom": ["files_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "payload_locked_documents_rels_payload_folders_fk": {
-          "name": "payload_locked_documents_rels_payload_folders_fk",
-          "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "payload_folders",
-          "columnsFrom": ["payload_folders_id"],
+          "tableTo": "frogbot_waitpoints",
+          "columnsFrom": ["frogbot_waitpoints_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1411,6 +2057,44 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
+    },
+    "payload_jobs_stats": {
+      "name": "payload_jobs_stats",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "stats": {
+          "name": "stats",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
   },
   "views": {},
@@ -1422,6 +2106,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "06c9307b-730f-4587-8342-cd8e6b0de7ea",
+  "id": "5b3a4bb7-4a5a-4f5d-a08c-60cd3e990ff0",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
