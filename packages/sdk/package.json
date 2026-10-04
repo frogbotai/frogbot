@@ -37,7 +37,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "build": "node ../../scripts/build-package.mjs",
     "clean": "rm -rf dist",
     "test": "vitest run --root ../.. --project=unit test/unit/sdk/index.spec.ts",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",

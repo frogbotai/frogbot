@@ -103,7 +103,11 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
     },
     files: ['dist'],
     sideEffects: false,
-    scripts: { build: 'tsc -p tsconfig.json', clean: 'rm -rf dist', typecheck: 'tsc --noEmit' },
+    scripts: {
+      build: 'node ../../../scripts/build-package.mjs',
+      clean: 'rm -rf dist',
+      typecheck: 'tsc --noEmit',
+    },
     dependencies: { zod: '^4.3.6' },
     peerDependencies: { frogbot: 'workspace:*' },
     devDependencies: { frogbot: 'workspace:*', typescript: '5.6.2' },

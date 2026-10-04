@@ -87,7 +87,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json && chmod +x bin.js",
+    "build": "node ../../scripts/build-package.mjs --assets json",
     "clean": "rm -rf dist",
     "typecheck": "node scripts/typecheck.mjs"
   },

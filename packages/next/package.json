@@ -116,7 +116,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json && rsync -a --include='*/' --include='*.css' --exclude='*' src/ dist/ && mkdir -p dist/assets && cp src/assets/* dist/assets/",
+    "build": "node ../../scripts/build-package.mjs --assets css,jpg,png",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

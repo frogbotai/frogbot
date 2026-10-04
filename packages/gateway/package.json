@@ -49,7 +49,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json && chmod +x dist/cli/index.js 2>/dev/null || true",
+    "build": "node ../../scripts/build-package.mjs",
     "clean": "rm -rf dist",
     "test": "vitest run --root ../.. --project=gateway-unit --project=gateway-integration --project=gateway-golden",
     "test:unit": "vitest run --root ../.. --project=gateway-unit",

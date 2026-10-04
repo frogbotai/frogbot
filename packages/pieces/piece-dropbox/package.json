@@ -22,7 +22,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "build": "node ../../../scripts/build-package.mjs",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
