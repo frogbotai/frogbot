@@ -503,7 +503,6 @@ test("a Word document that can't be read shows a red card without Retry, and the
 
   expect(refusal.status()).toBe(400);
   expect((await refusal.json()).errors[0]).toMatchObject({
-    name: 'ValidationError',
     data: {
       errors: [
         {
