@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const user = { email: 'rich-text@example.com', password: 'browser-test-password' };
+import { signIn, user } from './__helpers/signIn';
 
 function getDocumentID(value: unknown): number | string | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
@@ -18,21 +18,13 @@ function getDocumentID(value: unknown): number | string | undefined {
   return typeof docID === 'number' || typeof docID === 'string' ? docID : undefined;
 }
 
+test.beforeEach(async ({ page }) => {
+  await signIn(page, { adminRoute: '/admin' });
+});
+
 test('edits, saves, reloads, and renders rich text through the generated import map', async ({
   page,
 }) => {
-  await page.goto('/admin');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Browser rich text');
 
@@ -148,12 +140,6 @@ test('edits, saves, reloads, and renders rich text through the generated import 
 });
 
 test('creates and persists an external link through the link drawer', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !url.pathname.endsWith('/login'));
-
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Browser rich text link');
 
@@ -199,18 +185,6 @@ test('creates and persists an external link through the link drawer', async ({ p
 });
 
 test('documented block components render and server blocks use req.frogbot', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Documented blocks');
 
@@ -296,18 +270,6 @@ test('documented block components render and server blocks use req.frogbot', asy
 test('controlled RenderLexical state resets and does not persist with the form', async ({
   page,
 }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'On-demand editors');
 
@@ -339,18 +301,6 @@ test('controlled RenderLexical state resets and does not persist with the form',
 });
 
 test('form-backed RenderLexical content persists with the form', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Persisted on-demand editor');
 
@@ -391,36 +341,12 @@ test('form-backed RenderLexical content persists with the form', async ({ page }
 });
 
 test('RenderLexical omits the editor when its schema path does not resolve', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/schema-mismatches/create');
   await expect(page.getByRole('heading', { name: '[Untitled]' })).toBeVisible();
   await expect(page.locator('[contenteditable="true"]')).toHaveCount(0);
 });
 
 test('CodeBlock exposes the documented TypeScript language in the editor', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/posts/create');
 
   const editors = page.locator('[contenteditable="true"]');
@@ -437,18 +363,6 @@ test('CodeBlock exposes the documented TypeScript language in the editor', async
 });
 
 test('divider inserts from the slash menu and typed Markdown', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   await page.goto('/admin/collections/posts/create');
 
   const editors = page.locator('[contenteditable="true"]');
@@ -475,18 +389,6 @@ test('divider inserts from the slash menu and typed Markdown', async ({ page }) 
 });
 
 test('view selection preserves saved content and safely renders editor nodes', async ({ page }) => {
-  await page.goto('/admin/login');
-  await page.waitForURL(/\/admin\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)$/.test(url.pathname));
-
   const paragraph = {
     children: [
       {

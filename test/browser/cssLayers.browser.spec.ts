@@ -1,12 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import {
-  expectBackground,
-  openMenu,
-  openPostCreate,
-  readAdminColor,
-  signIn,
-} from './__helpers/adminTheme';
+import { expectBackground, openMenu, openPostCreate, readAdminColor } from './__helpers/adminTheme';
+import { signIn } from './__helpers/signIn';
 
 const appPage = '/theme-check/layers';
 const buttonOverride = 'rgb(11, 22, 33)';

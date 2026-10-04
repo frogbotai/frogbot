@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { setAdminTheme } from './__helpers/adminTheme';
 import { fetchMetadata, metadataValues } from './__helpers/metadata';
@@ -8,28 +8,7 @@ import {
   expectTwoPixelStroke,
   iconStroke,
 } from './__helpers/sidebar';
-
-const user = { email: 'custom-field@example.com', password: 'browser-test-password' };
-
-async function signIn(page: Page) {
-  await page.goto('/');
-  await page.waitForURL(/\/(create-first-user|login)/);
-  await page.waitForLoadState('networkidle');
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-
-  if (page.url().includes('create-first-user')) {
-    const response = await page.request.post('/api/users/first-register', { data: user });
-
-    expect(response.ok()).toBe(true);
-    await page.goto('/');
-
-    return;
-  }
-
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)/.test(url.pathname));
-}
+import { signIn } from './__helpers/signIn';
 
 test.beforeEach(async ({ page }) => {
   await signIn(page);

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
+import type { SignInOptions } from './__helpers/signIn';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
@@ -200,12 +201,24 @@ const questionServer = {
   },
 };
 
-export default defineConfig({
+const setupProject = (server: string, port: number, signInOptions: SignInOptions = {}) => ({
+  name: `${server}-setup`,
+  testMatch: 'auth.setup.ts',
+  use: {
+    ...devices['Desktop Chrome'],
+    baseURL: `http://localhost:${port}`,
+    channel: 'chromium',
+    signInOptions,
+  },
+});
+
+export default defineConfig<{ signInOptions: SignInOptions }>({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
   outputDir: path.join(dirname, 'test-results'),
   fullyParallel: false,
   workers: 1,
+  maxFailures: process.env.CI ? undefined : 3,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list', { printSteps: true }]],
   timeout: 30_000,
@@ -216,9 +229,17 @@ export default defineConfig({
     video: 'off',
   },
   projects: [
+    setupProject('plugin-seo', pluginSeoPort, { adminRoute: '/admin' }),
+    setupProject('chat-assets', chatAssetsPort),
+    setupProject('question', questionPort),
+    setupProject('blank', blankPort),
+    setupProject('rich-text', richTextPort, { adminRoute: '/admin' }),
+    setupProject('live-preview', livePreviewPort),
+    setupProject('custom-field', customFieldPort),
     {
       name: 'plugin-seo',
       testMatch: 'seoFields.browser.spec.ts',
+      dependencies: ['plugin-seo-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${pluginSeoPort}`,
@@ -228,6 +249,7 @@ export default defineConfig({
     {
       name: 'chat-assets',
       testMatch: 'chatAssets.browser.spec.ts',
+      dependencies: ['chat-assets-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${chatAssetsPort}`,
@@ -248,6 +270,7 @@ export default defineConfig({
         'topBarPhone.browser.spec.ts',
         'costUSD.browser.spec.ts',
       ],
+      dependencies: ['question-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${questionPort}`,
@@ -262,6 +285,7 @@ export default defineConfig({
         'breadcrumbs.browser.spec.ts',
         'topBarPhone.browser.spec.ts',
       ],
+      dependencies: ['question-setup'],
       use: {
         ...devices['Desktop Firefox'],
         baseURL: `http://localhost:${questionPort}`,
@@ -275,6 +299,7 @@ export default defineConfig({
         'breadcrumbs.browser.spec.ts',
         'topBarPhone.browser.spec.ts',
       ],
+      dependencies: ['question-setup'],
       use: {
         ...devices['Desktop Safari'],
         baseURL: `http://localhost:${questionPort}`,
@@ -287,6 +312,7 @@ export default defineConfig({
         'iconGeometry.browser.spec.ts',
         'navShell.browser.spec.ts',
       ],
+      dependencies: ['blank-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${blankPort}`,
@@ -296,6 +322,7 @@ export default defineConfig({
     {
       name: 'rich-text',
       testMatch: 'richText.browser.spec.ts',
+      dependencies: ['rich-text-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${richTextPort}`,
@@ -305,6 +332,7 @@ export default defineConfig({
     {
       name: 'live-preview',
       testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
+      dependencies: ['live-preview-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${livePreviewPort}`,
@@ -318,6 +346,7 @@ export default defineConfig({
         'adminTheme.browser.spec.ts',
         'cssLayers.browser.spec.ts',
       ],
+      dependencies: ['custom-field-setup'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${customFieldPort}`,
@@ -327,6 +356,7 @@ export default defineConfig({
     {
       name: 'custom-field-firefox',
       testMatch: 'cssLayers.browser.spec.ts',
+      dependencies: ['custom-field-setup'],
       use: {
         ...devices['Desktop Firefox'],
         baseURL: `http://localhost:${customFieldPort}`,
@@ -335,6 +365,7 @@ export default defineConfig({
     {
       name: 'custom-field-webkit',
       testMatch: 'cssLayers.browser.spec.ts',
+      dependencies: ['custom-field-setup'],
       use: {
         ...devices['Desktop Safari'],
         baseURL: `http://localhost:${customFieldPort}`,
