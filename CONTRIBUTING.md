@@ -233,9 +233,9 @@ Use applicable local implementations, types, tests, and fixtures rather than mem
 
 - **AI SDK by Vercel source:** `~/code/ai` — ALWAYS check this repo for AI SDK by Vercel internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what AI SDK by Vercel supports.
 
-- **`opencode` source:** `~/code/opencode` — ALWAYS check this repo for `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what `opencode` supports.
+- **`opencode` 1.x source:** `~/code/opencode` — the 1.x release line (`dev`, the upstream default branch). ALWAYS check this repo for 1.x `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior.
 
-- **`opencode` v2 beta source:** `~/code/opencode-v2` — the 2.0 beta line (git worktree on `v2-beta`, tracks `origin/beta`). Check for 2.0 architecture direction (Effect runtime, `core`/`protocol`/`server`/`llm`/`sdk-next` package split). NOT shipped behavior — for what `opencode` does today, use `~/code/opencode`.
+- **`opencode` 2.x source:** `~/code/opencode-v2` — the released 2.x line (git worktree of `~/code/opencode` on `v2`, tracks `origin/v2`). Effect-based architecture split into `core`, `protocol`, `server`, `ai`, `sdk`, and `cli` packages. Use the checkout that matches the `opencode` version in question, label which line the evidence comes from, and check both when the lines may differ.
 
 - **Strapi source:** `~/code/strapi` — use for ideas and comparative patterns in headless CMS architecture, extensibility, administration, and developer experience. It is not a source of truth for FrogBot behavior.
 
