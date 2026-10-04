@@ -27,18 +27,27 @@ function makeAgent(
 function makeRequest({
   agents = [makeAgent('support')],
   chat = { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' } as const,
-  providers = {},
+  ai = {},
   user = { id: 'user-1' },
 }: {
   agents?: AgentInstance[];
   chat?: { enabled: false } | { enabled: true; chatsSlug: string; messagesSlug: string };
-  providers?: Record<string, unknown>;
-  user?: { id: string } | null;
+  ai?: Record<string, unknown>;
+  user?: Record<string, unknown> | null;
 } = {}): FrogBotRequest {
   return {
     frogbot: {
       agents: Object.fromEntries(agents.map((agent) => [agent.slug, agent])),
-      config: { ai: { providers }, chat, files: { slug: 'uploads' } },
+      config: {
+        ai: {
+          providers: {},
+          routers: {},
+          access: { transcribe: ({ req }: { req: FrogBotRequest }) => !!req.user },
+          ...ai,
+        },
+        chat,
+        files: { slug: 'uploads' },
+      },
     },
     user,
   } as unknown as FrogBotRequest;
@@ -138,31 +147,256 @@ describe('manifest endpoint', () => {
     expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
   });
 
-  it('reports the default transcription model', async () => {
-    const response = await buildManifestEndpoint().handler(
-      makeRequest({ providers: { groq: true } }),
-    );
-
-    expect(await response.json()).toMatchObject({
-      ai: { transcribe: { model: 'groq/whisper-large-v3' } },
-    });
-  });
-
-  it('reports the dedicated transcription model for a Google-only app', async () => {
-    const req = makeRequest({ providers: { google: true } });
-
-    const response = await buildManifestEndpoint().handler(req);
-
-    expect(await response.json()).toMatchObject({
-      ai: { transcribe: { model: 'google/gemini-3.5-transcribe' } },
-    });
-  });
-
-  it.each(['bedrock', 'openrouter'])('disables voice input for a %s-only app', async (provider) => {
-    const req = makeRequest({ providers: { [provider]: true } });
+  it('reports unavailable transcription when the setting is unset and Groq is configured', async () => {
+    const req = makeRequest({ ai: { providers: { groq: true } } });
 
     const response = await buildManifestEndpoint().handler(req);
 
     expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it.each(['google', 'mistral'])(
+    'reports unavailable transcription when the setting is unset and %s is configured',
+    async (provider) => {
+      const req = makeRequest({ ai: { providers: { [provider]: true } } });
+
+      const response = await buildManifestEndpoint().handler(req);
+
+      expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+    },
+  );
+
+  it('reports the configured transcription model', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+      },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: { model: 'openai/gpt-4o-mini-transcribe' } },
+    });
+  });
+
+  it('reports the model behind a transcription router', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
+        transcriptionModel: 'stt',
+      },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: { model: 'openai/gpt-4o-mini-transcribe' } },
+    });
+  });
+
+  it('reports unavailable transcription when the user allowlist excludes the model', async () => {
+    const req = makeRequest({
+      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
+      user: { id: 'user-1', modelAccess: 'selected', models: ['openai/whisper-1'] },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports unavailable transcription when the user allowlist names only the router slug', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
+        transcriptionModel: 'stt',
+      },
+      user: { id: 'user-1', modelAccess: 'selected', models: ['stt'] },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports the router target when the user allowlist names it', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
+        transcriptionModel: 'stt',
+      },
+      user: { id: 'user-1', modelAccess: 'selected', models: ['openai/gpt-4o-mini-transcribe'] },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: { model: 'openai/gpt-4o-mini-transcribe' } },
+    });
+  });
+
+  it('reports unavailable transcription when the access rule denies the user', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: { transcribe: () => false },
+      },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports unavailable transcription and still serves agents when the access rule rejects', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: { transcribe: () => Promise.reject(new Error('access failed')) },
+      },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: false },
+      agents: [{ slug: 'support' }],
+    });
+  });
+
+  it('reports unavailable transcription to an anonymous caller', async () => {
+    const req = makeRequest({
+      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
+      user: null,
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports unavailable transcription to an anonymous caller the access rule allows', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: { transcribe: () => true },
+      },
+      user: null,
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('checks the transcribe access rule with the request', async () => {
+    const transcribe = vi.fn(() => true);
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: { transcribe },
+      },
+    });
+
+    await buildManifestEndpoint().handler(req);
+
+    expect(transcribe).toHaveBeenCalledWith({ req });
+  });
+
+  it('reports unavailable transcription when the access rule throws synchronously', async () => {
+    const req = makeRequest({
+      ai: {
+        providers: { openai: true },
+        transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+        access: {
+          transcribe: () => {
+            throw new Error('access failed');
+          },
+        },
+      },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports unavailable transcription when the user allowlist is selected and empty', async () => {
+    const req = makeRequest({
+      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
+      user: { id: 'user-1', modelAccess: 'selected', models: [] },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports the model to a user whose allowlist includes it', async () => {
+    const req = makeRequest({
+      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
+      user: {
+        id: 'user-1',
+        modelAccess: 'selected',
+        models: ['openai/gpt-4o-mini', 'openai/gpt-4o-mini-transcribe'],
+      },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: { model: 'openai/gpt-4o-mini-transcribe' } },
+    });
+  });
+
+  it('decides transcription per user with the same configuration', async () => {
+    const ai = {
+      providers: { openai: true },
+      transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+      access: { transcribe: ({ req }: { req: FrogBotRequest }) => req.user?.id === 'allowed' },
+    };
+
+    const allowed = await buildManifestEndpoint().handler(
+      makeRequest({ ai, user: { id: 'allowed' } }),
+    );
+    const denied = await buildManifestEndpoint().handler(
+      makeRequest({ ai, user: { id: 'denied' } }),
+    );
+
+    expect(await allowed.json()).toMatchObject({
+      ai: { transcribe: { model: 'openai/gpt-4o-mini-transcribe' } },
+    });
+    expect(await denied.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('does not run the transcribe access rule when the setting is unset', async () => {
+    const transcribe = vi.fn(() => true);
+    const req = makeRequest({ ai: { providers: { groq: true }, access: { transcribe } } });
+
+    await buildManifestEndpoint().handler(req);
+
+    expect(transcribe).not.toHaveBeenCalled();
+  });
+
+  it('keeps the response shape and cache header when transcription is available', async () => {
+    const req = makeRequest({
+      ai: { providers: { openai: true }, transcriptionModel: 'openai/gpt-4o-mini-transcribe' },
+    });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(Object.keys(await response.json()).sort()).toEqual(['agents', 'ai', 'chat', 'files']);
   });
 });

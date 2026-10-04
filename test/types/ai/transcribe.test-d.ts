@@ -18,3 +18,6 @@ void frogbot.transcribe({
   audio: Buffer.from('audio'),
   language: 'fr',
 });
+
+// @ts-expect-error `model` is required; `ai.transcriptionModel` is not a fallback.
+void frogbot.transcribe({ audio: Buffer.from('audio') });

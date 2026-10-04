@@ -64,6 +64,14 @@ export function getConfiguredChatModelIds(ai: AIConfig | SanitizedAIConfig | und
     .map(({ id }) => id);
 }
 
+export function getConfiguredTranscriptionModelIds(
+  ai: AIConfig | SanitizedAIConfig | undefined,
+): string[] {
+  return configuredModels(ai)
+    .filter(({ mode }) => mode === 'audio_transcription')
+    .map(({ id }) => id);
+}
+
 export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: string): string {
   if (ai.smallModel) return ai.smallModel;
   const provider = providerName(mainModel);

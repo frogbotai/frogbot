@@ -8,6 +8,21 @@ const config = {
 
 void config;
 
+const withTranscriptionModel = {
+  providers: { openai: true },
+  transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+} satisfies AIConfig;
+
+void withTranscriptionModel;
+
+const withUnknownTranscriptionModel: AIConfig = {
+  providers: { openai: true },
+  // @ts-expect-error `transcriptionModel` accepts configured model IDs only.
+  transcriptionModel: 'future/model',
+};
+
+void withUnknownTranscriptionModel;
+
 const withDefaultRouter: AIConfig = {
   providers: { openai: true },
   routers: { judge: { model: 'openai/gpt-4o-mini' } },

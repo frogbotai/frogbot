@@ -485,7 +485,16 @@ A `data-paste` part holds pasted text inline. The composer sends one only when i
 
 ## Voice input
 
-The composer shows a microphone when the server manifest advertises a transcription model and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.
+The composer shows a microphone when [`ai.transcriptionModel`](/ai/overview#ai-options) is set, the signed-in user may transcribe with it, and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.
+
+```ts
+ai: {
+  providers: { openai: true },
+  transcriptionModel: 'openai/gpt-4o-mini-transcribe',
+}
+```
+
+A user may transcribe when `ai.access.transcribe` allows them and their model allowlist includes the model. For an alias, the allowlist must include the model behind the alias, not the alias. Without `transcriptionModel`, or for a user who may not transcribe, the composer shows no microphone.
 
 Recording uses the browser's supported audio container: Opus in WebM where available, MP4 on Safari, or the browser default. Audio is sent for batch transcription after recording stops; transcription is not streamed.
 
