@@ -76,10 +76,7 @@ function isFileRefusal(error: unknown): boolean {
   if (!(error instanceof FrogBotSDKError) || error.status !== 400) return false;
 
   const [detail] = error.errors;
-
-  if (detail?.name !== 'ValidationError') return false;
-
-  const data = detail.data as { errors?: { path?: unknown }[] } | undefined;
+  const data = detail?.data as { errors?: { path?: unknown }[] } | undefined;
 
   return Boolean(data?.errors?.some((entry) => entry.path === 'file'));
 }

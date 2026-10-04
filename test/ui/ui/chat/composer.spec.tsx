@@ -46,7 +46,7 @@ function fileRefusal(name: string) {
     {
       errors: [
         {
-          name: 'ValidationError',
+          name: 'g',
           message: 'The following field is invalid: file',
           data: {
             collection: 'assets',
@@ -442,7 +442,7 @@ describe('Composer', () => {
     expect(within(word).queryByText('Large file')).toBeNull();
   });
 
-  it('shows a Word document the server refuses as red, without Retry', async () => {
+  it('shows a Word document the server refuses as red, without Retry, when the error name is minified', async () => {
     const { drop, onSubmit, server } = renderComposer();
 
     server.fetch.mockImplementationOnce(async () => fileRefusal('report.docx'));
