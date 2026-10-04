@@ -54,14 +54,3 @@ export const resend = createResend({
 export const dateHelper = createDateHelper();
 export const dataSummarizer = createDataSummarizer();
 export const pdf = createPdf();
-
-export const pieces = [
-  ...(google ? [google] : []),
-  linear,
-  googleSheets,
-  googleDrive,
-  googleCalendar,
-  dateHelper,
-  dataSummarizer,
-  pdf,
-];

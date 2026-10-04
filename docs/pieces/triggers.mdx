@@ -4,7 +4,7 @@ description: Receive webhook events in FrogBot agents.
 keywords: [pieces, triggers, webhooks, subscriptions]
 ---
 
-Pieces declare `webhook` and `app` triggers. Mount a trigger on an agent using its instance reference. FrogBot discovers the instance from that mount; root `pieces` registration is not required.
+Pieces declare `webhook` and `app` triggers. Mount a trigger on an agent using its instance reference.
 
 ## Mount a trigger
 
@@ -54,7 +54,7 @@ Instance slugs default to the piece slug. Give distinct instances unique slugs w
 
 Both paths use your configured `routes.api` prefix instead of `/api` when customized. Generated subscription URLs combine `serverURL`, that prefix, and the instance slug.
 
-Boot reconciliation reuses unchanged subscriptions, replaces changed subscriptions, and cleans up removed mounts. If an instance is missing during cleanup, FrogBot retains its subscription ledger entry and logs a warning: credentials cannot be reconstructed from the database. Restore the instance and its credentials to retry cleanup.
+Boot reconciliation reuses unchanged subscriptions, replaces changed subscriptions, and cleans up removed mounts. If an instance is missing during cleanup, FrogBot retains its subscription ledger entry and logs a warning: credentials cannot be reconstructed from the database. To retry cleanup, use the instance again, with its credentials, in an agent's triggers, channels, or tools, or in `connections`.
 
 Boot reconciliation and the subscription ledger exist only while an agent declares a trigger or channel. Removing the last trigger and channel stops automatic deregistration, so delete those webhooks at the provider.
 

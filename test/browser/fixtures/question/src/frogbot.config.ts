@@ -30,6 +30,10 @@ import {
   verboseEffort,
 } from '../shared';
 
+const slack = definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
+  slug: channelChat.channelThread.account,
+});
+
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-question-secret',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
@@ -78,11 +82,6 @@ export default buildConfig({
       Component: '/components/RobotSettings#RobotSettings',
       access: () => false,
     },
-  ],
-  pieces: [
-    definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
-      slug: channelChat.channelThread.account,
-    }),
   ],
   ai: {
     providers: {
@@ -136,7 +135,7 @@ export default buildConfig({
       },
       instructions: 'Ask before acting.',
       access: ({ req }) => Boolean(req.user),
-      tools: [question],
+      tools: [question, slack],
     },
     {
       slug: pickerAgentSlug,

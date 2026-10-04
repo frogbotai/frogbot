@@ -18,7 +18,6 @@ import type { Block } from '../fields/config/types.js';
 import type { FrogBot } from '../frogbot.js';
 import type { JobsConfig } from '../jobs/types.js';
 import type { EmailPiece } from '../pieces/email.js';
-import type { Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
 import type {
@@ -127,8 +126,6 @@ export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   email?: EmailPiece | Promise<EmailPiece>;
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
-  /** Pieces — bundled tools, triggers, and auth for a third-party service. */
-  pieces?: Piece[];
   /** Standalone tools available to agents, outside of any piece. */
   tools?: readonly AnyTool[];
   /** Third-party account linking — which providers users can connect. */

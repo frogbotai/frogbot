@@ -154,7 +154,6 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         { slug: 'users', auth: true, fields: [] },
         { slug: 'customers', auth: true, fields: [] },
       ],
-      pieces: [instance, ...linkedPieces],
       connections: [
         { piece: instance, oauth: true, secret: true },
         ...linkedPieces.map((piece) => ({

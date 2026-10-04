@@ -3843,7 +3843,7 @@ describe('frogbot sanitize', () => {
       ]);
     });
 
-    it('installs the trigger host from agent mounts without root piece registration', async () => {
+    it('installs the trigger host from agent mounts', async () => {
       const createExample = definePiece({
         slug: 'trigger-example',
         label: 'Trigger example',

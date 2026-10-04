@@ -30,7 +30,7 @@ pnpm add @frogbotai/piece-exa
 
 ## Use a developer key
 
-Pass the provider key when creating the piece, register the piece, and assign its default tool to the agent.
+Pass the provider key when creating the piece, and assign its default tool to the agent.
 
 ```ts
 import { createBraveSearch } from '@frogbotai/piece-brave-search'
@@ -41,7 +41,6 @@ const braveSearch = createBraveSearch({
 })
 
 export default buildConfig({
-  pieces: [braveSearch],
   agents: [
     {
       slug: 'researcher',

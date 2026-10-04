@@ -528,7 +528,7 @@ export const getNextRows = defineAction({
     }
     if (!instanceSlug) {
       throw new Error(
-        'Register the Google Sheets piece instance in your configuration before using a persistent cursor.',
+        "Use this Google Sheets instance in an agent's tools or triggers, or in `connections`, before using a persistent cursor.",
       );
     }
     const key = `pieces:google-sheets:cursor:${createHash('sha256')

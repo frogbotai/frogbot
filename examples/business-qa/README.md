@@ -107,7 +107,7 @@ http://localhost:3000/api/connections/google-drive/authorize
 http://localhost:3000/api/connections/google-calendar/authorize
 ```
 
-The native Google packages need no Activepieces runtime setup. The example enables OAuth linking only for Google products, with no Google token fallback or static-token form. A shared app or Google login does not share product credentials; there is no grouped `google` connection or source/secret policy.
+The example enables OAuth linking only for Google products, with no Google token fallback or static-token form. A shared app or Google login does not share product credentials; there is no grouped `google` connection or source/secret policy.
 
 ## Connect Linear and Resend
 
@@ -139,7 +139,7 @@ The example selects a narrow subset of the 27 Sheets, 16 Drive, and 9 Calendar a
 | Drive    | `downloadFile`, `getFile`, `listFiles`          | `createFolder`, `uploadFile` |
 | Calendar | `listEvents`, `findFreeBusyPeriods`, `getEvent` | `createEvent`, `updateEvent` |
 
-**Breaking change:** Google tool mounts now use native factory instances and action names directly. Update previous wrapper imports, aliases, and call inputs to the schemas in the product packages. In particular, `appendRow` appends data; `insertRow` inserts after a specified row and is not selected here. Sheets row writes use `spreadsheetId`, numeric `sheetId`, and `values`; `updateRow` also takes a one-based `row`. Drive uploads take `file: { fileId, name? }` for an accessible FrogBot file. Calendar event creation takes `calendarId`, `title`, and a timezone-qualified `startDateTime`.
+Each tool is the product package's own action and takes that action's input schema. `appendRow` adds a row after the existing data; `insertRow` inserts after a given row and is not selected here. Sheets row writes take `spreadsheetId`, a numeric `sheetId`, and `values`; `updateRow` also takes a one-based `row`. Drive uploads take `file: { fileId, name? }` for a FrogBot file the caller can access. Calendar event creation takes `calendarId`, `title`, and a `startDateTime` with a time zone.
 
 The analyst has only read, download, and analysis actions. Drive downloads save files in FrogBot and return file references; they do not extract text. The analyst can extract PDF text and reports other unreadable content as an evidence gap. JSON responses include a `chatId` for authenticated calls:
 
