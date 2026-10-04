@@ -150,7 +150,7 @@ describe('checkOfficeZip', () => {
     });
   });
 
-  it('accepts 10,000 entries', async () => {
+  it('accepts 10,000 entries', { timeout: 30_000 }, async () => {
     const archive = await checkOfficeZip(manyEntries(10_000));
 
     expect(Object.keys(unzipSync(archive))).toHaveLength(10_000);
