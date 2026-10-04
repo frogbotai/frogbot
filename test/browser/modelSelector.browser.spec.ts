@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { signIn } from './__helpers/signIn';
 import { chatPicksPreference, chatsSlug, pickerAgentSlug } from './fixtures/question/shared';
 
 test.setTimeout(120_000);
@@ -13,8 +12,6 @@ async function choosePickerAgent(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await signIn(page);
-
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
   await page.goto(`/collections/${chatsSlug}/create`);

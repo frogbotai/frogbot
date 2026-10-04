@@ -11,7 +11,7 @@ import {
   waitForNavPreferenceSave,
   waitForNavSettled,
 } from './__helpers/sidebar';
-import { signIn } from './__helpers/signIn';
+import { signedOut } from './__helpers/signIn';
 
 const desktop = { width: 1440, height: 900 };
 const laptop = { width: 1280, height: 800 };
@@ -55,7 +55,7 @@ const drawnBounds = (icon: Locator) =>
 
 const loadWithSidebarOpen = async (page: Page) => {
   await setNavPreference(page, true);
-  await page.reload();
+  await page.goto('/');
   await waitForNavSettled(page);
 
   await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
@@ -65,7 +65,6 @@ test.describe('nav shell on desktop', () => {
   test.use({ viewport: desktop });
 
   test('expanded sidebar shares the grid with full-width content', async ({ page }) => {
-    await signIn(page);
     await loadWithSidebarOpen(page);
 
     const sidebarWidth = await expandedWidth(page);
@@ -77,7 +76,6 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('collections section links to the configured collections', async ({ page }) => {
-    await signIn(page);
     await loadWithSidebarOpen(page);
 
     await expect(
@@ -86,7 +84,7 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('home page shows collection cards instead of chat', async ({ page }) => {
-    await signIn(page);
+    await page.goto('/');
 
     await expect(page.locator('#card-users .card__click')).toHaveAttribute(
       'href',
@@ -98,7 +96,7 @@ test.describe('nav shell on desktop', () => {
   test('home page lists built-in collection cards under one Collections heading', async ({
     page,
   }) => {
-    await signIn(page);
+    await page.goto('/');
 
     await expect(page.locator('.collections__label')).toHaveText(['Collections']);
     await expect(page.locator('.collections__group #card-chats')).toHaveCount(1);
@@ -108,7 +106,6 @@ test.describe('nav shell on desktop', () => {
   test('default sidebar shows only the Collections section, with Chats and its icon', async ({
     page,
   }) => {
-    await signIn(page);
     await loadWithSidebarOpen(page);
 
     const collections = page.locator('#frogbot-nav-section-collections');
@@ -123,7 +120,6 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('default sidebar has no Messages link', async ({ page }) => {
-    await signIn(page);
     await loadWithSidebarOpen(page);
 
     const collections = page.locator('#frogbot-nav-section-collections');
@@ -133,15 +129,13 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('home page has no Messages card', async ({ page }) => {
-    await signIn(page);
+    await page.goto('/');
 
     await expect(page.locator('#card-chats')).toHaveCount(1);
     await expect(page.locator('#card-messages')).toHaveCount(0);
   });
 
   test('Settings > Collections has no Messages card', async ({ page }) => {
-    await signIn(page);
-
     await page.goto('/settings/collections');
 
     await expect(page.locator('#card-chats')).toHaveCount(1);
@@ -149,25 +143,25 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('messages list URL shows the admin not-found page', async ({ page }) => {
-    await signIn(page);
-
     await page.goto('/collections/messages');
 
     await expect(page.locator('.not-found')).toBeVisible();
   });
 
-  test('messages list URL redirects a signed-out visitor to login', async ({ page }) => {
-    await page.goto('/collections/messages');
+  test.describe('signed out', () => {
+    test.use({ storageState: signedOut });
 
-    await expect(page).toHaveURL(/\/login/);
+    test('messages list URL redirects a signed-out visitor to login', async ({ page }) => {
+      await page.goto('/collections/messages');
+
+      await expect(page).toHaveURL(/\/login/);
+    });
   });
 
   test.describe('with a saved message', () => {
     let saved: SavedMessage;
 
     test.beforeEach(async ({ page }) => {
-      await signIn(page);
-
       saved = await createMessage(page);
     });
 
@@ -183,15 +177,12 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('chats create route opens the chat composer', async ({ page }) => {
-    await signIn(page);
-
     await page.goto('/collections/chats/create');
 
     await expect(page.locator('.fb-composer textarea')).toBeVisible();
   });
 
   test('collapsed sidebar stays visible as an icon rail', async ({ page }) => {
-    await signIn(page);
     await loadWithSidebarOpen(page);
 
     await page.click('button[aria-label="Close sidebar"]');
@@ -210,7 +201,6 @@ test.describe('nav shell on desktop', () => {
   });
 
   test('sidebar shows Chats as a centred bubble without a dot', async ({ page }) => {
-    await signIn(page);
     await loadWithSidebarOpen(page);
 
     const icon = collectionNavIcon(page, 'chats');
@@ -228,7 +218,6 @@ test.describe('nav shell on desktop', () => {
   for (const theme of ['light', 'dark'] as const) {
     test(`sidebar collection icons draw 2px in the ${theme} theme`, async ({ page }) => {
       await setAdminTheme(page, theme);
-      await signIn(page);
       await loadWithSidebarOpen(page);
 
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -252,7 +241,6 @@ test.describe('nav shell keeps the saved desktop state', () => {
       }
     });
 
-    await signIn(page);
     await setNavPreference(page, true);
     await recordNavStates(page);
   });
@@ -383,7 +371,6 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
   test.beforeEach(async ({ page }) => {
     savedValues = [];
 
-    await signIn(page);
     await setNavPreference(page, true);
     await recordNavStates(page);
 
@@ -552,7 +539,6 @@ test.describe('nav shell on mobile', () => {
       },
     },
     async ({ page }) => {
-      await signIn(page);
       await setNavPreference(page, true);
       await recordNavStates(page);
 
@@ -567,7 +553,6 @@ test.describe('nav shell on mobile', () => {
   test('closing the drawer keeps the saved desktop preference', async ({ page }) => {
     const savedValues: unknown[] = [];
 
-    await signIn(page);
     await setNavPreference(page, true);
 
     page.on('request', (request) => {
@@ -601,7 +586,8 @@ test.describe('nav shell on mobile', () => {
   });
 
   test('closed drawer leaves the content full width', async ({ page }) => {
-    await signIn(page);
+    await page.goto('/');
+    await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
     await expect(shell(page)).toBeHidden();
@@ -612,7 +598,8 @@ test.describe('nav shell on mobile', () => {
   });
 
   test('open drawer overlays full-width content and closes from the backdrop', async ({ page }) => {
-    await signIn(page);
+    await page.goto('/');
+    await waitForNavSettled(page);
 
     await page.click('button[aria-label="Open navigation"]');
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
@@ -629,7 +616,8 @@ test.describe('nav shell on mobile', () => {
   });
 
   test('open drawer closes with Escape', async ({ page }) => {
-    await signIn(page);
+    await page.goto('/');
+    await waitForNavSettled(page);
 
     await page.click('button[aria-label="Open navigation"]');
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');

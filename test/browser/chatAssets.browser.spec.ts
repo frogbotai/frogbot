@@ -9,7 +9,7 @@ import {
 } from '@playwright/test';
 
 import { encryptedOfficeFile, reportDocx, reportText, xlsxFile } from '../__helpers/shared/office';
-import { signIn } from './__helpers/signIn';
+import { signedOut } from './__helpers/signIn';
 import {
   agentSlug,
   assetsSlug,
@@ -55,8 +55,6 @@ const brokenDocx = { name: 'report.docx', mimeType: docxType, buffer: brokenZip 
 test.setTimeout(120_000);
 
 test.beforeEach(async ({ page, request }) => {
-  await signIn(page);
-
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
   expect((await request.delete(`${providerURL}/requests`)).ok()).toBe(true);
 
@@ -232,9 +230,13 @@ function contrast({ text, background }: { text: string; background: string }) {
 }
 
 test('composer uploads a private chat asset, sends its bytes, and restores the attachment after reload', async ({
+  baseURL,
   page,
+  playwright,
   request,
 }) => {
+  const anonymous = await playwright.request.newContext({ baseURL, storageState: signedOut });
+
   const filename = 'browser-attachment.png';
   const prompt = 'Describe this uploaded image.';
   const image = Buffer.from(imageBase64, 'base64');
@@ -272,8 +274,8 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
   expect(filesBeforeSend.ok()).toBe(true);
   expect(await filesBeforeSend.json()).toMatchObject({ totalDocs: 0 });
 
-  const anonymousDraft = await request.get(`/api/${assetsSlug}/${asset.id}`);
-  const anonymousDownload = await request.get(asset.url);
+  const anonymousDraft = await anonymous.get(`/api/${assetsSlug}/${asset.id}`);
+  const anonymousDownload = await anonymous.get(asset.url);
 
   expect([401, 403, 404]).toContain(anonymousDraft.status());
   expect([401, 403, 404]).toContain(anonymousDownload.status());
@@ -371,8 +373,10 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
   expect(download.headers()['content-type']).toContain('image/png');
   expect(await download.body()).toEqual(image);
 
-  const anonymousAttached = await request.get(`/api/${assetsSlug}/${asset.id}`);
-  const anonymousAttachedDownload = await request.get(asset.url);
+  const anonymousAttached = await anonymous.get(`/api/${assetsSlug}/${asset.id}`);
+  const anonymousAttachedDownload = await anonymous.get(asset.url);
+
+  await anonymous.dispose();
 
   expect([401, 403, 404]).toContain(anonymousAttached.status());
   expect([401, 403, 404]).toContain(anonymousAttachedDownload.status());

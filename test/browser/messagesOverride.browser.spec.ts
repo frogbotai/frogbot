@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 import { createMessage, deleteMessage, type SavedMessage } from './__helpers/messages';
-import { collectionNavIcon, expandSidebar } from './__helpers/sidebar';
-import { signIn } from './__helpers/signIn';
+import { collectionNavIcon, expandSidebar, waitForNavSettled } from './__helpers/sidebar';
 import { chatsSlug, messagesSlug } from './fixtures/question/shared';
 
 let saved: SavedMessage;
 
 test.beforeEach(async ({ page }) => {
-  await signIn(page);
-
   saved = await createMessage(page);
+
+  await page.goto('/');
+  await waitForNavSettled(page);
 });
 
 test.afterEach(async ({ page }) => {

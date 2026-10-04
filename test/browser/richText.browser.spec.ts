@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { signIn, user } from './__helpers/signIn';
+import { user } from './__helpers/signIn';
 
 function getDocumentID(value: unknown): number | string | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
@@ -17,10 +17,6 @@ function getDocumentID(value: unknown): number | string | undefined {
 
   return typeof docID === 'number' || typeof docID === 'string' ? docID : undefined;
 }
-
-test.beforeEach(async ({ page }) => {
-  await signIn(page, { adminRoute: '/admin' });
-});
 
 test('edits, saves, reloads, and renders rich text through the generated import map', async ({
   page,

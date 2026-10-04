@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 import { DEFAULT_MODEL_CATALOG } from '../../packages/gateway/src/providers/catalog.data.js';
-import { signIn } from './__helpers/signIn';
 
 const defaultModel = 'openai/gpt-5.4-mini';
 const defaultModelName = DEFAULT_MODEL_CATALOG.get(defaultModel)!.name;
@@ -9,8 +8,6 @@ const defaultModelName = DEFAULT_MODEL_CATALOG.get(defaultModel)!.name;
 test.setTimeout(120_000);
 
 test.beforeEach(async ({ page }) => {
-  await signIn(page);
-
   await page.goto('/collections/chats/create');
 
   await expect(page.locator('.fb-composer textarea')).toBeVisible();

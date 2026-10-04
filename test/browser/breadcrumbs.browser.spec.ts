@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
 import { fetchMetadata, metadataValues } from './__helpers/metadata';
-import { signIn } from './__helpers/signIn';
+import { signedOut } from './__helpers/signIn';
 import {
   agentSlug,
   chatsSlug,
@@ -49,8 +49,6 @@ test.afterAll(async () => {
 
 test.beforeEach(async ({ page }) => {
   model.reset();
-
-  await signIn(page);
 
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 });
@@ -935,7 +933,7 @@ test.describe('server titles', () => {
     baseURL,
     playwright,
   }) => {
-    const request = await playwright.request.newContext({ baseURL });
+    const request = await playwright.request.newContext({ baseURL, storageState: signedOut });
     const metadata = await fetchMetadata(request, `/settings/${robotSettings.path}`);
 
     await request.dispose();
