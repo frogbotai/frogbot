@@ -27,7 +27,14 @@ import {
 } from '../__helpers/shared/office.js';
 import type { StubChatModel, StubChatRequest } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { chatsSlug, messagesSlug, questionAgentSlug, turnsSlug, usersSlug } from './shared.js';
+import {
+  chatsSlug,
+  messagesSlug,
+  modelPort,
+  questionAgentSlug,
+  turnsSlug,
+  usersSlug,
+} from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -134,7 +141,7 @@ describe('chat attachments reach the agent model', () => {
   let sequence = 0;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-attachments');
   });
 

@@ -5,12 +5,15 @@ import { connect } from 'node:net';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { testDatabaseName } from '../testPorts.js';
 import { requireTestTool } from './requireTestTool.js';
 
 const packageURL = (name: string) =>
   new URL(`../../../../packages/${name}/package.json`, import.meta.url);
 
 export const defaultPostgresURL = 'postgres://frogbot:frogbot@localhost:5433/frogbot';
+
+export const testPostgresURL = `postgres://frogbot:frogbot@localhost:5433/${testDatabaseName('frogbot')}`;
 
 export type PostgresClient = {
   connect(): Promise<void>;
@@ -23,6 +26,23 @@ export function createPostgresClient(connectionString: string): PostgresClient {
   const { Client } = createRequire(adapterRequire.resolve('@payloadcms/db-postgres'))('pg');
 
   return new Client({ connectionString });
+}
+
+export async function createTestPostgresDatabase(): Promise<void> {
+  if (testPostgresURL === defaultPostgresURL) return;
+
+  const admin = createPostgresClient(defaultPostgresURL);
+  const name = new URL(testPostgresURL).pathname.slice(1);
+
+  await admin.connect();
+
+  try {
+    await admin.query(`CREATE DATABASE "${name}"`);
+  } catch (error) {
+    if ((error as { code?: string }).code !== '42P04') throw error;
+  } finally {
+    await admin.end();
+  }
 }
 
 export async function createPostgresDatabase(prefix: string) {

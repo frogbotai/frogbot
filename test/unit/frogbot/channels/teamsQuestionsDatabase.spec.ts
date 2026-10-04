@@ -18,6 +18,7 @@ import { type FrogBot, initFrogBotFromPayload } from '../../../../packages/frogb
 import { question, type QuestionInput } from '../../../../packages/frogbot/src/tools/question.js';
 import { createMicrosoftTeams } from '../../../../packages/pieces/piece-microsoft-teams/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
+import { testPort } from '../../../__helpers/shared/testPorts.js';
 import {
   botAppId,
   botAppPassword,
@@ -35,7 +36,7 @@ import {
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
-const modelPort = 3996;
+const modelPort = testPort(3985);
 
 const colorQuestion: QuestionInput = {
   questions: [

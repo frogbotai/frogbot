@@ -19,6 +19,7 @@ import {
   chatAssetsSlug,
   chatsSlug,
   messagesSlug,
+  modelPort,
   s3ClientConfig,
   usersSlug,
 } from './shared.js';
@@ -69,7 +70,7 @@ describe('chat attachments stored in S3', () => {
   let sequence = 0;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'storage-s3-chat');
   });
 

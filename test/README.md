@@ -96,6 +96,11 @@ test/
 9. **Per-suite DB isolation.** Each suite gets a unique database name
    (derived from filename) to avoid conflicts when suites run sequentially
    against shared Docker services.
+   Git worktrees can run tests at the same time: fixed ports and database
+   names get a per-checkout offset from `test/__helpers/shared/testPorts.ts`
+   (0 for the `frogbot` checkout and CI, `(n % 50 || 50) × 100` for a folder ending in
+   a number `n`, otherwise a hash of the folder name). Docker storage
+   emulators still share their buckets.
 10. **Start long-running servers with `spawnServer`.** Any spec that starts
     `next dev`, `next build` or another long-lived process must use
     `spawnServer` from `test/e2e/process.ts`, and stop it with
@@ -109,11 +114,12 @@ test/
 
 ## Environment Variables
 
-| Variable                | Values                          | Default    | Description                                                                                |
-| ----------------------- | ------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
-| `FROGBOT_DATABASE`      | `mongodb`, `postgres`, `sqlite` | `mongodb`  | Which DB adapter to use                                                                    |
-| `FROGBOT_SEARCH_DRIVER` | `postgres`, `vercel-postgres`   | `postgres` | Driver for `test/search/postgres/`; `vercel-postgres` runs through a local WebSocket proxy |
-| `FROGBOT_TEST_TOOLS`    | directory path                  | unset      | Directory that resolves `ws` for the Vercel Postgres proxy                                 |
+| Variable                   | Values                          | Default      | Description                                                                                                 |
+| -------------------------- | ------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `FROGBOT_DATABASE`         | `mongodb`, `postgres`, `sqlite` | `mongodb`    | Which DB adapter to use                                                                                     |
+| `FROGBOT_SEARCH_DRIVER`    | `postgres`, `vercel-postgres`   | `postgres`   | Driver for `test/search/postgres/`; `vercel-postgres` runs through a local WebSocket proxy                  |
+| `FROGBOT_TEST_TOOLS`       | directory path                  | unset        | Directory that resolves `ws` for the Vercel Postgres proxy                                                  |
+| `FROGBOT_TEST_PORT_OFFSET` | non-negative integer            | per checkout | Added to every fixed test port; non-zero also suffixes Postgres and Mongo test databases with `_wt<offset>` |
 
 ## Docker Profiles
 

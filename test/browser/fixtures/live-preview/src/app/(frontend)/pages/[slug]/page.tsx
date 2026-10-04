@@ -3,7 +3,7 @@ import { getFrogBot } from 'frogbot';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import { pagesSlug } from '../../../../shared';
+import { pagesSlug, serverURL } from '../../../../shared';
 import { PageClient } from './page.client';
 
 type Args = {
@@ -36,5 +36,5 @@ export default async function Page({ params }: Args) {
     notFound();
   }
 
-  return <PageClient page={page} />;
+  return <PageClient page={page} serverURL={serverURL} />;
 }

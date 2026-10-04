@@ -18,6 +18,7 @@ import { type FrogBot, initFrogBotFromPayload } from '../../../../packages/frogb
 import { question, type QuestionInput } from '../../../../packages/frogbot/src/tools/question.js';
 import { createGithub } from '../../../../packages/pieces/piece-github/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
+import { testPort } from '../../../__helpers/shared/testPorts.js';
 import {
   assertGithubTraffic,
   type GithubApi,
@@ -33,7 +34,7 @@ import {
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
-const modelPort = 3997;
+const modelPort = testPort(3986);
 
 const alice: GithubPerson = { id: 41, login: 'alice', email: 'alice@example.com' };
 const bob: GithubPerson = { id: 42, login: 'bob', email: 'bob@example.com' };

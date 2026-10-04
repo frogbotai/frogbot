@@ -24,13 +24,14 @@ import { question, type QuestionInput } from '../../../../packages/frogbot/src/t
 import { createSlackAdapter } from '../../../../packages/pieces/piece-slack/node_modules/@chat-adapter/slack/dist/index.js';
 import { slackQuestions } from '../../../../packages/pieces/piece-slack/src/questions/index.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
+import { testPort } from '../../../__helpers/shared/testPorts.js';
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
 type SlackCall = { method: string; body: Record<string, unknown>; ts: string };
 
 const signingSecret = 'questions-database-secret';
-const modelPort = 3993;
+const modelPort = testPort(3982);
 const slackCalls: SlackCall[] = [];
 let slackTs = 0;
 let eventId = 0;

@@ -57,7 +57,9 @@ function run(args, env) {
 try {
   provider.listen(0, '127.0.0.1');
   await once(provider, 'listening');
-  const port = Number(process.env.SMOKE_PORT ?? 3116);
+  const port = Number(
+    process.env.SMOKE_PORT ?? Number(process.env.FROGBOT_TEST_PORT_OFFSET ?? 0) + 3116,
+  );
   const baseURL = `http://localhost:${port}`;
   const env = {
     ...process.env,

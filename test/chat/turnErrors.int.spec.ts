@@ -7,7 +7,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { questionAgentSlug } from './shared.js';
+import { modelPort, questionAgentSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -32,7 +32,7 @@ describe('chat turns: provider errors', () => {
   let model: StubChatModel;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-turn-errors');
   });
 

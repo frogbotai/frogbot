@@ -6,6 +6,7 @@ import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { FrogBot, getFrogBotPayload } from '../../../packages/frogbot/src/frogbot.js';
 import { openAccess } from '../../__helpers/shared/buildTestConfig.js';
+import { testDatabaseName } from '../../__helpers/shared/testPorts.js';
 
 const collection = 'search-setup-documents';
 
@@ -14,7 +15,7 @@ function getURL(): string {
     process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0',
   );
 
-  url.pathname = '/frogbot-test-search-setup';
+  url.pathname = `/${testDatabaseName('frogbot-test-search-setup')}`;
 
   return url.toString();
 }

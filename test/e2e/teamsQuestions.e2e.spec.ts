@@ -12,6 +12,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import { createMicrosoftTeams } from '../../packages/pieces/piece-microsoft-teams/dist/index.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 import {
   botAppId,
   botAppPassword,
@@ -27,7 +28,7 @@ import {
 import { startPieceServer } from './nativePieceServers.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
-const modelPort = 4096;
+const modelPort = testPort(4096);
 
 type ToolMessage = { role: string; content?: unknown };
 

@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { createGithub } from '../../packages/pieces/piece-github/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 import {
   assertGithubTraffic,
   githubApp,
@@ -26,7 +27,7 @@ import {
 import { startPieceServer } from './nativePieceServers.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
-const MODEL_PORT = 4097;
+const MODEL_PORT = testPort(4097);
 const CHANNEL_TASKS = ['frogbot-run-channel-message', 'frogbot-update-channel-question'];
 
 type ChannelJob = { input: { kind?: string; thread: { id: string } } };

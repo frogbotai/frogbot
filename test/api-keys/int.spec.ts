@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
-import config, { agentSlug } from './config.js';
+import config, { agentSlug, upstreamPort } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -79,7 +79,7 @@ describe('API keys plugin integration', () => {
         );
       });
     });
-    await new Promise<void>((resolve) => upstream.listen(3988, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) => upstream.listen(upstreamPort, '127.0.0.1', resolve));
     booted = await bootFrogBot(dirname);
   });
 

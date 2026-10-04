@@ -74,4 +74,7 @@ const server = createServer(async (req, res) => {
   res.end('data: [DONE]\n\n');
 });
 
-server.listen(Number(process.env.PORT || 3126), 'localhost');
+server.listen(
+  Number(process.env.PORT || Number(process.env.FROGBOT_TEST_PORT_OFFSET ?? 0) + 3126),
+  'localhost',
+);

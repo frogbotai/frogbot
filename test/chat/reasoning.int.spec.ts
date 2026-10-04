@@ -15,6 +15,7 @@ import {
   chatsSlug,
   lookupCalls,
   messagesSlug,
+  modelPort,
   questionAgentSlug,
   turnsSlug,
 } from './shared.js';
@@ -63,7 +64,7 @@ describe('chat reasoning selection', () => {
   let thinkerOptions: unknown;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-reasoning');
 
     const providers = booted.frogbot.config.ai!.providers as unknown as Record<

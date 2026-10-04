@@ -18,6 +18,7 @@ import { type FrogBot, initFrogBotFromPayload } from '../../../../packages/frogb
 import { question, type QuestionInput } from '../../../../packages/frogbot/src/tools/question.js';
 import { createTelegramBot } from '../../../../packages/pieces/piece-telegram-bot/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
+import { testPort } from '../../../__helpers/shared/testPorts.js';
 import {
   callbackUpdate,
   createTelegramApi,
@@ -30,7 +31,7 @@ import {
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
-const modelPort = 3995;
+const modelPort = testPort(3984);
 const answerers = new Set([String(telegramUsers.frog.id), String(telegramUsers.toad.id)]);
 
 const colorQuestion: QuestionInput = {

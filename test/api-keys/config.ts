@@ -3,8 +3,11 @@ import type { CollectionConfig, Plugin } from 'frogbot';
 import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.js';
 import { rolesPlugin } from '../../packages/plugins/plugin-roles/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 
 export const agentSlug = 'api-key-policy';
+
+export const upstreamPort = testPort(3988);
 
 export const addTenant: Plugin = (config) => ({
   ...config,
@@ -28,7 +31,7 @@ export default await buildTestConfig({
     providers: {
       test: {
         type: 'openai-compatible',
-        baseUrl: 'http://127.0.0.1:3988/v1',
+        baseUrl: `http://127.0.0.1:${upstreamPort}/v1`,
         apiKey: 'test-key',
         models: [
           { id: 'allowed', mode: 'chat', cost: { input: 1, output: 2 } },

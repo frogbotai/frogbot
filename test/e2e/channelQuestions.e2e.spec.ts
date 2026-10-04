@@ -25,10 +25,11 @@ import { z } from 'zod';
 import { createSlackAdapter } from '../../packages/pieces/piece-slack/node_modules/@chat-adapter/slack/dist/index.js';
 import { createSlack } from '../../packages/pieces/piece-slack/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 import { startPieceServer } from './nativePieceServers.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
-const MODEL_PORT = 4093;
+const MODEL_PORT = testPort(4093);
 const SIGNING_SECRET = 'channel-questions-e2e-signing-secret';
 const BOT_TOKEN = 'xoxb-channel-questions-e2e';
 const CHANNEL_TASK = 'frogbot-run-channel-message';

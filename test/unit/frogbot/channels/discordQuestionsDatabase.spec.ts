@@ -21,6 +21,7 @@ import {
   encodeQuestionId,
 } from '../../../../packages/pieces/piece-discord/src/questions/ids.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
+import { testPort } from '../../../__helpers/shared/testPorts.js';
 import {
   componentClick,
   type DiscordApi,
@@ -36,7 +37,7 @@ import {
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
-const modelPort = 3994;
+const modelPort = testPort(3983);
 const allowed = ['U1', 'U2', 'U3'];
 
 const colorQuestion: QuestionInput = {

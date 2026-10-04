@@ -18,6 +18,7 @@ import { type FrogBot, initFrogBotFromPayload } from '../../../../packages/frogb
 import { question, type QuestionInput } from '../../../../packages/frogbot/src/tools/question.js';
 import { createLinear } from '../../../../packages/pieces/piece-linear/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
+import { testPort } from '../../../__helpers/shared/testPorts.js';
 import {
   type LinearApi,
   linearRequest,
@@ -30,7 +31,7 @@ import {
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
 const webhookSecret = 'linear-questions-database-secret';
-const modelPort = 3998;
+const modelPort = testPort(3987);
 const frog = { id: 'linear-frog', name: 'Frog', email: 'frog@example.com' };
 const toad = { id: 'linear-toad', name: 'Toad', email: 'toad@example.com' };
 const stranger = { id: 'linear-stranger', name: 'Stranger', email: 'stranger@example.com' };

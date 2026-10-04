@@ -8,6 +8,7 @@ import {
   chatsSlug,
   filesSlug,
   messagesSlug,
+  providerURL,
   textReaderName,
   usersSlug,
 } from '../shared';
@@ -22,7 +23,7 @@ export default buildConfig({
     providers: {
       browser: {
         type: 'openai-compatible',
-        baseUrl: process.env.BROWSER_PROVIDER_URL || 'http://localhost:3126/v1',
+        baseUrl: process.env.BROWSER_PROVIDER_URL || `${providerURL}/v1`,
         apiKey: 'browser-provider-key',
         models: [
           { id: 'attachment-reader', mode: 'chat' },

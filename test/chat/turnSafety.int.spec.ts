@@ -12,6 +12,7 @@ import {
   chatsSlug,
   lookupCalls,
   messagesSlug,
+  modelPort,
   questionAgentSlug,
   unavailableTopic,
   usersSlug,
@@ -70,7 +71,7 @@ describe('chat turns: recovery, access, and forged input', () => {
   let model: StubChatModel;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-turn-safety');
   });
 
