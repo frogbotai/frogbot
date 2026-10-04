@@ -10,6 +10,7 @@ import type { Payload } from 'payload';
 import { pathToFileURL } from 'url';
 
 import { FrogBotRESTClient } from './FrogBotRESTClient';
+import { testDatabaseName } from './testPorts';
 
 export type BootedFrogBot = {
   frogbot: FrogBotInstance;
@@ -48,7 +49,7 @@ export async function bootFrogBot(
     const baseUri =
       process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0';
     const parsed = new URL(baseUri);
-    parsed.pathname = `/frogbot-test-${suiteName}`;
+    parsed.pathname = `/${testDatabaseName(`frogbot-test-${suiteName}`)}`;
     process.env.MONGODB_URI = parsed.toString();
   }
 

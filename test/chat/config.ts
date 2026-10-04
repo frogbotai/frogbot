@@ -8,6 +8,7 @@ import {
   agentSlug,
   chatsSlug,
   lookupCalls,
+  modelPort,
   questionAgentSlug,
   unavailableTopic,
   usersSlug,
@@ -62,7 +63,7 @@ export default await buildTestConfig({
     providers: {
       test: {
         type: 'openai-compatible',
-        baseUrl: 'http://127.0.0.1:3988/v1',
+        baseUrl: `http://127.0.0.1:${modelPort}/v1`,
         apiKey: 'test-key',
         models: [
           { id: 'gpt-4.1-mini', mode: 'chat' },

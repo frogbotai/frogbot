@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { createLinear } from '../../packages/pieces/piece-linear/dist/index.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 import {
   type LinearApi,
   type LinearUser,
@@ -24,7 +25,7 @@ import {
 import { startPieceServer } from './nativePieceServers.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
-const MODEL_PORT = 4098;
+const MODEL_PORT = testPort(4098);
 const webhookSecret = 'linear-questions-e2e-secret';
 
 const frog: LinearUser = { id: 'linear-frog', name: 'Frog', email: 'frog@linear-e2e.test' };

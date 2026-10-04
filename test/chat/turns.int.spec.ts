@@ -8,7 +8,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { lookupCalls, messagesSlug, questionAgentSlug, usersSlug } from './shared.js';
+import { lookupCalls, messagesSlug, modelPort, questionAgentSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -59,7 +59,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
   let model: StubChatModel;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-turns');
   });
 

@@ -15,6 +15,7 @@ import {
   chatsSlug,
   lookupCalls,
   messagesSlug,
+  modelPort,
   questionAgentSlug,
   turnsSlug,
   usersSlug,
@@ -65,7 +66,7 @@ describe('per-user agent model allowlists', () => {
   let running: Promise<unknown> | undefined;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'model-allowlist');
   });
 

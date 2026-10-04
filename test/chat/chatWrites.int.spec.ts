@@ -10,7 +10,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { chatsSlug, messagesSlug, questionAgentSlug, usersSlug } from './shared.js';
+import { chatsSlug, messagesSlug, modelPort, questionAgentSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -63,7 +63,7 @@ describe('chat writes: a chat is written only from its home', () => {
   let sequence = 0;
 
   beforeAll(async () => {
-    model = await startStubChatModel(3988);
+    model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-writes');
     booted.frogbot.config.pieces.instances.push(slackSupport);
     owner = await signUp('owner@chat-writes.test');

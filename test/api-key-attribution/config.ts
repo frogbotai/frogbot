@@ -4,8 +4,9 @@ import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.
 import type { CaptureStorage } from '../../packages/plugins/plugin-capture/src/index.js';
 import { capturePlugin } from '../../packages/plugins/plugin-capture/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 
-export const upstreamPort = 3989;
+export const upstreamPort = testPort(3989);
 
 export const captureBlobs = new Map<string, Uint8Array>();
 

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { testPort, testPortOffset } from '../../__helpers/shared/testPorts';
+
 const originalArgv = process.argv;
 const allProjects = [
   'blank',
@@ -12,7 +14,7 @@ const allProjects = [
 ];
 
 const dependencyURLs: Record<string, string[]> = {
-  'chat-assets': ['http://localhost:3126/health'],
+  'chat-assets': [`http://localhost:${testPort(3126)}/health`],
 };
 
 // The plugin-wrappers fixture has no front-end page, so its server is ready once /admin answers.
@@ -118,5 +120,16 @@ describe('browser project servers', () => {
 
     expect(expectedURLs).not.toContain(undefined);
     expect(servers.map((server) => server?.url)).toEqual(expectedURLs);
+  });
+
+  it('serves projects from offset ports and shares the offset with servers and workers', async () => {
+    process.argv = [process.execPath, 'playwright', 'test'];
+    vi.resetModules();
+
+    const { default: config } = await import('../../browser/playwright.config.js');
+    const blank = config.projects?.find((project) => project.name === 'blank');
+
+    expect(blank?.use?.baseURL).toBe(`http://localhost:${testPort(3111)}`);
+    expect(process.env.FROGBOT_TEST_PORT_OFFSET).toBe(String(testPortOffset));
   });
 });

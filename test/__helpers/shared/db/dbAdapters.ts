@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url';
 
 import fs from 'fs';
 
+import { testDatabaseName } from '../testPorts.js';
+import { testPostgresURL } from './postgres.js';
+
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
@@ -35,7 +38,7 @@ export const dbAdapters = {
 
   export const databaseAdapter = mongooseAdapter({
     ensureIndexes: true,
-    url: process.env.MONGODB_URI || 'mongodb://localhost:27018/frogbot-test?directConnection=true&replicaSet=rs0',
+    url: process.env.MONGODB_URI || 'mongodb://localhost:27018/${testDatabaseName('frogbot-test')}?directConnection=true&replicaSet=rs0',
   })`,
   },
   postgres: {
@@ -45,7 +48,7 @@ export const dbAdapters = {
 
   export const databaseAdapter = postgresAdapter({
     pool: {
-      connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL || 'postgres://frogbot:frogbot@localhost:5433/frogbot',
+      connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL || '${testPostgresURL}',
     },
   })`,
   },

@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { createTelegramBot } from '../../packages/pieces/piece-telegram-bot/dist/index.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 import {
   buttonData,
   callbackUpdate,
@@ -26,7 +27,7 @@ import {
 import { startPieceServer } from './nativePieceServers.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
-const modelPort = 4095;
+const modelPort = testPort(4095);
 const queue = 'frogbot-channel:support:telegramBot';
 const answerers = new Set([String(telegramUsers.frog.id), String(telegramUsers.toad.id)]);
 

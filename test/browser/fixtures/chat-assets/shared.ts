@@ -6,6 +6,6 @@ export const usersSlug = 'users';
 export const agentSlug = 'attachment-reader';
 export const textReaderName = 'Text Reader';
 export const chatPicksPreference = 'frogbot-chat-picks';
-export const providerURL = 'http://localhost:3126';
+export const providerURL = `http://localhost:${Number(process.env.FROGBOT_TEST_PORT_OFFSET ?? 0) + 3126}`;
 export const imageBase64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aJ1sAAAAASUVORK5CYII=';

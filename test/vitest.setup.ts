@@ -6,6 +6,7 @@ import {
   generateDatabaseAdapter,
   getCurrentDatabaseAdapter,
 } from './__helpers/shared/db/dbAdapters.js';
+import { createTestPostgresDatabase } from './__helpers/shared/db/postgres.js';
 
 process.env.PAYLOAD_DISABLE_ADMIN = 'true';
 process.env.PAYLOAD_DROP_DATABASE = 'true';
@@ -17,6 +18,11 @@ if (!process.env.FROGBOT_DATABASE) {
 const adapter = getCurrentDatabaseAdapter();
 
 await assertDbReachable(adapter);
+
+if (adapter === 'postgres' && !process.env.POSTGRES_URL && !process.env.DATABASE_URL) {
+  await createTestPostgresDatabase();
+}
+
 generateDatabaseAdapter(adapter);
 
 /**

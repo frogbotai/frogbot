@@ -16,6 +16,7 @@ import {
   encodeQuestionId,
 } from '../../packages/pieces/piece-discord/src/questions/ids.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
+import { testPort } from '../__helpers/shared/testPorts.js';
 import {
   componentClick,
   type DiscordApi,
@@ -30,7 +31,7 @@ import {
 import { startPieceServer } from './nativePieceServers.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
-const MODEL_PORT = 4094;
+const MODEL_PORT = testPort(4094);
 const CHANNEL_TASK = 'frogbot-run-channel-message';
 
 type ChannelJob = {

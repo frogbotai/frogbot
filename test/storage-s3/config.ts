@@ -3,7 +3,15 @@ import type { CollectionConfig } from 'frogbot';
 import { todoTools } from 'frogbot/tools';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
-import { agentSlug, bucket, chatsSlug, mediaSlug, s3ClientConfig, usersSlug } from './shared.js';
+import {
+  agentSlug,
+  bucket,
+  chatsSlug,
+  mediaSlug,
+  modelPort,
+  s3ClientConfig,
+  usersSlug,
+} from './shared.js';
 
 const Users: CollectionConfig = {
   slug: usersSlug,
@@ -33,7 +41,7 @@ export default await buildTestConfig({
     providers: {
       test: {
         type: 'openai-compatible',
-        baseUrl: 'http://127.0.0.1:3988/v1',
+        baseUrl: `http://127.0.0.1:${modelPort}/v1`,
         apiKey: 'test-key',
         models: [
           {

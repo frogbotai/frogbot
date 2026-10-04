@@ -3,18 +3,23 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig, devices } from '@playwright/test';
 
+import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
+
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
 const richTextFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'rich-text');
 const pluginSeoFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'plugin-wrappers');
-const blankPort = 3111;
-const customFieldPort = 3112;
-const richTextPort = 3113;
-const livePreviewPort = 3114;
-const chatAssetsPort = 3125;
-const chatProviderPort = 3126;
-const questionPort = 3127;
-const pluginSeoPort = 3128;
+const blankPort = testPort(3111);
+const customFieldPort = testPort(3112);
+const richTextPort = testPort(3113);
+const livePreviewPort = testPort(3114);
+const chatAssetsPort = testPort(3125);
+const chatProviderPort = testPort(3126);
+const questionPort = testPort(3127);
+const pluginSeoPort = testPort(3128);
+
+process.env.FROGBOT_TEST_PORT_OFFSET = String(testPortOffset);
+
 const selectedProjects = new Set<string>();
 let collectingProjects = false;
 
