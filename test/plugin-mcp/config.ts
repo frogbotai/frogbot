@@ -1,7 +1,7 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { mcpPlugin } from '@frogbotai/plugin-mcp';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import type { CollectionConfig } from 'frogbot';
+import { type CollectionConfig, moneyField } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
@@ -60,7 +60,15 @@ const Users: CollectionConfig = {
 const Posts: CollectionConfig = {
   slug: postsSlug,
   access: openAccess,
-  fields: [{ name: 'title', type: 'text' }],
+  fields: [
+    { name: 'title', type: 'text' },
+    moneyField({ name: 'price', min: 0, admin: { description: 'Retail price' } }),
+    {
+      name: 'cost',
+      type: 'group',
+      fields: [moneyField({ name: 'wholesale', currency: 'EUR' })],
+    },
+  ],
 };
 
 export default await buildTestConfig({
@@ -69,7 +77,7 @@ export default await buildTestConfig({
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
     mcpPlugin({
-      collections: { [postsSlug]: { enabled: { find: true } } },
+      collections: { [postsSlug]: { enabled: { find: true, create: true, update: true } } },
       mcp: {
         tools: [
           {

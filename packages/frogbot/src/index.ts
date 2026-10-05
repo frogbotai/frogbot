@@ -37,6 +37,7 @@ export type {
   ConnectionsConfig,
   SanitizedConnectionsConfig,
 } from './connections/types.js';
+export { moneyField } from './fields/baseFields/money/index.js';
 export { slugField } from './fields/baseFields/slug/index.js';
 export type { FrogBot as FrogBotInstance } from './frogbot.js';
 export { getCachedFrogBot, getFrogBot } from './getFrogBot.js';
@@ -473,6 +474,7 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
+export type { MoneyFieldArgs } from './fields/baseFields/money/index.js';
 export type { SlugField } from './fields/baseFields/slug/index.js';
 export type {
   ArrayField,

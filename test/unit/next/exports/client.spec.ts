@@ -25,4 +25,14 @@ describe('@frogbotai/next client export', () => {
   it('exports the field cell', () => {
     expect(source).toContain("export { FieldCell } from '../fields/FieldCell/index.client.js'");
   });
+
+  it('exports the money cell and field', () => {
+    expect(source).toContain(
+      "export { MoneyCell, MoneyField } from '../fields/Money/index.client.js'",
+    );
+  });
+
+  it('does not export the CostUSD components', () => {
+    expect(source).not.toContain('CostUSD');
+  });
 });

@@ -7,14 +7,8 @@ vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({
     config: { routes: { admin: '/admin', api: '/api' } },
   }),
+  useTranslation: () => ({ i18n: { language: 'en' } }),
 }));
-
-vi.mock('@frogbotai/next/client', async () => {
-  const { formatCostUSD } =
-    await import('../../../../packages/next/src/elements/CostUSD/index.client.js');
-
-  return { formatCostUSD };
-});
 
 const modelRows = [
   {
@@ -129,5 +123,37 @@ describe('UsageReports', () => {
     expect(screen.getByText('Small').closest('tr')?.textContent).toContain('$0.0034');
     expect(screen.getByText('Large').closest('tr')?.textContent).toContain('$0.50');
     expect(container.querySelector('.usage-reports__totals')?.textContent).toContain('$0.50 cost');
+  });
+
+  it('shows a zero cost total when there is no usage', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          groupBy: 'model',
+          from: '2026-01-01T00:00:00.000Z',
+          to: '2026-02-01T00:00:00.000Z',
+          rows: [],
+          totals: {
+            requestCount: 0,
+            inputTokens: 0,
+            outputTokens: 0,
+            cachedInputTokens: 0,
+            cacheWriteTokens: 0,
+            reasoningTokens: 0,
+            totalTokens: 0,
+            costUSD: 0,
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    vi.stubGlobal('fetch', fetch);
+
+    const { container } = render(<UsageReports />);
+
+    await waitFor(() => expect(screen.getByText('No usage in this date range.')).toBeTruthy());
+
+    expect(container.querySelector('.usage-reports__totals')?.textContent).toContain('$0.00 cost');
   });
 });

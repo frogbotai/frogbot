@@ -1,0 +1,196 @@
+---
+title: Money Field
+sidebarTitle: Money
+description: Store amounts of money as numbers and show them in a currency everywhere.
+keywords: money, currency, price, cost, number, fields, collections, configuration
+---
+
+`moneyField` returns a [Number field](/fields/number) that stores an amount in one currency. The admin panel shows the amount formatted in that currency and edits it in a money input, and agents and generated types are told what the number means. You don't name any components or write a formatter.
+
+```ts
+import { moneyField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Products: CollectionConfig = {
+  slug: 'products',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    moneyField({ name: 'price', label: 'Price', currency: 'EUR', min: 0, required: true }),
+  ],
+}
+```
+
+The result is a plain `number` field, so it works anywhere a field does, including inside groups, arrays, tabs and blocks.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `currency` | `string` | `'USD'` | Three-letter uppercase ISO 4217 currency code, such as `'EUR'` or `'JPY'`. Lowercase codes are rejected. |
+| `precision` | `'auto' \| number` | `'auto'` | Decimal places to show. `'auto'` uses the currency's standard decimals and keeps small amounts readable; a whole number from `0` to `100` always shows exactly that many. See [Display and editing](#display-and-editing). |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `min` | `number` | — | Minimum accepted value, checked by the built-in validator. Also set on the input and passed to agents. |
+| `max` | `number` | — | Maximum accepted value, checked by the built-in validator. Also set on the input and passed to agents. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value in the default validation. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `number` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the money field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+A money field holds one amount, so `hasMany`, `minRows` and `maxRows` are not accepted. TypeScript rejects them, and `hasMany: true` from JavaScript fails at startup.
+
+Invalid options fail when the config is built, with an error naming the field:
+
+```text
+moneyField "price": currency "usd" must be a three-letter uppercase ISO 4217 code
+moneyField "price": precision must be 'auto' or a whole number from 0 to 100, got 2.5
+moneyField "price": hasMany is not supported
+```
+
+## Admin options
+
+Money fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `step` | `number` | Any value | Amount the browser controls add or subtract. Without it the input accepts any decimal, such as `12.5` or `0.000173`. |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Accepted for compatibility with Number fields. The money input does not use it. |
+
+FrogBot stores the field's currency and precision in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display and editing
+
+With `precision: 'auto'`, amounts of at least one minor unit of the currency (one cent for USD, ¥1 for JPY, 0.001 for BHD) use the currency's standard decimals. Smaller amounts that aren't zero show up to 3 significant digits, so a real amount never reads as zero. Negative amounts follow the same rule by size.
+
+| Value | Currency | Shown |
+| --- | --- | --- |
+| `3.25` | USD | `$3.25` |
+| `1234.5` | USD | `$1,234.50` |
+| `0.016455` | USD | `$0.02` |
+| `0.00017270000000000002` | USD | `$0.000173` |
+| `0.009996` | USD | `$0.01` |
+| `0` | USD | `$0.00` |
+| `-3.25` / `-0.000173` | USD | `-$3.25` / `-$0.000173` |
+| `1234.5` / `0.5` | JPY | `¥1,235` / `¥0.5` |
+| `1.5` / `0.0004` | BHD | `BHD 1.500` / `BHD 0.0004` |
+| `1234.5`, German admin | USD | `1.234,50 $` |
+
+A number `precision` always shows exactly that many decimals: `precision: 4` shows `1.5` as `$1.5000`, and `precision: 0` shows `1234.5` as `$1,235`.
+
+<Warning>
+  A fixed precision can show small amounts as zero. With `precision: 2`, `0.000173` shows as `$0.00`. Use `'auto'` for values such as AI costs.
+</Warning>
+
+Amounts are formatted in the admin's selected language, so the same value shows as `$1,234.50` in English and `1.234,50 $` in German. The currency always comes from the field.
+
+An empty value (missing, `null`, or not a number) shows nothing: no placeholder and no dash. A stored `0` is an amount and shows as `$0.00`.
+
+Money looks the same in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. In the document view, an editable money field is a number input with the currency symbol before it. Type the amount in whole units, such as `12.5` for $12.50; it is saved as typed, and clearing the input saves an empty value. The label, description, validation errors, `min`, `max`, `required` and a custom `validate` work as on a Number field.
+
+When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted amount as text with no input. An empty value shows no amount.
+
+If a money field is the first List column, a row with an empty value has no link to open the document from that column.
+
+## Stored value
+
+Amounts are stored as decimals in whole currency units: `1.5` means $1.50, and `0.000173` is valid. Nothing is rounded on save. The REST API, GraphQL and the Local API return a plain number, and the generated TypeScript type is the same as a Number field's, such as `price?: number | null`.
+
+## Agents and generated types
+
+A money field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types). The text names the field's currency:
+
+```text
+Decimal amount in USD, in whole units, not minor units such as cents
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the money text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+moneyField({ name: 'wholesaleCost', admin: { description: 'Wholesale cost before VAT' } })
+```
+
+```text
+Wholesale cost before VAT (decimal amount in USD, in whole units, not minor units such as cents)
+```
+
+A function `admin.description` isn't copied, so the money text stands alone. The text is English only.
+
+Generated types show the text as a comment above the property. In the MCP plugin's create and update tools, `min` and `max` also become the value's `minimum` and `maximum`, so agents see the allowed range. Generated types don't include limits, and virtual fields don't appear in MCP tool inputs.
+
+To change the text, add your own `typescriptSchema` entry. It runs after the money field's entry, so it can adjust or replace the description:
+
+```ts
+moneyField({
+  name: 'wholesaleCost',
+  typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Cost in USD, excluding VAT' })],
+})
+```
+
+```text
+Cost in USD, excluding VAT
+```
+
+## Formatting in your code
+
+`formatMoney` is the formatter money fields use. Import it from `frogbot/fields`, which is safe to use in browser code:
+
+```tsx
+'use client'
+
+import { formatMoney } from 'frogbot/fields'
+
+export function Total({ amount }: { amount: number | null }) {
+  return <span>{formatMoney({ value: amount, currency: 'EUR', locale: 'de-DE' })}</span>
+}
+```
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `unknown` | Required | The amount in whole units. Anything other than a finite number is treated as empty. |
+| `currency` | `string` | `'USD'` | ISO 4217 currency code. |
+| `precision` | `'auto' \| number` | `'auto'` | Same as the field's `precision` option. |
+| `locale` | `string` | `'en-US'` | Language and region used for digits, separators and symbol placement. |
+
+`formatMoney` returns the formatted string, or `''` for an empty value. `frogbot/fields` also exports the `FormatMoneyArgs`, `MoneyKind` and `MoneyPrecision` types.
+
+## Custom components
+
+The money cell and input are `MoneyCell` and `MoneyField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the money input as they do on a Number field.
+
+A custom Cell can draw the standard money display inside its own markup with [`FieldCell`](/fields/overview#cell):
+
+```tsx
+'use client'
+
+import { FieldCell } from '@frogbotai/next/client'
+import type { DefaultCellComponentProps } from 'frogbot'
+
+export function PriceCell(props: DefaultCellComponentProps) {
+  return (
+    <strong>
+      <FieldCell {...props} />
+    </strong>
+  )
+}
+```
+
+```ts
+moneyField({
+  name: 'price',
+  admin: { components: { Cell: '/components/PriceCell#PriceCell' } },
+})
+```
+
+As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard money display.

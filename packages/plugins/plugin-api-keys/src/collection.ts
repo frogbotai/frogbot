@@ -1,10 +1,11 @@
-import type {
-  Access,
-  CollectionConfig,
-  CollectionView,
-  Endpoint,
-  Field,
-  FrogBotRequest,
+import {
+  type Access,
+  type CollectionConfig,
+  type CollectionView,
+  type Endpoint,
+  type Field,
+  type FrogBotRequest,
+  moneyField,
 } from 'frogbot';
 
 import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
@@ -195,18 +196,11 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     },
     ...(usageCollection
       ? [
-          {
+          moneyField({
             name: 'totalCostUSD',
-            type: 'number' as const,
             label: 'Total Cost (USD)',
             virtual: true,
-            admin: {
-              readOnly: true,
-              components: {
-                Cell: '@frogbotai/next/client#CostUSDCell',
-                Field: '@frogbotai/next/client#CostUSDField',
-              },
-            },
+            admin: { readOnly: true },
             hooks: {
               afterRead: [
                 async ({ data, req }: { data?: Record<string, unknown>; req: FrogBotRequest }) => {
@@ -226,7 +220,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
                 },
               ],
             },
-          },
+          }),
         ]
       : []),
     {

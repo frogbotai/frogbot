@@ -34,7 +34,7 @@ describe('resolveUsageCollection', () => {
     }
   });
 
-  it('labels costUSD and renders it with the shared cost cell and field', () => {
+  it('makes costUSD a money field', () => {
     const base = resolveUsageCollection(makeConfig()).collections.at(-1);
     const marked = resolveUsageCollection(
       makeConfig({ collections: [{ slug: 'ai-usage', usageLog: true, fields: [] }] }),
@@ -46,14 +46,19 @@ describe('resolveUsageCollection', () => {
       );
 
       expect(costUSD).toMatchObject({
+        type: 'number',
         label: 'Cost (USD)',
+        defaultValue: 0,
+        required: true,
         admin: {
           components: {
-            Cell: '@frogbotai/next/client#CostUSDCell',
-            Field: '@frogbotai/next/client#CostUSDField',
+            Cell: '@frogbotai/next/client#FieldCell',
+            Field: '@frogbotai/next/client#MoneyField',
           },
+          custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
         },
       });
+      expect(costUSD && 'typescriptSchema' in costUSD && costUSD.typescriptSchema).toHaveLength(1);
     }
   });
 

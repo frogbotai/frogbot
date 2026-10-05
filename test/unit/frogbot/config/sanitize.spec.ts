@@ -1363,7 +1363,7 @@ describe('frogbot sanitize', () => {
     );
   });
 
-  it('gives Monthly Spend the shared cost cell and field', async () => {
+  it('makes Monthly Budget and Monthly Spend money fields', async () => {
     const result = sanitize(
       makeConfig({
         collections: [{ slug: 'posts', fields: [] }],
@@ -1373,19 +1373,23 @@ describe('frogbot sanitize', () => {
 
     const payloadConfig = await result._internal.payloadConfig;
     const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+    const budget = users?.fields.find((field) => 'name' in field && field.name === 'monthlyBudget');
     const spend = users?.fields.find(
       (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
     );
 
-    expect(spend).toMatchObject({
-      admin: {
-        readOnly: true,
-        components: {
-          Cell: '@frogbotai/next/client#CostUSDCell',
-          Field: '@frogbotai/next/client#CostUSDField',
-        },
+    const money = {
+      components: {
+        Cell: '@frogbotai/next/client#FieldCell',
+        Field: '@frogbotai/next/client#MoneyField',
       },
-    });
+      custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
+    };
+
+    expect(budget).toMatchObject({ type: 'number', min: 0, admin: money });
+    expect(budget && 'admin' in budget && budget.admin?.readOnly).toBeFalsy();
+    expect(budget).not.toHaveProperty('access');
+    expect(spend).toMatchObject({ type: 'number', admin: { ...money, readOnly: true } });
   });
 
   it("keeps an app's own Monthly Spend admin components", async () => {

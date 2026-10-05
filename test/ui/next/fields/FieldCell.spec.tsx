@@ -6,7 +6,11 @@ const { DefaultCell } = vi.hoisted(() => ({
   DefaultCell: vi.fn((_props: unknown) => <span data-testid="default-cell" />),
 }));
 
-vi.mock('@payloadcms/ui', () => ({ DefaultCell }));
+vi.mock('@payloadcms/ui', () => ({
+  DefaultCell,
+  useTranslation: () => ({ i18n: { language: 'en' } }),
+  withCondition: <T,>(Component: T) => Component,
+}));
 
 const { FieldCell } =
   await import('../../../../packages/next/src/fields/FieldCell/index.client.js');
@@ -15,6 +19,12 @@ const channelField = {
   name: 'channel',
   type: 'text',
   admin: { custom: { frogbot: { kind: { type: 'channel' } } } },
+} as ClientField;
+
+const priceField = {
+  name: 'price',
+  type: 'number',
+  admin: { custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } } },
 } as ClientField;
 
 const titleField = { name: 'title', type: 'text' } as ClientField;
@@ -51,6 +61,12 @@ describe('FieldCell', () => {
     expect(DefaultCell).not.toHaveBeenCalled();
   });
 
+  it('formats a money kind before the default cell', () => {
+    render(<FieldCell {...cell(priceField, 0.016455)} />);
+
+    expect(lastCellData()).toBe('$0.02');
+  });
+
   it('passes every prop of an unmarked field to the default cell', () => {
     const props: DefaultCellComponentProps = {
       cellData: 'Write the report',
@@ -73,7 +89,7 @@ describe('FieldCell', () => {
   });
 
   it.each([
-    ['an unknown kind', { custom: { frogbot: { kind: { type: 'money' } } } }],
+    ['an unknown kind', { custom: { frogbot: { kind: { type: 'rating' } } } }],
     ['a prototype-key kind', { custom: { frogbot: { kind: { type: 'toString' } } } }],
     ['a string kind', { custom: { frogbot: { kind: 'channel' } } }],
     ['an empty kind', { custom: { frogbot: { kind: {} } } }],

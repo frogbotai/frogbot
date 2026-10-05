@@ -137,7 +137,13 @@ export interface Account {
   id: number;
   modelAccess?: ('all' | 'selected') | null;
   models?: ('test/allowed' | 'test/blocked')[] | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   monthlyBudget?: number | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -191,6 +197,9 @@ export interface Credential {
   tokenHash: string;
   lastUsedAt?: string | null;
   revokedAt?: string | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   totalCostUSD?: number | null;
   environment?: string | null;
   tenant?: string | null;
@@ -226,6 +235,9 @@ export interface UsageLog {
   cacheWriteTokens?: number | null;
   reasoningTokens?: number | null;
   totalTokens: number;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   costUSD: number;
   finishReason?: string | null;
   requestedAt: string;

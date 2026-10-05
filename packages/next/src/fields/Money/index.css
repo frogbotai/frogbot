@@ -1,0 +1,37 @@
+@layer frogbot {
+  .money-field__control {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .money-field__currency {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    padding: 0 0.75rem;
+    border: 1px solid var(--theme-base-300);
+    border-inline-end: 0;
+    border-start-start-radius: var(--fb-radius-lg);
+    border-end-start-radius: var(--fb-radius-lg);
+    background-color: var(--theme-base-100);
+    color: var(--theme-base-600);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+    white-space: nowrap;
+  }
+
+  .money-field__control .fb-input {
+    min-width: 0;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+
+  .money-field.error .money-field__currency,
+  .money-field.error .fb-input {
+    border-color: var(--color-destructive);
+  }
+
+  .money-field__value {
+    font-variant-numeric: tabular-nums;
+  }
+}

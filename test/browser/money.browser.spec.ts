@@ -20,7 +20,7 @@ test.afterEach(async ({ page }) => {
   expect((await page.request.delete('/api/browser/costs')).ok()).toBe(true);
 });
 
-test('Usage Logs heads the cost column "Cost (USD)" and shows dollars', async ({ page }) => {
+test('Usage Logs heads the cost column "Cost (USD)" and shows money amounts', async ({ page }) => {
   await page.goto(`/collections/${usageLogsSlug}?where[requestId][like]=browser-cost`);
 
   await expect(page.locator('th#heading-costUSD')).toHaveText('Cost (USD)');
@@ -33,7 +33,7 @@ test('Usage Logs heads the cost column "Cost (USD)" and shows dollars', async ({
   await expect(key.locator('td.cell-costUSD')).toHaveText('$0.02');
 });
 
-test('a usage log shows its cost as read-only dollars', async ({ page }) => {
+test('a usage log shows its cost as a read-only money amount', async ({ page }) => {
   await page.goto(`/collections/${usageLogsSlug}/${seeded.usageLogIds.small}`);
 
   await expect(page.locator('.field-type.number', { hasText: 'Cost (USD)' })).toContainText(
@@ -42,7 +42,7 @@ test('a usage log shows its cost as read-only dollars', async ({ page }) => {
   await expect(page.locator('input[name="costUSD"]')).toHaveCount(0);
 });
 
-test('API Keys shows Total Cost (USD) at two decimals', async ({ page }) => {
+test('API Keys shows Total Cost (USD) as a money amount at two decimals', async ({ page }) => {
   await page.goto(`/collections/${apiKeysSlug}`);
 
   await expect(page.locator('th#heading-totalCostUSD')).toHaveText('Total Cost (USD)');
@@ -52,7 +52,9 @@ test('API Keys shows Total Cost (USD) at two decimals', async ({ page }) => {
   await expect(row.locator('td.cell-totalCostUSD')).toHaveText('$0.02');
 });
 
-test("a user's Monthly Spend shows dollars and Monthly Budget stays editable", async ({ page }) => {
+test("a user's Monthly Spend shows a read-only money amount and Monthly Budget stays editable", async ({
+  page,
+}) => {
   await page.goto(`/collections/${usersSlug}/${seeded.userId}`);
 
   await expect(
@@ -64,4 +66,59 @@ test("a user's Monthly Spend shows dollars and Monthly Budget stays editable", a
 
   await expect(budget).toBeVisible();
   await expect(budget).toBeEditable();
+});
+
+test("a user's Monthly Budget saves a money amount, shows it in the List, and clears", async ({
+  page,
+}) => {
+  const userPath = `/collections/${usersSlug}/${seeded.userId}`;
+  const listPath = `/collections/${usersSlug}?columns=${encodeURIComponent('["email","monthlyBudget"]')}`;
+  const budgetField = page.locator('.money-field', { hasText: 'Monthly Budget (USD)' });
+  const budget = page.locator('input[name="monthlyBudget"]');
+  const listCell = page
+    .getByRole('row')
+    .filter({ has: page.locator(`a[href$="${userPath}"]`) })
+    .locator('td.cell-monthlyBudget');
+
+  const save = async () => {
+    const saved = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        new URL(response.url()).pathname === `/api/${usersSlug}/${seeded.userId}`,
+    );
+
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+    expect((await saved).ok()).toBe(true);
+  };
+
+  const storedBudget = async () => {
+    const response = await page.request.get(`/api/${usersSlug}/${seeded.userId}`);
+
+    return (await response.json()).monthlyBudget;
+  };
+
+  await page.goto(userPath);
+
+  await expect(budgetField.locator('.money-field__currency')).toHaveText('$');
+  await expect(page.getByText('Decimal amount')).toHaveCount(0);
+
+  await budget.fill('12.5');
+  await save();
+
+  expect(await storedBudget()).toBe(12.5);
+
+  await page.goto(listPath);
+
+  await expect(listCell).toHaveText('$12.50');
+
+  await page.goto(userPath);
+  await budget.fill('');
+  await save();
+
+  expect(await storedBudget()).toBeNull();
+
+  await page.goto(listPath);
+
+  await expect(listCell).toHaveText('');
 });

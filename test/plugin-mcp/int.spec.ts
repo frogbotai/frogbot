@@ -16,6 +16,7 @@ import {
   customStrategyHeader,
   customStrategyName,
   mcpEndpoint,
+  postsSlug,
   strategyFailureMessage,
   testCredentials,
   unknownApiKeyToken,
@@ -24,14 +25,24 @@ import {
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const configuredTools = ['createPosts', 'updatePosts', 'findPosts', actorToolName];
+
 type MeBody = {
   user: { id: string | number; email: string; _strategy: string } | null;
+};
+
+type InputSchema = {
+  type?: string | string[];
+  description?: string;
+  minimum?: number;
+  anyOf?: InputSchema[];
+  properties?: Record<string, InputSchema>;
 };
 
 type ToolsListBody = {
   jsonrpc: '2.0';
   id: number;
-  result: { tools: Array<{ name: string }> };
+  result: { tools: Array<{ name: string; inputSchema: InputSchema }> };
 };
 
 type ToolCallBody = {
@@ -125,6 +136,19 @@ describe('MCP plugin integration', () => {
     );
   }
 
+  function callTool(name: string, args: Record<string, unknown>) {
+    return booted.restClient.post<ToolCallBody | string>(
+      mcpEndpoint,
+      { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name, arguments: args } },
+      {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          Authorization: `Bearer ${apiKeyToken}`,
+        },
+      },
+    );
+  }
+
   it('POST /api/mcp lists configured tools with a persisted API key', async () => {
     const response = await listTools(apiKeyToken);
 
@@ -133,7 +157,71 @@ describe('MCP plugin integration', () => {
     const body = parseMcpResponse<ToolsListBody>(response.body);
 
     expect(body).toMatchObject({ jsonrpc: '2.0', id: 1 });
-    expect(body.result.tools.map(({ name }) => name)).toEqual(['findPosts', actorToolName]);
+    expect(body.result.tools.map(({ name }) => name)).toEqual(configuredTools);
+  });
+
+  it('POST /api/mcp describes money fields in the create and update tool schemas', async () => {
+    const { tools } = parseMcpResponse<ToolsListBody>((await listTools(apiKeyToken)).body).result;
+
+    for (const name of ['createPosts', 'updatePosts']) {
+      const properties = tools.find((tool) => tool.name === name)?.inputSchema.properties ?? {};
+      const price = properties.price ?? {};
+      const wholesale = properties.cost?.properties?.wholesale ?? {};
+      const number = price.anyOf?.find(({ type }) => type === 'number') ?? price;
+
+      expect(price.description).toBe(
+        'Retail price (decimal amount in USD, in whole units, not minor units such as cents)',
+      );
+      expect(number.minimum).toBe(0);
+      expect(wholesale.description).toBe(
+        'Decimal amount in EUR, in whole units, not minor units such as cents',
+      );
+    }
+  });
+
+  it('POST /api/mcp converts money field schemas without the permissive fallback', async () => {
+    const warn = vi.spyOn(console, 'warn');
+
+    const response = await listTools(apiKeyToken);
+
+    expect(response.status).toBe(200);
+    expect(warn.mock.calls.flat().map(String).join('\n')).not.toContain('Schema conversion failed');
+  });
+
+  it('POST /api/mcp rejects a negative money amount without saving', async () => {
+    const response = await callTool('createPosts', { title: 'Negative', price: -3 });
+
+    expect(response.status).toBe(200);
+
+    const { result } = parseMcpResponse<ToolCallBody>(response.body);
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([
+      {
+        type: 'text',
+        text: expect.stringMatching(/^MCP error -32602: Input validation error: .*>=0 at price$/),
+      },
+    ]);
+
+    const { totalDocs } = await booted.frogbot.count({
+      collection: postsSlug,
+      overrideAccess: true,
+    });
+
+    expect(totalDocs).toBe(0);
+  });
+
+  it('POST /api/mcp saves a decimal money amount', async () => {
+    const response = await callTool('createPosts', { title: 'Decimal', price: 12.5 });
+
+    expect(response.status).toBe(200);
+    expect(parseMcpResponse<ToolCallBody>(response.body).result.isError).not.toBe(true);
+
+    const { docs } = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
+
+    expect(docs.map(({ title, price }) => ({ title, price }))).toEqual([
+      { title: 'Decimal', price: 12.5 },
+    ]);
   });
 
   it('POST /api/mcp uses the API-key actor when an earlier custom strategy authenticates the engine request', async () => {
@@ -157,7 +245,7 @@ describe('MCP plugin integration', () => {
     expect(tools.status).toBe(200);
     expect(
       parseMcpResponse<ToolsListBody>(tools.body).result.tools.map(({ name }) => name),
-    ).toEqual(['findPosts', actorToolName]);
+    ).toEqual(configuredTools);
 
     const response = await booted.restClient.post<ToolCallBody | string>(
       mcpEndpoint,

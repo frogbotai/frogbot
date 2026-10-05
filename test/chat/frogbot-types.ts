@@ -145,7 +145,13 @@ export interface User {
         | 'test/writer'
       )[]
     | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   monthlyBudget?: number | null;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -288,6 +294,9 @@ export interface UsageLog {
   cacheWriteTokens?: number | null;
   reasoningTokens?: number | null;
   totalTokens: number;
+  /**
+   * Decimal amount in USD, in whole units, not minor units such as cents
+   */
   costUSD: number;
   finishReason?: string | null;
   requestedAt: string;

@@ -122,11 +122,13 @@ describe('API keys collection', () => {
       admin: {
         readOnly: true,
         components: {
-          Cell: '@frogbotai/next/client#CostUSDCell',
-          Field: '@frogbotai/next/client#CostUSDField',
+          Cell: '@frogbotai/next/client#FieldCell',
+          Field: '@frogbotai/next/client#MoneyField',
         },
+        custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
       },
     });
+    expect('typescriptSchema' in field! && field.typescriptSchema).toHaveLength(1);
     expect(collection.admin?.views?.[0]).toMatchObject({
       type: 'list',
       defaultFields: expect.arrayContaining(['totalCostUSD']),
