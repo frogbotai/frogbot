@@ -2,7 +2,7 @@
 title: AI Field
 sidebarTitle: AI
 description: Fill a field automatically with AI from other fields of the same record, and keep it up to date as they change.
-keywords: ai, ai field, generated, summary, classify, category, llm, model, prompt, text, select, fields, collections, configuration
+keywords: ai, ai field, generated, regenerate, bulk, summary, classify, category, llm, model, prompt, text, select, fields, collections, configuration
 ---
 
 `aiField` adds a field that FrogBot fills in with AI. You name the fields it reads and write a prompt. When one of those fields changes, FrogBot asks the model in the background and saves the answer. The admin panel shows when a value is being generated, when it failed, and when someone wrote it by hand.
@@ -186,7 +186,7 @@ await req.frogbot.update({
 })
 ```
 
-This needs update access to the record. Any other status you write is ignored.
+This needs update access to the record. Any other status you write is ignored. To regenerate many records at once, see [Regenerate many records](#regenerate-many-records).
 
 ### Quick edits
 
@@ -224,6 +224,52 @@ On a collection with drafts, a run reads and writes the latest version. A draft'
 ### The job runner
 
 Runs are jobs on the `default` queue. The web server checks for waiting runs once a minute; a [worker](/jobs-queue/workers) can check more often. If web autorun is turned off and no worker runs, values stay generating.
+
+## Regenerate many records
+
+The List's **…** menu has a **Regenerate \<label\>…** entry for each AI field, such as **Regenerate Summary…**. It's shown to users who can update the collection, and not in the trash or in a relationship drawer.
+
+The entry covers the selected rows. With nothing selected, or after **Select all**, it covers every record that matches the List's filters and search.
+
+<Note>
+  A [view's `filter`](/configuration/collections#shared-view-properties) isn't applied, so **All in view** and **Select all** can include records that the view hides. Add the condition as a List filter to leave them out.
+</Note>
+
+The entry opens a dialog that asks which records to run:
+
+| Choice | Runs records that are |
+| --- | --- |
+| **All selected**, or **All in view** with nothing selected | Never run, done, failed or edited by hand. It's the only choice that replaces values edited by hand. |
+| **Only values written by AI** | Done. |
+| **Only failed** | Failed. |
+| **Only never generated** | Never run. This is the default. |
+
+No choice runs records that are generating or whose inputs are all empty. The dialog doesn't count records in advance; choose **Regenerate** to queue the runs, or **Cancel** to change nothing.
+
+When the runs are queued, the dialog closes and a message reports the result:
+
+```text
+Queued 12 runs · 3 records skipped (no inputs, no permission, being edited, or changed)
+```
+
+A record is skipped when its inputs are all empty, you can't update it, another user is editing it, or its status changed after you chose. The selection is cleared, and the queued rows show a spinner and fill in as their runs finish. If queueing stops partway, for example after a network error, the message gives the error and how many runs were already queued; those runs still happen.
+
+Each record is regenerated as a single [Regenerate](#regenerate) would do it:
+
+- Drafts stay drafts, and published records stay published.
+- The runs use the List's locale.
+- The runs belong to you and follow your [AI policy](/ai/overview#user-model-and-budget-policy), including your budget and allowed models. See [Who a run belongs to](#who-a-run-belongs-to). A record your policy refuses, for example after your budget runs out partway, shows the failed state. Choose **Only failed** later to retry it.
+
+Runs go at the job runner's pace. With the defaults, the web server checks once a minute and runs up to 10 waiting runs, so 500 records take roughly an hour. To go faster, run a [worker](/jobs-queue/workers) with a shorter `--cron` and a higher `--limit`.
+
+From the [REST API](/rest-api/overview), the same result is a normal update that writes `pending` to the status field of every record matching a filter. This retries every failed summary:
+
+```text
+PATCH /api/tasks?where[_summary_status][equals]=error
+{ "_summary_status": "pending" }
+```
+
+On a collection with drafts, add `draft=true` and update drafts and published records separately, with a `_status` condition in the filter. For published records, also send `"_status": "published"` so they stay published. A plain update without `draft=true` publishes over any newer draft.
 
 ## Select output
 

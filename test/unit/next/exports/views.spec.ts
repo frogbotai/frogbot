@@ -65,6 +65,7 @@ vi.mock('@payloadcms/ui', () => ({
   SelectMany: () => null,
   StickyToolbar: ({ children }: ComponentProps<'div'>) => children,
   TableColumnsProvider: ({ children }: ComponentProps<'div'>) => children,
+  useAuth: () => ({}),
   useBulkUpload: () => ({
     drawerSlug: 'bulk-upload',
     setCollectionSlug: vi.fn(),

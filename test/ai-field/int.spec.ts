@@ -5,10 +5,21 @@ import { fileURLToPath } from 'node:url';
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  AI_BULK_CHUNK_SIZE,
+  type AIBulkChoice,
+  type AIBulkField,
+  type AIBulkTarget,
+  aiBulkLoadURL,
+  aiBulkRequests,
+  aiBulkResultMessage,
+  aiBulkTargets,
+} from '../../packages/next/src/fields/AI/bulk.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
+import type { RESTResponse } from '../__helpers/shared/FrogBotRESTClient';
 import type { StubChatModel, StubChatRequest } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import config from './config.js';
@@ -21,6 +32,7 @@ import {
   otherModel,
   reportsSlug,
   rollbackTitle,
+  sharedTitle,
   tasksSlug,
   usageLogsSlug,
   usersSlug,
@@ -186,6 +198,25 @@ describe('aiField runs', () => {
     await vi.waitFor(() => expect(model.titleRequests).toHaveLength(1), waitFor);
 
     return { release: gate.resolve, run };
+  }
+
+  function findArticle(id: Doc['id'], args: Record<string, unknown> = {}): Promise<Doc> {
+    return booted.frogbot.findByID({
+      collection: articlesSlug,
+      id,
+      depth: 0,
+      ...args,
+    }) as Promise<unknown> as Promise<Doc>;
+  }
+
+  async function lockTask(id: Doc['id'], user: Doc): Promise<void> {
+    await booted.payload.create({
+      collection: 'payload-locked-documents',
+      data: {
+        document: { relationTo: tasksSlug, value: id },
+        user: { relationTo: usersSlug, value: user.id },
+      } as never,
+    });
   }
 
   describe('queueing', () => {
@@ -482,13 +513,7 @@ describe('aiField runs', () => {
       const other = await createUser('editor');
       const task = await createTask({ notes: 'Paint the fence', summary: 'Mine' });
 
-      await booted.payload.create({
-        collection: 'payload-locked-documents',
-        data: {
-          document: { relationTo: tasksSlug, value: task.id },
-          user: { relationTo: usersSlug, value: other.id },
-        } as never,
-      });
+      await lockTask(task.id, other);
 
       const response = await patchTask(task.id, { _summary_status: 'pending' }, headers);
 
@@ -516,15 +541,6 @@ describe('aiField runs', () => {
   });
 
   describe('locales and drafts', () => {
-    function findArticle(id: Doc['id'], args: Record<string, unknown> = {}): Promise<Doc> {
-      return booted.frogbot.findByID({
-        collection: articlesSlug,
-        id,
-        depth: 0,
-        ...args,
-      }) as Promise<unknown> as Promise<Doc>;
-    }
-
     it('a French save writes only the French summary', async () => {
       const article = (await booted.frogbot.create({
         collection: articlesSlug,
@@ -848,6 +864,527 @@ describe('aiField runs', () => {
         summary: 'Generated later',
         _summary_status: 'done',
       });
+    });
+  });
+
+  describe('bulk regenerate', () => {
+    type BulkCollection = {
+      collection: string;
+      drafts: boolean;
+      field: AIBulkField;
+      locale: string;
+    };
+
+    type BulkArgs = BulkCollection & { choice: AIBulkChoice; headers: Record<string, string> };
+
+    type BulkWhere = Parameters<typeof aiBulkLoadURL>[0]['where'];
+
+    type BulkResponse = { docs: Doc[]; errors: unknown[] };
+
+    const tasks: BulkCollection = {
+      collection: tasksSlug,
+      drafts: false,
+      field: { inputs: ['title', 'notes', 'secret'], label: 'Summary', name: 'summary' },
+      locale: 'en',
+    };
+
+    const articles: BulkCollection = {
+      collection: articlesSlug,
+      drafts: true,
+      field: { inputs: ['body'], label: 'Summary', name: 'summary' },
+      locale: 'en',
+    };
+
+    function writeSummary({
+      collection,
+      data,
+      draft,
+      id,
+      locale,
+    }: {
+      collection: string;
+      data: Record<string, unknown>;
+      draft?: boolean;
+      id: Doc['id'];
+      locale?: string;
+    }): Promise<Doc> {
+      return booted.frogbot.update({
+        collection: collection as never,
+        id,
+        data: data as never,
+        context: { frogbotAIFieldRun: { collection, id, field: 'summary' } },
+        depth: 0,
+        ...(draft ? { draft } : {}),
+        ...(locale ? { locale } : {}),
+      }) as Promise<unknown> as Promise<Doc>;
+    }
+
+    async function seedTask(data: Record<string, unknown>): Promise<Doc> {
+      const task = await createTask({});
+
+      return writeSummary({ collection: tasksSlug, id: task.id, data });
+    }
+
+    async function seedArticle({
+      body,
+      status,
+    }: {
+      body: string;
+      status: 'draft' | 'published';
+    }): Promise<Doc> {
+      const draft = status === 'draft';
+
+      const article = (await booted.frogbot.create({
+        collection: articlesSlug,
+        data: { _status: status } as never,
+        draft,
+      })) as unknown as Doc;
+
+      return writeSummary({
+        collection: articlesSlug,
+        id: article.id,
+        data: { body, summary: 'Generated', _summary_status: 'done', _status: status },
+        draft,
+      });
+    }
+
+    function load({
+      choice,
+      collection,
+      drafts,
+      field,
+      headers,
+      locale,
+      where,
+    }: BulkArgs & { where: BulkWhere }) {
+      const url = aiBulkLoadURL({
+        api: '/api',
+        choice,
+        collectionSlug: collection,
+        drafts,
+        field,
+        locale,
+        where,
+      });
+
+      return booted.restClient.get<{ docs: Doc[] }>(url, { headers });
+    }
+
+    async function loadTargets(args: BulkArgs & { ids: Doc['id'][] }): Promise<AIBulkTarget[]> {
+      const { body } = await load({ ...args, where: { id: { in: args.ids } } });
+
+      return aiBulkTargets({ docs: body.docs, drafts: args.drafts, field: args.field });
+    }
+
+    async function send({
+      choice,
+      collection,
+      drafts,
+      field,
+      headers,
+      locale,
+      targets,
+    }: BulkArgs & { targets: AIBulkTarget[] }) {
+      const requests = aiBulkRequests({
+        api: '/api',
+        choice,
+        collectionSlug: collection,
+        drafts,
+        field,
+        locale,
+        targets,
+      });
+
+      const responses: RESTResponse<BulkResponse>[] = [];
+
+      for (const { body, url } of requests) {
+        responses.push(await booted.restClient.patch<BulkResponse>(url, body, { headers }));
+      }
+
+      return responses;
+    }
+
+    async function regenerate(args: BulkArgs & { ids: Doc['id'][] }) {
+      const targets = await loadTargets(args);
+
+      return send({ ...args, targets });
+    }
+
+    function ids(docs: Doc[] | undefined): string[] {
+      return (docs ?? []).map(({ id }) => String(id)).sort();
+    }
+
+    async function queuedIDs(): Promise<string[]> {
+      return (await waitingRuns('summary')).map(({ input }) => String(input.id)).sort();
+    }
+
+    async function summaryStatuses(docs: Doc[]): Promise<unknown[]> {
+      const found = await Promise.all(docs.map(({ id }) => findTask(id)));
+
+      return found.map((doc) => doc._summary_status ?? null);
+    }
+
+    it('the failed load returns every error record past one page, with only readable inputs', async () => {
+      const { headers } = await signIn('editor');
+
+      for (let index = 0; index < 12; index += 1) {
+        await seedTask({
+          title: `Task ${index}`,
+          notes: 'Paint the fence',
+          secret: 'Blue',
+          _summary_status: 'error',
+        });
+      }
+
+      const pending = await createTask({ notes: 'Paint the fence' });
+
+      const { body, status } = await load({ ...tasks, choice: 'failed', headers, where: {} });
+
+      expect(status).toBe(200);
+      expect(body.docs).toHaveLength(12);
+      expect(ids(body.docs)).not.toContain(String(pending.id));
+      expect(new Set(body.docs.map((doc) => Object.keys(doc).sort().join()))).toEqual(
+        new Set(['id,notes,title']),
+      );
+    });
+
+    it('the targets of a real load leave out records with no readable inputs', async () => {
+      const { headers } = await signIn('editor');
+      const filled = await seedTask({ notes: 'Paint the fence', _summary_status: 'done' });
+      const blank = await seedTask({ title: '', notes: '', _summary_status: 'done' });
+      const empty = await seedTask({ _summary_status: 'error' });
+      const hidden = await seedTask({ secret: 'Blue', _summary_status: 'manual' });
+
+      const { body } = await load({
+        ...tasks,
+        choice: 'all',
+        headers,
+        where: { id: { in: [filled.id, blank.id, empty.id, hidden.id] } },
+      });
+
+      expect(body.docs).toHaveLength(4);
+      expect(aiBulkTargets({ docs: body.docs, drafts: false, field: tasks.field })).toEqual([
+        { draft: false, id: filled.id },
+      ]);
+    });
+
+    it('only failed sets only the error record pending and queues one run', async () => {
+      const { headers } = await signIn('editor');
+      const failed = await seedTask({ notes: 'Paint the fence', _summary_status: 'error' });
+      const done = await seedTask({ notes: 'Paint the fence', _summary_status: 'done' });
+      const never = await seedTask({ notes: 'Paint the fence' });
+
+      await regenerate({
+        ...tasks,
+        choice: 'failed',
+        headers,
+        ids: [failed.id, done.id, never.id],
+      });
+
+      expect(await summaryStatuses([failed, done, never])).toEqual(['pending', 'done', null]);
+      expect(await queuedIDs()).toEqual([String(failed.id)]);
+    });
+
+    it('a run over more than one chunk queues every record', { timeout: 120_000 }, async () => {
+      const { headers } = await signIn('editor');
+      const seeded: Doc[] = [];
+
+      for (let index = 0; index <= AI_BULK_CHUNK_SIZE; index += 1) {
+        seeded.push(await seedTask({ notes: `Task ${index}`, _summary_status: 'error' }));
+      }
+
+      const responses = await regenerate({
+        ...tasks,
+        choice: 'failed',
+        headers,
+        ids: seeded.map(({ id }) => id),
+      });
+
+      expect(responses.map(({ body }) => body.docs.length)).toEqual([AI_BULK_CHUNK_SIZE, 1]);
+      expect(await queuedIDs()).toEqual(ids(seeded));
+    });
+
+    it('only never generated matches an empty status and a missing one', async () => {
+      const { headers } = await signIn('editor');
+      const empty = await seedTask({ notes: 'Paint the fence' });
+      const done = await seedTask({ notes: 'Paint the fence', _summary_status: 'done' });
+
+      const missing = (await booted.payload.db.create({
+        collection: tasksSlug,
+        data: { notes: 'Paint the fence' },
+      })) as unknown as Doc;
+
+      await regenerate({
+        ...tasks,
+        choice: 'never',
+        headers,
+        ids: [empty.id, missing.id, done.id],
+      });
+
+      expect(await queuedIDs()).toEqual(ids([empty, missing]));
+    });
+
+    it('all sets a hand-edited record pending and queues a run', async () => {
+      const { headers } = await signIn('editor');
+
+      const manual = await seedTask({
+        notes: 'Paint the fence',
+        summary: 'Mine',
+        _summary_status: 'manual',
+      });
+
+      await regenerate({ ...tasks, choice: 'all', headers, ids: [manual.id] });
+
+      expect((await findTask(manual.id))._summary_status).toBe('pending');
+      expect(await queuedIDs()).toEqual([String(manual.id)]);
+    });
+
+    it('all queues no second run for a record that is already pending', async () => {
+      const { headers } = await signIn('editor');
+      const pending = await createTask({ notes: 'Paint the fence' });
+
+      await regenerate({ ...tasks, choice: 'all', headers, ids: [pending.id] });
+
+      expect(await queuedIDs()).toEqual([String(pending.id)]);
+    });
+
+    it('only values written by AI skips a record edited by hand after the load', async () => {
+      const { headers } = await signIn('editor');
+      const generated = { notes: 'Paint the fence', summary: 'Generated', _summary_status: 'done' };
+      const edited = await seedTask(generated);
+      const other = await seedTask(generated);
+
+      const targets = await loadTargets({
+        ...tasks,
+        choice: 'generated',
+        headers,
+        ids: [edited.id, other.id],
+      });
+
+      await patchTask(edited.id, { summary: 'Mine' }, headers);
+
+      const [response] = await send({ ...tasks, choice: 'generated', headers, targets });
+
+      expect(ids(response?.body.docs)).toEqual([String(other.id)]);
+      expect(await findTask(edited.id)).toMatchObject({
+        summary: 'Mine',
+        _summary_status: 'manual',
+      });
+    });
+
+    it('a never-published draft sent in the draft group stays a draft', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'v1', status: 'draft' });
+
+      await regenerate({ ...articles, choice: 'generated', headers, ids: [article.id] });
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'draft',
+        _summary_status: 'pending',
+      });
+
+      expect(await queuedIDs()).toEqual([String(article.id)]);
+    });
+
+    it('a newer draft sent in the draft group leaves the published version unchanged', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'v1', status: 'published' });
+
+      await writeSummary({
+        collection: articlesSlug,
+        id: article.id,
+        data: { body: 'v2' },
+        draft: true,
+      });
+
+      await regenerate({ ...articles, choice: 'generated', headers, ids: [article.id] });
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'draft',
+        body: 'v2',
+        _summary_status: 'pending',
+      });
+
+      expect(await findArticle(article.id)).toMatchObject({
+        _status: 'published',
+        body: 'v1',
+        _summary_status: 'done',
+      });
+    });
+
+    it('a published record sent in the published group gets pending and stays published', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'v1', status: 'published' });
+
+      await regenerate({ ...articles, choice: 'generated', headers, ids: [article.id] });
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'published',
+        _summary_status: 'pending',
+      });
+
+      expect(await queuedIDs()).toEqual([String(article.id)]);
+    });
+
+    it('a published record that gets a newer draft after the load is left alone', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'v1', status: 'published' });
+      const targets = await loadTargets({
+        ...articles,
+        choice: 'generated',
+        headers,
+        ids: [article.id],
+      });
+
+      await writeSummary({
+        collection: articlesSlug,
+        id: article.id,
+        data: { body: 'Editor draft' },
+        draft: true,
+      });
+
+      const [response] = await send({ ...articles, choice: 'generated', headers, targets });
+
+      expect(targets).toEqual([{ draft: false, id: article.id }]);
+      expect(response?.body.docs).toEqual([]);
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'draft',
+        body: 'Editor draft',
+        _summary_status: 'done',
+      });
+
+      expect(await queuedIDs()).toEqual([]);
+    });
+
+    it('a French run writes only the French status', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'Hello', status: 'published' });
+
+      await writeSummary({
+        collection: articlesSlug,
+        id: article.id,
+        data: { body: 'Bonjour', summary: 'Résumé', _summary_status: 'done' },
+        locale: 'fr',
+      });
+
+      await regenerate({
+        ...articles,
+        choice: 'generated',
+        headers,
+        ids: [article.id],
+        locale: 'fr',
+      });
+
+      expect((await findArticle(article.id, { locale: 'fr' }))._summary_status).toBe('pending');
+      expect((await findArticle(article.id, { locale: 'en' }))._summary_status).toBe('done');
+    });
+
+    it('a French run queues its run in French', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'Hello', status: 'published' });
+
+      await writeSummary({
+        collection: articlesSlug,
+        id: article.id,
+        data: { body: 'Bonjour', summary: 'Résumé', _summary_status: 'done' },
+        locale: 'fr',
+      });
+
+      await regenerate({
+        ...articles,
+        choice: 'generated',
+        headers,
+        ids: [article.id],
+        locale: 'fr',
+      });
+
+      const runs = await waitingRuns('summary');
+
+      expect(runs.map(({ input }) => [String(input.id), input.locale])).toEqual([
+        [String(article.id), 'fr'],
+      ]);
+    });
+
+    it('a French load skips a record whose inputs are only in English', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'Hello', status: 'published' });
+
+      const { body } = await load({
+        ...articles,
+        choice: 'all',
+        headers,
+        locale: 'fr',
+        where: { id: { in: [article.id] } },
+      });
+
+      expect(body.docs).toHaveLength(1);
+      expect(aiBulkTargets({ docs: body.docs, drafts: true, field: articles.field })).toEqual([]);
+    });
+
+    it('update access narrows a chunk silently, and the message counts the rest as skipped', async () => {
+      const { headers } = await signIn('author');
+      const generated = { notes: 'Paint the fence', _summary_status: 'done' };
+      const shared = await seedTask({ ...generated, title: sharedTitle });
+      const own = await seedTask({ ...generated, title: 'Own' });
+      const targets = await loadTargets({
+        ...tasks,
+        choice: 'generated',
+        headers,
+        ids: [shared.id, own.id],
+      });
+
+      const [response] = await send({ ...tasks, choice: 'generated', headers, targets });
+
+      expect(response?.status).toBe(200);
+      expect(response?.body.errors).toEqual([]);
+      expect(ids(response?.body.docs)).toEqual([String(own.id)]);
+
+      expect(
+        aiBulkResultMessage({ loaded: targets.length, queued: response?.body.docs.length ?? 0 }),
+      ).toEqual({
+        message:
+          'Queued 1 run · 1 record skipped (no inputs, no permission, being edited, or changed)',
+        type: 'success',
+      });
+    });
+
+    it('a record another user is editing fails alone with a 400, and the other is queued', async () => {
+      const { headers } = await signIn('editor');
+      const other = await createUser('editor');
+      const generated = { notes: 'Paint the fence', _summary_status: 'done' };
+      const locked = await seedTask(generated);
+      const free = await seedTask(generated);
+
+      await lockTask(locked.id, other);
+
+      const [response] = await regenerate({
+        ...tasks,
+        choice: 'generated',
+        headers,
+        ids: [locked.id, free.id],
+      });
+
+      expect(response?.status).toBe(400);
+      expect(ids(response?.body.docs)).toEqual([String(free.id)]);
+      expect(response?.body.errors).toHaveLength(1);
+      expect(await queuedIDs()).toEqual([String(free.id)]);
+    });
+
+    it('each queued run names the user who started the bulk run', async () => {
+      const { headers, user } = await signIn('editor');
+      const generated = { notes: 'Paint the fence', _summary_status: 'done' };
+      const first = await seedTask(generated);
+      const second = await seedTask(generated);
+
+      await regenerate({ ...tasks, choice: 'generated', headers, ids: [first.id, second.id] });
+
+      const users = (await waitingRuns('summary')).map(({ input }) => input.user);
+
+      expect(users).toEqual([
+        { collection: usersSlug, id: user.id },
+        { collection: usersSlug, id: user.id },
+      ]);
     });
   });
 });

@@ -1,0 +1,39 @@
+@layer frogbot {
+  .ai-bulk-dialog__choices {
+    gap: 0.5rem;
+  }
+
+  .ai-bulk-dialog__choice.fb-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--theme-base-300);
+    border-radius: var(--fb-radius);
+    color: var(--theme-base-900);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .ai-bulk-dialog__choice.fb-label:has([data-state="checked"]) {
+    background: var(--theme-base-200);
+    border-color: var(--theme-base-500);
+  }
+
+  .ai-bulk-dialog__choice.fb-label:has(:disabled) {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .ai-bulk-dialog__choice-text {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .ai-bulk-dialog__hint {
+    color: var(--theme-base-600);
+    font-size: var(--fb-text-xs);
+    line-height: var(--fb-text-xs--line-height);
+    font-weight: 400;
+  }
+}

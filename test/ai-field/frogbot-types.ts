@@ -139,7 +139,7 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
-  role?: ('admin' | 'editor' | 'viewer' | 'blind') | null;
+  role?: ('admin' | 'editor' | 'author' | 'viewer' | 'blind') | null;
   modelAccess?: ('all' | 'selected') | null;
   models?: ('test/other-model' | 'test/writer-model')[] | null;
   /**

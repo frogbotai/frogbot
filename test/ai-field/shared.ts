@@ -11,4 +11,5 @@ export const aiFieldTaskSlug = 'frogbot-run-ai-field';
 export const writerModel = 'writer-model';
 export const otherModel = 'other-model';
 export const rollbackTitle = 'rollback';
+export const sharedTitle = 'Shared';
 export const modelPort = testPort(3991);

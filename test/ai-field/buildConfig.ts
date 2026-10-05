@@ -9,6 +9,7 @@ import {
   otherModel,
   reportsSlug,
   rollbackTitle,
+  sharedTitle,
   tasksSlug,
   usersSlug,
   writerModel,
@@ -20,7 +21,11 @@ const role = (user: unknown) => (user as { role?: string } | null)?.role;
 
 const notBlind: Access = ({ req }) => role(req.user) !== 'blind';
 
-const canUpdate: Access = ({ req }) => ['admin', 'editor', 'blind'].includes(role(req.user) ?? '');
+const canUpdate: Access = ({ req }) => {
+  if (role(req.user) === 'author') return { title: { not_equals: sharedTitle } };
+
+  return ['admin', 'editor', 'blind'].includes(role(req.user) ?? '');
+};
 
 const Users: CollectionConfig = {
   slug: usersSlug,
@@ -30,7 +35,7 @@ const Users: CollectionConfig = {
     {
       name: 'role',
       type: 'select',
-      options: ['admin', 'editor', 'viewer', 'blind'],
+      options: ['admin', 'editor', 'author', 'viewer', 'blind'],
       defaultValue: 'editor',
     },
   ],

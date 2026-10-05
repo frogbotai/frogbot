@@ -15,6 +15,7 @@ import {
   SelectMany,
   StickyToolbar,
   TableColumnsProvider,
+  useAuth,
   useBulkUpload,
   useConfig,
   useControllableState,
@@ -31,6 +32,8 @@ import type { ListViewClientProps } from 'payload';
 import { formatAdminURL, formatFilesize } from 'payload/shared';
 import React, { Fragment, useEffect } from 'react';
 
+import { aiBulkMenuFields } from '../../fields/AI/bulk.js';
+import { AIFieldListMenuItem } from '../../fields/AI/ListMenuItem.client.js';
 import { ViewControls } from '../controls/ViewControls.client.js';
 
 const baseClass = 'collection-list';
@@ -121,6 +124,26 @@ export const DefaultListView: React.FC<ListViewClientProps> = (props) => {
   const isTrashEnabled = Boolean(collectionConfig.trash);
 
   const { i18n } = useTranslation();
+
+  const { permissions } = useAuth();
+
+  const aiFields = aiBulkMenuFields({
+    canUpdate: Boolean(permissions?.collections?.[collectionSlug]?.update),
+    fields: collectionConfig.fields,
+    isInDrawer: Boolean(isInDrawer),
+    viewType,
+  });
+
+  const menuItems = [
+    ...(listMenuItems ?? []),
+    ...aiFields.map((field) => (
+      <AIFieldListMenuItem
+        collectionSlug={collectionSlug}
+        field={field}
+        key={`ai-bulk-${field.name}`}
+      />
+    )),
+  ];
 
   const { setStepNav } = useStepNav();
 
@@ -235,7 +258,7 @@ export const DefaultListView: React.FC<ListViewClientProps> = (props) => {
                 }
                 enableSort
                 enableGroupBy={listView?.groupBy !== false}
-                listMenuItems={listMenuItems}
+                listMenuItems={menuItems.length ? menuItems : undefined}
                 queryPreset={queryPreset}
                 queryPresetPermissions={queryPresetPermissions}
                 renderedFilters={renderedFilters}
