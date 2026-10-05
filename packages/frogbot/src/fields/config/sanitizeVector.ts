@@ -6,6 +6,7 @@ import {
 
 import type { MapVectorField } from '../../database/types.js';
 import { validateVector } from '../validations.js';
+import { sanitizeOptionColors } from './sanitizeOptionColors.js';
 import type { Field, VectorField } from './types.js';
 
 type VectorOwner =
@@ -104,6 +105,10 @@ function sanitizeFields(args: SanitizeVectorFieldsArgs, parent: string): Field[]
 
     if (field.type === 'vector') {
       return sanitizeVectorField({ ...args, field, path }) as unknown as Field;
+    }
+
+    if (field.type === 'select' || field.type === 'radio') {
+      return sanitizeOptionColors({ ...args, field, path });
     }
 
     if ('fields' in field && Array.isArray(field.fields)) {

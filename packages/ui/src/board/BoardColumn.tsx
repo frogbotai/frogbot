@@ -2,9 +2,11 @@
 
 import { useDroppable } from '@dnd-kit/core';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import type { OptionColor } from 'frogbot';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
+import { OptionPill } from '../components/option-pill.js';
 import type { BoardDropData, BoardPlacement } from './useBoard.js';
 
 const ROW_GAP = 8;
@@ -12,6 +14,7 @@ const ROW_GAP = 8;
 export function BoardColumn<T>({
   activeHeight,
   activeId,
+  color,
   columnKey,
   hasMore,
   label,
@@ -24,6 +27,7 @@ export function BoardColumn<T>({
 }: {
   activeHeight: number;
   activeId: string | null;
+  color?: OptionColor;
   columnKey: string;
   getId: (row: T) => string;
   hasMore?: boolean;
@@ -31,7 +35,10 @@ export function BoardColumn<T>({
   onReachEnd?: () => void;
   placement?: BoardPlacement;
   renderCard: (row: T) => ReactNode;
-  renderColumnHeader?: (column: { key: string; label: string }, count: number) => ReactNode;
+  renderColumnHeader?: (
+    column: { color?: OptionColor; key: string; label: string },
+    count: number,
+  ) => ReactNode;
   rows: T[];
 }) {
   const parent = useRef<HTMLDivElement>(null);
@@ -69,11 +76,11 @@ export function BoardColumn<T>({
     >
       <header className="frog-board__column-header">
         {renderColumnHeader ? (
-          renderColumnHeader({ key: columnKey, label }, rows.length)
+          renderColumnHeader({ color, key: columnKey, label }, rows.length)
         ) : (
           <>
-            <strong>{label}</strong>
-            <span>{rows.length}</span>
+            {color ? <OptionPill color={color}>{label}</OptionPill> : <strong>{label}</strong>}
+            <span className="frog-board__column-count">{rows.length}</span>
           </>
         )}
       </header>

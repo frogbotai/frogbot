@@ -10,6 +10,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import { moneyField } from '../../../../packages/frogbot/src/fields/baseFields/money/index.js';
+import type { OptionColor } from '../../../../packages/frogbot/src/fields/config/types.js';
 import {
   buildGeneratedTypesFooter,
   internalSelectName,
@@ -283,6 +284,56 @@ describe('frogbot generate:types', () => {
       expect(output).toMatch(/lines\?:[\s\S]*?amount\?: number \| null;/);
       expect(output).toMatch(/pricing\?: \{[\s\S]*?list\?: number \| null;/);
       expect(output).not.toContain('Nettopreis');
+    });
+
+    it('generates the same types for coloured and uncoloured options', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-option-color-types-'));
+
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+
+      const generate = async (colored: boolean) => {
+        const color = (name: OptionColor) => (colored ? { color: name } : {});
+
+        const config = await buildConfig({
+          secret: 'test-secret',
+          db: { defaultIDType: 'number' } as never,
+          collections: [
+            {
+              slug: 'tasks',
+              fields: [
+                {
+                  name: 'labels',
+                  type: 'select',
+                  hasMany: true,
+                  options: [
+                    { label: 'Bug', value: 'bug', ...color('red') },
+                    { label: 'Feature', value: 'feature', ...color('green') },
+                    'chore',
+                  ],
+                },
+                {
+                  name: 'priority',
+                  type: 'radio',
+                  options: [
+                    { label: 'Low', value: 'low' },
+                    { label: 'High', value: 'high', ...color('orange') },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+
+        const { outputPath } = await writeGeneratedTypes(config, dir);
+
+        return readFile(outputPath, 'utf-8');
+      };
+
+      const plain = await generate(false);
+      const colored = await generate(true);
+
+      expect(colored).toBe(plain);
+      expect(colored).toMatch(/labels\?: \('bug' \| 'feature' \| 'chore'\)\[\] \| null;/);
     });
 
     it('emits Chat/Message interfaces with UIMessage-typed parts for injected chat collections', async () => {

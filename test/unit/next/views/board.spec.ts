@@ -76,6 +76,34 @@ describe('collection board', () => {
     ]);
   });
 
+  it('colours select columns, with gray for uncoloured options', async () => {
+    const field = {
+      name: 'stage',
+      type: 'select',
+      admin: { custom: { frogbot: { optionColors: { done: 'green' } } } },
+      options: [
+        { label: 'Backlog', value: 'backlog' },
+        { color: 'green', label: 'Done', value: 'done' },
+        'archived',
+        'constructor',
+      ],
+    } as never;
+
+    const columns = await resolveColumns({
+      collectionSlug: 'posts',
+      field,
+      path: 'stage',
+      req: {} as never,
+    });
+
+    expect(columns).toStrictEqual([
+      { color: 'gray', key: 'string:backlog', label: 'Backlog', value: 'backlog' },
+      { color: 'green', key: 'string:done', label: 'Done', value: 'done' },
+      { color: 'gray', key: 'string:archived', label: 'archived', value: 'archived' },
+      { color: 'gray', key: 'string:constructor', label: 'constructor', value: 'constructor' },
+    ]);
+  });
+
   it('resolves access-controlled relationship columns with useAsTitle', async () => {
     const findDistinct = vi.fn().mockResolvedValue({ values: [{ stage: { id: 1, name: 'One' } }] });
     const req = {

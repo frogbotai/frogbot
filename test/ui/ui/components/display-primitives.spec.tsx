@@ -7,6 +7,7 @@ import {
   AlertTitle,
   Badge,
   Dot,
+  OptionPill,
   ShimmerEffect,
   StaggeredShimmers,
   Textarea,
@@ -34,4 +35,16 @@ it('renders display primitives with variants and BEM classes', () => {
 it('renders staggered shimmers immediately when requested', () => {
   render(<StaggeredShimmers count={3} renderDelay={0} />);
   expect(document.querySelectorAll('.fb-shimmer')).toHaveLength(3);
+});
+it('renders an option pill as a span with its colour modifier and className', () => {
+  render(
+    <OptionPill className="x" color="teal">
+      Review
+    </OptionPill>,
+  );
+
+  const pill = screen.getByText('Review');
+
+  expect(pill.tagName).toBe('SPAN');
+  expect(pill.className).toBe('fb-option-pill fb-option-pill--teal x');
 });

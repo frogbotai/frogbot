@@ -1,9 +1,10 @@
 'use client';
 
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
+import type { OptionColor } from 'frogbot';
 import { useEffect, useRef, useState } from 'react';
 
-export type BoardColumn = { key: string; label: string; value?: unknown };
+export type BoardColumn = { color?: OptionColor; key: string; label: string; value?: unknown };
 
 export type BoardMove<T> = {
   after?: T;

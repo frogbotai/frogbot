@@ -1,14 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import type { ClientField, DefaultCellComponentProps } from 'payload';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { DefaultCell } = vi.hoisted(() => ({
+const { DefaultCell, useTranslation } = vi.hoisted(() => ({
   DefaultCell: vi.fn((_props: unknown) => <span data-testid="default-cell" />),
+  useTranslation: vi.fn(() => ({ i18n: { language: 'en' } })),
 }));
 
 vi.mock('@payloadcms/ui', () => ({
   DefaultCell,
-  useTranslation: () => ({ i18n: { language: 'en' } }),
+  useTranslation,
   withCondition: <T,>(Component: T) => Component,
 }));
 
@@ -40,6 +42,32 @@ function textFieldWith(admin: unknown): ClientField {
 
 function lastCellData(): unknown {
   return (DefaultCell.mock.lastCall?.[0] as DefaultCellComponentProps).cellData;
+}
+
+const optionColors = { done: 'green' };
+
+const statusField = {
+  name: 'status',
+  type: 'select',
+  admin: { custom: { frogbot: { optionColors } } },
+  options: [
+    { label: { de: 'Erledigt', en: 'Done' }, value: 'done' },
+    { label: 'To do', value: 'todo' },
+  ],
+} as ClientField;
+
+function lastProps(): DefaultCellComponentProps {
+  return DefaultCell.mock.lastCall?.[0] as DefaultCellComponentProps;
+}
+
+function renderPills(): { className: string; text: string | null }[] {
+  const { options } = lastProps().field as { options: { label: ReactNode }[] };
+  const { container } = render(<>{options[0]?.label}</>);
+
+  return Array.from(container.querySelectorAll('.option-pills > span'), (pill) => ({
+    className: pill.className,
+    text: pill.textContent,
+  }));
 }
 
 describe('FieldCell', () => {
@@ -163,6 +191,105 @@ describe('FieldCell', () => {
     const { container } = render(<FieldCell {...cell(field, undefined)} />);
 
     expect(container.textContent).toBe('');
+    expect(DefaultCell).not.toHaveBeenCalled();
+  });
+
+  it('passes every prop except the field to the default cell for a coloured select', () => {
+    const props: DefaultCellComponentProps = {
+      cellData: 'done',
+      className: 'cell-status',
+      collectionSlug: 'tasks',
+      customCellProps: { tone: 'quiet' },
+      field: statusField,
+      link: true,
+      linkURL: '/admin/collections/tasks/row',
+      onClick: vi.fn(),
+      rowData: { id: 'row', status: 'done' },
+      viewType: 'list',
+    };
+
+    render(<FieldCell {...props} />);
+
+    const { field, ...passed } = lastProps();
+    const { field: _field, ...expected } = props;
+
+    expect(passed).toStrictEqual(expected);
+    expect(passed.onClick).toBe(props.onClick);
+    expect({ ...field, options: statusField.options }).toStrictEqual(statusField);
+    expect((field as { options: unknown[] }).options).toStrictEqual([
+      { label: expect.anything(), value: 'done' },
+    ]);
+  });
+
+  it('draws a coloured option as a pill with its translated label', () => {
+    useTranslation.mockReturnValueOnce({ i18n: { language: 'de' } });
+
+    render(<FieldCell {...cell(statusField, 'done')} />);
+
+    expect(renderPills()).toStrictEqual([
+      { className: 'fb-option-pill fb-option-pill--green', text: 'Erledigt' },
+    ]);
+  });
+
+  it('draws hasMany values as pills in stored order, with gray for uncoloured options', () => {
+    const cellData = ['done', 'todo'];
+
+    render(<FieldCell {...cell({ ...statusField, hasMany: true } as ClientField, cellData)} />);
+
+    expect((lastProps().field as { options: { value: unknown }[] }).options[0]?.value).toBe(
+      cellData,
+    );
+    expect(renderPills()).toStrictEqual([
+      { className: 'fb-option-pill fb-option-pill--green', text: 'Done' },
+      { className: 'fb-option-pill fb-option-pill--gray', text: 'To do' },
+    ]);
+  });
+
+  it.each(['archived', 'constructor'])('draws the unmatched value %s as a gray pill', (value) => {
+    render(<FieldCell {...cell(statusField, value)} />);
+
+    expect(renderPills()).toStrictEqual([
+      { className: 'fb-option-pill fb-option-pill--gray', text: value },
+    ]);
+  });
+
+  it('draws a coloured radio option as a pill', () => {
+    const field = { ...statusField, type: 'radio' } as ClientField;
+
+    render(<FieldCell {...cell(field, 'done')} />);
+
+    expect(renderPills()).toStrictEqual([
+      { className: 'fb-option-pill fb-option-pill--green', text: 'Done' },
+    ]);
+  });
+
+  it.each([null, '', []])('passes the empty coloured value %j to the default cell', (cellData) => {
+    const props = cell(statusField, cellData);
+
+    render(<FieldCell {...props} />);
+
+    expect(lastProps()).toStrictEqual(props);
+    expect(lastProps().field).toBe(statusField);
+  });
+
+  it('passes a select without option colours to the default cell', () => {
+    const field = { name: 'status', type: 'select', options: ['done'] } as ClientField;
+    const props = cell(field, 'done');
+
+    render(<FieldCell {...props} />);
+
+    expect(lastProps()).toStrictEqual(props);
+  });
+
+  it('draws the kind cell when a coloured select also has a kind', () => {
+    const field = {
+      ...statusField,
+      admin: { custom: { frogbot: { kind: { type: 'channel' }, optionColors } } },
+    } as ClientField;
+
+    render(<FieldCell {...cell(field, 'done')} />);
+
+    expect(screen.getByText('done').className).toBe('channel-cell');
     expect(DefaultCell).not.toHaveBeenCalled();
   });
 });

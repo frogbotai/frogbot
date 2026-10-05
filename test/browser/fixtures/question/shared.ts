@@ -1,7 +1,23 @@
+import type { OptionColor } from 'frogbot';
+
 export const chatsSlug = 'chats';
 export const messagesSlug = 'messages';
 export const usersSlug = 'users';
 export const tasksSlug = 'tasks';
+export const labelOptions = (
+  [
+    'gray',
+    'blue',
+    'cyan',
+    'teal',
+    'green',
+    'yellow',
+    'orange',
+    'red',
+    'pink',
+    'purple',
+  ] satisfies OptionColor[]
+).map((color) => ({ label: color[0].toUpperCase() + color.slice(1), value: color, color }));
 export const reportsPath = '/reports';
 export const insightsPath = '/insights';
 export const robotSettings = { label: 'Robot', path: 'robot' };

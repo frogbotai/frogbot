@@ -1,0 +1,53 @@
+@layer frogbot {
+  .fb-option-pill {
+    display: inline-flex;
+    padding: 0.125rem 0.5rem;
+    align-items: center;
+    color: var(--fb-option-pill-gray-text);
+    font-size: var(--fb-text-xs);
+    font-weight: 500;
+    line-height: var(--fb-text-xs--line-height);
+    background: var(--fb-option-pill-gray-bg);
+    border-radius: 9999px;
+  }
+  .fb-option-pill--gray {
+    color: var(--fb-option-pill-gray-text);
+    background: var(--fb-option-pill-gray-bg);
+  }
+  .fb-option-pill--blue {
+    color: var(--fb-option-pill-blue-text);
+    background: var(--fb-option-pill-blue-bg);
+  }
+  .fb-option-pill--cyan {
+    color: var(--fb-option-pill-cyan-text);
+    background: var(--fb-option-pill-cyan-bg);
+  }
+  .fb-option-pill--teal {
+    color: var(--fb-option-pill-teal-text);
+    background: var(--fb-option-pill-teal-bg);
+  }
+  .fb-option-pill--green {
+    color: var(--fb-option-pill-green-text);
+    background: var(--fb-option-pill-green-bg);
+  }
+  .fb-option-pill--yellow {
+    color: var(--fb-option-pill-yellow-text);
+    background: var(--fb-option-pill-yellow-bg);
+  }
+  .fb-option-pill--orange {
+    color: var(--fb-option-pill-orange-text);
+    background: var(--fb-option-pill-orange-bg);
+  }
+  .fb-option-pill--red {
+    color: var(--fb-option-pill-red-text);
+    background: var(--fb-option-pill-red-bg);
+  }
+  .fb-option-pill--pink {
+    color: var(--fb-option-pill-pink-text);
+    background: var(--fb-option-pill-pink-bg);
+  }
+  .fb-option-pill--purple {
+    color: var(--fb-option-pill-purple-text);
+    background: var(--fb-option-pill-purple-bg);
+  }
+}

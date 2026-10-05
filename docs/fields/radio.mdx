@@ -29,7 +29,7 @@ Options may be strings or `{ label, value }` objects.
 | --- | --- | --- | --- |
 | `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
 | `type` | `'radio'` | Required | Selects the Radio field. |
-| `options` | `(string \| { label: string \| Record<string, string>; value: string })[]` | Required | Allowed values. A string is used as both label and value. |
+| `options` | `(string \| { label: string \| Record<string, string>; value: string; color?: OptionColor })[]` | Required | Allowed values. A string is used as both label and value. `color` shows the option as a coloured pill. See [Option colors](#option-colors). |
 | `enumName` | `string \| ({ tableName }) => string` | Generated from the field name | SQL enum name. |
 | `dbName` | `string \| ({ tableName }) => string` | — | SQL table name. SQL adapters use it only for `hasMany` select fields, so it has no effect on Radio fields. |
 | `interfaceName` | `string` | — | Generates a reusable top-level TypeScript type for the options. |
@@ -56,6 +56,12 @@ Options may be strings or `{ label, value }` objects.
   does not currently ship a GraphQL execution route; this constraint applies
   only when an application separately mounts a compatible executor.
 </Banner>
+
+## Option colors
+
+Give an option a `color` to show its value as a coloured pill in the admin panel. `color` is one of `gray`, `blue`, `cyan`, `teal`, `green`, `yellow`, `orange`, `red`, `pink` and `purple`, the names in the `OptionColor` type.
+
+Radio fields follow the same rules as [Select option colors](/fields/select#option-colors), including where pills appear and how uncoloured values show.
 
 ## Admin options
 
