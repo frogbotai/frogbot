@@ -37,7 +37,6 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
       db: descriptor,
       collections: [],
       jobs: resolveJobsConfig({
-        enableConcurrencyControl: true,
         tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
       }),
     });

@@ -28,6 +28,14 @@ describe('jobs schema', () => {
     );
   });
 
+  it.each([
+    [undefined, true],
+    [true, true],
+    [false, false],
+  ])('resolves enableConcurrencyControl %s to %s', (enableConcurrencyControl, expected) => {
+    expect(resolveJobsConfig({ enableConcurrencyControl }).enableConcurrencyControl).toBe(expected);
+  });
+
   it.each([{ runHooks: true }, { depth: 1 }, { depth: 0.5 }, { depth: Infinity }])(
     'rejects unsafe execution options %j before native configuration',
     async (options) => {

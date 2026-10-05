@@ -38,7 +38,6 @@ type WakeSQLWriter = {
 beforeAll(async () => {
   fixture = await bootJobsFixture({
     jobs: {
-      enableConcurrencyControl: true,
       deleteJobOnComplete: true,
       workflows: [
         {

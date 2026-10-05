@@ -71,7 +71,6 @@ beforeAll(async () => {
     },
     jobs: {
       deleteJobOnComplete: false,
-      enableConcurrencyControl: true,
       workflows: [
         {
           slug: 'http-wait',

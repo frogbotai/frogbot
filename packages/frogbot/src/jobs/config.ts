@@ -105,6 +105,7 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
 
   return {
     ...jobs,
+    enableConcurrencyControl: jobs.enableConcurrencyControl ?? true,
     runHooks: false,
     depth: 0,
     leaseDuration,
