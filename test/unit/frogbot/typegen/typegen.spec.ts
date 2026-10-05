@@ -11,6 +11,8 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import {
   buildGeneratedTypesFooter,
+  internalSelectName,
+  nameInternalSelects,
   stripInternalCollections,
   writeGeneratedTypes,
 } from '../../../../packages/frogbot/src/typegen/index.js';
@@ -57,6 +59,31 @@ describe('frogbot generate:types', () => {
     expect(schema.properties.result.oneOf[0]).toEqual({ $ref: '#/definitions/public' });
     expect(schema.properties.result.oneOf[1]).toEqual({ items: { type: 'null' }, type: 'array' });
     expect(schema.definitions).toEqual({ public: { type: 'object' } });
+  });
+
+  it('names internal select types FrogBot<Plural>Select', () => {
+    expect(internalSelectName('frogbot-chat-assets')).toBe('FrogBotChatAssetsSelect');
+    expect(internalSelectName('frogbot-trigger-subscriptions')).toBe(
+      'FrogBotTriggerSubscriptionsSelect',
+    );
+  });
+
+  it('titles only internal select definitions', () => {
+    const schema = {
+      definitions: {
+        'frogbot-waitpoints_select': { type: 'object' },
+        'frogbot-waitpoints': { type: 'object', title: 'FrogBotWaitpoint' },
+        posts_select: { type: 'object' },
+      },
+    };
+
+    nameInternalSelects(schema);
+
+    expect(schema.definitions).toEqual({
+      'frogbot-waitpoints_select': { type: 'object', title: 'FrogBotWaitpointsSelect' },
+      'frogbot-waitpoints': { type: 'object', title: 'FrogBotWaitpoint' },
+      posts_select: { type: 'object' },
+    });
   });
 
   it.todo('loads config from cwd via loadConfig');
@@ -219,6 +246,31 @@ describe('frogbot generate:types', () => {
       expect(output).toContain("role: 'user' | 'assistant' | 'system';");
       expect(output).toContain('assistant: unknown;');
       expect(output).not.toMatch(/payload/i);
+    });
+
+    it('emits FrogBot-cased names for internal collections, selects and tasks', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-internal-names-'));
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [
+          { slug: 'users', auth: true, fields: [] },
+          { slug: 'chats', chat: true, fields: [] },
+        ],
+        ai: { providers: { openai: { apiKey: 'sk-test' } } },
+        agents: [{ slug: 'assistant', model: 'openai/gpt-4o-mini', instructions: 'Assist.' }],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('export interface FrogBotChatAsset {');
+      expect(output).toContain('export interface FrogBotChatAssetsSelect {');
+      expect(output).toContain('export interface FrogBotChatTurn {');
+      expect(output).toContain('export interface FrogBotWaitpoint {');
+      expect(output).toContain('export interface TaskFrogBotSweepJobs {');
+      expect(output).not.toMatch(/Frogbot[A-Z]/);
     });
 
     it('emits the resolved custom usage-log slug', async () => {

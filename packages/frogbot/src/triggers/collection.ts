@@ -5,6 +5,7 @@ export const TRIGGER_SUBSCRIPTIONS_SLUG = 'frogbot-trigger-subscriptions';
 export function defaultTriggerSubscriptionsCollection(): CollectionConfig {
   return {
     slug: TRIGGER_SUBSCRIPTIONS_SLUG,
+    typescript: { interface: 'FrogBotTriggerSubscription' },
     admin: { hidden: true },
     graphQL: false,
     access: { create: () => false, read: () => false, update: () => false, delete: () => false },

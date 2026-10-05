@@ -46,21 +46,22 @@ FrogBot is in beta. The goal is the best and most consistent developer experienc
 
 Run everything from the repo root with `pnpm`. Scripts live in [package.json](package.json).
 
-| Task                                          | Command                                                                                                                              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Install, build all packages                   | `pnpm install`, `pnpm build`                                                                                                         |
-| Run an example against local packages         | `pnpm --filter <example-name> dev` (examples use `frogbot dev`)                                                                      |
-| Unit / UI / integration / e2e / browser tests | `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser`                                              |
-| Integration tests on a specific database      | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (Mongo and Postgres need `pnpm docker:start <profile> up -d`)      |
-| Static checks                                 | `pnpm check` (format, lint, stale-package build, changed-workspace typecheck, `scripts/check-*.mjs`; `--full` typechecks all)        |
-| Format and lint                               | `pnpm prettier:write && pnpm lint:fix` (agents: via the `lint` subagent)                                                             |
-| Typecheck an affected workspace               | `pnpm --filter <workspace-name> typecheck`                                                                                           |
-| Final repository typecheck                    | `pnpm typecheck` (builds and checks every workspace)                                                                                 |
-| Branding and docs gates                       | `pnpm check branding`, `pnpm check docs-fences`, `pnpm check docs-references`, `pnpm check docs-links`, `pnpm check ui-architecture` |
-| Regenerate AI model catalog types             | `pnpm generate:ai-types`, `pnpm sync:catalog`                                                                                        |
-| Release                                       | `pnpm bump <major\|minor\|patch>` (resume with `--from <step>`), `pnpm release` (owner only)                                         |
-| Check built packages before publishing        | `pnpm check dist-imports` (every relative import and entry point matches a file name exactly, including letter case)                 |
-| Check that installs resolve one `frogbot`     | `pnpm check single-frogbot` (no package lists `frogbot` as a regular dependency, and `frogbot` has no framework peers)               |
+| Task                                          | Command                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Install, build all packages                   | `pnpm install`, `pnpm build`                                                                                                                                        |
+| Run an example against local packages         | `pnpm --filter <example-name> dev` (examples use `frogbot dev`)                                                                                                     |
+| Unit / UI / integration / e2e / browser tests | `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser`                                                                             |
+| Integration tests on a specific database      | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (Mongo and Postgres need `pnpm docker:start <profile> up -d`)                                     |
+| Static checks                                 | `pnpm check` (format, lint, stale-package build, fixture import maps, changed-workspace typecheck, `scripts/check-*.mjs`; `--full` typechecks all)                  |
+| Format and lint                               | `pnpm prettier:write && pnpm lint:fix` (agents: via the `lint` subagent)                                                                                            |
+| Typecheck an affected workspace               | `pnpm --filter <workspace-name> typecheck`                                                                                                                          |
+| Final repository typecheck                    | `pnpm typecheck` (builds and checks every workspace)                                                                                                                |
+| Branding and docs gates                       | `pnpm check branding`, `pnpm check docs-fences`, `pnpm check docs-references`, `pnpm check docs-links`, `pnpm check ui-architecture`                                |
+| Regenerate AI model catalog types             | `pnpm generate:ai-types`, `pnpm sync:catalog`                                                                                                                       |
+| Release                                       | `pnpm bump <major\|minor\|patch>` (resume with `--from <step>`), `pnpm release` (owner only)                                                                        |
+| Check built packages before publishing        | `pnpm check dist-imports` (every relative import and entry point matches a file name exactly, including letter case)                                                |
+| Check that installs resolve one `frogbot`     | `pnpm check single-frogbot` (no package lists `frogbot` as a regular dependency, and `frogbot` has no framework peers)                                              |
+| Check generated files are fresh               | `pnpm check generated`, also in `pnpm check --full` (regenerates every tracked `importMap.js`, `frogbot-types.ts`, `piece-types.ts`; `--write` rewrites stale ones) |
 
 `pnpm check docs-links` validates General navigation, internal links, and local assets. It excludes content owned by other documentation tabs.
 

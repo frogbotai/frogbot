@@ -70,14 +70,14 @@ export interface Config {
     users: User;
     posts: Post;
     'api-keys': ApiKey;
-    'frogbot-waitpoints': FrogbotWaitpoint;
+    'frogbot-waitpoints': FrogBotWaitpoint;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
     'api-keys': ApiKeysSelect;
-    'frogbot-waitpoints': FrogbotWaitpointsSelect;
+    'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
   db: {
     defaultIDType: number;
@@ -94,8 +94,8 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
-      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
+      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -181,7 +181,7 @@ export interface ApiKey {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
-export interface FrogbotWaitpoint {
+export interface FrogBotWaitpoint {
   id: number;
   jobId: string;
   holder?: (number | null) | null;
@@ -261,7 +261,7 @@ export interface ApiKeysSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
-export interface FrogbotWaitpointsSelect {
+export interface FrogBotWaitpointsSelect {
   jobId?: boolean;
   holder?: boolean;
   name?: boolean;
@@ -310,17 +310,17 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-sweep-jobs".
+ * via the `definition` "TaskFrogBotSweepJobs".
  */
-export interface TaskFrogbotSweepJobs {
+export interface TaskFrogBotSweepJobs {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-cleanup-kv".
+ * via the `definition` "TaskFrogBotCleanupKv".
  */
-export interface TaskFrogbotCleanupKv {
+export interface TaskFrogBotCleanupKv {
   input?: unknown;
   output?: unknown;
 }

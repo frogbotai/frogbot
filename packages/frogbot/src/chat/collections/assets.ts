@@ -109,6 +109,7 @@ export function defaultChatAssetsCollection({
 
   return {
     slug: CHAT_ASSETS_SLUG,
+    typescript: { interface: 'FrogBotChatAsset' },
     upload: true,
     admin: { hidden: true },
     graphQL: false,

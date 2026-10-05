@@ -71,9 +71,7 @@ export interface Config {
     posts: Post;
     credentials: Credential;
     'audit-logs': AuditLog;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
-    'frogbot-waitpoints': FrogbotWaitpoint;
-    files: File;
+    'frogbot-waitpoints': FrogBotWaitpoint;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -81,9 +79,7 @@ export interface Config {
     posts: PostsSelect;
     credentials: CredentialsSelect;
     'audit-logs': AuditLogsSelect;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
-    'frogbot-waitpoints': FrogbotWaitpointsSelect;
-    files: FilesSelect;
+    'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
   db: {
     defaultIDType: number;
@@ -98,9 +94,9 @@ export interface Config {
   user: Account;
   jobs: {
     tasks: {
-      'frogbot-prune-audit-logs': TaskFrogbotPruneAuditLogs;
-      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
-      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
+      'frogbot-prune-audit-logs': TaskFrogBotPruneAuditLogs;
+      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -214,47 +210,9 @@ export interface AuditLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frogbot-trigger-subscriptions".
- */
-export interface FrogbotTriggerSubscription {
-  id: number;
-  agent: string;
-  piece: string;
-  instance: string;
-  trigger: string;
-  inputHash: string;
-  input:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  state?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  webhookUrl?: string | null;
-  status: 'active' | 'error';
-  cleanupPending?: boolean | null;
-  enablePending?: boolean | null;
-  enableAttempt?: string | null;
-  expiresAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
-export interface FrogbotWaitpoint {
+export interface FrogBotWaitpoint {
   id: number;
   jobId: string;
   holder?: (number | null) | null;
@@ -279,26 +237,6 @@ export interface FrogbotWaitpoint {
   dispatchLeaseUntil?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "files".
- */
-export interface File {
-  id: number;
-  folder?: (number | null) | null;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -365,30 +303,9 @@ export interface AuditLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "frogbot-trigger-subscriptions_select".
- */
-export interface FrogbotTriggerSubscriptionsSelect {
-  agent?: boolean;
-  piece?: boolean;
-  instance?: boolean;
-  trigger?: boolean;
-  inputHash?: boolean;
-  input?: boolean;
-  state?: boolean;
-  webhookUrl?: boolean;
-  status?: boolean;
-  cleanupPending?: boolean;
-  enablePending?: boolean;
-  enableAttempt?: boolean;
-  expiresAt?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
-export interface FrogbotWaitpointsSelect {
+export interface FrogBotWaitpointsSelect {
   jobId?: boolean;
   holder?: boolean;
   name?: boolean;
@@ -407,25 +324,6 @@ export interface FrogbotWaitpointsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "files_select".
- */
-export interface FilesSelect {
-  folder?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-  deletedAt?: boolean;
-  url?: boolean;
-  thumbnailURL?: boolean;
-  filename?: boolean;
-  mimeType?: boolean;
-  filesize?: boolean;
-  width?: boolean;
-  height?: boolean;
-  focalX?: boolean;
-  focalY?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -436,25 +334,25 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-prune-audit-logs".
+ * via the `definition` "TaskFrogBot-prune-audit-logs".
  */
-export interface TaskFrogbotPruneAuditLogs {
+export interface TaskFrogBotPruneAuditLogs {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-sweep-jobs".
+ * via the `definition` "TaskFrogBotSweepJobs".
  */
-export interface TaskFrogbotSweepJobs {
+export interface TaskFrogBotSweepJobs {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-cleanup-kv".
+ * via the `definition` "TaskFrogBotCleanupKv".
  */
-export interface TaskFrogbotCleanupKv {
+export interface TaskFrogBotCleanupKv {
   input?: unknown;
   output?: unknown;
 }

@@ -31,8 +31,13 @@ export function resolveChannelTask(jobs?: JobsConfig): JobsConfig {
   };
 
   const tasks: TaskConfig<ChannelTask>[] = [
-    { slug: CHANNEL_TASK_SLUG, handler },
-    { slug: CHANNEL_QUESTION_UPDATE_TASK_SLUG, handler, retries: QUESTION_UPDATE_RETRIES },
+    { slug: CHANNEL_TASK_SLUG, interfaceName: 'TaskFrogBotRunChannelMessage', handler },
+    {
+      slug: CHANNEL_QUESTION_UPDATE_TASK_SLUG,
+      interfaceName: 'TaskFrogBotUpdateChannelQuestion',
+      handler,
+      retries: QUESTION_UPDATE_RETRIES,
+    },
   ];
 
   return { ...jobs, tasks: [...(jobs?.tasks ?? []), ...tasks] };

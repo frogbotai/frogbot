@@ -10,8 +10,10 @@ import {
   changedPackages,
   discoverChecks,
   eslintLines,
+  fullOnlyChecks,
   labelLines,
   MAX_LINES,
+  missingImportMaps,
   parseArgs,
   prettierLines,
   report,
@@ -79,6 +81,85 @@ describe('discoverChecks', () => {
     expect(discoverChecks()).toEqual(
       expect.arrayContaining(['dist-imports', 'single-frogbot', 'ui-architecture']),
     );
+  });
+});
+
+describe('fullOnlyChecks', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'check-runner-'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  it('names the checks marked full-only in their first 5 lines', () => {
+    writeFileSync(join(dir, 'check-slow.mjs'), '#!/usr/bin/env node\n// check: full-only\n');
+    writeFileSync(join(dir, 'check-fast.mjs'), '#!/usr/bin/env node\n// fast\n');
+    writeFileSync(join(dir, 'check-late.mjs'), '\n\n\n\n\n// check: full-only\n');
+
+    expect(fullOnlyChecks(dir)).toEqual(['slow']);
+  });
+
+  it('marks generated full-only and keeps the fast checks in the default run', () => {
+    expect(fullOnlyChecks()).toContain('generated');
+    expect(fullOnlyChecks()).not.toContain('branding');
+  });
+});
+
+describe('missingImportMaps', () => {
+  const layout = 'test/browser/fixtures/app/src/app/(frogbot)/layout.tsx';
+  const page = 'test/browser/fixtures/app/src/app/(frogbot)/[[...segments]]/page.tsx';
+  const admin = 'test/e2e/fixtures/wrap/src/app/(frogbot)/layout.tsx';
+
+  const sources: Record<string, string> = {
+    [layout]: "import { importMap } from './importMap.js';",
+    [page]: "import { importMap } from '../importMap.js';",
+    [admin]: "import { importMap } from './admin/importMap.js';",
+    'test/browser/fixtures/app/src/frogbot.config.ts': "import x from './importMap.js';",
+    'test/browser/fixtures/app/next.config.mjs': "import x from './importMap.js';",
+    'test/e2e/fixtures/loose.config.ts': "import x from './importMap.js';",
+    'templates/blank/src/app/(frogbot)/layout.tsx': "import { importMap } from './importMap.js';",
+  };
+
+  const select = ({
+    exists = [] as string[],
+    ignored = (file: string) => file.startsWith('test/'),
+  } = {}) =>
+    missingImportMaps({
+      files: Object.keys(sources),
+      read: (file: string) => sources[file],
+      exists: (file: string) => exists.includes(file),
+      ignored,
+    });
+
+  it('names each fixture once whose imported map is missing, sorted', () => {
+    expect(select()).toEqual(['test/browser/fixtures/app', 'test/e2e/fixtures/wrap']);
+  });
+
+  it('resolves the import against the importing file', () => {
+    expect(
+      select({
+        exists: [
+          'test/browser/fixtures/app/src/app/(frogbot)/importMap.js',
+          'test/e2e/fixtures/wrap/src/app/(frogbot)/admin/importMap.js',
+        ],
+      }),
+    ).toEqual(['test/browser/fixtures/app']);
+  });
+
+  it('skips present maps, maps git does not ignore and files outside fixture directories', () => {
+    expect(
+      select({
+        exists: [
+          'test/browser/fixtures/app/src/app/(frogbot)/importMap.js',
+          'test/browser/fixtures/app/src/importMap.js',
+        ],
+        ignored: (file) => file.startsWith('test/browser/'),
+      }),
+    ).toEqual([]);
   });
 });
 

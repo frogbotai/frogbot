@@ -114,6 +114,7 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
       ...(jobs.tasks ?? []),
       {
         slug: JOB_SWEEP_TASK_SLUG,
+        interfaceName: 'TaskFrogBotSweepJobs',
         schedule: [{ cron: '* * * * *', queue: 'default' }],
         handler: async ({ req }) => {
           await sweepJobLeases({ req });

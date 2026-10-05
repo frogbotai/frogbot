@@ -56,6 +56,8 @@ templates/blank/frogbot.browser.db*
 test/e2e/fixtures/rich-text/rich-text.browser.db*
 test/e2e/fixtures/plugin-wrappers/plugin-wrappers.browser.db*
 test/browser/fixtures/**/*.db*
+test/browser/fixtures/**/importMap.js
+test/e2e/fixtures/**/importMap.js
 test/e2e/fixtures/plugin-wrappers/tsconfig.tsbuildinfo
 
 # Live test credentials

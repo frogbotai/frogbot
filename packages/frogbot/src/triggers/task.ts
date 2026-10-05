@@ -14,6 +14,7 @@ type AutorunCronConfig = Extract<NonNullable<JobsConfig['autoRun']>, unknown[]>[
 export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
   const task: TaskConfig<AgentTriggerTask> = {
     slug: AGENT_TRIGGER_TASK_SLUG,
+    interfaceName: 'TaskFrogBotRunAgentTrigger',
     handler: async ({ input, req }) => {
       const frogbot = getFrogBotInstance(req.payload);
       if (!frogbot) return { output: {} };

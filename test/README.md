@@ -394,8 +394,9 @@ Run `pnpm generate:types` after:
 - Editing a suite's `config.ts` (adding/removing collections or fields)
 - Adding a new suite (create config first, then generate)
 
-CI does **not** regenerate — reviewers see schema drift as a real diff.
-Commit the output.
+`pnpm check generated` reports every stale generated file, including the
+suite types, and `pnpm check generated --write` regenerates them. Commit the
+output. Browser and e2e fixture import maps are not committed.
 
 ## Known Quirks & Emulator Notes
 

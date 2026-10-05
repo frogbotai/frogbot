@@ -1,24 +1,27 @@
 #!/usr/bin/env node
 // `pnpm check [--full]` runs the static checks: prettier (report only), ESLint errors, a build
-// of every package whose `dist` is missing or older than its sources, the typecheck of packages
-// changed against local `main` (every package with `--full`), then every `scripts/check-*.mjs`.
+// of every package whose `dist` is missing or older than its sources, every missing gitignored
+// test-fixture `importMap.js`, the typecheck of packages changed against local `main` (every
+// package with `--full`), then every `scripts/check-*.mjs`.
+// A check file with `// check: full-only` in its first 5 lines runs only with `--full` or by name.
 // `pnpm check <name> [args]` runs one of those checks. It never runs tests or starts servers.
 // Tool output goes to `.idea/tmp/check-<time>.log`; stdout gets a `built N packages` line when
-// it built, then one `check: OK` line, or at most MAX_LINES `file:line rule message` lines and
-// the log path.
+// it built and a `generated N import maps` line when it generated, then one `check: OK` line,
+// or at most MAX_LINES `file:line rule message` lines and the log path.
 import { spawn, spawnSync } from 'node:child_process';
 import {
   appendFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
+  readFileSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { readJSON, ROOT } from './lib/workspace.mjs';
+import { generateEnv, readJSON, ROOT } from './lib/workspace.mjs';
 
 export const MAX_LINES = 40;
 
@@ -31,6 +34,20 @@ const TYPECHECK_CONCURRENCY = 4;
 const LISTED_PACKAGES = 4;
 
 const BUILD_STAMP = path.join('node_modules', '.cache', 'frogbot-build', 'stamp.json');
+
+const FIXTURES = ['test/browser/fixtures', 'test/e2e/fixtures'];
+
+const FIXTURE_DIR = /^test\/(?:browser|e2e)\/fixtures\/[^/]+(?=\/.*\.tsx?$)/;
+
+const IMPORT_MAP_IMPORT = /\bfrom\s+['"](\.{1,2}\/(?:[^'"]*\/)?importMap\.js)['"]/g;
+
+const IMPORT_MAP_SCRIPT = path.join(SCRIPTS, 'lib', 'generate-import-map.mjs');
+
+const IMPORT_MAP_CONCURRENCY = 4;
+
+const FULL_ONLY = '// check: full-only';
+
+const FULL_ONLY_LINES = 5;
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -60,6 +77,32 @@ export function discoverChecks(dir = SCRIPTS) {
     .map((file) => /^check-(.+)\.mjs$/.exec(file)?.[1])
     .filter(Boolean)
     .sort();
+}
+
+export function fullOnlyChecks(dir = SCRIPTS) {
+  return discoverChecks(dir).filter((name) =>
+    readFileSync(path.join(dir, `check-${name}.mjs`), 'utf8')
+      .split('\n', FULL_ONLY_LINES)
+      .some((line) => line.trim() === FULL_ONLY),
+  );
+}
+
+export function missingImportMaps({ files, read, exists, ignored }) {
+  const dirs = new Set();
+
+  for (const file of files) {
+    const dir = FIXTURE_DIR.exec(file)?.[0];
+
+    if (!dir) continue;
+
+    for (const [, specifier] of read(file).matchAll(IMPORT_MAP_IMPORT)) {
+      const map = path.posix.join(path.posix.dirname(file), specifier);
+
+      if (!exists(map) && ignored(map)) dirs.add(dir);
+    }
+  }
+
+  return [...dirs].sort();
 }
 
 export function changedPackages({ files, packages }) {
@@ -238,11 +281,11 @@ function sh(log, command, args) {
   return { code: result.status, stdout: result.stdout ?? '' };
 }
 
-function run(log, command, args) {
+function run(log, command, args, { cwd = ROOT, env = ENV } = {}) {
   const started = performance.now();
 
   return new Promise((resolve) => {
-    const child = spawn(command, args, { cwd: ROOT, env: ENV, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(command, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let output = '';
     let done = false;
@@ -404,6 +447,42 @@ async function build(log, { packages, changed }) {
   return { ok: true, groups: [] };
 }
 
+async function importMaps(log) {
+  const started = performance.now();
+  const listed = sh(log, 'git', ['ls-files', '-z', ...FIXTURES]);
+
+  const dirs = missingImportMaps({
+    files: listed.stdout.split('\0').filter(Boolean),
+    read: (file) => readFileSync(path.join(ROOT, file), 'utf8'),
+    exists: (file) => existsSync(path.join(ROOT, file)),
+    ignored: (file) => sh(log, 'git', ['check-ignore', '-q', file]).code === 0,
+  });
+
+  if (dirs.length === 0) return { ok: true, groups: [] };
+
+  const results = await mapLimit(dirs, IMPORT_MAP_CONCURRENCY, (dir) =>
+    run(log, process.execPath, [IMPORT_MAP_SCRIPT, '--write'], {
+      cwd: path.join(ROOT, dir),
+      env: generateEnv(),
+    }).then((result) => ({ dir, result })),
+  );
+
+  const failed = results.filter(({ result }) => result.code !== 0);
+
+  if (failed.length > 0) {
+    return {
+      ok: false,
+      groups: failed.map(({ dir, result }) => labelLines(dir, result.output, result.code)),
+    };
+  }
+
+  const noun = dirs.length === 1 ? 'import map' : 'import maps';
+
+  console.log(`generated ${dirs.length} ${noun} · ${seconds(performance.now() - started)}`);
+
+  return { ok: true, groups: [] };
+}
+
 async function typecheckChanged(log, packages) {
   const names = packages.map(({ name }) => name);
 
@@ -462,8 +541,14 @@ async function runAll(log, { checks, full }) {
     eslint(log),
   ]);
 
-  if (!built.ok) {
-    return { ok: false, groups: [...stages, built].flatMap(({ groups }) => groups), summary: [] };
+  const generated = built.ok ? await importMaps(log) : built;
+
+  if (!generated.ok) {
+    return {
+      ok: false,
+      groups: [...stages, generated].flatMap(({ groups }) => groups),
+      summary: [],
+    };
   }
 
   stages.push(full ? await typecheckAll(log) : await typecheckChanged(log, changed));
@@ -495,6 +580,7 @@ async function main() {
   if (options.error) exit(`${options.error}. ${USAGE}`);
 
   const checks = discoverChecks();
+  const fullOnly = fullOnlyChecks();
 
   if (options.name && !checks.includes(options.name)) {
     exit(`unknown check "${options.name}". Checks: ${checks.join(', ')}`);
@@ -504,7 +590,10 @@ async function main() {
   const log = openLog(argv);
   const result = options.name
     ? await runOne(log, options)
-    : await runAll(log, { checks, ...options });
+    : await runAll(log, {
+        checks: options.full ? checks : checks.filter((name) => !fullOnly.includes(name)),
+        ...options,
+      });
 
   const summary = [
     'check: OK',

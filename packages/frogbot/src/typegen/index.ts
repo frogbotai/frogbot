@@ -118,6 +118,29 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
   stripRefs(schema, internalDefs);
 }
 
+const INTERNAL_PREFIX = 'frogbot-';
+
+const INTERNAL_SELECT = /^(frogbot-.+)_select$/;
+
+export function internalSelectName(slug: string): string {
+  const words = slug
+    .slice(INTERNAL_PREFIX.length)
+    .split(/[^a-zA-Z0-9]+/)
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`);
+
+  return `FrogBot${words.join('')}Select`;
+}
+
+export function nameInternalSelects(schema: ConfigJSONSchema): void {
+  for (const [name, definition] of Object.entries(schema.definitions ?? {})) {
+    const slug = INTERNAL_SELECT.exec(name)?.[1];
+
+    if (slug && definition && typeof definition === 'object') {
+      (definition as { title?: string }).title = internalSelectName(slug);
+    }
+  }
+}
+
 function resolveOutputPath(config: SanitizedConfig, dir: string): string {
   const fromEnv = process.env.FROGBOT_TS_OUTPUT_PATH;
   if (fromEnv) return isAbsolute(fromEnv) ? fromEnv : resolve(dir, fromEnv);
@@ -152,6 +175,7 @@ async function compileTypes(
   const jsonSchema =
     'jsonSchema' in result ? (result as { jsonSchema: unknown }).jsonSchema : result;
   stripInternalCollections(jsonSchema as ConfigJSONSchema);
+  nameInternalSelects(jsonSchema as ConfigJSONSchema);
   const extraTypeStrings =
     'typeStringDefinitions' in result
       ? (result as { typeStringDefinitions?: Set<string> }).typeStringDefinitions

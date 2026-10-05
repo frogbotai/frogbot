@@ -80,10 +80,8 @@ const packageFingerprint = async ([packageDir, name]) => {
   return `${name}@${outputs}:${sha(manifest)}`;
 };
 
-const fingerprint = async ({ dir, generatesImportMap, env }) => {
-  const files = fixtureFiles(dir).filter(
-    (file) => !(generatesImportMap && path.basename(file) === 'importMap.js'),
-  );
+const fingerprint = async ({ dir, env }) => {
+  const files = fixtureFiles(dir).filter((file) => path.basename(file) !== 'importMap.js');
 
   const [fixtureContents, shared, packages] = await Promise.all([
     Promise.all(files.map((file) => readFile(path.join(dir, file)).catch(() => 'missing'))),
@@ -95,7 +93,7 @@ const fingerprint = async ({ dir, generatesImportMap, env }) => {
 
   const hash = createHash('sha256');
 
-  hash.update(JSON.stringify({ node: process.version, env, generatesImportMap }));
+  hash.update(JSON.stringify({ node: process.version, env }));
   shared.forEach((content) => hash.update(sha(content)));
   files.forEach((file, index) => hash.update(`${file}\0${sha(fixtureContents[index])}`));
   hash.update(packages.sort().join('\n'));
@@ -170,7 +168,7 @@ const run = (args, { cwd, env }) =>
   });
 
 const build = async (fixture) => {
-  const { dir, generatesImportMap } = fixture;
+  const { dir } = fixture;
   const nextBin = createRequire(path.join(dir, 'package.json')).resolve('next/dist/bin/next');
   const schema = path.join(buildDir(dir), 'schema.db');
   const { NODE_ENV: _nodeEnv, ...inherited } = process.env;
@@ -182,9 +180,7 @@ const build = async (fixture) => {
     if (code !== 0) throw new Error(`${fixture.name}: ${label} failed\n${output}`);
   };
 
-  if (generatesImportMap) {
-    await step('frogbot generate:importmap', [frogbotBin, 'generate:importmap']);
-  }
+  await step('frogbot generate:importmap', [frogbotBin, 'generate:importmap']);
 
   await step('next build', [nextBin, 'build', '--no-lint']);
   await mkdir(buildDir(dir), { recursive: true });
