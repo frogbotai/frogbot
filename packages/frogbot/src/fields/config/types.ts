@@ -15,6 +15,7 @@ import type {
   NamedGroupField as PayloadNamedGroupField,
   NamedTab as PayloadNamedTab,
   NumberField as PayloadNumberField,
+  OptionLabel as PayloadOptionLabel,
   PointField as PayloadPointField,
   RadioField as PayloadRadioField,
   RelationshipField as PayloadRelationshipField,
@@ -183,10 +184,12 @@ export type JoinField = RetypedField<PayloadJoinField>;
 export type JSONField = RetypedField<PayloadJSONField>;
 export type NumberField = RetypedField<PayloadNumberField>;
 export type PointField = RetypedField<PayloadPointField>;
-export type RadioField = RetypedField<PayloadRadioField>;
+export type RadioField = RetypedField<Omit<PayloadRadioField, 'options'> & { options: Option[] }>;
 export type RelationshipField = RetypedField<PayloadRelationshipField>;
 export type RowField = Omit<PayloadRowField, 'fields' | LayoutIgnoredKey> & FieldContainer;
-export type SelectField = RetypedField<PayloadSelectField>;
+export type SelectField = RetypedField<
+  DistributiveOmit<PayloadSelectField, 'options'> & { options: Option[] }
+>;
 export type TextareaField = RetypedField<PayloadTextareaField>;
 export type TextField = RetypedField<PayloadTextField>;
 export type UIField = RetypedField<PayloadUIField>;
@@ -256,8 +259,24 @@ export type Field =
   | UploadField
   | VectorField;
 
+export const optionColors = [
+  'gray',
+  'blue',
+  'cyan',
+  'teal',
+  'green',
+  'yellow',
+  'orange',
+  'red',
+  'pink',
+  'purple',
+] as const;
+
+export type OptionColor = (typeof optionColors)[number];
+
 export type OptionObject = {
-  label: Record<string, string> | string;
+  color?: OptionColor;
+  label: PayloadOptionLabel;
   value: string;
 };
 

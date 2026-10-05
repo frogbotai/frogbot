@@ -16,6 +16,7 @@ import {
   deliberatorEfforts,
   hiddenSettings,
   insightsPath,
+  labelOptions,
   messagesSlug,
   modelPort,
   monthlySpendUSD,
@@ -62,7 +63,11 @@ export default buildConfig({
         useAsTitle: 'title',
         views: [
           { type: 'list', defaultFields: ['title', 'status', 'channel'] },
-          { type: 'board', groupBy: 'status', defaultFields: ['status', 'channel'] },
+          {
+            type: 'board',
+            groupBy: 'status',
+            defaultFields: ['status', 'channel', 'labels'],
+          },
           { type: 'calendar', start: 'dueAt', defaultFields: ['status', 'channel'] },
         ],
       },
@@ -76,7 +81,7 @@ export default buildConfig({
               type: 'select',
               options: [
                 { label: 'Backlog', value: 'backlog' },
-                { label: 'Done', value: 'done' },
+                { label: 'Done', value: 'done', color: 'green' },
               ],
             },
             {
@@ -89,6 +94,12 @@ export default buildConfig({
             },
             { name: 'dueAt', type: 'date' },
           ],
+        },
+        {
+          name: 'labels',
+          type: 'select',
+          hasMany: true,
+          options: labelOptions,
         },
       ],
     },
@@ -175,7 +186,7 @@ export default buildConfig({
 
         await req.frogbot.delete({
           collection: 'payload-preferences',
-          where: { key: { equals: chatPicksPreference } },
+          where: { key: { in: [chatPicksPreference, `collection-${tasksSlug}`] } },
           overrideAccess: true,
           req,
         });

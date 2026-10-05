@@ -1,0 +1,8 @@
+@layer frogbot {
+  .option-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    vertical-align: middle;
+  }
+}

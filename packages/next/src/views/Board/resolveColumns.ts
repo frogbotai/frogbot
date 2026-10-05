@@ -1,10 +1,17 @@
 import { formatDate } from '@payloadcms/ui/shared';
+import type { OptionColor } from 'frogbot';
 import type { Field, PayloadRequest } from 'payload';
 import { flattenTopLevelFields } from 'payload/shared';
 
+import { getOptionColor } from '../../fields/optionColor.js';
 import { getBoardColumnKey, getBoardColumnValue } from './data.js';
 
-export type ResolvedBoardColumn = { key: string; label: string; value: unknown };
+export type ResolvedBoardColumn = {
+  color?: OptionColor;
+  key: string;
+  label: string;
+  value: unknown;
+};
 
 const supportedFieldTypes: Field['type'][] = [
   'text',
@@ -43,15 +50,20 @@ export async function resolveColumns({
   req: PayloadRequest;
 }): Promise<ResolvedBoardColumn[]> {
   if (field.type === 'select' || field.type === 'radio') {
-    return field.options.map((option) =>
-      typeof option === 'string'
-        ? { key: getBoardColumnKey(option), label: option, value: option }
-        : {
-            key: getBoardColumnKey(option.value),
-            label: String(option.label),
-            value: option.value,
-          },
-    );
+    return field.options.map((option) => {
+      const column: ResolvedBoardColumn =
+        typeof option === 'string'
+          ? { key: getBoardColumnKey(option), label: option, value: option }
+          : {
+              key: getBoardColumnKey(option.value),
+              label: String(option.label),
+              value: option.value,
+            };
+
+      const color = getOptionColor({ field, value: column.value });
+
+      return color ? { color, ...column } : column;
+    });
   }
   let populate: Record<string, Record<string, true>> | undefined;
   if (field.type === 'relationship' || field.type === 'upload') {

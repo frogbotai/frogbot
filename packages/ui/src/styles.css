@@ -18,6 +18,7 @@
 @import "./components/dropdown-menu.css";
 @import "./components/input.css";
 @import "./components/label.css";
+@import "./components/option-pill.css";
 @import "./components/popover.css";
 @import "./components/radio-group.css";
 @import "./components/scroll-area.css";
@@ -212,6 +213,26 @@
     --sidebar-border: light-dark(hsl(220 13% 91%), hsl(240 3.7% 15.9%));
     --sidebar-ring: 217.2 91.2% 59.8%;
     --fb-code-block-user-background: light-dark(var(--theme-base-50), var(--color-base-250));
+    --fb-option-pill-gray-bg: var(--theme-base-250);
+    --fb-option-pill-gray-text: var(--theme-base-850);
+    --fb-option-pill-blue-bg: light-dark(#bfdbfe, #1e3a8a);
+    --fb-option-pill-blue-text: light-dark(#1e40af, #bfdbfe);
+    --fb-option-pill-cyan-bg: light-dark(#a5f3fc, #164e63);
+    --fb-option-pill-cyan-text: light-dark(#155e75, #a5f3fc);
+    --fb-option-pill-teal-bg: light-dark(#99f6e4, #134e4a);
+    --fb-option-pill-teal-text: light-dark(#115e59, #99f6e4);
+    --fb-option-pill-green-bg: light-dark(#bbf7d0, #14532d);
+    --fb-option-pill-green-text: light-dark(#166534, #bbf7d0);
+    --fb-option-pill-yellow-bg: light-dark(#fef08a, #713f12);
+    --fb-option-pill-yellow-text: light-dark(#854d0e, #fef08a);
+    --fb-option-pill-orange-bg: light-dark(#fed7aa, #7c2d12);
+    --fb-option-pill-orange-text: light-dark(#9a3412, #fed7aa);
+    --fb-option-pill-red-bg: light-dark(#fecaca, #7f1d1d);
+    --fb-option-pill-red-text: light-dark(#991b1b, #fecaca);
+    --fb-option-pill-pink-bg: light-dark(#fbcfe8, #831843);
+    --fb-option-pill-pink-text: light-dark(#9d174d, #fbcfe8);
+    --fb-option-pill-purple-bg: light-dark(#e9d5ff, #581c87);
+    --fb-option-pill-purple-text: light-dark(#6b21a8, #e9d5ff);
   }
 
   :where(html:not([data-fb-ui-page])) {

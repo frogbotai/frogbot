@@ -5,7 +5,18 @@ import type { DefaultCellComponentProps } from 'payload';
 
 import { toCellData } from '../../views/cells.js';
 import { getFieldKind } from '../kind.js';
+import { hasOptionColors } from '../optionColor.js';
+import { OptionPills } from '../OptionPills/index.client.js';
 import { kindCells } from './kindCells.js';
+
+function isEmptyValue(value: unknown): boolean {
+  return (
+    value === null ||
+    value === undefined ||
+    value === '' ||
+    (Array.isArray(value) && value.length === 0)
+  );
+}
 
 export function FieldCell(props: DefaultCellComponentProps) {
   const { field } = props;
@@ -30,6 +41,13 @@ export function FieldCell(props: DefaultCellComponentProps) {
 
     return <KindCell {...props} cellData={cellData} />;
   }
+
+  if (
+    (field.type === 'select' || field.type === 'radio') &&
+    hasOptionColors(field) &&
+    !isEmptyValue(cellData)
+  )
+    return <OptionPills {...props} cellData={cellData} />;
 
   return <DefaultCell {...props} cellData={cellData} />;
 }

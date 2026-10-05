@@ -34,7 +34,7 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 | `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell after the board body. |
 | `beforeColumns` | `FrogBotComponent[]` | No; `[]` | Renders before the columns. |
 | `afterColumns` | `FrogBotComponent[]` | No; `[]` | Renders after the columns. |
-| `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. |
+| `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. See [Column headers](#column-headers). |
 | `Card` | `FrogBotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
 
 ```ts
@@ -75,3 +75,55 @@ Dragging a card performs a normal collection update, including access checks, va
 Nested fields use dot paths such as `workflow.stage` and `details.dueDate`.
 
 Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a switcher, using FrogBot's normal list pagination defaults.
+
+## Column headers
+
+Each column header shows the column's label and the number of cards loaded in it. When the group field is a select or radio field with [option colors](/fields/select#option-colors), each option's header shows its label as a coloured pill, and options without a colour show as `gray`. **Uncategorized** always keeps a plain label.
+
+A `ColumnHeader` component replaces the whole header and receives these props:
+
+| Prop | Type | Behavior |
+| --- | --- | --- |
+| `column.key` | `string` | Stable key for the column. |
+| `column.label` | `string` | Label shown in the header, such as the option label or the related document's title. **Uncategorized** for documents without a value. |
+| `column.value` | `unknown` | Stored group value for the column. `undefined` for **Uncategorized**. |
+| `column.color` | `OptionColor \| undefined` | The option's colour. Set only when the group field has option colors, and never for **Uncategorized**. |
+| `count` | `number` | Cards loaded in the column so far. |
+
+Use `OptionPill` from `@frogbotai/ui` to draw the same pill as the built-in header. It accepts these props:
+
+| Prop | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `color` | `OptionColor` | Yes | One of the ten option colours. |
+| `children` | `ReactNode` | No | Pill content. |
+| `className` | `string` | No | Added after the pill's own classes. |
+| Other `span` props | `ComponentProps<'span'>` | No | Passed to the rendered `span`. |
+
+```tsx
+'use client'
+
+import { OptionPill } from '@frogbotai/ui'
+import type { OptionColor } from 'frogbot'
+
+type StageHeaderProps = {
+  column: { color?: OptionColor; key: string; label: string; value: unknown }
+  count: number
+}
+
+export function StageHeader({ column, count }: StageHeaderProps) {
+  return (
+    <>
+      {column.color ? <OptionPill color={column.color}>{column.label}</OptionPill> : <strong>{column.label}</strong>}
+      <span>{count === 1 ? '1 task' : `${count} tasks`}</span>
+    </>
+  )
+}
+```
+
+```ts
+{
+  type: 'board',
+  groupBy: 'stage',
+  components: { ColumnHeader: '/components/StageHeader#StageHeader' },
+}
+```

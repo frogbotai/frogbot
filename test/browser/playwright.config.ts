@@ -234,6 +234,7 @@ const testProjects = [
       'topBarPhone.browser.spec.ts',
       'money.browser.spec.ts',
       'fieldCell.browser.spec.ts',
+      'optionColors.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

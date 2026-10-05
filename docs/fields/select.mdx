@@ -20,7 +20,7 @@ export const Status: Field = {
 }
 ```
 
-Options may be strings or `{ label, value }` objects.
+Options may be strings or `{ label, value }` objects, and objects may add a [color](#option-colors).
 
 ## Config options
 
@@ -28,7 +28,7 @@ Options may be strings or `{ label, value }` objects.
 | --- | --- | --- | --- |
 | `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
 | `type` | `'select'` | Required | Selects the Select field. |
-| `options` | `(string \| { label: string \| Record<string, string>; value: string })[]` | Required | Allowed values. A string is used as both label and value. |
+| `options` | `(string \| { label: string \| Record<string, string>; value: string; color?: OptionColor })[]` | Required | Allowed values. A string is used as both label and value. `color` shows the option as a coloured pill. See [Option colors](#option-colors). |
 | `hasMany` | `boolean` | `false` | Stores an ordered array of selections instead of one value. |
 | `filterOptions` | `({ data, options, req, siblingData }) => Option[]` | — | Returns the options shown and accepted for the current record. See [Filter options](#filter-options). |
 | `enumName` | `string \| ({ tableName }) => string` | Generated from the field name | SQL enum name. |
@@ -84,6 +84,44 @@ export const Visibility: Field = {
   Unlike relationship and upload `filterOptions`, this function returns an array
   of options rather than a query constraint.
 </Banner>
+
+## Option colors
+
+Give an option a `color` to show its value as a coloured pill in the admin panel.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Status: Field = {
+  name: 'status',
+  type: 'select',
+  options: [
+    { label: 'Backlog', value: 'backlog' },
+    { label: 'In progress', value: 'in_progress', color: 'blue' },
+    { label: 'Done', value: 'done', color: 'green' },
+  ],
+}
+```
+
+`color` is one of ten names: `gray`, `blue`, `cyan`, `teal`, `green`, `yellow`, `orange`, `red`, `pink` and `purple`. Each one has a light and a dark variant that follows the admin theme. The `OptionColor` type holds the same names:
+
+```ts
+import type { OptionColor } from 'frogbot'
+```
+
+Once any option has a colour, every value of the field shows as a pill. An option without a colour, and a stored value that matches no option, show as `gray`. A `hasMany` field shows one pill per value, in stored order. A field where no option has a colour looks the same as before.
+
+Pills appear in:
+
+- List cells.
+- Board and Calendar cards.
+- [Board column headers](/admin/collection-board#column-headers), when the field groups the board.
+
+The edit form and the List filters keep their usual controls.
+
+Colours are for display only. They don't change stored values, validation, API responses or generated types. A custom `admin.components.Cell` replaces the pills in the List; Board and Calendar cards still show them.
+
+A name outside the list fails the type check, and FrogBot stops at startup with an error that names the field, the option and the allowed colours.
 
 ## Admin options
 

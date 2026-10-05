@@ -10,6 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import type { OptionColor } from 'frogbot';
 import type { ReactNode } from 'react';
 
 import { BoardColumn } from './BoardColumn.js';
@@ -19,7 +20,10 @@ export type BoardProps<T> = UseBoardProps<T> & {
   hasMore?: Record<string, boolean>;
   onReachEnd?: (key: string) => void;
   renderCard: (row: T) => ReactNode;
-  renderColumnHeader?: (column: { key: string; label: string }, count: number) => ReactNode;
+  renderColumnHeader?: (
+    column: { color?: OptionColor; key: string; label: string },
+    count: number,
+  ) => ReactNode;
 };
 
 const collisionDetection: CollisionDetection = (args) => {
@@ -36,6 +40,7 @@ export function Board<T>(props: BoardProps<T>) {
       <div className="frog-board">
         {board.columns.map((column) => (
           <BoardColumn
+            color={column.color}
             columnKey={column.key}
             getId={props.getId}
             hasMore={props.hasMore?.[column.key]}

@@ -495,6 +495,7 @@ export type {
   NamedTab,
   NumberField,
   Option,
+  OptionColor,
   OptionObject,
   PointField,
   RadioField,

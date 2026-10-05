@@ -7,7 +7,21 @@ import {
   openPostCreate,
   readAdminColor,
 } from './__helpers/adminTheme';
+import { colorDifference, contrast } from './__helpers/color';
 import { signedOut } from './__helpers/signIn';
+
+const optionColors = [
+  'gray',
+  'blue',
+  'cyan',
+  'teal',
+  'green',
+  'yellow',
+  'orange',
+  'red',
+  'pink',
+  'purple',
+];
 
 function readRootProperty(page: Page, name: string) {
   return page.evaluate(
@@ -236,9 +250,9 @@ test('keeps the FrogBot palette on pages outside the admin', async ({ page }) =>
   });
 });
 
-for (const [colorScheme, userBackground, assistantBackground] of [
-  ['light', 'rgb(246, 247, 249)', 'rgb(246, 247, 249)'],
-  ['dark', 'rgb(217, 221, 226)', 'rgb(3, 7, 18)'],
+for (const [colorScheme, userBackground, assistantBackground, grayBackground] of [
+  ['light', 'rgb(246, 247, 249)', 'rgb(246, 247, 249)', 'rgb(217, 221, 226)'],
+  ['dark', 'rgb(217, 221, 226)', 'rgb(3, 7, 18)', 'rgb(44, 53, 68)'],
 ] as const) {
   test.describe(`on a ${colorScheme} operating system outside the admin`, () => {
     test.use({ colorScheme });
@@ -248,6 +262,41 @@ for (const [colorScheme, userBackground, assistantBackground] of [
 
       await expectBackground(page.getByTestId('theme-check-user-code'), userBackground);
       await expectBackground(page.getByTestId('theme-check-assistant-code'), assistantBackground);
+    });
+
+    test('keeps every option pill readable and blue, cyan and teal distinct', async ({ page }) => {
+      await page.goto('/theme-check/pills');
+
+      const pills = page.getByTestId('theme-check-pills').locator('.fb-option-pill');
+
+      await expect(pills).toHaveText(optionColors);
+
+      const colors = await pills.evaluateAll((elements) =>
+        elements.map((element) => ({
+          name: element.textContent ?? '',
+          text: getComputedStyle(element).color,
+          background: getComputedStyle(element).backgroundColor,
+        })),
+      );
+
+      for (const pill of colors) {
+        expect(contrast(pill), `${pill.name} contrast`).toBeGreaterThanOrEqual(4.5);
+      }
+
+      const byName = Object.fromEntries(colors.map((pill) => [pill.name, pill]));
+
+      expect(byName.gray.background).toBe(grayBackground);
+
+      for (const [a, b] of [
+        ['blue', 'cyan'],
+        ['cyan', 'teal'],
+        ['blue', 'teal'],
+      ]) {
+        expect(colorDifference(byName[a].background, byName[b].background)).toBeGreaterThanOrEqual(
+          10,
+        );
+        expect(colorDifference(byName[a].text, byName[b].text)).toBeGreaterThanOrEqual(10);
+      }
     });
   });
 }

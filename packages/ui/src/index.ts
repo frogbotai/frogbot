@@ -110,6 +110,7 @@ export {
 export { EditableText, type EditableTextProps } from './components/editable-text.js';
 export { Input } from './components/input.js';
 export { Label } from './components/label.js';
+export { OptionPill, type OptionPillProps } from './components/option-pill.js';
 export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './components/popover.js';
 export { RadioGroup, RadioGroupItem } from './components/radio-group.js';
 export { ScrollArea, type ScrollAreaProps, ScrollBar } from './components/scroll-area.js';
