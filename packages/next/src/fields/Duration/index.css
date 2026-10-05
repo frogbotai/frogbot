@@ -1,0 +1,9 @@
+@layer frogbot {
+  .duration-field.error .fb-input {
+    border-color: var(--color-destructive);
+  }
+
+  .duration-field__value {
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -9,7 +9,13 @@ import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
+import { barcodeField } from '../../../../packages/frogbot/src/fields/baseFields/barcode/index.js';
+import { durationField } from '../../../../packages/frogbot/src/fields/baseFields/duration/index.js';
 import { moneyField } from '../../../../packages/frogbot/src/fields/baseFields/money/index.js';
+import { percentField } from '../../../../packages/frogbot/src/fields/baseFields/percent/index.js';
+import { phoneField } from '../../../../packages/frogbot/src/fields/baseFields/phone/index.js';
+import { ratingField } from '../../../../packages/frogbot/src/fields/baseFields/rating/index.js';
+import { urlField } from '../../../../packages/frogbot/src/fields/baseFields/url/index.js';
 import type { OptionColor } from '../../../../packages/frogbot/src/fields/config/types.js';
 import {
   buildGeneratedTypesFooter,
@@ -284,6 +290,70 @@ describe('frogbot generate:types', () => {
       expect(output).toMatch(/lines\?:[\s\S]*?amount\?: number \| null;/);
       expect(output).toMatch(/pricing\?: \{[\s\S]*?list\?: number \| null;/);
       expect(output).not.toContain('Nettopreis');
+    });
+
+    it('emits simple kind descriptions as JSDoc without changing the field types', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-simple-kind-types-'));
+
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [
+          {
+            slug: 'records',
+            fields: [
+              percentField({ name: 'progress' }),
+              ratingField({ name: 'score', admin: { description: 'Fit' } }),
+              durationField({ name: 'timeSpent' }),
+              urlField({ name: 'website' }),
+              phoneField({ name: 'phone' }),
+              {
+                name: 'items',
+                type: 'array',
+                fields: [barcodeField({ name: 'sku' })],
+              },
+            ],
+          },
+        ],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = (await readFile(outputPath, 'utf-8')).replace(/\s+/g, ' ');
+      const documented = (property: string, type: string, text: string) =>
+        `/** * ${text} */ ${property}?: ${type} | null;`;
+
+      expect(output).toContain(
+        documented('progress', 'number', 'Fraction where 1 means 100%, for example 0.42 for 42%'),
+      );
+      expect(output).toContain(
+        documented('score', 'number', 'Fit (whole-number rating from 1 to 5)'),
+      );
+      expect(output).toContain(
+        documented(
+          'timeSpent',
+          'number',
+          'Duration in whole seconds, for example 5400 for 1 hour 30 minutes',
+        ),
+      );
+      expect(output).toContain(
+        documented(
+          'website',
+          'string',
+          'Web address, for example https://example.com or example.com',
+        ),
+      );
+      expect(output).toContain(
+        documented(
+          'phone',
+          'string',
+          'Phone number as text, for example +44 20 7946 0958 or (415) 555-9876',
+        ),
+      );
+      expect(output).toContain(
+        documented('sku', 'string', 'Barcode value as text, for example a UPC or EAN code'),
+      );
+      expect(output).toMatch(/items\?:[\s\S]*?sku\?: string \| null;/);
     });
 
     it('generates the same types for coloured and uncoloured options', async () => {

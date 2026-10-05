@@ -182,6 +182,14 @@ export interface Post {
      */
     wholesale?: number | null;
   };
+  /**
+   * Whole-number rating from 1 to 5
+   */
+  score?: number | null;
+  /**
+   * Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+   */
+  timeSpent?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -265,6 +273,8 @@ export interface PostsSelect {
     | {
         wholesale?: boolean;
       };
+  score?: boolean;
+  timeSpent?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

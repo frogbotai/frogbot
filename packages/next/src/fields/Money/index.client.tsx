@@ -4,16 +4,7 @@ import './index.css';
 
 import { Input } from '@frogbotai/ui';
 import { getTranslation } from '@payloadcms/translations';
-import {
-  DefaultCell,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-  RenderCustomComponent,
-  useField,
-  useTranslation,
-  withCondition,
-} from '@payloadcms/ui';
+import { DefaultCell, useField, useTranslation, withCondition } from '@payloadcms/ui';
 import { formatMoney } from 'frogbot/fields';
 import type { MoneyKind } from 'frogbot/fields';
 import type {
@@ -24,9 +15,10 @@ import type {
   NumberFieldValidation,
   Validate,
 } from 'payload';
-import { type ChangeEvent, type CSSProperties, useCallback, useMemo } from 'react';
+import { type ChangeEvent, useCallback } from 'react';
 
 import { getFieldKind } from '../kind.js';
+import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 
 type MoneyFieldAdmin = Pick<NonNullable<NumberField['admin']>, 'placeholder' | 'step'>;
 
@@ -58,7 +50,7 @@ export function MoneyCell(props: DefaultCellComponentProps) {
 
 function MoneyFieldComponent(props: NumberFieldClientProps) {
   const { field, path: pathFromProps, readOnly, validate } = props;
-  const { admin, label, localized, max, min, required } = field;
+  const { admin, max, min, required } = field;
   const { placeholder, step = 'any' } = (admin ?? {}) as MoneyFieldAdmin;
 
   const { i18n } = useTranslation();
@@ -76,14 +68,7 @@ function MoneyFieldComponent(props: NumberFieldClientProps) {
     [validate, min, max, required],
   );
 
-  const {
-    customComponents: { AfterInput, BeforeInput, Description, Error, Label } = {},
-    disabled,
-    path,
-    setValue,
-    showError,
-    value,
-  } = useField<number | null>({
+  const { customComponents, disabled, path, setValue, showError, value } = useField<number | null>({
     potentiallyStalePath: pathFromProps,
     validate: memoizedValidate,
   });
@@ -97,63 +82,21 @@ function MoneyFieldComponent(props: NumberFieldClientProps) {
     [setValue],
   );
 
-  const style = useMemo<CSSProperties>(
-    () => ({
-      ...admin?.style,
-      ...(admin?.width ? { '--field-width': admin.width } : { flex: '1 1 auto' }),
-      ...(admin?.style?.flex ? { flex: admin.style.flex } : {}),
-    }),
-    [admin?.style, admin?.width],
-  );
-
-  const className = [
-    'field-type',
-    'number',
-    'money-field',
-    admin?.className,
-    showError && 'error',
-    (readOnly || disabled) && 'read-only',
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  const fieldLabel = (
-    <RenderCustomComponent
-      CustomComponent={Label}
-      Fallback={<FieldLabel label={label} localized={localized} path={path} required={required} />}
-    />
-  );
-
-  const fieldDescription = (
-    <RenderCustomComponent
-      CustomComponent={Description}
-      Fallback={<FieldDescription description={admin?.description} path={path} />}
-    />
-  );
-
-  if (readOnly) {
-    return (
-      <div className={className} style={style}>
-        {fieldLabel}
-        <div className="field-type__wrap">
-          <div className="money-field__value">
-            {formatMoney({ value, currency, precision, locale })}
-          </div>
-          {fieldDescription}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={className} style={style}>
-      {fieldLabel}
-      <div className="field-type__wrap">
-        <RenderCustomComponent
-          CustomComponent={Error}
-          Fallback={<FieldError path={path} showError={showError} />}
-        />
-        {BeforeInput}
+    <KindFieldLayout
+      base="number"
+      className="money-field"
+      customComponents={customComponents}
+      field={field}
+      path={path}
+      readOnly={readOnly || disabled}
+      showError={showError}
+    >
+      {readOnly ? (
+        <div className="money-field__value">
+          {formatMoney({ value, currency, precision, locale })}
+        </div>
+      ) : (
         <div className="money-field__control">
           <span className="money-field__currency">{currencySymbol({ currency, locale })}</span>
           <Input
@@ -170,10 +113,8 @@ function MoneyFieldComponent(props: NumberFieldClientProps) {
             value={typeof value === 'number' ? value : ''}
           />
         </div>
-        {AfterInput}
-        {fieldDescription}
-      </div>
-    </div>
+      )}
+    </KindFieldLayout>
   );
 }
 

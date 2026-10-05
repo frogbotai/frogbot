@@ -24,7 +24,13 @@ export {
 } from '../elements/SignInButtons/index.client.js';
 export { StepNavReset, type StepNavResetProps } from '../elements/StepNavReset/index.client.js';
 export { ViewSwitcher, type ViewSwitcherProps } from '../elements/ViewSwitcher/index.client.js';
+export { BarcodeCell } from '../fields/Barcode/index.client.js';
 export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';
+export { DurationCell, DurationField } from '../fields/Duration/index.client.js';
 export { FieldCell } from '../fields/FieldCell/index.client.js';
 export { MoneyCell, MoneyField } from '../fields/Money/index.client.js';
+export { PercentCell, PercentField } from '../fields/Percent/index.client.js';
+export { PhoneCell, PhoneField } from '../fields/Phone/index.client.js';
+export { RatingCell, RatingField } from '../fields/Rating/index.client.js';
+export { UrlCell } from '../fields/Url/index.client.js';
 export * from '@payloadcms/next/client';

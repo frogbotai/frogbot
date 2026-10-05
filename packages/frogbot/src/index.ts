@@ -37,8 +37,14 @@ export type {
   ConnectionsConfig,
   SanitizedConnectionsConfig,
 } from './connections/types.js';
+export { barcodeField } from './fields/baseFields/barcode/index.js';
+export { durationField } from './fields/baseFields/duration/index.js';
 export { moneyField } from './fields/baseFields/money/index.js';
+export { percentField } from './fields/baseFields/percent/index.js';
+export { phoneField } from './fields/baseFields/phone/index.js';
+export { ratingField } from './fields/baseFields/rating/index.js';
 export { slugField } from './fields/baseFields/slug/index.js';
+export { urlField } from './fields/baseFields/url/index.js';
 export type { FrogBot as FrogBotInstance } from './frogbot.js';
 export { getCachedFrogBot, getFrogBot } from './getFrogBot.js';
 export type { GatewayHandler } from './server/gateway.js';
@@ -474,8 +480,14 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
+export type { BarcodeFieldArgs } from './fields/baseFields/barcode/index.js';
+export type { DurationFieldArgs } from './fields/baseFields/duration/index.js';
 export type { MoneyFieldArgs } from './fields/baseFields/money/index.js';
+export type { PercentFieldArgs } from './fields/baseFields/percent/index.js';
+export type { PhoneFieldArgs } from './fields/baseFields/phone/index.js';
+export type { RatingFieldArgs } from './fields/baseFields/rating/index.js';
 export type { SlugField } from './fields/baseFields/slug/index.js';
+export type { UrlFieldArgs } from './fields/baseFields/url/index.js';
 export type {
   ArrayField,
   Block,

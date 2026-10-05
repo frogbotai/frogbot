@@ -89,6 +89,7 @@ export const adminIconExports = [
   'SparkleIcon',
   'SquareIcon',
   'SquareLockIcon',
+  'StarIcon',
   'StopIcon',
   'StoplightIcon',
   'StripeIcon',

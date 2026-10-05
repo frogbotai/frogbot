@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   applyFieldKind,
@@ -9,6 +9,7 @@ import type {
   NumberField,
   TextField,
 } from '../../../../../packages/frogbot/src/fields/config/types.js';
+import { validateField, validateOptions } from './validateField.js';
 
 const spec: FieldKindSpec = {
   kind: { type: 'sample', unit: 'm' },
@@ -242,5 +243,81 @@ describe('applyFieldKind input', () => {
     expect({ ...input, typescriptSchema: undefined }).toEqual(snapshot);
     expect(input.typescriptSchema).toEqual([entry]);
     expect(input.admin).not.toHaveProperty('components');
+  });
+});
+
+describe('applyFieldKind validate', () => {
+  const evenSpec: FieldKindSpec = {
+    ...spec,
+    check: (value) => ((value as number) % 2 === 0 ? true : 'Enter an even number.'),
+  };
+
+  it('sets no validate when the spec has no check', () => {
+    const validate = () => true as const;
+
+    expect(applyFieldKind({ name: 'length', type: 'number' }, spec)).not.toHaveProperty('validate');
+    expect(applyFieldKind({ name: 'length', type: 'number', validate }, spec).validate).toBe(
+      validate,
+    );
+  });
+
+  it('returns the base result for a required number before the check', async () => {
+    const check = vi.fn(() => true as const);
+    const field = applyFieldKind(
+      { name: 'length', type: 'number', required: true },
+      { ...spec, check },
+    );
+
+    expect(await validateField(field, null)).toBe('validation:required');
+    expect(check).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [0, 'validation:lessThanMin'],
+    [12, 'validation:greaterThanMax'],
+    [7, 'Enter an even number.'],
+    [4, true],
+  ])('checks number %o against min, max and then the kind', async (value, expected) => {
+    const field = applyFieldKind({ name: 'length', type: 'number', min: 2, max: 10 }, evenSpec);
+
+    expect(await validateField(field, value)).toBe(expected);
+  });
+
+  it('returns the base minLength result for text before the check', async () => {
+    const check = vi.fn(() => 'Never valid.');
+    const field = applyFieldKind({ name: 'code', type: 'text', minLength: 3 } satisfies TextField, {
+      ...spec,
+      check,
+    });
+
+    expect(await validateField(field, 'ab')).toBe('validation:longerThanMin');
+    expect(check).not.toHaveBeenCalled();
+  });
+
+  it.each([null, undefined, ''])('skips the check for the empty value %o', async (value) => {
+    const check = vi.fn(() => 'Never valid.');
+    const field = applyFieldKind({ name: 'code', type: 'text' }, { ...spec, check });
+
+    expect(await validateField(field, value)).toBe(true);
+    expect(check).not.toHaveBeenCalled();
+  });
+
+  it('runs the developer validate after the check with the same value and options', async () => {
+    const validate = vi.fn(() => 'Developer rule.');
+    const field = applyFieldKind({ name: 'length', type: 'number', validate }, evenSpec);
+
+    expect(await validateField(field, 7)).toBe('Enter an even number.');
+    expect(validate).not.toHaveBeenCalled();
+
+    const options = validateOptions(field);
+
+    expect(await field.validate?.(4, options as never)).toBe('Developer rule.');
+    expect(validate).toHaveBeenCalledWith(4, options);
+  });
+
+  it('rejects a check on a field type without a base validator', () => {
+    expect(() =>
+      applyFieldKind({ name: 'notes', type: 'textarea' }, { ...spec, check: () => true }),
+    ).toThrow(new Error('applyFieldKind: check is not supported on textarea fields'));
   });
 });

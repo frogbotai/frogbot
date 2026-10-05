@@ -119,7 +119,15 @@
                   "fields/ui",
                   {
                     "group": "Field kinds",
-                    "pages": ["fields/money"]
+                    "pages": [
+                      "fields/money",
+                      "fields/percent",
+                      "fields/rating",
+                      "fields/duration",
+                      "fields/url",
+                      "fields/phone",
+                      "fields/barcode"
+                    ]
                   },
                   "fields/default-fields"
                 ]

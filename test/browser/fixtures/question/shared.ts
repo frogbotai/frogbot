@@ -4,6 +4,7 @@ export const chatsSlug = 'chats';
 export const messagesSlug = 'messages';
 export const usersSlug = 'users';
 export const tasksSlug = 'tasks';
+export const timesheetsSlug = 'timesheets';
 export const labelOptions = (
   [
     'gray',

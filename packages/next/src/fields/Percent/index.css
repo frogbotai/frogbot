@@ -1,0 +1,36 @@
+@layer frogbot {
+  .percent-field__control {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .percent-field__suffix {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    padding: 0 0.75rem;
+    border: 1px solid var(--theme-base-300);
+    border-inline-start: 0;
+    border-start-end-radius: var(--fb-radius-lg);
+    border-end-end-radius: var(--fb-radius-lg);
+    background-color: var(--theme-base-100);
+    color: var(--theme-base-600);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .percent-field__control .fb-input {
+    min-width: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .percent-field.error .percent-field__suffix,
+  .percent-field.error .fb-input {
+    border-color: var(--color-destructive);
+  }
+
+  .percent-field__value {
+    font-variant-numeric: tabular-nums;
+  }
+}

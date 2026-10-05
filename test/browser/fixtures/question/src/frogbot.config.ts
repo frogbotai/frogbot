@@ -1,6 +1,16 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin, mintApiKey } from '@frogbotai/plugin-api-keys';
-import { type AgentModelId, buildConfig, definePiece } from 'frogbot';
+import {
+  type AgentModelId,
+  barcodeField,
+  buildConfig,
+  definePiece,
+  durationField,
+  percentField,
+  phoneField,
+  ratingField,
+  urlField,
+} from 'frogbot';
 import { question } from 'frogbot/tools';
 
 import {
@@ -25,6 +35,7 @@ import {
   reportsPath,
   robotSettings,
   tasksSlug,
+  timesheetsSlug,
   turnsSlug,
   usageLogsSlug,
   usersSlug,
@@ -66,9 +77,23 @@ export default buildConfig({
           {
             type: 'board',
             groupBy: 'status',
-            defaultFields: ['status', 'channel', 'labels'],
+            defaultFields: [
+              'status',
+              'channel',
+              'labels',
+              'progress',
+              'score',
+              'timeSpent',
+              'website',
+              'phone',
+              'sku',
+            ],
           },
-          { type: 'calendar', start: 'dueAt', defaultFields: ['status', 'channel'] },
+          {
+            type: 'calendar',
+            start: 'dueAt',
+            defaultFields: ['status', 'channel', 'progress', 'website'],
+          },
         ],
       },
       fields: [
@@ -101,6 +126,21 @@ export default buildConfig({
           hasMany: true,
           options: labelOptions,
         },
+        percentField({ name: 'progress', precision: 1 }),
+        ratingField({ name: 'score' }),
+        durationField({ name: 'timeSpent', format: 'h:mm' }),
+        urlField({ name: 'website' }),
+        phoneField({ name: 'phone' }),
+        barcodeField({ name: 'sku' }),
+      ],
+    },
+    {
+      slug: timesheetsSlug,
+      admin: { useAsTitle: 'title' },
+      versions: { drafts: true },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        durationField({ name: 'logged', format: 'h:mm' }),
       ],
     },
   ],
@@ -180,7 +220,7 @@ export default buildConfig({
       handler: async (req) => {
         if (!req.user) return new Response(null, { status: 401 });
 
-        for (const collection of [messagesSlug, chatsSlug, turnsSlug, tasksSlug]) {
+        for (const collection of [messagesSlug, chatsSlug, turnsSlug, tasksSlug, timesheetsSlug]) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
 

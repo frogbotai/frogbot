@@ -1,0 +1,138 @@
+---
+title: Rating Field
+sidebarTitle: Rating
+description: Store star ratings as whole numbers and show them as stars everywhere.
+keywords: rating, stars, score, review, number, fields, collections, configuration
+---
+
+`ratingField` returns a [Number field](/fields/number) that stores a star rating as a whole number from `1` to `max`. The admin panel shows the rating as stars and edits it by clicking a star, and agents and generated types are told the allowed range. You don't name any components or write a formatter.
+
+```ts
+import { ratingField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Reviews: CollectionConfig = {
+  slug: 'reviews',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    ratingField({ name: 'score', label: 'Score', required: true }),
+  ],
+}
+```
+
+The result is a plain `number` field, so it works anywhere a field does, including inside groups, arrays, tabs and blocks.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `max` | `number` | `5` | Number of stars and the highest accepted value, a whole number from `1` to `10`. Checked by the built-in validator and passed to agents. |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel and used as the accessible name of the stars. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `number` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | — | Runs after the built-in validation and the rating check, and adds to them rather than replacing them. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the rating field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+The lowest rating is always `1`, so `min` is not accepted. A rating field holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted either. TypeScript rejects all four, and setting any of them from JavaScript fails at startup.
+
+Invalid options fail when the config is built, with an error naming the field:
+
+```text
+ratingField "score": max must be a whole number from 1 to 10, got 11
+ratingField "score": min is not supported
+ratingField "score": hasMany is not supported
+```
+
+Every save checks the value, whether it comes from the admin panel, the REST API, GraphQL, the Local API or an agent. `0` and values above `max` fail the built-in range check, and a fraction such as `3.5` fails with:
+
+```text
+Enter a whole number of stars from 1 to 5.
+```
+
+## Admin options
+
+Rating fields support the standard [field admin options](/fields/overview#admin-options). These Number field options are accepted but not used, because the rating control is a row of stars:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `step` | `number` | — | Not used. |
+| `placeholder` | `string \| Record<string, string>` | — | Not used. |
+| `autoComplete` | `string` | — | Not used. |
+
+FrogBot stores the field's `max` in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display and editing
+
+A rating shows `max` stars: the first `value` stars are filled, and the rest are faint outlines. A rating of `3` with the default `max` shows three filled stars and two faint ones, and screen readers hear "3 of 5".
+
+An empty value shows nothing, not five faint stars. A stored value that isn't a whole number from `1` to `max`, for example one saved before the field became a rating, shows as the plain stored number and never as stars.
+
+Ratings look the same in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. If a rating field is the first List column, a row with an empty value has no link to open the document from that column.
+
+In the document view, an editable rating field is a row of stars:
+
+- Click a star to set the rating.
+- Click the current star again to clear the rating.
+- Use the arrow keys to move the rating up or down once a star has focus.
+
+Screen readers announce the stars as a group named by the field's label, with each star read as "1 star", "2 stars", and so on. These star names are English only.
+
+The label, description, validation errors, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the stars with no way to change them.
+
+## Stored value
+
+Ratings are stored as whole numbers from `1` to `max`. The REST API, GraphQL and the Local API read and write the number, and the generated TypeScript type is the same as a Number field's, such as `score?: number | null`. Filters and sorting use the stored number.
+
+## Agents and generated types
+
+A rating field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types). The text uses the field's `max`:
+
+```text
+Whole-number rating from 1 to 5
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the rating text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+ratingField({ name: 'score', admin: { description: 'How well the candidate fits the role' } })
+```
+
+```text
+How well the candidate fits the role (whole-number rating from 1 to 5)
+```
+
+A function `admin.description` isn't copied, so the rating text stands alone. The text is English only.
+
+Generated types show the text as a comment above the property. In the MCP plugin's create and update tools, the value is an integer with a `minimum` of `1` and a `maximum` of `max`, so agents see the allowed range. Generated types don't include limits, and virtual fields don't appear in MCP tool inputs.
+
+To change the text, add your own `typescriptSchema` entry. It runs after the rating field's entry, so it can adjust or replace the description:
+
+```ts
+ratingField({
+  name: 'score',
+  max: 10,
+  typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Score out of 10' })],
+})
+```
+
+```text
+Score out of 10
+```
+
+## Custom components
+
+The rating cell and input are `RatingCell` and `RatingField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the stars as they do on a Number field. `frogbot/fields` exports the `RatingKind` type for reading the field's `max` in your own components.
+
+A custom Cell can draw the standard stars inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard stars.

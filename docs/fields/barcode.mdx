@@ -1,0 +1,120 @@
+---
+title: Barcode Field
+sidebarTitle: Barcode
+description: Store barcode values such as UPC or EAN codes as text.
+keywords: barcode, upc, ean, sku, code, text, fields, collections, configuration
+---
+
+`barcodeField` returns a [Text field](/fields/text) that stores a barcode value, such as a UPC or EAN code, as text. The admin panel shows the value as typed, and agents and generated types are told what the text means. You don't name any components.
+
+```ts
+import { barcodeField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Products: CollectionConfig = {
+  slug: 'products',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    barcodeField({ name: 'sku', label: 'SKU', unique: true }),
+  ],
+}
+```
+
+The result is a plain `text` field, so it works anywhere a field does, including inside groups, arrays, tabs and blocks.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `minLength` | `number` | — | Minimum length, checked by the built-in validator. |
+| `maxLength` | `number` | Root `defaultMaxTextLength` (`40000`) | Maximum length, checked by the built-in validator. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `string` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | — | Runs after the built-in validation of `required`, `minLength` and `maxLength`, and adds to it rather than replacing it. Use it for a format rule such as a check digit. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the barcode field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+A barcode field holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+
+```text
+barcodeField "sku": hasMany is not supported
+```
+
+FrogBot doesn't check the barcode's format, so any text is accepted. Your own `minLength`, `maxLength` and `validate` apply on every save.
+
+## Admin options
+
+Barcode fields support the standard [field admin options](/fields/overview#admin-options), plus the Text field's input options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Value of the input's `autocomplete` attribute. |
+| `rtl` | `boolean` | Follows the locale | `true` forces right-to-left text. `false` keeps left-to-right text in a right-to-left locale. When unset, right-to-left locales render right-to-left. |
+
+FrogBot marks the field as a barcode in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display and editing
+
+A barcode shows as typed, as plain text, in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. An empty value shows nothing: no placeholder and no dash. If a barcode field is the first List column, a row with an empty value has no link to open the document from that column.
+
+In the document view, a barcode field uses the normal text input. There is no camera scanning and no barcode image.
+
+## Stored value
+
+Only the barcode text is stored, with no barcode type such as UPC-A or EAN-13. The REST API, GraphQL and the Local API return the stored text, and the generated TypeScript type is the same as a Text field's, such as `sku?: string | null`.
+
+<Info>
+  If barcode scanning is added later, the stored value may change to hold the barcode type as well as the text.
+</Info>
+
+## Agents and generated types
+
+A barcode field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types):
+
+```text
+Barcode value as text, for example a UPC or EAN code
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the barcode text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+barcodeField({ name: 'sku', admin: { description: 'Code printed on the box' } })
+```
+
+```text
+Code printed on the box (barcode value as text, for example a UPC or EAN code)
+```
+
+A function `admin.description` isn't copied, so the barcode text stands alone. The text is English only. Generated types show the text as a comment above the property, and virtual fields don't appear in MCP tool inputs.
+
+To change the text, add your own `typescriptSchema` entry. It runs after the barcode field's entry, so it can adjust or replace the description:
+
+```ts
+barcodeField({
+  name: 'sku',
+  typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: '13-digit EAN code' })],
+})
+```
+
+```text
+13-digit EAN code
+```
+
+## Custom components
+
+The barcode cell is `BarcodeCell` from `@frogbotai/next/client`. Your own `admin.components.Cell` replaces it, and `admin.components.Field` and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work as they do on a Text field.
+
+A custom Cell can draw the standard display inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard display.

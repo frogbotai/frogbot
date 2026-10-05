@@ -1,0 +1,64 @@
+@layer frogbot {
+  .rating-stars {
+    display: inline-flex;
+    gap: 0.125rem;
+    vertical-align: middle;
+  }
+
+  .rating-stars__star {
+    flex-shrink: 0;
+    stroke: var(--theme-base-400);
+    fill: none;
+  }
+
+  .rating-stars__star--on {
+    color: var(--color-warning);
+    stroke: currentColor;
+    fill: currentColor;
+  }
+
+  .rating-field__control {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+
+  .rating-field__option {
+    position: relative;
+    display: inline-flex;
+    border-radius: var(--fb-radius-sm);
+    cursor: pointer;
+  }
+
+  .rating-field.read-only .rating-field__option {
+    cursor: default;
+  }
+
+  .rating-field__option:has(.rating-field__input:focus-visible) {
+    box-shadow: 0 0 0 2px var(--theme-brand-500);
+  }
+
+  .rating-field__input,
+  .rating-field__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .rating-field__star {
+    flex-shrink: 0;
+    stroke: var(--theme-base-400);
+    fill: none;
+  }
+
+  .rating-field__star--on {
+    color: var(--color-warning);
+    stroke: currentColor;
+    fill: currentColor;
+  }
+}

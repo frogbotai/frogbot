@@ -35,6 +35,7 @@ type InputSchema = {
   type?: string | string[];
   description?: string;
   minimum?: number;
+  maximum?: number;
   anyOf?: InputSchema[];
   properties?: Record<string, InputSchema>;
 };
@@ -221,6 +222,61 @@ describe('MCP plugin integration', () => {
 
     expect(docs.map(({ title, price }) => ({ title, price }))).toEqual([
       { title: 'Decimal', price: 12.5 },
+    ]);
+  });
+
+  it('POST /api/mcp describes rating and duration fields as whole numbers', async () => {
+    const { tools } = parseMcpResponse<ToolsListBody>((await listTools(apiKeyToken)).body).result;
+
+    for (const name of ['createPosts', 'updatePosts']) {
+      const properties = tools.find((tool) => tool.name === name)?.inputSchema.properties ?? {};
+      const score = properties.score ?? {};
+      const timeSpent = properties.timeSpent ?? {};
+      const scoreNumber = score.anyOf?.find(({ type }) => type === 'integer') ?? score;
+      const timeSpentNumber = timeSpent.anyOf?.find(({ type }) => type === 'integer') ?? timeSpent;
+
+      expect(score.description).toBe('Whole-number rating from 1 to 5');
+      expect(scoreNumber).toMatchObject({ type: 'integer', minimum: 1, maximum: 5 });
+      expect(timeSpent.description).toBe(
+        'Duration in whole seconds, for example 5400 for 1 hour 30 minutes',
+      );
+      expect(timeSpentNumber).toMatchObject({ type: 'integer' });
+    }
+  });
+
+  it('POST /api/mcp rejects a fractional rating without saving', async () => {
+    const response = await callTool('createPosts', { title: 'Half star', score: 3.5 });
+
+    expect(response.status).toBe(200);
+
+    const { result } = parseMcpResponse<ToolCallBody>(response.body);
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([
+      {
+        type: 'text',
+        text: 'MCP error -32602: Input validation error: Invalid arguments for tool createPosts: Invalid input at score',
+      },
+    ]);
+
+    const { totalDocs } = await booted.frogbot.count({
+      collection: postsSlug,
+      overrideAccess: true,
+    });
+
+    expect(totalDocs).toBe(0);
+  });
+
+  it('POST /api/mcp saves a whole rating and duration', async () => {
+    const response = await callTool('createPosts', { title: 'Rated', score: 3, timeSpent: 5400 });
+
+    expect(response.status).toBe(200);
+    expect(parseMcpResponse<ToolCallBody>(response.body).result.isError).not.toBe(true);
+
+    const { docs } = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
+
+    expect(docs.map(({ title, score, timeSpent }) => ({ title, score, timeSpent }))).toEqual([
+      { title: 'Rated', score: 3, timeSpent: 5400 },
     ]);
   });
 

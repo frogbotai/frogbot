@@ -91,6 +91,7 @@ export { default as SlackIcon } from '../icons/icons/SlackIcon.js';
 export { default as SparkleIcon } from '../icons/icons/SparkleIcon.js';
 export { default as SquareIcon } from '../icons/icons/SquareIcon.js';
 export { default as SquareLockIcon } from '../icons/icons/SquareLockIcon.js';
+export { default as StarIcon } from '../icons/icons/StarIcon.js';
 export { default as StopIcon } from '../icons/icons/StopIcon.js';
 export { default as StoplightIcon } from '../icons/icons/StoplightIcon.js';
 export { default as StripeIcon } from '../icons/icons/StripeIcon.js';
