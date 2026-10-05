@@ -229,7 +229,7 @@ Representative mappings include collection configuration in `collections/config/
 
 ## Reference Repos
 
-Use applicable local implementations, types, tests, and fixtures rather than memory or web copies of available code. The [Step 0 routing table](.github/feature-process/step0_research.md#local-source-routing) also covers gateway/client comparisons and unavailable sources; references below are local checkout defaults, not dependencies every contributor must clone.
+Use applicable local implementations, types, tests, and fixtures rather than memory or web copies of available code. The [Step 1 reference-repo table](.github/feature-process/step1_research.md#reference-repos) also covers gateway/client comparisons and unavailable sources; references below are local checkout defaults, not dependencies every contributor must clone.
 
 - **Payload source:** `~/code/payload` — ALWAYS check this repo for Payload internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what Payload supports.
 
