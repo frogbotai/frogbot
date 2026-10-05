@@ -9,6 +9,7 @@ import {
   definePiece,
   durationField,
   lastModifiedByField,
+  moneyField,
   percentField,
   phoneField,
   ratingField,
@@ -34,9 +35,11 @@ import {
   modelPort,
   monthlySpendUSD,
   pickerAgentSlug,
+  projectsSlug,
   reasoningModels,
   reportsPath,
   robotSettings,
+  tagsSlug,
   tasksSlug,
   timesheetsSlug,
   turnsSlug,
@@ -44,6 +47,11 @@ import {
   usersSlug,
   verboseEffort,
 } from '../shared';
+
+const projectStatusOptions = [
+  { label: 'Active', value: 'active', color: 'green' as const },
+  { label: 'Paused', value: 'paused' },
+];
 
 const slack = definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
   slug: channelChat.channelThread.account,
@@ -76,7 +84,19 @@ export default buildConfig({
       admin: {
         useAsTitle: 'title',
         views: [
-          { type: 'list', defaultFields: ['title', 'number', 'status', 'channel', 'createdBy'] },
+          {
+            type: 'list',
+            defaultFields: [
+              'title',
+              'number',
+              'status',
+              'channel',
+              'createdBy',
+              'projectBudget',
+              'projectStatus',
+              'tagNames',
+            ],
+          },
           {
             type: 'board',
             groupBy: 'status',
@@ -91,12 +111,24 @@ export default buildConfig({
               'phone',
               'sku',
               'createdBy',
+              'projectBudget',
+              'projectStatus',
+              'tagNames',
             ],
           },
           {
             type: 'calendar',
             start: 'dueAt',
-            defaultFields: ['status', 'channel', 'progress', 'website', 'createdBy'],
+            defaultFields: [
+              'status',
+              'channel',
+              'progress',
+              'website',
+              'createdBy',
+              'projectBudget',
+              'projectStatus',
+              'tagNames',
+            ],
           },
         ],
       },
@@ -139,8 +171,28 @@ export default buildConfig({
         autonumberField({ name: 'number' }),
         createdByField({ name: 'createdBy' }),
         lastModifiedByField({ name: 'lastModifiedBy' }),
+        { name: 'project', type: 'relationship', relationTo: projectsSlug },
+        { name: 'tags', type: 'relationship', relationTo: tagsSlug, hasMany: true },
+        { name: 'projectBudget', type: 'number', virtual: 'project.budget' },
+        {
+          name: 'projectStatus',
+          type: 'select',
+          options: projectStatusOptions,
+          virtual: 'project.status',
+        },
+        { name: 'tagNames', type: 'text', virtual: 'tags.name' },
       ],
     },
+    {
+      slug: projectsSlug,
+      admin: { useAsTitle: 'name' },
+      fields: [
+        { name: 'name', type: 'text', required: true },
+        moneyField({ name: 'budget' }),
+        { name: 'status', type: 'select', options: projectStatusOptions },
+      ],
+    },
+    { slug: tagsSlug, admin: { useAsTitle: 'name' }, fields: [{ name: 'name', type: 'text' }] },
     {
       slug: timesheetsSlug,
       admin: { useAsTitle: 'title' },
@@ -227,7 +279,15 @@ export default buildConfig({
       handler: async (req) => {
         if (!req.user) return new Response(null, { status: 401 });
 
-        for (const collection of [messagesSlug, chatsSlug, turnsSlug, tasksSlug, timesheetsSlug]) {
+        for (const collection of [
+          messagesSlug,
+          chatsSlug,
+          turnsSlug,
+          tasksSlug,
+          projectsSlug,
+          tagsSlug,
+          timesheetsSlug,
+        ]) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
 

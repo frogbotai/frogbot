@@ -237,6 +237,7 @@ const testProjects = [
       'optionColors.browser.spec.ts',
       'simpleKinds.browser.spec.ts',
       'systemFields.browser.spec.ts',
+      'virtualPaths.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

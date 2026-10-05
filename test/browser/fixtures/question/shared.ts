@@ -5,6 +5,8 @@ export const messagesSlug = 'messages';
 export const usersSlug = 'users';
 export const tasksSlug = 'tasks';
 export const timesheetsSlug = 'timesheets';
+export const projectsSlug = 'projects';
+export const tagsSlug = 'tags';
 export const labelOptions = (
   [
     'gray',

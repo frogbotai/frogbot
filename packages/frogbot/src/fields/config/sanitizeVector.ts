@@ -6,7 +6,7 @@ import {
 
 import type { MapVectorField } from '../../database/types.js';
 import { validateVector } from '../validations.js';
-import { sanitizeOptionColors } from './sanitizeOptionColors.js';
+import { FIELD_CELL_PATH, sanitizeOptionColors } from './sanitizeOptionColors.js';
 import { getSystemKind, sanitizeSystemKind, type SystemKindUsers } from './sanitizeSystemKinds.js';
 import type { Field, VectorField } from './types.js';
 
@@ -102,12 +102,27 @@ function sanitizeVectorField({
   return mapVectorField({ collection, block, dimensions, field: lowered, path });
 }
 
+function sanitizeVirtualPath(field: Field): Field {
+  if (!('virtual' in field) || typeof field.virtual !== 'string') return field;
+
+  const admin = ('admin' in field ? field.admin : undefined) as
+    { components?: { Cell?: unknown } } | undefined;
+
+  if (admin?.components?.Cell) return field;
+
+  return {
+    ...field,
+    admin: { ...admin, components: { ...admin?.components, Cell: FIELD_CELL_PATH } },
+  } as Field;
+}
+
 function sanitizeFields(
   args: SanitizeVectorFieldsArgs,
   parent: string,
   repeated: boolean,
 ): Field[] {
-  return args.fields.map((field) => {
+  return args.fields.map((input) => {
+    const field = sanitizeVirtualPath(input);
     const path = 'name' in field ? joinPath(parent, field.name) : parent;
     const systemKind = getSystemKind(field);
 
