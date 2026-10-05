@@ -22,6 +22,10 @@ describe('@frogbotai/next client export', () => {
     );
   });
 
+  it('exports the AI cell and field', () => {
+    expect(source).toContain("export { AICell, AIField } from '../fields/AI/index.client.js'");
+  });
+
   it('exports the field cell', () => {
     expect(source).toContain("export { FieldCell } from '../fields/FieldCell/index.client.js'");
   });

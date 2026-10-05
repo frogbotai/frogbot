@@ -7,16 +7,19 @@ import {
   type FieldType,
   RenderCustomComponent,
 } from '@payloadcms/ui';
-import type { NumberFieldClientProps, TextFieldClientProps } from 'payload';
+import type { NumberFieldClientProps, SelectFieldClientProps, TextFieldClientProps } from 'payload';
 import { type CSSProperties, type ReactNode, useMemo } from 'react';
 
 export type KindFieldLayoutProps = {
-  base: 'number' | 'text';
+  base: 'number' | 'select' | 'text';
   children: ReactNode;
   className: string;
   customComponents: FieldType<unknown>['customComponents'];
   errorMessage?: string;
-  field: NumberFieldClientProps['field'] | TextFieldClientProps['field'];
+  field:
+    | NumberFieldClientProps['field']
+    | SelectFieldClientProps['field']
+    | TextFieldClientProps['field'];
   labelAs?: 'label' | 'span';
   path: string;
   readOnly?: boolean;

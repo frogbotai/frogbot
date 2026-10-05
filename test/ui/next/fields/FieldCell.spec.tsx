@@ -13,7 +13,9 @@ const { DefaultCell, getEntityConfig, useTranslation } = vi.hoisted(() => ({
 
 vi.mock('@payloadcms/ui', () => ({
   DefaultCell,
-  useConfig: () => ({ getEntityConfig }),
+  useAuth: () => ({ permissions: { collections: { tasks: { update: true } } } }),
+  useConfig: () => ({ config: { routes: { api: '/api' } }, getEntityConfig }),
+  useLocale: () => ({}),
   useTranslation,
   withCondition: <T,>(Component: T) => Component,
 }));
@@ -142,6 +144,20 @@ describe('FieldCell', () => {
     render(<FieldCell {...cell(kindField('text', { type: 'phone' }), '5551234567')} />);
 
     expect(renderLastCellData().querySelector('a')?.getAttribute('href')).toBe('tel:5551234567');
+  });
+
+  it('draws an ai kind through the AI cell', () => {
+    const field = kindField('text', { type: 'ai', inputs: ['title'], prompt: 'Summarize.' });
+
+    render(
+      <FieldCell
+        {...cell(field, 'Old summary')}
+        rowData={{ id: 'row', title: 'Report', _value_status: 'pending' }}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'Generating' })).toBeTruthy();
+    expect(lastCellData()).toBe('Old summary');
   });
 
   it('renders nothing for an empty barcode kind', () => {
@@ -379,6 +395,14 @@ describe('FieldCell', () => {
     const tagName = { name: 'name', type: 'text' } as ClientField;
     const archived = { name: 'archived', type: 'checkbox' } as ClientField;
 
+    const brief = {
+      name: 'brief',
+      type: 'text',
+      admin: {
+        custom: { frogbot: { kind: { type: 'ai', inputs: ['name'], prompt: 'Summarize.' } } },
+      },
+    } as ClientField;
+
     const collections: Record<string, ClientCollectionConfig> = {
       clients: { slug: 'clients', fields: [clientName] } as ClientCollectionConfig,
       projects: {
@@ -395,6 +419,7 @@ describe('FieldCell', () => {
           { name: 'owner', type: 'relationship', relationTo: ['users', 'clients'] },
           { name: 'json', type: 'json' },
           { name: 'echo', type: 'text', virtual: 'client.name' },
+          brief,
         ],
       } as ClientCollectionConfig,
       tags: {
@@ -455,6 +480,19 @@ describe('FieldCell', () => {
       );
 
       expect(container.textContent).toBe(text);
+    });
+
+    it('draws an ai source as its plain value without state or actions', () => {
+      const props = cell(virtualField('project.brief'), 'Short brief');
+
+      render(<FieldCell {...props} />);
+
+      expect(lastProps()).toStrictEqual({
+        ...props,
+        field: { ...brief, label: 'Lookup', name: 'lookup' },
+      });
+      expect(screen.queryByRole('button')).toBeNull();
+      expect(screen.queryByRole('img')).toBeNull();
     });
 
     it('renders nothing for an empty money source value', () => {

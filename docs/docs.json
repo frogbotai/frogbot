@@ -129,7 +129,8 @@
                       "fields/barcode",
                       "fields/created-by",
                       "fields/last-modified-by",
-                      "fields/autonumber"
+                      "fields/autonumber",
+                      "fields/ai"
                     ]
                   },
                   "fields/default-fields"

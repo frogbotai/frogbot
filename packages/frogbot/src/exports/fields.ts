@@ -1,3 +1,5 @@
+export type { AIFieldStatus, AIKind } from '../fields/baseFields/ai/state.js';
+export { aiFieldPaths, isAIFieldInputSet } from '../fields/baseFields/ai/state.js';
 export type {
   DurationFormat,
   DurationKind,

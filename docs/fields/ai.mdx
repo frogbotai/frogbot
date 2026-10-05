@@ -1,0 +1,307 @@
+---
+title: AI Field
+sidebarTitle: AI
+description: Fill a field automatically with AI from other fields of the same record, and keep it up to date as they change.
+keywords: ai, ai field, generated, summary, classify, category, llm, model, prompt, text, select, fields, collections, configuration
+---
+
+`aiField` adds a field that FrogBot fills in with AI. You name the fields it reads and write a prompt. When one of those fields changes, FrogBot asks the model in the background and saves the answer. The admin panel shows when a value is being generated, when it failed, and when someone wrote it by hand.
+
+```ts
+import { aiField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'notes', type: 'textarea' },
+    aiField({
+      name: 'summary',
+      inputs: ['title', 'notes'],
+      prompt: 'Summarize this task in one sentence.',
+    }),
+  ],
+}
+```
+
+The value is a [Text field](/fields/text), or a [Select field](/fields/select) when you pass `options` (see [Select output](#select-output)). `aiField` returns a row holding the value and two state fields, `_summary_status` and `_summary_error` (see [Stored value](#stored-value)). Put it in a collection's `fields` like any other field.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `inputs` | `string[]` | Required | Names of the fields the model reads. Each must be a top-level field of the same collection. A change to any of them regenerates the value. See [Placement and inputs](#placement-and-inputs). |
+| `prompt` | `string` | Required | Instructions for the model, such as `'Summarize this task in one sentence.'`. See [What the model sees](#what-the-model-sees). |
+| `model` | `ModelId` | The [utility model](/ai/overview#choose-a-utility-model) | Model that generates the value: a configured chat model ID, such as `'openai/gpt-5-nano'`, or a [router](/ai/overview#add-aliases) name. Without it, FrogBot uses `ai.smallModel`, or picks a low-cost model from `ai.defaultModel`'s provider. |
+| `name` | `string` | Required | Property name used in stored records and APIs. Also names the state fields. See [field names](/fields/overview#field-names). |
+| `minLength` | `number` | — | Text output only. Minimum length, checked by the built-in validator on every save, including a run's. |
+| `maxLength` | `number` | Root `defaultMaxTextLength` (`40000`) | Text output only. Maximum length, checked by the built-in validator on every save. A longer answer fails the run. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale, and localizes the state fields with it. See [Locales and drafts](#locales-and-drafts). |
+| `defaultValue` | `string \| string[]` or `({ locale, req, user }) => value` | — | Value used when the field has no value. It counts as a hand-written value, so a record created with it starts as `manual` and isn't generated until someone regenerates it. |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. It also runs on a run's save, so a failing answer is saved as an error. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. `read` decides who sees the generated value. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. Without it, a duplicate keeps the value as a hand-written one. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the AI field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+With `options`, these Select options are also accepted, and `minLength` and `maxLength` are not:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `options` | `(string \| { label: string \| Record<string, string>; value: string; color?: OptionColor })[]` | — | Values the model may pick from. Must be non-empty, and every value a non-empty string. `color` shows the option as a coloured pill. See [Select output](#select-output). |
+| `hasMany` | `boolean` | `false` | Lets the model pick any number of options, stored as an ordered array. |
+| `filterOptions` | `({ data, options, req, siblingData }) => Option[]` | — | Returns the options shown and accepted for the current record. The model still sees every option, so an answer outside the filtered list fails validation. See [filter options](/fields/select#filter-options). |
+| `enumName` | `string \| ({ tableName }) => string` | Generated from the field name | SQL enum name. |
+| `dbName` | `string \| ({ tableName }) => string` | Generated from the field name | SQL table name for the values of a `hasMany` field. |
+| `interfaceName` | `string` | — | Generates a reusable top-level TypeScript type for the options. |
+
+`required` isn't supported: a generated value is empty until its first run finishes, and an empty answer is allowed. A text AI field also holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted without `options`. TypeScript rejects all of them, and from JavaScript they fail when the config is built, as do invalid options:
+
+```text
+aiField "summary": inputs must be a non-empty array of field names
+aiField "summary": prompt must be a non-empty string
+aiField "summary": model must be a non-empty string
+aiField "summary": required is not supported
+aiField "summary": hasMany is not supported
+aiField "type": options must be a non-empty array
+aiField "type": option values must be non-empty strings
+```
+
+## Admin options
+
+AI fields support the standard [field admin options](/fields/overview#admin-options). `admin.position` applies to the whole row, so the value and its status move to the sidebar together. Every other option applies to the value field. `admin.readOnly` stops hand edits but keeps Generate and Regenerate for users who may update the record.
+
+Text output also accepts the [Text admin options](/fields/text#admin-options):
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Accepted for compatibility with Text fields. The AI input does not use it. |
+| `rtl` | `boolean` | Follows the locale | Accepted for compatibility with Text fields. The AI input does not use it. |
+
+Select output accepts the [Select admin options](/fields/select#admin-options):
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `isClearable` | `boolean` | `true` | Shows a control that clears the selection. |
+| `isSortable` | `boolean` | `true` | Lets editors reorder selections when `hasMany` is `true`. |
+| `placeholder` | `string \| (({ i18n, t }) => string)` | — | Placeholder text shown when nothing is selected. |
+
+FrogBot stores the field's inputs, prompt and model in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+<Warning>
+  `admin.custom` is sent to the browser, so anyone who can open the admin panel can read the prompt. Don't put secrets in it.
+</Warning>
+
+## Display and editing
+
+### List
+
+The [List](/admin/overview) cell shows the value with its state:
+
+| State | Cell |
+| --- | --- |
+| Never run, inputs set | The value, if any, and a **Generate** button. |
+| Never run, inputs empty | Nothing. |
+| Generating | The previous value, dimmed, with a spinner. |
+| Done | The value, with a **Regenerate** button on hover. |
+| Failed | The previous value, if any, and a warning button. Hover it to read the error, and click it to retry. |
+| Edited by hand | The value, with a **Regenerate** button on hover. |
+
+The buttons need update access to the record. Without it, the cell shows the value, the spinner and the warning only. Generating cells update on their own: while any are visible, the page re-reads them in one request every 3 seconds, and stops once none are generating.
+
+If the collection sets `admin.enableListViewSelectAPI`, the List shows the plain value, with no state and no buttons.
+
+### Board and Calendar
+
+[Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show the value, dimmed while generating, and a warning icon after a failure. They have no buttons. Board can group by an AI select field.
+
+### Document view
+
+The document view shows a line under the input:
+
+| State | Line |
+| --- | --- |
+| Never run | Generate |
+| Generating | Generating… |
+| Done | Regenerate |
+| Failed | Failed: \<error\> · Retry |
+| Edited by hand | Edited by hand, won't update automatically · Regenerate |
+
+Generate, Regenerate and Retry need update access to the record, and the line is hidden while creating a record. While the value is generating, the view checks for the result every 3 seconds. A result that arrives while the form is open fills the input, unless you have already changed it.
+
+A Regenerate is refused while another user is editing the record, and the error appears as a message.
+
+Typing in the input and saving keeps your value. See [The manual-edit rule](#the-manual-edit-rule).
+
+## Runs
+
+### When runs happen
+
+A save queues a run when it:
+
+- creates a record with at least one input set;
+- changes an input of a record that wasn't edited by hand;
+- sets the status to `pending` ([Regenerate](#regenerate)).
+
+The run happens in the background, after the save has finished. A save that fails, or a transaction that rolls back, queues nothing.
+
+An AI field can be an input of another AI field: when the first one is saved, the second one runs. FrogBot refuses to start if AI fields form a cycle.
+
+### What the model sees
+
+The prompt is the model's instructions, and the message is a JSON object of the input values keyed by field name, in `inputs` order:
+
+```json
+{"title":"Ship the order","notes":"Courier picks up Friday"}
+```
+
+Values are read as stored: relationships are IDs and rich text is its stored JSON. The model has no tools, and the answer is saved with surrounding whitespace removed.
+
+### The manual-edit rule
+
+Writing a value by hand, from the admin panel or any API, marks the field as edited by hand. FrogBot then keeps that value: input changes no longer regenerate it, until someone regenerates it.
+
+A hand edit made while a run is in progress wins, and the run's answer is discarded. Clearing a generated value by hand also counts as an edit.
+
+### Regenerate
+
+Generate, Regenerate and Retry all set the status to `pending`, which queues a run and clears the edited-by-hand state. You can do the same from the REST API, the Local API or an agent tool:
+
+```ts
+await req.frogbot.update({
+  collection: 'tasks',
+  id,
+  data: { _summary_status: 'pending' },
+  req,
+})
+```
+
+This needs update access to the record. Any other status you write is ignored.
+
+### Quick edits
+
+With `jobs.enableConcurrencyControl` on, the default, quick edits leave at most one waiting run per record, field and locale, and it uses the latest inputs. A run that has already started finishes first.
+
+With `jobs.enableConcurrencyControl: false`, every qualifying save queues its own run, so quick edits can make extra model calls. Either way, an answer generated from inputs that have changed since is never saved. See [Jobs](/jobs-queue/overview).
+
+### Who a run belongs to
+
+A run belongs to the user who made the save, and its usage is recorded for that user. It follows their [AI policy](/ai/overview#user-model-and-budget-policy), including budget and allowed models, and the [AI access rules](/ai/overview#control-access). A run that a policy refuses is saved as a failure.
+
+A user's run reads only the inputs that user can read, so two users can get different answers for the same record. A save with no user, such as a Local API call or a seed, runs with no per-user limits and reads every input.
+
+The answer is visible to anyone who can read the AI field, so it can reveal inputs they can't read. Use the field's `access.read` when that matters.
+
+If the user is deleted before the run, or can no longer read the record, the run fails with one of these errors:
+
+```text
+The user who started this run no longer exists.
+The user who started this run can't read this record.
+```
+
+A run's save doesn't change a [Last modified by](/fields/last-modified-by) field.
+
+### Failures
+
+A failed run, such as a provider error, a refused policy or an answer that fails validation, sets the status to `error` and saves the first 200 characters of the message. The full error is written to the server log. Failed runs are not retried automatically; use Retry or Regenerate.
+
+### Locales and drafts
+
+A localized AI field runs per locale: a save in `fr` regenerates only the `fr` value, from the `fr` inputs.
+
+On a collection with drafts, a run reads and writes the latest version. A draft's run saves to the draft and leaves the published version unchanged.
+
+### The job runner
+
+Runs are jobs on the `default` queue. The web server checks for waiting runs once a minute; a [worker](/jobs-queue/workers) can check more often. If web autorun is turned off and no worker runs, values stay generating.
+
+## Select output
+
+Pass `options` to have the model pick from a list:
+
+```ts
+aiField({
+  name: 'type',
+  inputs: ['title', 'notes'],
+  prompt: 'Classify this request.',
+  options: [
+    { label: 'Bug', value: 'bug', color: 'red' },
+    { label: 'Feature', value: 'feature', color: 'blue' },
+    'question',
+  ],
+})
+```
+
+The model is asked for a structured answer and sees the option values, not the labels, so use values that explain themselves. With `hasMany: true` it can pick any number, and duplicates are dropped in the model's order.
+
+An empty answer is allowed and saved as no value. An answer that isn't an option, or that isn't a structured answer at all, fails the run with Retry. The model needs to support structured output.
+
+Changing the options regenerates nothing. A record whose stored value was removed from the options behaves as it would on any Select field: every save, including Regenerate, fails with "This field has an invalid selection" until the value is changed by hand.
+
+AI select values appear as option pills in List cells and on cards, coloured when the options have colours.
+
+## Placement and inputs
+
+An AI field must be a top-level field of a collection. Rows, collapsibles, unnamed groups and unnamed tabs are fine; arrays, blocks, named groups and named tabs are not. Inputs follow the same rule.
+
+FrogBot checks AI fields at startup and refuses to start with an error such as:
+
+```text
+[frogbot] aiField "summary" in collection "tasks": input "body" is not a top-level field of the collection
+[frogbot] aiField "summary" in collection "tasks": it lists itself as an input
+[frogbot] aiField "summary" in collection "tasks": AI fields form a cycle: summary → category → summary
+[frogbot] aiField "summary" in collection "tasks": "_summary_status" is already used by another field
+[frogbot] aiField "summary" in collection "tasks": model 'openai/gpt-5-nano' is not configured
+[frogbot] aiField "summary" in collection "tasks": model 'openai/text-embedding-3-small' is not a chat model
+[frogbot] aiField "summary" in collection "tasks": no model. Set `model` on the field, or `ai.smallModel` or `ai.defaultModel`
+[frogbot] aiField "summary" must be a top-level field of a collection; found in an array, blocks, group or named tab in collection "tasks"
+[frogbot] Job task slug 'frogbot-run-ai-field' is reserved for AI fields.
+```
+
+## Stored value
+
+The value is stored like a Text or Select field. Next to it, FrogBot keeps two state fields:
+
+| Field | Values |
+| --- | --- |
+| `_<name>_status` | `pending` (generating), `done`, `error` or `manual` (edited by hand). Empty means it has never run. |
+| `_<name>_error` | The message from the last failed run, or empty. |
+
+Both are returned by the REST API, the Local API and agent tools, and they're kept out of admin forms, List columns and filters. FrogBot sets them; the only write it accepts is the status `pending`. They are localized with the value.
+
+## Agents and generated types
+
+An AI field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types). The value's text names the inputs:
+
+```text
+Generated automatically by AI from: title, notes. Writing a value keeps it and stops automatic updates
+```
+
+The state fields have their own:
+
+```text
+Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
+Set by FrogBot: the error message from the last failed run
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the AI text is added after it in parentheses. The admin panel still shows only your description. A function `admin.description` isn't copied, so the AI text stands alone. The text is English only.
+
+To change the value's text, add your own `typescriptSchema` entry. It runs after the AI field's entry, so it can adjust or replace the description.
+
+## Custom components
+
+The AI cell and input are `AICell` and `AIField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work as they do on a Text or Select field.
+
+A custom Cell can draw the standard AI display inside its own markup with [`FieldCell`](/fields/overview#cell). As with any custom Cell, it appears only in the List view.
+
+`frogbot/fields` exports `aiFieldPaths(name)`, which returns the state field names, `isAIFieldInputSet(value)`, and the `AIFieldStatus` and `AIKind` types. It is safe to use in browser code.

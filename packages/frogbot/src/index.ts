@@ -37,6 +37,7 @@ export type {
   ConnectionsConfig,
   SanitizedConnectionsConfig,
 } from './connections/types.js';
+export { aiField } from './fields/baseFields/ai/index.js';
 export { autonumberField } from './fields/baseFields/autonumber/index.js';
 export { barcodeField } from './fields/baseFields/barcode/index.js';
 export { createdByField } from './fields/baseFields/createdBy/index.js';
@@ -483,6 +484,7 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
+export type { AIFieldArgs, AISelectFieldArgs } from './fields/baseFields/ai/index.js';
 export type { AutonumberFieldArgs } from './fields/baseFields/autonumber/index.js';
 export type { BarcodeFieldArgs } from './fields/baseFields/barcode/index.js';
 export type { CreatedByFieldArgs } from './fields/baseFields/createdBy/index.js';

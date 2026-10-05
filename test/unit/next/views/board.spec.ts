@@ -18,6 +18,7 @@ import {
   setPath,
   syncSortRows,
 } from '../../../../packages/next/src/views/Board/data.js';
+import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import { resolveActiveViewSlug } from '../../../../packages/next/src/views/Board/resolveActiveView.js';
 import {
   resolveBoardField,
@@ -206,6 +207,35 @@ describe('collection board', () => {
     expect(resolveBoardField(fields, 'kind')).toMatchObject({ name: 'kind' });
     expect(resolveBoardField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
     expect(resolveBoardField(fields, 'meta.status')).toMatchObject({ name: 'status' });
+  });
+
+  it('resolves an AI select inside its row and its option columns in order', async () => {
+    const fields = [
+      { name: 'notes', type: 'text' },
+      aiField({
+        name: 'type',
+        inputs: ['notes'],
+        prompt: 'Classify.',
+        options: [{ label: 'Bug', value: 'bug' }, 'feature', 'question'],
+      }),
+    ] as never;
+
+    const field = resolveBoardField(fields, 'type');
+
+    expect(field).toMatchObject({ name: 'type', type: 'select' });
+
+    await expect(
+      resolveColumns({
+        collectionSlug: 'tasks',
+        field: field as never,
+        path: 'type',
+        req: {} as never,
+      }),
+    ).resolves.toEqual([
+      { key: 'string:bug', label: 'Bug', value: 'bug' },
+      { key: 'string:feature', label: 'feature', value: 'feature' },
+      { key: 'string:question', label: 'question', value: 'question' },
+    ]);
   });
 
   it('rejects unsupported and presentational fields inside a row', () => {
