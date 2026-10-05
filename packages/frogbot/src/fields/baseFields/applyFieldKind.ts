@@ -1,4 +1,6 @@
-import type { Field, TextField, UIField } from '../config/types.js';
+import { number as validateNumber, text as validateText } from 'payload/shared';
+
+import type { Field, TextField, UIField, Validate } from '../config/types.js';
 
 type KindField = Exclude<Extract<Field, { name: string }>, UIField>;
 
@@ -12,6 +14,7 @@ export type FieldKindSpec = {
   Field?: string;
   description: string;
   integer?: boolean;
+  check?: (value: unknown) => string | true;
 };
 
 export type KindTypescriptSchemaArgs = {
@@ -22,7 +25,44 @@ export type KindTypescriptSchemaArgs = {
   integer?: boolean;
 };
 
+type BaseValidate = (value: unknown, options: unknown) => Promise<string | true> | string | true;
+
 const FIELD_CELL_PATH = '@frogbotai/next/client#FieldCell';
+
+const baseValidators: Partial<Record<KindField['type'], BaseValidate>> = {
+  number: validateNumber as BaseValidate,
+  text: validateText as BaseValidate,
+};
+
+export const acceptAnyValue = (): true => true;
+
+function isEmpty(value: unknown): boolean {
+  return value === null || value === undefined || value === '';
+}
+
+function composeValidate(field: KindField, check: NonNullable<FieldKindSpec['check']>): Validate {
+  const base = baseValidators[field.type];
+
+  if (!base) throw new Error(`applyFieldKind: check is not supported on ${field.type} fields`);
+
+  const developerValidate = 'validate' in field ? field.validate : undefined;
+
+  return async (value, options) => {
+    const baseResult = await base(value, options);
+
+    if (baseResult !== true) return baseResult;
+
+    if (!isEmpty(value)) {
+      const kindResult = check(value);
+
+      if (kindResult !== true) return kindResult;
+    }
+
+    return typeof developerValidate === 'function'
+      ? developerValidate(value, options as never)
+      : true;
+  };
+}
 
 function toInteger(type: JSONSchema['type']): JSONSchema['type'] {
   if (type === 'number') return 'integer';
@@ -117,5 +157,6 @@ export function applyFieldKind<TField extends KindField>(
       ...(Object.keys(components).length > 0 ? { components } : {}),
     },
     typescriptSchema: [kindEntry, ...(field.typescriptSchema ?? [])],
+    ...(spec.check ? { validate: composeValidate(field, spec.check) } : {}),
   };
 }

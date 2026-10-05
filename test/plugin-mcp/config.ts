@@ -1,7 +1,7 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { mcpPlugin } from '@frogbotai/plugin-mcp';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import { type CollectionConfig, moneyField } from 'frogbot';
+import { type CollectionConfig, durationField, moneyField, ratingField } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
@@ -68,6 +68,8 @@ const Posts: CollectionConfig = {
       type: 'group',
       fields: [moneyField({ name: 'wholesale', currency: 'EUR' })],
     },
+    ratingField({ name: 'score' }),
+    durationField({ name: 'timeSpent' }),
   ],
 };
 

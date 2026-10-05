@@ -1,0 +1,9 @@
+@layer frogbot {
+  .url-cell {
+    display: block;
+    max-width: 24rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

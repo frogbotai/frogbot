@@ -1,0 +1,7 @@
+@layer frogbot {
+  .kind-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}

@@ -11,3 +11,7 @@ export function getFieldKind(field: ClientField): FieldKind | undefined {
 
   return kind as FieldKind;
 }
+
+export function isEmptyKindValue(value: unknown): boolean {
+  return value === null || value === undefined || value === '';
+}

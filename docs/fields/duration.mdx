@@ -1,0 +1,188 @@
+---
+title: Duration Field
+sidebarTitle: Duration
+description: Store durations as whole seconds and show and edit them as hours, minutes and seconds.
+keywords: duration, time, hours, minutes, seconds, time spent, number, fields, collections, configuration
+---
+
+`durationField` returns a [Number field](/fields/number) that stores a duration in whole seconds. The admin panel shows `5400` as `1:30:00` and edits durations in the same form, and agents and generated types are told that the number is seconds. You don't name any components or write a formatter.
+
+```ts
+import { durationField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Timesheets: CollectionConfig = {
+  slug: 'timesheets',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    durationField({ name: 'timeSpent', label: 'Time spent', format: 'h:mm', min: 0 }),
+  ],
+}
+```
+
+The result is a plain `number` field, so it works anywhere a field does, including inside groups, arrays, tabs and blocks.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `format` | `'h:mm' \| 'h:mm:ss'` | `'h:mm:ss'` | How durations are shown and typed. See [Display and editing](#display-and-editing). |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `min` | `number` | — | Minimum accepted value in seconds. Durations can be negative; `min: 0` forbids that. Checked by the built-in validator and passed to agents. |
+| `max` | `number` | — | Maximum accepted value in seconds. Checked by the built-in validator and passed to agents. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `number` or `({ locale, req, user }) => value` | — | Value used when the field has no value, in seconds. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | — | Runs after the built-in validation and the whole-seconds check, and adds to them rather than replacing them. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the duration field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+A duration field holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup.
+
+Invalid options fail when the config is built, with an error naming the field:
+
+```text
+durationField "timeSpent": format must be "h:mm" or "h:mm:ss", got "mm"
+durationField "timeSpent": hasMany is not supported
+```
+
+Every save checks the value, whether it comes from the admin panel, the REST API, GraphQL, the Local API or an agent. A fraction such as `90.5` fails with:
+
+```text
+Enter a duration in whole seconds.
+```
+
+## Admin options
+
+Duration fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string>` | The format, such as `h:mm:ss` | Placeholder text. Use an object keyed by language code for translations. |
+| `step` | `number` | — | Not used, because the duration input is a text input. |
+| `autoComplete` | `string` | — | Not used. |
+
+FrogBot stores the field's format in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display and editing
+
+| Value (seconds) | `h:mm:ss` | `h:mm` |
+| --- | --- | --- |
+| `0` | `0:00` | `0:00` |
+| `90` | `1:30` | `0:02` |
+| `225` | `3:45` | `0:04` |
+| `5400` | `1:30:00` | `1:30` |
+| `93600` | `26:00:00` | `26:00` |
+| `-90` | `-1:30` | `-0:02` |
+
+`h:mm:ss` shows minutes and seconds under an hour, and hours, minutes and seconds from an hour. `h:mm` shows hours and minutes and rounds leftover seconds up, so a duration that isn't zero never shows as `0:00`. Hours keep counting past 24, and durations look the same in every admin language.
+
+An empty value shows nothing: no placeholder and no dash. A stored `0` shows as `0:00`. A stored value that isn't a whole number, for example one saved before the field became a duration, shows as the plain stored number.
+
+Durations look the same in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. If a duration field is the first List column, a row with an empty value has no link to open the document from that column.
+
+In the document view, an editable duration field is a text input. The rightmost part you type is the format's smallest unit, and each part after the first must be from `0` to `59`:
+
+| Typed | Saved with `h:mm` | Saved with `h:mm:ss` |
+| --- | --- | --- |
+| `90` | `5400` (90 minutes) | `90` (90 seconds) |
+| `1:30` | `5400` (1 hour 30 minutes) | `90` (1 minute 30 seconds) |
+| `1:02:03` | Not readable | `3723` (1 hour 2 minutes 3 seconds) |
+| `-1:30` | `-5400` | `-90` |
+
+When you leave the input, readable text is shown in the field's format, so `90` in an `h:mm` field becomes `1:30`. Clearing the input saves an empty value.
+
+Text the input can't read, such as `1:75`, `1.5` or `1:`, shows "Enter a duration such as 1:30." on the field when you leave it. That text is never saved: Save and Save Draft leave the field out of the request, so the stored value is kept, and after saving the input shows the stored value again.
+
+The label, description, validation errors, `min`, `max`, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted duration as text with no input.
+
+## Stored value
+
+Durations are stored as whole seconds: `5400` means 1 hour 30 minutes. The REST API, GraphQL and the Local API read and write the number of seconds, and the generated TypeScript type is the same as a Number field's, such as `timeSpent?: number | null`.
+
+<Warning>
+  The API takes seconds as a number. As for any Number field, a string is read as a number, so writing `"1:30"` saves `1`. Convert typed durations with [`parseDuration`](#formatting-in-your-code) before writing them.
+</Warning>
+
+Filters and sorting use the stored seconds, so a filter for durations over an hour takes `3600`.
+
+## Agents and generated types
+
+A duration field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types):
+
+```text
+Duration in whole seconds, for example 5400 for 1 hour 30 minutes
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the duration text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+durationField({ name: 'timeSpent', admin: { description: 'Time logged on the task' } })
+```
+
+```text
+Time logged on the task (duration in whole seconds, for example 5400 for 1 hour 30 minutes)
+```
+
+A function `admin.description` isn't copied, so the duration text stands alone. The text is English only.
+
+Generated types show the text as a comment above the property. In the MCP plugin's create and update tools, the value is an integer, and `min` and `max` also become its `minimum` and `maximum`, so agents see the allowed range. Generated types don't include limits, and virtual fields don't appear in MCP tool inputs.
+
+To change the text, add your own `typescriptSchema` entry. It runs after the duration field's entry, so it can adjust or replace the description:
+
+```ts
+durationField({
+  name: 'timeSpent',
+  typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Seconds logged' })],
+})
+```
+
+```text
+Seconds logged
+```
+
+## Formatting in your code
+
+`formatDuration` and `parseDuration` are the helpers duration fields use. Import them from `frogbot/fields`, which is safe to use in browser code:
+
+```ts
+import { formatDuration, parseDuration } from 'frogbot/fields'
+
+const seconds = parseDuration({ text: '1:30', format: 'h:mm' })
+
+const shown = formatDuration({ value: seconds, format: 'h:mm' })
+```
+
+Here `seconds` is `5400` and `shown` is `'1:30'`.
+
+`formatDuration` returns the formatted string, or `''` for an empty value. A fraction of a second, such as an average, is rounded up to the format's smallest unit.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `unknown` | Required | The duration in seconds. Anything other than a finite number is treated as empty. |
+| `format` | `'h:mm' \| 'h:mm:ss'` | `'h:mm:ss'` | Same as the field's `format` option. |
+
+`parseDuration` reads text the way the duration input does. It returns the number of seconds, `null` for blank text, or `undefined` for text it can't read.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text` | `string` | Required | The text to read, such as `'1:30'`. Surrounding spaces are ignored. |
+| `format` | `'h:mm' \| 'h:mm:ss'` | `'h:mm:ss'` | Sets the smallest unit, which is the unit of the rightmost part. |
+
+`frogbot/fields` also exports the `DurationFormat`, `DurationKind`, `FormatDurationArgs` and `ParseDurationArgs` types.
+
+## Custom components
+
+The duration cell and input are `DurationCell` and `DurationField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the duration input as they do on a Number field.
+
+A custom Cell can draw the standard duration display inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard duration display.

@@ -128,12 +128,20 @@ const iconNames = [
 describe('firmware icons', () => {
   it('exports the complete icon manifest', () => {
     expect(Object.keys(icons).sort()).toEqual(
-      [...iconNames, 'CheckIcon', 'IconBase', 'MenuIcon', 'SquareIcon', 'createLucideIcon'].sort(),
+      [
+        ...iconNames,
+        'CheckIcon',
+        'IconBase',
+        'MenuIcon',
+        'SquareIcon',
+        'StarIcon',
+        'createLucideIcon',
+      ].sort(),
     );
   });
 
   it('renders every exported icon', () => {
-    for (const name of [...iconNames, 'CheckIcon', 'MenuIcon', 'SquareIcon'] as const) {
+    for (const name of [...iconNames, 'CheckIcon', 'MenuIcon', 'SquareIcon', 'StarIcon'] as const) {
       const component = icons[name as keyof typeof icons];
       const { container, unmount } = render(createElement(component));
       expect(container.querySelector('svg')).not.toBeNull();
@@ -294,7 +302,14 @@ describe('icon line weight', () => {
     const names = loadedIcons.map(({ name }) => name);
 
     expect(names).toEqual(
-      expect.arrayContaining([...iconNames, 'BranchIcon', 'CheckIcon', 'MenuIcon', 'SquareIcon']),
+      expect.arrayContaining([
+        ...iconNames,
+        'BranchIcon',
+        'CheckIcon',
+        'MenuIcon',
+        'SquareIcon',
+        'StarIcon',
+      ]),
     );
     expect(names).toEqual(
       expect.arrayContaining([...Object.keys(excludedIcons), ...Object.keys(shapeStrokes)]),

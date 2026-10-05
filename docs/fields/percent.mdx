@@ -1,0 +1,166 @@
+---
+title: Percent Field
+sidebarTitle: Percent
+description: Store percentages as fractions and show them as percentages everywhere.
+keywords: percent, percentage, fraction, progress, number, fields, collections, configuration
+---
+
+`percentField` returns a [Number field](/fields/number) that stores a percentage as a fraction: `0.42` is 42%. The admin panel shows `42%` and edits the value as a percentage, and agents and generated types are told what the number means. You don't name any components or write a formatter.
+
+```ts
+import { percentField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    percentField({ name: 'progress', label: 'Progress', precision: 1, min: 0, max: 1 }),
+  ],
+}
+```
+
+The result is a plain `number` field, so it works anywhere a field does, including inside groups, arrays, tabs and blocks.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `precision` | `number` | `0` | Decimal places to show, a whole number from `0` to `8`. Display only: stored values are never rounded. |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `min` | `number` | — | Minimum accepted value in stored units, so `0` is 0% and `0.5` is 50%. Checked by the built-in validator and passed to agents. |
+| `max` | `number` | — | Maximum accepted value in stored units, so `max: 1` is 100%. Checked by the built-in validator and passed to agents. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `number` or `({ locale, req, user }) => value` | — | Value used when the field has no value, as a fraction. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | — | Runs after the built-in validation of `required`, `min` and `max`, and adds to it rather than replacing it. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the percent field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+A percent field holds one value, so `hasMany`, `minRows` and `maxRows` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup.
+
+Invalid options fail when the config is built, with an error naming the field:
+
+```text
+percentField "progress": precision must be a whole number from 0 to 8, got 9
+percentField "progress": hasMany is not supported
+```
+
+## Admin options
+
+Percent fields support the standard [field admin options](/fields/overview#admin-options). These Number field options are accepted but not used, because the percent input is a text input:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `step` | `number` | — | Not used. |
+| `placeholder` | `string \| Record<string, string>` | — | Not used. The percent input has no placeholder. |
+| `autoComplete` | `string` | — | Not used. |
+
+FrogBot stores the field's precision in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display and editing
+
+| Value | Options | Shown |
+| --- | --- | --- |
+| `0.42` | — | `42%` |
+| `0.425` | `precision: 1` | `42.5%` |
+| `0.42` | `precision: 2` | `42.00%` |
+| `-0.1` | — | `-10%` |
+| `1.5` | — | `150%` |
+| `0` | `precision: 1` | `0.0%` |
+| `0.42`, German admin | — | `42 %` |
+
+Percentages are formatted in the admin's selected language. `precision` changes only what is shown: `0.425` with `precision: 0` shows `43%` and is still stored as `0.425`.
+
+An empty value shows nothing: no placeholder and no dash. A stored `0` shows as `0%`.
+
+Percentages look the same in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. If a percent field is the first List column, a row with an empty value has no link to open the document from that column.
+
+In the document view, an editable percent field is a text input with a `%` sign after it. Type the percentage, and FrogBot saves the fraction: `42.5` saves `0.425`, and `7` saves exactly `0.07`. The input reads:
+
+- a dot as the decimal separator, such as `42.5` or `.5`, with no thousands separators
+- an optional trailing `%`, so a pasted `42%` saves `0.42`
+- a leading `-` or `+`
+
+Clearing the input saves an empty value. Text the input can't read, such as `abc` or `1,5`, shows "Enter a percentage such as 42.5." on the field when you leave it. That text is never saved: Save and Save Draft leave the field out of the request, so the stored value is kept, and after saving the input shows the stored value again.
+
+The label, description, validation errors, `min`, `max`, `required` and a custom `validate` work as on a Number field. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted percentage as text with no input.
+
+## Stored value
+
+Values are stored as fractions: `0.42` means 42%, and `1` means 100%. Values above `1` and below `0` are allowed unless you set `min` or `max`. The REST API, GraphQL and the Local API read and write the fraction, and the generated TypeScript type is the same as a Number field's, such as `progress?: number | null`.
+
+Filters and sorting use the stored value too, so a filter for 50% takes `0.5`.
+
+## Agents and generated types
+
+A percent field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types):
+
+```text
+Fraction where 1 means 100%, for example 0.42 for 42%
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the percent text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+percentField({ name: 'progress', admin: { description: 'Share of the work done' } })
+```
+
+```text
+Share of the work done (fraction where 1 means 100%, for example 0.42 for 42%)
+```
+
+A function `admin.description` isn't copied, so the percent text stands alone. The text is English only.
+
+Generated types show the text as a comment above the property. In the MCP plugin's create and update tools, `min` and `max` also become the value's `minimum` and `maximum`, so agents see the allowed range. Generated types don't include limits, and virtual fields don't appear in MCP tool inputs.
+
+To change the text, add your own `typescriptSchema` entry. It runs after the percent field's entry, so it can adjust or replace the description:
+
+```ts
+percentField({
+  name: 'progress',
+  typescriptSchema: [({ jsonSchema }) => ({ ...jsonSchema, description: 'Progress from 0 to 1' })],
+})
+```
+
+```text
+Progress from 0 to 1
+```
+
+## Formatting in your code
+
+`formatPercent` is the formatter percent fields use. Import it from `frogbot/fields`, which is safe to use in browser code:
+
+```tsx
+'use client'
+
+import { formatPercent } from 'frogbot/fields'
+
+export function Progress({ value }: { value: number | null }) {
+  return <span>{formatPercent({ value, precision: 1, locale: 'de-DE' })}</span>
+}
+```
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `unknown` | Required | The stored fraction. Anything other than a finite number is treated as empty. |
+| `precision` | `number` | `0` | Decimal places to show. |
+| `locale` | `string` | `'en-US'` | Language and region used for digits, separators and the position of the `%` sign. |
+
+`formatPercent` returns the formatted string, or `''` for an empty value. `frogbot/fields` also exports the `FormatPercentArgs` and `PercentKind` types.
+
+## Custom components
+
+The percent cell and input are `PercentCell` and `PercentField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the percent input as they do on a Number field.
+
+A custom Cell can draw the standard percent display inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard percent display.

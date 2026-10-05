@@ -48,6 +48,10 @@ describe('frogbot/fields entry', () => {
 
   it('reaches the formatter source', () => {
     expect(files).toContain(resolve(srcPath, 'fields/baseFields/money/formatMoney.ts'));
+    expect(files).toContain(resolve(srcPath, 'fields/baseFields/percent/formatPercent.ts'));
+    expect(files).toContain(resolve(srcPath, 'fields/baseFields/duration/formatDuration.ts'));
+    expect(files).toContain(resolve(srcPath, 'fields/baseFields/url/getUrlHref.ts'));
+    expect(files).toContain(resolve(srcPath, 'fields/baseFields/phone/formatPhone.ts'));
   });
 
   it('imports only relative files at runtime', () => {

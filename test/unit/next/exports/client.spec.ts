@@ -32,6 +32,22 @@ describe('@frogbotai/next client export', () => {
     );
   });
 
+  it.each([
+    ['BarcodeCell', 'Barcode'],
+    ['UrlCell', 'Url'],
+  ])('exports the %s kind cell', (name, folder) => {
+    expect(source).toContain(`export { ${name} } from '../fields/${folder}/index.client.js'`);
+  });
+
+  it.each([
+    ['DurationCell, DurationField', 'Duration'],
+    ['PercentCell, PercentField', 'Percent'],
+    ['PhoneCell, PhoneField', 'Phone'],
+    ['RatingCell, RatingField', 'Rating'],
+  ])('exports the %s kind cell and field', (names, folder) => {
+    expect(source).toContain(`export { ${names} } from '../fields/${folder}/index.client.js'`);
+  });
+
   it('does not export the CostUSD components', () => {
     expect(source).not.toContain('CostUSD');
   });

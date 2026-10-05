@@ -1,0 +1,171 @@
+---
+title: Phone Field
+sidebarTitle: Phone
+description: Store phone numbers as typed, check them on save and show them as call links everywhere.
+keywords: phone, telephone, tel, call, mobile, number, text, fields, collections, configuration
+---
+
+`phoneField` returns a [Text field](/fields/text) that stores a phone number as typed. Every save checks that the value looks like a phone number, the admin panel shows it as a link that starts a call, and agents and generated types are told what the text means. You don't name any components or write a validator.
+
+```ts
+import { phoneField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Contacts: CollectionConfig = {
+  slug: 'contacts',
+  fields: [
+    { name: 'name', type: 'text', required: true },
+    phoneField({ name: 'phone', label: 'Phone' }),
+  ],
+}
+```
+
+The result is a plain `text` field, so it works anywhere a field does, including inside groups, arrays, tabs and blocks.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `minLength` | `number` | — | Minimum length of the typed text, checked by the built-in validator. |
+| `maxLength` | `number` | Root `defaultMaxTextLength` (`40000`) | Maximum length of the typed text, checked by the built-in validator. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `required` | `boolean` | `false` | Rejects an empty value. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path. Numbers are compared as typed, so `5551234567` and `555-123-4567` are different values. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `localized` | `boolean` | `false` | Stores one value per configured locale. Ignored without [localization](/configuration/localization) or inside a localized parent. |
+| `defaultValue` | `string` or `({ locale, req, user }) => value` | — | Value used when the field has no value. See [default values](/fields/overview#default-values). |
+| `validate` | `Validate` | — | Runs after the built-in validation and the phone check, and adds to them rather than replacing them. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. See [field hooks](/hooks/fields). |
+| `access` | `{ create, read, update }` | Allowed | `FieldAccess` functions for each operation. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. Virtual fields are read-only in the admin panel unless `admin.readOnly` is `false`. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated, so the copy uses `defaultValue`. |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the phone field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+A phone field holds one number, so `hasMany`, `minRows` and `maxRows` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+
+```text
+phoneField "phone": hasMany is not supported
+```
+
+## Accepted numbers
+
+Every save checks the value, whether it comes from the admin panel, the REST API, GraphQL, the Local API or an agent. A phone number:
+
+- contains only digits, spaces, `-`, `.`, `(` and `)`, plus an optional `+` as the first character
+- has from 7 to 15 digits
+
+There are no country rules, and numbers aren't converted to an international format.
+
+| Value | Shown | Link |
+| --- | --- | --- |
+| `5551234567` | `(555) 123-4567` | `tel:5551234567` |
+| `555.123.4567` | `(555) 123-4567` | `tel:5551234567` |
+| `(555) 123-4567` | `(555) 123-4567` | `tel:5551234567` |
+| `+44 20 7946 0958` | `+44 20 7946 0958` | `tel:+442079460958` |
+| `+1 (415) 555-9876` | `+1 (415) 555-9876` | `tel:+14155559876` |
+| `1234567` | `1234567` | `tel:1234567` |
+
+These values are rejected: `call me`, `123` (too few digits), `555-1234 x12` (letters), `44+20 7946 0958` (`+` not first) and `++44 20 7946 0958`. A rejected value fails with:
+
+```text
+Enter a phone number with 7 to 15 digits.
+```
+
+An empty value skips the check; set `required` to reject it.
+
+## Admin options
+
+Phone fields support the standard [field admin options](/fields/overview#admin-options), plus the Text field's input options:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string \| Record<string, string>` | — | Placeholder text. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Value of the input's `autocomplete` attribute, such as `'tel'`. |
+| `rtl` | `boolean` | Follows the locale | `true` forces right-to-left text. `false` keeps left-to-right text in a right-to-left locale. When unset, right-to-left locales render right-to-left. |
+
+FrogBot marks the field as a phone number in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display and editing
+
+A number with exactly 10 digits and no `+` shows as `(XXX) XXX-XXXX`. Any other number shows as typed. The shown number is a `tel:` link built from the digits and any leading `+`, so clicking it opens the device's phone app.
+
+Links work in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events. Clicking a link on a card opens only the link, not the card. In the List's first column, which already links to the document, the number shows as text inside the document link.
+
+An empty value shows nothing: no placeholder and no dash. A stored value that isn't an accepted number, for example one saved before the field became a phone field, shows as plain text and is never turned into a link. If a phone field is the first List column, a row with an empty value has no link to open the document from that column.
+
+In the document view, an editable phone field uses the normal text input and shows the number as typed. When the field is read-only, because of `admin.readOnly`, because it is virtual, or because the user may not update it, the document view shows the formatted number as text with no input.
+
+## Stored value
+
+Numbers are stored exactly as typed, including spaces and punctuation. The REST API, GraphQL and the Local API return the stored text, and the generated TypeScript type is the same as a Text field's, such as `phone?: string | null`. Filters and sorting use the stored text.
+
+## Agents and generated types
+
+A phone field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types):
+
+```text
+Phone number as text, for example +44 20 7946 0958 or (415) 555-9876
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, the phone text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+phoneField({ name: 'phone', admin: { description: 'Main office line' } })
+```
+
+```text
+Main office line (phone number as text, for example +44 20 7946 0958 or (415) 555-9876)
+```
+
+A function `admin.description` isn't copied, so the phone text stands alone. The text is English only. Generated types show the text as a comment above the property, and virtual fields don't appear in MCP tool inputs.
+
+To change the text, add your own `typescriptSchema` entry. It runs after the phone field's entry, so it can adjust or replace the description:
+
+```ts
+phoneField({
+  name: 'phone',
+  typescriptSchema: [
+    ({ jsonSchema }) => ({ ...jsonSchema, description: 'Phone number with country code' }),
+  ],
+})
+```
+
+```text
+Phone number with country code
+```
+
+## Formatting in your code
+
+`formatPhone` and `getPhoneHref` are the helpers phone fields use. Import them from `frogbot/fields`, which is safe to use in browser code:
+
+```tsx
+'use client'
+
+import { formatPhone, getPhoneHref } from 'frogbot/fields'
+
+export function Phone({ value }: { value: string | null }) {
+  const href = getPhoneHref({ value })
+  const text = formatPhone({ value })
+
+  return href ? <a href={href}>{text}</a> : <span>{text}</span>
+}
+```
+
+Both take the same argument:
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `unknown` | Required | The stored number. |
+
+`formatPhone` returns `(XXX) XXX-XXXX` for an accepted number with exactly 10 digits and no `+`, any other text as given, and `''` for a value that isn't a string. `getPhoneHref` returns the `tel:` link for an [accepted number](#accepted-numbers), or `undefined` for an empty or rejected value. `frogbot/fields` also exports the `FormatPhoneArgs` type.
+
+## Custom components
+
+The phone cell and read-only display are `PhoneCell` and `PhoneField` from `@frogbotai/next/client`. `PhoneField` renders the normal text input when the field is editable. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work as they do on a Text field.
+
+A custom Cell can draw the standard link inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard link.

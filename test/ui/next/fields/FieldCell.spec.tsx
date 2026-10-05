@@ -44,6 +44,14 @@ function lastCellData(): unknown {
   return (DefaultCell.mock.lastCall?.[0] as DefaultCellComponentProps).cellData;
 }
 
+function kindField(type: 'number' | 'text', kind: Record<string, unknown>): ClientField {
+  return { name: 'value', type, admin: { custom: { frogbot: { kind } } } } as ClientField;
+}
+
+function renderLastCellData(): HTMLElement {
+  return render(<>{lastCellData() as ReactNode}</>).container;
+}
+
 const optionColors = { done: 'green' };
 
 const statusField = {
@@ -93,6 +101,51 @@ describe('FieldCell', () => {
     render(<FieldCell {...cell(priceField, 0.016455)} />);
 
     expect(lastCellData()).toBe('$0.02');
+  });
+
+  it('formats a percent kind before the default cell', () => {
+    render(<FieldCell {...cell(kindField('number', { type: 'percent', precision: 0 }), 0.42)} />);
+
+    expect(lastCellData()).toBe('42%');
+  });
+
+  it('draws a rating kind as stars', () => {
+    render(<FieldCell {...cell(kindField('number', { type: 'rating', max: 5 }), 3)} />);
+
+    expect(renderLastCellData().querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
+      '3 of 5',
+    );
+  });
+
+  it('formats a duration kind before the default cell', () => {
+    render(
+      <FieldCell {...cell(kindField('number', { type: 'duration', format: 'h:mm:ss' }), 5400)} />,
+    );
+
+    expect(lastCellData()).toBe('1:30:00');
+  });
+
+  it('draws a url kind as a link', () => {
+    render(<FieldCell {...cell(kindField('text', { type: 'url' }), 'example.com')} />);
+
+    expect(renderLastCellData().querySelector('a')?.getAttribute('href')).toBe(
+      'https://example.com',
+    );
+  });
+
+  it('draws a phone kind as a link', () => {
+    render(<FieldCell {...cell(kindField('text', { type: 'phone' }), '5551234567')} />);
+
+    expect(renderLastCellData().querySelector('a')?.getAttribute('href')).toBe('tel:5551234567');
+  });
+
+  it('renders nothing for an empty barcode kind', () => {
+    const { container } = render(
+      <FieldCell {...cell(kindField('text', { type: 'barcode' }), '')} />,
+    );
+
+    expect(container.childElementCount).toBe(0);
+    expect(DefaultCell).not.toHaveBeenCalled();
   });
 
   it('passes every prop of an unmarked field to the default cell', () => {
