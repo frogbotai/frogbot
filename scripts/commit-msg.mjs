@@ -2,7 +2,18 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const TYPES = ['feat', 'fix', 'refactor', 'chore', 'docs', 'test', 'perf', 'build', 'ci', 'style'];
+export const TYPES = [
+  'feat',
+  'fix',
+  'refactor',
+  'chore',
+  'docs',
+  'test',
+  'perf',
+  'build',
+  'ci',
+  'style',
+];
 
 const SUBJECT = new RegExp(`^(${TYPES.join('|')})(\\([a-z0-9-]+\\))?!?: \\S`);
 

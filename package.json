@@ -12,6 +12,7 @@
     "prettier:write": "prettier --write .",
     "prettier": "prettier --check .",
     "check": "node scripts/check.mjs",
+    "ticket": "node scripts/ticket.mjs",
     "typecheck": "pnpm --filter \"./packages/**\" build && pnpm -r --no-bail typecheck",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
