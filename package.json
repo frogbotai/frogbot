@@ -7,6 +7,8 @@
     "build": "pnpm -r build",
     "lint": "eslint . --cache --cache-location .idea/tmp/.eslintcache",
     "lint:fix": "eslint . --fix --cache --cache-location .idea/tmp/.eslintcache",
+    "lint-staged": "lint-staged",
+    "prepare": "husky",
     "prettier:write": "prettier --write .",
     "prettier": "prettier --check .",
     "typecheck": "pnpm --filter \"./packages/**\" build && pnpm -r --no-bail typecheck",
@@ -49,6 +51,13 @@
     "release:resume": "npm whoami && pnpm build && pnpm check:dist-imports && pnpm publish-packages && pnpm release:status",
     "release:status": "node scripts/release-status.mjs"
   },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix --cache --cache-location .idea/tmp/.eslintcache",
+      "prettier --write"
+    ],
+    "*.{md,mdx,json,yml,css}": "prettier --write"
+  },
   "devDependencies": {
     "@ai-sdk/amazon-bedrock": "^5.0.97",
     "@ai-sdk/anthropic": "^4.0.65",
@@ -69,8 +78,10 @@
     "eslint": "^9.16.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^17.8.0",
+    "husky": "9.0.11",
     "json-schema-to-typescript": "^15.0.3",
     "libsql": "^0.4.7",
+    "lint-staged": "15.2.7",
     "miniflare": "^4.20260730.0",
     "pino": "^9.14.0",
     "prettier": "^3.2.5",
