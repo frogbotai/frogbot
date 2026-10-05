@@ -14,6 +14,7 @@ export { listPendingCalls, settleClientToolCall } from '../chat/turn/settle.js';
 export { claimTurn, findTurnState, releaseTurn } from '../chat/turn/state.js';
 export type { FrogBotSanitizedConfig } from '../config/sanitized.js';
 export { compareAndSet, updateIfVersion } from '../database/compareAndSet.js';
+export { ensureAutonumbers } from '../fields/baseFields/autonumber/counter.js';
 export type { InitOptions } from '../frogbot.js';
 export type { FrogBot as FrogBotInstance } from '../frogbot.js';
 export { FrogBot, getFrogBotPayload } from '../frogbot.js';

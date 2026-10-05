@@ -125,6 +125,7 @@ describe('jobs:run lifecycle', () => {
         payloadConfig: Promise.resolve(payloadConfig),
         noEmail: true,
         triggers: {},
+        autonumbers: [],
       },
       onInit,
     } as unknown as FrogBotSanitizedConfig;

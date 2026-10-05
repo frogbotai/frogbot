@@ -1,12 +1,21 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { mcpPlugin } from '@frogbotai/plugin-mcp';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import { type CollectionConfig, durationField, moneyField, ratingField } from 'frogbot';
+import {
+  autonumberField,
+  type CollectionConfig,
+  createdByField,
+  durationField,
+  lastModifiedByField,
+  moneyField,
+  ratingField,
+} from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
 export const usersSlug = 'users';
 export const postsSlug = 'posts';
+export const ticketsSlug = 'tickets';
 export const apiKeysSlug = 'api-keys';
 export const mcpEndpoint = '/api/mcp';
 export const apiKeyToken = `fb_${'A'.repeat(43)}`;
@@ -73,13 +82,28 @@ const Posts: CollectionConfig = {
   ],
 };
 
+const Tickets: CollectionConfig = {
+  slug: ticketsSlug,
+  access: openAccess,
+  fields: [
+    { name: 'title', type: 'text' },
+    autonumberField({ name: 'number' }),
+    createdByField({ name: 'createdBy' }),
+    lastModifiedByField({ name: 'lastModifiedBy' }),
+  ],
+};
+
 export default await buildTestConfig({
-  collections: [Users, Posts],
+  admin: { user: usersSlug },
+  collections: [Users, Posts, Tickets],
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({ authCollection: usersSlug, collectionSlug: apiKeysSlug }),
     mcpPlugin({
-      collections: { [postsSlug]: { enabled: { find: true, create: true, update: true } } },
+      collections: {
+        [postsSlug]: { enabled: { find: true, create: true, update: true } },
+        [ticketsSlug]: { enabled: { find: true, create: true } },
+      },
       mcp: {
         tools: [
           {

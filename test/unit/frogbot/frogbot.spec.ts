@@ -18,6 +18,14 @@ import { TriggerSubscriptions } from '../../../packages/frogbot/src/triggers/sub
 import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { defineEchoPiece } from './triggers/fixtures/piece-echo.js';
 
+const { ensureAutonumbers } = vi.hoisted(() => ({
+  ensureAutonumbers: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock('../../../packages/frogbot/src/fields/baseFields/autonumber/counter.js', () => ({
+  ensureAutonumbers,
+}));
+
 vi.mock('payload', () => {
   let mockPayload = createMockPayload();
   return {
@@ -106,6 +114,7 @@ function makeConfig(): FrogBotSanitizedConfig {
       payloadConfig: Promise.resolve({} as any),
       noEmail: true,
       triggers: {},
+      autonumbers: [],
     },
   };
 }
@@ -366,6 +375,70 @@ describe('FrogBot class', () => {
       await new FrogBot().init({ config, disableOnInit: true });
 
       expect(reconcile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('autonumber startup run', () => {
+    function withAutonumber(): FrogBotSanitizedConfig {
+      const config = makeConfig();
+
+      config._internal.autonumbers = [{ collection: 'posts', path: 'number' }];
+
+      return config;
+    }
+
+    beforeEach(() => {
+      ensureAutonumbers.mockClear();
+    });
+
+    it('numbers existing records at boot when a collection has an autonumber field', async () => {
+      const frogbot = await new FrogBot().init({ config: withAutonumber() });
+
+      expect(ensureAutonumbers).toHaveBeenCalledExactlyOnceWith(frogbot);
+    });
+
+    it('finishes the run before onInit starts', async () => {
+      const order: string[] = [];
+
+      ensureAutonumbers.mockImplementationOnce(async () => {
+        await Promise.resolve();
+
+        order.push('autonumbers');
+      });
+
+      const config = withAutonumber();
+
+      config.onInit = () => {
+        order.push('config onInit');
+      };
+
+      await new FrogBot().init({ config, onInit: () => void order.push('onInit') });
+
+      expect(order).toEqual(['autonumbers', 'onInit', 'config onInit']);
+    });
+
+    it('skips the run without autonumber fields', async () => {
+      await new FrogBot().init({ config: makeConfig() });
+
+      expect(ensureAutonumbers).not.toHaveBeenCalled();
+    });
+
+    it('skips the run when disableOnInit is true', async () => {
+      await new FrogBot().init({ config: withAutonumber(), disableOnInit: true });
+
+      expect(ensureAutonumbers).not.toHaveBeenCalled();
+    });
+
+    it('logs a warning and still runs onInit when the run fails', async () => {
+      ensureAutonumbers.mockRejectedValueOnce(new Error('database unavailable'));
+
+      const onInit = vi.fn();
+      const frogbot = await new FrogBot().init({ config: withAutonumber(), onInit });
+
+      expect(frogbot.logger.warn).toHaveBeenCalledWith(
+        '[frogbot] Autonumber numbering failed: database unavailable',
+      );
+      expect(onInit).toHaveBeenCalledWith(frogbot);
     });
   });
 

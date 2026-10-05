@@ -70,15 +70,19 @@ export interface Config {
   collections: {
     users: User;
     posts: Post;
+    tickets: Ticket;
     'api-keys': ApiKey;
     'frogbot-waitpoints': FrogBotWaitpoint;
+    'frogbot-autonumbers': FrogBotAutonumber;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     posts: PostsSelect;
+    tickets: TicketsSelect;
     'api-keys': ApiKeysSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    'frogbot-autonumbers': FrogBotAutonumbersSelect;
   };
   db: {
     defaultIDType: number;
@@ -195,6 +199,28 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets".
+ */
+export interface Ticket {
+  id: number;
+  title?: string | null;
+  /**
+   * Unique number set by FrogBot when the record is created; read-only
+   */
+  number?: number | null;
+  /**
+   * Set by FrogBot to the user who created the record; read-only
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Set by FrogBot to the user who last saved the record; read-only
+   */
+  lastModifiedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
@@ -240,6 +266,17 @@ export interface FrogBotWaitpoint {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-autonumbers".
+ */
+export interface FrogBotAutonumber {
+  id: number;
+  key: string;
+  value: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect {
@@ -280,6 +317,18 @@ export interface PostsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets_select".
+ */
+export interface TicketsSelect {
+  title?: boolean;
+  number?: boolean;
+  createdBy?: boolean;
+  lastModifiedBy?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -310,6 +359,16 @@ export interface FrogBotWaitpointsSelect {
   dispatched?: boolean;
   dispatchOwner?: boolean;
   dispatchLeaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-autonumbers_select".
+ */
+export interface FrogBotAutonumbersSelect {
+  key?: boolean;
+  value?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

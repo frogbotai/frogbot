@@ -236,6 +236,7 @@ const testProjects = [
       'fieldCell.browser.spec.ts',
       'optionColors.browser.spec.ts',
       'simpleKinds.browser.spec.ts',
+      'systemFields.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getApiKeyPrefix, hashApiKeyToken } from '@frogbotai/plugin-api-keys';
+import { ensureAutonumbers } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -19,13 +20,21 @@ import {
   postsSlug,
   strategyFailureMessage,
   testCredentials,
+  ticketsSlug,
   unknownApiKeyToken,
   usersSlug,
 } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const configuredTools = ['createPosts', 'updatePosts', 'findPosts', actorToolName];
+const configuredTools = [
+  'createPosts',
+  'updatePosts',
+  'findPosts',
+  'createTickets',
+  'findTickets',
+  actorToolName,
+];
 
 type MeBody = {
   user: { id: string | number; email: string; _strategy: string } | null;
@@ -88,6 +97,7 @@ describe('MCP plugin integration', () => {
 
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
+    await ensureAutonumbers(booted.frogbot);
 
     const owner = await booted.frogbot.create({
       collection: usersSlug,
@@ -278,6 +288,52 @@ describe('MCP plugin integration', () => {
     expect(docs.map(({ title, score, timeSpent }) => ({ title, score, timeSpent }))).toEqual([
       { title: 'Rated', score: 3, timeSpent: 5400 },
     ]);
+  });
+
+  it('POST /api/mcp describes created by, last modified by and autonumber fields as set by FrogBot', async () => {
+    const { tools } = parseMcpResponse<ToolsListBody>((await listTools(apiKeyToken)).body).result;
+    const properties = tools.find(({ name }) => name === 'createTickets')?.inputSchema.properties;
+    const number = properties?.number ?? {};
+
+    expect(number.description).toBe(
+      'Unique number set by FrogBot when the record is created; read-only',
+    );
+    expect(number.anyOf?.find(({ type }) => type === 'integer') ?? number).toMatchObject({
+      type: 'integer',
+    });
+    expect(properties?.createdBy?.description).toBe(
+      'Set by FrogBot to the user who created the record; read-only',
+    );
+    expect(properties?.lastModifiedBy?.description).toBe(
+      'Set by FrogBot to the user who last saved the record; read-only',
+    );
+  });
+
+  it('POST /api/mcp create drops a sent number and creator and records the key owner', async () => {
+    const response = await callTool('createTickets', {
+      title: 'Printer',
+      number: 99,
+      createdBy: customActorId,
+      lastModifiedBy: customActorId,
+    });
+
+    expect(response.status).toBe(200);
+    expect(parseMcpResponse<ToolCallBody>(response.body).result.isError).not.toBe(true);
+
+    const { docs } = await booted.frogbot.find({
+      collection: ticketsSlug,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    expect(
+      docs.map(({ title, number, createdBy, lastModifiedBy }) => ({
+        title,
+        number,
+        createdBy,
+        lastModifiedBy,
+      })),
+    ).toEqual([{ title: 'Printer', number: 1, createdBy: ownerId, lastModifiedBy: ownerId }]);
   });
 
   it('POST /api/mcp uses the API-key actor when an earlier custom strategy authenticates the engine request', async () => {

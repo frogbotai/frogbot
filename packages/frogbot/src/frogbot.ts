@@ -70,6 +70,7 @@ import type {
 import { resolveConfigDir } from './config/resolveConfigPath.js';
 import type { FrogBotSanitizedConfig } from './config/sanitized.js';
 import { Connections } from './connections/api.js';
+import { ensureAutonumbers } from './fields/baseFields/autonumber/counter.js';
 import { ensureFrogBotInstance, registerFrogBotInstance } from './instanceRegistry.js';
 import type { Jobs } from './jobs/types.js';
 import { createKV } from './kv/index.js';
@@ -473,6 +474,14 @@ async function initialize(
       void frogbot.triggers.reconcile().catch((error: unknown) => {
         frogbot.logger.warn(
           `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+    }
+
+    if (frogbot.config._internal.autonumbers.length) {
+      await ensureAutonumbers(frogbot).catch((error: unknown) => {
+        frogbot.logger.warn(
+          `[frogbot] Autonumber numbering failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       });
     }

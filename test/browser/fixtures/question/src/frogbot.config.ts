@@ -2,10 +2,13 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin, mintApiKey } from '@frogbotai/plugin-api-keys';
 import {
   type AgentModelId,
+  autonumberField,
   barcodeField,
   buildConfig,
+  createdByField,
   definePiece,
   durationField,
+  lastModifiedByField,
   percentField,
   phoneField,
   ratingField,
@@ -66,14 +69,14 @@ export default buildConfig({
     },
   },
   collections: [
-    { slug: usersSlug, auth: true, fields: [] },
+    { slug: usersSlug, auth: true, admin: { useAsTitle: 'email' }, fields: [] },
     { slug: messagesSlug, message: true, admin: { hidden: false }, fields: [] },
     {
       slug: tasksSlug,
       admin: {
         useAsTitle: 'title',
         views: [
-          { type: 'list', defaultFields: ['title', 'status', 'channel'] },
+          { type: 'list', defaultFields: ['title', 'number', 'status', 'channel', 'createdBy'] },
           {
             type: 'board',
             groupBy: 'status',
@@ -87,12 +90,13 @@ export default buildConfig({
               'website',
               'phone',
               'sku',
+              'createdBy',
             ],
           },
           {
             type: 'calendar',
             start: 'dueAt',
-            defaultFields: ['status', 'channel', 'progress', 'website'],
+            defaultFields: ['status', 'channel', 'progress', 'website', 'createdBy'],
           },
         ],
       },
@@ -132,6 +136,9 @@ export default buildConfig({
         urlField({ name: 'website' }),
         phoneField({ name: 'phone' }),
         barcodeField({ name: 'sku' }),
+        autonumberField({ name: 'number' }),
+        createdByField({ name: 'createdBy' }),
+        lastModifiedByField({ name: 'lastModifiedBy' }),
       ],
     },
     {

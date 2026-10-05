@@ -58,7 +58,7 @@ const frogbot = await getFrogBot({ config })
 | --- | --- | --- | --- |
 | `config` | `FrogBotSanitizedConfig \| Promise<FrogBotSanitizedConfig>` | Required | The result of `buildConfig`, usually imported from `@frogbot-config`. |
 | `disableDBConnect` | `boolean` | `false` | Starts FrogBot without connecting to the database. |
-| `disableOnInit` | `boolean` | `false` | Skips the config's `onInit` callbacks, the `onInit` option, trigger reconciliation, and the development-only type and import map generation. |
+| `disableOnInit` | `boolean` | `false` | Skips the config's `onInit` callbacks, the `onInit` option, trigger reconciliation, [autonumber](/fields/autonumber#at-startup) numbering of existing records, and the development-only type and import map generation. |
 | `onInit` | `(frogbot: FrogBot) => void \| Promise<void>` | — | Runs once after startup, before the config's `onInit` callbacks. |
 | `startChannelGateway` | `boolean` | `true` | Opens gateway connections for channels that need one, such as Discord. Set `false` when [`frogbot channels:run`](/pieces/discord) holds the connection in another process. |
 

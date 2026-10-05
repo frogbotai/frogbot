@@ -48,5 +48,12 @@ export type FrogBotSanitizedConfig = {
     payloadConfig: Promise<import('payload').SanitizedConfig>; // eslint-disable-line @typescript-eslint/consistent-type-imports
     noEmail: boolean;
     triggers: IngressRegistry;
+    autonumbers: AutonumberEntry[];
   };
+};
+
+/** @internal — not part of the public API. */
+export type AutonumberEntry = {
+  collection: string;
+  path: string;
 };

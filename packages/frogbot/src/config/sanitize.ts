@@ -69,8 +69,13 @@ import { buildSecretEndpoints } from '../connections/secret.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { MapVectorField } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
+import {
+  AUTONUMBERS_SLUG,
+  defaultAutonumbersCollection,
+} from '../fields/baseFields/autonumber/collection.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
 import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
+import type { SystemKindUsers } from '../fields/config/sanitizeSystemKinds.js';
 import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 import type { FrogBot } from '../frogbot.js';
 import { initFrogBotFromPayload } from '../frogbot.js';
@@ -128,7 +133,11 @@ import {
 } from './collectionViews.js';
 import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
-import type { FrogBotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
+import type {
+  AutonumberEntry,
+  FrogBotSanitizedConfig,
+  SanitizedCollectionMeta,
+} from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
 import type { FrogBotConfig, GeneratePreviewURL, LivePreviewConfig, OnInit } from './types.js';
 import type { ValidationMode } from './validationContext.js';
@@ -372,12 +381,16 @@ function sanitizeCollection(
   attachFrogBot: AttachFrogBot,
   {
     mapVectorField,
+    onAutonumber,
     search,
     resolveFrogBot,
+    users,
   }: {
     mapVectorField?: MapVectorField;
+    onAutonumber?: (path: string) => void;
     search?: SearchIndexDescriptors;
     resolveFrogBot: ResolveFrogBot;
+    users: SystemKindUsers;
   },
 ): PayloadCollectionConfig {
   const signIn = validateSignIn(c);
@@ -411,6 +424,8 @@ function sanitizeCollection(
         collection: c.slug,
         fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
         mapVectorField,
+        onAutonumber,
+        users,
       }),
     ),
     ...(admin ? { admin } : {}),
@@ -1366,6 +1381,7 @@ function buildPayloadConfig(
   attachFrogBot: AttachFrogBot,
   resolveFrogBot: ResolveFrogBot,
   searchCollections: SearchCollection[] = [],
+  autonumbers: AutonumberEntry[] = [],
 ): PayloadConfig {
   const frogbotKeys = new Set([
     'agents',
@@ -1381,6 +1397,14 @@ function buildPayloadConfig(
 
   const mapVectorField = config.db.mapVectorField;
 
+  const authSlugs = config.collections
+    .filter((collection) => Boolean(collection.auth))
+    .map(({ slug }) => slug);
+  const users: SystemKindUsers = {
+    authSlugs: authSlugs.length ? authSlugs : ['users'],
+    resolve: () => resolveUserSlug(config),
+  };
+
   const collections = config.collections.map((collection) =>
     sanitizeCollection(
       collection.auth && !collection.admin?.icon
@@ -1389,8 +1413,10 @@ function buildPayloadConfig(
       attachFrogBot,
       {
         mapVectorField,
+        onAutonumber: (path) => autonumbers.push({ collection: collection.slug, path }),
         resolveFrogBot,
         search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
+        users,
       },
     ),
   );
@@ -1404,8 +1430,17 @@ function buildPayloadConfig(
           fields: [{ name: 'name', type: 'text' }],
         },
         attachFrogBot,
-        { mapVectorField, resolveFrogBot },
+        { mapVectorField, resolveFrogBot, users },
       ),
+    );
+  }
+  if (autonumbers.length) {
+    collections.push(
+      sanitizeCollection(defaultAutonumbersCollection(), attachFrogBot, {
+        mapVectorField,
+        resolveFrogBot,
+        users,
+      }),
     );
   }
   const out: Record<string, unknown> = {
@@ -1419,6 +1454,7 @@ function buildPayloadConfig(
                 block: block.slug,
                 fields: block.fields,
                 mapVectorField,
+                users,
               }),
             ),
           })),
@@ -1859,6 +1895,12 @@ export function sanitize(
     throw new Error(`FrogBot collection '${WAITPOINTS_SLUG}' is reserved for durable waits.`);
   }
 
+  if (config.collections.some(({ slug }) => slug === AUTONUMBERS_SLUG)) {
+    throw new Error(
+      `FrogBot collection '${AUTONUMBERS_SLUG}' is reserved for autonumber counters.`,
+    );
+  }
+
   // Resolve chat persistence — adopt marked collections or inject defaults.
   const chatResult = resolveChatCollections({ ...config, agents });
   const { collections: usageCollections, slug: usageSlug } = resolveUsageCollection(
@@ -1944,6 +1986,8 @@ export function sanitize(
     search ? [{ slug, search }] : [],
   );
 
+  const autonumbers: AutonumberEntry[] = [];
+
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
     { ...config, agents, collections: payloadCollections, jobs, kv, settings },
@@ -1968,6 +2012,7 @@ export function sanitize(
     attachFrogBot,
     resolveFrogBot,
     searchCollections,
+    autonumbers,
   );
   payloadConfig.db = withSearchRuntime({
     adapter: withJobsRuntime({
@@ -2026,6 +2071,7 @@ export function sanitize(
       payloadConfig: payloadSanitizedPromise,
       noEmail: !config.email,
       triggers,
+      autonumbers,
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;
