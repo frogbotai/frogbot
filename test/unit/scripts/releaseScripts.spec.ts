@@ -25,7 +25,7 @@ describe('release scripts', () => {
     );
 
     const build = bump.indexOf('pnpm build');
-    const check = bump.indexOf('pnpm check:dist-imports');
+    const check = bump.indexOf('pnpm check dist-imports');
     const services = bump.indexOf('pnpm test:services');
     const test = bump.indexOf('pnpm test:release');
 
@@ -45,7 +45,7 @@ describe('release scripts', () => {
     );
 
     const install = bump.indexOf('pnpm install --frozen-lockfile');
-    const check = bump.indexOf('pnpm check:single-frogbot');
+    const check = bump.indexOf('pnpm check single-frogbot');
 
     expect(install).toBeGreaterThanOrEqual(0);
     expect(check).toBe(install + 1);
@@ -58,7 +58,7 @@ describe('release scripts', () => {
       const release = steps(script);
 
       const build = release.indexOf('pnpm build');
-      const check = release.indexOf('pnpm check:dist-imports');
+      const check = release.indexOf('pnpm check dist-imports');
 
       expect(build).toBeGreaterThanOrEqual(0);
       expect(check).toBe(build + 1);
@@ -67,12 +67,9 @@ describe('release scripts', () => {
     },
   );
 
-  it('check:dist-imports runs the exact-case import check', () => {
-    expect(scripts['check:dist-imports']).toBe('node scripts/check-dist-imports.mjs');
-  });
-
-  it('check:single-frogbot runs the manifest check', () => {
-    expect(scripts['check:single-frogbot']).toBe('node scripts/check-single-frogbot.mjs');
+  it('check is the only root check script, and runs the check runner', () => {
+    expect(scripts.check).toBe('node scripts/check.mjs');
+    expect(Object.keys(scripts).filter((name) => name.startsWith('check:'))).toEqual([]);
   });
 
   it('every publishable package builds with the shared package build', () => {

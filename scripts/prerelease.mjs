@@ -13,12 +13,12 @@ export const BUMPS = ['major', 'minor', 'patch'];
 
 export const STEPS = [
   { name: 'install', run: ['pnpm', 'install', '--frozen-lockfile'] },
-  { name: 'check-single-frogbot', run: ['pnpm', 'check:single-frogbot'] },
+  { name: 'check-single-frogbot', run: ['pnpm', 'check', 'single-frogbot'] },
   { name: 'sync-catalog', run: ['pnpm', 'sync:catalog'] },
   { name: 'lint', run: ['pnpm', 'lint:fix'] },
   { name: 'format', run: ['pnpm', 'prettier:write'] },
   { name: 'build', run: ['pnpm', 'build'] },
-  { name: 'check-dist-imports', run: ['pnpm', 'check:dist-imports'] },
+  { name: 'check-dist-imports', run: ['pnpm', 'check', 'dist-imports'] },
   { name: 'services', run: ['pnpm', 'test:services'], docker: true },
   { name: 'test', run: ['pnpm', 'test:release'], docker: true },
   // { name: 'browser', run: ['pnpm', 'test:browser'] },
