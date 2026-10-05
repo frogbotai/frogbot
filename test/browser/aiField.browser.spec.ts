@@ -40,14 +40,69 @@ async function storedTask(page: Page, id: ID): Promise<Record<string, unknown>> 
   return response.json();
 }
 
-async function expectStoredStatus(page: Page, id: ID, status: string): Promise<void> {
-  expect((await storedTask(page, id))[statusPath]).toBe(status);
+async function expectStoredStatus(page: Page, id: ID, status: string | null): Promise<void> {
+  expect((await storedTask(page, id))[statusPath] ?? null).toBe(status);
+}
+
+function listRow(page: Page, title: string): Locator {
+  return page.locator('tr', {
+    has: page.locator('td.cell-title', { hasText: new RegExp(`^${title}$`) }),
+  });
 }
 
 function listCell(page: Page, title: string): Locator {
-  return page
-    .locator('tr', { has: page.locator('td.cell-title', { hasText: new RegExp(`^${title}$`) }) })
-    .locator(`td.cell-${aiFieldName}`);
+  return listRow(page, title).locator(`td.cell-${aiFieldName}`);
+}
+
+function listPathWith(query: string): string {
+  return `${listPath}&${query}`;
+}
+
+async function gotoList(page: Page, path: string = listPath): Promise<void> {
+  await page.goto(path);
+  await expect(page.getByRole('columnheader').getByRole('checkbox')).toBeEnabled();
+}
+
+function bulkEntry(page: Page): Locator {
+  return page.getByRole('button', { name: 'Regenerate Summary…' });
+}
+
+async function openBulkDialog(page: Page): Promise<Locator> {
+  await page.getByRole('button', { name: 'More options' }).click();
+  await bulkEntry(page).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Regenerate Summary' });
+
+  await expect(dialog).toBeVisible();
+
+  return dialog;
+}
+
+async function confirmBulk(dialog: Locator, choice?: string): Promise<void> {
+  if (choice) await dialog.getByRole('radio', { name: choice }).check();
+
+  await dialog.getByRole('button', { name: 'Regenerate', exact: true }).click();
+  await expect(dialog).toBeHidden();
+}
+
+async function markPage(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (window as unknown as { __aiMarker: number }).__aiMarker = 1;
+  });
+}
+
+async function expectSamePage(page: Page): Promise<void> {
+  expect(await page.evaluate(() => (window as unknown as { __aiMarker?: number }).__aiMarker)).toBe(
+    1,
+  );
+}
+
+async function createNeverRun(page: Page, data: TaskData): Promise<ID> {
+  const id = await createTask(page, data);
+
+  await setState(page, id, { status: null });
+
+  return id;
 }
 
 function boardSummary(page: Page, title: string): Locator {
@@ -106,16 +161,12 @@ test('a pending List cell shows the result without a reload', async ({ page }) =
   await expect(cell.locator('.ai-cell--pending')).toBeVisible();
   await expect(cell.getByRole('img', { name: 'Generating' })).toBeVisible();
 
-  await page.evaluate(() => {
-    (window as unknown as { __aiMarker: number }).__aiMarker = 1;
-  });
+  await markPage(page);
   await setState(page, id, { status: 'done', value: 'Ships on Friday.' });
 
   await expect(cell).toHaveText('Ships on Friday.', { timeout: 10_000 });
   await expect(cell.getByRole('img', { name: 'Generating' })).toHaveCount(0);
-  expect(await page.evaluate(() => (window as unknown as { __aiMarker?: number }).__aiMarker)).toBe(
-    1,
-  );
+  await expectSamePage(page);
 });
 
 test('a done List cell reveals Regenerate on hover, and clicking it starts a run', async ({
@@ -276,5 +327,145 @@ test('an edit form opened while pending fills the result and saving does not reg
     title: 'Ship the order today',
     [aiFieldName]: 'Ready.',
     [statusPath]: 'done',
+  });
+});
+
+test.describe('bulk regenerate', () => {
+  test('a selection with "Only failed" queues only the failed row', async ({ page }) => {
+    const failed = await createTask(page, { title: 'Failed task', notes: 'Call the courier' });
+    const done = await createTask(page, { title: 'Done task', notes: 'Book the van' });
+    const neverRun = await createNeverRun(page, { title: 'Fresh task', notes: 'Pack the boxes' });
+
+    await setState(page, failed, { status: 'error', error: 'Model refused' });
+    await setState(page, done, { status: 'done', value: 'Van booked.' });
+    await gotoList(page);
+    await listRow(page, 'Failed task').getByRole('checkbox').check();
+    await listRow(page, 'Done task').getByRole('checkbox').check();
+    await markPage(page);
+
+    await confirmBulk(await openBulkDialog(page), 'Only failed');
+
+    await expect(page.getByText('Queued 1 run', { exact: true })).toBeVisible();
+    await expect(
+      listCell(page, 'Failed task').getByRole('img', { name: 'Generating' }),
+    ).toBeVisible();
+    await expect(listCell(page, 'Done task').getByRole('img', { name: 'Generating' })).toHaveCount(
+      0,
+    );
+    await expect(listCell(page, 'Fresh task').getByRole('img', { name: 'Generating' })).toHaveCount(
+      0,
+    );
+
+    for (const title of ['Failed task', 'Done task', 'Fresh task']) {
+      await expect(listRow(page, title).getByRole('checkbox')).not.toBeChecked();
+    }
+
+    await expectSamePage(page);
+    await expectStoredStatus(page, failed, 'pending');
+    await expectStoredStatus(page, done, 'done');
+    await expectStoredStatus(page, neverRun, null);
+  });
+
+  test('with nothing selected, "All in view" covers the filtered List', async ({ page }) => {
+    const first = await createNeverRun(page, { title: 'Alpha one', notes: 'Order paper' });
+    const second = await createNeverRun(page, { title: 'Alpha two', notes: 'Order ink' });
+    const other = await createNeverRun(page, { title: 'Beta', notes: 'Order pens' });
+
+    await gotoList(page, listPathWith('where[title][like]=Alpha'));
+
+    await expect(listRow(page, 'Beta')).toHaveCount(0);
+
+    const dialog = await openBulkDialog(page);
+
+    await expect(dialog.getByRole('radio', { name: 'All in view' })).toBeVisible();
+    await expect(dialog.getByRole('radio', { name: 'Only never generated' })).toBeChecked();
+
+    await confirmBulk(dialog);
+
+    await expect(page.getByText('Queued 2 runs', { exact: true })).toBeVisible();
+    await expectStoredStatus(page, first, 'pending');
+    await expectStoredStatus(page, second, 'pending');
+    await expectStoredStatus(page, other, null);
+  });
+
+  test('"Select all" covers every page', async ({ page }) => {
+    const ids: ID[] = [];
+
+    for (let index = 1; index <= 7; index += 1) {
+      ids.push(await createNeverRun(page, { title: `Task ${index}`, notes: `Step ${index}` }));
+    }
+
+    await gotoList(page, listPathWith('limit=5'));
+    await page.getByRole('columnheader').getByRole('checkbox').check();
+    await page.getByRole('button', { name: /^Select all \(7\)/ }).click();
+
+    const dialog = await openBulkDialog(page);
+
+    await expect(dialog.getByRole('radio', { name: 'All selected' })).toBeVisible();
+
+    await confirmBulk(dialog);
+
+    await expect(page.getByText('Queued 7 runs', { exact: true })).toBeVisible();
+
+    for (const id of ids) {
+      await expectStoredStatus(page, id, 'pending');
+    }
+  });
+
+  test('"All in view" replaces hand-edited values', async ({ page }) => {
+    const manual = await createTask(page, { title: 'Manual task', notes: 'Call the courier' });
+    const done = await createTask(page, { title: 'Done task', notes: 'Book the van' });
+
+    await setState(page, manual, { status: 'manual', value: 'Written by hand.' });
+    await setState(page, done, { status: 'done', value: 'Van booked.' });
+    await gotoList(page);
+
+    const dialog = await openBulkDialog(page);
+    const all = dialog.getByRole('radio', { name: 'All in view' });
+
+    await expect(all).toHaveAccessibleDescription('Also replaces values edited by hand.');
+
+    await confirmBulk(dialog, 'All in view');
+
+    await expect(page.getByText('Queued 2 runs', { exact: true })).toBeVisible();
+    await expectStoredStatus(page, manual, 'pending');
+    await expectStoredStatus(page, done, 'pending');
+  });
+
+  test('a record with empty inputs is skipped and counted', async ({ page }) => {
+    const withNotes = await createNeverRun(page, { title: 'With notes', notes: 'Order paper' });
+    const withoutNotes = await createTask(page, { title: 'Without notes' });
+
+    await gotoList(page);
+    await confirmBulk(await openBulkDialog(page));
+
+    await expect(
+      page.getByText(
+        'Queued 1 run · 1 record skipped (no inputs, no permission, being edited, or changed)',
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expectStoredStatus(page, withNotes, 'pending');
+    await expectStoredStatus(page, withoutNotes, null);
+  });
+
+  test('the dialog replaces the menu, and Escape closes it without changes', async ({ page }) => {
+    const id = await createNeverRun(page, { title: 'Fresh task', notes: 'Pack the boxes' });
+
+    await gotoList(page);
+
+    const dialog = await openBulkDialog(page);
+
+    await expect(bulkEntry(page)).toBeHidden();
+    await expect(dialog.locator(':focus')).toHaveCount(1);
+
+    await page.keyboard.press('Escape');
+
+    await expect(dialog).toBeHidden();
+    await expectStoredStatus(page, id, null);
+
+    await page.getByRole('button', { name: 'More options' }).click();
+
+    await expect(bulkEntry(page)).toBeVisible();
   });
 });
