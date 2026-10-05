@@ -1,11 +1,20 @@
 #!/usr/bin/env node
-// `pnpm check [--full]` runs the static checks: prettier (report only), ESLint errors, the
-// typecheck of packages changed against local `main` (every package with `--full`), then every
-// `scripts/check-*.mjs`. `pnpm check <name> [args]` runs one of those checks. It never runs
-// tests or starts servers. Tool output goes to `.idea/tmp/check-<time>.log`; stdout gets one
-// `check: OK` line, or at most MAX_LINES `file:line rule message` lines and the log path.
+// `pnpm check [--full]` runs the static checks: prettier (report only), ESLint errors, a build
+// of every package whose `dist` is missing or older than its sources, the typecheck of packages
+// changed against local `main` (every package with `--full`), then every `scripts/check-*.mjs`.
+// `pnpm check <name> [args]` runs one of those checks. It never runs tests or starts servers.
+// Tool output goes to `.idea/tmp/check-<time>.log`; stdout gets a `built N packages` line when
+// it built, then one `check: OK` line, or at most MAX_LINES `file:line rule message` lines and
+// the log path.
 import { spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,6 +29,8 @@ const TMP = path.join('.idea', 'tmp');
 const TYPECHECK_CONCURRENCY = 4;
 
 const LISTED_PACKAGES = 4;
+
+const BUILD_STAMP = path.join('node_modules', '.cache', 'frogbot-build', 'stamp.json');
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -65,6 +76,20 @@ export function changedPackages({ files, packages }) {
   }
 
   return [...changed].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function stalePackages(packages) {
+  return packages.filter(
+    ({ dist, built, newest }) => !dist || built === undefined || newest > built,
+  );
+}
+
+export function buildFilters({ stale, changed }) {
+  const closures = new Set(changed.map(({ name }) => name));
+  const own = stale.map(({ name }) => name).filter((name) => !closures.has(name));
+  const filters = [...own.sort(), ...[...closures].sort().map((name) => `${name}...`)];
+
+  return filters.flatMap((filter) => ['--filter', filter]);
 }
 
 function lines(text) {
@@ -317,15 +342,69 @@ function changedFiles(log) {
 function workspacePackages(log) {
   const listed = sh(log, 'pnpm', ['ls', '-r', '--depth', '-1', '--json']);
 
-  return JSON.parse(listed.stdout).map(({ name, path: dir }) => ({
-    name,
-    dir: path.relative(ROOT, dir).split(path.sep).join('/'),
-    typecheck: Boolean(readJSON(path.join(dir, 'package.json')).scripts?.typecheck),
-  }));
+  return JSON.parse(listed.stdout).map(({ name, path: dir }) => {
+    const { scripts } = readJSON(path.join(dir, 'package.json'));
+
+    return {
+      name,
+      dir: path.relative(ROOT, dir).split(path.sep).join('/'),
+      typecheck: Boolean(scripts?.typecheck),
+      buildable: Boolean(scripts?.build?.includes('scripts/build-package.mjs')),
+    };
+  });
 }
 
-async function typecheckChanged(log) {
-  const packages = changedPackages({ files: changedFiles(log), packages: workspacePackages(log) });
+function mtime(file) {
+  return statSync(file, { throwIfNoEntry: false })?.mtimeMs;
+}
+
+function newestSource(dir) {
+  const src = path.join(dir, 'src');
+  const files = [
+    path.join(dir, 'package.json'),
+    ...readdirSync(dir)
+      .filter((file) => /^tsconfig.*\.json$/.test(file))
+      .map((file) => path.join(dir, file)),
+    ...(existsSync(src) ? [src, ...readdirSync(src, { recursive: true })] : []).map((file) =>
+      path.resolve(src, file),
+    ),
+  ];
+
+  return files.reduce((newest, file) => Math.max(newest, mtime(file) ?? 0), 0);
+}
+
+function buildState({ name, dir }) {
+  const root = path.join(ROOT, dir);
+
+  return {
+    name,
+    dist: existsSync(path.join(root, 'dist')),
+    built: mtime(path.join(root, BUILD_STAMP)),
+    newest: newestSource(root),
+  };
+}
+
+async function build(log, { packages, changed }) {
+  const started = performance.now();
+  const stale = stalePackages(packages.filter(({ buildable }) => buildable).map(buildState));
+
+  if (stale.length === 0) return { ok: true, groups: [] };
+
+  const filters = buildFilters({ stale, changed: changed.filter(({ buildable }) => buildable) });
+  const result = await run(log, 'pnpm', [...filters, 'build']);
+
+  if (result.code !== 0) {
+    return { ok: false, groups: [failureLines('build', result, tscLines(result.output))] };
+  }
+
+  const noun = stale.length === 1 ? 'package' : 'packages';
+
+  console.log(`built ${stale.length} ${noun} · ${seconds(performance.now() - started)}`);
+
+  return { ok: true, groups: [] };
+}
+
+async function typecheckChanged(log, packages) {
   const names = packages.map(({ name }) => name);
 
   const summary =
@@ -336,13 +415,6 @@ async function typecheckChanged(log) {
         : `typecheck ${names.join(', ')}`;
 
   if (packages.length === 0) return { ok: true, groups: [], summary };
-
-  const filters = names.flatMap((name) => ['--filter', `${name}^...`]);
-  const build = await run(log, 'pnpm', [...filters, 'build']);
-
-  if (build.code !== 0) {
-    return { ok: false, groups: [failureLines('build', build, tscLines(build.output))], summary };
-  }
 
   const results = await mapLimit(packages, TYPECHECK_CONCURRENCY, async (pkg) => {
     const result = await run(log, 'pnpm', ['--filter', pkg.name, 'typecheck']);
@@ -382,9 +454,19 @@ async function check(log, { name, args }) {
 }
 
 async function runAll(log, { checks, full }) {
-  const stages = await Promise.all([prettier(log), eslint(log)]);
+  const packages = workspacePackages(log);
+  const changed = changedPackages({ files: changedFiles(log), packages });
+  const [built, ...stages] = await Promise.all([
+    build(log, { packages, changed }),
+    prettier(log),
+    eslint(log),
+  ]);
 
-  stages.push(full ? await typecheckAll(log) : await typecheckChanged(log));
+  if (!built.ok) {
+    return { ok: false, groups: [...stages, built].flatMap(({ groups }) => groups), summary: [] };
+  }
+
+  stages.push(full ? await typecheckAll(log) : await typecheckChanged(log, changed));
 
   const results = await Promise.all(checks.map((name) => check(log, { name, args: [] })));
 

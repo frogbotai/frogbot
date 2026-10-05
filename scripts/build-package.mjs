@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmod, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readdir, readFile, realpath, rm, utimes, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -298,7 +298,15 @@ const build = async () => {
   return 0;
 };
 
-const code = (await isUpToDate()) ? 0 : await build();
+const touchStamp = async () => {
+  const now = new Date();
+
+  await utimes(stampFile, now, now);
+
+  return 0;
+};
+
+const code = (await isUpToDate()) ? await touchStamp() : await build();
 
 const bins = typeof manifest.bin === 'string' ? [manifest.bin] : Object.values(manifest.bin ?? {});
 
