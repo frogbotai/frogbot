@@ -53,6 +53,7 @@ export function resolveScheduleTasks({
 
   const task: TaskConfig<ScheduledAgentTask> = {
     slug: AGENT_SCHEDULE_TASK_SLUG,
+    interfaceName: 'TaskFrogBotRunAgentSchedule',
     schedule: scheduled.map(({ agent, trigger }) => ({
       cron: scheduleCron(trigger),
       queue: `frogbot-schedule:${agent.slug}:${trigger.slug}`,

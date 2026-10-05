@@ -5,6 +5,7 @@ export const CHAT_TURNS_SLUG = 'frogbot-chat-turns';
 export function defaultChatTurnsCollection(): CollectionConfig {
   return {
     slug: CHAT_TURNS_SLUG,
+    typescript: { interface: 'FrogBotChatTurn' },
     admin: { hidden: true },
     graphQL: false,
     access: {

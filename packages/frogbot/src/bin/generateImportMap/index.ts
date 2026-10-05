@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import process from 'node:process';
 
 import type { PayloadComponent, SanitizedConfig } from 'payload';
+import { format } from 'prettier';
 
 import { rewritePayloadComponent } from '../../config/rewriteComponentPaths.js';
 import { iterateConfig } from './iterateConfig.js';
@@ -127,13 +128,16 @@ export async function writeImportMap({
     mapKeys.push(`  "${userPath}": ${identifier}`);
   }
 
-  const importMapOutputFile = `${imports.join('\n')}
+  const importMapOutputFile = await format(
+    `${imports.join('\n')}
 
 /** @type import('frogbot').ImportMap */
 export const importMap = {
 ${mapKeys.join(',\n')}
 }
-`;
+`,
+    { parser: 'babel', singleQuote: true },
+  );
 
   if (!force) {
     const currentImportMap = await fs.readFile(importMapFilePath, 'utf-8').catch(() => '');

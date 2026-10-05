@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import type { SanitizedConfig } from 'payload';
 import { generateImportMap as payloadGenerateImportMap } from 'payload';
+import { format } from 'prettier';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { generateImportMap } from '../../../../../packages/frogbot/src/bin/generateImportMap/index.js';
@@ -101,7 +102,12 @@ describe('frogbot importMap generator', () => {
 
     expect(result).toEqual({ changed: true, outputPath: join(dir, 'b', 'importMap.js') });
     expect(theirs).toContain("/** @type import('payload').ImportMap */");
-    expect(ours).toBe(theirs.replace("import('payload')", "import('frogbot')"));
+    expect(ours).toBe(
+      await format(theirs.replace("import('payload')", "import('frogbot')"), {
+        parser: 'babel',
+        singleQuote: true,
+      }),
+    );
   });
 
   it('emits no Payload references for a minimal frogbot config', async () => {
@@ -115,9 +121,9 @@ describe('frogbot importMap generator', () => {
 
     expect(output).toContain("from '@frogbotai/next/rsc'");
     expect(output).toContain("from '@frogbotai/next/views'");
-    expect(output).not.toContain('"@frogbotai/next/views#ChatView"');
-    expect(output).toContain('"@frogbotai/next/views#SettingsView"');
-    expect(output).toContain('"@frogbotai/next/rsc#CollectionCards"');
+    expect(output).not.toContain("'@frogbotai/next/views#ChatView'");
+    expect(output).toContain("'@frogbotai/next/views#SettingsView'");
+    expect(output).toContain("'@frogbotai/next/rsc#CollectionCards'");
     expect(output).toContain("from './fields/NameField.tsx'");
     expect(output).toContain("from './components/UserIcon.tsx'");
     expect(output).toContain("from './components/HomeIcon.tsx'");
@@ -127,7 +133,7 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from './components/BeforeClose.tsx'");
     expect(output).toContain("from './components/AfterAccount.tsx'");
     expect(output).toContain("from './components/BeforeAccount.tsx'");
-    expect(output).toContain('"/components/LogoutButton.tsx#default"');
+    expect(output).toContain("'/components/LogoutButton.tsx#default'");
     expect(output).toContain("from 'my-ui/client'");
     expect(output).toContain("from './settings/Usage.tsx'");
     expect(output).toContain("from './settings/UsageIcon.tsx'");
@@ -165,7 +171,7 @@ describe('frogbot importMap generator', () => {
     expect(output).toMatch(
       /import \{ SupportLink as \w+ \} from '\.\/components\/SupportLink\.tsx'/,
     );
-    expect(output).toContain('"./components/SupportLink.tsx#SupportLink":');
+    expect(output).toContain("'./components/SupportLink.tsx#SupportLink':");
   });
 
   it('imports component icons and skips built-in icon names', async () => {
@@ -248,10 +254,10 @@ describe('frogbot importMap generator', () => {
 
     expect(output).toMatch(/import \{ NavIcon as \w+ \} from '\.\/components\/NavIcon\.tsx'/);
     expect(output).toMatch(/import \{ UsageIcon as \w+ \} from '\.\/settings\/UsageIcon\.tsx'/);
-    expect(output).toContain('"./components/NavIcon.tsx#NavIcon":');
-    expect(output).toContain('"./settings/UsageIcon.tsx#UsageIcon":');
+    expect(output).toContain("'./components/NavIcon.tsx#NavIcon':");
+    expect(output).toContain("'./settings/UsageIcon.tsx#UsageIcon':");
     expect(output).not.toContain("from ''");
-    expect(output).not.toContain('"":');
+    expect(output).not.toContain("'':");
   });
 
   it('rewrites lexical components supplied by editor import-map callbacks', async () => {
@@ -361,7 +367,7 @@ describe('frogbot importMap generator', () => {
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    expect(output).toContain('"@frogbotai/next/views#ChatView"');
+    expect(output).toContain("'@frogbotai/next/views#ChatView'");
     expect(output).not.toContain('ChatListView');
   });
 
@@ -381,7 +387,7 @@ describe('frogbot importMap generator', () => {
 
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    expect(output).toContain('"@frogbotai/next/client#StepNavReset"');
+    expect(output).toContain("'@frogbotai/next/client#StepNavReset'");
     expect(output).toContain("from '@frogbotai/next/client'");
   });
 
@@ -604,6 +610,21 @@ describe('frogbot importMap generator', () => {
     expect(first?.changed).toBe(true);
     expect(second?.changed).toBe(false);
     expect(forced?.changed).toBe(true);
+  });
+
+  it('writes the import map formatted with semicolons and single quotes', async () => {
+    const dir = await makeDir('frogbot-importmap-format-');
+    const payloadConfig = await makePayloadConfig();
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toBe(await format(output, { parser: 'babel', singleQuote: true }));
+    expect(output).toMatch(/^import \{ \w+ as \w+ \} from '[^']+';$/m);
+    expect(output).toMatch(/^};$/m);
   });
 
   it('reports stale output without writing in dry-run mode', async () => {

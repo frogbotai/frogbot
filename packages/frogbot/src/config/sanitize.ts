@@ -1777,6 +1777,7 @@ export function sanitize(
           ...(config.jobs?.tasks ?? []).filter((task) => task.slug !== 'frogbot-reset-ai-budgets'),
           {
             slug: 'frogbot-reset-ai-budgets',
+            interfaceName: 'TaskFrogBotResetAiBudgets',
             schedule: [{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }],
             handler: async ({ req }) => {
               await req.payload.update({

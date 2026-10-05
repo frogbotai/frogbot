@@ -23,6 +23,7 @@ export function resolveKVCleanupTask({
       ...(jobs?.tasks ?? []),
       {
         slug: KV_CLEANUP_TASK_SLUG,
+        interfaceName: 'TaskFrogBotCleanupKv',
         schedule: [{ cron: '0 * * * *', queue: 'default' }],
         handler: async ({ req }) => {
           if (!(req.payload.kv instanceof DatabaseKVAdapter)) {

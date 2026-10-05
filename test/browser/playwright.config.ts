@@ -336,9 +336,9 @@ const chatProvider = {
 
 const selectedFixtures = [...new Set(selectedServers.map((name) => servers[name].fixture))].map(
   (name) => {
-    const { dir, cli, env } = fixtures[name];
+    const { dir, env } = fixtures[name];
 
-    return { name, dir, generatesImportMap: cli === 'frogbot', env };
+    return { name, dir, env };
   },
 );
 

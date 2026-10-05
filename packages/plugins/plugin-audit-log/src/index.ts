@@ -83,6 +83,7 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
     const retention = options.retention;
     const task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number] = {
       slug: `frogbot-prune-${auditSlug}`,
+      interfaceName: `TaskFrogBot-prune-${auditSlug}`,
       schedule: [
         {
           cron: retention.cron ?? '0 0 * * *',

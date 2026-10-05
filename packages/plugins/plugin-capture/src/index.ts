@@ -68,6 +68,7 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
     const task = options.retentionDays
       ? {
           slug: 'frogbot-prune-ai-captures',
+          interfaceName: 'TaskFrogBotPruneAiCaptures',
           schedule: [{ cron: '0 3 * * *', queue: 'frogbot-prune-ai-captures' }],
           handler: async ({ req }: { req: { payload: any } }) => {
             const cutoff = new Date(Date.now() - options.retentionDays! * 86_400_000).toISOString();

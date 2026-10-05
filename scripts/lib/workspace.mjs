@@ -4,6 +4,19 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+const PINNED_ENV = { FROGBOT_DATABASE: 'sqlite', FROGBOT_SECRET: 'frogbot-generate-types' };
+
+const PASSED_ENV = ['PATH', 'HOME', 'TMPDIR', 'SystemRoot'];
+
+export function generateEnv(extra = {}) {
+  const passed = PASSED_ENV.filter((name) => process.env[name] !== undefined).map((name) => [
+    name,
+    process.env[name],
+  ]);
+
+  return { ...Object.fromEntries(passed), ...PINNED_ENV, ...extra };
+}
+
 export function readJSON(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }

@@ -34,7 +34,7 @@ describe('usage reports import map', () => {
     const output = await readFile(join(dir, 'importMap.js'), 'utf8');
 
     expect(output).toContain("from '@frogbotai/plugin-usage-reports/client'");
-    expect(output).toContain('"@frogbotai/plugin-usage-reports/client#UsageReports"');
+    expect(output).toContain("'@frogbotai/plugin-usage-reports/client#UsageReports'");
     expect(output).not.toContain('UsageReportsNavLink');
     expect(output).not.toContain('usage-analytics');
   });
