@@ -56,7 +56,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/bin/**', '**/cli/**', '**/scripts/**', '**/bin.js'],
+    files: ['**/bin/**', '**/cli/**', '**/scripts/**', '**/bin.js', '.opencode/plugins/**'],
     rules: { 'no-console': 'off' },
   },
   {

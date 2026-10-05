@@ -1,0 +1,64 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Workers (depth 1) may start `lint` and `general` (depth 2); nothing nests deeper.
+  "experimental": { "subagent_depth": 2 },
+  // Ordered rules; the last match wins. The frogbot plugin refuses the same commands first,
+  // naming the alternative; these rules still hold when the plugin is not loaded.
+  "permissions": [
+    { "action": "shell", "resource": "git push *", "effect": "deny" },
+    { "action": "shell", "resource": "git -C * push *", "effect": "deny" },
+    { "action": "shell", "resource": "git -c * push *", "effect": "deny" },
+
+    { "action": "shell", "resource": "git *commit *--no-verify*", "effect": "deny" },
+    { "action": "shell", "resource": "git *commit -n*", "effect": "deny" },
+    { "action": "shell", "resource": "git *commit * -n*", "effect": "deny" },
+    { "action": "shell", "resource": "git *commit -an*", "effect": "deny" },
+    { "action": "shell", "resource": "git *commit * -an*", "effect": "deny" },
+
+    { "action": "shell", "resource": "git merge *", "effect": "deny" },
+    { "action": "shell", "resource": "git -C * merge *", "effect": "deny" },
+    { "action": "shell", "resource": "git -c * merge *", "effect": "deny" },
+
+    { "action": "shell", "resource": "sleep *", "effect": "deny" },
+    { "action": "shell", "resource": "kill -0 *", "effect": "deny" },
+
+    { "action": "shell", "resource": "pnpm test", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm run test", "effect": "deny" },
+    { "action": "shell", "resource": "vitest run", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm vitest run", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm exec vitest run", "effect": "deny" },
+    { "action": "shell", "resource": "npx vitest run", "effect": "deny" },
+    { "action": "shell", "resource": "playwright test", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm exec playwright test", "effect": "deny" },
+    { "action": "shell", "resource": "npx playwright test", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm test:browser", "effect": "deny" },
+    { "action": "shell", "resource": "pnpm run test:browser", "effect": "deny" },
+
+    // Only the primary agents below may read the archive or start subagents.
+    { "action": "read", "resource": ".idea/archive/*", "effect": "deny" },
+    { "action": "read", "resource": "*/.idea/archive/*", "effect": "deny" },
+    { "action": "subagent", "resource": "*", "effect": "deny" },
+  ],
+  "agents": {
+    "build": {
+      "permissions": [
+        { "action": "read", "resource": ".idea/archive/*", "effect": "allow" },
+        { "action": "read", "resource": "*/.idea/archive/*", "effect": "allow" },
+        { "action": "subagent", "resource": "*", "effect": "allow" },
+      ],
+    },
+    "plan": {
+      "permissions": [
+        { "action": "read", "resource": ".idea/archive/*", "effect": "allow" },
+        { "action": "read", "resource": "*/.idea/archive/*", "effect": "allow" },
+        { "action": "subagent", "resource": "*", "effect": "allow" },
+      ],
+    },
+    "general": {
+      "permissions": [
+        { "action": "subagent", "resource": "lint", "effect": "allow" },
+        { "action": "subagent", "resource": "general", "effect": "allow" },
+      ],
+    },
+  },
+}
