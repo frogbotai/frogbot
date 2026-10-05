@@ -79,6 +79,13 @@ The `check:docs-references` allowlist holds intentional placeholders only.
 - Only include the commit message content, no additional attribution or co-authored-by lines
 - In multi-feature programs, commit each completed and verified F feature separately; never combine multiple F features in one commit
 
+## Git hooks
+
+`pnpm install` installs the hooks (husky sets `core.hooksPath` to `.husky/_`). A checkout or worktree runs them only after its own `pnpm install`.
+
+- `pre-commit` runs lint-staged on the staged files: `eslint --fix` then `prettier --write` on code, `prettier --write` on Markdown, JSON, YAML and CSS. Lint errors fail the commit; warnings don't. Then `scripts/precommit-guard.mjs` refuses staged `.idea/`, `CHANGELOG*`, `.changeset/` and `patches/` files, and a new `patchedDependencies` entry in `package.json` or `pnpm-workspace.yaml`, printing one line per path.
+- `commit-msg` runs `scripts/commit-msg.mjs`: the subject must follow the Conventional Commits format above (merge commits are exempt), and `Co-authored-by:` or "Generated with" lines are refused.
+
 ## Code style
 
 - **Crisp, clean code**: Favor simplicity over complexity

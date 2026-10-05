@@ -1,0 +1,1 @@
+node scripts/commit-msg.mjs "$1"
