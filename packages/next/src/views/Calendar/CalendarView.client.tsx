@@ -3,7 +3,6 @@
 import { Calendar, getVisibleRange } from '@frogbotai/ui';
 import { getTranslation } from '@payloadcms/translations';
 import {
-  DefaultCell,
   RelationshipProvider,
   toast,
   useConfig,
@@ -19,7 +18,8 @@ import type { ClientCollectionConfig, Column, TypeWithID } from 'payload';
 import type { ComponentType } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { appendQuery, getPath, setPath, toCellData } from '../cells.js';
+import { FieldCell } from '../../fields/FieldCell/index.client.js';
+import { appendQuery, getPath, setPath } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
 
 type Row = Record<string, unknown> & {
@@ -76,36 +76,23 @@ function CalendarDocumentEvent({
         ) : (
           <>
             <div className="collection-calendar__title">{title}</div>
-            {cardColumns.map(({ accessor, field }) => {
-              const value = getPath(row, accessor);
-              const cellData =
-                field.type === 'relationship' || field.type === 'upload'
-                  ? Array.isArray(value)
-                    ? value.map(toCellData)
-                    : toCellData(value)
-                  : value;
-              return (
-                <div className="collection-calendar__field" key={accessor}>
-                  <span className="collection-calendar__field-label">
-                    {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
-                  </span>
-                  <span className="collection-calendar__field-value">
-                    {accessor === 'id' ? (
-                      String(cellData ?? '')
-                    ) : (
-                      <DefaultCell
-                        cellData={cellData}
-                        collectionSlug={collectionSlug}
-                        field={field}
-                        link={false}
-                        rowData={row}
-                        viewType="list"
-                      />
-                    )}
-                  </span>
-                </div>
-              );
-            })}
+            {cardColumns.map(({ accessor, field }) => (
+              <div className="collection-calendar__field" key={accessor}>
+                <span className="collection-calendar__field-label">
+                  {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
+                </span>
+                <span className="collection-calendar__field-value">
+                  <FieldCell
+                    cellData={getPath(row, accessor)}
+                    collectionSlug={collectionSlug}
+                    field={field}
+                    link={false}
+                    rowData={row}
+                    viewType="calendar"
+                  />
+                </span>
+              </div>
+            ))}
           </>
         )}
       </div>

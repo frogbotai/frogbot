@@ -4,11 +4,15 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const viewsPath = resolve('packages/next/src/views');
-const files = readdirSync(viewsPath, { recursive: true, withFileTypes: true })
-  .filter((entry) => entry.isFile() && entry.name.endsWith('.client.tsx'))
-  .map((entry) => resolve(entry.parentPath, entry.name));
+const fieldsPath = resolve('packages/next/src/fields');
 
-describe('client view UI imports', () => {
+const files = [viewsPath, fieldsPath].flatMap((path) =>
+  readdirSync(path, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.client.tsx'))
+    .map((entry) => resolve(entry.parentPath, entry.name)),
+);
+
+describe('client view and field UI imports', () => {
   it.each(files)('%s does not mix root and element or icon runtime imports', (file) => {
     const source = readFileSync(file, 'utf8');
     const hasRootImport = /from ['"]@payloadcms\/ui['"]/.test(source);

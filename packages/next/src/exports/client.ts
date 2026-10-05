@@ -1,4 +1,3 @@
-export { ChannelCell, type ChannelCellProps } from '../elements/ChannelCell/index.client.js';
 export {
   CostUSDCell,
   type CostUSDCellProps,
@@ -32,4 +31,6 @@ export {
 } from '../elements/SignInButtons/index.client.js';
 export { StepNavReset, type StepNavResetProps } from '../elements/StepNavReset/index.client.js';
 export { ViewSwitcher, type ViewSwitcherProps } from '../elements/ViewSwitcher/index.client.js';
+export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';
+export { FieldCell } from '../fields/FieldCell/index.client.js';
 export * from '@payloadcms/next/client';

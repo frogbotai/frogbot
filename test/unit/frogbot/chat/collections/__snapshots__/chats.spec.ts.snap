@@ -52,7 +52,14 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       },
       "admin": {
         "components": {
-          "Cell": "@frogbotai/next/client#ChannelCell",
+          "Cell": "@frogbotai/next/client#FieldCell",
+        },
+        "custom": {
+          "frogbot": {
+            "kind": {
+              "type": "channel",
+            },
+          },
         },
       },
       "index": true,

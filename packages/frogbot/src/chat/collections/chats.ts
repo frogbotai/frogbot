@@ -62,7 +62,10 @@ export function defaultChatsCollection({
         type: 'text',
         index: true,
         access: readOnly,
-        admin: { components: { Cell: '@frogbotai/next/client#ChannelCell' } },
+        admin: {
+          components: { Cell: '@frogbotai/next/client#FieldCell' },
+          custom: { frogbot: { kind: { type: 'channel' } } },
+        },
       },
       { name: 'externalId', type: 'text', index: true, access: readOnly },
       {
