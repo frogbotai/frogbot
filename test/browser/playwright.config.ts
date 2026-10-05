@@ -238,6 +238,7 @@ const testProjects = [
       'simpleKinds.browser.spec.ts',
       'systemFields.browser.spec.ts',
       'virtualPaths.browser.spec.ts',
+      'aiField.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

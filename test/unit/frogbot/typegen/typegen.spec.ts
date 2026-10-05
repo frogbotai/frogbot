@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
+import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import { barcodeField } from '../../../../packages/frogbot/src/fields/baseFields/barcode/index.js';
 import { createdByField } from '../../../../packages/frogbot/src/fields/baseFields/createdBy/index.js';
@@ -357,6 +358,54 @@ describe('frogbot generate:types', () => {
         documented('sku', 'string', 'Barcode value as text, for example a UPC or EAN code'),
       );
       expect(output).toMatch(/items\?:[\s\S]*?sku\?: string \| null;/);
+    });
+
+    it('emits AI field descriptions as JSDoc on the value and both state fields', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-ai-field-types-'));
+
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        ai: { providers: { openai: true }, defaultModel: 'openai/gpt-5-nano' },
+        collections: [
+          {
+            slug: 'tasks',
+            fields: [
+              { name: 'title', type: 'text' },
+              { name: 'notes', type: 'textarea' },
+              aiField({ name: 'summary', inputs: ['title', 'notes'], prompt: 'Summarize.' }),
+            ],
+          },
+        ],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = (await readFile(outputPath, 'utf-8')).replace(/\s+/g, ' ');
+      const documented = (property: string, type: string, text: string) =>
+        `/** * ${text} */ ${property}?: ${type} | null;`;
+
+      expect(output).toContain(
+        documented(
+          'summary',
+          'string',
+          'Generated automatically by AI from: title, notes. Writing a value keeps it and stops automatic updates',
+        ),
+      );
+      expect(output).toContain(
+        documented(
+          '_summary_status',
+          "('pending' | 'done' | 'error' | 'manual')",
+          'Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value',
+        ),
+      );
+      expect(output).toContain(
+        documented(
+          '_summary_error',
+          'string',
+          'Set by FrogBot: the error message from the last failed run',
+        ),
+      );
     });
 
     it('emits system kind descriptions as JSDoc without changing the field types', async () => {

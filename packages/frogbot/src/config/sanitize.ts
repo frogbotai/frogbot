@@ -74,6 +74,8 @@ import {
   defaultAutonumbersCollection,
 } from '../fields/baseFields/autonumber/collection.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
+import { sanitizeAIFields } from '../fields/baseFields/ai/sanitize.js';
+import { resolveAIFieldTask } from '../fields/baseFields/ai/task.js';
 import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import type { SystemKindUsers } from '../fields/config/sanitizeSystemKinds.js';
 import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
@@ -1831,6 +1833,13 @@ export function sanitize(
     };
   }
 
+  sanitizeAIFields({
+    ai: config.ai,
+    blocks: config.blocks,
+    collections: config.collections,
+    mode,
+  });
+
   if (config.tools !== undefined && !Array.isArray(config.tools)) {
     throw new Error('[frogbot] Root tools must be an array when configured.');
   }
@@ -1881,15 +1890,18 @@ export function sanitize(
   const channelJobs = agents?.some((agent) => agent.channels?.length)
     ? resolveChannelTask(resolvedJobs)
     : resolvedJobs;
-  const jobs = {
-    ...resolvedJobs,
-    ...resolveKVCleanupTask({
-      kv,
-      jobs: Object.keys(triggers).length
-        ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: channelJobs }))
-        : resolveScheduleTasks({ agents, jobs: channelJobs }),
-    }),
-  };
+  const jobs = resolveAIFieldTask({
+    collections: config.collections,
+    jobs: {
+      ...resolvedJobs,
+      ...resolveKVCleanupTask({
+        kv,
+        jobs: Object.keys(triggers).length
+          ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: channelJobs }))
+          : resolveScheduleTasks({ agents, jobs: channelJobs }),
+      }),
+    },
+  });
 
   if (config.collections.some(({ slug }) => slug === WAITPOINTS_SLUG)) {
     throw new Error(`FrogBot collection '${WAITPOINTS_SLUG}' is reserved for durable waits.`);

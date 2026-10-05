@@ -16,6 +16,7 @@ export type StubChatResponse = {
 export type StubTitleResponse = {
   text: string;
   hold?: Promise<void>;
+  error?: { status: number; body: unknown };
 };
 
 export type StubChatRequest = {
@@ -28,6 +29,7 @@ export type StubChatRequest = {
 
 export type StubChatModel = {
   requests: StubChatRequest[];
+  titleRequests: StubChatRequest[];
   respond: (...responses: StubChatResponse[]) => void;
   respondTitle: (...responses: StubTitleResponse[]) => void;
   reset: () => void;
@@ -65,11 +67,12 @@ function listen(server: Server, port: number): Promise<void> {
  * consumes the next scripted response (text by default), is recorded, and
  * can hold its reply until a test releases it or fail with a scripted HTTP
  * error. Requests without tools, such as chat title generation, consume the
- * next scripted title response ('Done.' by default), can hold it the same
- * way, and are not recorded.
+ * next scripted title response ('Done.' by default), can hold or fail it the
+ * same way, and are recorded in `titleRequests`.
  */
 export async function startStubChatModel(port: number): Promise<StubChatModel> {
   const requests: StubChatRequest[] = [];
+  const titleRequests: StubChatRequest[] = [];
   const responses: StubChatResponse[] = [];
   const titles: StubTitleResponse[] = [];
 
@@ -83,7 +86,7 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
     const body = await readJSON(req);
     const agentRequest = (body.tools?.length ?? 0) > 0;
 
-    if (agentRequest) requests.push(body);
+    (agentRequest ? requests : titleRequests).push(body);
 
     const response: StubChatResponse = (agentRequest ? responses.shift() : titles.shift()) ?? {
       text: 'Done.',
@@ -162,6 +165,7 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
 
   return {
     requests,
+    titleRequests,
     respond: (...next) => {
       responses.push(...next);
     },
@@ -170,6 +174,7 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
     },
     reset: () => {
       requests.length = 0;
+      titleRequests.length = 0;
       responses.length = 0;
       titles.length = 0;
     },

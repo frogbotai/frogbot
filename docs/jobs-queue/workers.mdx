@@ -40,7 +40,7 @@ const jobs = {
 };
 ```
 
-`shouldAutoRun` prevents web autorun from executing jobs, but scheduling happens before that check: an existing autorun entry can handle schedules once before stopping. `autoRun: []` removes user-defined entries; scheduled agent triggers currently append their own entry during configuration, so the empty array alone does not guarantee that web replicas never schedule jobs. Keep the execution guard even with an empty array. The worker CLI disables built-in autorun before initialization and uses its own tick loop.
+`shouldAutoRun` prevents web autorun from executing jobs, but scheduling happens before that check: an existing autorun entry can handle schedules once before stopping. `autoRun: []` removes user-defined entries; scheduled agent triggers, piece triggers and AI fields append their own entry during configuration, so the empty array alone does not guarantee that web replicas never schedule jobs. Keep the execution guard even with an empty array. The worker CLI disables built-in autorun before initialization and uses its own tick loop.
 
 ## Separate workers and scheduler
 

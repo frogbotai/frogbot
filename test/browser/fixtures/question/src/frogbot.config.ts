@@ -2,6 +2,7 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin, mintApiKey } from '@frogbotai/plugin-api-keys';
 import {
   type AgentModelId,
+  aiField,
   autonumberField,
   barcodeField,
   buildConfig,
@@ -15,10 +16,13 @@ import {
   ratingField,
   urlField,
 } from 'frogbot';
+import { aiFieldPaths } from 'frogbot/fields';
 import { question } from 'frogbot/tools';
 
 import {
   agentSlug,
+  aiFieldName,
+  aiFieldPath,
   apiKeysSlug,
   channelChat,
   channelQuestion,
@@ -95,6 +99,7 @@ export default buildConfig({
               'projectBudget',
               'projectStatus',
               'tagNames',
+              aiFieldName,
             ],
           },
           {
@@ -114,6 +119,7 @@ export default buildConfig({
               'projectBudget',
               'projectStatus',
               'tagNames',
+              aiFieldName,
             ],
           },
           {
@@ -181,6 +187,13 @@ export default buildConfig({
           virtual: 'project.status',
         },
         { name: 'tagNames', type: 'text', virtual: 'tags.name' },
+        { name: 'notes', type: 'text' },
+        aiField({
+          name: aiFieldName,
+          inputs: ['notes'],
+          prompt: 'Summarize this task in one sentence.',
+          model: 'browser/questioner',
+        }),
       ],
     },
     {
@@ -249,6 +262,7 @@ export default buildConfig({
       },
     },
   },
+  jobs: { shouldAutoRun: () => false },
   agents: [
     {
       slug: agentSlug,
@@ -299,6 +313,35 @@ export default buildConfig({
         });
 
         return Response.json({ reset: true });
+      },
+    },
+    {
+      path: aiFieldPath,
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) return new Response(null, { status: 401 });
+
+        const { id, status, value, error } = (await req.json?.()) as {
+          id: number | string;
+          status: string | null;
+          value?: string | null;
+          error?: string | null;
+        };
+
+        const paths = aiFieldPaths(aiFieldName);
+
+        const doc = await req.frogbot.db.updateOne({
+          collection: tasksSlug,
+          id,
+          data: {
+            [paths.status]: status,
+            [paths.error]: error ?? null,
+            ...(value !== undefined && { [aiFieldName]: value }),
+          },
+          req,
+        });
+
+        return Response.json({ doc });
       },
     },
     {
