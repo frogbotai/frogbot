@@ -109,6 +109,40 @@ export const AuthorName: Field = {
 }
 ```
 
+#### Display in the admin
+
+In List, Board and Calendar, a string path virtual field shows its value the way the field at the end of the path shows it. A path to a [money](/fields/money) field shows a money amount, a path to a select or radio with [option colors](/fields/select#option-colors) shows the coloured pill, and a path to a date uses that date field's display format. An empty value shows what the source field shows when it is empty, so an empty money amount shows nothing, and `0` shows as zero (`$0.00`).
+
+```ts
+import { moneyField, type CollectionConfig } from 'frogbot'
+
+export const Projects: CollectionConfig = {
+  slug: 'projects',
+  fields: [{ name: 'name', type: 'text' }, moneyField({ name: 'budget', currency: 'USD' })],
+}
+
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  fields: [
+    { name: 'project', type: 'relationship', relationTo: 'projects' },
+    { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true },
+    { name: 'projectBudget', type: 'number', virtual: 'project.budget' },
+    { name: 'tagNames', type: 'text', virtual: 'tags.name' },
+  ],
+}
+```
+
+A task whose project has a budget of `12.5` shows `$12.50` in the Project Budget column, and a task tagged "urgent" and "backend" shows `urgent, backend`.
+
+- **Sources.** The field at the end of the path can be a text, textarea, email, number, select, radio, checkbox or date field, including fields built on them such as [money](/fields/money). The path can cross several relationships, named groups and named tabs.
+- **Lists.** When the path crosses a `hasMany` relationship, each non-empty value is shown with the source field's display, separated by commas. In the List, only the first value links to the Document.
+- **Type and options.** Give the virtual field the source field's `type`, `options` and `hasMany`. The display follows the source field, but filters and generated types follow what you write on the virtual field.
+- **Paths that can't be followed.** If the path names a field that doesn't exist, passes through an array or blocks field, crosses a relationship to more than one collection, or ends at an unsupported or virtual field, the field shows as a plain value. A misspelt path returns an empty value and doesn't stop FrogBot from starting.
+- **Your own display.** A [custom `Cell`](#cell) on the virtual field, or a field factory such as `moneyField()` used for the virtual field itself, is used instead of the source field's display.
+- **Edit view.** The edit view shows the virtual field's own read-only input for the type you wrote. For example, a number virtual field pointing at a money field shows `12.5`.
+
+Grouping a Board by a virtual path field, or using one as a Calendar date, isn't supported.
+
 ### Virtual path syntax
 
 Virtual paths use dot notation to traverse relationships and nested data:

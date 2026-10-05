@@ -1,15 +1,19 @@
 import { render, screen } from '@testing-library/react';
-import type { ClientField, DefaultCellComponentProps } from 'payload';
+import type { ClientCollectionConfig, ClientField, DefaultCellComponentProps } from 'payload';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { DefaultCell, useTranslation } = vi.hoisted(() => ({
-  DefaultCell: vi.fn((_props: unknown) => <span data-testid="default-cell" />),
+const { DefaultCell, getEntityConfig, useTranslation } = vi.hoisted(() => ({
+  DefaultCell: vi.fn(({ cellData }: { cellData?: unknown }) => (
+    <span data-testid="default-cell">{typeof cellData === 'string' ? cellData : null}</span>
+  )),
+  getEntityConfig: vi.fn(),
   useTranslation: vi.fn(() => ({ i18n: { language: 'en' } })),
 }));
 
 vi.mock('@payloadcms/ui', () => ({
   DefaultCell,
+  useConfig: () => ({ getEntityConfig }),
   useTranslation,
   withCondition: <T,>(Component: T) => Component,
 }));
@@ -81,6 +85,7 @@ function renderPills(): { className: string; text: string | null }[] {
 describe('FieldCell', () => {
   beforeEach(() => {
     DefaultCell.mockClear();
+    getEntityConfig.mockClear();
   });
 
   it('renders a channel kind as a badge', () => {
@@ -344,5 +349,266 @@ describe('FieldCell', () => {
 
     expect(screen.getByText('done').className).toBe('channel-cell');
     expect(DefaultCell).not.toHaveBeenCalled();
+  });
+
+  describe('virtual path fields', () => {
+    const budget = {
+      name: 'budget',
+      type: 'number',
+      admin: {
+        custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
+      },
+    } as ClientField;
+
+    const projectStatus = {
+      name: 'status',
+      type: 'select',
+      admin: { custom: { frogbot: { optionColors: { active: 'green' } } } },
+      options: [{ label: 'Active', value: 'active' }],
+    } as ClientField;
+
+    const startsOn = {
+      name: 'startsOn',
+      type: 'date',
+      admin: { date: { displayFormat: 'd MMM yyyy' } },
+    } as ClientField;
+
+    const summary = { name: 'summary', type: 'textarea' } as ClientField;
+    const code = { name: 'code', type: 'text' } as ClientField;
+    const clientName = { name: 'name', type: 'text' } as ClientField;
+    const tagName = { name: 'name', type: 'text' } as ClientField;
+    const archived = { name: 'archived', type: 'checkbox' } as ClientField;
+
+    const collections: Record<string, ClientCollectionConfig> = {
+      clients: { slug: 'clients', fields: [clientName] } as ClientCollectionConfig,
+      projects: {
+        slug: 'projects',
+        fields: [
+          { name: 'name', type: 'text' },
+          budget,
+          projectStatus,
+          startsOn,
+          { name: 'details', type: 'group', fields: [summary] },
+          { type: 'tabs', tabs: [{ name: 'meta', fields: [code] }] },
+          { name: 'client', type: 'relationship', relationTo: 'clients' },
+          { name: 'milestones', type: 'array', fields: [{ name: 'title', type: 'text' }] },
+          { name: 'owner', type: 'relationship', relationTo: ['users', 'clients'] },
+          { name: 'json', type: 'json' },
+          { name: 'echo', type: 'text', virtual: 'client.name' },
+        ],
+      } as ClientCollectionConfig,
+      tags: {
+        slug: 'tags',
+        fields: [tagName, archived],
+      } as ClientCollectionConfig,
+      alphas: {
+        slug: 'alphas',
+        fields: [
+          { name: 'beta', type: 'relationship', relationTo: 'betas' },
+          { name: 'betaEcho', type: 'text', virtual: 'beta.alphaEcho' },
+        ],
+      } as ClientCollectionConfig,
+      betas: {
+        slug: 'betas',
+        fields: [
+          { name: 'alpha', type: 'relationship', relationTo: 'alphas' },
+          { name: 'alphaEcho', type: 'text', virtual: 'alpha.betaEcho' },
+        ],
+      } as ClientCollectionConfig,
+      tasks: {
+        slug: 'tasks',
+        fields: [
+          { name: 'project', type: 'relationship', relationTo: 'projects' },
+          { name: 'tags', type: 'relationship', hasMany: true, relationTo: 'tags' },
+          { name: 'vendor', type: 'relationship', relationTo: 'vendors' },
+        ],
+      } as ClientCollectionConfig,
+    };
+
+    function virtualField(
+      virtual: string | true,
+      type: 'number' | 'select' | 'text' = 'text',
+    ): ClientField {
+      return { name: 'lookup', type, label: 'Lookup', virtual } as ClientField;
+    }
+
+    function linkedCell(field: ClientField, cellData: unknown): DefaultCellComponentProps {
+      return { ...cell(field, cellData), link: true, onClick: vi.fn() };
+    }
+
+    function calls(): DefaultCellComponentProps[] {
+      return DefaultCell.mock.calls.map(([props]) => props as DefaultCellComponentProps);
+    }
+
+    beforeEach(() => {
+      getEntityConfig.mockImplementation(({ collectionSlug }: { collectionSlug: string }) =>
+        Object.hasOwn(collections, collectionSlug) ? collections[collectionSlug] : null,
+      );
+    });
+
+    it.each([
+      [12.5, '$12.50'],
+      [0, '$0.00'],
+    ])('draws the money source value %j as %s', (cellData, text) => {
+      const { container } = render(
+        <FieldCell {...cell(virtualField('project.budget', 'number'), cellData)} />,
+      );
+
+      expect(container.textContent).toBe(text);
+    });
+
+    it('renders nothing for an empty money source value', () => {
+      const { container } = render(
+        <FieldCell {...cell(virtualField('project.budget', 'number'), null)} />,
+      );
+
+      expect(container.childElementCount).toBe(0);
+      expect(DefaultCell).not.toHaveBeenCalled();
+    });
+
+    it('draws a coloured select source as a pill when the virtual field is typed text', () => {
+      render(<FieldCell {...cell(virtualField('project.status'), 'active')} />);
+
+      expect(renderPills()).toStrictEqual([
+        { className: 'fb-option-pill fb-option-pill--green', text: 'Active' },
+      ]);
+    });
+
+    it('passes a date source with its display format and the virtual label', () => {
+      const props = cell(virtualField('project.startsOn'), '2026-10-05T00:00:00.000Z');
+
+      render(<FieldCell {...props} />);
+
+      expect(lastProps()).toStrictEqual({
+        ...props,
+        field: { ...startsOn, label: 'Lookup', name: 'lookup' },
+      });
+    });
+
+    it.each([
+      ['project.client.name', clientName],
+      ['project.details.summary', summary],
+      ['project.meta.code', code],
+    ])('follows %s to its source', (path, source) => {
+      const props = cell(virtualField(path), 'Acme');
+
+      render(<FieldCell {...props} />);
+
+      expect(lastProps()).toStrictEqual({
+        ...props,
+        field: { ...source, label: 'Lookup', name: 'lookup' },
+      });
+    });
+
+    it('joins list values with commas and skips empty entries', () => {
+      const { container } = render(
+        <FieldCell {...cell(virtualField('tags.name'), ['urgent', null, '', 'backend'])} />,
+      );
+
+      expect(container.textContent).toBe('urgent, backend');
+    });
+
+    it('draws each list value as a single value and links only the first', () => {
+      const props = linkedCell(virtualField('tags.name'), ['urgent', null, 'backend']);
+      const field = { ...tagName, hasMany: false, label: 'Lookup', name: 'lookup' };
+      const { onClick: _onClick, ...unlinked } = props;
+
+      render(<FieldCell {...props} />);
+
+      expect(calls()).toStrictEqual([
+        { ...props, cellData: 'urgent', field },
+        { ...unlinked, cellData: 'backend', field, link: false },
+      ]);
+    });
+
+    it('draws an empty list once as an empty value with the virtual label', () => {
+      const props = cell(virtualField('tags.name'), []);
+
+      render(<FieldCell {...props} />);
+
+      expect(calls()).toStrictEqual([
+        { ...props, cellData: null, field: { ...tagName, label: 'Lookup', name: 'lookup' } },
+      ]);
+    });
+
+    it('formats every money value in a list, including zero', () => {
+      const { container } = render(
+        <FieldCell {...cell(virtualField('project.budget', 'number'), [0, 12.5])} />,
+      );
+
+      expect(container.textContent).toBe('$0.00, $12.50');
+    });
+
+    it('draws a money source as money when the virtual field is typed text', () => {
+      const { container } = render(<FieldCell {...cell(virtualField('project.budget'), 12.5)} />);
+
+      expect(container.textContent).toBe('$12.50');
+    });
+
+    it('passes a false checkbox source value through as false', () => {
+      const props = cell(virtualField('tags.archived'), false);
+
+      render(<FieldCell {...props} />);
+
+      expect(calls()).toStrictEqual([
+        { ...props, field: { ...archived, label: 'Lookup', name: 'lookup' } },
+      ]);
+    });
+
+    it('keeps false checkbox values in a list', () => {
+      render(<FieldCell {...cell(virtualField('tags.archived'), [false, null, true])} />);
+
+      expect(calls().map((props) => props.cellData)).toStrictEqual([false, true]);
+    });
+
+    it('falls back to the default cell for virtual fields that point at each other', () => {
+      const props = {
+        ...cell(virtualField('beta.alphaEcho'), 'Acme'),
+        collectionSlug: 'alphas',
+      };
+
+      render(<FieldCell {...props} />);
+
+      expect(calls()).toStrictEqual([props]);
+    });
+
+    it.each([
+      'project.nope',
+      'project.milestones.title',
+      'project.owner.name',
+      'project.json',
+      'project.echo',
+      'project.client',
+      'project.constructor',
+      'vendor.name',
+      'project.name.first',
+    ])('falls back to the default cell for the path %s', (path) => {
+      const props = cell(virtualField(path), 'Acme');
+
+      render(<FieldCell {...props} />);
+
+      expect(calls()).toStrictEqual([props]);
+      expect(lastProps().field).toBe(props.field);
+    });
+
+    it('falls back to the default cell for a virtual field without a path', () => {
+      const props = cell(virtualField(true), ['urgent', 'backend']);
+
+      render(<FieldCell {...props} />);
+
+      expect(calls()).toStrictEqual([props]);
+      expect(getEntityConfig).not.toHaveBeenCalled();
+    });
+
+    it('draws with its own money kind before following the path', () => {
+      const field = {
+        ...virtualField('project.budget', 'number'),
+        admin: { custom: { frogbot: { kind: { type: 'money', currency: 'EUR', precision: 2 } } } },
+      } as ClientField;
+
+      const { container } = render(<FieldCell {...cell(field, 12.5)} />);
+
+      expect(container.textContent).toBe('€12.50');
+    });
   });
 });
