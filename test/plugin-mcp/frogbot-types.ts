@@ -172,6 +172,16 @@ export interface User {
 export interface Post {
   id: number;
   title?: string | null;
+  /**
+   * Retail price (decimal amount in USD, in whole units, not minor units such as cents)
+   */
+  price?: number | null;
+  cost?: {
+    /**
+     * Decimal amount in EUR, in whole units, not minor units such as cents
+     */
+    wholesale?: number | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -249,6 +259,12 @@ export interface UsersSelect {
  */
 export interface PostsSelect {
   title?: boolean;
+  price?: boolean;
+  cost?:
+    | boolean
+    | {
+        wholesale?: boolean;
+      };
   updatedAt?: boolean;
   createdAt?: boolean;
 }

@@ -1,11 +1,10 @@
-import { CostUSDCell as CostUSDCell_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
-import { CostUSDField as CostUSDField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
+import { FieldCell as FieldCell_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
+import { MoneyField as MoneyField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
 import { DefaultListView as DefaultListView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { FolderTableCell as FolderTableCell_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FolderField as FolderField_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { ApiKeysManager as ApiKeysManager_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client';
 import { RevokeApiKey as RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9 } from '@frogbotai/plugin-api-keys/client';
-import { FieldCell as FieldCell_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
 import { ChatView as ChatView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
 import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
@@ -19,10 +18,10 @@ import { CollectionCards as CollectionCards_0d74ee439e1043043a872b6d428a44d5 } f
 
 /** @type import('frogbot').ImportMap */
 export const importMap = {
-  '@frogbotai/next/client#CostUSDCell':
-    CostUSDCell_e1fc65845c25c823b271918436e716b9,
-  '@frogbotai/next/client#CostUSDField':
-    CostUSDField_e1fc65845c25c823b271918436e716b9,
+  '@frogbotai/next/client#FieldCell':
+    FieldCell_e1fc65845c25c823b271918436e716b9,
+  '@frogbotai/next/client#MoneyField':
+    MoneyField_e1fc65845c25c823b271918436e716b9,
   '@frogbotai/next/views#DefaultListView':
     DefaultListView_172b1613d7d7a5cf96731bcb4ca4ed45,
   '@frogbotai/next/rsc#FolderTableCell':
@@ -33,8 +32,6 @@ export const importMap = {
     ApiKeysManager_da5b1e8ed1210a079e514867fb7c4ae9,
   '@frogbotai/plugin-api-keys/client#RevokeApiKey':
     RevokeApiKey_da5b1e8ed1210a079e514867fb7c4ae9,
-  '@frogbotai/next/client#FieldCell':
-    FieldCell_e1fc65845c25c823b271918436e716b9,
   '@frogbotai/next/views#ChatView': ChatView_172b1613d7d7a5cf96731bcb4ca4ed45,
   '@frogbotai/next/client#FolderTypeField':
     FolderTypeField_e1fc65845c25c823b271918436e716b9,

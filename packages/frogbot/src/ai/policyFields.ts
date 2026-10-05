@@ -1,3 +1,4 @@
+import { moneyField } from '../fields/baseFields/money/index.js';
 import type { Field } from '../fields/config/types.js';
 
 const names = new Set(['modelAccess', 'models', 'monthlyBudget', 'spendThisPeriodUSD']);
@@ -24,21 +25,14 @@ export function createPolicyFields(targets: string[]): Field[] {
           ? true
           : 'Select at least one model or router.',
     },
-    { name: 'monthlyBudget', label: 'Monthly Budget (USD)', type: 'number', min: 0 },
-    {
+    moneyField({ name: 'monthlyBudget', label: 'Monthly Budget (USD)', min: 0 }),
+    moneyField({
       name: 'spendThisPeriodUSD',
       label: 'Monthly Spend (USD)',
-      type: 'number',
       defaultValue: 0,
       access: { update: () => false },
-      admin: {
-        readOnly: true,
-        components: {
-          Cell: '@frogbotai/next/client#CostUSDCell',
-          Field: '@frogbotai/next/client#CostUSDField',
-        },
-      },
-    },
+      admin: { readOnly: true },
+    }),
   ];
 }
 

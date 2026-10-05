@@ -320,7 +320,7 @@ export default buildConfig({
         await req.frogbot.update({
           collection: usersSlug as never,
           id: req.user.id,
-          data: { spendThisPeriodUSD: 0 } as never,
+          data: { spendThisPeriodUSD: 0, monthlyBudget: null } as never,
           overrideAccess: true,
           req,
         });

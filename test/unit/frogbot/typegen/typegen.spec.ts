@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
+import { moneyField } from '../../../../packages/frogbot/src/fields/baseFields/money/index.js';
 import {
   buildGeneratedTypesFooter,
   internalSelectName,
@@ -216,6 +217,72 @@ describe('frogbot generate:types', () => {
       expect(output).toMatch(/passages\?:[\s\S]*?embedding: number\[\];/);
       expect(output).toMatch(/details\?:[\s\S]*?optionalEmbedding\?: number\[\] \| null;/);
       expect(output).not.toMatch(/embedding: \[number/);
+    });
+
+    it('emits money descriptions as JSDoc without changing the number types', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-money-types-'));
+
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [
+          {
+            slug: 'products',
+            fields: [
+              moneyField({ name: 'price', admin: { description: 'Retail price' } }),
+              moneyField({ name: 'cost' }),
+              moneyField({
+                name: 'net',
+                admin: { description: { en: 'Net price', de: 'Nettopreis' } },
+              }),
+              moneyField({ name: 'computed', admin: { description: () => 'x' } }),
+              moneyField({
+                name: 'override',
+                typescriptSchema: [
+                  ({ jsonSchema }) => ({
+                    ...jsonSchema,
+                    description: 'Cost in USD, excluding VAT',
+                  }),
+                ],
+              }),
+              {
+                name: 'lines',
+                type: 'array',
+                fields: [moneyField({ name: 'amount', currency: 'EUR' })],
+              },
+              {
+                type: 'tabs',
+                tabs: [
+                  {
+                    name: 'pricing',
+                    fields: [moneyField({ name: 'list', currency: 'EUR' })],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = (await readFile(outputPath, 'utf-8')).replace(/\s+/g, ' ');
+      const units = 'in whole units, not minor units such as cents';
+      const documented = (property: string, text: string) =>
+        `/** * ${text} */ ${property}?: number | null;`;
+
+      expect(output).toContain(
+        documented('price', `Retail price (decimal amount in USD, ${units})`),
+      );
+      expect(output).toContain(documented('cost', `Decimal amount in USD, ${units}`));
+      expect(output).toContain(documented('net', `Net price (decimal amount in USD, ${units})`));
+      expect(output).toContain(documented('computed', `Decimal amount in USD, ${units}`));
+      expect(output).toContain(documented('override', 'Cost in USD, excluding VAT'));
+      expect(output).toContain(documented('amount', `Decimal amount in EUR, ${units}`));
+      expect(output).toContain(documented('list', `Decimal amount in EUR, ${units}`));
+      expect(output).toMatch(/lines\?:[\s\S]*?amount\?: number \| null;/);
+      expect(output).toMatch(/pricing\?: \{[\s\S]*?list\?: number \| null;/);
+      expect(output).not.toContain('Nettopreis');
     });
 
     it('emits Chat/Message interfaces with UIMessage-typed parts for injected chat collections', async () => {

@@ -2,8 +2,8 @@
 
 import './styles.css';
 
-import { formatCostUSD } from '@frogbotai/next/client';
-import { useConfig } from '@payloadcms/ui';
+import { useConfig, useTranslation } from '@payloadcms/ui';
+import { formatMoney } from 'frogbot/fields';
 import { useEffect, useState } from 'react';
 
 import type { UsageReport, UsageReportGroup, UsageReportRow } from '../index.js';
@@ -55,6 +55,7 @@ function formatTokens(value: number): string {
 
 export function UsageReports() {
   const { config } = useConfig();
+  const { i18n } = useTranslation();
   const [groupBy, setGroupBy] = useState<Extract<UsageReportGroup, 'model' | 'user'>>('model');
   const [range, setRange] = useState<DateRange>(() => rangeForDays(30, 'Last 30 days'));
   const [showCustom, setShowCustom] = useState(false);
@@ -116,7 +117,11 @@ export function UsageReports() {
       label: 'Reasoning',
       value: (row) => formatTokens(row.reasoningTokens),
     },
-    { field: 'costUSD', label: 'Cost', value: (row) => formatCostUSD(row.costUSD) },
+    {
+      field: 'costUSD',
+      label: 'Cost',
+      value: (row) => formatMoney({ value: row.costUSD, locale: i18n.language }),
+    },
   ];
 
   function sort(field: SortField) {
@@ -207,7 +212,10 @@ export function UsageReports() {
             <strong>{formatTokens(report?.totals.totalTokens ?? 0)}</strong> tokens
           </span>
           <span>
-            <strong>{formatCostUSD(report?.totals.costUSD)}</strong> cost
+            <strong>
+              {formatMoney({ value: report?.totals.costUSD ?? 0, locale: i18n.language })}
+            </strong>{' '}
+            cost
           </span>
         </div>
         {loading && <p className="usage-reports__state">Loading usage...</p>}

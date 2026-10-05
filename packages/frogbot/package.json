@@ -34,6 +34,11 @@
       "import": "./dist/exports/search.js",
       "default": "./dist/exports/search.js"
     },
+    "./fields": {
+      "types": "./dist/exports/fields.d.ts",
+      "import": "./dist/exports/fields.js",
+      "default": "./dist/exports/fields.js"
+    },
     "./kv": {
       "types": "./dist/exports/kv.d.ts",
       "import": "./dist/exports/kv.js",
@@ -154,6 +159,11 @@
         "types": "./dist/exports/search.d.ts",
         "import": "./dist/exports/search.js",
         "default": "./dist/exports/search.js"
+      },
+      "./fields": {
+        "types": "./dist/exports/fields.d.ts",
+        "import": "./dist/exports/fields.js",
+        "default": "./dist/exports/fields.js"
       },
       "./kv": {
         "types": "./dist/exports/kv.d.ts",

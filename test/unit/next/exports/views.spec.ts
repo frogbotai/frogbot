@@ -87,6 +87,7 @@ vi.mock('@payloadcms/ui', () => ({
   useTranslation: () => ({ i18n: { t: (key: string) => key } }),
   useWindowInfo: () => ({ breakpoints: { s: false } }),
   ViewDescription: () => null,
+  withCondition: <T>(Component: T) => Component,
 }));
 vi.mock('@payloadcms/ui/elements/ColumnSelector', () => ({}));
 vi.mock('@payloadcms/ui/elements/GroupByBuilder', () => ({}));

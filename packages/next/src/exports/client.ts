@@ -1,11 +1,4 @@
 export {
-  CostUSDCell,
-  type CostUSDCellProps,
-  CostUSDField,
-  type CostUSDFieldProps,
-  formatCostUSD,
-} from '../elements/CostUSD/index.client.js';
-export {
   AccountMenu,
   type AccountMenuIcon,
   AccountMenuItem,
@@ -33,4 +26,5 @@ export { StepNavReset, type StepNavResetProps } from '../elements/StepNavReset/i
 export { ViewSwitcher, type ViewSwitcherProps } from '../elements/ViewSwitcher/index.client.js';
 export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js';
 export { FieldCell } from '../fields/FieldCell/index.client.js';
+export { MoneyCell, MoneyField } from '../fields/Money/index.client.js';
 export * from '@payloadcms/next/client';
