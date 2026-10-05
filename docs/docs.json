@@ -126,7 +126,10 @@
                       "fields/duration",
                       "fields/url",
                       "fields/phone",
-                      "fields/barcode"
+                      "fields/barcode",
+                      "fields/created-by",
+                      "fields/last-modified-by",
+                      "fields/autonumber"
                     ]
                   },
                   "fields/default-fields"

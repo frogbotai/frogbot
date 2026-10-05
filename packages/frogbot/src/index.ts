@@ -37,8 +37,11 @@ export type {
   ConnectionsConfig,
   SanitizedConnectionsConfig,
 } from './connections/types.js';
+export { autonumberField } from './fields/baseFields/autonumber/index.js';
 export { barcodeField } from './fields/baseFields/barcode/index.js';
+export { createdByField } from './fields/baseFields/createdBy/index.js';
 export { durationField } from './fields/baseFields/duration/index.js';
+export { lastModifiedByField } from './fields/baseFields/lastModifiedBy/index.js';
 export { moneyField } from './fields/baseFields/money/index.js';
 export { percentField } from './fields/baseFields/percent/index.js';
 export { phoneField } from './fields/baseFields/phone/index.js';
@@ -480,8 +483,11 @@ export type {
   CollectionRefreshHook,
 } from './collections/config/types.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
+export type { AutonumberFieldArgs } from './fields/baseFields/autonumber/index.js';
 export type { BarcodeFieldArgs } from './fields/baseFields/barcode/index.js';
+export type { CreatedByFieldArgs } from './fields/baseFields/createdBy/index.js';
 export type { DurationFieldArgs } from './fields/baseFields/duration/index.js';
+export type { LastModifiedByFieldArgs } from './fields/baseFields/lastModifiedBy/index.js';
 export type { MoneyFieldArgs } from './fields/baseFields/money/index.js';
 export type { PercentFieldArgs } from './fields/baseFields/percent/index.js';
 export type { PhoneFieldArgs } from './fields/baseFields/phone/index.js';

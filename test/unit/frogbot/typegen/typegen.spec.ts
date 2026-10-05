@@ -9,8 +9,11 @@ import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
+import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
 import { barcodeField } from '../../../../packages/frogbot/src/fields/baseFields/barcode/index.js';
+import { createdByField } from '../../../../packages/frogbot/src/fields/baseFields/createdBy/index.js';
 import { durationField } from '../../../../packages/frogbot/src/fields/baseFields/duration/index.js';
+import { lastModifiedByField } from '../../../../packages/frogbot/src/fields/baseFields/lastModifiedBy/index.js';
 import { moneyField } from '../../../../packages/frogbot/src/fields/baseFields/money/index.js';
 import { percentField } from '../../../../packages/frogbot/src/fields/baseFields/percent/index.js';
 import { phoneField } from '../../../../packages/frogbot/src/fields/baseFields/phone/index.js';
@@ -354,6 +357,54 @@ describe('frogbot generate:types', () => {
         documented('sku', 'string', 'Barcode value as text, for example a UPC or EAN code'),
       );
       expect(output).toMatch(/items\?:[\s\S]*?sku\?: string \| null;/);
+    });
+
+    it('emits system kind descriptions as JSDoc without changing the field types', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-system-kind-types-'));
+
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [
+          { slug: 'users', auth: true, fields: [] },
+          {
+            slug: 'tickets',
+            fields: [
+              autonumberField({ name: 'number' }),
+              createdByField({ name: 'createdBy' }),
+              lastModifiedByField({ name: 'lastModifiedBy' }),
+            ],
+          },
+        ],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = (await readFile(outputPath, 'utf-8')).replace(/\s+/g, ' ');
+      const documented = (property: string, type: string, text: string) =>
+        `/** * ${text} */ ${property}?: ${type};`;
+
+      expect(output).toContain(
+        documented(
+          'number',
+          'number | null',
+          'Unique number set by FrogBot when the record is created; read-only',
+        ),
+      );
+      expect(output).toContain(
+        documented(
+          'createdBy',
+          '(number | null) | User',
+          'Set by FrogBot to the user who created the record; read-only',
+        ),
+      );
+      expect(output).toContain(
+        documented(
+          'lastModifiedBy',
+          '(number | null) | User',
+          'Set by FrogBot to the user who last saved the record; read-only',
+        ),
+      );
     });
 
     it('generates the same types for coloured and uncoloured options', async () => {

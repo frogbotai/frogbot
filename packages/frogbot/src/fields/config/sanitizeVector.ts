@@ -7,6 +7,7 @@ import {
 import type { MapVectorField } from '../../database/types.js';
 import { validateVector } from '../validations.js';
 import { sanitizeOptionColors } from './sanitizeOptionColors.js';
+import { getSystemKind, sanitizeSystemKind, type SystemKindUsers } from './sanitizeSystemKinds.js';
 import type { Field, VectorField } from './types.js';
 
 type VectorOwner =
@@ -15,6 +16,8 @@ type VectorOwner =
 type SanitizeVectorFieldsArgs = VectorOwner & {
   fields: readonly Field[];
   mapVectorField?: MapVectorField;
+  onAutonumber?: (path: string) => void;
+  users: SystemKindUsers;
 };
 
 type SanitizeVectorFieldArgs = VectorOwner & {
@@ -99,9 +102,18 @@ function sanitizeVectorField({
   return mapVectorField({ collection, block, dimensions, field: lowered, path });
 }
 
-function sanitizeFields(args: SanitizeVectorFieldsArgs, parent: string): Field[] {
+function sanitizeFields(
+  args: SanitizeVectorFieldsArgs,
+  parent: string,
+  repeated: boolean,
+): Field[] {
   return args.fields.map((field) => {
     const path = 'name' in field ? joinPath(parent, field.name) : parent;
+    const systemKind = getSystemKind(field);
+
+    if (systemKind) {
+      return sanitizeSystemKind({ ...args, ...systemKind, field, path, repeated });
+    }
 
     if (field.type === 'vector') {
       return sanitizeVectorField({ ...args, field, path }) as unknown as Field;
@@ -112,7 +124,14 @@ function sanitizeFields(args: SanitizeVectorFieldsArgs, parent: string): Field[]
     }
 
     if ('fields' in field && Array.isArray(field.fields)) {
-      return { ...field, fields: sanitizeFields({ ...args, fields: field.fields }, path) };
+      return {
+        ...field,
+        fields: sanitizeFields(
+          { ...args, fields: field.fields },
+          path,
+          repeated || field.type === 'array',
+        ),
+      };
     }
 
     if (field.type === 'tabs') {
@@ -123,6 +142,7 @@ function sanitizeFields(args: SanitizeVectorFieldsArgs, parent: string): Field[]
           fields: sanitizeFields(
             { ...args, fields: tab.fields },
             joinPath(parent, 'name' in tab && tab.name ? tab.name : ''),
+            repeated,
           ),
         })),
       };
@@ -131,7 +151,7 @@ function sanitizeFields(args: SanitizeVectorFieldsArgs, parent: string): Field[]
     if (field.type === 'blocks') {
       const sanitizeBlock = <T extends { fields: Field[]; slug: string }>(block: T): T => ({
         ...block,
-        fields: sanitizeFields({ ...args, fields: block.fields }, joinPath(path, block.slug)),
+        fields: sanitizeFields({ ...args, fields: block.fields }, joinPath(path, block.slug), true),
       });
 
       return {
@@ -148,5 +168,5 @@ function sanitizeFields(args: SanitizeVectorFieldsArgs, parent: string): Field[]
 }
 
 export function sanitizeVectorFields(args: SanitizeVectorFieldsArgs): Field[] {
-  return sanitizeFields(args, '');
+  return sanitizeFields(args, '', args.block !== undefined);
 }

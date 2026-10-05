@@ -1,0 +1,192 @@
+---
+title: Autonumber Field
+sidebarTitle: Autonumber
+description: Give every record a short unique number, such as ticket 42, set by FrogBot and read-only to people and agents.
+keywords: autonumber, auto increment, serial, sequence, record number, ticket number, counter, number, fields, collections, configuration
+---
+
+`autonumberField` returns a [Number field](/fields/number) that FrogBot sets to the next number when a record is created: 1, 2, 3 and so on. Numbers are unique within the field, even when many records are created at the same moment, and are never reused. People and agents can't write them, and agents and generated types are told that FrogBot sets them.
+
+```ts
+import { autonumberField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Tickets: CollectionConfig = {
+  slug: 'tickets',
+  fields: [
+    autonumberField({ name: 'number', label: 'Ticket #' }),
+    { name: 'title', type: 'text', required: true },
+  ],
+}
+```
+
+The result is a plain `number` field with a unique index. It works at the top level and inside groups, tabs, rows and collapsibles, but not inside arrays or blocks, where a per-row number has no meaning.
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `min` | `number` | — | Minimum accepted value, checked by the built-in validator against the number FrogBot assigns. |
+| `max` | `number` | — | Maximum accepted value, checked by the built-in validator against the number FrogBot assigns. A create whose number would be higher fails with an error naming the field. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `index` | `boolean` | `false` | Creates a database index. The field is always unique, which already creates one. |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. It checks the number FrogBot assigns. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. Your `beforeChange` and `beforeDuplicate` hooks run after the field's own. See [field hooks](/hooks/fields). |
+| `access` | `{ read }` | Allowed | `FieldAccess` function that decides who can read the number. Nobody can create or update it through access-controlled requests. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. A duplicate always gets a new number either way. See [Duplicates and versions](#duplicates-and-versions). |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+An autonumber field holds one number that FrogBot sets and is always unique, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `access.create` and `access.update` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+
+```text
+autonumberField "number": defaultValue is not supported
+```
+
+A field inside an array or blocks also fails at startup:
+
+```text
+[frogbot] Autonumber field 'items.number' in collection 'tickets' can't be inside an array or blocks.
+```
+
+## How numbers are assigned
+
+- Each new record gets the next number, starting at 1.
+- Each autonumber field counts on its own. A collection can have more than one, and a field in a group, such as `details.ref`, has its own count.
+- Numbers are unique within the field on SQLite, Postgres and MongoDB, even when many records are created at the same moment.
+- Numbers are never reused. Deleting record 2 leaves a gap, and the next record still gets the next new number.
+
+Updates, autosaves, drafts, bulk updates and version restores keep the number. A number sent with an update is ignored, including through the Local API.
+
+### Failed saves and transactions
+
+How a failed save affects the count depends on whether the save runs in a database [transaction](/database/transactions):
+
+- **SQLite and Postgres with transactions:** the number is taken inside the save's transaction. A save that fails and rolls back gives its number back, so it leaves no gap. Creates on the same field wait for each other's transactions, so a long-running transaction that creates a numbered record holds up other creates on that field until it finishes.
+- **MongoDB, and SQLite or Postgres without transactions:** the number is taken on its own, outside the save. A save that fails after its number was taken can leave a gap.
+
+Postgres runs transactions unless you set `transactionOptions: false`. SQLite runs them when you pass an object such as `transactionOptions: {}`, or when a collection uses [sign-in](/authentication/sign-in) and you leave `transactionOptions` unset. See [SQLite options](/database/sqlite#options).
+
+## Read-only to people and agents
+
+The admin panel shows the field as read-only. A number sent through the admin panel, REST, GraphQL, MCP, agent tools or a CSV import is dropped without an error, the record saves, and FrogBot gives it the next number.
+
+## Seeds and migrations
+
+Trusted server code can supply a number when it creates a record. This is the Local API with access overridden, which is its default:
+
+```ts
+await frogbot.create({ collection: 'tickets', data: { number: 100, title: 'Imported ticket' } })
+```
+
+- A supplied number must be a whole number of 1 or more. Anything else fails with an error naming the field: `Autonumber values must be whole numbers of 1 or more.`
+- A number another record already has fails with `Value must be unique` on the field, and nothing is saved.
+- After a seed, automatic numbers continue above the highest number the field has held. With the seed above, the next automatic number is 101.
+
+After a record is created, its number never changes.
+
+## Duplicates and versions
+
+- **Duplicate:** the copy doesn't inherit the number. It gets the next new number, as a new record does.
+- **Autosave and drafts:** the record keeps its number.
+- **Restoring a version:** the record keeps its number.
+
+## Existing records
+
+Adding an autonumber field to a collection that already has records numbers those records in the order they were created, oldest first. Records created at the same time are ordered by ID, and a collection with `timestamps: false` is ordered by ID alone. New records continue after them.
+
+Numbering existing records doesn't run hooks or change `updatedAt`, and leaves the record's other fields as they were. It writes the stored record only, not its saved versions. Records that already have a number keep it, and numbering continues after the highest one.
+
+### At startup
+
+FrogBot numbers existing records when it starts, for each autonumber field whose count doesn't exist yet. Startup waits for this before your `onInit` runs, so code in `onInit` finds every field ready. The first start after you add the field to a large collection takes longer, once; later starts only check that each count exists.
+
+When several servers start at once, one numbers the records and the others go on starting. If numbering fails, FrogBot logs a warning naming the field and keeps starting, and the next start tries again:
+
+```text
+[frogbot] Autonumber numbering failed for 'tickets.number': <message>
+```
+
+[`disableOnInit`](/local-api/overview) skips numbering at startup.
+
+### From a create
+
+A create that arrives before its field's count exists, for example from a server started with `disableOnInit` or while another server is still numbering, is handled as follows:
+
+- **SQLite and Postgres with transactions:** the create fails at once with an error naming the field, and nothing is saved. Try again once startup numbering has finished.
+- **MongoDB, and SQLite or Postgres without transactions:** the create numbers the existing records first, then takes the next number. If another server is already numbering them, the create waits for up to 60 seconds, then fails with the same error.
+
+```text
+Existing records are still being numbered. Try again in a moment.
+```
+
+## Counters
+
+FrogBot keeps each field's count in a hidden `frogbot-autonumbers` collection, with one record per field keyed by collection and field path, such as `tickets.number` or `tickets.details.ref`. The collection is added only when an autonumber field exists. It doesn't appear in the admin panel or GraphQL, and access-controlled requests can't read or change it. Generated types include it as `FrogBotAutonumber`.
+
+The slug is reserved. A collection of your own with that slug fails at startup:
+
+```text
+FrogBot collection 'frogbot-autonumbers' is reserved for autonumber counters.
+```
+
+<Warning>
+  Don't edit or delete counter records. FrogBot rebuilds a deleted counter from the highest number stored in the collection, so numbers of deleted records above that can be handed out again.
+</Warning>
+
+## Admin options
+
+Autonumber fields support the standard [field admin options](/fields/overview#admin-options), plus the Number field's options. `admin.readOnly` is always `true`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `step` | `number` | `1` | Has no effect, because the field is read-only. |
+| `placeholder` | `string \| Record<string, string>` | — | Text shown in the read-only input before the record has a number. Use an object keyed by language code for translations. |
+| `autoComplete` | `string` | — | Has no effect, because the field is read-only. |
+
+FrogBot marks the field in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display, sorting and filtering
+
+The number shows as a plain number in the [List](/admin/overview), on [Board](/admin/collection-board) cards and in [Calendar](/admin/collection-calendar) events, and in a read-only number input in the document view. A new record has no number until it is saved.
+
+The field sorts and filters like any number, in the admin panel and in REST and Local API queries:
+
+```ts
+const recent = await frogbot.find({
+  collection: 'tickets',
+  where: { number: { greater_than: 100 } },
+  sort: '-number',
+})
+```
+
+## Stored value
+
+The field stores a whole number. The REST API, GraphQL and the Local API return it as a number, and the generated TypeScript type is the same as a Number field's, such as `number?: number | null`.
+
+## Agents and generated types
+
+An autonumber field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types):
+
+```text
+Unique number set by FrogBot when the record is created; read-only
+```
+
+The MCP plugin's tools also give the value the type `integer`, so agents see that it is a whole number.
+
+With a string `admin.description`, or a translated one with an `en` entry, this text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+autonumberField({ name: 'number', admin: { description: 'Ticket number' } })
+```
+
+```text
+Ticket number (unique number set by FrogBot when the record is created; read-only)
+```
+
+A function `admin.description` isn't copied, so the text stands alone. The text is English only. Generated types show it as a comment above the property. To change it, add your own `typescriptSchema` entry, which runs after the field's entry.

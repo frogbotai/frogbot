@@ -1,0 +1,169 @@
+---
+title: Created By Field
+sidebarTitle: Created by
+description: Record the user who created each record, set by FrogBot and read-only to people and agents.
+keywords: created by, creator, author, owner, user, attribution, relationship, fields, collections, configuration
+---
+
+`createdByField` returns a [Relationship field](/fields/relationship) that FrogBot sets to the user who created the record. It is set once, on create, and never changes after that. People and agents can't write it, and agents and generated types are told that FrogBot sets it. You don't write any hooks or access rules.
+
+```ts
+import { createdByField, lastModifiedByField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Tickets: CollectionConfig = {
+  slug: 'tickets',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    createdByField({ name: 'createdBy' }),
+    lastModifiedByField({ name: 'lastModifiedBy' }),
+  ],
+}
+```
+
+The result is a plain single `relationship` field to your user collection. It works at the top level and inside groups, tabs, rows and collapsibles, but not inside arrays or blocks, where a per-row creator has no meaning. To record who saved a record last, use a [Last modified by field](/fields/last-modified-by).
+
+## Config options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Required | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| `relationTo` | `string` | Your user collection | Slug of the auth collection the field points at. See [Which user collection](#which-user-collection). |
+| `filterOptions` | `Where \| (args) => boolean \| Where \| Promise<boolean \| Where>` | — | Limits the records a value may point at. See [Filtering relationship options](/fields/relationship#filtering-relationship-options). |
+| `maxDepth` | `number` | Request depth | Maximum population depth for this field, regardless of the remaining request depth. See [depth](/queries/depth#max-depth). |
+| `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL request handler. |
+| `label` | `string \| Record<string, string> \| (({ i18n, t }) => string) \| false` | Generated from `name` | Label shown in the admin panel. Use an object keyed by language code for translations, or `false` to hide the label. |
+| `unique` | `boolean` | `false` | Creates a unique database index for the field path, so each user can create only one record. See [indexes](/database/indexes). |
+| `index` | `boolean` | `false` | Creates a database index for faster queries. `unique` already creates one. |
+| `validate` | `Validate` | Built-in validator | Replaces the built-in validator. It checks the value FrogBot sets. See [validation](/fields/overview#validation). |
+| `hooks` | `{ beforeValidate, beforeChange, afterChange, afterRead, beforeDuplicate }` | — | Arrays of `FieldHook` functions for each phase. Your `beforeChange` and `beforeDuplicate` hooks run after the field's own. See [field hooks](/hooks/fields). |
+| `access` | `{ read }` | Allowed | `FieldAccess` function that decides who can read the value. Nobody can create or update it through access-controlled requests. See [field access control](/access-control/fields). |
+| `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. See [virtual fields](/fields/overview#virtual-field-configuration). |
+| `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. A duplicate never copies the creator either way. See [Duplicates and versions](#duplicates-and-versions). |
+| `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
+| `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
+| `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
+
+A created by field holds one user that FrogBot sets, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `access.create` and `access.update` are not accepted, and `relationTo` takes one slug. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+
+```text
+createdByField "createdBy": hasMany is not supported
+createdByField "createdBy": relationTo must be one collection slug
+```
+
+## Who counts as the user
+
+| Where the save comes from | Created by |
+| --- | --- |
+| Admin panel, REST or GraphQL while signed in | The signed-in user |
+| An API key, including [MCP](/plugins/mcp) tools | The key's owner |
+| A chat agent turn | The person chatting |
+| The Local API with a `user` | That user |
+| No user: the Local API without `user`, jobs, scheduled agent turns, server scripts | Empty |
+
+Only the create sets the value. Updates, autosaves, drafts, bulk updates and version restores keep it, whoever saves.
+
+## Which user collection
+
+By default the field points at your user collection: the one `admin.user` names, or the only auth collection, or the `users` collection FrogBot adds when you have none. Set `relationTo` to point at another auth collection:
+
+```ts
+createdByField({ name: 'createdBy', relationTo: 'admins' })
+```
+
+If the request's user comes from a different auth collection than the field points at, the save counts as having no user, so the field stays empty.
+
+`relationTo` is filled in when the config is built, after plugins have run. With more than one auth collection and no `admin.user`, startup fails. Plugins can add an auth collection: the [MCP plugin](/plugins/mcp) adds one for its keys, so an app using it needs `admin.user` or an explicit `relationTo`.
+
+```text
+[frogbot] Created by field 'createdBy' in collection 'tickets': Multiple auth collections found (users, admins). Set `admin.user` to the slug of your user collection.
+```
+
+A `relationTo` that isn't an auth collection, and a field inside an array or blocks, also fail at startup:
+
+```text
+[frogbot] Created by field 'createdBy' in collection 'tickets' must point at an auth collection; 'posts' is not one.
+[frogbot] Created by field 'items.createdBy' in collection 'tickets' can't be inside an array or blocks.
+```
+
+## Read-only to people and agents
+
+The admin panel shows the field as read-only. A value sent through the admin panel, REST, GraphQL, MCP, agent tools or a CSV import is dropped without an error, and the rest of the record saves.
+
+## Seeds and migrations
+
+Trusted server code can set the creator when it creates a record. This is the Local API with access overridden, which is its default:
+
+```ts
+await frogbot.create({
+  collection: 'tickets',
+  data: { title: 'Imported ticket', createdBy: ana.id },
+})
+```
+
+After the record is created, its creator never changes, including through the Local API.
+
+## Duplicates and versions
+
+- **Duplicate:** the copy doesn't inherit the creator. The person duplicating becomes its creator.
+- **Autosave and drafts:** these are saves of an existing record, so the creator is kept.
+- **Restoring a version:** the record keeps its creator.
+
+## Existing records
+
+Adding the field to a collection that already has records leaves it empty on those records. Saving them later doesn't fill it, because only a create sets the creator.
+
+## Admin options
+
+Created by fields support the standard [field admin options](/fields/overview#admin-options), plus the Relationship field's options. `admin.readOnly` is always `true`.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `allowEdit` | `boolean` | `true` | Shows a button on the selected user that opens it in a drawer, for people who can read the user collection. |
+| `allowCreate` | `boolean` | `true` | Has no effect, because the field is read-only. |
+| `appearance` | `'select' \| 'drawer'` | `'select'` | Has no effect on the read-only input beyond hiding the dropdown arrow with `'drawer'`. |
+| `isSortable` | `boolean` | `true` | Has no effect, because the field holds one user. |
+| `sortOptions` | `string` | — | Has no effect, because the field is read-only. |
+| `placeholder` | `string \| (({ i18n, t }) => string)` | — | Text shown when the field is empty. |
+
+FrogBot marks the field in `admin.custom.frogbot.kind`. Your own `admin.custom` keys, and other keys under `admin.custom.frogbot`, are kept.
+
+## Display, sorting and filtering
+
+The [List](/admin/overview), [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show the user's title, which is the field named by the user collection's `admin.useAsTitle`. Without one, they show the user's ID. Someone who can't read the user collection sees what any relationship they can't read shows. The document view shows the user in a read-only relationship input.
+
+The field sorts and filters like any single relationship, in the admin panel and in REST and Local API queries:
+
+```ts
+const mine = await frogbot.find({
+  collection: 'tickets',
+  where: { createdBy: { equals: ana.id } },
+  sort: 'createdBy',
+})
+```
+
+## Stored value
+
+The field stores the user's ID, the same as a [single relationship](/fields/relationship#has-one), and populates it to the user with `depth`. The generated TypeScript type is the same as any single relationship to the user collection, such as `createdBy?: (number | null) | User`.
+
+## Agents and generated types
+
+A created by field describes itself to agents using FrogBot's [MCP tools](/plugins/mcp) and in [generated types](/typescript/generating-types):
+
+```text
+Set by FrogBot to the user who created the record; read-only
+```
+
+With a string `admin.description`, or a translated one with an `en` entry, this text is added after it in parentheses. The admin panel still shows only your description.
+
+```ts
+createdByField({ name: 'createdBy', admin: { description: 'Who opened the ticket' } })
+```
+
+```text
+Who opened the ticket (set by FrogBot to the user who created the record; read-only)
+```
+
+A function `admin.description` isn't copied, so the text stands alone. The text is English only. Generated types show it as a comment above the property. To change it, add your own `typescriptSchema` entry, which runs after the field's entry.

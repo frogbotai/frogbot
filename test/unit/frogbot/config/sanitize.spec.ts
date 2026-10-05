@@ -8,6 +8,9 @@ import type { CollectionConfig } from '../../../../packages/frogbot/src/collecti
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import { autonumberField } from '../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
+import { createdByField } from '../../../../packages/frogbot/src/fields/baseFields/createdBy/index.js';
+import { lastModifiedByField } from '../../../../packages/frogbot/src/fields/baseFields/lastModifiedBy/index.js';
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
   getCachedFrogBot,
@@ -4750,6 +4753,290 @@ describe('frogbot sanitize', () => {
       const result = sanitize(aiConfig({ telemetry: { enrichSpan } }));
       expect(result.ai?.telemetry.enrichSpan).toBe(enrichSpan);
       expect(result.ai?.telemetry.enabled).toBe(true);
+    });
+  });
+
+  describe('system field kinds', () => {
+    type RuntimeField = Record<string, any>;
+
+    const tickets = (fields: CollectionConfig['fields']): CollectionConfig => ({
+      slug: 'tickets',
+      fields,
+    });
+
+    async function payloadCollection(config: { _internal: { payloadConfig: Promise<any> } }) {
+      const payloadConfig = await config._internal.payloadConfig;
+
+      return (slug: string) =>
+        payloadConfig.collections.find(
+          (collection: { slug: string }) => collection.slug === slug,
+        ) as { fields: RuntimeField[] } | undefined;
+    }
+
+    async function relationTo(config: { _internal: { payloadConfig: Promise<any> } }) {
+      const find = await payloadCollection(config);
+
+      return find('tickets')!.fields.find(({ name }) => name === 'createdBy')?.relationTo;
+    }
+
+    it('points a user kind at admin.user', async () => {
+      const result = sanitize(
+        makeConfig({
+          admin: { user: 'staff' },
+          collections: [
+            { slug: 'staff', auth: true, fields: [] },
+            { slug: 'admins', auth: true, fields: [] },
+            tickets([createdByField({ name: 'createdBy' })]),
+          ],
+        }),
+      );
+
+      expect(await relationTo(result)).toBe('staff');
+    });
+
+    it('points a user kind at the only auth collection', async () => {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'members', auth: true, fields: [] },
+            tickets([createdByField({ name: 'createdBy' })]),
+          ],
+        }),
+      );
+
+      expect(await relationTo(result)).toBe('members');
+    });
+
+    it('points a user kind at the default users collection', async () => {
+      const result = sanitize(
+        makeConfig({ collections: [tickets([createdByField({ name: 'createdBy' })])] }),
+      );
+
+      expect(await relationTo(result)).toBe('users');
+    });
+
+    it('points a user kind at an auth collection a plugin adds', async () => {
+      const result = await buildConfig(
+        makeConfig({
+          collections: [tickets([createdByField({ name: 'createdBy' })])],
+          plugins: [
+            (config) => ({
+              ...config,
+              collections: [...config.collections, { slug: 'members', auth: true, fields: [] }],
+            }),
+          ],
+        }),
+      );
+
+      expect(await relationTo(result)).toBe('members');
+    });
+
+    it('keeps an explicit auth collection', async () => {
+      const result = sanitize(
+        makeConfig({
+          admin: { user: 'users' },
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            { slug: 'admins', auth: true, fields: [] },
+            tickets([createdByField({ name: 'createdBy', relationTo: 'admins' })]),
+          ],
+        }),
+      );
+
+      expect(await relationTo(result)).toBe('admins');
+    });
+
+    it('rejects a relationTo that is not an auth collection', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [
+              { slug: 'users', auth: true, fields: [] },
+              { slug: 'posts', fields: [] },
+              tickets([createdByField({ name: 'createdBy', relationTo: 'posts' })]),
+            ],
+          }),
+        ),
+      ).toThrow(
+        new Error(
+          "[frogbot] Created by field 'createdBy' in collection 'tickets' must point at an auth collection; 'posts' is not one.",
+        ),
+      );
+    });
+
+    it('names the field when the user collection cannot be resolved', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [
+              { slug: 'users', auth: true, fields: [] },
+              { slug: 'admins', auth: true, fields: [] },
+              tickets([lastModifiedByField({ name: 'lastModifiedBy' })]),
+            ],
+          }),
+        ),
+      ).toThrow(
+        new Error(
+          "[frogbot] Last modified by field 'lastModifiedBy' in collection 'tickets': Multiple auth collections found (users, admins). Set `admin.user` to the slug of your user collection.",
+        ),
+      );
+    });
+
+    it('does not resolve the user collection without a user kind', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [
+              { slug: 'users', auth: true, fields: [] },
+              { slug: 'admins', auth: true, fields: [] },
+              tickets([autonumberField({ name: 'number' })]),
+            ],
+          }),
+        ),
+      ).not.toThrow();
+    });
+
+    const kinds = [
+      ['Created by', () => createdByField({ name: 'number' })],
+      ['Last modified by', () => lastModifiedByField({ name: 'number' })],
+      ['Autonumber', () => autonumberField({ name: 'number' })],
+    ] as const;
+
+    it.each(kinds)('rejects %s fields inside an array', (label, make) => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [
+              { slug: 'users', auth: true, fields: [] },
+              tickets([{ name: 'items', type: 'array', fields: [make()] }]),
+            ],
+          }),
+        ),
+      ).toThrow(
+        new Error(
+          `[frogbot] ${label} field 'items.number' in collection 'tickets' can't be inside an array or blocks.`,
+        ),
+      );
+    });
+
+    it.each(kinds)('rejects %s fields inside collection blocks', (label, make) => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [
+              { slug: 'users', auth: true, fields: [] },
+              tickets([
+                {
+                  name: 'layout',
+                  type: 'blocks',
+                  blocks: [{ slug: 'hero', fields: [{ type: 'row', fields: [make()] }] }],
+                },
+              ]),
+            ],
+          }),
+        ),
+      ).toThrow(
+        new Error(
+          `[frogbot] ${label} field 'layout.hero.number' in collection 'tickets' can't be inside an array or blocks.`,
+        ),
+      );
+    });
+
+    it.each(kinds)('rejects %s fields inside config-level blocks', (label, make) => {
+      expect(() => sanitize(makeConfig({ blocks: [{ slug: 'hero', fields: [make()] }] }))).toThrow(
+        new Error(
+          `[frogbot] ${label} field 'number' in block 'hero' can't be inside an array or blocks.`,
+        ),
+      );
+    });
+
+    it('allows the kinds inside a named group and a named tab', async () => {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            tickets([
+              {
+                name: 'details',
+                type: 'group',
+                fields: [autonumberField({ name: 'ref' }), createdByField({ name: 'owner' })],
+              },
+              {
+                type: 'tabs',
+                tabs: [
+                  {
+                    name: 'meta',
+                    fields: [
+                      {
+                        type: 'collapsible',
+                        label: 'More',
+                        fields: [autonumberField({ name: 'seq' })],
+                      },
+                    ],
+                  },
+                  { label: 'Main', fields: [autonumberField({ name: 'number' })] },
+                ],
+              },
+            ]),
+          ],
+        }),
+      );
+      const find = await payloadCollection(result);
+      const fields = find('tickets')!.fields;
+
+      expect(fields[0].fields[1].relationTo).toBe('users');
+      expect(result._internal.autonumbers).toEqual([
+        { collection: 'tickets', path: 'details.ref' },
+        { collection: 'tickets', path: 'meta.seq' },
+        { collection: 'tickets', path: 'number' },
+      ]);
+    });
+
+    it('adds the counter collection only with an autonumber field', async () => {
+      const without = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            tickets([createdByField({ name: 'createdBy' })]),
+          ],
+        }),
+      );
+      const withAutonumber = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            tickets([autonumberField({ name: 'number' })]),
+            { slug: 'orders', fields: [autonumberField({ name: 'number' })] },
+          ],
+        }),
+      );
+
+      expect((await payloadCollection(without))('frogbot-autonumbers')).toBeUndefined();
+      expect(without._internal.autonumbers).toEqual([]);
+
+      const counters = (await payloadCollection(withAutonumber))('frogbot-autonumbers');
+
+      expect(counters).toMatchObject({
+        slug: 'frogbot-autonumbers',
+        admin: { hidden: true },
+        graphQL: false,
+        fields: [
+          { name: 'key', type: 'text', required: true, unique: true },
+          { name: 'value', type: 'number', required: true },
+        ],
+      });
+      expect(withAutonumber._internal.autonumbers).toEqual([
+        { collection: 'tickets', path: 'number' },
+        { collection: 'orders', path: 'number' },
+      ]);
+    });
+
+    it('reserves the counter collection slug', () => {
+      expect(() =>
+        sanitize(makeConfig({ collections: [{ slug: 'frogbot-autonumbers', fields: [] }] })),
+      ).toThrow(
+        new Error("FrogBot collection 'frogbot-autonumbers' is reserved for autonumber counters."),
+      );
     });
   });
 });
