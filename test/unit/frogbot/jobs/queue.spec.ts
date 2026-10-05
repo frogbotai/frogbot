@@ -10,7 +10,6 @@ describe('jobs.queue', () => {
   it('retains native enqueue semantics with safe execution defaults', async () => {
     const { payload, req, database, install } = await setup({
       jobs: {
-        enableConcurrencyControl: true,
         workflows: [
           {
             slug: 'sync',

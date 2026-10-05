@@ -55,7 +55,6 @@ function makeJobs(): JobsConfig {
     tasks: [{ slug: 'send-report', handler: async () => ({ output: {} }) }],
     workflows: [{ slug: 'report-workflow', handler: async () => {} }],
     deleteJobOnComplete: false,
-    enableConcurrencyControl: true,
     access: { run: () => true },
   };
 }

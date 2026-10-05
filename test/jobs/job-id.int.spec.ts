@@ -14,7 +14,6 @@ beforeAll(async () => {
   fixture = await bootJobsFixture({
     transactions: true,
     jobs: {
-      enableConcurrencyControl: true,
       workflows: [
         {
           slug: 'supersede',
@@ -226,6 +225,22 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
     expect(rows.docs).toHaveLength(1);
     expect(rows.docs[0]).toMatchObject({ id: second.id, jobId });
     expect(rows.docs[0].input).not.toEqual(first.input);
+  });
+
+  it('concurrency supersedes replaces an older pending job without a jobId', async () => {
+    const key = randomUUID();
+
+    await fixture.frogbot.jobs.queue({ workflow: 'supersede', input: { key, value: 'first' } });
+
+    const second = await fixture.frogbot.jobs.queue({
+      workflow: 'supersede',
+      input: { key, value: 'second' },
+    });
+
+    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false });
+
+    expect(rows.docs).toHaveLength(1);
+    expect(rows.docs[0]).toMatchObject({ id: second.id, input: { key, value: 'second' } });
   });
 
   it('a processing holder is returned rather than superseded', async () => {

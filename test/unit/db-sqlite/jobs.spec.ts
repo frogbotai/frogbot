@@ -75,7 +75,6 @@ beforeAll(async () => {
     collections: [{ slug: 'groups', fields: [{ name: 'title', type: 'text' }] }],
     jobs: resolveJobsConfig({
       tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
-      enableConcurrencyControl: true,
       jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
         ...defaultJobsCollection,
         dbName: 'custom_jobs',
