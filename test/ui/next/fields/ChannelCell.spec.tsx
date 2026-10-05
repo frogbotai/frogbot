@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { ChannelCell } from '../../../../packages/next/src/elements/ChannelCell/index.client.js';
+import { ChannelCell } from '../../../../packages/next/src/fields/Channel/index.client.js';
 
 describe('ChannelCell', () => {
   it('renders a channel badge', () => {

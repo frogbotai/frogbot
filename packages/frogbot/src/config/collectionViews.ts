@@ -1,5 +1,5 @@
 import type { CollectionBeforeChangeHook, PayloadComponent } from 'payload';
-import { generateKeyBetween } from 'payload/shared';
+import { flattenTopLevelFields, generateKeyBetween } from 'payload/shared';
 
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
@@ -21,13 +21,15 @@ const GROUP_BY_FIELD_TYPES: Field['type'][] = [
 
 function resolveField(fields: unknown[], path: string): Field | undefined {
   const [name, ...rest] = path.replace(/^-/, '').split('.');
-  const field = fields.find(
+  const flattened: unknown[] = flattenTopLevelFields(fields as never);
+  const field = flattened.find(
     (candidate): candidate is Field =>
       typeof candidate === 'object' &&
       candidate !== null &&
       'name' in candidate &&
       candidate.name === name,
   );
+
   if (!field) return undefined;
   if (rest.length === 0) return field;
   return 'fields' in field && Array.isArray(field.fields)

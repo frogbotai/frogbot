@@ -790,6 +790,8 @@ export const Price: Field = {
 }
 ```
 
+A custom `Cell` appears only in the List view; [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show FrogBot's built-in display for the field. To draw a field the same way in a custom Board `Card` or Calendar `Event`, render `FieldCell` from `@frogbotai/next/client` with the Cell props below.
+
 Cells use the generic `DefaultCellComponentProps` or `DefaultServerCellComponentProps` types from `frogbot`. Cell components do not receive field-component form props or a request.
 
 ```tsx

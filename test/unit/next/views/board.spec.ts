@@ -149,6 +149,52 @@ describe('collection board', () => {
     expect(resolveBoardField(fields, 'content')).toBeUndefined();
   });
 
+  it('resolves group fields inside rows, collapsibles, unnamed groups and tabs', () => {
+    const fields = [
+      { type: 'row', fields: [{ name: 'status', type: 'select', options: [] }] },
+      {
+        type: 'collapsible',
+        label: 'Flow',
+        fields: [{ name: 'stage', type: 'select', options: [] }],
+      },
+      { type: 'group', fields: [{ name: 'priority', type: 'radio', options: [] }] },
+      {
+        name: 'workflow',
+        type: 'group',
+        fields: [{ type: 'row', fields: [{ name: 'stage', type: 'select', options: [] }] }],
+      },
+      {
+        type: 'tabs',
+        tabs: [
+          { label: 'Kind', fields: [{ name: 'kind', type: 'select', options: [] }] },
+          { name: 'meta', fields: [{ name: 'status', type: 'select', options: [] }] },
+        ],
+      },
+    ] as never;
+
+    expect(resolveBoardField(fields, 'status')).toMatchObject({ name: 'status' });
+    expect(resolveBoardField(fields, 'stage')).toMatchObject({ name: 'stage' });
+    expect(resolveBoardField(fields, 'priority')).toMatchObject({ name: 'priority' });
+    expect(resolveBoardField(fields, 'kind')).toMatchObject({ name: 'kind' });
+    expect(resolveBoardField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
+    expect(resolveBoardField(fields, 'meta.status')).toMatchObject({ name: 'status' });
+  });
+
+  it('rejects unsupported and presentational fields inside a row', () => {
+    const fields = [
+      {
+        type: 'row',
+        fields: [
+          { name: 'content', type: 'richText' },
+          { name: 'status', type: 'ui', admin: { components: { Field: './Status#Status' } } },
+        ],
+      },
+    ] as never;
+
+    expect(resolveBoardField(fields, 'content')).toBeUndefined();
+    expect(resolveBoardField(fields, 'status')).toBeUndefined();
+  });
+
   it('strips direction only from the selected field path', () => {
     expect(getBoardGroupBy('-workflow.stage')).toBe('workflow.stage');
     expect(getBoardGroupBy('workflow.stage')).toBe('workflow.stage');

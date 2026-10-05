@@ -44,7 +44,10 @@ describe('defaultChatsCollection', () => {
       admin: { hidden: true },
     });
     expect(collection.fields.find((f) => 'name' in f && f.name === 'channel')).toMatchObject({
-      admin: { components: { Cell: '@frogbotai/next/client#ChannelCell' } },
+      admin: {
+        components: { Cell: '@frogbotai/next/client#FieldCell' },
+        custom: { frogbot: { kind: { type: 'channel' } } },
+      },
     });
     expect(collection.fields.find((f) => 'name' in f && f.name === 'todos')).toMatchObject({
       type: 'json',

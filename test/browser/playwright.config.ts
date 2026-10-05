@@ -233,6 +233,7 @@ const testProjects = [
       'breadcrumbs.browser.spec.ts',
       'topBarPhone.browser.spec.ts',
       'costUSD.browser.spec.ts',
+      'fieldCell.browser.spec.ts',
     ],
   }),
   project({ name: 'question-firefox', browser: 'firefox', testMatch: crossBrowserQuestionSpecs }),

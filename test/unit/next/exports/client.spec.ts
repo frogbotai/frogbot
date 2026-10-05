@@ -18,7 +18,11 @@ describe('@frogbotai/next client export', () => {
 
   it('exports the channel list cell', () => {
     expect(source).toContain(
-      "export { ChannelCell, type ChannelCellProps } from '../elements/ChannelCell/index.client.js'",
+      "export { ChannelCell, type ChannelCellProps } from '../fields/Channel/index.client.js'",
     );
+  });
+
+  it('exports the field cell', () => {
+    expect(source).toContain("export { FieldCell } from '../fields/FieldCell/index.client.js'");
   });
 });

@@ -244,6 +244,69 @@ describe('collection views', () => {
     expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
   });
 
+  describe('fields inside layout containers', () => {
+    const compile = (view: Record<string, unknown>) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [
+            { type: 'row', fields: [{ name: 'status', type: 'select', options: [] }] },
+            { type: 'collapsible', label: 'Dates', fields: [{ name: 'dueAt', type: 'date' }] },
+            { type: 'group', fields: [{ name: 'priority', type: 'radio', options: [] }] },
+            {
+              name: 'workflow',
+              type: 'group',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    { name: 'stage', type: 'select', options: [] },
+                    { name: 'endsAt', type: 'date' },
+                  ],
+                },
+              ],
+            },
+            {
+              type: 'tabs',
+              tabs: [
+                { label: 'Kind', fields: [{ name: 'category', type: 'radio', options: [] }] },
+                { name: 'meta', fields: [{ name: 'tone', type: 'select', options: [] }] },
+              ],
+            },
+          ],
+          admin: { views: [view as never] },
+        },
+      });
+
+    it.each(['status', 'priority', 'category', 'workflow.stage', 'meta.tone'])(
+      'accepts the board groupBy field %s',
+      (groupBy) => {
+        expect(() => compile({ type: 'board', groupBy })).not.toThrow();
+      },
+    );
+
+    it.each([
+      { start: 'dueAt', color: 'status' },
+      { start: 'dueAt', end: 'workflow.endsAt', color: 'priority' },
+      { start: 'workflow.endsAt', color: 'category' },
+      { start: 'dueAt', color: 'meta.tone' },
+    ])('accepts the calendar fields %o', (fields) => {
+      expect(() => compile({ type: 'calendar', ...fields })).not.toThrow();
+    });
+  });
+
+  it('rejects an unsupported groupBy field inside a row', () => {
+    expect(() =>
+      compileCollectionViews({
+        collection: {
+          slug: 'posts',
+          fields: [{ type: 'row', fields: [{ name: 'content', type: 'richText' }] }],
+          admin: { views: [{ type: 'board', groupBy: 'content' }] },
+        },
+      }),
+    ).toThrow('unsupported groupBy field "content"');
+  });
+
   it('preserves list actions on the default list route', () => {
     const actions = ['./Create#Button'];
     const admin = compileCollectionViews({

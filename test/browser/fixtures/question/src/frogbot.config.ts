@@ -60,16 +60,34 @@ export default buildConfig({
       slug: tasksSlug,
       admin: {
         useAsTitle: 'title',
-        views: [{ type: 'list' }, { type: 'board', groupBy: 'status' }],
+        views: [
+          { type: 'list', defaultFields: ['title', 'status', 'channel'] },
+          { type: 'board', groupBy: 'status', defaultFields: ['status', 'channel'] },
+          { type: 'calendar', start: 'dueAt', defaultFields: ['status', 'channel'] },
+        ],
       },
       fields: [
         { name: 'title', type: 'text', required: true },
         {
-          name: 'status',
-          type: 'select',
-          options: [
-            { label: 'Backlog', value: 'backlog' },
-            { label: 'Done', value: 'done' },
+          type: 'row',
+          fields: [
+            {
+              name: 'status',
+              type: 'select',
+              options: [
+                { label: 'Backlog', value: 'backlog' },
+                { label: 'Done', value: 'done' },
+              ],
+            },
+            {
+              name: 'channel',
+              type: 'text',
+              admin: {
+                components: { Cell: '@frogbotai/next/client#FieldCell' },
+                custom: { frogbot: { kind: { type: 'channel' } } },
+              },
+            },
+            { name: 'dueAt', type: 'date' },
           ],
         },
       ],

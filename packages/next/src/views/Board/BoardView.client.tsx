@@ -3,7 +3,6 @@
 import { Board, BoardCard } from '@frogbotai/ui';
 import { getTranslation } from '@payloadcms/translations';
 import {
-  DefaultCell,
   RelationshipProvider,
   toast,
   useConfig,
@@ -16,6 +15,7 @@ import { formatDocTitle } from '@payloadcms/ui/shared';
 import type { ClientCollectionConfig, Column, TypeWithID } from 'payload';
 import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
+import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath, toCellData } from '../cells.js';
 import { getViewCardColumns } from '../preferences.js';
 import { buildBoardReorderBody, buildColumnWhere, getBoardColumnKey } from './data.js';
@@ -73,36 +73,23 @@ function BoardDocumentCard({
           />
         ) : null}
         <div className="collection-board__title">{title}</div>
-        {cardColumns.map(({ accessor, field }) => {
-          const value = getPath(row, accessor);
-          const cellData =
-            field.type === 'relationship' || field.type === 'upload'
-              ? Array.isArray(value)
-                ? value.map(toCellData)
-                : toCellData(value)
-              : value;
-          return (
-            <div className="collection-board__field" key={accessor}>
-              <span className="collection-board__field-label">
-                {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
-              </span>
-              <div className="collection-board__field-value">
-                {accessor === 'id' ? (
-                  String(cellData ?? '')
-                ) : (
-                  <DefaultCell
-                    cellData={cellData}
-                    collectionSlug={collectionSlug}
-                    field={field}
-                    link={false}
-                    rowData={row}
-                    viewType="board"
-                  />
-                )}
-              </div>
+        {cardColumns.map(({ accessor, field }) => (
+          <div className="collection-board__field" key={accessor}>
+            <span className="collection-board__field-label">
+              {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
+            </span>
+            <div className="collection-board__field-value">
+              <FieldCell
+                cellData={getPath(row, accessor)}
+                collectionSlug={collectionSlug}
+                field={field}
+                link={false}
+                rowData={row}
+                viewType="board"
+              />
             </div>
-          );
-        })}
+          </div>
+        ))}
       </BoardCard>
       <DocumentDrawer />
     </>

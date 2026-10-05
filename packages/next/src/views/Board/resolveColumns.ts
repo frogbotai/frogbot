@@ -1,5 +1,6 @@
 import { formatDate } from '@payloadcms/ui/shared';
 import type { Field, PayloadRequest } from 'payload';
+import { flattenTopLevelFields } from 'payload/shared';
 
 import { getBoardColumnKey, getBoardColumnValue } from './data.js';
 
@@ -20,7 +21,10 @@ const supportedFieldTypes: Field['type'][] = [
 
 export function resolveBoardField(fields: Field[], path: string): Field | undefined {
   const [name, ...rest] = path.split('.');
-  const field = fields.find((candidate) => 'name' in candidate && candidate.name === name);
+  const field = (flattenTopLevelFields(fields) as Field[]).find(
+    (candidate) => 'name' in candidate && candidate.name === name,
+  );
+
   if (!field) return undefined;
   if (rest.length === 0) return supportedFieldTypes.includes(field.type) ? field : undefined;
   if (!('fields' in field) || !Array.isArray(field.fields)) return undefined;
