@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  buildFilters,
   capLines,
   changedPackages,
   discoverChecks,
@@ -14,6 +15,7 @@ import {
   parseArgs,
   prettierLines,
   report,
+  stalePackages,
   tscLines,
 } from '../../../scripts/check.mjs';
 
@@ -110,6 +112,52 @@ describe('changedPackages', () => {
 
   it('does not match a package by a shared name prefix', () => {
     expect(names(['packages/ui-extra/a.ts'])).toEqual([]);
+  });
+});
+
+describe('stalePackages', () => {
+  const names = (packages: { name: string; dist: boolean; built?: number; newest: number }[]) =>
+    (stalePackages(packages) as { name: string }[]).map(({ name }) => name);
+
+  it('keeps a package whose sources are no newer than its last build', () => {
+    expect(names([{ name: 'a', dist: true, built: 200, newest: 100 }])).toEqual([]);
+    expect(names([{ name: 'a', dist: true, built: 200, newest: 200 }])).toEqual([]);
+  });
+
+  it('rebuilds a package with a source newer than its last build', () => {
+    expect(names([{ name: 'a', dist: true, built: 200, newest: 201 }])).toEqual(['a']);
+  });
+
+  it('rebuilds a package without dist or without a finished build', () => {
+    expect(
+      names([
+        { name: 'no-dist', dist: false, built: 200, newest: 100 },
+        { name: 'no-stamp', dist: true, built: undefined, newest: 100 },
+        { name: 'fresh', dist: true, built: 200, newest: 100 },
+      ]),
+    ).toEqual(['no-dist', 'no-stamp']);
+  });
+});
+
+describe('buildFilters', () => {
+  const named = (...list: string[]) => list.map((name) => ({ name }));
+
+  it('builds stale packages alone and changed packages with their dependencies', () => {
+    expect(buildFilters({ stale: named('b', 'a'), changed: named('frogbot') })).toEqual([
+      '--filter',
+      'a',
+      '--filter',
+      'b',
+      '--filter',
+      'frogbot...',
+    ]);
+  });
+
+  it('names a package that is both stale and changed once, with its dependencies', () => {
+    expect(buildFilters({ stale: named('frogbot'), changed: named('frogbot') })).toEqual([
+      '--filter',
+      'frogbot...',
+    ]);
   });
 });
 
