@@ -2,12 +2,17 @@ import type { ModelId } from '../../../ai/types.js';
 import type { Field, Option, RowField, SelectField, TextField } from '../../config/types.js';
 import { applyFieldKind, kindTypescriptSchema } from '../applyFieldKind.js';
 import { rejectFieldOptions } from '../rejectFieldOptions.js';
-import { aiFieldErrorHook, aiFieldQueueHook, aiFieldStatusHook } from './hooks.js';
+import {
+  aiFieldErrorHook,
+  aiFieldQueueHook,
+  aiFieldRunGuardHook,
+  aiFieldStatusHook,
+} from './hooks.js';
 import { aiFieldPaths, type AIFieldStatus, type AIKind } from './state.js';
 
 export type AIFieldArgs = Omit<
   Extract<TextField, { hasMany?: false | undefined }>,
-  'type' | 'hasMany' | 'minRows' | 'maxRows' | 'required'
+  'type' | 'hasMany' | 'hidden' | 'minRows' | 'maxRows' | 'required' | 'virtual'
 > & {
   inputs: string[];
   prompt: string;
@@ -17,7 +22,7 @@ export type AIFieldArgs = Omit<
   required?: never;
 };
 
-export type AISelectFieldArgs = Omit<SelectField, 'type' | 'required'> & {
+export type AISelectFieldArgs = Omit<SelectField, 'type' | 'hidden' | 'required' | 'virtual'> & {
   inputs: string[];
   prompt: string;
   model?: ModelId;
@@ -44,6 +49,8 @@ function rejectBadOptions({ name, options }: { name: string; options: unknown })
   }
 }
 
+const REJECTED_OPTIONS = ['required', 'virtual', 'hidden'];
+
 function toValueField(rest: Record<string, unknown>): SelectField | TextField {
   if (rest.options === undefined) return { ...rest, type: 'text' } as TextField;
 
@@ -69,9 +76,9 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
   }
 
   if (args.options === undefined) {
-    rejectFieldOptions({ factory: 'aiField', field: args, keys: ['hasMany', 'required'] });
+    rejectFieldOptions({ factory: 'aiField', field: args, keys: ['hasMany', ...REJECTED_OPTIONS] });
   } else {
-    rejectFieldOptions({ factory: 'aiField', field: args, keys: ['required'] });
+    rejectFieldOptions({ factory: 'aiField', field: args, keys: REJECTED_OPTIONS });
     rejectBadOptions({ name: args.name, options: args.options });
   }
 
@@ -79,7 +86,23 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
   const paths = aiFieldPaths(args.name);
   const localized = rest.localized ? { localized: true } : {};
 
-  const value = applyFieldKind(toValueField({ ...rest, ...(admin ? { admin: valueAdmin } : {}) }), {
+  const hooks = (rest.hooks ?? {}) as NonNullable<TextField['hooks']>;
+
+  const valueHooks = {
+    ...hooks,
+    beforeValidate: [
+      ...(hooks.beforeValidate ?? []),
+      aiFieldRunGuardHook({ name: args.name, path: args.name }),
+    ],
+  };
+
+  const valueField = toValueField({
+    ...rest,
+    hooks: valueHooks,
+    ...(admin ? { admin: valueAdmin } : {}),
+  });
+
+  const value = applyFieldKind(valueField, {
     kind,
     cell: true,
     Field: '@frogbotai/next/client#AIField',
@@ -93,6 +116,7 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
     admin: { disabled: true },
     ...localized,
     hooks: {
+      beforeValidate: [aiFieldRunGuardHook({ name: args.name, path: paths.status })],
       beforeChange: [aiFieldStatusHook({ kind, name: args.name })],
       afterChange: [aiFieldQueueHook({ kind, name: args.name })],
       afterRead: [({ value }) => value ?? null],
@@ -109,7 +133,10 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
     type: 'text',
     admin: { disabled: true },
     ...localized,
-    hooks: { beforeChange: [aiFieldErrorHook({ kind, name: args.name })] },
+    hooks: {
+      beforeValidate: [aiFieldRunGuardHook({ name: args.name, path: paths.error })],
+      beforeChange: [aiFieldErrorHook({ kind, name: args.name })],
+    },
     typescriptSchema: [
       kindTypescriptSchema({ text: 'Set by FrogBot: the error message from the last failed run' }),
     ],

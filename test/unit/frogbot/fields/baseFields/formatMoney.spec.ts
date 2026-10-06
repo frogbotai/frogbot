@@ -56,6 +56,14 @@ describe('formatMoney fixed precision', () => {
   it('shows a small amount as zero with precision 2', () => {
     expect(formatMoney({ value: 0.000173, precision: 2 })).toBe('$0.00');
   });
+
+  it('shows a small negative amount that rounds to zero without a sign', () => {
+    expect(formatMoney({ value: -0.001, precision: 2 })).toBe('$0.00');
+  });
+
+  it('keeps the sign of a negative amount that does not round to zero', () => {
+    expect(formatMoney({ value: -0.006, precision: 2 })).toBe('-$0.01');
+  });
 });
 
 describe('formatMoney empty values', () => {

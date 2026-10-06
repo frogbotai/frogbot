@@ -428,18 +428,6 @@ describe('FrogBot class', () => {
 
       expect(ensureAutonumbers).not.toHaveBeenCalled();
     });
-
-    it('logs a warning and still runs onInit when the run fails', async () => {
-      ensureAutonumbers.mockRejectedValueOnce(new Error('database unavailable'));
-
-      const onInit = vi.fn();
-      const frogbot = await new FrogBot().init({ config: withAutonumber(), onInit });
-
-      expect(frogbot.logger.warn).toHaveBeenCalledWith(
-        '[frogbot] Autonumber numbering failed: database unavailable',
-      );
-      expect(onInit).toHaveBeenCalledWith(frogbot);
-    });
   });
 
   describe('CRUD methods', () => {

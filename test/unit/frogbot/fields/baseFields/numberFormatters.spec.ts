@@ -14,6 +14,9 @@ describe('formatPercent', () => {
     [{ value: -0.1 }, '-10%'],
     [{ value: 0 }, '0%'],
     [{ value: -0 }, '0%'],
+    [{ value: -0.001 }, '0%'],
+    [{ value: -0.00004, precision: 2 }, '0.00%'],
+    [{ value: -0.006 }, '-1%'],
     [{ value: 1.5 }, '150%'],
     [{ value: 0.12345, precision: 8 }, '12.34500000%'],
   ])('formats %o', (args, expected) => {

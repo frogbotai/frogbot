@@ -20,7 +20,10 @@ import { type ChangeEvent, useCallback } from 'react';
 import { getFieldKind } from '../kind.js';
 import { KindFieldLayout } from '../KindFieldLayout/index.client.js';
 
-type MoneyFieldAdmin = Pick<NonNullable<NumberField['admin']>, 'placeholder' | 'step'>;
+type MoneyFieldAdmin = Pick<
+  NonNullable<NumberField['admin']>,
+  'autoComplete' | 'placeholder' | 'step'
+>;
 
 function getMoneyKind(field: ClientField): Partial<MoneyKind> {
   return (getFieldKind(field) ?? {}) as Partial<MoneyKind>;
@@ -51,7 +54,7 @@ export function MoneyCell(props: DefaultCellComponentProps) {
 function MoneyFieldComponent(props: NumberFieldClientProps) {
   const { field, path: pathFromProps, readOnly, validate } = props;
   const { admin, max, min, required } = field;
-  const { placeholder, step = 'any' } = (admin ?? {}) as MoneyFieldAdmin;
+  const { autoComplete, placeholder, step = 'any' } = (admin ?? {}) as MoneyFieldAdmin;
 
   const { i18n } = useTranslation();
   const { currency = 'USD', precision } = getMoneyKind(field as ClientField);
@@ -100,6 +103,7 @@ function MoneyFieldComponent(props: NumberFieldClientProps) {
         <div className="money-field__control">
           <span className="money-field__currency">{currencySymbol({ currency, locale })}</span>
           <Input
+            autoComplete={autoComplete || undefined}
             disabled={disabled}
             id={`field-${path.replace(/\./g, '__')}`}
             max={max}

@@ -40,6 +40,8 @@ vi.mock('@payloadcms/ui', () => ({
   FieldDescription: ({ description }: { description?: string }) => <p>{description}</p>,
   FieldError: () => null,
   FieldLabel: ({ label }: { label?: string }) => <label>{label}</label>,
+  isFieldRTL: ({ fieldRTL, locale }: { fieldRTL?: boolean; locale?: { rtl?: boolean } }) =>
+    fieldRTL === true || (fieldRTL !== false && locale?.rtl === true),
   RenderCustomComponent: ({
     CustomComponent,
     Fallback,
@@ -364,8 +366,8 @@ describe('AICell actions', () => {
     expect(requestURL()).toBe('/api/tasks/1?depth=0');
   });
 
-  it('patches the draft of a draft row', async () => {
-    fetchMock.mockReturnValue(respond({ doc: row({ _summary_status: 'pending' }) }));
+  it('patches only the latest draft of a draft row', async () => {
+    fetchMock.mockReturnValue(respond({ docs: [row({ _summary_status: 'pending' })], errors: [] }));
 
     render(cell(row({ _status: 'draft' }), { collectionSlug: 'articles' }));
 
@@ -373,11 +375,17 @@ describe('AICell actions', () => {
 
     await flush();
 
-    expect(requestURL()).toBe('/api/articles/1?depth=0&locale=en&draft=true');
+    expect(requestURL()).toMatch(/^\/api\/articles\?depth=0&where\[and\]\[0\]\[id\]\[in\]\[0\]=1&/);
+    expect(requestURL()).toContain('&where[and][2][_status][equals]=draft&locale=en&draft=true');
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      body: JSON.stringify({ _summary_status: 'pending' }),
+      method: 'PATCH',
+    });
+    expect(screen.getByRole('img', { name: 'Generating' })).toBeTruthy();
   });
 
-  it('patches a published row without draft', async () => {
-    fetchMock.mockReturnValue(respond({ doc: row({ _summary_status: 'pending' }) }));
+  it('patches a published row only while its latest version is published', async () => {
+    fetchMock.mockReturnValue(respond({ docs: [row({ _summary_status: 'pending' })], errors: [] }));
 
     render(cell(row({ _status: 'published' }), { collectionSlug: 'articles' }));
 
@@ -385,7 +393,43 @@ describe('AICell actions', () => {
 
     await flush();
 
-    expect(requestURL()).toBe('/api/articles/1?depth=0&locale=en');
+    expect(requestURL()).toContain(
+      '&where[and][2][_status][equals]=published&locale=en&draft=true',
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      body: JSON.stringify({ _status: 'published', _summary_status: 'pending' }),
+      method: 'PATCH',
+    });
+  });
+
+  it('reports a record that changed since the load and keeps the state', async () => {
+    fetchMock.mockReturnValue(respond({ docs: [], errors: [] }));
+
+    render(cell(row({ _status: 'published' }), { collectionSlug: 'articles' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
+
+    await flush();
+
+    expect(toast.error).toHaveBeenCalledWith(
+      'This record changed since it was loaded. Reload it and try again.',
+    );
+    expect(screen.getByRole('button', { name: 'Regenerate' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Generating' })).toBeNull();
+  });
+
+  it('shows the server message when a draft row is being edited', async () => {
+    fetchMock.mockReturnValue(
+      respond({ docs: [], errors: [{ id: 1, message: 'Document is locked' }] }, false),
+    );
+
+    render(cell(row({ _status: 'draft' }), { collectionSlug: 'articles' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
+
+    await flush();
+
+    expect(toast.error).toHaveBeenCalledWith('Document is locked');
   });
 
   it('shows the server message and keeps the state when the request fails', async () => {
@@ -576,6 +620,29 @@ describe('AIField', () => {
     const { container } = renderField();
 
     expect(container.firstElementChild?.className).toBe('field-type text ai-field');
+  });
+
+  it('passes autoComplete and rtl to the text input', () => {
+    savedDoc();
+
+    const field = {
+      ...summaryField,
+      admin: { ...summaryField.admin, autoComplete: 'off', rtl: true },
+    };
+
+    const { container } = renderField({ field } as Partial<TextFieldClientProps>);
+    const input = container.querySelector('input');
+
+    expect(input?.getAttribute('autocomplete')).toBe('off');
+    expect(input?.getAttribute('dir')).toBe('rtl');
+  });
+
+  it('leaves the text input direction to the page without rtl', () => {
+    savedDoc();
+
+    const { container } = renderField();
+
+    expect(container.querySelector('input')?.hasAttribute('dir')).toBe(false);
   });
 
   it.each([

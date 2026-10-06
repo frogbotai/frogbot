@@ -72,6 +72,7 @@ export interface Config {
     articles: Article;
     issues: Issue;
     reports: Report;
+    shouts: Shout;
     'usage-logs': UsageLog;
     'frogbot-waitpoints': FrogBotWaitpoint;
   };
@@ -82,6 +83,7 @@ export interface Config {
     articles: ArticlesSelect;
     issues: IssuesSelect;
     reports: ReportsSelect;
+    shouts: ShoutsSelect;
     'usage-logs': UsageLogsSelect;
     'frogbot-waitpoints': FrogBotWaitpointsSelect;
   };
@@ -217,6 +219,7 @@ export interface Task {
  */
 export interface Article {
   id: number;
+  title?: string | null;
   body?: string | null;
   /**
    * Generated automatically by AI from: body. Writing a value keeps it and stops automatic updates
@@ -275,6 +278,29 @@ export interface Report {
    * Set by FrogBot: the error message from the last failed run
    */
   _labels_error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shouts".
+ */
+export interface Shout {
+  id: number;
+  loud?: string | null;
+  masked?: string | null;
+  /**
+   * Generated automatically by AI from: loud, masked. Writing a value keeps it and stops automatic updates
+   */
+  summary?: string | null;
+  /**
+   * Set by FrogBot: pending, done, error or manual. Write "pending" to regenerate the value
+   */
+  _summary_status?: ('pending' | 'done' | 'error' | 'manual') | null;
+  /**
+   * Set by FrogBot: the error message from the last failed run
+   */
+  _summary_error?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -396,6 +422,7 @@ export interface TasksSelect {
  * via the `definition` "articles_select".
  */
 export interface ArticlesSelect {
+  title?: boolean;
   body?: boolean;
   summary?: boolean;
   _summary_status?: boolean;
@@ -425,6 +452,19 @@ export interface ReportsSelect {
   labels?: boolean;
   _labels_status?: boolean;
   _labels_error?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shouts_select".
+ */
+export interface ShoutsSelect {
+  loud?: boolean;
+  masked?: boolean;
+  summary?: boolean;
+  _summary_status?: boolean;
+  _summary_error?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

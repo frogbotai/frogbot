@@ -1,3 +1,5 @@
+import { formatSigned } from '../formatSigned.js';
+
 export type MoneyPrecision = 'auto' | number;
 
 export type MoneyKind = {
@@ -21,28 +23,28 @@ export function formatMoney({
 }: FormatMoneyArgs): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '';
 
-  const amount = value === 0 ? 0 : value;
-
   if (precision !== 'auto') {
-    return new Intl.NumberFormat(locale, {
+    const fixed = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       minimumFractionDigits: precision,
       maximumFractionDigits: precision,
-    }).format(amount);
+    });
+
+    return formatSigned(fixed, value);
   }
 
   const standard = new Intl.NumberFormat(locale, { style: 'currency', currency });
   const digits = standard.resolvedOptions().maximumFractionDigits ?? 2;
-  const size = Math.abs(amount);
+  const size = Math.abs(value);
 
   if (size > 0 && size < 10 ** -digits) {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       maximumSignificantDigits: 3,
-    }).format(amount);
+    }).format(value);
   }
 
-  return standard.format(amount);
+  return formatSigned(standard, value);
 }

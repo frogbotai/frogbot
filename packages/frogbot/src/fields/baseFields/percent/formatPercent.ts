@@ -1,3 +1,5 @@
+import { formatSigned } from '../formatSigned.js';
+
 export type PercentKind = {
   type: 'percent';
   precision: number;
@@ -16,9 +18,11 @@ export function formatPercent({
 }: FormatPercentArgs): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '';
 
-  return new Intl.NumberFormat(locale, {
+  const format = new Intl.NumberFormat(locale, {
     style: 'percent',
     minimumFractionDigits: precision,
     maximumFractionDigits: precision,
-  }).format(value === 0 ? 0 : value);
+  });
+
+  return formatSigned(format, value);
 }

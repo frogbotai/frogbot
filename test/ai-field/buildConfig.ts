@@ -9,6 +9,7 @@ import {
   otherModel,
   reportsSlug,
   rollbackTitle,
+  shoutsSlug,
   sharedTitle,
   tasksSlug,
   usersSlug,
@@ -78,6 +79,7 @@ const Articles: CollectionConfig = {
   access: openAccess,
   versions: { drafts: true },
   fields: [
+    { name: 'title', type: 'text' },
     { name: 'body', type: 'text', localized: true },
     aiField({ name: 'summary', inputs: ['body'], prompt: 'Summarize.', localized: true }),
   ],
@@ -112,9 +114,33 @@ const Reports: CollectionConfig = {
   ],
 };
 
+const Shouts: CollectionConfig = {
+  slug: shoutsSlug,
+  access: openAccess,
+  hooks: {
+    afterRead: [
+      ({ doc }) => ({
+        ...doc,
+        ...(typeof doc.loud === 'string' && { loud: doc.loud.toUpperCase() }),
+      }),
+    ],
+  },
+  fields: [
+    { name: 'loud', type: 'text' },
+    {
+      name: 'masked',
+      type: 'text',
+      hooks: {
+        afterRead: [({ overrideAccess, value }) => (overrideAccess || !value ? value : '***')],
+      },
+    },
+    aiField({ name: 'summary', inputs: ['loud', 'masked'], prompt: 'Summarize.' }),
+  ],
+};
+
 export function buildAIFieldConfig(jobs: FrogBotConfig['jobs'] = {}) {
   return buildTestConfig({
-    collections: [Users, Tasks, Articles, Issues, Reports],
+    collections: [Users, Tasks, Articles, Issues, Reports, Shouts],
     localization: { locales: ['en', 'fr'], defaultLocale: 'en' },
     jobs: { shouldAutoRun: () => false, ...jobs },
     ai: {

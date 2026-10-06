@@ -72,6 +72,12 @@ lastModifiedByField({ name: 'lastModifiedBy', access: { update: () => true } });
 // @ts-expect-error the factory sets the type
 createdByField({ name: 'createdBy', type: 'relationship' });
 
+// @ts-expect-error FrogBot stores the value
+createdByField({ name: 'createdBy', virtual: true });
+
+// @ts-expect-error FrogBot stores the value
+lastModifiedByField({ name: 'lastModifiedBy', virtual: true });
+
 // @ts-expect-error a record has one number
 autonumberField({ name: 'number', hasMany: true });
 
@@ -95,3 +101,6 @@ autonumberField({ name: 'number', access: { update: () => true } });
 
 // @ts-expect-error the factory sets the type
 autonumberField({ name: 'number', type: 'number' });
+
+// @ts-expect-error FrogBot stores the value
+autonumberField({ name: 'number', virtual: true });

@@ -19,6 +19,8 @@ type RecordID = number | string;
 
 export type AIFieldRun = { collection: string; id: RecordID; field: string };
 
+export type AIFieldRunContext = AIFieldRun & { isCurrent?: () => Promise<boolean> };
+
 export type AIFieldRunInput = AIFieldRun & {
   locale?: string;
   user?: { collection: string; id: RecordID };
@@ -161,6 +163,18 @@ function statusArgs(
   };
 }
 
+export function aiFieldRunGuardHook({ name, path }: { name: string; path: string }): FieldHook {
+  return async ({ collection, context, originalDoc, value }) => {
+    const run = context?.[AI_FIELD_RUN_CONTEXT] as Partial<AIFieldRunContext> | undefined;
+    const id = originalDoc?.id;
+    const ownRun = isOwnAIFieldRun({ collection: collection?.slug, context, field: name, id });
+
+    if (!ownRun || !run?.isCurrent || (await run.isCurrent())) return value;
+
+    return originalDoc?.[path] ?? null;
+  };
+}
+
 export function aiFieldStatusHook(spec: AIFieldHookSpec): FieldHook {
   return (args) => nextAIFieldStatus(statusArgs(spec, args));
 }
@@ -169,10 +183,48 @@ export function aiFieldErrorHook(spec: AIFieldHookSpec): FieldHook {
   return (args) => nextAIFieldError(statusArgs(spec, args));
 }
 
+function savedAIFieldDoc({
+  data,
+  doc,
+  kind,
+  name,
+  operation,
+  ownRun,
+  previousDoc,
+}: AIFieldHookSpec & {
+  data: Doc;
+  doc: Doc;
+  operation: string | undefined;
+  ownRun: boolean;
+  previousDoc: Doc;
+}): Record<string, unknown> {
+  const { status } = aiFieldPaths(name);
+  const saved = { ...previousDoc, ...data, ...doc };
+
+  if (doc && status in doc) return saved;
+
+  return {
+    ...saved,
+    [status]: nextAIFieldStatus({ data, kind, name, operation, originalDoc: previousDoc, ownRun }),
+  };
+}
+
 export function aiFieldQueueHook({ kind, name }: AIFieldHookSpec): FieldHook {
-  return async ({ collection, context, operation, originalDoc: doc, previousDoc, req, value }) => {
+  return async (args) => {
+    const { collection, context, data, operation, previousDoc, req, value } = args;
     const slug = collection?.slug;
-    const ownRun = isOwnAIFieldRun({ collection: slug, context, field: name, id: doc?.id });
+    const id = args.originalDoc?.id ?? previousDoc?.id;
+    const ownRun = isOwnAIFieldRun({ collection: slug, context, field: name, id });
+
+    const doc = savedAIFieldDoc({
+      data,
+      doc: args.originalDoc,
+      kind,
+      name,
+      operation,
+      ownRun,
+      previousDoc,
+    });
 
     if (!slug || !shouldQueueAIFieldRun({ doc, kind, name, operation, ownRun, previousDoc })) {
       return value;
@@ -182,7 +234,7 @@ export function aiFieldQueueHook({ kind, name }: AIFieldHookSpec): FieldHook {
 
     const input: AIFieldRunInput = {
       collection: slug,
-      id: doc.id,
+      id: id as RecordID,
       field: name,
       ...(req.locale ? { locale: req.locale } : {}),
       ...(user ? { user: { collection: user.collection, id: user.id } } : {}),
