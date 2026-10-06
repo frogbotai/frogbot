@@ -697,7 +697,7 @@ Before release:
 Repository owners publish all packages with:
 
 ```bash
-pnpm publish-packages
+pnpm release
 ```
 
 Do not publish an individual first-party workspace manually. The repository release workflow owns synchronized versions and package order.

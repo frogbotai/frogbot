@@ -83,11 +83,16 @@ describe('check generated', () => {
     expect(found).toEqual([]);
   });
 
-  it('reads the piece-types command from the package generate:types script', () => {
-    const script =
-      'frogbot generate:piece-types src/index.ts --export createResend --output src/piece-types.ts';
+  it('builds the piece-types command from the create* factory in src/index.ts', () => {
+    const source =
+      "import { definePiece } from 'frogbot';\n\nexport const createResend = definePiece({});\n";
 
-    expect(pieceTypesArgs(script, 'packages/pieces/piece-resend/src/piece-types.ts')).toEqual([
+    expect(
+      pieceTypesArgs(source, {
+        file: 'packages/pieces/piece-resend/src/piece-types.ts',
+        cwd: 'packages/pieces/piece-resend',
+      }),
+    ).toEqual([
       'generate:piece-types',
       'src/index.ts',
       '--export',
@@ -97,11 +102,13 @@ describe('check generated', () => {
     ]);
   });
 
-  it('rejects a generate:types script that writes another file', () => {
-    const script = 'frogbot generate:piece-types src/index.ts --export createResend --output x.ts';
+  it('rejects a module without exactly one create* factory', () => {
+    const target = { file: 'packages/pieces/x/src/piece-types.ts', cwd: 'packages/pieces/x' };
 
-    expect(pieceTypesArgs(script, 'src/piece-types.ts')).toBeUndefined();
-    expect(pieceTypesArgs('tsc', 'src/piece-types.ts')).toBeUndefined();
+    expect(pieceTypesArgs('export const resend = {};\n', target)).toBeUndefined();
+    expect(
+      pieceTypesArgs('export const createA = 1;\nexport function createB() {}\n', target),
+    ).toBeUndefined();
   });
 
   it('prints one OK line when every file is fresh', () => {

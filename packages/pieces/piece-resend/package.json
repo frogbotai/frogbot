@@ -24,11 +24,9 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "generate:types": "frogbot generate:piece-types src/index.ts --export createResend --output src/piece-types.ts",
-    "check:types": "pnpm generate:types --check",
     "build": "node ../../../scripts/build-package.mjs",
     "clean": "rm -rf dist",
-    "typecheck": "pnpm check:types && tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "zod": "^4.3.6"

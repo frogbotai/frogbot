@@ -1,7 +1,7 @@
 // `pnpm bump <major|minor|patch> [--from <step>] [--list]`
 //
 // Runs the release gate (install, single frogbot install, sync, format, build,
-// dist imports, services, tests) and only then rewrites versions with
+// dist imports, UI packaging, services, tests) and only then rewrites versions with
 // scripts/bump.mjs. Each step is named so a failure can be resumed with
 // `--from <step>` instead of redoing everything.
 import { spawnSync } from 'node:child_process';
@@ -19,8 +19,26 @@ export const STEPS = [
   { name: 'format', run: ['pnpm', 'prettier:write'] },
   { name: 'build', run: ['pnpm', 'build'] },
   { name: 'check-dist-imports', run: ['pnpm', 'check', 'dist-imports'] },
-  { name: 'services', run: ['pnpm', 'test:services'], docker: true },
-  { name: 'test', run: ['pnpm', 'test:release'], docker: true },
+  { name: 'ui-package', run: ['node', 'scripts/test-ui-package.mjs'] },
+  { name: 'ui-next', run: ['node', 'scripts/test-ui-next.mjs'] },
+  { name: 'services', run: ['pnpm', 'docker:start'], docker: true },
+  { name: 'test', run: ['pnpm', 'test'], env: { RUN_E2E: '1' }, docker: true },
+  {
+    name: 'test-postgres',
+    run: ['pnpm', 'test:int:pg', 'test/database/int.spec.ts', 'test/search/postgres'],
+    docker: true,
+  },
+  {
+    name: 'test-mongodb',
+    run: [
+      'pnpm',
+      'test:int:mongo',
+      'test/database/int.spec.ts',
+      'test/search/mongodb',
+      'test/kv/mongo-native.int.spec.ts',
+    ],
+    docker: true,
+  },
   // { name: 'browser', run: ['pnpm', 'test:browser'] },
   { name: 'version', run: (bump) => ['node', 'scripts/bump.mjs', bump] },
 ];
@@ -121,10 +139,14 @@ function main() {
   for (const [i, step] of steps.entries()) {
     const argv = typeof step.run === 'function' ? step.run(args.bump) : step.run;
 
-    console.log(`\n▶ [${start + i + 1}/${STEPS.length}] ${step.name}: ${argv.join(' ')}\n`);
+    const env = Object.entries(step.env ?? {}).map(([name, value]) => `${name}=${value} `);
+
+    console.log(
+      `\n▶ [${start + i + 1}/${STEPS.length}] ${step.name}: ${env.join('')}${argv.join(' ')}\n`,
+    );
 
     const t = Date.now();
-    const result = sh(argv[0], argv.slice(1));
+    const result = sh(argv[0], argv.slice(1), { env: { ...process.env, ...step.env } });
 
     if (result.status !== 0) {
       fail(
