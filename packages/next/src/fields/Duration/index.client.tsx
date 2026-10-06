@@ -5,8 +5,8 @@ import './index.css';
 import { Input } from '@frogbotai/ui';
 import { getTranslation } from '@payloadcms/translations';
 import { DefaultCell, useField, useTranslation, withCondition } from '@payloadcms/ui';
-import { formatDuration, parseDuration } from 'frogbot/fields';
 import type { DurationFormat, DurationKind } from 'frogbot/fields';
+import { formatDuration, parseDuration } from 'frogbot/fields';
 import type {
   ClientField,
   DefaultCellComponentProps,

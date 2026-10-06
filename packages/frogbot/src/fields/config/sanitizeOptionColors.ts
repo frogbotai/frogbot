@@ -1,7 +1,7 @@
 import {
   type Field,
-  type OptionObject,
   optionColors,
+  type OptionObject,
   type RadioField,
   type SelectField,
 } from './types.js';

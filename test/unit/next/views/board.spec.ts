@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import {
   buildBoardReorderBody,
   buildColumnWhere,
@@ -18,7 +19,6 @@ import {
   setPath,
   syncSortRows,
 } from '../../../../packages/next/src/views/Board/data.js';
-import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
 import { resolveActiveViewSlug } from '../../../../packages/next/src/views/Board/resolveActiveView.js';
 import {
   resolveBoardField,

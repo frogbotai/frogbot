@@ -4,14 +4,14 @@ import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/i
 import {
   AI_BULK_CHUNK_SIZE,
   type AIBulkChoice,
-  type AIBulkField,
-  type AIBulkTarget,
   aiBulkChoiceFilter,
+  type AIBulkField,
   aiBulkLoadURL,
   aiBulkMenuFields,
   aiBulkRequests,
   aiBulkResultMessage,
   aiBulkScope,
+  type AIBulkTarget,
   aiBulkTargets,
 } from '../../../../packages/next/src/fields/AI/bulk.js';
 

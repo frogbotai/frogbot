@@ -16,8 +16,6 @@ import type {
   ConnectionEntry as PublicConnectionEntry,
   FrogBotConfig,
 } from '../../../../packages/frogbot/src/index.js';
-import type { TriggerEvent } from '../../../../packages/frogbot/src/triggers/types.js';
-import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import {
   definePiece,
   pieceTriggerInstance,
@@ -29,6 +27,8 @@ import type {
   PieceInstance,
   SignInMethod,
 } from '../../../../packages/frogbot/src/pieces/types.js';
+import type { TriggerEvent } from '../../../../packages/frogbot/src/triggers/types.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 declare const req: FrogBotRequest;
 

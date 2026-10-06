@@ -1,4 +1,4 @@
-import { type AIKind, aiFieldPaths, isAIFieldInputSet } from 'frogbot/fields';
+import { aiFieldPaths, type AIKind, isAIFieldInputSet } from 'frogbot/fields';
 import type {
   ClientCollectionConfig,
   ClientField,

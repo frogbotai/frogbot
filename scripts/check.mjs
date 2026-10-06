@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// `pnpm check [--full]` runs the static checks: prettier (report only), ESLint errors, a build
-// of every package whose `dist` is missing or older than its sources, every missing gitignored
-// test-fixture `importMap.js`, the typecheck of packages changed against local `main` (every
-// package with `--full`), then every `scripts/check-*.mjs`.
+// `pnpm check [--full]` runs the static checks: prettier (report only), ESLint (a warning or an
+// unpruned suppression fails too), a build of every package whose `dist` is missing or older than
+// its sources, every missing gitignored test-fixture `importMap.js`, the typecheck of packages
+// changed against local `main` (every package with `--full`), then every `scripts/check-*.mjs`.
 // A check file with `// check: full-only` in its first 5 lines runs only with `--full` or by name.
 // `pnpm check <name> [args]` runs one of those checks. It never runs tests or starts servers.
 // Tool output goes to `.idea/tmp/check-<time>.log`; stdout gets a `built N packages` line when
@@ -52,6 +52,11 @@ const FULL_ONLY_LINES = 5;
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
 const USAGE = 'usage: pnpm check [--full] | pnpm check <name> [args]';
+
+const UNPRUNED_SUPPRESSIONS = 'There are suppressions left that do not occur anymore';
+
+const PRUNE_LINE =
+  'eslint-suppressions.json eslint suppressed problems were fixed; run `pnpm lint --prune-suppressions`';
 
 const TSC_LOCATED = /^(?:(\S+) [\w:-]+: )?(\S.*?)\((\d+),\d+\): error (TS\d+): (.*)$/;
 
@@ -354,7 +359,7 @@ async function prettier(log) {
 async function eslint(log) {
   const result = await run(log, bin('eslint'), [
     '.',
-    '--quiet',
+    '--max-warnings=0',
     '--format',
     'json',
     '--cache',
@@ -362,6 +367,11 @@ async function eslint(log) {
     path.join(TMP, '.eslintcache'),
   ]);
 
+  return eslintResult(result);
+}
+
+export function eslintResult(result) {
+  const unpruned = result.output.includes(UNPRUNED_SUPPRESSIONS) ? [PRUNE_LINE] : [];
   let found;
 
   try {
@@ -370,7 +380,11 @@ async function eslint(log) {
     found = failureLines('eslint', result, []);
   }
 
-  return { ok: result.code === 0, groups: [found], summary: `eslint ${found.length} errors` };
+  return {
+    ok: result.code === 0,
+    groups: [[...found, ...unpruned]],
+    summary: `eslint ${found.length} problems`,
+  };
 }
 
 function changedFiles(log) {

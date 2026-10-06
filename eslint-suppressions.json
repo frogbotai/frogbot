@@ -1,0 +1,252 @@
+{
+  "packages/frogbot/src/admin/views/types.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/frogbot/src/collections/config/types.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 20
+    }
+  },
+  "packages/frogbot/src/config/sanitize.ts": {
+    "no-console": {
+      "count": 3
+    }
+  },
+  "packages/frogbot/src/database/types.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/frogbot/src/fields/baseFields/ai/sanitize.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/frogbot/src/fields/baseFields/slug/generateSlug.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/frogbot/src/fields/baseFields/slug/index.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "packages/frogbot/src/fields/config/types.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 20
+    }
+  },
+  "packages/frogbot/src/jobs/types.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/gateway/src/hooks.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/gateway/src/observability/logger.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/gateway/src/observability/setup.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/gateway/src/routes/chatCompletions/translators/toModelMessages/system.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/gateway/src/routes/messages/translators/toModelMessages/assistant.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "packages/next/src/utilities/brandImportMapErrors.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "packages/plugins/plugin-capture/src/index.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/richtext-lexical/src/features/typesServer.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "packages/ui/src/icons/IconBase.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "test/__helpers/shared/db/dbAdapters.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "test/__helpers/shared/storage/storageContractSuite.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "test/e2e/connections-ui.mjs": {
+    "no-console": {
+      "count": 7
+    }
+  },
+  "test/e2e/fixtures/skill-distribution/hosting/probe-public.mjs": {
+    "no-console": {
+      "count": 5
+    }
+  },
+  "test/e2e/fixtures/skill-distribution/installation/harness.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "test/generateTypes.ts": {
+    "no-console": {
+      "count": 4
+    }
+  },
+  "test/live/doctor.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "test/rich-text/config.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "test/types/collections/parity.test-d.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "test/types/fields/parity.test-d.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "test/types/fields/requestSlots.test-d.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "test/types/fields/validate.test-d.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "test/types/skill/samples/agents.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "test/types/skill/samples/ai.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "test/types/skill/samples/jobs.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
+  "test/ui/next/elements/Nav/FrogBotNavClient.spec.tsx": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/ui/ui/chat/chat.spec.tsx": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 15
+    }
+  },
+  "test/unit/frogbot/ai/syncCatalog.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/ai/types.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/bin/jobsRun.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/channels/webhook.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/config/authStrategies.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 2
+    }
+  },
+  "test/unit/frogbot/config/build.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/config/sanitize.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 2
+    }
+  },
+  "test/unit/frogbot/fields/baseFields/aiSanitize.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/fields/baseFields/systemKind.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/lifecycle.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/uploads/office/officeText.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 2
+    }
+  },
+  "test/unit/frogbot/uploads/office/xlsxText.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/uploads/storage.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/jobs/waitpoints.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/next/exports/views.spec.ts": {
+    "@typescript-eslint/consistent-type-imports": {
+      "count": 3
+    }
+  }
+}

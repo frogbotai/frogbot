@@ -6,7 +6,7 @@ import type { CollectionConfig } from '../../../collections/config/types.js';
 import type { ValidationMode } from '../../../config/validationContext.js';
 import type { Block, Field } from '../../config/types.js';
 import { getAIKind } from './hooks.js';
-import { type AIKind, aiFieldPaths } from './state.js';
+import { aiFieldPaths, type AIKind } from './state.js';
 import { resolveAIFieldModel } from './task.js';
 
 export type SanitizeAIFieldsArgs = {

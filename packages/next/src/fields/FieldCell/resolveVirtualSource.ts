@@ -37,10 +37,11 @@ export function resolveVirtualSource({
 
     if (!field) return undefined;
 
-    if (index === segments.length - 1)
+    if (index === segments.length - 1) {
       return sourceTypes.has(field.type) && !('virtual' in field && field.virtual)
         ? field
         : undefined;
+    }
 
     if (field.type === 'group' || (field.type as string) === 'tab') {
       fields = field.flattenedFields ?? [];

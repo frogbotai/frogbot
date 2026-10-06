@@ -91,7 +91,7 @@ The `docs-references` check's allowlist holds intentional placeholders only.
 
 `pnpm install` installs the hooks (husky sets `core.hooksPath` to `.husky/_`). A checkout or worktree runs them only after its own `pnpm install`.
 
-- `pre-commit` runs lint-staged on the staged files: `eslint --fix` then `prettier --write` on code, `prettier --write` on Markdown, JSON, YAML and CSS. Lint errors fail the commit; warnings don't. Then `scripts/precommit-guard.mjs` refuses staged `.idea/`, `CHANGELOG*`, `.changeset/` and `patches/` files, and a new `patchedDependencies` entry in `package.json` or `pnpm-workspace.yaml`, printing one line per path.
+- `pre-commit` runs lint-staged on the staged files: `eslint --fix` then `prettier --write` on code, `prettier --write` on Markdown, JSON, YAML and CSS. Lint errors, warnings and unused `eslint-disable` comments fail the commit. Older violations are baselined in `eslint-suppressions.json`; after fixing one, run `pnpm lint --prune-suppressions` and commit the smaller file. Then `scripts/precommit-guard.mjs` refuses staged `.idea/`, `CHANGELOG*`, `.changeset/` and `patches/` files, and a new `patchedDependencies` entry in `package.json` or `pnpm-workspace.yaml`, printing one line per path.
 - `commit-msg` runs `scripts/commit-msg.mjs`: the subject must follow the Conventional Commits format above (merge commits are exempt), and `Co-authored-by:` or "Generated with" lines are refused.
 
 ## Code style
