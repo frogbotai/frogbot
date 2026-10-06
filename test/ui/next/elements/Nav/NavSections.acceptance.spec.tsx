@@ -20,8 +20,8 @@ vi.mock('frogbot', () => ({
   }),
 }));
 
-import { admin } from '../../../../../packages/next/src/elements/Nav/fixtures/consumer/config';
-import { RecentsSection } from '../../../../../packages/next/src/elements/Nav/fixtures/consumer/RecentsSection';
+import { admin } from './fixtures/consumer/config';
+import { RecentsSection } from './fixtures/consumer/RecentsSection';
 
 describe('navigation section acceptance', () => {
   it('compiles, registers, and renders a copied section using public exports', async () => {

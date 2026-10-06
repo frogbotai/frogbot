@@ -7,14 +7,13 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Keep reusable components flat in `src/components` and name files by intent.
 - Components must not import chat, admin, or other domain code.
 - Internal file placement and public exports are separate decisions. Add consumer APIs to `src/index.ts` explicitly.
-- `src/exports/{client,shared,rsc}/index.ts` are the only files that may import `@payloadcms/ui`; the classification test governs their contents.
+- The classification test governs the contents of `src/exports/{client,shared,rsc}/index.ts`.
 
 ## Components
 
 - Preserve the accessible behavior and DOM structure of the Firmware source.
 - Use Radix primitives for headless behavior and add only the package required by that component.
 - Keep component props compatible with the underlying element or Radix primitive.
-- Use local icon factories instead of external icon libraries.
 
 ## Styling
 

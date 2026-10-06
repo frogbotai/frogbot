@@ -5,6 +5,8 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import frogbot from './scripts/eslint-plugin/index.mjs';
+
 const SPECS = ['**/*.spec.ts', '**/*.spec.tsx'];
 
 const BROWSER_SPECS = 'test/browser/**/*.spec.ts';
@@ -42,6 +44,32 @@ const mockBans = [
       'Integration, E2E and browser specs use the real modules; move module mocks to a unit test',
   },
 ];
+
+const UI_SOURCE = 'packages/ui/src/**/*.{ts,tsx}';
+
+const UI_LIBRARIES = [
+  {
+    regex: '^(?:lucide-react|react-icons)(?:/|$)',
+    message: 'Use the icon factories in packages/ui/src/icons.',
+  },
+  {
+    regex: '^(?:clsx|classnames|tailwind-merge|class-variance-authority)(?:/|$)',
+    message: 'Join class names with plain string concatenation.',
+  },
+];
+
+const PAYLOAD_UI_MESSAGE =
+  'Only packages/ui/src/exports/{client,rsc,shared}/index.ts import @payloadcms/ui, one entry each.';
+
+const PAYLOAD_UI_ENTRIES = {
+  'packages/ui/src/exports/client/index.ts': 'ui',
+  'packages/ui/src/exports/rsc/index.ts': 'ui/rsc',
+  'packages/ui/src/exports/shared/index.ts': 'ui/shared',
+};
+
+function uiImports(...patterns) {
+  return ['error', { patterns: [...UI_LIBRARIES, ...patterns] }];
+}
 
 export default tseslint.config(
   {
@@ -142,4 +170,42 @@ export default tseslint.config(
     files: ['templates/**', 'examples/**'],
     rules: { 'no-console': 'off' },
   },
+  {
+    plugins: { frogbot },
+    rules: {
+      'frogbot/no-imports-from-exports-dir': 'error',
+      'frogbot/no-imports-from-self': 'error',
+    },
+  },
+  {
+    files: ['packages/{ui,next}/**'],
+    rules: { 'frogbot/client-imports': 'error' },
+  },
+  {
+    files: [UI_SOURCE],
+    rules: {
+      'no-restricted-imports': uiImports({ regex: '^@payloadcms/', message: PAYLOAD_UI_MESSAGE }),
+    },
+  },
+  {
+    files: ['packages/ui/src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': uiImports(
+        { regex: '^@payloadcms/', message: PAYLOAD_UI_MESSAGE },
+        {
+          regex: '(?:^|/)(?:chat|admin)(?:[/.-]|$)|^@frogbotai/next(?:/|$)',
+          message: 'Components must not import chat or admin code.',
+        },
+      ),
+    },
+  },
+  ...Object.entries(PAYLOAD_UI_ENTRIES).map(([file, entry]) => ({
+    files: [file],
+    rules: {
+      'no-restricted-imports': uiImports({
+        regex: `^@payloadcms/(?!${entry}$)`,
+        message: PAYLOAD_UI_MESSAGE,
+      }),
+    },
+  })),
 );
