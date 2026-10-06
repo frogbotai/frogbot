@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-import * as icons from '../exports/icons.js';
+import * as icons from './index.js';
 
 type KebabCase<Value extends string> = Value extends `${infer First}${infer Rest}`
   ? Rest extends Uncapitalize<Rest>

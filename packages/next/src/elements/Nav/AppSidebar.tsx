@@ -2,7 +2,7 @@
 
 import { FolderIcon, FrogBotFavicon, SidebarLeftIcon } from '@frogbotai/ui/icons';
 import { type IconName, iconRegistry, isIconName } from '@frogbotai/ui/icons/registry';
-import { Tooltip } from '@payloadcms/ui/elements/Tooltip';
+import { Tooltip } from '@payloadcms/ui';
 import {
   type ComponentType,
   createElement,

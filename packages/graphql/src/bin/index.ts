@@ -1,6 +1,6 @@
 import { formatCliError, loadConfig, loadEnv } from 'frogbot/internal';
 
-import { generateSchema } from '../exports/utilities.js';
+import { generateSchema } from './generateSchema.js';
 
 export async function bin(): Promise<void> {
   loadEnv();
