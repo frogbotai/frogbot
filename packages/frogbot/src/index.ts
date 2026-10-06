@@ -329,6 +329,11 @@ export type {
 } from './types/generated.js';
 export type { FrogBotRequest } from './types/request.js';
 export type { UploadConfig, UploadHandler } from './uploads/types.js';
+export {
+  addDataAndFileToRequest,
+  addLocalesToRequestFromData,
+  headersWithCors,
+} from './utilities/request.js';
 export type {
   CountVersionsArgs,
   FindVersionByIDArgs,
@@ -354,8 +359,10 @@ export type {
   KVAdapter,
   KVAdapterResult,
   KVStoreValue,
+  SanitizedCollectionConfig,
   SendEmailOptions,
 } from 'payload';
+export { APIError } from 'payload';
 export type {
   ApplyDisableErrors,
   JsonObject,

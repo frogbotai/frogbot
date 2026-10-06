@@ -49,7 +49,7 @@ export function docsPackages() {
   return publishablePackages().map(({ dir }) => {
     const pkg = readJSON(path.join(dir, 'package.json'));
 
-    return { ...pkg, ...pkg.publishConfig };
+    return { ...pkg, ...pkg.publishConfig, dir };
   });
 }
 
@@ -136,27 +136,169 @@ function isFrogBotPackage(name) {
   return name === 'frogbot' || name.startsWith('frogbot/') || name.startsWith('@frogbotai/');
 }
 
-function exported(pkg, name) {
-  const subpath = name === pkg.name ? '.' : `.${name.slice(pkg.name.length)}`;
-
-  if (subpath.split('/').includes('..')) return false;
-
-  if (!pkg.exports) return subpath === '.';
+function exportsMap(pkg) {
+  if (!pkg.exports) return { '.': pkg.types ?? pkg.main ?? '' };
 
   const keys =
     typeof pkg.exports === 'object' && !Array.isArray(pkg.exports) ? Object.keys(pkg.exports) : [];
 
-  const exports = keys.some((key) => key.startsWith('.')) ? pkg.exports : { '.': pkg.exports };
+  return keys.some((key) => key.startsWith('.')) ? pkg.exports : { '.': pkg.exports };
+}
 
-  return Object.entries(exports).some(([key, target]) => {
-    if (target === null) return false;
+function exportTarget(pkg, name) {
+  const subpath = name === pkg.name ? '.' : `.${name.slice(pkg.name.length)}`;
+
+  if (subpath.split('/').includes('..')) return undefined;
+
+  for (const [key, target] of Object.entries(exportsMap(pkg))) {
+    if (target === null) continue;
 
     const star = key.indexOf('*');
 
-    if (star === -1) return key === subpath;
+    if (star === -1) {
+      if (key === subpath) return target;
 
-    return subpath.startsWith(key.slice(0, star)) && subpath.endsWith(key.slice(star + 1));
-  });
+      continue;
+    }
+
+    const prefix = key.slice(0, star);
+    const suffix = key.slice(star + 1);
+
+    if (subpath.startsWith(prefix) && subpath.endsWith(suffix)) {
+      const match = subpath.slice(prefix.length, subpath.length - suffix.length);
+
+      return JSON.parse(JSON.stringify(target).replaceAll('*', match));
+    }
+  }
+
+  return undefined;
+}
+
+function exported(pkg, name) {
+  return exportTarget(pkg, name) !== undefined;
+}
+
+function typesTarget(target) {
+  if (typeof target === 'string') return target.replace(/\.(m|c)?js$/, '.d.$1ts');
+
+  if (!target || typeof target !== 'object') return undefined;
+
+  if (Array.isArray(target)) return target.map(typesTarget).find(Boolean);
+
+  if (typeof target.types === 'string') return target.types;
+
+  return ['import', 'default', 'require', 'node']
+    .filter((condition) => condition in target)
+    .map((condition) => typesTarget(target[condition]))
+    .find(Boolean);
+}
+
+export function typesPaths(packages) {
+  return Object.fromEntries(
+    packages.flatMap((pkg) =>
+      Object.entries(exportsMap(pkg)).flatMap(([key, target]) => {
+        const file = pkg.dir && typesTarget(target);
+
+        return file ? [[`${pkg.name}${key.slice(1)}`, [path.resolve(pkg.dir, file)]]] : [];
+      }),
+    ),
+  );
+}
+
+export function namedImports(fence) {
+  const kind = /x$/.test(fence.language) ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const ast = ts.createSourceFile('fence.tsx', fence.content, ts.ScriptTarget.Latest, true, kind);
+  const imports = [];
+
+  function add(specifier, elements) {
+    if (!ts.isStringLiteral(specifier)) return;
+
+    for (const element of elements) {
+      const { line } = ast.getLineAndCharacterOfPosition(element.getStart(ast));
+
+      imports.push({
+        specifier: specifier.text,
+        name: (element.propertyName ?? element.name).text,
+        line: fence.line + line,
+      });
+    }
+  }
+
+  for (const statement of ast.statements) {
+    if (ts.isImportDeclaration(statement)) {
+      const bindings = statement.importClause?.namedBindings;
+
+      if (bindings && ts.isNamedImports(bindings)) {
+        add(statement.moduleSpecifier, bindings.elements);
+      }
+    } else if (
+      ts.isExportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      statement.exportClause &&
+      ts.isNamedExports(statement.exportClause)
+    ) {
+      add(statement.moduleSpecifier, statement.exportClause.elements);
+    }
+  }
+
+  return imports;
+}
+
+export function moduleExports(packages) {
+  const manifests = new Map(packages.map((pkg) => [pkg.name, pkg]));
+  const cache = new Map();
+
+  function entry(specifier) {
+    const pkg = manifests.get(packageName(specifier));
+    const target = pkg?.dir && typesTarget(exportTarget(pkg, specifier));
+
+    return target ? path.resolve(pkg.dir, target) : undefined;
+  }
+
+  return function exportsOf(specifiers) {
+    const files = [...new Set(specifiers.map(entry).filter(Boolean))];
+    const missing = files.filter((file) => !existsSync(file));
+
+    if (missing.length > 0) {
+      throw new Error(
+        `[check-docs-references] missing built types, run pnpm build: ${missing
+          .map((file) => path.relative(ROOT, file))
+          .join(', ')}`,
+      );
+    }
+
+    const pending = files.filter((file) => !cache.has(file));
+
+    if (pending.length > 0) {
+      const program = ts.createProgram(pending, {
+        allowJs: false,
+        jsx: ts.JsxEmit.Preserve,
+        module: ts.ModuleKind.NodeNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        noEmit: true,
+        skipLibCheck: true,
+        target: ts.ScriptTarget.ESNext,
+        types: [],
+      });
+
+      const checker = program.getTypeChecker();
+
+      for (const file of pending) {
+        const symbol = checker.getSymbolAtLocation(program.getSourceFile(file));
+        const names = symbol ? checker.getExportsOfModule(symbol).map(({ name }) => name) : [];
+
+        cache.set(file, new Set(names));
+      }
+    }
+
+    return new Map(
+      specifiers.flatMap((specifier) => {
+        const file = entry(specifier);
+
+        return file ? [[specifier, cache.get(file)]] : [];
+      }),
+    );
+  };
 }
 
 function shellSegments(line) {
@@ -190,6 +332,7 @@ export function checkDocsReferences({
   files,
   packages,
   commands,
+  exportsOf,
   allowlist = ALLOWLIST,
   reportStale = false,
 }) {
@@ -203,6 +346,7 @@ export function checkDocsReferences({
   const knownCommands = new Set(commands);
   const used = new Set();
   const problems = [];
+  const named = [];
 
   function report({ file, line, kind, name, reason }) {
     const entry = allowlist.find((item) => item.name === name);
@@ -288,6 +432,16 @@ export function checkDocsReferences({
 
           checkPackage({ file, line, kind: 'import', name: match[2] });
         }
+
+        if (exportsOf) {
+          const found = namedImports(fence).filter(({ specifier }) => {
+            const pkg = manifests.get(packageName(specifier));
+
+            return isFrogBotPackage(specifier) && pkg && exported(pkg, specifier);
+          });
+
+          named.push(...found.map((item) => ({ ...item, file })));
+        }
       }
 
       if (SHELL_LANGUAGES.has(fence.language)) {
@@ -301,6 +455,24 @@ export function checkDocsReferences({
       for (const match of line.content.matchAll(/(`+)([^`]+)\1/g)) {
         checkShell({ file, line: line.line, content: match[2], installsOnly: true });
       }
+    }
+  }
+
+  if (named.length > 0) {
+    const modules = exportsOf([...new Set(named.map(({ specifier }) => specifier))]);
+
+    for (const { file, line, specifier, name } of named) {
+      const names = modules.get(specifier);
+
+      if (!names) continue;
+
+      report({
+        file,
+        line,
+        kind: 'export',
+        name: `${name} from ${specifier}`,
+        reason: names.has(name) ? undefined : 'name is not exported',
+      });
     }
   }
 
@@ -324,10 +496,12 @@ export function checkDocsReferences({
 function main() {
   const directory = process.argv[2];
   const files = docsFiles({ directory });
+  const packages = docsPackages();
   const problems = checkDocsReferences({
     files,
-    packages: docsPackages(),
+    packages,
     commands: docsCommands(),
+    exportsOf: moduleExports(packages),
     reportStale: !directory,
   });
 

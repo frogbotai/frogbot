@@ -79,7 +79,8 @@ export async function up({
 ### Postgres:
 
 ```ts
-import { type MigrateUpArgs, sql } from '@frogbotai/db-postgres'
+import type { MigrateUpArgs } from '@frogbotai/db-postgres'
+import { sql } from '@frogbotai/db-postgres/drizzle'
 
 export async function up({ db, frogbot, req }: MigrateUpArgs): Promise<void> {
   const { rows: posts } = await db.execute(sql`SELECT * from posts`)

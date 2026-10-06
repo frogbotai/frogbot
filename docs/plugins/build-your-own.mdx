@@ -68,11 +68,11 @@ A good test suite verifies the behavior your plugin adds and confirms that exist
 Now that we have our environment setup and dev project ready to go - it's time to build the plugin!
 
 ```ts
-import type { Config } from 'frogbot'
+import type { FrogBotConfig } from 'frogbot'
 
 export const samplePlugin =
   (pluginOptions: PluginTypes) =>
-  (incomingConfig: Config): Config => {
+  (incomingConfig: FrogBotConfig): FrogBotConfig => {
     // create copy of incoming config
     let config = { ...incomingConfig }
 

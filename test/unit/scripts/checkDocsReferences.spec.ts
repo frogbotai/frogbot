@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   ALLOWLIST,
   checkDocsReferences,
   docsCommands,
+  moduleExports,
 } from '../../../scripts/check-docs-references.mjs';
 
 const packages = [
@@ -20,11 +25,25 @@ const packages = [
 ];
 const commands = ['dev', 'migrate', 'generate:types'];
 
+const moduleNames: Record<string, string[]> = {
+  frogbot: ['FrogBotConfig', 'buildConfig'],
+  '@frogbotai/next': ['withFrogBot'],
+};
+
+function exportsOf(specifiers: string[]) {
+  return new Map(
+    specifiers.flatMap((specifier) =>
+      moduleNames[specifier] ? [[specifier, new Set(moduleNames[specifier])]] : [],
+    ),
+  );
+}
+
 function check(content: string, reportStale = false) {
   return checkDocsReferences({
     files: [{ file: 'fixture.mdx', content }],
     packages,
     commands,
+    exportsOf,
     allowlist: ALLOWLIST,
     reportStale,
   });
@@ -282,4 +301,111 @@ describe('checkDocsReferences', () => {
       expect(() => docsCommands(source)).toThrow('commands object literal is missing or empty');
     },
   );
+
+  it('rejects the unexported Config import from ee6813d9 docs/plugins/build-your-own.mdx', () => {
+    const problems = check(
+      fence(
+        "import type { Config } from 'frogbot'\n\nexport const samplePlugin =\n  (pluginOptions: PluginTypes) =>\n  (incomingConfig: Config): Config => incomingConfig",
+        'ts',
+      ),
+    );
+
+    expect(problems).toEqual([
+      {
+        file: 'fixture.mdx',
+        line: 2,
+        kind: 'export',
+        name: 'Config from frogbot',
+        reason: 'name is not exported',
+      },
+    ]);
+  });
+
+  it.each([
+    "import type { FrogBotConfig } from 'frogbot'",
+    "import { buildConfig as build, type FrogBotConfig } from 'frogbot'",
+    "export { withFrogBot } from '@frogbotai/next'",
+    "import { anything } from '@frogbotai/ui'",
+    "import { anything } from 'other-package'",
+  ])('accepts named imports that exist or are not resolved: %s', (content) => {
+    const problems = check(fence(content, 'ts'));
+
+    expect(problems).toEqual([]);
+  });
+
+  it('reports each missing name at its own line', () => {
+    const problems = check(
+      fence(
+        "import {\n  buildConfig,\n  Config,\n} from 'frogbot'\nexport { nope as yes } from '@frogbotai/next'",
+        'tsx',
+      ),
+    );
+
+    expect(problems.map(({ line, name }) => ({ line, name }))).toEqual([
+      { line: 4, name: 'Config from frogbot' },
+      { line: 6, name: 'nope from @frogbotai/next' },
+    ]);
+  });
+
+  it('skips named imports from unexported subpaths', () => {
+    const problems = check(fence("import { a } from 'frogbot/shared'", 'ts'));
+
+    expect(problems.map(({ kind }) => kind)).toEqual(['import']);
+  });
+});
+
+describe('moduleExports', () => {
+  let directory: string | undefined;
+
+  afterEach(() => {
+    if (directory) rmSync(directory, { force: true, recursive: true });
+
+    directory = undefined;
+  });
+
+  function workspace(files: Record<string, string>) {
+    directory = mkdtempSync(path.join(os.tmpdir(), 'check-docs-references-'));
+
+    for (const [file, content] of Object.entries(files)) {
+      mkdirSync(path.dirname(path.join(directory, file)), { recursive: true });
+      writeFileSync(path.join(directory, file), content);
+    }
+
+    return directory;
+  }
+
+  it('reads export names from built declaration files, following re-exports', () => {
+    const dir = workspace({
+      'dist/index.d.ts':
+        "export type { FrogBotConfig } from './config.js';\nexport declare const buildConfig: () => void;\n",
+      'dist/config.d.ts': 'export type FrogBotConfig = { secret: string };\n',
+      'dist/shared.d.ts': 'export declare const shared: 1;\n',
+    });
+
+    const exportsOf = moduleExports([
+      {
+        name: 'frogbot',
+        dir,
+        exports: {
+          '.': { types: './dist/index.d.ts', import: './dist/index.js' },
+          './shared': './dist/shared.js',
+        },
+      },
+    ]);
+
+    const modules = exportsOf(['frogbot', 'frogbot/shared', 'frogbot/missing']);
+
+    expect([...modules.keys()]).toEqual(['frogbot', 'frogbot/shared']);
+    expect([...modules.get('frogbot')!].sort()).toEqual(['FrogBotConfig', 'buildConfig']);
+    expect([...modules.get('frogbot/shared')!]).toEqual(['shared']);
+  });
+
+  it('fails when the built types are missing', () => {
+    const dir = workspace({});
+    const exportsOf = moduleExports([
+      { name: 'frogbot', dir, exports: { '.': { types: './dist/index.d.ts' } } },
+    ]);
+
+    expect(() => exportsOf(['frogbot'])).toThrow('missing built types, run pnpm build');
+  });
 });

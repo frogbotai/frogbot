@@ -13,4 +13,4 @@ export default buildConfig({
 });
 ```
 
-This package delegates to `@payloadcms/plugin-sentry` and preserves its enablement, status capture, context, debug, and Sentry instance options. It uses FrogBot's supported `afterError` hook and admin provider surfaces.
+It supports the enablement, status capture, context, debug, and Sentry instance options, and uses FrogBot's supported `afterError` hook and admin provider surfaces.

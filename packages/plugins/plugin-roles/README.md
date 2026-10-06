@@ -65,4 +65,4 @@ rolesPlugin({
 
 Role resolution is memoized per request. `rolesPlugin()` and `rolesPlugin({ roles: [] })` are no-ops.
 
-Use `defaultRole` to assign new users that omit `roles`. Role-field updates default to assigned `admin` users when `admin` is listed and deny everyone otherwise; replace this with `rolesFieldAccess` when needed. Bootstrap the first privileged user explicitly through Payload's Local API or a seed script.
+Use `defaultRole` to assign new users that omit `roles`. Role-field updates default to assigned `admin` users when `admin` is listed and deny everyone otherwise; replace this with `rolesFieldAccess` when needed. Bootstrap the first privileged user explicitly through FrogBot's Local API or a seed script.

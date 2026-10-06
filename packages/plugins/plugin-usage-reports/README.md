@@ -15,9 +15,9 @@ export default buildConfig({
 });
 ```
 
-The plugin adds a Usage Analytics admin view with the Firmware date range control and sortable Models and Users tables. Reports page through the marker-resolved usage collection with Payload's local API and aggregate in memory, so SQLite, PostgreSQL, and MongoDB use the same path.
+The plugin adds a Usage Analytics admin view with the Firmware date range control and sortable Models and Users tables. Reports page through the marker-resolved usage collection with FrogBot's Local API and aggregate in memory, so SQLite, PostgreSQL, and MongoDB use the same path.
 
-The usage-log list gains Payload's experimental visual grouping. Set `pageSize` to change the local API batch size from its default of `5000`. For CSV export of raw usage rows, add `@frogbotai/plugin-import-export` to `plugins` and target the usage collection:
+The usage-log list gains experimental visual grouping. Set `pageSize` to change the local API batch size from its default of `5000`. For CSV export of raw usage rows, add `@frogbotai/plugin-import-export` to `plugins` and target the usage collection:
 
 ```ts
 plugins: [

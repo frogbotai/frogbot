@@ -12,4 +12,4 @@ export default buildConfig({
 });
 ```
 
-This package delegates to `@payloadcms/plugin-stripe` and preserves its secret, webhook, REST route, logging, test-key, and collection synchronization options. FrogBot does not add payment flow defaults or webhook handlers.
+It supports the secret, webhook, REST route, logging, test-key, and collection synchronization options. FrogBot does not add payment flow defaults or webhook handlers.
