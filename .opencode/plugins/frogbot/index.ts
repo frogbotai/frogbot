@@ -1,10 +1,16 @@
+import { execFile } from 'node:child_process';
+
 import {
+  badTicketTag,
   capOutput,
   contextTokens,
+  createAlerts,
   createResumeCap,
   createWatchdog,
   denial,
+  failureAlert,
   MESSAGES,
+  notification,
   readInput,
   searchesArchive,
   shellTimeout,
@@ -107,6 +113,7 @@ export default {
     const lookups = new Map<string, Promise<string | null>>();
     const background = new Set<string>();
     const controller = new AbortController();
+    const alerts = createAlerts();
     const data = process.env.XDG_DATA_HOME || `${process.env.HOME}/.local/share`;
 
     const remember = (
@@ -166,7 +173,10 @@ export default {
 
       if (event.tool === 'read') event.input = readInput(event.input);
 
-      if (event.tool === 'subagent') resumes.record(event.id, event.input);
+      if (event.tool === 'subagent') {
+        if (badTicketTag(event.input)) return MESSAGES.tag;
+        resumes.record(event.id, event.input);
+      }
 
       return undefined;
     };
@@ -239,6 +249,27 @@ export default {
       }
     });
 
+    const alert = async (sessionID: string, error: unknown) => {
+      const info = await ctx.session.get({ sessionID });
+      const found = failureAlert({
+        title: info.title ?? sessionID,
+        root: !info.parentID,
+        error: error as { type?: string; message?: string } | undefined,
+      });
+
+      if (!found || !alerts(found, Date.now())) return;
+
+      console.error(`[frogbot] ${found.title}: ${found.message}`);
+
+      if (process.platform !== 'darwin') return;
+
+      const [command, args] = notification(found);
+
+      execFile(command, args, (failure) => {
+        if (failure) log('notification', failure);
+      });
+    };
+
     const onEvent = async (event: OpenCodeEvent) => {
       const sessionID = field(event.data, 'sessionID');
       if (!sessionID) return;
@@ -250,6 +281,7 @@ export default {
         watchdog.start(sessionID, Date.now());
       } else if (STOPPED.has(event.type)) {
         watchdog.stop(sessionID);
+        if (event.type === 'session.execution.failed') await alert(sessionID, event.data?.error);
       } else if (event.type === 'session.deleted') {
         watchdog.forget(sessionID);
         parents.delete(sessionID);

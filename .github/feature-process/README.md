@@ -33,8 +33,12 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `new` creates the worktree and branch;
   - `status` shows every ticket's stage;
   - `decisions` writes the open cards and gates to `.idea/decisions/OPEN.md` and records the owner's answers;
-  - `land` rebases, runs the gates, squashes to one commit and fast-forwards local `main`, never pushing.
-- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops and whole-suite test runs, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents.
+  - `land` rebases, runs the gates, squashes to one commit and fast-forwards local `main`, never pushing. It takes more than 10 minutes when browser specs run, so start it as a background shell and wait for the notification. A docs-only diff skips `test:unit` and `test:ui`, except the unit specs that read Markdown. A known-flaky browser spec (`scripts/lib/flaky.mjs`) is retried once and logged as `flaky` in the ledger;
+  - `stats [--batch <n>]` reads `~/.local/share/opencode/opencode.db` (read-only) and shows each ticket's wall and active time, cost, tokens, turns, stage sessions, fix rounds and land attempts;
+  - `found "<kind> · <area> · <text>" [--source <path>]` adds a row to `.idea/found.md` with the next free `F-` number.
+- **Ticket keys.** A ticket split into parts uses a letter: `pnpm ticket new 210b` makes `frogbot-ticket210b` and `feat/ticket-210b-<slug>`, and its ledger rows say `210b`.
+- **Subagent descriptions** start with the ticket key, for example `211a stage 4: autonumber` or `250 lint: pnpm check`, so `stats` can count the session. A description with no number is fine and counts as "other"; the plugin refuses only one that starts with a number it can't read as a key.
+- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops and whole-suite test runs, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents. A failed top-level turn, or any provider sign-in error, raises a macOS notification.
 
 ## Where things live
 
@@ -71,7 +75,7 @@ A new decision card found while planning goes back into the spec and the inbox. 
 
 The plan's `touches:` list is matched against globs in `scripts/ticket.mjs`.
 
-- **Full** if any path matches migrations, `collections/config`, `jobs`, `uploads`, access files, `packages/storage-*` or `packages/*/src/exports`: a fresh tester, at most 2 fix rounds, leftovers to `.idea/found.md`.
+- **Full** if any path matches migrations, `collections/config`, `jobs`, `uploads`, access files, `packages/storage-*` or `packages/*/src/exports`: a fresh tester, at most 2 fix rounds, leftovers to `.idea/found.md` through `pnpm ticket found`.
 - **Light** otherwise: `pnpm ticket verify`, `pnpm ticket verify --ui` screenshots the coordinator looks at, and owner sampling.
 
 ## Standing permission

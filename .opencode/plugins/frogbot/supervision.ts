@@ -24,7 +24,8 @@ export const MESSAGES = {
   suite:
     'The full test suite is not allowed here: run the affected files or `--project`; the full suite runs in `pnpm ticket land`.',
   archive:
-    "Subagents can't search `.idea/archive/`: read `.idea/decisions.md` or the ticket's spec.",
+    "Subagents can't search `.idea/archive/`: name the file or folder you need, such as `.idea/found.md` or `.idea/tickets/<folder>`, or read `.idea/decisions.md`.",
+  tag: 'The subagent description starts with a number but not a ticket key: start it with the key and a space or colon (`211A stage 4: …`, `250 lint: pnpm check`), or with no number for work outside a ticket.',
 } as const;
 
 export type Denial = keyof typeof MESSAGES;
@@ -344,8 +345,30 @@ const ARCHIVE = /(?:^|\/)\.idea\/archive(?:\/|$)/;
 
 const IDEA_WILDCARD = /(?:^|\/)\.idea\/[*?[{]/;
 
-const SHELL_ARCHIVE =
-  /\.idea\/archive(?![\w-])|(?:^|[\s'"=(/])\.idea(?:\/?(?=[\s'";|&)]|$)|\/[*?[{])/;
+const SEARCHERS = new Set(['rg', 'ag', 'ack', 'fd', 'find', 'tree']);
+
+const GREPS = new Set(['grep', 'egrep', 'fgrep']);
+
+const PATTERN_FIRST = new Set(['grep', 'egrep', 'fgrep', 'rg', 'ag', 'ack', 'fd']);
+
+const PATTERN_FLAGS = new Set(['-e', '--regexp', '-f', '--file', '--files']);
+
+const VALUE_FLAGS = new Set([
+  '-A',
+  '-B',
+  '-C',
+  '-m',
+  '-d',
+  '-D',
+  '-g',
+  '-t',
+  '-T',
+  '--include',
+  '--exclude',
+  '--glob',
+  '--type',
+  '--max-count',
+]);
 
 function normalizePath(value: string) {
   return value.replaceAll('\\', '/').replace(/\/+$/, '');
@@ -355,6 +378,75 @@ function scopesArchive(path: string) {
   const normalized = normalizePath(path);
 
   return normalized === '.idea' || normalized.endsWith('/.idea') || ARCHIVE.test(normalized);
+}
+
+function recursive(name: string, args: string[]) {
+  if (SEARCHERS.has(name)) return true;
+
+  const flags = args.filter((arg) => arg.startsWith('-'));
+
+  if (GREPS.has(name)) {
+    return flags.some(
+      (flag) =>
+        /^-[a-zA-Z]*[rR]/.test(flag) ||
+        /^--(?:dereference-)?recursive$/.test(flag) ||
+        flag === '--directories=recurse',
+    );
+  }
+
+  return name === 'ls' && flags.some((flag) => /^-[a-zA-Z]*R/.test(flag) || flag === '--recursive');
+}
+
+function pathArgs(name: string, args: string[]) {
+  const positional: string[] = [];
+  let patternGiven = !PATTERN_FIRST.has(name);
+
+  for (let i = 0; i < args.length; i++) {
+    const [flag] = args[i].split('=', 1);
+
+    if (name === 'find' && /^[-(!]/.test(args[i])) break;
+
+    if (PATTERN_FLAGS.has(flag) || /^-[a-zA-Z]*[ef]$/.test(args[i])) patternGiven = true;
+
+    if (args[i].startsWith('-')) {
+      if ((VALUE_FLAGS.has(args[i]) || PATTERN_FLAGS.has(args[i])) && args[i] !== '--files') i++;
+      continue;
+    }
+
+    positional.push(args[i]);
+  }
+
+  return patternGiven ? positional : positional.slice(1);
+}
+
+function shellSearchesArchive(command: string, workdir: string) {
+  if (ARCHIVE.test(normalizePath(workdir))) return true;
+
+  let inIdea = workdir !== '' && scopesArchive(workdir);
+
+  for (const words of simpleCommands(command.replaceAll('\\', '/'))) {
+    const name = commandName(words[0]);
+    const args = words.slice(1);
+
+    if (name === 'cd' || name === 'pushd') {
+      const target = args.find((arg) => !arg.startsWith('-')) ?? '';
+
+      if (ARCHIVE.test(normalizePath(target))) return true;
+      inIdea = scopesArchive(target);
+      continue;
+    }
+
+    const paths = pathArgs(name, args);
+
+    if (paths.some(patternTouchesArchive)) return true;
+    if (!recursive(name, args)) continue;
+
+    const scoped = (path: string) => scopesArchive(path) || (inIdea && /^\.?\/?\*?$/.test(path));
+
+    if (paths.some(scoped) || (inIdea && paths.length === 0)) return true;
+  }
+
+  return false;
 }
 
 function patternTouchesArchive(pattern: string) {
@@ -381,7 +473,7 @@ export function searchesArchive(tool: string, input: unknown): boolean {
     );
   }
 
-  if (tool === 'shell') return SHELL_ARCHIVE.test(text('command').replaceAll('\\', '/'));
+  if (tool === 'shell') return shellSearchesArchive(text('command'), text('workdir'));
 
   return false;
 }
@@ -581,4 +673,76 @@ export function createWatchdog(stallMs = STALL_MS) {
       return notices;
     },
   };
+}
+
+const TICKET_TAG = /^\d+[a-z]?(?=[\s:]|$)/i;
+
+export function badTicketTag(input: unknown) {
+  const description =
+    typeof input === 'object' && input !== null
+      ? (input as { description?: unknown }).description
+      : undefined;
+
+  if (typeof description !== 'string') return false;
+
+  const text = description.trim();
+
+  return /^\d/.test(text) && !TICKET_TAG.test(text);
+}
+
+export const ALERT_QUIET_MS = 10 * 60_000;
+
+export type Alert = { title: string; message: string };
+
+export function failureAlert(input: {
+  title: string;
+  root: boolean;
+  error?: { type?: string; message?: string };
+}): Alert | undefined {
+  const type = input.error?.type ?? 'unknown';
+  const reason = (input.error?.message ?? '').split('\n')[0].slice(0, 200);
+
+  if (type === 'provider.auth') {
+    return {
+      title: 'FrogBot: provider sign-in failed',
+      message: `"${input.title}" stopped: ${reason}. Sign in again (for Bedrock, aws sso login), then tell it to continue.`,
+    };
+  }
+
+  if (!input.root) return undefined;
+
+  return {
+    title: 'FrogBot: turn failed',
+    message: `"${input.title}" stopped (${type}): ${reason}`,
+  };
+}
+
+export function createAlerts(quietMs = ALERT_QUIET_MS) {
+  const sent = new Map<string, number>();
+
+  return (alert: Alert, now: number) => {
+    const last = sent.get(alert.title);
+
+    if (last !== undefined && now - last < quietMs) return false;
+
+    sent.set(alert.title, now);
+
+    return true;
+  };
+}
+
+export function notification(alert: Alert): [string, string[]] {
+  return [
+    'osascript',
+    [
+      '-e',
+      'on run argv',
+      '-e',
+      'display notification (item 2 of argv) with title (item 1 of argv)',
+      '-e',
+      'end run',
+      alert.title,
+      alert.message,
+    ],
+  ];
 }

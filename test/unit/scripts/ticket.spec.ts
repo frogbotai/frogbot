@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import { affectedRuns } from '../../../scripts/lib/affected.mjs';
+import {
+  affectedRuns,
+  docsOnly,
+  landGates,
+  markdownSpecs,
+} from '../../../scripts/lib/affected.mjs';
 import {
   branchName,
   expandBraces,
   formatTable,
   hasTesterRow,
+  keyOfWorktree,
   landLevel,
   lanes,
   ledgerLine,
@@ -21,6 +27,7 @@ import {
   statusRow,
   tail,
   ticketGit,
+  ticketKeyOf,
   ticketOfBranch,
   tierOf,
   worktreePath,
@@ -51,6 +58,25 @@ describe('parseArgs', () => {
     expect(parseArgs(['next'])).toEqual({ command: 'next' });
   });
 
+  it('reads a part key, in either case', () => {
+    expect(parseArgs(['land', '210B'])).toEqual({ command: 'land', ticket: 210, part: 'b' });
+    expect(parseArgs(['new', '212b'])).toEqual({
+      command: 'new',
+      ticket: 212,
+      part: 'b',
+      type: 'feat',
+    });
+  });
+
+  it('reads stats and found', () => {
+    expect(parseArgs(['stats', '--batch', '27'])).toEqual({ command: 'stats', batch: 27 });
+    expect(parseArgs(['found', 'bug · land · text', '--source', 'x.md'])).toEqual({
+      command: 'found',
+      text: 'bug · land · text',
+      source: 'x.md',
+    });
+  });
+
   it('defaults the branch type to feat', () => {
     expect(parseArgs(['new', '999'])).toEqual({ command: 'new', ticket: 999, type: 'feat' });
   });
@@ -66,6 +92,9 @@ describe('parseArgs', () => {
     [['next', '5'], 'next takes no arguments'],
     [['status', '--batch', 'soon'], '--batch "soon" is not a batch'],
     [['status', '--all'], 'unknown argument "--all"'],
+    [['land', '210bc'], '"210bc" is not a ticket number'],
+    [['found'], 'found needs one quoted finding'],
+    [['stats', '27'], 'stats takes no arguments'],
   ])('rejects %j', (argv, error) => {
     expect(parseArgs(argv).error).toContain(error);
   });
@@ -252,12 +281,30 @@ describe('naming', () => {
     expect(worktreePath('/code/frogbot/frogbot', 999)).toBe('/code/frogbot/frogbot-ticket999');
   });
 
+  it('names a part with its letter', () => {
+    const key = ticketKeyOf({ ticket: 210, part: 'b' });
+
+    expect(branchName({ type: 'feat', ticket: key, slug: 'kinds' })).toBe('feat/ticket-210b-kinds');
+    expect(worktreePath('/code/frogbot/frogbot', key)).toBe('/code/frogbot/frogbot-ticket210b');
+    expect(ticketKeyOf({ ticket: 210 })).toBe('210');
+  });
+
+  it.each([
+    [{ path: '/c/frogbot-ticket210b', branch: 'feat/ticket-210b-kinds' }, '210b'],
+    [{ path: '/c/frogbot-ticket210', branch: 'feat/ticket-210-kinds' }, '210'],
+    [{ path: '/c/elsewhere', branch: 'feat/ticket-212B-bulk' }, '212b'],
+    [{ path: '/c/frogbot', branch: 'main' }, null],
+  ])('%j has key %s', (tree, key) => {
+    expect(keyOfWorktree(tree)).toBe(key);
+  });
+
   it.each([
     ['feat/ticket-218-ticket-cli', 218],
     ['feat/ticket125-connections', 125],
     ['fix/ticket-82', 82],
     ['main', null],
     ['feat/ticketing-5', null],
+    ['feat/ticket-210b-kinds', 210],
   ])('%s belongs to ticket %s', (branch, ticket) => {
     expect(ticketOfBranch(branch)).toBe(ticket);
   });
@@ -421,6 +468,55 @@ describe('ledger', () => {
   it('records int when the int run ran', () => {
     expect(landLevel(['check --full', 'test:unit', 'test:ui'])).toBe('unit');
     expect(landLevel(['check --full', 'test:unit', 'test:ui', 'test:int:sqlite'])).toBe('int');
+  });
+
+  it('records typecheck when no full unit run ran', () => {
+    expect(landLevel(['check --full'])).toBe('typecheck');
+    expect(landLevel(['check --full', 'test:unit test/unit/a.spec.ts'])).toBe('typecheck');
+  });
+});
+
+describe('landGates', () => {
+  const base = ['check --full', 'test:unit', 'test:ui'];
+  const specs = [
+    { file: 'test/unit/docs.spec.ts', text: "readFileSync('docs/rich-text/views.mdx')" },
+    { file: 'test/unit/plain.spec.ts', text: 'expect(1).toBe(1)' },
+    { file: 'test/unit/gateway/readme.spec.ts', text: "'README.md'" },
+    { file: 'test/ui/page.spec.tsx', text: "'page.mdx'" },
+  ];
+
+  it.each([
+    [['README.md'], true],
+    [['docs/fields/ai.mdx', 'packages/ui/README.md'], true],
+    [['docs/fields/ai.mdx', 'scripts/ticket.mjs'], false],
+    [[], false],
+  ])('%j is docs only: %s', (files, expected) => {
+    expect(docsOnly(files)).toBe(expected);
+  });
+
+  it('finds the unit specs that read Markdown', () => {
+    expect(markdownSpecs(specs)).toEqual(['test/unit/docs.spec.ts']);
+  });
+
+  it('skips test:unit, test:ui and the affected runs for a docs-only diff', () => {
+    expect(landGates({ base, files: ['packages/ui/README.md'], specs: [] })).toEqual([
+      'check --full',
+    ]);
+  });
+
+  it('still runs the unit specs that read Markdown', () => {
+    expect(landGates({ base, files: ['docs/rich-text/views.mdx'], specs })).toEqual([
+      'check --full',
+      'test:unit test/unit/docs.spec.ts',
+    ]);
+  });
+
+  it('runs every gate when code changed', () => {
+    expect(landGates({ base, files: ['README.md', 'packages/ui/a.tsx'], specs })).toEqual([
+      ...base,
+      'test:int:sqlite',
+      'test:browser',
+    ]);
   });
 });
 

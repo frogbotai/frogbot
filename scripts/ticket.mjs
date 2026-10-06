@@ -14,8 +14,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkCommitMessage, TYPES } from './commit-msg.mjs';
-import { affectedRuns } from './lib/affected.mjs';
+import { docsOnly, landGates } from './lib/affected.mjs';
 import { recordDecisions } from './lib/decisions.mjs';
+import { flakyRetry } from './lib/flaky.mjs';
+import { appendFinding } from './lib/found.mjs';
+import { readSessions, statsRows, summarize } from './lib/stats.mjs';
 
 export const FULL_TIER = [
   '**/migrations/**',
@@ -46,7 +49,7 @@ const MAIN = 'main';
 const DEFAULT_TYPE = 'feat';
 
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | next | decisions';
+  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | stats [--batch <n>] | found "<kind> · <area> · <text>" [--source <path>] | next | decisions';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -58,9 +61,11 @@ const BATCH = /^(?:\d+|none|deferred)$/;
 
 const FOLDER = /^ticket(\d+)_(.+)$/;
 
-const BRANCH_TICKET = /(?:^|\/)ticket-?(\d+)(?=-|$)/;
+const TICKET_KEY = /^(\d+)([a-z])?$/i;
 
-const WORKTREE_TICKET = /frogbot-ticket(\d+)$/;
+const BRANCH_TICKET = /(?:^|\/)ticket-?(\d+)([a-z])?(?=-|$)/i;
+
+const WORKTREE_TICKET = /frogbot-ticket(\d+)([a-z])?$/i;
 
 const REFLOG_MERGE = /^([0-9a-f]+) merge (\S+):/;
 
@@ -75,7 +80,9 @@ export function parseArgs(argv) {
 
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index];
-    const flag = { '--type': 'type', '-m': 'message', '--batch': 'batch' }[arg];
+    const flag = { '--type': 'type', '-m': 'message', '--batch': 'batch', '--source': 'source' }[
+      arg
+    ];
 
     if (!flag) {
       if (arg.startsWith('-')) return { error: `unknown argument "${arg}"` };
@@ -95,6 +102,8 @@ export function parseArgs(argv) {
     new: { ticket: true, flags: ['type'] },
     land: { ticket: true, flags: ['message'] },
     status: { ticket: false, flags: ['batch'] },
+    stats: { ticket: false, flags: ['batch'] },
+    found: { ticket: false, text: true, flags: ['source'] },
     next: { ticket: false, flags: [] },
     decisions: { ticket: false, flags: [] },
   }[command];
@@ -107,19 +116,27 @@ export function parseArgs(argv) {
 
   if (extra) return { error: `${command} takes no --${extra}` };
 
-  if (positional.length !== (allowed.ticket ? 1 : 0)) {
+  if (positional.length !== (allowed.ticket || allowed.text ? 1 : 0)) {
     return {
       error: allowed.ticket
         ? `${command} needs one ticket number`
-        : `${command} takes no arguments`,
+        : allowed.text
+          ? `${command} needs one quoted finding`
+          : `${command} takes no arguments`,
     };
   }
 
   if (allowed.ticket) {
-    options.ticket = number(positional[0]);
+    const key = TICKET_KEY.exec(positional[0]);
 
-    if (options.ticket === null) return { error: `"${positional[0]}" is not a ticket number` };
+    if (!key) return { error: `"${positional[0]}" is not a ticket number` };
+
+    options.ticket = Number(key[1]);
+
+    if (key[2]) options.part = key[2].toLowerCase();
   }
+
+  if (allowed.text) options.text = positional[0];
 
   if (command === 'new') {
     options.type ??= DEFAULT_TYPE;
@@ -338,6 +355,18 @@ export function ticketOfWorktree({ path: dir, branch }) {
   return number(WORKTREE_TICKET.exec(dir)?.[1]) ?? ticketOfBranch(branch);
 }
 
+export function ticketKeyOf({ ticket, part }) {
+  return `${ticket}${part ?? ''}`;
+}
+
+function keyOf(match) {
+  return match ? ticketKeyOf({ ticket: Number(match[1]), part: match[2]?.toLowerCase() }) : null;
+}
+
+export function keyOfWorktree({ path: dir, branch }) {
+  return keyOf(WORKTREE_TICKET.exec(dir)) ?? keyOf(BRANCH_TICKET.exec(branch ?? ''));
+}
+
 export function nextNumber({ folders, branches, worktrees }) {
   const numbers = [
     ...folders.map((folder) => number(FOLDER.exec(folder)?.[1])),
@@ -454,7 +483,9 @@ export function hasTesterRow(rows, { ticket, patchId, worker }) {
 }
 
 export function landLevel(gates) {
-  return gates.includes('test:int:sqlite') ? 'int' : 'unit';
+  if (gates.includes('test:int:sqlite')) return 'int';
+
+  return gates.includes('test:unit') ? 'unit' : 'typecheck';
 }
 
 export function tail(output, count = TAIL_LINES) {
@@ -650,7 +681,7 @@ function commandNext(main) {
   );
 }
 
-function commandStatus(main, options) {
+function batchTickets(main, options) {
   const tickets = folders(main)
     .map((folder) => readTicket(main, folder))
     .filter(({ header }) => header);
@@ -674,6 +705,12 @@ function commandStatus(main, options) {
     .sort((a, b) => a.ticket - b.ticket);
 
   if (selected.length === 0) refuse(`no ticket has Batch: ${batch}`);
+
+  return selected;
+}
+
+function commandStatus(main, options) {
+  const selected = batchTickets(main, options);
 
   const state = {
     branches: branches(main),
@@ -718,10 +755,36 @@ export function commandDecisions(main, { date = new Date().toLocaleDateString('e
   console.log(messages.join('\n'));
 }
 
-function commandNew(main, { ticket, type }) {
+function commandStats(main, options) {
+  const tickets = new Set(batchTickets(main, options).map(({ ticket }) => ticket));
+  const data = process.env.XDG_DATA_HOME || path.join(process.env.HOME, '.local', 'share');
+  const file = path.join(data, 'opencode', 'opencode.db');
+
+  if (!existsSync(file)) refuse(`no OpenCode database at ${file}`);
+
+  const { sessions, messages } = readSessions(file, { main, tickets });
+  const summary = summarize({ sessions, messages, ledger: readLedger(main), tickets });
+
+  console.log(formatTable(statsRows(summary)).join('\n'));
+}
+
+function commandFound(main, { text, source }) {
+  const idea = path.join(main, '.idea');
+  const { line } = appendFinding({
+    file: path.join(idea, 'found.md'),
+    archive: path.join(idea, 'archive', 'found.md'),
+    text,
+    source,
+  });
+
+  console.log(line);
+}
+
+function commandNew(main, { ticket, part, type }) {
   const { folder } = findTicket(main, ticket);
-  const branch = branchName({ type, ticket, slug: slugOf(folder) });
-  const dir = worktreePath(main, ticket);
+  const key = ticketKeyOf({ ticket, part });
+  const branch = branchName({ type, ticket: key, slug: slugOf(folder) });
+  const dir = worktreePath(main, key);
 
   if (git(main, ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).ok) {
     refuse(`branch ${branch} already exists`);
@@ -735,7 +798,7 @@ function commandNew(main, { ticket, type }) {
 
   console.log(`worktree ${dir} on ${branch}`);
 
-  const log = openLog(main, String(ticket));
+  const log = openLog(main, key);
 
   for (const [label, args] of [
     ['pnpm install', ['install']],
@@ -750,11 +813,19 @@ function commandNew(main, { ticket, type }) {
   }
 }
 
-function commandLand(main, { ticket, message }) {
-  const found = findTicket(main, ticket);
-  const tree = worktrees(main).find((candidate) => ticketOfWorktree(candidate) === ticket);
+function markdownReaders(dir) {
+  return lines(gitOut(dir, ['ls-files', 'test/unit'])).map((file) => ({
+    file,
+    text: readFileSync(path.join(dir, file), 'utf8'),
+  }));
+}
 
-  if (!tree) refuse(`no worktree for ticket ${ticket}; run pnpm ticket new ${ticket}`);
+function commandLand(main, { ticket, part, message }) {
+  const found = findTicket(main, ticket);
+  const key = ticketKeyOf({ ticket, part });
+  const tree = worktrees(main).find((candidate) => keyOfWorktree(candidate) === key);
+
+  if (!tree) refuse(`no worktree for ticket ${key}; run pnpm ticket new ${key}`);
 
   const { path: dir, branch } = tree;
 
@@ -801,20 +872,43 @@ function commandLand(main, { ticket, message }) {
   const id = patchId(dir);
 
   if (tier === 'full' && TESTER_CHECK) {
-    if (!hasTesterRow(readLedger(main), { ticket, patchId: id, worker: LAND })) {
+    if (!hasTesterRow(readLedger(main), { ticket: key, patchId: id, worker: LAND })) {
       refuse(`full tier: no tester row in .idea/ledger.tsv for patch-id ${id}`);
     }
   } else if (tier === 'full') console.log('full tier: tester check off until ticket 236');
 
-  const gates = [...BASE_GATES, ...affectedRuns(files)];
-  const log = openLog(main, String(ticket));
+  const gates = landGates({
+    base: BASE_GATES,
+    files,
+    specs: docsOnly(files) ? markdownReaders(dir) : [],
+  });
+  const log = openLog(main, key);
+
+  if (docsOnly(files)) console.log('docs only: test:unit and test:ui skipped');
 
   for (const gate of gates) {
-    const result = step(log, `pnpm ${gate}`, 'pnpm', gate.split(' '), dir);
+    let result = step(log, `pnpm ${gate}`, 'pnpm', gate.split(' '), dir);
+    const retry = !result.ok && gate === 'test:browser' && flakyRetry(result.output);
+
+    if (retry) {
+      const known = retry.tests.map(({ test, finding }) => `${test} (${finding})`).join(', ');
+
+      result = step(log, `pnpm ${gate} retry`, 'pnpm', [gate, ...retry.args], dir);
+
+      if (result.ok) {
+        appendLedger(main, {
+          ticket: key,
+          patchId: id,
+          level: 'flaky',
+          evidence: `pnpm ${gate}: ${known} failed, then passed on retry`,
+          verifier: LAND,
+        });
+      }
+    }
 
     if (!result.ok) {
       appendLedger(main, {
-        ticket,
+        ticket: key,
         patchId: id,
         level: 'failed',
         evidence: `pnpm ${gate}`,
@@ -839,19 +933,21 @@ function commandLand(main, { ticket, message }) {
     }
   }
 
-  appendLedger(main, {
-    ticket,
-    patchId: patchId(dir),
-    level: landLevel(gates),
-    evidence: gates.map((gate) => `pnpm ${gate}`).join(', '),
-    verifier: LAND,
-  });
+  const landed = patchId(dir);
 
   if (gitOut(main, ['rev-parse', MAIN]) !== start) refuse(`${MAIN} moved; run land again`);
 
   const merged = git(main, ['merge', '--ff-only', '--quiet', branch]);
 
   if (!merged.ok) refuse(`git merge --ff-only refused; ${MAIN} untouched:\n${merged.err}`);
+
+  appendLedger(main, {
+    ticket: key,
+    patchId: landed,
+    level: landLevel(gates),
+    evidence: gates.map((gate) => `pnpm ${gate}`).join(', '),
+    verifier: LAND,
+  });
 
   console.log(`${MAIN} ${gitOut(main, ['log', '-1', '--format=%h %s', MAIN])}`);
   console.log(`git worktree remove ${dir} && git branch -d ${branch}`);
@@ -871,6 +967,8 @@ function main() {
       new: commandNew,
       land: commandLand,
       status: commandStatus,
+      stats: commandStats,
+      found: commandFound,
       next: commandNext,
       decisions: commandDecisions,
     };
