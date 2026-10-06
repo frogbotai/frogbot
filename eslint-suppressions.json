@@ -1,39 +1,4 @@
 {
-  "packages/frogbot/src/config/sanitize.ts": {
-    "no-console": {
-      "count": 3
-    }
-  },
-  "packages/frogbot/src/fields/baseFields/ai/sanitize.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "packages/gateway/src/hooks.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "packages/gateway/src/observability/logger.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "packages/gateway/src/observability/setup.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "packages/gateway/src/routes/chatCompletions/translators/toModelMessages/system.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "packages/gateway/src/routes/messages/translators/toModelMessages/assistant.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
   "packages/next/src/fields/AI/index.client.tsx": {
     "jsx-a11y/no-noninteractive-tabindex": {
       "count": 1

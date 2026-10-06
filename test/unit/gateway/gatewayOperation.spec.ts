@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createGateway, type Gateway } from '../../../packages/gateway/src/gateway.js';
 import { type Hooks } from '../../../packages/gateway/src/hooks.js';
+import type { GatewayLogger } from '../../../packages/gateway/src/observability/logger.js';
 
 const okGenerate = () =>
   vi.fn(() =>
@@ -25,8 +26,8 @@ const okGenerate = () =>
     }),
   );
 
-function makeGateway(hooks: Hooks, doGenerate = okGenerate()): Gateway {
-  const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } }, hooks });
+function makeGateway(hooks: Hooks, doGenerate = okGenerate(), logger?: GatewayLogger): Gateway {
+  const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } }, hooks, logger });
   gw.registry.openai = {
     languageModel: () => new MockLanguageModelV4({ doGenerate }),
   } as unknown as typeof gw.registry.openai;
@@ -130,11 +131,18 @@ describe('gateway.operation', () => {
   });
 
   it('finish is idempotent, explicit values override, and hook errors are isolated', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const logger = {
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
+    };
     const afterOperation = vi.fn(() => {
       throw new Error('hook boom');
     });
-    const gw = makeGateway({ afterOperation: [afterOperation] });
+    const gw = makeGateway({ afterOperation: [afterOperation] }, okGenerate(), logger);
     const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
     const explicitError = new Error('explicit failure');
 
@@ -156,7 +164,14 @@ describe('gateway.operation', () => {
         error: explicitError,
       }),
     );
-    consoleError.mockRestore();
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        operation: 'chat.completions',
+        requestId: op.requestId,
+        error: expect.objectContaining({ message: 'hook boom' }),
+      }),
+      'hook-error',
+    );
   });
 
   it('records a doGenerate error via afterError and passes it to afterOperation', async () => {

@@ -25,6 +25,7 @@ import {
   withTranscriptionModelHooks,
   withVideoModelHooks,
 } from './modelHooks.js';
+import { resolveLogger } from './observability/logger.js';
 import { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
 import { mergeHooks } from './providers/middleware.js';
 import {
@@ -168,6 +169,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
   const registry = buildProviderRegistry(validated.providers);
   const catalog = validated.catalog ?? DEFAULT_MODEL_CATALOG;
   const allowlists = buildProviderModelAllowlists(validated.providers);
+  const logger = resolveLogger(validated.logger);
 
   // Shared modality resolvers — one per operation kind, closed over `registry`.
   // Both the public `gateway.xModel(id)` getters and `gateway.operation(...)`
@@ -189,6 +191,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'chat.completions',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     embedModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayEmbeddingModel => {
@@ -205,6 +208,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'embeddings',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     imageModel: (id: string, hooks?: Hooks, base?: OperationBase): ImageModelV4 => {
@@ -221,6 +225,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'images',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     videoModel: (id: string, hooks?: Hooks, base?: OperationBase): Experimental_VideoModelV4 => {
@@ -242,6 +247,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'videos',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     speechModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewaySpeechModel => {
@@ -263,6 +269,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'speech',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     transcribeModel: (
@@ -288,6 +295,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'transcriptions',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     rerankModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayRerankingModel => {
@@ -309,6 +317,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'rerank',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
     evaluationModel: (
@@ -336,6 +345,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         operation: 'evaluate',
         provider: resolved.providerName,
         base,
+        logger,
       });
     },
   };
@@ -350,7 +360,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
     upstreamTimeoutMs: validated.upstreamTimeoutMs,
     tracing: validated.tracing,
     tracer: validated.tracer,
-    logger: validated.logger,
+    logger,
     signalLevel: validated.signalLevel,
   });
 
@@ -435,7 +445,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
               durationMs: Date.now() - base.startedAt,
               error: result?.error ?? accError,
             },
-            { isolate: true },
+            { isolate: true, logger },
           );
         },
         chatModel: () => resolvers.chatModel(opts.model, hooks, base),

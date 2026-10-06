@@ -8,6 +8,7 @@
 
 import type { ModelMessage, ToolModelMessage, ToolResultPart } from '@ai-sdk/provider-utils';
 
+import { createLogger, type GatewayLogger } from '../../../../observability/logger.js';
 import type { OpenAIMessage, OpenAIToolMessage } from '../types.js';
 import { parseAssistantMessage } from './assistant.js';
 import { parseSystemMessages, parseUnknownMessage } from './system.js';
@@ -57,7 +58,10 @@ function rememberToolNames(msg: OpenAIMessage, toolNames: Map<string, string>): 
   }
 }
 
-export function toModelMessages(messages: OpenAIMessage[]): ModelMessage[] {
+export function toModelMessages(
+  messages: OpenAIMessage[],
+  logger: GatewayLogger = createLogger(),
+): ModelMessage[] {
   const out: ModelMessage[] = [];
   const toolNames = new Map<string, string>();
 
@@ -91,7 +95,7 @@ export function toModelMessages(messages: OpenAIMessage[]): ModelMessage[] {
       }
 
       default: {
-        out.push(parseUnknownMessage(msg));
+        out.push(parseUnknownMessage(msg, logger));
         break;
       }
     }

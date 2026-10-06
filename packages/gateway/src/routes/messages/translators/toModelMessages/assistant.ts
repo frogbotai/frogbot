@@ -5,6 +5,7 @@ import type {
   ToolCallPart,
 } from '@ai-sdk/provider-utils';
 
+import type { GatewayLogger } from '../../../../observability/logger.js';
 import type { AnthropicAssistantMessage } from '../types.js';
 
 /**
@@ -17,6 +18,7 @@ import type { AnthropicAssistantMessage } from '../types.js';
 export function parseAssistantMessage(
   msg: AnthropicAssistantMessage,
   messageIndex: number,
+  logger: GatewayLogger,
 ): AssistantModelMessage {
   if (typeof msg.content === 'string') {
     return { role: 'assistant', content: msg.content };
@@ -76,8 +78,9 @@ export function parseAssistantMessage(
         // Reachable at runtime for forward-compat unknown block types the
         // schema lets through.
         const unknown = block as unknown as { type: string };
-        console.warn(
-          `[gateway] unsupported assistant content block type "${unknown.type}" in messages[${messageIndex}] — skipped`,
+        logger.warn(
+          { blockType: unknown.type, messageIndex },
+          `unsupported assistant content block type "${unknown.type}" in messages[${messageIndex}] — skipped`,
         );
         break;
       }

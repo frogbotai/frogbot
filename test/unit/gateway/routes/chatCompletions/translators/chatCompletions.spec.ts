@@ -20,12 +20,22 @@
 // `developer` role mapping). These exercise the stage-4.5 parser additions.
 // ---------------------------------------------------------------------------
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
+import type { GatewayLogger } from '../../../../../../packages/gateway/src/observability/logger.js';
 import {
   type OpenAIMessage,
   toModelMessages,
 } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/index.js';
+
+const makeLogger = (): GatewayLogger => ({
+  trace: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+});
 
 // ---------------------------------------------------------------------------
 // system messages
@@ -985,16 +995,23 @@ describe('array-of-text-parts content (G8)', () => {
 
 describe('compatibility tolerance', () => {
   test('unknown role is forwarded as system message with [role=X] prefix', () => {
-    const result = toModelMessages([
-      { role: 'function', content: '{"result":42}' } as OpenAIMessage,
-    ]);
+    const logger = makeLogger();
+    const result = toModelMessages(
+      [{ role: 'function', content: '{"result":42}' } as OpenAIMessage],
+      logger,
+    );
     expect(result).toEqual([{ role: 'system', content: '[role=function] {"result":42}' }]);
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
+      { role: 'function' },
+      'unknown message role "function" — forwarding as system',
+    );
   });
 
   test('vendor-specific role with non-string content is JSON-serialised', () => {
-    const result = toModelMessages([
-      { role: 'thought', content: null } as unknown as OpenAIMessage,
-    ]);
+    const result = toModelMessages(
+      [{ role: 'thought', content: null } as unknown as OpenAIMessage],
+      makeLogger(),
+    );
     expect(result[0]).toEqual({
       role: 'system',
       content: '[role=thought] ""',

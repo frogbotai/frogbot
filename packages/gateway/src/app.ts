@@ -26,12 +26,11 @@ import { createAiSdkTelemetry } from './observability/aiSdkTelemetry.js';
 import { createGenAiHooks } from './observability/genAi.js';
 import {
   createAiSdkWarningLogger,
-  createLogger,
   createLoggingHooks,
   type GatewayLogger,
-  isLoggerInstance,
   logGatewayError,
   type LoggerOptions,
+  resolveLogger,
 } from './observability/logger.js';
 import type { SignalLevelInput } from './observability/signalLevel.js';
 import { createTracingHooks, type TracingOptions } from './observability/tracing.js';
@@ -104,7 +103,7 @@ const normalizeBasePath = (basePath: string | undefined): string => {
 export function createApp(ctx: AppContext) {
   const app = new Hono();
   const signalLevel = ctx.tracing?.signalLevel ?? ctx.signalLevel;
-  const logger = isLoggerInstance(ctx.logger) ? ctx.logger : createLogger(ctx.logger);
+  const logger = resolveLogger(ctx.logger);
   const tracingHooks = createTracingHooks({
     endpoint: ctx.tracing?.endpoint,
     signalLevel,
@@ -151,6 +150,7 @@ export function createApp(ctx: AppContext) {
     models: ctx.catalog,
     allowlists: ctx.allowlists,
     hooks,
+    logger,
     maxBodyBytes: ctx.maxBodyBytes,
     upstreamTimeoutMs: ctx.upstreamTimeoutMs,
   };

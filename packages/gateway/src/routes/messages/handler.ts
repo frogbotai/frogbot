@@ -33,6 +33,7 @@ import {
   runHooks,
 } from '../../hooks.js';
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
@@ -70,6 +71,8 @@ import { toAISDKToolChoice, toAISDKTools } from './translators/tools.js';
 export type MessagesRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
   telemetry?: AiSdkTelemetry;
@@ -79,6 +82,7 @@ const operation = 'messages' as const;
 
 export function messagesRoute(ctx: MessagesRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/messages', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -140,6 +144,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       const messages = toModelMessages({
         messages: body.messages as AnthropicMessage[],
         system: body.system as AnthropicSystemParam | undefined,
+        logger,
       });
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
@@ -251,6 +256,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           hooks,
           startedAt,
           phase,
+          logger,
         });
         lifecycle = streamLifecycle;
         const result = otelContext.with(activeContext, () =>
@@ -359,7 +365,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           response: result.response,
           warnings: result.warnings,
         },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       const reasoning = toAnthropicReasoning(result.finalStep.reasoning);
@@ -414,7 +420,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
       throw err;
@@ -443,7 +449,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
             durationMs: Date.now() - startedAt,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }

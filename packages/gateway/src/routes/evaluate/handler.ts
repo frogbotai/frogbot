@@ -14,6 +14,7 @@ import {
   runHooks,
 } from '../../hooks.js';
 import { directUsage } from '../../modelHooks.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
   type ProviderModelPolicy,
@@ -31,6 +32,8 @@ import { parseEvaluateRequest } from './schema.js';
 export type EvaluateRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
 };
@@ -39,6 +42,7 @@ const operation = 'evaluate' as const;
 
 export function evaluateRoute(ctx: EvaluateRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/evaluate', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -119,7 +123,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
       await runHooks(
         hooks.afterUpstream,
         { ...base, phase, response: result.response, usage },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       const reportedModelId = result.response.modelId;
@@ -149,7 +153,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
 
@@ -165,7 +169,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
             usage,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }

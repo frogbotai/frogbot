@@ -179,17 +179,21 @@ describe('buildGatewayConfig', () => {
   });
 });
 
+function makeLogger(): Logger {
+  return {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  };
+}
+
 describe('createAIGateway', () => {
   it('preserves structured fields when gateway errors reach the host logger', async () => {
-    const warn = vi.fn();
-    const logger: Logger = {
-      trace: vi.fn(),
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn,
-      error: vi.fn(),
-      fatal: vi.fn(),
-    };
+    const logger = makeLogger();
+    const warn = logger.warn;
     const gw = createAIGateway(makeAIConfig({ openai: { apiKey: 'sk-test' } }), logger);
 
     const response = await gw.handler(
@@ -205,6 +209,32 @@ describe('createAIGateway', () => {
       expect.objectContaining({ path: '/v1/responses', status: 400 }),
       'request-error',
     );
+  });
+
+  it('logs an isolated in-process hook failure to the host logger, not the console', async () => {
+    const logger = makeLogger();
+    const consoleError = vi.spyOn(console, 'error');
+    const config = makeAIConfig({ openai: { apiKey: 'sk-test' } });
+    config.hooks.afterOperation = [
+      () => {
+        throw new Error('hook boom');
+      },
+    ];
+    const gw = createAIGateway(config, logger);
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o' });
+
+    await op.finish();
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'chat.completions',
+        requestId: op.requestId,
+        error: expect.objectContaining({ message: 'hook boom' }),
+      }),
+      'hook-error',
+    );
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it('constructs with an omitted API key and the SDK environment fallback', () => {

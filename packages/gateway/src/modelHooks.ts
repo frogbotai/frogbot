@@ -18,6 +18,7 @@ import {
   type OperationBase,
   runHooks,
 } from './hooks.js';
+import { type GatewayLogger, resolveLogger } from './observability/logger.js';
 import { otelContextKey } from './observability/tracing.js';
 import { getProviderHooks, mergeHooks } from './providers/middleware.js';
 import type {
@@ -40,6 +41,8 @@ type ModelHookOptions = {
    * minting a fresh requestId + empty context per call.
    */
   base?: OperationBase;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
 };
 
 type CallOptions = {
@@ -55,6 +58,7 @@ type CallResult = {
 
 function createModelHooks(options: ModelHookOptions) {
   const hooks = mergeHooks(getProviderHooks(options.provider), options.hooks ?? {});
+  const logger = resolveLogger(options.logger);
   let base: OperationBase;
   if (options.base) {
     base = options.base;
@@ -142,7 +146,7 @@ function createModelHooks(options: ModelHookOptions) {
     await runHooks(
       hooks.afterUpstream,
       { ...base, phase: 'afterUpstream', ...fields },
-      { isolate: true },
+      { isolate: true, logger },
     );
   }
 
@@ -153,7 +157,7 @@ function createModelHooks(options: ModelHookOptions) {
     await runHooks(
       hooks.afterError,
       { ...base, phase: 'afterError', failedPhase, error },
-      { isolate: true },
+      { isolate: true, logger },
     );
   }
 

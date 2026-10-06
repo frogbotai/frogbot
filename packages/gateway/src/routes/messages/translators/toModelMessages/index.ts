@@ -29,6 +29,7 @@
 
 import type { ModelMessage } from '@ai-sdk/provider-utils';
 
+import { createLogger, type GatewayLogger } from '../../../../observability/logger.js';
 import type { AnthropicMessage, AnthropicSystemParam } from '../types.js';
 import { parseAssistantMessage } from './assistant.js';
 import { parseSystemParam } from './system.js';
@@ -44,8 +45,9 @@ import { parseUserMessage } from './user.js';
 export function toModelMessages(args: {
   messages: AnthropicMessage[];
   system?: AnthropicSystemParam | null;
+  logger?: GatewayLogger;
 }): ModelMessage[] {
-  const { messages, system } = args;
+  const { messages, system, logger = createLogger() } = args;
   const out: ModelMessage[] = [];
 
   out.push(...parseSystemParam(system));
@@ -71,7 +73,7 @@ export function toModelMessages(args: {
         }
       }
     }
-    out.push(parseAssistantMessage(msg, i));
+    out.push(parseAssistantMessage(msg, i, logger));
   }
 
   return out;

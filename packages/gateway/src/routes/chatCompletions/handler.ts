@@ -36,6 +36,7 @@ import {
   runHooks,
 } from '../../hooks.js';
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
@@ -76,6 +77,8 @@ import { toAISDKToolChoice, toAISDKTools } from './translators/tools.js';
 export type ChatCompletionsRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
   telemetry?: AiSdkTelemetry;
@@ -85,6 +88,7 @@ const operation = 'chat.completions' as const;
 
 export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/chat/completions', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -146,7 +150,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       // Translate OpenAI wire format → AI SDK format.
       rejectUnsupportedChatParams(body);
-      const messages = toModelMessages(body.messages as OpenAIMessage[]);
+      const messages = toModelMessages(body.messages as OpenAIMessage[], logger);
       const tools = toAISDKTools(body.tools as OpenAITool[] | null | undefined);
       const { toolChoice, activeTools } = toAISDKToolChoice(body.tool_choice);
       const output = toChatOutput(body.response_format);
@@ -231,6 +235,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
           hooks,
           startedAt,
           phase,
+          logger,
         });
         lifecycle = streamLifecycle;
         const result = otelContext.with(activeContext, () =>
@@ -342,7 +347,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
           response: result.response,
           warnings: result.warnings,
         },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       const reasoningDetails = extractReasoningDetails(result.finalStep?.reasoning);
@@ -380,7 +385,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
       throw err;
@@ -409,7 +414,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
             durationMs: Date.now() - startedAt,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }
