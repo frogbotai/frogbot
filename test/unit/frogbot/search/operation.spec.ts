@@ -177,7 +177,11 @@ describe('search operation boundaries', () => {
   it('rejects document-dependent filter access before native execution', async () => {
     const { collection, frogbot, payload, req, search } = searchFixture();
 
-    collection.fields.push({ name: 'tenant', type: 'text', access: { read: async () => true } });
+    collection.fields.push({
+      name: 'tenant',
+      type: 'text',
+      access: { read: () => Promise.resolve(true) },
+    });
 
     await expect(
       searchOperation(frogbot, payload, {
@@ -195,7 +199,7 @@ describe('search operation boundaries', () => {
   it('does not rank against a conditional searched-field access callback', async () => {
     const { collection, frogbot, payload, req, search } = searchFixture();
 
-    collection.fields[0].access = { read: async () => false };
+    collection.fields[0].access = { read: () => Promise.resolve(false) };
 
     await expect(
       searchOperation(frogbot, payload, {
@@ -338,7 +342,7 @@ describe('search hydration', () => {
     expect(find).not.toHaveBeenCalled();
   });
 
-  it.each([
+  it.each<[{ id: unknown; score: number }[], string]>([
     [
       [
         { id: 1, score: 0.5 },

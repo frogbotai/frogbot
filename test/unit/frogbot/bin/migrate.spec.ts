@@ -24,12 +24,14 @@ const mocks = vi.hoisted(() => ({
     migrateReset: vi.fn(async () => {}),
     migrateStatus: vi.fn(async () => {}),
   },
-  find: vi.fn(async () => ({ docs: [] })),
+  find: vi.fn((): Promise<{ docs: { batch: number }[] }> => Promise.resolve({ docs: [] })),
   init: vi.fn(async () => {}),
-  loadConfig: vi.fn(async () => ({
-    collections: [],
-    _internal: { payloadConfig: Promise.resolve({}) },
-  })),
+  loadConfig: vi.fn(() =>
+    Promise.resolve({
+      collections: [],
+      _internal: { payloadConfig: Promise.resolve({}) },
+    }),
+  ),
 }));
 
 vi.mock('payload', () => ({

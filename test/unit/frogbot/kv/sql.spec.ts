@@ -10,7 +10,7 @@ import type { DrizzleAdapter } from '@payloadcms/drizzle';
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Payload } from 'payload';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
 import { createSQLKV } from '../../../../packages/frogbot/src/kv/adapters/sql.js';
@@ -260,25 +260,25 @@ describe('SQL KV with local SQLite', () => {
           },
         },
       );
-      try {
-        await once(worker, 'message');
-        const released = once(worker, 'message');
-        worker.postMessage('release');
-        expect(await kv[operation]('key', 'winner', { ttl: 200 })).toBe(
-          operation === 'set' ? undefined : true,
-        );
-        await released;
-        const [{ remaining }] = await adapters[0].drizzle
-          .select({
-            remaining: sql<number>`(julianday(${table.expiresAt}) - julianday('now')) * 86400000`,
-          })
-          .from(table);
-        expect(remaining).toBeGreaterThan(100);
-        expect(remaining).toBeLessThanOrEqual(201);
-        expect(await kv.get('key')).toBe('winner');
-      } finally {
+      onTestFinished(async () => {
         await worker.terminate();
-      }
+      });
+
+      await once(worker, 'message');
+      const released = once(worker, 'message');
+      worker.postMessage('release');
+      expect(await kv[operation]('key', 'winner', { ttl: 200 })).toBe(
+        operation === 'set' ? undefined : true,
+      );
+      await released;
+      const [{ remaining }] = await adapters[0].drizzle
+        .select({
+          remaining: sql<number>`(julianday(${table.expiresAt}) - julianday('now')) * 86400000`,
+        })
+        .from(table);
+      expect(remaining).toBeGreaterThan(100);
+      expect(remaining).toBeLessThanOrEqual(201);
+      expect(await kv.get('key')).toBe('winner');
     },
   );
 });

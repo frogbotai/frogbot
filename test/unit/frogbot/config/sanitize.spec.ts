@@ -1,8 +1,11 @@
+import type * as PayloadModule from 'payload';
+import type { Job, Locale, Payload, PayloadRequest, TaskConfig } from 'payload';
 import { buildConfig as payloadBuildConfig, meOperation, MissingEditorProp } from 'payload';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { z } from 'zod';
 
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
+import type { AgentConfig, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
@@ -23,7 +26,7 @@ import {
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: Record<string, unknown>) =>
     Promise.resolve({ globals: [], ...config }),
   ),
@@ -31,6 +34,12 @@ vi.mock('payload', async (importOriginal) => ({
 }));
 
 const { sanitize } = await import('../../../../packages/frogbot/src/config/sanitize.js');
+
+const FAST = 'fast' as AgentModelId;
+const STT = 'stt' as AgentModelId;
+const EMBEDDINGS = 'embeddings' as AgentModelId;
+const INTERNAL_CHAT = 'internal/chat' as AgentModelId;
+const OPENAI_UNKNOWN = 'openai/unknown' as AgentModelId;
 
 const createEmail = definePiece({
   slug: 'mailer',
@@ -65,6 +74,29 @@ function makePayload(config: unknown) {
     kv: {},
     email: {},
   };
+}
+
+function runTask(task: TaskConfig | undefined, payload: Partial<Payload>) {
+  const handler = task?.handler;
+
+  assert(typeof handler === 'function', 'Expected a task handler');
+
+  const job: Job<string> = {
+    id: 1,
+    input: {},
+    taskStatus: {},
+    totalTried: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+
+  return handler({
+    input: {},
+    inlineTask: vi.fn(),
+    job,
+    req: { payload } as PayloadRequest,
+    tasks: {},
+  });
 }
 
 function emailWarnings(warn: ReturnType<typeof vi.fn>) {
@@ -967,7 +999,7 @@ describe('frogbot sanitize', () => {
     });
 
     it('gives localization.filterAvailableLocales req.frogbot', async () => {
-      const locales = [{ code: 'en', label: 'English' }];
+      const locales: Locale[] = [{ code: 'en', label: 'English' }];
       const filterAvailableLocales = vi.fn((args: RecordedArgs & { locales: typeof locales }) =>
         args.req.frogbot ? args.locales : [],
       );
@@ -1388,7 +1420,7 @@ describe('frogbot sanitize', () => {
     };
 
     expect(budget).toMatchObject({ type: 'number', min: 0, admin: money });
-    expect(budget && 'admin' in budget && budget.admin?.readOnly).toBeFalsy();
+    expect(budget).not.toHaveProperty('admin.readOnly', true);
     expect(budget).not.toHaveProperty('access');
     expect(spend).toMatchObject({ type: 'number', admin: { ...money, readOnly: true } });
   });
@@ -1429,7 +1461,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const task = payloadConfig.jobs?.tasks?.find(({ slug }) => slug === 'frogbot-reset-ai-budgets');
     const update = vi.fn();
-    await task?.handler({ req: { payload: { update } } });
+    await runTask(task, { update });
     expect(task?.schedule).toEqual([{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }]);
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1496,15 +1528,13 @@ describe('frogbot sanitize', () => {
 
   it('keeps repeated sanitization and codegen quiet when email is omitted', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    try {
-      sanitize(makeConfig());
-      sanitize(makeConfig());
-      sanitize(makeConfig(), { mode: 'codegen' });
+    onTestFinished(() => warn.mockRestore());
 
-      expect(warn).not.toHaveBeenCalled();
-    } finally {
-      warn.mockRestore();
-    }
+    sanitize(makeConfig());
+    sanitize(makeConfig());
+    sanitize(makeConfig(), { mode: 'codegen' });
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it.each([false, true])(
@@ -1820,13 +1850,12 @@ describe('frogbot sanitize', () => {
   it('attaches req.frogbot before Payload default collection access runs', async () => {
     const defaultRead = vi.fn(({ req }) => Boolean(req.frogbot));
 
-    vi.mocked(payloadBuildConfig).mockImplementationOnce(async (config) => {
-      config.collections[0].access = {
-        ...config.collections[0].access,
-        read: defaultRead,
-      };
+    vi.mocked(payloadBuildConfig).mockImplementationOnce((config) => {
+      const users = config.collections?.[0];
+      assert(users, 'Expected the users collection');
+      users.access = { ...users.access, read: defaultRead };
 
-      return { globals: [], ...config } as never;
+      return Promise.resolve({ globals: [], ...config } as never);
     });
 
     const result = sanitize(makeConfig());
@@ -1975,17 +2004,17 @@ describe('frogbot sanitize', () => {
     resetFrogBotCache();
     const previousPhase = process.env.NEXT_PHASE;
     process.env.NEXT_PHASE = 'phase-production-build';
-    try {
-      const result = sanitize(makeConfig());
-      const payloadConfig = await result._internal.payloadConfig;
-      const payload = makePayload(payloadConfig);
-
-      await payloadConfig.onInit?.(payload as never);
-
-      expect(emailWarnings(payload.logger.warn)).toHaveLength(0);
-    } finally {
+    onTestFinished(() => {
       process.env.NEXT_PHASE = previousPhase;
-    }
+    });
+
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+
+    await payloadConfig.onInit?.(payload as never);
+
+    expect(emailWarnings(payload.logger.warn)).toHaveLength(0);
   });
 
   it('recovers endpoint requests when lifecycle registration is missing', async () => {
@@ -2217,7 +2246,7 @@ describe('frogbot sanitize', () => {
   });
 
   it('defaults to the collections dashboard and the resolved chat collection views', async () => {
-    const { buildConfig } = await vi.importActual<typeof import('payload')>('payload');
+    const { buildConfig } = await vi.importActual<typeof PayloadModule>('payload');
 
     vi.mocked(payloadBuildConfig).mockImplementationOnce(buildConfig);
 
@@ -2228,7 +2257,9 @@ describe('frogbot sanitize', () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const chats = payloadConfig.collections.find(({ slug }) => slug === result.chat.chatsSlug);
+    assert(result.chat.enabled, 'Expected chat to be enabled');
+    const { chatsSlug } = result.chat;
+    const chats = payloadConfig.collections.find(({ slug }) => slug === chatsSlug);
 
     expect(payloadConfig.admin.components.views.dashboard).toBeUndefined();
     expect(payloadConfig.admin.dashboard.widgets).toContainEqual(
@@ -2237,10 +2268,10 @@ describe('frogbot sanitize', () => {
         slug: 'collections',
       }),
     );
-    expect(chats?.admin.components.views).toMatchObject({
+    expect(chats?.admin.components?.views).toMatchObject({
       edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
     });
-    expect(chats?.admin.components.views.list).toEqual({
+    expect(chats?.admin.components?.views?.list).toEqual({
       Component: '@frogbotai/next/views#DefaultListView',
     });
   });
@@ -2310,7 +2341,9 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const req = { payload: makePayload(payloadConfig), context: {} } as never;
 
-    const layout = await payloadConfig.admin.dashboard.defaultLayout({ req });
+    const { defaultLayout: runLayout } = payloadConfig.admin.dashboard;
+    assert(typeof runLayout === 'function', 'Expected a default layout function');
+    const layout = await runLayout({ req });
 
     expect(layout).toEqual([
       {
@@ -2342,7 +2375,9 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const req = { payload: makePayload(payloadConfig), context: {} } as never;
 
-    await expect(payloadConfig.admin.dashboard.defaultLayout({ req })).rejects.toBe(error);
+    const { defaultLayout: runLayout } = payloadConfig.admin.dashboard;
+    assert(typeof runLayout === 'function', 'Expected a default layout function');
+    await expect(runLayout({ req })).rejects.toBe(error);
     expect(defaultLayout).toHaveBeenCalledWith({ req });
   });
 
@@ -2358,11 +2393,12 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
 
+    assert(result.chat.enabled, 'Expected chat to be enabled');
     expect(result.chat.chatsSlug).toBe('conversations');
-    expect(chats?.admin.components.views).toMatchObject({
+    expect(chats?.admin.components?.views).toMatchObject({
       edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
     });
-    expect(chats?.admin.components.views.list).toEqual({
+    expect(chats?.admin.components?.views?.list).toEqual({
       Component: '@frogbotai/next/views#DefaultListView',
     });
   });
@@ -2392,10 +2428,10 @@ describe('frogbot sanitize', () => {
     const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
 
     expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboard);
-    expect(chats?.admin.components.views.list).toMatchObject({
+    expect(chats?.admin.components?.views?.list).toMatchObject({
       Component: '@frogbotai/next/views#CustomCollectionView',
     });
-    expect(chats?.admin.components.views.edit.root).toEqual(root);
+    expect(chats?.admin.components?.views?.edit?.root).toEqual(root);
   });
 
   it('preserves configured admin nav sections and items', async () => {
@@ -2420,15 +2456,11 @@ describe('frogbot sanitize', () => {
 
     expect(components.navItems).toEqual([{ label: 'Home', path: '/' }]);
     expect(components.navSections).toEqual(['./components/Section#Section']);
-    expect(payloadConfig.admin.components.afterBottomRail).toEqual([
-      './components/AfterBottom#AfterBottom',
-    ]);
-    expect(payloadConfig.admin.components.beforeBottomRail).toEqual([
-      './components/BeforeBottom#BeforeBottom',
-    ]);
-    expect(payloadConfig.admin.components.beforeSidebarClose).toEqual([
-      './components/BeforeClose#BeforeClose',
-    ]);
+    expect(payloadConfig.admin.components).toMatchObject({
+      afterBottomRail: ['./components/AfterBottom#AfterBottom'],
+      beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
+      beforeSidebarClose: ['./components/BeforeClose#BeforeClose'],
+    });
   });
 
   it('injects FrogBot branding defaults into the payload config', async () => {
@@ -2780,7 +2812,7 @@ describe('frogbot sanitize', () => {
           ai: {
             providers: { openai: true },
             routers: { fast: { model: 'openai/gpt-4o-mini' } },
-            defaultModel: 'fast',
+            defaultModel: FAST,
           },
         }),
       );
@@ -2851,7 +2883,7 @@ describe('frogbot sanitize', () => {
           ai: {
             providers: { openai: true },
             routers: { fast: { model: 'openai/gpt-5-nano' } },
-            smallModel: 'fast',
+            smallModel: FAST,
           },
         }),
       );
@@ -2954,7 +2986,7 @@ describe('frogbot sanitize', () => {
           ai: {
             providers: { openai: true },
             routers: { stt: { model: 'openai/gpt-4o-mini-transcribe' } },
-            transcriptionModel: 'stt',
+            transcriptionModel: STT,
           },
         }),
       );
@@ -3168,7 +3200,7 @@ describe('frogbot sanitize', () => {
       slug: 'support',
       model: 'openai/gpt-5.4-mini',
       instructions: 'Help the user',
-    };
+    } satisfies AgentConfig;
     const makeTool = (slug: string, overrides: Record<string, unknown> = {}) => ({
       slug,
       description: `Run ${slug}`,
@@ -3180,18 +3212,16 @@ describe('frogbot sanitize', () => {
       slug: 'channel',
       label: 'Channel',
       auth: z.object({ token: z.string() }),
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
       channel: {
         adapter: () => ({}) as never,
-        async identity() {
-          return null;
-        },
+        identity: () => Promise.resolve(null),
       },
     });
 
     it('normalizes a string model to the default and only option', () => {
-      const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
+      const result = sanitize(makeConfig({ ai, agents: [agent] }));
 
       expect(result.agents?.[0]?.model).toEqual({
         default: 'openai/gpt-5.4-mini',
@@ -3293,7 +3323,7 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai,
         agents: [{ ...agent, model: { default: agent.model, options: [] } }],
-      } as never);
+      });
 
       const result = sanitize(config);
 
@@ -3372,7 +3402,7 @@ describe('frogbot sanitize', () => {
             unknown: { model: 'internal/missing' },
           },
         },
-        agents: [{ ...agent, model: { default: 'internal/chat', options: '*' } }],
+        agents: [{ ...agent, model: { default: INTERNAL_CHAT, options: '*' } }],
       });
 
       const result = sanitize(config);
@@ -3386,7 +3416,7 @@ describe('frogbot sanitize', () => {
           providers: { openai: { apiKey: 'test', models: ['gpt-5.4-mini'] } },
           routers: { fast: { model: agent.model } },
         },
-        agents: [{ ...agent, model: { default: 'fast', options: '*' } }],
+        agents: [{ ...agent, model: { default: FAST, options: '*' } }],
       });
 
       const result = sanitize(config);
@@ -3405,7 +3435,7 @@ describe('frogbot sanitize', () => {
             ...agent,
             model: {
               default: agent.model,
-              options: ['fast', agent.model, 'fast', 'openai/gpt-4o'],
+              options: [FAST, agent.model, FAST, 'openai/gpt-4o'],
             },
           },
         ],
@@ -3510,7 +3540,7 @@ describe('frogbot sanitize', () => {
           },
           routers: { other: { model: 'internal/other' } },
         },
-        agents: [{ ...agent, model: { default: 'internal/chat', options: '*' } }],
+        agents: [{ ...agent, model: { default: INTERNAL_CHAT, options: '*' } }],
       });
 
       const result = sanitize(config);
@@ -3546,7 +3576,7 @@ describe('frogbot sanitize', () => {
       });
 
       it.each([
-        ['openai/unknown', 'not configured'],
+        [OPENAI_UNKNOWN, 'not configured'],
         ['openai/text-embedding-3-small', 'not chat-capable'],
       ] as const)('warns and preserves the inherited %s default', (defaultModel, reason) => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -3586,7 +3616,7 @@ describe('frogbot sanitize', () => {
     it('rejects an explicit router whose target is not chat-capable', () => {
       const config = makeConfig({
         ai: { ...ai, routers: { embeddings: { model: 'openai/text-embedding-3-small' } } },
-        agents: [{ ...agent, model: { default: agent.model, options: ['embeddings'] } }],
+        agents: [{ ...agent, model: { default: agent.model, options: [EMBEDDINGS] } }],
       });
 
       expect(() => sanitize(config)).toThrow(
@@ -3754,13 +3784,13 @@ describe('frogbot sanitize', () => {
 
     it('accepts an agent profile', () => {
       const profile = { name: 'Ada', avatar: '/ada.png', description: 'Support' };
-      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, profile }] } as never));
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, profile }] }));
       expect(result.agents?.[0].profile).toEqual(profile);
     });
 
     it('accepts an omitted agent profile', () => {
-      const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
-      expect((result.agents?.[0] as typeof agent & { profile?: unknown }).profile).toBeUndefined();
+      const result = sanitize(makeConfig({ ai, agents: [agent] }));
+      expect(result.agents?.[0]?.profile).toBeUndefined();
     });
 
     it('rejects a channel without the channel capability', () => {
@@ -3777,7 +3807,7 @@ describe('frogbot sanitize', () => {
       const channel = createChannel({} as never);
 
       expect(() =>
-        sanitize(makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] } as never)),
+        sanitize(makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] })),
       ).toThrow("Channel 'channel' in agent 'support' requires factory auth");
     });
 
@@ -3792,7 +3822,7 @@ describe('frogbot sanitize', () => {
               { ...agent, channels: [channel] },
               { ...agent, slug: 'sales', channels: [channel] },
             ],
-          } as never),
+          }),
         ),
       ).toThrow("Channel 'channel' is mounted by agents 'support' and 'sales'");
     });
@@ -3805,7 +3835,7 @@ describe('frogbot sanitize', () => {
 
     it('rejects blank agent profile fields', () => {
       expect(() =>
-        sanitize(makeConfig({ ai, agents: [{ ...agent, profile: { name: '   ' } }] } as never)),
+        sanitize(makeConfig({ ai, agents: [{ ...agent, profile: { name: '   ' } }] })),
       ).toThrow("[frogbot] Agent 'support' profile name must be a non-empty string.");
     });
 
@@ -3816,7 +3846,7 @@ describe('frogbot sanitize', () => {
           ai,
           agents: [agent, { ...agent, slug: 'sales' }],
           tools: [shared],
-        } as never),
+        }),
       );
 
       expect(result.agents?.map(({ tools }) => tools?.map(({ slug }) => slug))).toEqual([
@@ -3835,11 +3865,9 @@ describe('frogbot sanitize', () => {
         ],
       });
       const example = createExample({});
-      const action = sanitize(
-        makeConfig({ ai, agents: [{ ...agent, tools: [example.first] }] } as never),
-      );
+      const action = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example.first] }] }));
       expect(action.agents?.[0].tools?.map(({ slug }) => slug)).toEqual(['example_first']);
-      const whole = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example] }] } as never));
+      const whole = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example] }] }));
       expect(whole.agents?.[0].tools?.map(({ slug }) => slug)).toEqual([
         'example_first',
         'example_second',
@@ -3852,7 +3880,7 @@ describe('frogbot sanitize', () => {
         label: 'Trigger example',
         actions: [],
         webhook: {
-          verify: async () => true,
+          verify: () => Promise.resolve(true),
           parse: () => ({ event: 'created' }),
         },
         triggers: [
@@ -3862,9 +3890,7 @@ describe('frogbot sanitize', () => {
             event: 'created',
             description: 'Created',
             input: z.object({}),
-            async run() {
-              return [];
-            },
+            run: () => Promise.resolve([]),
           },
         ],
       });
@@ -3873,9 +3899,7 @@ describe('frogbot sanitize', () => {
         trigger: example.triggers.created,
         handler: vi.fn(),
       };
-      const result = sanitize(
-        makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] } as never),
-      );
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] }));
       expect(result.agents?.[0].triggers).toEqual([trigger]);
       expect(result._internal.triggers[example.slug].instance).toBe(example);
       expect(result.pieces.instances).toContain(example);
@@ -3901,7 +3925,7 @@ describe('frogbot sanitize', () => {
         label: 'Trigger example',
         actions: [],
         webhook: {
-          verify: async () => true,
+          verify: () => Promise.resolve(true),
           parse: () => ({ event: 'created' }),
         },
         triggers: [
@@ -3911,9 +3935,7 @@ describe('frogbot sanitize', () => {
             event: 'created',
             description: 'Created',
             input: z.object({}),
-            async run() {
-              return [];
-            },
+            run: () => Promise.resolve([]),
           },
         ],
       });
@@ -3922,9 +3944,7 @@ describe('frogbot sanitize', () => {
         trigger: example.triggers.created,
         handler: vi.fn(),
       };
-      const result = sanitize(
-        makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] } as never),
-      );
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] }));
       const payloadConfig = await result._internal.payloadConfig;
 
       expect(
@@ -3934,9 +3954,7 @@ describe('frogbot sanitize', () => {
 
     it('keeps the subscription ledger for an agent with only a channel', async () => {
       const channel = createChannel({ auth: { token: 'secret' } });
-      const result = sanitize(
-        makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] } as never),
-      );
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] }));
       const payloadConfig = await result._internal.payloadConfig;
 
       expect(Object.keys(result._internal.triggers)).toEqual(['channel']);
@@ -3954,7 +3972,7 @@ describe('frogbot sanitize', () => {
           ai,
           agents: [{ ...agent, tools: [makeTool('shared', { execute: agentExecute })] }],
           tools: [makeTool('shared', { execute: rootExecute })],
-        } as never),
+        }),
       );
 
       expect(result.agents?.[0].tools).toHaveLength(1);
@@ -3974,7 +3992,7 @@ describe('frogbot sanitize', () => {
             { ...agent, slug: 'sales' },
           ],
           tools: [makeTool('shared', { component: '/SharedTool' }), makeTool('plain')],
-        } as never),
+        }),
       );
       const payloadConfig = await result._internal.payloadConfig;
 
@@ -4006,7 +4024,7 @@ describe('frogbot sanitize', () => {
           ai,
           agents: [{ ...agent, ...(tools === undefined ? {} : { tools }) }],
           tools: [makeTool('shared')],
-        } as never),
+        }),
       );
 
       expect(result.agents?.[0].tools?.map(({ slug }) => slug)).toEqual(['shared']);
@@ -4019,7 +4037,7 @@ describe('frogbot sanitize', () => {
             ai,
             agents: [agent],
             tools: [makeTool('same'), makeTool('same')],
-          } as never),
+          }),
         ),
       ).toThrow("[frogbot] Duplicate tool slug 'same' in root.");
       expect(() =>
@@ -4027,7 +4045,7 @@ describe('frogbot sanitize', () => {
           makeConfig({
             ai,
             agents: [{ ...agent, tools: [makeTool('same'), makeTool('same')] }],
-          } as never),
+          }),
         ),
       ).toThrow("[frogbot] Duplicate tool slug 'same' in agent 'support'.");
     });
@@ -4235,7 +4253,7 @@ describe('frogbot sanitize', () => {
                 ],
               },
             ],
-          } as never),
+          }),
         ),
       ).toThrow("Duplicate skill slug 'docs'");
       expect(() =>
@@ -4243,7 +4261,7 @@ describe('frogbot sanitize', () => {
           makeConfig({
             ai,
             agents: [{ ...agent, skills: [{ slug: 'not safe', instructions: 'Use it' }] }],
-          } as never),
+          }),
         ),
       ).toThrow('is not URL-safe');
     });
@@ -4258,7 +4276,7 @@ describe('frogbot sanitize', () => {
               slug,
               skills: [{ slug: 'docs', instructions: 'Use it' }],
             })),
-          } as never),
+          }),
         ),
       ).not.toThrow();
     });
@@ -4283,7 +4301,7 @@ describe('frogbot sanitize', () => {
                 ],
               },
             ],
-          } as never),
+          }),
         ),
       ).toThrow("Duplicate resource path 'api.md'");
     });
@@ -4302,7 +4320,7 @@ describe('frogbot sanitize', () => {
                   tools: [makeTool(slug)],
                 },
               ],
-            } as never),
+            }),
           ),
         ).toThrow(`[frogbot] Tool slug '${slug}' is reserved for agent skills.`);
       },
@@ -4315,7 +4333,7 @@ describe('frogbot sanitize', () => {
             ai,
             agents: [{ ...agent, skills: [{ slug: 'docs', instructions: 'Use it' }] }],
             tools: [makeTool('load_skill')],
-          } as never),
+          }),
         ),
       ).toThrow("[frogbot] Tool slug 'load_skill' is reserved for agent skills.");
     });
@@ -4334,7 +4352,7 @@ describe('frogbot sanitize', () => {
               tools: [makeTool('custom')],
             },
           ],
-        } as never),
+        }),
       );
 
       expect(result.agents?.[0].tools?.map(({ slug }) => slug)).toEqual([
@@ -4376,7 +4394,7 @@ describe('frogbot sanitize', () => {
         makeConfig({
           ai,
           agents: [{ ...agent, skills: [] }],
-        } as never),
+        }),
       );
 
       expect(empty.agents?.[0].tools).toEqual(omitted.agents?.[0].tools);
@@ -4404,7 +4422,7 @@ describe('frogbot sanitize', () => {
         }),
       );
       const payloadConfig = await result._internal.payloadConfig;
-      expect(payloadConfig.jobs.tasks.map(({ slug }) => slug)).toEqual([
+      expect(payloadConfig.jobs.tasks?.map(({ slug }) => slug)).toEqual([
         'user-task',
         'frogbot-reset-ai-budgets',
         'frogbot-sweep-jobs',
@@ -4604,7 +4622,7 @@ describe('frogbot sanitize', () => {
     const ai = { providers: { openai: { apiKey: 'sk-test' } } };
     const agents = [
       { slug: 'support', model: 'openai/gpt-5.4-mini', instructions: 'Help the user' },
-    ];
+    ] satisfies AgentConfig[];
 
     it('is disabled when neither markers nor agents are configured', () => {
       const result = sanitize(makeConfig());

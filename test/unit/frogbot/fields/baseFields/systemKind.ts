@@ -6,7 +6,7 @@ type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0][
 
 type KindField = {
   access?: Record<string, unknown>;
-  admin?: Record<string, any>;
+  admin?: { components?: { Cell?: unknown }; custom?: unknown; [key: string]: unknown };
   hooks?: Record<string, ((args: never) => unknown)[] | undefined>;
   typescriptSchema?: TextField['typescriptSchema'];
 };

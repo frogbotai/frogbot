@@ -6,6 +6,7 @@ import { BasePayload } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
+import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import {
   CHANNEL_TASK_SLUG,
   getChannelHost,
@@ -34,6 +35,8 @@ import {
   snowflake,
   startDiscordApi,
 } from './discordFixtures.js';
+
+const TEST_MODEL = 'test/gpt-4.1-mini' as AgentModelId;
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
@@ -94,7 +97,7 @@ async function boot({ api, directory }: { api: DiscordApi; directory: string }):
     agents: [
       {
         slug: 'support',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [createDiscord({ auth: { botToken: discordBotToken }, ...options })],
@@ -102,7 +105,7 @@ async function boot({ api, directory }: { api: DiscordApi; directory: string }):
       },
       {
         slug: 'closed',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [
@@ -436,8 +439,18 @@ describe('Discord questions with SQLite persistence', () => {
       toolCallId,
       input: {
         questions: [
-          { header: 'Color', question: 'Color?', options: [{ label: 'Red' }, { label: 'Blue' }] },
-          { header: 'Size', question: 'Size?', options: [{ label: 'S' }, { label: 'L' }] },
+          {
+            header: 'Color',
+            question: 'Color?',
+            options: [{ label: 'Red' }, { label: 'Blue' }],
+            custom: true,
+          },
+          {
+            header: 'Size',
+            question: 'Size?',
+            options: [{ label: 'S' }, { label: 'L' }],
+            custom: true,
+          },
         ],
       },
     });

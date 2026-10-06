@@ -11,6 +11,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { z } from 'zod';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
+import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import {
   CHANNEL_TASK_SLUG,
   getChannelHost,
@@ -25,6 +26,8 @@ import { createSlackAdapter } from '../../../../packages/pieces/piece-slack/node
 import { slackQuestions } from '../../../../packages/pieces/piece-slack/src/questions/index.js';
 import { startStubChatModel, type StubChatModel } from '../../../__helpers/shared/StubChatModel.js';
 import { testPort } from '../../../__helpers/shared/testPorts.js';
+
+const TEST_MODEL = 'test/gpt-4.1-mini' as AgentModelId;
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
@@ -233,14 +236,14 @@ async function boot(directory: string): Promise<FrogBot> {
     agents: [
       {
         slug: 'support',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [slackPiece({ auth: { token: 'secret' } })],
       },
       {
         slug: 'open',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [slackPiece({ slug: 'slack-open', auth: { token: 'secret' } })],

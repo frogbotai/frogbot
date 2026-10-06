@@ -272,7 +272,7 @@ describe('OAuth browser state', () => {
     const { intent } = await consumeOAuthState(flow.args);
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => Response.json({ error: 'invalid_grant' }, { status: 400 })),
+      vi.fn(() => Promise.resolve(Response.json({ error: 'invalid_grant' }, { status: 400 }))),
     );
     await expect(
       exchangeOAuthCode({

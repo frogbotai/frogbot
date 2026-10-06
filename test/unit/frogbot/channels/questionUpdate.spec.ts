@@ -40,9 +40,9 @@ const pendingCall: PendingCall = {
 
 function questionHooks() {
   return {
-    render: vi.fn<PieceChannelQuestions['render']>(async ({ calls }) => [
-      { messages: [card], calls: calls.map(({ toolCallId }) => toolCallId) },
-    ]),
+    render: vi.fn<PieceChannelQuestions['render']>(({ calls }) =>
+      Promise.resolve([{ messages: [card], calls: calls.map(({ toolCallId }) => toolCallId) }]),
+    ),
     parse: vi.fn<PieceChannelQuestions['parse']>(({ interaction }) => {
       if (interaction.type !== 'action') return { kind: 'ignore' };
 
@@ -59,9 +59,9 @@ function questionHooks() {
       };
     }),
     settled: vi.fn<PieceChannelQuestions['settled']>(async () => {}),
-    updated: vi.fn<NonNullable<PieceChannelQuestions['updated']>>(async ({ question }) => ({
-      messages: [...question.messages, next],
-    })),
+    updated: vi.fn<NonNullable<PieceChannelQuestions['updated']>>(({ question }) =>
+      Promise.resolve({ messages: [...question.messages, next] }),
+    ),
     rejected: vi.fn<NonNullable<PieceChannelQuestions['rejected']>>(async () => {}),
     stale: vi.fn<NonNullable<PieceChannelQuestions['stale']>>(async () => {}),
   };

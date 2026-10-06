@@ -1,3 +1,4 @@
+import type * as FsPromises from 'node:fs/promises';
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,7 +7,7 @@ import overlays from '../../../../scripts/fixtures/model-catalog-overlays.json' 
 import source from '../../../../scripts/fixtures/models-dev.json' with { type: 'json' };
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('node:fs/promises')>()),
+  ...(await importOriginal<typeof FsPromises>()),
   readFile: vi.fn(),
   writeFile: vi.fn(),
 }));
@@ -21,7 +22,7 @@ describe('model catalog sync', () => {
 
     const { catalog } = buildCatalogs({ overlays, source });
 
-    expect(catalog.map(({ id }) => id)).toEqual([
+    expect(catalog.map(({ id }: { id: string }) => id)).toEqual([
       'anthropic/claude-audio-chat',
       'anthropic/claude-current',
       'anthropic/embedding-fixture',
@@ -48,7 +49,7 @@ describe('model catalog sync', () => {
 
     const { gateway } = buildCatalogs({ overlays, source });
 
-    expect(gateway.find(({ id }) => id === 'anthropic/claude-current')).toEqual({
+    expect(gateway.find(({ id }: { id: string }) => id === 'anthropic/claude-current')).toEqual({
       id: 'anthropic/claude-current',
       name: 'Claude Current',
       created: '2026-01-02',
@@ -86,7 +87,7 @@ describe('model catalog sync', () => {
 
     const { gateway } = buildCatalogs({ overlays, source });
 
-    expect(gateway.find(({ id }) => id === 'anthropic/embedding-fixture')).toEqual({
+    expect(gateway.find(({ id }: { id: string }) => id === 'anthropic/embedding-fixture')).toEqual({
       id: 'anthropic/embedding-fixture',
       name: 'Embedding Fixture',
       created: '2026-01-03',
@@ -114,7 +115,9 @@ describe('model catalog sync', () => {
       mode: 'chat',
       provider: 'anthropic',
     });
-    expect(gateway.find(({ id }) => id === 'anthropic/claude-audio-chat')).toMatchObject({
+    expect(
+      gateway.find(({ id }: { id: string }) => id === 'anthropic/claude-audio-chat'),
+    ).toMatchObject({
       modalities: { input: ['text', 'audio'], output: ['text'] },
       operations: ['chat.completions', 'audio.transcriptions'],
     });
@@ -176,21 +179,21 @@ describe('provider logo sync', () => {
   const probe = 'frogbot-missing-provider-logo';
 
   function logoFetch(responses: Record<string, Response | Error> = {}) {
-    return vi.fn(async (url: string) => {
+    return vi.fn((url: string) => {
       if (url === 'https://models.dev/api.json') {
         const provider = {
           models: { 'claude-current': source.anthropic.models['claude-current'] },
         };
 
-        return Response.json({ 'amazon-bedrock': provider, anthropic: provider });
+        return Promise.resolve(Response.json({ 'amazon-bedrock': provider, anthropic: provider }));
       }
 
       const provider = url.slice('https://models.dev/logos/'.length, -'.svg'.length);
       const response = responses[provider] ?? new Response(null, { status: 404 });
 
-      if (response instanceof Error) throw response;
+      if (response instanceof Error) return Promise.reject(response);
 
-      return response;
+      return Promise.resolve(response);
     });
   }
 

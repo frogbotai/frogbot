@@ -17,7 +17,7 @@ function reqWithChat(
 ) {
   return {
     ...reqWithUser('u1', context),
-    frogbot: { findByID: async () => chat, config: { pieces: { instances: [] } } },
+    frogbot: { findByID: () => Promise.resolve(chat), config: { pieces: { instances: [] } } },
   } as unknown as FrogBotRequest;
 }
 

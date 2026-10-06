@@ -79,8 +79,10 @@ async function teamsFixture() {
 
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
   Object.assign(fixture.frogbot.logger, { warn: vi.fn() });
-  fixture.identity.mockImplementation((async ({ author }: { author: { email?: string } }) =>
-    author.email ? { id: `user:${author.email}`, collection: 'users' } : null) as never);
+  fixture.identity.mockImplementation((({ author }: { author: { email?: string } }) =>
+    Promise.resolve(
+      author.email ? { id: `user:${author.email}`, collection: 'users' } : null,
+    )) as never);
   fixture.access.mockImplementation((({ req }: { req: { user: unknown } }) =>
     Boolean(req.user)) as never);
 

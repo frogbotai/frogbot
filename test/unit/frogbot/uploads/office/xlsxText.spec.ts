@@ -1,6 +1,7 @@
 import { strToU8, unzipSync, zipSync } from 'fflate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type * as ReadExcelModule from '../../../../../packages/frogbot/node_modules/read-excel-file/universal/index.js';
 import readXlsxFile from '../../../../../packages/frogbot/node_modules/read-excel-file/universal/index.js';
 import { xlsxText } from '../../../../../packages/frogbot/src/uploads/office/xlsxText.js';
 import {
@@ -15,7 +16,7 @@ import {
 vi.mock(
   '../../../../../packages/frogbot/node_modules/read-excel-file/universal/index.js',
   async (importOriginal) => {
-    const actual = await importOriginal<typeof import('read-excel-file/universal')>();
+    const actual = await importOriginal<typeof ReadExcelModule>();
 
     return { ...actual, default: vi.fn(actual.default) };
   },

@@ -1,12 +1,16 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { ManifestResponse } from '../../../../packages/frogbot/src/index.js';
+import type { AgentProfile, ManifestResponse } from '../../../../packages/frogbot/src/index.js';
 
 describe('ManifestResponse', () => {
   it('exports the manifest response contract', () => {
     expectTypeOf<ManifestResponse>().toEqualTypeOf<{
-      chat: { enabled: false } | { enabled: true; chatsSlug: string; messagesSlug: string };
-      agents: { slug: string }[];
+      ai: { transcribe: { model: string } | false };
+      chat:
+        | { enabled: false }
+        | { enabled: true; chatsSlug: string; messagesSlug: string; assetsSlug: string };
+      files?: { slug: string };
+      agents: { slug: string; profile?: AgentProfile }[];
     }>();
   });
 });

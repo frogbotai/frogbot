@@ -5,7 +5,7 @@ import { Connections } from '../../../../../packages/frogbot/src/connections/api
 import { createCredentialEncryption } from '../../../../../packages/frogbot/src/connections/encryption.js';
 import type { ConnectionRow } from '../../../../../packages/frogbot/src/connections/store.js';
 import { createKV } from '../../../../../packages/frogbot/src/kv/index.js';
-import { kvAtomic } from '../../../../../packages/frogbot/src/kv/types.js';
+import { kvAtomic, type KVLock } from '../../../../../packages/frogbot/src/kv/types.js';
 import { definePiece } from '../../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceDefinition } from '../../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
@@ -15,7 +15,7 @@ export const definition = {
   label: 'Example',
   auth: z.object({ token: z.string().min(1) }),
   options: z.object({ region: z.string().default('west') }),
-  client: ({ auth, options }) => ({ auth, options }),
+  client: ({ auth, options }: { auth: unknown; options: object }) => ({ auth, options }),
   oauth: {
     authorizationUrl: 'https://provider.test/authorize',
     tokenUrl: 'https://provider.test/token',
@@ -23,7 +23,7 @@ export const definition = {
     pkce: true,
     toAuth: ({ tokens }) => ({ token: tokens.access_token }),
   },
-  actions: [],
+  actions: [] as const,
 } satisfies PieceDefinition;
 
 export function memoryKV() {
@@ -35,28 +35,33 @@ export function memoryKV() {
   };
   const adapter = {
     [kvAtomic]: true,
-    get: async (key: string) => (has(key) ? values.get(key) : undefined),
-    setIfAbsent: vi.fn(async (key: string, value: unknown, { ttl }: { ttl: number }) => {
-      if (has(key)) return false;
+    get: (key: string) => Promise.resolve(has(key) ? values.get(key) : undefined),
+    setIfAbsent: vi.fn((key: string, value: unknown, { ttl }: { ttl: number }) => {
+      if (has(key)) return Promise.resolve(false);
       values.set(key, value);
       expirations.set(key, Date.now() + ttl);
-      return true;
+      return Promise.resolve(true);
     }),
-    extendLock: vi.fn(async ({ key, token }, ttl: number) => {
-      if (!has(key) || values.get(key) !== token) return false;
+    extendLock: vi.fn(({ key, token }: KVLock, ttl: number) => {
+      if (!has(key) || values.get(key) !== token) return Promise.resolve(false);
       expirations.set(key, Date.now() + ttl);
-      return true;
+      return Promise.resolve(true);
     }),
-    releaseLock: vi.fn(async ({ key, token }) => {
-      if (!has(key) || values.get(key) !== token) return false;
-      return values.delete(key);
+    releaseLock: vi.fn(({ key, token }: KVLock) => {
+      if (!has(key) || values.get(key) !== token) return Promise.resolve(false);
+      return Promise.resolve(values.delete(key));
     }),
   };
   return { kv: createKV({ adapter: adapter as never }), adapter, values, expirations };
 }
 
+type OAuthPieceDefinition = PieceDefinition & {
+  oauth: NonNullable<PieceDefinition['oauth']>;
+  actions: readonly [];
+};
+
 export function setup(
-  pieceDefinition: PieceDefinition = definition,
+  pieceDefinition: OAuthPieceDefinition = definition,
   oauth = { clientId: 'client', clientSecret: 'secret' },
 ) {
   const piece = definePiece(pieceDefinition)({
@@ -66,10 +71,8 @@ export function setup(
   });
   const encryption = createCredentialEncryption({ secret: 'state-secret' });
   const memory = memoryKV();
-  const req = {
-    headers: new Headers(),
-    user: { id: 'owner', collection: 'users' },
-  } as FrogBotRequest;
+  const user: FrogBotRequest['user'] = { id: 'owner', collection: 'users' };
+  const req = { headers: new Headers(), user } as FrogBotRequest;
   const binding = {
     flow: 'link' as const,
     collection: 'users',
@@ -79,7 +82,7 @@ export function setup(
   return { ...memory, encryption, req, piece, binding };
 }
 
-export async function connectionSetup(pieceDefinition: PieceDefinition = definition) {
+export async function connectionSetup(pieceDefinition: OAuthPieceDefinition = definition) {
   const fixture = setup(pieceDefinition);
   const { encryption, piece, req, kv } = fixture;
   let row: ConnectionRow | undefined = {
@@ -109,17 +112,18 @@ export async function connectionSetup(pieceDefinition: PieceDefinition = definit
         payloadConfig: Promise.resolve({ admin: { user: 'users' }, routes: { api: '/api' } }),
       },
     },
-    find: vi.fn(async () => ({ docs: row ? [row] : [] })),
-    update: vi.fn(async ({ data }) => {
+    find: vi.fn(() => Promise.resolve({ docs: row ? [row] : [] })),
+    update: vi.fn(({ data }: { data: Partial<ConnectionRow> }) => {
       row = { ...row!, ...data };
-      return row;
+      return Promise.resolve(row);
     }),
-    create: vi.fn(async ({ data }) => {
+    create: vi.fn(({ data }: { data: Omit<ConnectionRow, 'id'> }) => {
       row = { ...data, id: 'created' };
-      return row;
+      return Promise.resolve(row);
     }),
-    delete: vi.fn(async () => {
+    delete: vi.fn(() => {
       row = undefined;
+      return Promise.resolve();
     }),
   };
   const config = {

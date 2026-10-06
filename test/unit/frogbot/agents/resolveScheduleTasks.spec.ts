@@ -1,5 +1,5 @@
-import type { JobsConfig, TaskConfig } from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import type { Job, JobsConfig, PayloadRequest, TaskConfig, TaskHandler } from 'payload';
+import { assert, describe, expect, it, vi } from 'vitest';
 
 import {
   AGENT_SCHEDULE_TASK_SLUG,
@@ -9,14 +9,34 @@ import {
 import type { AgentConfig, AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
 import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 
-const baseAgent = {
+const baseAgent: AgentConfig = {
   slug: 'reporter',
-  model: 'openai/test',
+  model: 'openai/gpt-4o',
   instructions: 'Report',
-} as AgentConfig;
+};
 
 function task(jobs: JobsConfig | undefined): TaskConfig {
   return jobs!.tasks!.find(({ slug }) => slug === AGENT_SCHEDULE_TASK_SLUG)!;
+}
+
+function taskHandler(jobs: JobsConfig | undefined): TaskHandler<string> {
+  const run = task(jobs).handler;
+
+  assert(typeof run === 'function', 'Expected task handler');
+
+  return run;
+}
+
+function makeJob(job: Partial<Job<string>> = {}): Job<string> {
+  return {
+    id: 1,
+    input: {},
+    taskStatus: {},
+    totalTried: 0,
+    createdAt: '2026-07-29T11:00:00.000Z',
+    updatedAt: '2026-07-29T11:00:00.000Z',
+    ...job,
+  };
 }
 
 describe('agent schedule tasks', () => {
@@ -92,11 +112,13 @@ describe('agent schedule tasks', () => {
           triggers: [{ type: 'schedule', slug: 'run', schedule: { every: '1h' }, prompt: 'Run' }],
         },
       ],
-      jobs: { autoRun: async (value) => [{ queue: value === payload ? 'user' : 'wrong' }] },
+      jobs: {
+        autoRun: (value) => Promise.resolve([{ queue: value === payload ? 'user' : 'wrong' }]),
+      },
     });
 
     const autoRun = jobs?.autoRun;
-    if (typeof autoRun !== 'function') throw new Error('Expected autoRun function');
+    assert(typeof autoRun === 'function', 'Expected autoRun function');
     expect(await autoRun(payload)).toEqual([
       { queue: 'user' },
       { allQueues: true, cron: '* * * * *' },
@@ -107,12 +129,14 @@ describe('agent schedule tasks', () => {
     const payload = {};
     const generate = vi.fn();
     const handler = vi.fn();
-    const createRequest = vi.fn(async ({ context }) => ({ context, user: null }));
+    const createRequest = vi.fn(({ context }: { context: unknown }) =>
+      Promise.resolve({ context, user: null }),
+    );
     const agent = {
       slug: 'reporter',
       config: {
         ...baseAgent,
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         triggers: [
           { type: 'schedule', slug: 'prompt', schedule: { every: '1h' }, prompt: 'Run report' },
           { type: 'schedule', slug: 'handler', schedule: { every: '1h' }, handler },
@@ -123,14 +147,10 @@ describe('agent schedule tasks', () => {
     const frogbot = { agents: { reporter: agent }, createRequest };
     registerFrogBotInstance(payload, frogbot as never);
     const config = resolveScheduleTasks({ agents: [agent.config] });
-    const run = task(config).handler;
-    if (typeof run !== 'function') throw new Error('Expected task handler');
-    const job = {
-      id: 42,
-      waitUntil: '2026-07-29T12:00:00.000Z',
-      createdAt: '2026-07-29T11:00:00.000Z',
-    };
-    const req = { payload };
+    const run = taskHandler(config);
+    const waitUntil = '2026-07-29T12:00:00.000Z';
+    const job = makeJob({ id: 42, waitUntil });
+    const req = { payload } as PayloadRequest;
 
     await run({
       input: { agentSlug: 'reporter', triggerSlug: 'prompt' },
@@ -158,7 +178,7 @@ describe('agent schedule tasks', () => {
         frogbot,
         agent,
         req: expect.objectContaining({ user: null }),
-        job: { id: 42, scheduledFor: new Date(job.waitUntil) },
+        job: { id: 42, scheduledFor: new Date(waitUntil) },
       }),
     );
   });
@@ -168,7 +188,7 @@ describe('agent schedule tasks', () => {
     const generate = vi.fn();
     const staleAgent = {
       ...baseAgent,
-      model: { default: 'openai/test', options: ['openai/test'] },
+      model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
       triggers: [],
     };
 
@@ -183,9 +203,13 @@ describe('agent schedule tasks', () => {
         },
       ],
     });
-    const run = task(config).handler;
-    if (typeof run !== 'function') throw new Error('Expected task handler');
-    const args = { job: {}, req: { payload }, inlineTask: vi.fn(), tasks: {} };
+    const run = taskHandler(config);
+    const args = {
+      job: makeJob(),
+      req: { payload } as PayloadRequest,
+      inlineTask: vi.fn(),
+      tasks: {},
+    };
     await expect(
       run({ ...args, input: { agentSlug: 'missing', triggerSlug: 'run' } }),
     ).resolves.toEqual({ output: {} });

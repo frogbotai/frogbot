@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 
 import {
   CHANNEL_QUESTION_UPDATE_TASK_SLUG,
@@ -12,7 +12,7 @@ describe('channel jobs', () => {
     const task = resolveChannelTask().tasks![0];
     const payload = {};
 
-    if (typeof task.handler !== 'function') throw new Error('Missing task handler');
+    assert(typeof task.handler === 'function', 'Missing task handler');
 
     await expect(task.handler({ input: {}, req: { payload } } as never)).rejects.toThrow(
       'initialized channel host',

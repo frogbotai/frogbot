@@ -30,13 +30,13 @@ function runSchema(
 
 describe('applyFieldKind marker', () => {
   it('sets the kind marker on admin.custom.frogbot', () => {
-    const field = applyFieldKind({ name: 'length', type: 'number' }, spec);
+    const field = applyFieldKind<NumberField>({ name: 'length', type: 'number' }, spec);
 
     expect(field.admin?.custom).toEqual({ frogbot: { kind: { type: 'sample', unit: 'm' } } });
   });
 
   it('keeps other admin.custom and admin.custom.frogbot keys', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       {
         name: 'length',
         type: 'number',
@@ -52,7 +52,7 @@ describe('applyFieldKind marker', () => {
   });
 
   it('replaces an admin.custom.frogbot value that is not an object', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       { name: 'length', type: 'number', admin: { custom: { frogbot: 'legacy' } } },
       spec,
     );
@@ -63,7 +63,7 @@ describe('applyFieldKind marker', () => {
 
 describe('applyFieldKind components', () => {
   it('sets the FieldCell list cell and the kind field component', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       { name: 'length', type: 'number' },
       { ...spec, cell: true, Field: '@frogbotai/next/client#SampleField' },
     );
@@ -75,7 +75,7 @@ describe('applyFieldKind components', () => {
   });
 
   it('keeps the developer Cell and Field over the kind components', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       {
         name: 'length',
         type: 'number',
@@ -94,7 +94,7 @@ describe('applyFieldKind components', () => {
   });
 
   it('adds no components key when neither the spec nor the field gives one', () => {
-    const field = applyFieldKind({ name: 'length', type: 'number' }, spec);
+    const field = applyFieldKind<NumberField>({ name: 'length', type: 'number' }, spec);
 
     expect(field.admin).not.toHaveProperty('components');
   });
@@ -104,7 +104,7 @@ describe('applyFieldKind typescriptSchema', () => {
   it('puts the kind entry first and keeps developer entries in order', () => {
     const calls: string[] = [];
 
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       {
         name: 'length',
         type: 'number',
@@ -131,7 +131,7 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('uses the kind text when there is no description', () => {
-    const field = applyFieldKind({ name: 'length', type: 'number' }, spec);
+    const field = applyFieldKind<NumberField>({ name: 'length', type: 'number' }, spec);
 
     expect(runSchema(field, { type: 'number' })).toEqual({
       type: 'number',
@@ -140,7 +140,7 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('appends the kind text in lowercase after an existing description', () => {
-    const field = applyFieldKind({ name: 'length', type: 'number' }, spec);
+    const field = applyFieldKind<NumberField>({ name: 'length', type: 'number' }, spec);
 
     expect(runSchema(field, { type: 'number', description: 'Board length' }).description).toBe(
       'Board length (length in metres)',
@@ -148,7 +148,7 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('lets a later developer entry replace the description', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       {
         name: 'length',
         type: 'number',
@@ -163,7 +163,10 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('adds min and max as schema limits', () => {
-    const field = applyFieldKind({ name: 'length', type: 'number', min: 0, max: 10 }, spec);
+    const field = applyFieldKind<NumberField>(
+      { name: 'length', type: 'number', min: 0, max: 10 },
+      spec,
+    );
 
     expect(runSchema(field, { type: ['number', 'null'] })).toEqual({
       type: ['number', 'null'],
@@ -174,7 +177,7 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('puts limits on items for a hasMany field', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       { name: 'lengths', type: 'number', hasMany: true, min: 1, max: 5 },
       spec,
     );
@@ -187,7 +190,7 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('ignores limits that are not numbers', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<TextField>(
       { name: 'title', type: 'text', minLength: 2 } satisfies TextField,
       spec,
     );
@@ -199,19 +202,25 @@ describe('applyFieldKind typescriptSchema', () => {
   });
 
   it('marks a string number type as integer', () => {
-    const field = applyFieldKind({ name: 'count', type: 'number' }, { ...spec, integer: true });
+    const field = applyFieldKind<NumberField>(
+      { name: 'count', type: 'number' },
+      { ...spec, integer: true },
+    );
 
     expect(runSchema(field, { type: 'number' }).type).toBe('integer');
   });
 
   it('marks a nullable number type as integer', () => {
-    const field = applyFieldKind({ name: 'count', type: 'number' }, { ...spec, integer: true });
+    const field = applyFieldKind<NumberField>(
+      { name: 'count', type: 'number' },
+      { ...spec, integer: true },
+    );
 
     expect(runSchema(field, { type: ['number', 'null'] }).type).toEqual(['integer', 'null']);
   });
 
   it('marks hasMany items as integer', () => {
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       { name: 'counts', type: 'number', hasMany: true },
       { ...spec, integer: true },
     );
@@ -255,15 +264,17 @@ describe('applyFieldKind validate', () => {
   it('sets no validate when the spec has no check', () => {
     const validate = () => true as const;
 
-    expect(applyFieldKind({ name: 'length', type: 'number' }, spec)).not.toHaveProperty('validate');
-    expect(applyFieldKind({ name: 'length', type: 'number', validate }, spec).validate).toBe(
-      validate,
-    );
+    expect(
+      applyFieldKind<NumberField>({ name: 'length', type: 'number' }, spec),
+    ).not.toHaveProperty('validate');
+    expect(
+      applyFieldKind<NumberField>({ name: 'length', type: 'number', validate }, spec).validate,
+    ).toBe(validate);
   });
 
   it('returns the base result for a required number before the check', async () => {
     const check = vi.fn(() => true as const);
-    const field = applyFieldKind(
+    const field = applyFieldKind<NumberField>(
       { name: 'length', type: 'number', required: true },
       { ...spec, check },
     );
@@ -278,17 +289,23 @@ describe('applyFieldKind validate', () => {
     [7, 'Enter an even number.'],
     [4, true],
   ])('checks number %o against min, max and then the kind', async (value, expected) => {
-    const field = applyFieldKind({ name: 'length', type: 'number', min: 2, max: 10 }, evenSpec);
+    const field = applyFieldKind<NumberField>(
+      { name: 'length', type: 'number', min: 2, max: 10 },
+      evenSpec,
+    );
 
     expect(await validateField(field, value)).toBe(expected);
   });
 
   it('returns the base minLength result for text before the check', async () => {
     const check = vi.fn(() => 'Never valid.');
-    const field = applyFieldKind({ name: 'code', type: 'text', minLength: 3 } satisfies TextField, {
-      ...spec,
-      check,
-    });
+    const field = applyFieldKind<TextField>(
+      { name: 'code', type: 'text', minLength: 3 },
+      {
+        ...spec,
+        check,
+      },
+    );
 
     expect(await validateField(field, 'ab')).toBe('validation:longerThanMin');
     expect(check).not.toHaveBeenCalled();
@@ -296,7 +313,7 @@ describe('applyFieldKind validate', () => {
 
   it.each([null, undefined, ''])('skips the check for the empty value %o', async (value) => {
     const check = vi.fn(() => 'Never valid.');
-    const field = applyFieldKind({ name: 'code', type: 'text' }, { ...spec, check });
+    const field = applyFieldKind<TextField>({ name: 'code', type: 'text' }, { ...spec, check });
 
     expect(await validateField(field, value)).toBe(true);
     expect(check).not.toHaveBeenCalled();
@@ -304,7 +321,10 @@ describe('applyFieldKind validate', () => {
 
   it('runs the developer validate after the check with the same value and options', async () => {
     const validate = vi.fn(() => 'Developer rule.');
-    const field = applyFieldKind({ name: 'length', type: 'number', validate }, evenSpec);
+    const field = applyFieldKind<NumberField>(
+      { name: 'length', type: 'number', validate },
+      evenSpec,
+    );
 
     expect(await validateField(field, 7)).toBe('Enter an even number.');
     expect(validate).not.toHaveBeenCalled();

@@ -191,13 +191,11 @@ describe('rewriteComponentPaths', () => {
       '@frogbotai/next/rsc#Section',
       './components/Section#Section',
     ]);
-    expect(config.admin.components.afterBottomRail).toEqual(['@frogbotai/next/rsc#AfterBottom']);
-    expect(config.admin.components.beforeBottomRail).toEqual([
-      './components/BeforeBottom#BeforeBottom',
-    ]);
-    expect(config.admin.components.beforeSidebarClose).toEqual([
-      '@frogbotai/next/client#BeforeClose',
-    ]);
+    expect(config.admin.components).toMatchObject({
+      afterBottomRail: ['@frogbotai/next/rsc#AfterBottom'],
+      beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
+      beforeSidebarClose: ['@frogbotai/next/client#BeforeClose'],
+    });
     expect((config.collections[0]?.admin as never as { icon: string }).icon).toBe(
       '@frogbotai/next/rsc#CollectionIcon',
     );

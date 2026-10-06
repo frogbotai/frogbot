@@ -6,7 +6,7 @@ import { question, type QuestionInput } from '../../../../packages/frogbot/src/t
 import { LinearClient } from '../../../../packages/pieces/piece-linear/node_modules/@linear/sdk/dist/index.mjs';
 import { LinearChannelAdapter } from '../../../../packages/pieces/piece-linear/src/adapter.js';
 import { linearQuestions } from '../../../../packages/pieces/piece-linear/src/questions/index.js';
-import { channelFixture } from './helpers.js';
+import { asyncChunks, channelFixture } from './helpers.js';
 import {
   commentCreated,
   type LinearApi,
@@ -67,9 +67,7 @@ function pendingCall({
 
 function textTurn(text?: string) {
   return {
-    stream: (async function* () {
-      if (text) yield text;
-    })(),
+    stream: text ? asyncChunks(text) : asyncChunks<string>(),
     persistence: Promise.resolve(),
   };
 }
@@ -457,7 +455,7 @@ describe('Linear questions through the channel host', () => {
     const followUp = await prompt(fixture, { body: 'Also make it round' });
 
     expect(fixture.streamMessage).toHaveBeenCalledTimes(2);
-    expect(fixture.streamMessage.mock.calls[1][0].messages[0].parts).toEqual([
+    expect(fixture.streamMessage.mock.calls[1][0].messages?.[0]).toHaveProperty('parts', [
       { type: 'text', text: 'Also make it round' },
     ]);
     expect(followUp.activities.map(({ input }) => input.content)).toEqual([

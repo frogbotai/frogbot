@@ -13,14 +13,15 @@ function makeAgent(
     slug,
     config: {
       slug,
-      model: { default: 'openai/test', options: ['openai/test'] },
+      model: { default: 'openai/gpt-5-nano', options: ['openai/gpt-5-nano'] },
       instructions: 'Help',
       access,
       profile,
-    } as AgentInstance['config'],
+    },
     aiAgent: {} as AgentInstance['aiAgent'],
-    generate: vi.fn() as AgentInstance['generate'],
-    stream: vi.fn() as AgentInstance['stream'],
+    generate: vi.fn<AgentInstance['generate']>(),
+    stream: vi.fn<AgentInstance['stream']>(),
+    streamMessage: vi.fn<AgentInstance['streamMessage']>(),
   };
 }
 

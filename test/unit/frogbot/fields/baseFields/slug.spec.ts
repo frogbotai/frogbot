@@ -98,10 +98,10 @@ describe('slugField', () => {
 
   it('awaits async slugify and preserves manual values on create', async () => {
     const req = request();
-    const slugify = vi.fn(async ({ req: callbackReq, valueToSlugify }) => {
+    const slugify = vi.fn(({ req: callbackReq, valueToSlugify }) => {
       expect(callbackReq).toBe(req);
 
-      return String(valueToSlugify).toUpperCase();
+      return Promise.resolve(String(valueToSlugify).toUpperCase());
     });
     const hook = getHook(slugField({ slugify }));
     const generated = { title: 'new post' };
@@ -127,7 +127,7 @@ describe('slugField', () => {
   });
 
   it('retains undefined async slug results', async () => {
-    const hook = getHook(slugField({ slugify: async () => undefined }));
+    const hook = getHook(slugField({ slugify: () => Promise.resolve(undefined) }));
     const data = { title: 'new post' };
 
     const siblingData = {};
@@ -318,7 +318,7 @@ describe('slugField', () => {
     const countVersions = vi.fn().mockResolvedValue({ totalDocs: 2 });
     const req = request(countVersions);
     const hook = getHook(
-      slugField({ slugify: async ({ valueToSlugify }) => `x-${valueToSlugify}` }),
+      slugField({ slugify: ({ valueToSlugify }) => Promise.resolve(`x-${valueToSlugify}`) }),
     );
     const collection = { slug: 'posts', versions: { drafts: { autosave: true } } };
     const data = { slug: 'old', title: 'changed' };

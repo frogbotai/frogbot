@@ -1,3 +1,4 @@
+import type * as PayloadModule from 'payload';
 import type { Payload, PayloadRequest, SanitizedConfig } from 'payload';
 import { BasePayload } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,8 +26,8 @@ vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
   loadConfig: mocks.loadConfig,
 }));
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
-  createLocalReq: vi.fn(async ({ req }, payload) => ({ ...req, payload })),
+  ...(await importOriginal<typeof PayloadModule>()),
+  createLocalReq: vi.fn(({ req }, payload) => Promise.resolve({ ...req, payload })),
 }));
 
 function deferred() {
@@ -41,15 +42,15 @@ function deferred() {
 function makePayload() {
   return {
     config: { collections: [] },
-    db: { [jobLeaseOperations]: { update: vi.fn(async () => undefined) } },
+    db: { [jobLeaseOperations]: { update: vi.fn((): Promise<void> => Promise.resolve()) } },
     kv: {},
     logger: { warn: vi.fn(), error: vi.fn() },
     secret: 'worker-secret',
-    init: vi.fn(async (_args: unknown) => undefined),
-    destroy: vi.fn(async () => undefined),
+    init: vi.fn((_args: unknown): Promise<void> => Promise.resolve()),
+    destroy: vi.fn((): Promise<void> => Promise.resolve()),
     jobs: {
-      handleSchedules: vi.fn(async (_args: unknown) => undefined),
-      run: vi.fn(async (_args: unknown) => undefined),
+      handleSchedules: vi.fn((_args: unknown): Promise<void> => Promise.resolve()),
+      run: vi.fn((_args: unknown): Promise<void> => Promise.resolve()),
     },
   };
 }
@@ -112,7 +113,7 @@ describe('jobs:run lifecycle', () => {
       return this;
     });
 
-    onInit = vi.fn(async (_frogbot: FrogBot) => undefined);
+    onInit = vi.fn((_frogbot: FrogBot) => Promise.resolve());
 
     payloadConfig = {
       jobs: { autoRun: [{ cron: '* * * * * *', allQueues: true }] },
@@ -163,15 +164,19 @@ describe('jobs:run lifecycle', () => {
   it('boots the real FrogBot runtime, retains app initialization, and passes it to tasks', async () => {
     let initialized = false;
 
-    onInit.mockImplementation(async (frogbot: FrogBot) => {
+    onInit.mockImplementation((frogbot: FrogBot) => {
       expect(frogbot).toBeInstanceOf(FrogBot);
 
       initialized = true;
+
+      return Promise.resolve();
     });
 
-    mocks.payload.init.mockImplementation(async () => {
+    mocks.payload.init.mockImplementation(() => {
       expect(payloadConfig.jobs.autoRun).toEqual([]);
       expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
+
+      return Promise.resolve();
     });
 
     mocks.payload.jobs.run.mockImplementation(async (args) => {
@@ -210,12 +215,16 @@ describe('jobs:run lifecycle', () => {
   it('handles schedules before claiming jobs with the same queue and request', async () => {
     const order: string[] = [];
 
-    mocks.payload.jobs.handleSchedules.mockImplementation(async () => {
+    mocks.payload.jobs.handleSchedules.mockImplementation(() => {
       order.push('schedule');
+
+      return Promise.resolve();
     });
 
-    mocks.payload.jobs.run.mockImplementation(async () => {
+    mocks.payload.jobs.run.mockImplementation(() => {
       order.push('run');
+
+      return Promise.resolve();
     });
 
     await start(['--cron=* * * * * *', '--handle-schedules', '--queue=mail', '--limit=6']);
@@ -242,13 +251,11 @@ describe('jobs:run lifecycle', () => {
     await vi.advanceTimersByTimeAsync(2000);
 
     expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
-    expect(mocks.payload.jobs.handleSchedules).toHaveBeenCalledTimes(scheduling ? 2 : 0);
+    const scheduleArgs = [expect.objectContaining({ allQueues: true, queue: undefined })];
 
-    if (scheduling) {
-      expect(mocks.payload.jobs.handleSchedules).toHaveBeenCalledWith(
-        expect.objectContaining({ allQueues: true, queue: undefined }),
-      );
-    }
+    expect(mocks.payload.jobs.handleSchedules.mock.calls).toEqual(
+      scheduling ? [scheduleArgs, scheduleArgs] : [],
+    );
 
     await signal();
   });
@@ -343,41 +350,37 @@ describe('jobs:run lifecycle', () => {
     expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
   });
 
-  it.each(['handleSchedules', 'run'] as const)(
-    'cleans up and exits 1 after %s fails',
-    async (method) => {
-      mocks.payload.jobs[method].mockRejectedValue(new Error(`${method} failure`));
+  it.each([
+    { method: 'handleSchedules', runs: 0 },
+    { method: 'run', runs: 1 },
+  ] as const)('cleans up and exits 1 after $method fails', async ({ method, runs }) => {
+    mocks.payload.jobs[method].mockRejectedValue(new Error(`${method} failure`));
 
-      await start(['--cron=* * * * * *', '--handle-schedules']);
-      await vi.advanceTimersByTimeAsync(1000);
+    await start(['--cron=* * * * * *', '--handle-schedules']);
+    await vi.advanceTimersByTimeAsync(1000);
 
-      expect(await worker).toEqual(new Error('exit:1'));
-      expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${method} failure`);
-      expect(mocks.payload.destroy).toHaveBeenCalledOnce();
+    expect(await worker).toEqual(new Error('exit:1'));
+    expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${method} failure`);
+    expect(mocks.payload.destroy).toHaveBeenCalledOnce();
+    expect(mocks.payload.jobs.run).toHaveBeenCalledTimes(runs);
+  });
 
-      if (method === 'handleSchedules') expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
-    },
-  );
+  it.each([
+    { phase: 'config', fail: (failure: Error) => mocks.loadConfig.mockRejectedValue(failure) },
+    { phase: 'database', fail: (failure: Error) => mocks.payload.init.mockRejectedValue(failure) },
+    { phase: 'application', fail: (failure: Error) => onInit.mockRejectedValue(failure) },
+  ])('handles $phase initialization failure', async ({ phase, fail }) => {
+    const failure = new Error(`${phase} failure`);
 
-  it.each(['config', 'database', 'application'] as const)(
-    'handles %s initialization failure',
-    async (phase) => {
-      const failure = new Error(`${phase} failure`);
+    fail(failure);
 
-      if (phase === 'config') mocks.loadConfig.mockRejectedValue(failure);
+    worker = jobsRun([]).catch((error: unknown) => error);
 
-      if (phase === 'database') mocks.payload.init.mockRejectedValue(failure);
-
-      if (phase === 'application') onInit.mockRejectedValue(failure);
-
-      worker = jobsRun([]).catch((error: unknown) => error);
-
-      expect(await worker).toEqual(new Error('exit:1'));
-      expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${phase} failure`);
-      expect(mocks.payload.destroy).toHaveBeenCalledTimes(phase === 'config' ? 0 : 1);
-      expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
-    },
-  );
+    expect(await worker).toEqual(new Error('exit:1'));
+    expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${phase} failure`);
+    expect(mocks.payload.destroy).toHaveBeenCalledTimes(phase === 'config' ? 0 : 1);
+    expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
+  });
 
   it('waits for initialization to settle when signalled during boot', async () => {
     const initializing = deferred();

@@ -56,7 +56,12 @@ function makeFind({
 }
 
 function makeReq({
-  chat = { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+  chat = {
+    enabled: true,
+    chatsSlug: 'chats',
+    messagesSlug: 'messages',
+    assetsSlug: 'frogbot-chat-assets',
+  },
   create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   db = {},
   deleteFn = vi.fn(() => Promise.resolve({})),
@@ -160,7 +165,11 @@ describe('resolveChatContext', () => {
     });
 
     it('creates a chat without a title when the first message has no text', async () => {
-      const image = { type: 'file', mediaType: 'image/png', url: 'https://files.test/frog.png' };
+      const image: UIMessage['parts'][number] = {
+        type: 'file',
+        mediaType: 'image/png',
+        url: 'https://files.test/frog.png',
+      };
       const { req, create } = makeReq();
 
       await resolveChatContext({
@@ -275,7 +284,7 @@ describe('resolveChatContext', () => {
 
     it('stores the selection on new messages and returns it as the turn selection', async () => {
       const { req, create } = makeReq();
-      const selection = { model: 'openai/other', reasoning: 'high' } as const;
+      const selection = { model: 'openai/gpt-5-mini', reasoning: 'high' } as const;
 
       const result = await resolveChatContext({
         req,
@@ -288,7 +297,11 @@ describe('resolveChatContext', () => {
 
       expect(create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ id: 'u2', model: 'openai/other', reasoning: 'high' }),
+          data: expect.objectContaining({
+            id: 'u2',
+            model: 'openai/gpt-5-mini',
+            reasoning: 'high',
+          }),
         }),
       );
       expect(result).toMatchObject({ status: 'ready', selection });
@@ -605,7 +618,7 @@ describe('resolveChatContext', () => {
           agentSlug: 'support',
           chatId: 'chat-1',
           incoming,
-          selection: { model: 'openai/other', reasoning: 'high' },
+          selection: { model: 'openai/gpt-5-mini', reasoning: 'high' },
           tools: {},
           delivery,
         });
@@ -618,7 +631,7 @@ describe('resolveChatContext', () => {
               id: 'u2',
               status: 'queued',
               delivery,
-              model: 'openai/other',
+              model: 'openai/gpt-5-mini',
               reasoning: 'high',
             }),
           }),
@@ -748,7 +761,9 @@ describe('resolveChatContext', () => {
 
         return Promise.resolve({
           docs: [
-            governing ? { ...historyDoc, model: 'openai/other', reasoning: 'high' } : turnMessage,
+            governing
+              ? { ...historyDoc, model: 'openai/gpt-5-mini', reasoning: 'high' }
+              : turnMessage,
           ],
         });
       });
@@ -760,13 +775,13 @@ describe('resolveChatContext', () => {
         agentSlug: 'support',
         chatId: 'chat-1',
         incoming: [answered],
-        selection: { model: 'openai/test' },
+        selection: { model: 'openai/gpt-5-nano' },
         tools: {},
       });
 
       expect(result).toMatchObject({
         status: 'ready',
-        selection: { model: 'openai/other', reasoning: 'high' },
+        selection: { model: 'openai/gpt-5-mini', reasoning: 'high' },
       });
       expect(find).toHaveBeenCalledWith(
         expect.objectContaining({

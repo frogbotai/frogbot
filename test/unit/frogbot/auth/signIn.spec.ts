@@ -14,12 +14,13 @@ const createIdentity = definePiece({
   slug: 'identity',
   label: 'Identity',
   auth: z.object({ access_token: z.string() }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   oauth: {
     authorizationUrl: 'https://identity.example/authorize',
     tokenUrl: 'https://identity.example/token',
     scopes: ['email'],
-    account: async () => ({ id: 'account', label: 'Account', email: 'person@example.com' }),
+    account: () =>
+      Promise.resolve({ id: 'account', label: 'Account', email: 'person@example.com' }),
   },
   actions: [],
 });
@@ -96,7 +97,7 @@ describe('collection sign-in configuration', () => {
       label: 'No account',
       actions: [],
       auth: z.object({ access_token: z.string() }),
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       oauth: {
         authorizationUrl: 'https://example.com',
         tokenUrl: 'https://example.com',

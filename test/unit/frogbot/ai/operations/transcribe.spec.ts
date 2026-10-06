@@ -1,9 +1,11 @@
+import type { TranscriptionModelV4CallOptions } from '@ai-sdk/provider';
 import { createGateway, type Gateway } from '@frogbotai/gateway';
 import { MockProviderV4, MockTranscriptionModelV4 } from 'ai/test';
-import { describe, expect, it, vi } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 
 import { transcribeOperation } from '../../../../../packages/frogbot/src/ai/operations/transcribe.js';
 import type { SanitizedAIConfig } from '../../../../../packages/frogbot/src/ai/types.js';
+import type { Logger } from '../../../../../packages/frogbot/src/frogbot.js';
 
 const bytes = new Uint8Array([82, 73, 70, 70, 1, 2, 3]);
 
@@ -30,25 +32,44 @@ const config = {
 } satisfies SanitizedAIConfig;
 
 function makeModel() {
-  const doGenerate = vi.fn(async () => ({
-    text: 'Hello from FrogBot',
-    segments: [],
-    language: 'en',
-    durationInSeconds: 1,
-    warnings: [],
-    response: { timestamp: new Date(0), modelId: 'whisper-1' },
-  }));
+  const doGenerate = vi.fn((_options: TranscriptionModelV4CallOptions) =>
+    Promise.resolve({
+      text: 'Hello from FrogBot',
+      segments: [],
+      language: 'en',
+      durationInSeconds: 1,
+      warnings: [],
+      response: { timestamp: new Date(0), modelId: 'whisper-1' },
+    }),
+  );
 
   return { model: new MockTranscriptionModelV4({ doGenerate }), doGenerate };
 }
+
+function sentOptions(doGenerate: ReturnType<typeof makeModel>['doGenerate']) {
+  const call = doGenerate.mock.calls[0];
+
+  assert(call, 'Expected a transcription call');
+
+  return call[0];
+}
+
+const logger: Logger = {
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+  trace: vi.fn(),
+  fatal: vi.fn(),
+};
 
 function makeGateway() {
   const { model, doGenerate } = makeModel();
   const transcribeModel = vi.fn(() => model);
 
   const operation = vi.fn(() => ({
-    start: async () => {},
-    finish: async () => {},
+    start: () => Promise.resolve(),
+    finish: () => Promise.resolve(),
     transcribeModel,
   }));
 
@@ -79,20 +100,23 @@ describe('transcribeOperation', () => {
     const { gateway, doGenerate } = makeGateway();
 
     const result = await transcribeOperation(
-      { gateway, config, logger: console },
+      { gateway, config, logger },
       { model: 'openai/whisper-1', audio: makeAudio() },
     );
 
     expect(result.text).toBe('Hello from FrogBot');
     expect(doGenerate).toHaveBeenCalledOnce();
-    expect(new Uint8Array(doGenerate.mock.calls[0][0].audio)).toEqual(bytes);
+    const { audio } = sentOptions(doGenerate);
+
+    assert(audio instanceof Uint8Array, 'Expected audio bytes');
+    expect(new Uint8Array(audio)).toEqual(bytes);
   });
 
   it('sends language under the provider name', async () => {
     const { gateway, doGenerate } = makeGateway();
 
     await transcribeOperation(
-      { gateway, config, logger: console },
+      { gateway, config, logger },
       {
         model: 'openai/whisper-1',
         audio: bytes,
@@ -101,7 +125,7 @@ describe('transcribeOperation', () => {
       },
     );
 
-    expect(doGenerate.mock.calls[0][0].providerOptions).toEqual({
+    expect(sentOptions(doGenerate).providerOptions).toEqual({
       openai: { language: 'fr', prompt: 'Bonjour' },
       groq: { language: 'de' },
     });
@@ -111,7 +135,7 @@ describe('transcribeOperation', () => {
     const { gateway, doGenerate } = makeGateway();
 
     await transcribeOperation(
-      { gateway, config, logger: console },
+      { gateway, config, logger },
       {
         model: 'openai/whisper-1',
         audio: bytes,
@@ -120,7 +144,7 @@ describe('transcribeOperation', () => {
       },
     );
 
-    expect(doGenerate.mock.calls[0][0].providerOptions).toEqual({ openai: { language: 'es' } });
+    expect(sentOptions(doGenerate).providerOptions).toEqual({ openai: { language: 'es' } });
   });
 
   it.each([
@@ -132,22 +156,22 @@ describe('transcribeOperation', () => {
     const { gateway, doGenerate } = makeGateway();
 
     await transcribeOperation(
-      { gateway, config, logger: console },
+      { gateway, config, logger },
       { model: model as never, audio: bytes, language: 'fr' },
     );
 
-    expect(doGenerate.mock.calls[0][0].providerOptions).toEqual(providerOptions);
+    expect(sentOptions(doGenerate).providerOptions).toEqual(providerOptions);
   });
 
   it('sends no provider options when neither language nor providerOptions is set', async () => {
     const { gateway, doGenerate } = makeGateway();
 
     await transcribeOperation(
-      { gateway, config, logger: console },
+      { gateway, config, logger },
       { model: 'openai/whisper-1', audio: bytes },
     );
 
-    expect(doGenerate.mock.calls[0][0].providerOptions).toEqual({});
+    expect(sentOptions(doGenerate).providerOptions).toEqual({});
   });
 
   it('delivers Blob bytes and language through a real gateway to the provider', async () => {
@@ -164,7 +188,7 @@ describe('transcribeOperation', () => {
     }) as unknown as typeof gateway.registry.groq;
 
     const result = await transcribeOperation(
-      { gateway, config, logger: console },
+      { gateway, config, logger },
       {
         model: 'groq/whisper-large-v3',
         audio: new Blob([bytes], { type: 'audio/wav' }),
@@ -174,7 +198,7 @@ describe('transcribeOperation', () => {
 
     expect(result.text).toBe('Hello from FrogBot');
     expect(doGenerate).toHaveBeenCalledOnce();
-    expect(doGenerate.mock.calls[0][0]).toMatchObject({
+    expect(sentOptions(doGenerate)).toMatchObject({
       audio: bytes,
       providerOptions: { groq: { language: 'fr' } },
     });

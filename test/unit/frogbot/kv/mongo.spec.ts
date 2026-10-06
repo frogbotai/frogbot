@@ -5,16 +5,18 @@ import { createMongoKV } from '../../../../packages/frogbot/src/kv/adapters/mong
 import { KVUnsupportedError } from '../../../../packages/frogbot/src/kv/errors.js';
 import { kvAtomic } from '../../../../packages/frogbot/src/kv/types.js';
 
+type Fixture = ReturnType<typeof fixture>;
+
 function fixture() {
   const native = {
     deleteMany: vi.fn().mockResolvedValue({ deletedCount: 0 }),
     deleteOne: vi.fn().mockResolvedValue({ deletedCount: 0 }),
-    find: vi.fn().mockReturnValue({ toArray: async () => [] }),
+    find: vi.fn().mockReturnValue({ toArray: () => Promise.resolve([]) }),
     findOne: vi.fn().mockResolvedValue(null),
     findOneAndUpdate: vi.fn().mockResolvedValue({ _id: 'existing', expiresAt: null }),
     insertOne: vi.fn().mockResolvedValue({ insertedId: 'generated' }),
     listIndexes: vi.fn().mockReturnValue({
-      toArray: async () => [{ key: { key: 1 }, unique: true }],
+      toArray: () => Promise.resolve([{ key: { key: 1 }, unique: true }]),
     }),
     updateOne: vi.fn().mockResolvedValue({ matchedCount: 0 }),
   };
@@ -97,7 +99,7 @@ describe('Mongo KV', () => {
     ].map((indexes) => ({ indexes })),
   )('refuses unsafe key indexes: %j', async ({ indexes }) => {
     const { kv, native } = fixture();
-    native.listIndexes.mockReturnValue({ toArray: async () => indexes });
+    native.listIndexes.mockReturnValue({ toArray: () => Promise.resolve(indexes) });
     await expect(kv.setIfAbsent('key', 'value')).rejects.toThrow('unique, non-partial key index');
     expect(native.updateOne).not.toHaveBeenCalled();
   });
@@ -242,55 +244,62 @@ describe('Mongo KV', () => {
     expect(native.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  it.each(['standalone', 'custom ID', 'missing unique index'])(
-    'preserves basic storage and cleanup with %s',
-    async (configuration) => {
-      const { kv, model, native, upsert } = fixture();
-      if (configuration === 'standalone') model.db.db.command.mockResolvedValue({});
-      if (configuration === 'custom ID') {
-        model.schema.path.mockReturnValue({ instance: 'Number', options: {} });
-      }
-      if (configuration === 'missing unique index') {
-        native.listIndexes.mockReturnValue({ toArray: async () => [] });
-      }
-      native.findOne.mockResolvedValue({ key: 'key', data: 'value' });
-      native.find.mockReturnValue({ toArray: async () => [{ key: 'key' }] });
-      await expect(kv.set('key', 'value')).resolves.toBeUndefined();
-      expect(upsert).toHaveBeenCalledWith({
-        collection: 'customKV',
-        data: { key: 'key', data: 'value', expiresAt: null },
-        joins: false,
-        req: {},
-        select: {},
-        where: { key: { equals: 'key' } },
-      });
-      await expect(kv.get('key')).resolves.toBe('value');
-      await expect(kv.has('key')).resolves.toBe(true);
-      await expect(kv.keys()).resolves.toEqual(['key']);
-      await expect(kv.delete('key')).resolves.toBeUndefined();
-      await expect(kv.clear()).resolves.toBeUndefined();
-      await expect(kv.cleanup()).resolves.toBeUndefined();
-      expect(model.db.db.command).not.toHaveBeenCalled();
-      expect(model.schema.path).not.toHaveBeenCalled();
-      expect(native.listIndexes).not.toHaveBeenCalled();
-      expect(model.db.startSession).not.toHaveBeenCalled();
-      for (const [filter, options] of [...native.findOne.mock.calls, ...native.find.mock.calls]) {
-        expect(filter).toHaveProperty('$expr');
-        expect(options).toMatchObject({ readPreference: 'primary' });
-      }
-      expect(native.deleteMany).toHaveBeenLastCalledWith(
-        { $expr: expect.any(Object) },
-        expect.objectContaining({ readPreference: 'primary' }),
-      );
-      await expect(kv.setIfAbsent('key', 'intruder')).rejects.toBeInstanceOf(KVUnsupportedError);
-      expect(native.findOneAndUpdate).not.toHaveBeenCalled();
-      expect(native.insertOne).not.toHaveBeenCalled();
-      expect(native.updateOne).not.toHaveBeenCalled();
-      await expect(kv.get('key')).resolves.toBe('value');
-      await expect(kv.set('key', 'replacement', {})).resolves.toBeUndefined();
-      expect(upsert).toHaveBeenCalledTimes(2);
+  it.each([
+    {
+      configuration: 'standalone',
+      configure: ({ model }: Fixture) => model.db.db.command.mockResolvedValue({}),
     },
-  );
+    {
+      configuration: 'custom ID',
+      configure: ({ model }: Fixture) =>
+        model.schema.path.mockReturnValue({ instance: 'Number', options: {} }),
+    },
+    {
+      configuration: 'missing unique index',
+      configure: ({ native }: Fixture) =>
+        native.listIndexes.mockReturnValue({ toArray: () => Promise.resolve([]) }),
+    },
+  ])('preserves basic storage and cleanup with $configuration', async ({ configure }) => {
+    const setup = fixture();
+    const { kv, model, native, upsert } = setup;
+    configure(setup);
+    native.findOne.mockResolvedValue({ key: 'key', data: 'value' });
+    native.find.mockReturnValue({ toArray: () => Promise.resolve([{ key: 'key' }]) });
+    await expect(kv.set('key', 'value')).resolves.toBeUndefined();
+    expect(upsert).toHaveBeenCalledWith({
+      collection: 'customKV',
+      data: { key: 'key', data: 'value', expiresAt: null },
+      joins: false,
+      req: {},
+      select: {},
+      where: { key: { equals: 'key' } },
+    });
+    await expect(kv.get('key')).resolves.toBe('value');
+    await expect(kv.has('key')).resolves.toBe(true);
+    await expect(kv.keys()).resolves.toEqual(['key']);
+    await expect(kv.delete('key')).resolves.toBeUndefined();
+    await expect(kv.clear()).resolves.toBeUndefined();
+    await expect(kv.cleanup()).resolves.toBeUndefined();
+    expect(model.db.db.command).not.toHaveBeenCalled();
+    expect(model.schema.path).not.toHaveBeenCalled();
+    expect(native.listIndexes).not.toHaveBeenCalled();
+    expect(model.db.startSession).not.toHaveBeenCalled();
+    for (const [filter, options] of [...native.findOne.mock.calls, ...native.find.mock.calls]) {
+      expect(filter).toHaveProperty('$expr');
+      expect(options).toMatchObject({ readPreference: 'primary' });
+    }
+    expect(native.deleteMany).toHaveBeenLastCalledWith(
+      { $expr: expect.any(Object) },
+      expect.objectContaining({ readPreference: 'primary' }),
+    );
+    await expect(kv.setIfAbsent('key', 'intruder')).rejects.toBeInstanceOf(KVUnsupportedError);
+    expect(native.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(native.insertOne).not.toHaveBeenCalled();
+    expect(native.updateOne).not.toHaveBeenCalled();
+    await expect(kv.get('key')).resolves.toBe('value');
+    await expect(kv.set('key', 'replacement', {})).resolves.toBeUndefined();
+    expect(upsert).toHaveBeenCalledTimes(2);
+  });
 
   it('recovers from a transient capability-check failure without poisoning basic or extended calls', async () => {
     const { kv, model, native, upsert } = fixture();

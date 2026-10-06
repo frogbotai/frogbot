@@ -2,7 +2,7 @@ import type { UIMessage, UIMessageChunk } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
+import type { AgentInstance, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
 import { assertStoredSelection } from '../../../../packages/frogbot/src/chat/turn/selection.js';
 import type * as StreamTurnModule from '../../../../packages/frogbot/src/chat/turn/streamTurn.js';
@@ -33,6 +33,12 @@ vi.mock('../../../../packages/frogbot/src/chat/turn/streamTurn.js', async (impor
 
 const { buildAgentEndpoints } =
   await import('../../../../packages/frogbot/src/agents/endpoints.js');
+
+const OPENAI_TEST = 'openai/test' as AgentModelId;
+const OPENAI_OTHER = 'openai/other' as AgentModelId;
+const LOCAL_THINKER = 'local/thinker' as AgentModelId;
+const LOCAL_DEEP = 'local/deep' as AgentModelId;
+const LOCAL_PLAIN = 'local/plain' as AgentModelId;
 
 const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
 
@@ -77,12 +83,13 @@ function makeAgent(): AgentInstance {
     slug: 'support',
     config: {
       slug: 'support',
-      model: { default: 'openai/test', options: ['openai/test'] },
+      model: { default: OPENAI_TEST, options: [OPENAI_TEST] },
       instructions: 'Help',
     },
     aiAgent: { tools: {} } as unknown as AgentInstance['aiAgent'],
     generate: vi.fn() as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
+    streamMessage: vi.fn() as AgentInstance['streamMessage'],
   };
 }
 
@@ -174,13 +181,15 @@ describe('agent endpoints', () => {
     listPendingCalls.mockReset().mockResolvedValue([]);
     releaseTurn.mockReset().mockResolvedValue(true);
 
-    resolveChatContext.mockReset().mockImplementation(async ({ selection }) => ({
-      status: 'ready',
-      chatId: 'chat-1',
-      uiMessages: history,
-      claim,
-      selection,
-    }));
+    resolveChatContext.mockReset().mockImplementation(({ selection }) =>
+      Promise.resolve({
+        status: 'ready',
+        chatId: 'chat-1',
+        uiMessages: history,
+        claim,
+        selection,
+      }),
+    );
 
     streamTurn.mockReset().mockImplementation(() => Promise.resolve(makeTurn()));
   });
@@ -210,7 +219,7 @@ describe('agent endpoints', () => {
   it('filters the manifest for a restricted user', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_PLAIN];
 
     const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
 
@@ -233,7 +242,7 @@ describe('agent endpoints', () => {
   it('rejects a user-blocked model before creating a chat or saving a message', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_PLAIN];
 
     const req = makeRequest({
       agent,
@@ -254,7 +263,7 @@ describe('agent endpoints', () => {
   it('runs an offered model allowed for a restricted user', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_PLAIN];
 
     const req = makeRequest({
       agent,
@@ -273,12 +282,12 @@ describe('agent endpoints', () => {
   it('runs the user fallback when no model is named', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_PLAIN];
 
     const req = makeRequest({ agent, user: { id: 'user-1', models: ['local/plain'] } });
     const runModel = vi.fn();
 
-    streamTurn.mockImplementation(async ({ agent: current, req: request, selection }) => {
+    streamTurn.mockImplementation(({ agent: current, req: request, selection }) => {
       const resolved = assertStoredSelection({
         agent: current,
         config: request.frogbot.config.ai!,
@@ -288,7 +297,7 @@ describe('agent endpoints', () => {
 
       runModel(resolved.model);
 
-      return makeTurn();
+      return Promise.resolve(makeTurn());
     });
 
     const response = await postHandler()(req);
@@ -300,7 +309,7 @@ describe('agent endpoints', () => {
   it('advertises reasoning options only for allowed models that offer them', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_PLAIN];
 
     const response = await listHandler()(makeRequest({ agent }));
 
@@ -324,7 +333,7 @@ describe('agent endpoints', () => {
       slug: 'google-sheets',
       label: 'Google Sheets',
       auth: z.string(),
-      client: ({ auth }) => ({ auth }),
+      client: ({ auth }: { auth: unknown }) => ({ auth }),
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
         tokenUrl: 'https://example.com/token',
@@ -332,7 +341,12 @@ describe('agent endpoints', () => {
         toAuth: ({ tokens }) => tokens.access_token,
       },
       actions: [
-        { slug: 'find', description: 'Find rows', input: z.object({}), run: async () => [] },
+        {
+          slug: 'find',
+          description: 'Find rows',
+          input: z.object({}),
+          run: () => Promise.resolve([]),
+        },
       ],
     })({ slug: 'sheets', oauth: { clientId: 'client-id', clientSecret: 'client-secret' } });
     const requirements = [
@@ -503,7 +517,7 @@ describe('agent endpoints', () => {
   it('rejects a configured chat model outside explicit agent options before creating a chat', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_PLAIN];
 
     const response = await postHandler()(
       makeRequest({ agent, body: { prompt: 'Hello', model: 'local/deep' } }),
@@ -520,7 +534,7 @@ describe('agent endpoints', () => {
   it('passes an allowed model to the turn', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'openai/other'];
+    agent.config.model.options = [OPENAI_TEST, OPENAI_OTHER];
 
     const response = await postHandler()(
       makeRequest({ agent, body: { prompt: 'Hello', model: 'openai/other' } }),
@@ -535,7 +549,7 @@ describe('agent endpoints', () => {
   it('stores and runs the selected model and reasoning option', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/thinker'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER];
 
     const response = await postHandler()(
       makeRequest({ agent, body: { prompt: 'Hello', model: 'local/thinker', reasoning: 'high' } }),
@@ -553,7 +567,7 @@ describe('agent endpoints', () => {
   it('runs the selection resolved by the chat context rather than the body', async () => {
     const agent = makeAgent();
 
-    agent.config.model.options = ['openai/test', 'local/thinker', 'local/plain'];
+    agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_PLAIN];
 
     resolveChatContext.mockResolvedValue({
       status: 'ready',
@@ -582,7 +596,7 @@ describe('agent endpoints', () => {
     async (accept, selection, model) => {
       const agent = makeAgent();
 
-      agent.config.model.options = ['openai/test', 'local/thinker', 'local/deep', 'local/plain'];
+      agent.config.model.options = [OPENAI_TEST, LOCAL_THINKER, LOCAL_DEEP, LOCAL_PLAIN];
 
       const response = await postHandler()(
         makeRequest({ accept, agent, body: { prompt: 'Hello', ...selection } }),

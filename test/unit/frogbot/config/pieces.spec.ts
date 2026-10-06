@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 
+import type { AgentConfig } from '../../../../packages/frogbot/src/agents/types.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import {
@@ -12,7 +13,7 @@ import type { Piece, PieceInstance } from '../../../../packages/frogbot/src/piec
 const db = {} as never;
 const collections = [{ slug: 'users', auth: true, fields: [] }];
 const ai = { providers: { openai: { apiKey: 'sk-test' } } };
-const agent = {
+const agent: AgentConfig = {
   slug: 'support',
   model: 'openai/gpt-5.4-mini',
   instructions: 'Help the user',
@@ -41,7 +42,7 @@ const createChannel = definePiece({
   slug: 'channel',
   label: 'Channel',
   auth: z.object({ token: z.string() }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   actions: [
     {
       slug: 'post',
@@ -52,9 +53,7 @@ const createChannel = definePiece({
   ],
   channel: {
     adapter: () => ({}) as never,
-    async identity() {
-      return null;
-    },
+    identity: () => Promise.resolve(null),
   },
 });
 
@@ -62,7 +61,7 @@ const createLinked = definePiece({
   slug: 'linked',
   label: 'Linked',
   auth: z.object({ apiKey: z.string().min(1) }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   actions: [],
 });
 
@@ -71,7 +70,7 @@ const createTrigger = definePiece({
   label: 'Trigger example',
   actions: [],
   webhook: {
-    verify: async () => true,
+    verify: () => Promise.resolve(true),
     parse: () => ({ event: 'created' }),
   },
   triggers: [
@@ -81,9 +80,7 @@ const createTrigger = definePiece({
       event: 'created',
       description: 'Created',
       input: z.object({}),
-      async run() {
-        return [];
-      },
+      run: () => Promise.resolve([]),
     },
   ],
 });

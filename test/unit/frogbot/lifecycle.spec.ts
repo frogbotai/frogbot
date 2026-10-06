@@ -1,3 +1,4 @@
+import type * as PayloadModule from 'payload';
 import { getPayload } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -25,7 +26,7 @@ const payloadState = vi.hoisted(() => ({
 }));
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: object) => Promise.resolve({ globals: [], ...config })),
   createLocalReq: vi.fn(),
   getPayload: vi.fn(

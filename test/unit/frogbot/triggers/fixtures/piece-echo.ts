@@ -2,7 +2,10 @@ import { createHmac } from 'node:crypto';
 
 import { z } from 'zod';
 
-import { definePiece } from '../../../../../packages/frogbot/src/pieces/definePiece.js';
+import {
+  createPieceHelpers,
+  definePiece,
+} from '../../../../../packages/frogbot/src/pieces/definePiece.js';
 
 export const echoSecret = 'echo-secret';
 export const echoCalls: Array<Record<string, unknown>> = [];
@@ -11,7 +14,69 @@ export function resetEchoCalls(): void {
   echoCalls.length = 0;
 }
 
+type EchoOptions = { prefix: string };
+
+const { defineAppTrigger, defineWebhookTrigger } = createPieceHelpers<EchoOptions, EchoOptions>();
+
 export function defineEchoPiece(define: typeof definePiece) {
+  const receivedTrigger = defineAppTrigger({
+    slug: 'received',
+    type: 'app',
+    event: 'received',
+    description: 'Receive an echo event.',
+    input: z.object({}),
+    output: z.object({ message: z.string() }),
+    run({ req, options, client }) {
+      const data = req.data as { id: string; message: string };
+      echoCalls.push({ type: 'app', data, options, client });
+      return Promise.resolve([
+        { dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } },
+      ]);
+    },
+  });
+
+  const subscribedTrigger = defineWebhookTrigger({
+    slug: 'subscribed',
+    type: 'webhook',
+    description: 'Receive a subscribed echo event.',
+    input: z.object({ channel: z.string() }),
+    output: z.object({ message: z.string() }),
+    onEnable({ input, webhookUrl, options, client }) {
+      echoCalls.push({ type: 'enable', input, webhookUrl, options, client });
+      return Promise.resolve({ enabled: input.channel });
+    },
+    onDisable({ input, state, options, client }) {
+      echoCalls.push({ type: 'disable', input, state, options, client });
+      return Promise.resolve();
+    },
+    run({ req, input, options, client, state }) {
+      const data = req.data as { id: string; message: string };
+      echoCalls.push({ type: 'webhook', input, data, options, client, state });
+      return Promise.resolve([
+        { dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } },
+      ]);
+    },
+  });
+
+  const otherTrigger = defineWebhookTrigger({
+    slug: 'other',
+    type: 'webhook',
+    description: 'Receive another subscribed echo event.',
+    input: z.object({ channel: z.string() }),
+    output: z.object({ message: z.string() }),
+    onEnable() {
+      return Promise.resolve({});
+    },
+    async onDisable() {},
+    run({ req, input, options, client }) {
+      const data = req.data as { id: string; message: string };
+      echoCalls.push({ type: 'other', input, data, options, client });
+      return Promise.resolve([
+        { dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } },
+      ]);
+    },
+  });
+
   return define({
     slug: 'echo',
     label: 'Echo',
@@ -26,64 +91,17 @@ export function defineEchoPiece(define: typeof definePiece) {
           createHmac('sha256', echoSecret).update(body).digest('hex')
         );
       },
-      async handshake({ req }) {
+      handshake({ req }) {
         const data = req.data as { challenge?: string } | undefined;
-        return data?.challenge ? Response.json({ challenge: data.challenge }) : null;
+        return Promise.resolve(
+          data?.challenge ? Response.json({ challenge: data.challenge }) : null,
+        );
       },
       parse({ req }) {
         return { event: (req.data as { event: string }).event };
       },
     },
-    triggers: [
-      {
-        slug: 'received',
-        type: 'app',
-        event: 'received',
-        description: 'Receive an echo event.',
-        input: z.object({}),
-        output: z.object({ message: z.string() }),
-        async run({ req, options, client }) {
-          const data = req.data as { id: string; message: string };
-          echoCalls.push({ type: 'app', data, options, client });
-          return [{ dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } }];
-        },
-      },
-      {
-        slug: 'subscribed',
-        type: 'webhook',
-        description: 'Receive a subscribed echo event.',
-        input: z.object({ channel: z.string() }),
-        output: z.object({ message: z.string() }),
-        async onEnable({ input, webhookUrl, options, client }) {
-          echoCalls.push({ type: 'enable', input, webhookUrl, options, client });
-          return { enabled: input.channel };
-        },
-        async onDisable({ input, state, options, client }) {
-          echoCalls.push({ type: 'disable', input, state, options, client });
-        },
-        async run({ req, input, options, client, state }) {
-          const data = req.data as { id: string; message: string };
-          echoCalls.push({ type: 'webhook', input, data, options, client, state });
-          return [{ dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } }];
-        },
-      },
-      {
-        slug: 'other',
-        type: 'webhook',
-        description: 'Receive another subscribed echo event.',
-        input: z.object({ channel: z.string() }),
-        output: z.object({ message: z.string() }),
-        async onEnable() {
-          return {};
-        },
-        async onDisable() {},
-        async run({ req, input, options, client }) {
-          const data = req.data as { id: string; message: string };
-          echoCalls.push({ type: 'other', input, data, options, client });
-          return [{ dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } }];
-        },
-      },
-    ],
+    triggers: [receivedTrigger, subscribedTrigger, otherTrigger],
   });
 }
 

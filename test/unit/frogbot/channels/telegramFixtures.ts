@@ -71,12 +71,12 @@ export function createTelegramApi() {
     return { status: 200, payload: { ok: true, result } };
   };
 
-  const fetch = async (input: string | URL | Request, init?: RequestInit) => {
+  const fetch = (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     const method = url.pathname.split('/').at(-1)!;
     const { status, payload } = handle(method, JSON.parse(String(init?.body ?? '{}')));
 
-    return Response.json(payload, { status });
+    return Promise.resolve(Response.json(payload, { status }));
   };
 
   const listen = async () => {

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
+
 const modulePath = '../../../../packages/frogbot/src/tools/todos.js';
 
 async function loadTools() {
@@ -103,7 +105,7 @@ describe('todo tools', () => {
   it('ships the todo renderer on both tools', async () => {
     const { todoTools } = await loadTools();
 
-    expect(todoTools.map(({ component }) => component)).toEqual([
+    expect(todoTools.map(({ component }: AnyTool) => component)).toEqual([
       '@frogbotai/ui/chat#TodoToolRender',
       '@frogbotai/ui/chat#TodoToolRender',
     ]);

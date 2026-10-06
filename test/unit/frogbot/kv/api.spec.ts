@@ -12,48 +12,51 @@ import type { KV, KVAtomicAdapter, KVLock } from '../../../../packages/frogbot/s
 class LegacyAdapter implements KVAdapter {
   readonly values = new Map<string, KVStoreValue>();
 
-  async clear() {
+  clear(): Promise<void> {
     this.values.clear();
+    return Promise.resolve();
   }
 
-  async delete(key: string) {
+  delete(key: string): Promise<void> {
     this.values.delete(key);
+    return Promise.resolve();
   }
 
-  async get<T extends KVStoreValue>(key: string): Promise<T | null> {
-    return (this.values.get(key) as T | undefined) ?? null;
+  get<T extends KVStoreValue>(key: string): Promise<T | null> {
+    return Promise.resolve((this.values.get(key) as T | undefined) ?? null);
   }
 
-  async has(key: string) {
-    return this.values.has(key);
+  has(key: string): Promise<boolean> {
+    return Promise.resolve(this.values.has(key));
   }
 
-  async keys() {
-    return [...this.values.keys()];
+  keys(): Promise<string[]> {
+    return Promise.resolve([...this.values.keys()]);
   }
 
-  async set(key: string, value: KVStoreValue) {
+  set(key: string, value: KVStoreValue): Promise<void> {
     this.values.set(key, value);
+    return Promise.resolve();
   }
 }
 
 class AtomicAdapter extends LegacyAdapter implements KVAtomicAdapter {
   readonly [kvAtomic] = true;
 
-  async setIfAbsent(key: string, value: KVStoreValue) {
-    if (this.values.has(key)) return false;
+  setIfAbsent(key: string, value: KVStoreValue): Promise<boolean> {
+    if (this.values.has(key)) return Promise.resolve(false);
     this.values.set(key, value);
-    return true;
+    return Promise.resolve(true);
   }
 
-  async extendLock(lock: KVLock) {
-    return this.values.get(lock.key) === lock.token;
+  extendLock(lock: KVLock): Promise<boolean> {
+    return Promise.resolve(this.values.get(lock.key) === lock.token);
   }
 
-  async releaseLock(lock: KVLock) {
-    if (this.values.get(lock.key) !== lock.token) return false;
+  releaseLock(lock: KVLock): Promise<boolean> {
+    if (this.values.get(lock.key) !== lock.token) return Promise.resolve(false);
     this.values.delete(lock.key);
-    return true;
+    return Promise.resolve(true);
   }
 }
 

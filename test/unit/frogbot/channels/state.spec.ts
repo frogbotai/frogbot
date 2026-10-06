@@ -1,5 +1,5 @@
 import type { KVStoreValue } from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createChannelStateAdapter } from '../../../../packages/frogbot/src/channels/state.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
@@ -11,42 +11,50 @@ function memoryKV(): KV {
   let token = 0;
 
   const kv = {
-    clear: async () => values.clear(),
-    delete: async (key: string) => {
+    clear: () => {
+      values.clear();
+
+      return Promise.resolve();
+    },
+    delete: (key: string) => {
       values.delete(key);
       locks.delete(key);
+
+      return Promise.resolve();
     },
-    get: async (key: string) => values.get(key) ?? null,
-    has: async (key: string) => values.has(key),
-    keys: async () => [...values.keys()],
-    set: async (key: string, value: KVStoreValue, _options?: KVSetOptions) => {
+    get: (key: string) => Promise.resolve(values.get(key) ?? null),
+    has: (key: string) => Promise.resolve(values.has(key)),
+    keys: () => Promise.resolve([...values.keys()]),
+    set: (key: string, value: KVStoreValue, _options?: KVSetOptions) => {
       values.set(key, value);
+
+      return Promise.resolve();
     },
-    setIfAbsent: async (key: string, value: KVStoreValue, _options?: KVSetOptions) => {
-      if (values.has(key)) return false;
+    setIfAbsent: (key: string, value: KVStoreValue, _options?: KVSetOptions) => {
+      if (values.has(key)) return Promise.resolve(false);
 
       values.set(key, value);
 
-      return true;
+      return Promise.resolve(true);
     },
-    acquireLock: async (key: string) => {
-      if (locks.has(key)) return null;
+    acquireLock: (key: string): Promise<KVLock | null> => {
+      if (locks.has(key)) return Promise.resolve(null);
 
       const next = `token-${++token}`;
 
       locks.set(key, next);
       values.set(key, next);
 
-      return { key, token: next };
+      return Promise.resolve({ key, token: next });
     },
-    extendLock: async (lock: KVLock) => locks.get(lock.key) === lock.token,
-    releaseLock: async (lock: KVLock) => {
-      if (locks.get(lock.key) !== lock.token) return false;
+    extendLock: (lock: KVLock) => Promise.resolve(locks.get(lock.key) === lock.token),
+    releaseLock: (lock: KVLock) => {
+      if (locks.get(lock.key) !== lock.token) return Promise.resolve(false);
 
       locks.delete(lock.key);
       values.delete(lock.key);
 
-      return true;
+      return Promise.resolve(true);
     },
     lock: <T>(key: string, ttl: number, fn: Parameters<typeof runKVLock<T>>[0]['fn']) =>
       runKVLock({ kv, key, ttl, fn }),
@@ -121,23 +129,23 @@ describe('createChannelStateAdapter', () => {
     vi.useFakeTimers();
     vi.setSystemTime(1000);
 
-    try {
-      const kv = memoryKV();
-      const acquire = kv.acquireLock;
-
-      kv.acquireLock = async (key, ttl) => {
-        const lock = await acquire(key, ttl);
-
-        vi.setSystemTime(1500);
-
-        return lock;
-      };
-
-      const state = createChannelStateAdapter({ kv, namespace: 'latency' });
-
-      await expect(state.acquireLock('thread', 1000)).resolves.toMatchObject({ expiresAt: 2000 });
-    } finally {
+    onTestFinished(() => {
       vi.useRealTimers();
-    }
+    });
+
+    const kv = memoryKV();
+    const acquire = kv.acquireLock;
+
+    kv.acquireLock = async (key, ttl) => {
+      const lock = await acquire(key, ttl);
+
+      vi.setSystemTime(1500);
+
+      return lock;
+    };
+
+    const state = createChannelStateAdapter({ kv, namespace: 'latency' });
+
+    await expect(state.acquireLock('thread', 1000)).resolves.toMatchObject({ expiresAt: 2000 });
   });
 });

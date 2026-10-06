@@ -3,9 +3,14 @@ import { createHmac } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import {
+  createPieceHelpers,
+  definePiece,
+} from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { buildTriggerEndpoints } from '../../../../packages/frogbot/src/triggers/endpoints.js';
 import { createEchoPiece, echoCalls, echoSecret, resetEchoCalls } from './fixtures/piece-echo.js';
+
+const { defineAppTrigger, defineWebhookTrigger } = createPieceHelpers();
 
 const instance = createEchoPiece({ prefix: 'echo: ' });
 const appSubscriber = {
@@ -57,13 +62,13 @@ function request(body: Record<string, unknown>, subscription?: string) {
 function kv() {
   const values = new Set<string>();
   return {
-    has: vi.fn(async (key: string) => values.has(key)),
-    setIfAbsent: vi.fn(async (key: string) => {
-      if (values.has(key)) return false;
+    has: vi.fn((key: string) => Promise.resolve(values.has(key))),
+    setIfAbsent: vi.fn((key: string) => {
+      if (values.has(key)) return Promise.resolve(false);
       values.add(key);
-      return true;
+      return Promise.resolve(true);
     }),
-    lock: vi.fn(async (_key, _ttl, fn) => fn({ signal: new AbortController().signal })),
+    lock: vi.fn((_key, _ttl, fn) => Promise.resolve(fn({ signal: new AbortController().signal }))),
   };
 }
 
@@ -145,10 +150,10 @@ describe('trigger endpoints', () => {
   });
 
   it('dispatches subscribed triggers without a piece webhook and passes persisted state', async () => {
-    const run = vi.fn(async ({ req, state }) => {
+    const run = vi.fn(({ req, state }) => {
       const data = req.data as { id: string; token: string };
 
-      return data.token === state.token ? [{ dedupeKey: data.id, data }] : [];
+      return Promise.resolve(data.token === state.token ? [{ dedupeKey: data.id, data }] : []);
     });
     const instance = definePiece({
       slug: 'stateful',
@@ -161,8 +166,8 @@ describe('trigger endpoints', () => {
           description: 'Receive authenticated events',
           input: z.object({}),
           output: z.object({ id: z.string(), token: z.string() }),
-          async onEnable() {
-            return { token: 'persisted-secret' };
+          onEnable() {
+            return Promise.resolve({ token: 'persisted-secret' });
           },
           async onDisable() {},
           run,
@@ -320,7 +325,7 @@ describe('trigger endpoints', () => {
         return [{ dedupeKey: req.data.id, data: { token: client.token } }];
       });
       const trigger = {
-        slug: 'received',
+        slug: 'received' as const,
         description: 'Receive',
         input: z.object({}),
         output: z.object({ token: z.string() }),
@@ -331,7 +336,7 @@ describe('trigger endpoints', () => {
         label: 'Owned',
         actions: [],
         auth: z.object({ token: z.string() }),
-        client: ({ auth }) => auth,
+        client: ({ auth }: { auth: unknown }) => auth,
         webhook: { verify, parse: ({ req }) => ({ event: req.data!.event }) },
         triggers: [
           type === 'app'
@@ -339,16 +344,18 @@ describe('trigger endpoints', () => {
             : {
                 ...trigger,
                 type: 'webhook',
-                onEnable: async () => ({}),
+                onEnable: () => Promise.resolve({}),
                 onDisable: async () => {},
               },
         ],
       })({ auth: { token: 'developer' } });
       const client = vi.spyOn(instance, 'client');
-      const resolvePieceCredential = vi.fn(async ({ req, piece }) => ({
-        auth: req.user ? { token: 'user' } : { token: 'developer' },
-        key: piece,
-      }));
+      const resolvePieceCredential = vi.fn(({ req, piece }) =>
+        Promise.resolve({
+          auth: req.user ? { token: 'user' } : { token: 'developer' },
+          key: piece,
+        }),
+      );
       const subscriber = {
         agentSlug: 'ops',
         piece: instance,
@@ -412,26 +419,25 @@ describe('trigger endpoints', () => {
 
   it('applies the trigger input schema to persisted raw input, including Date transforms', async () => {
     const since = '2026-09-12T00:00:00.000Z';
-    const run = vi.fn(async ({ input }) => [
-      { dedupeKey: 'date', data: { since: input.since.toISOString() } },
-    ]);
+    const run = vi.fn(({ input }) =>
+      Promise.resolve([{ dedupeKey: 'date', data: { since: input.since.toISOString() } }]),
+    );
+    const trigger = defineWebhookTrigger({
+      slug: 'dated',
+      type: 'webhook',
+      description: 'Receive dated events',
+      input: z.object({ since: z.string().transform((value) => new Date(value)) }),
+      output: z.object({ since: z.string() }),
+      onEnable: ({ input }) => Promise.resolve({ since: input.since.toISOString() }),
+      onDisable: async () => {},
+      run,
+    });
     const instance = definePiece({
       slug: 'dates',
       label: 'Dates',
       actions: [],
-      webhook: { verify: async () => true },
-      triggers: [
-        {
-          slug: 'dated',
-          type: 'webhook',
-          description: 'Receive dated events',
-          input: z.object({ since: z.string().transform((value) => new Date(value)) }),
-          output: z.object({ since: z.string() }),
-          onEnable: async ({ input }) => ({ since: input.since.toISOString() }),
-          onDisable: async () => {},
-          run,
-        },
-      ],
+      webhook: { verify: () => Promise.resolve(true) },
+      triggers: [trigger],
     })();
     const subscriber = {
       agentSlug: 'ops',
@@ -501,8 +507,8 @@ describe('trigger endpoints', () => {
           description: 'Receive',
           input: z.object({}),
           output: z.object({}),
-          async run() {
-            return [];
+          run() {
+            return Promise.resolve([]);
           },
         },
       ],
@@ -527,7 +533,9 @@ describe('trigger endpoints', () => {
 
   it('routes GET directly to the handshake with its query and request context', async () => {
     const verify = vi.fn().mockResolvedValue(false);
-    const handshake = vi.fn(async ({ req }) => Response.json({ challenge: req.query.challenge }));
+    const handshake = vi.fn(({ req }) =>
+      Promise.resolve(Response.json({ challenge: req.query.challenge })),
+    );
     const instance = definePiece({
       slug: 'challenge',
       label: 'Challenge',
@@ -560,25 +568,27 @@ describe('trigger endpoints', () => {
   });
 
   it('keeps each app subscriber’s filtered and transformed results isolated', async () => {
+    const trigger = defineAppTrigger({
+      slug: 'received',
+      type: 'app',
+      event: 'received',
+      description: 'Receive',
+      input: z.object({ accept: z.boolean(), label: z.string() }),
+      output: z.object({ label: z.string() }),
+      async run({ input, req }) {
+        expect(await req.json!()).toEqual(req.data);
+        return input.accept ? [{ dedupeKey: req.data!.id, data: { label: input.label } }] : [];
+      },
+    });
     const instance = definePiece({
       slug: 'filtered',
       label: 'Filtered',
       actions: [],
-      webhook: { verify: async () => true, parse: ({ req }) => ({ event: req.data!.event }) },
-      triggers: [
-        {
-          slug: 'received',
-          type: 'app',
-          event: 'received',
-          description: 'Receive',
-          input: z.object({ accept: z.boolean(), label: z.string() }),
-          output: z.object({ label: z.string() }),
-          async run({ input, req }) {
-            expect(await req.json!()).toEqual(req.data);
-            return input.accept ? [{ dedupeKey: req.data!.id, data: { label: input.label } }] : [];
-          },
-        },
-      ],
+      webhook: {
+        verify: () => Promise.resolve(true),
+        parse: ({ req }) => ({ event: req.data!.event }),
+      },
+      triggers: [trigger],
     })();
     const subscribers = ['ops', 'audit', 'ignored'].map((agentSlug) => ({
       agentSlug,

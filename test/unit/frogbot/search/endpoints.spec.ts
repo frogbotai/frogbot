@@ -17,27 +17,21 @@ import type {
 } from '../../../../packages/frogbot/src/search/types.js';
 import { hybridRanking, ranking, searchFixture } from './fixture.js';
 
-function restFixture(
-  body: () => Promise<unknown>,
-  options: Parameters<typeof searchFixture>[0] = {},
-) {
+function restFixture(body: unknown, options: Parameters<typeof searchFixture>[0] = {}) {
   const fixture = searchFixture(options);
 
   Object.assign(fixture.frogbot, {
     search: (options: SearchOptions) => searchOperation(fixture.frogbot, fixture.payload, options),
   });
 
-  fixture.req.json = body;
+  fixture.req.json = () => Promise.resolve(body);
 
   const [endpoint] = buildSearchEndpoints({ collection: 'articles' });
 
   return { ...fixture, endpoint };
 }
 
-function restManyFixture(
-  body: () => Promise<unknown>,
-  options: Parameters<typeof searchFixture>[0] = {},
-) {
+function restManyFixture(body: unknown, options: Parameters<typeof searchFixture>[0] = {}) {
   const fixture = searchFixture(options);
 
   Object.assign(fixture.frogbot, {
@@ -45,7 +39,7 @@ function restManyFixture(
       searchManyOperation(fixture.frogbot, fixture.payload, options),
   });
 
-  fixture.req.json = body;
+  fixture.req.json = () => Promise.resolve(body);
 
   const endpoint = buildSearchManyEndpoint();
 
@@ -67,12 +61,12 @@ const collections = [
 
 describe('collection search REST endpoint', () => {
   it('POST /api/articles/search ranks within the requesting user access and returns hits', async () => {
-    const { endpoint, find, req, search } = restFixture(async () => ({
+    const { endpoint, find, req, search } = restFixture({
       index: 'content',
       query: { text: 'hello' },
       limit: 5,
       select: { title: true },
-    }));
+    });
 
     const response = await endpoint.handler(req);
 
@@ -91,12 +85,12 @@ describe('collection search REST endpoint', () => {
 
   it('POST /api/articles/search forwards hybrid candidates to the adapter', async () => {
     const { endpoint, req, search } = restFixture(
-      async () => ({
+      {
         index: 'content',
         query: { text: 'hello', vector: [1, 0, 0] },
         limit: 5,
         candidates: 250,
-      }),
+      },
       { rows: [], rowRanking: hybridRanking },
     );
 
@@ -111,11 +105,11 @@ describe('collection search REST endpoint', () => {
   it.each(['overrideAccess', 'collection', 'req'])(
     'POST /api/articles/search rejects a body that sets %s',
     async (key) => {
-      const { endpoint, req, search } = restFixture(async () => ({
+      const { endpoint, req, search } = restFixture({
         index: 'content',
         query: { text: 'hello' },
         [key]: true,
-      }));
+      });
 
       await expect(endpoint.handler(req)).rejects.toMatchObject({
         name: 'SearchValidationError',
@@ -128,8 +122,8 @@ describe('collection search REST endpoint', () => {
 
   it.each([
     ['malformed JSON', () => Promise.reject(new SyntaxError('Unexpected token'))],
-    ['an array', async () => []],
-    ['a string', async () => 'hello'],
+    ['an array', []],
+    ['a string', 'hello'],
   ])('POST /api/articles/search rejects %s as a 400 validation error', async (_label, body) => {
     const { endpoint, req } = restFixture(body);
 
@@ -137,7 +131,7 @@ describe('collection search REST endpoint', () => {
   });
 
   it('POST /api/articles/search surfaces invalid query input with its API status', async () => {
-    const { endpoint, req } = restFixture(async () => ({ index: 'content', query: {} }));
+    const { endpoint, req } = restFixture({ index: 'content', query: {} });
 
     await expect(endpoint.handler(req)).rejects.toMatchObject({ status: 400 });
   });
@@ -166,11 +160,11 @@ describe('collection search REST endpoint', () => {
 
 describe('cross-collection search REST endpoint', () => {
   it('POST /api/frogbot/search ranks each collection within the requesting user access', async () => {
-    const { endpoint, find, req, search } = restManyFixture(async () => ({
+    const { endpoint, find, req, search } = restManyFixture({
       collections: [collections[0], { ...collections[1], select: { question: true } }],
       query: { text: 'hello' },
       limit: 5,
-    }));
+    });
 
     const response = await endpoint.handler(req);
 
@@ -207,7 +201,7 @@ describe('cross-collection search REST endpoint', () => {
 
   it('POST /api/frogbot/search fails the whole request when the user cannot read one collection', async () => {
     const { endpoint, req } = restManyFixture(
-      async () => ({ collections, query: { text: 'hello' } }),
+      { collections, query: { text: 'hello' } },
       { faqs: { read: () => false } },
     );
 
@@ -224,11 +218,11 @@ describe('cross-collection search REST endpoint', () => {
     'overrideAccess',
     'req',
   ])('POST /api/frogbot/search rejects a top-level %s', async (key) => {
-    const { endpoint, req, search } = restManyFixture(async () => ({
+    const { endpoint, req, search } = restManyFixture({
       collections,
       query: { text: 'hello' },
       [key]: true,
-    }));
+    });
 
     await expect(endpoint.handler(req)).rejects.toMatchObject({
       name: 'SearchValidationError',
@@ -249,7 +243,7 @@ describe('cross-collection search REST endpoint', () => {
   ])(
     'POST /api/frogbot/search rejects a body %s as a 400 validation error',
     async (_label, body) => {
-      const { endpoint, find, req, search } = restManyFixture(async () => body);
+      const { endpoint, find, req, search } = restManyFixture(body);
 
       await expect(endpoint.handler(req)).rejects.toMatchObject({
         name: 'SearchValidationError',
@@ -263,8 +257,8 @@ describe('cross-collection search REST endpoint', () => {
 
   it.each([
     ['malformed JSON', () => Promise.reject(new SyntaxError('Unexpected token'))],
-    ['an array', async () => []],
-    ['a string', async () => 'hello'],
+    ['an array', []],
+    ['a string', 'hello'],
   ])('POST /api/frogbot/search rejects %s as a 400 validation error', async (_label, body) => {
     const { endpoint, req } = restManyFixture(body);
 

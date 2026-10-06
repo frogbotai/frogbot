@@ -39,7 +39,9 @@ describe('channels:run lifecycle', () => {
     });
     mocks.initFrogBot.mockReset().mockResolvedValue({ destroy: mocks.destroy });
 
-    vi.spyOn(BasePayload.prototype, 'init').mockResolvedValue(undefined);
+    vi.spyOn(BasePayload.prototype, 'init').mockImplementation(function (this: BasePayload) {
+      return Promise.resolve(this);
+    });
     vi.spyOn(process, 'exit').mockImplementation((code) => {
       throw new Error(`exit:${code}`);
     });

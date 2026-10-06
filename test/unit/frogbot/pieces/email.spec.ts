@@ -23,8 +23,8 @@ function runtime(payload = {} as Payload) {
     encryption: createCredentialEncryption({ secret: 'email-test-secret' }),
   });
 
-  vi.spyOn(frogbot, 'createRequest').mockImplementation(async () =>
-    Object.assign({ payload, user: null } as never, { frogbot }),
+  vi.spyOn(frogbot, 'createRequest').mockImplementation(() =>
+    Promise.resolve(Object.assign({ payload, user: null } as never, { frogbot })),
   );
   vi.spyOn(frogbot, 'email', 'get').mockImplementation(() => payload.email);
   registerFrogBotInstance(payload, frogbot);
@@ -37,7 +37,7 @@ function fixture({
   auth = true,
 }: { from?: unknown; auth?: boolean } = {}) {
   const send = vi.fn<PieceEmail<object, unknown>['send']>().mockResolvedValue({ id: 'sent' });
-  const client = vi.fn(async ({ auth }: { auth: unknown }) => ({ auth }));
+  const client = vi.fn(({ auth }: { auth: unknown }) => Promise.resolve({ auth }));
   const createEmail = definePiece({
     slug: 'mailer',
     label: 'Mailer',

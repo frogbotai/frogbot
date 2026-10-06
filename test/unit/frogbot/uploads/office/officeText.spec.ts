@@ -1,12 +1,14 @@
 import { strToU8, unzipSync, zipSync } from 'fflate';
-import mammoth from 'mammoth';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import mammoth from '../../../../../packages/frogbot/node_modules/mammoth/lib/index.js';
 import {
   officeKind,
   officeText,
 } from '../../../../../packages/frogbot/src/uploads/office/officeText.js';
+import type * as SheetGuardModule from '../../../../../packages/frogbot/src/uploads/office/sheetGuard.js';
 import { checkSheetSize } from '../../../../../packages/frogbot/src/uploads/office/sheetGuard.js';
+import type * as XlsxTextModule from '../../../../../packages/frogbot/src/uploads/office/xlsxText.js';
 import { xlsxText } from '../../../../../packages/frogbot/src/uploads/office/xlsxText.js';
 import {
   docxFile,
@@ -22,10 +24,7 @@ import {
 vi.mock(
   '../../../../../packages/frogbot/src/uploads/office/xlsxText.js',
   async (importOriginal) => {
-    const actual =
-      await importOriginal<
-        typeof import('../../../../../packages/frogbot/src/uploads/office/xlsxText.js')
-      >();
+    const actual = await importOriginal<typeof XlsxTextModule>();
 
     return { ...actual, xlsxText: vi.fn(actual.xlsxText) };
   },
@@ -34,10 +33,7 @@ vi.mock(
 vi.mock(
   '../../../../../packages/frogbot/src/uploads/office/sheetGuard.js',
   async (importOriginal) => {
-    const actual =
-      await importOriginal<
-        typeof import('../../../../../packages/frogbot/src/uploads/office/sheetGuard.js')
-      >();
+    const actual = await importOriginal<typeof SheetGuardModule>();
 
     return { ...actual, checkSheetSize: vi.fn(actual.checkSheetSize) };
   },
@@ -182,7 +178,9 @@ describe('officeText', () => {
 
   it('reports an unexpected converter failure as an invalid file', async () => {
     vi.spyOn(mammoth, 'convertToHtml').mockResolvedValue({
-      value: undefined,
+      get value(): string {
+        throw new TypeError('converter returned no value');
+      },
       messages: [],
     });
 

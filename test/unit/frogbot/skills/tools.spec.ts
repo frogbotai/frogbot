@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 
 const req = { id: 'request' };
 const frogbot = { id: 'frogbot' };
@@ -21,7 +21,21 @@ const skills = [
 
 async function tools() {
   const { buildSkillTools } = await import('../../../../packages/frogbot/src/skills/tools.js');
-  return Object.fromEntries(buildSkillTools(skills as never).map((tool) => [tool.slug, tool]));
+  const built = buildSkillTools(skills);
+
+  const execute = (slug: string) => {
+    const run = built.find((tool) => tool.slug === slug)?.execute;
+
+    assert(run, `Expected the ${slug} tool`);
+
+    return run;
+  };
+
+  return {
+    list_skills: { execute: execute('list_skills') },
+    load_skill: { execute: execute('load_skill') },
+    load_skill_resource: { execute: execute('load_skill_resource') },
+  };
 }
 
 describe('skill tools', () => {

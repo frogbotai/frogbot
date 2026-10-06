@@ -10,6 +10,12 @@ afterEach(() => {
   process.env = { ...originalEnv };
 });
 
+function replaceEnv(values: Record<string, string>) {
+  for (const key of Object.keys(process.env)) delete process.env[key];
+
+  Object.assign(process.env, values);
+}
+
 describe('defineEnv', () => {
   it('aggregates parsing and requiredness issues in schema order', () => {
     process.env = { NODE_ENV: 'production', PORT: 'abc' };
@@ -32,15 +38,14 @@ describe('defineEnv', () => {
   it('exposes structured issues', () => {
     process.env = { NODE_ENV: 'production' };
 
-    try {
-      defineEnv({ secret: env.string().required() });
-      expect.unreachable();
-    } catch (error) {
-      expect(error).toBeInstanceOf(FrogBotEnvError);
-      expect((error as FrogBotEnvError).issues).toEqual([
-        { envName: 'SECRET', message: 'is required', name: 'secret' },
-      ]);
-    }
+    const define = () => defineEnv({ secret: env.string().required() });
+
+    expect(define).toThrow(FrogBotEnvError);
+    expect(define).toThrow(
+      expect.objectContaining({
+        issues: [{ envName: 'SECRET', message: 'is required', name: 'secret' }],
+      }),
+    );
   });
 
   it('skips requiredness in test mode while still parsing present values', () => {
@@ -101,13 +106,13 @@ describe('defineEnv', () => {
   });
 
   it('returns a frozen object', () => {
-    process.env = { VALUE: 'current' };
+    replaceEnv({ VALUE: 'current' });
 
     expect(Object.isFrozen(defineEnv({ value: env.string() }))).toBe(true);
   });
 
   it('takes a new environment snapshot on every call', () => {
-    process.env = { VALUE: 'first' };
+    replaceEnv({ VALUE: 'first' });
     expect(defineEnv({ value: env.string() }).value).toBe('first');
 
     process.env.VALUE = 'second';
@@ -115,7 +120,7 @@ describe('defineEnv', () => {
   });
 
   it('uses overridden variable names', () => {
-    process.env = { CUSTOM_VALUE: 'set' };
+    replaceEnv({ CUSTOM_VALUE: 'set' });
 
     expect(defineEnv({ value: env.string().name('CUSTOM_VALUE') })).toEqual({ value: 'set' });
   });

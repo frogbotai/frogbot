@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   destroy: vi.fn(),
@@ -24,7 +24,7 @@ describe('runScript', () => {
   let dir: string;
   let file: string;
   let error: ReturnType<typeof vi.spyOn>;
-  let exit: ReturnType<typeof vi.spyOn>;
+  let exit: MockInstance<typeof process.exit>;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -77,9 +77,11 @@ describe('runScript', () => {
     const observedArgv: string[][] = [];
     const calls: string[] = [];
 
-    mocks.tsImport.mockImplementation(async () => {
+    mocks.tsImport.mockImplementation(() => {
       observedArgv.push([...process.argv]);
       calls.push('import');
+
+      return Promise.resolve();
     });
     mocks.destroy.mockImplementation(async () => {
       await Promise.resolve();

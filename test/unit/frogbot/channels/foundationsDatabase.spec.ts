@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { BasePayload } from 'payload';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
 import { resolveChannelChat } from '../../../../packages/frogbot/src/channels/conversation.js';
@@ -93,35 +93,33 @@ describe('channel foundations with SQLite', () => {
 
       await current.host.initialize(false);
 
-      try {
-        expect((await current.host.webhook(`slack-sqlite-${retry}`, request(false)))?.status).toBe(
-          200,
-        );
+      onTestFinished(() => current.host.shutdown());
 
-        expect((await current.host.webhook(`slack-sqlite-${retry}`, request(retry)))?.status).toBe(
-          200,
-        );
-        expect((await current.host.webhook(`slack-sqlite-${retry}`, request(true)))?.status).toBe(
-          200,
-        );
-        expect(queue).toHaveBeenCalledOnce();
+      expect((await current.host.webhook(`slack-sqlite-${retry}`, request(false)))?.status).toBe(
+        200,
+      );
 
-        const jobs = await frogbot.find({
-          collection: 'payload-jobs',
-          where: {
-            and: [
-              { taskSlug: { equals: CHANNEL_TASK_SLUG } },
-              { 'input.instanceSlug': { equals: `slack-sqlite-${retry}` } },
-            ],
-          },
-          overrideAccess: true,
-        });
+      expect((await current.host.webhook(`slack-sqlite-${retry}`, request(retry)))?.status).toBe(
+        200,
+      );
+      expect((await current.host.webhook(`slack-sqlite-${retry}`, request(true)))?.status).toBe(
+        200,
+      );
+      expect(queue).toHaveBeenCalledOnce();
 
-        expect(jobs.docs).toHaveLength(1);
-        expect(jobs.docs[0].input.message.id).toBe('1.000001');
-      } finally {
-        await current.host.shutdown();
-      }
+      const jobs = await frogbot.find({
+        collection: 'payload-jobs',
+        where: {
+          and: [
+            { taskSlug: { equals: CHANNEL_TASK_SLUG } },
+            { 'input.instanceSlug': { equals: `slack-sqlite-${retry}` } },
+          ],
+        },
+        overrideAccess: true,
+      });
+
+      expect(jobs.docs).toHaveLength(1);
+      expect(jobs.docs[0].input).toMatchObject({ message: { id: '1.000001' } });
     },
   );
 

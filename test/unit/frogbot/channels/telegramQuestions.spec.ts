@@ -308,7 +308,12 @@ describe('Telegram native questions through the installed adapter and channel ho
       input: {
         questions: [
           colorQuestion.questions[0],
-          { header: 'Size', question: 'Pick a size', options: [{ label: 'S' }, { label: 'L' }] },
+          {
+            header: 'Size',
+            question: 'Pick a size',
+            options: [{ label: 'S' }, { label: 'L' }],
+            custom: true,
+          },
         ],
       },
     });
@@ -332,7 +337,12 @@ describe('Telegram native questions through the installed adapter and channel ho
       input: {
         questions: [
           colorQuestion.questions[0],
-          { header: 'Size', question: 'Pick a size', options: [{ label: 'S' }, { label: 'L' }] },
+          {
+            header: 'Size',
+            question: 'Pick a size',
+            options: [{ label: 'S' }, { label: 'L' }],
+            custom: true,
+          },
         ],
       },
     });

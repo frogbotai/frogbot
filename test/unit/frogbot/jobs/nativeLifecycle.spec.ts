@@ -1,5 +1,5 @@
 import type { Job, PayloadRequest } from 'payload';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { deferred, jobRow, nativeRunner } from './nativeRunner.js';
 
@@ -24,7 +24,7 @@ describe('native job lifecycle', () => {
           tasks: [
             {
               slug: 'work',
-              handler: async () => {
+              handler: () => {
                 if (!succeeds) throw new Error('task failed');
 
                 return { output: { finished: true } };
@@ -52,18 +52,18 @@ describe('native job lifecycle', () => {
         settled = true;
       });
 
-      try {
-        await started.promise;
-        await vi.advanceTimersByTimeAsync(1000);
+      onTestFinished(() => allowed.resolve());
 
-        expect(settled).toBe(false);
-        expect(rows[0].processing).toBe(true);
-        expect(operations.update).toHaveBeenCalled();
-      } finally {
-        allowed.resolve();
+      await started.promise;
+      await vi.advanceTimersByTimeAsync(1000);
 
-        await run;
-      }
+      expect(settled).toBe(false);
+      expect(rows[0].processing).toBe(true);
+      expect(operations.update).toHaveBeenCalled();
+
+      allowed.resolve();
+
+      await run;
 
       expect(payload.config.jobs).toMatchObject({ runHooks: false, depth: 0 });
       expect(events).toEqual([`${succeeds ? 'success' : 'failure'}:1`]);
@@ -72,13 +72,14 @@ describe('native job lifecycle', () => {
         expect.objectContaining({ taskSlug: 'work', state: succeeds ? 'succeeded' : 'failed' }),
       ]);
 
-      if (succeeds) {
-        expect(rows[0].completedAt).toEqual(expect.any(String));
-        expect(rows[0].log?.[0].output).toEqual({ finished: true });
-      } else {
-        expect(rows[0].hasError).toBe(true);
-        expect(rows[0].error).toMatchObject({ message: 'task failed' });
-      }
+      expect(rows[0]).toMatchObject(
+        succeeds
+          ? {
+              completedAt: expect.any(String),
+              log: [expect.objectContaining({ output: { finished: true } })],
+            }
+          : { hasError: true, error: { message: 'task failed' } },
+      );
 
       expect(vi.getTimerCount()).toBe(0);
     },
@@ -93,7 +94,7 @@ describe('native job lifecycle', () => {
       let insideResult: unknown;
       let insideError: unknown;
 
-      if (mode === 'same-job') rows[2].processing = true;
+      rows[2].processing = mode === 'same-job';
 
       const { payload, req } = await nativeRunner({
         rows,
@@ -106,18 +107,23 @@ describe('native job lifecycle', () => {
             {
               slug: 'work',
               handler: async ({ req: jobReq }) => {
-                try {
-                  insideResult = await jobReq.payload.update({
+                await jobReq.payload
+                  .update({
                     collection: 'payload-jobs',
                     id: target,
                     data: { processing: true, queue: 'changed' },
                     overrideAccess: false,
                     disableTransaction: true,
                     req: jobReq,
-                  });
-                } catch (error) {
-                  insideError = error;
-                }
+                  })
+                  .then(
+                    (result) => {
+                      insideResult = result;
+                    },
+                    (error: unknown) => {
+                      insideError = error;
+                    },
+                  );
 
                 return { output: {} };
               },
@@ -129,38 +135,58 @@ describe('native job lifecycle', () => {
       let outsideResult: unknown;
       let outsideError: unknown;
 
-      try {
-        outsideResult = await payload.update({
+      await payload
+        .update({
           collection: 'payload-jobs',
           id: 3,
           data: { processing: true, queue: 'changed' },
           overrideAccess: false,
           disableTransaction: true,
           req,
-        });
-      } catch (error) {
-        outsideError = error;
-      }
+        })
+        .then(
+          (result) => {
+            outsideResult = result;
+          },
+          (error: unknown) => {
+            outsideError = error;
+          },
+        );
 
-      if (allowed) {
-        expect(outsideError).toBeUndefined();
-        expect(outsideResult).toMatchObject({ id: 3, processing: true, queue: 'changed' });
-      } else {
-        expect(outsideError).toMatchObject({ status: 403 });
-        expect(rows[2]).toMatchObject({ processing: false, queue: 'default' });
-      }
+      expect({ outsideResult, outsideError }).toEqual(
+        allowed
+          ? {
+              outsideResult: expect.objectContaining({
+                id: 3,
+                processing: true,
+                queue: 'changed',
+              }),
+              outsideError: undefined,
+            }
+          : { outsideResult: undefined, outsideError: expect.objectContaining({ status: 403 }) },
+      );
+      expect(rows[2]).toMatchObject(
+        allowed ? { processing: true, queue: 'changed' } : { processing: false, queue: 'default' },
+      );
 
       await payload.jobs.run({ req, limit: 1, silent: true });
 
-      if (allowed) {
-        expect(insideError).toBeUndefined();
-        expect(insideResult).toMatchObject({ id: target, processing: true, queue: 'changed' });
-        expect(rows[target - 1].queue).toBe('changed');
-      } else {
-        expect(insideError).toMatchObject({ status: 403 });
-        expect(rows[1]).toMatchObject({ processing: false, queue: 'default' });
-        expect((rows[1] as Job & { leaseOwner?: string }).leaseOwner).toBeUndefined();
-      }
+      expect({ insideResult, insideError }).toEqual(
+        allowed
+          ? {
+              insideResult: expect.objectContaining({
+                id: target,
+                processing: true,
+                queue: 'changed',
+              }),
+              insideError: undefined,
+            }
+          : { insideResult: undefined, insideError: expect.objectContaining({ status: 403 }) },
+      );
+      expect(rows[target - 1]).toMatchObject(
+        allowed ? { queue: 'changed' } : { processing: false, queue: 'default' },
+      );
+      expect((rows[1] as Job & { leaseOwner?: string }).leaseOwner).toBeUndefined();
     },
   );
 
@@ -175,19 +201,18 @@ describe('native job lifecycle', () => {
 
       const update = async (req: PayloadRequest) => {
         for (const id of [2, 3]) {
-          try {
-            results.push(
-              await req.payload.update({
-                collection: 'payload-jobs',
-                id,
-                data: { processing: true, queue: 'ordinary' },
-                req: { ...req, transactionID: 'application-transaction' },
-                overrideAccess: false,
-              }),
+          await req.payload
+            .update({
+              collection: 'payload-jobs',
+              id,
+              data: { processing: true, queue: 'ordinary' },
+              req: { ...req, transactionID: 'application-transaction' },
+              overrideAccess: false,
+            })
+            .then(
+              (result) => results.push(result),
+              (error: unknown) => errors.push(error),
             );
-          } catch (error) {
-            errors.push(error);
-          }
         }
       };
 
@@ -206,7 +231,7 @@ describe('native job lifecycle', () => {
 
             return 'createdAt';
           },
-          tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
+          tasks: [{ slug: 'work', handler: () => ({ output: {} }) }],
           jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
             ...defaultJobsCollection,
             access: { ...defaultJobsCollection.access, update: ({ id }) => id !== 3 },

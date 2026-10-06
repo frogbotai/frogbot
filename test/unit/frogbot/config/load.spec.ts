@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, onTestFinished } from 'vitest';
 
 import { loadConfig, resolveConfigDir } from '../../../../packages/frogbot/src/config/load.js';
 
@@ -105,21 +105,21 @@ describe('frogbot resolveConfigDir', () => {
     await writeFile(join(dir, 'suite', 'config.ts'), CONFIG);
     process.env.FROGBOT_CONFIG_PATH = join(dir, 'suite', 'config.ts');
 
-    try {
-      expect(resolveConfigDir(process.cwd())).toBe(join(dir, 'suite'));
-    } finally {
+    onTestFinished(() => {
       delete process.env.FROGBOT_CONFIG_PATH;
-    }
+    });
+
+    expect(resolveConfigDir(process.cwd())).toBe(join(dir, 'suite'));
   });
 
   it('returns null when FROGBOT_CONFIG_PATH points at a missing file', async () => {
     const dir = await makeDir();
     process.env.FROGBOT_CONFIG_PATH = join(dir, 'missing.ts');
 
-    try {
-      expect(resolveConfigDir(process.cwd())).toBeNull();
-    } finally {
+    onTestFinished(() => {
       delete process.env.FROGBOT_CONFIG_PATH;
-    }
+    });
+
+    expect(resolveConfigDir(process.cwd())).toBeNull();
   });
 });

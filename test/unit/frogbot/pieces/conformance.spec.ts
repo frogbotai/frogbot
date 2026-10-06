@@ -1,34 +1,63 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { pieceConformance } from '../../../../packages/frogbot/src/pieces/conformance.js';
+import {
+  pieceConformance,
+  type PieceConformanceFixtures,
+} from '../../../../packages/frogbot/src/pieces/conformance.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { PieceDefinition } from '../../../../packages/frogbot/src/pieces/types.js';
 import { channelFixture } from '../channels/helpers.js';
 import { conformanceChannelState } from './channelState.js';
+
+const empty = z.object({});
+const itemInput = z.object({ id: z.string() });
+const itemOutput = z.object({ id: z.string(), region: z.string() });
+const regionOptions = z.object({ region: z.string() });
+const secretOptions = z.object({ secret: z.string() });
+const tokenAuth = z.object({ token: z.string() });
+const accessTokenAuth = z.object({ accessToken: z.string() });
+const credentialAuth = z.object({ credential: z.string() });
+
+type ValidTypes = {
+  auth: undefined;
+  options: z.output<typeof regionOptions>;
+  actions: {
+    getItem: { input: z.output<typeof itemInput>; output: z.output<typeof itemOutput> };
+    fail: { input: z.output<typeof empty>; output: never };
+  };
+  triggers: { itemCreated: { input: z.output<typeof empty>; output: unknown } };
+};
+type ChannelTypes = {
+  auth: z.output<typeof tokenAuth>;
+  options: z.output<typeof secretOptions>;
+  actions: Record<string, never>;
+  triggers: Record<string, never>;
+};
+type ValidFixtures = PieceConformanceFixtures &
+  Required<Pick<PieceConformanceFixtures, 'options' | 'triggers'>>;
 
 const createValid = () =>
   definePiece({
     slug: 'example',
     label: 'Example',
-    options: z.object({ region: z.string() }),
+    options: regionOptions,
     actions: [
       {
         slug: 'getItem',
         description: 'Get an item',
-        input: z.object({ id: z.string() }),
-        output: z.object({ id: z.string(), region: z.string() }),
+        input: itemInput,
+        output: itemOutput,
         options: {
-          id: async ({ options }) => [{ label: options.region, value: 'item' }],
+          id: ({ options }) => Promise.resolve([{ label: options.region, value: 'item' }]),
         },
-        run: async ({ input, options }) => ({ id: input.id, region: options.region }),
+        run: ({ input, options }) => Promise.resolve({ id: input.id, region: options.region }),
       },
       {
         slug: 'fail',
         description: 'Fail',
-        input: z.object({}),
-        run: async () => {
-          throw new Error('vendor unavailable');
-        },
+        input: empty,
+        run: () => Promise.reject(new Error('vendor unavailable')),
       },
     ],
     triggers: [
@@ -37,13 +66,13 @@ const createValid = () =>
         type: 'app',
         event: 'item.created',
         description: 'Item created',
-        input: z.object({}),
-        run: async () => [],
+        input: empty,
+        run: () => Promise.resolve([]),
       },
     ],
-  });
+  } satisfies PieceDefinition<ValidTypes, undefined>);
 
-const validFixtures = () => ({
+const validFixtures = (): ValidFixtures => ({
   factoryOptions: { region: 'us' },
   actions: [
     { slug: 'getItem', input: { id: '1' }, expect: { result: { id: '1', region: 'us' } } },
@@ -56,7 +85,7 @@ const validFixtures = () => ({
       expect: [{ label: 'us', value: 'item' }],
     },
   ],
-  triggers: [{ slug: 'itemCreated', type: 'app' as const }],
+  triggers: [{ slug: 'itemCreated', type: 'app' }],
 });
 
 const channelReq = { frogbot: {} } as never;
@@ -65,8 +94,8 @@ const createChannel = ({ adapterOwned = false } = {}) =>
   definePiece({
     slug: 'channel',
     label: 'Channel',
-    auth: z.object({ token: z.string() }),
-    options: z.object({ secret: z.string() }),
+    auth: tokenAuth,
+    options: secretOptions,
     client: ({ auth }) => auth,
     channel: {
       adapter: () => {
@@ -81,17 +110,21 @@ const createChannel = ({ adapterOwned = false } = {}) =>
               : new Response(null, { status: 401 }),
         } as never;
       },
-      identity: async ({ author }) =>
-        author.userId === 'known' ? ({ id: 'user', collection: 'users' } as never) : null,
+      identity: ({ author }) =>
+        Promise.resolve(
+          author.userId === 'known' ? ({ id: 'user', collection: 'users' } as never) : null,
+        ),
     },
     webhook: {
       verify: adapterOwned
         ? undefined
-        : async ({ req, options }) => req.headers.get('x-secret') === options.secret,
-      handshake: async ({ req }) =>
-        typeof req.data === 'object' && req.data && 'challenge' in req.data
-          ? new Response(String(req.data.challenge), { status: 202 })
-          : null,
+        : ({ req, options }) => Promise.resolve(req.headers.get('x-secret') === options.secret),
+      handshake: ({ req }) =>
+        Promise.resolve(
+          typeof req.data === 'object' && req.data && 'challenge' in req.data
+            ? new Response(String(req.data.challenge), { status: 202 })
+            : null,
+        ),
       parse: ({ req }) => ({
         event:
           typeof req.data === 'object' && req.data && 'event' in req.data
@@ -100,7 +133,7 @@ const createChannel = ({ adapterOwned = false } = {}) =>
       }),
     },
     actions: [],
-  });
+  } satisfies PieceDefinition<ChannelTypes, ChannelTypes['auth']>);
 
 const channelFixtures = () => ({
   factoryOptions: { auth: { token: 'token' }, secret: 'secret' },
@@ -159,7 +192,7 @@ describe('pieceConformance', () => {
 
   it('rejects invalid factory options and action inputs', async () => {
     const options = validFixtures();
-    options.factoryOptions = { region: 1 as never };
+    options.factoryOptions = { region: 1 };
     await expect(pieceConformance(createValid(), options)).rejects.toThrow(
       'factory options are invalid',
     );
@@ -189,7 +222,7 @@ describe('pieceConformance', () => {
           description: 'Run',
           input: z.object({}),
           output: z.string(),
-          run: async () => 1 as never,
+          run: () => Promise.resolve(1 as never),
         },
       ],
     });
@@ -223,7 +256,7 @@ describe('pieceConformance', () => {
     const createTokenShaped = definePiece({
       slug: 'token-shaped',
       label: 'Token shaped',
-      auth: z.object({ accessToken: z.string() }),
+      auth: accessTokenAuth,
       client: ({ auth }) => auth,
       actions: [],
     });
@@ -238,7 +271,7 @@ describe('pieceConformance', () => {
     const createOAuth = definePiece({
       slug: 'oauth',
       label: 'OAuth',
-      auth: z.object({ credential: z.string() }),
+      auth: credentialAuth,
       client: ({ auth }) => auth,
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
@@ -333,8 +366,8 @@ describe('pieceConformance', () => {
     const createWithoutChannel = definePiece({
       slug: 'without-channel',
       label: 'Without channel',
-      auth: z.object({ token: z.string() }),
-      options: z.object({ secret: z.string() }),
+      auth: tokenAuth,
+      options: secretOptions,
       client: ({ auth }) => auth,
       actions: [],
     });

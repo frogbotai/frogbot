@@ -1,7 +1,7 @@
-import type { Adapter } from 'chat';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
+import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { buildIngressRegistry } from '../../../../packages/frogbot/src/triggers/registry.js';
 
@@ -10,10 +10,10 @@ const channelPiece = definePiece({
   label: 'Channel test',
   auth: z.object({ token: z.string() }),
   actions: [],
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   channel: {
     adapter: () => ({ name: 'channel-test' }) as Adapter,
-    identity: async () => null,
+    identity: () => Promise.resolve(null),
   },
 });
 

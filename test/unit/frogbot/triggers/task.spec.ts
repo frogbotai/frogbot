@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import type { Job, PayloadRequest, RequestContext } from 'payload';
+import { assert, describe, expect, it, vi } from 'vitest';
 
 import { resolveScheduleTasks } from '../../../../packages/frogbot/src/agents/resolveScheduleTasks.js';
 import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
@@ -39,7 +40,7 @@ describe('agent trigger task', () => {
           triggers: [{ type: 'schedule', slug: 'tick', schedule: { every: '1m' }, prompt: 'tick' }],
         },
       ] as never,
-      jobs: { autoRun: dynamic ? async () => [runner] : [runner] },
+      jobs: { autoRun: dynamic ? () => Promise.resolve([runner]) : [runner] },
     });
     const resolved = resolveTriggerTasks(jobs);
     expect(resolved.autoRun).toBe(jobs!.autoRun);
@@ -68,9 +69,19 @@ describe('agent trigger task', () => {
         },
       },
     };
-    createRequest.mockImplementation(async ({ context }) => ({ context, frogbot }));
+    createRequest.mockImplementation(({ context }) => Promise.resolve({ context, frogbot }));
     registerFrogBotInstance(payload, frogbot as never);
     const task = resolveTriggerTasks().tasks!.find(({ slug }) => slug === AGENT_TRIGGER_TASK_SLUG)!;
+    assert(typeof task.handler === 'function');
+    const context: RequestContext = { requestId: 'one' };
+    const job: Job<string> = {
+      id: 1,
+      input: {},
+      taskStatus: {},
+      totalTried: 0,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
 
     await task.handler({
       input: {
@@ -79,7 +90,10 @@ describe('agent trigger task', () => {
         triggerSlug: 'received',
         event: { dedupeKey: 'one', data: { message: 'hello' } },
       },
-      req: { payload, context: { requestId: 'one' } },
+      req: { payload, context } as PayloadRequest,
+      job,
+      inlineTask: vi.fn(),
+      tasks: {},
     });
     expect(handler).toHaveBeenCalledWith({
       event: { message: 'hello' },

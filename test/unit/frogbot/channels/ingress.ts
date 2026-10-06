@@ -6,24 +6,25 @@ import {
   shutdownChannelHost,
 } from '../../../../packages/frogbot/src/channels/host.js';
 import { pieceInstanceRuntime } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { PieceInstance } from '../../../../packages/frogbot/src/pieces/types.js';
+import type { ChannelPieceInstance } from '../../../../packages/frogbot/src/pieces/types.js';
 import { buildIngressRegistry } from '../../../../packages/frogbot/src/triggers/registry.js';
 import { channelFixture } from './helpers.js';
 
 export function ingressFixture({
   instance,
-  triggerSlugs,
+  triggers,
   conversational = false,
 }: {
-  instance: PieceInstance;
-  triggerSlugs: string[];
+  instance: ChannelPieceInstance;
+  triggers: AgentConfig['triggers'];
   conversational?: boolean;
 }) {
-  const agent = {
+  const agent: AgentConfig = {
     slug: 'ops',
+    instructions: '',
     channels: conversational ? [instance] : [],
-    triggers: triggerSlugs.map((slug) => ({ trigger: instance.triggers[slug], handler: vi.fn() })),
-  } as AgentConfig;
+    triggers,
+  };
 
   const registry = buildIngressRegistry({ agents: [agent] });
   const { kv, values } = channelFixture();
@@ -32,10 +33,12 @@ export function ingressFixture({
     agents: { ops: { slug: agent.slug, config: agent } },
     config: { _internal: { triggers: registry } },
     connections: {
-      resolvePieceCredential: vi.fn(async () => ({
-        auth: pieceInstanceRuntime(instance).auth,
-        key: instance,
-      })),
+      resolvePieceCredential: vi.fn(() =>
+        Promise.resolve({
+          auth: pieceInstanceRuntime(instance).auth,
+          key: instance,
+        }),
+      ),
     },
     kv,
     queue: vi.fn(),

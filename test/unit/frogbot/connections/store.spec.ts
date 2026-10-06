@@ -22,15 +22,15 @@ function harness() {
     encryption: createCredentialEncryption({ secret: 'test-secret' }),
   };
   const atomic = {
-    acquireLock: vi.fn(async (key: string) => ({ key, token: 'token' })),
-    extendLock: vi.fn(async () => true),
-    releaseLock: vi.fn(async () => true),
+    acquireLock: vi.fn((key: string) => Promise.resolve({ key, token: 'token' })),
+    extendLock: vi.fn(() => Promise.resolve(true)),
+    releaseLock: vi.fn(() => Promise.resolve(true)),
   };
   const frogbot = {
-    find: vi.fn(async () => ({ docs: [] })),
-    create: vi.fn(async ({ data }) => ({ ...data, id: 1 })),
-    update: vi.fn(async ({ data, id }) => ({ ...data, id })),
-    delete: vi.fn(async () => ({})),
+    find: vi.fn(() => Promise.resolve({ docs: [] })),
+    create: vi.fn(({ data }) => Promise.resolve({ ...data, id: 1 })),
+    update: vi.fn(({ data, id }) => Promise.resolve({ ...data, id })),
+    delete: vi.fn(() => Promise.resolve({})),
     kv: {
       lock: <T>(key: string, ttl: number, fn: KVLockCallback<T>) =>
         runKVLock({ kv: atomic, key, ttl, fn }),

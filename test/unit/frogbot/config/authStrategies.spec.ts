@@ -1,3 +1,4 @@
+import type * as PayloadModule from 'payload';
 import { executeAuthStrategies, type Payload, type PayloadRequest } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,17 +10,18 @@ import {
 import type { AuthStrategy } from '../../../../packages/frogbot/src/auth/types.js';
 import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type * as FrogBotModule from '../../../../packages/frogbot/src/frogbot.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: Record<string, unknown>) =>
     Promise.resolve({ globals: [], ...config }),
   ),
 }));
 
 vi.mock('../../../../packages/frogbot/src/frogbot.js', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../../packages/frogbot/src/frogbot.js')>()),
+  ...(await importOriginal<typeof FrogBotModule>()),
   initFrogBotFromPayload: vi.fn(),
 }));
 
@@ -63,10 +65,10 @@ function makeFrogBot(config: FrogBotSanitizedConfig) {
     config,
     logger: { error: vi.fn() },
     kv: {
-      get: vi.fn(async () => undefined),
-      acquireLock: vi.fn(async (key: string) => ({ key, token: 'session-lock' })),
-      extendLock: vi.fn(async () => true),
-      releaseLock: vi.fn(async () => true),
+      get: vi.fn(() => Promise.resolve(undefined)),
+      acquireLock: vi.fn((key: string) => Promise.resolve({ key, token: 'session-lock' })),
+      extendLock: vi.fn(() => Promise.resolve(true)),
+      releaseLock: vi.fn(() => Promise.resolve(true)),
     },
   };
 
@@ -94,10 +96,10 @@ describe('custom authentication strategy adapters', () => {
     const payload = await makePayload(config);
     const frogbot = makeFrogBot(config);
 
-    init.mockImplementationOnce(async (engine, currentConfig) => {
+    init.mockImplementationOnce((engine, currentConfig) => {
       registerFrogBotInstance(engine, frogbot, currentConfig);
 
-      return frogbot;
+      return Promise.resolve(frogbot);
     });
 
     const first = await run(payload);
@@ -262,9 +264,7 @@ describe('custom authentication strategy adapters', () => {
         },
         {
           name: 'broken',
-          authenticate: async () => {
-            throw error;
-          },
+          authenticate: () => Promise.reject(error),
         },
       ]),
     );
@@ -378,7 +378,7 @@ describe('custom authentication strategy adapters', () => {
     ]);
   });
 
-  it.each([
+  it.each<[string, unknown]>([
     ['synchronous Error', new Error('sync failure')],
     ['non-Error', 'non-Error failure'],
   ])(

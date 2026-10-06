@@ -11,7 +11,7 @@ import { hasChannelChatAccess } from '../../../../packages/frogbot/src/chat/chan
 import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
 import type { PendingCall } from '../../../../packages/frogbot/src/chat/turn/types.js';
 import { question } from '../../../../packages/frogbot/src/tools/question.js';
-import { channelFixture } from './helpers.js';
+import { asyncChunks, channelFixture } from './helpers.js';
 
 const { continueTurn, listPendingCalls, settleClientToolCall } = vi.hoisted(() => ({
   continueTurn: vi.fn(),
@@ -76,9 +76,9 @@ function parseInteraction(interaction: QuestionInteraction) {
 
 function questionHooks() {
   return {
-    render: vi.fn<PieceChannelQuestions['render']>(async ({ calls }) => [
-      { messages: [card], calls: calls.map(({ toolCallId }) => toolCallId) },
-    ]),
+    render: vi.fn<PieceChannelQuestions['render']>(({ calls }) =>
+      Promise.resolve([{ messages: [card], calls: calls.map(({ toolCallId }) => toolCallId) }]),
+    ),
     parse: vi.fn<PieceChannelQuestions['parse']>(({ interaction }) =>
       parseInteraction(interaction),
     ),
@@ -153,12 +153,12 @@ describe('channel question delivery', () => {
       part: {},
       allSettled: true,
     });
-    continueTurn.mockReset().mockImplementation(async () => ({
-      stream: (async function* () {
-        yield 'Continued';
-      })(),
-      persistence: Promise.resolve(),
-    }));
+    continueTurn.mockReset().mockImplementation(() =>
+      Promise.resolve({
+        stream: asyncChunks('Continued'),
+        persistence: Promise.resolve(),
+      }),
+    );
   });
 
   it('renders a pending question once and records its messages', async () => {
@@ -224,9 +224,9 @@ describe('channel question delivery', () => {
   it('keeps calls the piece held back until an open card is answered', async () => {
     const hooks = questionHooks();
 
-    hooks.render.mockImplementation(async ({ calls }) => [
-      { messages: [card], calls: [calls[0].toolCallId] },
-    ]);
+    hooks.render.mockImplementation(({ calls }) =>
+      Promise.resolve([{ messages: [card], calls: [calls[0].toolCallId] }]),
+    );
 
     const fixture = channelFixture({ questions: hooks });
 
@@ -255,10 +255,7 @@ describe('channel question delivery', () => {
     const fixture = channelFixture({ questions: questionHooks() });
 
     fixture.streamMessage.mockResolvedValueOnce({
-      stream: (async function* () {
-        yield { type: 'tool-call', toolName: 'question' };
-        yield '  ';
-      })(),
+      stream: asyncChunks<unknown>({ type: 'tool-call', toolName: 'question' }, '  '),
       persistence: Promise.resolve(),
     } as never);
 
@@ -394,7 +391,7 @@ describe('channel question delivery', () => {
     const { fixture, hooks } = await askedFixture();
     const moved = { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' };
 
-    hooks.updated.mockImplementationOnce(async ({ question }) => {
+    hooks.updated.mockImplementationOnce(({ question }) => {
       expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
         pending: 'update',
         revision: 1,
@@ -402,7 +399,7 @@ describe('channel question delivery', () => {
       });
       expect(question).toEqual({ messages: [card], revision: 1, state: { step: 2 } });
 
-      return { messages: [moved], state: { step: 3 } };
+      return Promise.resolve({ messages: [moved], state: { step: 3 } });
     });
 
     await fixture.interact(click('partial'));
@@ -514,10 +511,12 @@ describe('channel question delivery', () => {
     const hooks = questionHooks();
     const closed = { id: 'closed-1', postedAt: '2026-09-26T00:00:09.000Z' };
 
-    hooks.settled.mockImplementation(async ({ question }) => ({
-      messages: [...question.messages, closed],
-      state: { view: 'Answered by user-2' },
-    }));
+    hooks.settled.mockImplementation(({ question }) =>
+      Promise.resolve({
+        messages: [...question.messages, closed],
+        state: { view: 'Answered by user-2' },
+      }),
+    );
 
     const { fixture } = await askedFixture(hooks);
 
@@ -673,12 +672,14 @@ describe('channel question delivery', () => {
   it('records every message of a question and hands all of them to settled', async () => {
     const hooks = questionHooks();
 
-    hooks.render.mockImplementation(async ({ calls }) => [
-      {
-        messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
-        calls: calls.map(({ toolCallId }) => toolCallId),
-      },
-    ]);
+    hooks.render.mockImplementation(({ calls }) =>
+      Promise.resolve([
+        {
+          messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
+          calls: calls.map(({ toolCallId }) => toolCallId),
+        },
+      ]),
+    );
 
     const { fixture } = await askedFixture(hooks);
 
@@ -698,9 +699,11 @@ describe('channel question delivery', () => {
   it('sends a click on the previous question message to stale instead of the next question', async () => {
     const hooks = questionHooks();
 
-    hooks.updated.mockImplementation(async ({ question }) => ({
-      messages: [...question.messages, { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' }],
-    }));
+    hooks.updated.mockImplementation(({ question }) =>
+      Promise.resolve({
+        messages: [...question.messages, { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' }],
+      }),
+    );
 
     const { fixture } = await askedFixture(hooks);
 
@@ -725,9 +728,11 @@ describe('channel question delivery', () => {
       return sent < posted ? { kind: 'stale' } : parseInteraction(interaction);
     });
 
-    hooks.updated.mockImplementation(async ({ question }) => ({
-      messages: [...question.messages, { id: 'card-2', postedAt: '2999-01-01T00:00:00.000Z' }],
-    }));
+    hooks.updated.mockImplementation(({ question }) =>
+      Promise.resolve({
+        messages: [...question.messages, { id: 'card-2', postedAt: '2999-01-01T00:00:00.000Z' }],
+      }),
+    );
 
     const { fixture } = await askedFixture(hooks);
 
@@ -817,12 +822,14 @@ describe('channel question delivery', () => {
   it('sends a click on an earlier page of the question to stale', async () => {
     const hooks = questionHooks();
 
-    hooks.render.mockImplementation(async ({ calls }) => [
-      {
-        messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
-        calls: calls.map(({ toolCallId }) => toolCallId),
-      },
-    ]);
+    hooks.render.mockImplementation(({ calls }) =>
+      Promise.resolve([
+        {
+          messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
+          calls: calls.map(({ toolCallId }) => toolCallId),
+        },
+      ]),
+    );
 
     const { fixture } = await askedFixture(hooks);
 
@@ -841,9 +848,11 @@ describe('channel question delivery', () => {
   it('sends a modal submission opened from the previous question message to stale', async () => {
     const hooks = questionHooks();
 
-    hooks.updated.mockImplementation(async ({ question }) => ({
-      messages: [...question.messages, { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' }],
-    }));
+    hooks.updated.mockImplementation(({ question }) =>
+      Promise.resolve({
+        messages: [...question.messages, { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' }],
+      }),
+    );
 
     const { fixture } = await askedFixture(hooks);
 

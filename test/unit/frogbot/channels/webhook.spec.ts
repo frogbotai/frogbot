@@ -1,3 +1,4 @@
+import type * as Payload from 'payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -10,8 +11,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
-  addDataAndFileToRequest: vi.fn(async () => undefined),
+  ...(await importOriginal<typeof Payload>()),
+  addDataAndFileToRequest: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 vi.mock('../../../../packages/frogbot/src/channels/host.js', () => ({
@@ -26,10 +27,10 @@ const channelPiece = definePiece({
   label: 'Channel only',
   auth: z.object({ token: z.string() }),
   actions: [],
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   channel: {
     adapter: () => ({ name: 'channel-only' }) as never,
-    identity: async () => null,
+    identity: () => Promise.resolve(null),
   },
 });
 
@@ -71,9 +72,12 @@ describe('channel webhook ingress', () => {
     expect(mocks.webhook).toHaveBeenCalledWith('channel-only', expect.any(Request));
   });
 
-  it.each([false, true])(
-    'drains app-trigger enqueue before settling ingress (sibling failure: %s)',
-    async (failSibling) => {
+  it.each([
+    { failSibling: false, expected: expect.objectContaining({ status: 202 }) },
+    { failSibling: true, expected: expect.any(AggregateError) },
+  ])(
+    'drains app-trigger enqueue before settling ingress (sibling failure: $failSibling)',
+    async ({ failSibling, expected }) => {
       let release!: () => void;
       const held = new Promise<void>((resolve) => {
         release = resolve;
@@ -90,9 +94,9 @@ describe('channel webhook ingress', () => {
         label: 'Shared',
         auth: z.object({ token: z.string() }),
         actions: [],
-        client: ({ auth }) => auth,
+        client: ({ auth }: { auth: unknown }) => auth,
         webhook: {
-          verify: async () => true,
+          verify: () => Promise.resolve(true),
           parse: () => ({ event: 'message' }),
         },
         triggers: [
@@ -107,7 +111,7 @@ describe('channel webhook ingress', () => {
         ],
         channel: {
           adapter: () => ({ name: 'shared' }) as never,
-          identity: async () => null,
+          identity: () => Promise.resolve(null),
         },
       });
       const instance = sharedPiece({ auth: { token: 'secret' } });
@@ -125,20 +129,26 @@ describe('channel webhook ingress', () => {
           },
         ],
       });
-      const queue = vi.fn(async () => undefined);
+      const queue = vi.fn(() => Promise.resolve(undefined));
       const frogbot = {
         config: { _internal: { triggers } },
         connections: {
-          resolvePieceCredential: vi.fn(async () => ({ auth: { token: 'secret' }, key: {} })),
+          resolvePieceCredential: vi.fn(() =>
+            Promise.resolve({ auth: { token: 'secret' }, key: {} }),
+          ),
         },
         logger: { error: vi.fn() },
         queue,
         kv: {
-          has: vi.fn(async () => false),
-          lock: vi.fn(async (_key, _ttl, callback) =>
-            callback({ signal: new AbortController().signal }),
+          has: vi.fn(() => Promise.resolve(false)),
+          lock: vi.fn(
+            (
+              _key: string,
+              _ttl: number,
+              callback: (args: { signal: AbortSignal }) => Promise<unknown>,
+            ) => callback({ signal: new AbortController().signal }),
           ),
-          setIfAbsent: vi.fn(async () => true),
+          setIfAbsent: vi.fn(() => Promise.resolve(true)),
         },
       };
       const req = Object.assign(
@@ -150,7 +160,7 @@ describe('channel webhook ingress', () => {
       )!;
 
       let acknowledged = false;
-      const pending = endpoint.handler(req as never).then(
+      const pending = Promise.resolve(endpoint.handler(req as never)).then(
         (response) => {
           acknowledged = true;
 
@@ -176,11 +186,7 @@ describe('channel webhook ingress', () => {
       const response = await pending;
 
       expect(queue).toHaveBeenCalledOnce();
-      if (failSibling) {
-        expect(response).toBeInstanceOf(AggregateError);
-      } else {
-        expect(response).toMatchObject({ status: 202 });
-      }
+      expect(response).toEqual(expected);
     },
   );
 

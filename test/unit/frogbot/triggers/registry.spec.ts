@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type { AgentConfig } from '../../../../packages/frogbot/src/agents/types.js';
+import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
+import type {
+  AgentConfig,
+  AgentPieceTrigger,
+} from '../../../../packages/frogbot/src/agents/types.js';
 import {
   definePiece,
   pieceInstanceDefinition,
@@ -12,11 +16,24 @@ import type { PieceTriggerReference } from '../../../../packages/frogbot/src/pie
 import { buildIngressRegistry } from '../../../../packages/frogbot/src/triggers/registry.js';
 import { createEchoPiece } from './fixtures/piece-echo.js';
 
+// Tolerates the invalid references some tests pass on purpose.
+function isAppTrigger(
+  trigger: PieceTriggerReference,
+): trigger is Extract<PieceTriggerReference, { type: 'app' }> {
+  return Reflect.get(Object(trigger), 'type') === 'app';
+}
+
+function subscription(trigger: PieceTriggerReference, input: unknown): AgentPieceTrigger {
+  const handler = vi.fn();
+
+  return isAppTrigger(trigger) ? { trigger, input, handler } : { trigger, input, handler };
+}
+
 function agent(trigger: PieceTriggerReference, slug = 'ops', input?: unknown): AgentConfig {
   return {
     slug,
     instructions: 'Handle events',
-    triggers: [{ trigger, input, handler: vi.fn() }],
+    triggers: [subscription(trigger, input)],
   };
 }
 
@@ -25,14 +42,14 @@ const createChannel = definePiece({
   label: 'Channel',
   actions: [],
   channel: {
-    adapter: () => ({}),
-    async identity() {
-      return null;
+    adapter: vi.fn<() => Adapter>(),
+    identity() {
+      return Promise.resolve(null);
     },
   },
   webhook: {
-    async verify() {
-      return true;
+    verify() {
+      return Promise.resolve(true);
     },
   },
   triggers: [
@@ -42,8 +59,8 @@ const createChannel = definePiece({
       event: 'received',
       description: 'Received',
       input: z.object({}),
-      async run() {
-        return [];
+      run() {
+        return Promise.resolve([]);
       },
     },
   ],
@@ -124,8 +141,8 @@ describe('trigger ingress registry', () => {
           event: 'created',
           description: 'Created',
           input: z.object({}),
-          async run() {
-            return [];
+          run() {
+            return Promise.resolve([]);
           },
         },
       ],
@@ -147,12 +164,12 @@ describe('trigger ingress registry', () => {
           type: 'webhook',
           description: 'Received',
           input: z.object({}),
-          async onEnable() {
-            return { secret: 'persisted' };
+          onEnable() {
+            return Promise.resolve({ secret: 'persisted' });
           },
           async onDisable() {},
-          async run() {
-            return [];
+          run() {
+            return Promise.resolve([]);
           },
         },
       ],
@@ -169,8 +186,8 @@ describe('trigger ingress registry', () => {
       label: 'Polling',
       actions: [],
       webhook: {
-        async verify() {
-          return true;
+        verify() {
+          return Promise.resolve(true);
         },
       },
       triggers: [
@@ -179,8 +196,8 @@ describe('trigger ingress registry', () => {
           type: 'polling',
           description: 'Polled',
           input: z.object({}),
-          async run() {
-            return { events: [] };
+          run() {
+            return Promise.resolve({ events: [] });
           },
         },
       ],
@@ -205,8 +222,8 @@ describe('trigger ingress registry', () => {
       label: 'Parsed',
       actions: [],
       webhook: {
-        async verify() {
-          return true;
+        verify() {
+          return Promise.resolve(true);
         },
       },
       triggers: [
@@ -216,8 +233,8 @@ describe('trigger ingress registry', () => {
           event: 'received',
           description: 'Received',
           input: z.object({ count: z.string().default('2').transform(Number) }),
-          async run() {
-            return [];
+          run() {
+            return Promise.resolve([]);
           },
         },
       ],
@@ -257,8 +274,8 @@ describe('trigger ingress registry', () => {
       label: 'Defaulted',
       actions: [],
       webhook: {
-        async verify() {
-          return true;
+        verify() {
+          return Promise.resolve(true);
         },
       },
       triggers: [
@@ -268,8 +285,8 @@ describe('trigger ingress registry', () => {
           event: 'received',
           description: 'Received',
           input: z.object({ channel: z.string() }).default({ channel: 'alerts' }),
-          async run() {
-            return [];
+          run() {
+            return Promise.resolve([]);
           },
         },
       ],

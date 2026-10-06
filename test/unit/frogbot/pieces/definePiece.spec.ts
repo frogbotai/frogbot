@@ -14,6 +14,9 @@ import {
 import { generatePieceTypes } from '../../../../packages/frogbot/src/pieces/generateTypes.js';
 import { pieceCapabilities } from '../../../../packages/frogbot/src/pieces/types.js';
 
+const tokenAuth = z.object({ token: z.string() });
+const accessTokenAuth = z.object({ accessToken: z.string() });
+
 function request(auth = { token: 'resolved' }) {
   const resolvePieceCredential = vi.fn().mockResolvedValue({ auth, key: auth });
   const req = {
@@ -26,7 +29,7 @@ function request(auth = { token: 'resolved' }) {
 const createExample = definePiece({
   slug: 'example',
   label: 'Example',
-  auth: z.object({ token: z.string() }),
+  auth: tokenAuth,
   options: z.object({ prefix: z.string() }),
   client: ({ auth }) => ({ auth }),
   actions: [
@@ -34,16 +37,16 @@ const createExample = definePiece({
       slug: 'run',
       description: 'Run',
       input: z.object({ value: z.string() }),
-      async run({ input, client, options, req }) {
-        return { input, client, options, req };
+      run({ input, client, options, req }) {
+        return Promise.resolve({ input, client, options, req });
       },
     },
     {
       slug: 'other',
       description: 'Other',
       input: z.object({}),
-      async run() {
-        return 'other';
+      run() {
+        return Promise.resolve('other');
       },
     },
   ],
@@ -63,7 +66,7 @@ describe('definePiece', () => {
     const piece = definePiece({
       slug: 'generated-example',
       label: 'Generated example',
-      auth: z.object({ token: z.string() }),
+      auth: tokenAuth,
       options: z.object({ region: z.string().default('us') }),
       client,
       actions: [
@@ -97,8 +100,8 @@ describe('definePiece', () => {
           slug: '__proto__',
           description: 'Run',
           input: z.object({}),
-          async run() {
-            return 'ok';
+          run() {
+            return Promise.resolve('ok');
           },
         },
       ],
@@ -119,8 +122,8 @@ describe('definePiece', () => {
           description: 'Read',
           input: z.object({}),
           output: z.string().transform(Number).pipe(z.number()),
-          async run() {
-            return '42';
+          run() {
+            return Promise.resolve('42');
           },
         },
       ],
@@ -196,7 +199,7 @@ describe('definePiece', () => {
     const createCached = definePiece({
       slug: 'cached',
       label: 'Cached',
-      auth: z.object({ token: z.string() }),
+      auth: tokenAuth,
       client,
       actions: [],
     });
@@ -236,7 +239,7 @@ describe('definePiece', () => {
     const oauth = definePiece({
       slug: 'oauth',
       label: 'OAuth',
-      auth: z.object({ accessToken: z.string() }),
+      auth: accessTokenAuth,
       client: ({ auth }) => auth,
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
@@ -259,8 +262,8 @@ describe('definePiece', () => {
             type: 'app',
             description: 'Created',
             input: z.object({}),
-            async run() {
-              return [];
+            run() {
+              return Promise.resolve([]);
             },
           } as never,
         ],
@@ -277,8 +280,8 @@ describe('definePiece', () => {
             type: 'polling',
             description: 'Same',
             input: z.object({}),
-            async run() {
-              return { events: [] };
+            run() {
+              return Promise.resolve({ events: [] });
             },
           },
           {
@@ -286,8 +289,8 @@ describe('definePiece', () => {
             type: 'polling',
             description: 'Same',
             input: z.object({}),
-            async run() {
-              return { events: [] };
+            run() {
+              return Promise.resolve({ events: [] });
             },
           },
         ],
@@ -299,20 +302,20 @@ describe('definePiece', () => {
     const createCapable = definePiece({
       slug: 'capable',
       label: 'Capable',
-      auth: z.object({ accessToken: z.string() }),
+      auth: accessTokenAuth,
       client: ({ auth }) => auth,
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
         tokenUrl: 'https://example.com/token',
         scopes: [],
-        async account() {
-          return { id: 'id', label: 'Account', email: 'user@example.com' };
+        account() {
+          return Promise.resolve({ id: 'id', label: 'Account', email: 'user@example.com' });
         },
       },
       actions: [],
       email: {
-        async send() {
-          return null;
+        send() {
+          return Promise.resolve(null);
         },
       },
     });
@@ -358,8 +361,8 @@ describe('createPieceHelpers', () => {
       slug: 'echo',
       description: 'Echo',
       input: z.object({ text: z.string() }),
-      async run({ input }: { input: { text: string } }) {
-        return input.text;
+      run({ input }: { input: { text: string } }) {
+        return Promise.resolve(input.text);
       },
     };
     const appTrigger = {
@@ -368,8 +371,8 @@ describe('createPieceHelpers', () => {
       type: 'app' as const,
       event: 'received',
       input: z.object({}),
-      async run() {
-        return [];
+      run() {
+        return Promise.resolve([]);
       },
     };
     const pollingTrigger = {
@@ -377,8 +380,8 @@ describe('createPieceHelpers', () => {
       description: 'Polled',
       type: 'polling' as const,
       input: z.object({}),
-      async run() {
-        return { events: [] };
+      run() {
+        return Promise.resolve({ events: [] });
       },
     };
     const webhookTrigger = {
@@ -386,12 +389,12 @@ describe('createPieceHelpers', () => {
       description: 'Hooked',
       type: 'webhook' as const,
       input: z.object({}),
-      async onEnable() {
-        return null;
+      onEnable() {
+        return Promise.resolve(null);
       },
       async onDisable() {},
-      async run() {
-        return [];
+      run() {
+        return Promise.resolve([]);
       },
     };
 

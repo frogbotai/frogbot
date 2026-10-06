@@ -91,7 +91,7 @@ describe('logUsage', () => {
   it('writes on a detached request instead of the caller request', async () => {
     const { req, create } = makeReq();
 
-    logUsage({
+    await logUsage({
       requestId: 'req-4',
       operation: 'chat.completions',
       startedAt: 1,
@@ -107,7 +107,7 @@ describe('logUsage', () => {
   it('composes generic usage fields into the existing write', async () => {
     const { req, create } = makeReq();
 
-    logUsage({
+    await logUsage({
       requestId: 'req-2',
       operation: 'chat.completions',
       startedAt: 1,
@@ -126,7 +126,7 @@ describe('logUsage', () => {
   it('omits contributor fields when none are supplied', async () => {
     const { req, create } = makeReq();
 
-    logUsage({
+    await logUsage({
       requestId: 'req-3',
       operation: 'chat.completions',
       startedAt: 1,
@@ -142,7 +142,7 @@ describe('logUsage', () => {
   it('prices a custom model with its configured cost', async () => {
     const { req, create } = makeReq();
 
-    logUsage({
+    await logUsage({
       requestId: 'req-7',
       operation: 'chat.completions',
       startedAt: 1,
@@ -159,7 +159,7 @@ describe('logUsage', () => {
   it('prices other models from the built-in price list', async () => {
     const { req, create } = makeReq();
 
-    logUsage({
+    await logUsage({
       requestId: 'req-8',
       operation: 'chat.completions',
       startedAt: 1,
@@ -177,7 +177,7 @@ describe('logUsage', () => {
     const failure = new Error('write failed');
     const { req, error } = makeReq({ create: vi.fn().mockRejectedValue(failure) });
 
-    logUsage({
+    await logUsage({
       requestId: 'req-5',
       operation: 'chat.completions',
       startedAt: 1,
@@ -193,7 +193,7 @@ describe('logUsage', () => {
   it('skips the write when usage tracking is disabled', async () => {
     const { req, createRequest } = makeReq();
 
-    logUsage({
+    await logUsage({
       requestId: 'req-6',
       operation: 'chat.completions',
       startedAt: 1,

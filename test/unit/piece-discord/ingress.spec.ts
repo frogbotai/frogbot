@@ -32,7 +32,10 @@ function fixture(conversational = false) {
 
   const result = ingressFixture({
     instance,
-    triggerSlugs: ['commandReceived', 'componentReceived', 'messageCreated'],
+    triggers: (['commandReceived', 'componentReceived', 'messageCreated'] as const).map((slug) => ({
+      trigger: instance.triggers[slug],
+      handler: vi.fn(),
+    })),
     conversational,
   });
 
@@ -191,7 +194,10 @@ describe('Discord adapter-verified ingress', () => {
     { auth: { botToken: 'bot-token' }, error: 'applicationId and publicKey' },
   ])('requires complete bot config (%j)', async ({ error, ...options }) => {
     const instance = createDiscord(options);
-    const result = ingressFixture({ instance, triggerSlugs: ['commandReceived'] });
+    const result = ingressFixture({
+      instance,
+      triggers: [{ trigger: instance.triggers.commandReceived, handler: vi.fn() }],
+    });
 
     fixtures.push(result);
 

@@ -11,9 +11,13 @@ type ResolverField = {
 const graphQL = {} as Parameters<GraphQLExtension>[0];
 const schemaContext = {} as Parameters<GraphQLExtension>[1];
 
+function unexpectedAttach(): Promise<FrogBotRequest> {
+  return Promise.reject(new Error('Unexpected attachment'));
+}
+
 describe('custom GraphQL extension wrapping', () => {
   it('keeps an absent extension absent', () => {
-    const wrapped = wrapGraphQLExtension(undefined, async (req) => req as FrogBotRequest);
+    const wrapped = wrapGraphQLExtension(undefined, unexpectedAttach);
 
     expect(wrapped).toBeUndefined();
   });
@@ -21,10 +25,7 @@ describe('custom GraphQL extension wrapping', () => {
   it.each([null, undefined, false, 7, 'field', () => 'field'])(
     'passes a non-object field through unchanged: %s',
     (field) => {
-      const wrapped = wrapGraphQLExtension(
-        () => ({ field }),
-        async (req) => req as FrogBotRequest,
-      );
+      const wrapped = wrapGraphQLExtension(() => ({ field }), unexpectedAttach);
 
       const fields = wrapped!(graphQL, schemaContext);
 
@@ -35,10 +36,7 @@ describe('custom GraphQL extension wrapping', () => {
   it.each([{}, { type: 'String' }, { resolve: null }, { resolve: 'not a function' }])(
     'preserves field identity when there is no callable resolver: %j',
     (field) => {
-      const wrapped = wrapGraphQLExtension(
-        () => ({ field }),
-        async (req) => req as FrogBotRequest,
-      );
+      const wrapped = wrapGraphQLExtension(() => ({ field }), unexpectedAttach);
 
       const fields = wrapped!(graphQL, schemaContext);
 
@@ -103,9 +101,7 @@ describe('custom GraphQL extension wrapping', () => {
     async (context) => {
       const wrapped = wrapGraphQLExtension(
         () => ({ field: { resolve: () => 'unchanged' } }),
-        async () => {
-          throw new Error('Unexpected attachment');
-        },
+        unexpectedAttach,
       );
 
       const fields = wrapped!(graphQL, schemaContext);
@@ -126,7 +122,7 @@ describe('custom GraphQL extension wrapping', () => {
           },
         },
       }),
-      async (req) => req as FrogBotRequest,
+      unexpectedAttach,
     );
 
     const fields = wrapped!(graphQL, schemaContext);
@@ -147,9 +143,7 @@ describe('custom GraphQL extension wrapping', () => {
           },
         },
       }),
-      async () => {
-        throw error;
-      },
+      () => Promise.reject(error),
     );
 
     const fields = wrapped!(graphQL, schemaContext);

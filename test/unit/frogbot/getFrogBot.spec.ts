@@ -88,7 +88,8 @@ describe('getFrogBot', () => {
     await expect(getFrogBot(options)).rejects.toThrow('transient init failure');
     const second = getFrogBot(options);
     const concurrent = getFrogBot(options);
-    if (initState.calls === 2) resolveRetry(recovered);
+    await vi.waitFor(() => expect(initState.calls).toBe(2));
+    resolveRetry(recovered);
     const results = await Promise.allSettled([second, concurrent]);
     expect(results).toEqual([
       { status: 'fulfilled', value: recovered },

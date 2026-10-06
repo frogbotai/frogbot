@@ -75,7 +75,7 @@ describe('jobs schema', () => {
     expect(collection.fields.some((field) => 'name' in field && field.name === 'id')).toBe(false);
 
     expect(
-      payload.config.jobs.tasks.find(({ slug }) => slug === 'frogbot-sweep-jobs')?.schedule,
+      payload.config.jobs.tasks?.find(({ slug }) => slug === 'frogbot-sweep-jobs')?.schedule,
     ).toEqual([expect.objectContaining({ cron: '* * * * *', queue: 'default' })]);
   });
 

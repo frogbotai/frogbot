@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { toGatewayHooks, toHookUsage } from '../../../../packages/frogbot/src/ai/hooks.js';
-import type { SanitizedAIHooks } from '../../../../packages/frogbot/src/collections/config/types-ai.js';
+import type {
+  AIHookContext,
+  SanitizedAIHooks,
+} from '../../../../packages/frogbot/src/ai/hooks/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeHooks(overrides: Partial<SanitizedAIHooks> = {}): SanitizedAIHooks {
@@ -24,8 +27,8 @@ function makeReq(): FrogBotRequest {
 
 describe('toGatewayHooks', () => {
   it('lifts seeded req/user/agent from the context bag onto each phase args', async () => {
-    const seen: Record<string, unknown>[] = [];
-    const record = (args: Record<string, unknown>) => {
+    const seen: AIHookContext[] = [];
+    const record = (args: AIHookContext) => {
       seen.push(args);
     };
     const gatewayHooks = toGatewayHooks(
@@ -90,7 +93,7 @@ describe('toGatewayHooks', () => {
   });
 
   it('is a pure pass-through when the context bag has no seed', async () => {
-    let received: Record<string, unknown> | undefined;
+    let received: AIHookContext | undefined;
     const gatewayHooks = toGatewayHooks(
       makeHooks({ beforeOperation: [(args) => void (received = args)] }),
     );

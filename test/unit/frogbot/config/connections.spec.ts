@@ -6,6 +6,7 @@ import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { ConnectionEntry } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { PieceInstance } from '../../../../packages/frogbot/src/pieces/types.js';
 
 const oauth = { clientId: 'client', clientSecret: 'app-secret' };
 const auth = { apiKey: 'developer-secret' };
@@ -13,7 +14,7 @@ const createPiece = definePiece({
   slug: 'example',
   label: 'Example',
   auth: z.object({ apiKey: z.string().min(1) }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
@@ -24,10 +25,10 @@ const createPiece = definePiece({
       slug: 'read',
       description: 'Read an item',
       input: z.object({}),
-      run: async ({ client }) => client,
+      run: ({ client }) => Promise.resolve(client),
     },
   ],
-  webhook: { verify: async () => true },
+  webhook: { verify: () => Promise.resolve(true) },
   triggers: [
     {
       type: 'app',
@@ -35,7 +36,7 @@ const createPiece = definePiece({
       description: 'An item changed',
       input: z.object({}),
       event: 'changed',
-      run: async () => [],
+      run: () => Promise.resolve([]),
     },
   ],
 });
@@ -50,28 +51,11 @@ function config(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
 }
 
 describe('connection config boot', () => {
-  it.each([
-    { name: 'A', developer: true, secret: false, oauth: false },
-    { name: 'B', developer: false, secret: true, oauth: false },
-    { name: 'C', developer: false, secret: false, oauth: true },
-    { name: 'A+B', developer: true, secret: true, oauth: false },
-    { name: 'A+C', developer: true, secret: false, oauth: true },
-    { name: 'B+C', developer: false, secret: true, oauth: true },
-    { name: 'A+B+C', developer: true, secret: true, oauth: true },
-  ])('boots credential combination $name through collection sanitization', async (combination) => {
-    const piece = createPiece({
-      slug: 'custom-instance',
-      ...(combination.developer ? { auth } : {}),
-      ...(combination.oauth ? { oauth } : {}),
-    });
+  type Combination = { secret: boolean; oauth: boolean };
+
+  async function boot(combination: Combination, connections: ConnectionEntry[]) {
     const enabled = combination.secret || combination.oauth;
-    const result = sanitize(
-      config({
-        connections: enabled
-          ? [{ piece, secret: combination.secret, oauth: combination.oauth }]
-          : [],
-      }),
-    );
+    const result = sanitize(config({ connections }));
     const payload = await result._internal.payloadConfig;
     expect(result.connections.enabled).toBe(enabled);
     expect(payload.collections.filter(({ slug }) => slug === 'connections')).toHaveLength(
@@ -83,25 +67,97 @@ describe('connection config boot', () => {
     expect(payload).not.toHaveProperty('connections');
     expect(payload).not.toHaveProperty('credentialSources');
     expect(payload.endpoints.some(({ path }) => path.startsWith('/connections'))).toBe(false);
-    if (enabled) {
-      expect(payload.collections.find(({ slug }) => slug === 'connections')?.endpoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ method: 'post', path: '/:piece' }),
-          expect.objectContaining({ method: 'delete', path: '/:id' }),
-        ]),
-      );
-      const entry = result.connections.entries.example;
-      expect(entry?.piece).toBe(piece);
-      expect(entry).toMatchObject({ secret: combination.secret, oauth: combination.oauth });
-      expect(JSON.stringify(entry?.secretSchema ?? {})).not.toContain('developer-secret');
-      expect(Boolean(entry?.secretSchema)).toBe(combination.secret);
-      const owner = payload.collections
-        .find(({ slug }) => slug === 'connections')
-        ?.fields.find((field) => 'name' in field && field.name === 'owner');
-      expect(owner).toMatchObject({ relationTo: 'users' });
-    } else {
-      expect(result.connections.entries).toEqual({});
+
+    return { payload, result };
+  }
+
+  const slug = 'custom-instance';
+
+  it('boots credential combination A through collection sanitization', async () => {
+    const { result } = await boot({ secret: false, oauth: false }, []);
+
+    expect(result.connections.entries).toEqual({});
+  });
+
+  it.each<
+    Combination & {
+      name: string;
+      connect: () => { piece: PieceInstance; connections: ConnectionEntry[] };
     }
+  >([
+    {
+      name: 'B',
+      secret: true,
+      oauth: false,
+      connect: () => {
+        const piece = createPiece({ slug });
+        return { piece, connections: [{ piece, secret: true }] };
+      },
+    },
+    {
+      name: 'C',
+      secret: false,
+      oauth: true,
+      connect: () => {
+        const piece = createPiece({ slug, oauth });
+        return { piece, connections: [{ piece, oauth: true }] };
+      },
+    },
+    {
+      name: 'A+B',
+      secret: true,
+      oauth: false,
+      connect: () => {
+        const piece = createPiece({ slug, auth });
+        return { piece, connections: [{ piece, secret: true }] };
+      },
+    },
+    {
+      name: 'A+C',
+      secret: false,
+      oauth: true,
+      connect: () => {
+        const piece = createPiece({ slug, auth, oauth });
+        return { piece, connections: [{ piece, oauth: true }] };
+      },
+    },
+    {
+      name: 'B+C',
+      secret: true,
+      oauth: true,
+      connect: () => {
+        const piece = createPiece({ slug, oauth });
+        return { piece, connections: [{ piece, secret: true, oauth: true }] };
+      },
+    },
+    {
+      name: 'A+B+C',
+      secret: true,
+      oauth: true,
+      connect: () => {
+        const piece = createPiece({ slug, auth, oauth });
+        return { piece, connections: [{ piece, secret: true, oauth: true }] };
+      },
+    },
+  ])('boots credential combination $name through collection sanitization', async (combination) => {
+    const { piece, connections } = combination.connect();
+    const { payload, result } = await boot(combination, connections);
+
+    expect(payload.collections.find(({ slug }) => slug === 'connections')?.endpoints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ method: 'post', path: '/:piece' }),
+        expect.objectContaining({ method: 'delete', path: '/:id' }),
+      ]),
+    );
+    const entry = result.connections.entries.example;
+    expect(entry?.piece).toBe(piece);
+    expect(entry).toMatchObject({ secret: combination.secret, oauth: combination.oauth });
+    expect(JSON.stringify(entry?.secretSchema ?? {})).not.toContain('developer-secret');
+    expect(Boolean(entry?.secretSchema)).toBe(combination.secret);
+    const owner = payload.collections
+      .find(({ slug }) => slug === 'connections')
+      ?.fields.find((field) => 'name' in field && field.name === 'owner');
+    expect(owner).toMatchObject({ relationTo: 'users' });
   });
 
   it('discovers connection-only instances without altering native tools or ingress', async () => {
@@ -116,7 +172,7 @@ describe('connection config boot', () => {
             slug: 'assistant',
             instructions: 'Help',
             tools: [mounted],
-            triggers: [{ trigger: mounted.triggers.changed, input: {}, prompt: 'Handle change' }],
+            triggers: [{ trigger: mounted.triggers.changed, input: {}, handler: () => {} }],
           },
         ],
       }),
@@ -205,7 +261,7 @@ describe('connection config boot', () => {
       slug: 'opaque',
       label: 'Opaque',
       auth: z.custom(),
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
         tokenUrl: 'https://example.com/token',

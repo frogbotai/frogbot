@@ -2,32 +2,42 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   calls: [] as string[],
-  channelsRun: vi.fn(async () => mocks.calls.push(`channelsRun:${process.env.FROGBOT_TEST_KEY}`)),
+  channelsRun: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`channelsRun:${process.env.FROGBOT_TEST_KEY}`)),
+  ),
   dev: vi.fn(() => mocks.calls.push(`dev:${process.env.FROGBOT_TEST_KEY}`)),
-  exportTrainingData: vi.fn(async () =>
-    mocks.calls.push(`exportTrainingData:${process.env.FROGBOT_TEST_KEY}`),
+  exportTrainingData: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`exportTrainingData:${process.env.FROGBOT_TEST_KEY}`)),
   ),
-  exportCaptures: vi.fn(async () =>
-    mocks.calls.push(`exportCaptures:${process.env.FROGBOT_TEST_KEY}`),
+  exportCaptures: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`exportCaptures:${process.env.FROGBOT_TEST_KEY}`)),
   ),
-  generateImportMap: vi.fn(async () =>
-    mocks.calls.push(`generateImportMap:${process.env.FROGBOT_TEST_KEY}`),
+  generateImportMap: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`generateImportMap:${process.env.FROGBOT_TEST_KEY}`)),
   ),
-  generatePieceTypes: vi.fn(async () =>
-    mocks.calls.push(`generatePieceTypes:${process.env.FROGBOT_TEST_KEY}`),
+  generatePieceTypes: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`generatePieceTypes:${process.env.FROGBOT_TEST_KEY}`)),
   ),
-  generateTypes: vi.fn(async () =>
-    mocks.calls.push(`generateTypes:${process.env.FROGBOT_TEST_KEY}`),
+  generateTypes: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`generateTypes:${process.env.FROGBOT_TEST_KEY}`)),
   ),
-  jobsRun: vi.fn(async () => mocks.calls.push(`jobsRun:${process.env.FROGBOT_TEST_KEY}`)),
+  jobsRun: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`jobsRun:${process.env.FROGBOT_TEST_KEY}`)),
+  ),
   loadEnv: vi.fn(() => {
     mocks.calls.push('loadEnv');
 
     process.env.FROGBOT_TEST_KEY = 'loaded';
   }),
-  migrate: vi.fn(async (args: string[]) => mocks.calls.push(`migrate:${args.join(',')}`)),
-  piecesPort: vi.fn(async () => mocks.calls.push(`piecesPort:${process.env.FROGBOT_TEST_KEY}`)),
-  runScript: vi.fn(async () => mocks.calls.push(`runScript:${process.env.FROGBOT_TEST_KEY}`)),
+  migrate: vi.fn((args: string[]) =>
+    Promise.resolve(mocks.calls.push(`migrate:${args.join(',')}`)),
+  ),
+  piecesPort: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`piecesPort:${process.env.FROGBOT_TEST_KEY}`)),
+  ),
+  runScript: vi.fn(() =>
+    Promise.resolve(mocks.calls.push(`runScript:${process.env.FROGBOT_TEST_KEY}`)),
+  ),
   start: vi.fn(() => mocks.calls.push(`start:${process.env.FROGBOT_TEST_KEY}`)),
 }));
 

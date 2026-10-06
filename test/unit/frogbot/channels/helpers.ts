@@ -25,6 +25,17 @@ export function deferred() {
   return { promise, resolve };
 }
 
+export function asyncChunks<T>(...chunks: T[]): AsyncIterableIterator<T> {
+  const iterator = chunks[Symbol.iterator]();
+
+  return {
+    next: () => Promise.resolve(iterator.next()),
+    [Symbol.asyncIterator]() {
+      return this;
+    },
+  };
+}
+
 export function createMemoryKV() {
   const values = new Map<string, unknown>();
   const ttls = new Map<string, number | undefined>();
@@ -32,36 +43,40 @@ export function createMemoryKV() {
   let token = 0;
 
   const kv = {
-    acquireLock: vi.fn(async (key: string) => {
-      if (locks.has(key)) return null;
+    acquireLock: vi.fn((key: string): Promise<KVLock | null> => {
+      if (locks.has(key)) return Promise.resolve(null);
 
       const lock = { key, token: String(++token) };
 
       locks.set(key, lock);
 
-      return lock;
+      return Promise.resolve(lock);
     }),
-    extendLock: vi.fn(async (lock: KVLock) => locks.get(lock.key)?.token === lock.token),
-    releaseLock: vi.fn(async (lock: KVLock) => {
-      if (locks.get(lock.key)?.token !== lock.token) return false;
+    extendLock: vi.fn((lock: KVLock) => Promise.resolve(locks.get(lock.key)?.token === lock.token)),
+    releaseLock: vi.fn((lock: KVLock) => {
+      if (locks.get(lock.key)?.token !== lock.token) return Promise.resolve(false);
 
-      return locks.delete(lock.key);
+      return Promise.resolve(locks.delete(lock.key));
     }),
-    delete: vi.fn(async (key: string) => {
+    delete: vi.fn((key: string) => {
       values.delete(key);
+
+      return Promise.resolve();
     }),
-    get: vi.fn(async (key: string) => values.get(key) ?? null),
-    has: vi.fn(async (key: string) => values.has(key)),
-    set: vi.fn(async (key: string, value: unknown, options?: { ttl?: number }) => {
+    get: vi.fn((key: string) => Promise.resolve(values.get(key) ?? null)),
+    has: vi.fn((key: string) => Promise.resolve(values.has(key))),
+    set: vi.fn((key: string, value: unknown, options?: { ttl?: number }) => {
       values.set(key, value);
       ttls.set(key, options?.ttl);
+
+      return Promise.resolve();
     }),
-    setIfAbsent: vi.fn(async (key: string, value: unknown) => {
-      if (values.has(key)) return false;
+    setIfAbsent: vi.fn((key: string, value: unknown) => {
+      if (values.has(key)) return Promise.resolve(false);
 
       values.set(key, value);
 
-      return true;
+      return Promise.resolve(true);
     }),
     lock: vi.fn(
       <T>(key: string, ttl: number, fn: Parameters<KV['lock']>[2]) =>
@@ -89,8 +104,10 @@ export function channelFixture({
   const posted: Array<{ threadId: string; text: string }> = [];
   const adapter = {
     name: 'slack',
-    initialize: vi.fn(async (instance: ChatInstance) => {
+    initialize: vi.fn((instance: ChatInstance) => {
       chat = instance;
+
+      return Promise.resolve();
     }),
     handleWebhook: vi.fn(async (request: Request, options?: WebhookOptions) => {
       const data = await request.json();
@@ -103,7 +120,7 @@ export function channelFixture({
       };
 
       if (data.type === 'action') {
-        chat.processAction(
+        void chat.processAction(
           {
             actionId: data.actionId,
             value: data.value,
@@ -155,11 +172,13 @@ export function channelFixture({
       });
 
       message.isMention = data.mention ?? true;
-      chat.processMessage(adapter as unknown as Adapter, data.threadId, message, options);
+      void chat.processMessage(adapter as unknown as Adapter, data.threadId, message, options);
 
       return new Response(null, { status: 202 });
     }),
-    fetchThread: vi.fn(async (id: string) => ({ id, channelId: id.split(':')[0], metadata: {} })),
+    fetchThread: vi.fn((id: string) =>
+      Promise.resolve({ id, channelId: id.split(':')[0], metadata: {} }),
+    ),
     channelIdFromThreadId: (id: string) => id.split(':')[0],
     isDM: (id: string) => id.startsWith('dm'),
     stream: vi.fn(async (threadId: string, stream: AsyncIterable<string>) => {
@@ -173,7 +192,7 @@ export function channelFixture({
     }),
   };
 
-  const identity = vi.fn(async (): Promise<FrogBotRequest['user']> => null);
+  const identity = vi.fn((): Promise<FrogBotRequest['user']> => Promise.resolve(null));
   const piece = definePiece({
     slug,
     label: slug,
@@ -188,16 +207,18 @@ export function channelFixture({
   })({ auth: { token: 'secret' } });
 
   const inputs: ChannelTaskInput[] = [];
-  const queue = vi.fn(async ({ input }: { input: ChannelTaskInput }) => {
+  const queue = vi.fn(({ input }: { input: ChannelTaskInput }) => {
     inputs.push(input);
+
+    return Promise.resolve();
   });
 
-  const streamMessage = vi.fn(async (_opts: AgentStreamMessageOpts) => ({
-    stream: (async function* () {
-      yield 'Hello back';
-    })(),
-    persistence: Promise.resolve(),
-  }));
+  const streamMessage = vi.fn((_opts: AgentStreamMessageOpts) =>
+    Promise.resolve({
+      stream: asyncChunks('Hello back'),
+      persistence: Promise.resolve(),
+    }),
+  );
 
   const access = vi.fn(() => true);
   const chats = new Map<string, { id: string }>();
@@ -221,31 +242,35 @@ export function channelFixture({
       _internal: { triggers: {}, payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
     },
     connections: {
-      resolvePieceCredential: vi.fn(async () => ({ auth: { token: 'secret' }, key: {} })),
+      resolvePieceCredential: vi.fn(() => Promise.resolve({ auth: { token: 'secret' }, key: {} })),
     },
-    createRequest: vi.fn(async (req: { context?: object }) =>
-      Object.assign(req, { context: req.context ?? {}, frogbot }),
+    createRequest: vi.fn((req: { context?: object }) =>
+      Promise.resolve(Object.assign(req, { context: req.context ?? {}, frogbot })),
     ),
-    find: vi.fn(async ({ collection, where }: { collection: string; where: FixtureWhere }) => {
+    find: vi.fn(({ collection, where }: { collection: string; where: FixtureWhere }) => {
       if (collection === 'messages') {
-        return { docs: messages.filter((message) => matchesWhere(message, where)) };
+        return Promise.resolve({
+          docs: messages.filter((message) => matchesWhere(message, where)),
+        });
       }
 
       const channelKey = (where as { channelKey: { equals: string } }).channelKey.equals;
 
-      return { docs: chats.has(channelKey) ? [chats.get(channelKey)] : [] };
+      return Promise.resolve({ docs: chats.has(channelKey) ? [chats.get(channelKey)] : [] });
     }),
-    findByID: vi.fn(async ({ collection, id }: { collection: string; id: string }) =>
-      collection === 'chats'
-        ? ([...chats.values()].find((chat) => chat.id === id) ?? null)
-        : { id },
+    findByID: vi.fn(({ collection, id }: { collection: string; id: string }) =>
+      Promise.resolve(
+        collection === 'chats'
+          ? ([...chats.values()].find((chat) => chat.id === id) ?? null)
+          : { id },
+      ),
     ),
-    create: vi.fn(async ({ data }: { data: { channelKey: string } }) => {
+    create: vi.fn(({ data }: { data: { channelKey: string } }) => {
       const row = { ...data, id: `chat-${chats.size + 1}` };
 
       chats.set(data.channelKey, row);
 
-      return row;
+      return Promise.resolve(row);
     }),
     logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn() },
     kv,

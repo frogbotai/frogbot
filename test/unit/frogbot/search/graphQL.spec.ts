@@ -121,11 +121,13 @@ describe('collection search GraphQL queries', () => {
   it('resolves searchArticles through collection search with the request user access', async () => {
     const { queries, sanitized } = await buildQueries(config());
 
-    const search = vi.fn(async () => ({
-      mode: 'lexical',
-      ranking,
-      hits: [{ doc: { id: 1, title: 'stored' }, score: 0.5 }],
-    }));
+    const search = vi.fn(() =>
+      Promise.resolve({
+        mode: 'lexical',
+        ranking,
+        hits: [{ doc: { id: 1, title: 'stored' }, score: 0.5 }],
+      }),
+    );
 
     const payload = {} as Payload;
     const frogbot = { search } as unknown as FrogBot;
@@ -171,17 +173,19 @@ describe('collection search GraphQL queries', () => {
       vector: { method: 'ann', higherIsBetter: false, approximate: true },
     };
 
-    const search = vi.fn(async () => ({
-      mode: 'hybrid',
-      ranking: { method: 'rrf', higherIsBetter: true, approximate: true, components },
-      hits: [
-        {
-          doc: { id: 1, title: 'stored' },
-          score: 0.03,
-          components: { lexical: null, vector: { rank: 2, score: 0.4 } },
-        },
-      ],
-    }));
+    const search = vi.fn(() =>
+      Promise.resolve({
+        mode: 'hybrid',
+        ranking: { method: 'rrf', higherIsBetter: true, approximate: true, components },
+        hits: [
+          {
+            doc: { id: 1, title: 'stored' },
+            score: 0.03,
+            components: { lexical: null, vector: { rank: 2, score: 0.4 } },
+          },
+        ],
+      }),
+    );
 
     const payload = {} as Payload;
 

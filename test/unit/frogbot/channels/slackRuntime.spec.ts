@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { text } from 'node:stream/consumers';
 
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createSlackAdapter } from '../../../../packages/pieces/piece-slack/node_modules/@chat-adapter/slack/dist/index.js';
 import { channelFixture, deferred } from './helpers.js';
@@ -153,18 +153,18 @@ describe('installed Slack adapter channel runtime', () => {
 
       await current.host.initialize(false);
 
-      try {
-        await expect(current.host.webhook('slack', signedRequest())).rejects.toThrow(
-          'Channel webhook processing failed',
-        );
-
-        expect((await current.host.webhook('slack', signedRequest({ retry })))?.status).toBe(200);
-
-        expect(current.inputs).toHaveLength(0);
-        expect(current.queue).toHaveBeenCalledOnce();
-      } finally {
+      onTestFinished(async () => {
         await current.host.shutdown();
-      }
+      });
+
+      await expect(current.host.webhook('slack', signedRequest())).rejects.toThrow(
+        'Channel webhook processing failed',
+      );
+
+      expect((await current.host.webhook('slack', signedRequest({ retry })))?.status).toBe(200);
+
+      expect(current.inputs).toHaveLength(0);
+      expect(current.queue).toHaveBeenCalledOnce();
     },
   );
 
@@ -183,38 +183,38 @@ describe('installed Slack adapter channel runtime', () => {
 
     const pending = current.host.webhook('slack', signedRequest());
 
-    try {
-      await vi.waitFor(() => expect(current.queue).toHaveBeenCalledOnce());
-
-      const payload = eventPayload();
-
-      for (const ts of ['1.000002', '1.000003']) {
-        const event = { ...payload.event, ts, thread_ts: payload.event.ts };
-        const request = signedRequest({
-          payload: {
-            ...payload,
-            event_id: `Ev${ts}`,
-            event,
-          },
-        });
-
-        expect((await other.host.webhook('slack', request))?.status).toBe(200);
-      }
-
-      expect(other.inputs).toHaveLength(2);
-
-      held.resolve();
-
-      expect((await pending)?.status).toBe(200);
-      expect(current.inputs).toHaveLength(1);
-      expect(
-        new Set([...current.inputs, ...other.inputs].map(({ thread }) => thread.id)).size,
-      ).toBe(1);
-    } finally {
+    onTestFinished(async () => {
       held.resolve();
       await pending;
       await Promise.all([current.host.shutdown(), other.host.shutdown()]);
+    });
+
+    await vi.waitFor(() => expect(current.queue).toHaveBeenCalledOnce());
+
+    const payload = eventPayload();
+
+    for (const ts of ['1.000002', '1.000003']) {
+      const event = { ...payload.event, ts, thread_ts: payload.event.ts };
+      const request = signedRequest({
+        payload: {
+          ...payload,
+          event_id: `Ev${ts}`,
+          event,
+        },
+      });
+
+      expect((await other.host.webhook('slack', request))?.status).toBe(200);
     }
+
+    expect(other.inputs).toHaveLength(2);
+
+    held.resolve();
+
+    expect((await pending)?.status).toBe(200);
+    expect(current.inputs).toHaveLength(1);
+    expect(new Set([...current.inputs, ...other.inputs].map(({ thread }) => thread.id)).size).toBe(
+      1,
+    );
   });
 
   it.each([{ user: 'UBOT' }, { user: '', bot_id: 'BBOT', bot_profile: { user_id: 'UBOT' } }])(
@@ -225,17 +225,17 @@ describe('installed Slack adapter channel runtime', () => {
 
       await current.host.initialize(false);
 
-      try {
-        const response = await current.host.webhook(
-          'slack',
-          signedRequest({ payload: { ...payload, event: { ...payload.event, ...author } } }),
-        );
-
-        expect(response?.status).toBe(200);
-        expect(current.queue).not.toHaveBeenCalled();
-      } finally {
+      onTestFinished(async () => {
         await current.host.shutdown();
-      }
+      });
+
+      const response = await current.host.webhook(
+        'slack',
+        signedRequest({ payload: { ...payload, event: { ...payload.event, ...author } } }),
+      );
+
+      expect(response?.status).toBe(200);
+      expect(current.queue).not.toHaveBeenCalled();
     },
   );
 });

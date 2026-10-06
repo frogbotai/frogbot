@@ -27,10 +27,10 @@ function makePayload(): Payload {
 function makeFrogBot(): FrogBot {
   return {
     kv: {
-      acquireLock: vi.fn(async (key: string) => ({ key, token: 'session-lock' })),
-      extendLock: vi.fn(async () => true),
-      get: vi.fn(async () => undefined),
-      releaseLock: vi.fn(async () => true),
+      acquireLock: vi.fn((key: string) => Promise.resolve({ key, token: 'session-lock' })),
+      extendLock: vi.fn(() => Promise.resolve(true)),
+      get: vi.fn(() => Promise.resolve(undefined)),
+      releaseLock: vi.fn(() => Promise.resolve(true)),
     },
   } as unknown as FrogBot;
 }
@@ -70,7 +70,7 @@ describe('attachRegisteredFrogBot', () => {
       req,
       collectionSlug: 'users',
       operation: 'login',
-      fn: async () => {
+      fn: () => {
         attachSessionPayload(req);
 
         const scoped = req.payload;
@@ -79,12 +79,12 @@ describe('attachRegisteredFrogBot', () => {
 
         const result = attachRegisteredFrogBot(req);
 
-        return {
+        return Promise.resolve({
           result,
           runtime: Reflect.get(req, runtimeSymbol),
           scoped,
           sessionPayload: req.payload,
-        };
+        });
       },
     });
 
@@ -110,13 +110,13 @@ describe('attachRegisteredFrogBot', () => {
       req,
       collectionSlug: 'users',
       operation: 'login',
-      fn: async () => {
+      fn: () => {
         attachSessionPayload(req);
 
         const scoped = req.payload;
         const result = attachRegisteredFrogBot(req);
 
-        return { result, scoped, sessionPayload: req.payload };
+        return Promise.resolve({ result, scoped, sessionPayload: req.payload });
       },
     });
 

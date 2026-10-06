@@ -12,7 +12,7 @@ const definition = {
   slug: 'example',
   label: 'Example',
   auth: z.object({ token: z.string().min(1) }),
-  client: ({ auth }) => ({ auth }),
+  client: ({ auth }: { auth: unknown }) => ({ auth }),
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
@@ -52,7 +52,7 @@ async function setup({
         ...row,
       }
     : undefined;
-  const find = vi.fn(async () => ({ docs: stored ? [stored] : [] }));
+  const find = vi.fn(() => Promise.resolve({ docs: stored ? [stored] : [] }));
   const frogbot = {
     find,
     config: {

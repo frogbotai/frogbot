@@ -156,17 +156,19 @@ describe('runKVLock', () => {
     const renewal = deferred<boolean>();
     let current: KVLock | undefined;
     let expiresAt = 0;
-    kv.acquireLock.mockImplementation(async (key, ttl) => {
-      if (current && performance.now() < expiresAt) return null;
+    kv.acquireLock.mockImplementation((key, ttl) => {
+      if (current && performance.now() < expiresAt) return Promise.resolve(null);
       current = { key, token: current ? 'successor' : 'owner' };
       expiresAt = performance.now() + ttl;
-      return current;
+      return Promise.resolve(current);
     });
     kv.extendLock.mockReturnValue(renewal.promise);
-    kv.releaseLock.mockImplementation(async (held) => {
-      if (held.token !== current?.token || performance.now() >= expiresAt) return false;
+    kv.releaseLock.mockImplementation((held) => {
+      if (held.token !== current?.token || performance.now() >= expiresAt) {
+        return Promise.resolve(false);
+      }
       current = undefined;
-      return true;
+      return Promise.resolve(true);
     });
     let signal!: AbortSignal;
     const result = runKVLock({
@@ -238,9 +240,13 @@ describe('runKVLock', () => {
               errors: [callbackError, expect.any(KVLeaseLostError)],
             });
 
+      const settle = {
+        resolve: () => callback.resolve(),
+        reject: () => callback.reject(callbackError),
+      };
+
       await vi.advanceTimersByTimeAsync(30);
-      if (completion === 'resolve') callback.resolve();
-      else callback.reject(callbackError);
+      settle[completion]();
       await vi.advanceTimersByTimeAsync(59);
       expect(kv.releaseLock).not.toHaveBeenCalled();
       await vi.advanceTimersByTimeAsync(1);
@@ -282,8 +288,9 @@ describe('runKVLock', () => {
     async (failure) => {
       const kv = createKV();
       const error = new Error('renewal failed');
-      if (failure === 'false') kv.extendLock.mockResolvedValue(false);
-      else kv.extendLock.mockRejectedValue(error);
+      kv.extendLock.mockImplementation(() =>
+        failure === 'false' ? Promise.resolve(false) : Promise.reject(error),
+      );
       kv.releaseLock.mockReturnValue(new Promise(() => {}));
       const result = runKVLock({
         kv,
@@ -419,6 +426,12 @@ describe('runKVLock', () => {
     async (completion) => {
       const kv = createKV();
       const error = new Error('callback failed');
+      const outcome = {
+        resolve: () => 'too late',
+        reject: () => {
+          throw error;
+        },
+      };
       let signal!: AbortSignal;
       const result = runKVLock({
         kv,
@@ -427,17 +440,15 @@ describe('runKVLock', () => {
         fn: (args) => {
           signal = args.signal;
           vi.spyOn(performance, 'now').mockReturnValue(90);
-          if (completion === 'reject') throw error;
-          return 'too late';
+          return outcome[completion]();
         },
       });
 
-      if (completion === 'resolve') await expect(result).rejects.toBeInstanceOf(KVLeaseLostError);
-      else {
-        await expect(result).rejects.toMatchObject({
-          errors: [error, expect.any(KVLeaseLostError)],
-        });
-      }
+      await expect(result).rejects.toEqual(
+        completion === 'resolve'
+          ? expect.any(KVLeaseLostError)
+          : expect.objectContaining({ errors: [error, expect.any(KVLeaseLostError)] }),
+      );
       expect(signal.aborted).toBe(true);
       expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
     },
@@ -445,9 +456,9 @@ describe('runKVLock', () => {
 
   it('checks the deadline on release completion before returning callback success', async () => {
     const kv = createKV();
-    kv.releaseLock.mockImplementation(async () => {
+    kv.releaseLock.mockImplementation(() => {
       vi.spyOn(performance, 'now').mockReturnValue(90);
-      return true;
+      return Promise.resolve(true);
     });
 
     await expect(runKVLock({ kv, key: 'job', ttl: 90, fn: () => 'done' })).rejects.toBeInstanceOf(
@@ -557,17 +568,18 @@ describe('runKVLock', () => {
       const fn = vi.fn();
       const result = runKVLock({ kv, key: 'job', ttl: 90, fn });
       const assertion = expectDelayed(result).rejects.toBeInstanceOf(KVLeaseLostError);
+      const settle = {
+        reject: () => acquisition.reject(new Error('late acquisition failure')),
+        'release rejection': () => acquisition.resolve(lock),
+      };
 
       await vi.advanceTimersByTimeAsync(90);
       await assertion;
-      if (completion === 'reject') acquisition.reject(new Error('late acquisition failure'));
-      else acquisition.resolve(lock);
+      settle[completion]();
       await vi.advanceTimersByTimeAsync(90);
       expect(fn).not.toHaveBeenCalled();
       expect(kv.extendLock).not.toHaveBeenCalled();
-      if (completion === 'release rejection') {
-        expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
-      } else expect(kv.releaseLock).not.toHaveBeenCalled();
+      expect(kv.releaseLock.mock.calls).toEqual(completion === 'release rejection' ? [[lock]] : []);
     },
   );
 
@@ -631,9 +643,13 @@ describe('runKVLock', () => {
           ? expectDelayed(result).rejects.toBe(renewalError)
           : expectDelayed(result).rejects.toMatchObject({ errors: [callbackError, renewalError] });
 
+      const settle = {
+        resolve: () => callback.resolve(),
+        reject: () => callback.reject(callbackError),
+      };
+
       await vi.advanceTimersByTimeAsync(100);
-      if (completion === 'resolve') callback.resolve();
-      else callback.reject(callbackError);
+      settle[completion]();
       await vi.advanceTimersByTimeAsync(0);
       renewal.reject(renewalError);
       await assertion;
@@ -678,8 +694,10 @@ describe('runKVLock', () => {
 
   it('preserves non-Error callback rejections', async () => {
     const kv = createKV();
+    const callback = deferred<never>();
+    callback.reject(undefined);
     await expect(
-      runKVLock({ kv, key: 'job', ttl: 300, fn: () => Promise.reject(undefined) }),
+      runKVLock({ kv, key: 'job', ttl: 300, fn: () => callback.promise }),
     ).rejects.toBeUndefined();
     expect(kv.releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
   });

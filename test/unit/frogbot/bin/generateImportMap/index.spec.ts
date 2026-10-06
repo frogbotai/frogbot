@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { SanitizedConfig } from 'payload';
 import { generateImportMap as payloadGenerateImportMap } from 'payload';
 import { format } from 'prettier';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { generateImportMap } from '../../../../../packages/frogbot/src/bin/generateImportMap/index.js';
 import { resolveImportMapFilePath } from '../../../../../packages/frogbot/src/bin/generateImportMap/utilities/resolveImportMapFilePath.js';
@@ -642,24 +642,19 @@ describe('frogbot importMap generator', () => {
   it('returns null with ignoreResolveError when no app dir exists', async () => {
     const dir = await makeDir('frogbot-importmap-noresolve-');
     const payloadConfig = await makePayloadConfig();
-    payloadConfig.admin.importMap.importMapFile = undefined;
+    payloadConfig.admin.importMap.importMapFile = '';
 
-    const original = process.env.ROOT_DIR;
-    process.env.ROOT_DIR = dir;
-    try {
-      await expect(
-        generateImportMap(payloadConfig, { ignoreResolveError: true }),
-      ).resolves.toBeNull();
-      await expect(generateImportMap(payloadConfig)).rejects.toThrowError(
-        'Could not find the import map folder',
-      );
-    } finally {
-      if (original === undefined) {
-        delete process.env.ROOT_DIR;
-      } else {
-        process.env.ROOT_DIR = original;
-      }
-    }
+    vi.stubEnv('ROOT_DIR', dir);
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+
+    await expect(
+      generateImportMap(payloadConfig, { ignoreResolveError: true }),
+    ).resolves.toBeNull();
+    await expect(generateImportMap(payloadConfig)).rejects.toThrowError(
+      'Could not find the import map folder',
+    );
   });
 });
 

@@ -14,8 +14,15 @@ async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
   return new TextDecoder().decode(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))));
 }
 
-async function* iterate(records: TrainingDataRecord[]): AsyncGenerator<TrainingDataRecord> {
-  for (const record of records) yield record;
+function asyncIterable<T>(items: Iterable<T>): AsyncIterable<T> {
+  const iterator = items[Symbol.iterator]();
+
+  return {
+    [Symbol.asyncIterator]: () => ({
+      next: () => Promise.resolve(iterator.next()),
+      return: () => Promise.resolve(iterator.return?.() ?? { done: true, value: undefined }),
+    }),
+  };
 }
 
 describe('encodeTrainingData', () => {
@@ -31,7 +38,7 @@ describe('encodeTrainingData', () => {
       { chat: { id: 2 }, messages: [] },
     ];
 
-    const output = await readAll(encodeTrainingData(iterate(records)));
+    const output = await readAll(encodeTrainingData(asyncIterable(records)));
     const lines = output.trimEnd().split('\n');
 
     expect(lines).toHaveLength(2);
@@ -40,14 +47,14 @@ describe('encodeTrainingData', () => {
 
   it('streams before the source is exhausted', async () => {
     let yielded = 0;
-    async function* slow(): AsyncGenerator<TrainingDataRecord> {
+    function* slow(): Generator<TrainingDataRecord> {
       while (true) {
         yielded += 1;
         yield { chat: { id: yielded }, messages: [] };
       }
     }
 
-    const reader = encodeTrainingData(slow()).getReader();
+    const reader = encodeTrainingData(asyncIterable(slow())).getReader();
     await reader.read();
     await reader.cancel();
 
@@ -68,10 +75,10 @@ describe('encodeTrainingData', () => {
     const onReturn = vi.fn();
     const records = {
       [Symbol.asyncIterator]: () => ({
-        next: async () => ({ done: false, value: { chat: {}, messages: [] } }),
-        return: async () => {
+        next: () => Promise.resolve({ done: false, value: { chat: {}, messages: [] } }),
+        return: () => {
           onReturn();
-          return { done: true, value: undefined };
+          return Promise.resolve({ done: true, value: undefined });
         },
       }),
     } as unknown as AsyncIterable<TrainingDataRecord>;
