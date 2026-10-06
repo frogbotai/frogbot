@@ -65,7 +65,7 @@ export function createMemoryKV() {
     }),
     lock: vi.fn(
       <T>(key: string, ttl: number, fn: Parameters<KV['lock']>[2]) =>
-        runKVLock({ kv: kv as unknown as KV, key, ttl, fn }) as Promise<T>,
+        runKVLock({ kv, key, ttl, fn }) as Promise<T>,
     ),
   };
 

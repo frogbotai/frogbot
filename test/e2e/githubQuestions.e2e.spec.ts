@@ -102,7 +102,7 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
       overrideAccess: true,
     });
 
-    return result.docs as unknown as ChannelJob[];
+    return result.docs;
   }
 
   async function kinds(issue: number): Promise<Record<string, number>> {
@@ -123,7 +123,7 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
     await expect
       .poll(
         async () => {
-          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() } as never);
+          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() });
 
           return (
             await channelJobs({ completedAt: { exists: false }, hasError: { not_equals: true } })
@@ -276,28 +276,28 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
     await comment({ body: '@frogbot paint the door', issue, person: alice });
 
     const [asked] = comments(issue);
-    const options = asked!.body.split('\n').filter((line) => /^\d+\. /.test(line));
+    const options = asked.body.split('\n').filter((line) => /^\d+\. /.test(line));
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
-    expect(bodies(issue)).toEqual([asked!.body]);
-    expect(asked!.body.startsWith('### Finish\n\n')).toBe(true);
-    expect(rendered(asked!.body)).toContain('Which finish should the **front door** get?');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(bodies(issue)).toEqual([asked.body]);
+    expect(asked.body.startsWith('### Finish\n\n')).toBe(true);
+    expect(rendered(asked.body)).toContain('Which finish should the **front door** get?');
     expect(options.map((line) => rendered(line))).toEqual(
-      paint.questions[0]!.options.map(
+      paint.questions[0].options.map(
         ({ label, description }, index) => `${index + 1}. **${label}** — ${description}`,
       ),
     );
-    expect(asked!.body).not.toMatch(/@design|#12/);
-    expect(asked!.body).toContain('- `/answer "your answer"` to answer in your own words');
+    expect(asked.body).not.toMatch(/@design|#12/);
+    expect(asked.body).toContain('- `/answer "your answer"` to answer in your own words');
 
     model.respond({ text: 'Going with satin on the front door.' });
 
     await comment({ body: '/answer 3', issue });
 
-    expect(api.edits(asked!.id)).toEqual([
-      { id: asked!.id, body: expect.stringContaining('<sub>Answered by `@bob`</sub>') },
+    expect(api.edits(asked.id)).toEqual([
+      { id: asked.id, body: expect.stringContaining('<sub>Answered by `@bob`</sub>') },
     ]);
-    expect(rendered(api.edits(asked!.id)[0]!.body)).toContain('✅ **Satin — washable**');
+    expect(rendered(api.edits(asked.id)[0].body)).toContain('✅ **Satin — washable**');
     expect(toolResults()).toEqual([
       { answers: [{ header: 'Finish', selected: ['Satin — washable'] }] },
     ]);
@@ -326,7 +326,7 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
       "`@mallory` doesn't have access to answer this question.",
       expect.stringMatching(/^`@bob` There's no option 9\. Choose a number from 1 to 7\.\n\n/),
     ]);
-    expect(api.edits(asked!.id)).toEqual([]);
+    expect(api.edits(asked.id)).toEqual([]);
     expect(model.requests).toHaveLength(1);
     expect(await kinds(issue)).toEqual({ message: 3 });
   });
@@ -347,8 +347,8 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
       '### Toppings · Question 2 of 3',
       '### Notes · Question 3 of 3',
     ]);
-    expect(api.edits(asked[0]!.id)[0]!.body).toContain('Answered by `@alice`');
-    expect(rendered(api.edits(asked[1]!.id)[0]!.body)).toContain('✅ **Basil, Chili & honey**');
+    expect(api.edits(asked[0].id)[0].body).toContain('Answered by `@alice`');
+    expect(rendered(api.edits(asked[1].id)[0].body)).toContain('✅ **Basil, Chili & honey**');
     expect(model.requests).toHaveLength(1);
 
     model.respond({ text: 'Large with basil and chili & honey, extra crispy.' });
@@ -364,7 +364,7 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
         ],
       },
     ]);
-    expect(api.edits(asked[2]!.id).at(-1)!.body).toContain('Answered by `@bob`');
+    expect(api.edits(asked[2].id).at(-1)!.body).toContain('Answered by `@bob`');
     expect(await kinds(issue)).toEqual({ message: 4, continue: 1 });
     expect(bodies(issue).at(-1)).toBe('Large with basil and chili & honey, extra crispy.');
   });

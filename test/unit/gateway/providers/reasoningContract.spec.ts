@@ -1,4 +1,4 @@
-import type { LanguageModelV4, SharedV4ProviderOptions } from '@ai-sdk/provider';
+import type { SharedV4ProviderOptions } from '@ai-sdk/provider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { withLanguageModelHooks } from '../../../../packages/gateway/src/modelHooks.js';
@@ -72,7 +72,7 @@ async function send(args: {
     model: args.modelId,
     operation: 'chat.completions',
     provider: args.modelId.slice(0, args.modelId.indexOf('/')),
-  }) as LanguageModelV4;
+  });
 
   await model
     .doGenerate({ prompt, providerOptions: structuredClone(args.providerOptions) })

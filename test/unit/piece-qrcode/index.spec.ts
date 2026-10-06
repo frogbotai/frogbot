@@ -52,7 +52,7 @@ describe('QR Code', () => {
 
     expect(create).toHaveBeenCalledTimes(1);
 
-    const call = create.mock.calls[0]![0];
+    const call = create.mock.calls[0][0];
 
     expect(call).toMatchObject({
       collection: 'media',

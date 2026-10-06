@@ -563,7 +563,7 @@ describe('hybrid components', () => {
   ])('rejects malformed hybrid results (%#: %s)', async (rowRanking, rows, _reason) => {
     const { find, frogbot, payload, req } = searchFixture({
       rowRanking,
-      rows: rows as never,
+      rows,
     });
 
     await expect(

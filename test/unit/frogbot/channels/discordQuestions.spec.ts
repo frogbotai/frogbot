@@ -98,7 +98,7 @@ async function asked({
       applicationId: discordApplicationId,
       botToken: discordBotToken,
       publicKey: discordPublicKey,
-      logger: silent as never,
+      logger: silent,
     }),
     client: createDiscordClient({
       auth: { botToken: discordBotToken },
@@ -240,10 +240,10 @@ describe('Discord native questions through the channel host', () => {
     const { fixture, messageId } = await asked({ location });
     const [card] = api.cards(location.threadId);
 
-    expect(fixture.streamMessage.mock.calls[0]![0].clientTools).toEqual({ kinds: ['question'] });
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
     expect(messageId).toMatch(/^\d+$/);
-    expect(card!.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
-    expect(JSON.stringify(card!.body)).toContain(control('option', 1));
+    expect(card.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
+    expect(JSON.stringify(card.body)).toContain(control('option', 1));
   });
   it('records the card with the time Discord posted it', async () => {
     const { fixture, messageId } = await asked();
@@ -254,7 +254,7 @@ describe('Discord native questions through the channel host', () => {
     )!;
 
     expect(record).toMatchObject({
-      messages: [{ id: messageId, postedAt: card!.timestamp }],
+      messages: [{ id: messageId, postedAt: card.timestamp }],
       revision: 0,
     });
   });
@@ -266,7 +266,7 @@ describe('Discord native questions through the channel host', () => {
     const response = await click({ fixture, messageId, customId: control('option', 1) });
 
     expect(response).toEqual({ type: 6 });
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: ['Blue'] }] } },
       actor: {
         user: null,
@@ -276,7 +276,7 @@ describe('Discord native questions through the channel host', () => {
     expect(since(before)).toEqual([
       expect.objectContaining({ method: 'PATCH', path: `/channels/T1/messages/${messageId}` }),
     ]);
-    expect(JSON.stringify(since(before)[0]!.body)).toContain('Answered by **User U2**');
+    expect(JSON.stringify(since(before)[0].body)).toContain('Answered by **User U2**');
     expect(fixture.inputs.at(-1)).toMatchObject({ kind: 'continue', responder: { userId: 'U2' } });
   });
 
@@ -377,7 +377,7 @@ describe('Discord native questions through the channel host', () => {
 
     await click({ fixture, messageId, customId: control('submit') });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Colors', selected: ['Red', 'Green'] }] },
     });
   });
@@ -424,7 +424,7 @@ describe('Discord native questions through the channel host', () => {
     const edits = api.edits('T1', messageId);
 
     expect(edits).toHaveLength(1);
-    expect(JSON.stringify(edits[0]!.body)).toContain('**Size** · 2 of 2');
+    expect(JSON.stringify(edits[0].body)).toContain('**Size** · 2 of 2');
     expect(settleClientToolCall).not.toHaveBeenCalled();
 
     await click({ fixture, messageId, customId: control('option', 0, 0) });
@@ -433,7 +433,7 @@ describe('Discord native questions through the channel host', () => {
 
     await click({ fixture, messageId, customId: control('option', 0, 1), user: 'U3' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: {
         answers: [
           { header: 'Color', selected: ['Blue'] },
@@ -482,7 +482,7 @@ describe('Discord native questions through the channel host', () => {
 
     await click({ fixture, messageId, customId: control('option', 0, 1), user: 'U3' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: {
         answers: [
           { header: 'Color', selected: ['Blue'] },
@@ -497,7 +497,7 @@ describe('Discord native questions through the channel host', () => {
 
     await click({ fixture, messageId, customId: control('custom') });
 
-    expect(JSON.stringify(api.edits('T1', messageId)[0]!.body)).toContain(
+    expect(JSON.stringify(api.edits('T1', messageId)[0].body)).toContain(
       '**User U2**, reply in this thread',
     );
 
@@ -505,7 +505,7 @@ describe('Discord native questions through the channel host', () => {
 
     await say({ fixture, content: 'Teal, please' });
 
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: [], custom: 'Teal, please' }] } },
       actor: { channel: { id: 'U2' } },
     });
@@ -532,8 +532,8 @@ describe('Discord native questions through the channel host', () => {
 
     await click({ fixture, messageId, customId: control('dismiss') });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
-    expect(JSON.stringify(api.edits('T1', messageId)[0]!.body)).toContain(
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
+    expect(JSON.stringify(api.edits('T1', messageId)[0].body)).toContain(
       'Dismissed by **User U2**',
     );
     expect(fixture.inputs).toHaveLength(jobs);
@@ -566,7 +566,7 @@ describe('Discord native questions through the channel host', () => {
     const cards = api.cards('T1');
 
     expect(cards).toHaveLength(2);
-    expect(JSON.stringify(cards[1]!.body)).toContain(control('option', 0, 0, 'call-2'));
+    expect(JSON.stringify(cards[1].body)).toContain(control('option', 0, 0, 'call-2'));
     expect(fixture.inputs.filter(({ kind }) => kind === 'continue')).toEqual([]);
   });
 
@@ -601,7 +601,7 @@ describe('Discord native questions through the channel host', () => {
 
     await click({ fixture, messageId, customId: control('option', 0), user: 'U3' });
 
-    expect(JSON.stringify(api.edits('T1', messageId)[0]!.body)).toContain('✓ Color: Red');
+    expect(JSON.stringify(api.edits('T1', messageId)[0].body)).toContain('✓ Color: Red');
   });
 
   it('does not let a participant without access page, pick, submit, or press Other…', async () => {
@@ -633,7 +633,7 @@ describe('Discord native questions through the channel host', () => {
       `PATCH /channels/T1/messages/${messageId}`,
       `PATCH /channels/T1/messages/${messageId}`,
     ]);
-    expect(since(before)[0]!.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
+    expect(since(before)[0].body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
   });
 
   it('arms once when the same Other… click is delivered twice', async () => {
@@ -656,7 +656,7 @@ describe('Discord native questions through the channel host', () => {
     await click({ fixture, messageId, customId: control('custom') });
     await say({ fixture, content: `<@${discordApplicationId}> Teal`, mention: true });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: [], custom: 'Teal' }] },
     });
   });

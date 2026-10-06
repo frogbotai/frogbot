@@ -5,7 +5,6 @@ import {
   type BedrockConfig,
   bedrockProvider,
 } from '../../packages/gateway/src/providers/bedrock/index.js';
-import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 const upstreamBodies: unknown[] = [];
@@ -29,7 +28,7 @@ function makeApp() {
     fetch,
   } as BedrockConfig);
   return createApp({
-    registry: { bedrock: bedrock } as unknown as ProviderRegistry,
+    registry: { bedrock },
   });
 }
 

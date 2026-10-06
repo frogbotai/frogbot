@@ -52,7 +52,7 @@ export async function editComments({
     if (result.status === 'fulfilled') return;
 
     req.frogbot.logger.error(
-      { err: result.reason, piece: 'github', toolCallId, commentId: edits[index]!.id },
+      { err: result.reason, piece: 'github', toolCallId, commentId: edits[index].id },
       '[piece-github] Could not close a question comment.',
     );
   });

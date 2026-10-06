@@ -337,7 +337,7 @@ export class FrogBot {
       operation: 'resetPassword',
       fn: async () => {
         const payloadReq = req as unknown as PayloadRequest;
-        const collection = state(this).payload.collections[args.collection]!;
+        const collection = state(this).payload.collections[args.collection];
         const result = await resetPasswordOperation({
           collection,
           data: args.data,

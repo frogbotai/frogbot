@@ -8,7 +8,6 @@ import {
   bedrockProvider,
 } from '../../packages/gateway/src/providers/bedrock/index.js';
 import { DEFAULT_MODEL_CATALOG } from '../../packages/gateway/src/providers/catalog.data.js';
-import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
@@ -79,7 +78,7 @@ function makeBedrock() {
 
 function makeApp() {
   return createApp({
-    registry: { bedrock: makeBedrock() } as unknown as ProviderRegistry,
+    registry: { bedrock: makeBedrock() },
   });
 }
 

@@ -304,7 +304,7 @@ describe('chat attachments reach the agent model', () => {
       overrideAccess: true,
     });
 
-    return docs[0]!.id;
+    return docs[0].id;
   }
 
   async function turnState(chatId: number | string) {
@@ -367,7 +367,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       [
         'Read these.',
         'Attached file "notes.md":\n# Notes',
@@ -390,7 +390,7 @@ describe('chat attachments reach the agent model', () => {
     const [saved] = await storedMessages(response.body.chatId);
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([['What is this?', imageMarker]]);
+    expect(userContent(model.requests[0])).toEqual([['What is this?', imageMarker]]);
     expect(saved?.parts).toEqual(parts);
   });
 
@@ -403,7 +403,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Unzip this.', `[Can't read ${archive.filename}: this file type isn't supported]`],
     ]);
   });
@@ -420,7 +420,7 @@ describe('chat attachments reach the agent model', () => {
       messages: [userMessage({ type: 'text', text: 'Unzip this.' }, reference(archive))],
     });
 
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Unzip this.', `[Can't read ${archive.filename}: this file type isn't supported]`],
     ]);
   });
@@ -440,7 +440,7 @@ describe('chat attachments reach the agent model', () => {
       ],
     });
 
-    expect(userContent(model.requests[0]!)).toEqual([['What is this?', 'image']]);
+    expect(userContent(model.requests[0])).toEqual([['What is this?', 'image']]);
   });
 
   it('sends a saved image again after a question is answered', async () => {
@@ -491,7 +491,7 @@ describe('chat attachments reach the agent model', () => {
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
 
     expect(queued.status).toBe(202);
-    expect(userContent(model.requests[1]!)).toEqual([['Start.'], ['And this?', 'image']]);
+    expect(userContent(model.requests[1])).toEqual([['Start.'], ['And this?', 'image']]);
   });
 
   it('fails Send with 404 for a missing file and releases the chat', async () => {
@@ -522,7 +522,7 @@ describe('chat attachments reach the agent model', () => {
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
     await vi.waitFor(() => expect(turnState(chatId)).resolves.toBe('idle'), { timeout: 10_000 });
 
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Start.'],
       ['Look.', `[Can't read ${ghost.filename}: the file couldn't be loaded]`],
     ]);
@@ -547,7 +547,7 @@ describe('chat attachments reach the agent model', () => {
       model: 'test/media',
     });
 
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Look.', '[File repeated later: shot.png]'],
       ['Again.', 'image'],
     ]);
@@ -584,7 +584,7 @@ describe('chat attachments reach the agent model', () => {
     const [saved] = await storedMessages(response.body.chatId);
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       [
         'Compare.',
         `[File removed: ${report.filename}]`,
@@ -619,7 +619,7 @@ describe('chat attachments reach the agent model', () => {
 
     expect(stored.sha256 ?? null).toBeNull();
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([['What is this?', 'image']]);
+    expect(userContent(model.requests[0])).toEqual([['What is this?', 'image']]);
   });
 
   it("replaces another user's asset with a marker on a queued turn and leaves it unlinked", async () => {
@@ -647,7 +647,7 @@ describe('chat attachments reach the agent model', () => {
       overrideAccess: true,
     })) as { chat?: unknown };
 
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Start.'],
       ['And this?', `[Can't read ${photo.filename}: the file couldn't be loaded]`],
     ]);
@@ -663,7 +663,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Review.', `Attached file "${code.filename}":\nconst a = 1;`],
     ]);
   });
@@ -681,7 +681,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([['Summarize.', `pdf ${report.filename}`]]);
+    expect(userContent(model.requests[0])).toEqual([['Summarize.', `pdf ${report.filename}`]]);
   });
 
   it('replaces a single PDF over the size limit and completes the turn', async () => {
@@ -697,7 +697,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Summarize.', `[File removed: ${report.filename}]`],
     ]);
   });
@@ -726,14 +726,14 @@ describe('chat attachments reach the agent model', () => {
 
     const response = await post({
       messages: [
-        userMessage({ type: 'text', text: 'Compare.' }, reference(first!), reference(second!)),
+        userMessage({ type: 'text', text: 'Compare.' }, reference(first), reference(second)),
       ],
       model: 'test/media',
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
-      ['Compare.', `[File repeated later: ${first!.filename}]`, 'image'],
+    expect(userContent(model.requests[0])).toEqual([
+      ['Compare.', `[File repeated later: ${first.filename}]`, 'image'],
     ]);
   });
 
@@ -756,7 +756,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       [
         'Read.',
         `Attached file "${latin.filename}":\ncaf\ufffd`,
@@ -777,7 +777,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Compare.', attached(report, reportText), attached(budget, budgetText)],
     ]);
   });
@@ -797,7 +797,7 @@ describe('chat attachments reach the agent model', () => {
 
     await booted.frogbot.agents[questionAgentSlug]!.generate({ req, messages: [message()] });
 
-    expect(userContent(model.requests[1]!)).toEqual(userContent(model.requests[0]!));
+    expect(userContent(model.requests[1])).toEqual(userContent(model.requests[0]));
   });
 
   it('reads a Word document stored without text once and keeps its text', async () => {
@@ -816,7 +816,7 @@ describe('chat attachments reach the agent model', () => {
 
     expect(stored.text).toBe(reportText);
     expect(followUp.status).toBe(200);
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Summarize.', attached(report, reportText)],
       ['And now?'],
     ]);
@@ -837,7 +837,7 @@ describe('chat attachments reach the agent model', () => {
 
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
 
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Start.'],
       ['And this?', attached(report, reportText)],
     ]);
@@ -919,7 +919,7 @@ describe('chat attachments reach the agent model', () => {
 
     const stored = await storedAsset(report);
 
-    expect(userContent(model.requests[1]!)).toEqual([['Read.', attached(report, reportText)]]);
+    expect(userContent(model.requests[1])).toEqual([['Read.', attached(report, reportText)]]);
     expect(stored).toMatchObject({ owner: user.id, text: reportText });
   });
 
@@ -940,7 +940,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Total?', `[Can't read ${locked.filename}: the file couldn't be read]`],
     ]);
     expect((await storedAsset(locked)).text ?? null).toBeNull();
@@ -989,7 +989,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Present.', `[Can't read ${deck.filename}: this file type isn't supported]`],
     ]);
   });
@@ -1059,7 +1059,7 @@ describe('chat attachments reach the agent model', () => {
       model: 'test/text-only',
     });
 
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Read.', `[File repeated later: ${first.filename}]`, attached(second, reportText)],
     ]);
   });
@@ -1074,7 +1074,7 @@ describe('chat attachments reach the agent model', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([
+    expect(userContent(model.requests[0])).toEqual([
       ['Read.', `Attached file "${notes.filename}":\n${text}`],
     ]);
   });

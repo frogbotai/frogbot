@@ -183,7 +183,7 @@ export async function startGithubApi({ people = [] }: { people?: GithubPerson[] 
     const user = /^\/users\/([^/]+)$/.exec(path);
 
     if (method === 'GET' && user) {
-      const person = people.find(({ login }) => login === decodeURIComponent(user[1]!));
+      const person = people.find(({ login }) => login === decodeURIComponent(user[1]));
 
       if (!person) return reply(404, { message: 'Not Found' });
 

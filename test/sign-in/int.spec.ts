@@ -48,7 +48,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     const callback = new URL(url.searchParams.get('redirect_uri')!);
     callback.searchParams.set('state', url.searchParams.get('state')!);
     callback.searchParams.set('code', code);
-    return { url, callback, cookie: response.headers.get('set-cookie')!.split(';')[0]! };
+    return { url, callback, cookie: response.headers.get('set-cookie')!.split(';')[0] };
   };
   const callback = (flow: { callback: URL; cookie: string }) =>
     request(flow.callback, { headers: { cookie: flow.cookie } });

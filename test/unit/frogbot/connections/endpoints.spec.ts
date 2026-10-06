@@ -40,12 +40,12 @@ function fixture(pieceDefinition: PieceDefinition = definition) {
       },
     }) as unknown as FrogBotRequest;
   const start = async (query = '') => {
-    const response = await endpoints[0]!.handler(
+    const response = await endpoints[0].handler(
       request({ url: `https://app.test/authorize${query}` }),
     );
     expect(response.status).toBe(302);
     const provider = new URL(response.headers.get('location')!);
-    const cookie = response.headers.get('set-cookie')!.split(';')[0]!;
+    const cookie = response.headers.get('set-cookie')!.split(';')[0];
     const url = `${provider.searchParams.get('redirect_uri')}?state=${provider.searchParams.get('state')}&code=private-code`;
     return { response, provider, cookie, url };
   };
@@ -80,7 +80,7 @@ describe('OAuth linking endpoints', () => {
     'requires the admin owner to authorize: %j',
     async (user) => {
       const f = fixture();
-      const response = await f.endpoints[0]!.handler(f.request({ user }));
+      const response = await f.endpoints[0].handler(f.request({ user }));
       expect(response.status).toBe(user ? 403 : 401);
       expect(f.values.size).toBe(0);
     },
@@ -119,7 +119,7 @@ describe('OAuth linking endpoints', () => {
           oauth: f.piece.oauth,
         });
       }
-      expect((await f.endpoints[1]!.handler(f.request(flow))).status).toBe(400);
+      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
       expect(f.fetch).not.toHaveBeenCalled();
       expect(f.upsert).not.toHaveBeenCalled();
     },
@@ -134,12 +134,12 @@ describe('OAuth linking endpoints', () => {
     expect(flow.provider.searchParams.get('code_challenge_method')).toBe('S256');
     expect(flow.response.headers.get('cache-control')).toBe('no-store');
     expect(f.upsert).not.toHaveBeenCalled();
-    const response = await f.endpoints[1]!.handler(f.request(flow));
+    const response = await f.endpoints[1].handler(f.request(flow));
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe('/control/settings/connections');
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(response.headers.get('cache-control')).toBe('no-store');
-    const body = f.fetch.mock.calls[0]![1].body as URLSearchParams;
+    const body = f.fetch.mock.calls[0][1].body as URLSearchParams;
     expect(body.get('redirect_uri')).toBe(flow.provider.searchParams.get('redirect_uri'));
     expect(body.get('code_verifier')).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(f.upsert).toHaveBeenCalledWith(
@@ -158,7 +158,7 @@ describe('OAuth linking endpoints', () => {
   ])('preserves safe returnTo %s', async (returnTo) => {
     const f = fixture();
     const flow = await f.start(`?returnTo=${encodeURIComponent(returnTo)}`);
-    expect((await f.endpoints[1]!.handler(f.request(flow))).headers.get('location')).toBe(
+    expect((await f.endpoints[1].handler(f.request(flow))).headers.get('location')).toBe(
       '/elsewhere?tab=connections#linked',
     );
   });
@@ -167,7 +167,7 @@ describe('OAuth linking endpoints', () => {
     'rejects unsafe returnTo %j before storing state',
     async (returnTo) => {
       const f = fixture();
-      const response = await f.endpoints[0]!.handler(
+      const response = await f.endpoints[0].handler(
         f.request({ url: `https://app.test/authorize?returnTo=${encodeURIComponent(returnTo)}` }),
       );
       expect(response.status).toBe(400);
@@ -182,7 +182,7 @@ describe('OAuth linking endpoints', () => {
   ])('fails closed on unsafe serverURL %s', async (serverURL) => {
     const f = fixture();
     f.config.serverURL = serverURL;
-    const response = await f.endpoints[0]!.handler(f.request());
+    const response = await f.endpoints[0].handler(f.request());
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Connection operation failed' });
     expect(f.values.size).toBe(0);
@@ -195,15 +195,15 @@ describe('OAuth linking endpoints', () => {
     expect(flow.provider.searchParams.get('redirect_uri')).toBe(
       'https://app.test/connections/example/callback',
     );
-    const response = await f.endpoints[1]!.handler(f.request(flow));
+    const response = await f.endpoints[1].handler(f.request(flow));
     expect(response.headers.get('location')).toBe('/settings/connections');
   });
 
   it('allows a browser-bound cross-site callback without req.user and rejects replay', async () => {
     const f = fixture();
     const flow = await f.start();
-    expect((await f.endpoints[1]!.handler(f.request({ ...flow, user: null }))).status).toBe(302);
-    expect((await f.endpoints[1]!.handler(f.request(flow))).status).toBe(400);
+    expect((await f.endpoints[1].handler(f.request({ ...flow, user: null }))).status).toBe(302);
+    expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
     expect(f.fetch).toHaveBeenCalledTimes(1);
     expect(f.findByID).toHaveBeenCalledWith({
       collection: 'users',
@@ -236,11 +236,11 @@ describe('OAuth linking endpoints', () => {
     });
     const flow = await f.start();
     f.fetch.mockImplementationOnce(async () => {
-      expect((await f.endpoints[1]!.handler(f.request(flow))).status).toBe(400);
+      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
       expect(f.upsert).not.toHaveBeenCalled();
       return Response.json({ access_token: 'fresh-token' });
     });
-    const response = f.endpoints[1]!.handler(f.request(flow));
+    const response = f.endpoints[1].handler(f.request(flow));
     await started;
     expect(f.upsert).not.toHaveBeenCalled();
     finish();
@@ -258,9 +258,9 @@ describe('OAuth linking endpoints', () => {
       if (kind === 'owner') req.user = { id: 'other', collection: 'users' };
       if (kind === 'collection') req.user = { id: 'owner', collection: 'customers' };
       if (kind === 'browser') req.headers.delete('cookie');
-      expect((await f.endpoints[1]!.handler(req)).status).toBe(400);
+      expect((await f.endpoints[1].handler(req)).status).toBe(400);
       expect(f.fetch).not.toHaveBeenCalled();
-      expect((await f.endpoints[1]!.handler(f.request(flow))).status).toBe(302);
+      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(302);
     },
   );
 
@@ -276,14 +276,14 @@ describe('OAuth linking endpoints', () => {
       if (kind === 'deleted-owner') f.findByID.mockResolvedValue(null);
       if (kind === 'provider') f.fetch.mockRejectedValue(new Error('private-client-secret'));
       if (kind === 'storage') f.upsert.mockRejectedValue(new Error('private-refresh-token'));
-      const response = await f.endpoints[1]!.handler(f.request({ ...flow, url: url.href }));
+      const response = await f.endpoints[1].handler(f.request({ ...flow, url: url.href }));
       expect(response.status).toBe(kind === 'storage' ? 500 : 400);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(await response.json()).toEqual({ error: 'Connection operation failed' });
       if (kind !== 'storage') expect(f.upsert).not.toHaveBeenCalled();
       const calls = f.fetch.mock.calls.length;
-      expect((await f.endpoints[1]!.handler(f.request(flow))).status).toBe(400);
+      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
       expect(f.fetch).toHaveBeenCalledTimes(calls);
     },
   );
@@ -299,7 +299,7 @@ describe('OAuth linking endpoints', () => {
       },
     });
     const flow = await f.start();
-    const response = await f.endpoints[1]!.handler(f.request(flow));
+    const response = await f.endpoints[1].handler(f.request(flow));
     expect(response.status).toBe(400);
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(f.upsert).not.toHaveBeenCalled();

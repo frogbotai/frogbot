@@ -30,7 +30,7 @@ export const blockIds = {
 };
 
 export function isQuickQuestion(input: QuestionInput): boolean {
-  return input.questions.length === 1 && !input.questions[0]!.multiple;
+  return input.questions.length === 1 && !input.questions[0].multiple;
 }
 
 export function questionBlocks(call: ChannelQuestionCall): SlackBlock[] {
@@ -83,7 +83,7 @@ export function customAnswerView({
   metadata: string;
   q: number;
 }): SlackBlock {
-  const item = call.input.questions[q]!;
+  const item = call.input.questions[q];
   const quick = isQuickQuestion(call.input);
 
   return {
@@ -112,7 +112,7 @@ export function customAnswerView({
 }
 
 function quickBlocks(call: ChannelQuestionCall): SlackBlock[] {
-  const item = call.input.questions[0]!;
+  const item = call.input.questions[0];
   const buttons = item.options.length <= BUTTON_OPTIONS;
   const descriptions = buttons
     ? item.options.flatMap(({ label, description }) =>

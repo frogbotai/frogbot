@@ -119,7 +119,7 @@ export const generateSlug =
     };
 
     const { totalDocs } = await req.frogbot.countVersions({
-      collection: collection!.slug,
+      collection: collection.slug,
       req,
       where,
     });

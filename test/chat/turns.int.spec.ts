@@ -178,7 +178,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     const messages = await storedMessages(body.chatId);
 
     expect(messages.map(({ role }) => role)).toEqual(['user', 'assistant']);
-    expect(messages[1]!.parts).toEqual(
+    expect(messages[1].parts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           type: 'tool-question',
@@ -188,7 +188,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
         expect.objectContaining({ type: 'text', text: 'Painting it blue.' }),
       ]),
     );
-    expect(messages[1]!.settlements?.['call-question']).toMatchObject({ outcome: 'answered' });
+    expect(messages[1].settlements?.['call-question']).toMatchObject({ outcome: 'answered' });
   });
 
   it('a second answer is rejected as already settled without another model call', async () => {
@@ -237,7 +237,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     const messages = await storedMessages(body.chatId);
 
-    expect(messages[1]!.parts).toContainEqual(
+    expect(messages[1].parts).toContainEqual(
       expect.objectContaining({ type: 'tool-question', state: 'input-available' }),
     );
   });
@@ -275,10 +275,10 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     const messages = await storedMessages(body.chatId);
 
-    expect(messages[1]!.parts).toContainEqual(
+    expect(messages[1].parts).toContainEqual(
       expect.objectContaining({ type: 'tool-question', state: 'output-error' }),
     );
-    expect(messages[1]!.settlements?.['call-question']).toMatchObject({ outcome: 'dismissed' });
+    expect(messages[1].settlements?.['call-question']).toMatchObject({ outcome: 'dismissed' });
     await expect(
       findTurnState({ req: await booted.frogbot.createRequest({}), chatId: body.chatId }),
     ).resolves.toBe('idle');
@@ -313,11 +313,11 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     const [, assistant] = await storedMessages(body.chatId);
     const actor = { user: { collection: usersSlug, id: expect.anything() } };
 
-    expect(assistant!.parts.filter(({ type }) => type === 'tool-question')).toEqual([
+    expect(assistant.parts.filter(({ type }) => type === 'tool-question')).toEqual([
       expect.objectContaining({ state: 'output-error', errorText: 'Dismissed by the user.' }),
       expect.objectContaining({ state: 'output-error' }),
     ]);
-    expect(assistant!.settlements).toEqual({
+    expect(assistant.settlements).toEqual({
       'call-first': { outcome: 'dismissed', actor, at: expect.any(String) },
       'call-second': { outcome: 'cancelled', actor, at: expect.any(String) },
     });
@@ -340,7 +340,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     const [, assistant] = await storedMessages(body.chatId);
 
-    expect(assistant!.settlements?.['call-question']).toEqual({
+    expect(assistant.settlements?.['call-question']).toEqual({
       outcome: 'answered',
       actor: { user: { collection: usersSlug, id: expect.anything() } },
       at: expect.any(String),
@@ -362,7 +362,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     const messages = await storedMessages(body.chatId);
 
-    expect(messages[1]!.parts).toContainEqual(
+    expect(messages[1].parts).toContainEqual(
       expect.objectContaining({
         type: 'tool-lookup',
         state: 'output-available',
@@ -385,7 +385,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
         messages: [
           {
             ...assistant,
-            parts: assistant!.parts.map((part) =>
+            parts: assistant.parts.map((part) =>
               part.type === 'tool-question'
                 ? { ...part, state: 'output-available', output: answer }
                 : part,
@@ -400,8 +400,8 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     const messages = await storedMessages(body.chatId);
 
-    expect(messages.map(({ id }) => id)).toEqual([messages[0]!.id, assistant!.id]);
-    expect(messages[1]!.parts).toContainEqual(
+    expect(messages.map(({ id }) => id)).toEqual([messages[0].id, assistant.id]);
+    expect(messages[1].parts).toContainEqual(
       expect.objectContaining({ type: 'text', text: 'Blue it is.' }),
     );
   });
@@ -433,7 +433,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
         messages: [
           {
             ...assistant,
-            parts: assistant!.parts.map((part) =>
+            parts: assistant.parts.map((part) =>
               part.type === 'tool-question'
                 ? { ...part, state: 'output-available', output: redAnswer }
                 : part,
@@ -447,12 +447,12 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     await response.text();
 
     const [, continued] = await storedMessages(body.chatId);
-    const outputs = continued!.parts
+    const outputs = continued.parts
       .filter((part) => part.type === 'tool-question')
       .map((part) => part.output);
 
     expect(outputs).toEqual([answer, redAnswer]);
-    expect(continued!.parts).toContainEqual(
+    expect(continued.parts).toContainEqual(
       expect.objectContaining({ type: 'text', text: 'Both answered.' }),
     );
   });
@@ -472,11 +472,11 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     await settle(body.chatId, { toolCallId: 'call-question', output: answer });
 
-    expect(JSON.stringify(model.requests[1]!.messages)).not.toContain('Also sand it first.');
+    expect(JSON.stringify(model.requests[1].messages)).not.toContain('Also sand it first.');
 
     await vi.waitFor(() => expect(model.requests).toHaveLength(3), { timeout: 10_000 });
 
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Also sand it first.');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Also sand it first.');
     await vi.waitFor(async () =>
       expect((await storedMessages(body.chatId)).map(({ role }) => role)).toEqual([
         'user',
@@ -573,7 +573,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     await running;
 
     expect(model.requests).toHaveLength(3);
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Use oil paint.');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Use oil paint.');
   });
 
   it('a request runs every tool-loop step with the model and reasoning option it sends', async () => {
@@ -722,7 +722,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
         messages: [
           {
             ...assistant,
-            parts: assistant!.parts.map((part) =>
+            parts: assistant.parts.map((part) =>
               part.type === 'tool-question'
                 ? { ...part, state: 'output-available', output: answer }
                 : part,
@@ -746,7 +746,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     const result = await booted.frogbot.agents[questionAgentSlug]!.generate({ prompt: 'Go.' });
 
-    expect(model.requests[0]!.tools?.map(({ function: fn }) => fn.name)).toEqual(['lookup']);
+    expect(model.requests[0].tools?.map(({ function: fn }) => fn.name)).toEqual(['lookup']);
     expect(result.steps[0]!.content).toContainEqual(
       expect.objectContaining({ type: 'tool-error', toolCallId: 'call-stray' }),
     );
@@ -764,8 +764,8 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
         updateIfVersion({
           req,
           collection: messagesSlug,
-          id: assistant!.id,
-          version: assistant!.version,
+          id: assistant.id,
+          version: assistant.version,
           data: { metadata: { text } },
         }),
       ),

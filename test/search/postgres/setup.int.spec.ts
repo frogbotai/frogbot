@@ -113,7 +113,7 @@ describePostgres(`postgres search setup [${driver}]`, () => {
       const version = await getVectorVersion(database);
 
       expect(version).toBeDefined();
-      expect(version!.localeCompare('0.8.0', undefined, { numeric: true })).toBeGreaterThanOrEqual(
+      expect(version.localeCompare('0.8.0', undefined, { numeric: true })).toBeGreaterThanOrEqual(
         0,
       );
     });

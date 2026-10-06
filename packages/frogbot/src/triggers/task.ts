@@ -40,7 +40,7 @@ export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
         },
       });
       await configured.handler({
-        event: (input.event as { data: unknown }).data as never,
+        event: (input.event as { data: unknown }).data,
         agent,
         req: triggerReq,
       });

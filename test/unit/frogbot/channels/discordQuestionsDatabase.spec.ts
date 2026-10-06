@@ -292,9 +292,9 @@ describe('Discord questions with SQLite persistence', () => {
     const threadId = 'T101';
     const card = await ask({ threadId, toolCallId: 'call-1' });
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
-    expect(api.cards(threadId)[0]!.body).toMatchObject({ flags: 32768 });
-    expect(JSON.stringify(api.cards(threadId)[0]!.body)).toContain(
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(api.cards(threadId)[0].body).toMatchObject({ flags: 32768 });
+    expect(JSON.stringify(api.cards(threadId)[0].body)).toContain(
       control({ toolCallId: 'call-1', verb: 'option', n: 1 }),
     );
 
@@ -316,7 +316,7 @@ describe('Discord questions with SQLite persistence', () => {
         },
       ],
     ]);
-    expect(JSON.stringify(api.edits(threadId, card)[0]!.body)).toContain('Answered by **User U2**');
+    expect(JSON.stringify(api.edits(threadId, card)[0].body)).toContain('Answered by **User U2**');
     expect(await continuations(threadId)).toMatchObject([{ responder: { userId: 'U2' } }]);
 
     await run((await continuations(threadId))[0]);
@@ -418,9 +418,7 @@ describe('Discord questions with SQLite persistence', () => {
     expect(await settlements(threadId)).toMatchObject([['call-dismiss', { outcome: 'dismissed' }]]);
     expect(await continuations(threadId)).toEqual([]);
     expect(await findTurnState({ req, chatId: await chatId(threadId) })).toBe('idle');
-    expect(JSON.stringify(api.edits(threadId, card)[0]!.body)).toContain(
-      'Dismissed by **User U2**',
-    );
+    expect(JSON.stringify(api.edits(threadId, card)[0].body)).toContain('Dismissed by **User U2**');
 
     model.respond({ text: 'Starting over.' });
 
@@ -575,8 +573,8 @@ describe('Discord questions with SQLite persistence', () => {
     expect(toolResults()).toEqual([
       { answers: [{ header: 'Color', selected: [], custom: 'Teal' }] },
     ]);
-    expect(JSON.stringify(model.requests[1]!.messages)).not.toContain('Make it matte');
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Make it matte');
+    expect(JSON.stringify(model.requests[1].messages)).not.toContain('Make it matte');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Make it matte');
     expect(posted(threadId)).toContain('Replying to your note.');
   });
 

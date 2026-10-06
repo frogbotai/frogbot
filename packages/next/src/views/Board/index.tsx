@@ -3,7 +3,7 @@ import './BoardView.css';
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
 import type { FrogBotRequest } from 'frogbot';
 import { notFound } from 'next/navigation';
-import type { AdminViewServerProps, Field, SanitizedFieldPermissions } from 'payload';
+import type { AdminViewServerProps, SanitizedFieldPermissions } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
@@ -46,14 +46,14 @@ export async function BoardView(props: AdminViewServerProps) {
   const querySort =
     typeof query.sort === 'string' ||
     (Array.isArray(query.sort) && query.sort.every((value) => typeof value === 'string'))
-      ? (query.sort as string | string[])
+      ? query.sort
       : Object.prototype.hasOwnProperty.call(query, 'sort')
         ? ''
         : undefined;
   const queryColumns: ViewColumnsSource =
     typeof query.columns === 'string' ||
     (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
-      ? (query.columns as string | string[])
+      ? query.columns
       : undefined;
   const preferenceKey = getViewPreferenceKey(collectionSlug, board.slug);
   const preference = initPageResult.req.user
@@ -155,7 +155,7 @@ export async function BoardView(props: AdminViewServerProps) {
       </CollectionViewShell>
     );
   }
-  const groupField = resolveBoardField(collectionConfig.fields as Field[], groupBy);
+  const groupField = resolveBoardField(collectionConfig.fields, groupBy);
   if (!groupField) notFound();
   const columns = await resolveColumns({
     collectionSlug,

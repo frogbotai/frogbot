@@ -240,7 +240,7 @@ export function aiFieldQueueHook({ kind, name }: AIFieldHookSpec): FieldHook {
       ...(user ? { user: { collection: user.collection, id: user.id } } : {}),
     };
 
-    await req.frogbot.jobs.queue({ task: AI_FIELD_TASK_SLUG, input, req } as never);
+    await req.frogbot.jobs.queue({ task: AI_FIELD_TASK_SLUG, input, req });
 
     return value;
   };

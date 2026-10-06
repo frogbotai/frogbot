@@ -11,7 +11,7 @@ import {
   useTranslation,
   XIcon,
 } from '@payloadcms/ui';
-import type { Sort, Where } from 'payload';
+import type { Where } from 'payload';
 import { transformWhereQuery, validateWhereQuery } from 'payload/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -92,7 +92,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   const groupBy = typeof query?.groupBy === 'string' ? query.groupBy : '';
   const groupByField = groupBy.replace(/^-/, '');
 
-  const sortRows = parseSort(query?.sort as Sort | undefined);
+  const sortRows = parseSort(query?.sort);
   const sortValue = serializeSort(sortRows);
   const defaultSort = manualSortField ?? serializeSort(parseSort(collectionConfig.defaultSort));
 

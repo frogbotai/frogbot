@@ -148,7 +148,7 @@ describe('FrogBot Teams adapter', () => {
       },
     ]);
     expect(chat.processAction).toHaveBeenCalledOnce();
-    expect(chat.processAction.mock.calls[0]![0]).toMatchObject({
+    expect(chat.processAction.mock.calls[0][0]).toMatchObject({
       actionId: 'frogbot.question.submit',
       value: 'call-1',
       messageId: '1700000000001',
@@ -186,7 +186,7 @@ describe('FrogBot Teams adapter', () => {
       }),
     );
 
-    expect(chat.processAction.mock.calls[0]![0].user).toMatchObject({
+    expect(chat.processAction.mock.calls[0][0].user).toMatchObject({
       userId: '29:grace',
       email: 'grace@cache.example',
       fullName: 'Grace Hopper',
@@ -206,7 +206,7 @@ describe('FrogBot Teams adapter', () => {
       }),
     );
 
-    const { user } = chat.processAction.mock.calls[0]![0];
+    const { user } = chat.processAction.mock.calls[0][0];
 
     expect(user).toMatchObject({ userId: '29:guest', fullName: 'Guest' });
     expect(user).not.toHaveProperty('email');
@@ -220,7 +220,7 @@ describe('FrogBot Teams adapter', () => {
       submitActivity({ id: 'submit-own', serviceUrl: server.serviceUrl, toolCallId: 'call-1' }),
     );
 
-    expect(chat.processAction.mock.calls[0]![0].messageId).toBe('submit-own');
+    expect(chat.processAction.mock.calls[0][0].messageId).toBe('submit-own');
   });
 
   it('leaves other card actions to the Teams adapter', async () => {
@@ -232,12 +232,12 @@ describe('FrogBot Teams adapter', () => {
     });
 
     expect(server.requests).toEqual([]);
-    expect(chat.processAction.mock.calls[0]![0]).toMatchObject({
+    expect(chat.processAction.mock.calls[0][0]).toMatchObject({
       actionId: 'approve',
       value: 'yes',
       user: { userId: '29:ada' },
     });
-    expect(chat.processAction.mock.calls[0]![0].user).not.toHaveProperty('email');
+    expect(chat.processAction.mock.calls[0][0].user).not.toHaveProperty('email');
   });
 
   it('rejects an activity whose token was issued for another bot', async () => {

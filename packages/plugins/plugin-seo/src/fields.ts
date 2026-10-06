@@ -43,9 +43,9 @@ export function MetaImageField(args: MetaImageFieldArgs): UploadField {
 }
 
 export function OverviewField(args: OverviewFieldArgs): UIField {
-  return (payloadOverviewField as (args: OverviewFieldArgs) => UIField)(args);
+  return payloadOverviewField(args);
 }
 
 export function PreviewField(args: PreviewFieldArgs): UIField {
-  return (payloadPreviewField as (args: PreviewFieldArgs) => UIField)(args);
+  return payloadPreviewField(args);
 }

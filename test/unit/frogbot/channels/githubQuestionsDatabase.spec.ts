@@ -297,7 +297,7 @@ describe('GitHub questions with SQLite persistence', () => {
     const issue = 101;
     const asked = await ask({ issue, toolCallId: 'call-1' });
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
     expect(bodies(issue)).toEqual([asked.body]);
     expect(asked.body).toContain('1. **Red \\*hot\\***\n2. **Blue\\_ish**');
 
@@ -317,7 +317,7 @@ describe('GitHub questions with SQLite persistence', () => {
         },
       ],
     ]);
-    expect(api.edits(asked.id)[0]!.body).toContain('Answered by `@bob`');
+    expect(api.edits(asked.id)[0].body).toContain('Answered by `@bob`');
     expect(await continuations(issue)).toMatchObject([{ responder: { userName: 'bob' } }]);
 
     await run((await continuations(issue))[0]);
@@ -418,7 +418,7 @@ describe('GitHub questions with SQLite persistence', () => {
     expect(await settlements(issue)).toMatchObject([['call-dismiss', { outcome: 'dismissed' }]]);
     expect(await continuations(issue)).toEqual([]);
     expect(await findTurnState({ req, chatId: await chatId(issue) })).toBe('idle');
-    expect(api.edits(asked.id)[0]!.body).toContain('<sub>Dismissed by `@bob`</sub>');
+    expect(api.edits(asked.id)[0].body).toContain('<sub>Dismissed by `@bob`</sub>');
 
     model.respond({ text: 'Starting over.' });
 
@@ -437,7 +437,7 @@ describe('GitHub questions with SQLite persistence', () => {
     const second = comments(issue).at(-1)!;
 
     expect(second.body).toContain('### Toppings · Question 2 of 3');
-    expect(api.edits(first.id)[0]!.body).toContain('✅ **Large**');
+    expect(api.edits(first.id)[0].body).toContain('✅ **Large**');
 
     const racing = nextCommentId();
 
@@ -491,7 +491,7 @@ describe('GitHub questions with SQLite persistence', () => {
     await say({ issue, body: '/answer 1' });
     await run((await continuations(issue))[0]);
 
-    expect(api.edits(asked.id)[0]!.body).toContain('✅ **Red \\*hot\\***');
+    expect(api.edits(asked.id)[0].body).toContain('✅ **Red \\*hot\\***');
     expect(toolResults()).toEqual([{ answers: [{ header: 'Color', selected: ['Red *hot*'] }] }]);
     expect(bodies(issue).at(-1)).toBe('Red after restart.');
   });

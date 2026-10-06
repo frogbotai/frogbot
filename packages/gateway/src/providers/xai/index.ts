@@ -64,6 +64,6 @@ export const xaiProvider = {
     return Object.assign(provider, xai, {
       languageModel,
       responses: languageModel,
-    }) as XaiProvider;
+    });
   },
 } satisfies ProviderDefinition<'xai', XaiConfig, XaiProvider>;

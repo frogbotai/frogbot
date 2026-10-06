@@ -258,7 +258,7 @@ describe('gmail', () => {
         tokens: { access_token: 'access' },
         client,
         req,
-      } as never),
+      }),
     ).resolves.toEqual({
       id: 'google-user',
       label: 'user@example.com',

@@ -90,7 +90,7 @@ beforeAll(async () => {
 
   payload.collections = Object.fromEntries(
     payload.config.collections.map((config) => [config.slug, { config }]),
-  ) as Payload['collections'];
+  );
 
   database = descriptor.init({ payload });
   payload.db = database;

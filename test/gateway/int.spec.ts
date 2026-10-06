@@ -181,13 +181,13 @@ function createDelayedStreamModel(opts: {
     doStream: async () => ({
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+          controller.enqueue({ type: 'text-start', id: 'text-0' });
           controller.enqueue({
             type: 'text-delta',
             id: 'text-0',
             delta: text,
-          } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
+          });
+          controller.enqueue({ type: 'text-end', id: 'text-0' });
           setTimeout(() => {
             controller.enqueue({
               type: 'finish',
@@ -219,13 +219,13 @@ function createMidStreamErrorModel(error: unknown): LanguageModelV4 {
     doStream: async () => ({
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+          controller.enqueue({ type: 'text-start', id: 'text-0' });
           controller.enqueue({
             type: 'text-delta',
             id: 'text-0',
             delta: 'hello',
-          } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+          });
+          controller.enqueue({ type: 'error', error });
           controller.close();
         },
       }),
@@ -773,12 +773,12 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         return {
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
-              controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hello',
-              } as LanguageModelV4StreamPart);
+              });
             },
           }),
         };
@@ -815,7 +815,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),
@@ -845,7 +845,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),
@@ -879,7 +879,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),
@@ -911,7 +911,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),
@@ -943,13 +943,13 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hello',
-            } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            });
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),
@@ -1345,12 +1345,12 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hello',
-            } as LanguageModelV4StreamPart);
+            });
           },
         }),
       }),
@@ -1528,7 +1528,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       doStream: async () => ({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),

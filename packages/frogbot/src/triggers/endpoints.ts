@@ -119,7 +119,7 @@ async function dispatchWebhookTriggers({
       limit: 1,
       depth: 0,
       overrideAccess: true,
-    } as never);
+    });
     row = (result.docs as Subscription[])[0];
     if (!row) return new Response(null, { status: 404 });
   }

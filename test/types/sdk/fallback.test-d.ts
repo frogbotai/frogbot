@@ -6,7 +6,7 @@ const sdk = createFrogBotSDK({ baseURL: '/api' });
 
 export async function untypedResults() {
   const pages = await sdk.find({ collection: 'any-collection' });
-  const page = pages.docs[0]!;
+  const page = pages.docs[0];
 
   expectTypeOf(page).not.toBeAny();
   expectTypeOf(page).toEqualTypeOf<Record<string, unknown> & { id: string | number }>();
@@ -35,7 +35,7 @@ export async function untypedSearchHits() {
     query: { text: 'frogs' },
   });
 
-  expectTypeOf(result.hits[0]!.doc).not.toBeAny();
+  expectTypeOf(result.hits[0].doc).not.toBeAny();
 }
 
 export async function untypedSearchManyHits() {
@@ -45,5 +45,5 @@ export async function untypedSearchManyHits() {
   });
 
   expectTypeOf(results[0].collection).toEqualTypeOf<'articles'>();
-  expectTypeOf(results[0].hits[0]!.doc).not.toBeAny();
+  expectTypeOf(results[0].hits[0].doc).not.toBeAny();
 }

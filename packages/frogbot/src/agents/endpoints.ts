@@ -49,10 +49,7 @@ export function buildAgentEndpoints() {
           const parsed = bodySchema.safeParse(await req.json!().catch(() => undefined));
 
           if (!parsed.success) {
-            return Response.json(
-              { error: describeIssue(parsed.error.issues[0]!) },
-              { status: 400 },
-            );
+            return Response.json({ error: describeIssue(parsed.error.issues[0]) }, { status: 400 });
           }
 
           const { chatId, model, reasoning, delivery, prompt, messages } = parsed.data;

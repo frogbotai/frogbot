@@ -68,9 +68,7 @@ describe('toResponsesResponse', () => {
   });
 
   it('emits function_call output items from tool calls', () => {
-    vi.spyOn(crypto, 'randomUUID').mockReturnValue(
-      'fc-id' as `${string}-${string}-${string}-${string}-${string}`,
-    );
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue('fc-id');
 
     const result = toResponsesResponse({
       model: 'openai/gpt-4o-mini',
@@ -229,9 +227,9 @@ describe('toResponsesResponse', () => {
 
   it('emits reasoning output items from result.content', () => {
     vi.spyOn(crypto, 'randomUUID')
-      .mockReturnValueOnce('response-id' as `${string}-${string}-${string}-${string}-${string}`)
-      .mockReturnValueOnce('reasoning-id' as `${string}-${string}-${string}-${string}-${string}`)
-      .mockReturnValueOnce('message-id' as `${string}-${string}-${string}-${string}-${string}`);
+      .mockReturnValueOnce('response-id')
+      .mockReturnValueOnce('reasoning-id')
+      .mockReturnValueOnce('message-id');
 
     const result = toResponsesResponse({
       model: 'openai/gpt-4o-mini',

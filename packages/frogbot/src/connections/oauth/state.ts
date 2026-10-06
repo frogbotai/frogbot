@@ -225,7 +225,7 @@ export async function consumeOAuthState({
       .filter((part) => part.startsWith(`${name}=`));
     if (values.length !== 1) throw new OAuthError('state');
 
-    const browser = randomSchema.parse(values[0]!.slice(name.length + 1));
+    const browser = randomSchema.parse(values[0].slice(name.length + 1));
     if (!timingSafeEqual(Buffer.from(intent.browser, 'hex'), Buffer.from(digest(browser), 'hex'))) {
       throw new OAuthError('state');
     }

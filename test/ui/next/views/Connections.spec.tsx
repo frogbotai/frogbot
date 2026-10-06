@@ -210,7 +210,7 @@ describe('linked accounts', () => {
     fetchMock
       .mockResolvedValueOnce(Response.json({ id: 3 }))
       .mockResolvedValueOnce(Response.json({ docs: [] }));
-    render(<ConnectionsViewClient {...props} pieces={[{ ...pieces[1]!, secretSchema: schema }]} />);
+    render(<ConnectionsViewClient {...props} pieces={[{ ...pieces[1], secretSchema: schema }]} />);
     fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
     fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
     expect(screen.getByRole('combobox', { name: 'token value mode' }).textContent).toBe(
@@ -253,7 +253,7 @@ describe('linked accounts', () => {
     fetchMock
       .mockResolvedValueOnce(Response.json({ id: 3 }))
       .mockResolvedValueOnce(Response.json({ docs: [] }));
-    render(<ConnectionsViewClient {...props} pieces={[{ ...pieces[1]!, secretSchema: schema }]} />);
+    render(<ConnectionsViewClient {...props} pieces={[{ ...pieces[1], secretSchema: schema }]} />);
     fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
     fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Add item' }));

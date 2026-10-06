@@ -113,7 +113,7 @@ describe('zoom', () => {
     const action = pieceFactoryDefinition(createZoom).actions?.find(
       ({ slug }) => slug === 'getMeeting',
     );
-    const options = await action?.options?.meeting_id?.({ client } as never);
+    const options = await action?.options?.meeting_id?.({ client });
 
     expect(options).toEqual([
       { label: 'First', value: '1' },
@@ -216,7 +216,7 @@ describe('zoom', () => {
         tokens: { access_token: 'stored-access' },
         client,
         req,
-      } as never),
+      }),
     ).resolves.toEqual({ id: 'zoom-user', label: 'Zoom User', email: 'user@example.com' });
 
     vi.stubGlobal(

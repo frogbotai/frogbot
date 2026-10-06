@@ -264,7 +264,7 @@ describe('vector fields', () => {
     input.blocks = [
       {
         slug: 'shared',
-        fields: [{ name: 'embedding', type: 'vector', dimensions: 0 } as VectorField],
+        fields: [{ name: 'embedding', type: 'vector', dimensions: 0 }],
       },
     ];
 

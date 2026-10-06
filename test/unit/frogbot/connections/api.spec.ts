@@ -319,7 +319,7 @@ describe('connections API', () => {
 
   it('denies metadata and deletion to non-admin auth collection owners', async () => {
     const { api, req, find } = await setup({ row: {} });
-    req.user = { id: 'owner', collection: 'customers' } as never;
+    req.user = { id: 'owner', collection: 'customers' };
     await expect(api.list({ req })).rejects.toThrow('admin user collection');
     await expect(api.delete({ req, id: 'connection' })).rejects.toThrow('admin user collection');
     expect(find).not.toHaveBeenCalled();

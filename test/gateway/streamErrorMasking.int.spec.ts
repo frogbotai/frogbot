@@ -40,13 +40,13 @@ function createMidStreamErrorModel(): LanguageModelV4 {
       Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hello',
-            } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+            });
+            controller.enqueue({ type: 'error', error });
             controller.close();
           },
         }),

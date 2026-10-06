@@ -89,7 +89,7 @@ export async function findChannelChat({
     overrideAccess: true,
   });
 
-  return result.docs[0] as { id: DocID; channelThread?: unknown } | undefined;
+  return result.docs[0];
 }
 
 export async function resolveChannelChat({

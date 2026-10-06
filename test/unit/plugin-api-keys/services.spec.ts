@@ -73,7 +73,7 @@ describe('API key services', () => {
       owner: 'victim-1',
     };
 
-    await mintApiKey(options as Parameters<typeof mintApiKey>[0]);
+    await mintApiKey(options);
 
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ owner: 'user-1' }) }),

@@ -142,6 +142,6 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
         agent('assistant'),
       ],
     });
-    expect(body.agents[0]!.models.every((id) => id.startsWith('openai/'))).toBe(true);
+    expect(body.agents[0].models.every((id) => id.startsWith('openai/'))).toBe(true);
   });
 });

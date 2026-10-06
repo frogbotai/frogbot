@@ -244,7 +244,7 @@ describe('Discord question components', () => {
     const [select] = inspect(body).selects;
 
     expect(select).toMatchObject({ min_values: 1, max_values: 1, custom_id: id('select', 0) });
-    expect(select!.options).toEqual([
+    expect(select.options).toEqual([
       { label: 'Basic', value: '0', description: 'Monthly' },
       { label: 'Pro', value: '1', description: 'Yearly' },
     ]);
@@ -307,7 +307,7 @@ describe('Discord question components', () => {
         result.selects.forEach((select) => {
           expect(select.options.length).toBeLessThanOrEqual(25);
           expect(select.max_values).toBe(
-            input.input.questions[0]!.multiple ? select.options.length : 1,
+            input.input.questions[0].multiple ? select.options.length : 1,
           );
         });
       });
@@ -330,7 +330,7 @@ describe('Discord question components', () => {
     ]);
     expect(first.texts.at(-1)).toContain('Page 1 of 2 · options 1–375 of 376.');
     expect(second.selects).toHaveLength(1);
-    expect(second.selects[0]!.options).toEqual([{ label: 'Option 375', value: '375' }]);
+    expect(second.selects[0].options).toEqual([{ label: 'Option 375', value: '375' }]);
     expect(second.buttons[0]).toMatchObject({ custom_id: id('page', 0) });
   });
 
@@ -340,9 +340,9 @@ describe('Discord question components', () => {
       payload(call({ header: 'Pick', options: [{ label: long }, { label: 'Short' }] })),
     );
 
-    expect(selects[0]!.options[0]!.label).toHaveLength(100);
-    expect(selects[0]!.options[0]!.label).toMatch(/^1\. Very long option .*….* end$/);
-    expect(selects[0]!.options[1]!.label).toBe('Short');
+    expect(selects[0].options[0].label).toHaveLength(100);
+    expect(selects[0].options[0].label).toMatch(/^1\. Very long option .*….* end$/);
+    expect(selects[0].options[1].label).toBe('Short');
     expect(texts[1]).toContain('Full text of shortened options');
     expect(texts[1]).toContain(`**1.** ${long}`);
   });
@@ -354,7 +354,7 @@ describe('Discord question components', () => {
       options: Array.from({ length: 25 }, (_, index) => ({ label: `${prefix}#${index}` })),
     });
     const { selects, texts } = inspect(payload(input));
-    const labels = selects[0]!.options.map(({ label }) => label);
+    const labels = selects[0].options.map(({ label }) => label);
 
     expect(new Set(labels).size).toBe(25);
     expect(labels[9]).toMatch(/^10\. Deploy .*#9$/);
@@ -383,8 +383,8 @@ describe('Discord question components', () => {
     );
 
     const strings = [
-      open.selects[0]!.options[0]!.label,
-      open.selects[0]!.options[0]!.description!,
+      open.selects[0].options[0].label,
+      open.selects[0].options[0].description!,
       ...open.texts,
       ...settled.texts,
     ];
@@ -465,7 +465,7 @@ describe('Discord question components', () => {
     );
 
     expect(text).toBeLessThanOrEqual(DISCORD_LIMITS.text);
-    expect(texts[0]!.endsWith('-# Answered by **Toad**')).toBe(true);
+    expect(texts[0].endsWith('-# Answered by **Toad**')).toBe(true);
   });
 
   it('neutralises mentions and markdown from a typed answer and a display name', () => {
@@ -537,7 +537,7 @@ describe('Discord question components', () => {
     expect(result.selects).toEqual([]);
     expect(result.texts[0]).toContain('✅ **Red**');
     expect(result.texts[0]).toContain('✅ **“Make it \\*matte\\*”**');
-    expect(result.texts[0]!.endsWith('-# Answered by **Toad** (@toad)')).toBe(true);
+    expect(result.texts[0].endsWith('-# Answered by **Toad** (@toad)')).toBe(true);
   });
 
   it('retires a dismissed card and a card answered elsewhere', () => {
@@ -556,8 +556,8 @@ describe('Discord question components', () => {
     );
 
     expect(dismissed.texts[0]).toContain('🚫 **Dismissed**');
-    expect(dismissed.texts[0]!.endsWith('-# Dismissed by <@U3>')).toBe(true);
-    expect(elsewhere.texts[0]!.endsWith('-# Answered')).toBe(true);
+    expect(dismissed.texts[0].endsWith('-# Dismissed by <@U3>')).toBe(true);
+    expect(elsewhere.texts[0].endsWith('-# Answered')).toBe(true);
   });
 });
 

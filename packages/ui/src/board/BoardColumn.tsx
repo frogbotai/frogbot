@@ -45,7 +45,7 @@ export function BoardColumn<T>({
   const virtualizer = useVirtualizer({
     count: rows.length,
     estimateSize: () => 140,
-    getItemKey: (index) => getId(rows[index]!),
+    getItemKey: (index) => getId(rows[index]),
     getScrollElement: () => parent.current,
     overscan: 3,
   });
@@ -102,7 +102,7 @@ export function BoardColumn<T>({
               {item.index === sourceIndex ? (
                 <div className="frog-board__source-spacer" style={{ height: activeHeight }} />
               ) : (
-                renderCard(rows[item.index]!)
+                renderCard(rows[item.index])
               )}
             </div>
           ))}

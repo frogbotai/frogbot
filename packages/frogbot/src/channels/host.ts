@@ -116,7 +116,7 @@ export class ChannelHost {
     }
 
     const adapter = runtime.definition.channel!.adapter({
-      auth: runtime.auth as never,
+      auth: runtime.auth,
       options: runtime.options as never,
     });
 
@@ -478,7 +478,7 @@ export class ChannelHost {
       overrideAccess: true,
     })) as ChatDocument | null;
 
-    const reference = chat?.channelThread as ChannelThreadReference | null | undefined;
+    const reference = chat?.channelThread;
     const binding = reference ? this.bindings.get(reference.account) : undefined;
 
     if (!reference || binding?.kind !== 'conversation' || binding.agent.slug !== chat?.agent) {
@@ -501,7 +501,7 @@ export class ChannelHost {
   }
 
   private async runQueued({ req, agent, chat, claim, uiMessages, selection }: TurnRunnerArgs) {
-    const reference = chat.channelThread as ChannelThreadReference | null | undefined;
+    const reference = chat.channelThread;
     const binding = reference ? this.bindings.get(reference.account) : undefined;
 
     if (!reference || binding?.kind !== 'conversation' || binding.agent.slug !== agent.slug) {

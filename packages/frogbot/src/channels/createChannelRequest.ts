@@ -38,7 +38,7 @@ export async function createChannelRequest({
   });
 
   const client = await runtime.client({ req });
-  const user = await runtime.definition.channel!.identity({ author, client: client as never, req });
+  const user = await runtime.definition.channel!.identity({ author, client, req });
 
   return { client, req: Object.assign(req, { user }) };
 }

@@ -52,11 +52,11 @@ export function decodeQuestionId(id: string): QuestionControl | null {
   if (!match) return null;
 
   const [, key, q, code, n] = match;
-  const verb = verbs.get(code!);
+  const verb = verbs.get(code);
 
   if (!verb) return null;
 
-  return { key: key!, q: Number(q), verb, ...(n === undefined ? {} : { n: Number(n) }) };
+  return { key, q: Number(q), verb, ...(n === undefined ? {} : { n: Number(n) }) };
 }
 
 export function snowflakeTime(id: unknown): number {

@@ -42,7 +42,7 @@ describe('Channel credential forms', () => {
       connections: [{ piece, secret: true }],
     });
 
-    const entry = connections.entries[piece.slug]!;
+    const entry = connections.entries[piece.slug];
     const field = projectConnectionSchema(entry.secretSchema);
     const initial = initialConnectionValue(field);
 

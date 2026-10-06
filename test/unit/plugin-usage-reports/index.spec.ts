@@ -63,9 +63,9 @@ describe('usageReportsPlugin', () => {
 
   it('composes with an explicitly configured import-export plugin exactly once', async () => {
     const withReports = await usageReportsPlugin()(createConfig());
-    const result = (await importExportPlugin({
+    const result = await importExportPlugin({
       collections: [{ slug: 'ai-usage', import: false, export: { format: 'csv' } }],
-    })(withReports as never)) as unknown as typeof withReports;
+    })(withReports);
     const usage = result.collections.find((item) => item.slug === 'ai-usage');
 
     expect(result.collections.map((item) => item.slug)).toContain('exports');

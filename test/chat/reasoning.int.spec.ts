@@ -72,7 +72,7 @@ describe('chat reasoning selection', () => {
       { models: CustomModel[] }
     >;
 
-    thinker = providers.test!.models.find(({ id }) => id === 'thinker')!;
+    thinker = providers.test.models.find(({ id }) => id === 'thinker')!;
     thinkerOptions = thinker.reasoningOptions;
   });
 
@@ -292,7 +292,7 @@ describe('chat reasoning selection', () => {
     ).docs;
 
     const steer = await post({
-      chatId: chat!.id,
+      chatId: chat.id,
       prompt: 'Keep it short.',
       model: 'test/gpt-4.1-mini',
       delivery: 'steer',
@@ -359,7 +359,7 @@ describe('chat reasoning selection', () => {
     ).docs;
 
     const queued = await post({
-      chatId: chat!.id,
+      chatId: chat.id,
       prompt: 'Think a little.',
       model: 'test/thinker',
       reasoning: 'low',
@@ -372,10 +372,10 @@ describe('chat reasoning selection', () => {
 
     await vi.waitFor(
       async () => {
-        const messages = await storedMessages(chat!.id);
+        const messages = await storedMessages(chat.id);
 
         expect(messages.at(-1)).toMatchObject({ role: 'user', status: 'active' });
-        await expect(turnState(chat!.id)).resolves.toBe('idle');
+        await expect(turnState(chat.id)).resolves.toBe('idle');
       },
       { timeout: 10_000 },
     );
@@ -384,7 +384,7 @@ describe('chat reasoning selection', () => {
     expect(choices()).toEqual([['thinker', 'high']]);
 
     const next = await post({
-      chatId: chat!.id,
+      chatId: chat.id,
       prompt: 'Try again.',
       model: 'test/thinker',
       reasoning: 'high',

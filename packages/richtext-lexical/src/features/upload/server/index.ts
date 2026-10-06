@@ -34,4 +34,4 @@ export const UploadFeature = (
   upstreamUploadFeature({
     ...props,
     collections: adaptCollections(props?.collections),
-  } as UpstreamUploadFeatureProps);
+  });

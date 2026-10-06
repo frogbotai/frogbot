@@ -69,7 +69,7 @@ describe('assertRichTextEditor', () => {
   it('validates dashboard widget fields and handles shared field cycles', () => {
     const richText = { name: 'content', type: 'richText' };
     const group = { fields: [richText], name: 'settings', type: 'group' };
-    group.fields.push(group as never);
+    group.fields.push(group);
     const config = {
       admin: {
         dashboard: {

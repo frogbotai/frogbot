@@ -44,8 +44,8 @@ describe('lazy connection refresh', () => {
     expect(results.map(({ auth }) => auth)).toEqual(
       Array.from({ length: 9 }, () => ({ token: 'fresh' })),
     );
-    expect(results[0]!.key).toBe(results[1]!.key);
-    expect((await api.resolvePieceCredential({ piece, req })).key).toBe(results[0]!.key);
+    expect(results[0].key).toBe(results[1].key);
+    expect((await api.resolvePieceCredential({ piece, req })).key).toBe(results[0].key);
     expect(refresh).toHaveBeenCalledOnce();
     expect(frogbot.update).toHaveBeenCalledOnce();
     const row = await (

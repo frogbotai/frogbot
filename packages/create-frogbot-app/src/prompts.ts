@@ -159,7 +159,7 @@ export async function resolvePlan({
   if (agents === undefined && interactive) {
     agents = resolvePromptValue<AgentTarget[]>(
       await p.multiselect({ message: 'Coding agents', required: false, options: AGENTS }),
-    ) as AgentTarget[];
+    );
   }
 
   const resolvedAgents = agents ?? [];
@@ -170,7 +170,7 @@ export async function resolvePlan({
     agents: resolvedAgents as AgentTarget[],
     ai: resolvedAI,
     apiKey,
-    database: resolvedDatabase as Database,
+    database: resolvedDatabase,
     dest: path.resolve(cwd, projectName),
     git: args.git,
     install: args.install,

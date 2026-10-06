@@ -148,7 +148,7 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
     await expect
       .poll(
         async () => {
-          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() } as never);
+          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() });
 
           return (
             await channelJobsWhere({
@@ -340,28 +340,28 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
     await mention({ content: '<@100000000000000001> paint the door', threadId });
 
     const [card] = api.cards(threadId);
-    const select = JSON.parse(JSON.stringify(card!.body)).components[0].components.find(
+    const select = JSON.parse(JSON.stringify(card.body)).components[0].components.find(
       (component: { type: number }) => component.type === 1,
     ).components[0];
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
     expect(replies(threadId)).toEqual([]);
-    expect(card!.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
-    expect(JSON.stringify(card!.body)).toContain('Which finish should the **front door** get?');
+    expect(card.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
+    expect(JSON.stringify(card.body)).toContain('Which finish should the **front door** get?');
     expect(select.options).toEqual(
-      paint.questions[0]!.options.map((option, index) => ({ ...option, value: String(index) })),
+      paint.questions[0].options.map((option, index) => ({ ...option, value: String(index) })),
     );
 
     model.respond({ text: 'Going with satin on the front door.' });
 
     await click({
       customId: control({ toolCallId, verb: 'select', n: 0 }),
-      messageId: card!.id!,
+      messageId: card.id!,
       threadId,
       values: ['2'],
     });
 
-    expect(JSON.stringify(api.edits(threadId, card!.id!)[0]!.body)).toContain(
+    expect(JSON.stringify(api.edits(threadId, card.id!)[0].body)).toContain(
       'Answered by **User U2**',
     );
     expect(toolResults()).toEqual([
@@ -374,7 +374,7 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
 
     await click({
       customId: control({ toolCallId, verb: 'select', n: 0 }),
-      messageId: card!.id!,
+      messageId: card.id!,
       threadId,
       user: 'U3',
       values: ['0'],
@@ -396,13 +396,13 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
 
     await click({
       customId: control({ toolCallId, verb: 'dismiss' }),
-      messageId: card!.id!,
+      messageId: card.id!,
       threadId,
       user: 'U9',
     });
 
     expect(replies(threadId)).toEqual(["<@U9> You don't have access to answer this question."]);
-    expect(api.edits(threadId, card!.id!)).toEqual([]);
+    expect(api.edits(threadId, card.id!)).toEqual([]);
     expect(model.requests).toHaveLength(1);
     expect(await kinds(threadId)).toEqual({ message: 1 });
   });
@@ -416,7 +416,7 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
     await mention({ content: 'order a pizza', threadId });
 
     const [card] = api.cards(threadId);
-    const messageId = card!.id!;
+    const messageId = card.id!;
 
     await click({ customId: control({ toolCallId, verb: 'option', n: 2 }), messageId, threadId });
     await click({

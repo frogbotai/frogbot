@@ -106,7 +106,7 @@ export function PageContextButton({
             className="fb-page-context-button__menu"
             style={{
               left: (() => {
-                const buttonRect = buttonRef.current!.getBoundingClientRect();
+                const buttonRect = buttonRef.current.getBoundingClientRect();
                 const actualWidth = Math.min(400, window.innerWidth - 16);
                 const calculatedLeft = buttonRect.left + buttonRect.width / 2 - actualWidth / 2;
                 return Math.max(8, Math.min(calculatedLeft, window.innerWidth - actualWidth - 8));

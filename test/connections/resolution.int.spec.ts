@@ -59,13 +59,13 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
   const request = (user: ConnectionOwner | null = owner): FrogBotRequest =>
     ({ frogbot, payload, user }) as unknown as FrogBotRequest;
   const link = (body: unknown, user = owner) =>
-    endpoints[0]!.handler({
+    endpoints[0].handler({
       ...request(user),
       routeParams: { piece: 'example' },
       json: async () => body,
     } as never);
   const remove = (id: number | string, user = owner) =>
-    endpoints[1]!.handler({
+    endpoints[1].handler({
       ...request(user),
       routeParams: { id: String(id) },
     } as never);

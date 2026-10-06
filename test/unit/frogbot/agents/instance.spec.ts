@@ -757,7 +757,7 @@ describe('agent client tool gate', () => {
       toolCall: { toolName: string };
       messages: ModelMessage[];
     }) => string;
-    const execute = agent.aiAgent.tools.lookup!.execute!;
+    const execute = agent.aiAgent.tools.lookup.execute!;
     const clientStep: ModelMessage[] = [];
     const serverStep: ModelMessage[] = [];
 
@@ -909,7 +909,7 @@ describe('agent model input pass', () => {
           ],
         },
       },
-    } as SanitizedAIConfig;
+    };
   }
 
   async function startRun({
@@ -1005,7 +1005,7 @@ describe('agent model input pass', () => {
       toolCall: { toolName: string };
       messages: ModelMessage[];
     }) => string;
-    const execute = agent.aiAgent.tools.lookup!.execute!;
+    const execute = agent.aiAgent.tools.lookup.execute!;
 
     const { messages } = await prepareStep({ messages: [photo], stepNumber: 0 });
 

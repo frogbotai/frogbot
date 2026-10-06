@@ -1,14 +1,4 @@
 {
-  ".opencode/plugins/frogbot/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  ".opencode/plugins/frogbot/supervision.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "examples/fly-sqlite/src/app/(frogbot)/layout.tsx": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -19,162 +9,14 @@
       "count": 1
     }
   },
-  "packages/create-frogbot-app/src/prompts.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/agents/endpoints.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/auth/operation.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/bin/generatePieceTypes.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/bin/piecesPort.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/frogbot/src/channels/conversation.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/channels/createChannelRequest.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/channels/host.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/frogbot/src/channels/questions/createQuestionStore.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/channels/questions/createQuestionsBinding.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/channels/state.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "packages/frogbot/src/chat/turn/actor.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
-  "packages/frogbot/src/chat/turn/endpoints.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/chat/turn/queue.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/config/build.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/config/collectionViews.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/frogbot/src/config/rewriteComponentPaths.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/config/sanitize.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/connections/api.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/connections/oauth/state.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/connections/resolveCollections.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/connections/store.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/database/compareAndSet.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/fields/baseFields/ai/hooks.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/fields/baseFields/ai/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/fields/baseFields/ai/task.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "packages/frogbot/src/fields/baseFields/autonumber/counter.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/frogbot/src/fields/baseFields/slug/generateSlug.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/fields/config/sanitizeVector.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/frogbot/src/frogbot.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "packages/frogbot/src/jobs/runtime.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
     }
   },
   "packages/frogbot/src/jobs/types.ts": {
@@ -195,61 +37,13 @@
       "count": 2
     }
   },
-  "packages/frogbot/src/pieces/generateTypes.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/frogbot/src/search/drizzle/sqlite/prerequisites.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
-  "packages/frogbot/src/search/drizzle/sqlite/schema/getSearchMigration.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/search/endpoints.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/search/graphQL.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/search/operation.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/frogbot/src/tools/question.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/training/readTrainingData.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/triggers/endpoints.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/frogbot/src/triggers/subscriptions.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    },
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/triggers/task.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -258,63 +52,8 @@
       "count": 1
     }
   },
-  "packages/frogbot/src/uploads/toAgentModelMessages.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/uploads/toModelInput.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/gateway/src/providers/xai/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/gateway/src/utils/repairToolCall.ts": {
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "packages/next/src/fields/AI/bulk.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/next/src/views/Board/BoardView.client.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/next/src/views/Board/index.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/next/src/views/Calendar/CalendarView.client.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/next/src/views/Calendar/index.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/next/src/views/CollectionViewShell.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/next/src/views/Connections/ConnectionFields.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/next/src/views/controls/ViewControls.client.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -423,26 +162,6 @@
       "count": 1
     }
   },
-  "packages/pieces/piece-discord/src/questions/components.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/pieces/piece-discord/src/questions/ids.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/pieces/piece-discord/src/questions/parse.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/pieces/piece-discord/src/questions/updated.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/pieces/piece-discord/src/triggers.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -453,54 +172,14 @@
       "count": 1
     }
   },
-  "packages/pieces/piece-github/src/questions/comments.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "packages/pieces/piece-github/src/questions/githubThread.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/pieces/piece-github/src/questions/grammar.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/pieces/piece-google-drive/src/actions/list.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/pieces/piece-google-sheets/src/rows.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
   "packages/pieces/piece-http/src/actions/parseUrl.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
-  "packages/pieces/piece-linear/src/actions/options.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "packages/pieces/piece-linear/src/index.ts": {
     "@typescript-eslint/await-thenable": {
       "count": 1
-    }
-  },
-  "packages/pieces/piece-linear/src/questions/elicitation.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "packages/pieces/piece-linear/src/questions/parse.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
     }
   },
   "packages/pieces/piece-linear/src/triggers/webhook.ts": {
@@ -548,11 +227,6 @@
       "count": 1
     }
   },
-  "packages/pieces/piece-microsoft-teams/src/questions/parse.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/pieces/piece-microsoft-teams/src/triggers.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -568,11 +242,6 @@
       "count": 2
     }
   },
-  "packages/pieces/piece-posthog/src/client.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/pieces/piece-slack/src/actions.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -586,24 +255,9 @@
       "count": 1
     }
   },
-  "packages/pieces/piece-slack/src/questions/blocks.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "packages/pieces/piece-slack/src/questions/parse.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "packages/pieces/piece-telegram-bot/src/index.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "packages/pieces/piece-telegram-bot/src/questions/keyboard.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
     }
   },
   "packages/pieces/piece-telegram-bot/src/triggers/newUpdate.ts": {
@@ -636,11 +290,6 @@
       "count": 1
     }
   },
-  "packages/plugins/plugin-api-keys/src/server/services.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/plugins/plugin-audit-log/src/hooks.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
@@ -656,29 +305,9 @@
       "count": 1
     }
   },
-  "packages/plugins/plugin-import-export/src/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/plugins/plugin-roles/src/allow.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/plugins/plugin-roles/src/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 9
-    }
-  },
   "packages/plugins/plugin-roles/src/resolve.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
-    }
-  },
-  "packages/plugins/plugin-seo/src/fields.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
     }
   },
   "packages/plugins/plugin-usage-reports/src/index.ts": {
@@ -686,38 +315,8 @@
       "count": 1
     }
   },
-  "packages/richtext-lexical/src/features/link/server/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/richtext-lexical/src/features/upload/server/index.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/richtext-lexical/src/utilities/resolveConfig.ts": {
     "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
-  "packages/ui/src/board/BoardColumn.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/ui/src/calendar/useCalendar.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/ui/src/chat/chat.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/ui/src/chat/page-context-button.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -736,21 +335,6 @@
       "count": 1
     }
   },
-  "test/ai-field/concurrency-off/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/ai-field/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 10
-    }
-  },
-  "test/ai/evaluate.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/api-key-attribution/config.ts": {
     "@typescript-eslint/require-await": {
       "count": 4
@@ -766,31 +350,13 @@
       "count": 1
     }
   },
-  "test/audit-log/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/auth-strategies/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
   "test/auth/autoLogin.int.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/auth/session.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 28
-    },
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/browser/channelChat.browser.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -799,100 +365,19 @@
       "count": 4
     }
   },
-  "test/browser/question.browser.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/browser/seoFields.browser.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
-  "test/chat/assets.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/chat/attachments.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 30
-    }
-  },
-  "test/chat/chatWrites.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    }
-  },
-  "test/chat/migrations.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/chat/modelAllowlist.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "test/chat/persistence.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 35
-    }
-  },
-  "test/chat/reasoning.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    }
-  },
-  "test/chat/todos.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/chat/turnSafety.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 10
-    }
-  },
-  "test/chat/turns.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 23
-    }
-  },
   "test/connections/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 10
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/connections/resolution.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 2
-    }
-  },
-  "test/e2e/channelQuestions.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 32
-    }
-  },
-  "test/e2e/chatAssets.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "test/e2e/coldRest.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/e2e/discordQuestions.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 13
     }
   },
   "test/e2e/docsFences.e2e.spec.ts": {
@@ -915,21 +400,6 @@
       "count": 2
     }
   },
-  "test/e2e/githubQuestions.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 20
-    }
-  },
-  "test/e2e/linearQuestions.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "test/e2e/nativePiece.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/e2e/nextClientBuild.e2e.spec.ts": {
     "@typescript-eslint/restrict-plus-operands": {
       "count": 2
@@ -945,20 +415,7 @@
       "count": 2
     }
   },
-  "test/e2e/teamsQuestions.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    }
-  },
-  "test/e2e/telegramQuestions.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/email/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 7
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -968,22 +425,9 @@
       "count": 1
     }
   },
-  "test/gateway/bedrockFileContent.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/gateway/bedrockPromptCaching.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/gateway/billingUsage.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
     }
   },
   "test/gateway/cacheUsageMatrix.int.spec.ts": {
@@ -992,9 +436,6 @@
     }
   },
   "test/gateway/cacheWireMatrix.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -1004,23 +445,12 @@
       "count": 2
     }
   },
-  "test/gateway/crossRoute.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/gateway/dxP2.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/gateway/hooksP2.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/only-throw-error": {
       "count": 1
     },
@@ -1029,9 +459,6 @@
     }
   },
   "test/gateway/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 18
-    },
     "@typescript-eslint/only-throw-error": {
       "count": 3
     },
@@ -1049,15 +476,7 @@
       "count": 6
     }
   },
-  "test/gateway/observabilityP2.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "test/gateway/openrouter.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -1070,25 +489,12 @@
       "count": 2
     }
   },
-  "test/gateway/responsesP2wire.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 20
-    }
-  },
   "test/gateway/routes/evaluate.int.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
-  "test/gateway/streamErrorMasking.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "test/gateway/strictOutput.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
@@ -1104,9 +510,6 @@
     }
   },
   "test/gateway/wireHonesty.messages.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 7
-    },
     "@typescript-eslint/only-throw-error": {
       "count": 2
     },
@@ -1116,26 +519,6 @@
   },
   "test/gateway/wireHonesty.responses.int.spec.ts": {
     "@typescript-eslint/require-await": {
-      "count": 2
-    }
-  },
-  "test/gateway/zen.chat.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 11
-    }
-  },
-  "test/gateway/zen.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "test/gateway/zen.messages.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "test/gateway/zen.responses.e2e.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     }
   },
@@ -1170,9 +553,6 @@
     }
   },
   "test/live/rag.live.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -1182,72 +562,9 @@
       "count": 1
     }
   },
-  "test/roles/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/sdk/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/search/postgres/setup.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/search/setup.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/search/sqlite/migrations.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 8
-    }
-  },
-  "test/search/sqlite/sdk.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "test/search/sqlite/vectorIndex.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/sign-in/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/storage-s3/chatAttachments.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 8
-    }
-  },
-  "test/system-fields/autonumber.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    }
-  },
-  "test/system-fields/users.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "test/training-data/custom/config.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/training-data/export.int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
     }
   },
   "test/triggers/config.ts": {
@@ -1493,16 +810,6 @@
       "count": 3
     }
   },
-  "test/types/sdk/fallback.test-d.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
-  "test/types/sdk/generated.test-d.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 13
-    }
-  },
   "test/types/skill/samples/jobs.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -1513,20 +820,7 @@
       "count": 1
     }
   },
-  "test/ui/next/elements/Nav/CollectionsSection.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/ui/next/elements/Nav/FrogBotNav.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "test/ui/next/elements/Nav/RecentsSection.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
@@ -1556,29 +850,9 @@
       "count": 3
     }
   },
-  "test/ui/next/fields/SimpleKindFields.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/ui/next/views/CollectionViewShell.spec.tsx": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
-    }
-  },
-  "test/ui/next/views/Connections.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/ui/next/views/ViewControls.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/ui/ui/board.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 7
     }
   },
   "test/ui/ui/chat/artifact-persistence.spec.tsx": {
@@ -1586,16 +860,8 @@
       "count": 2
     }
   },
-  "test/ui/ui/chat/channel-conversation.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/ui/ui/chat/chat.spec.tsx": {
     "@typescript-eslint/await-thenable": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     },
     "@typescript-eslint/require-await": {
@@ -1608,9 +874,6 @@
     }
   },
   "test/ui/ui/chat/file-reference-part.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/prefer-promise-reject-errors": {
       "count": 1
     },
@@ -1624,9 +887,6 @@
     }
   },
   "test/ui/ui/chat/question-tool-render.spec.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -1657,61 +917,33 @@
     }
   },
   "test/unit/db-d1-sqlite/jobs.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
   "test/unit/db-mongodb/jobs.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
   "test/unit/db-postgres/jobs.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
   "test/unit/db-sqlite/jobs.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/frogbot/agents/endpoints.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
-      "count": 3
-    }
-  },
-  "test/unit/frogbot/agents/instance.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 3
     }
   },
   "test/unit/frogbot/agents/resolveScheduleTasks.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
-    }
-  },
-  "test/unit/frogbot/agents/service.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 21
     }
   },
   "test/unit/frogbot/agents/streamMessage.spec.ts": {
@@ -1720,9 +952,6 @@
     }
   },
   "test/unit/frogbot/ai/gateway-evaluate.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
@@ -1735,15 +964,7 @@
       "count": 1
     }
   },
-  "test/unit/frogbot/ai/models.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/unit/frogbot/ai/operations/evaluate.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 5
     }
@@ -1793,42 +1014,9 @@
       "count": 1
     }
   },
-  "test/unit/frogbot/channels/discordFixtures.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/unit/frogbot/channels/discordQuestions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 19
-    }
-  },
-  "test/unit/frogbot/channels/discordQuestionsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 7
-    }
-  },
-  "test/unit/frogbot/channels/endpoints.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/unit/frogbot/channels/foundationsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/unit/frogbot/channels/gateway.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 5
-    }
-  },
-  "test/unit/frogbot/channels/githubFixtures.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     }
   },
   "test/unit/frogbot/channels/githubQuestions.spec.ts": {
@@ -1836,34 +1024,20 @@
       "count": 12
     }
   },
-  "test/unit/frogbot/channels/githubQuestionsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    }
-  },
   "test/unit/frogbot/channels/helpers.ts": {
     "@typescript-eslint/no-floating-promises": {
       "count": 2
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     },
     "@typescript-eslint/require-await": {
       "count": 19
     }
   },
   "test/unit/frogbot/channels/host.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 32
-    },
     "@typescript-eslint/require-await": {
       "count": 7
     }
   },
   "test/unit/frogbot/channels/ingress.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
@@ -1874,42 +1048,18 @@
     }
   },
   "test/unit/frogbot/channels/linearQuestions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 28
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
-  "test/unit/frogbot/channels/linearQuestionsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 9
-    }
-  },
-  "test/unit/frogbot/channels/questionStore.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
   "test/unit/frogbot/channels/questionUpdate.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/unit/frogbot/channels/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 25
-    },
     "@typescript-eslint/require-await": {
       "count": 12
-    }
-  },
-  "test/unit/frogbot/channels/questionsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 7
     }
   },
   "test/unit/frogbot/channels/registry.spec.ts": {
@@ -1917,58 +1067,24 @@
       "count": 1
     }
   },
-  "test/unit/frogbot/channels/slackQuestions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    }
-  },
   "test/unit/frogbot/channels/state.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 10
     }
   },
-  "test/unit/frogbot/channels/task.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/unit/frogbot/channels/teamsFixtures.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
   "test/unit/frogbot/channels/teamsQuestions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    },
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/unit/frogbot/channels/teamsQuestionsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 8
     }
   },
   "test/unit/frogbot/channels/telegramFixtures.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/unit/frogbot/channels/telegramQuestions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 18
-    }
-  },
-  "test/unit/frogbot/channels/telegramQuestionsDatabase.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
     }
   },
   "test/unit/frogbot/channels/webhook.spec.ts": {
@@ -1977,25 +1093,12 @@
     }
   },
   "test/unit/frogbot/chat/assetsHash.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/unit/frogbot/chat/branchChat.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
     }
   },
   "test/unit/frogbot/chat/collections/messages.spec.ts": {
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/unit/frogbot/config/assertRichTextEditor.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -2005,24 +1108,11 @@
     }
   },
   "test/unit/frogbot/config/authStrategies.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 9
-    },
     "@typescript-eslint/only-throw-error": {
       "count": 1
     },
     "@typescript-eslint/require-await": {
       "count": 6
-    }
-  },
-  "test/unit/frogbot/config/build.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/unit/frogbot/config/collectionViews.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 10
     }
   },
   "test/unit/frogbot/config/connections.spec.ts": {
@@ -2031,17 +1121,11 @@
     }
   },
   "test/unit/frogbot/config/pieces.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
   "test/unit/frogbot/config/sanitize.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 23
-    },
     "@typescript-eslint/require-await": {
       "count": 6
     }
@@ -2052,17 +1136,11 @@
     }
   },
   "test/unit/frogbot/connections/api.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/frogbot/connections/endpoints.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 19
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
@@ -2072,40 +1150,23 @@
       "count": 8
     }
   },
-  "test/unit/frogbot/connections/oauth/handshake.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
   "test/unit/frogbot/connections/oauth/refresh.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
       "count": 5
     }
   },
   "test/unit/frogbot/connections/oauth/state.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/frogbot/connections/oauth/tokens.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 8
     }
   },
   "test/unit/frogbot/connections/resolveCollections.spec.ts": {
     "@typescript-eslint/await-thenable": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -2120,11 +1181,6 @@
   "test/unit/frogbot/connections/store.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 7
-    }
-  },
-  "test/unit/frogbot/fields/baseFields/ai.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
     }
   },
   "test/unit/frogbot/fields/baseFields/aiSanitize.spec.ts": {
@@ -2147,26 +1203,6 @@
       "count": 3
     }
   },
-  "test/unit/frogbot/fields/optionColors.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/unit/frogbot/fields/vector.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/unit/frogbot/fields/virtualPaths.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
-  "test/unit/frogbot/frogbot.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
   "test/unit/frogbot/jobs/helpers.ts": {
     "@typescript-eslint/require-await": {
       "count": 6
@@ -2183,9 +1219,6 @@
     }
   },
   "test/unit/frogbot/jobs/nativeRunner.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 6
     }
@@ -2219,9 +1252,6 @@
     }
   },
   "test/unit/frogbot/pieces/conformance.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 15
-    },
     "@typescript-eslint/require-await": {
       "count": 8
     }
@@ -2240,9 +1270,6 @@
     }
   },
   "test/unit/frogbot/pieces/email.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 7
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
@@ -2253,9 +1280,6 @@
     }
   },
   "test/unit/frogbot/search/fixture.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
@@ -2266,21 +1290,8 @@
     }
   },
   "test/unit/frogbot/search/operation.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
-    }
-  },
-  "test/unit/frogbot/search/searchMany.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/unit/frogbot/tools/todos.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     }
   },
   "test/unit/frogbot/training/encodeTrainingData.spec.ts": {
@@ -2299,9 +1310,6 @@
     }
   },
   "test/unit/frogbot/triggers/endpoints.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 13
     }
@@ -2322,16 +1330,8 @@
     }
   },
   "test/unit/frogbot/triggers/task.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 2
-    }
-  },
-  "test/unit/frogbot/uploads/office/officeText.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     }
   },
   "test/unit/frogbot/uploads/toAgentModelMessages.spec.ts": {
@@ -2380,17 +1380,11 @@
     }
   },
   "test/unit/gateway/providers/reasoningContract.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/gateway/providers/sdkCacheContract.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -2401,17 +1395,11 @@
     }
   },
   "test/unit/gateway/providers/xai/finishReason.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/unit/gateway/routes/chatCompletions/handler.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 5
     }
@@ -2454,11 +1442,6 @@
       "count": 9
     }
   },
-  "test/unit/gateway/routes/responses/translators/toResponse.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
   "test/unit/gateway/routes/speech/handler.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 3
@@ -2484,11 +1467,6 @@
       "count": 9
     }
   },
-  "test/unit/next/fields/aiBulk.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 8
-    }
-  },
   "test/unit/opencode/supervision.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 3
@@ -2500,69 +1478,38 @@
     }
   },
   "test/unit/piece-crypto/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 5
     }
   },
   "test/unit/piece-discord/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/piece-discord/questionHooks.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 9
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
-  "test/unit/piece-discord/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 18
-    }
-  },
   "test/unit/piece-discord/reactionIdentity.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/unit/piece-file-helper/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/unit/piece-front/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/piece-github/channelFlow.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 2
-    }
-  },
-  "test/unit/piece-github/credentialForm.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     }
   },
   "test/unit/piece-github/index.spec.ts": {
@@ -2576,51 +1523,26 @@
     }
   },
   "test/unit/piece-github/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 17
-    },
     "@typescript-eslint/require-await": {
       "count": 3
     }
   },
   "test/unit/piece-gmail/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/piece-google-calendar/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 10
     }
   },
   "test/unit/piece-google-drive/customApiCall.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/prefer-promise-reject-errors": {
       "count": 3
     }
   },
-  "test/unit/piece-google-drive/files.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 9
-    }
-  },
-  "test/unit/piece-google-drive/permissions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    }
-  },
   "test/unit/piece-google-sheets/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 18
-    },
     "@typescript-eslint/prefer-promise-reject-errors": {
       "count": 2
     },
@@ -2634,36 +1556,17 @@
     }
   },
   "test/unit/piece-image-helper/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 8
-    },
     "@typescript-eslint/require-await": {
       "count": 4
     }
   },
   "test/unit/piece-linear/actionTransport.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-linear/connections.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
   "test/unit/piece-linear/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-linear/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },
@@ -2672,33 +1575,12 @@
       "count": 1
     }
   },
-  "test/unit/piece-microsoft-teams/adapter.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    }
-  },
   "test/unit/piece-microsoft-teams/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
-  "test/unit/piece-microsoft-teams/questionCard.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 12
-    }
-  },
-  "test/unit/piece-microsoft-teams/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  },
   "test/unit/piece-monday/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
@@ -2708,19 +1590,9 @@
       "count": 4
     }
   },
-  "test/unit/piece-pagerduty/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
   "test/unit/piece-pdf/index.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 3
-    }
-  },
-  "test/unit/piece-qrcode/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     }
   },
   "test/unit/piece-resend/email.spec.ts": {
@@ -2729,17 +1601,11 @@
     }
   },
   "test/unit/piece-slack/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/piece-slack/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -2750,17 +1616,11 @@
     }
   },
   "test/unit/piece-telegram-bot/adapter.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
   },
   "test/unit/piece-telegram-bot/commands.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
@@ -2771,9 +1631,6 @@
     }
   },
   "test/unit/piece-telegram-bot/questionHooks.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    },
     "@typescript-eslint/only-throw-error": {
       "count": 1
     },
@@ -2781,29 +1638,13 @@
       "count": 1
     }
   },
-  "test/unit/piece-telegram-bot/questions.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 11
-    }
-  },
   "test/unit/piece-trello/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 10
-    },
     "@typescript-eslint/require-await": {
       "count": 4
     }
   },
   "test/unit/piece-twilio/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
-    },
     "@typescript-eslint/require-await": {
-      "count": 2
-    }
-  },
-  "test/unit/piece-zoom/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     }
   },
@@ -2812,58 +1653,24 @@
       "count": 2
     }
   },
-  "test/unit/plugin-api-keys/importMap.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/unit/plugin-api-keys/services.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/unit/plugin-audit-log/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 2
     }
   },
   "test/unit/plugin-capture/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 9
-    }
-  },
-  "test/unit/plugin-import-export/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
     }
   },
   "test/unit/plugin-mcp/index.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/unit/plugin-roles/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 23
-    }
-  },
-  "test/unit/plugin-seo/seoPlugin.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    }
-  },
-  "test/unit/plugin-usage-reports/index.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
     }
   },
   "test/unit/richtext-lexical/docs.spec.ts": {
@@ -2881,11 +1688,6 @@
       "count": 1
     }
   },
-  "test/unit/scripts/testServers.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/unit/sdk/auth.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -2896,18 +1698,8 @@
       "count": 1
     }
   },
-  "test/unit/sdk/query-params.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
   "test/unit/ui/chat/foundation-contracts.spec.ts": {
     "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/usage-logs/custom/config.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     }
   },

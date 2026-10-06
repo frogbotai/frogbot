@@ -61,7 +61,7 @@ function queueWithRequest(kind: QueueHookKind, override?: CollectionOverride): C
       );
     }
 
-    const queueHook = afterChange[index]!;
+    const queueHook = afterChange[index];
 
     const withRequest: CollectionAfterChangeHook = (args) =>
       queueHook({ ...args, req: withQueueRequest(args.req) });
@@ -81,8 +81,7 @@ function queueWithRequest(kind: QueueHookKind, override?: CollectionOverride): C
 function withQueueRequest(req: PayloadRequest): PayloadRequest {
   const { payload } = req;
 
-  const queue = ((args) =>
-    payload.jobs.queue({ ...args, req } as never)) as typeof payload.jobs.queue;
+  const queue = ((args) => payload.jobs.queue({ ...args, req })) as typeof payload.jobs.queue;
 
   return replace(req, 'payload', replace(payload, 'jobs', replace(payload.jobs, 'queue', queue)));
 }

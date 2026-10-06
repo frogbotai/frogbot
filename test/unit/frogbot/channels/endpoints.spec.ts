@@ -13,7 +13,7 @@ vi.mock('../../../../packages/frogbot/src/channels/host.js', () => ({
   getChannelHost: () => mocks.host,
 }));
 
-const endpoint = buildChannelGatewayEndpoints()[0]!;
+const endpoint = buildChannelGatewayEndpoints()[0];
 
 function request(secret?: string) {
   return Object.assign(

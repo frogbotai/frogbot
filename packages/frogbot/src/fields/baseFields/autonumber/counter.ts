@@ -106,15 +106,15 @@ function withValueAt(
   [name, ...rest]: string[],
   value: number,
 ): Record<string, unknown> {
-  if (!rest.length) return { [name!]: value };
+  if (!rest.length) return { [name]: value };
 
-  const group = doc[name!];
+  const group = doc[name];
   const sibling = (group !== null && typeof group === 'object' ? group : {}) as Record<
     string,
     unknown
   >;
 
-  return { [name!]: { ...sibling, ...withValueAt(sibling, rest, value) } };
+  return { [name]: { ...sibling, ...withValueAt(sibling, rest, value) } };
 }
 
 export async function storedAutonumber({

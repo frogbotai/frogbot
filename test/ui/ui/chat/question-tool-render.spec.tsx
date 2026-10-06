@@ -395,7 +395,7 @@ describe('QuestionToolRender in Chat', () => {
     expect(screen.getByText('Answered')).toBeTruthy();
     expect(requests(`/api/agents/${agent}`)).toHaveLength(1);
 
-    const sent = body(requests(`/api/agents/${agent}`)[0]!);
+    const sent = body(requests(`/api/agents/${agent}`)[0]);
 
     expect(sent.chatId).toBe(chatId);
     expect(sent.messages.at(-1)).toMatchObject({
@@ -437,7 +437,7 @@ describe('QuestionToolRender in Chat', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Dismiss' }));
 
     expect(await screen.findByText('Dismissed by the user.')).toBeTruthy();
-    expect(body(requests(`/api/agents/${agent}/chats/${chatId}/settle`)[0]!)).toEqual({
+    expect(body(requests(`/api/agents/${agent}/chats/${chatId}/settle`)[0])).toEqual({
       toolCallId: 'call-1',
       dismissed: true,
     });

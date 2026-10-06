@@ -57,16 +57,16 @@ describe('training data export', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
-    owner = (await booted.frogbot.create({
+    owner = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
-    })) as { id: number | string };
-    otherUser = (await booted.frogbot.create({
+    });
+    otherUser = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'other@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     const exported = (await booted.frogbot.create({
       collection: chatsSlug,

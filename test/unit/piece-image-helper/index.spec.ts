@@ -98,7 +98,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', left: 1, top: 0, width: 2, height: 1, resultFileName: 'crop' },
       req: request(),
     });
-    const saved = await Jimp.read(uploads[0]!.data);
+    const saved = await Jimp.read(uploads[0].data);
 
     expect(result).toMatchObject({ name: 'crop.png', mimeType: 'image/png' });
     expect([saved.bitmap.width, saved.bitmap.height]).toEqual([2, 1]);
@@ -109,7 +109,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', degrees: 90 },
       req: request(),
     });
-    const saved = await Jimp.read(uploads[0]!.data);
+    const saved = await Jimp.read(uploads[0].data);
 
     expect(result.name).toBe('image.png');
     expect([saved.bitmap.width, saved.bitmap.height]).toEqual([2, 4]);
@@ -125,8 +125,8 @@ describe('image-helper execution', () => {
       req: request(),
     });
 
-    const proportional = await Jimp.read(uploads[0]!.data);
-    const fixed = await Jimp.read(uploads[1]!.data);
+    const proportional = await Jimp.read(uploads[0].data);
+    const fixed = await Jimp.read(uploads[1].data);
 
     expect([proportional.bitmap.width, proportional.bitmap.height]).toEqual([8, 4]);
     expect([fixed.bitmap.width, fixed.bitmap.height]).toEqual([8, 8]);
@@ -139,7 +139,7 @@ describe('image-helper execution', () => {
     });
 
     expect(compressed).toMatchObject({ name: 'small.jpg', mimeType: 'image/jpeg' });
-    expect(uploads[0]!.data.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+    expect(uploads[0].data.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
   });
 
   it.each([
@@ -152,7 +152,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', outputFormat, resultFileName: 'converted' },
       req: request(),
     });
-    const converted = await Jimp.read(uploads[0]!.data);
+    const converted = await Jimp.read(uploads[0].data);
 
     expect(result).toMatchObject({
       sourceMimeType: 'image/png',
@@ -166,7 +166,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', outputFormat: 'AVIF' },
       req: request(),
     });
-    const metadata = await sharp(uploads[0]!.data).metadata();
+    const metadata = await sharp(uploads[0].data).metadata();
 
     expect(result.file).toMatchObject({ name: 'image.avif', mimeType: 'image/avif' });
     expect(metadata).toMatchObject({ format: 'heif', width: 4, height: 2 });
@@ -199,7 +199,7 @@ describe('image-helper execution', () => {
   });
 
   it('requires the configured files collection', async () => {
-    const req = request() as never as { frogbot: { config: { files?: unknown } } };
+    const req = request() as { frogbot: { config: { files?: unknown } } };
     delete req.frogbot.config.files;
 
     await expect(

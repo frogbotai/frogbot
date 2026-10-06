@@ -34,7 +34,7 @@ describe('todo tools', () => {
     const { ctx, update } = makeCtx();
     const todos = [{ content: 'Ship it', status: 'in_progress' }];
 
-    await write_todos.execute({ todos }, ctx as never);
+    await write_todos.execute({ todos }, ctx);
 
     expect(update).toHaveBeenCalledWith({
       collection: 'conversations',

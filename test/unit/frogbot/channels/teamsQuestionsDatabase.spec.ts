@@ -110,7 +110,7 @@ async function boot(directory: string): Promise<FrogBot> {
 }
 
 function conversationOf(threadId: string) {
-  return Buffer.from(threadId.split(':')[1]!, 'base64url').toString();
+  return Buffer.from(threadId.split(':')[1], 'base64url').toString();
 }
 
 describe('Teams questions with SQLite persistence', () => {
@@ -318,9 +318,9 @@ describe('Teams questions with SQLite persistence', () => {
     const root = '1001';
     const card = await ask({ root, toolCallId: 'call-1' });
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
     expect(replies(root)).toEqual([]);
-    expect(cardInputs(cards(root)[0])[0]!.choices).toEqual([
+    expect(cardInputs(cards(root)[0])[0].choices).toEqual([
       { title: 'Red, barn', value: '0' },
       { title: 'Blue', value: '1' },
     ]);
@@ -532,20 +532,20 @@ describe('Teams questions with SQLite persistence', () => {
     expect(cards(root)).toHaveLength(1);
 
     await submit({
-      card: cards(root)[0]!.sentId,
+      card: cards(root)[0].sentId,
       root,
       toolCallId: 'call-a',
       values: { 'question-0': '1' },
     });
 
     expect(cards(root)).toHaveLength(2);
-    expect(cardOf(cards(root)[1])!.actions![0]!.data).toMatchObject({ value: 'call-b' });
+    expect(cardOf(cards(root)[1])!.actions![0].data).toMatchObject({ value: 'call-b' });
     expect(await continuations(root)).toEqual([]);
 
     model.respond({ text: 'Blue, large.' });
 
     await submit({
-      card: cards(root)[1]!.sentId,
+      card: cards(root)[1].sentId,
       root,
       toolCallId: 'call-b',
       values: { 'question-0-text': 'Extra large' },
@@ -643,8 +643,8 @@ describe('Teams questions with SQLite persistence', () => {
 
     await host().run(JSON.parse(JSON.stringify(promotion)));
 
-    expect(JSON.stringify(model.requests[1]!.messages)).not.toContain('Make it matte');
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Make it matte');
+    expect(JSON.stringify(model.requests[1].messages)).not.toContain('Make it matte');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Make it matte');
     expect(replies(root)).toEqual(['Red, and I read your note.', 'Replying to your note.']);
   });
 

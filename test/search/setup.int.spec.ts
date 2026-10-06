@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { sanitize } from '../../packages/frogbot/src/config/sanitize.js';
-import type { FrogBotConfig } from '../../packages/frogbot/src/config/types.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 
 const { databaseAdapter } = await import('../databaseAdapter.js');
@@ -22,7 +21,7 @@ function searchConfig() {
         search: { titles: { lexical: { fields: ['title'] } } },
       },
     ],
-  } as FrogBotConfig);
+  });
 }
 
 describe('search setup', () => {

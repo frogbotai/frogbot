@@ -67,7 +67,7 @@ function validateAnswers(input: QuestionInput, output: QuestionOutput): true | s
   }
 
   for (const [index, item] of input.questions.entries()) {
-    const answer = output.answers[index]!;
+    const answer = output.answers[index];
     const labels = new Set(item.options.map(({ label }) => label));
 
     if (answer.header !== item.header) return `Answer ${index + 1} must be for '${item.header}'.`;

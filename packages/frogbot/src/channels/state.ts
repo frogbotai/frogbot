@@ -28,7 +28,7 @@ export function createChannelStateAdapter({
     for (;;) {
       try {
         return await kv.lock(key(`list-lock:${value}`), LIST_LOCK_TTL, async ({ signal }) => {
-          const current = ((await kv.get(listKey(value))) as T[] | null) ?? [];
+          const current = (await kv.get<T[]>(listKey(value))) ?? [];
 
           signal.throwIfAborted();
 
@@ -93,10 +93,10 @@ export function createChannelStateAdapter({
       kv.extendLock({ key: lockKey(lock.threadId), token: lock.token }, ttlMs),
     forceReleaseLock: (threadId) => kv.delete(lockKey(threadId)),
     get: async <T>(value: string) => (await kv.get(key(`value:${value}`))) as T | null,
-    getList: async <T>(value: string) => ((await kv.get(listKey(value))) as T[] | null) ?? [],
+    getList: async <T>(value: string) => (await kv.get<T[]>(listKey(value))) ?? [],
     isSubscribed: (threadId) => kv.has(subscriptionKey(threadId)),
     queueDepth: async (threadId) => {
-      const queue = (await kv.get(listKey(queueKey(threadId)))) as QueueEntry[] | null;
+      const queue = await kv.get<QueueEntry[]>(listKey(queueKey(threadId)));
 
       return queue?.length ?? 0;
     },

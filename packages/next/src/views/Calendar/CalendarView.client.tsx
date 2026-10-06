@@ -14,7 +14,7 @@ import {
 import { formatDocTitle } from '@payloadcms/ui/shared';
 import type { CalendarMode } from 'frogbot';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type { ClientCollectionConfig, Column, TypeWithID } from 'payload';
+import type { ClientCollectionConfig, Column } from 'payload';
 import type { ComponentType } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -64,7 +64,7 @@ function CalendarDocumentEvent({
   const { config } = useConfig();
   const title = formatDocTitle({
     collectionConfig,
-    data: row as unknown as TypeWithID,
+    data: row,
     dateFormat: config.admin.dateFormat,
     i18n,
   });
@@ -134,7 +134,7 @@ export function CalendarViewClient({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const collectionConfig = getEntityConfig({ collectionSlug }) as ClientCollectionConfig;
+  const collectionConfig = getEntityConfig({ collectionSlug });
   const cardColumns = useMemo(
     () => getViewCardColumns(columns, collectionConfig.admin?.useAsTitle),
     [collectionConfig.admin?.useAsTitle, columns],

@@ -676,7 +676,7 @@ describe('FrogBot class', () => {
       expect(response.status).toBe(200);
       expect(generate).toHaveBeenCalledOnce();
       expect(handler).toHaveBeenCalledOnce();
-      expect(new URL(handler.mock.calls[0]![0].url).pathname).toBe('/v1/chat/completions');
+      expect(new URL(handler.mock.calls[0][0].url).pathname).toBe('/v1/chat/completions');
     });
 
     it('forwards model discovery without an access check', async () => {
@@ -690,7 +690,7 @@ describe('FrogBot class', () => {
       expect(response.status).toBe(200);
       expect(generate).not.toHaveBeenCalled();
       expect(handler).toHaveBeenCalledOnce();
-      expect(new URL(handler.mock.calls[0]![0].url).pathname).toBe('/v1/models');
+      expect(new URL(handler.mock.calls[0][0].url).pathname).toBe('/v1/models');
     });
   });
 

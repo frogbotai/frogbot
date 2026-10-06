@@ -196,7 +196,7 @@ describe('twilio', () => {
       input: {},
       options: {},
       req,
-    } as never);
+    });
 
     expect(result.events).toEqual([
       { sid: 'CA2', status: 'completed', date_created: '2026-01-02T00:00:00Z' },
@@ -222,7 +222,7 @@ describe('twilio', () => {
 
     const definition = createTwilio({ auth }).triggers.callCompleted;
     const client = createTwilioClient({ auth, options: {} });
-    const baseline = await definition.run({ client, input: {}, options: {}, req } as never);
+    const baseline = await definition.run({ client, input: {}, options: {}, req });
 
     expect(baseline).toEqual({
       events: [],
@@ -235,7 +235,7 @@ describe('twilio', () => {
       input: {},
       options: {},
       req,
-    } as never);
+    });
 
     expect(tied.events).toEqual([{ sid: 'CA2', status: 'completed', date_created: date }]);
   });

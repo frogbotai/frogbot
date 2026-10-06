@@ -104,7 +104,7 @@ export const listFiles = defineAction({
     const pending = [{ folderId: input.folderId, level: 1 }];
     const visited = new Set<string>();
     for (let index = 0; index < pending.length; index++) {
-      const folder = pending[index]!;
+      const folder = pending[index];
       if (visited.has(folder.folderId)) continue;
       visited.add(folder.folderId);
       const query = `${queryLiteral(folder.folderId)} in parents${input.includeTrashed ? '' : ' and trashed = false'}`;

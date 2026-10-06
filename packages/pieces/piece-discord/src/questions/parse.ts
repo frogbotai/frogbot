@@ -227,11 +227,11 @@ function choose({
   state: DiscordQuestionState;
 }): QuestionParseResult {
   const { questions } = call.input;
-  const item = questions[state.q]!;
+  const item = questions[state.q];
 
   const selected = [...new Set(indexes)]
     .sort((a, b) => a - b)
-    .map((index) => item.options[index]!.label);
+    .map((index) => item.options[index].label);
 
   const answers = [
     ...state.answers.slice(0, state.q),

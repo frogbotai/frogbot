@@ -657,7 +657,7 @@ describe('Google Calendar custom API', () => {
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).rejects.toThrow('redirects are not allowed');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0]!;
+    const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toBe('https://www.googleapis.com/calendar/v3/custom');
     expect(init?.redirect).toBe('manual');
     expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${auth.accessToken}`);

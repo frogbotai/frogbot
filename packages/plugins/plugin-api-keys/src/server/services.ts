@@ -98,7 +98,7 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
   const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
   await req.frogbot.update({
     collection: collectionSlug as never,
-    id: key.id as never,
+    id: key.id,
     data: { revokedAt },
     overrideAccess: true,
     req,

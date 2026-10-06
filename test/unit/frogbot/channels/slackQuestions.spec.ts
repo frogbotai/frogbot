@@ -184,7 +184,7 @@ async function askedFixture(call = pendingCall()) {
   });
 
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
-  fixture.identity.mockResolvedValue({ id: 'user-2', collection: 'users' } as never);
+  fixture.identity.mockResolvedValue({ id: 'user-2', collection: 'users' });
 
   await fixture.host.initialize(false);
   await fixture.host.webhook('slack', mention());
@@ -238,7 +238,7 @@ describe('Slack native questions', () => {
     );
 
     expect(response?.status).toBe(200);
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: ['Red'] }] } },
       actor: { channel: { piece: 'slack', id: 'U2', username: 'toad' } },
     });
@@ -319,7 +319,7 @@ describe('Slack native questions', () => {
     );
 
     expect(response?.status).toBe(200);
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: [], custom: 'Green' }] },
     });
 
@@ -378,7 +378,7 @@ describe('Slack native questions', () => {
 
     expect(fixture.inputs.map(({ kind }) => kind)).not.toContain('update');
     expect(lastCall('chat.postEphemeral')).toBeUndefined();
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: ['Red'] }] },
     });
     expect(fixture.frogbot.logger.error).toHaveBeenCalledWith(
@@ -428,7 +428,7 @@ describe('Slack native questions', () => {
       }),
     );
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Colors', selected: ['Red', 'Blue'] }] },
     });
 

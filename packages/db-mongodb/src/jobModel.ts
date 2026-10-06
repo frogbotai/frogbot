@@ -1,7 +1,11 @@
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import { transform } from '@payloadcms/db-mongodb/internal';
+import type { Field } from 'payload';
 
-export function getJobModel(adapter: MongooseAdapter) {
+export function getJobModel(adapter: MongooseAdapter): {
+  fields: Field[];
+  Model: MongooseAdapter['collections'][string];
+} {
   const collection = adapter.payload.collections['payload-jobs'];
   const Model = adapter.collections['payload-jobs'];
 

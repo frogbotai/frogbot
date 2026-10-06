@@ -19,11 +19,11 @@ async function loadOptions(load: (after?: string) => Promise<Connection>) {
 }
 
 export const teams = ({ client }: { client: Linear }) =>
-  loadOptions((after) => client.teams({ first: 100, after }) as Promise<Connection>);
+  loadOptions((after) => client.teams({ first: 100, after }));
 export const users = ({ client }: { client: Linear }) =>
   loadOptions((after) => client.users({ first: 100, after }) as Promise<Connection>);
 export const projects = ({ client }: { client: Linear }) =>
-  loadOptions((after) => client.projects({ first: 100, after }) as Promise<Connection>);
+  loadOptions((after) => client.projects({ first: 100, after }));
 export const priorities = async ({ client }: { client: Linear }) =>
   (await client.issuePriorityValues).map(({ label, priority }) => ({
     label,
@@ -33,12 +33,11 @@ export const teamOptions =
   (method: 'issues' | 'workflowStates' | 'issueLabels') =>
   ({ client, input }: { client: Linear; input: { teamId?: string } }) =>
     input.teamId
-      ? loadOptions(
-          (after) =>
-            client[method]({
-              first: 100,
-              after,
-              filter: { team: { id: { eq: input.teamId } } },
-            }) as Promise<Connection>,
+      ? loadOptions((after) =>
+          client[method]({
+            first: 100,
+            after,
+            filter: { team: { id: { eq: input.teamId } } },
+          }),
         )
       : Promise.resolve([]);

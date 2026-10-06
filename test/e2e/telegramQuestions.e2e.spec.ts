@@ -63,7 +63,7 @@ describe.skipIf(!RUN_E2E)(
     function post(update: Record<string, unknown>, secret = TELEGRAM_WEBHOOK_SECRET) {
       return fetch(
         telegramWebhook(update, { secret, url: `${server.url}/api/webhooks/telegramBot` }),
-        { signal: AbortSignal.timeout(20_000) } as RequestInit,
+        { signal: AbortSignal.timeout(20_000) },
       );
     }
 

@@ -21,7 +21,7 @@ describe('Google Drive files through the SDK', () => {
     ).resolves.toEqual(metadata);
     expect(requests[0]?.url.pathname).toBe('/drive/v3/files');
     expect(requests[0]?.url.searchParams.get('supportsAllDrives')).toBe('true');
-    expect(JSON.parse(requests[0]!.body.toString())).toEqual({
+    expect(JSON.parse(requests[0].body.toString())).toEqual({
       name: 'Invoices',
       mimeType: folderMimeType,
       parents: ['parent'],
@@ -63,7 +63,7 @@ describe('Google Drive files through the SDK', () => {
       req,
       overrideAccess: false,
     });
-    const fetchOptions = fetchFile.mock.calls[0]![1];
+    const fetchOptions = fetchFile.mock.calls[0][1];
     expect(fetchOptions.headers.get('authorization')).toBe('Bearer app-token');
     expect(fetchOptions.headers.get('cookie')).toBe('session=private');
     expect(fetchOptions.redirect).toBe('error');
@@ -78,7 +78,7 @@ describe('Google Drive files through the SDK', () => {
     const { drive, req, findByID } = await fixture();
     findByID.mockResolvedValue({ url: 'https://storage.test/signed', filename: 'file' });
     await drive.uploadFile({ req, input: { file: { fileId: 'source' } } });
-    expect([...fetchFile.mock.calls[0]![1].headers]).toEqual([]);
+    expect([...fetchFile.mock.calls[0][1].headers]).toEqual([]);
   });
 
   it.each(['missing', 'denied', 'fetch'])('fails closed on %s file access', async (failure) => {
@@ -136,8 +136,8 @@ describe('Google Drive files through the SDK', () => {
       expect(requests[1]?.url.searchParams.get('mimeType')).toBe(
         `application/vnd.openxmlformats-officedocument.${mime}`,
       );
-      expect(create.mock.calls[0]![0].file.name).toBe(`Report${extension}`);
-      expect(create.mock.calls[0]![0].file.data).toEqual(Buffer.from('office bytes'));
+      expect(create.mock.calls[0][0].file.name).toBe(`Report${extension}`);
+      expect(create.mock.calls[0][0].file.data).toEqual(Buffer.from('office bytes'));
     },
   );
 
@@ -175,7 +175,7 @@ describe('Google Drive files through the SDK', () => {
       },
     });
     expect(requests[1]?.url.pathname).toBe('/drive/v3/files/file/copy');
-    expect(JSON.parse(requests[1]!.body.toString())).toEqual({
+    expect(JSON.parse(requests[1].body.toString())).toEqual({
       name: 'Copy',
       parents: ['destination'],
       mimeType: 'application/vnd.google-apps.spreadsheet',
@@ -225,9 +225,9 @@ describe('Google Drive files through the SDK', () => {
       const { drive, req, requests } = await fixture(() => json({ ...metadata, parents }));
       await drive.moveFile({
         req,
-        input: { fileId: 'file', folderId: folderId as string, includeSharedDrives: true },
+        input: { fileId: 'file', folderId, includeSharedDrives: true },
       });
-      expect(requests).toHaveLength(count as number);
+      expect(requests).toHaveLength(count);
       if (count === 2) {
         expect(requests[1]?.method).toBe('PATCH');
         expect(requests[1]?.url.searchParams.get('removeParents')).toBe(remove);
@@ -246,7 +246,7 @@ describe('Google Drive files through the SDK', () => {
     await expect(
       drive.trashFile({ req, input: { fileId: 'file', includeSharedDrives: true } }),
     ).resolves.toMatchObject({ trashed: true });
-    expect(JSON.parse(requests[0]!.body.toString())).toEqual({ trashed: true });
+    expect(JSON.parse(requests[0].body.toString())).toEqual({ trashed: true });
     await expect(
       drive.deleteFile({ req, input: { fileId: 'file', includeSharedDrives: true } }),
     ).resolves.toEqual({ deleted: true });

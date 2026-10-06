@@ -102,7 +102,7 @@ describe('trello', () => {
 
     await createTrello({ auth })[slug]({ input, req: req() } as never);
 
-    const [url, init] = fetch.mock.calls[0]!;
+    const [url, init] = fetch.mock.calls[0];
 
     expect(new URL(String(url)).pathname).toBe(path);
     expect(init.method ?? 'GET').toBe(method);
@@ -132,14 +132,14 @@ describe('trello', () => {
       req: req(),
     });
 
-    expect(new URL(String(fetch.mock.calls[0]![0])).searchParams.get('idList')).toBe('list');
-    expect(JSON.parse(fetch.mock.calls[0]![1].body)).toEqual({
+    expect(new URL(String(fetch.mock.calls[0][0])).searchParams.get('idList')).toBe('list');
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
       name: 'Card',
       desc: 'Body',
       pos: 'top',
       idLabels: ['label'],
     });
-    expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({
+    expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
       idList: 'next',
       closed: false,
       due: '2026-09-14T00:00:00.000Z',
@@ -205,14 +205,14 @@ describe('trello', () => {
     });
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(fetch.mock.calls[0]![1]).toMatchObject({ redirect: 'error' });
-    expect((fetch.mock.calls[0]![1].headers as Headers).get('cookie')).toBe('session=test');
-    const trelloUrl = new URL(String(fetch.mock.calls[1]![0]));
+    expect(fetch.mock.calls[0][1]).toMatchObject({ redirect: 'error' });
+    expect((fetch.mock.calls[0][1].headers as Headers).get('cookie')).toBe('session=test');
+    const trelloUrl = new URL(String(fetch.mock.calls[1][0]));
 
     expect(trelloUrl.pathname).toBe('/1/cards/card/attachments');
     expect(trelloUrl.searchParams.get('mimeType')).toBe('application/pdf');
     expect(trelloUrl.searchParams.get('setCover')).toBe('true');
-    expect(fetch.mock.calls[1]![1].body).toBeInstanceOf(FormData);
+    expect(fetch.mock.calls[1][1].body).toBeInstanceOf(FormData);
   });
 
   it('passes custom API calls through without allowing another origin', async () => {
@@ -230,11 +230,11 @@ describe('trello', () => {
       req: req(),
     });
 
-    const url = new URL(String(fetch.mock.calls[0]![0]));
+    const url = new URL(String(fetch.mock.calls[0][0]));
 
     expect(url.origin).toBe('https://api.trello.com');
     expect(url.searchParams.get('fields')).toBe('name');
-    expect(JSON.parse(fetch.mock.calls[0]![1].body)).toEqual({ name: 'Board' });
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ name: 'Board' });
   });
 
   it('preserves useful Trello errors', async () => {

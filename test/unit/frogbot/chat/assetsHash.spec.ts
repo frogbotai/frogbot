@@ -32,7 +32,7 @@ async function run({
   context?: Record<string, unknown>;
   operation?: 'create' | 'update';
 }) {
-  return hook!({
+  return hook({
     collection,
     data,
     req: { file, context } as unknown as FrogBotRequest,

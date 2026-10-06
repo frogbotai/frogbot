@@ -156,8 +156,8 @@ describe('agent service', () => {
 
       const manifest = await getAgentManifest({ req });
 
-      expect(manifest.agents[0]!.models).toEqual(expected);
-      expect(manifest.agents[0]!.defaultModel).toBe('fast');
+      expect(manifest.agents[0].models).toEqual(expected);
+      expect(manifest.agents[0].defaultModel).toBe('fast');
 
       expected.forEach((id) => {
         expect(
@@ -176,7 +176,7 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.reasoning).toEqual({
+    expect(manifest.agents[0].reasoning).toEqual({
       fast: [
         { key: 'low', label: 'Low' },
         { key: 'high', label: 'High' },
@@ -187,7 +187,7 @@ describe('agent service', () => {
       ],
     });
 
-    Object.entries(manifest.agents[0]!.reasoning!).forEach(([model, variants]) => {
+    Object.entries(manifest.agents[0].reasoning!).forEach(([model, variants]) => {
       variants.forEach(({ key }) => {
         expect(
           assertAgentSelection({
@@ -224,8 +224,8 @@ describe('agent service', () => {
     const selection = assertAgentSelection({ agent, config: ai, selection: {}, user: req.user });
 
     expect(agent.config.model.options).toEqual(['local/thinker', 'local/plain', 'local/writer']);
-    expect(manifest.agents[0]!.models).toEqual(['local/plain', 'local/writer']);
-    expect(manifest.agents[0]!.defaultModel).toBe('local/plain');
+    expect(manifest.agents[0].models).toEqual(['local/plain', 'local/writer']);
+    expect(manifest.agents[0].defaultModel).toBe('local/plain');
     expect(selection).toEqual({ model: 'local/plain' });
     expect(() =>
       assertAgentSelection({
@@ -262,7 +262,7 @@ describe('agent service', () => {
       ];
 
       const manifest = await getAgentManifest({ req });
-      const offered = manifest.agents[0]!.models;
+      const offered = manifest.agents[0].models;
       const rejected = candidates.filter((candidate) => !offered.includes(candidate));
 
       expect(offered).toEqual(expected);
@@ -288,8 +288,8 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.models).toEqual(['local/thinker']);
-    expect(manifest.agents[0]!.defaultModel).toBe('local/thinker');
+    expect(manifest.agents[0].models).toEqual(['local/thinker']);
+    expect(manifest.agents[0].defaultModel).toBe('local/thinker');
     expect(assertAgentSelection({ agent, config: ai, selection: {}, user: req.user })).toEqual({
       model: 'local/thinker',
     });
@@ -361,7 +361,7 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.names).toEqual({ 'my-local/thinker': 'Local Thinker' });
+    expect(manifest.agents[0].names).toEqual({ 'my-local/thinker': 'Local Thinker' });
   });
 
   it.each(['bedrock/anthropic.claude-3-haiku-20240307-v1:0', 'my-local/plain', 'smart'])(
@@ -407,8 +407,8 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.models).toEqual(['my-local/thinker']);
-    expect(manifest.agents[0]!.names).toEqual({ 'my-local/thinker': 'Local Thinker' });
+    expect(manifest.agents[0].models).toEqual(['my-local/thinker']);
+    expect(manifest.agents[0].names).toEqual({ 'my-local/thinker': 'Local Thinker' });
   });
 
   it('filters manifest models in agent order rather than allowlist order', async () => {
@@ -421,8 +421,8 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.models).toEqual(['openai/test', 'my-local/plain']);
-    expect(manifest.agents[0]!.defaultModel).toBe('openai/test');
+    expect(manifest.agents[0].models).toEqual(['openai/test', 'my-local/plain']);
+    expect(manifest.agents[0].defaultModel).toBe('openai/test');
   });
 
   it('falls back to the first allowed model when the default is blocked', async () => {
@@ -435,7 +435,7 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.defaultModel).toBe('openai/other');
+    expect(manifest.agents[0].defaultModel).toBe('openai/other');
   });
 
   it('omits agents with no allowed models', async () => {
@@ -455,7 +455,7 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(Object.keys(manifest.agents[0]!.reasoning ?? {})).toEqual(['my-local/thinker']);
+    expect(Object.keys(manifest.agents[0].reasoning ?? {})).toEqual(['my-local/thinker']);
   });
 
   it.each([
@@ -487,7 +487,7 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.models).toEqual(['openai/other']);
+    expect(manifest.agents[0].models).toEqual(['openai/other']);
   });
 
   it('accepts an offered model allowed for the user', () => {
@@ -617,12 +617,12 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(Object.keys(manifest.agents[0]!.reasoning ?? {})).toEqual(['smart', 'my-local/thinker']);
-    expect(manifest.agents[0]!.reasoning?.['my-local/thinker']).toEqual([
+    expect(Object.keys(manifest.agents[0].reasoning ?? {})).toEqual(['smart', 'my-local/thinker']);
+    expect(manifest.agents[0].reasoning?.['my-local/thinker']).toEqual([
       { key: 'low', label: 'Low' },
       { key: 'high', label: 'High' },
     ]);
-    expect(manifest.agents[0]!.reasoning?.smart).toEqual(
+    expect(manifest.agents[0].reasoning?.smart).toEqual(
       expect.arrayContaining([{ key: 'high', label: 'High' }]),
     );
   });
@@ -639,7 +639,7 @@ describe('agent service', () => {
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0]!.inputs).toEqual({
+    expect(manifest.agents[0].inputs).toEqual({
       'openai/gpt-5': ['text', 'image'],
       smart: ['text', 'image'],
       'my-local/viewer': ['text', 'image', 'pdf'],

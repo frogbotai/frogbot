@@ -407,5 +407,5 @@ export function toModelInput({
 
   let index = 0;
 
-  return mapAttachments(messages, () => slots[index++]!.replacement);
+  return mapAttachments(messages, () => slots[index++].replacement);
 }

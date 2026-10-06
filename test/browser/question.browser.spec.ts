@@ -100,7 +100,7 @@ test('answering a question persists the answer and continues the turn once', asy
 
   expect(posts).toHaveLength(2);
   expect(model.requests).toHaveLength(2);
-  expect(model.requests[1]!.messages).toContainEqual(
+  expect(model.requests[1].messages).toContainEqual(
     expect.objectContaining({ role: 'tool', tool_call_id: 'call-1' }),
   );
 

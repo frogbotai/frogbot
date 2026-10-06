@@ -65,7 +65,7 @@ describe('collection views', () => {
   it('provides a default list view', () => {
     const admin = compileCollectionViews({ collection: { slug: 'posts', fields: [] } });
 
-    expect((admin?.custom?.frogbot as any).views).toEqual([
+    expect(admin?.custom?.frogbot.views).toEqual([
       { type: 'list', slug: 'list', label: 'List', path: '' },
     ]);
     expect(admin?.components?.views?.list).toEqual({
@@ -89,7 +89,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.groupBy).toBe(true);
-    expect((admin?.custom?.frogbot as any).views[0]).toMatchObject({
+    expect(admin?.custom?.frogbot.views[0]).toMatchObject({
       groupBy: false,
       type: 'list',
     });
@@ -132,14 +132,14 @@ describe('collection views', () => {
       'by-stage',
       'map-view',
     ]);
-    expect((admin?.custom?.frogbot as any).views.map(({ slug }: any) => slug)).toEqual([
+    expect(admin?.custom?.frogbot.views.map(({ slug }: any) => slug)).toEqual([
       'list',
       'by-owner',
       'by-stage',
       'map-view',
     ]);
-    expect((admin?.custom?.frogbot as any).views[1].orderField).toBe('_order_by_owner');
-    expect((admin?.custom?.frogbot as any).views[2].orderField).toBe('_order_by_stage');
+    expect(admin?.custom?.frogbot.views[1].orderField).toBe('_order_by_owner');
+    expect(admin?.custom?.frogbot.views[2].orderField).toBe('_order_by_stage');
     expect(admin?.components?.Description).toBe('@frogbotai/next/views#CollectionViewSwitcher');
     expect(admin?.components?.beforeList).toBeUndefined();
     expect(admin?.groupBy).toBe(true);
@@ -173,8 +173,8 @@ describe('collection views', () => {
       },
     });
 
-    expect((admin?.custom?.frogbot as any).views[0]).not.toHaveProperty('filter');
-    expect((admin?.custom?.frogbot as any).views[0]).not.toHaveProperty('access');
+    expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('filter');
+    expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('access');
     expect(runtime[0]).toMatchObject({ access, filter });
     expect(admin?.components?.views?.list).toMatchObject({
       Component: '@frogbotai/next/views#BoardView',
@@ -212,7 +212,7 @@ describe('collection views', () => {
       exact: true,
       path: '/schedule',
     });
-    expect((admin?.custom?.frogbot as any).views[1]).toEqual({
+    expect(admin?.custom?.frogbot.views[1]).toEqual({
       type: 'calendar',
       slug: 'schedule',
       label: 'Calendar',
@@ -221,7 +221,7 @@ describe('collection views', () => {
       end: 'endsAt',
       color: 'status',
     });
-    expect((admin?.custom?.frogbot as any).views[1]).not.toHaveProperty('orderField');
+    expect(admin?.custom?.frogbot.views[1]).not.toHaveProperty('orderField');
   });
 
   it('validates calendar date and color fields', () => {
@@ -384,7 +384,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.Description).toBe('@frogbotai/next/views#CollectionViewSwitcher');
-    expect((admin?.custom?.frogbot as any).descriptionComponent).toBe(Description);
+    expect(admin?.custom?.frogbot.descriptionComponent).toBe(Description);
   });
 
   it('rejects duplicate normalized slugs', () => {

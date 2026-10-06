@@ -266,7 +266,7 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
     model.respond({ text: 'Painting it red and navy, matte, with a teal trim.' });
 
     await submit({
-      card: card!.sentId!,
+      card: card.sentId!,
       root,
       toolCallId: 'call-paint',
       values: { 'question-0': '1,0', 'question-0-text': 'Teal trim', 'question-1': '0' },
@@ -274,7 +274,7 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
 
     const [settled] = updates(root);
 
-    expect(settled).toMatchObject({ activityId: card!.sentId });
+    expect(settled).toMatchObject({ activityId: card.sentId });
     expect(cardInputs(settled)).toEqual([]);
     expect(JSON.stringify(cardOf(settled))).toContain('Answered by Grace Hopper');
 
@@ -315,7 +315,7 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
 
     await mention({ root, text: 'Ship it' });
 
-    const card = cards(root)[0]!.sentId!;
+    const card = cards(root)[0].sentId!;
 
     await submit({
       card,
@@ -391,14 +391,14 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
     expect(cards(root)).toHaveLength(1);
 
     await submit({
-      card: cards(root)[0]!.sentId!,
+      card: cards(root)[0].sentId!,
       root,
       toolCallId: 'call-first',
       values: { 'question-0': '1' },
     });
 
     expect(cards(root)).toHaveLength(2);
-    expect(cardOf(cards(root)[1])!.actions![0]!.data).toMatchObject({ value: 'call-second' });
+    expect(cardOf(cards(root)[1])!.actions![0].data).toMatchObject({ value: 'call-second' });
 
     await work();
 
@@ -407,7 +407,7 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
     model.respond({ text: 'A large blue shirt.' });
 
     await submit({
-      card: cards(root)[1]!.sentId!,
+      card: cards(root)[1].sentId!,
       root,
       toolCallId: 'call-second',
       values: { 'question-0': '1' },

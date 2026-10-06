@@ -83,8 +83,8 @@ describe('ChannelHost initialization cleanup', () => {
 
       try {
         await vi.waitFor(() => {
-          expect(adapters[0]!.disconnect).toHaveBeenCalledOnce();
-          expect(adapters[1]!.disconnect).toHaveBeenCalledOnce();
+          expect(adapters[0].disconnect).toHaveBeenCalledOnce();
+          expect(adapters[1].disconnect).toHaveBeenCalledOnce();
         });
 
         expect(connected).toEqual(new Set(['first', 'second']));
@@ -110,8 +110,8 @@ describe('ChannelHost initialization cleanup', () => {
         await first.host.shutdown();
       }
 
-      expect(adapters[0]!.disconnect).toHaveBeenCalledOnce();
-      expect(adapters[1]!.disconnect).toHaveBeenCalledOnce();
+      expect(adapters[0].disconnect).toHaveBeenCalledOnce();
+      expect(adapters[1].disconnect).toHaveBeenCalledOnce();
     },
   );
 });
@@ -181,7 +181,7 @@ describe('ChannelHost conversation loop', () => {
     const first = channelFixture();
     const second = channelFixture();
 
-    first.identity.mockResolvedValueOnce({ id: 'owner', collection: 'users' } as never);
+    first.identity.mockResolvedValueOnce({ id: 'owner', collection: 'users' });
 
     await first.host.initialize(false);
     await second.host.initialize(false);
@@ -192,8 +192,8 @@ describe('ChannelHost conversation loop', () => {
     expect(second.values.has('channels:support:slack:subscription:channel:thread-1')).toBe(false);
     expect(first.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
 
-    const opts = first.streamMessage.mock.calls[0]![0];
-    const chat = first.frogbot.create.mock.calls[0]![0].data;
+    const opts = first.streamMessage.mock.calls[0][0];
+    const chat = first.frogbot.create.mock.calls[0][0].data;
 
     expect(opts.overrideAccess).toBe(true);
     expect(
@@ -201,16 +201,16 @@ describe('ChannelHost conversation loop', () => {
         access: opts.channelAccess!,
         req: opts.req!,
         agentSlug: 'support',
-        chat: { ...chat, id: opts.chatId!, agent: 'support' },
+        chat: { ...chat, id: opts.chatId, agent: 'support' },
       }),
     ).toBe(true);
 
-    first.identity.mockResolvedValueOnce({ id: 'participant', collection: 'users' } as never);
+    first.identity.mockResolvedValueOnce({ id: 'participant', collection: 'users' });
 
     await first.deliver('message-2', 'channel:thread-1', { mention: false, author: 'user-2' });
-    await first.host.run(first.inputs[1]!);
+    await first.host.run(first.inputs[1]);
     await second.deliver();
-    await second.host.run(second.inputs[0]!);
+    await second.host.run(second.inputs[0]);
 
     expect(first.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
       'chat-1',
@@ -237,7 +237,7 @@ describe('ChannelHost conversation loop', () => {
       'dm-peer-2:thread-1',
     ].entries()) {
       await fixture.deliver(`message-${index}`, thread, { mention: false });
-      await fixture.host.run(fixture.inputs[index]!);
+      await fixture.host.run(fixture.inputs[index]);
     }
 
     expect(new Set(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).size).toBe(3);
@@ -251,7 +251,7 @@ describe('ChannelHost conversation loop', () => {
     await fixture.host.initialize(false);
     await fixture.deliver('message-1');
     await fixture.deliver('message-2');
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     fixture.streamMessage.mockResolvedValueOnce({
       status: 'queued',
@@ -260,7 +260,7 @@ describe('ChannelHost conversation loop', () => {
       delivery: 'queue',
     } as never);
 
-    await fixture.host.run(fixture.inputs[1]!);
+    await fixture.host.run(fixture.inputs[1]);
 
     expect(fixture.streamMessage).toHaveBeenCalledTimes(2);
     expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
@@ -275,7 +275,7 @@ describe('ChannelHost conversation loop', () => {
 
     await fixture.host.initialize(false);
     await fixture.deliver('message-1');
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     fixture.messages.push({
       id: 'message-2',
@@ -328,7 +328,7 @@ describe('ChannelHost conversation loop', () => {
 
     await fixture.host.initialize(false);
     await fixture.deliver('message-1');
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
     await fixture.host.shutdown();
 
     fixture.messages.push({
@@ -365,7 +365,7 @@ describe('ChannelHost conversation loop', () => {
     await fixture.deliver();
 
     let done = false;
-    const outcome = fixture.host.run(fixture.inputs[0]!).catch((error: unknown) => {
+    const outcome = fixture.host.run(fixture.inputs[0]).catch((error: unknown) => {
       done = true;
 
       return error;
@@ -405,7 +405,7 @@ describe('ChannelHost conversation loop', () => {
     await fixture.host.initialize(false);
     await fixture.deliver();
 
-    await expect(fixture.host.run(fixture.inputs[0]!)).rejects.toBe(error);
+    await expect(fixture.host.run(fixture.inputs[0])).rejects.toBe(error);
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
 
@@ -419,22 +419,22 @@ describe('ChannelHost conversation loop', () => {
 
     await fixture.host.initialize(false);
     await fixture.deliver();
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.frogbot.logger.info).toHaveBeenCalledOnce();
     expect(fixture.streamMessage).not.toHaveBeenCalled();
     expect(fixture.frogbot.find).not.toHaveBeenCalled();
 
     await expect(
-      fixture.host.run({ ...fixture.inputs[0]!, instanceSlug: 'missing' }),
+      fixture.host.run({ ...fixture.inputs[0], instanceSlug: 'missing' }),
     ).rejects.toThrow('unavailable');
-    await expect(fixture.host.run({ ...fixture.inputs[0]!, agentSlug: 'other' })).rejects.toThrow(
+    await expect(fixture.host.run({ ...fixture.inputs[0], agentSlug: 'other' })).rejects.toThrow(
       'unavailable',
     );
     await expect(
       fixture.host.run({
-        ...fixture.inputs[0]!,
-        thread: { ...fixture.inputs[0]!.thread, adapterName: 'other' },
+        ...fixture.inputs[0],
+        thread: { ...fixture.inputs[0].thread, adapterName: 'other' },
       }),
     ).rejects.toThrow('adapter');
 
@@ -449,11 +449,11 @@ describe('ChannelHost conversation loop', () => {
       collection: 'users',
       modelAccess: 'selected',
       models: ['openai/other'],
-    } as never);
+    });
 
     await fixture.host.initialize(false);
     await fixture.deliver();
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.frogbot.logger.info).toHaveBeenCalledExactlyOnceWith(
       { agent: 'support', piece: 'slack', author: 'user-1' },
@@ -480,15 +480,15 @@ describe('ChannelHost conversation loop', () => {
       collection: 'users',
       modelAccess: 'selected',
       models: ['openai/other'],
-    } as never);
+    });
 
     await fixture.host.initialize(false);
     await fixture.deliver();
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
-    expect(fixture.streamMessage.mock.calls[0]![0].selection).toBeUndefined();
-    expect(fixture.streamMessage.mock.calls[0]![0].req?.user).toMatchObject({
+    expect(fixture.streamMessage.mock.calls[0][0].selection).toBeUndefined();
+    expect(fixture.streamMessage.mock.calls[0][0].req?.user).toMatchObject({
       id: 'user-1',
       modelAccess: 'selected',
       models: ['openai/other'],
@@ -504,11 +504,11 @@ describe('ChannelHost conversation loop', () => {
 
     await fixture.host.initialize(false);
     await fixture.deliver();
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
-    expect(fixture.streamMessage.mock.calls[0]![0].req?.user).toBeNull();
-    expect(fixture.streamMessage.mock.calls[0]![0].selection).toBeUndefined();
+    expect(fixture.streamMessage.mock.calls[0][0].req?.user).toBeNull();
+    expect(fixture.streamMessage.mock.calls[0][0].selection).toBeUndefined();
     expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
     expect(fixture.frogbot.logger.info).not.toHaveBeenCalled();
 

@@ -84,7 +84,7 @@ describe('booted TypeSafe evaluation', () => {
       { timeout: 5_000, interval: 25 },
     );
 
-    return rows[0]!;
+    return rows[0];
   }
 
   async function createUser() {

@@ -33,4 +33,4 @@ export const LinkFeature = (
   upstreamLinkFeature({
     ...props,
     fields: adaptFields(props?.fields),
-  } as UpstreamLinkFeatureServerProps);
+  });

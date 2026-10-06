@@ -113,7 +113,7 @@ function sanitizeVirtualPath(field: Field): Field {
   return {
     ...field,
     admin: { ...admin, components: { ...admin?.components, Cell: FIELD_CELL_PATH } },
-  } as Field;
+  };
 }
 
 function sanitizeFields(

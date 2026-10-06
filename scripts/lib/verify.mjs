@@ -9,6 +9,7 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  utimesSync,
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -83,7 +84,9 @@ export function changedFiles(root) {
 
 // The patch-id of the working tree against the merge base with local `main`, untracked files
 // included, so it equals `git patch-id` of `main...HEAD` once the same change is committed. The
-// diff is staged into a throwaway copy of the index, so the real index is never touched.
+// diff is staged into a throwaway copy of the index, so the real index is never touched. The copy
+// keeps the index's times: git's racy-git check compares them with each file's mtime, and a fresh
+// mtime would let a same-size rewrite from the same second pass as unchanged.
 export function worktreePatchId(root) {
   const base = git(root, ['merge-base', MAIN, 'HEAD']).trim();
   const scratch = mkdtempSync(path.join(os.tmpdir(), 'frogbot-verify-'));
@@ -91,7 +94,12 @@ export function worktreePatchId(root) {
   const real = path.resolve(root, git(root, ['rev-parse', '--git-path', 'index']).trim());
 
   try {
-    if (existsSync(real)) copyFileSync(real, index);
+    if (existsSync(real)) {
+      const { atime, mtime } = statSync(real);
+
+      copyFileSync(real, index);
+      utimesSync(index, atime, mtime);
+    }
 
     const env = { ...ENV, GIT_INDEX_FILE: index };
     const run = (args, input) =>

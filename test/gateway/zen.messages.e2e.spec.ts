@@ -19,10 +19,7 @@
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import {
-  buildProviderRegistry,
-  type ProviderRegistry,
-} from '../../packages/gateway/src/providers/registry.js';
+import { buildProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse, type SseFrame } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { describeLive } from '../live/live.js';
@@ -37,7 +34,7 @@ const TEST_TIMEOUT = 90_000;
 function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-  }) as ProviderRegistry;
+  });
   return createApp({ registry });
 }
 
@@ -276,7 +273,7 @@ describeLive(
         // message_start first, message_stop last.
         expect(names[0]).toBe('message_start');
         expect(names[names.length - 1]).toBe('message_stop');
-        const startData = events[0]!.data;
+        const startData = events[0].data;
         expect(typeof startData.message?.id).toBe('string');
 
         // Exactly one message_delta, carrying a stop_reason, before message_stop.
@@ -285,7 +282,7 @@ describeLive(
           .filter((i) => i >= 0);
         expect(deltaIndices).toHaveLength(1);
         expect(deltaIndices[0]).toBe(names.length - 2);
-        const messageDelta = events[deltaIndices[0]!]!.data;
+        const messageDelta = events[deltaIndices[0]].data;
         expect(messageDelta.delta?.stop_reason).toBeTruthy();
         expect(messageDelta.usage?.output_tokens).toBeGreaterThan(0);
 

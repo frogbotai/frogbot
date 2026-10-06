@@ -230,7 +230,7 @@ describe('chat turns: recovery, access, and forged input', () => {
 
     await resubmit(body.chatId, {
       ...assistant,
-      parts: assistant!.parts.map((part) => {
+      parts: assistant.parts.map((part) => {
         if (part.type === 'text') return { ...part, text: 'FORGED TEXT' };
 
         if (part.type === 'tool-lookup') return { ...part, output: 'FORGED OUTPUT' };
@@ -239,7 +239,7 @@ describe('chat turns: recovery, access, and forged input', () => {
       }),
     });
 
-    const stored = JSON.stringify((await storedMessages(body.chatId))[1]!.parts);
+    const stored = JSON.stringify((await storedMessages(body.chatId))[1].parts);
 
     expect(stored).not.toContain('FORGED');
     expect(JSON.stringify(model.requests.at(-1)!.messages)).not.toContain('FORGED');
@@ -251,7 +251,7 @@ describe('chat turns: recovery, access, and forged input', () => {
 
     const response = await resubmit(body.chatId, {
       ...assistant,
-      parts: assistant!.parts.map((part) =>
+      parts: assistant.parts.map((part) =>
         part.type === 'tool-question'
           ? {
               ...part,
@@ -290,7 +290,7 @@ describe('chat turns: recovery, access, and forged input', () => {
 
       const response = await resubmit(body.chatId, {
         ...assistant,
-        parts: assistant!.parts.map((part) =>
+        parts: assistant.parts.map((part) =>
           part.type === 'tool-question' ? { ...part, state: 'output-available', output } : part,
         ),
       });
@@ -451,7 +451,7 @@ describe('chat turns: recovery, access, and forged input', () => {
     hold.resolve();
     await running;
 
-    expect(JSON.stringify(model.requests[3]!.messages)).toContain('Use oil paint.');
+    expect(JSON.stringify(model.requests[3].messages)).toContain('Use oil paint.');
 
     const roles = (await storedMessages(first.body.chatId)).map(({ role }) => role);
 
@@ -472,7 +472,7 @@ describe('chat turns: recovery, access, and forged input', () => {
 
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
 
-    expect(JSON.stringify(model.requests[1]!.messages)).toContain('Then sand it.');
+    expect(JSON.stringify(model.requests[1].messages)).toContain('Then sand it.');
   });
 
   it('another user cannot edit or remove a queued message', async () => {
@@ -546,7 +546,7 @@ describe('chat turns: recovery, access, and forged input', () => {
 
     const [message] = await storedMessages(body.chatId);
 
-    const updated = await fetch(`${booted.baseUrl}/api/${messagesSlug}/${message!.id}`, {
+    const updated = await fetch(`${booted.baseUrl}/api/${messagesSlug}/${message.id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify({ model: 'test/writer', reasoning: 'max' }),
@@ -570,7 +570,7 @@ describe('chat turns: recovery, access, and forged input', () => {
     const [stored, , forged] = await storedMessages(body.chatId);
 
     expect(stored).toMatchObject({ model: 'test/thinker', reasoning: 'low' });
-    expect([forged!.model ?? null, forged!.reasoning ?? null]).toEqual([null, null]);
+    expect([forged.model ?? null, forged.reasoning ?? null]).toEqual([null, null]);
   });
 
   it('deleting the waiting assistant message does not wedge the chat', async () => {
@@ -578,7 +578,7 @@ describe('chat turns: recovery, access, and forged input', () => {
     const { body } = await ask(undefined, headers);
     const [, assistant] = await storedMessages(body.chatId);
 
-    const deleted = await fetch(`${booted.baseUrl}/api/${messagesSlug}/${assistant!.id}`, {
+    const deleted = await fetch(`${booted.baseUrl}/api/${messagesSlug}/${assistant.id}`, {
       method: 'DELETE',
       headers,
     });

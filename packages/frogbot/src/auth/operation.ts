@@ -65,7 +65,7 @@ export function attachSessionPayload(req: PayloadRequest): void {
               return target.updateOne(args);
             }
             operation.signal.throwIfAborted();
-            if (payload.collections[operation.collectionSlug]!.config.auth.useSessions) {
+            if (payload.collections[operation.collectionSlug].config.auth.useSessions) {
               await requireSessionTransaction(args.req as PayloadRequest);
             }
             if (
@@ -407,7 +407,7 @@ export async function withAuthOperation<T>({
       delete payloadReq.transactionID;
       operation.transaction = true;
       try {
-        const collection = payloadReq.payload.collections[collectionSlug]!.config;
+        const collection = payloadReq.payload.collections[collectionSlug].config;
         if (kind === 'refresh' && payloadReq.user) {
           if (payloadReq.user.collection !== collectionSlug) throw new Forbidden(payloadReq.t);
           if (collection.auth.useSessions && !collection.auth.disableLocalStrategy) {

@@ -13,13 +13,13 @@ const Conversations: CollectionConfig = {
   slug: 'conversations',
   chat: true,
   fields: [],
-} as never;
+};
 
 const Turns: CollectionConfig = {
   slug: 'turns',
   message: true,
   fields: [],
-} as never;
+};
 
 export default await buildTestConfig({
   collections: [Users, Conversations, Turns],

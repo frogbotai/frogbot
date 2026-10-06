@@ -218,7 +218,7 @@ export async function startTeamsServer() {
     const nativeFetch = globalThis.fetch;
     const nativeRequest = https.request.bind(https);
 
-    vi.stubGlobal('fetch', ((input: string | URL | Request, init?: RequestInit) => {
+    vi.stubGlobal('fetch', (input: string | URL | Request, init?: RequestInit) => {
       const target = new URL(input instanceof Request ? input.url : input.toString());
 
       if (target.hostname !== 'login.microsoftonline.com') return nativeFetch(input, init);
@@ -226,7 +226,7 @@ export async function startTeamsServer() {
       const local = `${url}${target.pathname}${target.search}`;
 
       return nativeFetch(input instanceof Request ? new Request(local, input) : local, init);
-    }) as typeof fetch);
+    });
 
     vi.spyOn(https, 'request').mockImplementation(((
       options: RequestOptions,

@@ -25,7 +25,7 @@ const message = { to: 'recipient@example.com', subject: 'Hello', text: 'Welcome'
 const runtimes: FrogBot[] = [];
 
 function requestBody(index = 0) {
-  return JSON.parse(fetch.mock.calls[index]![1]!.body as string);
+  return JSON.parse(fetch.mock.calls[index][1]!.body as string);
 }
 
 async function bootRuntime(overrides: Partial<FrogBotConfig>) {
@@ -141,7 +141,7 @@ describe('piece-backed transactional email', () => {
       defaultFromName: 'FrogBot',
     });
     expect(fetch).toHaveBeenCalledOnce();
-    expect(fetch.mock.calls[0]![1]).toMatchObject({
+    expect(fetch.mock.calls[0][1]).toMatchObject({
       method: 'POST',
       headers: { Authorization: 'Bearer email-factory-key', 'Content-Type': 'application/json' },
     });
@@ -247,7 +247,7 @@ describe('piece-backed transactional email', () => {
 
     expect(token).toMatch(/^[a-f0-9]+$/);
     expect(fetch).toHaveBeenCalledOnce();
-    expect(fetch.mock.calls[0]![1]!.headers).toMatchObject({
+    expect(fetch.mock.calls[0][1]!.headers).toMatchObject({
       Authorization: 'Bearer email-factory-key',
     });
     expect(requestBody()).toMatchObject({
@@ -258,7 +258,7 @@ describe('piece-backed transactional email', () => {
 
     await booted.payload.resetPassword({
       collection: usersSlug,
-      data: { token: token!, password: 'new-password' },
+      data: { token, password: 'new-password' },
     });
 
     const login = await booted.payload.login({
@@ -435,11 +435,11 @@ describe('email piece boot and runtime isolation', () => {
     expect(firstDeliveries).toHaveLength(3);
     expect(secondDeliveries).toHaveLength(1);
     expect(new Set(firstDeliveries.map(({ client }) => client)).size).toBe(1);
-    expect(firstDeliveries[0]!.client).not.toBe(secondDeliveries[0]!.client);
+    expect(firstDeliveries[0].client).not.toBe(secondDeliveries[0].client);
     expect(firstDeliveries.every(({ req }) => req.payload === firstPayload && !req.user)).toBe(
       true,
     );
-    expect(secondDeliveries[0]!.req.payload).toBe(secondPayload);
+    expect(secondDeliveries[0].req.payload).toBe(secondPayload);
     expect(requestBody().from).toBe('"transactional" <sender@example.com>');
   });
 

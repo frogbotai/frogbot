@@ -347,12 +347,12 @@ describe('Teams question hooks', () => {
       });
 
       expect(server.cards()).toHaveLength(1);
-      expect(cardOf(server.cards()[0])!.actions![0]!.data).toEqual({
+      expect(cardOf(server.cards()[0])!.actions![0].data).toEqual({
         actionId: 'frogbot.question.submit',
         value: 'call-1',
       });
       expect(rendered).toEqual([
-        { messages: [{ id: server.cards()[0]!.sentId, postedAt: '' }], calls: ['call-1'] },
+        { messages: [{ id: server.cards()[0].sentId, postedAt: '' }], calls: ['call-1'] },
       ]);
     });
 
@@ -380,7 +380,7 @@ describe('Teams question hooks', () => {
       const card = cardOf(server.cards()[0]);
 
       expect(rendered).toEqual([
-        { messages: [{ id: server.cards()[0]!.sentId, postedAt: '' }], calls: ['call-1'] },
+        { messages: [{ id: server.cards()[0].sentId, postedAt: '' }], calls: ['call-1'] },
       ]);
       expect(cardInputs(server.cards()[0])).toEqual([]);
       expect(card!.actions).toEqual([
@@ -570,7 +570,7 @@ describe('Teams question hooks', () => {
         interaction: action({ from: members.guest }),
       });
 
-      expect(server.targeted()[0]!.body.text).toBe(
+      expect(server.targeted()[0].body.text).toBe(
         "FrogBot couldn't match your Teams account to a user, so you can't answer this question.",
       );
     });

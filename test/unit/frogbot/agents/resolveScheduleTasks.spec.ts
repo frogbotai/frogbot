@@ -73,7 +73,7 @@ describe('agent schedule tasks', () => {
     await expect(
       beforeSchedule!({
         defaultBeforeSchedule,
-        jobStats: {} as never,
+        jobStats: {},
         queueable: {} as never,
         req: {} as never,
       }),

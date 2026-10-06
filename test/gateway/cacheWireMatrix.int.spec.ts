@@ -113,7 +113,7 @@ function buildCacheApp(args: {
     }
     return Response.json(args.successBody);
   };
-  const provider = args.providerFactory(fetch as typeof globalThis.fetch);
+  const provider = args.providerFactory(fetch);
   const registry = { [args.providerName]: provider } as ProviderRegistry;
   return { app: createApp({ registry }), requests };
 }
@@ -145,7 +145,7 @@ const providers = [
     successBody: successBodies.openai,
     factory: (fetch: typeof globalThis.fetch) => {
       const provider = createOpenAI({ apiKey: 'test', fetch });
-      return { ...provider, languageModel: provider.chat } as ProviderRegistry[string];
+      return { ...provider, languageModel: provider.chat };
     },
   },
   {
@@ -412,7 +412,7 @@ describe('cache wire matrix', () => {
 
     expect(status, JSON.stringify(body)).toBe(200);
     expect(requests).toHaveLength(1);
-    wireCase.assertBody(requests[0]!.body);
+    wireCase.assertBody(requests[0].body);
   });
 });
 

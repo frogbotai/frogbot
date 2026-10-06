@@ -146,7 +146,7 @@ describe('crypto', () => {
     });
     expect(fetch).toHaveBeenCalledTimes(1);
 
-    const fetchOptions = fetch.mock.calls[0]![1];
+    const fetchOptions = fetch.mock.calls[0][1];
 
     expect(fetchOptions).toMatchObject({ redirect: 'error' });
     expect(new Headers(fetchOptions?.headers).get('authorization')).toBe('Bearer token');
@@ -193,7 +193,7 @@ describe('crypto', () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
 
-    const fetchOptions = fetch.mock.calls[0]![1];
+    const fetchOptions = fetch.mock.calls[0][1];
 
     expect(fetchOptions).toMatchObject({ redirect: 'error' });
     expect([...new Headers(fetchOptions?.headers)]).toEqual([]);

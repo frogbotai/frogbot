@@ -165,7 +165,7 @@ describe('capture hooks', () => {
       sampleRate: 1,
       maxBodyBytes: 30,
       collectionSlug: 'captures',
-      storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} } as never,
+      storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} },
     });
     const base = {
       requestId: 'request-1',
@@ -271,7 +271,7 @@ describe('capture hooks', () => {
       sampleRate: 1,
       maxBodyBytes: 1_000,
       collectionSlug: 'captures',
-      storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} } as never,
+      storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} },
     });
     const base = {
       requestId: 'request-large',

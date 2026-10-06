@@ -18,7 +18,7 @@ export function readCommand(body: string): GithubCommand {
 
   if (!match) return { kind: 'none' };
 
-  const kind = match[1]!.toLowerCase() as 'answer' | 'dismiss';
+  const kind = match[1].toLowerCase() as 'answer' | 'dismiss';
 
   return { kind, rest: text.slice(match[0].length).trim() };
 }
@@ -34,7 +34,7 @@ export function readAnswer({
 
   const quoted = text.length > 1 ? QUOTED.exec(text) : null;
 
-  if (quoted) return customAnswer({ item, text: quoted[1]!.trim(), quoted: true });
+  if (quoted) return customAnswer({ item, text: quoted[1].trim(), quoted: true });
 
   if (OPENING_QUOTE.test(text) && item.custom) {
     return { reason: 'Put your whole answer between quotes, for example /answer "Teal".' };
@@ -74,7 +74,7 @@ function selectedAnswer({
     return { reason: `“${item.header}” takes one answer. Reply with a single option number.` };
   }
 
-  return { selected: indexes.map((index) => item.options[index - 1]!.label) };
+  return { selected: indexes.map((index) => item.options[index - 1].label) };
 }
 
 function customAnswer({

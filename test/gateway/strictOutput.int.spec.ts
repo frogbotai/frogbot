@@ -42,7 +42,7 @@ function scriptedModel(replies: Reply[]) {
   const calls: LanguageModelV4CallOptions[] = [];
   const next = (options: LanguageModelV4CallOptions) => {
     calls.push(options);
-    return replies[Math.min(calls.length, replies.length) - 1]!;
+    return replies[Math.min(calls.length, replies.length) - 1];
   };
 
   const model: LanguageModelV4 = {
@@ -156,11 +156,11 @@ describe('gateway strict structured output', () => {
     expect(body.choices?.[0]?.message.content).toBe(GOOD);
     expect(body.usage).toMatchObject({ prompt_tokens: 20, completion_tokens: 10 });
     expect(calls).toHaveLength(2);
-    expect(calls[1]!.prompt.at(-2)).toEqual({
+    expect(calls[1].prompt.at(-2)).toEqual({
       role: 'assistant',
       content: [{ type: 'text', text: BAD }],
     });
-    expect(lastUserText(calls[1]!)).toContain('total: Invalid input: expected number');
+    expect(lastUserText(calls[1])).toContain('total: Invalid input: expected number');
   });
 
   it('fails with structured_output_invalid when the retry breaks the schema too', async () => {

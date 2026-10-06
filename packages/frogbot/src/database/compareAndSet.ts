@@ -67,7 +67,7 @@ export async function compareAndSet({
   }
 
   const table = adapter.tables[tableName];
-  const fields = adapter.payload.collections[collection]!.config.flattenedFields;
+  const fields = adapter.payload.collections[collection].config.flattenedFields;
   const query = buildQuery({ adapter, tableName, fields, where });
 
   if (query.joins.length) {

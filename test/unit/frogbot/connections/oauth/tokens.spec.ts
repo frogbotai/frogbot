@@ -44,7 +44,7 @@ describe('OAuth token and account transport', () => {
       refresh_token: 'refresh',
       vendor: { tenant: ['one'] },
     });
-    const [url, request] = fetch.mock.calls[0]! as unknown as [string, RequestInit];
+    const [url, request] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://provider.test/token');
     expect(Object.fromEntries(request.body as URLSearchParams)).toEqual({
       grant_type: 'authorization_code',
@@ -81,7 +81,7 @@ describe('OAuth token and account transport', () => {
       verifier: 'v'.repeat(43),
     });
 
-    const [, request] = fetch.mock.calls[0]! as unknown as [string, RequestInit];
+    const [, request] = fetch.mock.calls[0] as unknown as [string, RequestInit];
 
     expect(new Headers(request.headers).get('authorization')).toBe(
       `Basic ${Buffer.from('client%3Aid+%25%C3%A9:secret%3A%25+snow%E2%98%83').toString('base64')}`,
@@ -355,7 +355,7 @@ describe('OAuth token and account transport', () => {
       new_vendor: true,
       expires_in: 3600,
     });
-    const [, request] = fetch.mock.calls[0]! as unknown as [string, RequestInit];
+    const [, request] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(Object.fromEntries(request.body as URLSearchParams)).toEqual({
       grant_type: 'refresh_token',
       refresh_token: 'refresh',
@@ -401,7 +401,7 @@ describe('OAuth token and account transport', () => {
       tokens: { access_token: 'old', refresh_token: 'refresh' },
     });
 
-    const [, request] = fetch.mock.calls[0]! as unknown as [string, RequestInit];
+    const [, request] = fetch.mock.calls[0] as unknown as [string, RequestInit];
 
     expect(new Headers(request.headers).get('authorization')).toBe(
       `Basic ${Buffer.from('client%3Aid+%25%C3%A9:secret%3A%25+snow%E2%98%83').toString('base64')}`,

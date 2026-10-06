@@ -117,7 +117,7 @@ describe('channel gateway listener', () => {
 
     await expect(firstRun).resolves.toBe(true);
 
-    expect(starts[0]!.webhookUrl).toBe('https://example.com/api/webhooks/discord');
+    expect(starts[0].webhookUrl).toBe('https://example.com/api/webhooks/discord');
 
     const takeoverController = new AbortController();
     const takeover = second.runGatewayListener({

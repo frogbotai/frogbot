@@ -326,7 +326,7 @@ describe('native Monday', () => {
         req,
       }),
     ).resolves.toEqual({ id: 'asset-1', name: 'note.txt' });
-    const [url, init] = fetchMock.mock.calls[0]!;
+    const [url, init] = fetchMock.mock.calls[0];
     const form = init?.body as FormData;
 
     expect(url).toBe('https://api.monday.com/v2/file');

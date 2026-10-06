@@ -18,15 +18,15 @@ expectTypeOf(automatic).toEqualTypeOf<FrogBotSDK<GeneratedTypes>>();
 export async function automaticTyping() {
   const pages = await automatic.find({ collection: 'sdk-pages' });
 
-  expectTypeOf(pages.docs[0]!).toEqualTypeOf<SdkPage>();
-  expectTypeOf(pages.docs[0]!.title).toEqualTypeOf<string>();
+  expectTypeOf(pages.docs[0]).toEqualTypeOf<SdkPage>();
+  expectTypeOf(pages.docs[0].title).toEqualTypeOf<string>();
   expectTypeOf(pages.totalDocs).toEqualTypeOf<number>();
 }
 
 export async function explicitTyping() {
   const pages = await explicit.find({ collection: 'sdk-pages' });
 
-  expectTypeOf(pages.docs[0]!).toEqualTypeOf<SdkPage>();
+  expectTypeOf(pages.docs[0]).toEqualTypeOf<SdkPage>();
 }
 
 export async function misspelledSlugs() {
@@ -56,8 +56,8 @@ export async function misspelledSlugs() {
 export async function selectNarrowsTheResult() {
   const pages = await automatic.find({ collection: 'sdk-pages', select: { title: true } });
 
-  expectTypeOf(pages.docs[0]!).toHaveProperty('title');
-  expectTypeOf(pages.docs[0]!).not.toHaveProperty('slug');
+  expectTypeOf(pages.docs[0]).toHaveProperty('title');
+  expectTypeOf(pages.docs[0]).not.toHaveProperty('slug');
 }
 
 export async function disableErrors() {
@@ -91,7 +91,7 @@ export async function authAndVersions() {
   const restored = await automatic.restoreVersion({ collection: 'sdk-pages', id: 'v1' });
 
   expectTypeOf(login.user).toEqualTypeOf<SdkUser>();
-  expectTypeOf(versions.docs[0]!.version).toEqualTypeOf<SdkPage>();
+  expectTypeOf(versions.docs[0].version).toEqualTypeOf<SdkPage>();
   expectTypeOf(restored).toEqualTypeOf<SdkPage>();
 }
 
@@ -105,7 +105,7 @@ export async function updateAndDelete() {
   const removed = await automatic.delete({ collection: 'sdk-pages', id: 1 });
 
   expectTypeOf(one).toEqualTypeOf<SdkPage>();
-  expectTypeOf(many.docs[0]!).toEqualTypeOf<SdkPage>();
+  expectTypeOf(many.docs[0]).toEqualTypeOf<SdkPage>();
   expectTypeOf(removed).toEqualTypeOf<SdkPage>();
 
   // @ts-expect-error title must be a string
@@ -162,7 +162,7 @@ export async function searchHits() {
     query: { text: 'x' },
   });
 
-  expectTypeOf(result.hits[0]!.doc).toEqualTypeOf<SdkPage>();
+  expectTypeOf(result.hits[0].doc).toEqualTypeOf<SdkPage>();
 }
 
 export async function searchManyResultsFollowTheRequestOrder() {
@@ -185,9 +185,9 @@ export async function searchManyResultsFollowTheRequestOrder() {
   const [pages, media] = results;
 
   expectTypeOf(pages.collection).toEqualTypeOf<'sdk-pages'>();
-  expectTypeOf(pages.hits[0]!.doc).toEqualTypeOf<SdkPage>();
+  expectTypeOf(pages.hits[0].doc).toEqualTypeOf<SdkPage>();
   expectTypeOf(media.collection).toEqualTypeOf<'sdk-media'>();
-  expectTypeOf(media.hits[0]!.doc).toEqualTypeOf<SdkMedia>();
+  expectTypeOf(media.hits[0].doc).toEqualTypeOf<SdkMedia>();
 }
 
 export async function searchManyCollectionNarrowsTheDocument() {
@@ -201,7 +201,7 @@ export async function searchManyCollectionNarrowsTheDocument() {
 
   for (const group of results) {
     if (group.collection === 'sdk-media') {
-      expectTypeOf(group.hits[0]!.doc).toEqualTypeOf<SdkMedia>();
+      expectTypeOf(group.hits[0].doc).toEqualTypeOf<SdkMedia>();
     }
   }
 }
@@ -213,7 +213,7 @@ export async function searchManyDocumentsKeepTheirCollectionType() {
   });
 
   // @ts-expect-error media hits hold media documents
-  const page: SdkPage = results[0].hits[0]!.doc;
+  const page: SdkPage = results[0].hits[0].doc;
 
   return page;
 }
@@ -254,7 +254,7 @@ expectTypeOf<SearchManyPagesAndMedia[1]['where']>().toEqualTypeOf<
 
 export async function fieldsAreNotAny() {
   const messages = await automatic.find({ collection: 'messages' });
-  const message = messages.docs[0]!;
+  const message = messages.docs[0];
 
   expectTypeOf(message).toEqualTypeOf<Message>();
   expectTypeOf(message.parts).not.toBeAny();

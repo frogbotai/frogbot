@@ -42,7 +42,7 @@ function call(input: QuestionInput = color, toolCallId = 'call-1'): ChannelQuest
 }
 
 function single(overrides: Partial<QuestionInput['questions'][number]> = {}): QuestionInput {
-  return { questions: [{ ...color.questions[0]!, ...overrides }] };
+  return { questions: [{ ...color.questions[0], ...overrides }] };
 }
 
 const postedAt = '2026-09-25T12:00:00.000Z';

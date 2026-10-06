@@ -62,13 +62,13 @@ function makeMockModel(): LanguageModelV4 {
     doStream: async () => ({
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+          controller.enqueue({ type: 'text-start', id: 'text-0' });
           controller.enqueue({
             type: 'text-delta',
             id: 'text-0',
             delta: 'hi',
-          } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
+          });
+          controller.enqueue({ type: 'text-end', id: 'text-0' });
           controller.enqueue({
             type: 'finish',
             finishReason: 'stop',

@@ -394,10 +394,10 @@ describe('Slack questions with SQLite persistence', () => {
     const thread = '1.000001';
     const card = await ask({ thread, toolCallId: 'call-1' });
 
-    expect(JSON.stringify(cards(thread)[0]!.body.blocks)).toContain(
+    expect(JSON.stringify(cards(thread)[0].body.blocks)).toContain(
       'frogbot:question:choose:call-1:0:0',
     );
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
 
     model.respond({ text: 'Painting it red.' });
 
@@ -598,7 +598,7 @@ describe('Slack questions with SQLite persistence', () => {
       'slack',
       click({
         actionId: 'frogbot:question:choose:call-a:0:1',
-        card: first[0]!.ts,
+        card: first[0].ts,
         thread,
         value: '1',
       }),
@@ -607,7 +607,7 @@ describe('Slack questions with SQLite persistence', () => {
     const second = cards(thread);
 
     expect(second).toHaveLength(2);
-    expect(JSON.stringify(second[1]!.body.blocks)).toContain('frogbot:question:choose:call-b:0:1');
+    expect(JSON.stringify(second[1].body.blocks)).toContain('frogbot:question:choose:call-b:0:1');
     expect(await continuations(thread)).toEqual([]);
 
     model.respond({ text: 'Blue, large.' });
@@ -616,7 +616,7 @@ describe('Slack questions with SQLite persistence', () => {
       'slack',
       click({
         actionId: 'frogbot:question:choose:call-b:0:1',
-        card: second[1]!.ts,
+        card: second[1].ts,
         thread,
         value: '1',
       }),
@@ -746,8 +746,8 @@ describe('Slack questions with SQLite persistence', () => {
     await host.run(JSON.parse(JSON.stringify(promotion)));
 
     expect(JSON.stringify(slackCalls.map(({ body }) => body))).toContain('Replying to your note.');
-    expect(JSON.stringify(model.requests[1]!.messages)).not.toContain('Make it matte');
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Make it matte');
+    expect(JSON.stringify(model.requests[1].messages)).not.toContain('Make it matte');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Make it matte');
   });
 
   it('runs a message queued behind a dismissed question as a channel job', async () => {

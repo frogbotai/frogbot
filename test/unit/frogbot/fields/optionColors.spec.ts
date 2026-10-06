@@ -21,7 +21,7 @@ function status(overrides: Partial<SelectField> = {}): SelectField {
       { label: 'Done', value: 'done', color: 'green' },
     ],
     ...overrides,
-  } as SelectField;
+  };
 }
 
 function priority(): RadioField {
@@ -45,9 +45,7 @@ function config({ blocks, fields }: { blocks?: Block[]; fields: Field[] }): Frog
 }
 
 function sanitizeOne(field: Field): Field & { admin?: Record<string, any> } {
-  return sanitizeVectorFields({ collection: 'tasks', fields: [field] })[0] as Field & {
-    admin?: Record<string, any>;
-  };
+  return sanitizeVectorFields({ collection: 'tasks', fields: [field] })[0];
 }
 
 function findField(fields: unknown, name: string): Record<string, any> | undefined {

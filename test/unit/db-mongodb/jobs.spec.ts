@@ -130,7 +130,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
           where: { queue: { equals: 'work' } },
           data: { processing: true },
           ...args,
-        } as Parameters<MongooseAdapter['updateJobs']>[0]);
+        });
 
         const context = getJobLeaseContext()!;
 
@@ -459,11 +459,11 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
 
     expect(transactionID).toBeTruthy();
 
-    await claim({ id, req: { transactionID: Promise.resolve(transactionID!) } });
+    await claim({ id, req: { transactionID: Promise.resolve(transactionID) } });
 
     expect(await read(id)).toMatchObject({ processing: false });
 
-    await adapter.rollbackTransaction(transactionID!);
+    await adapter.rollbackTransaction(transactionID);
 
     expect(await read(id)).toMatchObject({ processing: false });
 
@@ -477,12 +477,12 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
       ids: [id],
       owner: claimed.owner,
       leaseDuration: 600_000,
-      req: { payload, transactionID: Promise.resolve(leaseTransaction!) } as Parameters<
+      req: { payload, transactionID: Promise.resolve(leaseTransaction) } as Parameters<
         typeof renewJobLease
       >[0]['req'],
     });
 
-    await adapter.rollbackTransaction(leaseTransaction!);
+    await adapter.rollbackTransaction(leaseTransaction);
 
     expect((await read(id))!.leaseUntil).toEqual(originalExpiry);
   });

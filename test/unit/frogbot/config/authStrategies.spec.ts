@@ -166,7 +166,7 @@ describe('custom authentication strategy adapters', () => {
     const cached = await getFrogBot({ config: configB });
 
     expect(result.user).toBe(user);
-    expect(authenticate.mock.calls[0]![0].frogbot).toBe(frogbot);
+    expect(authenticate.mock.calls[0][0].frogbot).toBe(frogbot);
     expect(frogbot.config).toBe(configB);
     expect(cached).toBe(frogbot);
     expect(getCachedFrogBot()).toBe(frogbot);
@@ -202,7 +202,7 @@ describe('custom authentication strategy adapters', () => {
       req,
       strategyName: 'token',
     });
-    expect(authenticate.mock.calls[0]![0]).not.toHaveProperty('payload');
+    expect(authenticate.mock.calls[0][0]).not.toHaveProperty('payload');
     expect(req).toHaveProperty('frogbot', frogbot);
     expect(Reflect.get(req, runtimeSymbol)).toBe(payload);
     expect(init).not.toHaveBeenCalled();
@@ -236,14 +236,14 @@ describe('custom authentication strategy adapters', () => {
         expect(req.payload).toBe(scoped);
         expect(req.frogbot).toBe(frogbot);
         expect(Reflect.get(req, runtimeSymbol)).toBe(payload);
-        expect(authenticate.mock.calls[0]![0].req).toBe(req);
+        expect(authenticate.mock.calls[0][0].req).toBe(req);
 
         return authenticated;
       },
     });
 
     expect(result.user).toBe(user);
-    expect(authenticate.mock.calls[0]![0].frogbot).toBe(frogbot);
+    expect(authenticate.mock.calls[0][0].frogbot).toBe(frogbot);
     expect(req.payload).toBe(payload);
     expect(init).not.toHaveBeenCalled();
     expect(getCachedFrogBot()).toBe(frogbot);
@@ -306,7 +306,7 @@ describe('custom authentication strategy adapters', () => {
     expect(authenticated).toHaveBeenCalledOnce();
     expect(unused).not.toHaveBeenCalled();
     expect(frogbot.logger.error).not.toHaveBeenCalled();
-    expect(anonymous.mock.calls[0]![0]).toEqual({
+    expect(anonymous.mock.calls[0][0]).toEqual({
       canSetHeaders: false,
       frogbot,
       headers: expect.any(Headers),
@@ -324,7 +324,7 @@ describe('custom authentication strategy adapters', () => {
     const strategy = Object.freeze({ name: 'shared', authenticate });
     const strategies = [strategy];
     const input = makeConfig(strategies);
-    const auth = input.collections[0]!.auth;
+    const auth = input.collections[0].auth;
     const first = await buildConfig(input);
     const second = await buildConfig(input);
     const firstPayload = await makePayload(first);
@@ -339,11 +339,11 @@ describe('custom authentication strategy adapters', () => {
 
     expect(results.map((result) => result.user)).toEqual([null, null]);
     expect(input).toEqual(makeConfig([strategy]));
-    expect(input.collections[0]!.auth).toBe(auth);
+    expect(input.collections[0].auth).toBe(auth);
     expect(strategies).toEqual([strategy]);
     expect(strategy.authenticate).toBe(authenticate);
-    expect(firstPayload.authStrategies[0]!.authenticate).not.toBe(authenticate);
-    expect(secondPayload.authStrategies[0]!.authenticate).not.toBe(authenticate);
+    expect(firstPayload.authStrategies[0].authenticate).not.toBe(authenticate);
+    expect(secondPayload.authStrategies[0].authenticate).not.toBe(authenticate);
     expect(authenticate).toHaveBeenCalledTimes(2);
     expect(firstFrogBot.logger.error).toHaveBeenCalledOnce();
     expect(secondFrogBot.logger.error).toHaveBeenCalledOnce();

@@ -92,9 +92,9 @@ describe('Telegram adapter thread routing', () => {
     plain.process({ message: recorded.anchoredReply });
     routed.process({ message: recorded.anchoredReply });
 
-    expect(plain.chat.processMessage.mock.calls[0]![1]).toBe('telegram:-100123:50');
-    expect(routed.chat.processMessage.mock.calls[0]![1]).toBe('telegram:-100123');
-    expect(routed.chat.processMessage.mock.calls[0]![2].replyTo.id).toBe('-100123:50');
+    expect(plain.chat.processMessage.mock.calls[0][1]).toBe('telegram:-100123:50');
+    expect(routed.chat.processMessage.mock.calls[0][1]).toBe('telegram:-100123');
+    expect(routed.chat.processMessage.mock.calls[0][2].replyTo.id).toBe('-100123:50');
   });
 
   it('keeps forum topics and private chats, and puts General-topic replies in the group', () => {
@@ -128,7 +128,7 @@ describe('Telegram adapter thread routing', () => {
       },
     });
 
-    expect(chat.processAction.mock.calls[0]![0]).toMatchObject({
+    expect(chat.processAction.mock.calls[0][0]).toMatchObject({
       threadId: 'telegram:-100123',
       messageId: '-100123:51',
       actionId: 'q:x',

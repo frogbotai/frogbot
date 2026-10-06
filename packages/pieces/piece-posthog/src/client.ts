@@ -53,9 +53,7 @@ export function createPosthogClient({ personalApiKey }: { personalApiKey: string
 
       if (!response.ok) {
         const detail =
-          result && typeof result === 'object' && 'detail' in result
-            ? (result as { detail: unknown }).detail
-            : result;
+          result && typeof result === 'object' && 'detail' in result ? result.detail : result;
 
         throw new Error(
           `PostHog request failed (${response.status}): ${typeof detail === 'string' ? detail : response.statusText}`,

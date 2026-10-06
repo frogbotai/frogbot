@@ -192,7 +192,7 @@ async function resolveReferences({
   return new Map(
     references.map((reference, index) => [
       reference.part as unknown as UIPart,
-      resolved[index]!.part,
+      resolved[index].part,
     ]),
   );
 }
@@ -227,14 +227,14 @@ async function findAsset({
   let doc: AssetDocument;
 
   try {
-    doc = (await req.frogbot.findByID({
+    doc = await req.frogbot.findByID({
       collection: collection.slug,
       id: part.id,
       depth: 0,
       req,
       overrideAccess: false,
       showHiddenFields: true,
-    })) as AssetDocument;
+    });
   } catch (error) {
     const denied = getStatus(error) === 403;
 

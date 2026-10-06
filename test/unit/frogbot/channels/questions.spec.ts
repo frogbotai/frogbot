@@ -94,14 +94,14 @@ async function askedFixture(hooks = questionHooks()) {
   const fixture = channelFixture({ questions: hooks });
 
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
-  fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' } as never);
+  fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' });
 
   await fixture.host.initialize(false);
   await fixture.deliver();
 
   listPendingCalls.mockResolvedValueOnce([pendingCall()]);
 
-  await fixture.host.run(fixture.inputs[0]!);
+  await fixture.host.run(fixture.inputs[0]);
 
   return { fixture, hooks };
 }
@@ -121,11 +121,11 @@ describe('channel question availability', () => {
 
       await fixture.host.initialize(false);
       await fixture.deliver();
-      await fixture.host.run(fixture.inputs[0]!);
+      await fixture.host.run(fixture.inputs[0]);
       await fixture.host.shutdown();
 
       return {
-        kinds: fixture.streamMessage.mock.calls[0]![0].clientTools?.kinds,
+        kinds: fixture.streamMessage.mock.calls[0][0].clientTools?.kinds,
         logged: fixture.frogbot.logger.error.mock.calls.length,
       };
     };
@@ -174,10 +174,10 @@ describe('channel question delivery', () => {
     } as never);
     listPendingCalls.mockResolvedValueOnce([pendingCall()]);
 
-    await fixture.host.run(fixture.inputs[1]!);
+    await fixture.host.run(fixture.inputs[1]);
 
     expect(hooks.render).toHaveBeenCalledOnce();
-    expect(hooks.render.mock.calls[0]![0].calls[0]!.input.questions[0]!.header).toBe('Color');
+    expect(hooks.render.mock.calls[0][0].calls[0].input.questions[0].header).toBe('Color');
     expect(fixture.values.get(key('message:channel:card-1'))).toEqual({
       chatId: 'chat-1',
       toolCallIds: ['call-1'],
@@ -206,14 +206,14 @@ describe('channel question delivery', () => {
 
     listPendingCalls.mockResolvedValueOnce([pendingCall()]);
 
-    await expect(fixture.host.run(fixture.inputs[0]!)).rejects.toThrow('Slack is down');
+    await expect(fixture.host.run(fixture.inputs[0])).rejects.toThrow('Slack is down');
 
     await fixture.deliver('message-2', thread, { mention: false });
 
     fixture.streamMessage.mockResolvedValueOnce({ status: 'queued' } as never);
     listPendingCalls.mockResolvedValueOnce([pendingCall()]);
 
-    await fixture.host.run(fixture.inputs[1]!);
+    await fixture.host.run(fixture.inputs[1]);
 
     expect(hooks.render).toHaveBeenCalledTimes(2);
     expect(fixture.values.has(key('call:chat-1:call-1'))).toBe(true);
@@ -225,7 +225,7 @@ describe('channel question delivery', () => {
     const hooks = questionHooks();
 
     hooks.render.mockImplementation(async ({ calls }) => [
-      { messages: [card], calls: [calls[0]!.toolCallId] },
+      { messages: [card], calls: [calls[0].toolCallId] },
     ]);
 
     const fixture = channelFixture({ questions: hooks });
@@ -237,13 +237,13 @@ describe('channel question delivery', () => {
 
     listPendingCalls.mockResolvedValueOnce([pendingCall('call-1'), pendingCall('call-2')]);
 
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
     await fixture.deliver('message-2', thread, { mention: false });
 
     fixture.streamMessage.mockResolvedValueOnce({ status: 'queued' } as never);
     listPendingCalls.mockResolvedValueOnce([pendingCall('call-1'), pendingCall('call-2')]);
 
-    await fixture.host.run(fixture.inputs[1]!);
+    await fixture.host.run(fixture.inputs[1]);
 
     expect(hooks.render).toHaveBeenCalledOnce();
     expect(fixture.values.has(key('call:chat-1:call-2'))).toBe(false);
@@ -264,7 +264,7 @@ describe('channel question delivery', () => {
 
     await fixture.host.initialize(false);
     await fixture.deliver();
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.posted).toEqual([]);
 
@@ -276,7 +276,7 @@ describe('channel question delivery', () => {
 
     await fixture.interact(click('answer', { author: 'user-2' }));
 
-    const settle = settleClientToolCall.mock.calls[0]![0];
+    const settle = settleClientToolCall.mock.calls[0][0];
 
     expect(settle).toMatchObject({
       chatId: 'chat-1',
@@ -292,7 +292,7 @@ describe('channel question delivery', () => {
         access: settle.channelAccess,
         req: settle.req,
         agentSlug: 'support',
-        chat: { ...fixture.frogbot.create.mock.calls[0]![0].data, id: 'chat-1', agent: 'support' },
+        chat: { ...fixture.frogbot.create.mock.calls[0][0].data, id: 'chat-1', agent: 'support' },
       }),
     ).toBe(true);
     expect(hooks.settled).toHaveBeenCalledWith(
@@ -354,7 +354,7 @@ describe('channel question delivery', () => {
       collection: 'users',
       modelAccess: 'selected',
       models: ['openai/other'],
-    } as never);
+    });
 
     await fixture.interact(click('answer', { author: 'user-2' }));
 
@@ -445,14 +445,14 @@ describe('channel question delivery', () => {
     const fixture = channelFixture({ questions: hooks });
 
     Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
-    fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' } as never);
+    fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' });
 
     await fixture.host.initialize(false);
     await fixture.deliver();
 
     listPendingCalls.mockResolvedValueOnce([pendingCall()]);
 
-    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.run(fixture.inputs[0]);
     await fixture.interact(click('partial'));
 
     const saved = fixture.values.get(key('call:chat-1:call-1'));
@@ -481,7 +481,7 @@ describe('channel question delivery', () => {
 
     await fixture.interact(click('dismiss'));
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
     expect(hooks.settled).toHaveBeenCalledWith(
       expect.objectContaining({ outcome: { dismissed: true } }),
     );
@@ -535,7 +535,7 @@ describe('channel question delivery', () => {
       settled: { at: expect.any(String) },
     });
     expect(hooks.stale).toHaveBeenCalledOnce();
-    expect(hooks.stale.mock.calls[0]![0].question).toEqual(settled);
+    expect(hooks.stale.mock.calls[0][0].question).toEqual(settled);
     expect(settleClientToolCall).toHaveBeenCalledOnce();
 
     await fixture.host.shutdown();
@@ -556,7 +556,7 @@ describe('channel question delivery', () => {
 
     await fixture.interact(click('answer'));
 
-    expect(hooks.stale.mock.calls[0]![0].question).toEqual({
+    expect(hooks.stale.mock.calls[0][0].question).toEqual({
       messages: [card],
       revision: 0,
       state: { view: 'Answered' },
@@ -596,7 +596,7 @@ describe('channel question delivery', () => {
     await fixture.interact(click('answer'));
 
     expect(hooks.render).toHaveBeenCalledTimes(2);
-    expect(hooks.render.mock.calls[1]![0].calls.map(({ toolCallId }) => toolCallId)).toEqual([
+    expect(hooks.render.mock.calls[1][0].calls.map(({ toolCallId }) => toolCallId)).toEqual([
       'call-2',
     ]);
     expect(fixture.inputs).toHaveLength(1);
@@ -652,7 +652,7 @@ describe('channel question delivery', () => {
     const { fixture } = await askedFixture();
 
     await fixture.deliver('message-2', thread, { mention: false, text: 'answer' });
-    await fixture.host.run(fixture.inputs[1]!);
+    await fixture.host.run(fixture.inputs[1]);
 
     expect(settleClientToolCall).toHaveBeenCalledOnce();
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
@@ -865,7 +865,7 @@ describe('channel question delivery', () => {
     fixture.access.mockReturnValue(false);
 
     await fixture.deliver('message-2', thread, { mention: false, text: 'answer' });
-    await fixture.host.run(fixture.inputs[1]!);
+    await fixture.host.run(fixture.inputs[1]);
 
     expect(hooks.denied).toHaveBeenCalledOnce();
     expect(settleClientToolCall).not.toHaveBeenCalled();

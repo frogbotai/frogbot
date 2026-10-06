@@ -22,10 +22,7 @@
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import {
-  buildProviderRegistry,
-  type ProviderRegistry,
-} from '../../packages/gateway/src/providers/registry.js';
+import { buildProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { describeLive } from '../live/live.js';
@@ -40,7 +37,7 @@ const TEST_TIMEOUT = 90_000;
 function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-  }) as ProviderRegistry;
+  });
   return createApp({ registry });
 }
 
@@ -214,7 +211,7 @@ describeLive(
           );
         }
 
-        const call = choice!.message.tool_calls[0]!;
+        const call = choice!.message.tool_calls[0];
         expect(typeof call.id).toBe('string');
         expect(call.function?.name).toBe('get_weather');
         const args = JSON.parse(call.function!.arguments!) as Record<string, unknown>;
@@ -599,7 +596,7 @@ describeLive(
           );
         }
 
-        const callA = c1!.message.tool_calls[0]!;
+        const callA = c1!.message.tool_calls[0];
         expect(typeof callA.id).toBe('string');
         expect(callA.id!.length).toBeGreaterThan(0);
         expect(typeof callA.function?.name).toBe('string');
@@ -642,7 +639,7 @@ describeLive(
         // assert the final answer. If it answered directly, that answer is the
         // terminal turn — either is protocol-valid.
         if (c2!.finish_reason === 'tool_calls' && c2!.message?.tool_calls?.length) {
-          const callB = c2!.message.tool_calls[0]!;
+          const callB = c2!.message.tool_calls[0];
           expect(typeof callB.id).toBe('string');
           expect(callB.id!.length).toBeGreaterThan(0);
           // Distinct id from callA — the round-trip must not reuse ids.
@@ -928,7 +925,7 @@ describeLive(
         const calls = choice?.message?.tool_calls;
         expect(Array.isArray(calls)).toBe(true);
         expect(calls!.length).toBeGreaterThan(0);
-        const call = calls![0]!;
+        const call = calls![0];
         expect(typeof call.id).toBe('string');
         expect(call.id!.length).toBeGreaterThan(0);
         expect(call.function?.name).toBe('get_weather');
@@ -958,7 +955,7 @@ describeLive(
         const calls = choice?.message?.tool_calls;
         expect(Array.isArray(calls)).toBe(true);
         expect(calls!.length).toBeGreaterThan(0);
-        const call = calls![0]!;
+        const call = calls![0];
         expect(typeof call.function?.name).toBe('string');
         expect(typeof JSON.parse(call.function!.arguments!)).toBe('object');
       },
@@ -1030,8 +1027,8 @@ describeLive(
         }
 
         // prompt_tokens must grow strictly as history accumulates.
-        expect(usages[1]!.prompt).toBeGreaterThan(usages[0]!.prompt);
-        expect(usages[2]!.prompt).toBeGreaterThan(usages[1]!.prompt);
+        expect(usages[1].prompt).toBeGreaterThan(usages[0].prompt);
+        expect(usages[2].prompt).toBeGreaterThan(usages[1].prompt);
       },
       TEST_TIMEOUT,
     );
@@ -1106,7 +1103,7 @@ describeLive(
       async () => {
         const registry = buildProviderRegistry({
           zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-        }) as ProviderRegistry;
+        });
         const app = createApp({ registry, maxBodyBytes: 4096 });
 
         const huge = 'x'.repeat(2 * 1024 * 1024);

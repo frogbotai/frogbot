@@ -14,7 +14,7 @@ function baseRequest(overrides: Partial<ChatCompletionRequest> = {}): ChatComple
     model: 'openai/gpt-4o-mini',
     messages: [],
     ...overrides,
-  } as ChatCompletionRequest;
+  };
 }
 
 describe('chatCompletionsRoute', () => {

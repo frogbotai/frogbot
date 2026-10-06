@@ -228,7 +228,7 @@ describe('FrogBotNav', () => {
   it('renders beforeAccountMenu, afterAccountMenu, and settingsMenu in order', async () => {
     render(await FrogBotNav(accountMenuProps()));
 
-    const { afterAccountMenu, beforeAccountMenu } = navClient.mock.calls[0]![0];
+    const { afterAccountMenu, beforeAccountMenu } = navClient.mock.calls[0][0];
     const before = render(<>{beforeAccountMenu}</>).container;
     const after = render(<>{afterAccountMenu}</>).container;
 
@@ -258,7 +258,7 @@ describe('FrogBotNav', () => {
 
     render(await FrogBotNav(navProps));
 
-    const { afterAccountMenu, beforeAccountMenu, logout } = navClient.mock.calls[0]![0];
+    const { afterAccountMenu, beforeAccountMenu, logout } = navClient.mock.calls[0][0];
 
     expect(render(<>{beforeAccountMenu}</>).container.innerHTML).toBe('');
     expect(render(<>{afterAccountMenu}</>).container.textContent).toBe('attached');
@@ -331,7 +331,7 @@ describe('FrogBotNav', () => {
     defaults.permissions = {
       collections: { chats: { read: true }, posts: { read: false } },
       globals: {},
-    } as unknown as ServerProps['permissions'];
+    };
 
     render(await FrogBotNav(defaults));
 

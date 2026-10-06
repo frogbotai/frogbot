@@ -194,7 +194,7 @@ describe('Telegram question hooks', () => {
         }),
       },
     ]);
-    expect(requests[0]!.body).not.toHaveProperty('message_thread_id');
+    expect(requests[0].body).not.toHaveProperty('message_thread_id');
   });
 
   it.each([
@@ -288,7 +288,7 @@ describe('Telegram question hooks', () => {
     });
 
     expect(requests.map(({ body }) => body.message_id)).toEqual([899, 900]);
-    expect(requests[1]!.body).toMatchObject({
+    expect(requests[1].body).toMatchObject({
       text: expect.stringMatching(/✅ “XL”\n\n<i>Answered by Toad Hall<\/i>$/),
       reply_markup: { inline_keyboard: [] },
     });
@@ -355,7 +355,7 @@ describe('Telegram question hooks', () => {
 
     await stale({ call, client, interaction: reply(), question: record(), req, thread });
 
-    expect(requests[0]!.body).toMatchObject({
+    expect(requests[0].body).toMatchObject({
       text: 'This question was already answered.',
       reply_parameters: { message_id: 905 },
     });
@@ -399,7 +399,7 @@ describe('Telegram question hooks', () => {
       thread,
     });
 
-    expect(requests[0]!.body).toMatchObject({
+    expect(requests[0].body).toMatchObject({
       text: "You don't have access to answer this question.",
       reply_parameters: { message_id: 905 },
     });
@@ -419,7 +419,7 @@ describe('Telegram question hooks', () => {
       thread,
     });
 
-    expect(requests[0]!.body).toMatchObject({
+    expect(requests[0].body).toMatchObject({
       text: reason,
       reply_parameters: { message_id: 900 },
     });

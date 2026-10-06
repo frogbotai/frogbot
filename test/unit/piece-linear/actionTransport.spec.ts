@@ -63,7 +63,7 @@ describe('Preserved Linear action transport', () => {
       const fetch = vi.fn().mockImplementation(async () =>
         Response.json({
           data: {
-            [`${operation[0]!.toLowerCase()}${operation.slice(1)}`]: {
+            [`${operation[0].toLowerCase()}${operation.slice(1)}`]: {
               success: true,
               lastSyncId: 1,
               [resource]: { id: 'id' },

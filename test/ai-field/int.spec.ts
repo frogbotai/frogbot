@@ -116,7 +116,7 @@ describe('aiField runs', () => {
       pagination: false,
     });
 
-    return result.docs as unknown as Doc[];
+    return result.docs;
   }
 
   async function aiJobs(): Promise<Job[]> {
@@ -162,8 +162,8 @@ describe('aiField runs', () => {
   function createTask(data: Record<string, unknown>, user?: Doc): Promise<Doc> {
     return booted.frogbot.create({
       collection: tasksSlug,
-      data: data as never,
-      ...(user ? { user: user as never, overrideAccess: false } : {}),
+      data,
+      ...(user ? { user, overrideAccess: false } : {}),
     }) as Promise<unknown> as Promise<Doc>;
   }
 
@@ -171,8 +171,8 @@ describe('aiField runs', () => {
     return booted.frogbot.update({
       collection: tasksSlug,
       id,
-      data: data as never,
-      ...(user ? { user: user as never, overrideAccess: false } : {}),
+      data,
+      ...(user ? { user, overrideAccess: false } : {}),
     }) as Promise<unknown> as Promise<Doc>;
   }
 
@@ -229,7 +229,7 @@ describe('aiField runs', () => {
       data: {
         document: { relationTo: tasksSlug, value: id },
         user: { relationTo: usersSlug, value: user.id },
-      } as never,
+      },
     });
   }
 
@@ -574,7 +574,7 @@ describe('aiField runs', () => {
       const shout = (await booted.frogbot.create({
         collection: shoutsSlug,
         data: { masked: 'secret' } as never,
-        user: user as never,
+        user,
         overrideAccess: false,
       })) as unknown as Doc;
 
@@ -597,7 +597,7 @@ describe('aiField runs', () => {
         booted.frogbot.update({
           collection: articlesSlug,
           id: article.id,
-          data: { title: 'Editor draft' } as never,
+          data: { title: 'Editor draft' },
           draft: true,
         }),
       );
@@ -888,10 +888,10 @@ describe('aiField runs', () => {
 
   describe('select output', () => {
     async function createDoc(collection: string, data: Record<string, unknown>): Promise<Doc> {
-      return (await booted.frogbot.create({
+      return await booted.frogbot.create({
         collection: collection as never,
         data: data as never,
-      })) as unknown as Doc;
+      });
     }
 
     function findDoc(collection: string, id: Doc['id']): Promise<Doc> {
@@ -1017,10 +1017,10 @@ describe('aiField runs', () => {
 
   describe('records saved before the field existed', () => {
     async function createOlderTask(): Promise<Doc> {
-      return (await booted.payload.db.create({
+      return await booted.payload.db.create({
         collection: tasksSlug,
         data: { title: 'Older', notes: 'Paint the fence' },
-      })) as unknown as Doc;
+      });
     }
 
     it('reads with an empty status, so the List can offer Generate', async () => {

@@ -81,11 +81,11 @@ describe('chat attachments stored in S3', () => {
 
     const email = `owner-${++sequence}@frogbot.local`;
 
-    user = (await booted.frogbot.create({
+    user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email, password },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     const login = await fetch(`${booted.baseUrl}/api/${usersSlug}/login`, {
       method: 'POST',
@@ -214,7 +214,7 @@ describe('chat attachments stored in S3', () => {
       overrideAccess: true,
     });
 
-    return { chatId: docs[0]!.id, hold, running };
+    return { chatId: docs[0].id, hold, running };
   }
 
   it('sends an image stored only in S3 on Send', async () => {
@@ -224,7 +224,7 @@ describe('chat attachments stored in S3', () => {
 
     await expect(fs.access(path.resolve(chatAssetsSlug, photo.filename))).rejects.toThrow();
     expect(response.status).toBe(200);
-    expect(userContent(model.requests[0]!)).toEqual([['What is this?', 'image']]);
+    expect(userContent(model.requests[0])).toEqual([['What is this?', 'image']]);
   });
 
   it('sends an image stored in S3 on a queued turn without cookies', async () => {
@@ -238,7 +238,7 @@ describe('chat attachments stored in S3', () => {
 
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
 
-    expect(userContent(model.requests[1]!)).toEqual([['Start.'], ['And this?', 'image']]);
+    expect(userContent(model.requests[1])).toEqual([['Start.'], ['And this?', 'image']]);
   });
 
   it('sends an image stored in S3 through Local API streamMessage', async () => {
@@ -249,7 +249,7 @@ describe('chat attachments stored in S3', () => {
       user: { ...user, collection: usersSlug },
     } as never);
 
-    const turn = (await booted.frogbot.agents[agentSlug]!.streamMessage({
+    const turn = (await booted.frogbot.agents[agentSlug].streamMessage({
       req,
       chatId: opened.body.chatId,
       messages: [fileMessage(photo, 'What is this?')],
@@ -257,7 +257,7 @@ describe('chat attachments stored in S3', () => {
 
     await turn.persistence;
 
-    expect(userContent(model.requests[1]!)).toEqual([['Start.'], ['What is this?', 'image']]);
+    expect(userContent(model.requests[1])).toEqual([['Start.'], ['What is this?', 'image']]);
   });
 
   it('replaces an image whose S3 object is gone with a marker on a queued turn', async () => {
@@ -274,7 +274,7 @@ describe('chat attachments stored in S3', () => {
 
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
 
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Start.'],
       ['And this?', `[Can't read ${photo.filename}: the file couldn't be loaded]`],
     ]);
@@ -310,7 +310,7 @@ describe('chat attachments stored in S3', () => {
 
     await vi.waitFor(() => expect(model.requests).toHaveLength(2), { timeout: 10_000 });
 
-    expect(userContent(model.requests[1]!)).toEqual([
+    expect(userContent(model.requests[1])).toEqual([
       ['Start.'],
       ['Summarize.', `Attached file "${report.filename}":\n${reportText}`],
     ]);

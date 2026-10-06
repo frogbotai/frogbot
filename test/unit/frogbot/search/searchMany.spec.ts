@@ -378,6 +378,6 @@ describe('searchMany access and execution', () => {
     });
 
     expect(createRequest).toHaveBeenCalledOnce();
-    expect(search.mock.calls[0]![0].req).toBe(search.mock.calls[1]![0].req);
+    expect(search.mock.calls[0][0].req).toBe(search.mock.calls[1][0].req);
   });
 });

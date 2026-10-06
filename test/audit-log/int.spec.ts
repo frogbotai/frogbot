@@ -170,7 +170,7 @@ describe('audit log plugin integration', () => {
     const task = booted.payload.config.jobs?.tasks?.find(
       (candidate) => candidate.slug === 'frogbot-prune-audit-logs',
     );
-    await task?.handler({ req: { payload: booted.payload } } as never);
+    await task?.handler({ req: { payload: booted.payload } });
     await expect(
       booted.frogbot.findByID({
         collection: 'audit-logs' as never,

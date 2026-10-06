@@ -113,7 +113,7 @@ describe('CollectionsSection', () => {
     expect(labels.map((label) => label.textContent)).toEqual(['Content']);
     expect(files.closest('.frogbot-collections-section__group')).toBeNull();
     expect(
-      files.compareDocumentPosition(labels[0]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      files.compareDocumentPosition(labels[0]) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 

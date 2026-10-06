@@ -309,7 +309,7 @@ describe('chat writes: a chat is written only from its home', () => {
           messages: [
             {
               ...assistant,
-              parts: assistant!.parts.map((part) =>
+              parts: assistant.parts.map((part) =>
                 part.type === 'tool-question'
                   ? { ...part, state: 'output-available', output: answer }
                   : part,
@@ -516,13 +516,13 @@ describe('chat writes: a chat is written only from its home', () => {
 
       const response = await request(
         'PATCH',
-        `/${messagesSlug}/${message!.id}`,
+        `/${messagesSlug}/${message.id}`,
         { parts: [{ type: 'text', text: 'Edited from the web.' }] },
         owner.headers,
       );
 
       expect(response.status).toBe(403);
-      expect((await storedMessages(chat))[0]!.parts).toEqual(message!.parts);
+      expect((await storedMessages(chat))[0].parts).toEqual(message.parts);
     });
 
     it('DELETE /api/messages/:id refuses to delete a channel chat message', async () => {
@@ -531,7 +531,7 @@ describe('chat writes: a chat is written only from its home', () => {
 
       const response = await request(
         'DELETE',
-        `/${messagesSlug}/${message!.id}`,
+        `/${messagesSlug}/${message.id}`,
         undefined,
         owner.headers,
       );
@@ -660,7 +660,7 @@ describe('chat writes: a chat is written only from its home', () => {
     async function restChat(chat: Chat): Promise<StoredChat> {
       const response = await request('GET', `/${chatsSlug}/${chat.id}`, undefined, owner.headers);
 
-      return response.body as StoredChat;
+      return response.body;
     }
 
     it('GET /api/chats/:id reads the channel’s display name for a channel chat', async () => {

@@ -49,13 +49,13 @@ function createUsageMock(): LanguageModelV4 {
       Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            controller.enqueue({ type: 'text-start', id: 't0' } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-start', id: 't0' });
             controller.enqueue({
               type: 'text-delta',
               id: 't0',
               delta: 'hi',
-            } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'text-end', id: 't0' } as LanguageModelV4StreamPart);
+            });
+            controller.enqueue({ type: 'text-end', id: 't0' });
             controller.enqueue({
               type: 'finish',
               finishReason: { unified: 'stop', raw: 'stop' },

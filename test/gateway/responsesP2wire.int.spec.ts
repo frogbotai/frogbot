@@ -109,13 +109,13 @@ describe('G71 — responses streaming error event has correct nested shape (REJE
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               // Emit text first so we commit to HTTP 200
-              controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hello',
-              } as LanguageModelV4StreamPart);
-              controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
+              });
+              controller.enqueue({ type: 'error', error });
               controller.close();
             },
           }),
@@ -173,12 +173,12 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               // Emit enough to pass the preamble (peek sees text)
-              controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hello',
-              } as LanguageModelV4StreamPart);
+              });
               // Then close normally — the catastrophic throw comes from the
               // transform phase itself via a TransformStream that errors.
               // Simulate via stream that throws on pull:
@@ -242,14 +242,14 @@ describe('G73 — response.completed usage includes token details', () => {
               controller.enqueue({
                 type: 'stream-start',
                 warnings: [],
-              } as LanguageModelV4StreamPart);
-              controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+              });
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
-              } as LanguageModelV4StreamPart);
-              controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
+              });
+              controller.enqueue({ type: 'text-end', id: 'text-0' });
               controller.enqueue({
                 type: 'finish',
                 finishReason: { unified: 'stop', raw: 'stop' },
@@ -266,7 +266,7 @@ describe('G73 — response.completed usage includes token details', () => {
                     reasoning: 5,
                   },
                 },
-              } as LanguageModelV4StreamPart);
+              });
               controller.close();
             },
           }),
@@ -321,7 +321,7 @@ describe('G74 — reasoning delta duplication', () => {
               controller.enqueue({
                 type: 'stream-start',
                 warnings: [],
-              } as LanguageModelV4StreamPart);
+              });
               controller.enqueue({ type: 'reasoning-start' } as LanguageModelV4StreamPart);
               controller.enqueue({
                 type: 'reasoning-delta',
@@ -377,12 +377,12 @@ describe('G49 — x-request-id present on streaming responses SSE response', () 
         Promise.resolve({
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
-              controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
-              } as LanguageModelV4StreamPart);
+              });
               controller.close();
             },
           }),
@@ -425,13 +425,13 @@ describe('G51 — responses stream terminal-frame count', () => {
         Promise.resolve({
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
-              controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
-              } as LanguageModelV4StreamPart);
-              controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
+              });
+              controller.enqueue({ type: 'text-end', id: 'text-0' });
               controller.enqueue({
                 type: 'finish',
                 finishReason: { unified: 'stop', raw: 'stop' },
@@ -533,24 +533,24 @@ describe('G75 — reasoning items surface encrypted_content', () => {
               controller.enqueue({
                 type: 'stream-start',
                 warnings: [],
-              } as LanguageModelV4StreamPart);
+              });
               controller.enqueue({
                 type: 'reasoning-start',
                 id: 'rs_1:0',
                 providerMetadata: { openai: { itemId: 'rs_1', reasoningEncryptedContent: null } },
-              } as LanguageModelV4StreamPart);
+              });
               controller.enqueue({
                 type: 'reasoning-delta',
                 id: 'rs_1:0',
                 delta: 'thinking...',
-              } as LanguageModelV4StreamPart);
+              });
               controller.enqueue({
                 type: 'reasoning-end',
                 id: 'rs_1:0',
                 providerMetadata: {
                   openai: { itemId: 'rs_1', reasoningEncryptedContent: 'enc_xyz' },
                 },
-              } as LanguageModelV4StreamPart);
+              });
               controller.enqueue({
                 type: 'finish',
                 finishReason: { unified: 'stop', raw: 'stop' },

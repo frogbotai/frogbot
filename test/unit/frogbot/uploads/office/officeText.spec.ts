@@ -184,7 +184,7 @@ describe('officeText', () => {
     vi.spyOn(mammoth, 'convertToHtml').mockResolvedValue({
       value: undefined,
       messages: [],
-    } as never);
+    });
 
     const document = docxFile({ body: paragraph('Hello') });
 

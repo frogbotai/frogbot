@@ -334,9 +334,9 @@ describe('chat assets HTTP e2e', () => {
       });
 
       const generatedAsset = toolPart!.output as Asset;
-      const secondRequest = provider.requests[1]!;
+      const secondRequest = provider.requests[1];
 
-      expect(secondRequest.messages.slice(0, 2)).toEqual(provider.requests[0]!.messages);
+      expect(secondRequest.messages.slice(0, 2)).toEqual(provider.requests[0].messages);
       expect(secondRequest.messages.at(-2)).toMatchObject({
         role: 'assistant',
         tool_calls: [
@@ -425,7 +425,7 @@ describe('chat assets HTTP e2e', () => {
     expect(response).toMatchObject({ chatId, text: answer });
     expect(provider.requests).toHaveLength(3);
     expect(provider.requests[2]?.messages).toEqual([
-      ...provider.requests[1]!.messages,
+      ...provider.requests[1].messages,
       { role: 'assistant', content: answer },
       { role: 'user', content: followUp },
     ]);

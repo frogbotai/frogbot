@@ -226,7 +226,7 @@ describe('GitHub question comments', () => {
     const labels = ['a*b', 'c_d', '[e]', '@f', 'g`h', 'Ünïcödé 🐸'];
     const target = call({ ...color, options: labels.map((label) => ({ label })) });
 
-    const lines = questionPages({ call: target, q: 0 })[0]!
+    const lines = questionPages({ call: target, q: 0 })[0]
       .split('\n')
       .filter((line) => /^\d+\. /.test(line));
 
@@ -248,7 +248,7 @@ describe('GitHub question comments', () => {
     expect(pages.length).toBeGreaterThan(5);
     expect(pages.every((page) => page.length <= 1_000)).toBe(true);
     expect(pages.slice(1).every((page) => page.startsWith('**Color** (continued)'))).toBe(true);
-    expect(numbered.map((line) => rendered(line.split('**')[1]!))).toEqual(
+    expect(numbered.map((line) => rendered(line.split('**')[1]))).toEqual(
       options.map(({ label }) => label),
     );
     expect(numbered.map((line) => Number(line.split('.')[0]))).toEqual(
@@ -286,9 +286,9 @@ describe('GitHub question comments', () => {
 
     const [page] = questionPages({ call: target, q: 0 });
 
-    expect(page!.split('\n')[0]).toBe('### Pick \\#');
+    expect(page.split('\n')[0]).toBe('### Pick \\#');
     expect(page).not.toMatch(/GH-12|gh-3/);
-    expect(rendered(page!.split('\n\n')[1]!)).toBe('See GH-12 and gh-3');
+    expect(rendered(page.split('\n\n')[1])).toBe('See GH-12 and gh-3');
   });
 
   it('never starts a comment with a reply command, so the bot cannot answer itself', () => {
@@ -515,7 +515,7 @@ describe('GitHub question hooks', () => {
     });
 
     expect(api.posts.length).toBeGreaterThan(1);
-    expect(result!.messages.map(({ id, question }) => ({ id, question }))).toEqual(
+    expect(result.messages.map(({ id, question }) => ({ id, question }))).toEqual(
       api.posts.map((_, index) => ({ id: String(100 + index), question: 0 })),
     );
   });
@@ -557,7 +557,7 @@ describe('GitHub question hooks', () => {
         }),
       },
     ]);
-    expect(api.edits[0]!.body).toContain('<sub>Answered by `@alice`</sub>');
+    expect(api.edits[0].body).toContain('<sub>Answered by `@alice`</sub>');
     expect(change).toEqual({
       messages: [
         { id: '100', postedAt: '2026-09-26T10:00:00.000Z', question: 0 },
@@ -605,7 +605,7 @@ describe('GitHub question hooks', () => {
       actor: {
         user: null,
         channel: { piece: 'github', account: 'github', id: '7', username: 'bob' },
-      } as never,
+      },
       outcome: {
         output: {
           answers: [
@@ -625,11 +625,11 @@ describe('GitHub question hooks', () => {
     });
 
     expect(api.edits.map(({ id }) => id)).toEqual(['100', '101', '102']);
-    expect(api.edits[0]!.body).toContain('✅ **Blue**');
-    expect(api.edits[0]!.body).toContain('Answered by `@alice`');
-    expect(api.edits[1]!.body).toContain('✅ **L**');
-    expect(api.edits[1]!.body).toContain('Answered by `@bob`');
-    expect(api.edits[2]!.body).toBe('**Size** (continued): this question is closed.');
+    expect(api.edits[0].body).toContain('✅ **Blue**');
+    expect(api.edits[0].body).toContain('Answered by `@alice`');
+    expect(api.edits[1].body).toContain('✅ **L**');
+    expect(api.edits[1].body).toContain('Answered by `@bob`');
+    expect(api.edits[2].body).toBe('**Size** (continued): this question is closed.');
     expect(change).toEqual({
       state: {
         q: 1,
@@ -646,7 +646,7 @@ describe('GitHub question hooks', () => {
     const change = await githubQuestions.settled({
       ...api.args,
       call: call(color, size),
-      actor: { user: null, channel: { piece: 'github', id: '7', username: 'bob' } } as never,
+      actor: { user: null, channel: { piece: 'github', id: '7', username: 'bob' } },
       outcome: { dismissed: true },
       question: record({
         messages: [
@@ -657,9 +657,9 @@ describe('GitHub question hooks', () => {
       }),
     });
 
-    expect(api.edits[0]!.body).toContain('✅ **Blue**');
-    expect(api.edits[1]!.body).toContain('🚫 **Dismissed**');
-    expect(api.edits[1]!.body).toContain('<sub>Dismissed by `@bob`</sub>');
+    expect(api.edits[0].body).toContain('✅ **Blue**');
+    expect(api.edits[1].body).toContain('🚫 **Dismissed**');
+    expect(api.edits[1].body).toContain('<sub>Dismissed by `@bob`</sub>');
     expect(change).toMatchObject({ state: { closed: { dismissed: true, by: 'bob' } } });
   });
 

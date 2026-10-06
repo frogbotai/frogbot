@@ -68,7 +68,7 @@ describe('SQLite approximate vector search', () => {
 
     for (const [index, embedding] of vectors.entries()) {
       docs.push(
-        (await frogbot.create({
+        await frogbot.create({
           collection: articlesSlug,
           data: {
             _status: 'published',
@@ -77,7 +77,7 @@ describe('SQLite approximate vector search', () => {
             title: `v${index}`,
           },
           overrideAccess: true,
-        } as never)) as { id: number },
+        } as never),
       );
     }
 

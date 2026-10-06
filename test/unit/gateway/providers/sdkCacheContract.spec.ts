@@ -2,7 +2,6 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { LanguageModelV4 } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { providerOptionsNamespace } from '../../../../packages/gateway/src/utils/params.js';
@@ -14,7 +13,7 @@ function captureProvider(successBody: unknown) {
     return Response.json(successBody);
   };
   return {
-    fetch: fetch as typeof globalThis.fetch,
+    fetch,
     getBody: () => {
       if (!body) throw new Error('No request captured');
       return body;
@@ -38,7 +37,7 @@ describe('SDK cache contracts', () => {
     });
     const model = createAnthropic({ apiKey: 'test', fetch: capture.fetch }).languageModel(
       'claude-sonnet-4-20250514',
-    ) as LanguageModelV4;
+    );
     await model.doGenerate({
       prompt: [
         {
@@ -67,7 +66,7 @@ describe('SDK cache contracts', () => {
       apiKey: 'test',
       region: 'us-east-1',
       fetch: capture.fetch,
-    }).languageModel('anthropic.claude-sonnet-4-20250514-v1:0') as LanguageModelV4;
+    }).languageModel('anthropic.claude-sonnet-4-20250514-v1:0');
     await model.doGenerate({
       prompt: [
         {
@@ -98,9 +97,7 @@ describe('SDK cache contracts', () => {
       choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
     });
-    const model = createOpenAI({ apiKey: 'test', fetch: capture.fetch }).chat(
-      'gpt-4o-mini',
-    ) as LanguageModelV4;
+    const model = createOpenAI({ apiKey: 'test', fetch: capture.fetch }).chat('gpt-4o-mini');
     await model.doGenerate({
       prompt: [
         {
@@ -129,7 +126,7 @@ describe('SDK cache contracts', () => {
     });
     const model = createGoogleGenerativeAI({ apiKey: 'test', fetch: capture.fetch }).languageModel(
       'gemini-2.5-flash',
-    ) as LanguageModelV4;
+    );
     await model.doGenerate({
       prompt,
       providerOptions: { google: { cachedContent: 'cachedContents/example' } },

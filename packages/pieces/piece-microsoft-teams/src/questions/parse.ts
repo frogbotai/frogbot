@@ -84,8 +84,7 @@ function parseAnswer({
   const typed = values[inputIds.text(q)];
   const custom = item.custom && typeof typed === 'string' ? typed.trim() : '';
 
-  const selected =
-    custom && !item.multiple ? [] : chosen.map((index) => item.options[index]!.label);
+  const selected = custom && !item.multiple ? [] : chosen.map((index) => item.options[index].label);
 
   if (selected.length === 0 && !custom) {
     return { reason: `Answer “${item.header}” before submitting.` };

@@ -204,7 +204,7 @@ describe('created by and last modified by', () => {
   async function createAs(user: SignedIn, data: Record<string, unknown>): Promise<ID> {
     const ticket = await booted.frogbot.create({
       collection: ticketsSlug,
-      data: data as never,
+      data,
       user: user.user,
     });
 
@@ -294,7 +294,7 @@ describe('created by and last modified by', () => {
 
       const [id] = await ticketIDs({ where: { title: { equals: 'From chat' } } });
 
-      expect(await savedBy(id!)).toEqual({ createdBy: ben.id, lastModifiedBy: ben.id });
+      expect(await savedBy(id)).toEqual({ createdBy: ben.id, lastModifiedBy: ben.id });
     });
 
     it('a Local API create with no user leaves both user fields empty', async () => {
@@ -483,7 +483,7 @@ describe('created by and last modified by', () => {
       });
 
       const restore = await booted.restClient.post(
-        `/api/${ticketsSlug}/versions/${versions.docs[0]!.id}`,
+        `/api/${ticketsSlug}/versions/${versions.docs[0].id}`,
         {},
         { headers: ben.headers },
       );

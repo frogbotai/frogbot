@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   ListControls: vi.fn(),
-  query: {} as Record<string, unknown>,
+  query: {},
   refineListData: vi.fn(),
   SortBuilder: vi.fn(() => null),
 }));

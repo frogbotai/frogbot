@@ -15,7 +15,7 @@ async function begin(fixture = setup()) {
     ...fixture.binding,
     returnTo: '/settings?tab=accounts#linked',
   });
-  fixture.req.headers.set('cookie', started.setCookie.split(';')[0]!);
+  fixture.req.headers.set('cookie', started.setCookie.split(';')[0]);
   const args = { ...fixture, ...fixture.binding, state: started.state };
   return { ...fixture, ...started, args };
 }
@@ -122,7 +122,7 @@ describe('OAuth browser state', () => {
 
   it('rejects conflicting authenticated owners without consuming', async () => {
     const flow = await begin();
-    flow.req.user = { id: 'attacker', collection: 'users' } as never;
+    flow.req.user = { id: 'attacker', collection: 'users' };
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
     expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
   });
@@ -140,7 +140,7 @@ describe('OAuth browser state', () => {
       collection: 'customers',
       returnTo: '/',
     });
-    fixture.req.headers.set('cookie', started.setCookie.split(';')[0]!);
+    fixture.req.headers.set('cookie', started.setCookie.split(';')[0]);
     const { intent } = await consumeOAuthState({
       ...fixture,
       ...fixture.binding,

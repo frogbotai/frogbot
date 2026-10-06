@@ -57,10 +57,10 @@ function bindFields(
           ];
         }),
       );
-      next = { ...next, access } as PayloadField;
+      next = { ...next, access };
     }
     if ('fields' in next && Array.isArray(next.fields)) {
-      next = { ...next, fields: bindFields(next.fields, roles, resolver, false) } as PayloadField;
+      next = { ...next, fields: bindFields(next.fields, roles, resolver, false) };
     }
     if ('tabs' in next && Array.isArray(next.tabs)) {
       next = {
@@ -69,7 +69,7 @@ function bindFields(
           ...tab,
           fields: bindFields(tab.fields, roles, resolver, false),
         })),
-      } as PayloadField;
+      };
     }
     return next;
   });
@@ -161,25 +161,25 @@ function bindAccess(
 function distance(left: string, right: string): number {
   const row = Array.from({ length: right.length + 1 }, (_, index) => index);
   for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
-    let previous = row[0]!;
+    let previous = row[0];
     row[0] = leftIndex;
     for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
-      const current = row[rightIndex]!;
+      const current = row[rightIndex];
       row[rightIndex] = Math.min(
-        row[rightIndex]! + 1,
-        row[rightIndex - 1]! + 1,
+        row[rightIndex] + 1,
+        row[rightIndex - 1] + 1,
         previous + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
       );
       previous = current;
     }
   }
-  return row[right.length]!;
+  return row[right.length];
 }
 
 function namedFields(fields: PayloadField[]): Array<PayloadField & { name: string }> {
   const result: Array<PayloadField & { name: string }> = [];
   for (const field of fields) {
-    if ('name' in field) result.push(field as PayloadField & { name: string });
+    if ('name' in field) result.push(field);
     if ('fields' in field && Array.isArray(field.fields)) result.push(...namedFields(field.fields));
     if ('tabs' in field && Array.isArray(field.tabs)) {
       for (const tab of field.tabs) result.push(...namedFields(tab.fields));

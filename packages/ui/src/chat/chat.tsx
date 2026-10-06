@@ -520,7 +520,7 @@ function ChatInner({
     ] as UIMessage['parts'];
     const revisedMessage = { ...message, parts };
     const metadata = (await adapter.buildMetadata?.(revisedMessage)) ?? message.metadata;
-    await chat.sendMessage({ messageId: message.id, parts, metadata } as never);
+    await chat.sendMessage({ messageId: message.id, parts, metadata });
     setEditingMessageId(undefined);
   };
   const branchMessage = async (message: UIMessage) => {

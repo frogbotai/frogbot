@@ -19,9 +19,9 @@ export function addSearchSnapshot(
 export function splitSearchSnapshot(
   snapshot: DrizzleSnapshotJSON,
 ): [snapshot: DrizzleSnapshotJSON, search: SearchSchema] {
-  const { frogbot, ...rest } = snapshot as SearchSnapshot;
+  const { frogbot, ...rest } = snapshot;
 
-  return [rest as DrizzleSnapshotJSON, frogbot?.search ?? {}];
+  return [rest, frogbot?.search ?? {}];
 }
 
 export function getSearchMigration({

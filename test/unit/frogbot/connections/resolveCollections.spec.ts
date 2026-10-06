@@ -113,9 +113,7 @@ describe('resolveConnectionsCollections', () => {
     expect(() =>
       resolveConnectionsCollections(
         config({
-          connections: [
-            { piece: createPiece({ oauth }), secret: true, [method]: 'true' } as ConnectionEntry,
-          ],
+          connections: [{ piece: createPiece({ oauth }), secret: true, [method]: 'true' }],
         }),
       ),
     ).toThrow(`${method} must be a boolean`);
