@@ -26,8 +26,8 @@ function runFixtureCommand(args: string[]): Promise<{ code: number; output: stri
     const child = spawnServer(process.execPath, args, { cwd: fixtureDir, env });
     let output = '';
 
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk));
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk));
+    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
+    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.on('error', reject);
     child.on('close', (code) => resolveExit({ code: code ?? 1, output }));
   });

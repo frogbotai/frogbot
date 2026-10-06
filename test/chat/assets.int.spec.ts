@@ -5,14 +5,14 @@ import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'ai';
 import { strToU8, unzipSync, zipSync } from 'fflate';
+import type { ToolCtx } from 'frogbot';
 import { resolveChatContext } from 'frogbot/test';
 import { saveChatAsset } from 'frogbot/tools';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import type { AgentModelMessagesProps } from '../../packages/frogbot/dist/uploads/toAgentModelMessages.js';
+import { toAgentModelMessages } from '../../packages/frogbot/dist/uploads/toAgentModelMessages.js';
 import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
-import type { ToolCtx } from '../../packages/frogbot/src/tools/types.js';
-import type { AgentModelMessagesProps } from '../../packages/frogbot/src/uploads/toAgentModelMessages.js';
-import { toAgentModelMessages } from '../../packages/frogbot/src/uploads/toAgentModelMessages.js';
 import { createFrogBotSDK, FrogBotSDKError } from '../../packages/sdk/src/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -30,12 +30,10 @@ import {
   xlsxFile,
   zipBomb,
 } from '../__helpers/shared/office.js';
-import type { Config } from './frogbot-types.js';
+import type { Chat, Config } from './frogbot-types.js';
 import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-
-type User = { id: number | string };
 
 type Asset = {
   id: number | string;
@@ -64,18 +62,20 @@ function sha256(content: string | Uint8Array): string {
 
 describe('chat assets', () => {
   let booted: BootedFrogBot;
+  type User = Awaited<ReturnType<typeof createUser>>['user'];
+
   let owner: User;
   let stranger: User;
   let ownerToken: string;
   let strangerToken: string;
   let sequence = 0;
 
-  async function createUser(email: string): Promise<{ user: User; token: string }> {
-    const user = (await booted.frogbot.create({
+  async function createUser(email: string) {
+    const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email, password },
       overrideAccess: true,
-    })) as User;
+    });
 
     const response = await booted.frogbot.handleRequest(
       new Request(`http://localhost/api/${usersSlug}/login`, {
@@ -187,7 +187,7 @@ describe('chat assets', () => {
     return booted.frogbot.createRequest({ user: { ...user, collection: usersSlug } } as never);
   }
 
-  async function createChat(user: User): Promise<number | string> {
+  async function createChat(user: User): Promise<Chat['id']> {
     const req = await requestFor(user);
 
     const result = await resolveChatContext({
@@ -197,7 +197,14 @@ describe('chat assets', () => {
       tools: {},
     });
 
-    return result.chatId;
+    const chat = await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: result.chatId,
+      depth: 0,
+      overrideAccess: true,
+    });
+
+    return chat.id;
   }
 
   async function readAsset(id: number | string): Promise<Asset> {
@@ -301,7 +308,7 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot as never,
+      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-hash', chatId },
     };
 
@@ -450,7 +457,7 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot as never,
+      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-1', chatId },
     };
 
@@ -474,7 +481,7 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot as never,
+      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-2' },
     };
 
@@ -708,7 +715,7 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot as never,
+      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-office', chatId },
     };
 
@@ -730,7 +737,7 @@ describe('chat assets', () => {
     const req = await requestFor(owner);
     const ctx: ToolCtx = {
       req,
-      frogbot: booted.frogbot as never,
+      frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: 'run-office-then-upload', chatId },
     };
 

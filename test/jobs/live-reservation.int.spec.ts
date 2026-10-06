@@ -4,7 +4,7 @@ import { createLocalReq } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { defaultBeforeSchedule } from '../../packages/frogbot/node_modules/payload/dist/queues/operations/handleSchedules/defaultBeforeSchedule.js';
-import { adapterName, bootJobsFixture } from './fixture.js';
+import { adapterName, bootJobsFixture, type FrogBotJob } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
@@ -22,7 +22,7 @@ afterAll(async () => {
 });
 
 async function readJob(id: number | string) {
-  const result = await fixture.payload.db.find({
+  const result = await fixture.payload.db.find<FrogBotJob>({
     collection: 'payload-jobs',
     where: { id: { equals: id } },
     limit: 1,
@@ -91,7 +91,10 @@ describe(`live reservation states: ${adapterName}`, () => {
       jobId,
     });
     const after = await readJob(first.id);
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', limit: 0 });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      limit: 0,
+    });
 
     expect(before).toMatchObject({ hasError: false, completedAt: null, totalTried: 1 });
     expect(before?.log).toEqual(
@@ -117,13 +120,17 @@ describe(`live reservation states: ${adapterName}`, () => {
 
     const duplicate = await fixture.worker.jobs.queue({
       task: 'fail-for-good',
+      input: undefined,
       jobId,
       waitUntil: new Date(),
     });
 
     await fixture.worker.jobs.run({ silent: true });
 
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', limit: 0 });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      limit: 0,
+    });
     const effects = await fixture.payload.db.find({ collection: 'effects', limit: 0 });
 
     expect(duplicate).toEqual(first);

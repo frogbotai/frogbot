@@ -74,7 +74,7 @@ test.describe('live preview', () => {
     const title = page.frameLocator('#live-preview-iframe').locator('#page-title');
 
     await expect(title).toHaveText('Home', { timeout: 30_000 });
-    await page.fill('#field-title', 'Home (Edited)');
+    await page.locator('#field-title').fill('Home (Edited)');
     await expect(title).toHaveText('Home (Edited)', { timeout: 15_000 });
   });
 

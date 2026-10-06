@@ -229,7 +229,7 @@ test('resizing to 1280px restores the unchanged desktop trail', async ({ page })
   await expect(page.locator('.frogbot-mobile-nav-toggle')).toHaveCount(0);
   await expect(page.locator('.app-header__controls-wrapper')).toHaveCSS('padding-left', '0px');
   await expect(page.locator('.step-nav__last')).toHaveCSS('max-width', '160px');
-  expect(await page.locator('.app-header__step-nav > *').allTextContents()).toEqual(trail);
+  await expect(page.locator('.app-header__step-nav > *')).toHaveText(trail);
 
   for (const part of await page.locator('.app-header__step-nav > *').all()) {
     await expect(part).toBeVisible();
@@ -240,5 +240,5 @@ test('resizing to 1280px restores the unchanged desktop trail', async ({ page })
   await page.setViewportSize({ width: 375, height: 667 });
 
   await expectPhoneTopBar(page, taskTitle);
-  expect(await page.locator('.app-header__step-nav > *').allTextContents()).toEqual(trail);
+  await expect(page.locator('.app-header__step-nav > *')).toHaveText(trail);
 });

@@ -225,8 +225,8 @@ describePostgres(`postgres search setup [${driver}]`, () => {
         ),
       );
 
-      expect(english.meta?.embedding).toEqual([1, 0, 0]);
-      expect(spanish.meta?.embedding).toEqual([0, 1, 0]);
+      expect(english).toMatchObject({ meta: { embedding: [1, 0, 0] } });
+      expect(spanish).toMatchObject({ meta: { embedding: [0, 1, 0] } });
 
       const json = await frogbot.create({
         collection: 'plain',

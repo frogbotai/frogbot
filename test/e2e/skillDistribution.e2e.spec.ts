@@ -78,7 +78,11 @@ describe('skill distribution local installation', () => {
     'prepared skills client (SKILL_DISTRIBUTION_SKILLS_BIN required)',
     () => {
       beforeEach(() => {
-        expect(clientVersion(fixture, skillsClient!)).toMatch(/^\d+\.\d+\.\d+$/);
+        const version = clientVersion(fixture, skillsClient!);
+
+        if (!/^\d+\.\d+\.\d+$/.test(version)) {
+          throw new Error(`Unexpected skills version ${version}`);
+        }
 
         for (const directory of [
           path.join(fixture.env.HOME!, '.cursor'),
@@ -154,10 +158,11 @@ describe('skill distribution local installation', () => {
         const version = clientVersion(fixture, claudeClient!);
         const [major, minor, patch] = version.split('.').map(Number);
 
-        expect(
-          major > 2 || (major === 2 && (minor > 1 || (minor === 1 && patch >= 233))),
-          `Claude ${version} lacks directory validation; prepare version >=2.1.233`,
-        ).toBe(true);
+        if (!(major > 2 || (major === 2 && (minor > 1 || (minor === 1 && patch >= 233))))) {
+          throw new Error(
+            `Claude ${version} lacks directory validation; prepare version >=2.1.233`,
+          );
+        }
       });
 
       it.each(['', 'skills'])('validates the real repository %s directory', (directory) => {

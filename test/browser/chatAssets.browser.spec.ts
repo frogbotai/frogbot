@@ -1,7 +1,7 @@
 import {
   type APIRequestContext,
   expect,
-  type FilePayload,
+  type FileChooser,
   type Locator,
   type Page,
   type Request,
@@ -110,7 +110,13 @@ function waitForUpload(page: Page) {
   );
 }
 
-async function pickFiles({ page, files }: { page: Page; files: FilePayload[] }) {
+async function pickFiles({
+  page,
+  files,
+}: {
+  page: Page;
+  files: Parameters<FileChooser['setFiles']>[0];
+}) {
   const chooser = page.waitForEvent('filechooser');
 
   await page.getByRole('button', { name: 'Add files', exact: true }).click();
@@ -640,7 +646,7 @@ test('a spreadsheet over 1,000 rows opens with the note the agent also receives'
 
   const viewer = page.getByRole('dialog', { name: 'export.xlsx' });
 
-  expect(await viewer.locator('pre').textContent()).toBe(asset.text);
+  await expect.poll(() => viewer.locator('pre').textContent()).toBe(asset.text);
 
   await viewer.getByRole('button', { name: 'Close', exact: true }).click();
 

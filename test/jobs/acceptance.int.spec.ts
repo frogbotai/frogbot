@@ -1,21 +1,26 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-import { jobLeaseOperations, renewJobLease, resetJobLease, sweepJobLeases } from 'frogbot/jobs';
+import {
+  type JobLeaseDatabase,
+  jobLeaseOperations,
+  renewJobLease,
+  resetJobLease,
+  sweepJobLeases,
+} from 'frogbot/jobs';
 import { createLocalReq } from 'payload';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import { adapterName, bootJobsFixture, deferred } from './fixture.js';
+import { adapterName, bootJobsFixture, deferred, type FrogBotJob, timestamp } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
 beforeAll(async () => {
   fixture = await bootJobsFixture();
 
-  assert.ok(
-    fixture.payload.db[jobLeaseOperations],
-    'Rebuild the selected adapter before acceptance.',
-  );
+  const database: JobLeaseDatabase = fixture.payload.db;
+
+  assert.ok(database[jobLeaseOperations], 'Rebuild the selected adapter before acceptance.');
 });
 
 afterEach(() => {
@@ -31,7 +36,7 @@ afterAll(async () => {
 });
 
 async function readJob(id: number | string) {
-  const result = await fixture.payload.db.find({
+  const result = await fixture.payload.db.find<FrogBotJob>({
     collection: 'payload-jobs',
     where: { id: { equals: id } },
     limit: 1,
@@ -68,13 +73,23 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
   it('a jobId whose job failed for good can be queued again', async () => {
     const queue = randomUUID();
     const jobId = `failed-${queue}`;
-    const first = await fixture.frogbot.jobs.queue({ task: 'fail-for-good', queue, jobId });
+    const first = await fixture.frogbot.jobs.queue({
+      task: 'fail-for-good',
+      input: undefined,
+      queue,
+      jobId,
+    });
 
     await fixture.frogbot.jobs.runByID({ id: first.id, silent: true });
 
     expect(await readJob(first.id)).toMatchObject({ hasError: true });
 
-    const second = await fixture.frogbot.jobs.queue({ task: 'fail-for-good', queue, jobId });
+    const second = await fixture.frogbot.jobs.queue({
+      task: 'fail-for-good',
+      input: undefined,
+      queue,
+      jobId,
+    });
 
     expect(second.id).not.toBe(first.id);
     expect(await readJob(second.id)).toMatchObject({ jobId, hasError: false });
@@ -161,7 +176,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       jobId,
     });
 
-    const rows = await fixture.payload.db.find({
+    const rows = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       where: { jobId: { equals: jobId } },
       pagination: false,
@@ -217,18 +232,21 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       fixture.worker.jobs.runByID({ id: job.id }),
     ]);
 
-    try {
-      await enteredOrFinished(gate.entered.promise, runs);
-
-      expect(await readJob(job.id)).toMatchObject({
-        processing: true,
-        leaseOwner: expect.any(String),
-        leaseUntil: expect.any(String),
-      });
-    } finally {
+    onTestFinished(async () => {
       gate.release.resolve();
       await runs;
-    }
+    });
+
+    await enteredOrFinished(gate.entered.promise, runs);
+
+    expect(await readJob(job.id)).toMatchObject({
+      processing: true,
+      leaseOwner: expect.any(String),
+      leaseUntil: expect.any(String),
+    });
+
+    gate.release.resolve();
+    await runs;
 
     expect((await effects(queue)).docs).toHaveLength(1);
     expect(await readJob(job.id)).toMatchObject({ completedAt: expect.any(String), totalTried: 1 });
@@ -334,8 +352,8 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
         const persisted = await readJob(job.id);
         const recorded = await effects(queue);
         const succeeded = attempt === 3 && !alwaysFail;
-        const checkpoints = persisted.log.filter((entry) => entry.taskID === 'checkpoint');
-        const attempts = persisted.log.filter((entry) => entry.taskSlug === 'retry-effect');
+        const checkpoints = (persisted.log ?? []).filter((entry) => entry.taskID === 'checkpoint');
+        const attempts = (persisted.log ?? []).filter((entry) => entry.taskSlug === 'retry-effect');
         const newAttempts = attempts.filter((entry) => !previousAttemptIDs.has(entry.id));
 
         expect(persisted).toMatchObject({
@@ -395,31 +413,34 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     const run = fixture.frogbot.jobs.run({ queue });
 
-    try {
-      await enteredOrFinished(gate.entered.promise, run);
-
-      const initial = await readJob(job.id);
-
-      await expect
-        .poll(async () => new Date((await readJob(job.id)).leaseUntil).getTime(), {
-          timeout: 15_000,
-        })
-        .toBeGreaterThan(new Date(initial.leaseUntil).getTime() + 5_000);
-
-      expect(Date.now()).toBeGreaterThan(new Date(initial.leaseUntil).getTime());
-
-      await sweepJobLeases({ req });
-      await fixture.payload.jobs.runByID({ id: job.id });
-
-      expect(await readJob(job.id)).toMatchObject({
-        processing: true,
-        leaseOwner: initial.leaseOwner,
-      });
-      expect((await effects(queue)).docs).toHaveLength(0);
-    } finally {
+    onTestFinished(async () => {
       gate.release.resolve();
       await run;
-    }
+    });
+
+    await enteredOrFinished(gate.entered.promise, run);
+
+    const initial = await readJob(job.id);
+
+    await expect
+      .poll(async () => timestamp((await readJob(job.id)).leaseUntil), {
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(timestamp(initial.leaseUntil) + 5_000);
+
+    expect(Date.now()).toBeGreaterThan(timestamp(initial.leaseUntil));
+
+    await sweepJobLeases({ req });
+    await fixture.payload.jobs.runByID({ id: job.id });
+
+    expect(await readJob(job.id)).toMatchObject({
+      processing: true,
+      leaseOwner: initial.leaseOwner,
+    });
+    expect((await effects(queue)).docs).toHaveLength(0);
+
+    gate.release.resolve();
+    await run;
 
     expect((await effects(queue)).docs).toHaveLength(1);
   });
@@ -446,23 +467,26 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     const run = fixture.frogbot.jobs.runByID({ id: job.id });
 
-    try {
-      await enteredOrFinished(gate.entered.promise, run);
-
-      const successor = await readJob(job.id);
-
-      await resetJobLease({ id: job.id, owner: 'crashed', leaseUntil: expired, req });
-      await renewJobLease({ ids: [job.id], owner: 'crashed', req });
-
-      expect(await readJob(job.id)).toMatchObject({
-        processing: true,
-        leaseOwner: successor.leaseOwner,
-        leaseUntil: successor.leaseUntil,
-      });
-    } finally {
+    onTestFinished(async () => {
       gate.release.resolve();
       await run;
-    }
+    });
+
+    await enteredOrFinished(gate.entered.promise, run);
+
+    const successor = await readJob(job.id);
+
+    await resetJobLease({ id: job.id, owner: 'crashed', leaseUntil: expired, req });
+    await renewJobLease({ ids: [job.id], owner: 'crashed', req });
+
+    expect(await readJob(job.id)).toMatchObject({
+      processing: true,
+      leaseOwner: successor.leaseOwner,
+      leaseUntil: successor.leaseUntil,
+    });
+
+    gate.release.resolve();
+    await run;
 
     expect((await effects(queue)).docs).toHaveLength(1);
 
@@ -541,16 +565,14 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     });
 
     vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date(new Date(scheduled.docs[0].waitUntil).getTime() + 1));
+    vi.setSystemTime(new Date(timestamp(scheduled.docs[0].waitUntil) + 1));
 
-    try {
-      await fixture.frogbot.jobs.run({
-        queue: 'default',
-        where: { taskSlug: { equals: 'frogbot-sweep-jobs' } },
-      });
-    } finally {
-      vi.useRealTimers();
-    }
+    await fixture.frogbot.jobs.run({
+      queue: 'default',
+      where: { taskSlug: { equals: 'frogbot-sweep-jobs' } },
+    });
+
+    vi.useRealTimers();
 
     expect(await readJob(crashed.id)).toMatchObject({ processing: false });
     expect(await readJob(scheduled.docs[0].id)).toMatchObject({

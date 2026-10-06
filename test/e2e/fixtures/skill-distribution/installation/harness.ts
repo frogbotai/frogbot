@@ -185,7 +185,6 @@ export function clientVersion(fixture: InstallationFixture, executable: string):
   const version = result.output.match(/\b\d+\.\d+\.\d+\b/)?.[0];
 
   expect(version, result.diagnostic).toBeDefined();
-  console.info(`Prepared distribution client: ${executable} (${version})`);
 
   return version!;
 }
@@ -304,9 +303,7 @@ export function packCLI(fixture: InstallationFixture): string {
 
   fs.mkdirSync(tarballs);
 
-  const version = successful(fixture, 'pnpm', ['--version'], cliRoot);
-
-  console.info(`Distribution pack pnpm: ${version.stdout.trim()}`);
+  successful(fixture, 'pnpm', ['--version'], cliRoot);
   successful(fixture, 'pnpm', ['pack', '--pack-destination', tarballs, '--json'], cliRoot);
 
   const archives = fs.readdirSync(tarballs);

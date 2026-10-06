@@ -89,6 +89,21 @@ export function run(
   };
 }
 
+/** `run` for setup steps in hooks: throws with the output when the command fails. */
+export function runSetup(
+  command: string,
+  args: string[],
+  options: { cwd: string; env?: NodeJS.ProcessEnv },
+): { output: string; status: number } {
+  const result = run(command, args, options);
+
+  if (result.status !== 0) {
+    throw new Error(`${command} ${args.join(' ')} exited with ${result.status}:\n${result.output}`);
+  }
+
+  return result;
+}
+
 function readPackage(directory: string): PackageJson {
   return JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8')) as PackageJson;
 }

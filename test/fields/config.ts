@@ -1,6 +1,5 @@
-import type { CollectionConfig, FieldHook } from 'frogbot';
+import { type CollectionConfig, type FieldHook, slugField } from 'frogbot';
 
-import { slugField } from '../../packages/frogbot/src/fields/baseFields/slug/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import {
   draftPostsSlug,
@@ -59,7 +58,7 @@ const UndefinedSlugPosts: CollectionConfig = {
   access: openAccess,
   fields: [
     { name: 'title', type: 'text', required: true },
-    slugField({ slugify: async () => undefined }),
+    slugField({ slugify: () => Promise.resolve(undefined) }),
   ],
 };
 

@@ -9,7 +9,9 @@ const fts = 'frogbot_search_search_articles_content_fts';
 
 type PushResult = {
   apply: () => Promise<void>;
+  hasDataLoss: boolean;
   statementsToExecute: string[];
+  warnings: string[];
 };
 
 describe('D1 search schema push', () => {

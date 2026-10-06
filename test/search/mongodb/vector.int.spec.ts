@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { Where } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -12,6 +11,7 @@ import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import type { SeededArticles } from './shared.js';
 import {
   articlesSlug,
+  mongooseAdapterOf,
   postsSlug,
   seedArticles,
   skipSearch,
@@ -307,7 +307,7 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
   });
 
   it('checks only the indexes of the requested draft context', async () => {
-    const db = booted.payload.db as MongooseAdapter;
+    const db = mongooseAdapterOf(booted.payload.db);
     const versions = db.versions[postsSlug].collection;
 
     await versions.dropSearchIndex('content_vector');

@@ -8,7 +8,7 @@ import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import type { Payload } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { articlesSlug, buildSearchConfig, pagesSlug } from './shared.js';
+import { articlesSlug, buildSearchConfig, pagesSlug, sqliteAdapterOf } from './shared.js';
 
 const databasePath = fileURLToPath(new URL('./search-migrations.db', import.meta.url));
 const migrationDir = fileURLToPath(new URL('./migrations', import.meta.url));
@@ -69,7 +69,7 @@ describe('SQLite search migrations', () => {
     });
 
     payload = getFrogBotPayload(frogbot);
-    db = payload.db as unknown as SQLiteAdapter;
+    db = sqliteAdapterOf(payload.db);
   });
 
   afterAll(async () => {

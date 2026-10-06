@@ -14,6 +14,7 @@ import {
   type LocalPackage,
   packLocalClosure,
   run,
+  runSetup,
 } from './fixtures/create-frogbot-app/harness';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
@@ -67,11 +68,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/sdk packaging', () => {
 
     applyLocalOverrides(frontend, localPackages);
 
-    const install = run('pnpm', ['install', '--store-dir', path.join(root, 'store')], {
-      cwd: frontend,
-    });
-
-    expect(install.status, install.output).toBe(0);
+    runSetup('pnpm', ['install', '--store-dir', path.join(root, 'store')], { cwd: frontend });
   }, 600000);
 
   afterAll(() => {
@@ -152,11 +149,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/sdk packaging', () => {
     let bundle: string;
 
     beforeAll(async () => {
-      const build = run(path.join(frontend, 'node_modules', '.bin', 'vite'), ['build'], {
-        cwd: frontend,
-      });
-
-      expect(build.status, build.output).toBe(0);
+      runSetup(path.join(frontend, 'node_modules', '.bin', 'vite'), ['build'], { cwd: frontend });
 
       bundle = fs.readFileSync(path.join(frontend, 'dist', 'main.js'), 'utf8');
 

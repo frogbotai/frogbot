@@ -49,11 +49,6 @@
       "count": 4
     }
   },
-  "test/browser/seoFields.browser.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
   "test/connections/int.spec.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
@@ -64,47 +59,7 @@
       "count": 2
     }
   },
-  "test/e2e/docsFences.e2e.spec.ts": {
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 2
-    }
-  },
-  "test/e2e/docsReferences.e2e.spec.ts": {
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 2
-    }
-  },
-  "test/e2e/fixtures/connections-ui.config.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/e2e/frogbotRun.e2e.spec.ts": {
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 2
-    }
-  },
-  "test/e2e/nextClientBuild.e2e.spec.ts": {
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 2
-    }
-  },
-  "test/e2e/pluginWrappersBuild.e2e.spec.ts": {
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 2
-    }
-  },
-  "test/e2e/scaffold.e2e.spec.ts": {
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 2
-    }
-  },
   "test/email/int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/fields/config.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -112,31 +67,6 @@
   "test/graphql/customResolvers/config.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "test/jobs/fixture.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/jobs/job-id.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/jobs/migrations.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/jobs/waitpoints-http.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 9
-    }
-  },
-  "test/jobs/waitpoints.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 6
     }
   },
   "test/live/rag.live.spec.ts": {

@@ -5,7 +5,7 @@ import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import { createLocalReq, type PayloadRequest } from 'payload';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { adapterName, bootJobsFixture } from './fixture.js';
+import { adapterName, bootJobsFixture, type FrogBotJob } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 let transactionReq: PayloadRequest | undefined;
@@ -18,7 +18,7 @@ beforeAll(async () => {
         {
           slug: 'supersede',
           concurrency: { key: ({ input }) => String(input.key), supersedes: true },
-          handler: async () => undefined,
+          handler: () => undefined,
         },
       ],
     },
@@ -66,7 +66,7 @@ async function commitAndRead(req: PayloadRequest, jobId: string) {
   transactionReq = undefined;
 
   const effects = await fixture.payload.db.find({ collection: 'effects', pagination: false });
-  const jobs = await fixture.payload.db.find({
+  const jobs = await fixture.payload.db.find<FrogBotJob>({
     collection: 'payload-jobs',
     where: { jobId: { equals: jobId } },
     pagination: false,
@@ -87,7 +87,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
     });
 
     const second = await fixture.worker.jobs.queue({ task: 'record-effect', input: {}, jobId });
-    const rows = await fixture.payload.db.find({
+    const rows = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       where: { jobId: { equals: jobId } },
       pagination: false,
@@ -108,7 +108,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
         collection: 'payload-jobs',
         data: { taskSlug: 'record-effect', input: { marker: jobId }, jobId },
       });
-      const stored = await fixture.payload.db.find({
+      const stored = await fixture.payload.db.find<FrogBotJob>({
         collection: 'payload-jobs',
         where: { id: { equals: first.id } },
         limit: 1,
@@ -130,7 +130,12 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       ]);
       expect(duplicate.id).toBe(first.id);
       expect(
-        (await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false })).docs,
+        (
+          await fixture.payload.db.find<FrogBotJob>({
+            collection: 'payload-jobs',
+            pagination: false,
+          })
+        ).docs,
       ).toHaveLength(1);
     },
   );
@@ -197,7 +202,10 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
     await fixture.frogbot.jobs.cancelByID({ id: first.id });
 
     const second = await fixture.frogbot.jobs.queue({ task: 'record-effect', input: {}, jobId });
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      pagination: false,
+    });
 
     expect(second.id).not.toBe(first.id);
     expect(rows.docs).toHaveLength(2);
@@ -219,7 +227,10 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       jobId,
     });
 
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      pagination: false,
+    });
 
     expect(second.input).toEqual({ key: jobId, value: 'second' });
     expect(rows.docs).toHaveLength(1);
@@ -237,7 +248,10 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       input: { key, value: 'second' },
     });
 
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      pagination: false,
+    });
 
     expect(rows.docs).toHaveLength(1);
     expect(rows.docs[0]).toMatchObject({ id: second.id, input: { key, value: 'second' } });
@@ -263,7 +277,10 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       jobId,
     });
 
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      pagination: false,
+    });
 
     expect(duplicate).toMatchObject({ id: first.id, input: first.input, processing: true });
     expect(rows.docs).toHaveLength(1);
@@ -276,10 +293,15 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       ),
     );
 
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', pagination: false });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      pagination: false,
+    });
 
     expect(new Set(results.map(({ id }) => id)).size).toBe(4);
-    expect(results.every((job) => !job.jobId)).toBe(true);
+    expect(results).toEqual(
+      Array.from({ length: 4 }, () => expect.not.objectContaining({ jobId: expect.anything() })),
+    );
     expect(rows.docs).toHaveLength(4);
   });
 });

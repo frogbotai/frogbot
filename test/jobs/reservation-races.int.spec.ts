@@ -10,7 +10,7 @@ import {
   sweepWaitpoints,
 } from '../../packages/frogbot/dist/jobs/waitpoints/operations.js';
 import type { Waitpoint } from '../../packages/frogbot/dist/jobs/waitpoints/types.js';
-import { adapterName, bootJobsFixture, deferred } from './fixture.js';
+import { adapterName, bootJobsFixture, deferred, type FrogBotJob, timestamp } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 let handler: WorkflowHandler;
@@ -53,7 +53,7 @@ afterAll(async () => {
 });
 
 async function readJob(id: number | string) {
-  const result = await fixture.payload.db.find({
+  const result = await fixture.payload.db.find<FrogBotJob>({
     collection: 'payload-jobs',
     where: { id: { equals: id } },
     limit: 1,
@@ -130,7 +130,11 @@ describe(`reservation races: ${adapterName}`, () => {
       results.push(result);
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', jobId });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'reservation-race',
+      input: {},
+      jobId,
+    });
 
     await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
@@ -158,7 +162,7 @@ describe(`reservation races: ${adapterName}`, () => {
     expect(closed).toMatchObject({ id: waiting.id, status: 'expired', dispatched: true });
     expect(processing).toMatchObject({ processing: true, completedAt: null, hasError: false });
 
-    vi.setSystemTime(Date.parse(processing.leaseUntil) + 1);
+    vi.setSystemTime(timestamp(processing.leaseUntil) + 1);
 
     await sweepJobLeases({ req });
 
@@ -217,7 +221,11 @@ describe(`reservation races: ${adapterName}`, () => {
       });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', jobId });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'reservation-race',
+      input: {},
+      jobId,
+    });
     const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
     inFlight.push(run);
@@ -237,7 +245,11 @@ describe(`reservation races: ${adapterName}`, () => {
       status: 409,
     });
 
-    const replacement = await fixture.worker.jobs.queue({ workflow: 'reservation-race', jobId });
+    const replacement = await fixture.worker.jobs.queue({
+      workflow: 'reservation-race',
+      input: {},
+      jobId,
+    });
 
     expect(replacement.id).not.toBe(source.id);
   });
@@ -261,7 +273,7 @@ describe(`reservation races: ${adapterName}`, () => {
       });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race' });
+    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
     const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
     inFlight.push(run);
@@ -309,7 +321,7 @@ describe(`reservation races: ${adapterName}`, () => {
       await waitFor('cooldown', { until: new Date(until) });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race' });
+    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
 
     await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
@@ -352,7 +364,7 @@ describe(`reservation races: ${adapterName}`, () => {
       await waitFor('cooldown', { until: new Date(until) });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race' });
+    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
 
     await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
@@ -399,7 +411,10 @@ describe(`reservation races: ${adapterName}`, () => {
       throw new Error('FrogBot resumed workflow retries after expiry');
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'retrying-reservation-race' });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'retrying-reservation-race',
+      input: {},
+    });
 
     await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
@@ -417,7 +432,7 @@ describe(`reservation races: ${adapterName}`, () => {
       totalTried: 1,
     });
     expect(before.error).toBeTruthy();
-    expect(Date.parse(before.waitUntil)).toBeGreaterThan(Date.now());
+    expect(timestamp(before.waitUntil)).toBeGreaterThan(Date.now());
 
     await sweepWaitpoints({ req });
 
@@ -436,7 +451,7 @@ describe(`reservation races: ${adapterName}`, () => {
         await waitFor('approval', { onWait: () => {} });
       };
 
-      const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race' });
+      const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
 
       await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
@@ -494,7 +509,10 @@ describe(`reservation races: ${adapterName}`, () => {
       }),
     ]);
 
-    const rows = await fixture.payload.db.find({ collection: 'payload-jobs', limit: 0 });
+    const rows = await fixture.payload.db.find<FrogBotJob>({
+      collection: 'payload-jobs',
+      limit: 0,
+    });
 
     expect(rows.docs.filter((row) => !row.completedAt && row.hasError !== true)).toHaveLength(1);
     expect(await readJob(second.id)).toMatchObject({ hasError: false });

@@ -11,10 +11,11 @@ import {
   type LocalPackage,
   packLocalClosure,
   run,
+  runSetup,
   serviceAvailable,
   subprocessEnvironment,
 } from './fixtures/create-frogbot-app/harness';
-import { getFreePort, spawnServer, terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const RUN_COMPILER_CHECKS = process.env.RUN_COMPILER_CHECKS === '1';
@@ -26,7 +27,7 @@ const cliPackage = JSON.parse(
 const postgresAvailable = RUN_E2E ? await serviceAvailable(5433) : false;
 const mongodbAvailable = RUN_E2E ? await serviceAvailable(27018) : false;
 
-async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
+async function expectAppBoots(directory: string, databaseUrl?: string): Promise<void> {
   const port = await getFreePort();
   const child = spawnServer(
     process.execPath,
@@ -50,24 +51,18 @@ async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
   }
 
   try {
-    const deadline = Date.now() + 90000;
+    await waitForServer(
+      child,
+      async () => {
+        // A request can hang while the app waits on startup, so each attempt has its own limit.
+        const response = await fetch(`http://127.0.0.1:${port}/api/users/me`, {
+          signal: AbortSignal.timeout(10000),
+        }).catch(() => undefined);
 
-    for (;;) {
-      if (child.exitCode !== null) {
-        throw new Error(`Generated app exited with ${child.exitCode}:\n${output}`);
-      }
-
-      // A request can hang while the app waits on startup, so each attempt has its own limit.
-      const response = await fetch(`http://127.0.0.1:${port}/api/users/me`, {
-        signal: AbortSignal.timeout(10000),
-      }).catch(() => undefined);
-
-      if (response?.status === 200) return;
-
-      if (Date.now() > deadline) throw new Error(`Generated app did not become ready:\n${output}`);
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+        return response?.status === 200;
+      },
+      { name: 'Generated app', timeout: 90000, interval: 500, output: () => output },
+    );
   } finally {
     await terminateProcess(child);
   }
@@ -77,13 +72,57 @@ interface AppCase {
   ai: 'none' | 'zen';
   database: 'mongodb' | 'postgres' | 'sqlite';
   name: string;
+  configIncludes: string[];
+  configExcludes: string[];
+  envIncludes: string[];
+  absentDependencies: string[];
+  absentPaths: string[];
 }
 
+const sqliteEnv = ['DATABASE_URL=file:./frogbot.db'];
+const noAIConfig = ['  ai:', '  agents:'];
+
 const cases: AppCase[] = [
-  { ai: 'zen', database: 'sqlite', name: 'sqlite-zen' },
-  { ai: 'none', database: 'sqlite', name: 'sqlite-none' },
-  { ai: 'none', database: 'postgres', name: 'postgres-none' },
-  { ai: 'none', database: 'mongodb', name: 'mongodb-none' },
+  {
+    ai: 'zen',
+    database: 'sqlite',
+    name: 'sqlite-zen',
+    configIncludes: ['sqliteAdapter', "defaultModel: 'zen/deepseek-v4.1-flash'"],
+    configExcludes: [],
+    envIncludes: sqliteEnv,
+    absentDependencies: [],
+    absentPaths: [],
+  },
+  {
+    ai: 'none',
+    database: 'sqlite',
+    name: 'sqlite-none',
+    configIncludes: ['sqliteAdapter'],
+    configExcludes: noAIConfig,
+    envIncludes: sqliteEnv,
+    absentDependencies: [],
+    absentPaths: ['src/agents'],
+  },
+  {
+    ai: 'none',
+    database: 'postgres',
+    name: 'postgres-none',
+    configIncludes: ['postgresAdapter'],
+    configExcludes: noAIConfig,
+    envIncludes: [],
+    absentDependencies: ['libsql'],
+    absentPaths: ['src/agents'],
+  },
+  {
+    ai: 'none',
+    database: 'mongodb',
+    name: 'mongodb-none',
+    configIncludes: ['mongooseAdapter'],
+    configExcludes: noAIConfig,
+    envIncludes: [],
+    absentDependencies: ['libsql', 'drizzle-kit'],
+    absentPaths: ['src/agents'],
+  },
 ];
 
 // The generated Postgres app pushes its schema in dev. On a shared database holding other
@@ -119,7 +158,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     if (postgresAvailable) postgresDatabase = await createPostgresDatabase('create_frogbot_app');
 
     for (const appCase of cases) {
-      const result = run(
+      runSetup(
         process.execPath,
         [
           cli,
@@ -135,19 +174,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
         { cwd: root },
       );
 
-      expect(result.status, result.output).toBe(0);
       appDirectories.set(appCase.name, path.join(root, appCase.name));
-    }
-
-    const firstApp = appDirectories.get('sqlite-zen')!;
-    const firstPackage = JSON.parse(
-      fs.readFileSync(path.join(firstApp, 'package.json'), 'utf8'),
-    ) as { dependencies: Record<string, string> };
-
-    for (const [name, version] of Object.entries(firstPackage.dependencies)) {
-      if (name === 'frogbot' || name.startsWith('@frogbotai/')) {
-        expect(version).toBe(`^${cliPackage.version}`);
-      }
     }
 
     localPackages = packLocalClosure({
@@ -164,6 +191,19 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     postgresDatabase = undefined;
 
     if (root) fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('pins generated FrogBot dependencies to the CLI version', () => {
+    const firstPackage = JSON.parse(
+      fs.readFileSync(path.join(appDirectories.get('sqlite-zen')!, 'package.json'), 'utf8'),
+    ) as { dependencies: Record<string, string> };
+    const frogbotDependencies = Object.keys(firstPackage.dependencies).filter(
+      (name) => name === 'frogbot' || name.startsWith('@frogbotai/'),
+    );
+
+    expect(frogbotDependencies.map((name) => firstPackage.dependencies[name])).toEqual(
+      frogbotDependencies.map(() => `^${cliPackage.version}`),
+    );
   });
 
   it('packs the complete local FrogBot dependency closure with publish exports', () => {
@@ -187,20 +227,14 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     expect(config).toContain('editor: lexicalEditor()');
     expect(pkg.dependencies['@frogbotai/richtext-lexical']).toBe(`^${cliPackage.version}`);
 
-    if (appCase.database === 'sqlite') {
-      expect(config).toContain('sqliteAdapter');
-      expect(env).toContain('DATABASE_URL=file:./frogbot.db');
+    for (const text of appCase.configIncludes) expect(config).toContain(text);
+    for (const text of appCase.configExcludes) expect(config).not.toContain(text);
+    for (const line of appCase.envIncludes) expect(env).toContain(line);
+    for (const name of appCase.absentDependencies) {
+      expect(pkg.dependencies).not.toHaveProperty(name);
     }
-
-    if (appCase.database === 'postgres') {
-      expect(config).toContain('postgresAdapter');
-      expect(pkg.dependencies.libsql).toBeUndefined();
-    }
-
-    if (appCase.database === 'mongodb') {
-      expect(config).toContain('mongooseAdapter');
-      expect(pkg.dependencies.libsql).toBeUndefined();
-      expect(pkg.dependencies['drizzle-kit']).toBeUndefined();
+    for (const file of appCase.absentPaths) {
+      expect(fs.existsSync(path.join(directory, file))).toBe(false);
     }
 
     // Adapter runtime deps are direct so Next dev resolves them even when it
@@ -211,18 +245,11 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
         'utf8',
       ),
     ) as { dependencies: Record<string, string> };
+    const runtime = Object.entries(adapter.dependencies).filter(
+      ([, version]) => !version.startsWith('workspace:'),
+    );
 
-    for (const [name, version] of Object.entries(adapter.dependencies)) {
-      if (!version.startsWith('workspace:')) expect(pkg.dependencies[name]).toBe(version);
-    }
-
-    if (appCase.ai === 'none') {
-      expect(config).not.toContain('  ai:');
-      expect(config).not.toContain('  agents:');
-      expect(fs.existsSync(path.join(directory, 'src', 'agents'))).toBe(false);
-    } else {
-      expect(config).toContain("defaultModel: 'zen/deepseek-v4.1-flash'");
-    }
+    expect(runtime.map(([name]) => [name, pkg.dependencies[name]])).toEqual(runtime);
   });
 
   it.each(cases)(
@@ -238,23 +265,24 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     120000,
   );
 
-  it.each(['sqlite-zen', 'sqlite-none'])(
-    'loads config and generates types for %s',
-    (name) => {
+  it.each([
+    { name: 'sqlite-zen', generated: ["models: 'zen/deepseek-v4.1-flash'"] },
+    { name: 'sqlite-none', generated: [] },
+  ])(
+    'loads config and generates types for $name',
+    ({ name, generated }) => {
       const directory = appDirectories.get(name)!;
       const result = run('pnpm', ['generate:types'], { cwd: directory });
 
       expect(result.status, result.output).toBe(0);
       expect(fs.existsSync(path.join(directory, 'src', 'frogbot-types.ts'))).toBe(true);
 
-      if (name === 'sqlite-zen') {
-        const generatedTypes = fs.readFileSync(
-          path.join(directory, 'src', 'frogbot-types.ts'),
-          'utf8',
-        );
+      const generatedTypes = fs.readFileSync(
+        path.join(directory, 'src', 'frogbot-types.ts'),
+        'utf8',
+      );
 
-        expect(generatedTypes).toContain("models: 'zen/deepseek-v4.1-flash'");
-      }
+      for (const text of generated) expect(generatedTypes).toContain(text);
     },
     120000,
   );
@@ -373,7 +401,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   it.each(['sqlite-zen', 'sqlite-none'])(
     'boots the generated %s application',
     async (name) => {
-      await bootApp(appDirectories.get(name)!);
+      await expectAppBoots(appDirectories.get(name)!);
     },
     120000,
   );
@@ -381,7 +409,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   it.skipIf(!postgresAvailable)(
     'boots the generated Postgres application',
     async () => {
-      await bootApp(appDirectories.get('postgres-none')!, postgresURL());
+      await expectAppBoots(appDirectories.get('postgres-none')!, postgresURL());
     },
     120000,
   );
@@ -389,7 +417,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
   it.skipIf(!mongodbAvailable)(
     'boots the generated MongoDB application',
     async () => {
-      await bootApp(
+      await expectAppBoots(
         appDirectories.get('mongodb-none')!,
         'mongodb://127.0.0.1:27018/frogbot-test?directConnection=true&replicaSet=rs0',
       );

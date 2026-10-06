@@ -1,3 +1,4 @@
+import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { FrogBotInstance } from 'frogbot';
 
 export const articlesSlug = 'search-articles';
@@ -100,4 +101,14 @@ export async function seedArticles(frogbot: FrogBotInstance): Promise<SeededArti
   });
 
   return { author: String(author.id), fox, hounds, cats, secret };
+}
+
+function isMongooseAdapter(db: unknown): db is MongooseAdapter {
+  return typeof db === 'object' && db !== null && 'name' in db && db.name === 'mongoose';
+}
+
+export function mongooseAdapterOf(db: unknown): MongooseAdapter {
+  if (!isMongooseAdapter(db)) throw new Error('Expected the MongoDB database adapter.');
+
+  return db;
 }

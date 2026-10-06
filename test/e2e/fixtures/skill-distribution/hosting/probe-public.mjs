@@ -83,14 +83,14 @@ async function probe(url) {
     }
 
     results.push(result);
-    console.log(JSON.stringify(result));
+    process.stdout.write(`${JSON.stringify(result)}\n`);
 
     return result;
   } catch (error) {
     const result = { url, error: String(error), milliseconds: Date.now() - started };
 
     results.push(result);
-    console.log(JSON.stringify(result));
+    process.stdout.write(`${JSON.stringify(result)}\n`);
 
     return result;
   }
@@ -121,25 +121,25 @@ if (intended?.url) {
 
   const fetched = await probe(advertised.href);
 
-  console.log(
-    JSON.stringify({
+  process.stdout.write(
+    `${JSON.stringify({
       advertisedDigest: intended.digest,
       digestMatches: intended.digest === `sha256:${fetched.sha256}`,
-    }),
+    })}\n`,
   );
 } else {
-  console.log(
-    JSON.stringify({
+  process.stdout.write(
+    `${JSON.stringify({
       blocker: 'Public v0.2 index does not advertise frogbot; no other skill installed or fetched',
-    }),
+    })}\n`,
   );
 }
 
-console.log(
-  JSON.stringify({
+process.stdout.write(
+  `${JSON.stringify({
     checkedAt: new Date().toISOString(),
     rawFallbacks: results
       .filter((result) => fallbacks.includes(result.url))
       .map(({ url, status, error }) => ({ url, status, error })),
-  }),
+  })}\n`,
 );

@@ -249,7 +249,9 @@ describe('chat assets HTTP e2e', () => {
   });
 
   afterEach(() => {
-    expect(provider.unexpected).toEqual([]);
+    if (provider.unexpected.length) {
+      throw new Error(`Unexpected provider requests: ${JSON.stringify(provider.unexpected)}`);
+    }
   });
 
   afterAll(async () => {

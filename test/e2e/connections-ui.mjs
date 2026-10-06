@@ -126,8 +126,8 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   assert.equal((await once(seed, 'exit'))[0], 0, output);
   const build = run([require.resolve('next/dist/bin/next'), 'build', '--no-lint'], env);
   assert.equal((await once(build, 'exit'))[0], 0, output);
-  console.log(
-    `PASS production ${businessQA ? 'business-qa' : 'simple'} app using built workspace packages`,
+  process.stdout.write(
+    `PASS production ${businessQA ? 'business-qa' : 'simple'} app using built workspace packages\n`,
   );
   runtime = run([require.resolve('next/dist/bin/next'), 'start', '--port', String(port)], env);
   for (let attempt = 0; attempt < 120; attempt++) {
@@ -162,7 +162,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   await google.waitFor({ state: 'visible' });
   assert.equal(await google.getAttribute('href'), '/api/users/sign-in/google?returnTo=%2F');
   assert.equal(await page.getByRole('button', { name: 'Login', exact: true }).count(), 1);
-  console.log('PASS /login: password form + visible Google sign-in link');
+  process.stdout.write('PASS /login: password form + visible Google sign-in link\n');
   const callback = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith('/google/callback'),
   );
@@ -192,15 +192,15 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   );
   const before = await page.evaluate(async () => (await fetch('/api/connections?limit=0')).json());
   assert.equal(before.docs.length, 0);
-  console.log('PASS local OAuth sign-in: authenticated session, zero linked accounts');
+  process.stdout.write('PASS local OAuth sign-in: authenticated session, zero linked accounts\n');
   await page.getByRole('button', { name: 'Account', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
   await page.getByRole('link', { name: 'Linked accounts', exact: true }).click();
   await page.getByText('No connections yet', { exact: true }).waitFor();
   if (businessQA) {
     assert.deepEqual(errors, []);
-    console.log(
-      'PASS business-qa normal sign-in callback → session → Linked accounts empty; local provider only',
+    process.stdout.write(
+      'PASS business-qa normal sign-in callback → session → Linked accounts empty; local provider only\n',
     );
   } else {
     await page.getByRole('button', { name: '+ New Connection', exact: true }).click();
@@ -237,8 +237,8 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     });
     await dialog.waitFor({ state: 'hidden' });
     await page.getByRole('button', { name: 'Options for Local Fixture' }).waitFor();
-    console.log(
-      'PASS Settings → Linked accounts → searchable modal → masked static fields → POST 200',
+    process.stdout.write(
+      'PASS Settings → Linked accounts → searchable modal → masked static fields → POST 200\n',
     );
     await page.reload();
     await page.getByRole('button', { name: 'Options for Local Fixture' }).waitFor();
@@ -260,12 +260,12 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     const after = await page.evaluate(async () => (await fetch('/api/connections?limit=0')).json());
     assert.equal(after.docs.length, 0);
     assert.deepEqual(errors, []);
-    console.log(
-      'PASS persisted row + search + Disconnect DELETE 204 + reload empty; zero browser exceptions',
+    process.stdout.write(
+      'PASS persisted row + search + Disconnect DELETE 204 + reload empty; zero browser exceptions\n',
     );
   }
 } catch (error) {
-  console.error(output);
+  process.stderr.write(`${output}\n`);
   throw error;
 } finally {
   await browser?.close();

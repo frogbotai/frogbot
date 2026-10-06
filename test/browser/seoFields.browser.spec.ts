@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 let pageErrors: string[];
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(({ page }) => {
   pageErrors = [];
 
   page.on('pageerror', (error) => pageErrors.push(error.message));

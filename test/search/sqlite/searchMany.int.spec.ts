@@ -2,7 +2,6 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
 import type { FrogBotRequest, SearchManyOptions, SearchQuery } from 'frogbot';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -16,6 +15,7 @@ import {
   noNotesTenant,
   notesSlug,
   pagesSlug,
+  sqliteAdapterOf,
   usersSlug,
 } from './shared.js';
 
@@ -109,7 +109,7 @@ describe('SQLite searchMany', () => {
   };
 
   const openTransaction = async () => {
-    const db = booted.payload.db as unknown as SQLiteAdapter;
+    const db = sqliteAdapterOf(booted.payload.db);
     const req = await booted.frogbot.createRequest();
 
     transactionID = (await db.beginTransaction()) ?? undefined;

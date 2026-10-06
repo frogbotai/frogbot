@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import type { WorkflowHandler } from '../../packages/frogbot/dist/jobs/types.js';
 import type { Waitpoint } from '../../packages/frogbot/dist/jobs/waitpoints/types.js';
-import { adapterName, bootJobsFixture, deferred } from './fixture.js';
+import { adapterName, bootJobsFixture, deferred, type FrogBotJob, timestamp } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 let handler: WorkflowHandler;
@@ -25,7 +25,7 @@ const inbox = definePiece({
   label: 'Waitpoint test inbox',
   actions: [],
   webhook: {
-    verify: async ({ req }) => req.headers.get('x-test-inbox') === 'local-reply',
+    verify: ({ req }) => Promise.resolve(req.headers.get('x-test-inbox') === 'local-reply'),
     parse: () => ({ event: 'reply' }),
   },
   triggers: [
@@ -36,10 +36,10 @@ const inbox = definePiece({
       description: 'Receive a local test reply.',
       input: z.object({}),
       output: replySchema,
-      run: async ({ req }) => {
+      run: ({ req }) => {
         const data = replySchema.parse(req.data);
 
-        return [{ dedupeKey: data.messageId, data }];
+        return Promise.resolve([{ dedupeKey: data.messageId, data }]);
       },
     },
   ],
@@ -143,7 +143,9 @@ async function waits() {
 }
 
 async function jobs() {
-  return (await fixture.payload.db.find({ collection: 'payload-jobs', where: {}, limit: 0 })).docs;
+  return (
+    await fixture.payload.db.find<FrogBotJob>({ collection: 'payload-jobs', where: {}, limit: 0 })
+  ).docs;
 }
 
 async function holder(id: number | string) {
@@ -195,7 +197,7 @@ function approval(onResult?: (result: unknown) => void) {
 describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
   it('a paused workflow keeps its row live and is not deleted', async () => {
     const until = new Date(Date.now() + 60_000).toISOString();
-    const prepare = vi.fn(async () => ({ output: { prepared: true } }));
+    const prepare = vi.fn(() => ({ output: { prepared: true } }));
 
     handler = async ({ inlineTask, waitFor }) => {
       await inlineTask('prepare', { task: prepare });
@@ -265,14 +267,12 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       .fn<WorkflowHandler>()
       .mockImplementationOnce(async ({ inlineTask }) => {
         await inlineTask('failed', {
-          task: async () => {
+          task: () => {
             throw failure;
           },
         });
       })
-      .mockImplementationOnce(async () => {
-        throw failure;
-      })
+      .mockImplementationOnce(() => Promise.reject(failure))
       .mockImplementation(async ({ waitFor }) => {
         await waitFor('delay', { until });
       });
@@ -287,7 +287,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(firstTick.queued).toHaveLength(1);
     expect(scheduled).toHaveLength(1);
 
-    vi.setSystemTime(new Date(scheduled[0].waitUntil).getTime() + 1);
+    vi.setSystemTime(timestamp(scheduled[0].waitUntil) + 1);
 
     await fixture.frogbot.jobs.runByID({ id: scheduled[0].id, silent: true });
 
@@ -332,7 +332,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
   it('confirms via the registered router and resumes the same row with the HTML form', async () => {
     const finished = vi.fn();
-    const prepare = vi.fn(async () => ({ output: { sent: true } }));
+    const prepare = vi.fn(() => ({ output: { sent: true } }));
     let url = '';
 
     handler = async ({ inlineTask, waitFor }) => {
@@ -689,7 +689,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const entered = deferred();
     const release = deferred();
     const finished = vi.fn();
-    const notify = vi.fn(async () => ({ output: { notified: true } }));
+    const notify = vi.fn(() => ({ output: { notified: true } }));
     let url = '';
 
     handler = async ({ waitFor, inlineTask }) => {
@@ -752,7 +752,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       input: original.input,
       log: [expect.objectContaining({ taskID: 'notify', state: 'succeeded' })],
     });
-    expect(Date.parse(paused.waitUntil)).toBeLessThanOrEqual(Date.now());
+    expect(timestamp(paused.waitUntil)).toBeLessThanOrEqual(Date.now());
     expect((await waits())[0]).toMatchObject({ ready: true, dispatched: false });
 
     await sweep();
@@ -839,7 +839,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
   });
 
   it('retries a failed callback without losing early input, token, deadline or checkpoints', async () => {
-    const checkpoint = vi.fn(async () => ({ output: { notified: true } }));
+    const checkpoint = vi.fn(() => ({ output: { notified: true } }));
     const urls: string[] = [];
     const finished = vi.fn();
 
@@ -912,7 +912,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
   it('replays approval, delay and expiry by name on the same workflow row', async () => {
     const now = Date.now();
     const until = new Date(now + 60_000);
-    const prepare = vi.fn(async () => ({ output: { prepared: true } }));
+    const prepare = vi.fn(() => ({ output: { prepared: true } }));
     const finished = vi.fn();
     const links: string[] = [];
 

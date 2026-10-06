@@ -8,7 +8,13 @@ import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import { articlesSlug, buildSearchConfig, notesSlug, pagesSlug } from './shared.js';
+import {
+  articlesSlug,
+  buildSearchConfig,
+  notesSlug,
+  pagesSlug,
+  sqliteAdapterOf,
+} from './shared.js';
 
 const indexedPath = fileURLToPath(new URL('./search-vector-index.db', import.meta.url));
 
@@ -38,7 +44,7 @@ describe('SQLite approximate vector search', () => {
       config: await buildSearchConfig({ url: `file:${indexedPath}` }),
     });
 
-    db = getFrogBotPayload(frogbot).db as SQLiteAdapter;
+    db = sqliteAdapterOf(getFrogBotPayload(frogbot).db);
   });
 
   afterAll(async () => {
@@ -64,7 +70,7 @@ describe('SQLite approximate vector search', () => {
 
     const next = random(7);
     const vectors = Array.from({ length: 40 }, () => [next(), next(), next()]);
-    const docs = [];
+    const docs: { id: number | string }[] = [];
 
     for (const [index, embedding] of vectors.entries()) {
       docs.push(

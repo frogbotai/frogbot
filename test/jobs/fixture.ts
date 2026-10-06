@@ -7,7 +7,14 @@ import { join } from 'node:path';
 import { buildConfig, type FrogBotConfig } from 'frogbot';
 import { getJobLeaseContext } from 'frogbot/jobs';
 import { FrogBot, getFrogBotPayload } from 'frogbot/test';
-import { BasePayload, type Payload, type PayloadRequest } from 'payload';
+import {
+  type BaseDatabaseAdapter,
+  BasePayload,
+  type DatabaseAdapterObj,
+  type Job,
+  type Payload,
+  type PayloadRequest,
+} from 'payload';
 
 import { initFrogBotFromPayload } from '../../packages/frogbot/dist/frogbot.js';
 import { createVercelPostgresProxy } from '../__helpers/shared/db/postgres.js';
@@ -30,6 +37,18 @@ export function deferred() {
   return { promise, resolve };
 }
 
+export type FrogBotJob = Job & {
+  jobId?: null | string;
+  leaseOwner?: null | string;
+  leaseUntil?: null | string;
+  priority?: null | number;
+  waitpoint?: unknown;
+};
+
+export function timestamp(value: null | string | undefined) {
+  return value ? Date.parse(value) : Number.NaN;
+}
+
 export type JobGate = {
   entered: ReturnType<typeof deferred>;
   release: ReturnType<typeof deferred>;
@@ -48,7 +67,7 @@ function externalRequire() {
 async function createDatabase({ transactions }: { transactions: boolean }) {
   const name = `ticket121_${randomUUID().replaceAll('-', '')}`;
   const cleanups: (() => Promise<void>)[] = [];
-  let descriptor: FrogBotConfig['db'];
+  let descriptor: DatabaseAdapterObj;
 
   if (adapterName === 'sqlite') {
     const { sqliteAdapter } = sourceAdapters
@@ -165,7 +184,7 @@ export async function bootJobsFixture({
   const gates = new Map<string, JobGate>();
   const actions = new Map<string, (req: PayloadRequest) => Promise<void>>();
   const hookEvents: { operation: string; id: string }[] = [];
-  const nativeDatabases: Payload['db'][] = [];
+  const nativeDatabases: BaseDatabaseAdapter[] = [];
   let frogbot: FrogBot | undefined;
   let workerPayload: Payload | undefined;
 
@@ -199,17 +218,17 @@ export async function bootJobsFixture({
   const shutdown = async () => {
     for (const gate of gates.values()) gate.release.resolve();
 
+    type DriverClient = {
+      end?: () => Promise<void>;
+      close?: () => void;
+      _clients?: { release(): void }[];
+      _idle?: { client: unknown }[];
+    };
+
     const drivers = nativeDatabases as unknown as {
-      drizzle?: {
-        $client?: {
-          end?: () => Promise<void>;
-          close?: () => void;
-          _clients?: { release(): void }[];
-          _idle?: { client: unknown }[];
-        };
-      };
+      drizzle?: { $client?: DriverClient };
       connection?: { dropDatabase(): Promise<void> };
-      client?: { close?: () => void };
+      client?: DriverClient;
     }[];
 
     const clients = drivers.map((driver) => driver.drizzle?.$client ?? driver.client);
@@ -282,7 +301,7 @@ export async function bootJobsFixture({
           {
             slug: 'fail-for-good',
             retries: 0,
-            handler: async () => {
+            handler: () => {
               throw new Error('FrogBot terminal failure fixture');
             },
           },
@@ -326,7 +345,7 @@ export async function bootJobsFixture({
                 input: { marker: input.marker },
               });
 
-              if (checkpoint.marker !== input.marker) {
+              if (checkpoint?.marker !== input.marker) {
                 throw new Error('Native checkpoint output was not restored.');
               }
 

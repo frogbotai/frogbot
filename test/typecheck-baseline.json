@@ -123,68 +123,40 @@
   "test/auth/session.int.spec.ts": {
     "TS7031": 1
   },
-  "test/browser/chatAssets.browser.spec.ts": {
-    "TS2614": 1
-  },
   "test/browser/fixtures/chat-assets/src/app/(frogbot)/[[...segments]]/page.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
-  "test/browser/fixtures/chat-assets/src/app/(frogbot)/api/[...slug]/route.ts": {
-    "TS2307": 1
-  },
   "test/browser/fixtures/chat-assets/src/app/(frogbot)/layout.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/browser/fixtures/chat-assets/src/frogbot.config.ts": {
     "TS2769": 2
   },
   "test/browser/fixtures/custom-field/src/app/(frogbot)/[[...segments]]/not-found.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/browser/fixtures/custom-field/src/app/(frogbot)/[[...segments]]/page.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
-  "test/browser/fixtures/custom-field/src/app/(frogbot)/api/[...slug]/route.ts": {
-    "TS2307": 1
-  },
   "test/browser/fixtures/custom-field/src/app/(frogbot)/layout.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/browser/fixtures/custom-field/src/frogbot.config.ts": {
     "TS2322": 1
   },
   "test/browser/fixtures/live-preview/src/app/(frogbot)/[[...segments]]/not-found.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/browser/fixtures/live-preview/src/app/(frogbot)/[[...segments]]/page.tsx": {
-    "TS2307": 1,
     "TS7016": 1
-  },
-  "test/browser/fixtures/live-preview/src/app/(frogbot)/api/[...slug]/route.ts": {
-    "TS2307": 1
   },
   "test/browser/fixtures/live-preview/src/app/(frogbot)/layout.tsx": {
-    "TS2307": 1,
     "TS7016": 1
-  },
-  "test/browser/fixtures/live-preview/src/app/(frontend)/pages/[slug]/page.tsx": {
-    "TS2307": 1
   },
   "test/browser/fixtures/question/src/app/(frogbot)/[[...segments]]/page.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
-  "test/browser/fixtures/question/src/app/(frogbot)/api/[...slug]/route.ts": {
-    "TS2307": 1
-  },
   "test/browser/fixtures/question/src/app/(frogbot)/layout.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/browser/fixtures/question/src/frogbot.config.ts": {
@@ -192,17 +164,14 @@
     "TS2353": 2,
     "TS2769": 2
   },
-  "test/browser/pushSchema.ts": {
-    "TS2307": 1
-  },
   "test/chat/assets.int.spec.ts": {
-    "TS2322": 18,
+    "TS2322": 7,
     "TS2352": 3,
     "TS2353": 1,
     "TS2769": 5
   },
   "test/chat/attachments.int.spec.ts": {
-    "TS2322": 11,
+    "TS2322": 10,
     "TS2339": 1,
     "TS2352": 4,
     "TS2353": 4,
@@ -215,7 +184,7 @@
     "TS7053": 1
   },
   "test/chat/config.ts": {
-    "TS2322": 6
+    "TS2322": 5
   },
   "test/chat/endpointComposition.int.spec.ts": {
     "TS2322": 5,
@@ -227,9 +196,8 @@
     "TS2717": 2
   },
   "test/chat/migrations.int.spec.ts": {
-    "TS2322": 9,
-    "TS2352": 6,
-    "TS2353": 1
+    "TS2322": 8,
+    "TS2352": 6
   },
   "test/chat/modelAllowlist.int.spec.ts": {
     "TS2322": 7,
@@ -237,7 +205,7 @@
     "TS2769": 2
   },
   "test/chat/persistence.int.spec.ts": {
-    "TS2322": 19,
+    "TS2322": 15,
     "TS2352": 3,
     "TS2353": 4,
     "TS2769": 4
@@ -283,40 +251,24 @@
     "TS2769": 7
   },
   "test/database/sqlite-busy.int.spec.ts": {
-    "TS2322": 33,
-    "TS2339": 4,
+    "TS2322": 32,
     "TS2353": 1,
-    "TS2769": 12,
-    "TS7031": 1
+    "TS2769": 12
   },
   "test/e2e/channelQuestions.e2e.spec.ts": {
-    "TS18046": 1,
-    "TS2322": 2,
-    "TS2339": 1,
-    "TS2741": 5
+    "TS2339": 1
   },
   "test/e2e/createFrogBotApp.e2e.spec.ts": {
     "TS2345": 1,
     "TS2741": 10
   },
-  "test/e2e/discordQuestions.e2e.spec.ts": {
-    "TS2322": 1
-  },
-  "test/e2e/fixtures/connections-ui.config.ts": {
-    "TS7031": 2
-  },
   "test/e2e/fixtures/create-frogbot-app/harness.ts": {
     "TS2741": 2
   },
   "test/e2e/fixtures/plugin-wrappers/src/app/(frogbot)/admin/[[...segments]]/page.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
-  "test/e2e/fixtures/plugin-wrappers/src/app/(frogbot)/api/[...slug]/route.ts": {
-    "TS2307": 1
-  },
   "test/e2e/fixtures/plugin-wrappers/src/app/(frogbot)/layout.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/e2e/fixtures/plugin-wrappers/src/frogbot.config.ts": {
@@ -327,18 +279,12 @@
     "TS2322": 1
   },
   "test/e2e/fixtures/rich-text/src/app/(frogbot)/admin/[[...segments]]/page.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
-  "test/e2e/fixtures/rich-text/src/app/(frogbot)/api/[...slug]/route.ts": {
-    "TS2307": 1
-  },
   "test/e2e/fixtures/rich-text/src/app/(frogbot)/layout.tsx": {
-    "TS2307": 1,
     "TS7016": 1
   },
   "test/e2e/fixtures/rich-text/src/app/(frontend)/page.tsx": {
-    "TS2307": 1,
     "TS2322": 1,
     "TS2339": 6
   },
@@ -364,17 +310,8 @@
   "test/e2e/fixtures/tool-agent/src/agents/webSearch.ts": {
     "TS2322": 2
   },
-  "test/e2e/fixtures/tool-agent/src/app/api/[...slug]/route.ts": {
-    "TS2307": 1
-  },
   "test/e2e/fixtures/tool-agent/src/frogbot-types.ts": {
     "TS2717": 1
-  },
-  "test/e2e/frogbotRun.e2e.spec.ts": {
-    "TS2322": 1
-  },
-  "test/e2e/githubQuestions.e2e.spec.ts": {
-    "TS2322": 1
   },
   "test/e2e/linearQuestions.e2e.spec.ts": {
     "TS2339": 2
@@ -385,11 +322,7 @@
     "TS2769": 1
   },
   "test/e2e/scaffold.e2e.spec.ts": {
-    "TS2345": 1,
     "TS2741": 1
-  },
-  "test/e2e/skillHosting.e2e.spec.ts": {
-    "TS18046": 1
   },
   "test/e2e/telegramQuestions.e2e.spec.ts": {
     "TS2322": 2,
@@ -407,7 +340,7 @@
     "TS7031": 1
   },
   "test/fields/config.ts": {
-    "TS2322": 7
+    "TS2322": 4
   },
   "test/fields/int.spec.ts": {
     "TS2322": 22,
@@ -415,15 +348,10 @@
     "TS2353": 3,
     "TS2769": 6
   },
-  "test/fields/regressions/config.ts": {
-    "TS18048": 3,
-    "TS2322": 2
-  },
   "test/fields/regressions/int.spec.ts": {
     "TS2322": 11,
     "TS2339": 4,
     "TS2353": 3,
-    "TS2739": 1,
     "TS2769": 8
   },
   "test/fields/vector/int.spec.ts": {
@@ -487,26 +415,13 @@
     "TS18047": 2
   },
   "test/jobs/acceptance.int.spec.ts": {
-    "TS2322": 6,
-    "TS2339": 9,
-    "TS7006": 4,
-    "TS7053": 1
+    "TS2322": 6
   },
   "test/jobs/concurrency-opt-out.int.spec.ts": {
     "TS2322": 1
   },
-  "test/jobs/fixture.ts": {
-    "TS18046": 1,
-    "TS18048": 1,
-    "TS2339": 1,
-    "TS2345": 1,
-    "TS2349": 1,
-    "TS2488": 1,
-    "TS7006": 1
-  },
   "test/jobs/job-id.int.spec.ts": {
     "TS2322": 16,
-    "TS2339": 2,
     "TS2353": 1,
     "TS2769": 1
   },
@@ -514,29 +429,20 @@
     "TS2322": 1
   },
   "test/jobs/live-reservation.int.spec.ts": {
-    "TS2322": 5,
-    "TS2339": 3
-  },
-  "test/jobs/migrations.int.spec.ts": {
-    "TS2353": 1
+    "TS2322": 5
   },
   "test/jobs/reservation-races.int.spec.ts": {
     "TS2322": 12,
-    "TS2339": 11,
     "TS2769": 2
   },
   "test/jobs/runtime-regressions.int.spec.ts": {
-    "TS2322": 1,
-    "TS2339": 4
+    "TS2322": 1
   },
   "test/jobs/waitpoints-http.int.spec.ts": {
-    "TS2322": 14,
-    "TS2339": 27,
-    "TS7031": 1
+    "TS2322": 14
   },
   "test/jobs/waitpoints.int.spec.ts": {
-    "TS2322": 30,
-    "TS2339": 36
+    "TS2322": 30
   },
   "test/live/rag.live.spec.ts": {
     "TS2322": 2,
@@ -624,8 +530,7 @@
     "TS2322": 1
   },
   "test/search/d1/schema.int.spec.ts": {
-    "TS2322": 1,
-    "TS2352": 1
+    "TS2322": 1
   },
   "test/search/d1/searchMany.int.spec.ts": {
     "TS2322": 4,
@@ -640,13 +545,8 @@
   "test/search/mongodb/hybrid.int.spec.ts": {
     "TS2322": 1
   },
-  "test/search/mongodb/indexes.int.spec.ts": {
-    "TS2339": 1,
-    "TS2352": 1
-  },
   "test/search/mongodb/lexical.int.spec.ts": {
     "TS2322": 1,
-    "TS2352": 1,
     "TS2769": 1
   },
   "test/search/mongodb/searchMany.int.spec.ts": {
@@ -654,17 +554,12 @@
     "TS2345": 2,
     "TS2353": 1
   },
-  "test/search/mongodb/setup.int.spec.ts": {
-    "TS2339": 1,
-    "TS2352": 1
-  },
   "test/search/mongodb/shared.ts": {
     "TS2322": 2,
     "TS2353": 1
   },
   "test/search/mongodb/vector.int.spec.ts": {
     "TS2322": 4,
-    "TS2352": 1,
     "TS2353": 3,
     "TS2769": 3
   },
@@ -681,19 +576,17 @@
     "TS2322": 8,
     "TS2339": 2,
     "TS2345": 5,
-    "TS2353": 4,
-    "TS7031": 1
+    "TS2353": 4
   },
   "test/search/postgres/setup.int.spec.ts": {
     "TS2322": 15,
-    "TS2339": 11,
+    "TS2339": 9,
     "TS2353": 7,
     "TS2769": 4
   },
   "test/search/postgres/vector.int.spec.ts": {
     "TS2322": 6,
     "TS2339": 4,
-    "TS2352": 1,
     "TS2353": 2
   },
   "test/search/sqlite/hybrid.int.spec.ts": {
@@ -727,10 +620,7 @@
   },
   "test/search/sqlite/vectorIndex.int.spec.ts": {
     "TS2322": 5,
-    "TS2352": 1,
-    "TS2769": 1,
-    "TS7005": 1,
-    "TS7034": 1
+    "TS2769": 1
   },
   "test/select/int.spec.ts": {
     "TS2322": 30,

@@ -2,14 +2,13 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
 import { sql } from '@frogbotai/db-sqlite';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import { articlesSlug, databasePath, pagesSlug } from './shared.js';
+import { articlesSlug, databasePath, pagesSlug, sqliteAdapterOf } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -92,7 +91,7 @@ describe('SQLite vector search', () => {
   });
 
   it('builds no vector index when the index opts out of approximation', async () => {
-    const { drizzle } = booted.payload.db as unknown as SQLiteAdapter;
+    const { drizzle } = sqliteAdapterOf(booted.payload.db);
 
     const objects = await drizzle.all<{ name: string }>(
       sql`SELECT "name" FROM sqlite_master WHERE "name" GLOB 'frogbot_search_*_vectors*'`,

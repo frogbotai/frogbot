@@ -16,8 +16,8 @@ function run(directory?: string) {
     const child = spawn(process.execPath, args, { cwd: repoRoot });
     let output = '';
 
-    child.stdout.on('data', (chunk: Buffer) => (output += chunk));
-    child.stderr.on('data', (chunk: Buffer) => (output += chunk));
+    child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
+    child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.on('error', reject);
     child.on('close', (code) => resolveExit({ code: code ?? 1, output }));
   });

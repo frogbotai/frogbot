@@ -22,7 +22,7 @@ test('edits, saves, reloads, and renders rich text through the generated import 
   page,
 }) => {
   await page.goto('/admin/collections/posts/create');
-  await page.fill('input[name="title"]', 'Browser rich text');
+  await page.locator('input[name="title"]').fill('Browser rich text');
 
   const editor = page.locator('[data-field-path="content"] [contenteditable="true"]').first();
 
@@ -137,7 +137,7 @@ test('edits, saves, reloads, and renders rich text through the generated import 
 
 test('creates and persists an external link through the link drawer', async ({ page }) => {
   await page.goto('/admin/collections/posts/create');
-  await page.fill('input[name="title"]', 'Browser rich text link');
+  await page.locator('input[name="title"]').fill('Browser rich text link');
 
   const editor = page.locator('[data-field-path="content"] [contenteditable="true"]').first();
 
@@ -182,7 +182,7 @@ test('creates and persists an external link through the link drawer', async ({ p
 
 test('documented block components render and server blocks use req.frogbot', async ({ page }) => {
   await page.goto('/admin/collections/posts/create');
-  await page.fill('input[name="title"]', 'Documented blocks');
+  await page.locator('input[name="title"]').fill('Documented blocks');
 
   const editor = page
     .locator('[data-field-path="documentedBlocks"] [contenteditable="true"]')
@@ -269,7 +269,7 @@ test('controlled RenderLexical state resets and does not persist with the form',
   page,
 }) => {
   await page.goto('/admin/collections/posts/create');
-  await page.fill('input[name="title"]', 'On-demand editors');
+  await page.locator('input[name="title"]').fill('On-demand editors');
 
   const editors = page.locator('[contenteditable="true"]');
 
@@ -300,7 +300,7 @@ test('controlled RenderLexical state resets and does not persist with the form',
 
 test('form-backed RenderLexical content persists with the form', async ({ page }) => {
   await page.goto('/admin/collections/posts/create');
-  await page.fill('input[name="title"]', 'Persisted on-demand editor');
+  await page.locator('input[name="title"]').fill('Persisted on-demand editor');
 
   const requiredEditor = page.locator('[data-field-path="content"] [contenteditable="true"]');
   const formEditor = page.locator('[data-field-path="previewContent"] [contenteditable="true"]');

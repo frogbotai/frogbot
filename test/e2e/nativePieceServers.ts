@@ -74,7 +74,7 @@ export async function startPieceProviders() {
     const toolName = body.tools?.find(({ function: tool }) => tool.name.endsWith('_send'))?.function
       .name;
     if (!toolName) throw new Error('The model request is missing the native send tool');
-    const user = body.messages.findLast(({ role }) => role === 'user');
+    const user = [...body.messages].reverse().find(({ role }) => role === 'user');
     const prompt = Array.isArray(user?.content)
       ? user.content.map(({ text }) => text ?? '').join('')
       : user?.content;

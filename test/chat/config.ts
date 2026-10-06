@@ -1,4 +1,4 @@
-import type { CollectionConfig, Tool } from 'frogbot';
+import type { CollectionConfig, Tool, Where } from 'frogbot';
 import { general } from 'frogbot/agents';
 import { question, todoTools } from 'frogbot/tools';
 import { z } from 'zod';
@@ -43,9 +43,11 @@ const Chats: CollectionConfig = {
     read: ({ req }) => {
       if (!req.user) return false;
 
-      return {
+      const ownOrShared: Where = {
         or: [{ user: { equals: req.user.id } }, { sharedWith: { contains: req.user.id } }],
       };
+
+      return ownOrShared;
     },
   },
   fields: [{ name: 'sharedWith', type: 'relationship', relationTo: usersSlug, hasMany: true }],

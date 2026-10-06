@@ -7,7 +7,14 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { ensureSearchIndexes } from '../../../packages/db-mongodb/src/search/index.js';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
-import { articlesSlug, postsSlug, skipSearch, useSearchDatabase, waitFor } from './shared.js';
+import {
+  articlesSlug,
+  mongooseAdapterOf,
+  postsSlug,
+  skipSearch,
+  useSearchDatabase,
+  waitFor,
+} from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -38,7 +45,7 @@ describe.skipIf(skipSearch)('MongoDB search indexes', () => {
   beforeAll(async () => {
     restoreDatabase = useSearchDatabase();
     booted = await bootFrogBot(dirname, 'search-indexes');
-    db = booted.payload.db as MongooseAdapter;
+    db = mongooseAdapterOf(booted.payload.db);
 
     await waitFor(
       () =>
@@ -47,7 +54,7 @@ describe.skipIf(skipSearch)('MongoDB search indexes', () => {
             (model) => model.collection.listSearchIndexes().toArray(),
           ),
         ),
-      (lists) => lists.flat().every((index) => index.queryable),
+      (lists) => lists.flat().every((index) => 'queryable' in index && index.queryable === true),
     );
   });
 

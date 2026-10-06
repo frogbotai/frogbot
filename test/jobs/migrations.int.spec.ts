@@ -75,10 +75,9 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
         config: await buildConfig({
           secret: 'frogbot-jobs-migrations-secret',
           db: descriptor,
-          admin: { disable: true },
           collections: [],
           typescript: { autoGenerate: false },
-          jobs: { autoRun: [], tasks: [{ slug: 'noop', handler: async () => ({ output: {} }) }] },
+          jobs: { autoRun: [], tasks: [{ slug: 'noop', handler: () => ({ output: {} }) }] },
         }),
         disableOnInit: true,
       });

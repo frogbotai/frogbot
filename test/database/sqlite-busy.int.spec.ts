@@ -3,6 +3,7 @@ import { setImmediate } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type MigrateUpArgs,
   sql,
   type SQLiteAdapter,
   sqliteAdapter,
@@ -491,6 +492,14 @@ function gateSlowHook() {
   return entered;
 }
 
+function sqliteTransaction(adapter: SQLiteAdapter, transactionID: number | string) {
+  const { db } = adapter.sessions[transactionID];
+
+  if (!('run' in db)) throw new Error('[test] the session is not a SQLite transaction');
+
+  return db;
+}
+
 const edgeHooks: CollectionConfig['hooks'] = {
   beforeChange: [
     async ({ data }) => {
@@ -509,9 +518,9 @@ const edgeHooks: CollectionConfig['hooks'] = {
       if (doc.title === 'Throw after') throw new Error('[test] after change');
 
       if (doc.title === 'Orphan') {
-        const adapter = req.payload.db as unknown as SQLiteAdapter;
+        const adapter = getFrogBotPayload(req.frogbot).db as unknown as SQLiteAdapter;
 
-        await adapter.sessions[(await req.transactionID)!].db.run(
+        await sqliteTransaction(adapter, (await req.transactionID)!).run(
           sql`insert into children (parent_id) values (99)`,
         );
       }
@@ -542,7 +551,9 @@ async function commitFailsInPayload(app: App) {
   const { transactionID } = await app.begin();
   const adapter = getFrogBotPayload(app.frogbot).db as unknown as SQLiteAdapter;
 
-  await adapter.sessions[transactionID].db.run(sql`insert into children (parent_id) values (99)`);
+  await sqliteTransaction(adapter, transactionID).run(
+    sql`insert into children (parent_id) values (99)`,
+  );
 
   const commitError = await app.commit(transactionID).then(
     () => undefined,
@@ -845,7 +856,7 @@ const identity = definePiece({
   slug: 'identity',
   label: 'Identity',
   auth: z.object({ accessToken: z.string() }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   oauth: {
     authorizationUrl: 'https://identity.example.com/authorize',
     tokenUrl: 'https://identity.example.com/token',
@@ -936,7 +947,9 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
     const { transactionID } = await app.begin();
     const adapter = getFrogBotPayload(app.frogbot).db as unknown as SQLiteAdapter;
 
-    await adapter.sessions[transactionID].db.run(sql`insert into children (parent_id) values (99)`);
+    await sqliteTransaction(adapter, transactionID).run(
+      sql`insert into children (parent_id) values (99)`,
+    );
 
     return transactionID;
   }
@@ -1061,13 +1074,17 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
       migrations: [
         {
           name: '20260101_tester_round_2',
-          async up({ db, req }) {
+          async up(args) {
+            const { db, req } = args as MigrateUpArgs;
+            const request = await app.frogbot.createRequest();
+
+            request.transactionID = req.transactionID;
             await db.run(
               sql`insert into notes (title, updated_at, created_at) values ('Raw migration', '2026-01-01', '2026-01-01')`,
             );
-            await app.create('Migration', req);
+            await app.create('Migration', request);
           },
-          async down() {},
+          down: () => Promise.resolve(),
         },
       ],
     });

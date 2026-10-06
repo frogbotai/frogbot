@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { text } from 'node:stream/consumers';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { AgentModelId, FrogBotInstance, FrogBotSanitizedConfig } from 'frogbot';
+import type { AgentModelId, FrogBotInstance, FrogBotSanitizedConfig, Where } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import {
   type ChannelQuestionCall,
@@ -59,6 +59,8 @@ type Job = {
   input: { kind?: string; revision?: number; thread: { id: string } };
 };
 
+type QuestionToolInput = z.input<typeof QuestionInput>;
+
 type User = { id: number | string; email: string; headers: Record<string, string> };
 
 type StoredMessage = {
@@ -73,21 +75,21 @@ const people: Record<string, string> = {
   U3: 'carol@channel-questions.test',
 };
 
-const twoQuestions: QuestionInput = {
+const twoQuestions: QuestionToolInput = {
   questions: [
     { header: 'Color', question: 'Which color?', options: [{ label: 'Red' }, { label: 'Blue' }] },
     { header: 'Size', question: 'Which size?', options: [{ label: 'Small' }, { label: 'Large' }] },
   ],
 };
 
-const threeQuestions: QuestionInput = {
+const threeQuestions: QuestionToolInput = {
   questions: [
     ...twoQuestions.questions,
     { header: 'Finish', question: 'Which finish?', options: [{ label: 'Matte' }] },
   ],
 };
 
-const longQuestion: QuestionInput = {
+const longQuestion: QuestionToolInput = {
   questions: [
     {
       header: 'Terms',
@@ -97,7 +99,7 @@ const longQuestion: QuestionInput = {
   ],
 };
 
-const colorQuestion: QuestionInput = {
+const colorQuestion: QuestionToolInput = {
   questions: [
     {
       header: 'Color',
@@ -447,16 +449,18 @@ async function identity({
   return result.docs[0] ? { ...(result.docs[0] as object), collection: 'users' } : null;
 }
 
+const pagesAuth = z.object({ botToken: z.string() });
+
 const createPages = definePiece({
   slug: 'pages',
   label: 'Pages',
-  auth: z.object({ botToken: z.string() }),
+  auth: pagesAuth,
   client: () => pagesClient(),
   actions: [],
   channel: {
     adapter: ({ auth }) =>
       createSlackAdapter({
-        botToken: auth.botToken,
+        botToken: pagesAuth.parse(auth).botToken,
         botUserId: 'UBOT',
         signingSecret: SIGNING_SECRET,
         apiUrl: slackApi.url,
@@ -596,7 +600,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
     await work();
   }
 
-  async function jobs(where: Record<string, unknown> = {}): Promise<Job[]> {
+  async function jobs(where: Where = {}): Promise<Job[]> {
     const result = await frogbot.find({
       collection: 'payload-jobs' as never,
       where: { and: [{ taskSlug: { in: [CHANNEL_TASK, UPDATE_TASK] } }, where] },
@@ -752,7 +756,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
     thread,
     toolCallId,
   }: {
-    input: QuestionInput;
+    input: QuestionToolInput;
     instance: string;
     thread: string;
     toolCallId: string;
@@ -859,7 +863,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
   });
 
   afterEach(() => {
-    expect(blocked).toEqual([]);
+    if (blocked.length) throw new Error(`Unexpected outbound requests: ${JSON.stringify(blocked)}`);
   });
 
   afterAll(async () => {
@@ -1398,18 +1402,21 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         user: alice,
       });
 
-      if (duplicate.status === 200 || duplicate.status === 201) {
-        const copy = (duplicate.body.doc ?? duplicate.body) as Record<string, unknown>;
+      const copy = (duplicate.body.doc ?? duplicate.body) as Record<string, unknown>;
+      const cleared = { channel: null, channelKey: null, channelThread: null, channelLabel: null };
 
-        expect(copy).toMatchObject({
-          channel: null,
-          channelKey: null,
-          channelThread: null,
-          channelLabel: null,
-        });
-      } else {
-        expect(duplicate.status).toBe(400);
-      }
+      // Either the copy drops the channel home or the duplicate is rejected.
+      expect([
+        { status: 200, ...cleared },
+        { status: 201, ...cleared },
+        { status: 400 },
+      ]).toContainEqual({
+        status: duplicate.status,
+        channel: copy.channel,
+        channelKey: copy.channelKey,
+        channelThread: copy.channelThread,
+        channelLabel: copy.channelLabel,
+      });
 
       expect((await chatOf(thread)).id).toBe(chat.id);
     });
@@ -1437,7 +1444,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
     it('branches into a private web chat where the question arrives closed and nothing reaches Slack', async () => {
       const mark = slackApi.calls.length;
       const source = await messagesOf(chat.id);
-      const assistant = source.findLast(({ role }) => role === 'assistant')!;
+      const assistant = [...source].reverse().find(({ role }) => role === 'assistant')!;
 
       const branch = await request('POST', '/frogbot/chat/branch', {
         body: { chatId: chat.id, messageId: assistant.id },

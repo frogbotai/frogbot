@@ -7,17 +7,18 @@ const google = definePiece({
   slug: 'google',
   label: 'Google',
   auth: z.object({ access_token: z.string() }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   oauth: {
     authorizationUrl: `${process.env.SMOKE_PROVIDER_URL}/authorize`,
     tokenUrl: `${process.env.SMOKE_PROVIDER_URL}/token`,
     scopes: ['openid', 'email'],
     toAuth: ({ tokens }) => ({ access_token: tokens.access_token }),
-    account: async () => ({
-      id: 'local-user',
-      label: 'Local fixture',
-      email: 'connections-ui@example.test',
-    }),
+    account: () =>
+      Promise.resolve({
+        id: 'local-user',
+        label: 'Local fixture',
+        email: 'connections-ui@example.test',
+      }),
   },
   actions: [],
 })({ oauth: { clientId: 'local-client', clientSecret: 'local-secret' } });
@@ -31,7 +32,7 @@ const fixture = definePiece({
     retries: z.number().int().min(0),
     enabled: z.boolean(),
   }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   actions: [],
 })();
 

@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { getFreePort, spawnServer, terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -50,15 +50,11 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     server.stdout?.resume();
     server.stderr?.resume();
 
-    const deadline = Date.now() + 210000;
-    for (;;) {
-      if (await isListening(port)) break;
-      if (server.exitCode !== null) {
-        throw new Error(`cold REST dev server exited with code ${server.exitCode}`);
-      }
-      if (Date.now() > deadline) throw new Error('cold REST dev server did not become ready');
-      await new Promise((r) => setTimeout(r, 2000));
-    }
+    await waitForServer(server, () => isListening(port), {
+      name: 'cold REST dev server',
+      timeout: 210000,
+      interval: 2000,
+    });
 
     const registration = await fetch(`${baseURL}/api/users/first-register`, {
       method: 'POST',
@@ -70,7 +66,9 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
       }),
     });
     const body = (await registration.json()) as { token: string };
-    expect(registration.status, JSON.stringify(body)).toBe(200);
+    if (registration.status !== 200) {
+      throw new Error(`first-register returned ${registration.status}: ${JSON.stringify(body)}`);
+    }
     token = body.token;
   }, 240000);
 

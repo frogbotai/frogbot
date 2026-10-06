@@ -1,8 +1,13 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { CollectionConfig, Field, FieldHook, TextField } from 'frogbot';
+import {
+  type CollectionConfig,
+  type Field,
+  type FieldHook,
+  slugField,
+  type TextField,
+} from 'frogbot';
 import type { TextField as PayloadTextField } from 'payload';
 
-import { slugField } from '../../../packages/frogbot/src/fields/baseFields/slug/index.js';
 import { buildTestConfig, openAccess } from '../../__helpers/shared/buildTestConfig.js';
 import {
   accessObservations,
@@ -76,10 +81,10 @@ const Posts: CollectionConfig = {
           const { req } = args;
 
           countRequests.push({
-            context: req.context,
+            context: req?.context,
             req,
-            transactionID: req.transactionID,
-            userID: req.user?.id,
+            transactionID: req?.transactionID,
+            userID: req?.user?.id,
           });
         }
 

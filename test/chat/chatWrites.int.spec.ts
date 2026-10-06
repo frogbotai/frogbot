@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { FrogBotRequest } from 'frogbot';
+import type { FrogBotRequest, TurnActor } from 'frogbot';
 import { definePiece } from 'frogbot';
 import { runQueuedTurn, settleClientToolCall } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -36,10 +36,6 @@ const channelRefusal = {
   error: expect.stringContaining('This conversation happens in Slack.'),
 };
 
-type User = { id: number | string; headers: Record<string, string> };
-
-type Chat = { id: number | string };
-
 type StoredMessage = {
   id: string;
   role: string;
@@ -59,6 +55,9 @@ type StoredChat = {
 describe('chat writes: a chat is written only from its home', () => {
   let booted: BootedFrogBot;
   let model: StubChatModel;
+  type User = Awaited<ReturnType<typeof signUp>>;
+  type Chat = Pick<Awaited<ReturnType<typeof createWebChat>>, 'id'>;
+
   let owner: User;
   let stranger: User;
   let sequence = 0;
@@ -110,7 +109,7 @@ describe('chat writes: a chat is written only from its home', () => {
     };
   }
 
-  async function signUp(email: string): Promise<User> {
+  async function signUp(email: string) {
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email, password: 'frogbot-int-password' },
@@ -131,7 +130,7 @@ describe('chat writes: a chat is written only from its home', () => {
     return `slack:C-writes:${sequence}`;
   }
 
-  async function createChannelChat(threadId: string): Promise<Chat> {
+  async function createChannelChat(threadId: string) {
     return booted.frogbot.create({
       collection: chatsSlug,
       data: {
@@ -142,14 +141,20 @@ describe('chat writes: a chat is written only from its home', () => {
         channelKey: `chat-writes-${threadId}`,
         channelThread: {
           account: 'slack-support',
-          thread: { _type: 'chat:Thread', id: threadId, channelId: 'C-writes', isDM: false },
+          thread: {
+            _type: 'chat:Thread',
+            adapterName: 'slack',
+            id: threadId,
+            channelId: 'C-writes',
+            isDM: false,
+          },
         },
       },
       overrideAccess: true,
     });
   }
 
-  async function createWebChat(user: User = owner): Promise<Chat> {
+  async function createWebChat(user: User = owner) {
     return booted.frogbot.create({
       collection: chatsSlug,
       data: { user: user.id, agent: questionAgentSlug },
@@ -403,7 +408,7 @@ describe('chat writes: a chat is written only from its home', () => {
   });
 
   describe('queued promotion', () => {
-    async function queue(chat: Chat, author: Record<string, unknown>) {
+    async function queue(chat: Chat, author: TurnActor) {
       await booted.frogbot.create({
         collection: messagesSlug,
         data: {

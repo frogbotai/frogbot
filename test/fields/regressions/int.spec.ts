@@ -177,7 +177,13 @@ describe('field runtime boundaries', () => {
       draft: true,
     });
     const req = await booted.frogbot.createRequest({
-      user: { id: 123, collection: usersSlug },
+      user: {
+        id: 123,
+        collection: usersSlug,
+        email: 'reviewer@example.com',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
     });
 
     req.context.reviewMarker = 'preserved';

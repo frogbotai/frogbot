@@ -1,8 +1,19 @@
 import { fileURLToPath } from 'node:url';
 
+import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import type { Access, CollectionConfig, FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
+
+function isSQLiteAdapter(db: unknown): db is SQLiteAdapter {
+  return typeof db === 'object' && db !== null && 'name' in db && db.name === 'sqlite';
+}
+
+export function sqliteAdapterOf(db: unknown): SQLiteAdapter {
+  if (!isSQLiteAdapter(db)) throw new Error('Expected the SQLite database adapter.');
+
+  return db;
+}
 
 export const databasePath = fileURLToPath(new URL('./search.db', import.meta.url));
 
