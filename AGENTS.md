@@ -1,1 +1,1 @@
-Read [CLAUDE.md](CLAUDE.md), then [CONTRIBUTING.md](CONTRIBUTING.md).
+Please read `./CLAUDE.md`.

@@ -4,11 +4,31 @@ The owner decides what gets built. Agents do the research, writing and code. Scr
 
 ## Who does what
 
-- **Owner.** Files issues, answers decision questions, approves specs, says **Go** once per batch, skims what lands, and is the only one who pushes.
-- **Coordinator.** One OpenCode session (the `build` agent) that runs a batch: it starts fresh agents, reviews their work and lands it. It writes no code.
-- **Workers.** A fresh `general` agent per step or stage, starting from the ticket's files, not chat history.
-- **Lint agent.** A cheap model that runs `pnpm check`.
-- **Tester.** A fresh agent that tries to break a risky ticket before it lands.
+Each role is an OpenCode agent, except the owner. The commands are the normal path; anything else is an exception.
+
+| Role            | Agent and model                       | Starts when                                                          | Runs                                                                                                                                                                  | Hands back                                                                     | Why it exists                                                                      |
+| --------------- | ------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **Owner**       | you                                   | any time                                                             | `opencode`, `pnpm ticket decisions`, `pnpm ticket status --batch <n>`, `git push`                                                                                     | issues, card answers, spec approvals, **Go**, pushes                           | decides what gets built; the only one who pushes                                   |
+| **Coordinator** | `build`, main model                   | the owner opens a batch                                              | `pnpm ticket next`, `pnpm ticket new <n>`, starts the agents below, `pnpm ticket land <n>` (background shell), `git worktree remove`, `pnpm ticket stats --batch <n>` | a short status per event; cards to the owner                                   | one place that sees every ticket; writes no code, so its context stays small       |
+| **Researcher**  | `research`, Sonnet                    | a ticket has an `issue.md`                                           | reads source and the precedent: `~/code/opencode-v2` for agent-harness work, `~/code/payload` for the rest, `pnpm check ticket-docs <n>`                              | `step1_research.md`: facts with `path:line`, no design                         | facts before design, on a cheaper model                                            |
+| **Worker**      | `general`, main model, fresh per step | research is done (spec), the spec is approved (plan), **Go** (build) | in its worktree: edits, `pnpm test:unit <file>`, `pnpm test:int:sqlite <file>`, the lint agent, one `git commit`                                                      | `step2_spec.md`, `step3_plan.md`, or one commit plus `step4_implementation.md` | one ticket, from its files, not chat history                                       |
+| **Lint agent**  | `lint`, cheap model                   | a worker or the coordinator asks                                     | `pnpm check`, `pnpm check --full`, `pnpm lint:fix`, `pnpm prettier:write`                                                                                             | one line: `check: OK …` or the errors                                          | lint output is long; a cheap model reads it so the worker doesn't                  |
+| **Tester**      | `general`, fresh                      | a full-tier ticket is committed                                      | targeted tests that try to break it                                                                                                                                   | bugs found, or "held"                                                          | the worker doesn't grade its own work; batch 27's testers found 2 real bugs in 248 |
+
+Never, for any agent: `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs. Inside a worker also never `git stash` (worktrees share it) or a background call (the plugin refuses both).
+
+### The normal path of a code ticket
+
+1. Coordinator: `pnpm ticket next`, writes `issue.md`.
+2. Researcher: `step1_research.md`.
+3. Worker: `step2_spec.md` with decision cards. **Owner approves** (`Approve:` in `OPEN.md`, or in chat).
+4. Worker: `step3_plan.md`, at most 3 stages. **Owner says Go** for the batch.
+5. Coordinator: `pnpm ticket new <n>`. Worker: builds, commits, logs.
+6. Full tier: a tester tries to break it, with at most 2 fix rounds. Light tier: `pnpm ticket verify`.
+7. Coordinator: `pnpm ticket land <n>`. It rebases, runs `check --full`, unit, UI and the int and browser specs the diff touches, squashes, and fast-forwards local `main`. Then `git worktree remove`.
+8. Owner: skims `main`, pushes.
+
+A process ticket from an approved PLAN skips steps 3 and 4: the PLAN section is its spec (DR-036). "Just do it" skips everything for that scope.
 
 ## Life of a ticket
 
@@ -87,6 +107,14 @@ The plan's `touches:` list is matched against globs in `scripts/ticket.mjs`.
 ## Fresh workers
 
 - Every worker starts fresh from the ticket's files. One resume is allowed; more need the owner.
+- Every prompt is this one line, with the stage filled in:
+
+  ```text
+  Ticket <n>, stage <research|spec|plan|implement|test>. Follow .github/feature-process/README.md and the ticket folder.
+  ```
+
+  Standing rules live in [CLAUDE.md](../../CLAUDE.md), the step docs and the plugin, never in the prompt.
+
 - "Just do it" from the owner skips the process for that scope.
 
 ## Not built yet
