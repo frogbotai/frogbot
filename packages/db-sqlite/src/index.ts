@@ -8,6 +8,8 @@ import {
 import { installSQLJobOperations } from 'frogbot/jobs';
 import { sqliteSearchAdapter } from 'frogbot/search';
 
+import { recoverFromBusy } from './recoverFromBusy.js';
+
 export { sql } from '@payloadcms/db-sqlite';
 export type { MigrateDownArgs, MigrateUpArgs, SQLiteAdapter, SQLiteAdapterArgs };
 
@@ -27,6 +29,16 @@ export function sqliteAdapter(args: SQLiteAdapterArgs) {
           : adapter.init(initArgs);
 
       database.packageName = '@frogbotai/db-sqlite';
+
+      const { connect } = database;
+
+      if (connect) {
+        database.connect = async function (this: SQLiteAdapter, options) {
+          await connect.call(this, options);
+
+          recoverFromBusy(this.client);
+        };
+      }
 
       installSQLJobOperations({ adapter: database, dialect: 'sqlite' });
 
