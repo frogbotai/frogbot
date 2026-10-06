@@ -7,6 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
 import { testPort, testPortOffset } from '../__helpers/shared/testPorts';
 import type { QuestionOptions } from './__helpers/questionTest';
 import type { SignInOptions } from './__helpers/signIn';
+import { stopServersOnSignal } from './__helpers/stopServersOnSignal';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
@@ -20,6 +21,8 @@ const buildFixturesScript = path.join(dirname, 'buildFixtures.mjs');
 const dev = process.env.FROGBOT_BROWSER_DEV === '1';
 
 process.env.FROGBOT_TEST_PORT_OFFSET = String(testPortOffset);
+
+stopServersOnSignal();
 
 const selectedProjects = new Set<string>();
 let collectingProjects = false;
