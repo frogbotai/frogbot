@@ -1,120 +1,108 @@
 # Contributing to FrogBot
 
-Shared engineering conventions for contributors and coding agents. Read this guide before editing, plus [UI conventions](packages/ui/CONTRIBUTING.md) when working in `packages/ui`.
+FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents, tools, chat, pieces, connections, jobs, a gateway) and ships it under FrogBot names. This guide is for everyone who changes it. Agents also follow [CLAUDE.md](CLAUDE.md); work in `packages/ui` also follows [UI conventions](packages/ui/CONTRIBUTING.md).
 
-## Development workflow
+## Setup
 
-- Read the current code and applicable domain constraints below before proposing changes. Use the configured `pnpm` version and Node requirement from [package.json](package.json).
-- This guide covers coding and verification. Small, direct changes do not require a ticket or planning documents.
+- Use the `pnpm` version and Node range in [package.json](package.json), and run every command from the repo root.
+- `pnpm install` installs dependencies and the [git hooks](#commits). A new worktree runs its hooks only after its own `pnpm install`.
+- `pnpm build` builds every package. It skips packages whose sources, config, lockfile and dependency types are unchanged; `pnpm -r clean` forces a full rebuild when you suspect a stale build.
+- Examples run against the local packages with `pnpm --filter <example-name> dev`.
+- Docker services are needed only for database integration and storage adapter tests. First browser run: `pnpm exec playwright install chromium firefox webkit`.
 
 ## Repository map
 
-FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents, tools, chat, pieces, connections, jobs, a gateway) and ships it under FrogBot names.
+| Path                                                                           | Contents                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/frogbot`                                                             | Core: `buildConfig`, the `FrogBot` class, `getFrogBot`, the CLI (`bin/`), typegen and every domain. The public boundary is `src/index.ts` plus `src/exports/*` (`frogbot/agents`, `frogbot/tools`, ...). |
+| `packages/next`, `packages/ui`                                                 | Next.js integration (`withFrogBot`, admin routes, import map) and the UI and chat component library.                                                                                                     |
+| `packages/db-*`, `packages/storage-*`, `packages/email-*`, `packages/kv-redis` | Thin wrappers over the Payload adapters, published as `@frogbotai/*`.                                                                                                                                    |
+| `packages/plugins/plugin-*`                                                    | First-party plugins (api-keys, roles, mcp, audit-log, stripe, ...).                                                                                                                                      |
+| `packages/pieces/piece-*`                                                      | Integration pieces (actions, triggers, OAuth recipes); [`packages/pieces/PORTING.md`](packages/pieces/PORTING.md) is the porting kit.                                                                    |
+| `packages/gateway`, `packages/sdk`                                             | The embeddable AI gateway and the client SDK.                                                                                                                                                            |
+| `packages/create-frogbot-app`                                                  | The scaffolder; packs `templates/` into its `dist/` at build time.                                                                                                                                       |
+| `templates/`, `examples/`                                                      | Starters the CLI installs (`blank`), and reference apps that are not installable.                                                                                                                        |
+| `docs/`                                                                        | The Mintlify site (`docs.json`).                                                                                                                                                                         |
+| `test/`                                                                        | Every test and fixture, one folder per area, plus `test/unit/`, `test/e2e/`, `test/browser/` and the shared harness in `test/__helpers/`. See [test/README.md](test/README.md).                          |
+| `scripts/`                                                                     | Repo tooling: `check.mjs` runs every `check-*.mjs`, `ticket.mjs` is `pnpm ticket`, `prerelease.mjs` is the `pnpm bump` release gate.                                                                     |
+| `.github/feature-process/`                                                     | How tickets go from issue to commit. `.idea/` holds local ticket documents and is never committed.                                                                                                       |
 
-| Path                                                                           | Contents                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/frogbot`                                                             | Core package: `buildConfig`, `FrogBot` class, `getFrogBot`, CLI (`bin/`), typegen, and every domain (`agents/`, `ai/`, `chat/`, `collections/`, `connections/`, `jobs/`, `kv/`, `pieces/`, `tools/`, `triggers/`, ...). Public boundary is `src/index.ts` plus `src/exports/*` (subpaths `frogbot/agents`, `frogbot/tools`, `frogbot/jobs`, `frogbot/kv`, `frogbot/search`, `frogbot/pieces`, `frogbot/connections`, `frogbot/env`). |
-| `packages/next`, `packages/ui`                                                 | Next.js integration (`withFrogBot`, admin routes, import map) and the reusable UI/chat component library. See [UI conventions](packages/ui/CONTRIBUTING.md).                                                                                                                                                                                                                                                                         |
-| `packages/db-*`, `packages/storage-*`, `packages/email-*`, `packages/kv-redis` | Thin adapter wrappers over the Payload adapters, published as `@frogbotai/*`.                                                                                                                                                                                                                                                                                                                                                        |
-| `packages/plugins/plugin-*`                                                    | First-party plugins (api-keys, roles, mcp, audit-log, stripe, ...).                                                                                                                                                                                                                                                                                                                                                                  |
-| `packages/pieces/piece-*`                                                      | Integration pieces (actions, triggers, OAuth recipes) ported natively; `PORTING.md` is the porting kit.                                                                                                                                                                                                                                                                                                                              |
-| `packages/gateway`, `packages/sdk`                                             | Embeddable AI gateway and the client SDK.                                                                                                                                                                                                                                                                                                                                                                                            |
-| `packages/create-frogbot-app`                                                  | Scaffolder; packs `templates/` into its `dist/` at build time.                                                                                                                                                                                                                                                                                                                                                                       |
-| `templates/`                                                                   | Starters the CLI installs (`blank`). `examples/` are reference apps, not installable.                                                                                                                                                                                                                                                                                                                                                |
-| `docs/`                                                                        | Mintlify site (`docs.json`). User-facing; never mentions Payload.                                                                                                                                                                                                                                                                                                                                                                    |
-| `test/`                                                                        | All tests and fixtures, one folder per area (`test/<area>/int.spec.ts`), `test/unit/`, `test/e2e/`, `test/browser/`, shared harness in `test/__helpers/`. See [test/README.md](test/README.md).                                                                                                                                                                                                                                      |
-| `scripts/`                                                                     | Repo tooling: `check.mjs` (`pnpm check`, which runs every `check-*.mjs`), `ticket.mjs` (`pnpm ticket`), `prerelease.mjs` (the `pnpm bump` release gate), `bump.mjs`, `check-branding.mjs`, `check-dist-imports.mjs`, `check-docs-fences.mjs`, `check-docs-references.mjs`, `sync-catalog.mjs`.                                                                                                                                       |
-| `.github/feature-process/`                                                     | Shared planning process. `.idea/` holds local ticket documents and is never committed.                                                                                                                                                                                                                                                                                                                                               |
+Before reading code:
 
-Architecture facts worth knowing before reading code:
-
-- `packages/frogbot/src/config/sanitize.ts` turns a `FrogBotConfig` into a Payload config; FrogBot-only keys (`agents`, `ai`, `connections`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames `@payloadcms/*` component specifiers to `@frogbotai/*` in the generated import map.
+- `packages/frogbot/src/config/sanitize.ts` turns a `FrogBotConfig` into a Payload config. FrogBot-only keys (`agents`, `ai`, `connections`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames `@payloadcms/*` component paths to `@frogbotai/*` in the generated import map.
 - `FrogBotRequest` replaces `req.payload` with `req.frogbot`; user code never sees `payload`.
-- FrogBot is the sole type generator (`frogbot generate:types` -> `frogbot-types.ts`); Payload's auto-generate is force-disabled. See [Type Generation](#type-generation-packagesfrogbot).
-- Internal source layout mirrors Payload core where a concept matches. See [FrogBot Core Project Structure](#frogbot-core-project-structure).
+- The internal layout mirrors Payload core where a concept matches (see [Project structure](#project-structure)).
 
 ## Design principles
 
-FrogBot is in beta. The goal is the best and most consistent developer experience across all of FrogBot, not the smallest diff. These principles decide between designs that all work.
+FrogBot is in beta. The goal is the best, most consistent developer experience across all of FrogBot, not the smallest diff. These principles decide between designs that all work.
 
-- **Break things to get the design right.** When a better API, schema, or extension point needs a breaking change, make it, and update every caller, piece, plugin, test, and doc in the same change. Don't add shims, flags, or parallel old and new paths to avoid the break: each one is a second way to do the same thing, and the inconsistency outlives the beta.
-- **Ask how Payload would solve it.** FrogBot users build on Payload's model, so a familiar shape is better DX than a clever one. Before designing an API, lifecycle, or runtime flow, find Payload's closest equivalent in [`~/code/payload`](#reference-repos) and follow it unless there is a concrete reason not to. Record that reason in the plan. Examples: definitions are config; a hook returns the value core saves (`beforeChange`) instead of keeping state of its own; side effects run in `afterChange` on the document that owns the data, so every write path triggers them; and a job saves each task's output so a retry skips finished work.
-- **One pattern per concept.** Extension points that do the same kind of job (piece hooks, plugin options, adapters, channel renderers) share naming, argument shapes, return shapes, and lifecycle. When one integration needs a seam that core lacks, change the core seam for every implementation instead of adding a workaround inside one package.
-- **Generic where the variation is real.** Put shared behavior in core behind a typed, documented extension point once two or more implementations need it, and keep platform specifics inside their own package. Don't build extension points for needs nobody has yet.
+- **Payload first, with restraint.** FrogBot users build on Payload's model, so a familiar shape beats a clever one. Before designing an API, lifecycle or runtime flow, find Payload's closest equivalent in [`~/code/payload`](#reference-repos) and follow it unless there is a concrete reason not to; record the reason in the plan. Match Payload; don't exceed it. Agent-harness work (chat turns, agents, tools, sessions, streaming and their SQLite storage) follows OpenCode v2 in `~/code/opencode-v2` the same way. Examples: definitions are config; a hook returns the value core saves (`beforeChange`) instead of keeping its own state; side effects run in `afterChange` on the document that owns the data, so every write path triggers them; a job saves each task's output so a retry skips finished work.
+- **No legacy.** No shims, flags, fallbacks, parallel old and new paths, data migrations, migration guides or upgrade notes. Each one is a second way to do the same thing, and the inconsistency outlives the beta. Delete dead code and buggy compatibility paths instead of keeping them "just in case". Don't ask whether to keep the old behavior.
+- **Breaking changes are fine.** When a better API, schema or extension point needs one, make it and update every caller, piece, plugin, test and doc in the same commit. Mark it with `!` in the subject and a `BREAKING CHANGE:` footer.
+- **One pattern per concept.** Extension points that do the same kind of job (piece hooks, plugin options, adapters, channel renderers) share naming, argument shapes, return shapes and lifecycle. When one integration needs a seam core lacks, change the core seam for every implementation instead of working around it in one package.
+- **Generic where the variation is real.** Put shared behavior in core behind a typed, documented extension point once two implementations need it, and keep platform specifics in their own package. Handle the cases the feature needs: no unused options, abstractions or extension points for needs nobody has yet. Check that a library is installed before using it.
 
 ## Commands
 
-Run everything from the repo root with `pnpm`. Scripts live in [package.json](package.json).
+| Task                                | Command                                                                                                                                                                             |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build every package                 | `pnpm build`                                                                                                                                                                        |
+| Static checks                       | `pnpm check` (format, lint, stale-package build, fixture import maps, changed-workspace typecheck, every `scripts/check-*.mjs`; never tests or servers); `--full` checks everything |
+| One check                           | `pnpm check <name>`, where name is a `scripts/check-<name>.mjs` file (see [Checks](#checks))                                                                                        |
+| Format and lint                     | `pnpm prettier`, `pnpm lint` (report only); `pnpm prettier:write`, `pnpm lint:fix`; after fixing a baselined violation, `pnpm lint --prune-suppressions`                            |
+| Typecheck                           | `pnpm --filter <workspace> typecheck` (`frogbot` also takes area names: `pnpm --filter frogbot typecheck jobs`); `pnpm typecheck` builds and checks every workspace                 |
+| Tests                               | `pnpm test` (every project), `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser --project <name>`; pass files to narrow                         |
+| Integration tests on one database   | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (`pnpm test:int:pg test/database`)                                                                                |
+| Docker services                     | `pnpm docker:start` (Postgres, Redis, MongoDB, MongoDB search, storage emulators), `pnpm docker:clean` (removes containers and volumes)                                             |
+| Live tests with real credentials    | `pnpm test:live` (see [Live tests](test/README.md#live-tests-real-credentials))                                                                                                     |
+| Regenerate a test suite's types     | `pnpm generate:types <suite>` (needs built packages)                                                                                                                                |
+| Sync the AI model catalog and types | `pnpm sync:catalog`                                                                                                                                                                 |
+| Tickets                             | `pnpm ticket next`, `new <n>`, `status [--batch <n>]`, `decisions`, `found "<row>"`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md))             |
+| Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; `--resume` after a partial publish), `pnpm release:status`                                 |
 
-| Task                                          | Command                                                                                                                                                             |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Install, build all packages                   | `pnpm install`, `pnpm build`                                                                                                                                        |
-| Run an example against local packages         | `pnpm --filter <example-name> dev` (examples use `frogbot dev`)                                                                                                     |
-| Unit / UI / integration / e2e / browser tests | `pnpm test` (every project), `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser`                                                |
-| Integration tests on a specific database      | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo`; pass files to narrow (`pnpm test:int:pg test/database`)                                          |
-| Docker services for integration tests         | `pnpm docker:start` (Postgres, Redis, MongoDB, MongoDB search, storage emulators), `pnpm docker:clean` (removes containers and volumes)                             |
-| Live tests with real credentials              | `pnpm test:live` (see [Live tests](test/README.md#live-tests-real-credentials))                                                                                     |
-| Static checks                                 | `pnpm check` (format, lint, stale-package build, fixture import maps, changed-workspace typecheck, `scripts/check-*.mjs`; `--full` typechecks all)                  |
-| Ticket lifecycle                              | `pnpm ticket new <n>`, `land <n>`, `status`, `next` (worktree off local `main`; `land` gates and fast-forwards one commit, never pushes)                            |
-| Format and lint                               | `pnpm prettier`, `pnpm lint` (report only); `pnpm prettier:write && pnpm lint:fix` (agents: via the `lint` subagent)                                                |
-| Typecheck an affected workspace               | `pnpm --filter <workspace-name> typecheck`                                                                                                                          |
-| Final repository typecheck                    | `pnpm typecheck` (builds and checks every workspace)                                                                                                                |
-| Branding and docs gates                       | `pnpm check branding`, `pnpm check docs-fences`, `pnpm check docs-references`, `pnpm check docs-links`, `pnpm check ui-architecture`                                |
-| Regenerate test suite types                   | `pnpm generate:types <suite>` (requires built packages)                                                                                                             |
-| Sync the AI model catalog and its types       | `pnpm sync:catalog`                                                                                                                                                 |
-| Release                                       | `pnpm bump <major\|minor\|patch>` (resume with `--from <step>`), `pnpm release` (owner only; `--resume` after a partial publish), `pnpm release:status`             |
-| Check built packages before publishing        | `pnpm check dist-imports` (every relative import and entry point matches a file name exactly, including letter case)                                                |
-| Check that installs resolve one `frogbot`     | `pnpm check single-frogbot` (no package lists `frogbot` as a regular dependency, and `frogbot` has no framework peers)                                              |
-| Check generated files are fresh               | `pnpm check generated`, also in `pnpm check --full` (regenerates every tracked `importMap.js`, `frogbot-types.ts`, `piece-types.ts`; `--write` rewrites stale ones) |
-| Check root and package scripts                | `pnpm check scripts` (every root script has a row here; packages have only `build`, `clean`, `typecheck`)                                                           |
-| Check the test layout                         | `pnpm check tests` (no tests in `packages/**/src`, every spec in a project, int specs reset with `clearAndSeed`, scratch in `os.tmpdir()` or `test/.tmp/`)          |
+`prepare` and `lint-staged` are git-hook plumbing and have no row. Packages have only `build`, `clean` and `typecheck`.
 
-`pnpm check docs-links` validates General navigation, internal links, and local assets. It excludes content owned by other documentation tabs.
+### Checks
 
-The `docs-references` check's allowlist holds intentional placeholders only.
+`pnpm check` runs these; each also runs alone as `pnpm check <name>`.
 
-## Git commits
-
-- Never stage or commit anything under `.idea/`. Ticket research, plans, and implementation summaries are local planning state. Reusable process instructions live in `.github/feature-process/` and belong in version control.
-- Preserve existing worktree and index changes. No per-stage commits or proposed commit messages; finish a verified ticket with one commit only when authorized. Merging into `main`, pushing, or opening a PR also requires explicit authorization.
-- Use Conventional Commits format: `type(scope): message`
-  - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `build`, `ci`, `style`
-  - Scope: the package or area (e.g. `gateway`, `frogbot`, `payload-plugin`)
-  - Examples: `refactor(gateway): move tool helpers into translators/`, `feat(gateway): add retry-after header support`
-- Do NOT use freeform prefixes like `gateway: ...` — always include the type
-- Do NOT add the opencode attribution footer to commit messages
-- Keep commit messages clean and focused on the actual changes
-- Only include the commit message content, no additional attribution or co-authored-by lines
-- In multi-feature programs, commit each completed and verified F feature separately; never combine multiple F features in one commit
-
-## Git hooks
-
-`pnpm install` installs the hooks (husky sets `core.hooksPath` to `.husky/_`). A checkout or worktree runs them only after its own `pnpm install`.
-
-- `pre-commit` runs lint-staged on the staged files: `eslint --fix` then `prettier --write` on code, `prettier --write` on Markdown, JSON, YAML and CSS. Lint errors, warnings and unused `eslint-disable` comments fail the commit. Older violations are baselined in `eslint-suppressions.json`; after fixing one, run `pnpm lint --prune-suppressions` and commit the smaller file. Then `scripts/precommit-guard.mjs` refuses staged `.idea/`, `CHANGELOG*`, `.changeset/` and `patches/` files, and a new `patchedDependencies` entry in `package.json` or `pnpm-workspace.yaml`, printing one line per path.
-- `commit-msg` runs `scripts/commit-msg.mjs`: the subject must follow the Conventional Commits format above (merge commits are exempt), and `Co-authored-by:` or "Generated with" lines are refused.
+| Name              | Fails when                                                                                                                                   |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branding`        | templates, examples, docs, skills or READMEs mention Payload                                                                                 |
+| `docs-fences`     | a docs code block has no language, or marks a shell command as plain text                                                                    |
+| `docs-links`      | a General docs link, anchor or local asset is broken                                                                                         |
+| `docs-references` | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)       |
+| `option-tables`   | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`         |
+| `tests`           | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/` |
+| `packages`        | a workspace folder has no tracked `package.json`                                                                                             |
+| `scripts`         | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                              |
+| `ui-architecture` | `packages/ui` uses forbidden imports, globals or strings                                                                                     |
+| `generated`       | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                           |
+| `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                    |
+| `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                          |
+| `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/decisions.md` or the plan (main checkout only)                                          |
 
 ## Code style
 
-- **Crisp, clean code**: Favor simplicity over complexity
-- **Remove dead code**: Don't retain unused logic or buggy compatibility paths just in case
-- **Consistent naming**: Use clear, consistent patterns (e.g., `createTextDoc`/`updateTextDoc`)
-- **Object parameters**: Prefer object params over multiple individual params for better maintainability
+- Crisp, simple code. Prefer object parameters over several positional ones.
+- Don't add comments unless asked: no comment blocks, citations or rationale. Put the explanation in the commit or the conversation.
+- Name consistently and briefly: `createTextDoc`/`updateTextDoc`, not `saveTextDocumentToDatabase`. Prefix types with their context (`ArtifactCreateProps`) and match them to their function (`dbCreate` → `ArtifactDBCreateProps`).
+- Name a private component that continues past a provider or readiness guard `*Inner` (`ChatInner`).
+- Brand casing: `frogbot` when the brand leads a camelCase identifier, `FrogBot` everywhere else in identifiers and file names (`frogbotFavicon`, `FrogBotConfig`, `getFrogBot`, `bootFrogBot.ts`); never `frogBot` or `Frogbot`. Package names, paths, CLI commands, slugs, environment variables and wire values stay lowercase (`FROGBOT_*` for constants).
+- Use the `FrogBot*` prefix only for a type that wraps a `Payload*` type (`FrogBotConfig` wraps `PayloadConfig`). New domain types get no prefix (`CollectionConfig`, `Field`); on a name clash, import the Payload type under a `Payload*` alias.
 
 ### Blank lines
 
-- **Favor more breathing room, not fewer lines. When a blank line is debatable, add it.** Concise code means less unnecessary logic, not compressed vertical spacing.
-- Use one blank line between logical steps, even within the same phase. Input preparation, validation, query construction, mutation, side effects, and returning a result should read as separate paragraphs, not one uninterrupted block.
-- Separate multiline declarations from the next statement. Short declarations may stay grouped only when they prepare the same immediate operation; sharing a scope or using the same variable is not enough reason to group statements.
-- Put a blank line before and after standalone loops and iteration calls such as `forEach`, separating setup, iteration, and subsequent work. Apply these rules inside callbacks and nested branches too.
-- Separate a condition's setup from its `if`, a guard from subsequent work, and independent conditionals from each other. Separate calculations from assignments or calls that mutate state, and separate base query construction from optional query modifications.
-- Put a blank line before a final return when other statements precede it, including in short helpers.
-- Separate top-level functions, classes, and type/interface declarations with one blank line; keep related imports grouped.
-- In tests, separate setup, execution, and assertions with blank lines, not explanatory comments.
-- Use single blank lines, never consecutive blank lines. Do not insert them immediately inside blocks, between every object property, or between every line of one expression. These limits are not a reason to collapse separate steps.
-- Before handing off, review edited code specifically for missing blank lines, not just formatter compliance. Prettier preserves logical blank lines but does not invent missing ones. Do not copy dense surrounding code or remove useful spacing to shorten a diff.
+Favor breathing room over fewer lines; when a blank line is debatable, add it. Concise code means less logic, not compressed spacing. Prettier keeps blank lines but never adds them, so review edited code for missing ones.
 
-For example, query preparation and mutation need breaks even inside one callback:
+- One blank line between logical steps, even within one phase: preparing input, validating, building a query, mutating, side effects and returning read as separate paragraphs.
+- Separate a multiline declaration from the next statement. Short declarations stay grouped only when they prepare the same operation.
+- Put a blank line before and after loops and iteration calls such as `forEach`, inside callbacks and nested branches too.
+- Separate a condition's setup from its `if`, a guard from the work after it, and independent conditionals from each other. Separate calculations from mutations, and a base query from its optional modifiers.
+- Put a blank line before a final `return` that follows other statements, and between top-level functions, classes and types.
+- In tests, separate setup, execution and assertions with blank lines, not comments.
+- Never two blank lines in a row, and none directly inside a block, between every object property or inside one expression.
 
 ```ts
 const manyTables = new Set(
@@ -137,124 +125,69 @@ orderBy.forEach(({ column, order }, index) => {
 const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 ```
 
-## Naming patterns
+## Domain rules
 
-- **Type naming**: Prefix with context (e.g., `ArtifactCreateProps`, `ArtifactDBUpdateProps`)
-- **Function naming**: Match types to functions (`dbCreate` → `ArtifactDBCreateProps`)
-- **Shorter names**: `createTextDoc` vs `saveTextDocumentToDatabase`
-- **Keep it simple**: Handle the cases the feature needs; do not add unused options or abstractions
-- **Component wrappers**: Name a private component that continues past a provider or readiness guard `*Inner` (for example, `ChatInner`)
-- **Brand casing**: Write `frogbot` when the brand leads a camelCase identifier and `FrogBot` everywhere else in identifiers and file names (`frogbot`, `frogbotFavicon`, `FrogBotConfig`, `getFrogBot`, `attachFrogBot`, `bootFrogBot.ts`). Never write `frogBot` or `Frogbot`. Package names, paths, CLI commands, slugs, environment variables, and wire values stay lowercase (`FROGBOT_*` for constants)
+- **Type generation.** FrogBot is the only type generator (`frogbot generate:types` → `frogbot-types.ts`), and its output already includes Payload's shapes. Payload's boot-time `typescript.autoGenerate` is always force-disabled in `config/sanitize.ts`; never ask users to turn it off. The user-facing `typescript.autoGenerate` controls FrogBot's generation in `FrogBot.init()`.
+- **Keep `req.frogbot` structural.** `FrogBot` and every class reachable from its public API (`Connections`, `ConnectionStore`, `TriggerSubscriptions`, piece instances) have no `private`, `protected`, `#private` or symbol-keyed members, or two installed copies of `frogbot` stop being compatible. Keep internal state in a module-level `WeakMap`; `pnpm --filter frogbot typecheck duplicate` enforces this.
+- **User-facing copy says FrogBot.** Docs, templates, examples, READMEs and scaffolded files describe everything as FrogBot behavior (`pnpm check branding`). A config object, option set or props type documented in `docs/` gets one table of every field its type accepts, on one page that others link to (`pnpm check option-tables`).
 
-## FrogBot Type Naming (`packages/frogbot`)
+### UI
 
-- **Only use `FrogBot*` prefix when wrapping a Payload type that uses `Payload*` prefix** (e.g., `FrogBotConfig` wraps `PayloadConfig`, `FrogBotRequest` wraps `PayloadRequest`)
-- **New domain types should NOT get the `FrogBot` prefix** — the package context is sufficient (e.g., `CollectionConfig`, `Field`, `Endpoint`, `Plugin`)
-- **If there's a name collision** with a Payload type, import the Payload type with a `Payload*` alias rather than prefixing our type
-- Current valid prefixed types: `FrogBotConfig`, `FrogBotRequest`, `FrogBotComponent`, `FrogBotInstance`, `FrogBotTypes`, `UntypedFrogBotTypes`
-
-## Type Generation (`packages/frogbot`)
-
-- FrogBot is the **sole** type generator (`frogbot generate:types` → `frogbot-types.ts`). It already includes Payload's shapes via `configToJSONSchema` — there is no separate "Payload types" output.
-- Payload's own boot-time auto-generate (`typescript.autoGenerate`, spawns a child process, writes `payload-types.ts`) must always be force-disabled on the Payload config built in `config/sanitize.ts`. Never fix this by telling users to set `typescript: { autoGenerate: false }` in their `frogbot.config.ts`.
-- The user-facing `typescript.autoGenerate` in `frogbot.config.ts` controls **FrogBot's** generation only (`FrogBotSanitizedConfig.typescript.autoGenerate`), wired to a boot-time call in `FrogBot.init()`.
-- Known related bugs: Payload's auto-generate breaks under Turbopack (vercel/next.js#66723) and trips a tsx/Node `module.registerHooks` bug on Node ≥23.5 (payloadcms/payload#16949, fixed in Payload's own `bin.js`). `config/load.ts` applies the same `registerHooks` guard before calling `tsImport`.
-
-## UI Parity with Firmware (CRITICAL — do not deviate)
-
-- **Firmware (`~/code/firmware`) is the previous iteration of FrogBot.** The goal is to port Firmware's existing, already-designed UI into FrogBot as FrogBot features — NOT to design new UI from scratch.
-- **When building any FrogBot admin/UI surface, find the corresponding Firmware implementation first** (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`, admin panel customizations) and follow it exactly. Not everything ports over, but where a Firmware design exists, it is the spec.
-- **Concrete example (issue #35):** the api-keys plugin UI must be a single button injected into the Payload collection list view that opens a modal (create → one-time key reveal in the same modal) — exactly how Firmware did it (`apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`). Inline always-visible panels above the list table are wrong.
-- **Direction of travel:** FrogBot's default Payload admin panel is progressively moving toward the Firmware desktop app / aggressively-masked web admin look, with FrogBot providing the components. Don't go fully there in one step, but new UI work must trend toward that design, never away from it.
-
-### UI color tokens
-
-- Use `--theme-base-*` for neutral component colors that should invert between light and dark themes.
-- Use `--color-base-*` only for fixed palette colors that must not invert, such as dark scrims or fixed-contrast text on brand/status surfaces.
-- Use `--theme-elevation-*` only in admin-only styles where the admin runtime supplies those tokens; reusable `packages/ui` styles must use `--theme-base-*`.
-
-### Payload UI import identity
-
-- In one client component graph, never mix runtime imports from `@payloadcms/ui` with `@payloadcms/ui/elements/*` or `@payloadcms/ui/icons/*`. The root entry is bundled and creates different React context identities from public subpaths, causing hooks such as `useConfig()` to return `undefined` at runtime.
-- Prefer root-only runtime imports and canonical root components. Utility subpaths and type-only imports are safe. If a required component is not exported from the root, redesign around a canonical root component rather than mixing entries.
-- Typechecking cannot detect this failure. Smoke-test the affected admin interaction in the simple example after rebuilding packages.
-
-## Constraints
-
-- **CRITICAL — documentation branding:** Never refer to Payload or Payload CMS in user-facing documentation, templates, examples, READMEs, scaffolded comments, or other user-visible copy. FrogBot is the product users interact with: describe behavior, APIs, admin features, adapters, collections, migrations, sessions, and configuration as **FrogBot** behavior. Rewrite underlying-framework references as a FrogBot self-reference or neutral wording. Before finishing documentation work, run the case-sensitive whole-word check: `rg -n -w -F 'Payload' -g '*.mdx' .` and remove every match unless the user explicitly requires a literal upstream package name or attribution.
-- **Complete option tables in docs:** Every config object, option set, argument object, or props type documented in `docs/` gets a table of every field its TypeScript type in `packages/*/src` accepts: name, type, required/default, and behavior. Never a partial list or examples alone; document each object on one page and link to it from the others.
-- **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.
-- Don't assume libraries are available - check first
-- Don't over-engineer solutions
-- Don't keep buggy legacy code "just in case"
-- **Keep `req.frogbot` structural:** `FrogBot` and every class reachable from its public API (`Connections`, `ConnectionStore`, `TriggerSubscriptions`, piece instances) have no `private`, `protected`, `#private`, or symbol-keyed members. Any of them makes two installed copies of `frogbot` incompatible. Keep internal state in a module-level `WeakMap`; `pnpm --filter frogbot typecheck duplicate` enforces this.
+- **Firmware is the spec.** Firmware (`~/code/firmware`) is FrogBot's previous iteration. Before building an admin or UI surface, find its Firmware implementation (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`) and follow it; port, don't redesign. For example, the api-keys UI is one button in the collection list view that opens a modal (create, then a one-time key reveal), as in `apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`. New UI work trends toward the Firmware desktop look, never away.
+- **Color tokens.** `--theme-base-*` for neutral colors that invert between themes; `--color-base-*` only for fixed colors that must not invert (dark scrims, text on brand surfaces); `--theme-elevation-*` only in admin-only styles, never in `packages/ui`.
 
 ## Verification
 
-- Put new tests, fixtures, test helpers, and test-only apps under the repository's root `test/` folder. Do not place unit tests beside production code or inside package `src/` folders. Follow the existing test layout and runner configuration; moving existing tests is separate work.
-- Tests and fixtures are part of implementation; they do not need a separate request. Once the feature's parts work together, check that it meets the agreed requirements, handles realistic failures, and has not broken related behavior. Planned tickets include a testing stage for this work; small direct edits need only the relevant checks.
-- Use unit tests for individual logic, integration tests for parts working together, and end-to-end (E2E) tests for affected user, API, or CLI flows. Inspect the test runner and existing fixtures. Test the result, not just whether an internal function was called. Do not replace the component whose behavior you are testing with a mock: for example, a database-claim test must exercise the real claim operation.
-- While a feature is incomplete, run checks that can give meaningful results. Record what is not connected yet and which later stage will test it. Do not run full suites against intentionally unfinished work, but investigate unexpected failures.
-- For bug fixes, show that the test fails for the original bug when feasible; say when you could not check that. Write assertions for the correct behavior, and correct existing tests that expected the bug.
-- Make tests repeatable. Use controlled test data and services where appropriate. When testing time itself, use a controllable clock where the test setup supports it. State when a test requires a paid or live service.
-- Find commands and environment requirements in [package.json](package.json), [vitest.config.ts](vitest.config.ts), and the [browser configuration](test/browser/playwright.config.ts). `pnpm test:unit`, `pnpm test:int`, `pnpm test:e2e`, and `pnpm test:browser` select different suites; E2E and browser tests are not interchangeable. Gateway projects have their own test-selection settings. Rebuild packages before tests that load their built output. `pnpm build` skips packages whose sources, configuration, lockfile and workspace dependencies' types have not changed, and rewrites only the `dist` files that changed; `pnpm -r clean` forces a full rebuild; use it only when you suspect a stale build. `pnpm test:browser` builds each browser fixture for `next start`, skips fixtures whose inputs are unchanged, and runs the projects in parallel; pass `--project <name>` so only that project's fixture builds and starts. See [Browser tests](test/README.md#browser-tests).
-- Browser runs: one Playwright process per checkout at a time, because two in one checkout overwrite `test/browser/test-results`. Other worktrees use their own ports, so they can run alongside; lower `--workers` when several do. Don't add a cross-worktree lock. During implementation, run only the affected specs with `--project`; run the full suite at most once, during final verification. After a failure, read the first error, then rerun with `--last-failed`. A failed `<server>-setup` project means that server is broken: fix it instead of rerunning.
-- Run tests in the foreground with a timeout. Don't `sleep` and poll for results. Start Docker services (`pnpm docker:start`) only for suites that need them, such as database integration and storage adapter tests; unit, UI and browser tests don't.
-- For code changes, run relevant tests followed by `pnpm prettier:write && pnpm lint:fix`. Agents must delegate lint and required type-checking to the `lint` subagent, including `pnpm lint:fix`, so the main context gets only what needs fixing. `pnpm check` runs formatting, lint, a build of every package whose `dist` is missing or stale, the changed-workspace typecheck and every repo check in one pass, with short output. During implementation, typecheck only affected workspaces with `pnpm --filter <workspace-name> typecheck`; `frogbot` also accepts area names to check only those, for example `pnpm --filter frogbot typecheck jobs`. Don't use the root `pnpm typecheck` as a routine intermediate check. Run it at most once, during final verification, when the change requires repository-wide coverage.
-- For Markdown-only changes, check affected-file formatting, links/anchors, examples, and content/instruction consistency; do not run application tests, code lint, or typecheck. Documentation containing executable code changes may need targeted example validation.
-- Review automatic fixes and preserve unrelated work. Rerun affected tests if fixes change behavior. Report commands actually run, results, skips, and unavailable services/credentials; required blocked checks leave the ticket unverified.
-
-### Writing tests
-
-- Integration suites boot a real instance with `bootFrogBot` from `test/__helpers/shared`, shut it down in `afterAll`, and reset state with `clearAndSeed` in `beforeEach`; do not leave records behind for the next test. Track anything created outside the seed and delete it in `afterEach`. A suite whose tests only read goes on the `READ_ONLY` list in `scripts/check-tests.mjs` instead.
-- Scratch folders start from `os.tmpdir()`, or from the gitignored `test/.tmp/` when the test needs the repo's `node_modules`.
-- Name tests as present-tense statements of observable behavior, e.g. `'POST /api/users/login rejects invalid credentials'`.
-- One behavior per test.
-- Keep collection slugs and other shared identifiers in the suite's `config.ts` or a shared constants file and reuse them in fixtures and assertions.
-- Adding a collection to a suite means adding it to that suite's `config.ts`; regenerate the suite's types with `pnpm generate:types <suite>` (requires built packages) when the shape matters to the test.
+- Tests and fixtures are part of the work and need no separate request. Use unit tests for single pieces of logic, integration tests for parts working together, and end-to-end tests for affected user, API or CLI flows. Test the result, not whether an internal function was called.
+- Integration suites boot a real instance with `bootFrogBot` from `test/__helpers/shared` and shut it down in `afterAll`. Delete anything created outside the seed in `afterEach`.
+- Keep collection slugs and shared identifiers in the suite's `config.ts` or a constants file and reuse them. A new collection goes in that `config.ts`; run `pnpm generate:types <suite>` when its shape matters.
+- For a bug fix, show the test fails on the original bug when you can, and say when you couldn't. Fix existing tests that expected the bug.
+- While a feature is unfinished, run the checks that can say something useful and record what isn't connected yet. Investigate unexpected failures.
+- Run the narrowest tests that cover the change, in the foreground with a timeout. Rebuild packages before tests that load built output. E2E and browser tests are different suites. Start Docker services only for suites that need them. State when a test needs a paid or live service.
+- Browser runs: one Playwright process per checkout (two overwrite `test/browser/test-results`); other worktrees use their own ports. Run affected specs with `--project <name>`, so only that fixture builds, and the full suite at most once, at the end. After a failure, read the first error, then rerun with `--last-failed`. A failed `<server>-setup` project means that server is broken: fix it. See [Browser tests](test/README.md#browser-tests).
+- Finish code changes with `pnpm check`. Typecheck affected workspaces while working; run the root `pnpm typecheck` at most once, at the end, when the change needs it.
+- Markdown-only changes need formatting, links, anchors and accurate examples, not application tests, lint or typecheck. Docs with executable code may need the example run.
+- Report the commands you ran, their results, and anything skipped or unavailable. A required check that couldn't run leaves the work unverified.
 
 ### When tests find a problem
 
-A failing test shows behavior we need to understand; it does not, by itself, decide what the feature must promise. Compare the finding with the agreed requirements and existing supported behavior:
+A failing test shows behavior to understand; it doesn't by itself decide what the feature promises. Compare it with the agreed requirements and existing supported behavior:
 
-- **Fix now:** the implementation breaks a requirement or existing supported behavior. Fix it and rerun the affected checks. A rare failure still matters if it breaks something we promised.
-- **Document:** the behavior is an agreed limitation, not a broken promise. Explain what users need to know and how to handle it.
-- **Defer:** addressing it would add behavior or guarantees outside the agreed work. Report the finding and ask the owner before adding it to the feature or accepting a new limitation.
+- **Fix now** when it breaks a requirement or supported behavior, however rare. Rerun the affected checks.
+- **Document** an agreed limitation: what users need to know and how to handle it.
+- **Defer** anything that adds behavior or guarantees beyond the agreed work: add a row to `.idea/found.md` with `pnpm ticket found` and carry on.
 
-Dependency patches are out of scope. Do not modify third-party dependencies through patch files, package-manager patch settings, or equivalent workarounds. Report the limitation and continue with the agreed application work; do not expand the architecture to avoid this rule.
+Raise security and data-loss findings right away, even when the fix is out of scope: what can happen to a user, how, how likely, and the simpler alternatives. A fix that needs a different core library or a substantial redesign waits for the owner; a new problem is not permission to redesign. Never patch a dependency or work around one with architecture; record the limitation and continue.
 
-Raise security or data-loss findings promptly, even if their fixes are out of scope. If a fix needs a different core library or a substantial design change, pause that work and ask the owner first. Explain what can happen to a user, how it can happen, what is known about its likelihood, and the simpler alternatives. A newly discovered problem is not permission to redesign the feature.
+Don't weaken tests or mark failures expected to get a green suite. When the owner changes a requirement or accepts a limitation, update the requirements and tests and keep the limitation visible in the summary.
 
-Do not weaken tests or mark failures as expected just to get a passing suite. If the owner changes a requirement or accepts a limitation, update the requirements and tests to match that decision, and keep the limitation visible in the final summary. Record findings in the existing summary; a separate report for every test failure is not required.
+## Commits
 
-## File Organization
+- [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): message`, with type `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `build`, `ci` or `style` and the package or area as scope (`feat(gateway): add retry-after header support`). Breaking changes add `!` and a `BREAKING CHANGE:` footer.
+- One verified ticket is one commit, focused on its change.
+- The hooks enforce the rest. [`.husky/pre-commit`](.husky/pre-commit) runs lint-staged (`eslint --fix` and `prettier --write`; any lint error, warning or unused `eslint-disable` fails), then [`scripts/precommit-guard.mjs`](scripts/precommit-guard.mjs) refuses `.idea/`, `CHANGELOG*`, `.changeset/`, `patches/` and new `patchedDependencies`. Older lint violations are baselined in `eslint-suppressions.json`, which only shrinks. [`.husky/commit-msg`](.husky/commit-msg) runs [`scripts/commit-msg.mjs`](scripts/commit-msg.mjs), which checks the subject and refuses `Co-authored-by:` and "Generated with" lines.
 
-- **Internal structure is for contributors, exports are for consumers** — define types/code wherever makes sense for devs working inside the package. Control public API surface separately via the exports layer. Don't conflate "where to define" with "what to export".
+## Project structure
 
-### FrogBot Core Project Structure
+Internal structure is for contributors; exports are for consumers. Define code where it makes sense inside the package and control the public API separately in `src/index.ts` and `src/exports/`.
 
-`packages/frogbot/src` follows Payload core's file and folder structure where FrogBot implements an equivalent concept.
+`packages/frogbot/src` follows Payload core's folders where FrogBot implements the same concept:
 
-1. Check Payload core for an equivalent domain; if one exists, use that name and nesting.
-2. Co-locate types with the domain that owns them; never add domain types to a horizontal catch-all.
-3. Keep a FrogBot-specific top-level domain only when Payload has no equivalent.
-4. Do not create a Payload domain FrogBot does not implement.
-5. Keep the public boundary in `src/index.ts` and `src/exports/` regardless of internal layout.
+1. Check Payload core for an equivalent domain; if one exists, use its name and nesting.
+2. Keep types with the domain that owns them, never in a catch-all.
+3. Add a FrogBot-only top-level domain only when Payload has no equivalent, and never a Payload domain FrogBot doesn't implement.
 
-Representative mappings include collection configuration in `collections/config/`, file handling in `uploads/`, import-map generation in `bin/generateImportMap/`, field types in `fields/config/`, and operation types split across `auth/`, `collections/`, and `versions/`. FrogBot-specific domains such as `agents/`, `ai/`, `chat/`, `connections/`, `pieces/`, `skills/`, and `tools/` remain top-level and own their types.
+For example: collection config in `collections/config/`, files in `uploads/`, import-map generation in `bin/generateImportMap/`, field types in `fields/config/`, operation types across `auth/`, `collections/` and `versions/`. FrogBot-only domains (`agents/`, `ai/`, `chat/`, `connections/`, `pieces/`, `skills/`, `tools/`) stay top-level and own their types.
 
-## Reference Repos
+## Reference repos
 
-Use applicable local implementations, types, tests, and fixtures rather than memory or web copies of available code. The [Step 1 reference-repo table](.github/feature-process/step1_research.md#reference-repos) also covers gateway/client comparisons and unavailable sources; references below are local checkout defaults, not dependencies every contributor must clone.
+Check local source, types and tests instead of memory or web copies. These are local checkouts, not dependencies; [Step 1](.github/feature-process/step1_research.md#reference-repos) lists more.
 
-- **Payload source:** `~/code/payload` — ALWAYS check this repo for Payload internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what Payload supports.
-
-- **AI SDK by Vercel source:** `~/code/ai` — ALWAYS check this repo for AI SDK by Vercel internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what AI SDK by Vercel supports.
-
-- **`opencode` 1.x source:** `~/code/opencode` — the 1.x release line (`dev`, the upstream default branch). ALWAYS check this repo for 1.x `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior.
-
-- **`opencode` 2.x source:** `~/code/opencode-v2` — the released 2.x line (git worktree of `~/code/opencode` on `v2`, tracks `origin/v2`). Effect-based architecture split into `core`, `protocol`, `server`, `ai`, `sdk`, and `cli` packages. Use the checkout that matches the `opencode` version in question, label which line the evidence comes from, and check both when the lines may differ.
-
-- **Strapi source:** `~/code/strapi` — use for ideas and comparative patterns in headless CMS architecture, extensibility, administration, and developer experience. It is not a source of truth for FrogBot behavior.
-
-- **Directus source:** `~/code/directus` — use for ideas and comparative patterns in data-platform architecture, administration, integrations, and developer experience. It is not a source of truth for FrogBot behavior.
+| Checkout                           | Use                                                                                                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `~/code/payload`                   | Payload source: the truth for its internals, types, tests and API.                                                                                              |
+| `~/code/ai`                        | AI SDK by Vercel source: the truth for what it supports.                                                                                                        |
+| `~/code/opencode`                  | `opencode` 1.x (`dev` branch).                                                                                                                                  |
+| `~/code/opencode-v2`               | `opencode` 2.x (`v2` worktree; Effect-based `core`, `protocol`, `server`, `ai`, `sdk`, `cli`). Use the line that matches the version in question and say which. |
+| `~/code/firmware`                  | FrogBot's previous iteration: the UI spec.                                                                                                                      |
+| `~/code/strapi`, `~/code/directus` | Ideas for CMS and data-platform design; never the truth for FrogBot behavior.                                                                                   |
