@@ -56,6 +56,7 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `land` rebases, runs the gates, squashes to one commit and fast-forwards local `main`, never pushing. It takes more than 10 minutes when browser specs run, so start it as a background shell and wait for the notification. A docs-only diff skips `test:unit` and `test:ui`, except the unit specs that read Markdown. A known-flaky browser spec (`scripts/lib/flaky.mjs`) is retried once and logged as `flaky` in the ledger;
   - `stats [--batch <n>]` reads `~/.local/share/opencode/opencode.db` (read-only) and shows each ticket's wall and active time, cost, tokens, turns, stage sessions, fix rounds and land attempts;
   - `found [--source <path>] <<'EOF'` reads one `<kind> · <area> · <text>` row from stdin and adds it to `.idea/found.md` with the next free `F-` number. The quoted here-doc keeps backticks from running; text that looks like captured terminal output is refused.
+  - `verify [--list]`, in a ticket worktree, maps the diff against local `main` (`scripts/lib/affected.mjs`, the map `land` uses) to typecheck areas, unit, UI, int and browser specs and repo checks, runs them cheapest first, and prints one line per group, the tier and the changed files nothing covers. It writes a `verify` ledger row at the level reached, or `failed`. `--list` prints the set without running it.
 - **Ticket keys.** A ticket split into parts uses a letter: `pnpm ticket new 210b` makes `frogbot-ticket210b` and `feat/ticket-210b-<slug>`, and its ledger rows say `210b`.
 - **Subagent descriptions** start with the ticket key, for example `211a stage 4: autonumber` or `250 lint: pnpm check`, so `stats` can count the session. A description with no number is fine and counts as "other"; the plugin refuses only one that starts with a number it can't read as a key.
 - **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs, `git stash` while other worktrees exist, and background calls inside subagents, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents. A failed top-level turn, or any provider sign-in error, raises a macOS notification.
@@ -119,4 +120,4 @@ The plan's `touches:` list is matched against globs in `scripts/ticket.mjs`.
 
 ## Not built yet
 
-`pnpm ticket verify [--ui]` (236, 237). Until then the coordinator does these by hand.
+`pnpm ticket verify --ui` (237). Until then the coordinator does it by hand.

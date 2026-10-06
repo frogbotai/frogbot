@@ -14,11 +14,21 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkCommitMessage, TYPES } from './commit-msg.mjs';
-import { docsOnly, landGates } from './lib/affected.mjs';
+import {
+  affectedSet,
+  docsOnly,
+  formatList,
+  formatUncovered,
+  groupSize,
+  landGates,
+  levelReached,
+  verifyGroups,
+} from './lib/affected.mjs';
 import { recordDecisions } from './lib/decisions.mjs';
 import { flakyRetry } from './lib/flaky.mjs';
 import { appendFinding, findingProblem } from './lib/found.mjs';
 import { readSessions, statsRows, summarize } from './lib/stats.mjs';
+import { runGroups, verifyInputs, worktreePatchId } from './lib/verify.mjs';
 
 export const FULL_TIER = [
   '**/migrations/**',
@@ -36,6 +46,8 @@ export const BASE_GATES = ['check --full', 'test:unit', 'test:ui'];
 
 export const LAND = 'land';
 
+export const VERIFY = 'verify';
+
 export const LEDGER_COLUMNS = ['ticket', 'patch-id', 'level', 'evidence', 'verifier', 'ts'];
 
 const PASS_LEVELS = ['typecheck', 'unit', 'int', 'ui'];
@@ -51,7 +63,7 @@ const DEFAULT_TYPE = 'feat';
 const FOUND_USAGE = `pnpm ticket found [--source <path>] <<'EOF' … EOF`;
 
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions';
+  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions | verify [--list]';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -82,6 +94,12 @@ export function parseArgs(argv) {
 
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index];
+
+    if (arg === '--list') {
+      options.list = true;
+      continue;
+    }
+
     const flag = { '--type': 'type', '-m': 'message', '--batch': 'batch', '--source': 'source' }[
       arg
     ];
@@ -108,6 +126,7 @@ export function parseArgs(argv) {
     found: { ticket: false, stdin: true, flags: ['source'] },
     next: { ticket: false, flags: [] },
     decisions: { ticket: false, flags: [] },
+    verify: { ticket: false, flags: ['list'] },
   }[command];
 
   if (!allowed) return { error: command ? `unknown command "${command}"` : 'no command' };
@@ -960,7 +979,64 @@ function commandLand(main, { ticket, part, message }) {
   console.log(`git worktree remove ${dir} && git branch -d ${branch}`);
 }
 
-function main() {
+async function commandVerify(main, { list }) {
+  const root = gitOut(process.cwd(), ['rev-parse', '--show-toplevel']);
+  const branch = git(root, ['symbolic-ref', '--short', 'HEAD']).out || null;
+  const key = root === main ? null : keyOfWorktree({ path: root, branch });
+
+  if (!key) refuse(`${root} is not a ticket worktree; run verify in frogbot-ticket<n>`);
+
+  const found = findTicket(main, Number(TICKET_KEY.exec(key)[1]));
+  const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
+  const log = openLog(main, `${key}-verify`);
+  const inputs = await verifyInputs(root, log);
+  const set = affectedSet(inputs);
+  const uncovered = set.uncovered.filter((file) => existsSync(path.join(root, file)));
+  const groups = verifyGroups(set);
+
+  if (list) {
+    console.log(formatList({ tier, groups, uncovered }).join('\n'));
+
+    return;
+  }
+
+  console.log(`tier: ${tier}`);
+
+  if (groups.length === 0) refuse('no check or test covers this diff; nothing ran, no ledger row');
+
+  const id = worktreePatchId(root);
+  const result = await runGroups({ root, log, groups });
+
+  console.log(formatUncovered(uncovered).join('\n'));
+
+  if (!result.ok) {
+    appendLedger(main, {
+      ticket: key,
+      patchId: id,
+      level: 'failed',
+      evidence: `${result.failed.command} failed`,
+      verifier: VERIFY,
+    });
+    console.log(tail(result.failed.output).join('\n'));
+    refuse(`${result.failed.group} is red; full log: ${path.relative(main, log)}`);
+  }
+
+  const level = levelReached(result.passed);
+
+  appendLedger(main, {
+    ticket: key,
+    patchId: id,
+    level,
+    evidence: result.passed.map((group) => `${group.group} ${groupSize(group)}`).join('; '),
+    verifier: VERIFY,
+  });
+
+  console.log(
+    `ledger: ${level} for patch-id ${id.slice(0, 12)} · full log: ${path.relative(main, log)}`,
+  );
+}
+
+async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   if (options.error) {
@@ -978,9 +1054,10 @@ function main() {
       found: commandFound,
       next: commandNext,
       decisions: commandDecisions,
+      verify: commandVerify,
     };
 
-    commands[options.command](root, options);
+    await commands[options.command](root, options);
   } catch (error) {
     if (!(error instanceof Refusal)) throw error;
 
@@ -989,4 +1066,4 @@ function main() {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) await main();
