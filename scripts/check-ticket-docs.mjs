@@ -43,6 +43,8 @@ const WORDS = { spec: 1500, plan: 2000 };
 
 const MAX_RULINGS = 60;
 
+const MAX_STAGES = 3;
+
 const SYMBOL_WINDOW = 3;
 
 const QUOTE_LENGTH = 60;
@@ -645,6 +647,13 @@ function checkStages(doc, problem) {
 
   if (starts.length === 0) problem(stages.index + 1, '"## Stages" lists no stages');
 
+  if (starts.length > MAX_STAGES) {
+    problem(
+      starts[MAX_STAGES] + 1,
+      `${starts.length} stages (max ${MAX_STAGES}); split the ticket`,
+    );
+  }
+
   starts.forEach((start, at) => {
     const text = doc.lines.slice(start, starts[at + 1] ?? stages.end).join('\n');
     const missing = ['Verify', 'Evidence'].filter(
@@ -747,6 +756,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
   const decisionsText = readOptional(path.join(idea, 'decisions.md'));
   const decisions = parseDecisions(decisionsText ?? '');
   const folders = ticketFolders(idea);
+  const archived = new Set(ticketFolders(path.join(idea, 'archive')).map(({ ticket }) => ticket));
   const filtered = only.length > 0;
   const rows = new Map();
 
@@ -787,7 +797,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
           message: `ticket ${row.ticket} is cut or merged but has a folder: tickets/${name}`,
         });
       }
-    } else if (matches.length === 0) {
+    } else if (matches.length === 0 && !archived.has(row.ticket)) {
       problems.push({
         file: row.planFile,
         line: row.line,

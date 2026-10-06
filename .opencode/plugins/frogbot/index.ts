@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process';
+import path from 'node:path';
 
 import {
+  backgroundCall,
   badTicketTag,
   capOutput,
   contextTokens,
@@ -15,7 +17,9 @@ import {
   searchesArchive,
   shellTimeout,
   STALL_CHECK_MS,
+  stashes,
   type TokenUsage,
+  worktreeCount,
 } from './supervision.ts';
 
 type Content = { type: string; text?: string };
@@ -54,7 +58,7 @@ type OpenCodeEvent = { type: string; data?: Record<string, unknown> };
 type Hook<Event> = (event: Event) => Promise<void> | void;
 
 type Context = {
-  readonly location: { readonly project: { readonly id: string } };
+  readonly location: { readonly directory: string; readonly project: { readonly id: string } };
   readonly tool: {
     hook(name: 'execute.before', callback: Hook<ToolBefore>): Promise<unknown>;
     hook(name: 'execute.after', callback: Hook<ToolAfter>): Promise<unknown>;
@@ -102,6 +106,16 @@ function field(value: unknown, key: string) {
   const found = (value as Record<string, unknown>)[key];
 
   return typeof found === 'string' && found !== '' ? found : undefined;
+}
+
+function worktreesAt(cwd: string) {
+  return new Promise<number>((resolve) => {
+    execFile('git', ['worktree', 'list', '--porcelain'], { cwd }, (error, stdout) => {
+      if (error) log('git worktree list', error);
+
+      resolve(error ? 1 : worktreeCount(stdout));
+    });
+  });
 }
 
 export default {
@@ -161,12 +175,16 @@ export default {
 
       watchdog.activity(event.sessionID, `${event.tool} call`, Date.now());
 
+      if (subagent && backgroundCall(event.tool, event.input)) return MESSAGES.background;
+
       if (event.tool === 'shell') {
         const command = field(event.input, 'command') ?? '';
-        const denied = denial(command);
+        const cwd = path.resolve(ctx.location.directory, field(event.input, 'workdir') ?? '.');
+        const worktrees = stashes(command) ? await worktreesAt(cwd) : 1;
+        const denied = denial(command, { worktrees });
 
         if (denied) return MESSAGES[denied];
-        if ((event.input as { background?: unknown }).background === true) background.add(command);
+        if (backgroundCall(event.tool, event.input)) background.add(command);
       }
 
       if (subagent && searchesArchive(event.tool, event.input)) return MESSAGES.archive;

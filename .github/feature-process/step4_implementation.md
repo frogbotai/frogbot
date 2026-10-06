@@ -2,7 +2,7 @@
 
 After `Go:`, the coordinator runs `pnpm ticket new <n>` and starts a fresh worker for each stage of the plan. Each worker reads the spec, the plan and this log, does its stage, and appends one entry to `step4_implementation.md`.
 
-- Stay within the stage. Add anything else you find with `pnpm ticket found "<kind> · <area> · <text>" --source <log path>`, which picks the next free `F-` number, and put that number in the log. Don't number rows by hand.
+- Stay within the stage. Add anything else you find with `pnpm ticket found --source <log path> <<'EOF'`, then the `<kind> · <area> · <text>` row on one line, then `EOF`. It picks the next free `F-` number; put that number in the log. Don't number rows by hand.
 - Verify by [tier](README.md#tiers), following [CONTRIBUTING.md](../../CONTRIBUTING.md#verification). The coordinator lands the ticket with `pnpm ticket land <n>`.
 - The log records state. The story of the change goes in the commit message.
 

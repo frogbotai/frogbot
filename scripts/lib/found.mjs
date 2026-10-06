@@ -4,6 +4,8 @@ const ID = /^- F-(\d+)\b/gm;
 
 const LOCK_TRIES = 20;
 
+const VITEST_OUTPUT = /\bTest Files\s|\bstderr \|/;
+
 export function findingIds(text) {
   return [...text.matchAll(ID)].map(([, id]) => Number(id));
 }
@@ -15,9 +17,22 @@ export function nextFindingId(texts) {
 }
 
 export function findingLine({ id, text, source }) {
-  const body = text.trim().replace(/\s*\n\s*/g, ' ');
+  return `- ${id} ${text.trim()}${source ? ` [source](${source})` : ''}`;
+}
 
-  return `- ${id} ${body}${source ? ` [source](${source})` : ''}`;
+export function findingProblem(text) {
+  const lines = text.trim().split('\n');
+
+  if (lines[0] === '') return 'no row on stdin';
+  if (lines.length > 1) return `the row has ${lines.length} lines; write one`;
+
+  if (text.includes('\u001b')) {
+    return 'the row has terminal escape codes, so it looks like captured output';
+  }
+
+  if (VITEST_OUTPUT.test(text)) return 'the row has vitest output ("Test Files" or "stderr |")';
+
+  return null;
 }
 
 function withLock(file, callback) {

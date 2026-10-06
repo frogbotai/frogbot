@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ALERT_QUIET_MS,
+  backgroundCall,
   badTicketTag,
   capOutput,
   contextTokens,
@@ -21,6 +22,8 @@ import {
   shellTimeout,
   simpleCommands,
   STALL_MS,
+  stashes,
+  worktreeCount,
 } from '../../../.opencode/plugins/frogbot/supervision.ts';
 
 const MINUTE = 60_000;
@@ -132,6 +135,74 @@ describe('denial', () => {
       'run the affected files or `--project`; the full suite runs in `pnpm ticket land`',
     );
     expect(MESSAGES.archive).toContain('such as `.idea/found.md`');
+    expect(MESSAGES.stash).toContain('`git show HEAD:<file>`');
+    expect(MESSAGES.stash).toContain('temp copy');
+    expect(MESSAGES.background).toContain('run the call in the foreground');
+  });
+});
+
+describe('git stash with other worktrees', () => {
+  it.each([
+    'git stash',
+    'git stash push -m wip',
+    'git stash -u',
+    'git stash pop',
+    'git stash apply stash@{0}',
+    'git stash drop',
+    'git -C ../frogbot stash',
+    'pnpm build && git stash && git stash pop',
+  ])('refuses %s', (command) => {
+    expect(denial(command, { worktrees: 2 })).toBe('stash');
+  });
+
+  it.each(['git stash list', 'git stash show -p stash@{0}', 'git show HEAD:package.json'])(
+    'allows the read-only %s',
+    (command) => {
+      expect(denial(command, { worktrees: 2 })).toBeUndefined();
+    },
+  );
+
+  it('allows git stash with only the main checkout', () => {
+    expect(denial('git stash push -m wip', { worktrees: 1 })).toBeUndefined();
+  });
+
+  it('asks for the worktree count only for a stash command', () => {
+    expect(stashes('git -C ../frogbot stash pop')).toBe(true);
+    expect(stashes('git status && echo "git stash"')).toBe(false);
+  });
+
+  it('counts worktrees from git worktree list --porcelain', () => {
+    const porcelain = [
+      'worktree /code/frogbot',
+      'HEAD 1111111111111111111111111111111111111111',
+      'branch refs/heads/main',
+      '',
+      'worktree /code/frogbot-ticket254',
+      'HEAD 2222222222222222222222222222222222222222',
+      'branch refs/heads/feat/ticket-254-process-followups-2',
+      '',
+    ].join('\n');
+
+    expect(worktreeCount(porcelain)).toBe(2);
+    expect(worktreeCount('worktree /code/frogbot\nHEAD 1\nbranch refs/heads/main\n')).toBe(1);
+  });
+});
+
+describe('backgroundCall', () => {
+  it.each([
+    ['subagent', { prompt: 'x', background: true }],
+    ['shell', { command: 'pnpm build', background: true }],
+  ])('flags %s with background: true', (tool, input) => {
+    expect(backgroundCall(tool, input)).toBe(true);
+  });
+
+  it.each([
+    ['subagent', { prompt: 'x' }],
+    ['subagent', { prompt: 'x', background: false }],
+    ['shell', { command: 'pnpm build' }],
+    ['read', { path: 'x', background: true }],
+  ])('leaves %s %j alone', (tool, input) => {
+    expect(backgroundCall(tool, input)).toBe(false);
   });
 });
 

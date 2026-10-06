@@ -6,6 +6,7 @@ A fresh planner writes `step3_plan.md` from the approved spec and the research S
 - Name the Payload precedent for the approach, or say it is FrogBot-specific.
 - Give each alternative one line, with why not.
 - Each stage is one fresh worker's job. `Verify:` is the exact command that proves it; `Evidence:` is where the result is kept, a path or a ledger level (`typecheck`, `unit`, `int`, `ui`).
+- A plan has at most 3 stages; split a bigger ticket.
 - A new decision found while planning becomes a card in the spec and goes back to the inbox. Don't settle it in the plan.
 - Run `pnpm check ticket-docs <n>` before returning.
 
