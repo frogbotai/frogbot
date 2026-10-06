@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { Job, PayloadRequest, Where } from 'payload';
 
 import { compareAndSet } from '../../database/compareAndSet.js';
+import { runnableNow } from '../lease.js';
 import { updateWaitpoint } from './atomic.js';
 import { WAITPOINTS_SLUG } from './collection.js';
 import { copyResumeData } from './json.js';
@@ -137,11 +138,9 @@ function isLiveHolder(
 async function wakeHolder({
   req,
   waitpoint,
-  now,
 }: {
   req: PayloadRequest;
   waitpoint: Waitpoint;
-  now: string;
 }): Promise<{ jobId?: number | string; retry?: true }> {
   const row = await findHolder({ req, waitpoint });
 
@@ -162,7 +161,7 @@ async function wakeHolder({
         { hasError: { not_equals: true } },
       ],
     },
-    data: { waitUntil: now },
+    data: { waitUntil: runnableNow() },
   });
 
   return woken ? { jobId: row.id } : { retry: true };
@@ -253,7 +252,7 @@ export async function dispatchWaitpoint({
       throw new Error('FrogBot waitpoint dispatch claim was lost.');
     }
 
-    const result = await wakeHolder({ req, waitpoint: current, now });
+    const result = await wakeHolder({ req, waitpoint: current });
 
     const marked = await updateWaitpoint({
       req,

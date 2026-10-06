@@ -35,7 +35,6 @@ type SessionOperation = {
 const operations = new AsyncLocalStorage<SessionOperation>();
 const contextKey = '_frogbotSessionOperation';
 const payloads = new WeakMap<Payload, Payload>();
-const sqliteOperations = new WeakMap<Payload, Map<string, Promise<void>>>();
 
 export function unwrapSessionPayload(payload: Payload): Payload {
   return payloads.get(payload) ?? payload;
@@ -342,30 +341,8 @@ export async function withSessionOperation<T>({
     });
   };
 
-  const runLocked = async (args: { signal: AbortSignal }) => {
-    const payload = unwrapSessionPayload((req as unknown as PayloadRequest).payload);
-    if (payload.db.name !== 'sqlite') return run(args);
-
-    let pending = sqliteOperations.get(payload);
-    if (!pending) sqliteOperations.set(payload, (pending = new Map()));
-    const waiting = pending.get(collectionSlug);
-    let release!: () => void;
-    const current = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    pending.set(collectionSlug, current);
-
-    try {
-      await waiting;
-      return await run(args);
-    } finally {
-      release();
-      if (pending.get(collectionSlug) === current) pending.delete(collectionSlug);
-    }
-  };
-
   try {
-    return await (inherited ? run(inherited) : withSessionLock({ ...lock, fn: runLocked }));
+    return await (inherited ? run(inherited) : withSessionLock({ ...lock, fn: run }));
   } catch (error) {
     req.user = previousUser;
 

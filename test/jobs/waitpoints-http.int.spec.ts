@@ -545,7 +545,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       id: source.id,
       jobId,
       completedAt: null,
-      waitUntil: new Date(now + 1000).toISOString(),
+      waitUntil: new Date(now + 999).toISOString(),
     });
 
     const duplicate = await fixture.worker.jobs.queue({ workflow: 'http-wait', jobId, input: {} });
@@ -820,7 +820,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       id: before.id,
       completedAt: null,
       processing: false,
-      waitUntil: new Date(now).toISOString(),
+      waitUntil: new Date(now - 1).toISOString(),
     });
     expect((await waits())[0]).toMatchObject({ ready: true, dispatched: false });
     expect(finished).not.toHaveBeenCalled();

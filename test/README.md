@@ -117,12 +117,12 @@ test/
 
 ## Environment Variables
 
-| Variable                   | Values                          | Default      | Description                                                                                                 |
-| -------------------------- | ------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------- |
-| `FROGBOT_DATABASE`         | `mongodb`, `postgres`, `sqlite` | `mongodb`    | Which DB adapter to use                                                                                     |
-| `FROGBOT_SEARCH_DRIVER`    | `postgres`, `vercel-postgres`   | `postgres`   | Driver for `test/search/postgres/`; `vercel-postgres` runs through a local WebSocket proxy                  |
-| `FROGBOT_TEST_TOOLS`       | directory path                  | unset        | Directory that resolves `ws` for the Vercel Postgres proxy                                                  |
-| `FROGBOT_TEST_PORT_OFFSET` | non-negative integer            | per checkout | Added to every fixed test port; non-zero also suffixes Postgres and Mongo test databases with `_wt<offset>` |
+| Variable                   | Values                          | Default      | Description                                                                                                                                                      |
+| -------------------------- | ------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FROGBOT_DATABASE`         | `mongodb`, `postgres`, `sqlite` | `mongodb`    | Which DB adapter to use                                                                                                                                          |
+| `FROGBOT_SEARCH_DRIVER`    | `postgres`, `vercel-postgres`   | `postgres`   | Driver for `test/search/postgres/`; `vercel-postgres` runs through a local WebSocket proxy                                                                       |
+| `FROGBOT_TEST_TOOLS`       | directory path                  | unset        | Directory that resolves `ws` for the Vercel Postgres proxy                                                                                                       |
+| `FROGBOT_TEST_PORT_OFFSET` | non-negative integer            | per checkout | Added to every fixed test port (`testPort` moves a port `fetch` blocks up by 20000); non-zero also suffixes Postgres and Mongo test databases with `_wt<offset>` |
 
 ## Docker Profiles
 

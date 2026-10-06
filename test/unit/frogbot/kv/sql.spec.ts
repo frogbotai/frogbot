@@ -30,7 +30,7 @@ const table = sqliteTable('custom_store', {
 
 async function connect(url: string) {
   const adapter = sqliteAdapter({ client: { url }, push: false, busyTimeout: 1000 }).init({
-    payload: { logger: { error: vi.fn() } } as unknown as Payload,
+    payload: { logger: { error: vi.fn(), info: vi.fn() } } as unknown as Payload,
   });
   await adapter.connect!();
   adapter.tableNameMap.set('custom_k_v_store', 'custom_store');

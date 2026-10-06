@@ -47,6 +47,7 @@ export function createSQLKV({
   const adapter = input as DrizzleAdapter;
   const sqlite = adapter.name === 'sqlite';
   const maxExpiration = sqlite ? 253402300799999 : 8640000000000000;
+  const queuesWrites = adapter.packageName === '@frogbotai/db-sqlite';
 
   if (sqlite && ['@payloadcms/db-sqlite', '@frogbotai/db-sqlite'].includes(adapter.packageName)) {
     const { clientConfig } = adapter as DrizzleAdapter & {
@@ -166,7 +167,8 @@ export function createSQLKV({
 
   async function ownership({ lock, expiresAt }: { lock: KVLock; expiresAt?: SQL | null }) {
     if (sqlite) {
-      if (Object.keys(adapter.sessions).length) return false;
+      // Without @frogbotai/db-sqlite's write lock, this write would fail SQLITE_BUSY beside an open transaction.
+      if (!queuesWrites && Object.keys(adapter.sessions).length) return false;
       const query =
         expiresAt === undefined
           ? primary().delete(table)

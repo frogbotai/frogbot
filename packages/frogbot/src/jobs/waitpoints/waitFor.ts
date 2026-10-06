@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import type { Job, PayloadRequest } from 'payload';
 
-import type { ReArm } from '../lease.js';
+import { type ReArm, runnableNow } from '../lease.js';
 import { updateWaitpoint } from './atomic.js';
 import { isReservedWaitpointKey } from './json.js';
 import {
@@ -220,7 +220,7 @@ export function createWaitFor({
         ? waitpoint.until!
         : waitpoint.status === 'pending'
           ? waitpoint.expiresAt!
-          : new Date().toISOString();
+          : runnableNow();
 
     waiting = name;
 
