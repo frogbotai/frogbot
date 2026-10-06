@@ -36,13 +36,12 @@ The result is a plain `number` field with a unique index. It works at the top le
 | `access` | `{ read }` | Allowed | `FieldAccess` function that decides who can read the number. Nobody can create or update it through access-controlled requests. See [field access control](/access-control/fields). |
 | `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
 | `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
-| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. See [virtual fields](/fields/overview#virtual-field-configuration). |
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. A duplicate always gets a new number either way. See [Duplicates and versions](#duplicates-and-versions). |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 | `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
-An autonumber field holds one number that FrogBot sets and is always unique, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `access.create` and `access.update` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+An autonumber field holds one number that FrogBot sets and is always unique, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `unique`, `virtual`, `access.create` and `access.update` are not accepted. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
 
 ```text
 autonumberField "number": defaultValue is not supported
@@ -67,7 +66,7 @@ Updates, autosaves, drafts, bulk updates and version restores keep the number. A
 
 How a failed save affects the count depends on whether the save runs in a database [transaction](/database/transactions):
 
-- **SQLite and Postgres with transactions:** the number is taken inside the save's transaction. A save that fails and rolls back gives its number back, so it leaves no gap. Creates on the same field wait for each other's transactions, so a long-running transaction that creates a numbered record holds up other creates on that field until it finishes.
+- **SQLite and Postgres with transactions:** the number is taken inside the save's transaction. A save that fails and rolls back gives its number back, so it leaves no gap. Creates on the same field wait for each other's transactions, so a long-running transaction that creates a numbered record holds up other creates on that field until it finishes. On Postgres, two transactions that create numbered records in two collections in opposite orders, such as one creating a ticket then an order and the other an order then a ticket, can deadlock, and Postgres fails one of them with `deadlock detected`. Create numbered records in the same collection order in every transaction, or retry a save that fails this way.
 - **MongoDB, and SQLite or Postgres without transactions:** the number is taken on its own, outside the save. A save that fails after its number was taken can leave a gap.
 
 Postgres runs transactions unless you set `transactionOptions: false`. SQLite runs them when you pass an object such as `transactionOptions: {}`, or when a collection uses [sign-in](/authentication/sign-in) and you leave `transactionOptions` unset. See [SQLite options](/database/sqlite#options).
@@ -104,7 +103,9 @@ Numbering existing records doesn't run hooks or change `updatedAt`, and leaves t
 
 ### At startup
 
-FrogBot numbers existing records when it starts, for each autonumber field whose count doesn't exist yet. Startup waits for this before your `onInit` runs, so code in `onInit` finds every field ready. The first start after you add the field to a large collection takes longer, once; later starts only check that each count exists.
+FrogBot numbers existing records when it starts, for each autonumber field whose count doesn't exist yet. Startup waits for this before your `onInit` runs. The first start after you add the field to a large collection takes longer, once; later starts only check that each count exists.
+
+A field can still be unready when `onInit` runs: on a server that left the numbering to another server, or after numbering failed. A create on that field then behaves as described in [From a create](#from-a-create). Don't wait on a create, update or delete in `onInit`: the call doesn't finish, so startup never completes. Seed records after startup instead.
 
 When several servers start at once, one numbers the records and the others go on starting. If numbering fails, FrogBot logs a warning naming the field and keeps starting, and the next start tries again:
 

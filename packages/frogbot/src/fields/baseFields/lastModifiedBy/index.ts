@@ -1,4 +1,5 @@
 import type { FieldHook, RelationshipField } from '../../config/types.js';
+import { AI_FIELD_RUN_CONTEXT } from '../ai/hooks.js';
 import {
   buildUserKindField,
   fieldRelationTo,
@@ -14,7 +15,9 @@ const setLastModifiedBy: FieldHook = ({ context, field, operation, previousValue
     return relationshipID(value);
   }
 
-  if (operation !== 'create' && context?.frogbotAIFieldRun) return relationshipID(previousValue);
+  const aiRun = context?.[AI_FIELD_RUN_CONTEXT];
+
+  if (operation !== 'create' && aiRun) return relationshipID(previousValue);
 
   const user = requestUserID({ req, relationTo: fieldRelationTo(field) });
 

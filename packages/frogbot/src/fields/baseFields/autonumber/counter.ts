@@ -1,14 +1,10 @@
 import { type DatabaseAdapter, type PayloadRequest, ValidationError } from 'payload';
 
+import type { AutonumberEntry } from '../../../config/sanitized.js';
 import type { FrogBot } from '../../../frogbot.js';
 import { KVLockContentionError } from '../../../kv/errors.js';
 import type { KV } from '../../../kv/types.js';
 import { AUTONUMBERS_SLUG } from './collection.js';
-
-export type AutonumberTarget = {
-  collection: string;
-  path: string;
-};
 
 type AutonumberCounterArgs = {
   db: DatabaseAdapter;
@@ -16,7 +12,7 @@ type AutonumberCounterArgs = {
   req?: PayloadRequest;
 };
 
-type AutonumberNumberingArgs = AutonumberTarget & {
+type AutonumberNumberingArgs = AutonumberEntry & {
   db: DatabaseAdapter;
   kv: KV;
 };
@@ -37,7 +33,7 @@ const WAIT_TIMEOUT = 60_000;
 export const AUTONUMBER_PENDING_MESSAGE =
   'Existing records are still being numbered. Try again in a moment.';
 
-export function autonumberKey({ collection, path }: AutonumberTarget): string {
+export function autonumberKey({ collection, path }: AutonumberEntry): string {
   return `${collection}.${path}`;
 }
 
@@ -46,7 +42,7 @@ export function autonumberError({
   message,
   path,
   req,
-}: AutonumberTarget & { message: string; req?: PayloadRequest }): ValidationError {
+}: AutonumberEntry & { message: string; req?: PayloadRequest }): ValidationError {
   return new ValidationError({ collection, errors: [{ path, message }], req });
 }
 
@@ -127,7 +123,7 @@ export async function storedAutonumber({
   id,
   path,
   req,
-}: AutonumberTarget & {
+}: AutonumberEntry & {
   db: DatabaseAdapter;
   id: number | string;
   req?: PayloadRequest;
@@ -142,7 +138,7 @@ async function highestAutonumber({
   collection,
   db,
   path,
-}: AutonumberTarget & { db: DatabaseAdapter }): Promise<number> {
+}: AutonumberEntry & { db: DatabaseAdapter }): Promise<number> {
   const { docs } = await db.find({
     collection,
     where: { and: [{ [path]: { exists: true } }, { [path]: { not_equals: null } }] },
@@ -161,7 +157,7 @@ async function numberExistingRecords({
   db,
   path,
   signal,
-}: AutonumberTarget & { db: DatabaseAdapter; signal: AbortSignal }): Promise<void> {
+}: AutonumberEntry & { db: DatabaseAdapter; signal: AbortSignal }): Promise<void> {
   const key = autonumberKey({ collection, path });
 
   if (await hasAutonumber({ db, key })) return;
@@ -217,7 +213,7 @@ export async function waitForAutonumber({
   db,
   path,
   req,
-}: AutonumberTarget & { db: DatabaseAdapter; req?: PayloadRequest }): Promise<void> {
+}: AutonumberEntry & { db: DatabaseAdapter; req?: PayloadRequest }): Promise<void> {
   const key = autonumberKey({ collection, path });
 
   for (let waited = 0; waited < WAIT_TIMEOUT; waited += WAIT_INTERVAL) {

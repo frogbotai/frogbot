@@ -478,13 +478,7 @@ async function initialize(
       });
     }
 
-    if (frogbot.config._internal.autonumbers.length) {
-      await ensureAutonumbers(frogbot).catch((error: unknown) => {
-        frogbot.logger.warn(
-          `[frogbot] Autonumber numbering failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      });
-    }
+    if (frogbot.config._internal.autonumbers.length) await ensureAutonumbers(frogbot);
 
     if (options.onInit) {
       await options.onInit(frogbot);

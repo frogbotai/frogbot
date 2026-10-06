@@ -14,6 +14,7 @@ import type { Field } from '../../config/types.js';
 import {
   AI_FIELD_RUN_CONTEXT,
   AI_FIELD_TASK_SLUG,
+  type AIFieldRunContext,
   type AIFieldRunInput,
   getAIKind,
 } from './hooks.js';
@@ -100,6 +101,16 @@ function readAnswer(select: AISelectOutput | undefined, { output, text }: AIFiel
   return [...new Set(picked)];
 }
 
+function once<T>(load: () => Promise<T>): () => Promise<T> {
+  let result: Promise<T> | undefined;
+
+  return () => {
+    result ??= load();
+
+    return result;
+  };
+}
+
 async function loadUser({
   frogbot,
   user,
@@ -140,39 +151,69 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
     ...(input.locale ? { locale: input.locale } : {}),
   });
 
+  const drafts = Boolean(collection.versions?.drafts);
+
   const read = (overrideAccess: boolean) =>
     frogbot.findByID({
       collection: input.collection as never,
       id: input.id,
       depth: 0,
       disableErrors: true,
-      draft: Boolean(collection.versions?.drafts),
+      draft: drafts,
       fallbackLocale: 'none',
       ...(input.locale ? { locale: input.locale as never } : {}),
       overrideAccess,
       req: runReq,
     }) as Promise<null | RunDoc>;
 
-  const write = (latest: RunDoc, data: Record<string, unknown>) =>
-    frogbot.update({
+  const write = async (
+    latest: RunDoc,
+    data: Record<string, unknown>,
+    isCurrent?: () => Promise<boolean>,
+  ): Promise<boolean> => {
+    const args = {
       collection: input.collection as never,
-      id: input.id,
       data: data as never,
       depth: 0,
-      draft: latest._status === 'draft',
       ...(input.locale ? { locale: input.locale as never } : {}),
       overrideAccess: true,
       req: runReq,
       context: {
-        [AI_FIELD_RUN_CONTEXT]: { collection: input.collection, id: input.id, field: input.field },
+        [AI_FIELD_RUN_CONTEXT]: {
+          collection: input.collection,
+          id: input.id,
+          field: input.field,
+          ...(isCurrent ? { isCurrent } : {}),
+        } satisfies AIFieldRunContext,
       },
+    };
+
+    const status = latest._status;
+
+    if (!drafts || (status !== 'draft' && status !== 'published')) {
+      await frogbot.update({ ...args, id: input.id });
+
+      return true;
+    }
+
+    const { docs, errors } = await frogbot.update({
+      ...args,
+      data: (status === 'published' ? { ...data, _status: status } : data) as never,
+      draft: true,
+      where: { and: [{ id: { equals: input.id } }, { _status: { equals: status } }] } as never,
     });
 
-  const fail = (latest: RunDoc, message: string) =>
-    write(latest, {
-      [paths.status]: 'error',
-      [paths.error]: message.slice(0, ERROR_LENGTH),
-    });
+    if (errors.length > 0) throw new Error(errors[0]?.message);
+
+    return docs.length > 0;
+  };
+
+  const failure = (message: string) => ({
+    [paths.status]: 'error',
+    [paths.error]: message.slice(0, ERROR_LENGTH),
+  });
+
+  const fail = (latest: RunDoc, message: string) => write(latest, failure(message));
 
   if (input.user && !user) {
     const stored = await read(true);
@@ -205,6 +246,19 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
     return unchanged ? latest : undefined;
   };
 
+  const save = async (data: Record<string, unknown>, retry = true): Promise<void> => {
+    const latest = await current();
+
+    if (!latest) return;
+
+    const isCurrent = once(async () => Boolean(await current()));
+    const saved = await write(latest, data, isCurrent);
+
+    if (saved || !retry) return;
+
+    await save(data, false);
+  };
+
   try {
     const result = await frogbot.generateText({
       model: resolveAIFieldModel(frogbot.config.ai, kind) as ModelId,
@@ -217,26 +271,14 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
 
     const answer = readAnswer(select, { output: request && result.output, text: result.text });
 
-    const latest = await current();
-
-    if (!latest) return;
-
-    await write(latest, {
-      [input.field]: answer,
-      [paths.status]: 'done',
-      [paths.error]: null,
-    });
+    await save({ [input.field]: answer, [paths.status]: 'done', [paths.error]: null });
   } catch (error) {
     frogbot.logger.error(
       { err: error },
       `[frogbot] aiField "${input.field}" in collection "${input.collection}" failed for record ${input.id}`,
     );
 
-    const latest = await current();
-
-    if (!latest) return;
-
-    await fail(latest, error instanceof Error ? error.message : String(error));
+    await save(failure(error instanceof Error ? error.message : String(error)));
   }
 }
 

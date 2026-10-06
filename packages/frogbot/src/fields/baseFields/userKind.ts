@@ -20,6 +20,7 @@ export type UserKindFieldArgs = Omit<
   | 'relationTo'
   | 'required'
   | 'type'
+  | 'virtual'
 > & {
   access?: { read?: FieldAccess };
   relationTo?: SingleRelationshipField['relationTo'];
@@ -41,6 +42,7 @@ const REJECTED_OPTIONS = [
   'localized',
   'defaultValue',
   'required',
+  'virtual',
   'access.create',
   'access.update',
 ];

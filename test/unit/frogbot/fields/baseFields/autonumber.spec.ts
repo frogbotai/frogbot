@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { ensureAutonumbers } from '../../../../../packages/frogbot/src/fields/baseFields/autonumber/counter.js';
 import { autonumberField } from '../../../../../packages/frogbot/src/fields/baseFields/autonumber/index.js';
+import type { FrogBot } from '../../../../../packages/frogbot/src/frogbot.js';
 import { itBehavesLikeASystemKind, runHook, runSchema } from './systemKind.js';
 
 describe('autonumberField', () => {
@@ -83,11 +85,39 @@ describe('autonumberField option errors', () => {
     [{ defaultValue: 1 }, 'defaultValue is not supported'],
     [{ required: true }, 'required is not supported'],
     [{ unique: false }, 'unique is not supported'],
+    [{ virtual: true }, 'virtual is not supported'],
     [{ access: { create: () => true } }, 'access.create is not supported'],
     [{ access: { update: () => true } }, 'access.update is not supported'],
   ])('rejects %o at call time', (options, message) => {
     expect(() => autonumberField({ name: 'number', ...(options as object) })).toThrow(
       new Error(`autonumberField "number": ${message}`),
     );
+  });
+});
+
+describe('ensureAutonumbers', () => {
+  it('logs a warning naming each failed field and resolves', async () => {
+    const warn = vi.fn();
+    const findOne = vi.fn().mockRejectedValue(new Error('database unavailable'));
+
+    const frogbot = {
+      config: {
+        _internal: {
+          autonumbers: [
+            { collection: 'tickets', path: 'number' },
+            { collection: 'orders', path: 'ref' },
+          ],
+        },
+      },
+      db: { findOne },
+      logger: { warn },
+    } as unknown as FrogBot;
+
+    await expect(ensureAutonumbers(frogbot)).resolves.toBeUndefined();
+
+    expect(warn.mock.calls).toEqual([
+      ["[frogbot] Autonumber numbering failed for 'tickets.number': database unavailable"],
+      ["[frogbot] Autonumber numbering failed for 'orders.ref': database unavailable"],
+    ]);
   });
 });

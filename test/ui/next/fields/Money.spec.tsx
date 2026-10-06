@@ -140,6 +140,12 @@ describe('MoneyField', () => {
     expect(input?.hasAttribute('max')).toBe(false);
   });
 
+  it('passes autoComplete to the number input', () => {
+    const { container } = renderField({ field: moneyField('USD', { autoComplete: 'off' }) });
+
+    expect(container.querySelector('input')?.getAttribute('autocomplete')).toBe('off');
+  });
+
   it('keeps the number field classes', () => {
     const { container } = renderField();
 

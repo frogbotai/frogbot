@@ -58,6 +58,15 @@ aiField({ name: 'summary', inputs: ['title'], prompt: 'Summarize.', hasMany: tru
 // @ts-expect-error AI text fields can't be required
 aiField({ name: 'summary', inputs: ['title'], prompt: 'Summarize.', required: true });
 
+// @ts-expect-error FrogBot stores the AI value
+aiField({ name: 'summary', inputs: ['title'], prompt: 'Summarize.', virtual: true });
+
+// @ts-expect-error the AI value is shown and returned
+aiField({ name: 'summary', inputs: ['title'], prompt: 'Summarize.', hidden: true });
+
+// @ts-expect-error FrogBot stores the AI value
+aiField({ name: 'type', inputs: ['notes'], prompt: 'Classify.', options: ['bug'], virtual: true });
+
 // @ts-expect-error AI select fields can't be required
 aiField({ name: 'type', inputs: ['notes'], prompt: 'Classify.', options: ['bug'], required: true });
 

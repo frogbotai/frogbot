@@ -14,6 +14,7 @@ import {
   aiBulkRequests,
   aiBulkResultMessage,
   aiBulkTargets,
+  aiRegenerateRequest,
 } from '../../packages/next/src/fields/AI/bulk.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -33,6 +34,7 @@ import {
   reportsSlug,
   rollbackTitle,
   sharedTitle,
+  shoutsSlug,
   tasksSlug,
   usageLogsSlug,
   usersSlug,
@@ -87,6 +89,8 @@ describe('aiField runs', () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
+
     await vi.waitFor(async () => {
       if ((await usageRows()).length !== model.titleRequests.length) {
         throw new Error('[test] usage rows are still being written');
@@ -200,6 +204,16 @@ describe('aiField runs', () => {
     return { release: gate.resolve, run };
   }
 
+  function editBeforeRunWrite(edit: () => Promise<unknown>): void {
+    const update = booted.frogbot.update.bind(booted.frogbot);
+
+    vi.spyOn(booted.frogbot, 'update').mockImplementationOnce(async (args) => {
+      await edit();
+
+      return update(args as never);
+    });
+  }
+
   function findArticle(id: Doc['id'], args: Record<string, unknown> = {}): Promise<Doc> {
     return booted.frogbot.findByID({
       collection: articlesSlug,
@@ -245,6 +259,46 @@ describe('aiField runs', () => {
       expect(response.status).toBe(200);
       expect(await waitingRuns('summary')).toHaveLength(0);
       expect((await findTask(task.id))._summary_status).toBe('done');
+    });
+
+    it('a REST input edit sent with select queues one run', async () => {
+      const { headers } = await signIn('editor');
+      const task = await createTask({ notes: 'Paint the fence' });
+
+      await runJobs();
+
+      const response = await booted.restClient.patch(
+        `/api/${tasksSlug}/${task.id}?select[id]=true`,
+        { notes: 'Paint the gate' },
+        { headers },
+      );
+
+      expect(response.status).toBe(200);
+      expect(await waitingRuns('summary')).toHaveLength(1);
+    });
+
+    it('a REST Regenerate of many records sent with select queues a run for each', async () => {
+      const { headers } = await signIn('editor');
+      const first = await createTask({ notes: 'Paint the fence' });
+      const second = await createTask({ notes: 'Paint the gate' });
+
+      await runJobs();
+      await runJobs();
+
+      const params = new URLSearchParams({
+        'where[id][in][0]': String(first.id),
+        'where[id][in][1]': String(second.id),
+        'select[id]': 'true',
+      });
+
+      const response = await booted.restClient.patch(
+        `/api/${tasksSlug}?${params}`,
+        { _summary_status: 'pending' },
+        { headers },
+      );
+
+      expect(response.status).toBe(200);
+      expect(await waitingRuns('summary')).toHaveLength(2);
     });
 
     it('a Local API update to a field that is not an input queues nothing', async () => {
@@ -429,6 +483,138 @@ describe('aiField runs', () => {
       await held.run;
 
       expect(await findTask(task.id)).toMatchObject({ summary: 'Mine', _summary_status: 'manual' });
+    });
+  });
+
+  describe('edits between the re-read and the save', () => {
+    it('a hand edit keeps the hand-written value and manual', async () => {
+      const { headers } = await signIn('editor');
+      const task = await createTask({ notes: 'Paint the fence' });
+
+      model.respondTitle({ text: 'Generated' });
+      editBeforeRunWrite(() => patchTask(task.id, { summary: 'Mine' }, headers));
+
+      await runJobs();
+
+      expect(await findTask(task.id)).toMatchObject({
+        summary: 'Mine',
+        _summary_status: 'manual',
+        _summary_error: null,
+      });
+    });
+
+    it('an input edit saves nothing and leaves one run for the new input', async () => {
+      const task = await createTask({ notes: 'one' });
+
+      model.respondTitle({ text: 'From one' });
+      editBeforeRunWrite(() => updateTask(task.id, { notes: 'two' }));
+
+      await runJobs();
+
+      const stale = await findTask(task.id);
+
+      expect(stale.summary ?? null).toBeNull();
+      expect(stale._summary_status).toBe('pending');
+      expect(await waitingRuns('summary')).toHaveLength(1);
+    });
+
+    it('a failed run keeps a hand edit and stores no error', async () => {
+      const { headers } = await signIn('editor');
+      const task = await createTask({ notes: 'Paint the fence' });
+
+      model.respondTitle({
+        text: '',
+        error: { status: 400, body: { error: { message: 'Bad request.' } } },
+      });
+      editBeforeRunWrite(() => patchTask(task.id, { summary: 'Mine' }, headers));
+
+      await runJobs();
+
+      expect(await findTask(task.id)).toMatchObject({
+        summary: 'Mine',
+        _summary_status: 'manual',
+        _summary_error: null,
+      });
+    });
+
+    it('a stale save does not queue the AI fields that read its value', async () => {
+      const task = await createTask({ notes: 'one' });
+
+      await runJobs();
+      await runJobs();
+      await updateTask(task.id, { notes: 'two' });
+
+      model.respondTitle({ text: 'From two' });
+      editBeforeRunWrite(() => updateTask(task.id, { notes: 'three' }));
+
+      await runJobs();
+
+      const categoryRuns = model.titleRequests.filter(({ model: id }) => id === otherModel);
+
+      expect(categoryRuns).toHaveLength(1);
+      expect(await waitingRuns('category')).toHaveLength(0);
+    });
+
+    it('a run saves its result when a read hook changes an input', async () => {
+      const shout = (await booted.frogbot.create({
+        collection: shoutsSlug,
+        data: { loud: 'quiet' } as never,
+      })) as unknown as Doc;
+
+      await runJobs();
+
+      const saved = await booted.frogbot.findByID({ collection: shoutsSlug, id: shout.id });
+
+      expect(saved).toMatchObject({ _summary_status: 'done' });
+    });
+
+    it("a user's run saves its result when a read hook hides an input from them", async () => {
+      const user = await createUser('editor');
+
+      const shout = (await booted.frogbot.create({
+        collection: shoutsSlug,
+        data: { masked: 'secret' } as never,
+        user: user as never,
+        overrideAccess: false,
+      })) as unknown as Doc;
+
+      await runJobs();
+
+      const saved = await booted.frogbot.findByID({ collection: shoutsSlug, id: shout.id });
+
+      expect(saved).toMatchObject({ _summary_status: 'done' });
+    });
+
+    it('a newer draft is not published and gets the result', async () => {
+      const article = (await booted.frogbot.create({
+        collection: articlesSlug,
+        data: { title: 'v1', body: 'Hello', _status: 'published' } as never,
+      })) as unknown as Doc;
+
+      model.respondTitle({ text: 'Generated' });
+
+      editBeforeRunWrite(() =>
+        booted.frogbot.update({
+          collection: articlesSlug,
+          id: article.id,
+          data: { title: 'Editor draft' } as never,
+          draft: true,
+        }),
+      );
+
+      await runJobs();
+
+      expect(await findArticle(article.id)).toMatchObject({
+        _status: 'published',
+        title: 'v1',
+      });
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'draft',
+        title: 'Editor draft',
+        summary: 'Generated',
+        _summary_status: 'done',
+      });
     });
   });
 
@@ -1255,6 +1441,64 @@ describe('aiField runs', () => {
       });
 
       expect(await queuedIDs()).toEqual([]);
+    });
+
+    it('a single Regenerate of a published record that gets a newer draft is refused', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'v1', status: 'published' });
+
+      const { body, url } = aiRegenerateRequest({
+        api: '/api',
+        collectionSlug: articlesSlug,
+        draft: false,
+        id: article.id,
+        locale: 'en',
+        name: 'summary',
+      });
+
+      await writeSummary({
+        collection: articlesSlug,
+        id: article.id,
+        data: { body: 'Editor draft' },
+        draft: true,
+      });
+
+      const response = await booted.restClient.patch<BulkResponse>(url, body, { headers });
+
+      expect(response.body.docs).toEqual([]);
+      expect(await findArticle(article.id)).toMatchObject({ _status: 'published', body: 'v1' });
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'draft',
+        body: 'Editor draft',
+      });
+
+      expect(await queuedIDs()).toEqual([]);
+    });
+
+    it('a single Regenerate of a published record queues a run and stays published', async () => {
+      const { headers } = await signIn('editor');
+      const article = await seedArticle({ body: 'v1', status: 'published' });
+
+      const { body, url } = aiRegenerateRequest({
+        api: '/api',
+        collectionSlug: articlesSlug,
+        draft: false,
+        id: article.id,
+        locale: 'en',
+        name: 'summary',
+      });
+
+      const response = await booted.restClient.patch<BulkResponse>(url, body, { headers });
+
+      expect(response.body.docs.map(({ id }) => String(id))).toEqual([String(article.id)]);
+
+      expect(await findArticle(article.id, { draft: true })).toMatchObject({
+        _status: 'published',
+        _summary_status: 'pending',
+      });
+
+      expect(await queuedIDs()).toEqual([String(article.id)]);
     });
 
     it('a French run writes only the French status', async () => {

@@ -69,6 +69,7 @@ function runQueueHook(
   field: AnyField,
   args: {
     context?: object;
+    data?: object;
     doc: object;
     operation?: string;
     previousDoc?: object;
@@ -128,12 +129,8 @@ describe('aiField row', () => {
       unique: true,
     });
 
-    expect(value).toMatchObject({
-      access,
-      hooks: { beforeChange },
-      label: 'Summary',
-      unique: true,
-    });
+    expect(value).toMatchObject({ access, label: 'Summary', unique: true });
+    expect(value.hooks?.beforeChange?.[0]).toBe(beforeChange[0]);
     expect(value.admin).toMatchObject({ className: 'ai', condition, readOnly: true, width: '50%' });
     expect(row).not.toHaveProperty('label');
     expect(row).not.toHaveProperty('unique');
@@ -251,6 +248,9 @@ describe('aiField call-time errors', () => {
     [{ hasMany: true }, 'hasMany is not supported'],
     [{ required: true }, 'required is not supported'],
     [{ required: false }, 'required is not supported'],
+    [{ virtual: true }, 'virtual is not supported'],
+    [{ virtual: 'author.name' }, 'virtual is not supported'],
+    [{ hidden: true }, 'hidden is not supported'],
   ])('rejects %o', (options, message) => {
     expect(() => aiField({ ...base, ...(options as object) } as AIFieldArgs)).toThrow(
       new Error(`aiField "summary": ${message}`),
@@ -307,6 +307,8 @@ describe('aiField select output', () => {
     [{ options: [{ label: 'Bug' }] }, 'option values must be non-empty strings'],
     [{ options: typeOptions, required: true }, 'required is not supported'],
     [{ options: typeOptions, hasMany: true, required: true }, 'required is not supported'],
+    [{ options: typeOptions, virtual: true }, 'virtual is not supported'],
+    [{ options: typeOptions, hidden: true }, 'hidden is not supported'],
   ])('rejects %o', (options, message) => {
     expect(() =>
       aiField({ ...base, name: 'type', ...(options as object) } as AISelectFieldArgs),
@@ -450,12 +452,12 @@ describe('aiField status rules', () => {
     ['another collection', { ...run, collection: 'articles' }],
     ['another record', { ...run, id: 2 }],
     ['another field', { ...run, field: 'category' }],
-  ])('a run context for %s is not the field own run', (_name, context) => {
+  ])('a run context for %s is not the field own run', async (_name, context) => {
     const { status } = make();
     const [hook] = status.hooks?.beforeChange ?? [];
 
     expect(
-      hook({
+      await hook({
         collection: { slug: 'tasks' },
         context: { frogbotAIFieldRun: context },
         data: { summary: 'AI', _summary_status: 'done' },
@@ -465,12 +467,12 @@ describe('aiField status rules', () => {
     ).toBe('manual');
   });
 
-  it('the status hook accepts its own run', () => {
+  it('the status hook accepts its own run', async () => {
     const { status } = make();
     const [hook] = status.hooks?.beforeChange ?? [];
 
     expect(
-      hook({
+      await hook({
         collection: { slug: 'tasks' },
         context: { frogbotAIFieldRun: run },
         data: { summary: 'AI', _summary_status: 'done' },
@@ -478,6 +480,65 @@ describe('aiField status rules', () => {
         originalDoc: { id: 1, summary: 'Old', _summary_status: 'pending' },
       }),
     ).toBe('done');
+  });
+
+  it.each([
+    ['value', 'summary', 'Mine'],
+    ['status', '_summary_status', 'manual'],
+    ['error', '_summary_error', 'Kept'],
+  ])(
+    'the %s guard of a run whose record changed since its read keeps the stored value',
+    async (_, path, stored) => {
+      const { error, status, value } = make();
+      const field = { summary: value, _summary_status: status, _summary_error: error }[path];
+      const hook = field?.hooks?.beforeValidate?.at(-1);
+
+      expect(
+        await hook?.({
+          collection: { slug: 'tasks' },
+          context: { frogbotAIFieldRun: { ...run, isCurrent: () => Promise.resolve(false) } },
+          originalDoc: {
+            id: 1,
+            summary: 'Mine',
+            _summary_status: 'manual',
+            _summary_error: 'Kept',
+          },
+          value: 'From the run',
+        }),
+      ).toBe(stored);
+    },
+  );
+
+  it('the guard of a run whose record is still current keeps the run value', async () => {
+    const { value } = make();
+    const hook = value.hooks?.beforeValidate?.at(-1);
+    const isCurrent = vi.fn(() => Promise.resolve(true));
+
+    expect(
+      await hook?.({
+        collection: { slug: 'tasks' },
+        context: { frogbotAIFieldRun: { ...run, isCurrent } },
+        originalDoc: { id: 1, summary: 'Old', _summary_status: 'pending' },
+        value: 'AI',
+      }),
+    ).toBe('AI');
+    expect(isCurrent).toHaveBeenCalledTimes(1);
+  });
+
+  it('the guard leaves a save that is not its own run alone', async () => {
+    const { value } = make();
+    const hook = value.hooks?.beforeValidate?.at(-1);
+    const isCurrent = vi.fn(() => Promise.resolve(false));
+
+    expect(
+      await hook?.({
+        collection: { slug: 'tasks' },
+        context: { frogbotAIFieldRun: { ...run, id: 2, isCurrent } },
+        originalDoc: { id: 1, summary: 'Old', _summary_status: 'done' },
+        value: 'Mine',
+      }),
+    ).toBe('Mine');
+    expect(isCurrent).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -619,6 +680,32 @@ describe('aiField queueing', () => {
     await runQueueHook(status, {
       doc: { ...pending, _summary_status: 'manual' },
       previousDoc: { _summary_status: 'done' },
+      req,
+    });
+
+    expect(queue).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an input edit', { notes: 'New' }, { ...pending, notes: 'Old', _summary_status: 'done' }],
+    ['a Regenerate', { _summary_status: 'pending' }, { ...pending, _summary_status: 'done' }],
+  ])('queues %s saved with a select that leaves out the status', async (_, data, previous) => {
+    const { status } = make();
+    const { queue, req } = queueRequest();
+
+    await runQueueHook(status, { data, doc: { id: 7 }, previousDoc: previous, req });
+
+    expect(queue).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not queue a save with a select that leaves out the status of a manual value', async () => {
+    const { status } = make();
+    const { queue, req } = queueRequest();
+
+    await runQueueHook(status, {
+      data: { notes: 'New' },
+      doc: { id: 7 },
+      previousDoc: { ...pending, notes: 'Old', _summary_status: 'manual' },
       req,
     });
 

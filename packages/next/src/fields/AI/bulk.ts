@@ -230,6 +230,34 @@ export function aiBulkRequests({
   );
 }
 
+export function aiRegenerateRequest({
+  api,
+  collectionSlug,
+  draft,
+  id,
+  locale,
+  name,
+}: {
+  api: string;
+  collectionSlug: string;
+  draft: boolean;
+  id: number | string;
+  locale?: string;
+  name: string;
+}): AIBulkRequest {
+  const [request] = aiBulkRequests({
+    api,
+    choice: 'all',
+    collectionSlug,
+    drafts: true,
+    field: { inputs: [], label: undefined, name },
+    locale,
+    targets: [{ draft, id }],
+  });
+
+  return request as AIBulkRequest;
+}
+
 export function aiBulkResultMessage({
   error,
   loaded,

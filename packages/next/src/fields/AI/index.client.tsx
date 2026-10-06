@@ -14,6 +14,7 @@ import { InvalidStepIcon, LoadingIcon, RefreshIcon, SparkleIcon } from '@frogbot
 import { getTranslation } from '@payloadcms/translations';
 import {
   DefaultCell,
+  isFieldRTL,
   ReactSelect,
   type ReactSelectOption,
   useAuth,
@@ -125,7 +126,7 @@ function useAIFieldTarget(collectionSlug: string) {
 }
 
 function useRegenerate({ collectionSlug, draft, id, name, onDoc }: AITarget) {
-  const { api, locale } = useAIFieldTarget(collectionSlug);
+  const { api, hasDrafts, locale } = useAIFieldTarget(collectionSlug);
   const [busy, setBusy] = useState(false);
 
   const regenerate = useCallback(() => {
@@ -137,13 +138,14 @@ function useRegenerate({ collectionSlug, draft, id, name, onDoc }: AITarget) {
       api,
       collectionSlug,
       draft,
+      drafts: hasDrafts,
       id,
       locale,
-      statusPath: aiFieldPaths(name).status,
+      name,
     })
       .then(onDoc, () => undefined)
       .finally(() => setBusy(false));
-  }, [api, collectionSlug, draft, id, locale, name, onDoc]);
+  }, [api, collectionSlug, draft, hasDrafts, id, locale, name, onDoc]);
 
   return { busy, regenerate };
 }
@@ -386,7 +388,16 @@ function AITextInput({
   value,
 }: AIInputProps & { field: TextFieldClientProps['field'] }) {
   const { i18n } = useTranslation();
-  const placeholder = field.admin?.placeholder;
+  const { config } = useConfig();
+  const locale = useLocale();
+  const { autoComplete, placeholder, rtl } = field.admin ?? {};
+
+  const renderRTL = isFieldRTL({
+    fieldLocalized: field.localized,
+    fieldRTL: rtl,
+    locale,
+    localizationConfig: config.localization || undefined,
+  });
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value),
@@ -395,6 +406,8 @@ function AITextInput({
 
   return (
     <Input
+      autoComplete={autoComplete || undefined}
+      dir={renderRTL ? 'rtl' : undefined}
       disabled={disabled}
       id={`field-${path.replace(/\./g, '__')}`}
       name={path}

@@ -32,6 +32,7 @@ describe('createdByField option errors', () => {
     [{ localized: true }, 'localized is not supported'],
     [{ defaultValue: 'u1' }, 'defaultValue is not supported'],
     [{ required: true }, 'required is not supported'],
+    [{ virtual: true }, 'virtual is not supported'],
     [{ access: { create: () => true } }, 'access.create is not supported'],
     [{ access: { update: () => true } }, 'access.update is not supported'],
     [{ relationTo: ['users', 'admins'] }, 'relationTo must be one collection slug'],

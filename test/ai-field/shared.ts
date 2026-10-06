@@ -5,6 +5,7 @@ export const tasksSlug = 'tasks';
 export const articlesSlug = 'articles';
 export const issuesSlug = 'issues';
 export const reportsSlug = 'reports';
+export const shoutsSlug = 'shouts';
 export const usageLogsSlug = 'usage-logs';
 export const jobsSlug = 'payload-jobs';
 export const aiFieldTaskSlug = 'frogbot-run-ai-field';

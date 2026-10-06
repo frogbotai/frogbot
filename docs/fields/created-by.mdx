@@ -40,13 +40,12 @@ The result is a plain single `relationship` field to your user collection. It wo
 | `access` | `{ read }` | Allowed | `FieldAccess` function that decides who can read the value. Nobody can create or update it through access-controlled requests. See [field access control](/access-control/fields). |
 | `hidden` | `boolean` | `false` | Removes the field from API responses and the admin panel while keeping stored data. |
 | `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
-| `virtual` | `boolean \| string` | `false` | `true` skips database storage; a string reads a value through a relationship path. See [virtual fields](/fields/overview#virtual-field-configuration). |
 | `disableDuplicate` | `boolean` | `false` | Leaves the value out when a document is duplicated. A duplicate never copies the creator either way. See [Duplicates and versions](#duplicates-and-versions). |
 | `admin` | `object` | — | Admin-panel options. See [Admin options](#admin-options). |
 | `custom` | `Record<string, any>` | — | Server-only metadata for your own code and plugins. Use `admin.custom` for data the browser also needs. |
 | `typescriptSchema` | `Array<({ jsonSchema }) => JSONSchema4>` | — | Functions that modify the JSON Schema used by [type generation](/typescript/generating-types) and agents. They run after the field's own entry. See [Agents and generated types](#agents-and-generated-types). |
 
-A created by field holds one user that FrogBot sets, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `access.create` and `access.update` are not accepted, and `relationTo` takes one slug. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
+A created by field holds one user that FrogBot sets, so `hasMany`, `minRows`, `maxRows`, `localized`, `defaultValue`, `required`, `virtual`, `access.create` and `access.update` are not accepted, and `relationTo` takes one slug. TypeScript rejects them, and setting any of them from JavaScript fails at startup with an error naming the field:
 
 ```text
 createdByField "createdBy": hasMany is not supported

@@ -30,6 +30,7 @@ export type AutonumberFieldArgs = Omit<
   | 'required'
   | 'type'
   | 'unique'
+  | 'virtual'
 > & {
   access?: { read?: FieldAccess };
 };
@@ -134,6 +135,7 @@ export function autonumberField(args: AutonumberFieldArgs): NumberField {
       'defaultValue',
       'required',
       'unique',
+      'virtual',
       'access.create',
       'access.update',
     ],
