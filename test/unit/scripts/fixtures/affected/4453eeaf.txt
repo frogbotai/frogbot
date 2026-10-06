@@ -1,0 +1,5 @@
+# 4453eeaf chore(repo): check every workspace folder has a tracked package.json
+
+M	CONTRIBUTING.md
+A	scripts/check-packages.mjs
+A	test/unit/scripts/checkPackages.spec.ts

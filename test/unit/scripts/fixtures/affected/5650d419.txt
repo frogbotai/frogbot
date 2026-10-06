@@ -1,0 +1,5 @@
+# 5650d419 fix(db-sqlite): recover the libsql connection after SQLITE_BUSY so later writes are not lost
+
+M	packages/db-sqlite/src/index.ts
+A	packages/db-sqlite/src/recoverFromBusy.ts
+A	test/database/sqlite-busy.int.spec.ts

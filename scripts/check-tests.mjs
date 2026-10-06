@@ -63,7 +63,7 @@ export function sourceTests(files) {
     .map((file) => ({ file, message: 'test file under src: move it to test/unit/<package>/' }));
 }
 
-function playwrightMatcher(patterns) {
+export function playwrightMatcher(patterns) {
   const list = [patterns].flat();
 
   return (file) =>
@@ -249,13 +249,13 @@ function read(file) {
   }
 }
 
-function loadConfig(file) {
+export function loadConfig(file) {
   return import(pathToFileURL(path.join(ROOT, file)).href).then((module) => module.default);
 }
 
 // The configs import TypeScript modules without an extension, which only bundlers resolve; retry
 // those as `.ts`.
-function resolveExtensionless() {
+export function resolveExtensionless() {
   registerHooks({
     resolve(specifier, context, next) {
       try {

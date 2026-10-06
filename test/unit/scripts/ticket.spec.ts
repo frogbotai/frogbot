@@ -73,6 +73,11 @@ describe('parseArgs', () => {
     expect(parseArgs(['found', '--source', 'x.md'])).toEqual({ command: 'found', source: 'x.md' });
   });
 
+  it('reads verify and its --list switch', () => {
+    expect(parseArgs(['verify'])).toEqual({ command: 'verify' });
+    expect(parseArgs(['verify', '--list'])).toEqual({ command: 'verify', list: true });
+  });
+
   it('defaults the branch type to feat', () => {
     expect(parseArgs(['new', '999'])).toEqual({ command: 'new', ticket: 999, type: 'feat' });
   });
@@ -91,6 +96,8 @@ describe('parseArgs', () => {
     [['land', '210bc'], '"210bc" is not a ticket number'],
     [['found', 'bug · land · `pnpm test:ui`'], 'found reads its row from stdin, not an argument'],
     [['stats', '27'], 'stats takes no arguments'],
+    [['verify', '236'], 'verify takes no arguments'],
+    [['land', '236', '--list'], 'land takes no --list'],
   ])('rejects %j', (argv, error) => {
     expect(parseArgs(argv).error).toContain(error);
   });
@@ -523,6 +530,10 @@ describe('affectedRuns', () => {
     [['packages/ui/src/components/button.tsx'], ['test:int:sqlite', 'test:browser']],
     [['test/browser/chat.spec.ts'], ['test:browser']],
     [['templates/blank/src/app.tsx'], ['test:browser']],
+    [['test/jobs/fixture.ts'], ['test:int:sqlite']],
+    [['test/__helpers/shared/bootFrogBot.ts'], ['test:int:sqlite']],
+    [['test/unit/frogbot/jobs/queue.spec.ts', 'test/types/jobs/native.test-d.ts'], []],
+    [['test/e2e/fixtures/rich-text/src/frogbot.config.ts'], ['test:browser']],
   ])('%j runs %j', (files, runs) => {
     expect(affectedRuns(files)).toEqual(runs);
   });

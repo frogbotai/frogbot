@@ -396,7 +396,7 @@ function changedFiles(log) {
   return [...lines(diff.stdout), ...lines(untracked.stdout)];
 }
 
-function workspacePackages(log) {
+export function workspacePackages(log) {
   const listed = sh(log, 'pnpm', ['ls', '-r', '--depth', '-1', '--json']);
 
   return JSON.parse(listed.stdout).map(({ name, path: dir }) => {
@@ -459,6 +459,12 @@ async function build(log, { packages, changed }) {
   console.log(`built ${stale.length} ${noun} · ${seconds(performance.now() - started)}`);
 
   return { ok: true, groups: [] };
+}
+
+export async function buildStale(log) {
+  const packages = workspacePackages(log);
+
+  return build(log, { packages, changed: changedPackages({ files: changedFiles(log), packages }) });
 }
 
 async function importMaps(log) {

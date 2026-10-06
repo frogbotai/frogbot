@@ -1,0 +1,14 @@
+# da7ba14f feat(next): show virtual path fields like their source field
+
+M	docs/fields/overview.mdx
+M	packages/frogbot/src/fields/config/sanitizeOptionColors.ts
+M	packages/frogbot/src/fields/config/sanitizeVector.ts
+M	packages/next/src/fields/FieldCell/index.client.tsx
+A	packages/next/src/fields/FieldCell/resolveVirtualSource.ts
+M	test/browser/fieldCell.browser.spec.ts
+M	test/browser/fixtures/question/shared.ts
+M	test/browser/fixtures/question/src/frogbot.config.ts
+M	test/browser/playwright.config.ts
+A	test/browser/virtualPaths.browser.spec.ts
+M	test/ui/next/fields/FieldCell.spec.tsx
+A	test/unit/frogbot/fields/virtualPaths.spec.ts
