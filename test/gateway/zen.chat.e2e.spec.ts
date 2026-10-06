@@ -19,7 +19,7 @@
 //
 // Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.chat.e2e.spec.ts
 
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import {
@@ -431,6 +431,7 @@ describeLive(
     //    review056.int.spec.ts (G1). Re-enable only if a deterministic live
     //    oracle for "JSON mode active" exists.
     // -------------------------------------------------------------------------
+    // eslint-disable-next-line vitest/no-disabled-tests -- unprovable against a live model, see the comment above
     it.skip('response_format json_object yields parseable JSON (G1 — unprovable against a live model)', () => {
       // intentionally empty — see comment above
     });

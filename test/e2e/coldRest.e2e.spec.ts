@@ -53,8 +53,9 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     const deadline = Date.now() + 210000;
     for (;;) {
       if (await isListening(port)) break;
-      if (server.exitCode !== null)
+      if (server.exitCode !== null) {
         throw new Error(`cold REST dev server exited with code ${server.exitCode}`);
+      }
       if (Date.now() > deadline) throw new Error('cold REST dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }

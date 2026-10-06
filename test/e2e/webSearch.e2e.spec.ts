@@ -52,10 +52,12 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
     server.stderr?.pipe(process.stderr);
     const deadline = Date.now() + 210000;
     while (!(await isListening(port))) {
-      if (server.exitCode !== null)
+      if (server.exitCode !== null) {
         throw new Error(`web search agent dev server exited with code ${server.exitCode}`);
-      if (Date.now() > deadline)
+      }
+      if (Date.now() > deadline) {
         throw new Error('web search agent dev server did not become ready');
+      }
       await new Promise((resolveWait) => setTimeout(resolveWait, 2000));
     }
     const registration = await client.post<{ token: string }>('/api/users/first-register', {

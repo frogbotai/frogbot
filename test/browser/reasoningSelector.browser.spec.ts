@@ -36,10 +36,6 @@ test.beforeAll(async ({ modelPort }) => {
   model = await startStubChatModel(modelPort);
 });
 
-test.afterAll(async () => {
-  await model.close();
-});
-
 test.beforeEach(async ({ page }) => {
   model.reset();
 
@@ -51,6 +47,10 @@ test.beforeEach(async ({ page }) => {
 
 test.afterEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
+});
+
+test.afterAll(async () => {
+  await model.close();
 });
 
 function trigger(page: Page) {

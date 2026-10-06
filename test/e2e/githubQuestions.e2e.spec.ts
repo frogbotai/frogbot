@@ -15,8 +15,8 @@ import { startStubChatModel, type StubChatModel } from '../__helpers/shared/Stub
 import { testPort } from '../__helpers/shared/testPorts.js';
 import {
   assertGithubTraffic,
-  githubApp,
   type GithubApi,
+  githubApp,
   type GithubPerson,
   githubWebhookSecret,
   issueComment,

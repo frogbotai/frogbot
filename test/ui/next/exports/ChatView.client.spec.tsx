@@ -225,8 +225,7 @@ describe('ChatViewClient', () => {
     reportChatId('chat/1');
     reportChatId('chat/1');
 
-    expect(replaceState).toHaveBeenCalledOnce();
-    expect(replaceState).toHaveBeenCalledWith(
+    expect(replaceState).toHaveBeenCalledExactlyOnceWith(
       null,
       '',
       '/admin/collections/conversations/chat%2F1',

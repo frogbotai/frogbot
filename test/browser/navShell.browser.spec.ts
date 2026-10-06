@@ -469,6 +469,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     expect(savedValues).toEqual([]);
   });
 
+  // eslint-disable-next-line playwright/no-skipped-test -- known bug, see the annotation
   test.fixme(
     'desktop collapse survives going back on mobile and resizing to desktop',
     {
@@ -533,6 +534,7 @@ test.describe('nav shell on mobile', () => {
     await setNavPreference(page, true);
   });
 
+  // eslint-disable-next-line playwright/no-skipped-test -- known bug, see the annotation
   test.fixme(
     'drawer is never shown open on first load',
     {

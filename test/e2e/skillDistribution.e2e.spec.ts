@@ -14,8 +14,9 @@ import {
   expectProjectSkill,
   expectScaffold,
   extractCLI,
-  packCLI,
+  type InstallationFixture,
   packageVersion,
+  packCLI,
   projectAgents,
   readJSON,
   repoRoot,
@@ -24,7 +25,6 @@ import {
   skillsAgents,
   skillsClient,
   successful,
-  type InstallationFixture,
 } from './fixtures/skill-distribution/installation/harness';
 
 describe('skill distribution local installation', () => {
@@ -312,7 +312,7 @@ describe('skill distribution local installation', () => {
       expectScaffold(project);
       expectProjectSkill(project);
       expect(fs.readFileSync(path.join(project, 'src/frogbot.config.ts'), 'utf8')).not.toMatch(
-        /^  ai:/m,
+        /^ {2}ai:/m,
       );
       expect(fs.existsSync(path.join(project, 'src/agents'))).toBe(false);
     });

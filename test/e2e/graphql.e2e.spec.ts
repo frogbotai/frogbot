@@ -69,8 +69,9 @@ describe.skipIf(!RUN_E2E)('GraphQL in a scaffolded application', () => {
 
       if (response?.status === 200) return { baseURL, child };
 
-      if (Date.now() > deadline)
+      if (Date.now() > deadline) {
         throw new Error(`next ${command} did not become ready:\n${errors}`);
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
     }

@@ -99,9 +99,110 @@
       "count": 1
     }
   },
+  "test/api-key-attribution/int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/auth/session.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 14
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 11
+    }
+  },
+  "test/browser/chatAssets.browser.spec.ts": {
+    "playwright/prefer-web-first-assertions": {
+      "count": 1
+    }
+  },
+  "test/browser/customField.browser.spec.ts": {
+    "playwright/no-conditional-in-test": {
+      "count": 2
+    },
+    "playwright/prefer-locator": {
+      "count": 2
+    }
+  },
+  "test/browser/livePreview.browser.spec.ts": {
+    "playwright/prefer-locator": {
+      "count": 1
+    }
+  },
+  "test/browser/navShell.browser.spec.ts": {
+    "playwright/prefer-locator": {
+      "count": 19
+    }
+  },
+  "test/browser/richText.browser.spec.ts": {
+    "playwright/prefer-locator": {
+      "count": 5
+    }
+  },
+  "test/browser/topBarPhone.browser.spec.ts": {
+    "playwright/prefer-web-first-assertions": {
+      "count": 2
+    }
+  },
+  "test/chat/persistence.int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/connections/int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 3
+    }
+  },
+  "test/database/sqlite-busy.int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 4
+    }
+  },
+  "test/e2e/channelQuestions.e2e.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    },
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
+  "test/e2e/chatAssets.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
+  "test/e2e/coldRest.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
   "test/e2e/connections-ui.mjs": {
     "no-console": {
       "count": 7
+    }
+  },
+  "test/e2e/createFrogBotApp.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/expect-expect": {
+      "count": 3
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 5
+    },
+    "vitest/no-standalone-expect": {
+      "count": 2
+    }
+  },
+  "test/e2e/discordQuestions.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 1
     }
   },
   "test/e2e/fixtures/skill-distribution/hosting/probe-public.mjs": {
@@ -114,9 +215,192 @@
       "count": 2
     }
   },
+  "test/e2e/graphql.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-standalone-expect": {
+      "count": 3
+    }
+  },
+  "test/e2e/linearQuestions.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 2
+    }
+  },
+  "test/e2e/nativePiece.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-standalone-expect": {
+      "count": 2
+    }
+  },
+  "test/e2e/scaffold.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
+  "test/e2e/sdkPackaging.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 2
+    }
+  },
+  "test/e2e/skillDistribution.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 2
+    }
+  },
+  "test/e2e/skillHosting.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 4
+    },
+    "vitest/valid-title": {
+      "count": 2
+    }
+  },
+  "test/e2e/telegramQuestions.e2e.spec.ts": {
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
+  "test/e2e/toolCalling.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
+  "test/e2e/webSearch.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/expect-expect": {
+      "count": 2
+    },
+    "vitest/no-standalone-expect": {
+      "count": 1
+    }
+  },
+  "test/email/int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/gateway/cacheWireMatrix.int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/gateway/int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "test/gateway/live/matrix.e2e.spec.ts": {
+    "vitest/expect-expect": {
+      "count": 13
+    }
+  },
+  "test/gateway/live/scenarios.e2e.spec.ts": {
+    "vitest/expect-expect": {
+      "count": 33
+    }
+  },
+  "test/gateway/openrouter.int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/gateway/secretRedaction.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "test/gateway/streamErrorMasking.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "test/gateway/upstreamErrorDetail.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/gateway/wireHonesty.chat.int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/gateway/zen.chat.e2e.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 8
+    }
+  },
+  "test/gateway/zen.e2e.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/gateway/zen.messages.e2e.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 4
+    }
+  },
+  "test/gateway/zen.responses.e2e.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
   "test/generateTypes.ts": {
     "no-console": {
       "count": 4
+    }
+  },
+  "test/hooks-access/int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "test/jobs/acceptance.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "test/jobs/runtime-regressions.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/kv/db.int.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/kv/mongo-native.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/kv/sql-postgres.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 9
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 2
     }
   },
   "test/live/doctor.ts": {
@@ -124,9 +408,37 @@
       "count": 1
     }
   },
+  "test/live/rag.live.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "test/rich-text/config.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    }
+  },
+  "test/search/mongodb/hybrid.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/search/postgres/vector.int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/sign-in/int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 5
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 5
+    }
+  },
+  "test/triggers/int.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 3
     }
   },
   "test/types/collections/parity.test-d.ts": {
@@ -169,9 +481,39 @@
       "count": 1
     }
   },
+  "test/ui/next/views/Connections.spec.tsx": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
   "test/ui/ui/chat/chat.spec.tsx": {
     "@typescript-eslint/consistent-type-imports": {
       "count": 15
+    }
+  },
+  "test/ui/ui/chat/question-tool-render.spec.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/create-frogbot-app/scaffold.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/db-sqlite/jobs.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/agents/resolveScheduleTasks.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 3
+    }
+  },
+  "test/unit/frogbot/agents/streamMessage.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
     }
   },
   "test/unit/frogbot/ai/syncCatalog.spec.ts": {
@@ -184,13 +526,80 @@
       "count": 1
     }
   },
+  "test/unit/frogbot/bin/generateImportMap.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/bin/generateImportMap/index.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "test/unit/frogbot/bin/jobsRun.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 5
+    }
+  },
+  "test/unit/frogbot/bin/loadEnv.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "test/unit/frogbot/channels/endpoints.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/channels/foundationsDatabase.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/channels/gateway.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "test/unit/frogbot/channels/host.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/channels/ingress.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/channels/slackRuntime.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "test/unit/frogbot/channels/state.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/channels/task.spec.ts": {
+    "vitest/no-conditional-in-test": {
       "count": 1
     }
   },
   "test/unit/frogbot/channels/webhook.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
       "count": 1
     }
   },
@@ -202,11 +611,52 @@
   "test/unit/frogbot/config/build.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
       "count": 1
+    },
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/config/connections.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/config/load.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "test/unit/frogbot/config/sanitize.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
       "count": 2
+    },
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "test/unit/frogbot/connections/endpoints.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 13
+    }
+  },
+  "test/unit/frogbot/connections/oauth/handshake.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/connections/oauth/refresh.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/frogbot/connections/oauth/tokens.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/env/defineEnv.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
     }
   },
   "test/unit/frogbot/fields/baseFields/aiSanitize.spec.ts": {
@@ -219,8 +669,56 @@
       "count": 1
     }
   },
+  "test/unit/frogbot/getFrogBot.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/jobs/lease.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/jobs/nativeLifecycle.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 4
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 4
+    }
+  },
+  "test/unit/frogbot/kv/lock.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 6
+    }
+  },
+  "test/unit/frogbot/kv/mongo.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 3
+    }
+  },
+  "test/unit/frogbot/kv/sql.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "test/unit/frogbot/lifecycle.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/triggers/dispatch.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/frogbot/triggers/subscriptions.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/frogbot/typegen/typegen.spec.ts": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -239,14 +737,203 @@
       "count": 1
     }
   },
+  "test/unit/gateway/observability/logger.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/gateway/observability/setup.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/gateway/observability/tracing.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "test/unit/gateway/providers/bedrock/index.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/gateway/routes/aiSdkContracts.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/gateway/routes/chatCompletions/translators/chatCompletions.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "test/unit/gateway/routes/chatCompletions/translators/output.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "test/unit/gateway/routes/embeddings/translators/toOpenAIResponse.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/gateway/routes/messages/schema.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/gateway/routes/responses/translators/toModelMessages.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
   "test/unit/jobs/waitpoints.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
+      "count": 1
+    },
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/kv-redis/atomic.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    },
+    "vitest/no-conditional-in-test": {
       "count": 1
     }
   },
   "test/unit/next/exports/views.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
       "count": 3
+    }
+  },
+  "test/unit/piece-airtable/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-discord/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/piece-discord/ingress.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-discord/reactionIdentity.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-dropbox/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-front/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/piece-github/channelFlow.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-github/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 11
+    }
+  },
+  "test/unit/piece-gmail/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/piece-google-drive/files.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 4
+    }
+  },
+  "test/unit/piece-google-drive/permissions.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-google/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-http/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-linear/connections.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-linear/webhook.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-notion/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-pagerduty/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-slack/index.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/piece-telegram-bot/commands.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "test/unit/piece-telegram-bot/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 2
+    }
+  },
+  "test/unit/piece-trello/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 6
+    }
+  },
+  "test/unit/piece-xero/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 4
+    }
+  },
+  "test/unit/plugin-capture/index.spec.ts": {
+    "vitest/no-conditional-in-test": {
+      "count": 1
+    }
+  },
+  "test/unit/scripts/browserSignals.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "test/unit/scripts/testServers.spec.ts": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   }
 }
