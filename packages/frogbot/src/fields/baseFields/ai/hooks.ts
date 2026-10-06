@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 
 import type { Field, FieldHook } from '../../config/types.js';
-import { type AIFieldStatus, type AIKind, aiFieldPaths, isAIFieldInputSet } from './state.js';
+import { aiFieldPaths, type AIFieldStatus, type AIKind, isAIFieldInputSet } from './state.js';
 
 export const AI_FIELD_TASK_SLUG = 'frogbot-run-ai-field';
 

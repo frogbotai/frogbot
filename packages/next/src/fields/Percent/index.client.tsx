@@ -4,8 +4,8 @@ import './index.css';
 
 import { Input } from '@frogbotai/ui';
 import { DefaultCell, useField, useTranslation, withCondition } from '@payloadcms/ui';
-import { formatPercent } from 'frogbot/fields';
 import type { PercentKind } from 'frogbot/fields';
+import { formatPercent } from 'frogbot/fields';
 import type { ClientField, DefaultCellComponentProps, NumberFieldClientProps } from 'payload';
 import { useMemo } from 'react';
 

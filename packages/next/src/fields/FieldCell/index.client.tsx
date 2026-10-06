@@ -87,8 +87,9 @@ export function FieldCell(props: DefaultCellComponentProps) {
     (field.type === 'select' || field.type === 'radio') &&
     hasOptionColors(field) &&
     !isEmptyValue(cellData)
-  )
+  ) {
     return <OptionPills {...props} cellData={cellData} />;
+  }
 
   return <DefaultCell {...props} cellData={cellData} />;
 }

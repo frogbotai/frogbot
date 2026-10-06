@@ -362,7 +362,6 @@ export type {
   SanitizedCollectionConfig,
   SendEmailOptions,
 } from 'payload';
-export { APIError } from 'payload';
 export type {
   ApplyDisableErrors,
   JsonObject,
@@ -371,6 +370,7 @@ export type {
   TransformDataWithSelect,
   Where,
 } from 'payload';
+export { APIError } from 'payload';
 
 // ---------------------------------------------------------------------------
 // Hook, access, endpoint, and field types (owned by frogbot)

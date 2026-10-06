@@ -9,10 +9,10 @@ import {
   AI_BULK_CHUNK_SIZE,
   type AIBulkChoice,
   type AIBulkField,
-  type AIBulkTarget,
   aiBulkLoadURL,
   aiBulkRequests,
   aiBulkResultMessage,
+  type AIBulkTarget,
   aiBulkTargets,
   aiRegenerateRequest,
 } from '../../packages/next/src/fields/AI/bulk.js';

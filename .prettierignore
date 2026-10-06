@@ -1,6 +1,7 @@
 **/frogbot-types.ts
 **/importMap.js
 **/importMap.json
+eslint-suppressions.json
 .tmp
 **/.git
 **/.hg

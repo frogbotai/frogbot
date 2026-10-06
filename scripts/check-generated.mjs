@@ -174,7 +174,9 @@ async function checkPieceTypes({ file, cwd }, { write }) {
   const source = existsSync(module) ? readFileSync(module, 'utf8') : '';
   const args = pieceTypesArgs(source, { file, cwd });
 
-  if (!args) return { status: 'error', message: `${PIECE_MODULE} has no single create* factory` };
+  if (!args) {
+    return { status: 'error', message: `${PIECE_MODULE} has no single create* factory` };
+  }
 
   const result = await node([FROGBOT_BIN, ...args, ...(write ? [] : ['--check'])], {
     cwd: path.join(ROOT, cwd),

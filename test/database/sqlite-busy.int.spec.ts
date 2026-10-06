@@ -130,8 +130,9 @@ describe.skipIf(getCurrentDatabaseAdapter() !== 'sqlite').each([
 
     const laterTransaction = await db.beginTransaction();
 
-    if (laterTransaction === null)
+    if (laterTransaction === null) {
       throw new Error('[test] the adapter did not start a transaction');
+    }
 
     req.transactionID = laterTransaction;
 

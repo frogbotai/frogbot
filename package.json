@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "lint": "eslint . --cache --cache-location .idea/tmp/.eslintcache",
-    "lint:fix": "eslint . --fix --cache --cache-location .idea/tmp/.eslintcache",
+    "lint": "eslint . --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
+    "lint:fix": "eslint . --fix --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
     "lint-staged": "lint-staged",
     "prepare": "husky",
     "prettier:write": "prettier --write .",
@@ -34,7 +34,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
-      "eslint --fix --cache --cache-location .idea/tmp/.eslintcache",
+      "eslint --fix --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
       "prettier --write"
     ],
     "*.{md,mdx,json,yml,css}": "prettier --write"

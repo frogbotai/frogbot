@@ -69,15 +69,15 @@ import { buildSecretEndpoints } from '../connections/secret.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { MapVectorField } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
+import { sanitizeAIFields } from '../fields/baseFields/ai/sanitize.js';
+import { resolveAIFieldTask } from '../fields/baseFields/ai/task.js';
 import {
   AUTONUMBERS_SLUG,
   defaultAutonumbersCollection,
 } from '../fields/baseFields/autonumber/collection.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
-import { sanitizeAIFields } from '../fields/baseFields/ai/sanitize.js';
-import { resolveAIFieldTask } from '../fields/baseFields/ai/task.js';
-import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import type { SystemKindUsers } from '../fields/config/sanitizeSystemKinds.js';
+import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 import type { FrogBot } from '../frogbot.js';
 import { initFrogBotFromPayload } from '../frogbot.js';
