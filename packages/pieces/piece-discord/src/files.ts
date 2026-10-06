@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const discordAttachment = z.object({
@@ -11,10 +11,7 @@ export async function loadDiscordAttachment(
   req: FrogBotRequest,
   attachment: z.output<typeof discordAttachment>,
 ) {
-  const collection = filesCollectionSlug(req, 'Discord');
-
-  const file = await req.frogbot.findByID({
-    collection,
+  const file = await findPieceFile(req, 'Discord', {
     id: attachment.fileId,
     depth: 0,
     req,

@@ -274,9 +274,7 @@ describe('native Microsoft Teams channel', () => {
     const find = vi.fn().mockResolvedValue({ docs: [{ id: 'user', email: 'ada@example.com' }] });
     const request = {
       frogbot: {
-        config: Promise.resolve({
-          _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
-        }),
+        config: { _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) } },
         find,
       },
     };

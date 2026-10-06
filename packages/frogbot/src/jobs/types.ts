@@ -1,4 +1,5 @@
 import type {
+  Document,
   JobsConfig as PayloadJobsConfig,
   JsonObject,
   Payload,
@@ -15,7 +16,7 @@ import type { WaitFor, WaitpointOptions } from './waitpoints/types.js';
 export type JobsConfig = Omit<PayloadJobsConfig, 'runHooks' | 'depth' | 'workflows'> & {
   leaseDuration?: number;
   waitpoints?: Partial<WaitpointOptions>;
-  workflows?: WorkflowConfig<any>[];
+  workflows?: WorkflowConfig<Document>[];
 };
 
 export type UntypedJobs = {
@@ -47,7 +48,7 @@ export type WorkflowConfig<T extends false | JobWorkflowSlug | object = false> =
   slug: T extends JobWorkflowSlug ? T : string;
 };
 
-type JobSlug = JobTaskSlug | JobWorkflowSlug;
+type JobSlug = Extract<keyof (TypedJobs['tasks'] & TypedJobs['workflows']), string>;
 
 type JobRequestArgs<T> = T extends { req?: PayloadRequest }
   ? Omit<T, 'req'> & { req?: FrogBotRequest | PayloadRequest }
@@ -121,7 +122,7 @@ declare const _nativeQueue: Payload['jobs']['queue'];
 
 export type JobsRuntime = Omit<Payload['jobs'], 'queue'> & {
   resume: Jobs['resume'];
-  queue: <T extends keyof PayloadTypedJobs['tasks'] | keyof PayloadTypedJobs['workflows']>(
+  queue: <T extends keyof (PayloadTypedJobs['tasks'] & PayloadTypedJobs['workflows'])>(
     args: Parameters<typeof _nativeQueue<T>>[0] & { jobId?: string },
   ) => ReturnType<typeof _nativeQueue<T>>;
 };

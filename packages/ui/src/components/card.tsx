@@ -6,8 +6,12 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={`fb-card__header${className ? ` ${className}` : ''}`} {...props} />;
 }
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={`fb-card__title${className ? ` ${className}` : ''}`} {...props} />;
+export function CardTitle({ children, className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3 className={`fb-card__title${className ? ` ${className}` : ''}`} {...props}>
+      {children}
+    </h3>
+  );
 }
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
   return <p className={`fb-card__description${className ? ` ${className}` : ''}`} {...props} />;

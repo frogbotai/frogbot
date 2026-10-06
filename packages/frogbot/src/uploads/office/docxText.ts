@@ -240,7 +240,7 @@ export async function docxText(bytes: Uint8Array): Promise<string> {
     .convertToHtml(
       { buffer: Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength) },
       {
-        convertImage: mammoth.images.imgElement(async () => ({ src: '' })),
+        convertImage: mammoth.images.imgElement(() => Promise.resolve({ src: '' })),
         includeEmbeddedStyleMap: false,
       },
     )

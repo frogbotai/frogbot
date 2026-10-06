@@ -425,7 +425,16 @@ async function initialize(
     local: createFrogBotLocalAPI(payload),
     payload,
   });
-  registerFrogBotInstance(payload, frogbot, config, (next) => refresh(frogbot, next));
+  registerFrogBotInstance(
+    payload,
+    frogbot,
+    config,
+    (next) =>
+      new Promise<void>((resolve) => {
+        refresh(frogbot, next);
+        resolve();
+      }),
+  );
 
   frogbot.secret = payload.secret;
   frogbot.logger = payload.logger;
@@ -437,7 +446,7 @@ async function initialize(
     );
   }
 
-  await refresh(frogbot, config);
+  refresh(frogbot, config);
 
   await initializeChannelHost(frogbot, options.startChannelGateway !== false);
 
@@ -492,7 +501,7 @@ async function initialize(
   return frogbot;
 }
 
-async function refresh(frogbot: FrogBot, config: FrogBotSanitizedConfig): Promise<void> {
+function refresh(frogbot: FrogBot, config: FrogBotSanitizedConfig): void {
   frogbot.config = config;
   frogbot.connections = new Connections(frogbot, config.connections);
   frogbot.triggers ??= new TriggerSubscriptions(frogbot);

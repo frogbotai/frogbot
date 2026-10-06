@@ -133,7 +133,15 @@ export function PageContextButton({
                 return (
                   <div
                     key={tab.id}
+                    aria-checked={selectedTabIds.has(tab.id)}
                     onClick={() => handleTabToggle(tab.id)}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      handleTabToggle(tab.id);
+                    }}
+                    role="checkbox"
+                    tabIndex={0}
                     className="fb-page-context-button__tab fb-slide-right-1"
                   >
                     {faviconUrl ? (

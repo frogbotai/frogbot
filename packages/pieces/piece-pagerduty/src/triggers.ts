@@ -32,18 +32,18 @@ function manualTrigger<const TSlug extends string>({
     type: 'webhook',
     input,
     output,
-    async onEnable({ webhookUrl }) {
-      return { webhookUrl };
+    onEnable({ webhookUrl }) {
+      return Promise.resolve({ webhookUrl });
     },
     async onDisable() {},
-    async run({ req, state }) {
+    run({ req, state }) {
       const delivery = output.safeParse(req.data);
 
       if (!state.webhookUrl || !delivery.success || delivery.data.event.event_type !== eventType) {
-        return [];
+        return Promise.resolve([]);
       }
 
-      return [{ data: delivery.data, dedupeKey: delivery.data.event.id }];
+      return Promise.resolve([{ data: delivery.data, dedupeKey: delivery.data.event.id }]);
     },
   });
 }

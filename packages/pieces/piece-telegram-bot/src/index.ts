@@ -74,8 +74,8 @@ const telegramBotChannel = {
       mode: 'webhook',
     });
   },
-  async identity() {
-    return null;
+  identity() {
+    return Promise.resolve(null);
   },
   questions: telegramQuestions,
 } satisfies PieceChannel<

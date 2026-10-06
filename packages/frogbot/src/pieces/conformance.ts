@@ -1,13 +1,11 @@
 import { isDeepStrictEqual } from 'node:util';
 
 import type { MessageHandler, StateAdapter } from 'chat';
-import type { z } from 'zod';
 
 import { ChannelChat } from '../channels/chat.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { pieceFactoryDefinition, pieceInstanceRuntime } from './definePiece.js';
 import type {
-  PieceActionDefinition,
   PieceDefinition,
   PieceFactory,
   PieceInstance,
@@ -143,14 +141,14 @@ export async function pieceConformance<T extends PieceDefinition>(
   const req = {
     frogbot: {
       connections: {
-        resolvePieceCredential: async () => ({ auth: configuredAuth, key: instance }),
+        resolvePieceCredential: () => Promise.resolve({ auth: configuredAuth, key: instance }),
       },
     },
     user: null,
   } as never;
 
   for (const fixture of fixtures.actions) {
-    const action = instance[fixture.slug as keyof typeof instance];
+    const action = instance[fixture.slug];
     if (typeof action !== 'function') fail(`action '${fixture.slug}' is not callable.`);
     try {
       const result = await (action as (args: { input: unknown; req: never }) => Promise<unknown>)({
@@ -189,10 +187,9 @@ export async function pieceConformance<T extends PieceDefinition>(
     : {};
   const client = await instance.client({ req });
   for (const fixture of fixtures.options ?? []) {
-    const action = definition.actions.find(({ slug }) => slug === fixture.action) as
-      PieceActionDefinition<z.ZodType, z.ZodType | undefined, unknown, unknown> | undefined;
+    const action = definition.actions.find(({ slug }) => slug === fixture.action);
     if (!action) fail(`options fixture references unknown action '${fixture.action}'.`);
-    const callbacks = action.options as
+    const callbacks:
       | Record<
           string,
           (args: {
@@ -202,7 +199,7 @@ export async function pieceConformance<T extends PieceDefinition>(
             req: never;
           }) => Promise<PieceOption[]>
         >
-      | undefined;
+      | undefined = action.options;
     const callback = callbacks?.[fixture.field];
     if (!callback) {
       fail(`action '${fixture.action}' has no options callback for '${fixture.field}'.`);
@@ -286,7 +283,7 @@ export async function pieceConformance<T extends PieceDefinition>(
   });
 
   const messages: ConformanceChannelMessage[] = [];
-  const receive: MessageHandler = async (thread, message) => {
+  const receive: MessageHandler = (thread, message) => {
     messages.push({
       id: message.id,
       threadId: thread.id,
@@ -348,7 +345,7 @@ export async function pieceConformance<T extends PieceDefinition>(
       let response: Response;
 
       try {
-        response = await chat.webhooks[adapter.name]!(channelRequest(fixture.request), {
+        response = await chat.webhooks[adapter.name](channelRequest(fixture.request), {
           waitUntil: (task) => tasks.push(task),
         });
       } finally {

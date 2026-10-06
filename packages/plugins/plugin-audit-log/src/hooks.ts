@@ -21,8 +21,7 @@ function writeAudit(
   previousDoc: Document | undefined,
   req: Parameters<CollectionAfterChangeHook<Document>>[0]['req'],
 ) {
-  const user = req.user as
-    (typeof req.user & { _strategy?: string; apiKeyId?: number | string }) | null;
+  const user = req.user;
 
   const snapshot =
     options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
@@ -38,7 +37,11 @@ function writeAudit(
         documentId: String(doc.id),
         user: user?.id,
         apiKeyId:
-          user?._strategy === 'api-key' && user.apiKeyId !== undefined
+          user &&
+          '_strategy' in user &&
+          user._strategy === 'api-key' &&
+          'apiKeyId' in user &&
+          user.apiKeyId !== undefined
             ? String(user.apiKeyId)
             : undefined,
         changes: operation === 'delete' ? {} : computeChanges(previousDoc, doc),

@@ -18,7 +18,7 @@ export const dateDifference = defineAction({
   input,
   output: z.record(z.string(), z.number()),
   idempotent: true,
-  async run({ input: value }) {
+  run({ input: value }) {
     const start = parseDate(value.startDate, value.startDateFormat);
     const end = parseDate(value.endDate, value.endDateFormat);
     const difference = dayjs.duration(end.diff(start));
@@ -36,6 +36,6 @@ export const dateDifference = defineAction({
       result[unit] = available[unit];
     });
 
-    return result;
+    return Promise.resolve(result);
   },
 });

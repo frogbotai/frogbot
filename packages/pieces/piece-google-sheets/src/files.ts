@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug, findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const fileReference = z.object({
@@ -19,10 +19,7 @@ export async function loadFile({
   req: FrogBotRequest;
   file: z.output<typeof fileReference>;
 }) {
-  const collection = filesCollectionSlug(req, 'Google Sheets');
-
-  const doc = await req.frogbot.findByID({
-    collection,
+  const doc = await findPieceFile(req, 'Google Sheets', {
     id: file.fileId,
     depth: 0,
     req,
@@ -67,12 +64,10 @@ export async function saveFile({
   name: string;
   mimeType: string;
 }) {
-  const collection = filesCollectionSlug(req, 'Google Sheets');
+  filesCollectionSlug(req, 'Google Sheets');
 
   req.signal?.throwIfAborted();
-  const doc = await req.frogbot.create({
-    collection,
-    data: {},
+  const doc = await createPieceFile(req, 'Google Sheets', {
     req,
     overrideAccess: false,
     file: { data, name, mimetype: mimeType, size: data.length },

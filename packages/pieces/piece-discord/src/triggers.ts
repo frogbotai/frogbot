@@ -49,13 +49,13 @@ function appTrigger<const TSlug extends string>(slug: TSlug, description: string
     input: triggerInput,
     output: triggerOutput,
     sample: {},
-    async run({ req }) {
+    run({ req }) {
       const delivery = discordObject.parse(req.data);
       const dedupeKey = deliveryKey(slug, delivery);
 
-      if (!dedupeKey) return [];
+      if (!dedupeKey) return Promise.resolve([]);
 
-      return [{ data: delivery, dedupeKey }];
+      return Promise.resolve([{ data: delivery, dedupeKey }]);
     },
   });
 }

@@ -5,10 +5,11 @@ export type ConfigInput = FrogBotSanitizedConfig | Promise<FrogBotSanitizedConfi
 
 export async function resolveConfig(config: ConfigInput): Promise<SanitizedConfig> {
   const resolved = await config;
+  const payloadConfig = resolved?._internal?.payloadConfig;
 
-  if (!resolved?._internal?.payloadConfig) {
+  if (payloadConfig == null) {
     throw new Error('FrogBot rich text requires a config returned by buildConfig.');
   }
 
-  return resolved._internal.payloadConfig;
+  return payloadConfig;
 }

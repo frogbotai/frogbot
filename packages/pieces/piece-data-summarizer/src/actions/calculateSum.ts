@@ -15,10 +15,10 @@ export const calculateSum = defineAction({
   description: 'Calculate the sum of a list of values.',
   input: inputSchema,
   output: outputSchema,
-  async run({ input }) {
+  run({ input }) {
     const values = parseNumbers(input.values);
     const sum = values.reduce((total, value) => total + value, 0);
 
-    return { sum };
+    return Promise.resolve({ sum });
   },
 });

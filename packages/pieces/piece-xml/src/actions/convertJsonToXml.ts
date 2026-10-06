@@ -18,11 +18,11 @@ export const convertJsonToXml = defineAction({
   description: 'Convert JSON to XML.',
   input: inputSchema,
   output: z.string().meta({ label: 'XML' }),
-  async run({ input }) {
+  run({ input }) {
     const json = JSON.parse(JSON.stringify(input.json));
     const attributesKey = input.attributesKey ? input.attributesKey : 'attr';
     const header = input.header ? input.header : false;
 
-    return json2xml(json, { attributes_key: attributesKey, header });
+    return Promise.resolve(json2xml(json, { attributes_key: attributesKey, header }));
   },
 });

@@ -153,6 +153,7 @@ export function AppSidebar({
       onClick={!open ? onToggle : undefined}
       onMouseEnter={() => setStripHovered(true)}
       onMouseLeave={() => setStripHovered(false)}
+      role="presentation"
     >
       <div className={`${baseClass}__header`}>
         <button
@@ -200,6 +201,7 @@ export function AppSidebar({
       <div
         className={`${baseClass}__bottom`}
         onClick={open ? (event) => event.stopPropagation() : undefined}
+        role="presentation"
       >
         {beforeBottomRail}
         <AccountMenu

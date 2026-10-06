@@ -99,14 +99,10 @@ function isSilentTurnError(error: Error) {
   return code !== undefined && SILENT_TURN_ERRORS.has(code);
 }
 
-function displayModelName({
-  entry,
-  model,
-}: {
-  entry: AgentManifestEntry;
-  model: AgentManifestEntry['defaultModel'];
-}) {
-  return entry.names?.[model] ?? model.slice(model.indexOf('/') + 1);
+function displayModelName({ entry, model }: { entry: AgentManifestEntry; model: string }) {
+  const names: Partial<Record<string, string>> | undefined = entry.names;
+
+  return names?.[model] ?? model.slice(model.indexOf('/') + 1);
 }
 
 function messageText(message: UIMessage) {
@@ -407,6 +403,9 @@ function ChatInner({
     setRuntimeChatId(`new:${agent}`);
     chat.setMessages([]);
   };
+  const latest = useRef({ clearConversation, setActiveChatId });
+  latest.current = { clearConversation, setActiveChatId };
+  const { setMessages } = chat;
 
   useEffect(
     () => () => {
@@ -437,7 +436,7 @@ function ChatInner({
       String(history.loadedChatId) === String(activeChatId) &&
       String(history.loadedChatId) !== reportedChatId.current
     ) {
-      chat.setMessages(history.messages);
+      setMessages(history.messages);
       setQueued(history.queued);
     }
   }, [
@@ -446,13 +445,13 @@ function ChatInner({
     history.loading,
     history.messages,
     history.queued,
-    chat.setMessages,
+    setMessages,
   ]);
 
   useEffect(() => {
     if (!chatIdControlled) return;
     if (controlledChatId === undefined) {
-      clearConversation();
+      latest.current.clearConversation();
       return;
     }
     if (String(controlledChatId) === reportedChatId.current) {
@@ -466,8 +465,8 @@ function ChatInner({
     if (previousAgent.current === agent) return;
     previousAgent.current = agent;
     if (activeChatId !== undefined) return;
-    clearConversation();
-    setActiveChatId(undefined);
+    latest.current.clearConversation();
+    latest.current.setActiveChatId(undefined);
   }, [activeChatId, agent]);
 
   const selectChat = (nextChatId: string | number) => {

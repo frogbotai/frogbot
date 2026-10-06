@@ -1,6 +1,7 @@
 import { createGitHubAdapter } from '@chat-adapter/github';
 import {
   definePiece,
+  findUserByEmail,
   type PieceChannel,
   type PieceOAuthRecipe,
   type PieceWebhook,
@@ -121,18 +122,7 @@ const githubChannel = {
 
     if (!email.success) return null;
 
-    const config = await req.frogbot.config;
-    const payloadConfig = await config._internal.payloadConfig;
-    const result = await req.frogbot.find({
-      collection: payloadConfig.admin.user as never,
-      where: { email: { equals: email.data } },
-      limit: 1,
-      overrideAccess: true,
-      req,
-    });
-    const match = result.docs[0];
-
-    return match ? { ...match, collection: payloadConfig.admin.user } : null;
+    return findUserByEmail(req, email.data);
   },
   questions: githubQuestions,
 } satisfies PieceChannel<z.output<typeof githubAuth>, z.output<typeof githubOptions>, GithubClient>;

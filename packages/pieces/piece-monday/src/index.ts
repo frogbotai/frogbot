@@ -18,13 +18,13 @@ export const createMonday = definePiece({
   auth: mondayAuth,
   client: createMondayClient,
   webhook: {
-    async verify() {
-      return true;
+    verify() {
+      return Promise.resolve(true);
     },
-    async handshake({ req }) {
+    handshake({ req }) {
       const challenge = (req.data as { challenge?: unknown } | undefined)?.challenge;
 
-      return typeof challenge === 'string' ? Response.json({ challenge }) : null;
+      return Promise.resolve(typeof challenge === 'string' ? Response.json({ challenge }) : null);
     },
   },
   actions: mondayActions,

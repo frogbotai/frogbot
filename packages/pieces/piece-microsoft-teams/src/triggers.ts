@@ -186,13 +186,13 @@ function activityTrigger<const TSlug extends string>(slug: TSlug, description: s
     event: slug,
     input: z.object({}),
     output: activity,
-    async run({ req }) {
+    run({ req }) {
       const parsed = activity.parse(req.data);
       const dedupeKey = typeof parsed.id === 'string' ? parsed.id.trim() : '';
 
-      if (!dedupeKey) return [];
+      if (!dedupeKey) return Promise.resolve([]);
 
-      return [{ data: parsed, dedupeKey }];
+      return Promise.resolve([{ data: parsed, dedupeKey }]);
     },
   });
 }

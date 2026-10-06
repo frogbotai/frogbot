@@ -16,7 +16,7 @@ export const extractDateParts = defineAction({
   input,
   output: z.record(z.string(), z.union([z.string(), z.number()])),
   idempotent: true,
-  async run({ input: value }) {
+  run({ input: value }) {
     const date = parseDate(value.inputDate, value.inputFormat);
     const available = {
       year: date.year(),
@@ -34,6 +34,6 @@ export const extractDateParts = defineAction({
       result[unit] = available[unit];
     });
 
-    return result;
+    return Promise.resolve(result);
   },
 });

@@ -1,4 +1,10 @@
-import { definePiece, type PieceChannel, type PieceOAuthRecipe } from 'frogbot/pieces';
+import type { TypedUser } from 'frogbot';
+import {
+  definePiece,
+  findUserByEmail,
+  type PieceChannel,
+  type PieceOAuthRecipe,
+} from 'frogbot/pieces';
 import type { z } from 'zod';
 
 import { createComment } from './actions/createComment.js';
@@ -76,24 +82,13 @@ const linearChannel = {
       userName: options.botUsername,
     });
   },
-  async identity({ author, client, req }) {
+  async identity({ author, client, req }): Promise<TypedUser | null> {
     const account = await client.user(author.userId);
     const email = account.email?.trim().toLowerCase();
 
     if (!email) return null;
 
-    const config = await req.frogbot.config;
-    const payloadConfig = await config._internal.payloadConfig;
-    const result = await req.frogbot.find({
-      collection: payloadConfig.admin.user as never,
-      where: { email: { equals: email } },
-      limit: 1,
-      overrideAccess: true,
-      req,
-    });
-    const match = result.docs[0];
-
-    return match ? { ...match, collection: payloadConfig.admin.user } : null;
+    return findUserByEmail(req, email);
   },
   questions: linearQuestions,
 } satisfies PieceChannel<z.output<typeof linearAuth>, z.output<typeof linearOptions>, Linear>;

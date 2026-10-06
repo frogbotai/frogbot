@@ -13,7 +13,7 @@ import {
 } from '@payloadcms/ui';
 import { formatDocTitle } from '@payloadcms/ui/shared';
 import type { ClientCollectionConfig, Column } from 'payload';
-import { type ComponentType, useEffect, useMemo, useState } from 'react';
+import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath, toCellData } from '../cells.js';
@@ -147,13 +147,22 @@ export function BoardViewClient(props: BoardViewClientProps) {
     setHasMore((current) => ({ ...current, [key]: result.hasNextPage }));
   };
 
-  useEffect(() => {
+  const loadBoard = () => {
     setRows([]);
     void Promise.all(
       [...props.columns.map(({ key }) => key), ''].map((key) => fetchColumn(key, 1, true)),
     ).catch((error) =>
       toast.error(error instanceof Error ? error.message : 'Failed to load board'),
     );
+  };
+  const loadBoardRef = useRef(loadBoard);
+
+  useEffect(() => {
+    loadBoardRef.current = loadBoard;
+  });
+
+  useEffect(() => {
+    loadBoardRef.current();
   }, [query.sort, query.where]);
 
   const request = async (path: string, init: RequestInit) => {

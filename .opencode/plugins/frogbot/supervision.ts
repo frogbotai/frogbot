@@ -553,11 +553,15 @@ export type TokenUsage = {
 };
 
 export function contextTokens(messages: readonly { type: string; tokens?: TokenUsage }[]) {
-  const last = messages.findLast((message) => message.type === 'assistant' && message.tokens);
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const { tokens, type } = messages[index];
 
-  if (!last?.tokens) return 0;
+    if (type !== 'assistant' || !tokens) continue;
 
-  return last.tokens.input + last.tokens.cache.read + last.tokens.cache.write;
+    return tokens.input + tokens.cache.read + tokens.cache.write;
+  }
+
+  return 0;
 }
 
 function formatTokens(tokens: number) {

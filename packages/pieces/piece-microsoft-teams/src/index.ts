@@ -1,4 +1,9 @@
-import { definePiece, type PieceChannel, type PieceOAuthRecipe } from 'frogbot/pieces';
+import {
+  definePiece,
+  findUserByEmail,
+  type PieceChannel,
+  type PieceOAuthRecipe,
+} from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { microsoftTeamsActionDefinitions } from './actions.js';
@@ -103,18 +108,7 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
 
       if (!email.success) return null;
 
-      const config = await req.frogbot.config;
-      const payloadConfig = await config._internal.payloadConfig;
-      const result = await req.frogbot.find({
-        collection: payloadConfig.admin.user as never,
-        where: { email: { equals: email.data } },
-        limit: 1,
-        overrideAccess: true,
-        req,
-      });
-      const match = result.docs[0];
-
-      return match ? { ...match, collection: payloadConfig.admin.user } : null;
+      return findUserByEmail(req, email.data);
     },
     questions: teamsQuestions,
   } satisfies PieceChannel<

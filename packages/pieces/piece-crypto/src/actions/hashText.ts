@@ -15,7 +15,7 @@ export const hashText = defineAction({
   description: 'Hash text with a selected digest algorithm.',
   input: inputSchema,
   output: z.string().regex(/^[a-f0-9]+$/),
-  async run({ input }) {
-    return createHash(input.method).update(input.text).digest('hex');
+  run({ input }) {
+    return Promise.resolve(createHash(input.method).update(input.text).digest('hex'));
   },
 });

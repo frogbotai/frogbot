@@ -1,8 +1,4 @@
 {
-  ".opencode/plugins/frogbot/supervision.ts": {
-    "TS2339": 1,
-    "TS7006": 1
-  },
   "packages/db-mongodb/src/search/buildSchema.ts": {
     "TS2352": 1
   },
@@ -15,117 +11,12 @@
   "packages/frogbot/src/config/rewriteComponentPaths.ts": {
     "TS2589": 1
   },
-  "packages/frogbot/src/fields/baseFields/autonumber/counter.ts": {
-    "TS2352": 1
-  },
   "packages/frogbot/src/jobs/runtime.ts": {
     "TS2740": 1
-  },
-  "packages/frogbot/src/kv/adapters/DatabaseKVAdapter.ts": {
-    "TS2345": 2
   },
   "packages/frogbot/src/search/runtime.ts": {
     "TS2345": 1,
     "TS2740": 2
-  },
-  "packages/next/src/exports/ChatView.client.tsx": {
-    "TS2339": 5,
-    "TS7031": 1
-  },
-  "packages/pieces/piece-airtable/src/actions/records.ts": {
-    "TS2322": 1,
-    "TS2339": 3
-  },
-  "packages/pieces/piece-crypto/src/actions/encryptFile.ts": {
-    "TS2322": 2,
-    "TS2339": 3
-  },
-  "packages/pieces/piece-csv/src/files.ts": {
-    "TS2322": 1,
-    "TS2339": 2
-  },
-  "packages/pieces/piece-discord/src/files.ts": {
-    "TS2322": 1,
-    "TS2339": 8
-  },
-  "packages/pieces/piece-dropbox/src/files.ts": {
-    "TS2322": 2,
-    "TS2339": 4
-  },
-  "packages/pieces/piece-file-helper/src/files.ts": {
-    "TS2322": 2,
-    "TS2339": 6
-  },
-  "packages/pieces/piece-front/src/actions.ts": {
-    "TS2322": 1,
-    "TS2339": 4
-  },
-  "packages/pieces/piece-github/src/index.ts": {
-    "TS2698": 1
-  },
-  "packages/pieces/piece-gmail/src/files.ts": {
-    "TS2322": 1,
-    "TS2339": 5
-  },
-  "packages/pieces/piece-gmail/src/mail.ts": {
-    "TS2322": 1,
-    "TS2339": 1
-  },
-  "packages/pieces/piece-google-drive/src/files.ts": {
-    "TS2322": 2,
-    "TS2339": 10
-  },
-  "packages/pieces/piece-google-sheets/src/files.ts": {
-    "TS2322": 2,
-    "TS2339": 6
-  },
-  "packages/pieces/piece-image-helper/src/files.ts": {
-    "TS2322": 2,
-    "TS2339": 8
-  },
-  "packages/pieces/piece-linear/src/index.ts": {
-    "TS2698": 1
-  },
-  "packages/pieces/piece-microsoft-teams/src/index.ts": {
-    "TS2698": 1
-  },
-  "packages/pieces/piece-pdf/src/files.ts": {
-    "TS2322": 2,
-    "TS2339": 6
-  },
-  "packages/pieces/piece-qrcode/src/index.ts": {
-    "TS2322": 1,
-    "TS2339": 2
-  },
-  "packages/pieces/piece-resend/src/actions/customApiCall.ts": {
-    "TS2322": 1,
-    "TS2352": 1
-  },
-  "packages/pieces/piece-slack/src/actions.ts": {
-    "TS2322": 1,
-    "TS2339": 2
-  },
-  "packages/pieces/piece-slack/src/files.ts": {
-    "TS2322": 1,
-    "TS2339": 3
-  },
-  "packages/pieces/piece-slack/src/index.ts": {
-    "TS2698": 1
-  },
-  "packages/pieces/piece-telegram-bot/src/files.ts": {
-    "TS2322": 1
-  },
-  "packages/pieces/piece-trello/src/files.ts": {
-    "TS2322": 1,
-    "TS2339": 7
-  },
-  "packages/pieces/piece-twilio/src/actions.ts": {
-    "TS2322": 1,
-    "TS2339": 2
-  },
-  "packages/pieces/piece-xero/src/actions.ts": {
-    "TS2322": 1,
-    "TS2339": 2
   },
   "packages/plugins/plugin-api-keys/src/server/services.ts": {
     "TS2322": 1,
@@ -141,12 +32,6 @@
   },
   "packages/plugins/plugin-mcp/src/access.ts": {
     "TS2322": 1
-  },
-  "packages/plugins/plugin-seo/src/index.ts": {
-    "TS2345": 2
-  },
-  "packages/ui/src/chat/chat.tsx": {
-    "TS2339": 2
   },
   "test/__helpers/shared/StubOAuthProvider.ts": {
     "TS2344": 1,
@@ -862,7 +747,7 @@
   },
   "test/sign-in/int.spec.ts": {
     "TS18048": 1,
-    "TS2322": 4,
+    "TS2322": 3,
     "TS2339": 16,
     "TS7031": 1
   },

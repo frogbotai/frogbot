@@ -26,7 +26,7 @@ export const nextDayOfYear = defineAction({
   input,
   output: z.object({ result: z.string() }),
   idempotent: false,
-  async run({ input: value }) {
+  run({ input: value }) {
     const now = dayjs().tz(value.timeZone);
     const selectedTime = value.currentTime ? now.format('HH:mm') : value.time;
     const { hours, minutes } = parseTime(selectedTime);
@@ -48,6 +48,6 @@ export const nextDayOfYear = defineAction({
       result = createOccurrence(nextYear, Math.min(value.day, lastDay));
     }
 
-    return { result: result.format(correctedFormat(value.timeFormat)) };
+    return Promise.resolve({ result: result.format(correctedFormat(value.timeFormat)) });
   },
 });

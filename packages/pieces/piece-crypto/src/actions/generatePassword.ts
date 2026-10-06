@@ -20,7 +20,7 @@ export const generatePassword = defineAction({
   description: 'Generate a cryptographically secure random password.',
   input: inputSchema,
   output: z.string().max(256),
-  async run({ input }) {
+  run({ input }) {
     const characters =
       input.characterSet === 'alphanumeric' ? alphanumeric : alphanumeric + symbols;
     let password = '';
@@ -29,6 +29,6 @@ export const generatePassword = defineAction({
       password += characters[randomInt(characters.length)];
     }
 
-    return password;
+    return Promise.resolve(password);
   },
 });

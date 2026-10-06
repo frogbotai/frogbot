@@ -25,7 +25,7 @@ export const nextDayOfWeek = defineAction({
   input,
   output: z.object({ result: z.string() }),
   idempotent: false,
-  async run({ input: value }) {
+  run({ input: value }) {
     const now = dayjs().tz(value.timeZone);
     const selectedTime = value.currentTime ? now.format('HH:mm') : value.time;
     const { hours, minutes } = parseTime(selectedTime);
@@ -36,6 +36,6 @@ export const nextDayOfWeek = defineAction({
 
     result = result.add(days, 'day');
 
-    return { result: result.format(correctedFormat(value.timeFormat)) };
+    return Promise.resolve({ result: result.format(correctedFormat(value.timeFormat)) });
   },
 });

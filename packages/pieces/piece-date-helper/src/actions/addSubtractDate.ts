@@ -27,7 +27,7 @@ export const addSubtractDate = defineAction({
   input,
   output: z.object({ result: z.string() }),
   idempotent: true,
-  async run({ input: value }) {
+  run({ input: value }) {
     let result = value.timeZone
       ? dayjs.tz(value.inputDate, correctedFormat(value.inputDateFormat), value.timeZone)
       : parseDate(value.inputDate, value.inputDateFormat);
@@ -76,6 +76,6 @@ export const addSubtractDate = defineAction({
       }
     }
 
-    return { result: result.format(correctedFormat(value.outputFormat)) };
+    return Promise.resolve({ result: result.format(correctedFormat(value.outputFormat)) });
   },
 });

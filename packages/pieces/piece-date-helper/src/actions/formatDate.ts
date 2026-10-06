@@ -18,13 +18,13 @@ export const formatDate = defineAction({
   input,
   output: z.object({ result: z.string() }),
   idempotent: true,
-  async run({ input: value }) {
+  run({ input: value }) {
     const parsed = parseDate(value.inputDate, value.inputFormat);
     const result = parsed
       .tz(value.inputTimeZone, true)
       .tz(value.outputTimeZone)
       .format(correctedFormat(value.outputFormat));
 
-    return { result };
+    return Promise.resolve({ result });
   },
 });

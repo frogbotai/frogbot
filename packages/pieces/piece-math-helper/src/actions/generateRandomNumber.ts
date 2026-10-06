@@ -14,9 +14,9 @@ export const generateRandomNumber = defineAction({
   description: 'Generate a random integer between two numbers, inclusive.',
   input: inputSchema,
   output,
-  async run({ input }) {
-    return Math.floor(
-      Math.random() * (input.secondNumber - input.firstNumber + 1) + input.firstNumber,
+  run({ input }) {
+    return Promise.resolve(
+      Math.floor(Math.random() * (input.secondNumber - input.firstNumber + 1) + input.firstNumber),
     );
   },
 });

@@ -8,7 +8,7 @@ const mergeClasses = (...classes: (string | undefined)[]): string => {
   return classes.filter(Boolean).join(' ');
 };
 
-const hasA11yProp = (props: Record<string, any>): boolean => {
+const hasA11yProp = (props: object): boolean => {
   return Object.keys(props).some((key) => key.startsWith('aria-') || key === 'role');
 };
 

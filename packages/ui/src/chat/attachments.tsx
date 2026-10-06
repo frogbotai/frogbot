@@ -362,9 +362,9 @@ export function AttachmentList({
       </div>
       {items.length > 0 && (
         <div className="fb-attachments__previews">
-          <ul role="list" aria-label="Attachments" className="fb-attachments__scroll">
+          <div role="list" aria-label="Attachments" className="fb-attachments__scroll">
             {items.map((item) => (
-              <li key={item.key} className="fb-attachments__card">
+              <div key={item.key} role="listitem" className="fb-attachments__card">
                 <AttachmentCard
                   name={item.name}
                   state={item.state}
@@ -378,9 +378,9 @@ export function AttachmentList({
                     item.state === 'failed' && item.source ? () => retry(item.key) : undefined
                   }
                 />
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </>

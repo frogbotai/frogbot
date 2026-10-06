@@ -12,7 +12,9 @@ export const getCurrentDate = defineAction({
   input,
   output: z.object({ result: z.string() }),
   idempotent: false,
-  async run({ input: value }) {
-    return { result: dayjs().tz(value.timeZone).format(correctedFormat(value.timeFormat)) };
+  run({ input: value }) {
+    return Promise.resolve({
+      result: dayjs().tz(value.timeZone).format(correctedFormat(value.timeFormat)),
+    });
   },
 });

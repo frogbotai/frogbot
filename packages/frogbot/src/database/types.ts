@@ -109,7 +109,7 @@ export type MapVectorFieldArgs = {
 export type MapVectorField = (args: MapVectorFieldArgs) => PayloadField;
 
 export type DatabaseAdapter = {
-  init: (args: { payload: any }) => unknown;
+  init: (args: { payload: Payload }) => unknown;
   defaultIDType: 'number' | 'text';
   name?: string;
   allowIDOnCreate?: boolean;

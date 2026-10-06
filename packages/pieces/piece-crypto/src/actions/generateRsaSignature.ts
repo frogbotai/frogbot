@@ -18,7 +18,7 @@ export const generateRsaSignature = defineAction({
   description: 'Sign text with an RSA private key.',
   input: inputSchema,
   output: z.string().min(1),
-  async run({ input }) {
+  run({ input }) {
     const signer = createSign(input.method).update(input.text);
     const key = input.passphrase
       ? { key: input.privateKey, passphrase: input.passphrase }
@@ -26,6 +26,6 @@ export const generateRsaSignature = defineAction({
 
     signer.end();
 
-    return signer.sign(key, input.outputEncoding);
+    return Promise.resolve(signer.sign(key, input.outputEncoding));
   },
 });

@@ -17,7 +17,7 @@ export const divideNumbers = defineAction({
   description: 'Divide the first number by the second number.',
   input: inputSchema,
   output,
-  async run({ input }) {
-    return input.firstNumber / input.secondNumber;
+  run({ input }) {
+    return Promise.resolve(input.firstNumber / input.secondNumber);
   },
 });

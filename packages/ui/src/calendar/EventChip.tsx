@@ -1,7 +1,7 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
-import type { CSSProperties, PointerEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
 
 import type { CalendarEvent, CalendarLane } from './core/index.js';
 import type { CalendarResizeEdge } from './useCalendar.js';
@@ -32,12 +32,23 @@ export function EventChip<T extends CalendarEvent>({
     pointer.stopPropagation();
     onResizeStart?.(edge, pointer);
   };
+  const onKeyDown = (keyboard: KeyboardEvent) => {
+    if (
+      keyboard.target !== keyboard.currentTarget ||
+      (keyboard.key !== 'Enter' && keyboard.key !== ' ')
+    ) {
+      return;
+    }
+    keyboard.preventDefault();
+    onClick?.();
+  };
   return (
     <div
       {...drag.attributes}
       {...drag.listeners}
       className={`frog-calendar__event${hidden || drag.isDragging ? ' frog-calendar__event--dragging' : ''}`}
       onClick={onClick}
+      onKeyDown={onClick ? onKeyDown : undefined}
       ref={drag.setNodeRef}
       style={
         {

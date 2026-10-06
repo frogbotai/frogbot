@@ -1,4 +1,4 @@
-import { definePiece, filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, definePiece, filesCollectionSlug } from 'frogbot/pieces';
 import { toBuffer } from 'qrcode';
 import { z } from 'zod';
 
@@ -23,7 +23,7 @@ const createQrCodeAction = defineAction({
   output: outputSchema,
   idempotent: false,
   async run({ input, req }) {
-    const collection = filesCollectionSlug(req, 'QR Code');
+    filesCollectionSlug(req, 'QR Code');
 
     req.signal?.throwIfAborted();
 
@@ -33,9 +33,7 @@ const createQrCodeAction = defineAction({
 
     req.signal?.throwIfAborted();
 
-    const file = await req.frogbot.create({
-      collection,
-      data: {},
+    const file = await createPieceFile(req, 'QR Code', {
       file: { data, name, mimetype: mimeType, size: data.length },
       req,
       overrideAccess: false,

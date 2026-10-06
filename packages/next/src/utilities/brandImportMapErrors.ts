@@ -24,17 +24,18 @@ export function brandImportMapErrors(): void {
 
   globals[installed] = true;
 
-  const error = console.error;
+  const target = globals.console;
+  const error = target.error;
 
-  console.error = (...args: unknown[]) => {
+  target.error = (...args: unknown[]) => {
     const [message, details] = args;
 
     if (message === missingComponentMessage && isMissingComponentDetails(details)) {
-      error.call(console, formatMissingComponentError(details));
+      error.call(target, formatMissingComponentError(details));
 
       return;
     }
 
-    error.apply(console, args);
+    error.apply(target, args);
   };
 }

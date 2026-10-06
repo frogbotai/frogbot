@@ -14,7 +14,7 @@ export const subtractNumbers = defineAction({
   description: 'Subtract the first number from the second number.',
   input: inputSchema,
   output,
-  async run({ input }) {
-    return input.secondNumber - input.firstNumber;
+  run({ input }) {
+    return Promise.resolve(input.secondNumber - input.firstNumber);
   },
 });

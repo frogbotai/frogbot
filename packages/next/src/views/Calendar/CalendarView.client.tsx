@@ -16,7 +16,7 @@ import type { CalendarMode } from 'frogbot';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { ClientCollectionConfig, Column } from 'payload';
 import type { ComponentType } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
 import { appendQuery, getPath, setPath } from '../cells.js';
@@ -70,7 +70,7 @@ function CalendarDocumentEvent({
   });
   return (
     <>
-      <div onClick={drawer.openDrawer}>
+      <div onClick={drawer.openDrawer} role="presentation">
         {Event ? (
           <Event row={row} />
         ) : (
@@ -188,9 +188,15 @@ export function CalendarViewClient({
     );
   };
 
+  const loadRef = useRef(load);
+
+  useEffect(() => {
+    loadRef.current = load;
+  });
+
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal).catch((error) => {
+    void loadRef.current(controller.signal).catch((error) => {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       toast.error(error instanceof Error ? error.message : 'Failed to load calendar');
     });

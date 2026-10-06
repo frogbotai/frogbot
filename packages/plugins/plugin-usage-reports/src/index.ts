@@ -184,7 +184,7 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
   if (!Number.isInteger(pageSize) || pageSize < 1) {
     throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
   }
-  return async (config) => {
+  return (config) => {
     if (!config.ai) throw new Error('[plugin-usage-reports] AI configuration is required.');
     const existing = config.collections.find((collection) => collection.usageLog === true);
     const usage = existing ?? { slug: 'usage-logs', usageLog: true as const, fields: [] };

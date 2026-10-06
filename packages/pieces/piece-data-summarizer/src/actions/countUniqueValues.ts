@@ -30,7 +30,7 @@ export const countUniqueValues = defineAction({
   description: 'Count unique values, optionally using selected object fields.',
   input: inputSchema,
   output: outputSchema,
-  async run({ input }) {
+  run({ input }) {
     const fields = input.fields;
     const values = fields?.length
       ? input.values.map((value) => selectFields(value, fields))
@@ -38,6 +38,6 @@ export const countUniqueValues = defineAction({
 
     const numUniques = new Set(values.map((value) => JSON.stringify(value))).size;
 
-    return { numUniques };
+    return Promise.resolve({ numUniques });
   },
 });

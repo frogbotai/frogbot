@@ -91,8 +91,8 @@ const discordChannel = {
       respondToGlobalMentions: options.respondToGlobalMentions,
     });
   },
-  async identity() {
-    return null;
+  identity() {
+    return Promise.resolve(null);
   },
   questions: discordQuestions,
 } satisfies PieceChannel<

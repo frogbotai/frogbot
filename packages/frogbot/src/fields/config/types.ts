@@ -7,6 +7,7 @@ import type {
   CodeField as PayloadCodeField,
   CollapsibleField as PayloadCollapsibleField,
   DateField as PayloadDateField,
+  Document as PayloadDocument,
   EmailField as PayloadEmailField,
   FieldBase as PayloadFieldBase,
   FieldHookArgs as PayloadFieldHookArgs,
@@ -33,20 +34,9 @@ import type {
   ValueWithRelation as PayloadValueWithRelation,
 } from 'payload';
 import {
-  fieldAffectsData as payloadFieldAffectsData,
-  fieldHasMaxDepth as payloadFieldHasMaxDepth,
-  fieldHasSubFields as payloadFieldHasSubFields,
-  fieldIsArrayType as payloadFieldIsArrayType,
-  fieldIsBlockType as payloadFieldIsBlockType,
-  fieldIsGroupType as payloadFieldIsGroupType,
-  fieldIsHiddenOrDisabled as payloadFieldIsHiddenOrDisabled,
-  fieldIsID as payloadFieldIsID,
   fieldIsLocalized as payloadFieldIsLocalized,
-  fieldIsPresentationalOnly as payloadFieldIsPresentationalOnly,
-  fieldIsSidebar as payloadFieldIsSidebar,
   fieldIsVirtual as payloadFieldIsVirtual,
   fieldShouldBeLocalized as payloadFieldShouldBeLocalized,
-  fieldSupportsMany as payloadFieldSupportsMany,
   groupHasName as payloadGroupHasName,
   optionIsObject as payloadOptionIsObject,
   optionIsValue as payloadOptionIsValue,
@@ -59,9 +49,9 @@ import type { FieldAccess } from '../../collections/config/types.js';
 import type { FrogBotArgs, FrogBotRequest } from '../../types/request.js';
 
 export interface FieldHookArgs<
-  TData extends TypeWithID = any,
-  TValue = any,
-  TSiblingData = any,
+  TData extends TypeWithID = PayloadDocument,
+  TValue = PayloadDocument,
+  TSiblingData = PayloadDocument,
 > extends Omit<
   PayloadFieldHookArgs<TData, TValue, TSiblingData>,
   'req' | 'field' | 'siblingFields'
@@ -71,21 +61,23 @@ export interface FieldHookArgs<
   siblingFields?: (Field | TabAsField)[];
 }
 
-export type FieldHook<TData extends TypeWithID = any, TValue = any, TSiblingData = any> = (
-  args: FieldHookArgs<TData, TValue, TSiblingData>,
-) => Promise<TValue> | TValue;
+export type FieldHook<
+  TData extends TypeWithID = PayloadDocument,
+  TValue = PayloadDocument,
+  TSiblingData = PayloadDocument,
+> = (args: FieldHookArgs<TData, TValue, TSiblingData>) => Promise<TValue> | TValue;
 
 export type ValidateOptions<
-  TData = any,
-  TSiblingData = any,
+  TData = PayloadDocument,
+  TSiblingData = PayloadDocument,
   TFieldConfig extends object = object,
-  TValue = any,
+  TValue = PayloadDocument,
 > = FrogBotArgs<PayloadBaseValidateOptions<TData, TSiblingData, TValue>> & TFieldConfig;
 
 export type Validate<
-  TValue = any,
-  TData = any,
-  TSiblingData = any,
+  TValue = PayloadDocument,
+  TData = PayloadDocument,
+  TSiblingData = PayloadDocument,
   TFieldConfig extends object = object,
 > = (
   value: null | TValue | undefined,
@@ -117,7 +109,7 @@ type FieldAccessConfig = {
   };
 };
 
-type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
 type RetypedKey = 'access' | 'defaultValue' | 'filterOptions' | 'hooks' | 'validate';
 
@@ -139,7 +131,18 @@ type RetypedMember<T, TField> = T extends unknown
       RequestSlots<T> &
       KeySlot<T, 'hooks', FieldHooks> &
       KeySlot<T, 'access', FieldAccessConfig> &
-      KeySlot<T, 'validate', { validate?: Validate<any, any, any, ValidatorFieldConfig<TField>> }>
+      KeySlot<
+        T,
+        'validate',
+        {
+          validate?: Validate<
+            PayloadDocument,
+            PayloadDocument,
+            PayloadDocument,
+            ValidatorFieldConfig<TField>
+          >;
+        }
+      >
   : never;
 
 type RetypedField<T> = RetypedMember<T, T>;
@@ -204,8 +207,8 @@ export type VectorField = Omit<
 };
 
 export type RichTextField<
-  TValue extends object = any,
-  TAdapterProps = any,
+  TValue extends object = PayloadDocument,
+  TAdapterProps = PayloadDocument,
   TExtraProperties = object,
 > = RetypedField<PayloadRichTextField<TValue, TAdapterProps, TExtraProperties>>;
 
@@ -290,62 +293,69 @@ type FieldWithMaxDepth = JoinField | RelationshipField | UploadField;
 type FieldAffectingData =
   Exclude<Extract<Field, { name: string }>, UIField> | (TabAsField & { name: string });
 
-const asPayloadField = (field: Field | Tab | TabAsField): any => field;
-
 export function fieldHasSubFields<T extends Field | TabAsField>(
   field: T,
 ): field is T & FieldWithSubFields {
-  return payloadFieldHasSubFields(asPayloadField(field));
+  return (
+    field.type === 'group' ||
+    field.type === 'array' ||
+    field.type === 'row' ||
+    field.type === 'collapsible'
+  );
 }
 
 export function fieldIsArrayType<T extends Field>(field: T): field is T & ArrayField {
-  return payloadFieldIsArrayType(asPayloadField(field));
+  return field.type === 'array';
 }
 
 export function fieldIsBlockType<T extends Field>(field: T): field is T & BlocksField {
-  return payloadFieldIsBlockType(asPayloadField(field));
+  return field.type === 'blocks';
 }
 
 export function fieldIsGroupType<T extends Field>(field: T): field is T & GroupField {
-  return payloadFieldIsGroupType(asPayloadField(field));
+  return field.type === 'group';
 }
 
 export function fieldSupportsMany<T extends Field>(field: T): field is T & FieldWithMany {
-  return payloadFieldSupportsMany(asPayloadField(field));
+  return field.type === 'select' || field.type === 'relationship' || field.type === 'upload';
 }
 
 export function fieldHasMaxDepth<T extends Field>(
   field: T,
 ): field is T & FieldWithMaxDepth & { maxDepth: number } {
-  return payloadFieldHasMaxDepth(asPayloadField(field));
+  return (
+    (field.type === 'upload' || field.type === 'relationship' || field.type === 'join') &&
+    typeof field.maxDepth === 'number'
+  );
 }
 
 export function fieldIsPresentationalOnly<T extends Field | TabAsField>(
   field: T,
 ): field is T & UIField {
-  return payloadFieldIsPresentationalOnly(asPayloadField(field));
+  return field.type === 'ui';
 }
 
 export function fieldIsSidebar<T extends Field | TabAsField>(
   field: T,
 ): field is T & { admin: { position: 'sidebar' } } {
-  return Boolean(field.admin && payloadFieldIsSidebar(asPayloadField(field)));
+  return field.admin?.position === 'sidebar';
 }
 
 export function fieldIsID<T extends Field>(field: T): field is T & { name: 'id' } {
-  return payloadFieldIsID(asPayloadField(field));
+  return 'name' in field && field.name === 'id';
 }
 
 export function fieldIsHiddenOrDisabled(field: Field | TabAsField): boolean {
-  const normalized = field.admin ? field : ({ ...field, admin: {} } as Field | TabAsField);
-
-  return Boolean(payloadFieldIsHiddenOrDisabled(asPayloadField(normalized)));
+  return Boolean(
+    ('hidden' in field && field.hidden) ||
+    (field.admin && 'disabled' in field.admin && field.admin.disabled),
+  );
 }
 
 export function fieldAffectsData<T extends Field | TabAsField>(
   field: T,
 ): field is T & FieldAffectingData {
-  return payloadFieldAffectsData(asPayloadField(field));
+  return 'name' in field && !fieldIsPresentationalOnly(field);
 }
 
 export function tabHasName<T extends Tab>(tab: T): tab is T & NamedTab {

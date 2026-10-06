@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const attachment = z.object({
@@ -8,10 +8,7 @@ export const attachment = z.object({
 });
 
 export async function loadFileAttachment(req: FrogBotRequest, value: z.output<typeof attachment>) {
-  const collection = filesCollectionSlug(req, 'Gmail');
-
-  const doc = await req.frogbot.findByID({
-    collection,
+  const doc = await findPieceFile(req, 'Gmail', {
     id: value.fileId,
     depth: 0,
     req,

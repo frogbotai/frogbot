@@ -64,18 +64,20 @@ export function webhookTrigger<const TSlug extends string, TInput extends z.ZodT
         throw new Error(`Linear failed to delete the ${slug} webhook '${state.webhookId}'.`);
       }
     },
-    async run({ input, req }) {
+    run({ input, req }) {
       const delivery = req.data as Delivery;
-      return delivery?.type === resourceType &&
-        delivery.action === action &&
-        (!matches || matches(delivery, input))
-        ? [
-            {
-              dedupeKey: createHash('sha256').update(JSON.stringify(delivery)).digest('hex'),
-              data: delivery,
-            },
-          ]
-        : [];
+      return Promise.resolve(
+        delivery?.type === resourceType &&
+          delivery.action === action &&
+          (!matches || matches(delivery, input))
+          ? [
+              {
+                dedupeKey: createHash('sha256').update(JSON.stringify(delivery)).digest('hex'),
+                data: delivery,
+              },
+            ]
+          : [],
+      );
     },
   });
 }

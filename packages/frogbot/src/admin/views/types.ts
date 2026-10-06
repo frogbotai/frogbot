@@ -218,7 +218,7 @@ export type DefaultCellComponentProps<
 
 export type DefaultServerCellComponentProps<
   TField extends ClientField = ClientField,
-  TCellData = any,
+  TCellData = Payload.Document,
 > = Omit<Payload.DefaultServerCellComponentProps<TField, TCellData>, 'payload'>;
 
 export type WidgetWidth = Payload.WidgetWidth;

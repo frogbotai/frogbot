@@ -14,7 +14,7 @@ export const getRemainder = defineAction({
   description: 'Get the remainder after dividing the first number by the second number.',
   input: inputSchema,
   output,
-  async run({ input }) {
-    return input.firstNumber % input.secondNumber;
+  run({ input }) {
+    return Promise.resolve(input.firstNumber % input.secondNumber);
   },
 });

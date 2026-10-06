@@ -1,6 +1,7 @@
 import { createSlackAdapter } from '@chat-adapter/slack';
 import {
   definePiece,
+  findUserByEmail,
   type PieceChannel,
   type PieceOAuthRecipe,
   type PieceWebhook,
@@ -51,8 +52,8 @@ const slackAccount: NonNullable<
 
 const slackWebhook = {
   verify: verifySlackWebhook,
-  async handshake({ req }) {
-    return slackHandshake(req);
+  handshake({ req }) {
+    return Promise.resolve(slackHandshake(req));
   },
   parse({ req }) {
     return parseSlackWebhook(req);
@@ -106,19 +107,7 @@ export const createSlack = definePiece({
 
       if (typeof email !== 'string' || !email.trim()) return null;
 
-      const config = await req.frogbot.config;
-      const payloadConfig = await config._internal.payloadConfig;
-      const result = await req.frogbot.find({
-        collection: payloadConfig.admin.user as never,
-        where: { email: { equals: email.trim().toLowerCase() } },
-        limit: 1,
-        overrideAccess: true,
-        req,
-      });
-
-      const match = result.docs[0];
-
-      return match ? { ...match, collection: payloadConfig.admin.user } : null;
+      return findUserByEmail(req, email.trim().toLowerCase());
     },
     questions: slackQuestions,
   } satisfies PieceChannel<z.output<typeof slackAuth>, z.output<typeof slackOptions>, SlackClient>,
