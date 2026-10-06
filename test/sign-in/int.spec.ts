@@ -7,12 +7,13 @@ import { setTimeout } from 'node:timers/promises';
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { serve } from '@hono/node-server';
 import { BasePayload, type CollectionBeforeChangeHook } from 'payload';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { z } from 'zod';
 
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { createOAuthState } from '../../packages/frogbot/src/connections/oauth/index.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
+import { createSQLKV } from '../../packages/frogbot/src/kv/adapters/sql.js';
 import * as locks from '../../packages/frogbot/src/kv/lock.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { SignInMethod } from '../../packages/frogbot/src/pieces/types.js';
@@ -224,18 +225,40 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   });
 
   it.skipIf(process.env.FROGBOT_DATABASE && process.env.FROGBOT_DATABASE !== 'sqlite')(
-    'refuses SQL KV lock release during a SQLite transaction without blocking later writes',
+    'waits to release a SQL KV lock until a SQLite transaction ends without blocking later writes',
     async () => {
       const lock = await frogbot.kv.acquireLock('release-during-transaction', 30_000);
       expect(lock).not.toBeNull();
       const transaction = await frogbot.db.beginTransaction();
       expect(transaction).toBeTruthy();
-      try {
-        expect(await frogbot.kv.releaseLock(lock!)).toBe(false);
-      } finally {
-        await frogbot.db.rollbackTransaction(transaction!);
-      }
-      expect(await frogbot.kv.releaseLock(lock!)).toBe(true);
+      onTestFinished(() => frogbot.db.rollbackTransaction(transaction!));
+      let settled = false;
+      const release = frogbot.kv.releaseLock(lock!).finally(() => {
+        settled = true;
+      });
+      await frogbot.kv.get('release-during-transaction');
+      expect(settled).toBe(false);
+      await frogbot.db.rollbackTransaction(transaction!);
+      expect(await release).toBe(true);
+      const next = await frogbot.kv.acquireLock('release-during-transaction', 30_000);
+      expect(next).not.toBeNull();
+      expect(await frogbot.kv.releaseLock(next!)).toBe(true);
+    },
+  );
+
+  it.skipIf(process.env.FROGBOT_DATABASE && process.env.FROGBOT_DATABASE !== 'sqlite')(
+    'refuses SQL KV lock release during a transaction on plain Payload SQLite, which has no write lock',
+    async () => {
+      const lock = await frogbot.kv.acquireLock('payload-release-during-transaction', 30_000);
+      expect(lock).not.toBeNull();
+      const payloadSQLite = { ...frogbot.db, packageName: '@payloadcms/db-sqlite' };
+      const kv = createSQLKV({ adapter: payloadSQLite, collectionSlug: 'payload-kv' });
+      const transaction = await frogbot.db.beginTransaction();
+      expect(transaction).toBeTruthy();
+      onTestFinished(() => frogbot.db.rollbackTransaction(transaction!));
+      expect(await kv.releaseLock(lock!)).toBe(false);
+      await frogbot.db.rollbackTransaction(transaction!);
+      expect(await kv.releaseLock(lock!)).toBe(true);
     },
   );
 

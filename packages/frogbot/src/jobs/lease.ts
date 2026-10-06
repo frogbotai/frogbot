@@ -9,6 +9,11 @@ import type { WaitpointReplay } from './waitpoints/types.js';
 export const DEFAULT_JOB_LEASE_DURATION = 300_000;
 export const jobLeaseOperations: unique symbol = Symbol.for('frogbot.jobs.leaseOperations');
 
+/** A `waitUntil` that runs the job now: Payload runs only jobs whose `waitUntil` is strictly before its clock. */
+export function runnableNow(): string {
+  return new Date(Date.now() - 1).toISOString();
+}
+
 export type ReArm = {
   waitUntil: string;
   log: Job['log'];

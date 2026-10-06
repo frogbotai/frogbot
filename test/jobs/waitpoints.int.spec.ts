@@ -566,6 +566,48 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     await expectNoContinuationJobs();
   });
 
+  it('a resumed workflow runs in the same millisecond it was woken', async () => {
+    const finished = vi.fn();
+    const { token } = await pausedWorkflow('resumed-same-millisecond', finished);
+
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now());
+
+    await fixture.worker.jobs.resume({ token, data: 'yes' });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+
+    expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'yes' });
+  });
+
+  it('a workflow answered before it paused runs in the same millisecond it paused', async () => {
+    const finished = vi.fn();
+
+    handler = async ({ waitFor }) => {
+      finished(
+        await waitFor('approval', {
+          onWait: async ({ resumeUrl }) => {
+            const token = new URL(resumeUrl).pathname.split('/')[3];
+
+            await fixture.worker.jobs.resume({ token, data: 'early' });
+          },
+        }),
+      );
+    };
+
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'wait',
+      input: { key: 'early-same-millisecond' },
+    });
+
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now());
+
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
+
+    expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'early' });
+  });
+
   it('the jobId is free after the resumed workflow fails for good', async () => {
     const failure = new Error('resumed workflow failed');
     const { source, token, waiting } = await pausedWorkflow('resumed-failure', () => {
@@ -1409,7 +1451,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     const expired = await holder(due);
 
     expect(expired.id).toBe(due.holder);
-    expect(expired.waitUntil).toBe(new Date(now).toISOString());
+    expect(expired.waitUntil).toBe(new Date(now - 1).toISOString());
     expect((await findWaitpoint({ req, token: due.token }))?.status).toBe('expired');
     expect((await findWaitpoint({ req, token: future.token }))?.status).toBe('pending');
 

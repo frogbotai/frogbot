@@ -20,6 +20,7 @@ import {
   agentSlug,
   apiKeysSlug,
   chatsSlug,
+  chatTransactionsDatabasePath,
   createTicketToolSlug,
   databasePath,
   exportsSlug,
@@ -704,5 +705,108 @@ describe.skipIf(!isSQLite)('CSV import and export inside one SQLite transaction'
     } as never)) as unknown as { filename?: string | null };
 
     expect(result.filename).toMatch(/\.csv$/);
+  });
+});
+
+describe.skipIf(!isSQLite)('a chat turn on SQLite with transactions on', () => {
+  let frogbot: FrogBotInstance;
+  let model: StubChatModel;
+
+  beforeAll(async () => {
+    await rm(chatTransactionsDatabasePath, { force: true });
+
+    model = await startStubChatModel(modelPort);
+
+    const config = await buildSystemFieldsConfig({
+      db: sqliteAdapter({
+        client: { url: `file:${chatTransactionsDatabasePath}` },
+        transactionOptions: {},
+      }),
+    });
+
+    frogbot = await bootFresh(() => new FrogBot().init({ config }));
+    await waitForStartupNumbering(frogbot);
+  });
+
+  afterAll(async () => {
+    await frogbot.destroy();
+    await model.close();
+    await rm(chatTransactionsDatabasePath, { force: true });
+  });
+
+  it('a queued turn with a server tool saves its reply, usage, and title without busy errors', async () => {
+    const errors = vi.spyOn(frogbot.logger, 'error');
+    const user = await frogbot.create({
+      collection: usersSlug,
+      data: { email: 'cy@system-fields.test', password },
+      overrideAccess: true,
+    });
+    const chat = await frogbot.create({
+      collection: chatsSlug,
+      data: { user: user.id, agent: agentSlug },
+      overrideAccess: true,
+    });
+
+    await frogbot.create({
+      collection: messagesSlug,
+      data: {
+        id: `queued-${chat.id}`,
+        chat: chat.id,
+        role: 'user',
+        parts: [{ type: 'text', text: 'Open a ticket for the printer.' }],
+        status: 'queued',
+        delivery: 'queue',
+        author: { user: { id: user.id, collection: usersSlug } },
+      },
+      overrideAccess: true,
+    });
+
+    model.respond(
+      {
+        toolCalls: [
+          { id: 'call-create', name: createTicketToolSlug, input: { title: 'From chat' } },
+        ],
+      },
+      { text: 'Opened it.' },
+    );
+
+    await runQueuedTurn({ frogbot, chatId: chat.id });
+
+    await vi.waitFor(async () => {
+      const titled = await frogbot.findByID({
+        collection: chatsSlug,
+        id: chat.id,
+        depth: 0,
+        overrideAccess: true,
+      });
+      const usage = await frogbot.count({
+        collection: usageLogsSlug,
+        where: { user: { equals: user.id } },
+        overrideAccess: true,
+      });
+
+      expect(titled.title).toBeTruthy();
+      expect(usage.totalDocs).toBeGreaterThan(0);
+    });
+
+    const { docs: replies } = await frogbot.find({
+      collection: messagesSlug,
+      where: { chat: { equals: chat.id }, role: { equals: 'assistant' } },
+      overrideAccess: true,
+    });
+    const logged = errors.mock.calls
+      .flat()
+      .map((argument) =>
+        JSON.stringify(argument, (_, value: unknown) =>
+          value instanceof Error ? value.message : value,
+        ),
+      );
+
+    expect(replies.flatMap((reply) => reply.parts)).toContainEqual(
+      expect.objectContaining({ type: 'text', text: 'Opened it.' }),
+    );
+    expect(
+      logged.filter((line) => /SQLITE_BUSY|database is locked|without `req`/.test(line)),
+    ).toEqual([]);
   });
 });

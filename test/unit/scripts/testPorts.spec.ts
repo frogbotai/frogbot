@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTestPortOffset } from '../../__helpers/shared/testPorts';
+import { fetchBlockedPorts, getTestPortOffset, testPort } from '../../__helpers/shared/testPorts';
 
 describe('test port offset', () => {
   it('uses FROGBOT_TEST_PORT_OFFSET when it is set', () => {
@@ -49,6 +49,20 @@ describe('test port offset', () => {
       expect(offset % 100).toBe(0);
       expect(offset).toBeGreaterThanOrEqual(100);
       expect(offset).toBeLessThanOrEqual(4900);
+    }
+  });
+
+  it('never returns a port fetch blocks, and keeps ports distinct, for any worktree offset', () => {
+    const offsets = Array.from({ length: 51 }, (_, slot) => slot * 100);
+    const bases = Array.from({ length: 2000 }, (_, index) => 3000 + index);
+
+    expect(testPort(3990, 200)).not.toBe(4190);
+
+    for (const offset of offsets) {
+      const ports = bases.map((base) => testPort(base, offset));
+
+      expect(ports.filter((port) => fetchBlockedPorts.has(port))).toEqual([]);
+      expect(new Set(ports).size).toBe(bases.length);
     }
   });
 });

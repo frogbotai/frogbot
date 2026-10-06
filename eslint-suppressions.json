@@ -243,11 +243,6 @@
       "count": 3
     }
   },
-  "test/database/sqlite-busy.int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 4
-    }
-  },
   "test/e2e/channelQuestions.e2e.spec.ts": {
     "vitest/no-conditional-in-test": {
       "count": 1
@@ -518,7 +513,7 @@
   },
   "test/sign-in/int.spec.ts": {
     "no-restricted-syntax": {
-      "count": 5
+      "count": 4
     },
     "vitest/no-conditional-in-test": {
       "count": 5

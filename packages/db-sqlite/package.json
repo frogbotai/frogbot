@@ -35,6 +35,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@libsql/client": "0.14.0",
     "@payloadcms/db-sqlite": "3.90.1",
     "drizzle-orm": "0.45.2"
   },

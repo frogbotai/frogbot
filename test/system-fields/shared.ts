@@ -10,6 +10,10 @@ export const transactionsDatabasePath = fileURLToPath(
   new URL('./system-fields-transactions.db', import.meta.url),
 );
 
+export const chatTransactionsDatabasePath = fileURLToPath(
+  new URL('./system-fields-chat-transactions.db', import.meta.url),
+);
+
 export const importsDir = path.join(tmpdir(), 'frogbot-system-fields-imports');
 
 export const usersSlug = 'users';

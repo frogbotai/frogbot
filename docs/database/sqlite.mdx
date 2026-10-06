@@ -130,8 +130,9 @@ Search tables, indexes, and triggers are part of your schema. Development push c
 | `autoIncrement` | `boolean` | `false` | Adds SQLite [AUTOINCREMENT](https://www.sqlite.org/autoinc.html) to primary keys, so IDs from deleted rows are never reused. |
 | `allowIDOnCreate` | `boolean` | `false` | Uses an `id` passed in create data, without a custom ID field. |
 | `transactionOptions` | `SQLiteTransactionConfig \| false` | Transactions off | Options for [transactions](https://orm.drizzle.team/docs/transactions). Transactions are off unless you pass an object, such as `{}`. When a collection sets [`auth.signIn`](/authentication/sign-in) and you leave this unset, FrogBot turns transactions on. See [Transactions](/database/transactions). |
-| `busyTimeout` | `number` | `0` | Milliseconds to wait when the database is locked. |
-| `wal` | `boolean \| { journalSizeLimit?: number; synchronous?: 'EXTRA' \| 'FULL' \| 'NORMAL' \| 'OFF' }` | `false` | Enables Write-Ahead Logging for better concurrency. Applies only to `file:` URLs. See [WAL mode](#wal-mode). |
+| `busyTimeout` | `number` | `1000` | Milliseconds to wait when another process holds the database lock. See [Concurrent writes](#concurrent-writes). |
+| `writeLockTimeout` | `number` | `5000` | Milliseconds a write waits for the write or transaction ahead of it in this process before it fails. See [Concurrent writes](#concurrent-writes). |
+| `wal` | `boolean \| { journalSizeLimit?: number; synchronous?: 'EXTRA' \| 'FULL' \| 'NORMAL' \| 'OFF' }` | `true` for a `file:` URL, otherwise `false` | Write-Ahead Logging, for better concurrency. Applies only to `file:` URLs. Pass `false` to use SQLite's rollback journal instead. See [WAL mode](#wal-mode). |
 | `blocksAsJSON` | `boolean` | `false` | Stores blocks in a JSON column instead of relational tables, which can be faster with many blocks. |
 | `localesSuffix` | `string` | `'_locales'` | Suffix for tables that store localized fields. |
 | `relationshipsSuffix` | `string` | `'_rels'` | Suffix for tables that store relationships. |
@@ -141,6 +142,26 @@ Search tables, indexes, and triggers are part of your schema. Development push c
 | `logger` | `boolean \| Logger` | `false` | Drizzle query logger. `true` logs every query; pass a Drizzle `Logger` to handle them yourself. |
 | `generateSchemaOutputFile` | `string` | A generated-schema file in `src/`, or in the project root without `src/` | File that `frogbot.db.generateSchema()` writes the typed Drizzle schema to. |
 | `schemaName` | `string` | — | Accepted for parity with the Postgres adapter. SQLite has no schemas, so it has no effect. |
+
+## Concurrent writes
+
+SQLite allows one writer at a time. Within one process, the adapter queues writes: each write statement, and each transaction from its start to its commit or rollback, waits for the one ahead of it. Reads don't wait, so a read without `req` during an open transaction returns the last committed data at once.
+
+A write that waits longer than `writeLockTimeout` fails with an error saying how long it waited. There are two causes. Most often, code inside a hook wrote through the Local API without passing `req`, so it waited on the very transaction it was part of. Pass `req` so the write joins the transaction:
+
+```ts
+afterChange: [
+  async ({ req }) => {
+    await req.payload.create({ collection: 'audit-logs', data: { event: 'saved' }, req })
+  },
+],
+```
+
+Otherwise a transaction held the lock for longer than `writeLockTimeout`, for example a hook that awaits a slow API call before the write returns. Shorten the transaction, by moving the slow work out of the hook, or raise `writeLockTimeout`.
+
+If a commit fails, for example on a deferred foreign key, the adapter rolls the transaction back and the operation rejects with the commit error, so nothing reports success without being saved.
+
+`busyTimeout` applies only when another process, such as a migration run, holds the lock. The wait blocks the server's event loop, so keep it short.
 
 ## Access to Drizzle
 
@@ -475,7 +496,7 @@ You can then verify that they're being used by checking the logs in your Cloudfl
 
 ### WAL Mode
 
-You can enable Write-Ahead Logging (WAL) mode for improved performance and concurrency by passing the `wal` option to the SQLite adapter.
+Write-Ahead Logging (WAL) is on by default for `file:` databases. In WAL mode, reads don't wait for a write that's committing, and a large transaction doesn't block reads. Pass `wal: false` to use SQLite's rollback journal instead. A database that ran in WAL switches back at startup; if another process has it open then, it stays in WAL and the adapter logs a warning. WAL keeps two files beside the database, ending in `-wal` and `-shm`; back up, move, or delete all three together.
 
 ```ts title="Example SQLite Adapter with WAL"
 import { sqliteAdapter } from '@frogbotai/db-sqlite'
@@ -486,7 +507,7 @@ export default buildConfig({
   ],
   // Configure the SQLite adapter here
   db: sqliteAdapter({
-    wal: true, // Enable WAL mode with default settings
+    wal: { synchronous: 'NORMAL' }, // Change a WAL setting
     client: {
       url: process.env.DATABASE_URL,
     },
@@ -494,7 +515,7 @@ export default buildConfig({
 })
 ```
 
-WAL needs a file database. With an in-memory or remote `client.url`, the adapter logs a warning and turns WAL off. Pass an object instead of `true` to change the WAL settings:
+WAL needs a file database. For an in-memory or remote `client.url`, WAL stays off; if you pass `wal: true` with one, the adapter logs a warning. Pass an object to change the WAL settings:
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
