@@ -152,6 +152,28 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
 
     expect(captured.exporterConfig?.url).toBe('http://collector.internal:4318/v1/traces');
   });
+
+  it('warns the passed logger, not the console, when called a second time', async () => {
+    mockSetupModules({});
+    const warn = vi.fn();
+    const logger = {
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn,
+      error: vi.fn(),
+      fatal: vi.fn(),
+    };
+
+    const { setupTracing } =
+      await import('../../../../packages/gateway/src/observability/setup.js');
+    setupTracing({ logger });
+    await setupTracing({ logger })();
+
+    expect(warn).toHaveBeenCalledExactlyOnceWith(
+      expect.stringContaining('setupTracing() called more than once'),
+    );
+  });
 });
 
 describe('setupTracing resource / service identity (G94)', () => {

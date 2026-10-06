@@ -13,6 +13,7 @@ import {
   type OperationBase,
   runHooks,
 } from '../../hooks.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
   type ProviderModelPolicy,
@@ -44,6 +45,8 @@ const SPEECH_FORMAT_MEDIA_TYPES: Record<SpeechResponseFormat, string> = {
 export type SpeechRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
 };
@@ -52,6 +55,7 @@ const operation = 'speech' as const;
 
 export function speechRoute(ctx: SpeechRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/audio/speech', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -144,7 +148,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
           response: result.responses,
           warnings: result.warnings,
         },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       return new Response(result.audio.uint8Array, {
@@ -166,7 +170,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
       throw err;
@@ -182,7 +186,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
             durationMs: Date.now() - startedAt,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }

@@ -159,6 +159,7 @@ export function sanitizeAIFields({
       if (problem) {
         if (mode === 'runtime') throw fail(problem);
 
+        // eslint-disable-next-line no-console
         console.warn(message(problem));
       }
 

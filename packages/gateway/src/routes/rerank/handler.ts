@@ -12,6 +12,7 @@ import {
   type OperationBase,
   runHooks,
 } from '../../hooks.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
   type ProviderModelPolicy,
@@ -30,6 +31,8 @@ import { toOpenAIRerankResponse, toRerankParams } from './translators/index.js';
 export type RerankRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
 };
@@ -38,6 +41,7 @@ const operation = 'rerank' as const;
 
 export function rerankRoute(ctx: RerankRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/rerank', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -121,7 +125,7 @@ export function rerankRoute(ctx: RerankRouteContext) {
       await runHooks(
         hooks.afterUpstream,
         { ...base, phase, response: result.response },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       const response = toOpenAIRerankResponse(result, {
@@ -139,7 +143,7 @@ export function rerankRoute(ctx: RerankRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
       throw err;
@@ -153,7 +157,7 @@ export function rerankRoute(ctx: RerankRouteContext) {
             durationMs: Date.now() - startedAt,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }

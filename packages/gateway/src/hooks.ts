@@ -13,6 +13,7 @@
 
 import type { Attributes } from '@opentelemetry/api';
 
+import { type GatewayLogger, serializeError } from './observability/logger.js';
 import type { GatewayLanguageModel } from './providers/registry.js';
 
 export type GatewayEnv = { Bindings: { context: Record<string, unknown> } };
@@ -216,7 +217,7 @@ export async function runHooks<
 >(
   hooks: Array<(args: A) => void | Promise<void>> | undefined,
   args: A,
-  opts?: { isolate?: boolean },
+  opts?: { isolate: true; logger: GatewayLogger },
 ): Promise<void> {
   if (!hooks || hooks.length === 0) return;
   for (const hook of hooks) {
@@ -224,9 +225,9 @@ export async function runHooks<
       try {
         await hook(args);
       } catch (err) {
-        console.error(
-          `[gateway] hook error (${args.operation}, requestId=${args.requestId}):`,
-          err,
+        opts.logger.error(
+          { operation: args.operation, requestId: args.requestId, error: serializeError(err) },
+          'hook-error',
         );
       }
       continue;

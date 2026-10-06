@@ -22,6 +22,7 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
 import { GATEWAY_PACKAGE_VERSION } from '../version.js';
+import { type GatewayLogger, resolveLogger } from './logger.js';
 
 export type SetupMetricsOptions = {
   /** Full OTLP metrics URL used verbatim (e.g. `http://collector:4318/v1/metrics`). Omit to let the exporter's own env handling apply (`OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/metrics` append, `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` verbatim). */
@@ -37,6 +38,8 @@ export type SetupTracingOptions = {
   shutdownTimeoutMs?: number;
   /** Metrics exporter options, or `false` to skip registering a MeterProvider. */
   metrics?: SetupMetricsOptions | false;
+  /** Host logger for setup warnings (e.g. Payload's `payload.logger`). Defaults to the console logger. */
+  logger?: GatewayLogger;
 };
 
 let registered = false;
@@ -80,7 +83,7 @@ function buildResource(): Resource {
  */
 export function setupTracing(options: SetupTracingOptions = {}): () => Promise<void> {
   if (registered) {
-    console.warn(
+    resolveLogger(options.logger).warn(
       'setupTracing() called more than once; the second invocation is ignored. One tracing configuration per process — the host application owns tracer lifecycle.',
     );
     return () => Promise.resolve();

@@ -19,6 +19,7 @@ import {
   type OperationBase,
   runHooks,
 } from '../../hooks.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
   type ProviderModelPolicy,
@@ -40,6 +41,8 @@ import {
 export type ImagesRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
 };
@@ -48,6 +51,7 @@ const operation = 'images' as const;
 
 export function imagesRoute(ctx: ImagesRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/images/generations', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -145,7 +149,7 @@ export function imagesRoute(ctx: ImagesRouteContext) {
           response: result.responses,
           warnings: result.warnings,
         },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       return c.json(toOpenAIImagesResponse(result.images, usage));
@@ -158,7 +162,7 @@ export function imagesRoute(ctx: ImagesRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
       throw err;
@@ -173,7 +177,7 @@ export function imagesRoute(ctx: ImagesRouteContext) {
             durationMs: Date.now() - startedAt,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }

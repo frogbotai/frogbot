@@ -7,7 +7,7 @@ keywords: ["observability", "logging", "OpenTelemetry", "tracing", "OTLP"]
 
 ## Logging
 
-Pass any pino-compatible logger, or anything satisfying `GatewayLogger`. Without one, the gateway creates its own console logger.
+Pass any pino-compatible logger, or anything satisfying `GatewayLogger`. Every gateway log goes to it: request logs, hook failures, and warnings about request content it can't translate. Without one, the gateway creates its own console logger. FrogBot passes its own logger, so an embedded gateway's output lands in FrogBot's logs.
 
 ```ts
 import pino from 'pino'
@@ -67,6 +67,7 @@ Omit `endpoint` to fall back to the exporter's own env handling: `OTEL_EXPORTER_
 | `endpoint` | `string` | From `OTEL_EXPORTER_OTLP_*` env vars | Full OTLP/HTTP traces URL, used as is. |
 | `shutdownTimeoutMs` | `number` | `10000` | How long the returned `flush` function waits for each exporter to flush before shutting it down anyway. |
 | `metrics` | `{ endpoint?: string; exportIntervalMs?: number } \| false` | Metrics on, with the defaults below | Metrics exporter options, or `false` to skip metrics. See [Metrics](#metrics). |
+| `logger` | `GatewayLogger` | The built-in console logger | Receives the warning a repeated call logs. |
 
 It also registers a global async context manager and labels exports with `service.name` `@frogbotai/gateway`, the package version, a per-process instance ID, and `NODE_ENV` as the environment; `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES` override them. Only the first call in a process takes effect; later calls log a warning and return a no-op `flush`.
 

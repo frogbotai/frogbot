@@ -18,6 +18,7 @@ import {
   type OperationBase,
   runHooks,
 } from '../../hooks.js';
+import { type GatewayLogger, resolveLogger } from '../../observability/logger.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
 import {
   type ProviderModelPolicy,
@@ -38,6 +39,8 @@ const DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024;
 export type TranscriptionsRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
+  /** Host logger; defaults to the console logger. */
+  logger?: GatewayLogger;
   maxBodyBytes?: number;
   upstreamTimeoutMs?: number;
 };
@@ -46,6 +49,7 @@ const operation = 'transcriptions' as const;
 
 export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
   const app = new Hono();
+  const logger = resolveLogger(ctx.logger);
 
   app.post('/audio/transcriptions', async (c) => {
     const requestId = ensureRequestId(c.req.raw);
@@ -152,7 +156,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
       await runHooks(
         hooks.afterUpstream,
         { ...base, phase, finishReason, usage, response: result.responses },
-        { isolate: true },
+        { isolate: true, logger },
       );
 
       const response = toOpenAITranscriptionResponse({
@@ -175,7 +179,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
         await runHooks(
           hooks.afterError,
           { ...base, phase: 'afterError', failedPhase: phase, error: err },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
       throw err;
@@ -191,7 +195,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
             durationMs: Date.now() - startedAt,
             error: operationError,
           },
-          { isolate: true },
+          { isolate: true, logger },
         );
       }
     }

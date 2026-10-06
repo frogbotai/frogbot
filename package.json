@@ -15,7 +15,7 @@
     "ticket": "node scripts/ticket.mjs",
     "typecheck": "pnpm --filter \"./packages/**\" build && pnpm -r --no-bail typecheck",
     "test": "vitest run",
-    "test:unit": "vitest run --project unit",
+    "test:unit": "vitest run --project unit --project gateway-unit",
     "test:ui": "vitest run --project ui",
     "test:browser": "playwright test --config test/browser/playwright.config.ts",
     "test:int": "vitest run --project int",

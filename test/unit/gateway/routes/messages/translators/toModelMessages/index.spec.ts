@@ -6,7 +6,7 @@
 // splitting, multimodal ingestion, tool_use_id correlation, cache_control
 // forwarding, and assistant block handling.
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { UnsupportedModalityError } from '../../../../../../../packages/gateway/src/errors/gatewayError.js';
 import { toModelMessages } from '../../../../../../../packages/gateway/src/routes/messages/translators/toModelMessages/index.js';
@@ -442,8 +442,17 @@ describe('assistant messages', () => {
     ]);
   });
 
-  test('drops unknown assistant block types', () => {
+  test('drops unknown assistant block types and warns the logger', () => {
+    const logger = {
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      fatal: vi.fn(),
+    };
     const result = toModelMessages({
+      logger,
       messages: [
         {
           role: 'assistant',
@@ -455,5 +464,9 @@ describe('assistant messages', () => {
       ],
     });
     expect(result).toEqual([{ role: 'assistant', content: 'kept' }]);
+    expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
+      { blockType: 'server_tool_use', messageIndex: 0 },
+      'unsupported assistant content block type "server_tool_use" in messages[0] — skipped',
+    );
   });
 });

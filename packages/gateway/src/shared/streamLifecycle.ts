@@ -43,6 +43,7 @@ import {
   type OperationBase,
   runHooks,
 } from '../hooks.js';
+import type { GatewayLogger } from '../observability/logger.js';
 
 export type StreamDoneOutcome =
   { kind: 'done' } | { kind: 'error'; error: unknown } | { kind: 'cancel'; reason?: unknown };
@@ -76,8 +77,9 @@ export function createStreamLifecycle(args: {
   hooks: Hooks;
   startedAt: number;
   phase: HookPhase;
+  logger: GatewayLogger;
 }): StreamLifecycle {
-  const { base, hooks, startedAt, phase } = args;
+  const { base, hooks, startedAt, phase, logger } = args;
 
   let finished = false;
   let capturedError: unknown;
@@ -99,7 +101,7 @@ export function createStreamLifecycle(args: {
     await runHooks(
       hooks.afterError,
       { ...base, phase: 'afterError', failedPhase: phase, error },
-      { isolate: true },
+      { isolate: true, logger },
     );
   }
 
@@ -119,7 +121,7 @@ export function createStreamLifecycle(args: {
         usage: fields.usage,
         warnings: fields.warnings,
       },
-      { isolate: true },
+      { isolate: true, logger },
     );
   }
 
@@ -140,7 +142,7 @@ export function createStreamLifecycle(args: {
         durationMs: Date.now() - startedAt,
         error: fields.error,
       },
-      { isolate: true },
+      { isolate: true, logger },
     );
   }
 

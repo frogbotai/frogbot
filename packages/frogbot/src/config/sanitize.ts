@@ -734,6 +734,7 @@ function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
 
     if (mode === 'runtime') throw new Error(message);
 
+    // eslint-disable-next-line no-console
     console.warn(message);
   }
 
@@ -1068,6 +1069,7 @@ function sanitizeAgents(
       if (message) {
         if (mode === 'runtime') throw new Error(message);
 
+        // eslint-disable-next-line no-console
         console.warn(message);
       }
     }
@@ -1083,6 +1085,7 @@ function sanitizeAgents(
       const agentToolSlugs = new Set(agentTools?.map(({ slug }) => slug));
       for (const slug of agentToolSlugs) {
         if (rootTools.some((tool) => tool.slug === slug)) {
+          // eslint-disable-next-line no-console
           console.warn(
             `[frogbot] Agent '${agent.slug}' tool '${slug}' shadows root tool '${slug}'.`,
           );

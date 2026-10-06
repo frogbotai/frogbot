@@ -67,6 +67,9 @@ function makeLogFn(level: Exclude<LogLevel, 'silent'>): LogFn {
       typeof first === 'string'
         ? { level, time: Date.now(), msg: first }
         : { level, time: Date.now(), msg, ...first };
+    // The default sink for a standalone gateway with no host logger. Every other
+    // gateway log goes through a GatewayLogger, so this is its only console write.
+    // eslint-disable-next-line no-console
     console.log(JSON.stringify(entry));
   };
 }
@@ -88,6 +91,10 @@ export function createLogger(options: LoggerOptions = {}): GatewayLogger {
     fatal: at('fatal'),
   };
 }
+
+/** The host's logger when one is passed, otherwise a console logger built from the options. */
+export const resolveLogger = (logger: GatewayLogger | LoggerOptions | undefined): GatewayLogger =>
+  isLoggerInstance(logger) ? logger : createLogger(logger);
 
 const operationModality: Record<HookOperation, string> = {
   'chat.completions': 'chat',
@@ -181,7 +188,7 @@ function errorLog(args: AfterErrorHookArgs) {
   };
 }
 
-function serializeError(error: unknown, seen = new WeakSet<object>()): unknown {
+export function serializeError(error: unknown, seen = new WeakSet<object>()): unknown {
   if (!(error instanceof Error)) return serializeValue(error, seen);
   if (seen.has(error)) return '[Circular]';
   seen.add(error);
