@@ -11,11 +11,20 @@ import type {
   ConnectionStore,
 } from '../../packages/frogbot/src/connections/store.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
-import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
+import { createPieceHelpers, definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 const client = vi.fn(({ auth }) => ({ token: auth.token.value }));
+const { defineAction } = createPieceHelpers<{ token: string }>();
+const read = defineAction({
+  slug: 'read',
+  description: 'Read',
+  input: z.object({}),
+  run({ client }) {
+    return Promise.resolve(client.token);
+  },
+});
 const createPiece = definePiece({
   slug: 'example',
   label: 'Example',
@@ -32,16 +41,7 @@ const createPiece = definePiece({
     scopes: [],
     toAuth: ({ tokens }) => ({ token: tokens.access_token }),
   },
-  actions: [
-    {
-      slug: 'read',
-      description: 'Read',
-      input: z.object({}),
-      async run({ client }) {
-        return client.token;
-      },
-    },
-  ],
+  actions: [read],
 });
 
 describe(`connection resolution and static routes [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
@@ -62,7 +62,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     endpoints[0].handler({
       ...request(user),
       routeParams: { piece: 'example' },
-      json: async () => body,
+      json: () => Promise.resolve(body),
     } as never);
   const remove = (id: number | string, user = owner) =>
     endpoints[1].handler({

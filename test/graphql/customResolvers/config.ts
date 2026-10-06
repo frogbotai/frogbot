@@ -59,7 +59,7 @@ export default await buildTestConfig({
         type: buildPaginatedListType('RecentUsers', context.collections[usersSlug].graphQL!.type),
       },
       nestedContext: {
-        type: new GraphQL.GraphQLObjectType({
+        type: new GraphQL.GraphQLObjectType<{ instance: unknown }, ResolverContext>({
           name: 'CustomResolverContext',
           fields: {
             label: { type: GraphQL.GraphQLString },
@@ -113,10 +113,10 @@ export default await buildTestConfig({
     mutations: (GraphQL) => ({
       mutationFailure: {
         type: GraphQL.GraphQLString,
-        resolve: async (_source: unknown, _args: unknown, { req }: ResolverContext) => {
+        resolve: (_source: unknown, _args: unknown, { req }: ResolverContext) => {
           seenFrogBot.resolver = req.frogbot;
 
-          throw new Error('Custom mutation failed');
+          return Promise.reject(new Error('Custom mutation failed'));
         },
       },
       addNote: {

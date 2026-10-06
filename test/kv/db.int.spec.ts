@@ -9,6 +9,33 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { expiryTTL, kvContract, waitForExpiry } from './contract.js';
 import { createKVRuntimeHarness, type KVRuntime } from './runtime.js';
 
+function expectSeparateNativeConnections(
+  first: KVRuntime,
+  second: KVRuntime,
+  collection: string,
+  custom: boolean,
+) {
+  if (first.frogbot.db.name === 'mongoose') {
+    const a = first.frogbot.db as unknown as MongooseAdapter;
+    const b = second.frogbot.db as unknown as MongooseAdapter;
+    expect(a.connection).not.toBe(b.connection);
+    expect(a.connection.name).toBe(b.connection.name);
+    if (custom) expect(a.collections[collection].collection.name).toBe('mapped_kv_records');
+  } else if (first.frogbot.db.name === 'postgres') {
+    const a = first.frogbot.db as unknown as PostgresAdapter;
+    const b = second.frogbot.db as unknown as PostgresAdapter;
+    expect(a.pool).not.toBe(b.pool);
+    expect(a.schemaName).toBe(b.schemaName);
+    if (custom) expect(a.tableNameMap.get('custom_kv_store')).toBe('mapped_kv_records');
+  } else {
+    const a = first.frogbot.db as unknown as SQLiteAdapter;
+    const b = second.frogbot.db as unknown as SQLiteAdapter;
+    expect(a.client).not.toBe(b.client);
+    expect(a.clientConfig.url).toBe(b.clientConfig.url);
+    if (custom) expect(a.tableNameMap.get('custom_kv_store')).toBe('mapped_kv_records');
+  }
+}
+
 for (const custom of [false, true]) {
   describe(`database KV [${custom ? 'custom collection and table' : 'no kv config'}]`, () => {
     const collection = custom ? 'custom-kv-store' : 'payload-kv';
@@ -64,25 +91,7 @@ for (const custom of [false, true]) {
       expect(first.frogbot).not.toBe(second.frogbot);
       expect(first.payload).not.toBe(second.payload);
       expect(first.frogbot.db).not.toBe(second.frogbot.db);
-      if (first.frogbot.db.name === 'mongoose') {
-        const a = first.frogbot.db as unknown as MongooseAdapter;
-        const b = second.frogbot.db as unknown as MongooseAdapter;
-        expect(a.connection).not.toBe(b.connection);
-        expect(a.connection.name).toBe(b.connection.name);
-        if (custom) expect(a.collections[collection].collection.name).toBe('mapped_kv_records');
-      } else if (first.frogbot.db.name === 'postgres') {
-        const a = first.frogbot.db as unknown as PostgresAdapter;
-        const b = second.frogbot.db as unknown as PostgresAdapter;
-        expect(a.pool).not.toBe(b.pool);
-        expect(a.schemaName).toBe(b.schemaName);
-        if (custom) expect(a.tableNameMap.get('custom_kv_store')).toBe('mapped_kv_records');
-      } else {
-        const a = first.frogbot.db as unknown as SQLiteAdapter;
-        const b = second.frogbot.db as unknown as SQLiteAdapter;
-        expect(a.client).not.toBe(b.client);
-        expect(a.clientConfig.url).toBe(b.clientConfig.url);
-        if (custom) expect(a.tableNameMap.get('custom_kv_store')).toBe('mapped_kv_records');
-      }
+      expectSeparateNativeConnections(first, second, collection, custom);
     });
 
     it('registers nullable expiration and one hourly cleanup task', () => {

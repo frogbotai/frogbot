@@ -252,14 +252,14 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
     it('duplicateFromID copies the file of an upload document', async () => {
       const source = await createAttachment(await writeFixture('copied.txt', 'ribbit'));
 
-      const copy = (await frogbot.create({
+      const copy = await frogbot.create({
         collection: 'attachments',
         data: {},
         duplicateFromID: source.id,
-      })) as { filename: string };
+      });
 
       expect(copy.filename).not.toBe(source.filename);
-      expect(await readFile(join(filesDir, copy.filename), 'utf8')).toBe('ribbit');
+      expect(await readFile(join(filesDir, String(copy.filename)), 'utf8')).toBe('ribbit');
     });
 
     it('renames a file whose name is already on disk', async () => {

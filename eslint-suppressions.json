@@ -14,29 +14,6 @@
       "count": 1
     }
   },
-  "test/__helpers/shared/db/dbAdapters.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "test/__helpers/shared/storage/storageContractSuite.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "test/api-key-attribution/int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/auth/session.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 14
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 11
-    }
-  },
   "test/browser/fixtures/custom-field/src/app/(site)/theme-check/system/page.tsx": {
     "jsx-a11y/aria-role": {
       "count": 1
@@ -47,78 +24,9 @@
       "count": 1
     }
   },
-  "test/connections/int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 3
-    }
-  },
-  "test/email/int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/generateTypes.ts": {
-    "no-console": {
-      "count": 4
-    }
-  },
-  "test/hooks-access/int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "test/kv/db.int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
-  "test/kv/mongo-native.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 2
-    }
-  },
-  "test/kv/sql-postgres.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 9
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 2
-    }
-  },
-  "test/live/doctor.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "test/live/rag.live.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/rich-text/config.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "test/search/mongodb/hybrid.int.spec.ts": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "test/sign-in/int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 4
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 5
-    }
-  },
-  "test/triggers/int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 3
     }
   },
   "test/ui/next/exports/ChatView.client.spec.tsx": {

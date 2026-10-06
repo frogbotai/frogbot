@@ -2,16 +2,10 @@ import type { CollectionSlug, FrogBotInstance } from 'frogbot';
 import { getFrogBotPayload } from 'frogbot/test';
 
 import { empty } from './scenarios/empty';
-import { singleUser } from './scenarios/singleUser';
-import { workspaceWithFiles } from './scenarios/workspaceWithFiles';
 
-export type Scenario = 'empty' | 'singleUser' | 'workspaceWithFiles';
+export type Scenario = 'empty';
 
-const scenarios = {
-  empty,
-  singleUser,
-  workspaceWithFiles,
-} as const;
+const scenarios = { empty } as const;
 
 /**
  * Truncate every collection on the booted frogbot instance, trashed

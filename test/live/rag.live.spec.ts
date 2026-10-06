@@ -12,9 +12,9 @@ import { randomUUID } from 'node:crypto';
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import { buildConfig, type FrogBotConfig, type FrogBotInstance } from 'frogbot';
 import { BasePayload } from 'payload';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 
-import { postgresAdapter } from '../../packages/db-postgres/src/index.js';
+import { type PostgresAdapter, postgresAdapter } from '../../packages/db-postgres/src/index.js';
 import { initFrogBotFromPayload } from '../../packages/frogbot/dist/frogbot.js';
 import {
   closePostgresPool,
@@ -74,12 +74,12 @@ function mongoTarget(name: string, envKey: string, fallback?: string): Target {
   return {
     name,
     keys: fallback ? KEYS : [...KEYS, envKey],
-    async setup() {
+    setup() {
       const url = new URL(process.env[envKey] ?? fallback!);
       url.pathname = `/frogbot-live-rag-${randomUUID().slice(0, 8)}`;
       const adapter = mongooseAdapter({ url: url.toString() });
 
-      return {
+      return Promise.resolve({
         db: adapter,
         beforeDestroy: async () => {
           const payloadDb = current?.payload.db as {
@@ -87,7 +87,7 @@ function mongoTarget(name: string, envKey: string, fallback?: string): Target {
           };
           await payloadDb.connection?.dropDatabase();
         },
-      };
+      });
     },
   };
 }
@@ -150,17 +150,20 @@ async function embed(texts: string[]): Promise<number[][]> {
   return res.body.data!.map((d) => d.embedding);
 }
 
-async function waitFor<T>(read: () => Promise<T>, done: (v: T) => boolean): Promise<T> {
-  const started = Date.now();
-  for (;;) {
-    const value = await read().catch((error: unknown) => error as T);
-    if (!(value instanceof Error) && done(value)) return value;
-    // Atlas search indexes build asynchronously (seconds locally, up to a minute hosted).
-    if (Date.now() - started > 90_000) {
-      throw new Error(`search never became ready: ${String(value)}`);
-    }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
+// Atlas search indexes build asynchronously (seconds locally, up to a minute hosted).
+function waitFor<T>(read: () => Promise<T>, done: (v: T) => boolean): Promise<T> {
+  return vi.waitFor(
+    async () => {
+      const value = await read();
+      expect(done(value), 'search never became ready').toBe(true);
+      return value;
+    },
+    { timeout: 90_000, interval: 1000 },
+  );
+}
+
+function isPostgres(db: BasePayload['db'] | undefined): db is BasePayload['db'] & PostgresAdapter {
+  return db?.name === 'postgres';
 }
 
 for (const target of TARGETS) {
@@ -231,9 +234,7 @@ for (const target of TARGETS) {
     afterAll(async () => {
       await setup?.beforeDestroy?.().catch(() => undefined);
       // payload.destroy() leaves the pg pool open; close it before dropping the database.
-      const pool = (
-        payload?.db as { drizzle?: { $client?: Parameters<typeof closePostgresPool>[0] } }
-      )?.drizzle?.$client;
+      const pool = isPostgres(payload?.db) ? payload.db.pool : undefined;
       await payload?.destroy();
       await closePostgresPool(pool);
       current = undefined;

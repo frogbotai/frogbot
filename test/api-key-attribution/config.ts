@@ -11,21 +11,27 @@ export const upstreamPort = testPort(3989);
 export const captureBlobs = new Map<string, Uint8Array>();
 
 const captureStorage: CaptureStorage = {
-  async put(key, bytes) {
+  put(key, bytes) {
     captureBlobs.set(key, bytes);
+
+    return Promise.resolve();
   },
-  async get(key) {
+  get(key) {
     const bytes = captureBlobs.get(key);
 
-    if (!bytes) throw new Error(`Missing capture blob ${key}`);
+    if (!bytes) return Promise.reject(new Error(`Missing capture blob ${key}`));
 
-    return bytes;
+    return Promise.resolve(bytes);
   },
-  async delete(key) {
+  delete(key) {
     captureBlobs.delete(key);
+
+    return Promise.resolve();
   },
-  async *list() {
-    yield* captureBlobs.keys();
+  list() {
+    const keys = captureBlobs.keys();
+
+    return { [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve(keys.next()) }) };
   },
 };
 

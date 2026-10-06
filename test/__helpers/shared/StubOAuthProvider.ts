@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { createServer } from 'node:http';
+import { createServer, type IncomingMessage } from 'node:http';
 
 export type StubOAuthRequests = {
   authorize: URLSearchParams[];
@@ -30,9 +30,7 @@ export function pkceChallenge(verifier: string): string {
   return createHash('sha256').update(verifier).digest('base64url');
 }
 
-async function readForm(
-  req: Parameters<Parameters<typeof createServer>[0]>[0],
-): Promise<Record<string, string>> {
+async function readForm(req: IncomingMessage): Promise<Record<string, string>> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
   return Object.fromEntries(new URLSearchParams(Buffer.concat(chunks).toString()));

@@ -7,6 +7,7 @@ import {
 } from '@frogbotai/richtext-lexical';
 import type { HTMLConvertersFunctionAsync } from '@frogbotai/richtext-lexical/html-async';
 import type { CollectionConfig } from 'frogbot';
+import type { BlockJSX } from 'payload';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { articlesSlug, htmlArticlesSlug, restrictedNotesSlug, usersSlug } from './shared.js';
@@ -44,27 +45,27 @@ const customConverters: HTMLConvertersFunctionAsync = ({ defaultConverters }) =>
 export const InlineCodeBlock = {
   slug: 'InlineCode',
   jsx: {
-    import: ({ children }: { children: string }) => ({ code: children }),
-    export: ({ fields }: { fields: { code?: string } }) => ({
+    import: ({ children }) => ({ code: children }),
+    export: ({ fields }) => ({
       children: fields.code ?? '',
       props: {},
     }),
-  },
+  } satisfies BlockJSX,
   fields: [{ name: 'code', type: 'code' as const }],
 };
 
 export const CalloutBlock = {
   slug: 'Callout',
   jsx: {
-    import: ({ children, markdownToLexical, props }: any) => ({
+    import: ({ children, markdownToLexical, props }) => ({
       content: markdownToLexical({ markdown: children }),
-      tone: props?.tone,
+      tone: props.tone,
     }),
-    export: ({ fields, lexicalToMarkdown }: any) => ({
+    export: ({ fields, lexicalToMarkdown }) => ({
       children: lexicalToMarkdown({ editorState: fields.content }),
       props: { tone: fields.tone },
     }),
-  },
+  } satisfies BlockJSX,
   fields: [
     { name: 'tone', type: 'select' as const, options: ['info', 'warning'] },
     {

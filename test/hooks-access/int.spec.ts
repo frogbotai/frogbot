@@ -605,17 +605,13 @@ describe('hooks-access', () => {
     });
 
     it('error message is returned in response', async () => {
-      try {
-        await booted.frogbot.create({
+      await expect(
+        booted.frogbot.create({
           collection: validateSlug,
           data: { title: 'hello', mustMatch: 'mismatch' },
           overrideAccess: true,
-        });
-        expect.fail('should have thrown');
-      } catch (err: any) {
-        const message = err.message || JSON.stringify(err);
-        expect(message.toLowerCase()).toContain('must match');
-      }
+        }),
+      ).rejects.toThrow(/must match/i);
     });
 
     it('req.frogbot is defined in validate context', async () => {
@@ -962,14 +958,12 @@ describe('hooks-access', () => {
 
         // Trigger lockout by exceeding maxLoginAttempts (2)
         for (let i = 0; i < 3; i++) {
-          try {
-            await booted.frogbot.login({
+          await expect(
+            booted.frogbot.login({
               collection: usersSlug,
               data: { email: testUserEmail, password: 'wrong' },
-            });
-          } catch {
-            // expected
-          }
+            }),
+          ).rejects.toThrow();
         }
 
         // Account should be locked — login with correct password fails

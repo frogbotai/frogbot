@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import { createClientConfig } from 'payload';
+import { createClientConfig, getLocalI18n } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
@@ -58,8 +58,9 @@ describe(`root admin autoLogin and autoRefresh [${process.env.FROGBOT_DATABASE |
 
     const clientConfig = createClientConfig({
       config: payload.config,
-      i18n: { t: (key: string) => key } as never,
+      i18n: await getLocalI18n({ config: payload.config, language: 'en' }),
       importMap: {},
+      user: true,
     });
 
     expect(clientConfig.admin).toMatchObject({ autoLogin: { email }, autoRefresh: true });

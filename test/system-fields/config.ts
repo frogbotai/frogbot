@@ -76,7 +76,10 @@ const useTemporaryUploadDir: NonNullable<
   Parameters<typeof importExportPlugin>[0]['overrideImportCollection']
 > = ({ collection }) => ({
   ...collection,
-  upload: { ...collection.upload, staticDir: importsDir },
+  upload: {
+    ...(typeof collection.upload === 'object' && collection.upload),
+    staticDir: importsDir,
+  },
 });
 
 export function buildTicketsConfig({ db, onInit }: Pick<FrogBotConfig, 'db' | 'onInit'>) {

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { decodeCapture } from '../../packages/plugins/plugin-capture/src/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -110,7 +110,7 @@ describe('API key attribution on usage rows and captures', () => {
     return response.headers.get('x-request-id')!;
   };
 
-  const findOne = (collection: string, requestId: string) =>
+  const findOne = (collection: string, requestId: string): Promise<Row> =>
     vi.waitFor(async () => {
       const result = await booted.frogbot.find({
         collection: collection as never,
@@ -121,7 +121,7 @@ describe('API key attribution on usage rows and captures', () => {
 
       expect(result.docs).toHaveLength(1);
 
-      return result.docs[0] as Row;
+      return result.docs[0];
     });
 
   const totalCost = async (id: number | string) =>
@@ -220,26 +220,26 @@ describe('API key attribution on usage rows and captures', () => {
       PAYLOAD_DROP_DATABASE: process.env.PAYLOAD_DROP_DATABASE,
     };
 
-    process.env.FROGBOT_CONFIG_PATH = path.join(dirname, 'config.ts');
-    delete process.env.PAYLOAD_DROP_DATABASE;
-
-    try {
-      await exportCaptures(['--api-key', String(key.id), '--output', output]);
-
-      expect(process.exitCode ?? 0).toBe(0);
-
-      const lines = (await readFile(output, 'utf8')).trim().split('\n');
-      const records = lines.map((line) => JSON.parse(line) as Row);
-
-      expect(records.map((record) => record.requestId)).toEqual([keyedRequest]);
-      expect(records[0]?.apiKey).toBe(String(key.id));
-    } finally {
+    onTestFinished(async () => {
       for (const [name, value] of Object.entries(env)) {
         if (value === undefined) delete process.env[name];
         else process.env[name] = value;
       }
 
       await rm(directory, { recursive: true, force: true });
-    }
+    });
+
+    process.env.FROGBOT_CONFIG_PATH = path.join(dirname, 'config.ts');
+    delete process.env.PAYLOAD_DROP_DATABASE;
+
+    await exportCaptures(['--api-key', String(key.id), '--output', output]);
+
+    expect(process.exitCode ?? 0).toBe(0);
+
+    const lines = (await readFile(output, 'utf8')).trim().split('\n');
+    const records = lines.map((line) => JSON.parse(line) as Row);
+
+    expect(records.map((record) => record.requestId)).toEqual([keyedRequest]);
+    expect(records[0]?.apiKey).toBe(String(key.id));
   });
 });

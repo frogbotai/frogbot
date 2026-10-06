@@ -1,17 +1,17 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import type { RichTextHtmlArticle } from './frogbot-types.js';
 import { htmlArticlesSlug, restrictedNotesSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function paragraph(text: string): SerializedEditorState {
+function paragraph(text: string): RichTextHtmlArticle['content'] {
   return {
     root: {
       children: [
@@ -45,7 +45,7 @@ function paragraph(text: string): SerializedEditorState {
   };
 }
 
-function relationship(id: number | string): SerializedEditorState {
+function relationship(id: number | string): RichTextHtmlArticle['content'] {
   return {
     root: {
       children: [
@@ -70,7 +70,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
   let booted: BootedFrogBot;
   let pendingTransaction: null | number | string = null;
 
-  async function renderRelationship({
+  function renderRelationship({
     depth,
     draft,
     id,
@@ -142,7 +142,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
     expect(created.contentHTML).toBe(
       '<div class="frogbot-richtext"><p><strong>Top level</strong></p></div>',
     );
-    expect(created.details.contentHTML).toBe(
+    expect(created.details?.contentHTML).toBe(
       '<div class="frogbot-richtext"><p><strong>Grouped</strong></p></div>',
     );
   });
@@ -207,10 +207,9 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       overrideAccess: true,
     });
 
-    const raw = await booted.frogbot.db.findOne<{
-      contentHTML?: string | null;
-      storedHTML?: string | null;
-    }>({
+    const raw = await booted.frogbot.db.findOne<
+      Pick<RichTextHtmlArticle, 'contentHTML' | 'id' | 'storedHTML'>
+    >({
       collection: htmlArticlesSlug,
       where: { id: { equals: created.id } },
     });
@@ -385,7 +384,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
 
     const req = await booted.frogbot.createRequest({ user: { ...user, collection: usersSlug } });
 
-    req.transactionID = transactionID;
+    req.transactionID = transactionID ?? undefined;
 
     const note = await booted.frogbot.create({
       collection: restrictedNotesSlug,

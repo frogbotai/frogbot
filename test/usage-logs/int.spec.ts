@@ -115,7 +115,7 @@ describe('usage logs', () => {
 
   describe('cost', () => {
     it('prices a custom model with its configured cost', async () => {
-      logUsage({
+      await logUsage({
         requestId: 'priced-write',
         model: 'zen/priced',
         operation: 'chat.completions',

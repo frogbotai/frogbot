@@ -10,7 +10,6 @@ import {
   HeadingFeature,
   ParagraphFeature,
 } from '@frogbotai/richtext-lexical';
-import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -18,11 +17,12 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { DividerFeature } from '../e2e/fixtures/rich-text/src/__docs-samples__/guide-examples/custom-features/divider/feature.server.js';
 import config, { CalloutBlock, InlineCodeBlock } from './config.js';
+import type { RichTextArticle } from './frogbot-types.js';
 import { articlesSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function paragraph(text: string): SerializedEditorState {
+function paragraph(text: string): RichTextArticle['content'] {
   return {
     root: {
       children: [
@@ -185,7 +185,7 @@ describe('rich text integration [sqlite]', () => {
     expect(editorConfig.features.enabledFeatures).toEqual(
       expect.arrayContaining(['paragraph', 'divider']),
     );
-    expect(state.root.children.some((node) => node.type === 'divider')).toBe(true);
+    expect(state.root.children.map((node) => node.type)).toContain('divider');
     expect(markdown).toContain('+++');
     expect(html).toContain('<hr>');
   });

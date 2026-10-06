@@ -2,22 +2,29 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { setTimeout } from 'node:timers/promises';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { serve } from '@hono/node-server';
-import { BasePayload, type CollectionBeforeChangeHook } from 'payload';
+import { BasePayload, type TypeWithID } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { z } from 'zod';
 
+import type { CollectionBeforeChangeHook } from '../../packages/frogbot/src/collections/config/types.js';
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { createOAuthState } from '../../packages/frogbot/src/connections/oauth/index.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { createSQLKV } from '../../packages/frogbot/src/kv/adapters/sql.js';
 import * as locks from '../../packages/frogbot/src/kv/lock.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
-import type { SignInMethod } from '../../packages/frogbot/src/pieces/types.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
+
+type StoredUser = TypeWithID & {
+  email: string;
+  hash?: string;
+  salt?: string;
+  _verified?: boolean;
+  sessions?: { id: string }[];
+};
 
 describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
   let frogbot: FrogBot;
@@ -25,7 +32,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   let provider: ReturnType<typeof serve>;
   let baseURL: string;
   let databaseDir: string;
-  let method: SignInMethod;
+  let method: ReturnType<typeof signInMethods>['method'];
   const exchanges: URLSearchParams[] = [];
   const accounts: { tokens: unknown; client: unknown }[] = [];
   const hooks: string[] = [];
@@ -58,8 +65,49 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       .find((value) => value.startsWith('identity-token='))
       ?.split(';')[0];
   const rawUser = async (email: string, collection = 'users') =>
-    (await frogbot.db.find({ collection, where: { email: { equals: email } }, pagination: false }))
-      .docs[0];
+    (
+      await frogbot.db.find<StoredUser>({
+        collection,
+        where: { email: { equals: email } },
+        pagination: false,
+      })
+    ).docs[0];
+  const signInMethods = (providerURL: string) => {
+    const createIdentity = definePiece({
+      slug: 'identity',
+      label: 'Identity',
+      auth: z.object({ access_token: z.string() }),
+      client: ({ auth }: { auth: unknown }) => auth,
+      oauth: {
+        authorizationUrl: `${providerURL}/authorize`,
+        tokenUrl: `${providerURL}/token`,
+        scopes: ['openid', 'email'],
+        pkce: true,
+        toAuth: ({ tokens }) => ({ access_token: tokens.access_token }),
+        account: ({ tokens, client }) => {
+          accounts.push({ tokens, client });
+          const email = (tokens.access_token ?? '').slice('fresh:'.length);
+          return Promise.resolve({
+            id: 'provider-account',
+            label: 'Provider account',
+            email: email === 'missing' ? (undefined as unknown as string) : email,
+          });
+        },
+      },
+      actions: [],
+    });
+    return {
+      method: createIdentity({
+        slug: 'work',
+        oauth: { clientId: 'client', clientSecret: 'private-app-secret' },
+        auth: { access_token: 'wrong-developer-fallback' },
+      }),
+      otherMethod: createIdentity({
+        slug: 'other',
+        oauth: { clientId: 'other-client', clientSecret: 'other-secret' },
+      }),
+    };
+  };
 
   beforeAll(async () => {
     databaseDir = await mkdtemp(join(tmpdir(), 'frogbot-test-sign-in-'));
@@ -87,38 +135,9 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
         (address) => resolve(`http://127.0.0.1:${address.port}`),
       );
     });
-    const createIdentity = definePiece({
-      slug: 'identity',
-      label: 'Identity',
-      auth: z.object({ access_token: z.string() }),
-      client: ({ auth }) => auth,
-      oauth: {
-        authorizationUrl: `${providerURL}/authorize`,
-        tokenUrl: `${providerURL}/token`,
-        scopes: ['openid', 'email'],
-        pkce: true,
-        toAuth: ({ tokens }) => ({ access_token: tokens.access_token }),
-        account: async ({ tokens, client }) => {
-          accounts.push({ tokens, client });
-          const email = tokens.access_token.slice('fresh:'.length);
-          return {
-            id: 'provider-account',
-            label: 'Provider account',
-            email: email === 'missing' ? (undefined as unknown as string) : email,
-          };
-        },
-      },
-      actions: [],
-    });
-    method = createIdentity({
-      slug: 'work',
-      oauth: { clientId: 'client', clientSecret: 'private-app-secret' },
-      auth: { access_token: 'wrong-developer-fallback' },
-    });
-    const otherMethod = createIdentity({
-      slug: 'other',
-      oauth: { clientId: 'other-client', clientSecret: 'other-secret' },
-    });
+    const methods = signInMethods(providerURL);
+    method = methods.method;
+    const otherMethod = methods.otherMethod;
     const createTestEmail = definePiece({
       slug: 'test-email',
       label: 'Test email',
@@ -271,34 +290,45 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
         data: { email, password: 'local-test-password', _verified: true },
       });
       const run = locks.runKVLock;
-      const lease = vi
-        .spyOn(locks, 'runKVLock')
-        .mockImplementation((args) => run({ ...args, ttl: 300 }));
+      const signals: AbortSignal[] = [];
+      const lease = vi.spyOn(locks, 'runKVLock').mockImplementation((args) =>
+        run({
+          ...args,
+          ttl: 300,
+          fn: (lock) => {
+            signals.push(lock.signal);
+            return args.fn(lock);
+          },
+        }),
+      );
       const update = frogbot.db.updateOne.bind(frogbot.db);
       let delayed = false;
       const write = vi.spyOn(frogbot.db, 'updateOne').mockImplementation(async (args) => {
         const result = await update(args);
         if (!delayed && args.collection === 'users' && Array.isArray(args.data.sessions)) {
           delayed = true;
-          await setTimeout(750);
+          await vi.waitFor(() => expect(signals.some(({ aborted }) => aborted)).toBe(true), {
+            timeout: 5000,
+          });
         }
         return result;
       });
-      try {
-        const response = await request('/rest/v1/users/login', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ email, password: 'local-test-password' }),
-        });
-        expect(delayed).toBe(true);
-        expect(response.status).toBe(500);
-        expect(sessionCookie(response)).toBeUndefined();
-        expect((await rawUser(email)).sessions ?? []).toEqual([]);
-        expect(Object.keys(frogbot.db.sessions ?? {})).toHaveLength(0);
-      } finally {
+      onTestFinished(() => {
         write.mockRestore();
         lease.mockRestore();
-      }
+      });
+      const failed = await request('/rest/v1/users/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password: 'local-test-password' }),
+      });
+      expect(delayed).toBe(true);
+      expect(failed.status).toBe(500);
+      expect(sessionCookie(failed)).toBeUndefined();
+      expect((await rawUser(email)).sessions ?? []).toEqual([]);
+      expect(Object.keys(frogbot.db.sessions ?? {})).toHaveLength(0);
+      write.mockRestore();
+      lease.mockRestore();
       const response = await callback(await authorize({ code: email }));
       expect(response.status).toBe(302);
       expect((await rawUser(email)).sessions).toHaveLength(1);
@@ -383,19 +413,35 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     expect(exchanges).toHaveLength(0);
   });
 
-  it.each(['collection', 'method', 'browser', 'state', 'flow'])(
-    'rejects a wrong %s binding before exchange',
-    async (kind) => {
-      const flow = await authorize({ code: 'wrong-binding@example.com' });
-      if (kind === 'collection') {
+  type Flow = Awaited<ReturnType<typeof authorize>>;
+  it.each<{ kind: string; tamper: (flow: Flow) => void | Promise<void> }>([
+    {
+      kind: 'collection',
+      tamper: (flow) => {
         flow.callback.pathname = flow.callback.pathname.replace('/users/', '/customers/');
-      }
-      if (kind === 'method') {
+      },
+    },
+    {
+      kind: 'method',
+      tamper: (flow) => {
         flow.callback.pathname = flow.callback.pathname.replace('/work/', '/other/');
-      }
-      if (kind === 'browser') flow.cookie = '';
-      if (kind === 'state') flow.callback.searchParams.set('state', 'invalid');
-      if (kind === 'flow') {
+      },
+    },
+    {
+      kind: 'browser',
+      tamper: (flow) => {
+        flow.cookie = '';
+      },
+    },
+    {
+      kind: 'state',
+      tamper: (flow) => {
+        flow.callback.searchParams.set('state', 'invalid');
+      },
+    },
+    {
+      kind: 'flow',
+      tamper: async (flow) => {
         const state = await createOAuthState({
           kv: frogbot.kv,
           encryption: frogbot.config.connections.encryption,
@@ -408,14 +454,17 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
         });
         flow.callback.searchParams.set('state', state.state);
         flow.cookie = state.setCookie.split(';')[0];
-      }
-      const response = await callback(flow);
-      expect(response.status).toBe(400);
-      expect(sessionCookie(response)).toBeUndefined();
-      expect(exchanges).toHaveLength(0);
-      expect(hooks).toHaveLength(0);
+      },
     },
-  );
+  ])('rejects a wrong $kind binding before exchange', async ({ tamper }) => {
+    const flow = await authorize({ code: 'wrong-binding@example.com' });
+    await tamper(flow);
+    const response = await callback(flow);
+    expect(response.status).toBe(400);
+    expect(sessionCookie(response)).toBeUndefined();
+    expect(exchanges).toHaveLength(0);
+    expect(hooks).toHaveLength(0);
+  });
 
   it('consumes state on provider cancellation and refuses replay', async () => {
     const flow = await authorize();
@@ -494,7 +543,10 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       authorize({ code: ' Concurrent@Example.com ' }),
       authorize({ code: email, piece: 'other' }),
     ]);
-    const release = Promise.withResolvers<void>();
+    let releaseCreate!: () => void;
+    const released = new Promise<void>((resolve) => {
+      releaseCreate = resolve;
+    });
     let blocked = false;
     let contending = false;
     let overlappingReads = 0;
@@ -502,7 +554,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     const createSpy = vi.spyOn(frogbot, 'create').mockImplementation(async (args) => {
       if (args.collection === 'users' && args.data.email === email) {
         blocked = true;
-        await release.promise;
+        await released;
         blocked = false;
       }
       return create(args);
@@ -521,22 +573,22 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       return get(key);
     });
     const pending = [callback(flows[0])];
-    let responses: Response[];
-    try {
-      await vi.waitFor(() => expect(blocked).toBe(true), { timeout: 5000 });
-      pending.push(callback(flows[1]));
-      await vi.waitFor(() => expect(contending).toBe(true), { timeout: 5000 });
-      expect(overlappingReads).toBe(0);
-    } finally {
-      release.resolve();
-      try {
-        responses = await Promise.all(pending);
-      } finally {
-        createSpy.mockRestore();
-        findSpy.mockRestore();
-        getSpy.mockRestore();
-      }
-    }
+    onTestFinished(async () => {
+      releaseCreate();
+      await Promise.allSettled(pending);
+      createSpy.mockRestore();
+      findSpy.mockRestore();
+      getSpy.mockRestore();
+    });
+    await vi.waitFor(() => expect(blocked).toBe(true), { timeout: 5000 });
+    pending.push(callback(flows[1]));
+    await vi.waitFor(() => expect(contending).toBe(true), { timeout: 5000 });
+    expect(overlappingReads).toBe(0);
+    releaseCreate();
+    const responses = await Promise.all(pending);
+    createSpy.mockRestore();
+    findSpy.mockRestore();
+    getSpy.mockRestore();
     expect(responses.map(({ status }) => status)).toEqual([302, 302]);
     expect(
       beforeChange.mock.calls.filter(

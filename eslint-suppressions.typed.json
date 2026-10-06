@@ -4,99 +4,9 @@
       "count": 1
     }
   },
-  "test/__helpers/shared/StubOAuthProvider.ts": {
-    "@typescript-eslint/await-thenable": {
-      "count": 1
-    }
-  },
-  "test/__helpers/shared/clearAndSeed/scenarios/singleUser.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/__helpers/shared/clearAndSeed/scenarios/workspaceWithFiles.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/api-key-attribution/config.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 4
-    }
-  },
-  "test/api-key-attribution/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/api-keys/int.spec.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "test/auth/autoLogin.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/auth/session.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
   "test/browser/fixtures/question/src/frogbot.config.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 4
-    }
-  },
-  "test/connections/int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/connections/resolution.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 2
-    }
-  },
-  "test/email/int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/graphql/customResolvers/config.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/live/rag.live.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/rich-text/htmlField.int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/sign-in/int.spec.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/triggers/config.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
-  "test/usage-logs/custom/int.spec.ts": {
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    }
-  },
-  "test/usage-logs/int.spec.ts": {
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
     }
   }
 }

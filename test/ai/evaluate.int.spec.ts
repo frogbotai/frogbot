@@ -164,7 +164,7 @@ describe('booted TypeSafe evaluation', () => {
 
   it('evaluates local aliases and both public IDs through the real TypeSafe wire', async () => {
     const alias = await booted.frogbot.evaluate({
-      model: 'judge' as 'typesafe-ai/jev',
+      model: 'judge',
       state,
       questions,
       maxRetries: 0,
@@ -351,7 +351,7 @@ describe('booted TypeSafe evaluation', () => {
 
     await expect(
       booted.frogbot.evaluate({
-        model: 'judge' as 'typesafe-ai/jev',
+        model: 'judge',
         state,
         questions,
         req,
@@ -408,7 +408,7 @@ describe('booted TypeSafe evaluation', () => {
   it('rejects unknown evaluation models before contacting TypeSafe', async () => {
     await expect(
       booted.frogbot.evaluate({
-        model: 'typesafe-ai/unknown' as 'typesafe-ai/jev',
+        model: 'typesafe-ai/unknown' as 'typesafe-ai/jev-latest',
         state,
         questions,
         maxRetries: 0,

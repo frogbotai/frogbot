@@ -11,10 +11,11 @@ import {
   type ConnectionRow,
   ConnectionStore,
 } from '../../packages/frogbot/src/connections/store.js';
+import type { ConnectionEntry } from '../../packages/frogbot/src/connections/types.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { KVLockContentionError } from '../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
-import type { PieceInstance } from '../../packages/frogbot/src/pieces/types.js';
+import type { PieceOAuthRecipe } from '../../packages/frogbot/src/pieces/types.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 const createPiece = definePiece({
@@ -43,9 +44,47 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
   let authorization: string;
   let otherAuthorization: string;
   let customerAuthorization: string;
-  let linkedPieces: PieceInstance[];
+  let linkedPieces: ReturnType<typeof linkedPiece>[];
   const exchanges: URLSearchParams[] = [];
   const accounts: { auth: unknown; user: unknown }[] = [];
+
+  const linkedAuth = z.object({ apiKey: z.string().min(1) });
+  type LinkedAuth = z.output<typeof linkedAuth>;
+  const linkedPiece = (providerURL: string, slug: string) =>
+    definePiece({
+      slug,
+      label: slug,
+      auth: linkedAuth,
+      client: ({ auth }: { auth: unknown }) => ({ auth: linkedAuth.parse(auth) }),
+      oauth: {
+        authorizationUrl: `${providerURL}/authorize`,
+        tokenUrl: `${providerURL}/token`,
+        scopes: ['default'],
+        pkce: true,
+        toAuth: ({ tokens }) => ({
+          apiKey: tokens.access_token === 'fresh-bad-auth' ? '' : (tokens.access_token ?? ''),
+        }),
+        account: ({ client, req }) => {
+          accounts.push({ auth: client.auth, user: req.user });
+          return Promise.resolve({
+            id: client.auth.apiKey === 'fresh-bad-account' ? '' : 'account',
+            label: 'Linked account',
+            email: 'linked@example.com',
+          });
+        },
+      } satisfies PieceOAuthRecipe<LinkedAuth, { auth: LinkedAuth }>,
+      actions: [],
+    })({
+      slug: `${slug}-instance`,
+      oauth: {
+        clientId: 'private-client-id',
+        clientSecret: 'private-client-secret',
+        scopes: ['read', 'write'],
+      },
+      ...(slug === 'case-ac' || slug === 'case-abc'
+        ? { auth: { apiKey: 'developer-fallback' } }
+        : {}),
+    });
 
   const request = (path: string, init: RequestInit = {}) =>
     fetch(new URL(path, baseURL), { ...init, redirect: 'manual' });
@@ -102,40 +141,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       );
     });
     linkedPieces = ['case-c', 'case-ac', 'case-bc', 'case-abc'].map((slug) =>
-      definePiece({
-        slug,
-        label: slug,
-        auth: z.object({ apiKey: z.string().min(1) }),
-        client: ({ auth }) => ({ auth }),
-        oauth: {
-          authorizationUrl: `${providerURL}/authorize`,
-          tokenUrl: `${providerURL}/token`,
-          scopes: ['default'],
-          pkce: true,
-          toAuth: ({ tokens }) => ({
-            apiKey: tokens.access_token === 'fresh-bad-auth' ? '' : tokens.access_token,
-          }),
-          account: async ({ client, req }) => {
-            accounts.push({ auth: client.auth, user: req.user });
-            return {
-              id: client.auth.apiKey === 'fresh-bad-account' ? '' : 'account',
-              label: 'Linked account',
-              email: 'linked@example.com',
-            };
-          },
-        },
-        actions: [],
-      })({
-        slug: `${slug}-instance`,
-        oauth: {
-          clientId: 'private-client-id',
-          clientSecret: 'private-client-secret',
-          scopes: ['read', 'write'],
-        },
-        ...(slug === 'case-ac' || slug === 'case-abc'
-          ? { auth: { apiKey: 'developer-fallback' } }
-          : {}),
-      }),
+      linkedPiece(providerURL, slug),
     );
     const instance = createPiece({
       slug: 'custom-instance',
@@ -156,11 +162,11 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       ],
       connections: [
         { piece: instance, oauth: true, secret: true },
-        ...linkedPieces.map((piece) => ({
-          piece,
-          oauth: true,
-          secret: piece.piece === 'case-bc' || piece.piece === 'case-abc',
-        })),
+        ...linkedPieces.map((piece): ConnectionEntry<typeof piece> =>
+          piece.piece === 'case-bc' || piece.piece === 'case-abc'
+            ? { piece, oauth: true, secret: true }
+            : { piece, oauth: true },
+        ),
       ],
     });
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
@@ -379,16 +385,22 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     expect(await store.get({ owner, piece })).toMatchObject({ credential: 'replacement' });
   });
 
-  it.each(['case-c', 'case-ac', 'case-bc', 'case-abc'])(
-    'links %s through real HTTP, PKCE, fresh account validation and encrypted storage',
-    async (piece) => {
+  const developerFallback = (resolution: Promise<unknown>) =>
+    expect(resolution).resolves.toEqual({ apiKey: 'developer-fallback' });
+  const notLinked = (resolution: Promise<unknown>) =>
+    expect(resolution).rejects.toMatchObject({ code: 'missing' });
+
+  it.each([
+    { piece: 'case-c', unlinked: notLinked },
+    { piece: 'case-ac', unlinked: developerFallback },
+    { piece: 'case-bc', unlinked: notLinked },
+    { piece: 'case-abc', unlinked: developerFallback },
+  ])(
+    'links $piece through real HTTP, PKCE, fresh account validation and encrypted storage',
+    async ({ piece, unlinked }) => {
       const instance = linkedPieces.find((entry) => entry.piece === piece)!;
       const req = await frogbot.createRequest({ user: owner });
-      if (piece === 'case-ac' || piece === 'case-abc') {
-        expect(await frogbot.connections.resolve({ piece: instance, req })).toEqual({
-          apiKey: 'developer-fallback',
-        });
-      }
+      await unlinked(frogbot.connections.resolve({ piece: instance, req }));
       const flow = await authorize(piece);
       expect(await store.list({ owner })).toEqual([]);
       expect(flow.url.searchParams.get('scope')).toBe('read write');
@@ -535,9 +547,20 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     },
   );
 
-  it.each(['denial', 'provider-error', 'malformed', 'bad-auth', 'bad-account'])(
-    'consumes failed %s callbacks, clears cookies and preserves existing rows',
-    async (code) => {
+  it.each([
+    {
+      code: 'denial',
+      exchanged: 0,
+      params: { error: 'access_denied-private-detail' },
+      emptyParams: { error: 'access_denied' },
+    },
+    { code: 'provider-error', exchanged: 1, params: {}, emptyParams: {} },
+    { code: 'malformed', exchanged: 1, params: {}, emptyParams: {} },
+    { code: 'bad-auth', exchanged: 1, params: {}, emptyParams: {} },
+    { code: 'bad-account', exchanged: 1, params: {}, emptyParams: {} },
+  ])(
+    'consumes failed $code callbacks, clears cookies and preserves existing rows',
+    async ({ code, exchanged, params, emptyParams }) => {
       const piece = 'case-bc';
       const saved = await store.upsert({
         owner,
@@ -547,8 +570,8 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       });
       const flow = await authorize(piece);
       flow.callback.searchParams.set('code', code);
-      if (code === 'denial') {
-        flow.callback.searchParams.set('error', 'access_denied-private-detail');
+      for (const [name, value] of Object.entries(params)) {
+        flow.callback.searchParams.set(name, value);
       }
       const response = await callback(flow);
       expect(response.status).toBe(400);
@@ -560,12 +583,14 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         method: 'secret',
         credential: { apiKey: 'existing-secret' },
       });
-      expect(exchanges).toHaveLength(code === 'denial' ? 0 : 1);
+      expect(exchanges).toHaveLength(exchanged);
       expect((await callback(flow)).status).toBe(400);
-      expect(exchanges).toHaveLength(code === 'denial' ? 0 : 1);
+      expect(exchanges).toHaveLength(exchanged);
       const emptyFlow = await authorize('case-c');
       emptyFlow.callback.searchParams.set('code', code);
-      if (code === 'denial') emptyFlow.callback.searchParams.set('error', 'access_denied');
+      for (const [name, value] of Object.entries(emptyParams)) {
+        emptyFlow.callback.searchParams.set(name, value);
+      }
       expect((await callback(emptyFlow)).status).toBe(400);
       expect(await store.get({ owner, piece: 'case-c' })).toBeUndefined();
     },

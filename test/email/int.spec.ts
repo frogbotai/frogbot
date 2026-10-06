@@ -5,10 +5,26 @@ import { fileURLToPath } from 'node:url';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
-import { ConnectionError, definePiece, type FrogBotConfig, type FrogBotRequest } from 'frogbot';
+import {
+  ConnectionError,
+  definePiece,
+  type FrogBotConfig,
+  type FrogBotRequest,
+  type PieceDefinition,
+} from 'frogbot';
 import { type FrogBot, getFrogBot, getFrogBotPayload } from 'frogbot/test';
 import { BasePayload } from 'payload';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from 'vitest';
 import { z } from 'zod';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -16,8 +32,9 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
-import { resend, Users } from './config.js';
-import { usersSlug } from './shared.js';
+import { Customers, resend, Users } from './config.js';
+import type { Customer } from './frogbot-types.js';
+import { customersSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const fetch = vi.fn<typeof globalThis.fetch>();
@@ -53,15 +70,30 @@ async function bootRuntime(overrides: Partial<FrogBotConfig>) {
   return runtime;
 }
 
+const transactionalAuth = z.object({ apiKey: z.string() });
+const transactionalOptions = z.object({ from: z.string() });
+
+type TransactionalClient = { apiKey: string };
+type TransactionalTypes = {
+  auth: z.output<typeof transactionalAuth>;
+  options: z.output<typeof transactionalOptions>;
+  actions: Record<string, never>;
+  triggers: Record<string, never>;
+};
+
+function requestPayload(req: FrogBotRequest) {
+  return 'payload' in req ? req.payload : undefined;
+}
+
 function instrumentedPiece() {
-  const clients: { apiKey: string }[] = [];
-  const deliveries: { client: { apiKey: string }; req: FrogBotRequest }[] = [];
+  const clients: TransactionalClient[] = [];
+  const deliveries: { client: TransactionalClient; req: FrogBotRequest }[] = [];
   const createEmail = definePiece({
     slug: 'transactional',
     label: 'Transactional',
-    auth: z.object({ apiKey: z.string() }),
-    options: z.object({ from: z.string() }),
-    client({ auth }) {
+    auth: transactionalAuth,
+    options: transactionalOptions,
+    client: ({ auth }) => {
       const client = { apiKey: auth.apiKey };
 
       clients.push(client);
@@ -82,7 +114,7 @@ function instrumentedPiece() {
         return response.json();
       },
     },
-  });
+  } satisfies PieceDefinition<TransactionalTypes, TransactionalClient>);
 
   const piece = createEmail({ auth: { apiKey: 'instrumented-key' }, from: 'sender@example.com' });
 
@@ -93,12 +125,12 @@ beforeEach(() => {
   vi.stubEnv('PAYLOAD_FORCE_DRIZZLE_PUSH', 'true');
 
   fetch.mockReset();
-  fetch.mockImplementation(async (url) => {
+  fetch.mockImplementation((url) => {
     if (String(url) !== 'https://api.resend.com/emails') {
-      throw new Error(`Unexpected email request: ${String(url)}`);
+      return Promise.reject(new Error(`Unexpected email request: ${String(url)}`));
     }
 
-    return Response.json({ id: 'sent-email' });
+    return Promise.resolve(Response.json({ id: 'sent-email' }));
   });
 
   vi.stubGlobal('fetch', fetch);
@@ -365,14 +397,11 @@ describe('email piece boot and runtime isolation', () => {
     });
 
     const payload = new BasePayload();
+    onTestFinished(() => payload.destroy());
 
-    try {
-      await expect(payload.init({ config: config._internal.payloadConfig })).rejects.toThrow(error);
+    await expect(payload.init({ config: config._internal.payloadConfig })).rejects.toThrow(error);
 
-      expect(fetch).not.toHaveBeenCalled();
-    } finally {
-      await payload.destroy();
-    }
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('resolves a promised native piece once and can send during onInit', async () => {
@@ -436,10 +465,10 @@ describe('email piece boot and runtime isolation', () => {
     expect(secondDeliveries).toHaveLength(1);
     expect(new Set(firstDeliveries.map(({ client }) => client)).size).toBe(1);
     expect(firstDeliveries[0].client).not.toBe(secondDeliveries[0].client);
-    expect(firstDeliveries.every(({ req }) => req.payload === firstPayload && !req.user)).toBe(
-      true,
-    );
-    expect(secondDeliveries[0].req.payload).toBe(secondPayload);
+    expect(
+      firstDeliveries.every(({ req }) => requestPayload(req) === firstPayload && !req.user),
+    ).toBe(true);
+    expect(requestPayload(secondDeliveries[0].req)).toBe(secondPayload);
     expect(requestBody().from).toBe('"transactional" <sender@example.com>');
   });
 
@@ -486,7 +515,7 @@ describe('auth email templates', () => {
       collections: [
         Users,
         {
-          slug: 'customers',
+          ...Customers,
           auth: {
             verify: {
               generateEmailHTML: ({ token }) => `<a href="/verify/${token}">Verify</a>`,
@@ -499,12 +528,11 @@ describe('auth email templates', () => {
               generateEmailSubject: ({ user }) => `Reset ${(user as { email: string }).email}`,
             },
           },
-          fields: [],
         },
       ],
     });
     const customer = await runtime.create({
-      collection: 'customers',
+      collection: customersSlug,
       data: { email: 'customer@example.com', password: 'password' },
     });
     const verifyToken = requestBody().html.match(
@@ -516,33 +544,31 @@ describe('auth email templates', () => {
       subject: `Verify ${customer.email}`,
     });
     await expect(
-      runtime.verifyEmail({ collection: 'customers', token: verifyToken! }),
+      runtime.verifyEmail({ collection: customersSlug, token: verifyToken! }),
     ).resolves.toBe(true);
 
     const requestedAt = Date.now();
     const token = await runtime.forgotPassword({
-      collection: 'customers',
+      collection: customersSlug,
       data: { email: customer.email },
     });
-    const stored = await getFrogBotPayload(runtime).db.findOne<{ resetPasswordExpiration: string }>(
-      {
-        collection: 'customers',
-        where: { id: { equals: customer.id } },
-      },
-    );
+    const stored = await getFrogBotPayload(runtime).db.findOne<Customer>({
+      collection: customersSlug,
+      where: { id: { equals: customer.id } },
+    });
 
     expect(requestBody(1)).toMatchObject({
       to: customer.email,
       subject: `Reset ${customer.email}`,
       html: `<a href="/reset/${token}">Reset</a>`,
     });
-    expect(Date.parse(stored!.resetPasswordExpiration) - requestedAt).toBeGreaterThanOrEqual(
-      600_000,
-    );
-    expect(Date.parse(stored!.resetPasswordExpiration) - requestedAt).toBeLessThan(660_000);
+    const expiresAt = Date.parse(String(stored?.resetPasswordExpiration));
+
+    expect(expiresAt - requestedAt).toBeGreaterThanOrEqual(600_000);
+    expect(expiresAt - requestedAt).toBeLessThan(660_000);
 
     const repeated = await runtime.forgotPassword({
-      collection: 'customers',
+      collection: customersSlug,
       data: { email: customer.email },
     });
 
@@ -559,7 +585,7 @@ describe('auth email templates', () => {
       collections: [
         Users,
         {
-          slug: 'customers',
+          ...Customers,
           auth: {
             verify: { generateEmailHTML: template, generateEmailSubject: template },
             forgotPassword: {
@@ -578,18 +604,17 @@ describe('auth email templates', () => {
               },
             ],
           },
-          fields: [],
         },
       ],
     });
 
     await runtime.create({
-      collection: 'customers',
+      collection: customersSlug,
       data: { email: 'customer@example.com', password: 'password' },
     });
 
     const token = await runtime.forgotPassword({
-      collection: 'customers',
+      collection: customersSlug,
       data: { email: 'customer@example.com' },
     });
 
