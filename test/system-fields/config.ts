@@ -88,59 +88,65 @@ export function buildTicketsConfig({ db, onInit }: Pick<FrogBotConfig, 'db' | 'o
   });
 }
 
-const isSQLite = getCurrentDatabaseAdapter() === 'sqlite';
-
-export default await buildTestConfig({
-  ...(isSQLite && { db: sqliteAdapter({ client: { url: `file:${databasePath}` } }) }),
-  admin: { user: usersSlug },
-  collections: [Users, Admins, Tickets, Chats],
-  ai: {
-    defaultModel: 'test/gpt-4.1-mini',
-    providers: {
-      test: {
-        type: 'openai-compatible',
-        baseUrl: `http://127.0.0.1:${modelPort}/v1`,
-        apiKey: 'test-key',
-        models: [{ id: 'gpt-4.1-mini', mode: 'chat' }],
-      },
-    },
-  },
-  agents: [
-    {
-      slug: agentSlug,
-      model: 'test/gpt-4.1-mini',
-      instructions: 'Manage tickets.',
-      access: () => true,
-      tools: [createTicket],
-    },
-  ],
-  jobs: {
-    tasks: [
-      {
-        slug: touchTicketTaskSlug,
-        inputSchema: [
-          { name: 'ticket', type: 'text', required: true },
-          { name: 'title', type: 'text', required: true },
-        ],
-        handler: async ({ input, req }) => {
-          await req.payload.update({
-            collection: ticketsSlug,
-            id: input.ticket,
-            data: { title: input.title },
-            req,
-          });
-
-          return { output: {} };
+export function buildSystemFieldsConfig({ db }: { db?: FrogBotConfig['db'] }) {
+  return buildTestConfig({
+    ...(db && { db }),
+    admin: { user: usersSlug },
+    collections: [Users, Admins, Tickets, Chats],
+    ai: {
+      defaultModel: 'test/gpt-4.1-mini',
+      providers: {
+        test: {
+          type: 'openai-compatible',
+          baseUrl: `http://127.0.0.1:${modelPort}/v1`,
+          apiKey: 'test-key',
+          models: [{ id: 'gpt-4.1-mini', mode: 'chat' }],
         },
       },
+    },
+    agents: [
+      {
+        slug: agentSlug,
+        model: 'test/gpt-4.1-mini',
+        instructions: 'Manage tickets.',
+        access: () => true,
+        tools: [createTicket],
+      },
     ],
-  },
-  plugins: [
-    apiKeysPlugin({ authCollection: usersSlug }),
-    importExportPlugin({
-      collections: [{ slug: ticketsSlug }],
-      overrideExportCollection: useTemporaryUploadDir,
-      overrideImportCollection: useTemporaryUploadDir,
-    }),
-  ],
+    jobs: {
+      tasks: [
+        {
+          slug: touchTicketTaskSlug,
+          inputSchema: [
+            { name: 'ticket', type: 'text', required: true },
+            { name: 'title', type: 'text', required: true },
+          ],
+          handler: async ({ input, req }) => {
+            await req.payload.update({
+              collection: ticketsSlug,
+              id: input.ticket,
+              data: { title: input.title },
+              req,
+            });
+
+            return { output: {} };
+          },
+        },
+      ],
+    },
+    plugins: [
+      apiKeysPlugin({ authCollection: usersSlug }),
+      importExportPlugin({
+        collections: [{ slug: ticketsSlug }],
+        overrideExportCollection: useTemporaryUploadDir,
+        overrideImportCollection: useTemporaryUploadDir,
+      }),
+    ],
+  });
+}
+
+const isSQLite = getCurrentDatabaseAdapter() === 'sqlite';
+
+export default await buildSystemFieldsConfig({
+  db: isSQLite ? sqliteAdapter({ client: { url: `file:${databasePath}` } }) : undefined,
 });

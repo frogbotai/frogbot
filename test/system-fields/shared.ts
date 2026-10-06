@@ -19,6 +19,7 @@ export const chatsSlug = 'chats';
 export const messagesSlug = 'messages';
 export const apiKeysSlug = 'api-keys';
 export const importsSlug = 'imports';
+export const exportsSlug = 'exports';
 export const usageLogsSlug = 'usage-logs';
 export const agentSlug = 'ticket-agent';
 export const createTicketToolSlug = 'create-ticket';

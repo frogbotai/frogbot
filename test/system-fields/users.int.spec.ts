@@ -2,8 +2,10 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
-import { runQueuedTurn } from 'frogbot/test';
+import type { FrogBotInstance } from 'frogbot';
+import { FrogBot, runQueuedTurn } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -11,8 +13,8 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { clearAndNumber, waitForStartupNumbering } from './boot.js';
-import config from './config.js';
+import { bootFresh, clearAndNumber, waitForStartupNumbering } from './boot.js';
+import config, { buildSystemFieldsConfig } from './config.js';
 import {
   adminsSlug,
   agentSlug,
@@ -20,12 +22,14 @@ import {
   chatsSlug,
   createTicketToolSlug,
   databasePath,
+  exportsSlug,
   importsDir,
   importsSlug,
   messagesSlug,
   modelPort,
   ticketsSlug,
   touchTicketTaskSlug,
+  transactionsDatabasePath,
   usageLogsSlug,
   usersSlug,
 } from './shared.js';
@@ -34,6 +38,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const password = 'frogbot-system-fields-password';
 const graphQLPost = GRAPHQL_POST(config);
 const isMongo = getCurrentDatabaseAdapter() === 'mongodb';
+const isSQLite = getCurrentDatabaseAdapter() === 'sqlite';
 
 type ID = number | string;
 
@@ -614,5 +619,90 @@ describe('created by and last modified by', () => {
 
       expect(await savedBy(ticket.id)).toEqual({ createdBy: null, lastModifiedBy: ben.id });
     });
+  });
+});
+
+describe.skipIf(!isSQLite)('CSV import and export inside one SQLite transaction', () => {
+  let frogbot: FrogBotInstance;
+  let ana: { id: ID; collection: string };
+
+  beforeAll(async () => {
+    await rm(transactionsDatabasePath, { force: true });
+
+    const transactionsConfig = await buildSystemFieldsConfig({
+      db: sqliteAdapter({
+        client: { url: `file:${transactionsDatabasePath}` },
+        transactionOptions: {},
+      }),
+    });
+
+    frogbot = await bootFresh(() => new FrogBot().init({ config: transactionsConfig }));
+    await waitForStartupNumbering(frogbot);
+  });
+
+  beforeEach(async () => {
+    await clearAndNumber(frogbot);
+
+    const user = await frogbot.create({
+      collection: usersSlug,
+      data: { email: 'ana@system-fields.test', password },
+      overrideAccess: true,
+    });
+
+    ana = { id: user.id, collection: usersSlug };
+  });
+
+  afterAll(async () => {
+    await frogbot.destroy();
+    await rm(importsDir, { recursive: true, force: true });
+    await rm(transactionsDatabasePath, { force: true });
+  });
+
+  it('a CSV import queues its job with the create and completes', async () => {
+    const data = Buffer.from(['title', 'Imported one', 'Imported two'].join('\n'));
+
+    const imported = await frogbot.create({
+      collection: importsSlug,
+      data: { collectionSlug: ticketsSlug, importMode: 'create' },
+      file: { data, mimetype: 'text/csv', name: 'tickets.csv', size: data.length },
+      user: ana,
+    } as never);
+
+    await frogbot.jobs.run();
+
+    const result = await frogbot.findByID({
+      collection: importsSlug,
+      id: imported.id,
+      overrideAccess: true,
+    } as never);
+
+    const tickets = await frogbot.find({
+      collection: ticketsSlug,
+      where: { title: { like: 'Imported' } },
+      overrideAccess: true,
+    });
+
+    expect(result).toMatchObject({ status: 'completed', summary: { imported: 2 } });
+    expect(tickets.totalDocs).toBe(2);
+  });
+
+  it('a CSV export queues its job with the create and saves its file', async () => {
+    await frogbot.create({ collection: ticketsSlug, data: { title: 'Exported' } });
+
+    const exported = await frogbot.create({
+      collection: exportsSlug,
+      data: { collectionSlug: ticketsSlug, format: 'csv' },
+      user: ana,
+    } as never);
+
+    await frogbot.jobs.run();
+
+    const result = (await frogbot.findByID({
+      collection: exportsSlug,
+      id: exported.id,
+      overrideAccess: true,
+    } as never)) as unknown as { filename?: string | null };
+
+    expect(result.filename).toMatch(/\.csv$/);
   });
 });
