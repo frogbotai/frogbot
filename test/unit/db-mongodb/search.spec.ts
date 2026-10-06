@@ -2,29 +2,29 @@ import { createRequire } from 'node:module';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { capabilities } from '../../../../packages/db-mongodb/src/search/capabilities.js';
-import { createSearchSetupError } from '../../../../packages/db-mongodb/src/search/createSearchSetupError.js';
-import { isSearchIndexDefinitionEqual } from '../../../../packages/db-mongodb/src/search/isSearchIndexDefinitionEqual.js';
-import { buildHybridPipeline } from '../../../../packages/db-mongodb/src/search/pipelines/buildHybridPipeline.js';
-import { buildVectorScore } from '../../../../packages/db-mongodb/src/search/pipelines/buildVectorScore.js';
+import { capabilities } from '../../../packages/db-mongodb/src/search/capabilities.js';
+import { createSearchSetupError } from '../../../packages/db-mongodb/src/search/createSearchSetupError.js';
+import { isSearchIndexDefinitionEqual } from '../../../packages/db-mongodb/src/search/isSearchIndexDefinitionEqual.js';
+import { buildHybridPipeline } from '../../../packages/db-mongodb/src/search/pipelines/buildHybridPipeline.js';
+import { buildVectorScore } from '../../../packages/db-mongodb/src/search/pipelines/buildVectorScore.js';
 import {
   buildVectorSearchStage,
   isApproximateVectorSearch,
-} from '../../../../packages/db-mongodb/src/search/pipelines/buildVectorSearchStage.js';
-import { buildSearchOperator } from '../../../../packages/db-mongodb/src/search/queries/buildSearchOperator.js';
-import { buildVectorSearchFilter } from '../../../../packages/db-mongodb/src/search/queries/buildVectorSearchFilter.js';
-import { parseSearchFilter } from '../../../../packages/db-mongodb/src/search/queries/parseSearchFilter.js';
+} from '../../../packages/db-mongodb/src/search/pipelines/buildVectorSearchStage.js';
+import { buildSearchOperator } from '../../../packages/db-mongodb/src/search/queries/buildSearchOperator.js';
+import { buildVectorSearchFilter } from '../../../packages/db-mongodb/src/search/queries/buildVectorSearchFilter.js';
+import { parseSearchFilter } from '../../../packages/db-mongodb/src/search/queries/parseSearchFilter.js';
 import type {
   SearchFieldType,
   SearchFilterNode,
   SearchIndex,
-} from '../../../../packages/db-mongodb/src/search/types.js';
-import type { SearchIndexDescriptor } from '../../../../packages/frogbot/src/search/types.js';
+} from '../../../packages/db-mongodb/src/search/types.js';
+import type { SearchIndexDescriptor } from '../../../packages/frogbot/src/search/types.js';
 
-vi.mock('frogbot/search', () => import('../../../../packages/frogbot/src/exports/search.js'));
+vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 const require = createRequire(
-  new URL('../../../../packages/db-mongodb/package.json', import.meta.url),
+  new URL('../../../packages/db-mongodb/package.json', import.meta.url),
 );
 
 const { Types } = createRequire(require.resolve('@payloadcms/db-mongodb'))('mongoose');

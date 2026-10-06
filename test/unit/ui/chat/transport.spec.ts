@@ -14,8 +14,21 @@ const message = {
 const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) =>
   createFrogBotSDK({ baseURL: '/api', fetch });
 
+type SendOptions = Parameters<FrogBotChatTransport['sendMessages']>[0];
+
+function sendOptions(overrides: Partial<SendOptions> = {}): SendOptions {
+  return {
+    abortSignal: undefined,
+    chatId: 'chat',
+    messageId: undefined,
+    messages: [],
+    trigger: 'submit-message',
+    ...overrides,
+  };
+}
+
 async function captureBody(request?: Parameters<typeof prepareChatRequest>[0]) {
-  const fetch = vi.fn(() =>
+  const fetch = vi.fn<typeof globalThis.fetch>(() =>
     Promise.resolve(
       new Response(new ReadableStream({ start: (controller) => controller.close() })),
     ),
@@ -26,12 +39,7 @@ async function captureBody(request?: Parameters<typeof prepareChatRequest>[0]) {
     prepareSendMessagesRequest: prepareChatRequest(request),
     body: { unsupported: true },
   });
-  await transport.sendMessages({
-    chatId: 'chat',
-    messageId: message.id,
-    messages: [message],
-    trigger: 'submit-message',
-  });
+  await transport.sendMessages(sendOptions({ messageId: message.id, messages: [message] }));
   return JSON.parse(fetch.mock.calls[0][1]?.body as string);
 }
 
@@ -61,7 +69,7 @@ describe('FrogBotChatTransport', () => {
 
   it('resolves a lazy chat id at send time', async () => {
     let chatId: string | undefined;
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
@@ -75,12 +83,7 @@ describe('FrogBotChatTransport', () => {
       }),
     });
     const send = () =>
-      transport.sendMessages({
-        chatId: 'chat',
-        messageId: message.id,
-        messages: [message],
-        trigger: 'submit-message',
-      });
+      transport.sendMessages(sendOptions({ messageId: message.id, messages: [message] }));
     await send();
     chatId = 'chat-1';
     await send();
@@ -99,7 +102,7 @@ describe('FrogBotChatTransport', () => {
     const onChatId = vi.fn();
     const dispatchEvent = vi.fn();
     vi.stubGlobal('window', { dispatchEvent });
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         new Response('data: {"type":"finish"}\n\n', {
           headers: { 'Content-Type': 'text/event-stream', 'X-FrogBot-Chat-Id': 'chat-1' },
@@ -111,9 +114,7 @@ describe('FrogBotChatTransport', () => {
       sdk: sdk(fetch),
       onChatId,
     });
-    await transport
-      .sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' })
-      .then((stream) => stream.cancel());
+    await transport.sendMessages(sendOptions()).then((stream) => stream.cancel());
     expect(fetch).toHaveBeenCalledWith(
       '/api/agents/support%20agent',
       expect.objectContaining({ method: 'POST' }),
@@ -127,7 +128,7 @@ describe('FrogBotChatTransport', () => {
   });
 
   it('requests the event stream response by default', async () => {
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         new Response('data: {"type":"finish"}\n\n', {
           headers: { 'Content-Type': 'text/event-stream' },
@@ -135,14 +136,12 @@ describe('FrogBotChatTransport', () => {
       ),
     );
     const transport = new FrogBotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch) });
-    await transport
-      .sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' })
-      .then((stream) => stream.cancel());
+    await transport.sendMessages(sendOptions()).then((stream) => stream.cancel());
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('text/event-stream');
   });
 
   it('preserves caller header overrides', async () => {
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
@@ -152,12 +151,12 @@ describe('FrogBotChatTransport', () => {
       sdk: sdk(fetch),
       headers: { Accept: 'application/json' },
     });
-    await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' });
+    await transport.sendMessages(sendOptions());
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('application/json');
   });
 
   it('sends the SDK headers with every agent request', async () => {
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
@@ -170,7 +169,7 @@ describe('FrogBotChatTransport', () => {
         headers: { authorization: 'Bearer token' },
       }),
     });
-    await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' });
+    await transport.sendMessages(sendOptions());
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('authorization')).toBe('Bearer token');
   });
 
@@ -179,19 +178,13 @@ describe('FrogBotChatTransport', () => {
       agentSlug: 'agent',
       sdk: sdk(() => Promise.resolve(new Response(null, { status: 499 }))),
     });
-    const stream = await transport.sendMessages({
-      chatId: 'chat',
-      messages: [],
-      trigger: 'submit-message',
-    });
+    const stream = await transport.sendMessages(sendOptions());
     expect((await stream.getReader().read()).done).toBe(true);
   });
 
   it('does not reconnect', async () => {
     expect(
-      await new FrogBotChatTransport({ agentSlug: 'agent', sdk: sdk() }).reconnectToStream({
-        chatId: 'chat',
-      }),
+      await new FrogBotChatTransport({ agentSlug: 'agent', sdk: sdk() }).reconnectToStream(),
     ).toBeNull();
   });
 });

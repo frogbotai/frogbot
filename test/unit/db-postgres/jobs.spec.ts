@@ -37,7 +37,7 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
       db: descriptor,
       collections: [],
       jobs: resolveJobsConfig({
-        tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
+        tasks: [{ slug: 'work', handler: () => ({ output: {} }) }],
       }),
     });
 
@@ -49,12 +49,13 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
 
     payload.db = database;
 
+    if (!database.init) throw new Error('The Postgres adapter must define init.');
+
     await database.init();
 
-    const execute = vi.fn(async (_query: { text: string }, _params: unknown[]) => ({
-      rows: [[7]],
-      rowCount: 1,
-    }));
+    const execute = vi.fn((_query: { text: string }, _params: unknown[]) =>
+      Promise.resolve({ rows: [[7]], rowCount: 1 }),
+    );
 
     const client = { query: execute };
 
@@ -147,7 +148,7 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
   });
 
   it('emits a conditional lease update with all ownership and expiry predicates', async () => {
-    const { database, execute, req } = await setup();
+    const { payload, execute, req } = await setup();
 
     await resetJobLease({
       id: 7,
@@ -156,7 +157,7 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
       req,
     });
 
-    expect((database as JobLeaseDatabase)[jobLeaseOperations]).toBeDefined();
+    expect((payload.db as JobLeaseDatabase)[jobLeaseOperations]).toBeDefined();
     expect(execute).toHaveBeenCalledOnce();
 
     const [{ text }, params] = execute.mock.calls[0];
@@ -174,7 +175,7 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
   it('uses the transaction connection ahead of primary and replica connections', async () => {
     const { database, execute, req } = await setup();
 
-    const transactionExecute = vi.fn(async () => ({ rows: [], rowCount: 0 }));
+    const transactionExecute = vi.fn(() => Promise.resolve({ rows: [], rowCount: 0 }));
     const transaction = nodeDrizzle({ client: { query: transactionExecute } as never });
 
     database.sessions['job-transaction'] = {

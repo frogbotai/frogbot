@@ -6,7 +6,7 @@ describe('editorConfigFactory', () => {
   it('resolves the internal config before invoking an editor provider', async () => {
     const payloadConfig = { marker: 'payload-config' };
     const editorConfig = { features: [], lexical: {}, resolvedFeatureMap: new Map() };
-    const editor = vi.fn(async () => ({ editorConfig }));
+    const editor = vi.fn(() => Promise.resolve({ editorConfig }));
     const config = Promise.resolve({
       _internal: { payloadConfig: Promise.resolve(payloadConfig) },
     });

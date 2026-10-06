@@ -13,16 +13,16 @@ vi.mock('@frogbotai/plugin-import-export', () => {
 const { usageReportsPlugin } =
   await import('../../../packages/plugins/plugin-usage-reports/src/index.js');
 
-function createConfig() {
+function createConfig(): FrogBotConfig {
   return {
     secret: 'test',
-    db: {},
+    db: {} as FrogBotConfig['db'],
     collections: [
       { slug: 'users', auth: true, fields: [] },
       { slug: 'ai-usage', usageLog: true, fields: [] },
     ],
     ai: { providers: { openai: { apiKey: 'test' } } },
-  } as FrogBotConfig;
+  };
 }
 
 describe('usageReportsPlugin without @frogbotai/plugin-import-export', () => {
@@ -32,7 +32,7 @@ describe('usageReportsPlugin without @frogbotai/plugin-import-export', () => {
 
     expect(result.endpoints?.some((item) => item.path === '/usage/report')).toBe(true);
     expect(result.collections.map((item) => item.slug)).toEqual(['users', 'ai-usage']);
-    expect(usage?.admin?.components?.listMenuItems).toBeUndefined();
+    expect(usage).not.toHaveProperty('admin.components.listMenuItems');
     expect(result.admin?.components?.providers).toBeUndefined();
   });
 });

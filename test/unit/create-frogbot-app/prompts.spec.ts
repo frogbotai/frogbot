@@ -23,7 +23,9 @@ afterEach(() => {
 
 describe('AI provider prompt', () => {
   beforeEach(() => {
-    vi.mocked(p.select).mockImplementation(async ({ options }) => options[0].value);
+    vi.mocked(p.select).mockImplementation(({ options }: { options: { value: unknown }[] }) =>
+      Promise.resolve(options[0].value),
+    );
     vi.mocked(p.password).mockResolvedValue('');
   });
 
@@ -44,7 +46,7 @@ describe('AI provider prompt', () => {
 
     const arg = vi.mocked(p.select).mock.calls[0][0];
 
-    expect(arg.options.map(({ value }) => value)).toEqual([
+    expect(arg.options.map(({ value }: { value: unknown }) => value)).toEqual([
       'zen',
       'openai',
       'anthropic',

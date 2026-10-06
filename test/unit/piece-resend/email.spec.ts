@@ -29,7 +29,7 @@ function requestBody() {
 
 beforeEach(() => {
   fetch.mockReset();
-  fetch.mockImplementation(async () => Response.json({ id: 'email-id' }));
+  fetch.mockImplementation(() => Promise.resolve(Response.json({ id: 'email-id' })));
 
   vi.stubGlobal('fetch', fetch);
 });

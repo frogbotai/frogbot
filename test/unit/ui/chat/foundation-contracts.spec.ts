@@ -12,7 +12,7 @@ describe('Firmware UI foundation contracts', () => {
   it('configures the FrogBot SDK with one server connection', async () => {
     const packageName = '@frogbotai/sdk';
     const sdkModule = await import(packageName);
-    const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(new Response('{}')));
     const sdk = sdkModule.createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       headers: { Authorization: 'Bearer token' },
@@ -35,7 +35,7 @@ describe('Firmware UI foundation contracts', () => {
     const request = await prepare({
       api: '/api/agents/support',
       body: undefined,
-      chatId: 'chat-1',
+      id: 'chat-1',
       credentials: undefined,
       headers: undefined,
       messageId: 'message-1',
@@ -57,14 +57,14 @@ describe('Firmware UI foundation contracts', () => {
     });
   });
 
-  it('rejects inline attachment data from the chat request pipeline', async () => {
+  it('rejects inline attachment data from the chat request pipeline', () => {
     const prepare = prepareChatRequest();
 
     expect(() =>
       prepare({
         api: '/api/agents/support',
         body: undefined,
-        chatId: 'chat-1',
+        id: 'chat-1',
         credentials: undefined,
         headers: undefined,
         messageId: 'message-1',

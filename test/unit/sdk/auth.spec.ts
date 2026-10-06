@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createFrogBotSDK } from '../../../packages/sdk/src/index';
+import { createFrogBotSDK, type UntypedFrogBotSDKTypes } from '../../../packages/sdk/src/index';
 import { baseURL, createClients } from './clients';
 
 type Client = ReturnType<typeof createClients>['frogbot'];
@@ -82,12 +82,12 @@ describe('FrogBotSDK auth methods', () => {
   it('passes credentials and base headers to a custom fetch', async () => {
     const inits: RequestInit[] = [];
 
-    const sdk = createFrogBotSDK({
+    const sdk = createFrogBotSDK<UntypedFrogBotSDKTypes>({
       baseURL,
-      fetch: async (_input, init) => {
+      fetch: (_input, init) => {
         inits.push(init ?? {});
 
-        return Response.json({ user: null });
+        return Promise.resolve(Response.json({ user: null }));
       },
       headers: { 'X-Base': 'base' },
     });

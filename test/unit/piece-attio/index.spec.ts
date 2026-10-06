@@ -37,6 +37,16 @@ function webhookRequest(body: string, secret = 'secret') {
   return request;
 }
 
+function createRecordObjectOptions() {
+  const options = attioActions.find(({ slug }) => slug === 'createRecord')?.options;
+
+  if (!options || !('objectId' in options) || !options.objectId) {
+    throw new Error('createRecord declares no objectId options.');
+  }
+
+  return options.objectId;
+}
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('attio', () => {
@@ -208,10 +218,10 @@ describe('attio', () => {
         response({ data: [{ id: { object_id: 'people' }, singular_noun: 'Person' }] }),
       );
     vi.stubGlobal('fetch', fetch);
-    const action = attioActions.find(({ slug }) => slug === 'createRecord');
+    const client = await createAttio({ auth }).client({ req });
 
     await expect(
-      action?.options?.objectId({ input: {}, client: await createAttio({ auth }).client({ req }) }),
+      createRecordObjectOptions()({ input: {}, client, options: {}, req }),
     ).resolves.toEqual([{ label: 'Person', value: 'people' }]);
   });
 

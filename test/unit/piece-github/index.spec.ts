@@ -3,16 +3,39 @@ import { createHash, createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+vi.mock(
+  'frogbot/pieces/test',
+  () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
+);
 
-import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
+import type { FrogBotRequest } from 'frogbot';
+import { pieceConformance } from 'frogbot/pieces/test';
+
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest as DefinitionRequest } from '../../../packages/frogbot/src/types/request.js';
+import {
+  createBranch,
+  createDiscussionComment,
+  createIssue,
+  customApiCall,
+} from '../../../packages/pieces/piece-github/src/actions.js';
 import { createGithubClient } from '../../../packages/pieces/piece-github/src/client.js';
 import {
   createGithub,
   githubActions,
+  githubOAuth,
   githubTriggers,
 } from '../../../packages/pieces/piece-github/src/index.js';
+import {
+  branchCreated,
+  collaboratorAdded,
+  commitCreated,
+  labelCreated,
+  mentioned,
+  milestoneCreated,
+  releaseCreated,
+  reviewRequested,
+} from '../../../packages/pieces/piece-github/src/triggers.js';
 import { conformanceChannelState } from '../frogbot/pieces/channelState.js';
 
 const auth = { accessToken: 'github-token' };
@@ -26,6 +49,25 @@ function json(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), {
     status,
     headers: { 'content-type': 'application/json' },
+  });
+}
+
+function request(overrides: Partial<FrogBotRequest> = {}): FrogBotRequest {
+  return { headers: new Headers(), ...overrides } as unknown as FrogBotRequest;
+}
+
+type Delivery = NonNullable<FrogBotRequest['data']>;
+
+function webhookRequest(headers: Record<string, string>, secret: string, value: Delivery) {
+  const body = JSON.stringify(value);
+
+  return request({
+    arrayBuffer: () => new Response(body).arrayBuffer(),
+    data: value,
+    headers: new Headers({
+      ...headers,
+      'x-hub-signature-256': `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`,
+    }),
   });
 }
 
@@ -64,8 +106,8 @@ describe('github', () => {
         channel: {
           adapter: { name: 'github' },
           identity: {
-            author: { userId: '42' },
-            req: {} as FrogBotRequest,
+            author: { userId: '42', userName: '', fullName: '', isBot: false, isMe: false },
+            req: request(),
             expect: null,
           },
           webhook: {
@@ -159,14 +201,11 @@ describe('github', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    const account = pieceFactoryDefinition(createGithub).oauth?.account;
-    if (!account) throw new Error('Missing GitHub account lookup.');
-
     await expect(
-      account({
+      githubOAuth.account({
         tokens: { access_token: 'stored-token' },
         client: createGithubClient({ auth: { accessToken: 'stored-token' } }),
-        req: undefined,
+        req: request(),
       }),
     ).resolves.toEqual({ id: '42', label: 'octocat', email: 'private@example.com' });
     expect(new Headers(fetch.mock.calls[1][1].headers).get('authorization')).toBe(
@@ -226,7 +265,7 @@ describe('github', () => {
           },
           find,
         },
-      } as unknown as FrogBotRequest,
+      } as unknown as DefinitionRequest,
     });
 
     expect(identity).toEqual({ id: 'user-1', collection: 'members' });
@@ -247,20 +286,15 @@ describe('github', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    const action = pieceFactoryDefinition(createGithub).actions.find(
-      (value) => value.slug === 'createIssue',
-    );
-    if (!action) throw new Error('Missing createIssue action.');
-
     const client = createGithubClient({ auth });
-    const input = action.input.parse({
+    const input = createIssue.input.parse({
       repository: { owner: 'frogbotai', repo: 'frogbot' },
       title: 'Bug',
       description: 'Details',
       labels: ['bug'],
       assignees: ['octocat'],
     });
-    const result = await action.run({ client, input, options: {}, req: undefined });
+    const result = await createIssue.run({ client, input, options: {}, req: request() });
 
     expect(result).toMatchObject({ id: 10, number: 7, title: 'Bug' });
     expect(new URL(String(fetch.mock.calls[0][0])).pathname).toBe(
@@ -275,7 +309,7 @@ describe('github', () => {
 
     vi.mocked(fetch).mockResolvedValueOnce(json({ id: 'wrong', number: 7, title: 'Bug' }));
 
-    await expect(action.run({ client, input, options: {}, req: undefined })).rejects.toThrow();
+    await expect(createIssue.run({ client, input, options: {}, req: request() })).rejects.toThrow();
   });
 
   it('loads paginated options and maps branch creation', async () => {
@@ -292,31 +326,24 @@ describe('github', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    const definition = pieceFactoryDefinition(createGithub).actions.find(
-      (value) => value.slug === 'createBranch',
-    );
-    if (!definition) throw new Error('Missing createBranch action.');
-
     const client = createGithubClient({ auth });
-    const options = definition.options?.sourceBranch;
-    if (!options) throw new Error('Missing branch options.');
 
     await expect(
-      options({
+      createBranch.options?.sourceBranch?.({
         client,
         input: { repository: { owner: 'org', repo: 'repo' } },
         options: {},
-        req: undefined,
+        req: request(),
       }),
     ).resolves.toHaveLength(100);
 
-    const input = definition.input.parse({
+    const input = createBranch.input.parse({
       repository: { owner: 'org', repo: 'repo' },
       sourceBranch: 'main',
       newBranchName: 'feature',
     });
 
-    await definition.run({ client, input, options: {}, req: undefined });
+    await createBranch.run({ client, input, options: {}, req: request() });
 
     expect(JSON.parse(fetch.mock.calls[3][1].body)).toEqual({
       ref: 'refs/heads/feature',
@@ -347,18 +374,18 @@ describe('github', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    const action = pieceFactoryDefinition(createGithub).actions.find(
-      (value) => value.slug === 'createDiscussionComment',
-    );
-    if (!action) throw new Error('Missing createDiscussionComment action.');
-
-    const input = action.input.parse({
+    const input = createDiscussionComment.input.parse({
       repository: { owner: 'org', repo: 'repo' },
       discussionNumber: 12,
       body: 'Reply',
     });
 
-    await action.run({ client: createGithubClient({ auth }), input, options: {}, req: undefined });
+    await createDiscussionComment.run({
+      client: createGithubClient({ auth }),
+      input,
+      options: {},
+      req: request(),
+    });
 
     const lookup = JSON.parse(fetch.mock.calls[0][1].body);
     const mutation = JSON.parse(fetch.mock.calls[1][1].body);
@@ -376,24 +403,14 @@ describe('github', () => {
     '/../../login/oauth/access_token',
     '/%2e%2e/login/oauth/access_token',
   ])('rejects unsafe custom REST path %s', async (path) => {
-    const action = pieceFactoryDefinition(createGithub).actions.find(
-      (value) => value.slug === 'customApiCall',
-    );
-    if (!action) throw new Error('Missing customApiCall action.');
-
-    await expect(action.input.parseAsync({ method: 'GET', path })).rejects.toThrow(
+    await expect(customApiCall.input.parseAsync({ method: 'GET', path })).rejects.toThrow(
       'URL must target the GitHub API',
     );
   });
 
   it('rejects auth overrides and redirects in custom REST calls', async () => {
-    const action = pieceFactoryDefinition(createGithub).actions.find(
-      (value) => value.slug === 'customApiCall',
-    );
-    if (!action) throw new Error('Missing customApiCall action.');
-
     await expect(
-      action.input.parseAsync({
+      customApiCall.input.parseAsync({
         method: 'GET',
         path: '/user',
         headers: { Authorization: 'Bearer stolen' },
@@ -402,14 +419,14 @@ describe('github', () => {
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 302 })));
 
-    const input = action.input.parse({ method: 'GET', path: '/user' });
+    const input = customApiCall.input.parse({ method: 'GET', path: '/user' });
 
     await expect(
-      action.run({
+      customApiCall.run({
         client: createGithubClient({ auth }),
         input,
         options: {},
-        req: { signal: undefined },
+        req: request(),
       }),
     ).rejects.toThrow('redirects are not allowed');
   });
@@ -422,55 +439,39 @@ describe('github', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    const trigger = pieceFactoryDefinition(createGithub).triggers?.find(
-      (value) => value.slug === 'labelCreated',
-    );
-    if (!trigger || trigger.type !== 'webhook') throw new Error('Missing labelCreated webhook.');
-
     const client = createGithubClient({ auth });
-    const input = trigger.input.parse({ repository: { owner: 'org', repo: 'repo' } });
-    const state = await trigger.onEnable({
+    const input = labelCreated.input.parse({ repository: { owner: 'org', repo: 'repo' } });
+    const state = await labelCreated.onEnable({
       client,
       input,
       webhookUrl: 'https://app.test/hook',
       options: {},
-      req: undefined,
+      req: request(),
     });
     const body = JSON.parse(fetch.mock.calls[0][1].body);
 
     expect(state).toMatchObject({ hookId: 123, owner: 'org', repo: 'repo', events: ['label'] });
-    expect(body.config.secret).toBe(state.secret);
+    expect(state).toHaveProperty('secret', body.config.secret);
     expect(body.config.secret).toMatch(/^[a-f0-9]{64}$/);
 
-    await trigger.onDisable({ client, input, state, options: {}, req: undefined });
+    await labelCreated.onDisable({ client, input, state, options: {}, req: request() });
 
     expect(new URL(String(fetch.mock.calls[1][0])).pathname).toBe('/repos/org/repo/hooks/123');
     expect(fetch.mock.calls[1][1].method).toBe('DELETE');
   });
 
   it('verifies signatures and filters webhook event and action', async () => {
-    const trigger = pieceFactoryDefinition(createGithub).triggers?.find(
-      (value) => value.slug === 'labelCreated',
-    );
-    if (!trigger || trigger.type !== 'webhook') throw new Error('Missing labelCreated webhook.');
-
+    const trigger = labelCreated;
     const client = createGithubClient({ auth });
     const delivery = { action: 'created', label: { name: 'bug' } };
     const state = { events: ['label'], hookId: 123, owner: 'org', repo: 'repo', secret: 'secret' };
 
-    function request(event: string, signatureSecret: string, value: unknown) {
-      const body = JSON.stringify(value);
-
-      return {
-        arrayBuffer: async () => Buffer.from(body),
-        data: value,
-        headers: new Headers({
-          'x-github-event': event,
-          'x-github-delivery': 'delivery',
-          'x-hub-signature-256': `sha256=${createHmac('sha256', signatureSecret).update(body).digest('hex')}`,
-        }),
-      };
-    }
+    const deliveryRequest = (event: string, signatureSecret: string, value: Delivery) =>
+      webhookRequest(
+        { 'x-github-event': event, 'x-github-delivery': 'delivery' },
+        signatureSecret,
+        value,
+      );
 
     await expect(
       trigger.run({
@@ -478,7 +479,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state,
         options: {},
-        req: request('label', 'secret', delivery),
+        req: deliveryRequest('label', 'secret', delivery),
       }),
     ).resolves.toEqual([{ data: delivery, dedupeKey: 'delivery:0' }]);
     await expect(
@@ -487,7 +488,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state,
         options: {},
-        req: request('issues', 'secret', delivery),
+        req: deliveryRequest('issues', 'secret', delivery),
       }),
     ).resolves.toEqual([]);
     await expect(
@@ -496,7 +497,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state,
         options: {},
-        req: request('label', 'secret', { action: 'edited' }),
+        req: deliveryRequest('label', 'secret', { action: 'edited' }),
       }),
     ).resolves.toEqual([]);
     await expect(
@@ -505,82 +506,83 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state,
         options: {},
-        req: request('label', 'wrong', delivery),
+        req: deliveryRequest('label', 'wrong', delivery),
       }),
     ).rejects.toThrow('signature is invalid');
   });
 
   it.each([
-    ['branchCreated', 'create', { ref_type: 'branch' }, { ref_type: 'tag' }],
-    ['collaboratorAdded', 'member', { action: 'added' }, { action: 'removed' }],
-    ['labelCreated', 'label', { action: 'created' }, { action: 'edited' }],
-    ['milestoneCreated', 'milestone', { action: 'created' }, { action: 'closed' }],
-    ['releaseCreated', 'release', { action: 'created' }, { action: 'published' }],
-    ['reviewRequested', 'pull_request', { action: 'review_requested' }, { action: 'opened' }],
-  ])('filters %s by its GitHub event action', async (slug, event, accepted, rejected) => {
-    const trigger = pieceFactoryDefinition(createGithub).triggers?.find(
-      (value) => value.slug === slug,
-    );
-    if (!trigger || trigger.type !== 'webhook') throw new Error(`Missing ${slug} webhook.`);
+    {
+      trigger: branchCreated,
+      event: 'create',
+      accepted: { ref_type: 'branch' },
+      rejected: { ref_type: 'tag' },
+    },
+    {
+      trigger: collaboratorAdded,
+      event: 'member',
+      accepted: { action: 'added' },
+      rejected: { action: 'removed' },
+    },
+    {
+      trigger: labelCreated,
+      event: 'label',
+      accepted: { action: 'created' },
+      rejected: { action: 'edited' },
+    },
+    {
+      trigger: milestoneCreated,
+      event: 'milestone',
+      accepted: { action: 'created' },
+      rejected: { action: 'closed' },
+    },
+    {
+      trigger: releaseCreated,
+      event: 'release',
+      accepted: { action: 'created' },
+      rejected: { action: 'published' },
+    },
+    {
+      trigger: reviewRequested,
+      event: 'pull_request',
+      accepted: { action: 'review_requested' },
+      rejected: { action: 'opened' },
+    },
+  ])(
+    'filters $trigger.slug by its GitHub event action',
+    async ({ trigger, event, accepted, rejected }) => {
+      const client = createGithubClient({ auth });
+      const state = { events: [event], hookId: 123, owner: 'org', repo: 'repo', secret: 'secret' };
+      const deliveryRequest = (value: Delivery) =>
+        webhookRequest({ 'x-github-event': event }, state.secret, value);
 
-    const client = createGithubClient({ auth });
-    const state = { events: [event], hookId: 123, owner: 'org', repo: 'repo', secret: 'secret' };
-
-    function request(value: unknown) {
-      const body = JSON.stringify(value);
-
-      return {
-        arrayBuffer: async () => Buffer.from(body),
-        data: value,
-        headers: new Headers({
-          'x-github-event': event,
-          'x-hub-signature-256': `sha256=${createHmac('sha256', state.secret).update(body).digest('hex')}`,
+      await expect(
+        trigger.run({
+          client,
+          input: { repository: { owner: 'org', repo: 'repo' } },
+          state,
+          options: {},
+          req: deliveryRequest(accepted),
         }),
-      };
-    }
-
-    await expect(
-      trigger.run({
-        client,
-        input: { repository: { owner: 'org', repo: 'repo' } },
-        state,
-        options: {},
-        req: request(accepted),
-      }),
-    ).resolves.toHaveLength(1);
-    await expect(
-      trigger.run({
-        client,
-        input: { repository: { owner: 'org', repo: 'repo' } },
-        state,
-        options: {},
-        req: request(rejected),
-      }),
-    ).resolves.toEqual([]);
-  });
+      ).resolves.toHaveLength(1);
+      await expect(
+        trigger.run({
+          client,
+          input: { repository: { owner: 'org', repo: 'repo' } },
+          state,
+          options: {},
+          req: deliveryRequest(rejected),
+        }),
+      ).resolves.toEqual([]);
+    },
+  );
 
   it('filters commit pushes and mentions beyond their event names', async () => {
-    const definitions = pieceFactoryDefinition(createGithub).triggers;
-    const commit = definitions?.find((value) => value.slug === 'commitCreated');
-    const mention = definitions?.find((value) => value.slug === 'mentioned');
-    if (!commit || commit.type !== 'webhook' || !mention || mention.type !== 'webhook') {
-      throw new Error('Missing commit or mention webhook.');
-    }
-
+    const commit = commitCreated;
+    const mention = mentioned;
     const client = createGithubClient({ auth });
-
-    function request(event: string, secret: string, value: unknown) {
-      const body = JSON.stringify(value);
-
-      return {
-        arrayBuffer: async () => Buffer.from(body),
-        data: value,
-        headers: new Headers({
-          'x-github-event': event,
-          'x-hub-signature-256': `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`,
-        }),
-      };
-    }
+    const deliveryRequest = (event: string, secret: string, value: Delivery) =>
+      webhookRequest({ 'x-github-event': event }, secret, value);
 
     const commitState = {
       events: ['push'],
@@ -605,7 +607,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state: commitState,
         options: {},
-        req: request('push', commitState.secret, push),
+        req: deliveryRequest('push', commitState.secret, push),
       }),
     ).resolves.toEqual([{ data: { id: 'one', distinct: true }, dedupeKey: `${commitHash}:0` }]);
     await expect(
@@ -614,7 +616,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state: commitState,
         options: {},
-        req: request('push', commitState.secret, { ...push, ref: 'refs/tags/v1' }),
+        req: deliveryRequest('push', commitState.secret, { ...push, ref: 'refs/tags/v1' }),
       }),
     ).resolves.toEqual([]);
 
@@ -633,7 +635,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state: mentionState,
         options: {},
-        req: request('issue_comment', mentionState.secret, {
+        req: deliveryRequest('issue_comment', mentionState.secret, {
           action: 'created',
           comment: { body: 'Please review, @octocat.' },
         }),
@@ -645,7 +647,7 @@ describe('github', () => {
         input: { repository: { owner: 'org', repo: 'repo' } },
         state: mentionState,
         options: {},
-        req: request('issue_comment', mentionState.secret, {
+        req: deliveryRequest('issue_comment', mentionState.secret, {
           action: 'created',
           comment: { body: 'Please ask @octocat-team.' },
         }),

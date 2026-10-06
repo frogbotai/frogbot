@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ClientField, DefaultCellComponentProps } from 'payload';
 import type { ComponentType, ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 const { DefaultCell, translation } = vi.hoisted(() => ({
   DefaultCell: vi.fn(({ cellData }: { cellData?: unknown }) => (
@@ -192,11 +192,9 @@ describe('simple kind cells', () => {
   it('keeps a link click from reaching the card', () => {
     const onCardClick = vi.fn();
 
-    render(
-      <div onClick={onCardClick}>
-        <KindLink href="#pricing">Pricing</KindLink>
-      </div>,
-    );
+    document.addEventListener('click', onCardClick);
+    onTestFinished(() => document.removeEventListener('click', onCardClick));
+    render(<KindLink href="#pricing">Pricing</KindLink>);
 
     fireEvent.click(screen.getByRole('link'));
 

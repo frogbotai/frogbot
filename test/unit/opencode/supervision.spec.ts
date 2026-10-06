@@ -24,7 +24,7 @@ import {
   STALL_MS,
   stashes,
   worktreeCount,
-} from '../../../.opencode/plugins/frogbot/supervision.ts';
+} from '../../../.opencode/plugins/frogbot/supervision.js';
 
 const MINUTE = 60_000;
 
@@ -400,15 +400,19 @@ describe('contextTokens', () => {
 });
 
 describe('createResumeCap', () => {
-  const child = async () => ({ title: 'Implement stage 3', tokens: 182_400, cost: 4.1 });
+  const child = () => Promise.resolve({ title: 'Implement stage 3', tokens: 182_400, cost: 4.1 });
 
   const memory = () => {
     const values = new Map<string, unknown>();
 
     return {
       values,
-      get: async (key: string) => values.get(key),
-      set: async (key: string, value: number) => void values.set(key, value),
+      get: (key: string) => Promise.resolve(values.get(key)),
+      set: (key: string, value: number) => {
+        values.set(key, value);
+
+        return Promise.resolve();
+      },
     };
   };
 

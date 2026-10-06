@@ -46,6 +46,15 @@ function Admin({ nav }: { nav: StepNavItem[] }) {
   );
 }
 
+// MutationObserver callbacks run on a microtask; an async act lets them deliver before it returns.
+function headChange(change: () => void): Promise<void> {
+  return act(() => {
+    change();
+
+    return Promise.resolve();
+  });
+}
+
 function ownedTitle() {
   return document.head.querySelector<HTMLTitleElement>('title[data-frogbot-tab-title]');
 }
@@ -133,7 +142,7 @@ describe('TabTitleSync', () => {
 
     const owned = ownedTitle();
 
-    await act(async () => {
+    await headChange(() => {
       nextTitle('Editing - Task - FrogBot');
     });
 
@@ -153,7 +162,7 @@ describe('TabTitleSync', () => {
   it('corrects another writer changing document.title', async () => {
     render(<Admin nav={[{ label: 'Reports' }]} />);
 
-    await act(async () => {
+    await headChange(() => {
       document.title = 'x';
     });
 
@@ -163,7 +172,7 @@ describe('TabTitleSync', () => {
   it('corrects a characterData mutation to its title', async () => {
     render(<Admin nav={[{ label: 'Reports' }]} />);
 
-    await act(async () => {
+    await headChange(() => {
       ownedTitle()!.firstChild!.nodeValue = 'x';
     });
 
@@ -189,7 +198,7 @@ describe('TabTitleSync', () => {
   it('removes its title when the label clears and reveals the current Next title', async () => {
     const { rerender } = render(<Admin nav={[{ label: 'Reports' }]} />);
 
-    await act(async () => {
+    await headChange(() => {
       nextTitle('Current Next title');
     });
 
@@ -209,7 +218,7 @@ describe('TabTitleSync', () => {
       expect(ownedTitle()).toBeNull();
       expect(document.title).toBe('Payload - FrogBot');
 
-      await act(async () => {
+      await headChange(() => {
         nextTitle('Dashboard - FrogBot');
       });
 
@@ -242,7 +251,7 @@ describe('TabTitleSync', () => {
     const writeText = vi.spyOn(owned, 'textContent', 'set');
     const prepend = vi.spyOn(document.head, 'prepend');
 
-    await act(async () => {
+    await headChange(() => {
       document.head.append(document.createElement('meta'));
     });
 
@@ -257,7 +266,7 @@ describe('TabTitleSync', () => {
     const writeText = vi.spyOn(ownedTitle()!, 'textContent', 'set');
     const prepend = vi.spyOn(document.head, 'prepend');
 
-    await act(async () => {
+    await headChange(() => {
       document.head.append(document.createElement('meta'));
     });
 

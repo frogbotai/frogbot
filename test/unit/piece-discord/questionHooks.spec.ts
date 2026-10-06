@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import type {
   ChannelQuestionCall,
   QuestionHookArgs,
   QuestionInteraction,
   QuestionRecord,
-} from '../../../packages/frogbot/src/exports/pieces.js';
+} from 'frogbot/pieces';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import {
   createDiscordClient,
@@ -47,10 +47,10 @@ const input: ChannelQuestionCall = {
 function fixture(body: unknown = { id: '900' }) {
   const requests: DiscordRequest[] = [];
   const client = {
-    request: vi.fn(async (request: DiscordRequest) => {
+    request: vi.fn((request: DiscordRequest) => {
       requests.push(request);
 
-      return { status: 200, headers: {}, body };
+      return Promise.resolve({ status: 200, headers: {}, body });
     }),
   } as unknown as DiscordClient;
 
@@ -267,9 +267,9 @@ describe('Discord question hooks', () => {
 
   it('propagates a Discord error from a hook', async () => {
     const client = {
-      request: vi.fn(async () => {
-        throw new Error('Discord request failed (403): Missing Access');
-      }),
+      request: vi.fn(() =>
+        Promise.reject(new Error('Discord request failed (403): Missing Access')),
+      ),
     } as unknown as DiscordClient;
 
     await expect(
@@ -289,7 +289,9 @@ describe('Discord question hooks', () => {
   });
 
   it('sends piece client requests to a configured API URL', async () => {
-    const fetch = vi.fn(async () => new Response(JSON.stringify({ id: '1' })));
+    const fetch = vi.fn((_url: string | URL | Request) =>
+      Promise.resolve(new Response(JSON.stringify({ id: '1' }))),
+    );
 
     vi.stubGlobal('fetch', fetch);
 

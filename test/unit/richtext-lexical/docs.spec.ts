@@ -1,9 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { createServerFeature, ParagraphFeature } from '@frogbotai/richtext-lexical';
+import { type createServerFeature, ParagraphFeature } from '@frogbotai/richtext-lexical';
 import { editorConfigFactory } from '@payloadcms/richtext-lexical';
 import type { SanitizedConfig } from 'payload';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 
 const featureDocs = readFileSync(
   new URL('../../../docs/rich-text/custom-features.mdx', import.meta.url),
@@ -21,10 +24,24 @@ if (!dependencyExample) {
   throw new Error('Missing documented dependency example');
 }
 
-const DividerFeature = new Function(
-  'createServerFeature',
-  dependencyExample.replace(/^import .*$/gm, '').replace('export const DividerFeature =', 'return'),
-)(createServerFeature) as ReturnType<typeof createServerFeature>;
+const packageEntry = fileURLToPath(
+  new URL('../../../packages/richtext-lexical/src/index.ts', import.meta.url),
+);
+const exampleDir = mkdtempSync(path.join(os.tmpdir(), 'frogbot-richtext-docs-'));
+const examplePath = path.join(exampleDir, 'divider-feature.mjs');
+
+writeFileSync(
+  examplePath,
+  dependencyExample.replace("'@frogbotai/richtext-lexical'", JSON.stringify(packageEntry)),
+);
+
+const { DividerFeature }: { DividerFeature: ReturnType<typeof createServerFeature> } = await import(
+  pathToFileURL(examplePath).href
+);
+
+afterAll(() => {
+  rmSync(exampleDir, { force: true, recursive: true });
+});
 
 describe('rich text documentation examples', () => {
   it('rejects a missing paragraph feature in the exact dependency example', async () => {

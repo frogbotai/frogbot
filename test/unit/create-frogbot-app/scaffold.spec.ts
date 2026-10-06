@@ -224,12 +224,27 @@ describe('template reconciliation', () => {
   });
 
   it.each([
-    ['sqlite', 'sqliteAdapter', '@frogbotai/db-sqlite', 'file:./frogbot.db'],
-    ['postgres', 'postgresAdapter', '@frogbotai/db-postgres', 'postgres://'],
-    ['mongodb', 'mongooseAdapter', '@frogbotai/db-mongodb', 'mongodb://'],
+    {
+      absent: [],
+      adapter: 'sqliteAdapter',
+      database: 'sqlite',
+      dependency: '@frogbotai/db-sqlite',
+    },
+    {
+      absent: ['libsql'],
+      adapter: 'postgresAdapter',
+      database: 'postgres',
+      dependency: '@frogbotai/db-postgres',
+    },
+    {
+      absent: ['drizzle-kit', 'libsql'],
+      adapter: 'mongooseAdapter',
+      database: 'mongodb',
+      dependency: '@frogbotai/db-mongodb',
+    },
   ] as const)(
-    'applies the %s database without changing the lexical editor',
-    (database, adapter, dependency) => {
+    'applies the $database database without changing the lexical editor',
+    ({ absent, adapter, database, dependency }) => {
       const dest = copyTemplate();
 
       applyDatabase(dest, database);
@@ -244,8 +259,9 @@ describe('template reconciliation', () => {
       expect(config).toContain('editor: lexicalEditor()');
       expect(pkg.dependencies[dependency]).toBeDefined();
       expect(pkg.dependencies['@frogbotai/richtext-lexical']).toBeDefined();
-      if (database === 'mongodb') expect(pkg.dependencies['drizzle-kit']).toBeUndefined();
-      if (database !== 'sqlite') expect(pkg.dependencies.libsql).toBeUndefined();
+      for (const name of absent) {
+        expect(pkg.dependencies[name]).toBeUndefined();
+      }
     },
   );
 

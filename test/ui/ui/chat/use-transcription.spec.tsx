@@ -5,7 +5,7 @@ import { useTranscription } from '../../../../packages/ui/src/chat/use-transcrip
 
 class Recorder {
   static instances: Recorder[] = [];
-  static isTypeSupported = vi.fn(() => true);
+  static isTypeSupported = vi.fn((_type: string) => true);
   ondataavailable: ((event: { data: Blob }) => void) | null = null;
   onstop: (() => void) | null = null;
   mimeType: string;

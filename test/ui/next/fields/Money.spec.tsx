@@ -1,16 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ClientField, DefaultCellComponentProps, NumberFieldClientProps } from 'payload';
+import type { DefaultCellComponentProps, NumberFieldClient, NumberFieldClientProps } from 'payload';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { DefaultCell, field, setValue, translation } = vi.hoisted(() => ({
+const { DefaultCell, setValue, translation } = vi.hoisted(() => ({
   DefaultCell: vi.fn(({ cellData }: { cellData?: unknown }) => (
     <span data-testid="default-cell">{String(cellData)}</span>
   )),
-  field: { value: undefined as unknown },
   setValue: vi.fn(),
   translation: { language: 'en' },
 }));
+const field = vi.hoisted((): { value: unknown } => ({ value: undefined }));
 
 vi.mock('@payloadcms/ui', () => ({
   DefaultCell,
@@ -39,8 +39,12 @@ vi.mock('@payloadcms/ui', () => ({
 const { MoneyCell, MoneyField } =
   await import('../../../../packages/next/src/fields/Money/index.client.js');
 
-function moneyField(currency = 'USD', admin: Record<string, unknown> = {}) {
-  return {
+// Payload's client `admin` type Picks from an optional type, which makes every picked key
+// required; the fixture states only the admin keys it uses.
+function moneyField(currency = 'USD', admin: Record<string, unknown> = {}): NumberFieldClient {
+  const field: Omit<NumberFieldClient, 'admin'> & {
+    admin?: Partial<NonNullable<NumberFieldClient['admin']>>;
+  } = {
     name: 'price',
     type: 'number',
     label: 'Price',
@@ -49,7 +53,17 @@ function moneyField(currency = 'USD', admin: Record<string, unknown> = {}) {
       ...admin,
       custom: { frogbot: { kind: { type: 'money', currency, precision: 'auto' } } },
     },
-  } as ClientField & NumberFieldClientProps['field'];
+  };
+
+  return field as NumberFieldClient;
+}
+
+function amountInput(container: HTMLElement): HTMLInputElement {
+  const input = container.querySelector('input');
+
+  if (!input) throw new Error('The money field rendered no input.');
+
+  return input;
 }
 
 function cell(cellData: unknown, currency?: string): DefaultCellComponentProps {
@@ -155,7 +169,7 @@ describe('MoneyField', () => {
   it('saves a typed amount', () => {
     const { container } = renderField();
 
-    fireEvent.change(container.querySelector('input')!, { target: { value: '12.5' } });
+    fireEvent.change(amountInput(container), { target: { value: '12.5' } });
 
     expect(setValue).toHaveBeenCalledWith(12.5);
   });
@@ -165,7 +179,7 @@ describe('MoneyField', () => {
 
     const { container } = renderField();
 
-    fireEvent.change(container.querySelector('input')!, { target: { value: '' } });
+    fireEvent.change(amountInput(container), { target: { value: '' } });
 
     expect(setValue).toHaveBeenCalledWith(null);
   });

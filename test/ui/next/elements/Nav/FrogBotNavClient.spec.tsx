@@ -1,3 +1,4 @@
+import type * as FrogBotUi from '@frogbotai/ui';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +12,7 @@ const setPreference = vi.fn();
 let nav: { navOpen: boolean; setNavOpen: (open: boolean) => void };
 
 vi.mock('@frogbotai/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@frogbotai/ui')>()),
+  ...(await importOriginal<typeof FrogBotUi>()),
   useIsMobile: () => isMobile,
 }));
 

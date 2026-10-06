@@ -23,7 +23,7 @@ it('useLivePreview merges posted data through the request handler', async () => 
     useLivePreview({
       initialData: { id: '1', title: 'A' },
       serverURL: window.location.origin,
-      requestHandler: async ({ data }) => Response.json(data.data),
+      requestHandler: ({ data }) => Promise.resolve(Response.json(data.data)),
     }),
   );
 

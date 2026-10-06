@@ -18,24 +18,35 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+// The component continues on a microtask after a deferred resolves; the async act lets it run.
+function settle(resolve: () => void): Promise<void> {
+  return act(() => {
+    resolve();
+
+    return Promise.resolve();
+  });
+}
+
 function uploadServer() {
   const files: File[] = [];
   const texts = new Map<string, string>();
 
-  const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fetch = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
     const file = (init?.body as FormData).get('file') as File;
 
     files.push(file);
 
-    return Response.json({
-      doc: {
-        id: `asset-${files.length}`,
-        filename: file.name,
-        mimeType: file.type,
-        text: texts.get(file.name) ?? null,
-      },
-      message: 'Document successfully created.',
-    });
+    return Promise.resolve(
+      Response.json({
+        doc: {
+          id: `asset-${files.length}`,
+          filename: file.name,
+          mimeType: file.type,
+          text: texts.get(file.name) ?? null,
+        },
+        message: 'Document successfully created.',
+      }),
+    );
   });
 
   return { fetch, files, texts };
@@ -284,7 +295,7 @@ describe('Composer', () => {
     expect(card.dataset.state).toBe('text');
     expect(screen.getByRole('button', { name: 'Open app.js' })).toBeTruthy();
     expect(status()).toBe('app.js attached as text');
-    expect(server.files.map(({ name, type }) => ({ name, type }))).toEqual([
+    expect(server.files.map(({ name, type }: File) => ({ name, type }))).toEqual([
       { name: 'app.js.txt', type: 'text/plain' },
     ]);
     expect(await server.files[0]?.text()).toBe("console.log('hi');");
@@ -363,7 +374,7 @@ describe('Composer', () => {
 
     const card = await screen.findByRole('group', { name: 'report.docx, DOCX, uploading' });
 
-    await act(async () => {
+    await settle(() => {
       upload.resolve(
         Response.json({
           doc: { id: 'asset-1', filename: 'report.docx', mimeType: DOCX_TYPE, text: '# Report' },
@@ -445,7 +456,7 @@ describe('Composer', () => {
   it('shows a Word document the server refuses as red, without Retry, when the error name is minified', async () => {
     const { drop, onSubmit, server } = renderComposer();
 
-    server.fetch.mockImplementationOnce(async () => fileRefusal('report.docx'));
+    server.fetch.mockImplementationOnce(() => Promise.resolve(fileRefusal('report.docx')));
 
     drop(binary('report.docx', DOCX_TYPE));
 
@@ -467,8 +478,10 @@ describe('Composer', () => {
     const { drop, server } = renderComposer();
 
     server.texts.set('report.docx', '# Report');
-    server.fetch.mockImplementationOnce(async () =>
-      Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
+    server.fetch.mockImplementationOnce(() =>
+      Promise.resolve(
+        Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
+      ),
     );
 
     drop(binary('report.docx', DOCX_TYPE));
@@ -511,8 +524,10 @@ describe('Composer', () => {
   it('retries a failed upload', async () => {
     const { drop, onSubmit, server } = renderComposer();
 
-    server.fetch.mockImplementationOnce(async () =>
-      Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
+    server.fetch.mockImplementationOnce(() =>
+      Promise.resolve(
+        Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
+      ),
     );
 
     drop(new File(['retry'], 'retry.txt', { type: 'text/plain' }));
@@ -537,8 +552,13 @@ describe('Composer', () => {
   it('shows a file over the upload limit as too large, without Retry', async () => {
     const { drop, server } = renderComposer();
 
-    server.fetch.mockImplementationOnce(async () =>
-      Response.json({ errors: [{ message: 'File size limit has been reached' }] }, { status: 413 }),
+    server.fetch.mockImplementationOnce(() =>
+      Promise.resolve(
+        Response.json(
+          { errors: [{ message: 'File size limit has been reached' }] },
+          { status: 413 },
+        ),
+      ),
     );
 
     drop(binary('big.mov', 'video/quicktime'));
@@ -629,7 +649,7 @@ describe('Composer', () => {
 
     expect(status()).toBe('notes.txt removed');
 
-    await act(async () => {
+    await settle(() => {
       upload.resolve(
         Response.json({ doc: { id: 'late', filename: 'notes.txt', mimeType: 'text/plain' } }),
       );
@@ -657,7 +677,7 @@ describe('Composer', () => {
 
     expect(onSubmit).toHaveBeenCalledOnce();
 
-    await act(async () => submitted.resolve());
+    await settle(() => submitted.resolve());
 
     expect(screen.queryByTestId('attachment-card')).toBeNull();
   });

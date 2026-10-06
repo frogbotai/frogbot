@@ -1,10 +1,12 @@
 import { createHmac } from 'node:crypto';
 
+import type { FrogBotRequest as PieceRequest } from 'frogbot/pieces';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { pieceInstanceRuntime } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import { createLinearClient } from '../../../packages/pieces/piece-linear/src/client.js';
 import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js';
 import { issueCreated } from '../../../packages/pieces/piece-linear/src/triggers/issueCreated.js';
 
@@ -28,7 +30,13 @@ function request({ body = payload(), signature = sign({ body }) } = {}) {
 
 function verify(req: FrogBotRequest) {
   const runtime = pieceInstanceRuntime(createLinear({ webhookSecret }));
-  return runtime.definition.webhook!.verify({ req, options: runtime.options as object });
+  return runtime.definition.webhook!.verify!({ req, options: runtime.options as object });
+}
+
+function signedRequest(signature: string) {
+  const req = request({ signature });
+  if (!signature) req.headers.delete('linear-signature');
+  return req;
 }
 
 const graphQL = (data: unknown) =>
@@ -79,9 +87,7 @@ describe('Linear webhook verification', () => {
   it.each(['', 'a', '0'.repeat(63), '0'.repeat(64), 'g'.repeat(64), '0'.repeat(65)])(
     'rejects a missing or invalid signature %j',
     async (signature) => {
-      const req = request({ signature });
-      if (!signature) req.headers.delete('linear-signature');
-      await expect(verify(req)).resolves.toBe(false);
+      await expect(verify(signedRequest(signature))).resolves.toBe(false);
     },
   );
 
@@ -107,7 +113,7 @@ describe('Linear webhook verification', () => {
   it('fails closed without a configured secret', async () => {
     const runtime = pieceInstanceRuntime(createLinear());
     await expect(
-      runtime.definition.webhook!.verify({ req: request(), options: runtime.options as object }),
+      runtime.definition.webhook!.verify!({ req: request(), options: runtime.options as object }),
     ).resolves.toBe(false);
   });
 
@@ -120,12 +126,14 @@ describe('Linear webhook verification', () => {
 
 describe('Linear webhook lifecycle', () => {
   it('passes the signing secret through the real SDK and deletes the registered webhook', async () => {
-    const fetch = vi.fn().mockImplementation(async () =>
-      graphQL({
-        webhookCreate: { success: true, lastSyncId: 1, webhook: { id: 'hook' } },
-        webhook: { id: 'hook' },
-        webhookDelete: { success: true, lastSyncId: 2, entityId: 'hook' },
-      }),
+    const fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        graphQL({
+          webhookCreate: { success: true, lastSyncId: 1, webhook: { id: 'hook' } },
+          webhook: { id: 'hook' },
+          webhookDelete: { success: true, lastSyncId: 2, entityId: 'hook' },
+        }),
+      ),
     );
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'lin_api_test' };
@@ -135,9 +143,14 @@ describe('Linear webhook lifecycle', () => {
         connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
       },
       user: null,
-    } as unknown as FrogBotRequest;
+    } as unknown as PieceRequest;
     const client = await linear.client({ req });
-    const args = { client, input: { teamId: 'team' }, options: { webhookSecret }, req };
+    const args = {
+      client,
+      input: { teamId: 'team' },
+      options: { webhookSecret, channelMode: 'agent-sessions' as const },
+      req,
+    };
     const state = await issueCreated.onEnable({
       ...args,
       webhookUrl: 'https://example.com/api/webhooks/linear/subscription',
@@ -199,8 +212,7 @@ describe('Linear webhook lifecycle', () => {
         }),
       ),
     );
-    const definition = pieceInstanceRuntime(createLinear()).definition;
-    const client = await definition.client!({ auth: { apiKey: 'lin_api_test' }, options: {} });
+    const client = createLinearClient({ auth: { apiKey: 'lin_api_test' } });
     await expect(
       issueCreated.onDisable({ client, state: { webhookId: 'hook' } } as never),
     ).rejects.toThrow("Linear failed to delete the issueCreated webhook 'hook'.");
@@ -237,7 +249,7 @@ describe('Linear webhook lifecycle', () => {
     const runtime = pieceInstanceRuntime(entry.instance);
     expect(runtime.options).toEqual({ webhookSecret, channelMode: 'agent-sessions' });
     await expect(
-      runtime.definition.webhook!.verify({
+      runtime.definition.webhook!.verify!({
         req: request({ body: payload(Date.now()) }),
         options: runtime.options as object,
       }),

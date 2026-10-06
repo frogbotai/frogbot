@@ -36,7 +36,7 @@ it('opens, focuses, and closes the dialog from the keyboard', async () => {
   expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Open dialog' }));
 });
 
-it('supports content without an overlay or close button', async () => {
+it('supports content without an overlay or close button', () => {
   render(
     <Dialog open onOpenChange={vi.fn()}>
       <DialogContent showOverlay={false} withCloseButton={false} aria-label="Plain dialog" />

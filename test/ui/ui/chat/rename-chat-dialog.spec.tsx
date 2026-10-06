@@ -64,7 +64,7 @@ describe('RenameChatDialog', () => {
     );
   });
 
-  it('remains usable when suggestion generation fails', async () => {
+  it('remains usable when suggestion generation fails', () => {
     const request = vi.fn().mockRejectedValue(new Error('offline'));
     render(
       <RenameChatDialog

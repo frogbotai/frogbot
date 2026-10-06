@@ -4,6 +4,8 @@ import { contentBytes } from '../../../packages/pieces/piece-google-drive/src/fi
 import { folderMimeType } from '../../../packages/pieces/piece-google-drive/src/schemas.js';
 import { fixture, json, metadata } from './fixtures.js';
 
+type FindByID = Awaited<ReturnType<typeof fixture>>['findByID'];
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Google Drive files through the SDK', () => {
@@ -81,17 +83,28 @@ describe('Google Drive files through the SDK', () => {
     expect([...fetchFile.mock.calls[0][1].headers]).toEqual([]);
   });
 
-  it.each(['missing', 'denied', 'fetch'])('fails closed on %s file access', async (failure) => {
+  it.each([
+    {
+      failure: 'missing',
+      arrange: (findByID: FindByID) => findByID.mockResolvedValue({}),
+      fetches: 0,
+    },
+    {
+      failure: 'denied',
+      arrange: (findByID: FindByID) => findByID.mockRejectedValue(new Error('Access denied')),
+      fetches: 0,
+    },
+    { failure: 'fetch', arrange: () => undefined, fetches: 1 },
+  ])('fails closed on $failure file access', async ({ arrange, fetches }) => {
     const fetchFile = vi.fn().mockResolvedValue(new Response('denied', { status: 403 }));
     vi.stubGlobal('fetch', fetchFile);
     const { drive, req, findByID, requests } = await fixture();
-    if (failure === 'missing') findByID.mockResolvedValue({});
-    if (failure === 'denied') findByID.mockRejectedValue(new Error('Access denied'));
+    arrange(findByID);
     await expect(
       drive.uploadFile({ req, input: { file: { fileId: 'source' } } }),
     ).rejects.toThrow();
     expect(requests).toEqual([]);
-    if (failure !== 'fetch') expect(fetchFile).not.toHaveBeenCalled();
+    expect(fetchFile).toHaveBeenCalledTimes(fetches);
   });
 
   it('downloads arbitrary bytes to an access-checked FrogBot file', async () => {
@@ -215,27 +228,26 @@ describe('Google Drive files through the SDK', () => {
   });
 
   it.each([
-    [['old', 'older'], 'destination', 'old,older', 'destination', 2],
-    [['destination', 'old'], 'destination', 'old', null, 2],
-    [['destination'], 'destination', null, null, 1],
-    [[], 'destination', null, 'destination', 2],
-  ])(
-    'moves from %j without detaching the destination',
-    async (parents, folderId, remove, add, count) => {
-      const { drive, req, requests } = await fixture(() => json({ ...metadata, parents }));
-      await drive.moveFile({
-        req,
-        input: { fileId: 'file', folderId, includeSharedDrives: true },
-      });
-      expect(requests).toHaveLength(count);
-      if (count === 2) {
-        expect(requests[1]?.method).toBe('PATCH');
-        expect(requests[1]?.url.searchParams.get('removeParents')).toBe(remove);
-        expect(requests[1]?.url.searchParams.get('addParents')).toBe(add);
-        expect(requests[1]?.url.searchParams.get('supportsAllDrives')).toBe('true');
-      }
-    },
-  );
+    [['old', 'older'], 'destination', [{ removeParents: 'old,older', addParents: 'destination' }]],
+    [['destination', 'old'], 'destination', [{ removeParents: 'old', addParents: null }]],
+    [['destination'], 'destination', []],
+    [[], 'destination', [{ removeParents: null, addParents: 'destination' }]],
+  ])('moves from %j without detaching the destination', async (parents, folderId, patches) => {
+    const { drive, req, requests } = await fixture(() => json({ ...metadata, parents }));
+    await drive.moveFile({
+      req,
+      input: { fileId: 'file', folderId, includeSharedDrives: true },
+    });
+    expect(requests).toHaveLength(1 + patches.length);
+    expect(
+      requests.slice(1).map(({ method, url }) => ({
+        method,
+        removeParents: url.searchParams.get('removeParents'),
+        addParents: url.searchParams.get('addParents'),
+        supportsAllDrives: url.searchParams.get('supportsAllDrives'),
+      })),
+    ).toEqual(patches.map((patch) => ({ method: 'PATCH', ...patch, supportsAllDrives: 'true' })));
+  });
 
   it('trashes by PATCH and permanently deletes by DELETE', async () => {
     const { drive, req, requests } = await fixture(({ method }) =>

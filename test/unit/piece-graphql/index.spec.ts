@@ -41,7 +41,7 @@ describe('graphql', () => {
     const definition = pieceActionDefinition(graphql.sendRequest);
 
     expect(
-      definition?.output.parse({
+      definition?.output?.parse({
         status: 200,
         headers: { 'content-type': 'application/json' },
         body: { data: { frog: 'bot' } },

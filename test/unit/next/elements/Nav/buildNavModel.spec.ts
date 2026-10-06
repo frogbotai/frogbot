@@ -15,15 +15,23 @@ const i18n = {
     })[key] ?? key,
 } as ServerProps['i18n'];
 
-const permissions = {
-  collections: {
-    hidden: { read: true },
-    posts: { read: true },
-    users: { read: true },
-    projects: { read: true },
-  },
-  globals: {},
-} as unknown as NonNullable<ServerProps['permissions']>;
+function collectionPermissions(
+  read: Record<string, boolean>,
+): NonNullable<ServerProps['permissions']> {
+  return {
+    collections: Object.fromEntries(
+      Object.entries(read).map(([slug, value]) => [slug, { read: value }]),
+    ),
+    globals: {},
+  } as unknown as NonNullable<ServerProps['permissions']>;
+}
+
+const permissions = collectionPermissions({
+  hidden: true,
+  posts: true,
+  users: true,
+  projects: true,
+});
 
 function config(): SanitizedConfig {
   return {
@@ -118,9 +126,12 @@ describe('buildCollectionGroups', () => {
   });
 
   it('excludes entities without visibility or read permission', () => {
-    const nextPermissions = structuredClone(permissions);
-
-    nextPermissions.collections.users.read = false;
+    const nextPermissions = collectionPermissions({
+      hidden: true,
+      posts: true,
+      users: false,
+      projects: true,
+    });
 
     const result = buildCollectionGroups({
       config: config(),

@@ -19,7 +19,7 @@ vi.mock('@payloadcms/ui', async () => {
     stepNav: StepNavItem[];
   }>({ setStepNav: () => undefined, stepNav: [] });
 
-  mocks.StepNavProvider = ({ children }: { children: ReactNode }) => {
+  mocks.StepNavProvider = function StepNavProvider({ children }: { children: ReactNode }) {
     const [stepNav, setStepNav] = useState<StepNavItem[]>([]);
 
     return createElement(StepNavContext.Provider, { value: { setStepNav, stepNav } }, children);
@@ -41,7 +41,11 @@ const { useStepNav } = await import('@payloadcms/ui');
 function TopBar() {
   const { stepNav } = useStepNav();
 
-  return <output data-testid="step-nav">{stepNav.map(({ label }) => label).join(' / ')}</output>;
+  return (
+    <output data-testid="step-nav">
+      {stepNav.map(({ label }: StepNavItem) => label).join(' / ')}
+    </output>
+  );
 }
 
 function LabelledPage({ label }: { label: string }) {

@@ -1,11 +1,11 @@
 import { createHmac, generateKeyPairSync, verify } from 'node:crypto';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 vi.mock('../../../packages/frogbot/src/chat/turn/settle.js', () => ({
-  listPendingCalls: vi.fn(async () => []),
+  listPendingCalls: vi.fn(() => Promise.resolve([])),
   settleClientToolCall: vi.fn(),
 }));
 
@@ -34,53 +34,55 @@ describe('GitHub App channel conversation', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string, init?: RequestInit) => {
-        const path = new URL(url).pathname;
-        const headers = new Headers(init?.headers);
-        const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-
-        calls.push({ path, body });
-
-        if (path === '/app/installations/67890/access_tokens') {
-          const jwt = headers.get('authorization')!.replace(/^bearer /i, '');
-          const [header, payload, signature] = jwt.split('.');
-
-          expect(JSON.parse(Buffer.from(payload, 'base64url').toString()).iss).toBe('12345');
-          expect(
-            verify(
-              'RSA-SHA256',
-              Buffer.from(`${header}.${payload}`),
-              keys.publicKey,
-              Buffer.from(signature, 'base64url'),
-            ),
-          ).toBe(true);
-
-          return Response.json({
-            token: 'installation-token',
-            expires_at: new Date(Date.now() + 3_600_000).toISOString(),
-          });
-        }
-
-        if (path === '/users/octocat') {
-          expect(headers.get('authorization')).toBe('Bearer installation-token');
-
-          return Response.json({ email: null });
-        }
-
-        if (path === '/repos/frogbotai/frogbot/issues/12/comments') {
-          expect(headers.get('authorization')).toBe('token installation-token');
-          expect(init?.method).toBe('POST');
-
-          return Response.json({
-            id: 900 + calls.length,
-            body: body.body,
-            user: { id: 99, login: 'frogbot[bot]', type: 'Bot' },
-          });
-        }
-
-        throw new Error(`Unexpected GitHub request: ${path}`);
-      }),
+      vi.fn((url: string, init?: RequestInit) => Promise.resolve().then(() => respond(url, init))),
     );
+
+    function respond(url: string, init?: RequestInit) {
+      const path = new URL(url).pathname;
+      const headers = new Headers(init?.headers);
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+
+      calls.push({ path, body });
+
+      if (path === '/app/installations/67890/access_tokens') {
+        const jwt = headers.get('authorization')!.replace(/^bearer /i, '');
+        const [header, payload, signature] = jwt.split('.');
+
+        expect(JSON.parse(Buffer.from(payload, 'base64url').toString()).iss).toBe('12345');
+        expect(
+          verify(
+            'RSA-SHA256',
+            Buffer.from(`${header}.${payload}`),
+            keys.publicKey,
+            Buffer.from(signature, 'base64url'),
+          ),
+        ).toBe(true);
+
+        return Response.json({
+          token: 'installation-token',
+          expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+        });
+      }
+
+      if (path === '/users/octocat') {
+        expect(headers.get('authorization')).toBe('Bearer installation-token');
+
+        return Response.json({ email: null });
+      }
+
+      if (path === '/repos/frogbotai/frogbot/issues/12/comments') {
+        expect(headers.get('authorization')).toBe('token installation-token');
+        expect(init?.method).toBe('POST');
+
+        return Response.json({
+          id: 900 + calls.length,
+          body: body.body,
+          user: { id: 99, login: 'frogbot[bot]', type: 'Bot' },
+        });
+      }
+
+      throw new Error(`Unexpected GitHub request: ${path}`);
+    }
 
     const deliver = async (id: number, text: string, secret = webhookSecret) => {
       const body = JSON.stringify({
@@ -113,35 +115,33 @@ describe('GitHub App channel conversation', () => {
 
     await fixture.host.initialize(false);
 
-    try {
-      expect((await deliver(1, '@frogbot help', 'wrong-secret'))?.status).toBe(401);
-      await deliver(2, 'An ordinary comment');
+    onTestFinished(() => fixture.host.shutdown());
 
-      expect(fixture.inputs).toHaveLength(0);
+    expect((await deliver(1, '@frogbot help', 'wrong-secret'))?.status).toBe(401);
+    await deliver(2, 'An ordinary comment');
 
-      expect((await deliver(3, '@frogbot help'))?.status).toBe(200);
-      expect(fixture.inputs).toHaveLength(1);
+    expect(fixture.inputs).toHaveLength(0);
 
-      await fixture.host.run(fixture.inputs[0]);
-      await deliver(4, 'Follow-up without a mention');
+    expect((await deliver(3, '@frogbot help'))?.status).toBe(200);
+    expect(fixture.inputs).toHaveLength(1);
 
-      expect(fixture.inputs).toHaveLength(2);
+    await fixture.host.run(fixture.inputs[0]);
+    await deliver(4, 'Follow-up without a mention');
 
-      await fixture.host.run(fixture.inputs[1]);
-      await deliver(4, 'Follow-up without a mention');
+    expect(fixture.inputs).toHaveLength(2);
 
-      expect(fixture.inputs).toHaveLength(2);
-      expect(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
-        'chat-1',
-        'chat-1',
-      ]);
-      expect(calls.filter(({ path }) => path.endsWith('/comments'))).toEqual([
-        { path: '/repos/frogbotai/frogbot/issues/12/comments', body: { body: 'Hello back' } },
-        { path: '/repos/frogbotai/frogbot/issues/12/comments', body: { body: 'Hello back' } },
-      ]);
-      expect(calls.filter(({ path }) => path.endsWith('/access_tokens'))).toHaveLength(2);
-    } finally {
-      await fixture.host.shutdown();
-    }
+    await fixture.host.run(fixture.inputs[1]);
+    await deliver(4, 'Follow-up without a mention');
+
+    expect(fixture.inputs).toHaveLength(2);
+    expect(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
+      'chat-1',
+      'chat-1',
+    ]);
+    expect(calls.filter(({ path }) => path.endsWith('/comments'))).toEqual([
+      { path: '/repos/frogbotai/frogbot/issues/12/comments', body: { body: 'Hello back' } },
+      { path: '/repos/frogbotai/frogbot/issues/12/comments', body: { body: 'Hello back' } },
+    ]);
+    expect(calls.filter(({ path }) => path.endsWith('/access_tokens'))).toHaveLength(2);
   });
 });

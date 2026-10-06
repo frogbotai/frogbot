@@ -78,7 +78,9 @@ function fixture({ channel = false, webhookSecret = factorySecret } = {}) {
     kv: {
       has: vi.fn().mockResolvedValue(false),
       setIfAbsent: vi.fn().mockResolvedValue(true),
-      lock: vi.fn(async (_key, _ttl, run) => run({ signal: new AbortController().signal })),
+      lock: vi.fn((_key, _ttl, run) =>
+        Promise.resolve(run({ signal: new AbortController().signal })),
+      ),
     },
     queue: vi.fn(),
   };
@@ -110,7 +112,9 @@ function fixture({ channel = false, webhookSecret = factorySecret } = {}) {
 }
 
 beforeEach(() => {
-  host.webhook.mockReset().mockImplementation(async () => Response.json({ channel: true }));
+  host.webhook
+    .mockReset()
+    .mockImplementation(() => Promise.resolve(Response.json({ channel: true })));
 });
 
 describe('GitHub subscription ingress', () => {

@@ -58,28 +58,28 @@ function fixture({
   failures = [],
   threadId = 'telegram:-100:7',
 }: {
-  failures?: unknown[];
+  failures?: Error[];
   threadId?: string;
 } = {}) {
   const requests: Array<{ method: string; body: Record<string, unknown> }> = [];
   const error = vi.fn();
 
   const client = {
-    call: vi.fn(async (method: string, body: Record<string, unknown>) => {
+    call: vi.fn((method: string, body: Record<string, unknown>) => {
       requests.push({ method, body });
 
       const failure = failures.shift();
 
-      if (failure) throw failure;
+      if (failure) return Promise.reject(failure);
 
-      return {
+      return Promise.resolve({
         ok: true,
         result: {
           message_id: 900,
           date: 1_790_409_600,
           chat: { id: Number(threadId.split(':')[1]) },
         },
-      };
+      });
     }),
   } as unknown as TelegramBotClient;
 

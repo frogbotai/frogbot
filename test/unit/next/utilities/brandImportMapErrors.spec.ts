@@ -1,5 +1,5 @@
 import { getFromImportMap } from 'payload/shared';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 const { brandImportMapErrors } =
   await import('../../../../packages/next/src/utilities/brandImportMapErrors.js');
@@ -7,14 +7,14 @@ const { brandImportMapErrors } =
 const installed = Symbol.for('frogbot.brandImportMapErrors');
 const originalError = console.error;
 
-let output: ReturnType<typeof vi.fn>;
+let output: Mock<(...data: unknown[]) => void>;
 
 function lookup(PayloadComponent: string) {
   return getFromImportMap({ importMap: {}, PayloadComponent, schemaPath: '' });
 }
 
 beforeEach(() => {
-  output = vi.fn();
+  output = vi.fn<(...data: unknown[]) => void>();
   console.error = output;
 
   delete (globalThis as Record<symbol, unknown>)[installed];

@@ -34,7 +34,7 @@ function waitpoint(overrides: Partial<Waitpoint> = {}): Waitpoint {
     ready: true,
     status: 'pending',
     expiresAt: '2026-09-14T12:00:00Z',
-    snapshot: {
+    data: {
       workflow: 'private-workflow',
       input: { secret: 'private-input' },
       queue: 'private-queue',

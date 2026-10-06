@@ -2,10 +2,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { collections, fetchMock, listQuery, locale, router, selection, toast } = vi.hoisted(() => ({
-  collections: {} as Record<string, unknown>,
-  fetchMock: vi.fn(),
-  listQuery: { query: {} as Record<string, unknown> },
+const { fetchMock, locale, router, selection, toast } = vi.hoisted(() => ({
+  fetchMock: vi.fn<(url: string, init?: RequestInit) => Promise<unknown>>(),
   locale: { code: undefined as string | undefined },
   router: { refresh: vi.fn() },
   selection: {
@@ -15,6 +13,8 @@ const { collections, fetchMock, listQuery, locale, router, selection, toast } = 
   },
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
 }));
+const collections = vi.hoisted((): Record<string, unknown> => ({}));
+const listQuery = vi.hoisted((): { query: Record<string, unknown> } => ({ query: {} }));
 
 vi.mock('@payloadcms/ui', () => ({
   PopupList: {
@@ -82,7 +82,7 @@ function replyWith(...replies: Reply[]) {
 }
 
 function sent(): { body?: unknown; method: string; url: string }[] {
-  return fetchMock.mock.calls.map(([url, init]: [string, RequestInit | undefined]) => ({
+  return fetchMock.mock.calls.map(([url, init]) => ({
     body: init?.body ? JSON.parse(String(init.body)) : undefined,
     method: init?.method ?? 'GET',
     url,
@@ -92,7 +92,7 @@ function sent(): { body?: unknown; method: string; url: string }[] {
 function scopeFor(collectionSlug = 'tasks') {
   return aiBulkScope({
     collectionConfig: collections[collectionSlug] as never,
-    query: listQuery.query as never,
+    query: listQuery.query,
     selectAll: selection.selectAll,
     selectedIDs: selection.selectedIDs,
   });
@@ -228,7 +228,7 @@ describe('AIBulkDialog choices', () => {
 
     const radios = screen.getAllByRole('radio');
 
-    expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual([
+    expect(radios.map((radio: HTMLElement) => radio.getAttribute('aria-checked'))).toEqual([
       'false',
       'false',
       'false',
@@ -236,8 +236,10 @@ describe('AIBulkDialog choices', () => {
     ]);
     expect(
       radios
-        .map((radio) => document.getElementById(String(radio.getAttribute('aria-labelledby'))))
-        .map((label) => label?.textContent),
+        .map((radio: HTMLElement) =>
+          document.getElementById(String(radio.getAttribute('aria-labelledby'))),
+        )
+        .map((label: HTMLElement | null) => label?.textContent),
     ).toEqual(['All in view', 'Only values written by AI', 'Only failed', 'Only never generated']);
   });
 
@@ -389,7 +391,7 @@ describe('AIBulkDialog responses', () => {
         body: { docs: [docs[0]], errors: [{ id: 2, message: 'Locked' }], message: 'Locked' },
         status: 400,
       },
-      { body: patched([docs[2] as Doc]) },
+      { body: patched([docs[2]]) },
     );
     renderItem({ collectionSlug: 'articles', field: articleSummary });
 

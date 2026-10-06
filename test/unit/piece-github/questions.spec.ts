@@ -126,28 +126,30 @@ function github({
   let next = start;
 
   const adapter = {
-    postMessage: vi.fn(async (_thread: string, { raw }: { raw: string }) => {
-      if (posts.length === failPostAt) throw new Error('GitHub is down');
+    postMessage: vi.fn((_thread: string, { raw }: { raw: string }) => {
+      if (posts.length === failPostAt) return Promise.reject(new Error('GitHub is down'));
 
       posts.push(raw);
 
       const id = String(next++);
 
-      return {
+      return Promise.resolve({
         id,
         threadId,
         raw: { comment: { id: Number(id), created_at: at(id) } },
-      };
+      });
     }),
-    editMessage: vi.fn(async (_thread: string, id: string, { raw }: { raw: string }) => {
-      if (failEdits) throw new Error('GitHub is down');
+    editMessage: vi.fn((_thread: string, id: string, { raw }: { raw: string }) => {
+      if (failEdits) return Promise.reject(new Error('GitHub is down'));
 
       edits.push({ id, body: raw });
 
-      return { id, threadId, raw: {} };
+      return Promise.resolve({ id, threadId, raw: {} });
     }),
-    deleteMessage: vi.fn(async (_thread: string, id: string) => {
+    deleteMessage: vi.fn((_thread: string, id: string) => {
       deleted.push(id);
+
+      return Promise.resolve();
     }),
   };
 

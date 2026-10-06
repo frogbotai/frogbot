@@ -67,7 +67,7 @@ describe('API key token utilities', () => {
     },
   );
 
-  it.each([
+  it.each<Record<string, string>>([
     {},
     { authorization: 'Basic fb_token' },
     { authorization: 'Bearer' },

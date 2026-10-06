@@ -13,7 +13,7 @@ describe('loadChats', () => {
       hasNextPage: true,
       hasPrevPage: true,
     };
-    const fetch = vi.fn(() => Promise.resolve(Response.json(result)));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(Response.json(result)));
     await expect(
       loadChats({
         sdk: createFrogBotSDK({ baseURL: '/api', fetch }),

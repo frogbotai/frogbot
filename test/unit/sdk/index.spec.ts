@@ -4,7 +4,7 @@ import { createFrogBotSDK, FrogBotSDK, FrogBotSDKError } from '../../../packages
 
 describe('FrogBotSDK', () => {
   it('composes URLs and configured headers', async () => {
-    const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(new Response('{}')));
     const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api/',
       fetch,
@@ -23,7 +23,7 @@ describe('FrogBotSDK', () => {
   });
 
   it('sends JSON and merges request headers', async () => {
-    const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(new Response('{}')));
     const sdk = new FrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch,
@@ -45,7 +45,7 @@ describe('FrogBotSDK', () => {
   });
 
   it('sends multipart bodies without setting content type', async () => {
-    const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(new Response('{}')));
     const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
     const body = new FormData();
     body.append('_payload', JSON.stringify({ alt: 'Frog' }));
@@ -59,7 +59,7 @@ describe('FrogBotSDK', () => {
   });
 
   it('uploads a file to a collection', async () => {
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         Response.json({
           doc: { id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' },
@@ -147,7 +147,9 @@ describe('FrogBotSDK', () => {
   });
 
   it('transcribes audio through the configured fetch', async () => {
-    const fetch = vi.fn(() => Promise.resolve(Response.json({ text: 'ribbit' })));
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(Response.json({ text: 'ribbit' })),
+    );
     const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch,
@@ -177,7 +179,9 @@ describe('FrogBotSDK', () => {
   });
 
   it('sends chat completion requests through the shared request path', async () => {
-    const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 'chat-1' })));
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(Response.json({ id: 'chat-1' })),
+    );
     const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
 
     const response = await sdk.ai.chat({

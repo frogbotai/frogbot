@@ -291,7 +291,7 @@ describe('verifyGroups', () => {
 
 describe('runGroups', () => {
   const log = path.join(os.tmpdir(), `verify-${process.pid}.log`);
-  const build = async () => ({ ok: true, groups: [] });
+  const build = () => Promise.resolve({ ok: true, groups: [] });
   const pass = ['node', '-e', ''];
   const fail = ['node', '-e', 'process.exit(3)'];
 

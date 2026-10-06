@@ -29,7 +29,9 @@ Paragraph with **strong**, *emphasis*, ~~removed~~, [link](https://example.com),
     );
 
     const inventory = new Set(
-      Array.from(container.querySelectorAll('[class]')).map((element) => element.className),
+      Array.from<Element>(container.querySelectorAll('[class]')).map(
+        (element) => element.className,
+      ),
     );
 
     expect([...inventory].sort()).toEqual(

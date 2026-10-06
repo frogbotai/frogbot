@@ -69,7 +69,7 @@ describe('usageReportsPlugin', () => {
     const usage = result.collections.find((item) => item.slug === 'ai-usage');
 
     expect(result.collections.map((item) => item.slug)).toContain('exports');
-    expect(usage?.admin?.components?.listMenuItems).toEqual([
+    expect(usage).toHaveProperty('admin.components.listMenuItems', [
       expect.objectContaining({ path: '@payloadcms/plugin-import-export/rsc#ExportListMenuItem' }),
     ]);
     expect((result.admin?.components as Record<string, unknown>).providers).toEqual([

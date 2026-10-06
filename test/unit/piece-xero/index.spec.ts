@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 
+import type { FrogBotRequest } from 'frogbot/pieces';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -8,6 +9,7 @@ import {
   pieceInstanceRuntime,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import type { FrogBotRequest as CoreRequest } from '../../../packages/frogbot/src/types/request.js';
 import { xeroActions } from '../../../packages/pieces/piece-xero/src/actions.js';
 import { createXeroClient } from '../../../packages/pieces/piece-xero/src/client.js';
 import {
@@ -19,28 +21,43 @@ import {
 import { xeroTriggers } from '../../../packages/pieces/piece-xero/src/triggers.js';
 import { xeroWebhook } from '../../../packages/pieces/piece-xero/src/webhook.js';
 
-function action(slug: string) {
-  const definition = xeroActions.find((candidate) => candidate.slug === slug);
+type XeroAction = (typeof xeroActions)[number];
+type XeroTrigger = (typeof xeroTriggers)[number];
+
+function action<TSlug extends XeroAction['slug']>(slug: TSlug) {
+  const definition = xeroActions.find(
+    (candidate): candidate is Extract<XeroAction, { slug: TSlug }> => candidate.slug === slug,
+  );
 
   if (!definition) throw new Error(`Missing action ${slug}.`);
 
   return definition;
 }
 
-function trigger(slug: string) {
-  const definition = xeroTriggers.find((candidate) => candidate.slug === slug);
+function trigger<TSlug extends XeroTrigger['slug']>(slug: TSlug) {
+  const definition = xeroTriggers.find(
+    (candidate): candidate is Extract<XeroTrigger, { slug: TSlug }> => candidate.slug === slug,
+  );
 
   if (!definition) throw new Error(`Missing trigger ${slug}.`);
 
   return definition;
 }
 
-function request(data = {}) {
-  return {
-    data,
-    headers: new Headers(),
-    signal: null,
-  };
+function requestFixture(data: unknown, overrides: object) {
+  return { data, headers: new Headers(), signal: null, ...overrides };
+}
+
+function request(data: unknown = {}, overrides: object = {}): FrogBotRequest {
+  return requestFixture(data, overrides) as unknown as FrogBotRequest;
+}
+
+function coreRequest(): CoreRequest {
+  return requestFixture({}, {}) as unknown as CoreRequest;
+}
+
+function cursorValue(cursor: unknown, key: string): unknown {
+  return cursor && typeof cursor === 'object' ? Reflect.get(cursor, key) : undefined;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -73,7 +90,7 @@ describe('xero inventory and OAuth', () => {
       accessToken: 'new',
       refreshToken: 'rotated',
     });
-    await expect(oauth?.account?.({ tokens: {}, client, req: request() })).resolves.toEqual({
+    await expect(oauth?.account?.({ tokens: {}, client, req: coreRequest() })).resolves.toEqual({
       id: 'user-1',
       label: 'Frog',
       email: 'frog@example.com',
@@ -95,7 +112,7 @@ describe('xero inventory and OAuth', () => {
     };
 
     await expect(
-      definition.options.tenantId({ client, input: {}, options: {}, req: request() }),
+      definition.options?.tenantId?.({ client, input: {}, options: {}, req: request() }),
     ).resolves.toEqual([
       { label: 'One', value: 'tenant-1' },
       { label: 'Two', value: 'tenant-2' },
@@ -122,7 +139,7 @@ describe('xero transport and actions', () => {
         query: { page: 2, includeArchived: false },
         body: { Contacts: [{ Name: 'Frog' }] },
       },
-      action('findContact').output,
+      action('findContact').output!,
     );
 
     expect(fetch).toHaveBeenCalledWith(
@@ -138,7 +155,7 @@ describe('xero transport and actions', () => {
       }),
     );
     await expect(
-      client.request({ path: '/../connections' }, action('findContact').output),
+      client.request({ path: '/../connections' }, action('findContact').output!),
     ).rejects.toThrow('escapes its API base');
   });
 
@@ -228,17 +245,19 @@ describe('xero transport and actions', () => {
   });
 
   it('rejects unsafe attachment URLs before downloading', async () => {
-    const req = {
-      ...request(),
-      url: 'https://frog.test/actions',
-      frogbot: {
-        config: {
-          files: { slug: 'files' },
-          _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://frog.test' }) },
+    const req = request(
+      {},
+      {
+        url: 'https://frog.test/actions',
+        frogbot: {
+          config: {
+            files: { slug: 'files' },
+            _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://frog.test' }) },
+          },
+          findByID: vi.fn().mockResolvedValue({ url: 'https://evil.test/file.pdf' }),
         },
-        findByID: vi.fn().mockResolvedValue({ url: 'https://evil.test/file.pdf' }),
       },
-    };
+    );
 
     await expect(
       action('uploadAttachment').run({
@@ -265,18 +284,21 @@ describe('xero transport and actions', () => {
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({ Attachments: [] }),
     };
-    const req = {
-      ...request(),
-      url: 'https://frog.test/actions',
-      headers: new Headers({ authorization: 'Bearer local', cookie: 'session=1' }),
-      frogbot: {
-        config: {
-          files: { slug: 'files' },
-          _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://frog.test' }) },
+    const findByID = vi.fn().mockResolvedValue({ url: '/api/files/file-1' });
+    const req = request(
+      {},
+      {
+        url: 'https://frog.test/actions',
+        headers: new Headers({ authorization: 'Bearer local', cookie: 'session=1' }),
+        frogbot: {
+          config: {
+            files: { slug: 'files' },
+            _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://frog.test' }) },
+          },
+          findByID,
         },
-        findByID: vi.fn().mockResolvedValue({ url: '/api/files/file-1' }),
       },
-    };
+    );
 
     await action('uploadAttachment').run({
       input: {
@@ -293,7 +315,7 @@ describe('xero transport and actions', () => {
       req,
     });
 
-    expect(req.frogbot.findByID).toHaveBeenCalledWith(
+    expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'files', id: 'file-1', req, overrideAccess: false }),
     );
     expect(fetch).toHaveBeenCalledWith(
@@ -317,22 +339,24 @@ describe('xero webhook', () => {
   it('accepts a signed empty ITR delivery and rejects a bad signature', async () => {
     const body = Buffer.from(JSON.stringify({ events: [] }));
     const signature = createHmac('sha256', 'webhook-key').update(body).digest('base64');
-    const req = {
-      ...request(),
-      headers: new Headers({ 'x-xero-signature': signature }),
-      arrayBuffer: vi.fn().mockResolvedValue(body),
-    };
-
-    await expect(xeroWebhook.verify({ req, options: { webhookKey: 'webhook-key' } })).resolves.toBe(
-      true,
+    const req = request(
+      {},
+      {
+        headers: new Headers({ 'x-xero-signature': signature }),
+        arrayBuffer: vi.fn().mockResolvedValue(body),
+      },
     );
+
     await expect(
-      xeroWebhook.verify({
+      xeroWebhook.verify!({ req, options: { webhookKey: 'webhook-key' } }),
+    ).resolves.toBe(true);
+    await expect(
+      xeroWebhook.verify!({
         req: { ...req, headers: new Headers({ 'x-xero-signature': 'bad' }) },
         options: { webhookKey: 'webhook-key' },
       }),
     ).resolves.toBe(false);
-    expect(xeroWebhook.parse({ req }).event).toBe('xero.events');
+    expect(xeroWebhook.parse!({ req }).event).toBe('xero.events');
   });
 
   it('routes one app delivery to matching trigger filters and excludes bills', async () => {
@@ -357,8 +381,6 @@ describe('xero webhook', () => {
       request: vi.fn().mockResolvedValue({ Invoices: [{ InvoiceID: 'bill', Type: 'ACCPAY' }] }),
     };
     const definition = trigger('salesInvoiceCreated');
-
-    if (definition.type !== 'app') throw new Error('Expected app trigger.');
 
     await expect(
       definition.run({
@@ -412,8 +434,6 @@ describe('xero webhook', () => {
     };
     const definition = trigger('contactCreated');
 
-    if (definition.type !== 'app') throw new Error('Expected app trigger.');
-
     const client = { listTenants: vi.fn(), request: vi.fn() };
     const tenantOne = await definition.run({
       input: { tenantId: 'tenant-1', fetchFullRecord: false },
@@ -444,8 +464,6 @@ describe('xero polling', () => {
   it('continues capped pages without advancing the modification window', async () => {
     const definition = trigger('paymentCreated');
 
-    if (definition.type !== 'polling') throw new Error('Expected polling trigger.');
-
     const client = {
       listTenants: vi.fn(),
       request: vi.fn().mockImplementation(({ query }) =>
@@ -470,16 +488,14 @@ describe('xero polling', () => {
 
     expect(second.events).toEqual([]);
     expect(second.cursor).toMatchObject({ nextPage: 1 });
-    expect(second.cursor?.modifiedAfter).toBe(first.cursor?.windowStarted);
+    expect(cursorValue(second.cursor, 'modifiedAfter')).toBe(
+      cursorValue(first.cursor, 'windowStarted'),
+    );
   });
 
   it('tracks reconciliation transitions and applies the ACCPAY bill selector', async () => {
     const reconciled = trigger('paymentReconciled');
     const bills = trigger('billCreated');
-
-    if (reconciled.type !== 'polling' || bills.type !== 'polling') {
-      throw new Error('Expected polling triggers.');
-    }
 
     const input = { tenantId: 'tenant-1', statuses: [], types: [], pageSize: 10 };
     const paymentClient = {

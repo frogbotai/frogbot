@@ -19,12 +19,14 @@ beforeEach(async () => {
   source = await new Jimp(4, 2, 0xff0000ff).getBufferAsync(Jimp.MIME_PNG);
   uploads.length = 0;
   convertHeic.mockReset();
-  convertHeic.mockImplementation(async () => source);
+  convertHeic.mockImplementation(() => Promise.resolve(source));
 
   vi.stubGlobal(
     'fetch',
-    vi.fn(
-      async () => new Response(source, { status: 200, headers: { 'content-type': 'image/png' } }),
+    vi.fn(() =>
+      Promise.resolve(
+        new Response(source, { status: 200, headers: { 'content-type': 'image/png' } }),
+      ),
     ),
   );
 });
@@ -40,16 +42,18 @@ function request({ mimeType = 'image/png' } = {}) {
         files: { slug: 'files' },
         _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://frogbot.test' }) },
       },
-      findByID: vi.fn(async () => ({
-        id: 'source',
-        filename: 'source.png',
-        mimeType,
-        url: '/api/files/source.png',
-      })),
-      create: vi.fn(async ({ file }: { file: (typeof uploads)[number] }) => {
+      findByID: vi.fn(() =>
+        Promise.resolve({
+          id: 'source',
+          filename: 'source.png',
+          mimeType,
+          url: '/api/files/source.png',
+        }),
+      ),
+      create: vi.fn(({ file }: { file: (typeof uploads)[number] }) => {
         uploads.push(file);
 
-        return { id: `saved-${uploads.length}`, url: `/api/files/${file.name}` };
+        return Promise.resolve({ id: `saved-${uploads.length}`, url: `/api/files/${file.name}` });
       }),
     },
   } as never;

@@ -4,13 +4,13 @@ import { bearerFetch, cookieFetch } from '../../../../packages/ui/src/chat/auth'
 
 describe('chat auth fetches', () => {
   it('uses cookie credentials without changing global fetch', async () => {
-    const fetch = vi.fn(() => Promise.resolve(new Response()));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(new Response()));
     await cookieFetch(fetch)('/api/test');
     expect(fetch).toHaveBeenCalledWith('/api/test', { credentials: 'include' });
   });
 
   it('injects a current bearer token', async () => {
-    const fetch = vi.fn(() => Promise.resolve(new Response()));
+    const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(new Response()));
     await bearerFetch(() => Promise.resolve('token'), fetch)('/api/test', {
       headers: { Accept: 'application/json' },
     });

@@ -19,6 +19,15 @@ const reference = {
   mediaType: 'text/plain',
 };
 
+// The component continues on a microtask after a deferred resolves; the async act lets it run.
+function settle(resolve: () => void): Promise<void> {
+  return act(() => {
+    resolve();
+
+    return Promise.resolve();
+  });
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
@@ -33,7 +42,7 @@ function readBlob(blob: Blob) {
     const reader = new FileReader();
 
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => reject(reader.error ?? new Error('The blob could not be read.'));
     reader.readAsText(blob);
   });
 }
@@ -65,7 +74,11 @@ function createAdapter(routes: Record<string, () => Response | Promise<Response>
     throw new Error(`Unexpected request: ${input}`);
   });
 
-  return { apiBase, fetch, headers: async () => ({ Authorization: 'Bearer private-session' }) };
+  return {
+    apiBase,
+    fetch,
+    headers: () => Promise.resolve({ Authorization: 'Bearer private-session' }),
+  };
 }
 
 describe('file references', () => {
@@ -103,7 +116,7 @@ describe('file references', () => {
     expect(screen.getByRole('status').textContent).toBe('Loading attachment: claimed.txt');
     expect(screen.queryByRole('img')).toBeNull();
 
-    await act(async () => {
+    await settle(() => {
       metadata.resolve(
         Response.json({ id: 'asset-1', filename: 'chart one.png', mimeType: 'image/png' }),
       );
@@ -418,7 +431,7 @@ describe('file references', () => {
 
     expect(signal?.aborted).toBe(true);
 
-    await act(async () => {
+    await settle(() => {
       metadata.resolve(
         Response.json({ id: 'asset-1', filename: 'stale.png', mimeType: 'image/png' }),
       );
@@ -450,7 +463,7 @@ describe('file references', () => {
 
     expect(signal?.aborted).toBe(true);
 
-    await act(async () => {
+    await settle(() => {
       bytes.resolve(new Response('late bytes'));
     });
 

@@ -10,11 +10,17 @@ import {
   pieceInstanceRuntime,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { createCard } from '../../../packages/pieces/piece-trello/src/actions.js';
 import {
   createTrello,
   trelloActions,
   trelloTriggers,
 } from '../../../packages/pieces/piece-trello/src/index.js';
+import {
+  cardCreated,
+  cardDeadline,
+  cardMovedToList,
+} from '../../../packages/pieces/piece-trello/src/triggers.js';
 
 const auth = {
   username: 'trello-key',
@@ -44,7 +50,7 @@ function webhookRequest(delivery: unknown, webhookUrl: string, valid = true) {
     .digest('base64');
 
   return {
-    arrayBuffer: async () => Buffer.from(body),
+    arrayBuffer: () => Promise.resolve(Buffer.from(body)),
     data: delivery,
     headers: new Headers({ 'x-trello-webhook': signature }),
   };
@@ -111,7 +117,9 @@ describe('trello', () => {
   });
 
   it('maps card creation and update fields exactly', async () => {
-    const fetch = vi.fn().mockImplementation(async () => json({ id: 'card', name: 'Card' }));
+    const fetch = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(json({ id: 'card', name: 'Card' })));
 
     vi.stubGlobal('fetch', fetch);
     const trello = createTrello({ auth });
@@ -156,7 +164,9 @@ describe('trello', () => {
     vi.stubGlobal('fetch', fetch);
     const trello = createTrello({ auth });
     const client = await trello.client({ req: req() });
-    const options = pieceActionDefinition(trello.createCard)!.options!;
+    const options = createCard.options!;
+
+    expect(pieceActionDefinition(trello.createCard)).toBe(createCard);
     const args = { client, options: {}, req: req() };
 
     await expect(options.boardId!({ ...args, input: {} })).resolves.toEqual([
@@ -173,10 +183,12 @@ describe('trello', () => {
   it('uploads an attachment from the configured files collection', async () => {
     const fetch = vi
       .fn()
-      .mockImplementation(async (value: URL | string) =>
-        String(value).includes('/files/report.pdf')
-          ? new Response('report data', { headers: { 'Content-Type': 'application/pdf' } })
-          : json({ id: 'attachment', name: 'Report', url: 'https://trello.com/report' }),
+      .mockImplementation((value: URL | string) =>
+        Promise.resolve(
+          String(value).includes('/files/report.pdf')
+            ? new Response('report data', { headers: { 'Content-Type': 'application/pdf' } })
+            : json({ id: 'attachment', name: 'Report', url: 'https://trello.com/report' }),
+        ),
       );
     const request = {
       frogbot: {
@@ -259,18 +271,25 @@ describe('trello', () => {
     ).resolves.toBeNull();
   });
 
-  it.each(['cardCreated', 'cardMovedToList'] as const)(
-    'reuses, filters, and deletes the %s webhook',
-    async (slug) => {
-      const definition = pieceFactoryDefinition(createTrello).triggers!.find(
-        (trigger) => trigger.slug === slug,
-      )!;
-      if (definition.type !== 'webhook') throw new Error('Expected webhook trigger.');
+  it.each([
+    {
+      slug: 'cardCreated',
+      definition: cardCreated,
+      translationKey: 'action_create_card',
+      entities: { card: { id: 'card' }, list: { id: 'list' } },
+    },
+    {
+      slug: 'cardMovedToList',
+      definition: cardMovedToList,
+      translationKey: 'action_move_card_from_list_to_list',
+      entities: { card: { id: 'card' }, listAfter: { id: 'list' }, listBefore: { id: 'old' } },
+    },
+  ])(
+    'reuses, filters, and deletes the $slug webhook',
+    async ({ definition, translationKey, entities }) => {
+      expect(pieceFactoryDefinition(createTrello).triggers).toContain(definition);
 
-      const input =
-        slug === 'cardCreated'
-          ? { boardId: 'board', listId: 'list' }
-          : { boardId: 'board', listId: 'list' };
+      const input = { boardId: 'board', listId: 'list' };
       const client = {
         listWebhooks: vi
           .fn()
@@ -295,19 +314,7 @@ describe('trello', () => {
       });
       expect(client.createWebhook).not.toHaveBeenCalled();
 
-      const entities =
-        slug === 'cardCreated'
-          ? { card: { id: 'card' }, list: { id: 'list' } }
-          : { card: { id: 'card' }, listAfter: { id: 'list' }, listBefore: { id: 'old' } };
-      const delivery = {
-        action: {
-          display: {
-            translationKey:
-              slug === 'cardCreated' ? 'action_create_card' : 'action_move_card_from_list_to_list',
-            entities,
-          },
-        },
-      };
+      const delivery = { action: { display: { translationKey, entities } } };
 
       await expect(
         definition.run({
@@ -338,10 +345,9 @@ describe('trello', () => {
   );
 
   it('creates a webhook when no registration matches', async () => {
-    const definition = pieceFactoryDefinition(createTrello).triggers!.find(
-      (trigger) => trigger.slug === 'cardCreated',
-    )!;
-    if (definition.type !== 'webhook') throw new Error('Expected webhook trigger.');
+    const definition = cardCreated;
+
+    expect(pieceFactoryDefinition(createTrello).triggers).toContain(definition);
 
     const client = {
       listWebhooks: vi.fn().mockResolvedValue([]),
@@ -363,10 +369,9 @@ describe('trello', () => {
   });
 
   it('accepts a webhook signed over the raw body and registered callback URL', async () => {
-    const definition = pieceFactoryDefinition(createTrello).triggers!.find(
-      (trigger) => trigger.slug === 'cardCreated',
-    )!;
-    if (definition.type !== 'webhook') throw new Error('Expected webhook trigger.');
+    const definition = cardCreated;
+
+    expect(pieceFactoryDefinition(createTrello).triggers).toContain(definition);
 
     const webhookUrl = 'https://example.com/hook';
     const delivery = {
@@ -394,10 +399,9 @@ describe('trello', () => {
   });
 
   it('rejects an invalid webhook signature before reading parsed data', async () => {
-    const definition = pieceFactoryDefinition(createTrello).triggers!.find(
-      (trigger) => trigger.slug === 'cardCreated',
-    )!;
-    if (definition.type !== 'webhook') throw new Error('Expected webhook trigger.');
+    const definition = cardCreated;
+
+    expect(pieceFactoryDefinition(createTrello).triggers).toContain(definition);
 
     const webhookUrl = 'https://example.com/hook';
     const delivery = { action: { display: { translationKey: 'action_create_card' } } };
@@ -420,10 +424,9 @@ describe('trello', () => {
   });
 
   it('rejects webhook cards that do not match the trigger output', async () => {
-    const definition = pieceFactoryDefinition(createTrello).triggers!.find(
-      (trigger) => trigger.slug === 'cardCreated',
-    )!;
-    if (definition.type !== 'webhook') throw new Error('Expected webhook trigger.');
+    const definition = cardCreated;
+
+    expect(pieceFactoryDefinition(createTrello).triggers).toContain(definition);
 
     const client = {
       getCard: vi.fn().mockResolvedValue({ id: 'card' }),
@@ -443,7 +446,7 @@ describe('trello', () => {
         client,
         input: { boardId: 'board' },
         req: {
-          arrayBuffer: async () => Buffer.from(JSON.stringify(delivery)),
+          arrayBuffer: () => Promise.resolve(Buffer.from(JSON.stringify(delivery))),
           data: delivery,
           headers: new Headers({ 'x-trello-webhook': 'signature' }),
         },
@@ -459,10 +462,9 @@ describe('trello', () => {
   it('emits only approaching incomplete deadlines and advances the cursor', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-13T00:00:00.000Z'));
-    const definition = pieceFactoryDefinition(createTrello).triggers!.find(
-      (trigger) => trigger.slug === 'cardDeadline',
-    )!;
-    if (definition.type !== 'polling') throw new Error('Expected polling trigger.');
+    const definition = cardDeadline;
+
+    expect(pieceFactoryDefinition(createTrello).triggers).toContain(definition);
 
     const due = '2026-09-13T01:00:00.000Z';
     const client = {

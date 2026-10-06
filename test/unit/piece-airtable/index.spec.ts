@@ -2,12 +2,14 @@ import type { FrogBotRequest } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+vi.mock(
+  'frogbot/pieces/test',
+  () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
+);
 
-import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
-import {
-  pieceFactoryDefinition,
-  pieceInstanceTools,
-} from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { pieceConformance } from 'frogbot/pieces/test';
+
+import { pieceInstanceTools } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import {
   airtableActions,
   airtableTriggers,
@@ -41,7 +43,7 @@ function response(body: unknown, status = 200) {
 
 function installTransport() {
   const requests: Array<{ url: URL; init: RequestInit }> = [];
-  const transport = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
+  const route = (input: string | URL | Request, init: RequestInit = {}) => {
     const url = new URL(String(input));
 
     requests.push({ url, init });
@@ -74,7 +76,10 @@ function installTransport() {
     if (url.pathname === '/v0/whoami') return response({ id: 'usr1' });
 
     return response({ error: 'not found' }, 404);
-  });
+  };
+  const transport = vi.fn((input: string | URL | Request, init?: RequestInit) =>
+    Promise.resolve(route(input, init)),
+  );
 
   vi.stubGlobal('fetch', transport);
 
@@ -352,15 +357,11 @@ describe('native Airtable', () => {
     vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-13T12:00:00.000Z'));
 
     const { piece, req } = request();
-    const definition = pieceFactoryDefinition(createAirtable);
     const client = await piece.client({ req });
-    const created = definition.triggers?.[0];
-    const updated = definition.triggers?.[1];
+    const { newRecord: created, newOrUpdatedRecord: updated } = piece.triggers;
 
-    if (created?.type !== 'polling' || updated?.type !== 'polling') {
-      throw new Error('Missing polling triggers.');
-    }
-
+    expect(created.type).toBe('polling');
+    expect(updated.type).toBe('polling');
     expect(created).not.toHaveProperty('options');
     expect(updated).not.toHaveProperty('options');
 

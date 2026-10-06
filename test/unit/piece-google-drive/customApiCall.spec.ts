@@ -4,6 +4,10 @@ import { fixture, json } from './fixtures.js';
 
 afterEach(() => vi.unstubAllGlobals());
 
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error ? signal.reason : new Error(String(signal.reason));
+}
+
 describe('Google Drive custom API transport', () => {
   it('preserves arbitrary JSON fields on file-shaped responses', async () => {
     const body = {
@@ -222,7 +226,7 @@ describe('Google Drive custom API transport', () => {
     const { drive, req, requests, controller } = await fixture(
       ({ signal }) =>
         new Promise((_, reject) => {
-          signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+          signal?.addEventListener('abort', () => reject(abortReason(signal)), { once: true });
         }),
     );
     const result = drive.customApiCall({
@@ -240,7 +244,7 @@ describe('Google Drive custom API transport', () => {
     const { drive, req } = await fixture(
       ({ signal }) =>
         new Promise((_, reject) => {
-          signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+          signal?.addEventListener('abort', () => reject(abortReason(signal)), { once: true });
         }),
     );
     await expect(
@@ -257,7 +261,7 @@ describe('Google Drive custom API transport', () => {
       vi.fn(
         (_url, options) =>
           new Promise((_, reject) => {
-            options.signal.addEventListener('abort', () => reject(options.signal.reason), {
+            options.signal.addEventListener('abort', () => reject(abortReason(options.signal)), {
               once: true,
             });
           }),

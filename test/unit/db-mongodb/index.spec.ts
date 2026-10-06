@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { compatibilityOptions, mongooseAdapter } from '../../../../packages/db-mongodb/src/index';
+import { compatibilityOptions, mongooseAdapter } from '../../../packages/db-mongodb/src/index';
 
-vi.mock('frogbot/jobs', () => import('../../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
 
 describe('@frogbotai/db-mongodb exports', () => {
   it('exports mongooseAdapter as a function', () => {

@@ -31,7 +31,12 @@ const taskFields = [
   { name: 'notes', type: 'text' },
   { name: 'secret', type: 'text' },
   aiField({ name: 'summary', inputs: ['title', 'notes', 'secret'], prompt: 'Summarize.' }),
-  aiField({ name: 'category', inputs: ['summary'], prompt: 'Categorize.', model: 'test/other' }),
+  aiField({
+    name: 'category',
+    inputs: ['summary'],
+    prompt: 'Categorize.',
+    model: 'openai/gpt-5-mini',
+  }),
 ] as never;
 
 const menuArgs = { canUpdate: true, fields: taskFields, isInDrawer: false, viewType: 'list' };
@@ -82,7 +87,7 @@ describe('aiBulkMenuFields', () => {
     const withModel = aiBulkMenuFields({
       ...menuArgs,
       fields: [
-        aiField({ name: 'gist', inputs: ['body'], prompt: 'Sum up.', model: 'test/a' }),
+        aiField({ name: 'gist', inputs: ['body'], prompt: 'Sum up.', model: 'openai/gpt-5' }),
       ] as never,
     });
 

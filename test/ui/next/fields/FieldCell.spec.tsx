@@ -1,5 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import type { ClientCollectionConfig, ClientField, DefaultCellComponentProps } from 'payload';
+import type {
+  ClientCollectionConfig,
+  ClientField,
+  DefaultCellComponentProps,
+  SelectFieldClient,
+} from 'payload';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -60,7 +65,17 @@ function renderLastCellData(): HTMLElement {
 
 const optionColors = { done: 'green' };
 
-const statusField = {
+// Payload's client `admin` type Picks from an optional type, which makes every picked key
+// required; a fixture states only the admin keys it uses.
+function selectField(
+  field: Omit<SelectFieldClient, 'admin'> & {
+    admin?: Partial<NonNullable<SelectFieldClient['admin']>>;
+  },
+): SelectFieldClient {
+  return field as SelectFieldClient;
+}
+
+const statusField = selectField({
   name: 'status',
   type: 'select',
   admin: { custom: { frogbot: { optionColors } } },
@@ -68,7 +83,7 @@ const statusField = {
     { label: { de: 'Erledigt', en: 'Done' }, value: 'done' },
     { label: 'To do', value: 'todo' },
   ],
-} as ClientField;
+});
 
 function lastProps(): DefaultCellComponentProps {
   return DefaultCell.mock.lastCall?.[0] as DefaultCellComponentProps;
@@ -78,7 +93,7 @@ function renderPills(): { className: string; text: string | null }[] {
   const { options } = lastProps().field as { options: { label: ReactNode }[] };
   const { container } = render(<>{options[0]?.label}</>);
 
-  return Array.from(container.querySelectorAll('.option-pills > span'), (pill) => ({
+  return Array.from(container.querySelectorAll('.option-pills > span'), (pill: Element) => ({
     className: pill.className,
     text: pill.textContent,
   }));
@@ -308,7 +323,7 @@ describe('FieldCell', () => {
   it('draws hasMany values as pills in stored order, with gray for uncoloured options', () => {
     const cellData = ['done', 'todo'];
 
-    render(<FieldCell {...cell({ ...statusField, hasMany: true } as ClientField, cellData)} />);
+    render(<FieldCell {...cell({ ...statusField, hasMany: true }, cellData)} />);
 
     expect((lastProps().field as { options: { value: unknown }[] }).options[0]?.value).toBe(
       cellData,
@@ -356,10 +371,10 @@ describe('FieldCell', () => {
   });
 
   it('draws the kind cell when a coloured select also has a kind', () => {
-    const field = {
+    const field = selectField({
       ...statusField,
       admin: { custom: { frogbot: { kind: { type: 'channel' }, optionColors } } },
-    } as ClientField;
+    });
 
     render(<FieldCell {...cell(field, 'done')} />);
 
@@ -376,12 +391,12 @@ describe('FieldCell', () => {
       },
     } as ClientField;
 
-    const projectStatus = {
+    const projectStatus = selectField({
       name: 'status',
       type: 'select',
       admin: { custom: { frogbot: { optionColors: { active: 'green' } } } },
       options: [{ label: 'Active', value: 'active' }],
-    } as ClientField;
+    });
 
     const startsOn = {
       name: 'startsOn',

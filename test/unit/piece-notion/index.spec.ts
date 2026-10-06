@@ -14,6 +14,12 @@ import {
   notionActions,
   notionTriggers,
 } from '../../../packages/pieces/piece-notion/src/index.js';
+import {
+  newComment,
+  newDatabaseItem,
+  updatedDatabaseItem,
+  updatedPage,
+} from '../../../packages/pieces/piece-notion/src/triggers/polling.js';
 
 const auth = { accessToken: 'secret_test' };
 const page = {
@@ -33,47 +39,77 @@ function response(value: unknown, status = 200) {
   });
 }
 
+function notionResponse(url: URL, init: RequestInit): Response {
+  if (url.pathname === '/v1/users/me') {
+    return response({ object: 'user', id: 'user1', name: 'Ada' });
+  }
+  if (url.pathname === '/v1/comments' && init.method === 'POST') return response(comment);
+  if (url.pathname === '/v1/comments') {
+    return response({ object: 'list', results: [comment], has_more: false, next_cursor: null });
+  }
+  if (url.pathname.endsWith('/children')) {
+    return response({
+      object: 'list',
+      results: [{ object: 'block', id: 'block1' }],
+      has_more: false,
+      next_cursor: null,
+    });
+  }
+  if (url.pathname.endsWith('/query')) {
+    return response({ object: 'list', results: [page], has_more: false, next_cursor: null });
+  }
+  if (url.pathname === '/v1/search') {
+    return response({ object: 'list', results: [page], has_more: false, next_cursor: null });
+  }
+  if (url.pathname.startsWith('/v1/databases/')) {
+    return response({
+      object: 'database',
+      id: 'database1',
+      properties: { Name: { type: 'title' } },
+    });
+  }
+  if (url.pathname === '/v1/pages' || url.pathname.startsWith('/v1/pages/')) {
+    return response(page);
+  }
+  if (url.pathname === '/v1/custom') return response({ ok: true });
+
+  return response({ message: 'not found' }, 404);
+}
+
+function blockChildrenResponse(url: URL): Response {
+  if (url.pathname.endsWith('/root/children') && !url.searchParams.has('start_cursor')) {
+    return response({
+      object: 'list',
+      results: [{ object: 'block', id: 'parent', has_children: true }],
+      has_more: true,
+      next_cursor: 'next',
+    });
+  }
+  if (url.pathname.endsWith('/root/children')) {
+    return response({
+      object: 'list',
+      results: [{ object: 'block', id: 'leaf', has_children: false }],
+      has_more: false,
+      next_cursor: null,
+    });
+  }
+
+  return response({
+    object: 'list',
+    results: [{ object: 'block', id: 'child', has_children: true }],
+    has_more: false,
+    next_cursor: null,
+  });
+}
+
 function installTransport() {
   const requests: Array<{ url: URL; init: RequestInit }> = [];
-  const transport = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
+  const transport = vi.fn((input: string | URL | Request, init: RequestInit = {}) => {
     const url = new URL(String(input));
 
     requests.push({ url, init });
 
-    if (url.pathname === '/v1/users/me') {
-      return response({ object: 'user', id: 'user1', name: 'Ada' });
-    }
-    if (url.pathname === '/v1/comments' && init.method === 'POST') return response(comment);
-    if (url.pathname === '/v1/comments') {
-      return response({ object: 'list', results: [comment], has_more: false, next_cursor: null });
-    }
-    if (url.pathname.endsWith('/children')) {
-      return response({
-        object: 'list',
-        results: [{ object: 'block', id: 'block1' }],
-        has_more: false,
-        next_cursor: null,
-      });
-    }
-    if (url.pathname.endsWith('/query')) {
-      return response({ object: 'list', results: [page], has_more: false, next_cursor: null });
-    }
-    if (url.pathname === '/v1/search') {
-      return response({ object: 'list', results: [page], has_more: false, next_cursor: null });
-    }
-    if (url.pathname.startsWith('/v1/databases/')) {
-      return response({
-        object: 'database',
-        id: 'database1',
-        properties: { Name: { type: 'title' } },
-      });
-    }
-    if (url.pathname === '/v1/pages' || url.pathname.startsWith('/v1/pages/')) {
-      return response(page);
-    }
-    if (url.pathname === '/v1/custom') return response({ ok: true });
-
-    return response({ message: 'not found' }, 404);
+    return Promise.resolve(notionResponse(url, init));
   });
 
   vi.stubGlobal('fetch', transport);
@@ -249,23 +285,28 @@ describe('native Notion', () => {
     const { piece, req } = request();
     const definition = pieceFactoryDefinition(createNotion);
     const client = await piece.client({ req });
-    const inputs = [
-      { databaseId: 'database1' },
-      { databaseId: 'database1' },
-      { pageId: 'page1' },
-      {},
+    const context = {
+      cursor: Date.parse('2026-09-13T09:00:00.000Z'),
+      client,
+      options: {},
+      req,
+    };
+    const runs = [
+      () => newDatabaseItem.run({ ...context, input: { databaseId: 'database1' } }),
+      () => updatedDatabaseItem.run({ ...context, input: { databaseId: 'database1' } }),
+      () => newComment.run({ ...context, input: { pageId: 'page1' } }),
+      () => updatedPage.run({ ...context, input: {} }),
     ];
 
-    for (const [index, trigger] of (definition.triggers ?? []).entries()) {
-      if (trigger.type !== 'polling') throw new Error('Expected a polling trigger.');
+    expect(definition.triggers).toEqual([
+      newDatabaseItem,
+      updatedDatabaseItem,
+      newComment,
+      updatedPage,
+    ]);
 
-      const result = await trigger.run({
-        input: inputs[index] ?? {},
-        cursor: Date.parse('2026-09-13T09:00:00.000Z'),
-        client,
-        options: {},
-        req,
-      });
+    for (const run of runs) {
+      const result = await run();
 
       expect(result.events).toHaveLength(1);
       expect(result.cursor).toBe(Date.parse('2026-09-13T12:00:00.000Z'));
@@ -305,12 +346,14 @@ describe('native Notion', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (_input: string | URL | Request, init: RequestInit = {}) => {
+      vi.fn((_input: string | URL | Request, init: RequestInit = {}) => {
         const body = JSON.parse(String(init.body));
 
-        return body.start_cursor
-          ? response({ object: 'list', results: [fuzzy], has_more: false, next_cursor: null })
-          : response({ object: 'list', results: [exact], has_more: true, next_cursor: 'next' });
+        return Promise.resolve(
+          body.start_cursor
+            ? response({ object: 'list', results: [fuzzy], has_more: false, next_cursor: null })
+            : response({ object: 'list', results: [exact], has_more: true, next_cursor: 'next' }),
+        );
       }),
     );
 
@@ -325,33 +368,9 @@ describe('native Notion', () => {
   });
 
   it('recurses through paginated block children only to the requested depth', async () => {
-    const transport = vi.fn(async (input: string | URL | Request) => {
-      const url = new URL(String(input));
-
-      if (url.pathname.endsWith('/root/children') && !url.searchParams.has('start_cursor')) {
-        return response({
-          object: 'list',
-          results: [{ object: 'block', id: 'parent', has_children: true }],
-          has_more: true,
-          next_cursor: 'next',
-        });
-      }
-      if (url.pathname.endsWith('/root/children')) {
-        return response({
-          object: 'list',
-          results: [{ object: 'block', id: 'leaf', has_children: false }],
-          has_more: false,
-          next_cursor: null,
-        });
-      }
-
-      return response({
-        object: 'list',
-        results: [{ object: 'block', id: 'child', has_children: true }],
-        has_more: false,
-        next_cursor: null,
-      });
-    });
+    const transport = vi.fn((input: string | URL | Request) =>
+      Promise.resolve(blockChildrenResponse(new URL(String(input)))),
+    );
 
     vi.stubGlobal('fetch', transport);
 
@@ -374,28 +393,29 @@ describe('native Notion', () => {
     const boundary = '2026-09-13T09:00:00.000Z';
     const newer = { ...page, id: 'newer', created_time: '2026-09-13T10:00:00.000Z' };
     const atBoundary = { ...page, id: 'boundary', created_time: boundary };
-    const transport = vi.fn(async (_input: string | URL | Request, init: RequestInit = {}) => {
+    const transport = vi.fn((_input: string | URL | Request, init: RequestInit = {}) => {
       const body = JSON.parse(String(init.body));
 
-      return body.start_cursor
-        ? response({ object: 'list', results: [newer], has_more: false, next_cursor: null })
-        : response({
-            object: 'list',
-            results: [atBoundary, newer],
-            has_more: true,
-            next_cursor: 'next',
-          });
+      return Promise.resolve(
+        body.start_cursor
+          ? response({ object: 'list', results: [newer], has_more: false, next_cursor: null })
+          : response({
+              object: 'list',
+              results: [atBoundary, newer],
+              has_more: true,
+              next_cursor: 'next',
+            }),
+      );
     });
 
     vi.stubGlobal('fetch', transport);
     vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-13T12:00:00.000Z'));
 
     const { piece, req } = request();
-    const trigger = pieceFactoryDefinition(createNotion).triggers?.[0];
 
-    if (trigger?.type !== 'polling') throw new Error('Expected database polling trigger.');
+    expect(pieceFactoryDefinition(createNotion).triggers?.[0]).toBe(newDatabaseItem);
 
-    const result = await trigger.run({
+    const result = await newDatabaseItem.run({
       input: { databaseId: 'database1' },
       cursor: Date.parse(boundary),
       client: await piece.client({ req }),

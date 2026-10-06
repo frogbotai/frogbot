@@ -1,12 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 vi.mock('../../../packages/frogbot/src/chat/turn/settle.js', () => ({
-  listPendingCalls: vi.fn(async () => []),
+  listPendingCalls: vi.fn(() => Promise.resolve([])),
   settleClientToolCall: vi.fn(),
 }));
 
+import type { ChannelTaskInput } from '../../../packages/frogbot/src/channels/types.js';
 import { createTelegramBot } from '../../../packages/pieces/piece-telegram-bot/src/index.js';
 import { channelFixture, deferred } from '../frogbot/channels/helpers.js';
 
@@ -18,7 +19,7 @@ function telegramFixture() {
 
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (url: string, init?: RequestInit) => {
+    vi.fn((url: string, init?: RequestInit) => {
       const method = url.split('/').at(-1)!;
       const body = JSON.parse(String(init?.body ?? '{}'));
 
@@ -50,10 +51,10 @@ function telegramFixture() {
           };
           break;
         default:
-          throw new Error(`Unexpected Telegram API request: ${method}`);
+          return Promise.reject(new Error(`Unexpected Telegram API request: ${method}`));
       }
 
-      return Response.json({ ok: true, result });
+      return Promise.resolve(Response.json({ ok: true, result }));
     }),
   );
 
@@ -117,6 +118,11 @@ function telegramFixture() {
   return { ...fixture, deliver, requests, run };
 }
 
+function messageInput(input: ChannelTaskInput) {
+  if (!('message' in input)) throw new Error(`Expected a message task, got '${input.kind}'.`);
+  return input.message;
+}
+
 beforeEach(() => vi.useFakeTimers());
 
 afterEach(() => {
@@ -129,35 +135,32 @@ describe('Telegram commands through the installed adapter and channel host', () 
     const fixture = telegramFixture();
 
     await fixture.host.initialize(false);
+    onTestFinished(() => fixture.host.shutdown());
 
-    try {
-      expect((await fixture.deliver())?.status).toBe(200);
-      expect(fixture.inputs).toHaveLength(1);
+    expect((await fixture.deliver())?.status).toBe(200);
+    expect(fixture.inputs).toHaveLength(1);
 
-      await fixture.run(0);
-      await fixture.deliver({ id: 2, text: '/help setup' });
-      await fixture.run(1);
-      await fixture.deliver({ id: 3, text: 'Hello' });
-      await fixture.run(2);
+    await fixture.run(0);
+    await fixture.deliver({ id: 2, text: '/help setup' });
+    await fixture.run(1);
+    await fixture.deliver({ id: 3, text: 'Hello' });
+    await fixture.run(2);
 
-      expect(fixture.inputs.map(({ message }) => message.text)).toEqual([
-        '/start',
-        '/help setup',
-        'Hello',
-      ]);
-      expect(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
-        'chat-1',
-        'chat-1',
-        'chat-1',
-      ]);
-      expect(fixture.streamMessage.mock.calls[0][0].req).toMatchObject({
-        user: null,
-        context: { channel: { piece: 'telegramBot', author: { id: '42' } } },
-      });
-      expect(fixture.requests.filter(({ method }) => method === 'sendMessage')).toHaveLength(3);
-    } finally {
-      await fixture.host.shutdown();
-    }
+    expect(fixture.inputs.map((input) => messageInput(input).text)).toEqual([
+      '/start',
+      '/help setup',
+      'Hello',
+    ]);
+    expect(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
+      'chat-1',
+      'chat-1',
+      'chat-1',
+    ]);
+    expect(fixture.streamMessage.mock.calls[0][0].req).toMatchObject({
+      user: null,
+      context: { channel: { piece: 'telegramBot', author: { id: '42' } } },
+    });
+    expect(fixture.requests.filter(({ method }) => method === 'sendMessage')).toHaveLength(3);
   });
 
   it('waits for command enqueue and deduplicates update retries and repeated message IDs', async () => {
@@ -177,23 +180,23 @@ describe('Telegram commands through the installed adapter and channel host', () 
       acknowledged = true;
     });
 
-    try {
-      await vi.waitFor(() => expect(fixture.queue).toHaveBeenCalledOnce());
-
-      expect(acknowledged).toBe(false);
-
-      held.resolve();
-      await delivery;
-      await fixture.deliver({ text: '/start referral' });
-      await fixture.deliver({ updateId: 2, text: '/start referral' });
-
-      expect(fixture.inputs).toHaveLength(1);
-      expect(fixture.inputs[0].message).toMatchObject({ id: '42:1', text: '/start referral' });
-    } finally {
+    onTestFinished(async () => {
       held.resolve();
       await delivery;
       await fixture.host.shutdown();
-    }
+    });
+
+    await vi.waitFor(() => expect(fixture.queue).toHaveBeenCalledOnce());
+
+    expect(acknowledged).toBe(false);
+
+    held.resolve();
+    await delivery;
+    await fixture.deliver({ text: '/start referral' });
+    await fixture.deliver({ updateId: 2, text: '/start referral' });
+
+    expect(fixture.inputs).toHaveLength(1);
+    expect(messageInput(fixture.inputs[0])).toMatchObject({ id: '42:1', text: '/start referral' });
   });
 
   it('preserves webhook verification, the Telegram allowlist, and default anonymous denial', async () => {
@@ -202,58 +205,52 @@ describe('Telegram commands through the installed adapter and channel host', () 
     Reflect.deleteProperty(fixture.frogbot.agents.support.config, 'access');
 
     await fixture.host.initialize(false);
+    onTestFinished(() => fixture.host.shutdown());
 
-    try {
-      expect((await fixture.deliver({ secret: 'wrong' }))?.status).toBe(401);
-      await fixture.deliver({ id: 2, userId: 99 });
+    expect((await fixture.deliver({ secret: 'wrong' }))?.status).toBe(401);
+    await fixture.deliver({ id: 2, userId: 99 });
 
-      expect(fixture.inputs).toHaveLength(0);
+    expect(fixture.inputs).toHaveLength(0);
 
-      await fixture.deliver({ id: 3 });
+    await fixture.deliver({ id: 3 });
 
-      expect(fixture.inputs).toHaveLength(1);
+    expect(fixture.inputs).toHaveLength(1);
 
-      await fixture.run(0);
+    await fixture.run(0);
 
-      expect(fixture.streamMessage).not.toHaveBeenCalled();
-      expect(fixture.frogbot.create).not.toHaveBeenCalled();
-      expect(fixture.frogbot.logger.info).toHaveBeenCalledOnce();
-    } finally {
-      await fixture.host.shutdown();
-    }
+    expect(fixture.streamMessage).not.toHaveBeenCalled();
+    expect(fixture.frogbot.create).not.toHaveBeenCalled();
+    expect(fixture.frogbot.logger.info).toHaveBeenCalledOnce();
   });
 
   it('keeps targeted group commands and forum topics separate without routing ordinary unmentioned groups', async () => {
     const fixture = telegramFixture();
 
     await fixture.host.initialize(false);
+    onTestFinished(() => fixture.host.shutdown());
 
-    try {
-      await fixture.deliver({ text: 'Hello group', chatId: -100 });
-      await fixture.deliver({ id: 2, text: '/help@otherbot', chatId: -100 });
+    await fixture.deliver({ text: 'Hello group', chatId: -100 });
+    await fixture.deliver({ id: 2, text: '/help@otherbot', chatId: -100 });
 
-      expect(fixture.inputs).toHaveLength(0);
+    expect(fixture.inputs).toHaveLength(0);
 
-      for (const topic of [7, 8]) {
-        await fixture.deliver({ id: topic, text: '/help@frogbot setup', chatId: -100, topic });
+    for (const topic of [7, 8]) {
+      await fixture.deliver({ id: topic, text: '/help@frogbot setup', chatId: -100, topic });
 
-        expect(fixture.inputs).toHaveLength(topic - 6);
+      expect(fixture.inputs).toHaveLength(topic - 6);
 
-        await fixture.run(fixture.inputs.length - 1);
-      }
-
-      expect(new Set(fixture.inputs.map(({ thread }) => thread.id)).size).toBe(2);
-      expect(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
-        'chat-1',
-        'chat-2',
-      ]);
-
-      await fixture.deliver({ id: 9, text: 'Follow-up', chatId: -100, topic: 7 });
-      await fixture.run(2);
-
-      expect(fixture.streamMessage.mock.calls[2][0].chatId).toBe('chat-1');
-    } finally {
-      await fixture.host.shutdown();
+      await fixture.run(fixture.inputs.length - 1);
     }
+
+    expect(new Set(fixture.inputs.map(({ thread }) => thread.id)).size).toBe(2);
+    expect(fixture.streamMessage.mock.calls.map(([call]) => call.chatId)).toEqual([
+      'chat-1',
+      'chat-2',
+    ]);
+
+    await fixture.deliver({ id: 9, text: 'Follow-up', chatId: -100, topic: 7 });
+    await fixture.run(2);
+
+    expect(fixture.streamMessage.mock.calls[2][0].chatId).toBe('chat-1');
   });
 });

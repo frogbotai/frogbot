@@ -107,13 +107,14 @@ describe('crypto', () => {
 
       return { id: 'encrypted-file' };
     });
-    const findByID = vi.fn(async () => ({
-      url: '/api/files/source-file',
-      filename: 'input.txt',
-    }));
-    const fetch = vi.fn(
-      async (_input: string | URL | Request, _init?: RequestInit) =>
-        new Response('controlled input'),
+    const findByID = vi.fn(() =>
+      Promise.resolve({
+        url: '/api/files/source-file',
+        filename: 'input.txt',
+      }),
+    );
+    const fetch = vi.fn((_input: string | URL | Request, _init?: RequestInit) =>
+      Promise.resolve(new Response('controlled input')),
     );
     const request = {
       url: 'https://app.test/action',
@@ -168,9 +169,8 @@ describe('crypto', () => {
       curve: 'curve25519Legacy',
       userIDs: [{ name: 'FrogBot' }],
     });
-    const fetch = vi.fn(
-      async (_input: string | URL | Request, _init?: RequestInit) =>
-        new Response('controlled input'),
+    const fetch = vi.fn((_input: string | URL | Request, _init?: RequestInit) =>
+      Promise.resolve(new Response('controlled input')),
     );
 
     vi.stubGlobal('fetch', fetch);
@@ -185,8 +185,9 @@ describe('crypto', () => {
             files: { slug: 'files' },
             _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://app.test' }) },
           },
-          findByID: async () => ({ url: 'https://storage.test/signed', filename: 'input.txt' }),
-          create: async () => ({ id: 'encrypted-file' }),
+          findByID: () =>
+            Promise.resolve({ url: 'https://storage.test/signed', filename: 'input.txt' }),
+          create: () => Promise.resolve({ id: 'encrypted-file' }),
         },
       } as never,
     });

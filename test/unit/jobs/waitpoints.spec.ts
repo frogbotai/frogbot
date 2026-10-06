@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
 import type { JobLeaseContext } from '../../../packages/frogbot/src/jobs/lease.js';
+import type * as leaseModule from '../../../packages/frogbot/src/jobs/lease.js';
 import type { WorkflowHandler } from '../../../packages/frogbot/src/jobs/types.js';
 import { defaultWaitpointsCollection } from '../../../packages/frogbot/src/jobs/waitpoints/collection.js';
 import {
@@ -25,8 +26,7 @@ const storage = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../packages/frogbot/src/jobs/lease.js', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('../../../packages/frogbot/src/jobs/lease.js')>();
+  const actual = await importOriginal<typeof leaseModule>();
 
   return {
     ...actual,
@@ -36,19 +36,21 @@ vi.mock('../../../packages/frogbot/src/jobs/lease.js', async (importOriginal) =>
 
 vi.mock('../../../packages/frogbot/src/jobs/waitpoints/operations.js', () => ({
   findWaitpoint: vi.fn(
-    async ({ token, jobId, name }: { token?: string; jobId?: string; name?: string }) =>
-      structuredClone(
-        storage.rows.find((row) =>
-          token ? row.token === token : row.jobId === jobId && row.name === name,
-        ) ?? null,
+    ({ token, jobId, name }: { token?: string; jobId?: string; name?: string }) =>
+      Promise.resolve(
+        structuredClone(
+          storage.rows.find((row) =>
+            token ? row.token === token : row.jobId === jobId && row.name === name,
+          ) ?? null,
+        ),
       ),
   ),
-  createWaitpoint: vi.fn(async ({ data }: { data: Omit<Waitpoint, 'id'> }) => {
+  createWaitpoint: vi.fn(({ data }: { data: Omit<Waitpoint, 'id'> }) => {
     const row = { id: storage.rows.length + 1, ...structuredClone(data) };
 
     storage.rows.push(row);
 
-    return structuredClone(row);
+    return Promise.resolve(structuredClone(row));
   }),
   markWaitpointReady: async ({ waitpoint }: { waitpoint: Waitpoint }) => {
     await storage.ready();
@@ -58,20 +60,20 @@ vi.mock('../../../packages/frogbot/src/jobs/waitpoints/operations.js', () => ({
       { ready: true },
     );
   },
-  dispatchWaitpoint: async ({ waitpoint }: { waitpoint: Waitpoint }) =>
-    storage.wakeHolder(waitpoint),
+  dispatchWaitpoint: ({ waitpoint }: { waitpoint: Waitpoint }) =>
+    Promise.resolve(storage.wakeHolder(waitpoint)),
   sweepWaitpoints: vi.fn(),
 }));
 
 vi.mock('../../../packages/frogbot/src/jobs/waitpoints/atomic.js', () => ({
-  updateWaitpoint: vi.fn(async ({ where, data }: { where: Where; data: Partial<Waitpoint> }) => {
+  updateWaitpoint: vi.fn(({ where, data }: { where: Where; data: Partial<Waitpoint> }) => {
     const row = storage.rows.find((candidate) => matches(candidate, where));
 
-    if (!row) return false;
+    if (!row) return Promise.resolve(false);
 
     Object.assign(row, structuredClone(data));
 
-    return true;
+    return Promise.resolve(true);
   }),
 }));
 
@@ -100,7 +102,7 @@ function workflowArgs(replay?: WaitpointReplay): Parameters<WorkflowHandler>[0] 
   } as unknown as Parameters<WorkflowHandler>[0];
 }
 
-async function run(handler: WorkflowHandler, args = workflowArgs()) {
+async function run(handler: WorkflowHandler | string, args = workflowArgs()) {
   const workflow = wrapWorkflow({ workflow: { slug: 'work', handler }, config });
 
   if (typeof workflow.handler !== 'function') throw new Error('Expected wrapped workflow');
@@ -265,7 +267,7 @@ describe('workflow wait creation', () => {
           {
             slug: 'work',
             handler: async ({ inlineTask, waitFor }) => {
-              await inlineTask('prepare', { task: async () => ({ output: { prepared: true } }) });
+              await inlineTask('prepare', { task: () => ({ output: { prepared: true } }) });
 
               await waitFor('approval', {
                 onWait: async ({ resumeUrl }) => {
@@ -273,7 +275,7 @@ describe('workflow wait creation', () => {
 
                   Object.assign(storage.rows[0], { status: 'resumed', data: { approved: true } });
 
-                  await inlineTask('send', { task: async () => ({ output: { sent: true } }) });
+                  await inlineTask('send', { task: () => ({ output: { sent: true } }) });
                 },
               });
 
@@ -393,10 +395,10 @@ describe('workflow wait creation', () => {
     const later = vi.fn();
     const onWait = vi
       .fn()
-      .mockImplementationOnce(async () => {
+      .mockImplementationOnce(() => {
         Object.assign(storage.rows[0], { status: 'resumed', data: { approved: true } });
 
-        throw failure;
+        return Promise.reject(failure);
       })
       .mockResolvedValueOnce(undefined);
     const args = workflowArgs({ jobId: 'root', results: {} });
@@ -428,11 +430,7 @@ describe('workflow wait creation', () => {
   it('propagates errors unrelated to the private waiting signal', async () => {
     const error = new Error('workflow failed');
 
-    await expect(
-      run(async () => {
-        throw error;
-      }),
-    ).rejects.toBe(error);
+    await expect(run(() => Promise.reject(error))).rejects.toBe(error);
   });
 
   it('keeps a wait preparing when readiness fails after the callback', async () => {
@@ -452,16 +450,13 @@ describe('workflow wait creation', () => {
     expect(storage.wakeHolder).not.toHaveBeenCalled();
   });
 
-  it.each(['default', 'named'])('wraps dynamically imported %s handlers', async (name) => {
+  it.each([
+    { name: 'default', suffix: '' },
+    { name: 'named', suffix: '#named' },
+  ])('wraps dynamically imported $name handlers', async ({ name, suffix }) => {
     const path = new URL('./dynamicWorkflow.ts', import.meta.url).pathname;
-    const workflow = wrapWorkflow({
-      workflow: { slug: 'work', handler: name === 'named' ? `${path}#named` : path },
-      config,
-    });
 
-    if (typeof workflow.handler !== 'function') throw new Error('Expected wrapped workflow');
-
-    await workflow.handler(workflowArgs());
+    await run(`${path}${suffix}`);
 
     expect(storage.rows[0]).toMatchObject({ name, kind: 'delay', ready: true });
   });
@@ -548,7 +543,7 @@ describe('named wait replay', () => {
     vi.setSystemTime(new Date('2026-09-13T00:00:00.000Z'));
 
     const rows = [jobRow(1, true)];
-    const prepare = vi.fn(async () => ({ output: { prepared: true } }));
+    const prepare = vi.fn(() => Promise.resolve({ output: { prepared: true } }));
     const onWait = vi.fn();
     const received: unknown[] = [];
 

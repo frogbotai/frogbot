@@ -1,11 +1,13 @@
+import type { FrogBotRequest } from 'frogbot/pieces';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import { pieceActionDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { createIssue } from '../../../packages/pieces/piece-linear/src/actions/createIssue.js';
 import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js';
 
-function request() {
+function request(): FrogBotRequest {
   const auth = { apiKey: 'lin_api_test' };
 
   return {
@@ -13,7 +15,7 @@ function request() {
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
     },
     user: null,
-  } as never;
+  } as unknown as FrogBotRequest;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -60,17 +62,19 @@ describe('Preserved Linear action transport', () => {
   ] as const)(
     'maps $slug to the SDK request',
     async ({ slug, input, operation, variables, resource }) => {
-      const fetch = vi.fn().mockImplementation(async () =>
-        Response.json({
-          data: {
-            [`${operation[0].toLowerCase()}${operation.slice(1)}`]: {
-              success: true,
-              lastSyncId: 1,
+      const fetch = vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          Response.json({
+            data: {
+              [`${operation[0].toLowerCase()}${operation.slice(1)}`]: {
+                success: true,
+                lastSyncId: 1,
+                [resource]: { id: 'id' },
+              },
               [resource]: { id: 'id' },
             },
-            [resource]: { id: 'id' },
-          },
-        }),
+          }),
+        ),
       );
 
       vi.stubGlobal('fetch', fetch);
@@ -141,14 +145,14 @@ describe('Preserved Linear action transport', () => {
 
     const linear = createLinear({ auth: { apiKey: 'lin_api_test' } });
     const client = await linear.client({ req: request() });
-    const definition = pieceActionDefinition(linear.createIssue)!;
-    const context = { client, options: {}, req: request() };
+    const context = { client, options: { channelMode: 'agent-sessions' as const }, req: request() };
 
-    expect(await definition.options?.teamId?.({ ...context, input: {} })).toEqual([
+    expect(pieceActionDefinition(linear.createIssue)).toBe(createIssue);
+    expect(await createIssue.options?.teamId?.({ ...context, input: {} })).toEqual([
       { label: 'One', value: 't1' },
       { label: 'Two', value: 't2' },
     ]);
-    expect(await definition.options?.stateId?.({ ...context, input: { teamId: 't1' } })).toEqual([
+    expect(await createIssue.options?.stateId?.({ ...context, input: { teamId: 't1' } })).toEqual([
       { label: 'Todo', value: 's1' },
     ]);
     expect(JSON.parse(fetch.mock.calls[1]?.[1]?.body as string).variables.after).toBe('next');

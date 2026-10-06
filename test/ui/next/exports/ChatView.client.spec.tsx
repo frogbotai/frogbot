@@ -152,10 +152,12 @@ function reportChatId(chatId: string | undefined) {
 }
 
 function serveChat(chat: { id: string; title?: string }) {
-  mocks.request.mockImplementation(async () => Response.json({ agent: 'general', ...chat }));
+  mocks.request.mockImplementation(() =>
+    Promise.resolve(Response.json({ agent: 'general', ...chat })),
+  );
 }
 
-async function trigger() {
+function trigger() {
   return screen.findByRole('button', { expanded: false });
 }
 
