@@ -4,10 +4,11 @@ import { fileURLToPath } from 'node:url';
 import type { FrogBotRequest } from 'frogbot';
 import { definePiece } from 'frogbot';
 import { runQueuedTurn, settleClientToolCall } from 'frogbot/test';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import { chatsSlug, messagesSlug, modelPort, questionAgentSlug, usersSlug } from './shared.js';
@@ -66,6 +67,11 @@ describe('chat writes: a chat is written only from its home', () => {
     model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-writes');
     booted.frogbot.config.pieces.instances.push(slackSupport);
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+
     owner = await signUp('owner@chat-writes.test');
     stranger = await signUp('stranger@chat-writes.test');
   });

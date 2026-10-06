@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { decodeCapture } from '../../packages/plugins/plugin-capture/src/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { captureBlobs, upstreamPort } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,10 +56,21 @@ describe('API key attribution on usage rows and captures', () => {
     });
     await new Promise<void>((resolve) => upstream.listen(upstreamPort, '127.0.0.1', resolve));
     booted = await bootFrogBot(dirname);
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+    await new Promise<void>((resolve, reject) =>
+      upstream.close((error) => (error ? reject(error) : resolve())),
+    );
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
 
     const owner = await booted.frogbot.create({
       collection: 'accounts',
-      data: credentials,
+      data: { ...credentials, spendThisPeriodUSD: 0 },
       overrideAccess: true,
     });
 
@@ -72,22 +84,6 @@ describe('API key attribution on usage rows and captures', () => {
     if (login.status !== 200) throw new Error(`Login failed with ${login.status}.`);
 
     sessionToken = login.body.token;
-  });
-
-  afterAll(async () => {
-    await booted.shutdown();
-    await new Promise<void>((resolve, reject) =>
-      upstream.close((error) => (error ? reject(error) : resolve())),
-    );
-  });
-
-  beforeEach(async () => {
-    await booted.frogbot.update({
-      collection: 'accounts',
-      id: ownerId,
-      data: { spendThisPeriodUSD: 0 },
-      overrideAccess: true,
-    });
   });
 
   const mint = async (name: string) => {

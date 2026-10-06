@@ -2,10 +2,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { TrainingDataRecord } from 'frogbot';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../../__helpers/shared/clearAndSeed';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -14,6 +15,14 @@ describe('training data export: custom chat collections', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname, 'training-data-custom');
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
 
     const chat = (await booted.frogbot.create({
       collection: 'conversations',
@@ -31,10 +40,6 @@ describe('training data export: custom chat collections', () => {
       },
       overrideAccess: true,
     });
-  });
-
-  afterAll(async () => {
-    await booted.shutdown();
   });
 
   it('exports from the marked chat and message collections', async () => {

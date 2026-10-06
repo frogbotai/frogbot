@@ -6,7 +6,6 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 
 export const repoRoot = resolve(import.meta.dirname, '../../../../..');
-export const fixtureRoot = import.meta.dirname;
 export const legacyBase = '/.well-known/skills';
 export const legacyIndex = `${legacyBase}/index.json`;
 export const legacyEntry = `${legacyBase}/frogbot/SKILL.md`;
@@ -44,7 +43,11 @@ export function preparedClient(variable: string) {
 }
 
 export function createProfile() {
-  const root = mkdtempSync(join(fixtureRoot, 'run-'));
+  const scratchRoot = join(repoRoot, 'test/.tmp');
+
+  mkdirSync(scratchRoot, { recursive: true });
+
+  const root = mkdtempSync(join(scratchRoot, 'skill-hosting-'));
   const home = join(root, 'home');
   const project = join(root, 'project');
   const config = join(root, 'config');

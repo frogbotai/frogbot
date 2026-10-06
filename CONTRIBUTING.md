@@ -67,6 +67,7 @@ Run everything from the repo root with `pnpm`. Scripts live in [package.json](pa
 | Check that installs resolve one `frogbot`     | `pnpm check single-frogbot` (no package lists `frogbot` as a regular dependency, and `frogbot` has no framework peers)                                              |
 | Check generated files are fresh               | `pnpm check generated`, also in `pnpm check --full` (regenerates every tracked `importMap.js`, `frogbot-types.ts`, `piece-types.ts`; `--write` rewrites stale ones) |
 | Check root and package scripts                | `pnpm check scripts` (every root script has a row here; packages have only `build`, `clean`, `typecheck`)                                                           |
+| Check the test layout                         | `pnpm check tests` (no tests in `packages/**/src`, every spec in a project, int specs reset with `clearAndSeed`, scratch in `os.tmpdir()` or `test/.tmp/`)          |
 
 `pnpm check docs-links` validates General navigation, internal links, and local assets. It excludes content owned by other documentation tabs.
 
@@ -205,7 +206,8 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 
 ### Writing tests
 
-- Integration suites boot a real instance with `bootFrogBot` from `test/__helpers/shared`, shut it down in `afterAll`, and reset state with `clearAndSeed` in `beforeEach`; do not leave records behind for the next test. Track anything created outside the seed and delete it in `afterEach`.
+- Integration suites boot a real instance with `bootFrogBot` from `test/__helpers/shared`, shut it down in `afterAll`, and reset state with `clearAndSeed` in `beforeEach`; do not leave records behind for the next test. Track anything created outside the seed and delete it in `afterEach`. A suite whose tests only read goes on the `READ_ONLY` list in `scripts/check-tests.mjs` instead.
+- Scratch folders start from `os.tmpdir()`, or from the gitignored `test/.tmp/` when the test needs the repo's `node_modules`.
 - Name tests as present-tense statements of observable behavior, e.g. `'POST /api/users/login rejects invalid credentials'`; this repo does not use a `should` prefix.
 - One behavior per test. No `if`/`else` or `try`/`finally` inside a test body; use hooks for cleanup.
 - Keep collection slugs and other shared identifiers in the suite's `config.ts` or a shared constants file and reuse them in fixtures and assertions.

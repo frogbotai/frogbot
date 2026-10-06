@@ -2,23 +2,33 @@ import type { Adapter, Author } from 'chat';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
-import type { AgentConfig, AgentInstance, AgentPieceTrigger } from '../agents/types.js';
+import type {
+  AgentConfig,
+  AgentInstance,
+  AgentPieceTrigger,
+} from '../../../../packages/frogbot/src/agents/types.js';
 import type {
   ConnectionEntry as DomainConnectionEntry,
   ConnectionSchema,
-} from '../connections/types.js';
-import type { ConnectionEntry as PublicPieceConnectionEntry } from '../exports/pieces.js';
-import type { ConnectionEntry as PublicConnectionEntry, FrogBotConfig } from '../index.js';
-import type { TriggerEvent } from '../triggers/types.js';
-import type { FrogBotRequest } from '../types/request.js';
-import { definePiece, pieceTriggerInstance } from './definePiece.js';
+} from '../../../../packages/frogbot/src/connections/types.js';
+import type { ConnectionEntry as PublicPieceConnectionEntry } from '../../../../packages/frogbot/src/exports/pieces.js';
+import type {
+  ConnectionEntry as PublicConnectionEntry,
+  FrogBotConfig,
+} from '../../../../packages/frogbot/src/index.js';
+import type { TriggerEvent } from '../../../../packages/frogbot/src/triggers/types.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import {
+  definePiece,
+  pieceTriggerInstance,
+} from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type {
   ConnectionEntry,
   OAuthTokens,
   PieceDefinition,
   PieceInstance,
   SignInMethod,
-} from './types.js';
+} from '../../../../packages/frogbot/src/pieces/types.js';
 
 declare const req: FrogBotRequest;
 

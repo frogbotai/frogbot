@@ -3,11 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
 import { persistAssistantMessage, releaseTurn, resolveChatContext } from 'frogbot/test';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { agentSlug, chatsSlug, messagesSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +23,11 @@ describe('chat persistence: chat context', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+
     owner = (await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'owner@frogbot.local', password: 'frogbot-int-password' },

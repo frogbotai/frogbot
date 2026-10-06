@@ -1,6 +1,6 @@
 import type { FrogBotRequest } from 'frogbot';
 
-import { allow, hasRole } from './index.js';
+import { allow, hasRole } from '../../../packages/plugins/plugin-roles/src/index.js';
 
 declare module 'frogbot' {
   interface GeneratedTypes {

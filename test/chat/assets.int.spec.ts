@@ -7,7 +7,7 @@ import type { UIMessage } from 'ai';
 import { strToU8, unzipSync, zipSync } from 'fflate';
 import { resolveChatContext } from 'frogbot/test';
 import { saveChatAsset } from 'frogbot/tools';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
 import type { ToolCtx } from '../../packages/frogbot/src/tools/types.js';
@@ -16,6 +16,7 @@ import { toAgentModelMessages } from '../../packages/frogbot/src/uploads/toAgent
 import { createFrogBotSDK, FrogBotSDKError } from '../../packages/sdk/src/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import {
   budgetText,
   budgetXlsx,
@@ -220,6 +221,15 @@ describe('chat assets', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname, 'chat-assets');
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+    await fs.rm(path.resolve(CHAT_ASSETS_SLUG), { recursive: true, force: true });
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
 
     const created = await Promise.all([
       createUser('owner@frogbot.local'),
@@ -230,11 +240,6 @@ describe('chat assets', () => {
     ownerToken = created[0].token;
     stranger = created[1].user;
     strangerToken = created[1].token;
-  });
-
-  afterAll(async () => {
-    await booted.shutdown();
-    await fs.rm(path.resolve(CHAT_ASSETS_SLUG), { recursive: true, force: true });
   });
 
   it('exposes the assets slug in the manifest and hides the collection from the admin', async () => {

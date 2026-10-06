@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(import.meta.dirname, '..', '..');
-const tempRoot = join(repoRoot, '.idea', 'tmp');
+const tempRoot = join(repoRoot, 'test', '.tmp');
 const script = join(repoRoot, 'scripts', 'check-docs-fences.mjs');
 const tempDirs: string[] = [];
 
@@ -45,7 +45,7 @@ describe('docs fences gate', () => {
 
     expect(result.code).toBe(1);
     expect(result.output).toContain(
-      `${join('.idea', 'tmp', dir.split('/').at(-1)!, 'fixture.mdx')}:3`,
+      `${join('test', '.tmp', dir.split('/').at(-1)!, 'fixture.mdx')}:3`,
     );
     expect(result.output).not.toContain('fixture.mdx:7');
   });
@@ -65,7 +65,7 @@ describe('docs fences gate', () => {
     const result = await run(dir);
 
     expect(result.code).toBe(1);
-    const file = join('.idea', 'tmp', dir.split('/').at(-1)!, 'fixture.mdx');
+    const file = join('test', '.tmp', dir.split('/').at(-1)!, 'fixture.mdx');
     expect(result.output).toContain(`${file}:4`);
     expect(result.output).toContain(`${file}:8`);
     expect(result.output).toContain(`${file}:12`);

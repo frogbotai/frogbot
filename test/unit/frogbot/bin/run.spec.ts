@@ -29,7 +29,7 @@ describe('runScript', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    const tempRoot = join(process.cwd(), '.idea', 'tmp');
+    const tempRoot = join(process.cwd(), 'test', '.tmp');
 
     mkdirSync(tempRoot, { recursive: true });
 

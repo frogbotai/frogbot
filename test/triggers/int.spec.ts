@@ -2,10 +2,11 @@ import { createHmac } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const subscriptionsSlug = 'frogbot-trigger-subscriptions';
@@ -13,39 +14,54 @@ const taskSlug = 'frogbot-run-agent-trigger';
 
 describe('triggers', () => {
   let booted: BootedFrogBot;
+  let bootSubscriptions: Awaited<ReturnType<BootedFrogBot['frogbot']['triggers']['list']>>;
+
+  const declaredSubscriptions = (reconcile: boolean) =>
+    vi.waitFor(
+      async () => {
+        if (reconcile) await booted.frogbot.triggers.reconcile();
+
+        const subscriptions = await booted.frogbot.triggers.list();
+
+        expect(
+          subscriptions.filter(({ status }) => status === 'active').map(({ agent }) => agent),
+        ).toEqual(expect.arrayContaining(['ops', 'failing-handler']));
+
+        return subscriptions;
+      },
+      { timeout: 10_000 },
+    );
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
+    bootSubscriptions = await declaredSubscriptions(false);
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+    await declaredSubscriptions(true);
   });
 
-  it('reconciles declared subscriptions at boot', async () => {
-    await vi.waitFor(
-      async () => {
-        expect(await booted.frogbot.triggers.list()).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              agent: 'ops',
-              instance: 'echo',
-              trigger: 'subscribed',
-              status: 'active',
-              state: { enabled: 'alerts' },
-              input: { value: { channel: 'alerts' } },
-              webhookUrl: expect.stringMatching(
-                /^http:\/\/127\.0\.0\.1:3988\/api\/webhooks\/echo\//,
-              ),
-            }),
-            expect.objectContaining({
-              agent: 'failing-handler',
-              instance: 'echo',
-              trigger: 'subscribed',
-              status: 'active',
-              input: { value: { channel: 'failures' } },
-              state: { enabled: 'failures' },
-            }),
-          ]),
-        );
-      },
-      { timeout: 10_000 },
+  it('reconciles declared subscriptions at boot', () => {
+    expect(bootSubscriptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agent: 'ops',
+          instance: 'echo',
+          trigger: 'subscribed',
+          status: 'active',
+          state: { enabled: 'alerts' },
+          input: { value: { channel: 'alerts' } },
+          webhookUrl: expect.stringMatching(/^http:\/\/127\.0\.0\.1:3988\/api\/webhooks\/echo\//),
+        }),
+        expect.objectContaining({
+          agent: 'failing-handler',
+          instance: 'echo',
+          trigger: 'subscribed',
+          status: 'active',
+          input: { value: { channel: 'failures' } },
+          state: { enabled: 'failures' },
+        }),
+      ]),
     );
   });
   afterAll(async () => {

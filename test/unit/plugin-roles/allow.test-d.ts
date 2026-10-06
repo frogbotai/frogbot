@@ -2,7 +2,7 @@ import type { Access, AgentAccess, FieldAccess, FrogBotRequest } from 'frogbot';
 import type { Where } from 'payload';
 import { expectTypeOf } from 'vitest';
 
-import { allow } from './index.js';
+import { allow } from '../../../packages/plugins/plugin-roles/src/index.js';
 
 const booleanAccess = allow('member', ({ data, id, req }) => Boolean(data || id || req.user));
 const ownAccess = allow({ role: 'member', own: 'owner' });

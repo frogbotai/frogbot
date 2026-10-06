@@ -3,11 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { Where } from 'payload';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ensureSearchIndexes } from '../../../packages/db-mongodb/src/search/index.js';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import type { SeededArticles } from './shared.js';
 import {
   articlesSlug,
@@ -68,6 +69,17 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
   beforeAll(async () => {
     restoreDatabase = useSearchDatabase();
     booted = await bootFrogBot(dirname, 'search-vector');
+  });
+
+  afterAll(async () => {
+    await booted?.shutdown();
+
+    restoreDatabase?.();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+
     ids = await seedArticles(booted.frogbot);
 
     const first = await booted.frogbot.create({
@@ -125,12 +137,6 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
         search({ collection: postsSlug, vector: [1, 0, 0], locale: 'fr', overrideAccess: true }),
       (result) => result.ids[0] === posts.second,
     );
-  });
-
-  afterAll(async () => {
-    await booted?.shutdown();
-
-    restoreDatabase?.();
   });
 
   it('ranks by the index metric', async () => {

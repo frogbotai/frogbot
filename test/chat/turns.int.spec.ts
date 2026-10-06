@@ -2,10 +2,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { claimTurn, findTurnState, updateIfVersion } from 'frogbot/test';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import { lookupCalls, messagesSlug, modelPort, questionAgentSlug, usersSlug } from './shared.js';
@@ -61,6 +62,10 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
   beforeAll(async () => {
     model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-turns');
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   afterEach(() => {

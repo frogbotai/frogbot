@@ -11,10 +11,10 @@ import type {
   KVLock,
   KVLockCallback,
   KVSetOptions,
-} from '../exports/kv.js';
-import type { kvAtomic } from '../exports/kv.js';
-import type { FrogBot } from '../frogbot.js';
-import type { databaseKVAdapter as rootDatabaseKVAdapter } from '../index.js';
+} from '../../../../packages/frogbot/src/exports/kv.js';
+import type { kvAtomic } from '../../../../packages/frogbot/src/exports/kv.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
+import type { databaseKVAdapter as rootDatabaseKVAdapter } from '../../../../packages/frogbot/src/index.js';
 
 expectTypeOf<typeof createKV>().parameters.toEqualTypeOf<[{ adapter: KVAdapter }]>();
 expectTypeOf<typeof createKV>().returns.toEqualTypeOf<KV>();

@@ -1,11 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { logUsage } from '../../../packages/frogbot/src/ai/logUsage.js';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../../__helpers/shared/clearAndSeed';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,6 +19,10 @@ describe('custom usage logs', () => {
 
   afterAll(async () => {
     await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   it('writes usage to the marked custom collection only', async () => {

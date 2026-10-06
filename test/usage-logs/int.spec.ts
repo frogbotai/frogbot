@@ -1,11 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { logUsage } from '../../packages/frogbot/src/ai/logUsage.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,6 +19,10 @@ describe('usage logs', () => {
 
   afterAll(async () => {
     await defaultBooted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(defaultBooted.frogbot, 'empty');
   });
 
   it('allows authenticated users to read usage logs', async () => {
@@ -109,14 +114,6 @@ describe('usage logs', () => {
   });
 
   describe('cost', () => {
-    afterEach(async () => {
-      await defaultBooted.frogbot.delete({
-        collection: 'usage-logs' as never,
-        where: { requestId: { equals: 'priced-write' } },
-        overrideAccess: true,
-      });
-    });
-
     it('prices a custom model with its configured cost', async () => {
       logUsage({
         requestId: 'priced-write',
