@@ -69,9 +69,37 @@
       "count": 1
     }
   },
+  "packages/next/src/elements/Nav/AppSidebar.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 2
+    }
+  },
+  "packages/next/src/exports/ChatView.client.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "packages/next/src/fields/AI/index.client.tsx": {
+    "jsx-a11y/no-noninteractive-tabindex": {
+      "count": 1
+    }
+  },
   "packages/next/src/utilities/brandImportMapErrors.ts": {
     "no-console": {
       "count": 2
+    }
+  },
+  "packages/next/src/views/Board/BoardView.client.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "packages/next/src/views/Calendar/CalendarView.client.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
     }
   },
   "packages/plugins/plugin-capture/src/index.ts": {
@@ -82,6 +110,56 @@
   "packages/richtext-lexical/src/features/typesServer.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    }
+  },
+  "packages/ui/src/board/BoardCard.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/calendar/EventChip.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/chat/attachment-viewer.tsx": {
+    "jsx-a11y/no-noninteractive-tabindex": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/chat/attachments.tsx": {
+    "jsx-a11y/no-redundant-roles": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/chat/chat.tsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 3
+    }
+  },
+  "packages/ui/src/chat/markdown.tsx": {
+    "jsx-a11y/heading-has-content": {
+      "count": 6
+    }
+  },
+  "packages/ui/src/chat/page-context-button.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/alert.tsx": {
+    "jsx-a11y/heading-has-content": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/card.tsx": {
+    "jsx-a11y/heading-has-content": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/editable-text.tsx": {
+    "jsx-a11y/no-noninteractive-tabindex": {
+      "count": 1
     }
   },
   "packages/ui/src/icons/IconBase.ts": {
@@ -123,6 +201,16 @@
     },
     "playwright/prefer-locator": {
       "count": 2
+    }
+  },
+  "test/browser/fixtures/custom-field/src/app/(site)/theme-check/system/page.tsx": {
+    "jsx-a11y/aria-role": {
+      "count": 1
+    }
+  },
+  "test/browser/fixtures/custom-field/src/components/ThemeProbe.tsx": {
+    "jsx-a11y/aria-role": {
+      "count": 1
     }
   },
   "test/browser/livePreview.browser.spec.ts": {
@@ -481,6 +569,26 @@
       "count": 1
     }
   },
+  "test/ui/next/elements/StepNavReset.spec.tsx": {
+    "react-hooks/rules-of-hooks": {
+      "count": 1
+    }
+  },
+  "test/ui/next/exports/ChatView.client.spec.tsx": {
+    "jsx-a11y/aria-role": {
+      "count": 1
+    }
+  },
+  "test/ui/next/fields/AI.spec.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    }
+  },
+  "test/ui/next/fields/SimpleKindCells.spec.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    }
+  },
   "test/ui/next/views/Connections.spec.tsx": {
     "vitest/no-conditional-in-test": {
       "count": 1
@@ -489,6 +597,16 @@
   "test/ui/ui/chat/chat.spec.tsx": {
     "@typescript-eslint/consistent-type-imports": {
       "count": 15
+    }
+  },
+  "test/ui/ui/chat/code-block.spec.tsx": {
+    "jsx-a11y/aria-role": {
+      "count": 4
+    }
+  },
+  "test/ui/ui/chat/message.spec.tsx": {
+    "jsx-a11y/aria-role": {
+      "count": 1
     }
   },
   "test/ui/ui/chat/question-tool-render.spec.tsx": {

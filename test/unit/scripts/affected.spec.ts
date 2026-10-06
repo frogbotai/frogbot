@@ -125,6 +125,7 @@ describe('affectedSet on past commits', () => {
       'docs-references',
       'option-tables',
       'tests',
+      'typed-lint',
     ]);
     expect(set.uncovered).toEqual([]);
   });
@@ -160,7 +161,7 @@ describe('affectedSet on past commits', () => {
 
     expect(set.typecheck).toEqual([]);
     expect(set.specs.unit).toEqual(['test/unit/scripts/checkPackages.spec.ts']);
-    expect(set.checks).toEqual(['packages', 'scripts', 'tests']);
+    expect(set.checks).toEqual(['packages', 'scripts', 'tests', 'typed-lint']);
     expect(set.uncovered).toEqual([]);
   });
 });

@@ -7,15 +7,13 @@
     "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2022"],
+    "jsx": "preserve",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "types": ["node"],
     "isolatedModules": true
   },
-  "exclude": ["node_modules", "dist"],
-  "include": [
-    "./*.ts",
-    "./__helpers/**/*.ts"
-  ]
+  "exclude": ["node_modules", "dist", ".tmp"],
+  "include": ["./**/*.ts", "./**/*.tsx"]
 }
