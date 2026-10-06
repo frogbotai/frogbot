@@ -1,8 +1,8 @@
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
+import type { CaptureStorage } from '@frogbotai/plugin-capture';
+import { capturePlugin } from '@frogbotai/plugin-capture';
 import type { CollectionConfig } from 'frogbot';
 
-import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.js';
-import type { CaptureStorage } from '../../packages/plugins/plugin-capture/src/index.js';
-import { capturePlugin } from '../../packages/plugins/plugin-capture/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { testPort } from '../__helpers/shared/testPorts.js';
 

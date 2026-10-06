@@ -72,7 +72,7 @@ describe('telegram-bot', () => {
         channel: {
           adapter: { name: 'telegram' },
           identity: {
-            author: { userId: '42', userName: 'frog' },
+            author: { userId: '42', userName: 'frog', fullName: 'Frog', isBot: false, isMe: false },
             req: {} as FrogBotRequest,
             expect: null,
           },

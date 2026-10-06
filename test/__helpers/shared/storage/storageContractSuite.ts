@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import type { CollectionSlug, TypedCollection } from 'frogbot';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../bootFrogBot';
@@ -10,6 +11,13 @@ import { isServiceReachable, storageServices } from './storageServices';
 const uploadsDir = path.resolve(import.meta.dirname, '../../../uploads');
 const testImagePath = path.resolve(uploadsDir, 'image.png');
 
+type UploadField = 'alt' | 'filename' | 'filesize' | 'mimeType' | 'url';
+
+/** An upload collection with an `alt` text field, the shape the contract writes and reads. */
+export type StorageMediaSlug = {
+  [TSlug in CollectionSlug]: UploadField extends keyof TypedCollection<TSlug> ? TSlug : never;
+}[CollectionSlug];
+
 export interface StorageContractOptions {
   beforeSetup?: () => Promise<void>;
 }
@@ -17,7 +25,7 @@ export interface StorageContractOptions {
 export function storageContractSuite(
   adapterName: string,
   dirname: string,
-  mediaSlug: string,
+  mediaSlug: StorageMediaSlug,
   options?: StorageContractOptions,
 ) {
   describe(`storage contract [${adapterName}]`, () => {

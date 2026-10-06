@@ -242,7 +242,9 @@ export function channelFixture({
       _internal: { triggers: {}, payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
     },
     connections: {
-      resolvePieceCredential: vi.fn(() => Promise.resolve({ auth: { token: 'secret' }, key: {} })),
+      resolvePieceCredential: vi.fn((): Promise<{ auth: unknown; key: object }> =>
+        Promise.resolve({ auth: { token: 'secret' }, key: {} }),
+      ),
     },
     createRequest: vi.fn((req: { context?: object }) =>
       Promise.resolve(Object.assign(req, { context: req.context ?? {}, frogbot })),

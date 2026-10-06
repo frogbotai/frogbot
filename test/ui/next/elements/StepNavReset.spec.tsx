@@ -41,11 +41,7 @@ const { useStepNav } = await import('@payloadcms/ui');
 function TopBar() {
   const { stepNav } = useStepNav();
 
-  return (
-    <output data-testid="step-nav">
-      {stepNav.map(({ label }: StepNavItem) => label).join(' / ')}
-    </output>
-  );
+  return <output data-testid="step-nav">{stepNav.map(({ label }) => label).join(' / ')}</output>;
 }
 
 function LabelledPage({ label }: { label: string }) {

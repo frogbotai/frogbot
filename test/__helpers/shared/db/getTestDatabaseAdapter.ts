@@ -1,4 +1,5 @@
-import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from 'frogbot';
+
 import { getCurrentDatabaseAdapter } from './dbAdapters.js';
 
 export async function getTestDatabaseAdapter({ sqlite }: { sqlite: FrogBotConfig['db'] }) {

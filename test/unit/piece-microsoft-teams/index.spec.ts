@@ -305,7 +305,13 @@ describe('native Microsoft Teams channel', () => {
       channel: {
         adapter: { name: 'teams' },
         identity: {
-          author: { userId: '29:user' },
+          author: {
+            userId: '29:user',
+            userName: 'user',
+            fullName: 'User',
+            isBot: false,
+            isMe: false,
+          },
           req: {} as never,
           expect: null,
         },

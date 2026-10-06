@@ -52,7 +52,7 @@ afterEach(() => {
 describe('pnpm ticket decisions', () => {
   it('is a command', () => {
     expect(parseArgs(['decisions'])).toEqual({ command: 'decisions' });
-    expect(parseArgs(['decisions', '5']).error).toBe('decisions takes no arguments');
+    expect(parseArgs(['decisions', '5'])).toMatchObject({ error: 'decisions takes no arguments' });
   });
 
   it('lists open cards verbatim, Following Payload, Approve and ready batches', () => {

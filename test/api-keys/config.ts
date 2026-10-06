@@ -1,7 +1,7 @@
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
+import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { CollectionConfig, Plugin } from 'frogbot';
 
-import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.js';
-import { rolesPlugin } from '../../packages/plugins/plugin-roles/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { testPort } from '../__helpers/shared/testPorts.js';
 

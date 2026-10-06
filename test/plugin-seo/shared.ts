@@ -1,13 +1,13 @@
-import type { CollectionConfig } from 'frogbot';
-
 import {
   MetaDescriptionField,
   MetaImageField,
   MetaTitleField,
   OverviewField,
   PreviewField,
-} from '../../packages/plugins/plugin-seo/src/fields.js';
-import type { GenerateTitle } from '../../packages/plugins/plugin-seo/src/types.js';
+} from '@frogbotai/plugin-seo/fields';
+import type { GenerateTitle } from '@frogbotai/plugin-seo/types';
+import type { CollectionConfig } from 'frogbot';
+
 import { openAccess } from '../__helpers/shared/buildTestConfig.js';
 
 export const usersSlug = 'users';

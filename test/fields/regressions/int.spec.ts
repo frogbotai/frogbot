@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
+import type { FieldArgument } from './frogbot-types.js';
 import {
   accessObservations,
   countRequests,
@@ -43,7 +44,7 @@ describe('field runtime boundaries', () => {
     payloadHookObservations.length = 0;
   });
 
-  const blockData = {
+  const blockData: NonNullable<FieldArgument['blocks']>[number] = {
     id: 'observed-row',
     blockType: observedBlockSlug,
     observed: 'Observed',

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@opentelemetry/*": ["../packages/gateway/node_modules/@opentelemetry/*"],
+      "@payloadcms/richtext-lexical": [
+        "../packages/richtext-lexical/node_modules/@payloadcms/richtext-lexical"
+      ],
+      "frogbot": ["../packages/frogbot/src/index.ts"],
+      "frogbot/pieces/test": ["../packages/frogbot/src/exports/pieces-test.ts"],
+      "frogbot/*": ["../packages/frogbot/src/exports/*.ts"]
+    }
+  }
+}

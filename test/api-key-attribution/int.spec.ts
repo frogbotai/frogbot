@@ -4,13 +4,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { decodeCapture } from '@frogbotai/plugin-capture';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import { decodeCapture } from '../../packages/plugins/plugin-capture/src/index.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { captureBlobs, upstreamPort } from './config.js';
+import type { Account, Credential } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,7 +20,7 @@ type Row = Record<string, unknown>;
 describe('API key attribution on usage rows and captures', () => {
   let booted: BootedFrogBot;
   let upstream: Server;
-  let ownerId: number | string;
+  let ownerId: Account['id'];
   let sessionToken: string;
   const credentials = {
     email: 'attribution-owner@frogbot.local',
@@ -87,7 +88,7 @@ describe('API key attribution on usage rows and captures', () => {
   });
 
   const mint = async (name: string) => {
-    const response = await booted.restClient.post<{ id: number | string; token: string }>(
+    const response = await booted.restClient.post<{ id: Credential['id']; token: string }>(
       '/api/credentials/mint',
       { name },
       { headers: { Authorization: `JWT ${sessionToken}` } },
@@ -110,10 +111,10 @@ describe('API key attribution on usage rows and captures', () => {
     return response.headers.get('x-request-id')!;
   };
 
-  const findOne = (collection: string, requestId: string): Promise<Row> =>
+  const findOne = <TSlug extends 'captures' | 'usage-logs'>(collection: TSlug, requestId: string) =>
     vi.waitFor(async () => {
       const result = await booted.frogbot.find({
-        collection: collection as never,
+        collection,
         where: { requestId: { equals: requestId } },
         depth: 0,
         overrideAccess: true,
@@ -124,13 +125,13 @@ describe('API key attribution on usage rows and captures', () => {
       return result.docs[0];
     });
 
-  const totalCost = async (id: number | string) =>
+  const totalCost = async (id: Credential['id']) =>
     (
-      (await booted.frogbot.findByID({
+      await booted.frogbot.findByID({
         collection: 'credentials',
         id,
         overrideAccess: true,
-      })) as Row
+      })
     ).totalCostUSD;
 
   it('attributes a keyed request to the key on the usage row and the capture', async () => {

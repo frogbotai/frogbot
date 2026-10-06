@@ -86,7 +86,13 @@ describe('linear', () => {
         channel: {
           adapter: { name: 'linear' },
           identity: {
-            author: { userId: 'user-id', userName: 'frog' },
+            author: {
+              userId: 'user-id',
+              userName: 'frog',
+              fullName: 'Frog',
+              isBot: false,
+              isMe: false,
+            },
             req: {
               frogbot: {
                 config: {

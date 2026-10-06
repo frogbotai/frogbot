@@ -15,6 +15,7 @@ import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import { bootFresh, clearAndNumber, waitForStartupNumbering } from './boot.js';
 import config, { buildSystemFieldsConfig } from './config.js';
+import type { User } from './frogbot-types.js';
 import {
   adminsSlug,
   agentSlug,
@@ -41,7 +42,7 @@ const graphQLPost = GRAPHQL_POST(config);
 const isMongo = getCurrentDatabaseAdapter() === 'mongodb';
 const isSQLite = getCurrentDatabaseAdapter() === 'sqlite';
 
-type ID = number | string;
+type ID = User['id'];
 
 type SignedIn = {
   id: ID;

@@ -7,10 +7,16 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import type { TriggerDelivery } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const subscriptionsSlug = 'frogbot-trigger-subscriptions';
 const taskSlug = 'frogbot-run-agent-trigger';
+
+const deliveryMessage = ({ event }: TriggerDelivery) =>
+  event && typeof event === 'object' && !Array.isArray(event) && typeof event.message === 'string'
+    ? event.message
+    : undefined;
 
 describe('triggers', () => {
   let booted: BootedFrogBot;
@@ -104,7 +110,7 @@ describe('triggers', () => {
       collection: 'trigger-deliveries',
       pagination: false,
       overrideAccess: true,
-    } as never);
+    });
 
   const runDeliveryJobs = async ({
     eventID,
@@ -137,7 +143,9 @@ describe('triggers', () => {
     }
     const messages = recipients.map(({ message }) => message);
     const deliveriesForEvent = async () =>
-      (await findDeliveries()).docs.filter((doc) => messages.includes(doc.event.message));
+      (await findDeliveries()).docs.filter((doc) =>
+        messages.some((message) => deliveryMessage(doc) === message),
+      );
     expect(await deliveriesForEvent()).toEqual([]);
 
     await booted.payload.jobs.run({
@@ -203,12 +211,12 @@ describe('triggers', () => {
         status: 'active',
       },
       overrideAccess: true,
-    } as never);
+    });
     const subscription = await booted.frogbot.findByID({
       collection: subscriptionsSlug,
       id: created.id,
       overrideAccess: true,
-    } as never);
+    });
 
     expect(subscription).toMatchObject({
       id: created.id,
@@ -239,7 +247,7 @@ describe('triggers', () => {
     expect(await findJobs('app-event')).toHaveLength(2);
     await booted.payload.jobs.run({ allQueues: true });
     expect(
-      (await findDeliveries()).docs.filter((doc) => doc.event.message === 'echo: hello 🌍'),
+      (await findDeliveries()).docs.filter((doc) => deliveryMessage(doc) === 'echo: hello 🌍'),
     ).toHaveLength(2);
   });
 
@@ -297,7 +305,7 @@ describe('triggers', () => {
     });
     expect(
       (await findDeliveries()).docs.filter((doc) =>
-        recipients.some(({ message }) => doc.event.message === message),
+        recipients.some(({ message }) => deliveryMessage(doc) === message),
       ),
     ).toHaveLength(2);
   });
@@ -332,9 +340,9 @@ describe('triggers', () => {
       await vi.waitFor(() => expect(holding).toBe(true));
       const second = await deliver({ body, subscription });
       expect(second.status === 429 || second.status >= 500).toBe(true);
-      expect((await findDeliveries()).docs.filter((doc) => doc.event.message === message)).toEqual(
-        [],
-      );
+      expect(
+        (await findDeliveries()).docs.filter((doc) => deliveryMessage(doc) === message),
+      ).toEqual([]);
       release();
       expect((await first).status).toBe(200);
       expect((await deliver({ body, subscription })).status).toBe(200);
@@ -414,7 +422,9 @@ describe('triggers', () => {
       allQueues: true,
       where: { id: { in: jobs.map(({ id }) => id) } },
     });
-    const deliveries = (await findDeliveries()).docs.filter((doc) => doc.event.message === message);
+    const deliveries = (await findDeliveries()).docs.filter(
+      (doc) => deliveryMessage(doc) === message,
+    );
     expect(deliveries).toHaveLength(2);
     expect(deliveries.map(({ handler }) => handler).sort()).toEqual([
       'app-primary',
@@ -503,7 +513,7 @@ describe('triggers', () => {
             status: 'active',
           },
           overrideAccess: true,
-        } as never);
+        });
       }
     };
     await createUnrelatedRows('before');
@@ -529,7 +539,7 @@ describe('triggers', () => {
     const firstPage = await booted.frogbot.find({
       collection: subscriptionsSlug,
       overrideAccess: true,
-    } as never);
+    });
     expect(firstPage.docs).toHaveLength(10);
     expect(firstPage.docs.map((row) => row.id)).not.toContain(subscription.id);
     expect(await booted.frogbot.triggers.list()).toContainEqual(

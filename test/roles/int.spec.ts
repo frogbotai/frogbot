@@ -6,15 +6,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import type { User } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const password = 'frogbot-test-password';
-
-type User = {
-  id: number | string;
-  email: string;
-  roles?: string[];
-};
 
 describe('roles', () => {
   let booted: BootedFrogBot;
@@ -31,7 +26,7 @@ describe('roles', () => {
     await clearAndSeed(booted.frogbot, 'empty');
   });
 
-  async function createUser(email: string, roles?: string[]): Promise<User> {
+  async function createUser(email: string, roles?: User['roles']): Promise<User> {
     return await booted.frogbot.create({
       collection: 'users',
       data: { email, password, ...(roles ? { roles } : {}) },
@@ -40,16 +35,16 @@ describe('roles', () => {
   }
 
   async function requestFor(user: User) {
-    return booted.frogbot.createRequest({ user: { ...user, collection: 'users' } } as never);
+    return booted.frogbot.createRequest({ user });
   }
 
   it('does not assign a role to the first user without defaultRole', async () => {
     const user = await createUser('first@frogbot.local');
-    const persisted = (await booted.frogbot.findByID({
+    const persisted = await booted.frogbot.findByID({
       collection: 'users',
       id: user.id,
       overrideAccess: true,
-    })) as User;
+    });
 
     expect(persisted.roles ?? []).toEqual([]);
   });
@@ -99,11 +94,11 @@ describe('roles', () => {
       overrideAccess: false,
     });
 
-    const persisted = (await booted.frogbot.findByID({
+    const persisted = await booted.frogbot.findByID({
       collection: 'users',
       id: target.id,
       overrideAccess: true,
-    })) as User;
+    });
     expect(persisted.roles).toEqual(['owner']);
   });
 

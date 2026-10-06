@@ -386,11 +386,11 @@ describe('ChatViewClient', () => {
 
     const list = within(screen.getByRole('dialog'));
 
-    expect(list.getByRole('button', { name: 'Nova Micro (US)', exact: true })).toBeTruthy();
-    expect(list.getByRole('button', { name: 'plain', exact: true })).toBeTruthy();
-    expect(list.getByRole('button', { name: 'smart', exact: true })).toBeTruthy();
+    expect(list.getByRole('button', { name: 'Nova Micro (US)' })).toBeTruthy();
+    expect(list.getByRole('button', { name: 'plain' })).toBeTruthy();
+    expect(list.getByRole('button', { name: 'smart' })).toBeTruthy();
     expect(
-      list.getByRole('button', { name: 'anthropic.claude-3-haiku-20240307-v1:0', exact: true }),
+      list.getByRole('button', { name: 'anthropic.claude-3-haiku-20240307-v1:0' }),
     ).toBeTruthy();
     expect(
       [...document.querySelectorAll('.fb-model-selector__option-name')].map(

@@ -1,4 +1,5 @@
-import { allow, rolesPlugin } from '../../../packages/plugins/plugin-roles/src/index.js';
+import { allow, rolesPlugin } from '@frogbotai/plugin-roles';
+
 import { buildTestConfig } from '../../__helpers/shared/buildTestConfig.js';
 import { usersSlug } from './shared.js';
 

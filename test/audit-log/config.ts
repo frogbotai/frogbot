@@ -1,7 +1,7 @@
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
+import { auditLogPlugin } from '@frogbotai/plugin-audit-log';
 import type { CollectionConfig } from 'frogbot';
 
-import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.js';
-import { auditLogPlugin } from '../../packages/plugins/plugin-audit-log/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
 const Accounts: CollectionConfig = {

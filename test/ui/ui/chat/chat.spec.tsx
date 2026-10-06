@@ -1,4 +1,3 @@
-import type { UseChatOptions } from '@ai-sdk/react';
 import type { AgentManifest } from '@frogbotai/sdk';
 import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -15,7 +14,7 @@ const state = vi.hoisted(() => ({
   setMessages: vi.fn(),
   addToolOutput: vi.fn(),
   clearError: vi.fn(),
-  options: undefined as UseChatOptions | undefined,
+  options: undefined as ChatInit<UIMessage> | undefined,
   refresh: vi.fn(),
   adapter: {
     fetch: vi.fn(),
@@ -35,7 +34,7 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('@ai-sdk/react', () => ({
-  useChat: (options: UseChatOptions) => {
+  useChat: (options: ChatInit<UIMessage>) => {
     state.options = options;
     return state;
   },
@@ -381,7 +380,13 @@ describe('Chat', () => {
     });
     vi.mocked(emitChatMutation).mockClear();
 
-    state.options?.onFinish?.({});
+    state.options?.onFinish?.({
+      message,
+      messages: [message],
+      isAbort: false,
+      isDisconnect: false,
+      isError: false,
+    });
     expect(emitChatMutation).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(2_500);
     expect(emitChatMutation).toHaveBeenCalledOnce();
@@ -413,13 +418,7 @@ describe('Chat', () => {
     state.adapter.executeClientTool.mockResolvedValue('complete');
     render(<Chat agent="support" />);
     await state.options?.onToolCall?.({
-      toolCall: {
-        type: 'dynamic-tool',
-        toolName: 'lookup',
-        toolCallId: 'call',
-        state: 'input-available',
-        input: { id: 1 },
-      },
+      toolCall: { dynamic: true, toolName: 'lookup', toolCallId: 'call', input: { id: 1 } },
     });
     expect(state.adapter.executeClientTool).toHaveBeenCalledWith('lookup', { id: 1 });
     expect(state.addToolOutput).toHaveBeenCalledWith({

@@ -99,7 +99,7 @@ describe('parseArgs', () => {
     [['verify', '236'], 'verify takes no arguments'],
     [['land', '236', '--list'], 'land takes no --list'],
   ])('rejects %j', (argv, error) => {
-    expect(parseArgs(argv).error).toContain(error);
+    expect(parseArgs(argv)).toMatchObject({ error: expect.stringContaining(error) });
   });
 });
 

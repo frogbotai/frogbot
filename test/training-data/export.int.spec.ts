@@ -1,21 +1,28 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { TrainingDataRecord } from 'frogbot';
+import type { TrainingDataRecord, UIMessage } from 'frogbot';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import type { Chat, Message, User } from './frogbot-types.js';
 import { chatsSlug, messagesSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const imagePart = { type: 'file', mediaType: 'image/png', url: 'https://cdn.test/a.png' };
-const videoPart = { type: 'file', mediaType: 'video/mp4', url: 'https://cdn.test/a.mp4' };
-const filePart = { type: 'file', mediaType: 'application/pdf', url: 'https://cdn.test/a.pdf' };
-const reasoningPart = { type: 'reasoning', text: 'thinking carefully' };
-const toolCallPart = {
+type Part = UIMessage['parts'][number];
+
+const imagePart: Part = { type: 'file', mediaType: 'image/png', url: 'https://cdn.test/a.png' };
+const videoPart: Part = { type: 'file', mediaType: 'video/mp4', url: 'https://cdn.test/a.mp4' };
+const filePart: Part = {
+  type: 'file',
+  mediaType: 'application/pdf',
+  url: 'https://cdn.test/a.pdf',
+};
+const reasoningPart: Part = { type: 'reasoning', text: 'thinking carefully' };
+const toolCallPart: Part = {
   type: 'tool-lookup',
   toolCallId: 'call-1',
   state: 'output-available',
@@ -42,9 +49,9 @@ async function readRecords(stream: ReadableStream<Uint8Array>): Promise<Training
 
 describe('training data export', () => {
   let booted: BootedFrogBot;
-  let owner: { id: number | string };
-  let otherUser: { id: number | string };
-  let exportedChatId: number | string;
+  let owner: User;
+  let otherUser: User;
+  let exportedChatId: Chat['id'];
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
@@ -68,20 +75,20 @@ describe('training data export', () => {
       overrideAccess: true,
     });
 
-    const exported = (await booted.frogbot.create({
+    const exported = await booted.frogbot.create({
       collection: chatsSlug,
       data: { title: 'exported', agent: 'support', user: owner.id },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
     exportedChatId = exported.id;
 
-    const excluded = (await booted.frogbot.create({
+    const excluded = await booted.frogbot.create({
       collection: chatsSlug,
       data: { title: 'excluded', agent: 'other', user: otherUser.id },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
-    const messages = [
+    const messages: Pick<Message, 'id' | 'role' | 'parts' | 'metadata'>[] = [
       { id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }, imagePart] },
       { id: 'm2', role: 'assistant', parts: [reasoningPart, toolCallPart] },
       { id: 'm3', role: 'user', parts: [videoPart, filePart] },
