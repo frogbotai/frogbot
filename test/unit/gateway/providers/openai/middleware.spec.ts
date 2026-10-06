@@ -31,93 +31,93 @@ function makeArgs(
 }
 
 describe('openaiReasoningEffort', () => {
-  it('maps Anthropic thinking budget to reasoning_effort for o-series', () => {
+  it('maps Anthropic thinking budget to reasoning_effort for o-series', async () => {
     const args = makeArgs('openai/o3', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 13000 } } },
       params: { maxOutputTokens: 16384 },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     // 13000/16384 ≈ 0.79 → 'high'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'high' });
   });
 
-  it('maps low budget to minimal', () => {
+  it('maps low budget to minimal', async () => {
     const args = makeArgs('openai/o1', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 500 } } },
       params: { maxOutputTokens: 16384 },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     // 500/16384 ≈ 0.03 → 'minimal'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'minimal' });
   });
 
-  it('caps near-full budget at xhigh (OpenAI enum has no "max")', () => {
+  it('caps near-full budget at xhigh (OpenAI enum has no "max")', async () => {
     const args = makeArgs('openai/o4-mini', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 16000 } } },
       params: { maxOutputTokens: 16384 },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     // 16000/16384 ≈ 0.98 → clamped to 'xhigh'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'xhigh' });
   });
 
-  it('skips non-reasoning models (gpt-4o)', () => {
+  it('skips non-reasoning models (gpt-4o)', async () => {
     const args = makeArgs('openai/gpt-4o', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 13000 } } },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     expect(args.providerOptions['openai']).toBeUndefined();
   });
 
-  it('skips if reasoningEffort already explicitly set', () => {
+  it('skips if reasoningEffort already explicitly set', async () => {
     const args = makeArgs('openai/o3', {
       providerOptions: {
         openai: { reasoningEffort: 'low' },
         anthropic: { thinking: { budget_tokens: 13000 } },
       },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     // Should NOT overwrite
     expect((args.providerOptions['openai'] as any).reasoningEffort).toBe('low');
   });
 
-  it('skips if no Anthropic thinking budget', () => {
+  it('skips if no Anthropic thinking budget', async () => {
     const args = makeArgs('openai/o3', {
       providerOptions: { anthropic: {} },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     expect(args.providerOptions['openai']).toBeUndefined();
   });
 
-  it('skips if budget_tokens is 0', () => {
+  it('skips if budget_tokens is 0', async () => {
     const args = makeArgs('openai/o3', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 0 } } },
     });
-    openaiReasoningEffort(args);
+    await openaiReasoningEffort(args);
     expect(args.providerOptions['openai']).toBeUndefined();
   });
 
-  it('recognizes o1, o3, o4 prefixes as reasoning models', () => {
+  it('recognizes o1, o3, o4 prefixes as reasoning models', async () => {
     const models = ['openai/o1', 'openai/o1-mini', 'openai/o3', 'openai/o3-mini', 'openai/o4-mini'];
     for (const model of models) {
       const args = makeArgs(model, {
         providerOptions: { anthropic: { thinking: { budget_tokens: 8000 } } },
         params: { maxOutputTokens: 16384 },
       });
-      openaiReasoningEffort(args);
+      await openaiReasoningEffort(args);
       expect(args.providerOptions['openai']).toBeDefined();
     }
   });
 });
 
 describe('openaiEmbedDimensions', () => {
-  it('re-homes neutral dimensions and user into the openai namespace', () => {
+  it('re-homes neutral dimensions and user into the openai namespace', async () => {
     const args = makeArgs('openai/text-embedding-3-small', {
       operation: 'embeddings',
       providerOptions: { unknown: { dimensions: 256, user: 'user-1' } },
     });
 
-    openaiEmbedDimensions(args);
+    await openaiEmbedDimensions(args);
 
     expect(args.providerOptions.openai).toEqual({ dimensions: 256, user: 'user-1' });
     expect(args.providerOptions.unknown).toEqual({});
@@ -125,7 +125,7 @@ describe('openaiEmbedDimensions', () => {
 });
 
 describe('openaiPromptCacheBreakpoint', () => {
-  it('keeps system content a string and marks the message itself', () => {
+  it('keeps system content a string and marks the message itself', async () => {
     const message = {
       role: 'system',
       content: 'Long policy.',
@@ -133,7 +133,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     };
     const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(message).toEqual({
       role: 'system',
@@ -142,7 +142,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     });
   });
 
-  it('translates message-level cache control', () => {
+  it('translates message-level cache control', async () => {
     const message = {
       role: 'user',
       content: 'hello',
@@ -150,7 +150,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     };
     const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(message).toEqual({
       role: 'user',
@@ -164,7 +164,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     });
   });
 
-  it('translates content-part cache control', () => {
+  it('translates content-part cache control', async () => {
     const part = {
       type: 'text',
       text: 'hello',
@@ -174,14 +174,14 @@ describe('openaiPromptCacheBreakpoint', () => {
       messages: [{ role: 'user', content: [part] }],
     });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(part.providerOptions).toEqual({
       openai: { promptCacheBreakpoint: { mode: 'explicit' } },
     });
   });
 
-  it('drops cache control ttl without inferring retention', () => {
+  it('drops cache control ttl without inferring retention', async () => {
     const message = {
       role: 'user',
       content: 'hello',
@@ -189,7 +189,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     };
     const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(message.content).toEqual([
       {
@@ -200,7 +200,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     ]);
   });
 
-  it('applies request-level cache control to the last message', () => {
+  it('applies request-level cache control to the last message', async () => {
     const messages = [
       { role: 'user', content: 'first' },
       { role: 'assistant', content: 'last' },
@@ -210,7 +210,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(messages[0]).not.toHaveProperty('providerOptions');
     expect(messages[1]).toEqual({
@@ -226,7 +226,7 @@ describe('openaiPromptCacheBreakpoint', () => {
     expect(args.providerOptions.unknown).toBeUndefined();
   });
 
-  it('drops cache control for models without explicit breakpoints', () => {
+  it('drops cache control for models without explicit breakpoints', async () => {
     const part = {
       type: 'text',
       text: 'hello',
@@ -238,17 +238,17 @@ describe('openaiPromptCacheBreakpoint', () => {
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(messages).toEqual([{ role: 'user', content: [{ type: 'text', text: 'hello' }] }]);
     expect(args.providerOptions).toEqual({});
   });
 
-  it('does nothing without cache control', () => {
+  it('does nothing without cache control', async () => {
     const messages = [{ role: 'user', content: 'hello' }];
     const args = makeArgs('openai/gpt-5.6', { messages });
 
-    openaiPromptCacheBreakpoint(args);
+    await openaiPromptCacheBreakpoint(args);
 
     expect(messages).toEqual([{ role: 'user', content: 'hello' }]);
     expect(args.providerOptions).toEqual({});

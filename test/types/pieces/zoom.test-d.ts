@@ -15,8 +15,12 @@ expectTypeOf<Parameters<typeof zoom.getMeeting>[0]['input']>().toEqualTypeOf<{
 }>();
 expectTypeOf<Awaited<typeof _meeting>['join_url']>().toEqualTypeOf<string | undefined>();
 
-// @ts-expect-error getMeeting does not accept createMeetingRegistrant input
-zoom.getMeeting({ input: { meeting_id: '123', first_name: 'Ada', email: 'ada@example.com' }, req });
+const _getMeetingRejectsCreateMeetingRegistrantInput = () =>
+  zoom.getMeeting({
+    // @ts-expect-error getMeeting does not accept createMeetingRegistrant input
+    input: { meeting_id: '123', first_name: 'Ada', email: 'ada@example.com' },
+    req,
+  });
 
 const updated = zoom.updateMeeting({ input: { meeting_id: '123', topic: 'Frogs' }, req });
 

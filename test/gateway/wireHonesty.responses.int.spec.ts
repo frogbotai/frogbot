@@ -5,8 +5,9 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { requiredToolCall } from '../__helpers/gateway/required-tool-call.js';
+import { finish, mockUsage } from './mockModel.js';
 
-const TOOL_CALLS_FINISH = { unified: 'tool-calls', raw: 'tool_calls' } as const;
+const TOOL_CALLS_FINISH = finish('tool-calls', 'tool_calls');
 
 /**
  * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
@@ -17,10 +18,10 @@ function createRecordingModel(opts?: {
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
   const { text = 'Hello from mock!', onCall } = opts ?? {};
-  const usage = {
+  const usage = mockUsage({
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
-  };
+  });
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -28,14 +29,14 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
 
       const toolCalls = requiredToolCall(options);
 
-      return {
+      return Promise.resolve({
         content: toolCalls.length > 0 ? toolCalls : [{ type: 'text' as const, text }],
-        finishReason: toolCalls.length > 0 ? TOOL_CALLS_FINISH : 'stop',
+        finishReason: toolCalls.length > 0 ? TOOL_CALLS_FINISH : finish('stop'),
         usage,
         warnings: [],
         response: {
@@ -43,22 +44,22 @@ function createRecordingModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async (options: LanguageModelV4CallOptions) => {
+    doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      return {
+      return Promise.resolve({
         stream: new ReadableStream({
           start(controller) {
             controller.enqueue({ type: 'stream-start', warnings: [] });
             controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({ type: 'text-delta', id: 'text-0', delta: text });
             controller.enqueue({ type: 'text-end', id: 'text-0' });
-            controller.enqueue({ type: 'finish', finishReason: 'stop', usage });
+            controller.enqueue({ type: 'finish', finishReason: finish('stop'), usage });
             controller.close();
           },
         }),
-      };
+      });
     },
   };
 }

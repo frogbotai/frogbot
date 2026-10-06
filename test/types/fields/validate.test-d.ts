@@ -2,11 +2,18 @@ import type { FrogBot, NumberField, TextField, ValidateOptions, VectorField } fr
 import type { BaseValidateOptions, Operation } from 'payload';
 import { expectTypeOf } from 'vitest';
 
-declare const options: ValidateOptions;
+type Data = { title: string };
+type SiblingData = { slug: string };
+type Value = number;
 
-expectTypeOf(options.blockData).toEqualTypeOf<BaseValidateOptions<any, any, any>['blockData']>();
+declare const options: ValidateOptions;
+declare const typedOptions: ValidateOptions<Data, SiblingData, object, Value>;
+
+expectTypeOf(typedOptions.blockData).toEqualTypeOf<
+  BaseValidateOptions<Data, SiblingData, Value>['blockData']
+>();
 expectTypeOf(options.preferences).toEqualTypeOf<
-  BaseValidateOptions<any, any, any>['preferences']
+  BaseValidateOptions<Data, SiblingData, Value>['preferences']
 >();
 expectTypeOf(options.collectionSlug).toEqualTypeOf<string | undefined>();
 expectTypeOf(options.overrideAccess).toEqualTypeOf<boolean | undefined>();

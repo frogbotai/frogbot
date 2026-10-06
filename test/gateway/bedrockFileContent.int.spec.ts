@@ -9,6 +9,7 @@ import {
 } from '../../packages/gateway/src/providers/bedrock/index.js';
 import { DEFAULT_MODEL_CATALOG } from '../../packages/gateway/src/providers/catalog.data.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { asV4 } from './mockModel.js';
 
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
 const PDF = 'JVBERi0xLjQKJUVPRg==';
@@ -255,7 +256,7 @@ describe('Bedrock file content wire contract', () => {
         content: [{ type: 'file', mediaType: 'image/png', data: { type: 'data', data: PNG } }],
       },
     ];
-    await gateway.chatModel(`bedrock/${STANDARD_MODEL}`).doGenerate({ prompt });
+    await asV4(gateway.chatModel(`bedrock/${STANDARD_MODEL}`)).doGenerate({ prompt });
 
     expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
   });

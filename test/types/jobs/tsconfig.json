@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.fallback.json" },
+    { "path": "./tsconfig.generated.json" }
+  ]
+}

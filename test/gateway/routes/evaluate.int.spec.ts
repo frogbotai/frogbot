@@ -50,11 +50,12 @@ function fixture(
     allowlists?: ReadonlyMap<string, ReadonlySet<string>>;
   } = {},
 ) {
-  const fetch = vi.fn(
-    async (_url: RequestInfo | URL, _init?: RequestInit) =>
+  const fetch = vi.fn((_url: RequestInfo | URL, _init?: RequestInit) =>
+    Promise.resolve(
       new Response(JSON.stringify(options.response ?? response), {
         headers: { 'content-type': 'application/json', 'x-private': 'upstream-secret' },
       }),
+    ),
   );
   const registry = {
     'typesafe-ai': createTypeSafeAi({ apiKey: 'test-provider-key', fetch }),

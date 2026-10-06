@@ -3,18 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage, partStream } from './mockModel.js';
 
-const modelUsage = {
+const modelUsage = mockUsage({
   inputTokens: { total: 100, noCache: 30, cacheRead: 60, cacheWrite: 10 },
   outputTokens: { total: 20, text: 20 },
-};
+});
 
 function buildUsageApp() {
   const afterUpstream = vi.fn();
   const model = new MockLanguageModelV4({
-    doGenerate: async () => ({
+    doGenerate: {
       content: [{ type: 'text', text: 'ok' }],
-      finishReason: 'stop',
+      finishReason: finish('stop'),
       usage: modelUsage,
       warnings: [],
       response: {
@@ -22,19 +23,17 @@ function buildUsageApp() {
         modelId: 'model',
         timestamp: new Date('2026-01-01T00:00:00Z'),
       },
-    }),
-    doStream: async () => ({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue({ type: 'stream-start', warnings: [] });
-          controller.enqueue({ type: 'text-start', id: 'text-0' });
-          controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'ok' });
-          controller.enqueue({ type: 'text-end', id: 'text-0' });
-          controller.enqueue({ type: 'finish', finishReason: 'stop', usage: modelUsage });
-          controller.close();
-        },
+    },
+    doStream: () =>
+      Promise.resolve({
+        stream: partStream([
+          { type: 'stream-start', warnings: [] },
+          { type: 'text-start', id: 'text-0' },
+          { type: 'text-delta', id: 'text-0', delta: 'ok' },
+          { type: 'text-end', id: 'text-0' },
+          { type: 'finish', finishReason: finish('stop'), usage: modelUsage },
+        ]),
       }),
-    }),
   });
   const registry = {
     openai: new MockProviderV4({ languageModels: { model } }),

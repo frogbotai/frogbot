@@ -17,8 +17,9 @@ expectTypeOf<Parameters<typeof dataSummarizer.countUniqueValues>[0]['input']>().
 }>();
 expectTypeOf(uniques).toEqualTypeOf<Promise<{ numUniques: number }>>();
 
-// @ts-expect-error calculateSum does not accept countUniqueValues input
-dataSummarizer.calculateSum({ input: { values: [1], fields: ['id'] }, req });
+const _calculateSumRejectsCountUniqueValuesInput = () =>
+  // @ts-expect-error calculateSum does not accept countUniqueValues input
+  dataSummarizer.calculateSum({ input: { values: [1], fields: ['id'] }, req });
 
 expectTypeOf(dataSummarizer.findMinMax({ input: { values: [1, 2] }, req })).toEqualTypeOf<
   Promise<{ min: number; max: number }>

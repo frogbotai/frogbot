@@ -15,8 +15,9 @@ expectTypeOf<Parameters<typeof imageHelper.rotate>[0]['input']>().toEqualTypeOf<
 }>();
 expectTypeOf<Awaited<typeof _rotated>['id']>().toEqualTypeOf<string | number>();
 
-// @ts-expect-error rotate does not accept imageToBase64 input
-imageHelper.rotate({ input: { image: 1, mimeType: 'image/png' }, req });
+const _rotateRejectsImageToBase64Input = () =>
+  // @ts-expect-error rotate does not accept imageToBase64 input
+  imageHelper.rotate({ input: { image: 1, mimeType: 'image/png' }, req });
 
 expectTypeOf(imageHelper.imageToBase64({ input: { image: 1 }, req })).toEqualTypeOf<
   Promise<string>

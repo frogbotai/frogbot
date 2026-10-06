@@ -80,7 +80,7 @@ describe('genAi metrics', () => {
     const { createGenAiHooks } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
     const hooks = createGenAiHooks('required');
-    hooks.afterOperation?.[0]?.({
+    await hooks.afterOperation?.[0]?.({
       phase: 'afterOperation',
       operation: ctx.operation,
       requestId: 'req_1',

@@ -212,7 +212,9 @@ describe('gateway provider HTTP golden replay', () => {
     );
 
     expect(status).toBe(200);
-    expect(body).toMatchObject(loadJsonFixture(scenario, 'expected-response.json'));
+    expect(body).toMatchObject(
+      loadJsonFixture<Record<string, unknown>>(scenario, 'expected-response.json'),
+    );
   });
 
   it('replays OpenAI speech through the real provider package', async () => {

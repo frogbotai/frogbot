@@ -464,7 +464,9 @@ describe('catalog sync aggregator providers', () => {
   const priced = { input: 3, output: 15, cache_read: 0.3, cache_write: 3.75 };
 
   const syncVercel = (models: Record<string, unknown>) =>
-    buildCatalogs({ overlays: {}, source: { vercel: { models } } }).gateway.map(({ id }) => id);
+    buildCatalogs({ overlays: {}, source: { vercel: { models } } }).gateway.map(
+      ({ id }: { id: string }) => id,
+    );
 
   it('keeps nested creator/model IDs under the vercel prefix', () => {
     const ids = syncVercel({
@@ -496,7 +498,7 @@ describe('catalog sync aggregator providers', () => {
       source: { openai: { models: { [model.id]: model } } },
     });
 
-    expect(gateway.map(({ id }) => id)).toEqual([`openai/${model.id}`]);
+    expect(gateway.map(({ id }: { id: string }) => id)).toEqual([`openai/${model.id}`]);
   });
 
   it('publishes only priced text-output models for vercel in the committed catalog', () => {
@@ -574,7 +576,7 @@ describe('catalog sync SDK metadata', () => {
       source: { 'amazon-bedrock': { models: { [model.id]: model } } },
     });
 
-    expect(gateway.map(({ id }) => id)).toEqual([`bedrock/${replacement.id}`]);
+    expect(gateway.map(({ id }: { id: string }) => id)).toEqual([`bedrock/${replacement.id}`]);
   });
 
   it('keeps priced aggregator models, including free variants, and skips unpriced routers', () => {
@@ -597,7 +599,7 @@ describe('catalog sync SDK metadata', () => {
       },
     });
 
-    expect(gateway.map(({ id }) => id)).toEqual([
+    expect(gateway.map(({ id }: { id: string }) => id)).toEqual([
       'openrouter/anthropic/claude-sonnet-4.6',
       'openrouter/meta-llama/llama-3.3-70b-instruct:free',
     ]);
@@ -610,7 +612,7 @@ describe('catalog sync SDK metadata', () => {
       source: { openai: { models: { [model.id]: model } } },
     });
 
-    expect(gateway.map(({ id }) => id)).toEqual([`openai/${model.id}`]);
+    expect(gateway.map(({ id }: { id: string }) => id)).toEqual([`openai/${model.id}`]);
   });
 
   it('preserves overlay-only provider entries', () => {
@@ -704,7 +706,7 @@ describe('catalog sync SDK metadata', () => {
       { id: 'typesafe-ai/reranker', provider: 'typesafe-ai', mode: 'rerank' },
     ]);
 
-    expect(gateway.every((entry) => !Object.hasOwn(entry, 'mode'))).toBe(true);
+    expect(gateway.every((entry: object) => !Object.hasOwn(entry, 'mode'))).toBe(true);
   });
 
   it('publishes both TypeSafe evaluation IDs with matching overlay pricing', () => {
@@ -718,9 +720,11 @@ describe('catalog sync SDK metadata', () => {
     for (const id of ids) {
       const gatewayEntry = DEFAULT_MODEL_CATALOG.get(id);
 
-      expect(gatewayEntry).toEqual(generated.gateway.find((entry) => entry.id === id));
+      expect(gatewayEntry).toEqual(
+        generated.gateway.find((entry: { id: string }) => entry.id === id),
+      );
       expect(catalog.find((entry) => entry.id === id)).toEqual(
-        generated.catalog.find((entry) => entry.id === id),
+        generated.catalog.find((entry: { id: string }) => entry.id === id),
       );
       expect(gatewayEntry?.operations).toEqual(['evaluate']);
       expect(gatewayEntry?.modalities).toEqual({ input: ['text'], output: [] });

@@ -153,7 +153,7 @@ async function streamChatText(app: LiveApp, body: Record<string, unknown>): Prom
     .join('');
 }
 
-export async function runChatVision(app: LiveApp, model: string): Promise<void> {
+export async function expectChatVision(app: LiveApp, model: string): Promise<void> {
   const text = await chatText(app, {
     model,
     messages: [
@@ -167,7 +167,7 @@ export async function runChatVision(app: LiveApp, model: string): Promise<void> 
   expect(text).toMatch(FIXTURE_FACTS.receiptTotal);
 }
 
-export async function runChatVisionStream(app: LiveApp, model: string): Promise<void> {
+export async function expectChatVisionStream(app: LiveApp, model: string): Promise<void> {
   const text = await streamChatText(app, {
     model,
     messages: [
@@ -181,7 +181,7 @@ export async function runChatVisionStream(app: LiveApp, model: string): Promise<
   expect(text).toMatch(FIXTURE_FACTS.receiptTotal);
 }
 
-export async function runMessagesVision(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesVision(app: LiveApp, model: string): Promise<void> {
   const body = await messages(app, {
     model,
     messages: [
@@ -195,7 +195,7 @@ export async function runMessagesVision(app: LiveApp, model: string): Promise<vo
   expect(messagesText(body)).toMatch(FIXTURE_FACTS.receiptTotal);
 }
 
-export async function runResponsesVision(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesVision(app: LiveApp, model: string): Promise<void> {
   const body = await responses(app, {
     model,
     input: [
@@ -209,7 +209,7 @@ export async function runResponsesVision(app: LiveApp, model: string): Promise<v
   expect(body.output_text).toMatch(FIXTURE_FACTS.receiptTotal);
 }
 
-export async function runChatMultiImage(app: LiveApp, model: string): Promise<void> {
+export async function expectChatMultiImage(app: LiveApp, model: string): Promise<void> {
   const text = await chatText(app, {
     model,
     messages: [
@@ -233,7 +233,7 @@ export async function runChatMultiImage(app: LiveApp, model: string): Promise<vo
   expect(text).toMatch(FIXTURE_FACTS.circleColor);
 }
 
-export async function runChatImageFollowUp(app: LiveApp, model: string): Promise<void> {
+export async function expectChatImageFollowUp(app: LiveApp, model: string): Promise<void> {
   const history: ChatMessage[] = [
     {
       role: 'user',
@@ -254,7 +254,7 @@ export async function runChatImageFollowUp(app: LiveApp, model: string): Promise
   expect(text).toMatch(FIXTURE_FACTS.squareColor);
 }
 
-export async function runChatPdf(app: LiveApp, model: string): Promise<void> {
+export async function expectChatPdf(app: LiveApp, model: string): Promise<void> {
   const text = await chatText(app, {
     model,
     messages: [{ role: 'user', content: [{ type: 'text', text: PDF_QUESTION }, chatPdf()] }],
@@ -263,7 +263,7 @@ export async function runChatPdf(app: LiveApp, model: string): Promise<void> {
   expect(text).toMatch(FIXTURE_FACTS.renewalCode);
 }
 
-export async function runMessagesPdf(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesPdf(app: LiveApp, model: string): Promise<void> {
   const body = await messages(app, {
     model,
     messages: [{ role: 'user', content: [messagesPdf(), { type: 'text', text: PDF_QUESTION }] }],
@@ -272,7 +272,7 @@ export async function runMessagesPdf(app: LiveApp, model: string): Promise<void>
   expect(messagesText(body)).toMatch(FIXTURE_FACTS.renewalCode);
 }
 
-export async function runResponsesPdf(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesPdf(app: LiveApp, model: string): Promise<void> {
   const body = await responses(app, {
     model,
     input: [
@@ -283,7 +283,7 @@ export async function runResponsesPdf(app: LiveApp, model: string): Promise<void
   expect(body.output_text).toMatch(FIXTURE_FACTS.renewalCode);
 }
 
-export async function runChatAudio(app: LiveApp, model: string): Promise<void> {
+export async function expectChatAudio(app: LiveApp, model: string): Promise<void> {
   const text = await chatText(app, {
     model,
     messages: [
@@ -337,7 +337,7 @@ function expectExpense(raw: string | null | undefined): void {
   );
 }
 
-export async function runChatStructuredOutput(app: LiveApp, model: string): Promise<void> {
+export async function expectChatStructuredOutput(app: LiveApp, model: string): Promise<void> {
   const text = await chatText(app, {
     model,
     messages: [
@@ -352,7 +352,7 @@ export async function runChatStructuredOutput(app: LiveApp, model: string): Prom
   expectExpense(text);
 }
 
-export async function runResponsesStructuredOutput(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesStructuredOutput(app: LiveApp, model: string): Promise<void> {
   const body = await responses(app, {
     model,
     input: `Extract this receipt as an expense record.\n\n${RECEIPT_TEXT}`,
@@ -377,7 +377,7 @@ const RECORD_EXPENSE_TOOL = {
   },
 };
 
-export async function runChatVisionToolCall(app: LiveApp, model: string): Promise<void> {
+export async function expectChatVisionToolCall(app: LiveApp, model: string): Promise<void> {
   const body = await chat(app, {
     model,
     tools: [RECORD_EXPENSE_TOOL],
@@ -405,7 +405,7 @@ export async function runChatVisionToolCall(app: LiveApp, model: string): Promis
 const REASONING_QUESTION =
   'A pond has 17 lily pads with 23 frogs on each. 6 frogs leave. How many frogs remain? Reply with just the number.';
 
-export async function runChatReasoning(app: LiveApp, model: string): Promise<void> {
+export async function expectChatReasoning(app: LiveApp, model: string): Promise<void> {
   const text = await chatText(app, {
     model,
     reasoning_effort: 'low',
@@ -415,7 +415,7 @@ export async function runChatReasoning(app: LiveApp, model: string): Promise<voi
   expect(text).toMatch(/\b385\b/);
 }
 
-export async function runResponsesReasoning(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesReasoning(app: LiveApp, model: string): Promise<void> {
   const body = await responses(app, {
     model,
     reasoning: { effort: 'low' },
@@ -437,7 +437,7 @@ const MESSAGES_WEATHER_TOOL = {
   },
 };
 
-export async function runMessagesThinking(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesThinking(app: LiveApp, model: string): Promise<void> {
   const body = await messages(app, {
     model,
     thinking: THINKING,
@@ -451,7 +451,7 @@ export async function runMessagesThinking(app: LiveApp, model: string): Promise<
   expect(messagesText(body)).toMatch(/\b385\b/);
 }
 
-export async function runMessagesThinkingToolLoop(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesThinkingToolLoop(app: LiveApp, model: string): Promise<void> {
   const question = {
     role: 'user',
     content:
@@ -598,7 +598,11 @@ async function cachedTokens(app: LiveApp, model: string, wire: CacheWire): Promi
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function runPromptCache(app: LiveApp, model: string, wire: CacheWire): Promise<void> {
+export async function expectPromptCache(
+  app: LiveApp,
+  model: string,
+  wire: CacheWire,
+): Promise<void> {
   await cachedTokens(app, model, wire);
 
   let cached = 0;

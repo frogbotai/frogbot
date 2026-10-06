@@ -22,5 +22,6 @@ expectTypeOf(parsed).toEqualTypeOf<
   }>
 >();
 
-// @ts-expect-error parseUrl does not accept sendRequest input
-http.parseUrl({ input: { method: 'GET', url: 'https://example.com' }, req });
+const _parseUrlRejectsSendRequestInput = () =>
+  // @ts-expect-error parseUrl does not accept sendRequest input
+  http.parseUrl({ input: { method: 'GET', url: 'https://example.com' }, req });

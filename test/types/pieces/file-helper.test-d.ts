@@ -14,8 +14,9 @@ expectTypeOf<Parameters<typeof fileHelper.checkFileType>[0]['input']>().toEqualT
 }>();
 expectTypeOf(check).toEqualTypeOf<Promise<{ mimeType: string; isMatch: boolean }>>();
 
-// @ts-expect-error checkFileType does not accept createFile input
-fileHelper.checkFileType({ input: { content: 'Hello', fileName: 'hello.txt' }, req });
+const _checkFileTypeRejectsCreateFileInput = () =>
+  // @ts-expect-error checkFileType does not accept createFile input
+  fileHelper.checkFileType({ input: { content: 'Hello', fileName: 'hello.txt' }, req });
 
 expectTypeOf(fileHelper.getFileName({ input: { file: 1 }, req })).toEqualTypeOf<
   Promise<{ fileName: string }>

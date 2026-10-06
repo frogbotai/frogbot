@@ -25,13 +25,30 @@ const upstreamError = new Error('upstream failed');
 
 function buildHooks(events: string[]): Hooks {
   return {
-    beforeOperation: [() => events.push('beforeOperation')],
-    beforeUpstream: [() => events.push('beforeUpstream')],
-    afterUpstream: [() => events.push('afterUpstream')],
-    afterError: [(args) => events.push(`afterError:${args.failedPhase}`)],
+    beforeOperation: [
+      () => {
+        events.push('beforeOperation');
+      },
+    ],
+    beforeUpstream: [
+      () => {
+        events.push('beforeUpstream');
+      },
+    ],
+    afterUpstream: [
+      () => {
+        events.push('afterUpstream');
+      },
+    ],
+    afterError: [
+      (args) => {
+        events.push(`afterError:${args.failedPhase}`);
+      },
+    ],
     afterOperation: [
-      (args) =>
-        events.push(`afterOperation:${args.finishReason ?? 'none'}:${args.error ? 'error' : 'ok'}`),
+      (args) => {
+        events.push(`afterOperation:${args.finishReason ?? 'none'}:${args.error ? 'error' : 'ok'}`);
+      },
     ],
   };
 }
@@ -47,15 +64,15 @@ const cases: RouteCase[] = [
           openai: new MockProviderV4({
             embeddingModels: {
               'text-embedding-3-small': new MockEmbeddingModelV4({
-                doEmbed: async ({ values }) => {
+                doEmbed: ({ values }) => {
                   if (fail) {
-                    throw upstreamError;
+                    return Promise.reject(upstreamError);
                   }
-                  return {
+                  return Promise.resolve({
                     embeddings: values.map(() => [1, 2]),
                     usage: { tokens: 3 },
                     warnings: [],
-                  };
+                  });
                 },
               }),
             },
@@ -81,15 +98,16 @@ const cases: RouteCase[] = [
           openai: new MockProviderV4({
             imageModels: {
               'dall-e-3': new MockImageModelV4({
-                doGenerate: async () => {
+                doGenerate: () => {
                   if (fail) {
-                    throw upstreamError;
+                    return Promise.reject(upstreamError);
                   }
-                  return {
+                  return Promise.resolve({
                     images: ['aW1hZ2U='],
                     usage: { inputTokens: 1, outputTokens: 0, totalTokens: 1 },
                     warnings: [],
-                  };
+                    response: { timestamp: new Date(0), modelId: 'dall-e-3', headers: undefined },
+                  });
                 },
               }),
             },
@@ -112,11 +130,11 @@ const cases: RouteCase[] = [
           openai: new MockProviderV4({
             speechModels: {
               'tts-1': new MockSpeechModelV4({
-                doGenerate: async () => {
+                doGenerate: () => {
                   if (fail) {
-                    throw upstreamError;
+                    return Promise.reject(upstreamError);
                   }
-                  return {
+                  return Promise.resolve({
                     audio: new Uint8Array([1]),
                     warnings: [],
                     response: {
@@ -124,7 +142,7 @@ const cases: RouteCase[] = [
                       timestamp: new Date(0),
                       modelId: 'tts-1',
                     },
-                  };
+                  });
                 },
               }),
             },
@@ -151,11 +169,11 @@ const cases: RouteCase[] = [
           openai: new MockProviderV4({
             transcriptionModels: {
               'whisper-1': new MockTranscriptionModelV4({
-                doGenerate: async () => {
+                doGenerate: () => {
                   if (fail) {
-                    throw upstreamError;
+                    return Promise.reject(upstreamError);
                   }
-                  return {
+                  return Promise.resolve({
                     text: 'frog',
                     segments: [],
                     language: 'en',
@@ -166,7 +184,7 @@ const cases: RouteCase[] = [
                       timestamp: new Date(0),
                       modelId: 'whisper-1',
                     },
-                  };
+                  });
                 },
               }),
             },
@@ -189,11 +207,11 @@ const cases: RouteCase[] = [
         provider: 'replicate.video',
         modelId: 'wan-2.5',
         maxVideosPerCall: 1,
-        doGenerate: async () => {
+        doGenerate: () => {
           if (fail) {
-            throw upstreamError;
+            return Promise.reject(upstreamError);
           }
-          return {
+          return Promise.resolve({
             videos: [
               {
                 type: 'base64' as const,
@@ -208,7 +226,7 @@ const cases: RouteCase[] = [
               modelId: 'wan-2.5',
               headers: {},
             },
-          };
+          });
         },
       } satisfies Experimental_VideoModelV4;
 
@@ -235,15 +253,15 @@ const cases: RouteCase[] = [
           cohere: new MockProviderV4({
             rerankingModels: {
               'rerank-v3.5': new MockRerankingModelV4({
-                doRerank: async () => {
+                doRerank: () => {
                   if (fail) {
-                    throw upstreamError;
+                    return Promise.reject(upstreamError);
                   }
-                  return {
+                  return Promise.resolve({
                     ranking: [{ index: 0, relevanceScore: 0.9 }],
                     warnings: [],
                     response: { id: 'rerank_123' },
-                  };
+                  });
                 },
               }),
             },
@@ -344,7 +362,9 @@ describe('modality handler operation runner', () => {
           () => {
             throw new Error('boom afterOperation');
           },
-          () => events.push('afterOperation:ran'),
+          () => {
+            events.push('afterOperation:ran');
+          },
         ],
       },
     });
@@ -371,7 +391,11 @@ describe('modality handler operation runner', () => {
             });
           },
         ],
-        beforeUpstream: [() => events.push('beforeUpstream')],
+        beforeUpstream: [
+          () => {
+            events.push('beforeUpstream');
+          },
+        ],
       },
     });
 

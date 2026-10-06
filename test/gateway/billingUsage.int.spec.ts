@@ -17,13 +17,14 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { AfterOperationHookArgs, Hooks, HookUsage } from '../../packages/gateway/src/hooks.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // AI SDK v7 usage partition: `inputTokens.total` includes cache-read AND
 // cache-write; `cacheWrite` maps to `LanguageModelUsage.inputTokenDetails.cacheWriteTokens`.
-const USAGE = {
+const USAGE = mockUsage({
   inputTokens: { total: 100, noCache: 70, cacheRead: 10, cacheWrite: 20 },
   outputTokens: { total: 50, text: 50 },
-};
+});
 
 function createUsageMock(): LanguageModelV4 {
   return {
@@ -36,7 +37,7 @@ function createUsageMock(): LanguageModelV4 {
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],
-        finishReason: 'stop',
+        finishReason: finish('stop'),
         usage: USAGE,
         warnings: [],
         response: {
@@ -58,9 +59,9 @@ function createUsageMock(): LanguageModelV4 {
             controller.enqueue({ type: 'text-end', id: 't0' });
             controller.enqueue({
               type: 'finish',
-              finishReason: { unified: 'stop', raw: 'stop' },
+              finishReason: finish('stop', 'stop'),
               usage: USAGE,
-            } as LanguageModelV4StreamPart);
+            });
             controller.close();
           },
         }),

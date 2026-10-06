@@ -23,8 +23,9 @@ expectTypeOf<Parameters<typeof stripe.createCustomer>[0]['input']>().toEqualType
 }>();
 expectTypeOf(customer).toEqualTypeOf<Promise<Record<string, JSONValue>>>();
 
-// @ts-expect-error createCustomer does not accept getInvoice input
-stripe.createCustomer({ input: { invoiceId: 'in_123' } });
+const _createCustomerRejectsGetInvoiceInput = () =>
+  // @ts-expect-error createCustomer does not accept getInvoice input
+  stripe.createCustomer({ input: { invoiceId: 'in_123' } });
 
 const _response = stripe.sendRequest({ input: { method: 'GET', path: '/customers' } });
 

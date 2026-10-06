@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { loadLayeredConfig } from '../../../../packages/gateway/src/config/layered.js';
+import { providerMap, testEnv } from './fixtures.js';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'frogbotai-gateway-layered-'));
 
@@ -31,15 +32,18 @@ describe('loadLayeredConfig', () => {
 
     const result = await loadLayeredConfig({
       cwd: project,
-      defaults: { providers: { openai: { apiKey: 'default-key' } }, logger: { level: 'info' } },
+      defaults: {
+        providers: providerMap({ openai: { apiKey: 'default-key' } }),
+        logger: { level: 'info' },
+      },
       configPath: explicit,
-      env: {
+      env: testEnv({
         GATEWAY_CONFIG_JSON: JSON.stringify({
           providers: { openai: { apiKey: '{env:FROGBOTAI_INLINE_KEY}' } },
           tracing: { endpoint: 'http://otel.test' },
         }),
         FROGBOTAI_INLINE_KEY: 'inline-key',
-      },
+      }),
     });
 
     expect(result.config.providers.openai).toEqual({
@@ -75,7 +79,7 @@ describe('loadLayeredConfig', () => {
       };\n`,
     );
 
-    const result = await loadLayeredConfig({ cwd: project, configPath: explicit, env: {} });
+    const result = await loadLayeredConfig({ cwd: project, configPath: explicit, env: testEnv() });
 
     expect(result.config.basePath).toBe('/api');
     expect([...(result.config.catalog?.keys() ?? [])]).toEqual(['openai/gpt-4o']);
@@ -102,9 +106,9 @@ describe('loadLayeredConfig', () => {
       }),
     );
 
-    const result = await loadLayeredConfig({ cwd: project, configPath: explicit, env: {} });
+    const result = await loadLayeredConfig({ cwd: project, configPath: explicit, env: testEnv() });
 
-    expect(result.config.providers.openai.organization).toBe('explicit-org');
+    expect(result.config.providers.openai).toMatchObject({ organization: 'explicit-org' });
     expect(result.config.logger).toEqual({ level: 'debug' });
   });
 
@@ -117,7 +121,10 @@ describe('loadLayeredConfig', () => {
     const global = join(xdg, 'frogbotai', 'gateway.json');
     writeFileSync(global, JSON.stringify({ providers: { openai: { apiKey: 'global-key' } } }));
 
-    const result = await loadLayeredConfig({ cwd: project, env: { XDG_CONFIG_HOME: xdg } });
+    const result = await loadLayeredConfig({
+      cwd: project,
+      env: testEnv({ XDG_CONFIG_HOME: xdg }),
+    });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'global-key' });
     expect(result.sources).toContainEqual({ kind: 'global', path: global });
@@ -128,7 +135,7 @@ describe('loadLayeredConfig', () => {
     const project = join(dir, 'project');
     mkdirSync(project);
 
-    const result = await loadLayeredConfig({ cwd: project, env: { XDG_CONFIG_HOME: '' } });
+    const result = await loadLayeredConfig({ cwd: project, env: testEnv({ XDG_CONFIG_HOME: '' }) });
 
     expect(result.sources.some((source) => source.kind === 'global')).toBe(false);
   });
@@ -146,7 +153,7 @@ describe('loadLayeredConfig', () => {
       JSON.stringify({ providers: { openai: { apiKey: 'json-key', organization: 'json-org' } } }),
     );
 
-    const result = await loadLayeredConfig({ cwd: project, env: {} });
+    const result = await loadLayeredConfig({ cwd: project, env: testEnv() });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'ts-key' });
     const projectSources = result.sources.filter((source) => source.kind === 'project');
@@ -168,7 +175,7 @@ describe('loadLayeredConfig', () => {
       JSON.stringify({ providers: { openai: { apiKey: 'inner-key' } } }),
     );
 
-    const result = await loadLayeredConfig({ cwd: inner, env: {} });
+    const result = await loadLayeredConfig({ cwd: inner, env: testEnv() });
 
     expect(result.config.providers.openai).toEqual({
       apiKey: 'inner-key',
@@ -202,7 +209,7 @@ describe('loadLayeredConfig', () => {
       JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }),
     );
 
-    const result = await loadLayeredConfig({ cwd: project, env: {} });
+    const result = await loadLayeredConfig({ cwd: project, env: testEnv() });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'project-key' });
     const projectPaths = result.sources
@@ -226,7 +233,7 @@ describe('loadLayeredConfig', () => {
       JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }),
     );
 
-    const result = await loadLayeredConfig({ cwd: project, env: {} });
+    const result = await loadLayeredConfig({ cwd: project, env: testEnv() });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'project-key' });
   });
@@ -245,7 +252,10 @@ describe('loadLayeredConfig', () => {
       JSON.stringify({ providers: { openai: { apiKey: 'inner-key' } } }),
     );
 
-    const result = await loadLayeredConfig({ cwd: inner, env: { GATEWAY_CONFIG_ROOT: outer } });
+    const result = await loadLayeredConfig({
+      cwd: inner,
+      env: testEnv({ GATEWAY_CONFIG_ROOT: outer }),
+    });
 
     expect(result.config.providers.openai).toEqual({
       apiKey: 'inner-key',
@@ -265,7 +275,7 @@ describe('loadLayeredConfig', () => {
     await expect(
       loadLayeredConfig({
         cwd: dir,
-        env: { GATEWAY_CONFIG_JSON: '{"providers": {' },
+        env: testEnv({ GATEWAY_CONFIG_JSON: '{"providers": {' }),
       }),
     ).rejects.toThrow(/GATEWAY_CONFIG_JSON: invalid JSON/);
   });
@@ -275,7 +285,7 @@ describe('loadLayeredConfig', () => {
     await expect(
       loadLayeredConfig({
         cwd: dir,
-        env: { GATEWAY_CONFIG_JSON: '{"providers": {},}' },
+        env: testEnv({ GATEWAY_CONFIG_JSON: '{"providers": {},}' }),
       }),
     ).rejects.toThrow(/GATEWAY_CONFIG_JSON: invalid JSON/);
   });
@@ -283,14 +293,14 @@ describe('loadLayeredConfig', () => {
   it('rejects a GATEWAY_CONFIG_JSON array with a clear error (P2-D6c)', async () => {
     const dir = scratch();
     await expect(
-      loadLayeredConfig({ cwd: dir, env: { GATEWAY_CONFIG_JSON: '[]' } }),
+      loadLayeredConfig({ cwd: dir, env: testEnv({ GATEWAY_CONFIG_JSON: '[]' }) }),
     ).rejects.toThrow(/GATEWAY_CONFIG_JSON: expected a JSON object, got array/);
   });
 
   it('rejects a GATEWAY_CONFIG_JSON scalar with a clear error (P2-D6c)', async () => {
     const dir = scratch();
     await expect(
-      loadLayeredConfig({ cwd: dir, env: { GATEWAY_CONFIG_JSON: '42' } }),
+      loadLayeredConfig({ cwd: dir, env: testEnv({ GATEWAY_CONFIG_JSON: '42' }) }),
     ).rejects.toThrow(/GATEWAY_CONFIG_JSON: expected a JSON object, got number/);
   });
 });

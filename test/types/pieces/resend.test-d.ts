@@ -61,17 +61,18 @@ expectTypeOf<ResendFactoryOptions['from']>().toEqualTypeOf<
 >();
 expectTypeOf<ResendFactoryOptions['oauth']>().toEqualTypeOf<undefined>();
 
-resend.send({ input });
-resend.send({ input, req });
-resend.client({});
-resend.createDomain({ input: { name: 'example.com', region: 'us-east-1' } });
-resend.getEmailStatus({ input: { email_id: 'email-id', expand: true } });
+const _sent = resend.send({ input });
+const _sentWithReq = resend.send({ input, req });
+const _client = resend.client({});
+const _domain = resend.createDomain({ input: { name: 'example.com', region: 'us-east-1' } });
+const _status = resend.getEmailStatus({ input: { email_id: 'email-id', expand: true } });
 expectTypeOf(resend.sendBatchEmails({ input: { emails: [] } })).toEqualTypeOf<
   Promise<PieceJSON[]>
 >();
 
-// @ts-expect-error send does not accept createDomain input
-resend.send({ input: { name: 'example.com', region: 'us-east-1' } });
+const _sendRejectsCreateDomainInput = () =>
+  // @ts-expect-error send does not accept createDomain input
+  resend.send({ input: { name: 'example.com', region: 'us-east-1' } });
 
 const connected = createResend();
 
@@ -82,8 +83,8 @@ createResend({
   auth: { apiKey: 'key' },
   from: { address: 'sender@example.com', name: 'FrogBot' },
 });
-connected.send({ input, req });
-connected.client({ req });
+const _connectedSent = connected.send({ input, req });
+const _connectedClient = connected.client({ req });
 expectTypeOf<Parameters<typeof connected.send>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogBotRequest }>();
 expectTypeOf<{ input: SendInput }>().not.toMatchTypeOf<Parameters<typeof connected.send>[0]>();

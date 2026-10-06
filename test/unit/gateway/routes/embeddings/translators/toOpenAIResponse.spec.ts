@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import {
   encodeEmbedding,
@@ -35,11 +35,10 @@ describe('toOpenAIEmbeddingsResponse', () => {
   });
 
   it('encodes base64 without Buffer for workers runtimes', () => {
-    vi.stubGlobal('Buffer', undefined);
-    try {
-      expect(encodeEmbedding([1, -2.5])).toBe('AACAPwAAIMA=');
-    } finally {
+    onTestFinished(() => {
       vi.unstubAllGlobals();
-    }
+    });
+    vi.stubGlobal('Buffer', undefined);
+    expect(encodeEmbedding([1, -2.5])).toBe('AACAPwAAIMA=');
   });
 });

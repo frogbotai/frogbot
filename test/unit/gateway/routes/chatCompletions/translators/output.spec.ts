@@ -44,26 +44,14 @@ describe('toChatOutput', () => {
   });
 
   test('json_schema without a schema object throws a 400 pointed at the field', () => {
-    let caught: unknown;
-    try {
-      toChatOutput({ type: 'json_schema', json_schema: { name: 'weather' } });
-    } catch (e) {
-      caught = e;
-    }
-    const err = caught as { status?: number; param?: string };
-    expect(err.status).toBe(400);
-    expect(err.param).toBe('response_format.json_schema.schema');
+    expect(() => toChatOutput({ type: 'json_schema', json_schema: { name: 'weather' } })).toThrow(
+      expect.objectContaining({ status: 400, param: 'response_format.json_schema.schema' }),
+    );
   });
 
   test('unknown response_format type throws a 400 pointed at the field', () => {
-    let caught: unknown;
-    try {
-      toChatOutput({ type: 'banana' });
-    } catch (e) {
-      caught = e;
-    }
-    const err = caught as { status?: number; param?: string };
-    expect(err.status).toBe(400);
-    expect(err.param).toBe('response_format.type');
+    expect(() => toChatOutput({ type: 'banana' })).toThrow(
+      expect.objectContaining({ status: 400, param: 'response_format.type' }),
+    );
   });
 });

@@ -15,7 +15,7 @@ export const config = buildConfig({
         slug: 'send-report',
         inputSchema: [{ name: 'reportId', type: 'text', required: true }],
         outputSchema: [{ name: 'reportId', type: 'text', required: true }],
-        async handler({ input }) {
+        handler({ input }) {
           return { output: { reportId: input.reportId } };
         },
       },
@@ -52,7 +52,7 @@ export const approvalWorkflow: WorkflowConfig = {
   async handler({ waitFor }) {
     const { output } = await waitForApproval(waitFor);
 
-    console.log(output.approved);
+    if (!output.approved) throw new Error('Approval was denied or expired');
   },
 };
 

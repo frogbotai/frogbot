@@ -7,6 +7,7 @@
     "generated.test-d.ts",
     "requests.test-d.ts",
     "native.test-d.ts",
-    "waitpoints.test-d.ts"
+    "waitpoints.test-d.ts",
+    "config.ts"
   ]
 }

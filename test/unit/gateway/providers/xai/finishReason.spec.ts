@@ -9,15 +9,23 @@ function fakeModel(raw: string, body: unknown): LanguageModelV4 {
     provider: 'xai.responses',
     modelId: 'grok-4.3',
     supportedUrls: {},
-    doGenerate: async () =>
-      ({
+    doGenerate: () =>
+      Promise.resolve({
         content: [],
         finishReason: { unified: 'other', raw },
-        usage: {},
+        usage: {
+          inputTokens: {
+            total: undefined,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: undefined, text: undefined, reasoning: undefined },
+        },
         warnings: [],
         response: { body },
-      }) as never,
-    doStream: async () => ({}) as never,
+      }),
+    doStream: () => Promise.reject(new Error('doStream is not used by these tests')),
   };
 }
 

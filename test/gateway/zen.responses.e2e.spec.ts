@@ -267,15 +267,12 @@ describeLive(
 
         expect(status).toBe(200);
         const call = (body.output ?? []).find((item) => item.type === 'function_call');
+        expect(call, '[zen.responses.e2e] model did not call the tool').toBeDefined();
 
-        if (!call) {
-          throw new Error('[zen.responses.e2e] model did not call the tool');
-        }
-
-        expect(call.name).toBe('get_weather');
-        expect(typeof call.call_id).toBe('string');
-        expect(call.call_id!.length).toBeGreaterThan(0);
-        const args = JSON.parse(call.arguments ?? '') as Record<string, unknown>;
+        expect(call!.name).toBe('get_weather');
+        expect(typeof call!.call_id).toBe('string');
+        expect(call!.call_id!.length).toBeGreaterThan(0);
+        const args = JSON.parse(call!.arguments ?? '') as Record<string, unknown>;
         expect(typeof args).toBe('object');
       },
       TEST_TIMEOUT,

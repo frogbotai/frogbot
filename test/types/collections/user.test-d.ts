@@ -76,7 +76,7 @@ export async function requestFromPartialUser() {
   return frogbot.createRequest({ user: { id: 1 } });
 }
 
-export const identity: Channel['identity'] = async () => selectUser;
+export const identity: Channel['identity'] = () => Promise.resolve(selectUser);
 
 // @ts-expect-error A channel identity must resolve the generated user.
-export const partialIdentity: Channel['identity'] = async () => ({ id: 1 });
+export const partialIdentity: Channel['identity'] = () => Promise.resolve({ id: 1 });

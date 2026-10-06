@@ -16,8 +16,12 @@ expectTypeOf<Parameters<typeof posthog.createProject>[0]['input']>().toEqualType
 }>();
 expectTypeOf<Awaited<typeof _project>['api_token']>().toEqualTypeOf<string>();
 
-// @ts-expect-error createProject does not accept createEvent input
-posthog.createProject({ input: { event: 'signup', eventType: 'capture', distinctId: 'u1' }, req });
+const _createProjectRejectsCreateEventInput = () =>
+  posthog.createProject({
+    // @ts-expect-error createProject does not accept createEvent input
+    input: { event: 'signup', eventType: 'capture', distinctId: 'u1' },
+    req,
+  });
 
 const _response = posthog.customApiCall({ input: { method: 'GET', path: '/api/projects/' }, req });
 

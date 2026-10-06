@@ -13,8 +13,9 @@ expectTypeOf<Parameters<typeof gmail.send>[0]['input']['draft']>().toEqualTypeOf
 >();
 expectTypeOf<Awaited<typeof _sent>['threadId']>().toEqualTypeOf<string | undefined>();
 
-// @ts-expect-error send does not accept getEmail input
-gmail.send({ input: { messageId: 'message' } });
+const _sendRejectsGetEmailInput = () =>
+  // @ts-expect-error send does not accept getEmail input
+  gmail.send({ input: { messageId: 'message' } });
 
 const _found = gmail.searchEmails({ input: { from: 'a@example.com', maxResults: 10 } });
 

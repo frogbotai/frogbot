@@ -10,7 +10,7 @@
 // streamError.ts) while the rest of the 4xx text passes through.
 
 import type { LanguageModelV4 } from '@ai-sdk/provider';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
@@ -42,13 +42,12 @@ function createKeyLeakModel(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
     doGenerate: () => Promise.reject(error),
     doStream: () => Promise.reject(error),
-  } as LanguageModelV4;
+  };
 }
 
 function makeAppWithMockProvider(providerName: string) {
@@ -63,38 +62,34 @@ describe('gateway integration — 4xx credential-fragment redaction (G34)', () =
   // is redacted (redactKeyFragments) while the rest of the actionable 4xx
   // text passes through.
   it('does not echo the operator key fragment in a chat 401 (OpenAI envelope)', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const app = makeAppWithMockProvider('openai');
-      const { status, body } = await postJson(app, '/v1/chat/completions', {
-        model: 'openai/gpt-4o-mini',
-        messages: [{ role: 'user', content: 'hi' }],
-      });
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const app = makeAppWithMockProvider('openai');
+    const { status, body } = await postJson(app, '/v1/chat/completions', {
+      model: 'openai/gpt-4o-mini',
+      messages: [{ role: 'user', content: 'hi' }],
+    });
 
-      expect(status).toBe(401);
-      expect(JSON.stringify(body)).not.toContain(KEY_FRAGMENT);
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    expect(status).toBe(401);
+    expect(JSON.stringify(body)).not.toContain(KEY_FRAGMENT);
   });
 
   // Same leak on the Anthropic envelope path (/v1/messages).
   it('does not echo the operator key fragment in a messages 401 (Anthropic envelope)', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const app = makeAppWithMockProvider('anthropic');
-      const { status, body } = await postJson(app, '/v1/messages', {
-        model: 'anthropic/test-model',
-        messages: [{ role: 'user', content: 'hi' }],
-        max_tokens: 100,
-      });
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const app = makeAppWithMockProvider('anthropic');
+    const { status, body } = await postJson(app, '/v1/messages', {
+      model: 'anthropic/test-model',
+      messages: [{ role: 'user', content: 'hi' }],
+      max_tokens: 100,
+    });
 
-      expect(status).toBe(401);
-      expect(JSON.stringify(body)).not.toContain(KEY_FRAGMENT);
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    expect(status).toBe(401);
+    expect(JSON.stringify(body)).not.toContain(KEY_FRAGMENT);
   });
 });

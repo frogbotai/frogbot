@@ -12,8 +12,9 @@ expectTypeOf<Parameters<typeof notion.addComment>[0]['input']>().toEqualTypeOf<{
 expectTypeOf<Awaited<typeof _comment>['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _comment>['created_time']>().toEqualTypeOf<string>();
 
-// @ts-expect-error addComment does not accept retrieveDatabase input
-notion.addComment({ input: { databaseId: 'database' } });
+const _addCommentRejectsRetrieveDatabaseInput = () =>
+  // @ts-expect-error addComment does not accept retrieveDatabase input
+  notion.addComment({ input: { databaseId: 'database' } });
 
 expectTypeOf<keyof typeof notion.triggers>().toEqualTypeOf<
   'newDatabaseItem' | 'updatedDatabaseItem' | 'newComment' | 'updatedPage'

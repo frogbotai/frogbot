@@ -165,11 +165,7 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
       const choice = body.choices?.[0];
       expect(choice).toBeDefined();
 
-      if (choice!.finish_reason !== 'tool_calls') {
-        throw new Error(
-          `[zen.e2e] model did not call the tool (finish_reason=${String(choice!.finish_reason)})`,
-        );
-      }
+      expect(choice!.finish_reason, '[zen.e2e] model did not call the tool').toBe('tool_calls');
 
       const toolCalls = choice!.message?.tool_calls as ToolCall[] | undefined;
       expect(Array.isArray(toolCalls)).toBe(true);

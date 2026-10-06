@@ -1,6 +1,6 @@
 // Bedrock provider credential validation tests.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 const { createAmazonBedrock, standardLanguageModel } = vi.hoisted(() => ({
   createAmazonBedrock: vi.fn(),
@@ -22,17 +22,20 @@ vi.mock('@aws-sdk/credential-providers', () => ({ fromNodeProviderChain }));
 
 import { bedrockProvider } from '../../../../../packages/gateway/src/providers/bedrock/index.js';
 import { DEFAULT_MODEL_CATALOG } from '../../../../../packages/gateway/src/providers/catalog.data.js';
+import { testEnv } from '../../config/fixtures.js';
 
 describe('bedrockProvider.fromEnv', () => {
   it('returns undefined when no AWS credentials are present', () => {
-    const result = bedrockProvider.fromEnv({});
+    const result = bedrockProvider.fromEnv(testEnv());
     expect(result).toBeUndefined();
   });
 
   it('returns bearer token config when AWS_BEARER_TOKEN_BEDROCK is set', () => {
-    const result = bedrockProvider.fromEnv({
-      AWS_BEARER_TOKEN_BEDROCK: 'token-123',
-    });
+    const result = bedrockProvider.fromEnv(
+      testEnv({
+        AWS_BEARER_TOKEN_BEDROCK: 'token-123',
+      }),
+    );
     expect(result).toEqual({
       apiKey: 'token-123',
       region: 'us-east-1',
@@ -40,10 +43,12 @@ describe('bedrockProvider.fromEnv', () => {
   });
 
   it('respects AWS_REGION in bearer token mode', () => {
-    const result = bedrockProvider.fromEnv({
-      AWS_BEARER_TOKEN_BEDROCK: 'token-123',
-      AWS_REGION: 'eu-west-1',
-    });
+    const result = bedrockProvider.fromEnv(
+      testEnv({
+        AWS_BEARER_TOKEN_BEDROCK: 'token-123',
+        AWS_REGION: 'eu-west-1',
+      }),
+    );
     expect(result).toEqual({
       apiKey: 'token-123',
       region: 'eu-west-1',
@@ -51,11 +56,13 @@ describe('bedrockProvider.fromEnv', () => {
   });
 
   it('returns SigV4 config when all three core credentials are set', () => {
-    const result = bedrockProvider.fromEnv({
-      AWS_ACCESS_KEY_ID: 'AKIAIOSFODNN7EXAMPLE',
-      AWS_SECRET_ACCESS_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-      AWS_REGION: 'us-west-2',
-    });
+    const result = bedrockProvider.fromEnv(
+      testEnv({
+        AWS_ACCESS_KEY_ID: 'AKIAIOSFODNN7EXAMPLE',
+        AWS_SECRET_ACCESS_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+        AWS_REGION: 'us-west-2',
+      }),
+    );
     expect(result).toEqual({
       accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
       secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
@@ -64,12 +71,14 @@ describe('bedrockProvider.fromEnv', () => {
   });
 
   it('includes sessionToken when AWS_SESSION_TOKEN is set', () => {
-    const result = bedrockProvider.fromEnv({
-      AWS_ACCESS_KEY_ID: 'AKID',
-      AWS_SECRET_ACCESS_KEY: 'secret',
-      AWS_REGION: 'us-east-1',
-      AWS_SESSION_TOKEN: 'session-token',
-    });
+    const result = bedrockProvider.fromEnv(
+      testEnv({
+        AWS_ACCESS_KEY_ID: 'AKID',
+        AWS_SECRET_ACCESS_KEY: 'secret',
+        AWS_REGION: 'us-east-1',
+        AWS_SESSION_TOKEN: 'session-token',
+      }),
+    );
     expect(result).toEqual({
       accessKeyId: 'AKID',
       secretAccessKey: 'secret',
@@ -79,25 +88,29 @@ describe('bedrockProvider.fromEnv', () => {
   });
 
   it('returns undefined when only access key is provided (partial SigV4 skips — G41)', () => {
-    expect(bedrockProvider.fromEnv({ AWS_ACCESS_KEY_ID: 'AKID' })).toBeUndefined();
+    expect(bedrockProvider.fromEnv(testEnv({ AWS_ACCESS_KEY_ID: 'AKID' }))).toBeUndefined();
   });
 
   it('returns undefined when secret key is missing (partial SigV4 skips — G41)', () => {
     expect(
-      bedrockProvider.fromEnv({
-        AWS_ACCESS_KEY_ID: 'AKID',
-        AWS_REGION: 'us-east-1',
-      }),
+      bedrockProvider.fromEnv(
+        testEnv({
+          AWS_ACCESS_KEY_ID: 'AKID',
+          AWS_REGION: 'us-east-1',
+        }),
+      ),
     ).toBeUndefined();
   });
 
   it('bearer token takes priority over SigV4 when both are set', () => {
-    const result = bedrockProvider.fromEnv({
-      AWS_BEARER_TOKEN_BEDROCK: 'token-123',
-      AWS_ACCESS_KEY_ID: 'AKID',
-      AWS_SECRET_ACCESS_KEY: 'secret',
-      AWS_REGION: 'us-east-1',
-    });
+    const result = bedrockProvider.fromEnv(
+      testEnv({
+        AWS_BEARER_TOKEN_BEDROCK: 'token-123',
+        AWS_ACCESS_KEY_ID: 'AKID',
+        AWS_SECRET_ACCESS_KEY: 'secret',
+        AWS_REGION: 'us-east-1',
+      }),
+    );
     expect(result).toEqual({
       apiKey: 'token-123',
       region: 'us-east-1',
@@ -105,24 +118,26 @@ describe('bedrockProvider.fromEnv', () => {
   });
 
   it('returns chain-backed config for an AWS profile', () => {
-    expect(bedrockProvider.fromEnv({ AWS_PROFILE: 'dev' })).toEqual({
+    expect(bedrockProvider.fromEnv(testEnv({ AWS_PROFILE: 'dev' }))).toEqual({
       region: 'us-east-1',
     });
   });
 
   it('returns chain-backed config for web identity', () => {
     expect(
-      bedrockProvider.fromEnv({
-        AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
-        AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
-        AWS_REGION: 'us-west-2',
-      }),
+      bedrockProvider.fromEnv(
+        testEnv({
+          AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
+          AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
+          AWS_REGION: 'us-west-2',
+        }),
+      ),
     ).toEqual({ region: 'us-west-2' });
   });
 
   it('returns undefined for partial web identity configuration', () => {
     expect(
-      bedrockProvider.fromEnv({ AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test' }),
+      bedrockProvider.fromEnv(testEnv({ AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test' })),
     ).toBeUndefined();
   });
 });
@@ -237,24 +252,21 @@ describe('bedrockProvider.build', () => {
   });
 
   it('routes catalogued Chat models through Mantle', () => {
-    const entry = DEFAULT_MODEL_CATALOG.get('bedrock/openai.gpt-5.6-luna') as
-      (object & { sdk?: { api: string; npm: string; shape: string } }) | undefined;
-    const original = entry?.sdk;
-    if (entry) {
-      entry.sdk = {
-        npm: '@ai-sdk/amazon-bedrock/mantle',
-        api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
-        shape: 'chat',
-      };
-    }
+    const entry = DEFAULT_MODEL_CATALOG.get('bedrock/openai.gpt-5.6-luna');
+    assert(entry, 'bedrock/openai.gpt-5.6-luna is in the default catalog');
+    const original = entry.sdk;
+    entry.sdk = {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
+      shape: 'chat',
+    };
+    onTestFinished(() => {
+      entry.sdk = original;
+    });
 
-    try {
-      const provider = bedrockProvider.build({ apiKey: 'token-123', region: 'us-east-2' });
-      expect(provider.languageModel('openai.gpt-5.6-luna')).toBe('chat:openai.gpt-5.6-luna');
-      expect(mantleChat).toHaveBeenCalledWith('openai.gpt-5.6-luna');
-    } finally {
-      if (entry) entry.sdk = original;
-    }
+    const provider = bedrockProvider.build({ apiKey: 'token-123', region: 'us-east-2' });
+    expect(provider.languageModel('openai.gpt-5.6-luna')).toBe('chat:openai.gpt-5.6-luna');
+    expect(mantleChat).toHaveBeenCalledWith('openai.gpt-5.6-luna');
   });
 
   it('keeps standard Bedrock models on the standard provider', () => {

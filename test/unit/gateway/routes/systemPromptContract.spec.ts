@@ -25,6 +25,7 @@
 // live requests 400 on any system prompt — the defect this tier guards.
 
 import type { LanguageModelV4CallOptions } from '@ai-sdk/provider';
+import type { ModelMessage } from 'ai';
 import { generateText } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
@@ -35,6 +36,7 @@ import type { AnthropicMessage } from '../../../../packages/gateway/src/routes/m
 import { toModelMessages as messagesToModelMessages } from '../../../../packages/gateway/src/routes/messages/translators/index.js';
 import type { ResponsesRequest } from '../../../../packages/gateway/src/routes/responses/schema.js';
 import { toModelMessages as responsesToModelMessages } from '../../../../packages/gateway/src/routes/responses/translators/index.js';
+import { generateResult, v4Usage } from './mockModels.js';
 
 // A mock model that returns a minimal valid non-streaming result and records
 // every `doGenerate` call (MockLanguageModelV4.doGenerateCalls), so we can
@@ -42,19 +44,14 @@ import { toModelMessages as responsesToModelMessages } from '../../../../package
 // `standardizePrompt` accepted it.
 function recordingModel() {
   return new MockLanguageModelV4({
-    doGenerate: async () => ({
-      content: [{ type: 'text', text: 'ok' }],
-      finishReason: 'stop',
-      usage: { inputTokens: 5, outputTokens: 2, totalTokens: 7 },
-      warnings: [],
-    }),
+    doGenerate: () => Promise.resolve(generateResult({ usage: v4Usage(5, 2) })),
   });
 }
 
 // Mirrors the handler call site: real translator output → real generateText
 // with `allowSystemInMessages: true`. Returns the prompt the model received.
 async function runThroughSdk(
-  messages: Parameters<typeof generateText>[0]['messages'],
+  messages: ModelMessage[],
 ): Promise<LanguageModelV4CallOptions['prompt']> {
   const model = recordingModel();
   await generateText({

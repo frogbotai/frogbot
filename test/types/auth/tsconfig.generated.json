@@ -3,5 +3,10 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["docs-example.test-d.ts", "generated.test-d.ts", "strategy.generated.test-d.ts"]
+  "include": [
+    "docs-example.test-d.ts",
+    "generated.test-d.ts",
+    "strategy.generated.test-d.ts",
+    "config.ts"
+  ]
 }

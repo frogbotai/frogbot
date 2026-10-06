@@ -374,74 +374,6 @@
       "count": 1
     }
   },
-  "test/gateway/cacheWireMatrix.int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
-  "test/gateway/int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "test/gateway/live/matrix.e2e.spec.ts": {
-    "vitest/expect-expect": {
-      "count": 13
-    }
-  },
-  "test/gateway/live/scenarios.e2e.spec.ts": {
-    "vitest/expect-expect": {
-      "count": 33
-    }
-  },
-  "test/gateway/openrouter.int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
-  "test/gateway/secretRedaction.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "test/gateway/streamErrorMasking.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "test/gateway/upstreamErrorDetail.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/gateway/wireHonesty.chat.int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 2
-    }
-  },
-  "test/gateway/zen.chat.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 8
-    }
-  },
-  "test/gateway/zen.e2e.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
-  "test/gateway/zen.messages.e2e.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 4
-    }
-  },
-  "test/gateway/zen.responses.e2e.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
   "test/generateTypes.ts": {
     "no-console": {
       "count": 4
@@ -522,41 +454,6 @@
   "test/triggers/int.spec.ts": {
     "no-restricted-syntax": {
       "count": 3
-    }
-  },
-  "test/types/collections/parity.test-d.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "test/types/fields/parity.test-d.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    }
-  },
-  "test/types/fields/requestSlots.test-d.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "test/types/fields/validate.test-d.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    }
-  },
-  "test/types/skill/samples/agents.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "test/types/skill/samples/ai.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "test/types/skill/samples/jobs.ts": {
-    "no-console": {
-      "count": 1
     }
   },
   "test/ui/next/elements/Nav/FrogBotNavClient.spec.tsx": {
@@ -848,59 +745,6 @@
   "test/unit/frogbot/uploads/storage.spec.ts": {
     "@typescript-eslint/consistent-type-imports": {
       "count": 1
-    }
-  },
-  "test/unit/gateway/observability/logger.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/unit/gateway/observability/setup.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/unit/gateway/observability/tracing.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "test/unit/gateway/providers/bedrock/index.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
-  "test/unit/gateway/routes/aiSdkContracts.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    }
-  },
-  "test/unit/gateway/routes/chatCompletions/translators/chatCompletions.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 5
-    }
-  },
-  "test/unit/gateway/routes/chatCompletions/translators/output.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "test/unit/gateway/routes/embeddings/translators/toOpenAIResponse.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/unit/gateway/routes/messages/schema.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/unit/gateway/routes/responses/translators/toModelMessages.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "test/unit/jobs/waitpoints.spec.ts": {

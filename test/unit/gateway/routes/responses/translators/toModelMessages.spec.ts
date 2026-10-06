@@ -84,34 +84,30 @@ describe('toModelMessages', () => {
   });
 
   it('throws a 400 RequestValidationError for a malformed image_url', () => {
-    let caught: unknown;
-    try {
+    const translate = () =>
       toModelMessages([
         { role: 'user', content: [{ type: 'input_image', image_url: 'not a url' }] },
       ]);
-    } catch (err) {
-      caught = err;
-    }
-    expect(caught).toBeInstanceOf(RequestValidationError);
-    expect(caught).toMatchObject({
-      status: 400,
-      code: 'invalid_request_body',
-      param: 'input[0].content[0].image_url',
-    });
+    expect(translate).toThrow(RequestValidationError);
+    expect(translate).toThrow(
+      expect.objectContaining({
+        status: 400,
+        code: 'invalid_request_body',
+        param: 'input[0].content[0].image_url',
+      }),
+    );
   });
 
   it('throws a 400 RequestValidationError for a malformed file_url', () => {
-    let caught: unknown;
-    try {
+    const translate = () =>
       toModelMessages([{ role: 'user', content: [{ type: 'input_file', file_url: '::bad::' }] }]);
-    } catch (err) {
-      caught = err;
-    }
-    expect(caught).toBeInstanceOf(RequestValidationError);
-    expect(caught).toMatchObject({
-      status: 400,
-      code: 'invalid_request_body',
-      param: 'input[0].content[0].file_url',
-    });
+    expect(translate).toThrow(RequestValidationError);
+    expect(translate).toThrow(
+      expect.objectContaining({
+        status: 400,
+        code: 'invalid_request_body',
+        param: 'input[0].content[0].file_url',
+      }),
+    );
   });
 });

@@ -39,17 +39,13 @@ describe('toResponsesTools', () => {
   });
 
   it('forwards an mcp tool with its server config captured as args (openai)', () => {
-    const tools = toResponsesTools(
-      [
-        {
-          type: 'mcp',
-          server_label: 'deepwiki',
-          server_url: 'https://mcp.deepwiki.com/mcp',
-          require_approval: 'never',
-        },
-      ],
-      'openai',
-    );
+    const mcpTool = {
+      type: 'mcp',
+      server_label: 'deepwiki',
+      server_url: 'https://mcp.deepwiki.com/mcp',
+      require_approval: 'never',
+    };
+    const tools = toResponsesTools([mcpTool], 'openai');
 
     expect(tools!.mcp).toEqual({
       type: 'provider',

@@ -24,8 +24,9 @@ expectTypeOf(
   }),
 ).toEqualTypeOf<Promise<Record<string, unknown>>>();
 
-// @ts-expect-error createLink does not accept addComment input
-front.createLink({ input: { conversationId: 'cnv', authorId: 'tea', body: 'Hi' }, req });
+const _createLinkRejectsAddCommentInput = () =>
+  // @ts-expect-error createLink does not accept addComment input
+  front.createLink({ input: { conversationId: 'cnv', authorId: 'tea', body: 'Hi' }, req });
 
 const handle = front.addContactHandle({
   input: { contactId: 'crd', source: 'email', handle: 'a@example.com' },

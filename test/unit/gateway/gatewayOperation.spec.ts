@@ -149,11 +149,13 @@ describe('gateway.operation', () => {
     ).resolves.toBeUndefined();
     await op.finish();
 
-    expect(afterOperation).toHaveBeenCalledOnce();
-    const args = afterOperation.mock.calls[0][0];
-    expect(args.finishReason).toBe('abort');
-    expect(args.usage).toEqual({ inputTokens: 1, outputTokens: 2, totalTokens: 3 });
-    expect(args.error).toBe(explicitError);
+    expect(afterOperation).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        finishReason: 'abort',
+        usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
+        error: explicitError,
+      }),
+    );
     consoleError.mockRestore();
   });
 

@@ -14,9 +14,12 @@ import type {
   ImageModelV4CallOptions,
   LanguageModelV4,
   LanguageModelV4CallOptions,
+  LanguageModelV4Content,
+  LanguageModelV4FinishReason,
   LanguageModelV4StreamPart,
+  SharedV4Warning,
 } from '@ai-sdk/provider';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
@@ -31,6 +34,8 @@ import {
   type ProviderRegistry,
 } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { providerMap } from '../unit/gateway/config/fixtures.js';
+import { finish, mockModel, mockUsage, partStream } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Shared test app — providers configured but never actually called for
@@ -39,10 +44,12 @@ import { postJson } from '../__helpers/gateway/post-json.js';
 
 function makeApp() {
   return createApp({
-    registry: buildProviderRegistry({
-      openai: { apiKey: 'sk-test-int' },
-      anthropic: { apiKey: 'sk-ant-test-int' },
-    }),
+    registry: buildProviderRegistry(
+      providerMap({
+        openai: { apiKey: 'sk-test-int' },
+        anthropic: { apiKey: 'sk-ant-test-int' },
+      }),
+    ),
   });
 }
 
@@ -52,14 +59,14 @@ function makeApp() {
  */
 function createMockLanguageModel(opts?: {
   text?: string;
-  toolCalls?: Array<{ toolCallId: string; toolName: string; input: unknown }>;
-  finishReason?: string;
+  toolCalls?: Array<{ toolCallId: string; toolName: string; input: string }>;
+  finishReason?: LanguageModelV4FinishReason['unified'];
   inputTokens?: number;
   outputTokens?: number;
   inputTokenDetails?: { cacheReadTokens?: number; cacheWriteTokens?: number };
   outputTokenDetails?: { reasoningTokens?: number };
-  error?: unknown;
-  warnings?: Array<{ type: string; message?: string }>;
+  error?: Error;
+  warnings?: SharedV4Warning[];
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
   const {
@@ -75,12 +82,10 @@ function createMockLanguageModel(opts?: {
     onCall,
   } = opts ?? {};
 
-  const content: LanguageModelV4['doGenerate'] extends (opts: any) => Promise<infer R>
-    ? R['content']
-    : never = toolCalls
+  const content: LanguageModelV4Content[] = toolCalls
     ? toolCalls.map((tc) => ({ type: 'tool-call' as const, ...tc }))
     : [{ type: 'text' as const, text }];
-  const usage = {
+  const usage = mockUsage({
     inputTokens: {
       total: inputTokens,
       noCache: inputTokens - (inputTokenDetails?.cacheReadTokens ?? 0),
@@ -92,22 +97,15 @@ function createMockLanguageModel(opts?: {
       text: outputTokens - (outputTokenDetails?.reasoningTokens ?? 0),
       reasoning: outputTokenDetails?.reasoningTokens,
     },
-  };
+  });
 
-  return {
-    specificationVersion: 'v4',
-    provider: 'mock',
-    modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
-    get supportedUrls() {
-      return Promise.resolve({});
-    },
-    doGenerate: async (options) => {
+  return mockModel({
+    doGenerate: (options) => {
       onCall?.(options);
-      if (error) throw error;
-      return {
+      if (error) return Promise.reject(error);
+      return Promise.resolve({
         content,
-        finishReason,
+        finishReason: finish(finishReason),
         usage,
         warnings,
         response: {
@@ -115,9 +113,9 @@ function createMockLanguageModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async (options) => {
+    doStream: (options) => {
       onCall?.(options);
       const parts: LanguageModelV4StreamPart[] = [
         { type: 'stream-start' as const, warnings },
@@ -128,20 +126,19 @@ function createMockLanguageModel(opts?: {
               { type: 'text-end' as const, id: 'text-0' },
             ]
           : []),
-        { type: 'finish' as const, finishReason, usage },
+        { type: 'finish' as const, finishReason: finish(finishReason), usage },
       ];
-      return {
-        stream: new ReadableStream({
-          start(controller) {
-            for (const part of parts) {
-              controller.enqueue(part);
-            }
-            controller.close();
-          },
-        }),
-      };
+      return Promise.resolve({ stream: partStream(parts) });
     },
-  };
+  });
+}
+
+/** The language params a chat-route `beforeUpstream` hook mutates. */
+function languageParams(
+  args: BeforeUpstreamHookArgs,
+): NonNullable<BeforeUpstreamHookArgs['params']> {
+  if (!args.params) throw new Error('beforeUpstream args carry no language params');
+  return args.params;
 }
 
 /**
@@ -165,7 +162,7 @@ function makeAppWithMockProvider(providerName: string, mockModel?: LanguageModel
 function createDelayedStreamModel(opts: {
   delayMs: number;
   text?: string;
-  finishReason?: string;
+  finishReason?: LanguageModelV4FinishReason['unified'];
   inputTokens?: number;
   outputTokens?: number;
 }): LanguageModelV4 {
@@ -178,32 +175,33 @@ function createDelayedStreamModel(opts: {
   } = opts;
   return {
     ...createMockLanguageModel(),
-    doStream: async () => ({
-      stream: new ReadableStream<LanguageModelV4StreamPart>({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'text-0' });
-          controller.enqueue({
-            type: 'text-delta',
-            id: 'text-0',
-            delta: text,
-          });
-          controller.enqueue({ type: 'text-end', id: 'text-0' });
-          setTimeout(() => {
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream<LanguageModelV4StreamPart>({
+          start(controller) {
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({
-              type: 'finish',
-              // `LanguageModelV4FinishReason` is `{ unified, raw }`, not a
-              // plain string — real providers always shape it this way.
-              finishReason: { unified: finishReason, raw: finishReason },
-              usage: {
-                inputTokens: { total: inputTokens, noCache: inputTokens },
-                outputTokens: { total: outputTokens, text: outputTokens },
-              },
-            } as LanguageModelV4StreamPart);
-            controller.close();
-          }, delayMs);
-        },
+              type: 'text-delta',
+              id: 'text-0',
+              delta: text,
+            });
+            controller.enqueue({ type: 'text-end', id: 'text-0' });
+            setTimeout(() => {
+              controller.enqueue({
+                type: 'finish',
+                // `LanguageModelV4FinishReason` is `{ unified, raw }`, not a
+                // plain string — real providers always shape it this way.
+                finishReason: finish(finishReason, finishReason),
+                usage: mockUsage({
+                  inputTokens: { total: inputTokens, noCache: inputTokens },
+                  outputTokens: { total: outputTokens, text: outputTokens },
+                }),
+              });
+              controller.close();
+            }, delayMs);
+          },
+        }),
       }),
-    }),
   };
 }
 
@@ -216,20 +214,21 @@ function createDelayedStreamModel(opts: {
 function createMidStreamErrorModel(error: unknown): LanguageModelV4 {
   return {
     ...createMockLanguageModel(),
-    doStream: async () => ({
-      stream: new ReadableStream<LanguageModelV4StreamPart>({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'text-0' });
-          controller.enqueue({
-            type: 'text-delta',
-            id: 'text-0',
-            delta: 'hello',
-          });
-          controller.enqueue({ type: 'error', error });
-          controller.close();
-        },
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream<LanguageModelV4StreamPart>({
+          start(controller) {
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
+            controller.enqueue({
+              type: 'text-delta',
+              id: 'text-0',
+              delta: 'hello',
+            });
+            controller.enqueue({ type: 'error', error });
+            controller.close();
+          },
+        }),
       }),
-    }),
   };
 }
 
@@ -237,7 +236,7 @@ function createMockEmbeddingModel(opts?: {
   embeddings?: number[][];
   tokens?: number;
   maxEmbeddingsPerCall?: number;
-  error?: unknown;
+  error?: Error;
   onCall?: (options: EmbeddingModelV4CallOptions) => void;
 }): EmbeddingModelV4 {
   const { embeddings, tokens = 8, maxEmbeddingsPerCall, error, onCall } = opts ?? {};
@@ -247,15 +246,15 @@ function createMockEmbeddingModel(opts?: {
     modelId: 'mock-embed-model',
     maxEmbeddingsPerCall,
     supportsParallelCalls: true,
-    doEmbed: async (options) => {
+    doEmbed: (options) => {
       onCall?.(options);
-      if (error) throw error;
-      return {
+      if (error) return Promise.reject(error);
+      return Promise.resolve({
         embeddings: embeddings ?? options.values.map((_, index) => [index + 0.25, index + 0.5]),
         usage: { tokens },
         response: { headers: {} },
         warnings: [],
-      };
+      });
     },
   };
 }
@@ -263,7 +262,7 @@ function createMockEmbeddingModel(opts?: {
 function createMockImageModel(opts?: {
   images?: string[];
   warnings?: Array<{ type: 'other'; message: string }>;
-  error?: unknown;
+  error?: Error;
   onCall?: (options: ImageModelV4CallOptions) => void;
 }): ImageModelV4 {
   const { images, warnings = [], error, onCall } = opts ?? {};
@@ -272,10 +271,10 @@ function createMockImageModel(opts?: {
     provider: 'mock',
     modelId: 'mock-image-model',
     maxImagesPerCall: undefined,
-    doGenerate: async (options) => {
+    doGenerate: (options) => {
       onCall?.(options);
-      if (error) throw error;
-      return {
+      if (error) return Promise.reject(error);
+      return Promise.resolve({
         images:
           images ??
           Array.from({ length: options.n ?? 1 }, (_, index) =>
@@ -288,7 +287,7 @@ function createMockImageModel(opts?: {
           headers: {},
         },
         usage: { inputTokens: 3, outputTokens: 0, totalTokens: 3 },
-      };
+      });
     },
   };
 }
@@ -365,7 +364,7 @@ describe('gateway integration — /v1/messages', () => {
 
   it('rejects unconfigured provider with 404', async () => {
     const app = createApp({
-      registry: buildProviderRegistry({ openai: { apiKey: 'sk-test' } }),
+      registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -719,7 +718,9 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('mock model with tool calls returns tool_calls in response', async () => {
     const model = createMockLanguageModel({
-      toolCalls: [{ toolCallId: 'call_123', toolName: 'get_weather', input: { city: 'SF' } }],
+      toolCalls: [
+        { toolCallId: 'call_123', toolName: 'get_weather', input: JSON.stringify({ city: 'SF' }) },
+      ],
     });
     const app = makeAppWithMockProvider('groq', model);
     const { status, body } = await postJson(app, '/v1/chat/completions', {
@@ -762,15 +763,15 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     let upstreamSignal: AbortSignal | undefined;
     let observedAbort: Promise<void> | undefined;
 
-    const model = {
+    const model: LanguageModelV4 = {
       ...createMockLanguageModel(),
-      doStream: async (options: { abortSignal?: AbortSignal }) => {
+      doStream: (options) => {
         upstreamSignal = options.abortSignal;
         observedAbort = new Promise((resolve) => {
           options.abortSignal?.addEventListener('abort', () => resolve(), { once: true });
         });
 
-        return {
+        return Promise.resolve({
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
@@ -781,9 +782,9 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
               });
             },
           }),
-        };
+        });
       },
-    } as unknown as LanguageModelV4;
+    };
 
     const app = makeAppWithMockProvider('groq', model);
     const controller = new AbortController();
@@ -812,14 +813,15 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const error = Object.assign(new Error('Invalid API key'), { statusCode: 401 });
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'error', error });
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'error', error });
+              controller.close();
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('groq', model);
@@ -842,14 +844,15 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const error = Object.assign(new Error('Rate limit reached'), { statusCode: 429 });
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'error', error });
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'error', error });
+              controller.close();
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('anthropic', model);
@@ -876,14 +879,15 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const error = Object.assign(new Error('Rate limit reached'), { statusCode: 429 });
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'error', error });
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'error', error });
+              controller.close();
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('groq', model);
@@ -908,14 +912,15 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const error = Object.assign(new Error('Rate limit reached'), { statusCode: 429 });
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'error', error });
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'error', error });
+              controller.close();
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('openai', model);
@@ -940,20 +945,21 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const error = Object.assign(new Error('provider failed'), { statusCode: 503 });
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'text-start', id: 'text-0' });
-            controller.enqueue({
-              type: 'text-delta',
-              id: 'text-0',
-              delta: 'hello',
-            });
-            controller.enqueue({ type: 'error', error });
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
+              controller.enqueue({
+                type: 'text-delta',
+                id: 'text-0',
+                delta: 'hello',
+              });
+              controller.enqueue({ type: 'error', error });
+              controller.close();
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('anthropic', model);
@@ -1019,39 +1025,37 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   });
 
   it('masks production 5xx provider errors and preserves x-request-id', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const app = makeAppWithMockProvider(
-        'openai',
-        createMockLanguageModel({
-          error: new Error('provider leaked secret sk-provider-internal'),
-        }),
-      );
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const app = makeAppWithMockProvider(
+      'openai',
+      createMockLanguageModel({
+        error: new Error('provider leaked secret sk-provider-internal'),
+      }),
+    );
 
-      const { status, headers, body } = await postJson(
-        app,
-        '/v1/chat/completions',
-        {
-          model: 'openai/gpt-4o-mini',
-          messages: [{ role: 'user', content: 'hi' }],
-        },
-        { 'x-request-id': 'req-stage-7' },
-      );
+    const { status, headers, body } = await postJson(
+      app,
+      '/v1/chat/completions',
+      {
+        model: 'openai/gpt-4o-mini',
+        messages: [{ role: 'user', content: 'hi' }],
+      },
+      { 'x-request-id': 'req-stage-7' },
+    );
 
-      expect(status).toBe(500);
-      // G103: the gateway mints its own id and does not echo the client value.
-      const requestId = headers.get('x-request-id') ?? '';
-      expect(requestId).not.toBe('req-stage-7');
-      expect(requestId).toMatch(/^req_[A-Za-z0-9-]+$/);
-      expect(body).toHaveProperty(
-        'error.message',
-        `Internal server error (request_id: ${requestId}).`,
-      );
-      expect(JSON.stringify(body)).not.toContain('sk-provider-internal');
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    expect(status).toBe(500);
+    // G103: the gateway mints its own id and does not echo the client value.
+    const requestId = headers.get('x-request-id') ?? '';
+    expect(requestId).not.toBe('req-stage-7');
+    expect(requestId).toMatch(/^req_[A-Za-z0-9-]+$/);
+    expect(body).toHaveProperty(
+      'error.message',
+      `Internal server error (request_id: ${requestId}).`,
+    );
+    expect(JSON.stringify(body)).not.toContain('sk-provider-internal');
   });
 
   it('runs all lifecycle hook slots for responses and mutates upstream params', async () => {
@@ -1073,7 +1077,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         beforeUpstream: [
           (args) => {
             order.push('beforeUpstream');
-            args.params.temperature = 0.4;
+            languageParams(args).temperature = 0.4;
           },
         ],
         afterUpstream: [
@@ -1127,14 +1131,20 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       'openai',
       createMockLanguageModel({
         text: '',
-        toolCalls: [{ toolCallId: 'call_1', toolName: 'get_weather', input: { city: 'Paris' } }],
+        toolCalls: [
+          {
+            toolCallId: 'call_1',
+            toolName: 'get_weather',
+            input: JSON.stringify({ city: 'Paris' }),
+          },
+        ],
         onCall: (options) => {
           callOptions = options;
         },
       }),
     );
 
-    const { status, body } = await postJson(app, '/v1/responses', {
+    const { status, body } = await postJson<{ output: unknown }>(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
       input: 'what is the weather',
       instructions: 'You are a weather bot',
@@ -1342,18 +1352,19 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
 
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'text-start', id: 'text-0' });
-            controller.enqueue({
-              type: 'text-delta',
-              id: 'text-0',
-              delta: 'hello',
-            });
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
+              controller.enqueue({
+                type: 'text-delta',
+                id: 'text-0',
+                delta: 'hello',
+              });
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('groq', model, {
@@ -1471,7 +1482,11 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
   });
 
   it('responses: emits a spec-conformant SSE wire shape with monotonic sequence_number', async () => {
-    const model = createDelayedStreamModel({ delayMs: 5, text: 'hi', finishReason: 'stop' });
+    const model = createDelayedStreamModel({
+      delayMs: 5,
+      text: 'hi',
+      finishReason: 'stop',
+    });
     const app = makeAppWithMockProvider('openai', model);
 
     const res = await app.request('http://localhost/v1/responses', {
@@ -1502,7 +1517,11 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
   });
 
   it('responses: terminates streaming with response.incomplete on a length finish reason', async () => {
-    const model = createDelayedStreamModel({ delayMs: 5, text: 'hi', finishReason: 'length' });
+    const model = createDelayedStreamModel({
+      delayMs: 5,
+      text: 'hi',
+      finishReason: 'length',
+    });
     const app = makeAppWithMockProvider('openai', model);
 
     const res = await app.request('http://localhost/v1/responses', {
@@ -1525,14 +1544,15 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     const error = Object.assign(new Error('Invalid API key'), { statusCode: 401 });
     const model = {
       ...createMockLanguageModel(),
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'error', error });
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'error', error });
+              controller.close();
+            },
+          }),
         }),
-      }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('openai', model);
@@ -1686,7 +1706,7 @@ describe('gateway integration — M3 embeddings and images', () => {
       }),
     });
 
-    const { status, body } = await postJson(app, '/v1/images/generations', {
+    const { status, body } = await postJson<{ data: unknown[] }>(app, '/v1/images/generations', {
       model: 'openai/dall-e-3',
       prompt: 'a small frog robot',
       n: 2,
@@ -1744,7 +1764,7 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       modelId: 'wan-2.5',
       maxVideosPerCall: 1,
       doGenerate: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1));
+        await new Promise((resolve) => setImmediate(resolve));
         return {
           videos: [{ type: 'base64', data: 'dmlkZW8=', mediaType: 'video/mp4' }],
           warnings: [],
@@ -1774,11 +1794,12 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       specificationVersion: 'v4',
       provider: 'mock.speech',
       modelId: 'tts-1',
-      doGenerate: async () => ({
-        audio: new Uint8Array([1, 2, 3]),
-        warnings: [],
-        response: { id: 'speech_1', timestamp: new Date(0), modelId: 'tts-1' },
-      }),
+      doGenerate: () =>
+        Promise.resolve({
+          audio: new Uint8Array([1, 2, 3]),
+          warnings: [],
+          response: { id: 'speech_1', timestamp: new Date(0), modelId: 'tts-1' },
+        }),
     };
     const app = createApp({
       registry: {
@@ -1807,14 +1828,15 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       specificationVersion: 'v4',
       provider: 'mock.transcription',
       modelId: 'whisper-1',
-      doGenerate: async () => ({
-        text: 'frog robot',
-        segments: [{ text: 'frog robot', startSecond: 0, endSecond: 1 }],
-        language: 'en',
-        durationInSeconds: 1,
-        warnings: [],
-        response: { id: 'transcription_1', timestamp: new Date(0), modelId: 'whisper-1' },
-      }),
+      doGenerate: () =>
+        Promise.resolve({
+          text: 'frog robot',
+          segments: [{ text: 'frog robot', startSecond: 0, endSecond: 1 }],
+          language: 'en',
+          durationInSeconds: 1,
+          warnings: [],
+          response: { id: 'transcription_1', timestamp: new Date(0), modelId: 'whisper-1' },
+        }),
     };
     const app = createApp({
       registry: {
@@ -1882,14 +1904,15 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       specificationVersion: 'v4',
       provider: 'mock.rerank',
       modelId: 'rerank-v3.5',
-      doRerank: async () => ({
-        ranking: [
-          { index: 1, relevanceScore: 0.9 },
-          { index: 0, relevanceScore: 0.4 },
-        ],
-        warnings: [],
-        response: { id: 'rerank_1' },
-      }),
+      doRerank: () =>
+        Promise.resolve({
+          ranking: [
+            { index: 1, relevanceScore: 0.9 },
+            { index: 0, relevanceScore: 0.4 },
+          ],
+          warnings: [],
+          response: { id: 'rerank_1' },
+        }),
     };
     const app = createApp({
       registry: {
@@ -1916,7 +1939,7 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
 describe('gateway integration — credential validation', () => {
   it('unconfigured groq returns 404 for groq model', async () => {
     const app = createApp({
-      registry: buildProviderRegistry({ openai: { apiKey: 'sk-test' } }),
+      registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'groq/llama-3.3-70b-versatile',
@@ -1928,7 +1951,7 @@ describe('gateway integration — credential validation', () => {
 
   it('unconfigured bedrock returns 404', async () => {
     const app = createApp({
-      registry: buildProviderRegistry({ openai: { apiKey: 'sk-test' } }),
+      registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
@@ -1940,7 +1963,7 @@ describe('gateway integration — credential validation', () => {
 
   it('completely unknown provider returns 404', async () => {
     const app = createApp({
-      registry: buildProviderRegistry({ openai: { apiKey: 'sk-test' } }),
+      registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'nonexistent-provider/some-model',

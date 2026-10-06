@@ -20,10 +20,10 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     handlers: [
-      async (req, { params }) => {
+      (req, { params }) => {
         expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
 
-        return Response.json({ filename: params.filename, user: req.user?.id });
+        return Promise.resolve(Response.json({ filename: params.filename, user: req.user?.id }));
       },
       (req) => {
         // @ts-expect-error FrogBot requests don't expose req.payload.

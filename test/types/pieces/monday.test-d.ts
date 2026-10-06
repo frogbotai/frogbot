@@ -17,8 +17,9 @@ expectTypeOf<Parameters<typeof monday.createItem>[0]['input']>().toEqualTypeOf<{
 }>();
 expectTypeOf(item).toEqualTypeOf<Promise<Record<string, unknown>>>();
 
-// @ts-expect-error createItem does not accept createUpdate input
-monday.createItem({ input: { itemId: '3', body: 'Done' } });
+const _createItemRejectsCreateUpdateInput = () =>
+  // @ts-expect-error createItem does not accept createUpdate input
+  monday.createItem({ input: { itemId: '3', body: 'Done' } });
 
 const items = monday.listBoardItems({ input: { workspaceId: '1', boardId: '2' } });
 

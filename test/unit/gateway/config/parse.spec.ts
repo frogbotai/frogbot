@@ -13,12 +13,13 @@ import {
 } from '../../../../packages/gateway/src/config/parse.js';
 import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
 import { createLogger } from '../../../../packages/gateway/src/observability/logger.js';
+import { providerMap } from './fixtures.js';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'frogbotai-gateway-config-'));
 
 describe('mergeConfigs', () => {
   it('overlay providers win, shallow-merge partial entries', () => {
-    const base = { providers: { openai: { apiKey: 'env' } } } as const;
+    const base = { providers: providerMap({ openai: { apiKey: 'env' } }) };
     const overlay = { providers: { openai: { baseURL: 'https://x' } } } as const;
     const merged = mergeConfigs(base, overlay);
     expect(merged.providers.openai).toEqual({ apiKey: 'env', baseURL: 'https://x' });
@@ -102,7 +103,7 @@ describe('mergeConfigs', () => {
 describe('finalizeConfig', () => {
   it('applies enabled_providers allow list', () => {
     const out = finalizeConfig({
-      providers: { openai: { apiKey: 'x' }, groq: { apiKey: 'y' } },
+      providers: providerMap({ openai: { apiKey: 'x' }, groq: { apiKey: 'y' } }),
       enabled_providers: ['openai'],
     });
     expect(Object.keys(out.providers)).toEqual(['openai']);
@@ -110,7 +111,7 @@ describe('finalizeConfig', () => {
 
   it('applies disabled_providers deny list', () => {
     const out = finalizeConfig({
-      providers: { openai: { apiKey: 'x' }, groq: { apiKey: 'y' } },
+      providers: providerMap({ openai: { apiKey: 'x' }, groq: { apiKey: 'y' } }),
       disabled_providers: ['groq'],
     });
     expect(Object.keys(out.providers)).toEqual(['openai']);
@@ -130,7 +131,7 @@ describe('finalizeConfig', () => {
   it('preserves non-provider keys and drops allow/deny lists', () => {
     const hooks = {};
     const out = finalizeConfig({
-      providers: { openai: { apiKey: 'x' }, groq: { apiKey: 'y' } },
+      providers: providerMap({ openai: { apiKey: 'x' }, groq: { apiKey: 'y' } }),
       disabled_providers: ['groq'],
       maxBodyBytes: 1024,
       hooks,
@@ -149,7 +150,7 @@ describe('finalizeConfig', () => {
   });
 
   it('is idempotent — kParsed marker short-circuits', () => {
-    const first = finalizeConfig({ providers: { openai: { apiKey: 'x' } } });
+    const first = finalizeConfig({ providers: providerMap({ openai: { apiKey: 'x' } }) });
     expect((first as unknown as Record<symbol, unknown>)[kParsed]).toBe(true);
     const second = finalizeConfig(first);
     expect(second).toBe(first);
@@ -158,7 +159,7 @@ describe('finalizeConfig', () => {
   it('throws when allow list produces empty registry', () => {
     expect(() =>
       finalizeConfig({
-        providers: { openai: { apiKey: 'x' } },
+        providers: providerMap({ openai: { apiKey: 'x' } }),
         enabled_providers: ['groq'],
       }),
     ).toThrow(ConfigError);

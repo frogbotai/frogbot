@@ -624,7 +624,6 @@ describe('audio format coverage', () => {
           content: [
             {
               type: 'input_audio',
-              // @ts-expect-error — intentionally bad format for the test
               input_audio: { data: 'AAAA', format: 'aiff' },
             },
           ],
@@ -674,8 +673,7 @@ describe('tool-call argument parsing', () => {
   });
 
   test('malformed JSON arguments throw InvalidToolArgumentsError with param path', () => {
-    let caught: unknown;
-    try {
+    expect(() =>
       toModelMessages([
         {
           role: 'assistant',
@@ -688,15 +686,14 @@ describe('tool-call argument parsing', () => {
             },
           ],
         },
-      ]);
-    } catch (e) {
-      caught = e;
-    }
-    expect(caught).toBeDefined();
-    const err = caught as { code?: string; param?: string; message?: string };
-    expect(err.code).toBe('invalid_tool_arguments');
-    expect(err.param).toBe('messages[0].tool_calls[0].function.arguments');
-    expect(err.message).toMatch(/Invalid JSON/);
+      ]),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'invalid_tool_arguments',
+        param: 'messages[0].tool_calls[0].function.arguments',
+        message: expect.stringMatching(/Invalid JSON/),
+      }),
+    );
   });
 });
 
@@ -730,37 +727,35 @@ describe('file part handling', () => {
   });
 
   test('file_id reference throws with `file_id`-pointed param', () => {
-    let caught: unknown;
-    try {
+    expect(() =>
       toModelMessages([
         {
           role: 'user',
           content: [{ type: 'file', file: { file_id: 'file-abc123' } }],
         },
-      ]);
-    } catch (e) {
-      caught = e;
-    }
-    const err = caught as { code?: string; param?: string };
-    expect(err.code).toBe('unsupported_modality');
-    expect(err.param).toBe('messages[0].content[0].file.file_id');
+      ]),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'unsupported_modality',
+        param: 'messages[0].content[0].file.file_id',
+      }),
+    );
   });
 
   test('non-data-URL file_data throws with `file_data`-pointed param', () => {
-    let caught: unknown;
-    try {
+    expect(() =>
       toModelMessages([
         {
           role: 'user',
           content: [{ type: 'file', file: { file_data: 'https://example.com/file.pdf' } }],
         },
-      ]);
-    } catch (e) {
-      caught = e;
-    }
-    const err = caught as { code?: string; param?: string };
-    expect(err.code).toBe('unsupported_modality');
-    expect(err.param).toBe('messages[0].content[0].file.file_data');
+      ]),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'unsupported_modality',
+        param: 'messages[0].content[0].file.file_data',
+      }),
+    );
   });
 });
 describe('skipped fields (M1+) — tracked gaps', () => {
@@ -1031,41 +1026,39 @@ describe('compatibility tolerance', () => {
   });
 
   test('unknown content-part type throws UnsupportedModalityError with precise param', () => {
-    let caught: unknown;
-    try {
+    expect(() =>
       toModelMessages([
         {
           role: 'user',
           content: [{ type: 'video_url', video_url: { url: 'https://x' } }] as any,
         },
-      ]);
-    } catch (e) {
-      caught = e;
-    }
-    const err = caught as { code?: string; param?: string; message?: string };
-    expect(err.code).toBe('unsupported_modality');
-    expect(err.param).toBe('messages[0].content[0].type');
-    expect(err.message).toMatch(/video_url/);
+      ]),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'unsupported_modality',
+        param: 'messages[0].content[0].type',
+        message: expect.stringMatching(/video_url/),
+      }),
+    );
   });
 
   test('unknown audio format throws UnsupportedModalityError from translator not schema', () => {
     // Previously this was caught by z.enum at schema level with a generic error.
     // Now the schema passes `format: z.string()` and the translator throws with
     // the precise param path.
-    let caught: unknown;
-    try {
+    expect(() =>
       toModelMessages([
         {
           role: 'user',
           content: [{ type: 'input_audio', input_audio: { data: 'AAAA', format: 'aac' } } as any],
         },
-      ]);
-    } catch (e) {
-      caught = e;
-    }
-    const err = caught as { code?: string; param?: string; message?: string };
-    expect(err.code).toBe('unsupported_modality');
-    expect(err.param).toBe('messages[0].content[0].input_audio.format');
-    expect(err.message).toMatch(/aac/);
+      ]),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'unsupported_modality',
+        param: 'messages[0].content[0].input_audio.format',
+        message: expect.stringMatching(/aac/),
+      }),
+    );
   });
 });

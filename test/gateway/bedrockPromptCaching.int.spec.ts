@@ -10,16 +10,18 @@ import { postJson } from '../__helpers/gateway/post-json.js';
 const upstreamBodies: unknown[] = [];
 
 function makeApp() {
-  const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fetch = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
     upstreamBodies.push(JSON.parse(String(init?.body)));
-    return new Response(
-      JSON.stringify({
-        output: { message: { role: 'assistant', content: [{ text: 'ok' }] } },
-        stopReason: 'end_turn',
-        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-        metrics: { latencyMs: 1 },
-      }),
-      { headers: { 'content-type': 'application/json' } },
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          output: { message: { role: 'assistant', content: [{ text: 'ok' }] } },
+          stopReason: 'end_turn',
+          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+          metrics: { latencyMs: 1 },
+        }),
+        { headers: { 'content-type': 'application/json' } },
+      ),
     );
   });
   const bedrock = bedrockProvider.build({

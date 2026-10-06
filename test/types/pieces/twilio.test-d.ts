@@ -22,8 +22,9 @@ expectTypeOf(developerTwilio.getMessage({ input: { messageSid: 'SM1' } })).toEqu
   ReturnType<typeof twilio.getMessage>
 >();
 
-// @ts-expect-error sendSms does not accept getMessage input
-twilio.sendSms({ input: { messageSid: 'SM1' }, req });
+const _sendSmsRejectsGetMessageInput = () =>
+  // @ts-expect-error sendSms does not accept getMessage input
+  twilio.sendSms({ input: { messageSid: 'SM1' }, req });
 
 const _recording = twilio.downloadRecording({ input: { recordingSid: 'RE1' }, req });
 

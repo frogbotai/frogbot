@@ -86,11 +86,11 @@ const received = defineAppTrigger({
   event: 'message.received',
   input: z.object({}),
   output: z.object({ id: z.string() }),
-  async run({ client, options }) {
+  run({ client, options }) {
     expectTypeOf(client).toEqualTypeOf<Mailer>();
     expectTypeOf(options).toEqualTypeOf<MailerOptions>();
 
-    return [];
+    return Promise.resolve([]);
   },
 });
 
@@ -99,11 +99,11 @@ const bounced = definePollingTrigger({
   description: 'A message bounces.',
   type: 'polling',
   input: z.object({}),
-  async run({ client, cursor }) {
+  run({ client, cursor }) {
     expectTypeOf(client).toEqualTypeOf<Mailer>();
     expectTypeOf(cursor).toEqualTypeOf<PieceJSON | undefined>();
 
-    return { events: [] };
+    return Promise.resolve({ events: [] });
   },
 });
 
@@ -117,21 +117,23 @@ const opened = defineWebhookTrigger({
 
     return { hookId, secret };
   },
-  async onDisable({ state }) {
+  onDisable({ state }) {
     expectTypeOf(state).toEqualTypeOf<HookState>();
+
+    return Promise.resolve();
   },
   renew: {
     schedule: '0 0 * * *',
-    async run({ state }) {
+    run({ state }) {
       expectTypeOf(state).toEqualTypeOf<HookState>();
 
-      return state;
+      return Promise.resolve(state);
     },
   },
-  async run({ state }) {
+  run({ state }) {
     expectTypeOf(state).toEqualTypeOf<HookState>();
 
-    return [];
+    return Promise.resolve([]);
   },
 });
 
@@ -167,10 +169,12 @@ expectTypeOf(
 ).toEqualTypeOf<Promise<{ id: string }>>();
 expectTypeOf(mailer.listLabels({ input: {}, req })).toEqualTypeOf<Promise<{ labels: string[] }>>();
 
-// @ts-expect-error send does not accept listLabels input
-mailer.send({ input: { prefix: 'inbox' }, req });
-// @ts-expect-error listLabels does not accept send input
-mailer.listLabels({ input: { to: ['user@example.com'], subject: 'Hello' }, req });
+const _sendRejectsListLabelsInput = () =>
+  // @ts-expect-error send does not accept listLabels input
+  mailer.send({ input: { prefix: 'inbox' }, req });
+const _listLabelsRejectsSendInput = () =>
+  // @ts-expect-error listLabels does not accept send input
+  mailer.listLabels({ input: { to: ['user@example.com'], subject: 'Hello' }, req });
 
 expectTypeOf<keyof typeof mailer.triggers>().toEqualTypeOf<'received' | 'bounced' | 'opened'>();
 expectTypeOf(mailer.triggers.received.type).toEqualTypeOf<'app'>();
@@ -199,11 +203,11 @@ const echo = plain.defineAction({
   slug: 'echo',
   description: 'Echo text.',
   input: z.object({ text: z.string() }),
-  async run({ client, input, options }) {
+  run({ client, input, options }) {
     expectTypeOf(client).toEqualTypeOf<undefined>();
     expectTypeOf(options).toEqualTypeOf<Record<string, never>>();
 
-    return input.text;
+    return Promise.resolve(input.text);
   },
 });
 
@@ -216,10 +220,10 @@ const archive = plain.defineAction({
   description: 'Archive a message.',
   input: z.object({ id: z.string() }),
   output: z.object({ archived: z.literal(true), state: z.enum(['archived', 'skipped']) }),
-  async run({ input }) {
+  run({ input }) {
     const state = 'archived';
 
-    return { archived: true, state, id: input.id };
+    return Promise.resolve({ archived: true, state, id: input.id });
   },
 });
 
@@ -229,8 +233,8 @@ const expired = plain.definePollingTrigger({
   type: 'polling',
   input: z.object({}),
   output: z.object({ status: z.literal('expired') }),
-  async run() {
-    return { events: [{ status: 'expired' }] };
+  run() {
+    return Promise.resolve({ events: [{ status: 'expired' }] });
   },
 });
 
@@ -252,8 +256,8 @@ function widenedAction(slug: string) {
     slug,
     description: 'Look something up.',
     input: lookupInput,
-    async run() {
-      return null;
+    run() {
+      return Promise.resolve(null);
     },
   };
 }
@@ -262,8 +266,8 @@ const satisfiedAction = {
   slug: 'satisfied',
   description: 'Look something up.',
   input: lookupInput,
-  async run() {
-    return null;
+  run() {
+    return Promise.resolve(null);
   },
 } satisfies PieceActionDefinition<typeof lookupInput>;
 
@@ -271,8 +275,8 @@ const annotatedAction: PieceActionDefinition = {
   slug: 'annotated',
   description: 'Look something up.',
   input: lookupInput,
-  async run() {
-    return null;
+  run() {
+    return Promise.resolve(null);
   },
 };
 
@@ -282,8 +286,8 @@ const annotatedTrigger: PieceAppTrigger<typeof lookupInput> = {
   type: 'app',
   event: 'something.happened',
   input: lookupInput,
-  async run() {
-    return [];
+  run() {
+    return Promise.resolve([]);
   },
 };
 
@@ -344,10 +348,10 @@ definePiece({
   slug: 'inline',
   label: 'Inline',
   webhook: {
-    async handshake({ req }) {
+    handshake({ req }) {
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
-      return null;
+      return Promise.resolve(null);
     },
   },
   actions: [echo],

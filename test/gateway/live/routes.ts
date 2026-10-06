@@ -105,7 +105,7 @@ type ChatBody = {
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 };
 
-export async function runChat(app: LiveApp, model: string): Promise<void> {
+export async function expectChat(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ChatBody>(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: PROMPT }],
@@ -127,7 +127,7 @@ type ChatChunk = {
   choices?: Array<{ delta?: { content?: string }; finish_reason?: string | null }>;
 };
 
-export async function runChatStream(app: LiveApp, model: string): Promise<void> {
+export async function expectChatStream(app: LiveApp, model: string): Promise<void> {
   const res = await postRaw(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: PROMPT }],
@@ -158,7 +158,7 @@ type MessagesBody = {
   usage?: { input_tokens?: number; output_tokens?: number };
 };
 
-export async function runMessages(app: LiveApp, model: string): Promise<void> {
+export async function expectMessages(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<MessagesBody>(app, '/v1/messages', {
     model,
     messages: [{ role: 'user', content: PROMPT }],
@@ -182,7 +182,7 @@ type AnthropicEventData = {
   delta?: { type?: string; text?: string };
 };
 
-export async function runMessagesStream(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesStream(app: LiveApp, model: string): Promise<void> {
   const res = await postRaw(app, '/v1/messages', {
     model,
     messages: [{ role: 'user', content: PROMPT }],
@@ -212,7 +212,7 @@ type ResponsesBody = {
   usage?: { input_tokens?: number; output_tokens?: number };
 };
 
-export async function runResponses(app: LiveApp, model: string): Promise<void> {
+export async function expectResponses(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ResponsesBody>(app, '/v1/responses', {
     model,
     input: PROMPT,
@@ -227,7 +227,7 @@ export async function runResponses(app: LiveApp, model: string): Promise<void> {
   expect(body.usage?.output_tokens).toBeGreaterThan(0);
 }
 
-export async function runResponsesStream(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesStream(app: LiveApp, model: string): Promise<void> {
   const res = await postRaw(app, '/v1/responses', {
     model,
     input: PROMPT,
@@ -260,7 +260,7 @@ type EmbeddingsBody = {
   usage?: { prompt_tokens?: number; total_tokens?: number };
 };
 
-export async function runEmbeddings(app: LiveApp, model: string): Promise<void> {
+export async function expectEmbeddings(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<EmbeddingsBody>(app, '/v1/embeddings', {
     model,
     input: [
@@ -299,7 +299,7 @@ type RerankBody = {
   results?: Array<{ index?: number; relevance_score?: number }>;
 };
 
-export async function runRerank(app: LiveApp, model: string): Promise<void> {
+export async function expectRerank(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<RerankBody>(app, '/v1/rerank', {
     model,
     query: 'What sound does a frog make?',
@@ -328,7 +328,7 @@ export async function runRerank(app: LiveApp, model: string): Promise<void> {
 
 type TranscriptionBody = { text?: string };
 
-export async function runTranscription(app: LiveApp, model: string): Promise<void> {
+export async function expectTranscription(app: LiveApp, model: string): Promise<void> {
   const res = await withRetry(async () => {
     const form = new FormData();
     form.set('model', model);
@@ -344,7 +344,7 @@ export async function runTranscription(app: LiveApp, model: string): Promise<voi
   expect(body.text).toMatch(FIXTURE_FACTS.speech);
 }
 
-export async function runSpeech(app: LiveApp, model: string, voice: string): Promise<void> {
+export async function expectSpeech(app: LiveApp, model: string, voice: string): Promise<void> {
   const res = await postRaw(app, '/v1/audio/speech', {
     model,
     voice,
@@ -364,7 +364,7 @@ export async function runSpeech(app: LiveApp, model: string, voice: string): Pro
 
 type ImagesBody = { data?: Array<{ b64_json?: string }> };
 
-export async function runImages(app: LiveApp, model: string): Promise<void> {
+export async function expectImages(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ImagesBody>(app, '/v1/images/generations', {
     model,
     prompt: 'A minimalist line drawing of a frog',
@@ -381,7 +381,7 @@ export async function runImages(app: LiveApp, model: string): Promise<void> {
 
 type VideosBody = { id?: string; data?: Array<{ b64_json?: string }> };
 
-export async function runVideos(app: LiveApp, model: string): Promise<void> {
+export async function expectVideos(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<VideosBody>(app, '/v1/videos/generations', {
     model,
     prompt: 'A frog hopping across a lily pad, 2 seconds',

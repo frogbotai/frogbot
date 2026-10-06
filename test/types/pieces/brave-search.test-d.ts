@@ -16,5 +16,6 @@ expectTypeOf<
   NonNullable<Awaited<typeof _results>['web']>['results'][number]['url']
 >().toEqualTypeOf<string>();
 
-// @ts-expect-error searchWeb does not accept customApiCall input
-braveSearch.searchWeb({ input: { method: 'GET', path: '/web/search' }, req });
+const _searchWebRejectsCustomApiCallInput = () =>
+  // @ts-expect-error searchWeb does not accept customApiCall input
+  braveSearch.searchWeb({ input: { method: 'GET', path: '/web/search' }, req });

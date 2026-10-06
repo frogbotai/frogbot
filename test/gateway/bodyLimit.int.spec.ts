@@ -12,29 +12,23 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockModel, mockUsage } from './mockModel.js';
 
 function createMockLanguageModel(): LanguageModelV4 {
-  return {
-    specificationVersion: 'v4',
-    provider: 'mock',
-    modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
-    get supportedUrls() {
-      return Promise.resolve({});
-    },
+  return mockModel({
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],
-        finishReason: 'stop',
-        usage: {
+        finishReason: finish('stop'),
+        usage: mockUsage({
           inputTokens: { total: 1, noCache: 1 },
           outputTokens: { total: 1, text: 1 },
-        },
+        }),
         warnings: [],
         response: { id: 'r', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
       }),
     doStream: () => Promise.resolve({ stream: new ReadableStream() }),
-  } as LanguageModelV4;
+  });
 }
 
 function makeAppWithMockProvider(providerName: string, maxBodyBytes: number) {

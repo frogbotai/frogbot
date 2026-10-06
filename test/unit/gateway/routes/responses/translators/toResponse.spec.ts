@@ -1,3 +1,4 @@
+import type { LanguageModelUsage } from 'ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -6,7 +7,17 @@ import {
 } from '../../../../../../packages/gateway/src/routes/responses/translators/toResponse.js';
 
 const baseResponse = { timestamp: new Date('2026-07-03T00:00:00.000Z') };
-const baseUsage = { inputTokens: 3, outputTokens: 2, totalTokens: 5 };
+const baseUsage: LanguageModelUsage = {
+  inputTokens: 3,
+  outputTokens: 2,
+  totalTokens: 5,
+  inputTokenDetails: {
+    noCacheTokens: undefined,
+    cacheReadTokens: undefined,
+    cacheWriteTokens: undefined,
+  },
+  outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
+};
 
 describe('toResponsesResponse', () => {
   afterEach(() => {
@@ -77,7 +88,7 @@ describe('toResponsesResponse', () => {
         finishReason: 'tool-calls',
         toolCalls: [{ toolCallId: 'call_1', toolName: 'get_weather', input: { city: 'Paris' } }],
         response: { id: 'resp_x', timestamp: new Date('2026-07-03T00:00:00.000Z') },
-        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+        usage: { ...baseUsage, inputTokens: 1, outputTokens: 1, totalTokens: 2 },
       },
     });
 
@@ -166,7 +177,10 @@ describe('toResponsesResponse', () => {
         text: 'ok',
         finishReason: 'stop',
         response: baseResponse,
-        usage: { ...baseUsage, inputTokenDetails: { cacheReadTokens: 12 } },
+        usage: {
+          ...baseUsage,
+          inputTokenDetails: { ...baseUsage.inputTokenDetails, cacheReadTokens: 12 },
+        },
       },
     });
     expect(result.usage.input_tokens_details).toEqual({ cached_tokens: 12 });
@@ -179,7 +193,14 @@ describe('toResponsesResponse', () => {
         text: 'ok',
         finishReason: 'stop',
         response: baseResponse,
-        usage: { ...baseUsage, inputTokenDetails: { cacheReadTokens: 12, cacheWriteTokens: 8 } },
+        usage: {
+          ...baseUsage,
+          inputTokenDetails: {
+            ...baseUsage.inputTokenDetails,
+            cacheReadTokens: 12,
+            cacheWriteTokens: 8,
+          },
+        },
       },
     });
     expect(result.usage.input_tokens_details).toEqual({ cached_tokens: 12, cache_write_tokens: 8 });
@@ -192,7 +213,10 @@ describe('toResponsesResponse', () => {
         text: 'ok',
         finishReason: 'stop',
         response: baseResponse,
-        usage: { ...baseUsage, outputTokenDetails: { reasoningTokens: 7 } },
+        usage: {
+          ...baseUsage,
+          outputTokenDetails: { ...baseUsage.outputTokenDetails, reasoningTokens: 7 },
+        },
       },
     });
     expect(result.usage.output_tokens_details).toEqual({ reasoning_tokens: 7 });
@@ -272,7 +296,7 @@ describe('toResponsesResponse', () => {
       body: { parallel_tool_calls: false },
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
-    expect(result.parallel_tool_calls).toBe(false);
+    expect(result).toHaveProperty('parallel_tool_calls', false);
   });
 
   it('defaults parallel_tool_calls to true when absent from the request', () => {
@@ -280,7 +304,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
-    expect(result.parallel_tool_calls).toBe(true);
+    expect(result).toHaveProperty('parallel_tool_calls', true);
   });
 
   it('always emits spec-required echo fields with defaults when the body is absent', () => {

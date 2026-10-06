@@ -18,8 +18,9 @@ expectTypeOf<Parameters<typeof googleCalendar.createQuickEvent>[0]['input']>().t
 }>();
 expectTypeOf<Awaited<typeof _quickEvent>['htmlLink']>().toEqualTypeOf<string | null | undefined>();
 
-// @ts-expect-error createQuickEvent does not accept deleteEvent input
-googleCalendar.createQuickEvent({ input: { calendarId: 'primary', eventId: 'event' }, req });
+const _createQuickEventRejectsDeleteEventInput = () =>
+  // @ts-expect-error createQuickEvent does not accept deleteEvent input
+  googleCalendar.createQuickEvent({ input: { calendarId: 'primary', eventId: 'event' }, req });
 
 const deleted = googleCalendar.deleteEvent({
   input: { calendarId: 'primary', eventId: 'event' },

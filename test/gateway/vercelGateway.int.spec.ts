@@ -9,19 +9,21 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import type { AfterOperationHookArgs } from '../../packages/gateway/src/hooks.js';
 import { DEFAULT_MODEL_CATALOG } from '../../packages/gateway/src/providers/catalog.data.js';
 import { calculateModelCostUSD } from '../../packages/gateway/src/providers/cost.js';
+import { openaiProvider } from '../../packages/gateway/src/providers/openai/index.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { vercelProvider } from '../../packages/gateway/src/providers/vercel/index.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 const CLAUDE = 'vercel/anthropic/claude-sonnet-4.6';
 const GPT = 'vercel/openai/gpt-5.4-mini';
 
-const USAGE = {
+const USAGE = mockUsage({
   inputTokens: { total: 1200, noCache: 200, cacheRead: 800, cacheWrite: 200 },
   outputTokens: { total: 50, text: 30, reasoning: 20 },
-};
+});
 
-const FINISH_REASON = { unified: 'stop', raw: 'end_turn' };
+const FINISH_REASON = finish('stop', 'end_turn');
 
 type UpstreamCall = {
   url: string;
@@ -261,7 +263,7 @@ describe('Vercel AI Gateway provider — wire integration', () => {
   });
 
   it('reports the provider as not configured without a key', async () => {
-    const other = { openai: vercelProvider.build({ apiKey: 'unused' }) } as ProviderRegistry;
+    const other: ProviderRegistry = { openai: openaiProvider.build({ apiKey: 'unused' }) };
 
     const { status, body } = await postJson<{ error: { message: string } }>(
       makeApp(other),
@@ -294,17 +296,14 @@ describe('Vercel AI Gateway provider — upstream errors', () => {
     );
   }
 
-  let previousNodeEnv: string | undefined;
-
   beforeEach(() => {
     calls = [];
     operations = [];
-    previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = previousNodeEnv;
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
 

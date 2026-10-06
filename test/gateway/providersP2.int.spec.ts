@@ -17,6 +17,8 @@ import {
   type ProviderRegistry,
 } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { providerMap } from '../unit/gateway/config/fixtures.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -27,7 +29,6 @@ function makeCapturingModel(capture: (opts: LanguageModelV4CallOptions) => void)
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
@@ -35,8 +36,11 @@ function makeCapturingModel(capture: (opts: LanguageModelV4CallOptions) => void)
       capture(options);
       return Promise.resolve({
         content: [{ type: 'text', text: 'ok' }],
-        finishReason: { unified: 'stop', raw: 'stop' },
-        usage: { inputTokens: { total: 1, noCache: 1 }, outputTokens: { total: 1, text: 1 } },
+        finishReason: finish('stop', 'stop'),
+        usage: mockUsage({
+          inputTokens: { total: 1, noCache: 1 },
+          outputTokens: { total: 1, text: 1 },
+        }),
         warnings: [],
         response: { id: 'r1', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
       });
@@ -62,7 +66,7 @@ function makeCapturingModel(capture: (opts: LanguageModelV4CallOptions) => void)
 describe('G80 — pre-built provider instance not accepted (D-class)', () => {
   it('buildProviderRegistry accepts config objects and builds instances from them', () => {
     // Documents the correct path: config objects → build() → instances
-    const registry = buildProviderRegistry({ openai: { apiKey: 'sk-test' } });
+    const registry = buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } }));
     expect(registry.openai).toBeDefined();
     // The built instance has languageModel method — it is NOT the raw config
     expect(typeof registry.openai?.languageModel).toBe('function');

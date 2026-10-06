@@ -1,3 +1,4 @@
+import type { ImageModelV4, ImageModelV4Result } from '@ai-sdk/provider';
 import { APICallError } from '@ai-sdk/provider';
 import { MockImageModelV4, MockProviderV4 } from 'ai/test';
 import { describe, expect, it, vi } from 'vitest';
@@ -5,13 +6,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../../../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../../../../packages/gateway/src/providers/registry.js';
 
+function imageResult({ warnings }: Pick<ImageModelV4Result, 'warnings'>): ImageModelV4Result {
+  return {
+    images: ['aW1hZ2U='],
+    usage: { inputTokens: 3, outputTokens: 0, totalTokens: 3 },
+    warnings,
+    response: { timestamp: new Date(0), modelId: 'dall-e-3', headers: undefined },
+  };
+}
+
 describe('imagesRoute', () => {
   it('serves POST /v1/images/generations', async () => {
-    const doGenerate = vi.fn(async () => ({
-      images: ['aW1hZ2U='],
-      usage: { inputTokens: 3, outputTokens: 0, totalTokens: 3 },
-      warnings: [],
-    }));
+    const doGenerate = vi.fn<ImageModelV4['doGenerate']>(() =>
+      Promise.resolve(imageResult({ warnings: [] })),
+    );
     const model = new MockImageModelV4({ maxImagesPerCall: 2, doGenerate });
     const app = createApp({
       registry: {
@@ -71,17 +79,18 @@ describe('imagesRoute', () => {
 
   it('returns OpenAI-shaped content policy errors', async () => {
     const model = new MockImageModelV4({
-      doGenerate: async () => {
-        throw new APICallError({
-          message: 'Request blocked by the safety policy.',
-          url: 'https://api.example.test/v1/images/generations',
-          requestBodyValues: {},
-          statusCode: 400,
-          data: {
-            error: { message: 'Request blocked by the safety policy.', code: 'safety_blocked' },
-          },
-        });
-      },
+      doGenerate: () =>
+        Promise.reject(
+          new APICallError({
+            message: 'Request blocked by the safety policy.',
+            url: 'https://api.example.test/v1/images/generations',
+            requestBodyValues: {},
+            statusCode: 400,
+            data: {
+              error: { message: 'Request blocked by the safety policy.', code: 'safety_blocked' },
+            },
+          }),
+        ),
     });
     const app = createApp({
       registry: {
@@ -112,11 +121,7 @@ describe('imagesRoute', () => {
     const warning = { type: 'other' as const, message: 'image warning' };
     const afterUpstream = vi.fn();
     const model = new MockImageModelV4({
-      doGenerate: async () => ({
-        images: ['aW1hZ2U='],
-        usage: { inputTokens: 3, outputTokens: 0, totalTokens: 3 },
-        warnings: [warning],
-      }),
+      doGenerate: () => Promise.resolve(imageResult({ warnings: [warning] })),
     });
     const app = createApp({
       registry: {

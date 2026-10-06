@@ -24,14 +24,15 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 function createRecordingModel(opts?: {
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
-  const usage = {
+  const usage = mockUsage({
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
-  };
+  });
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -39,11 +40,11 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       opts?.onCall?.(options);
-      return {
+      return Promise.resolve({
         content: [{ type: 'text' as const, text: 'hi' }],
-        finishReason: 'stop',
+        finishReason: finish('stop'),
         usage,
         warnings: [],
         response: {
@@ -51,10 +52,10 @@ function createRecordingModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async () => {
-      throw new Error('not used');
+    doStream: () => {
+      return Promise.reject(new Error('not used'));
     },
   };
 }

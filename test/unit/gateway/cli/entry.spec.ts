@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { buildProvidersFromEnv, isCliEntry } from '../../../../packages/gateway/src/cli/index.js';
+import { testEnv } from '../config/fixtures.js';
 
 const realFile = '/real/pkg/dist/cli/index.js';
 const moduleUrl = pathToFileURL(realFile).href;
@@ -38,18 +39,20 @@ describe('isCliEntry', () => {
 
 describe('buildProvidersFromEnv', () => {
   it('discovers Bedrock from an AWS profile', () => {
-    expect(buildProvidersFromEnv({ AWS_PROFILE: 'dev' })['bedrock']).toEqual({
+    expect(buildProvidersFromEnv(testEnv({ AWS_PROFILE: 'dev' }))['bedrock']).toEqual({
       region: 'us-east-1',
     });
   });
 
   it('discovers Bedrock from web identity', () => {
     expect(
-      buildProvidersFromEnv({
-        AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
-        AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
-        AWS_REGION: 'us-west-2',
-      })['bedrock'],
+      buildProvidersFromEnv(
+        testEnv({
+          AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
+          AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
+          AWS_REGION: 'us-west-2',
+        }),
+      )['bedrock'],
     ).toEqual({ region: 'us-west-2' });
   });
 });

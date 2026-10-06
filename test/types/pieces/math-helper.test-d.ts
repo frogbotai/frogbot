@@ -14,5 +14,6 @@ expectTypeOf<Parameters<typeof mathHelper.addNumbers>[0]['input']>().toEqualType
 }>();
 expectTypeOf(sum).toEqualTypeOf<Promise<number>>();
 
-// @ts-expect-error addNumbers requires both numbers
-mathHelper.addNumbers({ input: { firstNumber: 1 }, req });
+const _addNumbersRequiresBothNumbers = () =>
+  // @ts-expect-error addNumbers requires both numbers
+  mathHelper.addNumbers({ input: { firstNumber: 1 }, req });

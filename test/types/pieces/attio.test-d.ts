@@ -16,8 +16,9 @@ expectTypeOf<Parameters<typeof attio.createNote>[0]['input']>().toEqualTypeOf<{
 }>();
 expectTypeOf(note).toEqualTypeOf<Promise<Record<string, unknown>>>();
 
-// @ts-expect-error createNote does not accept getTask input
-attio.createNote({ input: { taskId: 'task' } });
+const _createNoteRejectsGetTaskInput = () =>
+  // @ts-expect-error createNote does not accept getTask input
+  attio.createNote({ input: { taskId: 'task' } });
 
 const deleted = attio.deleteTask({ input: { taskId: 'task' } });
 

@@ -24,10 +24,10 @@ let bodies: Record<string, any>[] = [];
 beforeEach(() => {
   bodies = [];
 
-  vi.stubGlobal('fetch', async (_input: RequestInfo | URL, init?: RequestInit) => {
+  vi.stubGlobal('fetch', (_input: RequestInfo | URL, init?: RequestInit) => {
     bodies.push(JSON.parse(String(init?.body)) as Record<string, any>);
 
-    throw sentUpstream;
+    return Promise.reject(sentUpstream);
   });
 });
 
@@ -74,11 +74,11 @@ async function send(args: {
     provider: args.modelId.slice(0, args.modelId.indexOf('/')),
   });
 
-  await model
-    .doGenerate({ prompt, providerOptions: structuredClone(args.providerOptions) })
-    .catch((error: unknown) => {
-      if (error !== sentUpstream) throw error;
-    });
+  await Promise.resolve(
+    model.doGenerate({ prompt, providerOptions: structuredClone(args.providerOptions) }),
+  ).catch((error: unknown) => {
+    if (error !== sentUpstream) throw error;
+  });
 
   const body = bodies.at(-1);
 

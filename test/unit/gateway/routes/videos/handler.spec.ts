@@ -6,12 +6,14 @@ import type { ProviderRegistry } from '../../../../../packages/gateway/src/provi
 
 describe('videosRoute', () => {
   it('serves POST /v1/videos/generations', async () => {
-    const doGenerate = vi.fn(async () => ({
-      videos: [{ type: 'base64' as const, data: 'dmlkZW8=', mediaType: 'video/mp4' }],
-      warnings: [],
-      providerMetadata: {},
-      response: { timestamp: new Date(), modelId: 'wan-2.5', headers: {} },
-    }));
+    const doGenerate = vi.fn(() =>
+      Promise.resolve({
+        videos: [{ type: 'base64' as const, data: 'dmlkZW8=', mediaType: 'video/mp4' }],
+        warnings: [],
+        providerMetadata: {},
+        response: { timestamp: new Date(), modelId: 'wan-2.5', headers: {} },
+      }),
+    );
     const model = {
       specificationVersion: 'v4',
       provider: 'replicate.video',
@@ -92,12 +94,14 @@ describe('videosRoute', () => {
       provider: 'replicate.video',
       modelId: 'wan-2.5',
       maxVideosPerCall: 1,
-      doGenerate: vi.fn(async () => ({
-        videos: [{ type: 'base64' as const, data: 'dmlkZW8=', mediaType: 'video/mp4' }],
-        warnings: [warning],
-        providerMetadata: {},
-        response: { timestamp: new Date(), modelId: 'wan-2.5', headers: {} },
-      })),
+      doGenerate: vi.fn(() =>
+        Promise.resolve({
+          videos: [{ type: 'base64' as const, data: 'dmlkZW8=', mediaType: 'video/mp4' }],
+          warnings: [warning],
+          providerMetadata: {},
+          response: { timestamp: new Date(), modelId: 'wan-2.5', headers: {} },
+        }),
+      ),
     } satisfies Experimental_VideoModelV4;
     const app = createApp({
       registry: {

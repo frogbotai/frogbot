@@ -17,11 +17,13 @@ const questions = {
 
 describe('gateway evaluation model', () => {
   it('canonicalizes jev before the catalog and allowlist and keeps the requested hook model', async () => {
-    const upstream = vi.fn(async (_options: Experimental_EvaluationModelV4CallOptions) => ({
-      answers: { refunded: { type: 'boolean' as const, probability: 0.8 } },
-      usage: { inputTokens: 14, outputTokens: 2 },
-      warnings: [],
-    }));
+    const upstream = vi.fn((_options: Experimental_EvaluationModelV4CallOptions) =>
+      Promise.resolve({
+        answers: { refunded: { type: 'boolean' as const, probability: 0.8 } },
+        usage: { inputTokens: 14, outputTokens: 2 },
+        warnings: [],
+      }),
+    );
     const beforeUpstream = vi.fn();
     const gateway = createGateway({
       providers: { 'typesafe-ai': { apiKey: 'secret', models: ['jev'] } },
@@ -84,11 +86,13 @@ describe('gateway evaluation model', () => {
     const phases: string[] = [];
     const afterUpstream = vi.fn();
     const afterOperation = vi.fn();
-    const upstream = vi.fn(async (_options: Experimental_EvaluationModelV4CallOptions) => ({
-      answers: { refunded: { type: 'boolean' as const, probability: 0.8 } },
-      usage: { inputTokens: 14 },
-      warnings: [],
-    }));
+    const upstream = vi.fn((_options: Experimental_EvaluationModelV4CallOptions) =>
+      Promise.resolve({
+        answers: { refunded: { type: 'boolean' as const, probability: 0.8 } },
+        usage: { inputTokens: 14 },
+        warnings: [],
+      }),
+    );
     const gateway = createGateway({
       providers: { 'typesafe-ai': { apiKey: 'secret' } },
       hooks: {

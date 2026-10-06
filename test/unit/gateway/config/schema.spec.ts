@@ -5,6 +5,7 @@ import {
   parseGatewayConfig,
 } from '../../../../packages/gateway/src/config/schema.js';
 import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
+import { providerMap } from './fixtures.js';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -20,7 +21,9 @@ describe('parseGatewayConfig — provider credentials', () => {
 
   it('accepts an undefined API key when the provider credential env var is set', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
-    expect(parseGatewayConfig({ providers: { openai: { apiKey: undefined } } })).toEqual({
+    expect(
+      parseGatewayConfig({ providers: providerMap({ openai: { apiKey: undefined } }) }),
+    ).toEqual({
       providers: { openai: { apiKey: undefined } },
     });
   });
@@ -37,7 +40,7 @@ describe('parseGatewayConfig — provider credentials', () => {
     ['   ', 'whitespace'],
   ])('rejects an %s explicit API key even when the env fallback exists', (apiKey) => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
-    expect(() => parseGatewayConfig({ providers: { openai: { apiKey } } })).toThrow(
+    expect(() => parseGatewayConfig({ providers: providerMap({ openai: { apiKey } }) })).toThrow(
       'providers.openai.apiKey must be a non-empty string',
     );
   });
@@ -70,7 +73,9 @@ describe('parseGatewayConfig — provider credentials', () => {
     vi.stubEnv('KLINGAI_ACCESS_KEY', undefined);
     vi.stubEnv('KLINGAI_SECRET_KEY', undefined);
 
-    const config = parseGatewayConfig({ providers: { klingai: { apiKey: 'kling-key' } } });
+    const config = parseGatewayConfig({
+      providers: providerMap({ klingai: { apiKey: 'kling-key' } }),
+    });
 
     expect(config.providers.klingai).toEqual({ apiKey: 'kling-key' });
   });
@@ -98,7 +103,9 @@ describe('parseGatewayConfig — provider credentials', () => {
   it('accepts an Anthropic authToken without an API key', () => {
     vi.stubEnv('ANTHROPIC_API_KEY', undefined);
 
-    const config = parseGatewayConfig({ providers: { anthropic: { authToken: 'token' } } });
+    const config = parseGatewayConfig({
+      providers: providerMap({ anthropic: { authToken: 'token' } }),
+    });
 
     expect(config.providers.anthropic).toEqual({ authToken: 'token' });
   });
@@ -106,13 +113,13 @@ describe('parseGatewayConfig — provider credentials', () => {
   it('rejects an empty Anthropic authToken', () => {
     vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant-env');
 
-    expect(() => parseGatewayConfig({ providers: { anthropic: { authToken: ' ' } } })).toThrow(
-      'providers.anthropic.authToken must be a non-empty string',
-    );
+    expect(() =>
+      parseGatewayConfig({ providers: providerMap({ anthropic: { authToken: ' ' } }) }),
+    ).toThrow('providers.anthropic.authToken must be a non-empty string');
   });
 
   it('does not require static credentials for providers without requiredKeys', () => {
-    expect(parseGatewayConfig({ providers: { bedrock: {} } })).toEqual({
+    expect(parseGatewayConfig({ providers: providerMap({ bedrock: {} }) })).toEqual({
       providers: { bedrock: {} },
     });
   });
@@ -134,10 +141,10 @@ describe('parseGatewayConfig — openai-compatible providers', () => {
 
   it('accepts an openai-compatible provider alongside a built-in', () => {
     const result = parseGatewayConfig({
-      providers: {
+      providers: providerMap({
         openai: { apiKey: 'sk-test' },
         ollama: { baseURL: 'http://localhost:11434/v1' },
-      },
+      }),
     });
     expect(result.providers.ollama).toBeDefined();
     expect(result.providers.openai).toBeDefined();
@@ -170,7 +177,7 @@ describe('parseGatewayConfig — model allowlists', () => {
   it('accepts catalogued built-in models', () => {
     expect(
       parseGatewayConfig({
-        providers: { openai: { apiKey: 'sk-test', models: ['gpt-4o'] } },
+        providers: providerMap({ openai: { apiKey: 'sk-test', models: ['gpt-4o'] } }),
       }).providers.openai,
     ).toEqual({ apiKey: 'sk-test', models: ['gpt-4o'] });
   });
@@ -178,7 +185,7 @@ describe('parseGatewayConfig — model allowlists', () => {
   it('rejects unknown built-in models', () => {
     expect(() =>
       parseGatewayConfig({
-        providers: { openai: { apiKey: 'sk-test', models: ['not-a-real-model'] } },
+        providers: providerMap({ openai: { apiKey: 'sk-test', models: ['not-a-real-model'] } }),
       }),
     ).toThrow('providers.openai.models contains unknown model: not-a-real-model');
   });

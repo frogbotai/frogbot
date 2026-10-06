@@ -4,7 +4,7 @@ import { APICallError } from '@ai-sdk/provider';
 import { RetryError } from 'ai';
 import type { Logger as PinoLogger } from 'pino';
 import pino from 'pino';
-import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, it, onTestFinished, vi } from 'vitest';
 
 import type {
   AfterErrorHookArgs,
@@ -127,10 +127,8 @@ describe('createLogger (console default)', () => {
 });
 
 describe('createLoggingHooks', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it('logs request start and end with structured request metadata', async () => {
@@ -179,7 +177,7 @@ describe('createLoggingHooks', () => {
   });
 
   it('logs full cause chains outside production', async () => {
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     const { entries, logger } = captureLogger();
     const hooks = createLoggingHooks(logger);
     const error = new Error('outer', { cause: new Error('inner') });
@@ -207,7 +205,7 @@ describe('createLoggingHooks', () => {
   });
 
   it('logs production error details', async () => {
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     const { entries, logger } = captureLogger();
     const hooks = createLoggingHooks(logger);
 
@@ -235,7 +233,7 @@ describe('createLoggingHooks', () => {
   it.each(['development', 'production'] as const)(
     'logs APICallError diagnostics in %s',
     async (nodeEnv) => {
-      process.env.NODE_ENV = nodeEnv;
+      vi.stubEnv('NODE_ENV', nodeEnv);
       const { entries, logger } = captureLogger();
       const hooks = createLoggingHooks(logger);
       const error = Object.assign(apiCallError(), {
@@ -281,7 +279,9 @@ describe('createLoggingHooks', () => {
 
     const serialized = (entries[0]?.obj as { error: Record<string, unknown> }).error;
     expect(serialized.responseBody).toBe('a'.repeat(2046));
-    expect(new TextEncoder().encode(serialized.responseBody).byteLength).toBeLessThanOrEqual(2048);
+    expect(
+      new TextEncoder().encode(String(serialized.responseBody)).byteLength,
+    ).toBeLessThanOrEqual(2048);
     expect(serialized.custom).toEqual({ self: '[Circular]' });
     expect(() => JSON.stringify(entries[0]?.obj)).not.toThrow();
   });
@@ -367,10 +367,8 @@ describe('createLoggingHooks', () => {
 });
 
 describe('createLoggingHooks with a real pino instance', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it('serializes lifecycle entries with pino level numbers and request metadata', async () => {
@@ -414,7 +412,7 @@ describe('createLoggingHooks with a real pino instance', () => {
   });
 
   it('serializes error name/message/stack at level 50 outside production', async () => {
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     const { logger, lines } = capturePino();
     const hooks = createLoggingHooks(logger);
 
@@ -440,7 +438,7 @@ describe('createLoggingHooks with a real pino instance', () => {
   });
 
   it('serializes the error property in production mode', async () => {
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     const { logger, lines } = capturePino();
     const hooks = createLoggingHooks(logger);
 
@@ -490,24 +488,22 @@ describe('logGatewayError with a real pino instance', () => {
   });
 
   it('logs the raw 500 message in production', () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const { logger, lines } = capturePino();
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const { logger, lines } = capturePino();
 
-      logGatewayError(logger, {
-        requestId: 'req_1',
-        status: 500,
-        path: '/v1/chat/completions',
-        error: new Error('upstream detail'),
-      });
+    logGatewayError(logger, {
+      requestId: 'req_1',
+      status: 500,
+      path: '/v1/chat/completions',
+      error: new Error('upstream detail'),
+    });
 
-      expect(lines()).toMatchObject([
-        { level: 50, msg: 'request-error', message: 'upstream detail' },
-      ]);
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    expect(lines()).toMatchObject([
+      { level: 50, msg: 'request-error', message: 'upstream detail' },
+    ]);
   });
 
   it('redacts key fragments from the logged message', () => {

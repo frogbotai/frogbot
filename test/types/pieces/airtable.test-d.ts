@@ -17,8 +17,9 @@ expectTypeOf<Parameters<typeof airtable.findRecords>[0]['input']>().toEqualTypeO
 expectTypeOf<Awaited<typeof _records>[number]['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _records>[number]['fields']>().toEqualTypeOf<Record<string, unknown>>();
 
-// @ts-expect-error findRecords does not accept createBase input
-airtable.findRecords({ input: { workspaceId: 'workspace', name: 'Base', tables: [] } });
+const _findRecordsRejectsCreateBaseInput = () =>
+  // @ts-expect-error findRecords does not accept createBase input
+  airtable.findRecords({ input: { workspaceId: 'workspace', name: 'Base', tables: [] } });
 
 expectTypeOf<keyof typeof airtable.triggers>().toEqualTypeOf<'newRecord' | 'newOrUpdatedRecord'>();
 expectTypeOf(airtable.triggers.newOrUpdatedRecord.type).toEqualTypeOf<'polling'>();

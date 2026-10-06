@@ -13,6 +13,7 @@ import {
   resolveProvider,
 } from '../../../../../packages/gateway/src/providers/registry.js';
 import { vercelProvider } from '../../../../../packages/gateway/src/providers/vercel/index.js';
+import { providerMap, testEnv } from '../../config/fixtures.js';
 
 const GENERATE_BODY = {
   content: [{ type: 'text', text: 'ok' }],
@@ -49,18 +50,20 @@ describe('Vercel AI Gateway provider', () => {
 
   it('is enabled only by AI_GATEWAY_API_KEY', () => {
     expect(vercelProvider.envVars[0]).toBe('AI_GATEWAY_API_KEY');
-    expect(vercelProvider.fromEnv({})).toBeUndefined();
+    expect(vercelProvider.fromEnv(testEnv())).toBeUndefined();
 
     expect(
-      vercelProvider.fromEnv({
-        AI_GATEWAY_API_KEY: 'key',
-        AI_GATEWAY_BASE_URL: 'https://example.test/v4/ai',
-      }),
+      vercelProvider.fromEnv(
+        testEnv({
+          AI_GATEWAY_API_KEY: 'key',
+          AI_GATEWAY_BASE_URL: 'https://example.test/v4/ai',
+        }),
+      ),
     ).toEqual({ apiKey: 'key', baseURL: 'https://example.test/v4/ai' });
   });
 
   it('is not enabled by a Vercel OIDC token alone', () => {
-    const env = { VERCEL_OIDC_TOKEN: 'oidc-token', VERCEL: '1' };
+    const env = testEnv({ VERCEL_OIDC_TOKEN: 'oidc-token', VERCEL: '1' });
 
     expect(vercelProvider.fromEnv(env)).toBeUndefined();
     expect(buildProvidersFromEnv(env)).not.toHaveProperty('vercel');
@@ -91,7 +94,7 @@ describe('Vercel AI Gateway provider', () => {
   });
 
   it('accepts cataloged chat models and rejects other IDs and operations', () => {
-    const registry = buildProviderRegistry({ vercel: { apiKey: 'key' } });
+    const registry = buildProviderRegistry(providerMap({ vercel: { apiKey: 'key' } }));
 
     const resolve = (modelId: string, operation: 'chat.completions' | 'embeddings') =>
       resolveProvider({ modelId, operation, providers: registry, models: DEFAULT_MODEL_CATALOG });

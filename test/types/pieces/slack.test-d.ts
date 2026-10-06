@@ -15,8 +15,9 @@ expectTypeOf<Parameters<typeof slack.addReaction>[0]['input']>().toEqualTypeOf<{
 }>();
 expectTypeOf<Awaited<typeof _reacted>['ok']>().toEqualTypeOf<true>();
 
-// @ts-expect-error addReaction does not accept findUserByEmail input
-slack.addReaction({ input: { email: 'ada@example.com' } });
+const _addReactionRejectsFindUserByEmailInput = () =>
+  // @ts-expect-error addReaction does not accept findUserByEmail input
+  slack.addReaction({ input: { email: 'ada@example.com' } });
 
 expectTypeOf<keyof typeof slack.triggers>().toEqualTypeOf<
   | 'messageCreated'

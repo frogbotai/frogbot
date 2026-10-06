@@ -16,8 +16,9 @@ expectTypeOf<Parameters<typeof telegram.answerCallbackQuery>[0]['input']>().toEq
 }>();
 expectTypeOf<Awaited<typeof _answered>['ok']>().toEqualTypeOf<true>();
 
-// @ts-expect-error answerCallbackQuery does not accept sendTextMessage input
-telegram.answerCallbackQuery({ input: { chatId: 1, message: 'Hello' } });
+const _answerCallbackQueryRejectsSendTextMessageInput = () =>
+  // @ts-expect-error answerCallbackQuery does not accept sendTextMessage input
+  telegram.answerCallbackQuery({ input: { chatId: 1, message: 'Hello' } });
 
 const _file = telegram.getFile({ input: { fileId: 'file' } });
 

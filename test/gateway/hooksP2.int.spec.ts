@@ -41,59 +41,60 @@ import { createGateway } from '../../packages/gateway/src/gateway.js';
 import type { BeforeUpstreamHookArgs, Hooks } from '../../packages/gateway/src/hooks.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeLanguageModel(opts?: { error?: unknown }): LanguageModelV4 {
+function makeLanguageModel(opts?: { error?: Error }): LanguageModelV4 {
   return {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async () => {
-      if (opts?.error) throw opts.error;
-      return {
+    doGenerate: () => {
+      if (opts?.error) return Promise.reject(opts.error);
+      return Promise.resolve({
         content: [{ type: 'text' as const, text: 'hi' }],
-        finishReason: 'stop',
-        usage: {
+        finishReason: finish('stop'),
+        usage: mockUsage({
           inputTokens: { total: 2, noCache: 2 },
           outputTokens: { total: 1, text: 1 },
-        },
+        }),
         warnings: [],
         response: { id: 'r1', modelId: 'mock-model', timestamp: new Date() },
-      };
+      });
     },
-    doStream: async () => ({
-      stream: new ReadableStream<LanguageModelV4StreamPart>({
-        start(controller) {
-          if (opts?.error) {
-            controller.enqueue({ type: 'error', error: opts.error });
-          } else {
-            controller.enqueue({ type: 'text-start', id: 'text-0' });
-            controller.enqueue({
-              type: 'text-delta',
-              id: 'text-0',
-              delta: 'hi',
-            });
-            controller.enqueue({ type: 'text-end', id: 'text-0' });
-            controller.enqueue({
-              type: 'finish',
-              finishReason: 'stop',
-              usage: {
-                inputTokens: { total: 2, noCache: 2 },
-                outputTokens: { total: 1, text: 1 },
-              },
-            });
-          }
-          controller.close();
-        },
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream<LanguageModelV4StreamPart>({
+          start(controller) {
+            if (opts?.error) {
+              controller.enqueue({ type: 'error', error: opts.error });
+            } else {
+              controller.enqueue({ type: 'text-start', id: 'text-0' });
+              controller.enqueue({
+                type: 'text-delta',
+                id: 'text-0',
+                delta: 'hi',
+              });
+              controller.enqueue({ type: 'text-end', id: 'text-0' });
+              controller.enqueue({
+                type: 'finish',
+                finishReason: finish('stop'),
+                usage: mockUsage({
+                  inputTokens: { total: 2, noCache: 2 },
+                  outputTokens: { total: 1, text: 1 },
+                }),
+              });
+            }
+            controller.close();
+          },
+        }),
       }),
-    }),
   };
 }
 

@@ -23,5 +23,6 @@ expectTypeOf(exported).toEqualTypeOf<
   >
 >();
 
-// @ts-expect-error exportWorksheet does not accept createSpreadsheet input
-sheets.exportWorksheet({ input: { title: 'Budget' } });
+const _exportWorksheetRejectsCreateSpreadsheetInput = () =>
+  // @ts-expect-error exportWorksheet does not accept createSpreadsheet input
+  sheets.exportWorksheet({ input: { title: 'Budget' } });

@@ -11,13 +11,13 @@ export const jobsTypeConfig: FrogBotConfig = {
         slug: 'send-notification',
         inputSchema: [{ name: 'recipient', type: 'text', required: true }],
         outputSchema: [{ name: 'delivered', type: 'checkbox', required: true }],
-        handler: async () => ({ output: { delivered: true } }),
+        handler: () => ({ output: { delivered: true } }),
       },
       {
         slug: 'count-items',
         inputSchema: [{ name: 'count', type: 'number', required: true }],
         outputSchema: [{ name: 'total', type: 'number', required: true }],
-        handler: async () => ({ output: { total: 1 } }),
+        handler: () => ({ output: { total: 1 } }),
       },
     ],
     workflows: [

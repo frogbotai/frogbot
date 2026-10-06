@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { interpolateConfigText } from '../../../../packages/gateway/src/config/variable.js';
 import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
+import { testEnv } from './fixtures.js';
 
 const scratch = () => realpathSync(mkdtempSync(join(tmpdir(), 'frogbotai-gateway-variable-')));
 
@@ -15,7 +16,7 @@ describe('interpolateConfigText', () => {
     const out = await interpolateConfigText({
       text: JSON.stringify({ apiKey: '{env:FROGBOTAI_VAR_KEY}' }),
       source: '/tmp/gateway.config.json',
-      env: { FROGBOTAI_VAR_KEY: 'plain-key' },
+      env: testEnv({ FROGBOTAI_VAR_KEY: 'plain-key' }),
     });
     expect(JSON.parse(out)).toEqual({ apiKey: 'plain-key' });
   });
@@ -25,7 +26,7 @@ describe('interpolateConfigText', () => {
     const out = await interpolateConfigText({
       text: JSON.stringify({ apiKey: '{env:FROGBOTAI_VAR_SPECIAL}' }),
       source: '/tmp/gateway.config.json',
-      env: { FROGBOTAI_VAR_SPECIAL: value },
+      env: testEnv({ FROGBOTAI_VAR_SPECIAL: value }),
     });
     expect(JSON.parse(out)).toEqual({ apiKey: value });
   });
@@ -35,14 +36,14 @@ describe('interpolateConfigText', () => {
       interpolateConfigText({
         text: '{"apiKey":"{env:FROGBOTAI_VAR_MISSING}"}',
         source: '/tmp/gateway.config.json',
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(ConfigError);
     await expect(
       interpolateConfigText({
         text: '{"apiKey":"{env:FROGBOTAI_VAR_MISSING}"}',
         source: '/tmp/gateway.config.json',
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/FROGBOTAI_VAR_MISSING/);
   });
@@ -53,7 +54,7 @@ describe('interpolateConfigText', () => {
     const out = await interpolateConfigText({
       text: JSON.stringify({ apiKey: '{file:./secret.txt}' }),
       source: join(dir, 'gateway.config.json'),
-      env: {},
+      env: testEnv(),
     });
     expect(JSON.parse(out)).toEqual({ apiKey: 'line"1\nline\\2' });
   });
@@ -64,7 +65,7 @@ describe('interpolateConfigText', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:./nope.txt}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(ConfigError);
   });
@@ -75,7 +76,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
     const out = await interpolateConfigText({
       text: '\\{env:FOO}',
       source: '/tmp/gateway.config.json',
-      env: { FOO: 'resolved' },
+      env: testEnv({ FOO: 'resolved' }),
     });
     expect(out).toBe('{env:FOO}');
   });
@@ -84,7 +85,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
     const out = await interpolateConfigText({
       text: '{env:FOO}',
       source: '/tmp/gateway.config.json',
-      env: { FOO: 'resolved' },
+      env: testEnv({ FOO: 'resolved' }),
     });
     expect(out).toBe('resolved');
   });
@@ -93,7 +94,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
     const out = await interpolateConfigText({
       text: '\\{file:./secret.txt}',
       source: '/tmp/gateway.config.json',
-      env: {},
+      env: testEnv(),
     });
     expect(out).toBe('{file:./secret.txt}');
   });
@@ -102,7 +103,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
     const out = await interpolateConfigText({
       text: '\\\\{env:FOO}',
       source: '/tmp/gateway.config.json',
-      env: { FOO: 'resolved' },
+      env: testEnv({ FOO: 'resolved' }),
     });
     expect(out).toBe('\\resolved');
   });
@@ -111,7 +112,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
     const out = await interpolateConfigText({
       text: '\\{env:A}{env:B}',
       source: '/tmp/gateway.config.json',
-      env: { A: 'aa', B: 'bb' },
+      env: testEnv({ A: 'aa', B: 'bb' }),
     });
     expect(out).toBe('{env:A}bb');
   });
@@ -120,7 +121,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
     const out = await interpolateConfigText({
       text: '\\{file:./\\{env:FOO}.txt}',
       source: '/tmp/gateway.config.json',
-      env: { FOO: 'resolved' },
+      env: testEnv({ FOO: 'resolved' }),
     });
     expect(out).toBe('{file:./{env:FOO}.txt}');
   });
@@ -133,7 +134,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
     const out = await interpolateConfigText({
       text: JSON.stringify({ apiKey: '{file:./valid.txt}' }),
       source: join(dir, 'gateway.config.json'),
-      env: {},
+      env: testEnv(),
     });
     expect(JSON.parse(out)).toEqual({ apiKey: 'ok' });
   });
@@ -145,7 +146,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
     const out = await interpolateConfigText({
       text: JSON.stringify({ apiKey: '{file:./a/b/c/../../b/c/secret.txt}' }),
       source: join(dir, 'gateway.config.json'),
-      env: {},
+      env: testEnv(),
     });
     expect(JSON.parse(out)).toEqual({ apiKey: 'deep' });
   });
@@ -156,7 +157,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:/etc/passwd}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/resolves outside the config directory/);
   });
@@ -167,7 +168,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:../../etc/shadow}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/resolves outside the config directory/);
   });
@@ -178,7 +179,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:/}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/resolves outside the config directory/);
   });
@@ -195,7 +196,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:./link.txt}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/resolves outside the config directory/);
   });
@@ -207,7 +208,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
     const out = await interpolateConfigText({
       text: JSON.stringify({ apiKey: '{file:./link.txt}' }),
       source: join(dir, 'gateway.config.json'),
-      env: {},
+      env: testEnv(),
     });
     expect(JSON.parse(out)).toEqual({ apiKey: 'inside' });
   });
@@ -218,7 +219,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:./missing.txt}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/ENOENT/);
   });
@@ -229,7 +230,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:/etc/definitely-not-here-xyz}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/resolves outside the config directory/);
   });
@@ -240,7 +241,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/empty file path/);
   });
@@ -251,7 +252,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:~/../outside}' }),
         source: join(dir, 'gateway.config.json'),
-        env: {},
+        env: testEnv(),
       }),
     ).rejects.toThrow(/resolves outside the config directory/);
   });

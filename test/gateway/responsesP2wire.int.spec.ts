@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -28,15 +29,17 @@ function makeBaseModel() {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],
-        finishReason: { unified: 'stop', raw: 'stop' },
-        usage: { inputTokens: { total: 1, noCache: 1 }, outputTokens: { total: 1, text: 1 } },
+        finishReason: finish('stop', 'stop'),
+        usage: mockUsage({
+          inputTokens: { total: 1, noCache: 1 },
+          outputTokens: { total: 1, text: 1 },
+        }),
         warnings: [],
         response: { id: 'r1', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
       }),
@@ -252,8 +255,8 @@ describe('G73 — response.completed usage includes token details', () => {
               controller.enqueue({ type: 'text-end', id: 'text-0' });
               controller.enqueue({
                 type: 'finish',
-                finishReason: { unified: 'stop', raw: 'stop' },
-                usage: {
+                finishReason: finish('stop', 'stop'),
+                usage: mockUsage({
                   inputTokens: {
                     total: 20,
                     noCache: 10,
@@ -265,7 +268,7 @@ describe('G73 — response.completed usage includes token details', () => {
                     text: 10,
                     reasoning: 5,
                   },
-                },
+                }),
               });
               controller.close();
             },
@@ -322,20 +325,21 @@ describe('G74 — reasoning delta duplication', () => {
                 type: 'stream-start',
                 warnings: [],
               });
-              controller.enqueue({ type: 'reasoning-start' } as LanguageModelV4StreamPart);
+              controller.enqueue({ type: 'reasoning-start', id: 'reasoning-0' });
               controller.enqueue({
                 type: 'reasoning-delta',
+                id: 'reasoning-0',
                 delta: 'thinking...',
-              } as LanguageModelV4StreamPart);
-              controller.enqueue({ type: 'reasoning-end' } as LanguageModelV4StreamPart);
+              });
+              controller.enqueue({ type: 'reasoning-end', id: 'reasoning-0' });
               controller.enqueue({
                 type: 'finish',
-                finishReason: 'stop',
-                usage: {
+                finishReason: finish('stop'),
+                usage: mockUsage({
                   inputTokens: { total: 5, noCache: 5 },
                   outputTokens: { total: 3, text: 0, reasoning: 3 },
-                },
-              } as LanguageModelV4StreamPart);
+                }),
+              });
               controller.close();
             },
           }),
@@ -434,12 +438,12 @@ describe('G51 — responses stream terminal-frame count', () => {
               controller.enqueue({ type: 'text-end', id: 'text-0' });
               controller.enqueue({
                 type: 'finish',
-                finishReason: { unified: 'stop', raw: 'stop' },
-                usage: {
+                finishReason: finish('stop', 'stop'),
+                usage: mockUsage({
                   inputTokens: { total: 5, noCache: 5 },
                   outputTokens: { total: 4, text: 4 },
-                },
-              } as LanguageModelV4StreamPart);
+                }),
+              });
               controller.close();
             },
           }),
@@ -494,8 +498,11 @@ describe('G75 — reasoning items surface encrypted_content', () => {
             },
             { type: 'text', text: 'hi' },
           ],
-          finishReason: { unified: 'stop', raw: 'stop' },
-          usage: { inputTokens: { total: 1, noCache: 1 }, outputTokens: { total: 1, text: 1 } },
+          finishReason: finish('stop', 'stop'),
+          usage: mockUsage({
+            inputTokens: { total: 1, noCache: 1 },
+            outputTokens: { total: 1, text: 1 },
+          }),
           warnings: [],
           response: {
             id: 'r1',
@@ -553,12 +560,12 @@ describe('G75 — reasoning items surface encrypted_content', () => {
               });
               controller.enqueue({
                 type: 'finish',
-                finishReason: { unified: 'stop', raw: 'stop' },
-                usage: {
+                finishReason: finish('stop', 'stop'),
+                usage: mockUsage({
                   inputTokens: { total: 5, noCache: 5 },
                   outputTokens: { total: 3, text: 0, reasoning: 3 },
-                },
-              } as LanguageModelV4StreamPart);
+                }),
+              });
               controller.close();
             },
           }),
