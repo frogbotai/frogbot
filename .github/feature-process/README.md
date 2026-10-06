@@ -27,7 +27,7 @@ Stage is read from these files and git, never stored. For small edits the owner 
 ## The guardrails
 
 - **Git hooks** format and lint staged files, refuse `.idea/`, and require Conventional Commit messages.
-- **`pnpm check`** is the one static check. It builds what is out of date, then runs format, lint, typecheck of changed workspaces and the repo checks; `--full` covers everything.
+- **`pnpm check`** is the one static check. It builds what is out of date, then runs format, lint, typecheck of changed workspaces and the repo checks; `--full` covers everything. In the main checkout, `pnpm check ticket-docs [<n>]` checks ticket folders against the templates, `.idea/decisions.md` and PLAN's ticket table, and that every cited `path:line` exists.
 - **`pnpm ticket`**:
   - `next` gives a ticket number;
   - `new` creates the worktree and branch;
@@ -85,4 +85,4 @@ The plan's `touches:` list is matched against globs in `scripts/ticket.mjs`.
 
 ## Not built yet
 
-`pnpm check ticket-docs` (222) and `pnpm ticket verify [--ui]` (236, 237). Until then the coordinator does these by hand.
+`pnpm ticket verify [--ui]` (236, 237). Until then the coordinator does these by hand.
