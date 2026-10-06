@@ -34,17 +34,22 @@ function makeConfig(evaluate: SanitizedAIConfig['access']['evaluate'] = () => tr
       evaluate,
     },
     telemetry: { enabled: false },
+    usage: { slug: 'ai-usage' },
     _internal: { deploymentId: 'test' },
   } satisfies SanitizedAIConfig;
 }
 
 function makeGateway(model: Experimental_EvaluationMockModelV4) {
   const events: string[] = [];
-  const start = vi.fn(async () => {
+  const start = vi.fn(() => {
     events.push('start');
+
+    return Promise.resolve();
   });
-  const finish = vi.fn(async () => {
+  const finish = vi.fn(() => {
     events.push('finish');
+
+    return Promise.resolve();
   });
   const evaluationModel = vi.fn(() => model);
   const operation = vi.fn(() => ({ start, finish, evaluationModel }));
@@ -55,26 +60,28 @@ function makeGateway(model: Experimental_EvaluationMockModelV4) {
 
 describe('evaluateOperation', () => {
   it('resolves router aliases and preserves mixed SDK answers, usage, rounding, and metadata', async () => {
-    const doEvaluate = vi.fn(async () => ({
-      answers: {
-        refunded: { type: 'boolean' as const, probability: 0.85 },
-        team: {
-          type: 'choice' as const,
-          choice: 'billing',
-          probabilities: { billing: 0.75, support: 0.25 },
+    const doEvaluate = vi.fn(() =>
+      Promise.resolve({
+        answers: {
+          refunded: { type: 'boolean' as const, probability: 0.85 },
+          team: {
+            type: 'choice' as const,
+            choice: 'billing',
+            probabilities: { billing: 0.75, support: 0.25 },
+          },
+          severity: {
+            type: 'score' as const,
+            score: 0.75,
+            probabilities: { '0': 0.25, '1': 0.75 },
+          },
         },
-        severity: {
-          type: 'score' as const,
-          score: 0.75,
-          probabilities: { '0': 0.25, '1': 0.75 },
-        },
-      },
-      usage: { inputTokens: 120, outputTokens: 0 },
-      warnings: [],
-      rounding: { probabilityDecimals: 2, scoreDecimals: 2 },
-      providerMetadata: { typesafe: { confidence: { refunded: 0.98 } } },
-      response: { modelId: 'jev-1.13.0', id: 'eval-1' },
-    }));
+        usage: { inputTokens: 120, outputTokens: 0 },
+        warnings: [],
+        rounding: { probabilityDecimals: 2, scoreDecimals: 2 },
+        providerMetadata: { typesafe: { confidence: { refunded: 0.98 } } },
+        response: { modelId: 'jev-1.13.0', id: 'eval-1' },
+      }),
+    );
     const model = new Experimental_EvaluationMockModelV4({ doEvaluate });
     const { gateway, operation, start, finish, evaluationModel, events } = makeGateway(model);
 
@@ -105,10 +112,11 @@ describe('evaluateOperation', () => {
 
   it('finishes with the SDK error once when an upstream answer is invalid', async () => {
     const model = new Experimental_EvaluationMockModelV4({
-      doEvaluate: async () => ({
-        answers: { refunded: { type: 'boolean', probability: 2 } },
-        warnings: [],
-      }),
+      doEvaluate: () =>
+        Promise.resolve({
+          answers: { refunded: { type: 'boolean', probability: 2 } },
+          warnings: [],
+        }),
     });
     const { gateway, finish } = makeGateway(model);
 
@@ -167,10 +175,11 @@ describe('evaluateOperation', () => {
 
   it('allows trusted local calls with overrideAccess and no request', async () => {
     const model = new Experimental_EvaluationMockModelV4({
-      doEvaluate: async () => ({
-        answers: { refunded: { type: 'boolean', probability: 0.9 } },
-        warnings: [],
-      }),
+      doEvaluate: () =>
+        Promise.resolve({
+          answers: { refunded: { type: 'boolean', probability: 0.9 } },
+          warnings: [],
+        }),
     });
     const { gateway, finish } = makeGateway(model);
     const config = makeConfig(() => false);

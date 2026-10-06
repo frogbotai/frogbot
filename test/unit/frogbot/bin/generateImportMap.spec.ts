@@ -43,6 +43,8 @@ describe('frogbot generate:importmap', () => {
   it('loads production env files before importing the config', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'frogbot-importmap-env-'));
 
+    onTestFinished(() => rm(dir, { recursive: true, force: true }));
+
     await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=base\n');
     await writeFile(join(dir, '.env.local'), 'FROGBOT_TEST_KEY=local\n');
     await writeFile(join(dir, '.env.production'), 'FROGBOT_TEST_KEY=production\n');
@@ -52,26 +54,22 @@ describe('frogbot generate:importmap', () => {
       "import { writeFileSync } from 'node:fs'; writeFileSync('observed-env', process.env.FROGBOT_TEST_KEY ?? ''); export default {};\n",
     );
 
-    try {
-      const script = `process.argv = ['node', 'frogbot', 'generate:importmap']; const { bin } = await import(${JSON.stringify(binURL)}); await bin();`;
-      const result = execFileAsync(
-        process.execPath,
-        ['--import', tsxLoader, '--input-type=module', '--eval', script],
-        {
-          cwd: dir,
-          env: {
-            ...process.env,
-            FROGBOT_TEST_KEY: undefined,
-            NODE_ENV: 'production',
-            __NEXT_PROCESSED_ENV: undefined,
-          },
+    const script = `process.argv = ['node', 'frogbot', 'generate:importmap']; const { bin } = await import(${JSON.stringify(binURL)}); await bin();`;
+    const result = execFileAsync(
+      process.execPath,
+      ['--import', tsxLoader, '--input-type=module', '--eval', script],
+      {
+        cwd: dir,
+        env: {
+          ...process.env,
+          FROGBOT_TEST_KEY: undefined,
+          NODE_ENV: 'production',
+          __NEXT_PROCESSED_ENV: undefined,
         },
-      );
+      },
+    );
 
-      await expect(result).rejects.toBeDefined();
-      await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe('production-local');
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+    await expect(result).rejects.toBeDefined();
+    await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe('production-local');
   });
 });

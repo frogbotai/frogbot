@@ -14,7 +14,7 @@ import type { Field, TextField } from '../../../../../packages/frogbot/src/field
 
 type Schema = Parameters<NonNullable<TextField['typescriptSchema']>[number]>[0]['jsonSchema'];
 
-type AnyField = Field & {
+type AnyField = Omit<Field, 'admin' | 'hooks' | 'typescriptSchema'> & {
   admin?: Record<string, unknown>;
   hooks?: Record<string, ((args: unknown) => unknown)[]>;
   typescriptSchema?: TextField['typescriptSchema'];

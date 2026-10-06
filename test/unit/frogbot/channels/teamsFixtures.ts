@@ -291,6 +291,14 @@ export function cardInputs(request: TeamsRequest | undefined) {
   return (cardOf(request)?.body ?? []).filter(({ type }) => String(type).startsWith('Input.'));
 }
 
+type ActivityOptions = {
+  from?: TeamsMember;
+  id: string;
+  root?: string;
+  scope?: TeamsScope;
+  serviceUrl: string;
+};
+
 export function teamsActivity({
   from = members.ada,
   id,
@@ -298,13 +306,7 @@ export function teamsActivity({
   scope = 'channel',
   serviceUrl,
   ...rest
-}: {
-  from?: TeamsMember;
-  id: string;
-  root?: string;
-  scope?: TeamsScope;
-  serviceUrl: string;
-} & Record<string, unknown>) {
+}: ActivityOptions & Record<string, unknown>) {
   return {
     type: 'message',
     id,
@@ -352,13 +354,14 @@ export function submitActivity({
   toolCallId,
   values = {},
   ...options
-}: Omit<Parameters<typeof teamsActivity>[0], 'id'> & {
-  action?: 'submit' | 'dismiss';
-  card?: string;
-  id?: string;
-  toolCallId: string;
-  values?: Record<string, string>;
-}) {
+}: Omit<ActivityOptions, 'id'> &
+  Record<string, unknown> & {
+    action?: 'submit' | 'dismiss';
+    card?: string;
+    id?: string;
+    toolCallId: string;
+    values?: Record<string, string>;
+  }) {
   return teamsActivity({
     id,
     ...options,
@@ -372,12 +375,16 @@ export function memoryState() {
 
   return {
     values,
-    get: vi.fn(async (key: string) => (values.get(key) ?? null) as never),
-    set: vi.fn(async (key: string, value: unknown) => {
+    get: vi.fn((key: string) => Promise.resolve((values.get(key) ?? null) as never)),
+    set: vi.fn((key: string, value: unknown) => {
       values.set(key, value);
+
+      return Promise.resolve();
     }),
-    delete: vi.fn(async (key: string) => {
+    delete: vi.fn((key: string) => {
       values.delete(key);
+
+      return Promise.resolve();
     }),
   };
 }

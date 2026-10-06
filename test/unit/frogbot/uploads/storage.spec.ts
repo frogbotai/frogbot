@@ -1,3 +1,4 @@
+import type * as PayloadModule from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
@@ -12,7 +13,7 @@ import { uploadthingStorage } from '../../../../packages/storage-uploadthing/src
 import { vercelBlobStorage } from '../../../../packages/storage-vercel-blob/src/index.js';
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: Record<string, unknown>) =>
     Promise.resolve({ globals: [], ...config }),
   ),

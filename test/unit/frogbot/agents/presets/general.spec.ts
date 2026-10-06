@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { general } from '../../../../../packages/frogbot/src/agents/presets/general.js';
 
@@ -20,19 +21,21 @@ describe('general', () => {
   });
 
   it('applies optional overrides while preserving core-owned fields', () => {
-    const tools = [{ slug: 'search', description: 'Search', inputSchema: {} }];
+    const tools = [
+      { slug: 'search', description: 'Search', inputSchema: z.object({}), execute: () => [] },
+    ];
 
     expect(
       general({
         slug: 'other',
         instructions: 'Other instructions',
-        model: 'openai/test',
+        model: 'openai/gpt-4o',
         tools,
       }),
     ).toEqual({
       slug: 'general',
       instructions: 'You are a concise and helpful general assistant.',
-      model: 'openai/test',
+      model: 'openai/gpt-4o',
       tools,
     });
   });

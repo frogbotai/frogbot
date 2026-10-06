@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { SKIPPED_FOR_CLIENT_INPUT } from '../../../../packages/frogbot/src/agents/tools.js';
+import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import type * as MessagePersistence from '../../../../packages/frogbot/src/chat/messagePersistence.js';
 import type * as State from '../../../../packages/frogbot/src/chat/turn/state.js';
@@ -142,6 +143,7 @@ function makeConfig(hooks: SanitizedAIConfig['hooks']): SanitizedAIConfig {
       evaluate: () => true,
     },
     telemetry: { enabled: false },
+    usage: { slug: 'ai-usage' },
     _internal: { deploymentId: 'test' },
   };
 }
@@ -293,7 +295,7 @@ describe('agent hook lifecycle', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         tools: [tool],
       },
@@ -336,7 +338,7 @@ describe('agent hook lifecycle', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(config, req),
@@ -370,7 +372,7 @@ describe('agent hook lifecycle', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(config, req),
@@ -404,7 +406,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test', 'openai/allowed'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o', 'openai/gpt-4.1'] },
         instructions: 'Help',
       },
       deps as never,
@@ -413,14 +415,14 @@ describe('agent generate turns', () => {
     const result = await agent.generate({ prompt: 'Run report', req, overrideAccess: true });
 
     expect(result.text).toBe('ok');
-    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/test');
+    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/gpt-4o');
     expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         req,
-        mainModel: 'openai/test',
+        mainModel: 'openai/gpt-4o',
         message: expect.objectContaining({
           metadata: expect.objectContaining({
-            usage: expect.objectContaining({ model: 'openai/test' }),
+            usage: expect.objectContaining({ model: 'openai/gpt-4o' }),
           }),
         }),
       }),
@@ -428,11 +430,11 @@ describe('agent generate turns', () => {
   });
 
   it('rejects a stored model blocked for the turn user before generating', async () => {
-    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/allowed'] });
+    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/gpt-4.1'] });
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test', 'openai/allowed'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o', 'openai/gpt-4.1'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -443,13 +445,13 @@ describe('agent generate turns', () => {
       chatId: 'chat-1',
       uiMessages: history,
       claim,
-      selection: { model: 'openai/test' },
+      selection: { model: 'openai/gpt-4o' },
     });
 
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'openai/test' is not allowed for this user",
+      message: "Model 'openai/gpt-4o' is not allowed for this user",
     });
 
     expect(agentState.generateCall).toBeUndefined();
@@ -463,7 +465,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -474,13 +476,13 @@ describe('agent generate turns', () => {
       chatId: 'chat-1',
       uiMessages: history,
       claim,
-      selection: { model: 'openai/allowed' },
+      selection: { model: 'openai/gpt-4.1' },
     });
 
     await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
       code: 'selection-unavailable',
       status: 409,
-      message: "Model 'openai/allowed' is not allowed for agent 'support'",
+      message: "Model 'openai/gpt-4.1' is not allowed for agent 'support'",
     });
 
     expect(agentState.generateCall).toBeUndefined();
@@ -490,14 +492,14 @@ describe('agent generate turns', () => {
   });
 
   it('runs on the user fallback and records it as the main model', async () => {
-    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/allowed'] });
+    const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/gpt-4.1'] });
     const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
       gateway: { chatModel: ReturnType<typeof vi.fn> };
     };
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test', 'openai/allowed'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o', 'openai/gpt-4.1'] },
         instructions: 'Help',
       },
       deps as never,
@@ -505,14 +507,14 @@ describe('agent generate turns', () => {
 
     await agent.generate({ prompt: 'Hello', req });
 
-    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/allowed');
+    expect(deps.gateway.chatModel).toHaveBeenLastCalledWith('openai/gpt-4.1');
     expect(turn.persistAssistantMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         req,
-        mainModel: 'openai/allowed',
+        mainModel: 'openai/gpt-4.1',
         message: expect.objectContaining({
           metadata: expect.objectContaining({
-            usage: expect.objectContaining({ model: 'openai/allowed' }),
+            usage: expect.objectContaining({ model: 'openai/gpt-4.1' }),
           }),
         }),
       }),
@@ -528,7 +530,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       deps as never,
@@ -554,7 +556,7 @@ describe('agent generate turns', () => {
         parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'ok' })]),
       }),
       history,
-      mainModel: 'openai/test',
+      mainModel: 'openai/gpt-4o',
     });
     expect(deps.frogbot.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -569,7 +571,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -593,7 +595,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -611,7 +613,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -632,7 +634,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -651,7 +653,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         access,
       },
@@ -669,7 +671,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         access: () => false,
       },
@@ -689,7 +691,7 @@ describe('agent client tool gate', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         tools: [lookup, question],
       },
@@ -706,7 +708,7 @@ describe('agent client tool gate', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         tools: [lookup, question],
       },
@@ -726,7 +728,7 @@ describe('agent client tool gate', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         tools: [lookup],
       },
@@ -744,7 +746,7 @@ describe('agent client tool gate', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
         tools: [lookup, question],
       },
@@ -799,7 +801,7 @@ describe('agent steer messages', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -828,7 +830,7 @@ describe('agent steer messages', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -852,7 +854,7 @@ describe('agent steer messages', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: 'openai/test', options: ['openai/test'] },
+        model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -875,6 +877,9 @@ describe('agent model input pass', () => {
     messages: ModelMessage[];
     stepNumber?: number;
   }) => Promise<{ messages: ModelMessage[] }>;
+
+  const LOCAL_MEDIA = 'local/media' as AgentModelId;
+  const LOCAL_TEXT_ONLY = 'local/text-only' as AgentModelId;
 
   const photo: ModelMessage = {
     role: 'user',
@@ -916,14 +921,14 @@ describe('agent model input pass', () => {
     model,
     tools,
   }: {
-    model: string;
+    model: AgentModelId;
     tools?: Parameters<typeof createAgentInstance>[0]['tools'];
   }) {
     const req = makeReq();
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: { default: model, options: ['local/media', 'local/text-only'] },
+        model: { default: model, options: [LOCAL_MEDIA, LOCAL_TEXT_ONLY] },
         instructions: 'Help',
         tools,
       },
@@ -936,7 +941,7 @@ describe('agent model input pass', () => {
   }
 
   it("replaces media the step's model can't read with a marker", async () => {
-    const { prepareStep } = await startRun({ model: 'local/text-only' });
+    const { prepareStep } = await startRun({ model: LOCAL_TEXT_ONLY });
 
     const step = await prepareStep({ messages: [photo], stepNumber: 0 });
 
@@ -944,7 +949,7 @@ describe('agent model input pass', () => {
   });
 
   it('sends the same messages when the model reads every attachment', async () => {
-    const { prepareStep } = await startRun({ model: 'local/media' });
+    const { prepareStep } = await startRun({ model: LOCAL_MEDIA });
     const messages = [photo];
 
     const step = await prepareStep({ messages, stepNumber: 0 });
@@ -953,7 +958,7 @@ describe('agent model input pass', () => {
   });
 
   it('replaces images from the step a steer switches to a text-only model', async () => {
-    const { prepareStep } = await startRun({ model: 'local/media' });
+    const { prepareStep } = await startRun({ model: LOCAL_MEDIA });
     const messages = [photo];
 
     const before = await prepareStep({ messages, stepNumber: 0 });
@@ -975,7 +980,7 @@ describe('agent model input pass', () => {
   });
 
   it('loads steered pasted text with its label', async () => {
-    const { prepareStep } = await startRun({ model: 'local/media' });
+    const { prepareStep } = await startRun({ model: LOCAL_MEDIA });
 
     turn.promoteSteerMessages.mockResolvedValue([
       {
@@ -997,7 +1002,7 @@ describe('agent model input pass', () => {
 
   it('still skips server tools in a client-tool step whose messages the pass replaced', async () => {
     const { agent, prepareStep } = await startRun({
-      model: 'local/text-only',
+      model: LOCAL_TEXT_ONLY,
       tools: [lookup, question],
     });
 

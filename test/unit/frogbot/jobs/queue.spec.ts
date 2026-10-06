@@ -15,7 +15,7 @@ describe('jobs.queue', () => {
             slug: 'sync',
             queue: 'syncs',
             concurrency: { key: () => 'user-42', supersedes: true },
-            handler: async () => undefined,
+            handler: () => Promise.resolve(),
           },
         ],
       },
@@ -177,7 +177,7 @@ describe('jobs.queue', () => {
 
   it('inserts through the adapter operation with the caller request', async () => {
     const { req, database, install } = await setup();
-    const insert = vi.fn(async ({ insert }) => insert());
+    const insert = vi.fn(({ insert }) => insert());
 
     (database as JobInsertDatabase)[jobInsertOperations] = { insert };
 

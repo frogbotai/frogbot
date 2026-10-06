@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { env } from '../../../../packages/frogbot/src/env/builders.js';
+import { env, type EnvBuilderDescriptor } from '../../../../packages/frogbot/src/env/builders.js';
 
 describe('env builders', () => {
   it('creates immutable descriptors', () => {
@@ -46,7 +46,9 @@ describe('env builders', () => {
   });
 
   it('parses custom values', () => {
-    const builder = env.custom((raw) => JSON.parse(raw) as { enabled: boolean });
+    const builder = env.custom(
+      (raw) => JSON.parse(raw) as { enabled: boolean },
+    ) as EnvBuilderDescriptor<{ enabled: boolean }>;
 
     expect(builder.parse('{"enabled":true}')).toEqual({
       success: true,
@@ -57,7 +59,7 @@ describe('env builders', () => {
   it('turns custom parser failures into parse failures', () => {
     const builder = env.custom(() => {
       throw new Error('invalid JSON');
-    });
+    }) as EnvBuilderDescriptor<never>;
 
     expect(builder.parse('value')).toEqual({ error: 'invalid JSON', success: false });
   });

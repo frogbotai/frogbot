@@ -1,7 +1,7 @@
-import type { Adapter, Author } from 'chat';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
+import type { Adapter, Author } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import type {
   AgentConfig,
   AgentInstance,
@@ -114,8 +114,8 @@ const createTransformed = definePiece({
       description: 'Read',
       input: empty,
       output: z.string().transform(Number).pipe(z.number()),
-      async run() {
-        return '42';
+      run() {
+        return Promise.resolve('42');
       },
     },
   ],
@@ -141,24 +141,24 @@ const createCredentialed = definePiece({
       input: valueInput,
       output: valueOutput,
       options: {
-        async id({ input, client, options, req }) {
+        id({ input, client, options, req }) {
           expectTypeOf(input).toEqualTypeOf<
             Partial<CredentialedTypes['actions']['getValue']['input']>
           >();
           expectTypeOf(client).toEqualTypeOf<TokenClient>();
           expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
           expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-          return [{ label: 'Value', value: 'id' }];
+          return Promise.resolve([{ label: 'Value', value: 'id' }]);
         },
       },
-      async run({ input, client, options, req }) {
+      run({ input, client, options, req }) {
         expectTypeOf(input).toEqualTypeOf<CredentialedTypes['actions']['getValue']['input']>();
         expectTypeOf(input.id).toEqualTypeOf<string>();
         expectTypeOf(client).toEqualTypeOf<TokenClient>();
         expectTypeOf(client.token).toEqualTypeOf<string>();
         expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-        return { value: input.id };
+        return Promise.resolve({ value: input.id });
       },
     },
   ],
@@ -176,12 +176,14 @@ expectTypeOf(undefinedAuth.getValue({ input: { id: 'id' }, req })).toEqualTypeOf
 >();
 expectTypeOf<Parameters<typeof undefinedAuth.getValue>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<Parameters<typeof undefinedAuth.client>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
-connected.getValue({ input: { id: 'id' }, req });
+expectTypeOf(connected.getValue({ input: { id: 'id' }, req })).toEqualTypeOf<
+  Promise<{ value: string }>
+>();
 expectTypeOf(connected.client({ req })).toEqualTypeOf<Promise<TokenClient>>();
 expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogBotRequest }>();
 expectTypeOf<'missing'>().not.toExtend<keyof typeof connected>();
 // @ts-expect-error req is required without factory auth
-connected.getValue({ input: { id: 'id' } });
+void connected.getValue({ input: { id: 'id' } });
 // @ts-expect-error unknown action
 connected.missing({ input: {}, req });
 
@@ -190,8 +192,8 @@ const actions = [
     slug: 'widened',
     description: 'Widened',
     input: empty,
-    async run() {
-      return null;
+    run() {
+      return Promise.resolve(null);
     },
   },
 ];
@@ -249,13 +251,13 @@ const createDefaultOptions = definePiece({
       slug: 'getRegion',
       description: 'Get region',
       input: empty,
-      async run({ input, client, options, req }) {
+      run({ input, client, options, req }) {
         expectTypeOf(input).toEqualTypeOf<DefaultOptionsTypes['actions']['getRegion']['input']>();
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<DefaultOptionsTypes['options']>();
         expectTypeOf(options.region).toEqualTypeOf<string>();
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-        return options.region;
+        return Promise.resolve(options.region);
       },
     },
   ],
@@ -279,12 +281,12 @@ const createEmail = definePiece({
   label: 'Email',
   actions: [],
   email: {
-    async send({ message, client, options, req }) {
+    send({ message, client, options, req }) {
       expectTypeOf(message.to).not.toBeNever();
       expectTypeOf(client).toEqualTypeOf<undefined>();
       expectTypeOf(options).toEqualTypeOf<PlainTypes['options']>();
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-      return null;
+      return Promise.resolve(null);
     },
   },
 } satisfies PieceDefinition<PlainTypes, undefined>);
@@ -307,11 +309,11 @@ const createChannel = definePiece({
       expectTypeOf(options).toEqualTypeOf<ChannelTypes['options']>();
       return {} as Adapter;
     },
-    async identity({ author, client, req }) {
+    identity({ author, client, req }) {
       expectTypeOf(author).toEqualTypeOf<Author>();
       expectTypeOf(client).toEqualTypeOf<TokenClient>();
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-      return null;
+      return Promise.resolve(null);
     },
   },
 } satisfies PieceDefinition<ChannelTypes, TokenClient>);
@@ -341,19 +343,20 @@ const createTrigger = definePiece({
       description: 'Created',
       input: triggerInput,
       output: triggerOutput,
-      async onEnable() {
-        return { webhookId: 'webhook' };
+      onEnable() {
+        return Promise.resolve({ webhookId: 'webhook' });
       },
-      async onDisable({ state }) {
+      onDisable({ state }) {
         expectTypeOf(state).toEqualTypeOf<TriggerState>();
+        return Promise.resolve();
       },
-      async run({ input, client, options, req, state }) {
+      run({ input, client, options, req, state }) {
         expectTypeOf(input).toEqualTypeOf<TriggerTypes['triggers']['created']['input']>();
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<TriggerTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
         expectTypeOf(state).toEqualTypeOf<TriggerState>();
-        return [{ dedupeKey: 'created', data: { id: input.project } }];
+        return Promise.resolve([{ dedupeKey: 'created', data: { id: input.project } }]);
       },
     },
   ],
@@ -439,8 +442,8 @@ const createParsedTrigger = definePiece({
       description: 'Parsed',
       input: z.object({ count: z.string().default('1').transform(Number) }),
       output: z.object({ count: z.number() }),
-      async run() {
-        return [{ dedupeKey: 'parsed', data: { count: 1 } }];
+      run() {
+        return Promise.resolve([{ dedupeKey: 'parsed', data: { count: 1 } }]);
       },
     },
   ],
@@ -475,11 +478,11 @@ const createSignIn = definePiece({
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
     scopes: [],
-    async account({ tokens, client, req }) {
+    account({ tokens, client, req }) {
       expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
       expectTypeOf(client).toEqualTypeOf<OAuthClient>();
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
-      return { id: 'id', label: 'Account', email: 'user@example.com' };
+      return Promise.resolve({ id: 'id', label: 'Account', email: 'user@example.com' });
     },
   },
   client: ({ auth }) => auth,
@@ -629,8 +632,8 @@ const invalidEmailDefinition = {
   actions: [],
   email: {
     // @ts-expect-error email callbacks receive message, client, options, and req
-    async send({ auth }: { auth: string }) {
-      return auth;
+    send({ auth }: { auth: string }) {
+      return Promise.resolve(auth);
     },
   },
 } satisfies PieceDefinition<PlainTypes, undefined>;
@@ -648,8 +651,8 @@ const invalidTriggerDefinition = {
       description: 'Created',
       input: triggerInput,
       output: triggerOutput,
-      async run() {
-        return [];
+      run() {
+        return Promise.resolve([]);
       },
     },
   ],

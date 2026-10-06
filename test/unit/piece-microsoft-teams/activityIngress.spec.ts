@@ -56,7 +56,7 @@ const activities = [
     trigger: 'dialogSubmitted',
     data: { type: 'invoke', name: 'task/submit', value: { data: { answer: 'yes' } } },
   },
-];
+] as const;
 
 const fixtures: ReturnType<typeof ingressFixture>[] = [];
 
@@ -118,7 +118,14 @@ describe.each([false, true])(
           auth: { appId: 'bot-app-id', appPassword: 'bot-password' },
         });
 
-        const fixture = ingressFixture({ instance, triggerSlugs: [trigger], conversational });
+        const fixture = ingressFixture({
+          instance,
+          triggers: [trigger].map((slug) => ({
+            trigger: instance.triggers[slug],
+            handler: vi.fn(),
+          })),
+          conversational,
+        });
 
         fixtures.push(fixture);
 

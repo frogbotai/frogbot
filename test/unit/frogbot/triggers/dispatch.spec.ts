@@ -26,28 +26,30 @@ function runtime() {
   };
   const adapter = {
     [kvAtomic]: true as const,
-    get: vi.fn(async (key: string) => get(key)),
-    has: vi.fn(async (key: string) => get(key) !== undefined),
-    set: vi.fn(async (key: string, value: unknown, { ttl = Infinity } = {}) => {
+    get: vi.fn((key: string) => Promise.resolve(get(key))),
+    has: vi.fn((key: string) => Promise.resolve(get(key) !== undefined)),
+    set: vi.fn((key: string, value: unknown, { ttl = Infinity } = {}) => {
       values.set(key, { value, expires: Date.now() + ttl });
+      return Promise.resolve();
     }),
-    setIfAbsent: vi.fn(async (key: string, value: unknown, { ttl = Infinity } = {}) => {
-      if (get(key) !== undefined) return false;
+    setIfAbsent: vi.fn((key: string, value: unknown, { ttl = Infinity } = {}) => {
+      if (get(key) !== undefined) return Promise.resolve(false);
       values.set(key, { value, expires: Date.now() + ttl });
-      return true;
+      return Promise.resolve(true);
     }),
-    extendLock: vi.fn(async ({ key, token }, ttl: number) => {
-      if (get(key) !== token) return false;
+    extendLock: vi.fn(({ key, token }, ttl: number) => {
+      if (get(key) !== token) return Promise.resolve(false);
       values.set(key, { value: token, expires: Date.now() + ttl });
-      return true;
+      return Promise.resolve(true);
     }),
-    releaseLock: vi.fn(async ({ key, token }) => {
-      if (get(key) !== token) return false;
+    releaseLock: vi.fn(({ key, token }) => {
+      if (get(key) !== token) return Promise.resolve(false);
       values.delete(key);
-      return true;
+      return Promise.resolve(true);
     }),
-    delete: vi.fn(async (key: string) => {
+    delete: vi.fn((key: string) => {
       values.delete(key);
+      return Promise.resolve();
     }),
     clear: vi.fn(),
     keys: vi.fn(),
@@ -110,9 +112,22 @@ describe('dispatchTriggerEvents', () => {
     expect(frogbot.adapter.delete).not.toHaveBeenCalled();
   });
 
-  it.each([false, true])(
-    'keeps concurrent deliveries retryable while enqueue is pending (fails: %s)',
-    async (fails) => {
+  it.each([
+    {
+      fails: false,
+      settle: (queued: PromiseWithResolvers<void>) => queued.resolve(),
+      outcome: undefined,
+      enqueues: 1,
+    },
+    {
+      fails: true,
+      settle: (queued: PromiseWithResolvers<void>) => queued.reject(new Error('queue down')),
+      outcome: new Error('queue down'),
+      enqueues: 2,
+    },
+  ])(
+    'keeps concurrent deliveries retryable while enqueue is pending (fails: $fails)',
+    async ({ settle, outcome, enqueues }) => {
       const frogbot = runtime();
       const started = Promise.withResolvers<void>();
       const queued = Promise.withResolvers<void>();
@@ -125,12 +140,10 @@ describe('dispatchTriggerEvents', () => {
       await started.promise;
       await expect(dispatch(frogbot)).rejects.toBeInstanceOf(KVLockContentionError);
       expect(frogbot.queue).toHaveBeenCalledTimes(1);
-      if (fails) queued.reject(new Error('queue down'));
-      else queued.resolve();
-      if (fails) expect(await firstResult).toEqual(new Error('queue down'));
-      else expect(await firstResult).toBeUndefined();
+      settle(queued);
+      expect(await firstResult).toEqual(outcome);
       await dispatch(frogbot);
-      expect(frogbot.queue).toHaveBeenCalledTimes(fails ? 2 : 1);
+      expect(frogbot.queue).toHaveBeenCalledTimes(enqueues);
       expect(frogbot.adapter.delete).not.toHaveBeenCalled();
     },
   );
@@ -188,8 +201,8 @@ describe('dispatchTriggerEvents', () => {
     const frogbot = runtime();
     const setIfAbsent = frogbot.kv.setIfAbsent;
     vi.spyOn(frogbot.kv, 'setIfAbsent')
-      .mockImplementationOnce(async () => {
-        throw new Error('database down');
+      .mockImplementationOnce(() => {
+        return Promise.reject(new Error('database down'));
       })
       .mockImplementation(setIfAbsent);
     await expect(dispatch(frogbot)).rejects.toThrow('database down');

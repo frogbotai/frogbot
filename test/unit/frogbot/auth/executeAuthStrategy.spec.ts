@@ -50,10 +50,11 @@ describe('executeAuthStrategy', () => {
   });
 
   it('logs a non-Error throw once and rethrows the original value', async () => {
+    const thrown: unknown = 'x';
     const args = makeArgs({
       name: 'broken',
       authenticate: () => {
-        throw 'x';
+        throw thrown;
       },
     });
 

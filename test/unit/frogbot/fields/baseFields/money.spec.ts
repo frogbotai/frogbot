@@ -173,6 +173,6 @@ describe('moneyField in the admin', () => {
     expect(clientField.admin?.custom).toEqual({
       frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } },
     });
-    expect(clientField.admin?.description).toBe('Retail price');
+    expect(clientField.admin).toMatchObject({ description: 'Retail price' });
   });
 });

@@ -46,7 +46,11 @@ function fixture(conversational = false) {
     auth: { appId: 'bot-app-id', appPassword: 'bot-password' },
   });
 
-  const result = ingressFixture({ instance, triggerSlugs: ['messageReceived'], conversational });
+  const result = ingressFixture({
+    instance,
+    triggers: [{ trigger: instance.triggers.messageReceived, handler: vi.fn() }],
+    conversational,
+  });
 
   fixtures.push(result);
 
@@ -184,7 +188,10 @@ describe('Teams adapter-verified ingress', () => {
 
   it('rejects trigger-only boot without Azure Bot credentials', async () => {
     const instance = createMicrosoftTeams({ auth: { accessToken: 'graph-only' } });
-    const result = ingressFixture({ instance, triggerSlugs: ['messageReceived'] });
+    const result = ingressFixture({
+      instance,
+      triggers: [{ trigger: instance.triggers.messageReceived, handler: vi.fn() }],
+    });
 
     fixtures.push(result);
 

@@ -13,7 +13,7 @@ export type LeaseRow = {
   processing: boolean;
   leaseOwner?: string | null;
   leaseUntil?: string | null;
-  completedAt?: string;
+  completedAt?: string | null;
 };
 
 export function matches(row: Record<string, unknown>, where: Where): boolean {
@@ -53,24 +53,28 @@ export async function setup({
   const payload = new BasePayload();
 
   const operations = {
-    update: vi.fn(async ({ data, where }: JobLeaseMutation) => {
+    update: vi.fn(({ data, where }: JobLeaseMutation) => {
       for (const row of rows) if (matches(row, where)) Object.assign(row, data);
+
+      return Promise.resolve();
     }),
   };
 
   const database = {
     name: 'mongoose',
-    create: vi.fn(async ({ data }) => ({ id: 1, ...data })),
-    updateJobs: vi.fn(async () => []),
-    find: vi.fn(async ({ where }) => ({ docs: rows.filter((row) => matches(row, where)) })),
-    deleteMany: vi.fn(async () => undefined),
+    create: vi.fn(({ data }) => Promise.resolve({ id: 1, ...data })),
+    updateJobs: vi.fn(() => Promise.resolve([])),
+    find: vi.fn(({ where }) =>
+      Promise.resolve({ docs: rows.filter((row) => matches(row, where)) }),
+    ),
+    deleteMany: vi.fn(() => Promise.resolve()),
     [jobLeaseOperations]: operations,
   } as unknown as DatabaseAdapter;
 
   payload.logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() } as unknown as Payload['logger'];
 
   const config = resolveJobsConfig({
-    tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
+    tasks: [{ slug: 'work', handler: () => ({ output: {} }) }],
     ...jobs,
   });
 

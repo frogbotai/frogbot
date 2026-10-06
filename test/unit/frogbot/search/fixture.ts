@@ -111,14 +111,13 @@ export function searchFixture({
 
   const db = {} as Payload['db'];
 
-  const find = vi.fn(async (args: Record<string, unknown>) => ({
-    docs: collectionDocs[args.collection as string],
-  }));
+  const find = vi.fn((args: Record<string, unknown>) =>
+    Promise.resolve({ docs: collectionDocs[args.collection as string] }),
+  );
 
-  const search = vi.fn(async ({ collection: slug }: AdapterSearchArgs) => ({
-    ranking: rowRanking,
-    rows: collectionRows[slug],
-  }));
+  const search = vi.fn(({ collection: slug }: AdapterSearchArgs) =>
+    Promise.resolve({ ranking: rowRanking, rows: collectionRows[slug] }),
+  );
 
   const readiness = vi.fn();
 
@@ -139,7 +138,7 @@ export function searchFixture({
     find,
   } as unknown as Payload;
 
-  const createRequest = vi.fn(async () => req);
+  const createRequest = vi.fn(() => Promise.resolve(req));
 
   const frogbot = {
     collections: {

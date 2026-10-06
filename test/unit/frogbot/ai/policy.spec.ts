@@ -61,7 +61,7 @@ describe('AI user policy', () => {
     expect(fields).toHaveLength(5);
   });
 
-  it('keeps only the spend integrity lock and allows overriding it', async () => {
+  it('keeps only the spend integrity lock and allows overriding it', () => {
     const base = createPolicyFields([]);
     for (const field of base.filter(
       (item) => 'name' in item && item.name !== 'spendThisPeriodUSD',
@@ -143,7 +143,7 @@ describe('AI user policy', () => {
     const req = {
       user: { id: 'user-1' },
       frogbot: {
-        findByID: vi.fn(async () => ({ id: 'user-1', spendThisPeriodUSD: spend })),
+        findByID: vi.fn(() => Promise.resolve({ id: 'user-1', spendThisPeriodUSD: spend })),
         update: vi.fn(async ({ data }) => {
           await Promise.resolve();
           spend = data.spendThisPeriodUSD;

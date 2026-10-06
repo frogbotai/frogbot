@@ -74,23 +74,35 @@ export async function nativeRunner({
     return structuredClone(row);
   };
 
-  database.beginTransaction = vi.fn(async () => null);
-  database.commitTransaction = vi.fn(async () => undefined);
-  database.rollbackTransaction = vi.fn(async () => undefined);
-  database.find = vi.fn(async ({ where }) => ({
-    docs: structuredClone(rows.filter((row) => !where || matches(row, where))),
-  })) as typeof database.find;
-  database.findOne = vi.fn(async ({ where }) =>
-    structuredClone(rows.find((row) => !where || matches(row, where)) ?? null),
+  database.beginTransaction = vi.fn(() => Promise.resolve(null));
+  database.commitTransaction = vi.fn(() => Promise.resolve());
+  database.rollbackTransaction = vi.fn(() => Promise.resolve());
+  database.find = vi.fn(({ where }) => {
+    const docs = structuredClone(rows.filter((row) => !where || matches(row, where)));
+
+    return Promise.resolve({
+      docs,
+      hasNextPage: false,
+      hasPrevPage: false,
+      limit: docs.length,
+      pagingCounter: 1,
+      totalDocs: docs.length,
+      totalPages: 1,
+    });
+  }) as typeof database.find;
+  database.findOne = vi.fn(({ where }) =>
+    Promise.resolve(structuredClone(rows.find((row) => !where || matches(row, where)) ?? null)),
   ) as typeof database.findOne;
   database.packageName = '@frogbotai/db-mongodb';
   (database as JobLogDatabase)[jobLogOperations] = {
-    prune: vi.fn(async ({ id, keep }) => {
+    prune: vi.fn(({ id, keep }) => {
       const row = rows.find((candidate) => candidate.id === id)!;
 
-      if (row.completedAt || row.hasError) return;
+      if (!row.completedAt && !row.hasError) {
+        row.log = (row.log ?? []).filter((entry) => keep.includes(entry.id));
+      }
 
-      row.log = (row.log ?? []).filter((entry) => keep.includes(entry.id));
+      return Promise.resolve();
     }),
   };
 

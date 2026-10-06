@@ -11,6 +11,7 @@ import {
 
 import { buildManifestEndpoint } from '../../../packages/frogbot/src/chat/manifest.js';
 import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
+import { createCredentialEncryption } from '../../../packages/frogbot/src/connections/encryption.js';
 import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import { definePiece } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
@@ -110,6 +111,14 @@ function makeConfig(): FrogBotSanitizedConfig {
     ],
     secret: 'test-secret-min-32-chars-long-for-jwt',
     chat: { enabled: false },
+    connections: {
+      enabled: false,
+      encryption: createCredentialEncryption({ secret: 'test-secret-min-32-chars-long-for-jwt' }),
+      entries: {},
+    },
+    pieces: { instances: [] },
+    roles: [],
+    settings: [],
     _internal: {
       payloadConfig: Promise.resolve({} as any),
       noEmail: true,
@@ -135,8 +144,10 @@ function withAI(config: FrogBotSanitizedConfig): FrogBotSanitizedConfig {
       embed: ({ req }) => !!req.user,
       transcribe: ({ req }) => !!req.user,
       rerank: ({ req }) => !!req.user,
+      evaluate: ({ req }) => !!req.user,
     },
     telemetry: { enabled: false },
+    usage: { slug: 'usage-logs' },
     _internal: { deploymentId: 'test' },
   };
   return config;
@@ -284,7 +295,12 @@ describe('FrogBot class', () => {
       expect(frogbot.agents.assistant).not.toBe(firstAgent);
       expect(frogbot.agents.assistant.config.instructions).toBe('second');
       await expect(
-        Promise.resolve(frogbot.agents.assistant.config.access?.({ req: {} as never })),
+        Promise.resolve(
+          frogbot.agents.assistant.config.access?.({
+            req: {} as never,
+            agent: frogbot.agents.assistant,
+          }),
+        ),
       ).resolves.toBe(false);
       expect(frogbot.gateway).not.toBe(firstGateway);
       expect(frogbot.connections).not.toBe(firstConnections);
@@ -491,7 +507,7 @@ describe('FrogBot class', () => {
         user: { id: 'user-1' },
         permissions: {},
       });
-      const handler = vi.fn((request: Request) =>
+      const handler = vi.fn((request: Request, _opts?: { context?: Record<string, unknown> }) =>
         Response.json({ path: new URL(request.url).pathname }),
       );
       frogbot.gateway!.handler = handler;

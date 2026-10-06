@@ -23,6 +23,21 @@ import {
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
+const OPENAI_TEST = 'openai/test' as AgentModelId;
+const OPENAI_OTHER = 'openai/other' as AgentModelId;
+const OPENAI_UNKNOWN = 'openai/unknown' as AgentModelId;
+const SMART = 'smart' as AgentModelId;
+const FAST = 'fast' as AgentModelId;
+const LOCAL_THINKER = 'local/thinker' as AgentModelId;
+const LOCAL_PLAIN = 'local/plain' as AgentModelId;
+const LOCAL_WRITER = 'local/writer' as AgentModelId;
+const LOCAL_EMBEDDING = 'local/embedding' as AgentModelId;
+const MY_LOCAL_THINKER = 'my-local/thinker' as AgentModelId;
+const MY_LOCAL_PLAIN = 'my-local/plain' as AgentModelId;
+const MY_LOCAL_VIEWER = 'my-local/viewer' as AgentModelId;
+const MY_LOCAL_BLANK = 'my-local/blank' as AgentModelId;
+const BEDROCK_CLAUDE_3_HAIKU = 'bedrock/anthropic.claude-3-haiku-20240307-v1:0' as AgentModelId;
+
 const config = {
   providers: {
     openai: true,
@@ -50,7 +65,7 @@ const config = {
 
 function makeAgent({
   slug = 'support',
-  model = 'openai/test',
+  model = OPENAI_TEST,
   access,
   options = [],
 }: {
@@ -71,6 +86,7 @@ function makeAgent({
     aiAgent: { tools: {} } as unknown as AgentInstance['aiAgent'],
     generate: vi.fn() as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
+    streamMessage: vi.fn() as AgentInstance['streamMessage'],
   };
 }
 
@@ -136,41 +152,37 @@ async function sanitizeAgent(
 
 describe('agent service', () => {
   it.each([
-    [
-      'wildcard',
-      { default: 'fast', options: '*' },
-      ['fast', 'local/plain', 'local/thinker', 'local/writer'],
-    ],
+    ['wildcard', { default: FAST, options: '*' }, [FAST, LOCAL_PLAIN, LOCAL_THINKER, LOCAL_WRITER]],
     [
       'array',
-      { default: 'fast', options: ['local/thinker', 'fast', 'local/thinker'] },
-      ['fast', 'local/thinker'],
+      { default: FAST, options: [LOCAL_THINKER, FAST, LOCAL_THINKER] },
+      [FAST, LOCAL_THINKER],
     ],
   ] as const)(
     'preserves router and target manifest choices for sanitized %s options',
     async (_, model, expected) => {
       const { agent, config: ai } = await sanitizeAgent(model, {
-        fast: { model: 'local/thinker' },
+        fast: { model: LOCAL_THINKER },
       });
       const req = makeRequest({ agents: { support: agent }, ai });
 
       const manifest = await getAgentManifest({ req });
 
       expect(manifest.agents[0].models).toEqual(expected);
-      expect(manifest.agents[0].defaultModel).toBe('fast');
+      expect(manifest.agents[0].defaultModel).toBe(FAST);
 
       expected.forEach((id) => {
         expect(
           assertAgentSelection({ agent, config: ai, selection: { model: id }, user: req.user }),
-        ).toEqual({ model: id === 'fast' ? 'local/thinker' : id });
+        ).toEqual({ model: id === FAST ? 'local/thinker' : id });
       });
     },
   );
 
   it('advertises selectable reasoning variants for a sanitized router and its target', async () => {
     const { agent, config: ai } = await sanitizeAgent(
-      { default: 'fast', options: '*' },
-      { fast: { model: 'local/thinker' } },
+      { default: FAST, options: '*' },
+      { fast: { model: LOCAL_THINKER } },
     );
     const req = makeRequest({ agents: { support: agent }, ai });
 
@@ -187,8 +199,8 @@ describe('agent service', () => {
       ],
     });
 
-    Object.entries(manifest.agents[0].reasoning!).forEach(([model, variants]) => {
-      variants.forEach(({ key }) => {
+    [FAST, LOCAL_THINKER].forEach((model) => {
+      manifest.agents[0].reasoning![model]!.forEach(({ key }) => {
         expect(
           assertAgentSelection({
             agent,
@@ -196,42 +208,42 @@ describe('agent service', () => {
             selection: { model, reasoning: key },
             user: req.user,
           }),
-        ).toMatchObject({ model: 'local/thinker', variant: { key } });
+        ).toMatchObject({ model: LOCAL_THINKER, variant: { key } });
       });
     });
   });
 
   it('resolves a sanitized router default when no model is selected', async () => {
     const { agent, config: ai } = await sanitizeAgent(
-      { default: 'fast', options: ['local/thinker'] },
-      { fast: { model: 'local/thinker' } },
+      { default: FAST, options: [LOCAL_THINKER] },
+      { fast: { model: LOCAL_THINKER } },
     );
 
     const selection = assertAgentSelection({ agent, config: ai, selection: {}, user: null });
 
-    expect(selection).toEqual({ model: 'local/thinker' });
+    expect(selection).toEqual({ model: LOCAL_THINKER });
   });
 
   it('filters an expanded wildcard by the user selected model access', async () => {
-    const { agent, config: ai } = await sanitizeAgent({ default: 'local/thinker', options: '*' });
+    const { agent, config: ai } = await sanitizeAgent({ default: LOCAL_THINKER, options: '*' });
     const req = makeRequest({
       agents: { support: agent },
       ai,
-      user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer', 'local/plain'] },
+      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_WRITER, LOCAL_PLAIN] },
     });
 
     const manifest = await getAgentManifest({ req });
     const selection = assertAgentSelection({ agent, config: ai, selection: {}, user: req.user });
 
-    expect(agent.config.model.options).toEqual(['local/thinker', 'local/plain', 'local/writer']);
-    expect(manifest.agents[0].models).toEqual(['local/plain', 'local/writer']);
-    expect(manifest.agents[0].defaultModel).toBe('local/plain');
-    expect(selection).toEqual({ model: 'local/plain' });
+    expect(agent.config.model.options).toEqual([LOCAL_THINKER, LOCAL_PLAIN, LOCAL_WRITER]);
+    expect(manifest.agents[0].models).toEqual([LOCAL_PLAIN, LOCAL_WRITER]);
+    expect(manifest.agents[0].defaultModel).toBe(LOCAL_PLAIN);
+    expect(selection).toEqual({ model: LOCAL_PLAIN });
     expect(() =>
       assertAgentSelection({
         agent,
         config: ai,
-        selection: { model: 'local/thinker' },
+        selection: { model: LOCAL_THINKER },
         user: req.user,
       }),
     ).toThrow(expect.objectContaining({ status: 403 }));
@@ -240,24 +252,24 @@ describe('agent service', () => {
   it.each([
     [
       'wildcard',
-      { default: 'local/thinker', options: '*' },
-      ['local/thinker', 'local/plain', 'local/writer'],
+      { default: LOCAL_THINKER, options: '*' },
+      [LOCAL_THINKER, LOCAL_PLAIN, LOCAL_WRITER],
     ],
     [
       'array',
-      { default: 'local/thinker', options: ['local/plain', 'local/thinker', 'local/plain'] },
-      ['local/thinker', 'local/plain'],
+      { default: LOCAL_THINKER, options: [LOCAL_PLAIN, LOCAL_THINKER, LOCAL_PLAIN] },
+      [LOCAL_THINKER, LOCAL_PLAIN],
     ],
   ] as const)(
     'accepts exactly the manifest models for sanitized %s options',
     async (_, model, expected) => {
       const { agent, config: ai } = await sanitizeAgent(model);
       const req = makeRequest({ agents: { support: agent }, ai });
-      const candidates = [
-        'local/thinker',
-        'local/plain',
-        'local/writer',
-        'local/embedding',
+      const candidates: AgentModelId[] = [
+        LOCAL_THINKER,
+        LOCAL_PLAIN,
+        LOCAL_WRITER,
+        LOCAL_EMBEDDING,
         'openai/gpt-4o',
       ];
 
@@ -283,21 +295,21 @@ describe('agent service', () => {
   );
 
   it('offers only a sanitized string model and rejects another configured chat model', async () => {
-    const { agent, config: ai } = await sanitizeAgent('local/thinker');
+    const { agent, config: ai } = await sanitizeAgent(LOCAL_THINKER);
     const req = makeRequest({ agents: { support: agent }, ai });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0].models).toEqual(['local/thinker']);
-    expect(manifest.agents[0].defaultModel).toBe('local/thinker');
+    expect(manifest.agents[0].models).toEqual([LOCAL_THINKER]);
+    expect(manifest.agents[0].defaultModel).toBe(LOCAL_THINKER);
     expect(assertAgentSelection({ agent, config: ai, selection: {}, user: req.user })).toEqual({
-      model: 'local/thinker',
+      model: LOCAL_THINKER,
     });
     expect(() =>
       assertAgentSelection({
         agent,
         config: ai,
-        selection: { model: 'local/plain' },
+        selection: { model: LOCAL_PLAIN },
         user: req.user,
       }),
     ).toThrow(expect.objectContaining({ status: 403 }));
@@ -332,7 +344,7 @@ describe('agent service', () => {
       agents: {
         support: makeAgent({
           model: 'bedrock/us.amazon.nova-micro-v1:0',
-          options: ['openai/other', 'bedrock/us.amazon.nova-micro-v1:0'],
+          options: [OPENAI_OTHER, 'bedrock/us.amazon.nova-micro-v1:0'],
         }),
         denied: makeAgent({ slug: 'denied', access: () => false }),
       },
@@ -346,7 +358,7 @@ describe('agent service', () => {
           label: 'support',
           source: 'config',
           defaultModel: 'bedrock/us.amazon.nova-micro-v1:0',
-          models: ['bedrock/us.amazon.nova-micro-v1:0', 'openai/other'],
+          models: ['bedrock/us.amazon.nova-micro-v1:0', OPENAI_OTHER],
           names: { 'bedrock/us.amazon.nova-micro-v1:0': 'Nova Micro (US)' },
           inputs: { 'bedrock/us.amazon.nova-micro-v1:0': ['text'] },
         },
@@ -356,7 +368,7 @@ describe('agent service', () => {
 
   it('advertises the configured name of a custom model', async () => {
     const req = makeRequest({
-      agents: { support: makeAgent({ model: 'my-local/thinker', options: ['my-local/plain'] }) },
+      agents: { support: makeAgent({ model: MY_LOCAL_THINKER, options: [MY_LOCAL_PLAIN] }) },
     });
 
     const manifest = await getAgentManifest({ req });
@@ -364,7 +376,7 @@ describe('agent service', () => {
     expect(manifest.agents[0].names).toEqual({ 'my-local/thinker': 'Local Thinker' });
   });
 
-  it.each(['bedrock/anthropic.claude-3-haiku-20240307-v1:0', 'my-local/plain', 'smart'])(
+  it.each([BEDROCK_CLAUDE_3_HAIKU, MY_LOCAL_PLAIN, SMART])(
     'omits names when %s has no display name',
     async (model) => {
       const req = makeRequest({ agents: { support: makeAgent({ model }) } });
@@ -387,7 +399,7 @@ describe('agent service', () => {
       },
     } as unknown as SanitizedAIConfig;
 
-    const req = makeRequest({ agents: { support: makeAgent({ model: 'my-local/blank' }) }, ai });
+    const req = makeRequest({ agents: { support: makeAgent({ model: MY_LOCAL_BLANK }) }, ai });
 
     const manifest = await getAgentManifest({ req });
 
@@ -399,43 +411,43 @@ describe('agent service', () => {
       agents: {
         support: makeAgent({
           model: 'bedrock/us.amazon.nova-micro-v1:0',
-          options: ['my-local/thinker'],
+          options: [MY_LOCAL_THINKER],
         }),
       },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/thinker'] },
+      user: { id: 'user-1', modelAccess: 'selected', models: [MY_LOCAL_THINKER] },
     });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0].models).toEqual(['my-local/thinker']);
+    expect(manifest.agents[0].models).toEqual([MY_LOCAL_THINKER]);
     expect(manifest.agents[0].names).toEqual({ 'my-local/thinker': 'Local Thinker' });
   });
 
   it('filters manifest models in agent order rather than allowlist order', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ options: ['openai/other', 'my-local/plain'] }),
+        support: makeAgent({ options: [OPENAI_OTHER, MY_LOCAL_PLAIN] }),
       },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/plain', 'openai/test'] },
+      user: { id: 'user-1', modelAccess: 'selected', models: [MY_LOCAL_PLAIN, OPENAI_TEST] },
     });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0].models).toEqual(['openai/test', 'my-local/plain']);
-    expect(manifest.agents[0].defaultModel).toBe('openai/test');
+    expect(manifest.agents[0].models).toEqual([OPENAI_TEST, MY_LOCAL_PLAIN]);
+    expect(manifest.agents[0].defaultModel).toBe(OPENAI_TEST);
   });
 
   it('falls back to the first allowed model when the default is blocked', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ options: ['openai/other', 'my-local/plain'] }),
+        support: makeAgent({ options: [OPENAI_OTHER, MY_LOCAL_PLAIN] }),
       },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/plain', 'openai/other'] },
+      user: { id: 'user-1', modelAccess: 'selected', models: [MY_LOCAL_PLAIN, OPENAI_OTHER] },
     });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0].defaultModel).toBe('openai/other');
+    expect(manifest.agents[0].defaultModel).toBe(OPENAI_OTHER);
   });
 
   it('omits agents with no allowed models', async () => {
@@ -449,22 +461,22 @@ describe('agent service', () => {
 
   it('drops reasoning for blocked models', async () => {
     const req = makeRequest({
-      agents: { support: makeAgent({ options: ['smart', 'my-local/thinker'] }) },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/thinker'] },
+      agents: { support: makeAgent({ options: [SMART, MY_LOCAL_THINKER] }) },
+      user: { id: 'user-1', modelAccess: 'selected', models: [MY_LOCAL_THINKER] },
     });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(Object.keys(manifest.agents[0].reasoning ?? {})).toEqual(['my-local/thinker']);
+    expect(Object.keys(manifest.agents[0].reasoning ?? {})).toEqual([MY_LOCAL_THINKER]);
   });
 
   it.each([
-    { id: 'user-1', modelAccess: 'all' as const, models: ['openai/other'] },
+    { id: 'user-1', modelAccess: 'all' as const, models: [OPENAI_OTHER] },
     { id: 'user-1' },
     null,
   ])('preserves the unrestricted manifest for user %o', async (user) => {
     const req = makeRequest({
-      agents: { support: makeAgent({ options: ['openai/other'], access: () => true }) },
+      agents: { support: makeAgent({ options: [OPENAI_OTHER], access: () => true }) },
       user,
     });
 
@@ -474,40 +486,40 @@ describe('agent service', () => {
       slug: 'support',
       label: 'support',
       source: 'config',
-      defaultModel: 'openai/test',
-      models: ['openai/test', 'openai/other'],
+      defaultModel: OPENAI_TEST,
+      models: [OPENAI_TEST, OPENAI_OTHER],
     });
   });
 
   it('applies legacy model lists without a modelAccess field', async () => {
     const req = makeRequest({
-      agents: { support: makeAgent({ options: ['openai/other'] }) },
-      user: { id: 'user-1', models: ['openai/other'] },
+      agents: { support: makeAgent({ options: [OPENAI_OTHER] }) },
+      user: { id: 'user-1', models: [OPENAI_OTHER] },
     });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(manifest.agents[0].models).toEqual(['openai/other']);
+    expect(manifest.agents[0].models).toEqual([OPENAI_OTHER]);
   });
 
   it('accepts an offered model allowed for the user', () => {
-    const agent = makeAgent({ options: ['openai/other'] });
-    const user = makeRequest({ agents: {}, user: { id: 'user-1', models: ['openai/other'] } }).user;
+    const agent = makeAgent({ options: [OPENAI_OTHER] });
+    const user = makeRequest({ agents: {}, user: { id: 'user-1', models: [OPENAI_OTHER] } }).user;
 
     expect(
-      assertAgentSelection({ agent, config, selection: { model: 'openai/other' }, user }),
-    ).toEqual({ model: 'openai/other' });
+      assertAgentSelection({ agent, config, selection: { model: OPENAI_OTHER }, user }),
+    ).toEqual({ model: OPENAI_OTHER });
   });
 
   it('rejects an offered but user-blocked model before checking reasoning', () => {
-    const agent = makeAgent({ options: ['my-local/thinker'] });
-    const user = makeRequest({ agents: {}, user: { id: 'user-1', models: ['openai/test'] } }).user;
+    const agent = makeAgent({ options: [MY_LOCAL_THINKER] });
+    const user = makeRequest({ agents: {}, user: { id: 'user-1', models: [OPENAI_TEST] } }).user;
 
     expect(() =>
       assertAgentSelection({
         agent,
         config,
-        selection: { model: 'my-local/thinker', reasoning: 'invalid' },
+        selection: { model: MY_LOCAL_THINKER, reasoning: 'invalid' },
         user,
       }),
     ).toThrow(
@@ -526,7 +538,7 @@ describe('agent service', () => {
     }).user;
 
     expect(() =>
-      assertAgentSelection({ agent, config, selection: { model: 'my-local/thinker' }, user }),
+      assertAgentSelection({ agent, config, selection: { model: MY_LOCAL_THINKER }, user }),
     ).toThrow(
       expect.objectContaining({
         message: "Model 'my-local/thinker' is not allowed for agent 'support'",
@@ -536,15 +548,15 @@ describe('agent service', () => {
   });
 
   it('resolves the user fallback and its reasoning when no model is named', () => {
-    const agent = makeAgent({ options: ['my-local/thinker'] });
+    const agent = makeAgent({ options: [MY_LOCAL_THINKER] });
     const user = makeRequest({
       agents: {},
-      user: { id: 'user-1', models: ['my-local/thinker'] },
+      user: { id: 'user-1', models: [MY_LOCAL_THINKER] },
     }).user;
 
     expect(
       assertAgentSelection({ agent, config, selection: { reasoning: 'low' }, user }),
-    ).toMatchObject({ model: 'my-local/thinker', variant: { key: 'low' } });
+    ).toMatchObject({ model: MY_LOCAL_THINKER, variant: { key: 'low' } });
   });
 
   it('rejects an unnamed model when none are allowed for the user', () => {
@@ -563,10 +575,10 @@ describe('agent service', () => {
   });
 
   it.each([
-    ['smart', 'openai/gpt-5'],
-    ['openai/gpt-5', 'smart'],
+    [SMART, 'openai/gpt-5'],
+    ['openai/gpt-5', SMART],
   ] as const)('does not unlock %s by allowlisting %s', (model, allowed) => {
-    const agent = makeAgent({ options: ['smart', 'openai/gpt-5'] });
+    const agent = makeAgent({ options: [SMART, 'openai/gpt-5'] });
     const user = makeRequest({ agents: {}, user: { id: 'user-1', models: [allowed] } }).user;
 
     expect(() => assertAgentSelection({ agent, config, selection: { model }, user })).toThrow(
@@ -586,17 +598,12 @@ describe('agent service', () => {
     const piece = definePiece({
       slug: 'google-sheets',
       label: 'Sheets',
-      actions: ['read', 'write'].map((slug) => ({
-        slug,
-        description: slug,
-        input: z.object({}),
-        async run() {},
-      })),
+      actions: [
+        { slug: 'read', description: 'read', input: z.object({}), run: () => Promise.resolve() },
+        { slug: 'write', description: 'write', input: z.object({}), run: () => Promise.resolve() },
+      ],
     })({ slug: 'work-sheets' });
-    agent.config.tools = [
-      ...pieceInstanceTools(piece)!.map((tool) => ({ ...tool })),
-      ...agent.config.tools,
-    ];
+    agent.config.tools = pieceInstanceTools(piece)!.map((tool) => ({ ...tool }));
     const req = makeRequest({ agents: { support: agent }, authorizations });
 
     await expect(getAgentAuthorizations({ req, agent })).resolves.toEqual([
@@ -611,18 +618,18 @@ describe('agent service', () => {
   it('advertises the reasoning options of routers and custom models, leaving out the rest', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ options: ['smart', 'my-local/thinker', 'my-local/plain'] }),
+        support: makeAgent({ options: [SMART, MY_LOCAL_THINKER, MY_LOCAL_PLAIN] }),
       },
     });
 
     const manifest = await getAgentManifest({ req });
 
-    expect(Object.keys(manifest.agents[0].reasoning ?? {})).toEqual(['smart', 'my-local/thinker']);
-    expect(manifest.agents[0].reasoning?.['my-local/thinker']).toEqual([
+    expect(Object.keys(manifest.agents[0].reasoning ?? {})).toEqual([SMART, MY_LOCAL_THINKER]);
+    expect(manifest.agents[0].reasoning?.[MY_LOCAL_THINKER]).toEqual([
       { key: 'low', label: 'Low' },
       { key: 'high', label: 'High' },
     ]);
-    expect(manifest.agents[0].reasoning?.smart).toEqual(
+    expect(manifest.agents[0].reasoning?.[SMART]).toEqual(
       expect.arrayContaining([{ key: 'high', label: 'High' }]),
     );
   });
@@ -632,7 +639,7 @@ describe('agent service', () => {
       agents: {
         support: makeAgent({
           model: 'openai/gpt-5',
-          options: ['smart', 'my-local/viewer', 'my-local/plain', 'openai/unknown'],
+          options: [SMART, MY_LOCAL_VIEWER, MY_LOCAL_PLAIN, OPENAI_UNKNOWN],
         }),
       },
     });
@@ -648,7 +655,7 @@ describe('agent service', () => {
 
   it('omits inputs when no offered model has known types', async () => {
     const req = makeRequest({
-      agents: { support: makeAgent({ model: 'my-local/plain', options: ['openai/unknown'] }) },
+      agents: { support: makeAgent({ model: MY_LOCAL_PLAIN, options: [OPENAI_UNKNOWN] }) },
     });
 
     const manifest = await getAgentManifest({ req });
@@ -659,13 +666,13 @@ describe('agent service', () => {
   it('resolves the agent default model without reasoning when nothing is selected', () => {
     expect(assertAgentSelection({ agent: makeAgent(), config, selection: {}, user: null })).toEqual(
       {
-        model: 'openai/test',
+        model: OPENAI_TEST,
       },
     );
   });
 
-  it.each(['openai/test', 'openai/other'] as const)('resolves the allowed model %s', (model) => {
-    const agent = makeAgent({ options: ['openai/other'] });
+  it.each([OPENAI_TEST, OPENAI_OTHER] as const)('resolves the allowed model %s', (model) => {
+    const agent = makeAgent({ options: [OPENAI_OTHER] });
 
     expect(assertAgentSelection({ agent, config, selection: { model }, user: null })).toEqual({
       model,
@@ -673,12 +680,12 @@ describe('agent service', () => {
   });
 
   it('resolves a router to its model and the model reasoning variant', () => {
-    const agent = makeAgent({ options: ['smart', 'openai/gpt-5'] });
+    const agent = makeAgent({ options: [SMART, 'openai/gpt-5'] });
 
     const router = assertAgentSelection({
       agent,
       config,
-      selection: { model: 'smart', reasoning: 'high' },
+      selection: { model: SMART, reasoning: 'high' },
       user: null,
     });
 
@@ -697,17 +704,17 @@ describe('agent service', () => {
   });
 
   it('sends a custom model variant under the camel-cased provider key', () => {
-    const agent = makeAgent({ options: ['my-local/thinker'] });
+    const agent = makeAgent({ options: [MY_LOCAL_THINKER] });
 
     expect(
       assertAgentSelection({
         agent,
         config,
-        selection: { model: 'my-local/thinker', reasoning: 'low' },
+        selection: { model: MY_LOCAL_THINKER, reasoning: 'low' },
         user: null,
       }),
     ).toEqual({
-      model: 'my-local/thinker',
+      model: MY_LOCAL_THINKER,
       variant: {
         key: 'low',
         label: 'Low',
@@ -717,7 +724,7 @@ describe('agent service', () => {
   });
 
   it('checks a reasoning option against the agent default model when no model is selected', () => {
-    const agent = makeAgent({ model: 'my-local/thinker', options: ['openai/gpt-5'] });
+    const agent = makeAgent({ model: MY_LOCAL_THINKER, options: ['openai/gpt-5'] });
 
     expect(() =>
       assertAgentSelection({ agent, config, selection: { reasoning: 'medium' }, user: null }),
@@ -730,13 +737,13 @@ describe('agent service', () => {
   });
 
   it('rejects a reasoning option for a model without reasoning options with 400', () => {
-    const agent = makeAgent({ options: ['my-local/plain'] });
+    const agent = makeAgent({ options: [MY_LOCAL_PLAIN] });
 
     expect(() =>
       assertAgentSelection({
         agent,
         config,
-        selection: { model: 'my-local/plain', reasoning: 'high' },
+        selection: { model: MY_LOCAL_PLAIN, reasoning: 'high' },
         user: null,
       }),
     ).toThrow(
@@ -748,13 +755,13 @@ describe('agent service', () => {
   });
 
   it('rejects a model outside the agent options with 403 before checking reasoning', () => {
-    const agent = makeAgent({ options: ['openai/other'] });
+    const agent = makeAgent({ options: [OPENAI_OTHER] });
 
     expect(() =>
       assertAgentSelection({
         agent,
         config,
-        selection: { model: 'my-local/thinker', reasoning: 'high' },
+        selection: { model: MY_LOCAL_THINKER, reasoning: 'high' },
         user: null,
       }),
     ).toThrow(
@@ -782,7 +789,7 @@ describe('agent service', () => {
     const agent = makeAgent();
     const req = makeRequest({
       agents: { support: agent },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['openai/other'] },
+      user: { id: 'user-1', modelAccess: 'selected', models: [OPENAI_OTHER] },
     });
 
     await expect(canUseAgent({ req, agent })).resolves.toEqual({
@@ -792,10 +799,10 @@ describe('agent service', () => {
   });
 
   it('allows agent use when only a fallback model is usable', async () => {
-    const agent = makeAgent({ options: ['openai/other'] });
+    const agent = makeAgent({ options: [OPENAI_OTHER] });
     const req = makeRequest({
       agents: { support: agent },
-      user: { id: 'user-1', modelAccess: 'selected', models: ['openai/other'] },
+      user: { id: 'user-1', modelAccess: 'selected', models: [OPENAI_OTHER] },
     });
 
     await expect(canUseAgent({ req, agent })).resolves.toEqual({ allowed: true });

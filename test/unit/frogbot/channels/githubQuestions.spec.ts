@@ -134,7 +134,7 @@ async function asked({
       ...githubApp,
       apiUrl: api.url,
       botUserId: 99,
-      logger: silent as never,
+      logger: silent,
       userName: 'frogbot',
       webhookSecret: githubWebhookSecret,
     }),
@@ -179,7 +179,13 @@ async function say({
 function record(fixture: Fixture, toolCallId = 'call-1') {
   return [...fixture.values].find(([key]) =>
     key.endsWith(`:questions:call:chat-1:${toolCallId}`),
-  )?.[1] as { messages: unknown[]; revision: number; state?: unknown; settled?: unknown };
+  )?.[1] as {
+    messages: unknown[];
+    revision: number;
+    state?: unknown;
+    settled?: unknown;
+    pending?: unknown;
+  };
 }
 
 function since(before: number) {
@@ -218,14 +224,14 @@ describe('GitHub native questions through the channel host', () => {
     assertGithubTraffic({ api });
   });
 
-  it.each([
+  it.each<[string, Location]>([
     ['an issue', issue],
-    ['a pull request conversation', { kind: 'pull', issue: 7 } as Location],
-    ['a review comment thread', { kind: 'review', root: 5_000 } as Location],
+    ['a pull request conversation', { kind: 'pull', issue: 7 }],
+    ['a review comment thread', { kind: 'review', root: 5_000 }],
   ])('offers the question tool and posts the question comment in %s', async (_, location) => {
     const { fixture, posted, question: comment } = await asked({ location });
 
-    expect(fixture.streamMessage.mock.calls[0]![0].clientTools).toEqual({ kinds: ['question'] });
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
     expect(posted.map(({ body }) => body)).toEqual([
       'Hello back',
       expect.stringContaining('### Color'),
@@ -245,7 +251,7 @@ describe('GitHub native questions through the channel host', () => {
     await say({ fixture, body: '/answer 2' });
 
     expect(settleClientToolCall).toHaveBeenCalledOnce();
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: ['Blue @team'] }] } },
       actor: { channel: { piece: 'github', account: 'github', id: '43', username: 'hubot' } },
     });
@@ -256,7 +262,7 @@ describe('GitHub native questions through the channel host', () => {
         body: { body: expect.stringContaining('✅ **Blue @\u200bteam**') },
       },
     ]);
-    expect(api.edits(comment.id)[0]!.body).toContain('<sub>Answered by `@hubot`</sub>');
+    expect(api.edits(comment.id)[0].body).toContain('<sub>Answered by `@hubot`</sub>');
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
     expect(fixture.inputs.at(-1)).toMatchObject({ kind: 'continue', responder: { userId: '43' } });
   });
@@ -267,7 +273,7 @@ describe('GitHub native questions through the channel host', () => {
 
     await say({ fixture, body: '/answer "Teal"', location });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: [], custom: 'Teal' }] },
     });
     expect(api.edits(comment.id)).toEqual([
@@ -285,7 +291,7 @@ describe('GitHub native questions through the channel host', () => {
 
     expect(settleClientToolCall).not.toHaveBeenCalled();
     expect(second.body).toContain('### Size · Question 2 of 2');
-    expect(api.edits(first.id)[0]!.body).toContain('Answered by `@octocat`');
+    expect(api.edits(first.id)[0].body).toContain('Answered by `@octocat`');
     expect(record(fixture)).toMatchObject({
       messages: [
         { id: first.id, question: 0 },
@@ -297,7 +303,7 @@ describe('GitHub native questions through the channel host', () => {
 
     await say({ fixture, body: '/answer 2, 1' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: {
         answers: [
           { header: 'Color', selected: ['Blue'] },
@@ -357,7 +363,7 @@ describe('GitHub native questions through the channel host', () => {
 
     await say({ fixture, body: '/answer 1' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: {
         answers: [
           { header: 'Color', selected: ['Red'] },
@@ -390,8 +396,8 @@ describe('GitHub native questions through the channel host', () => {
 
     await say({ fixture, body: '/dismiss' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
-    expect(api.edits(comment.id)[0]!.body).toContain('<sub>Dismissed by `@hubot`</sub>');
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
+    expect(api.edits(comment.id)[0].body).toContain('<sub>Dismissed by `@hubot`</sub>');
     expect(fixture.inputs.slice(jobs + 1)).toEqual([]);
   });
 

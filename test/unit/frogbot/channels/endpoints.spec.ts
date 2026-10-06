@@ -35,22 +35,14 @@ describe('channel gateway cron endpoint', () => {
   });
 
   it.each([
-    [undefined, 401],
-    ['wrong', 401],
-    ['cron-secret', 200],
-  ])('authenticates bearer requests (%s)', async (secret, status) => {
+    [undefined, 401, []],
+    ['wrong', 401, []],
+    ['cron-secret', 200, [[{ durationMs: 600000, signal: expect.any(AbortSignal) }]]],
+  ])('authenticates bearer requests (%s)', async (secret, status, calls) => {
     const response = await endpoint.handler(request(secret) as never);
 
     expect(response.status).toBe(status);
-
-    if (status === 200) {
-      expect(mocks.host.runGatewayListener).toHaveBeenCalledWith({
-        durationMs: 600000,
-        signal: expect.any(AbortSignal),
-      });
-    } else {
-      expect(mocks.host.runGatewayListener).not.toHaveBeenCalled();
-    }
+    expect(mocks.host.runGatewayListener.mock.calls).toEqual(calls);
   });
 
   it('reports an overlapping lease without starting another listener', async () => {

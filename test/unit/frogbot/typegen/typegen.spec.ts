@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, onTestFinished } from 'vitest';
 
 import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import { aiField } from '../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
@@ -116,6 +116,8 @@ describe('frogbot generate:types', () => {
   it('loads production env files before importing the config', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'frogbot-types-env-'));
 
+    onTestFinished(() => rm(dir, { recursive: true, force: true }));
+
     await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=base\n');
     await writeFile(join(dir, '.env.local'), 'FROGBOT_TEST_KEY=local\n');
     await writeFile(join(dir, '.env.production'), 'FROGBOT_TEST_KEY=production\n');
@@ -125,27 +127,23 @@ describe('frogbot generate:types', () => {
       "import { writeFileSync } from 'node:fs'; writeFileSync('observed-env', process.env.FROGBOT_TEST_KEY ?? ''); export default {};\n",
     );
 
-    try {
-      const script = `process.argv = ['node', 'frogbot', 'generate:types']; const { bin } = await import(${JSON.stringify(binURL)}); await bin();`;
-      const result = execFileAsync(
-        process.execPath,
-        ['--import', tsxLoader, '--input-type=module', '--eval', script],
-        {
-          cwd: dir,
-          env: {
-            ...process.env,
-            FROGBOT_TEST_KEY: undefined,
-            NODE_ENV: 'production',
-            __NEXT_PROCESSED_ENV: undefined,
-          },
+    const script = `process.argv = ['node', 'frogbot', 'generate:types']; const { bin } = await import(${JSON.stringify(binURL)}); await bin();`;
+    const result = execFileAsync(
+      process.execPath,
+      ['--import', tsxLoader, '--input-type=module', '--eval', script],
+      {
+        cwd: dir,
+        env: {
+          ...process.env,
+          FROGBOT_TEST_KEY: undefined,
+          NODE_ENV: 'production',
+          __NEXT_PROCESSED_ENV: undefined,
         },
-      );
+      },
+    );
 
-      await expect(result).rejects.toBeDefined();
-      await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe('production-local');
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+    await expect(result).rejects.toBeDefined();
+    await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe('production-local');
   });
 
   it('emits agent slugs in the GeneratedTypes augmentation', () => {

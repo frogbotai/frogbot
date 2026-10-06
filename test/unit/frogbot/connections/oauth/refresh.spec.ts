@@ -14,6 +14,22 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+type Fixture = Awaited<ReturnType<typeof connectionSetup>>;
+
+async function storeTokens(fixture: Fixture, tokens: OAuthTokens | undefined) {
+  if (!tokens) return;
+  fixture.row()!.credential = await fixture.encryption.encrypt(JSON.stringify(tokens));
+}
+
+function settleRefresh(gate: ReturnType<typeof deferred<OAuthTokens>>, scenario: string) {
+  if (scenario.endsWith('failure')) gate.reject(new Error('provider failed'));
+  else gate.resolve({ access_token: 'late', expires_in: 3600 });
+}
+
+const storedTokens: Partial<Record<string, OAuthTokens>> = {
+  'missing-refresh': { access_token: 'old' },
+};
+
 describe('lazy connection refresh', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -66,7 +82,7 @@ describe('lazy connection refresh', () => {
       client,
       oauth: {
         ...definition.oauth,
-        refresh: async () => ({ access_token: 'fresh', expires_in: 3600 }),
+        refresh: () => Promise.resolve({ access_token: 'fresh', expires_in: 3600 }),
       },
     });
     fixture.row()!.expiresAt = '2099-01-01T00:00:00Z';
@@ -81,7 +97,9 @@ describe('lazy connection refresh', () => {
 
   it('uses the refresh grant when the recipe has no custom refresh', async () => {
     const fixture = await connectionSetup();
-    const fetch = vi.fn(async () => Response.json({ access_token: 'fresh', expires_in: 3600 }));
+    const fetch = vi.fn(() =>
+      Promise.resolve(Response.json({ access_token: 'fresh', expires_in: 3600 })),
+    );
     vi.stubGlobal('fetch', fetch);
     await expect(fixture.api.resolve(fixture)).resolves.toEqual({ token: 'fresh' });
     expect(fetch).toHaveBeenCalledOnce();
@@ -90,12 +108,12 @@ describe('lazy connection refresh', () => {
   it.each(['provider', 'invalid', 'expired', 'auth', 'missing-refresh'])(
     'marks %s refresh failure as error without factory fallback or retry',
     async (failure) => {
-      const refresh = vi.fn(async () => {
-        if (failure === 'provider') throw new Error('secret-error');
-        return {
+      const refresh = vi.fn(() => {
+        if (failure === 'provider') return Promise.reject(new Error('secret-error'));
+        return Promise.resolve({
           access_token: failure === 'invalid' ? '' : 'fresh',
           expires_in: failure === 'expired' ? 0 : 3600,
-        };
+        });
       });
       const fixture = await connectionSetup({
         ...definition,
@@ -105,11 +123,7 @@ describe('lazy connection refresh', () => {
           ...(failure === 'auth' ? { toAuth: () => ({ token: '' }) } : {}),
         },
       });
-      if (failure === 'missing-refresh') {
-        fixture.row()!.credential = await fixture.encryption.encrypt(
-          JSON.stringify({ access_token: 'old' }),
-        );
-      }
+      await storeTokens(fixture, storedTokens[failure]);
       const encrypted = fixture.row()!.credential;
       await expect(fixture.api.resolve(fixture)).rejects.toMatchObject({
         name: 'ConnectionError',
@@ -129,7 +143,7 @@ describe('lazy connection refresh', () => {
       ...definition,
       oauth: {
         ...definition.oauth,
-        refresh: async () => ({ access_token: 'fresh', expires_in: 3600, scope: '' }),
+        refresh: () => Promise.resolve({ access_token: 'fresh', expires_in: 3600, scope: '' }),
       },
     });
     await expect(
@@ -140,7 +154,7 @@ describe('lazy connection refresh', () => {
   });
 
   it('rereads under the lock and honors a relink completed before lock acquisition', async () => {
-    const refresh = vi.fn(async () => ({ access_token: 'fresh' }));
+    const refresh = vi.fn(() => Promise.resolve({ access_token: 'fresh' }));
     const fixture = await connectionSetup({
       ...definition,
       oauth: { ...definition.oauth, refresh },
@@ -187,8 +201,7 @@ describe('lazy connection refresh', () => {
               expiresAt: null,
             },
       );
-      if (scenario.endsWith('failure')) gate.reject(new Error('provider failed'));
-      else gate.resolve({ access_token: 'late', expires_in: 3600 });
+      settleRefresh(gate, scenario);
       expect(await outcome).toMatchObject(
         scenario.startsWith('delete') ? { code: 'missing' } : { token: 'relinked' },
       );

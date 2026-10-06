@@ -25,9 +25,11 @@ function makeFrogBot({
   evaluate?: () => boolean;
 } = {}) {
   const req = { user: null as object | null };
-  const handler = vi.fn(async () => Response.json({ answers: { refunded: { probability: 0.9 } } }));
-  const auth = vi.fn(async () => ({ user }));
-  const createRequest = vi.fn(async () => req);
+  const handler = vi.fn(() =>
+    Promise.resolve(Response.json({ answers: { refunded: { probability: 0.9 } } })),
+  );
+  const auth = vi.fn(() => Promise.resolve({ user }));
+  const createRequest = vi.fn(() => Promise.resolve(req));
   const frogbot = {
     gateway: { handler },
     config: { ai: { access: { evaluate } } },

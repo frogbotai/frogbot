@@ -1,3 +1,4 @@
+import type * as PayloadModule from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
@@ -7,7 +8,7 @@ import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instan
 import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: Record<string, unknown>) =>
     Promise.resolve({ globals: [], ...config }),
   ),
@@ -122,7 +123,7 @@ describe('frogbot buildConfig', () => {
 
     it('supports async plugins', async () => {
       const asyncPlugin: Plugin = async (c) => {
-        await new Promise((r) => setTimeout(r, 1));
+        await Promise.resolve();
         return {
           ...c,
           collections: [...c.collections, { slug: 'added', fields: [] }],

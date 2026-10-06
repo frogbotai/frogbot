@@ -57,7 +57,7 @@ describe('autonumberField', () => {
 
   it('keeps the stored number on an update whose latest version has none', async () => {
     const [assign] = autonumberField({ name: 'ref' }).hooks!.beforeChange!;
-    const findOne = vi.fn(async () => ({ id: 7, details: { ref: 3 } }));
+    const findOne = vi.fn(() => Promise.resolve({ id: 7, details: { ref: 3 } }));
 
     const result = await (assign as (args: unknown) => unknown)({
       collection: { slug: 'tickets' },

@@ -6,11 +6,11 @@ import { readTrainingData } from '../../../../packages/frogbot/src/training/read
 type Page = { docs: Record<string, unknown>[]; hasNextPage: boolean };
 
 function stubFrogBot(pages: { chats: Page[]; messages: Record<string, Page[]> }) {
-  const find = vi.fn(async (args: Record<string, unknown>) => {
+  const find = vi.fn((args: Record<string, unknown>) => {
     const page = (args.page as number) - 1;
-    if (args.collection === 'chats') return pages.chats[page];
+    if (args.collection === 'chats') return Promise.resolve(pages.chats[page]);
     const chatID = String((args.where as { chat: { equals: unknown } }).chat.equals);
-    return pages.messages[chatID][page];
+    return Promise.resolve(pages.messages[chatID][page]);
   });
 
   return {

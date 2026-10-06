@@ -35,20 +35,20 @@ function createHarness({ serverURL = 'https://frog.test/', api = '/api' } = {}) 
   let held: (KVLock & { expiresAt: number }) | undefined;
   let nextToken = 0;
   const kv = {
-    acquireLock: vi.fn(async (key: string, ttl: number) => {
-      if (held && held.expiresAt > Date.now()) return null;
+    acquireLock: vi.fn((key: string, ttl: number) => {
+      if (held && held.expiresAt > Date.now()) return Promise.resolve(null);
       held = { key, token: String(++nextToken), expiresAt: Date.now() + ttl };
-      return { key, token: held.token };
+      return Promise.resolve({ key, token: held.token });
     }),
-    extendLock: vi.fn(async (lock: KVLock, ttl: number) => {
-      if (held?.token !== lock.token || held.expiresAt <= Date.now()) return false;
+    extendLock: vi.fn((lock: KVLock, ttl: number) => {
+      if (held?.token !== lock.token || held.expiresAt <= Date.now()) return Promise.resolve(false);
       held.expiresAt = Date.now() + ttl;
-      return true;
+      return Promise.resolve(true);
     }),
-    releaseLock: vi.fn(async (lock: KVLock) => {
-      if (held?.token !== lock.token) return false;
+    releaseLock: vi.fn((lock: KVLock) => {
+      if (held?.token !== lock.token) return Promise.resolve(false);
       held = undefined;
-      return true;
+      return Promise.resolve(true);
     }),
     lock: <T>(key: string, ttl: number, fn: KVLockCallback<T>) => runKVLock({ kv, key, ttl, fn }),
   };
@@ -61,30 +61,31 @@ function createHarness({ serverURL = 'https://frog.test/', api = '/api' } = {}) 
   };
   const frogbot = {
     config,
-    find: vi.fn(async ({ pagination = true, limit, page = 1 }) => {
+    find: vi.fn(({ pagination = true, limit, page = 1 }) => {
       const size = limit ?? (pagination ? 10 : docs.length);
       const start = (page - 1) * size;
-      return {
+      return Promise.resolve({
         docs: JSON.parse(JSON.stringify(docs.slice(start, start + size))),
         hasNextPage: start + size < docs.length,
         nextPage: start + size < docs.length ? page + 1 : null,
-      };
+      });
     }),
-    create: vi.fn(async ({ data }) => {
+    create: vi.fn(({ data }) => {
       const doc = { id: nextId++, ...JSON.parse(JSON.stringify(data)) };
       docs.push(doc);
-      return structuredClone(doc);
+      return Promise.resolve(structuredClone(doc));
     }),
-    update: vi.fn(async ({ id, data }) => {
+    update: vi.fn(({ id, data }) => {
       const doc = docs.find((entry) => entry.id === id)!;
       Object.assign(doc, JSON.parse(JSON.stringify(data)));
-      return structuredClone(doc);
+      return Promise.resolve(structuredClone(doc));
     }),
-    delete: vi.fn(async ({ id }) => {
+    delete: vi.fn(({ id }) => {
       docs.splice(
         docs.findIndex((entry) => entry.id === id),
         1,
       );
+      return Promise.resolve();
     }),
     createRequest: vi.fn(),
     kv,
@@ -95,6 +96,11 @@ function createHarness({ serverURL = 'https://frog.test/', api = '/api' } = {}) 
   const target = { agent: 'ops', instance: 'echo', trigger: 'subscribed' };
   return { instance, hooks, subscriber, docs, config, frogbot, subscriptions, target };
 }
+
+const removeThrough = {
+  disable: (subscriptions: TriggerSubscriptions) => subscriptions.disable(42),
+  reconcile: (subscriptions: TriggerSubscriptions) => subscriptions.reconcile(),
+};
 
 describe('trigger subscriptions', () => {
   beforeEach(resetEchoCalls);
@@ -386,8 +392,7 @@ describe('trigger subscriptions', () => {
       await expect(subscriptions.enable(target)).rejects.toThrow('enable failed');
       expect(docs[0]).toMatchObject({ status: 'error', state: null, cleanupPending: false });
       config._internal.triggers = {};
-      if (operation === 'disable') await subscriptions.disable(42);
-      else await subscriptions.reconcile();
+      await removeThrough[operation](subscriptions);
       expect(disable).not.toHaveBeenCalled();
       expect(docs).toEqual([]);
     },
@@ -395,9 +400,9 @@ describe('trigger subscriptions', () => {
 
   it('compensates a failed final write with the exact enabled state, input, client, and request', async () => {
     const { hooks, subscriptions, target, frogbot, docs } = createHarness();
-    const enable = vi.spyOn(hooks, 'onEnable').mockImplementationOnce(async (args) => {
+    const enable = vi.spyOn(hooks, 'onEnable').mockImplementationOnce((args) => {
       frogbot.update.mockRejectedValueOnce(new Error('final write failed'));
-      return { enabled: args.input.channel };
+      return Promise.resolve({ enabled: args.input.channel });
     });
     const disable = vi.spyOn(hooks, 'onDisable');
     await expect(subscriptions.enable(target)).rejects.toThrow('final write failed');
@@ -421,9 +426,9 @@ describe('trigger subscriptions', () => {
 
   it('persists returned state when final-write compensation fails and retries cleanup before enable', async () => {
     const { hooks, subscriptions, target, frogbot, docs } = createHarness();
-    vi.spyOn(hooks, 'onEnable').mockImplementationOnce(async () => {
+    vi.spyOn(hooks, 'onEnable').mockImplementationOnce(() => {
       frogbot.update.mockRejectedValueOnce(new Error('final write failed'));
-      return { enabled: 'alerts' };
+      return Promise.resolve({ enabled: 'alerts' });
     });
     const disable = vi
       .spyOn(hooks, 'onDisable')
@@ -566,9 +571,9 @@ describe('trigger subscriptions', () => {
   it('keeps recovery state in memory through database failure and blocks duplicate enable on restart', async () => {
     const { hooks, subscriptions, target, frogbot, docs } = createHarness();
     const write = frogbot.update.getMockImplementation()!;
-    const enable = vi.spyOn(hooks, 'onEnable').mockImplementationOnce(async () => {
+    const enable = vi.spyOn(hooks, 'onEnable').mockImplementationOnce(() => {
       frogbot.update.mockRejectedValue(new Error('database unavailable'));
-      return { enabled: 'alerts' };
+      return Promise.resolve({ enabled: 'alerts' });
     });
     const disable = vi.spyOn(hooks, 'onDisable').mockRejectedValueOnce(new Error('vendor offline'));
     await expect(subscriptions.enable(target)).rejects.toThrow('database unavailable');
@@ -589,12 +594,12 @@ describe('trigger subscriptions', () => {
   it('compensates an ambiguous final write that committed before reporting failure', async () => {
     const { hooks, subscriptions, target, frogbot, docs } = createHarness();
     const write = frogbot.update.getMockImplementation()!;
-    vi.spyOn(hooks, 'onEnable').mockImplementationOnce(async () => {
+    vi.spyOn(hooks, 'onEnable').mockImplementationOnce(() => {
       frogbot.update.mockImplementationOnce(async (args) => {
         await write(args);
         throw new Error('response lost');
       });
-      return { enabled: 'alerts' };
+      return Promise.resolve({ enabled: 'alerts' });
     });
     const disable = vi.spyOn(hooks, 'onDisable');
     await expect(subscriptions.enable(target)).rejects.toThrow('response lost');
@@ -606,10 +611,10 @@ describe('trigger subscriptions', () => {
     const { hooks, subscriptions, target, frogbot, docs } = createHarness();
     const read = frogbot.find.getMockImplementation()!;
     const write = frogbot.update.getMockImplementation()!;
-    vi.spyOn(hooks, 'onEnable').mockImplementationOnce(async () => {
+    vi.spyOn(hooks, 'onEnable').mockImplementationOnce(() => {
       frogbot.find.mockRejectedValue(new Error('database unavailable'));
       frogbot.update.mockRejectedValue(new Error('database unavailable'));
-      return { enabled: 'alerts' };
+      return Promise.resolve({ enabled: 'alerts' });
     });
     const disable = vi.spyOn(hooks, 'onDisable');
     await expect(subscriptions.enable(target)).rejects.toThrow('database unavailable');

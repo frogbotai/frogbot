@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildConnectionOAuthEndpoints } from '../../../../packages/frogbot/src/connections/endpoints.js';
+import type { SanitizedConnectionsConfig } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { PieceDefinition } from '../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { definition, setup } from './oauth/fixtures.js';
 
-function fixture(pieceDefinition: PieceDefinition = definition) {
+function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
   const base = setup(pieceDefinition);
   const upsert = vi.fn().mockResolvedValue({ id: 'connection' });
   const findByID = vi.fn().mockResolvedValue({ id: 'owner' });
@@ -14,7 +14,7 @@ function fixture(pieceDefinition: PieceDefinition = definition) {
     serverURL: 'https://app.test',
     routes: { api: '/rest/v1', admin: '/control' },
   };
-  const connections = {
+  const connections: SanitizedConnectionsConfig = {
     enabled: true,
     slug: 'connections',
     encryption: base.encryption,
@@ -51,10 +51,13 @@ function fixture(pieceDefinition: PieceDefinition = definition) {
   };
   const fetch = vi
     .fn()
-    .mockImplementation(async () => Response.json({ access_token: 'fresh-token' }));
+    .mockImplementation(() => Promise.resolve(Response.json({ access_token: 'fresh-token' })));
   vi.stubGlobal('fetch', fetch);
   return { ...base, upsert, findByID, config, connections, endpoints, request, start, fetch };
 }
+
+type Fixture = ReturnType<typeof fixture>;
+type FixtureRequest = FrogBotRequest;
 
 describe('OAuth linking endpoints', () => {
   afterEach(() => {
@@ -106,24 +109,36 @@ describe('OAuth linking endpoints', () => {
     expect(f.fetch).not.toHaveBeenCalled();
   });
 
-  it.each(['origin', 'prefix', 'instance'])(
-    'rejects a callback whose %s binding changed after authorization',
-    async (kind) => {
-      const f = fixture();
-      const flow = await f.start();
-      if (kind === 'origin') f.config.serverURL = 'https://other.test';
-      if (kind === 'prefix') f.config.routes.api = '/other';
-      if (kind === 'instance') {
+  it.each<[string, (f: Fixture) => void]>([
+    [
+      'origin',
+      (f) => {
+        f.config.serverURL = 'https://other.test';
+      },
+    ],
+    [
+      'prefix',
+      (f) => {
+        f.config.routes.api = '/other';
+      },
+    ],
+    [
+      'instance',
+      (f) => {
         f.connections.entries.example.piece = definePiece(definition)({
           slug: 'other-instance',
           oauth: f.piece.oauth,
         });
-      }
-      expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
-      expect(f.fetch).not.toHaveBeenCalled();
-      expect(f.upsert).not.toHaveBeenCalled();
-    },
-  );
+      },
+    ],
+  ])('rejects a callback whose %s binding changed after authorization', async (_kind, change) => {
+    const f = fixture();
+    const flow = await f.start();
+    change(f);
+    expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
+    expect(f.fetch).not.toHaveBeenCalled();
+    expect(f.upsert).not.toHaveBeenCalled();
+  });
 
   it('uses configured origin, API prefix and default settings return route with PKCE', async () => {
     const f = fixture();
@@ -249,39 +264,83 @@ describe('OAuth linking endpoints', () => {
     expect(f.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['owner', 'collection', 'browser'])(
+  it.each<[string, (req: FixtureRequest) => void]>([
+    [
+      'owner',
+      (req) => {
+        req.user = { id: 'other', collection: 'users' };
+      },
+    ],
+    [
+      'collection',
+      (req) => {
+        req.user = { id: 'owner', collection: 'customers' };
+      },
+    ],
+    ['browser', (req) => req.headers.delete('cookie')],
+  ])(
     'rejects %s mismatch without consuming the legitimate browser intent',
-    async (kind) => {
+    async (_kind, change) => {
       const f = fixture();
       const flow = await f.start();
       const req = f.request(flow);
-      if (kind === 'owner') req.user = { id: 'other', collection: 'users' };
-      if (kind === 'collection') req.user = { id: 'owner', collection: 'customers' };
-      if (kind === 'browser') req.headers.delete('cookie');
+      change(req);
       expect((await f.endpoints[1].handler(req)).status).toBe(400);
       expect(f.fetch).not.toHaveBeenCalled();
       expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(302);
     },
   );
 
-  it.each(['denied', 'missing-code', 'duplicate-code', 'deleted-owner', 'provider', 'storage'])(
-    'consumes and clears cookies on a valid failed callback: %s',
-    async (kind) => {
+  it.each<{ kind: string; status: number; upserts: number; fail: (f: Fixture, url: URL) => void }>([
+    {
+      kind: 'denied',
+      status: 400,
+      upserts: 0,
+      fail: (_f, url) => url.searchParams.set('error', 'private-provider-error'),
+    },
+    {
+      kind: 'missing-code',
+      status: 400,
+      upserts: 0,
+      fail: (_f, url) => url.searchParams.delete('code'),
+    },
+    {
+      kind: 'duplicate-code',
+      status: 400,
+      upserts: 0,
+      fail: (_f, url) => url.searchParams.append('code', 'private-code-2'),
+    },
+    {
+      kind: 'deleted-owner',
+      status: 400,
+      upserts: 0,
+      fail: (f) => f.findByID.mockResolvedValue(null),
+    },
+    {
+      kind: 'provider',
+      status: 400,
+      upserts: 0,
+      fail: (f) => f.fetch.mockRejectedValue(new Error('private-client-secret')),
+    },
+    {
+      kind: 'storage',
+      status: 500,
+      upserts: 1,
+      fail: (f) => f.upsert.mockRejectedValue(new Error('private-refresh-token')),
+    },
+  ])(
+    'consumes and clears cookies on a valid failed callback: $kind',
+    async ({ status, upserts, fail }) => {
       const f = fixture();
       const flow = await f.start();
       const url = new URL(flow.url);
-      if (kind === 'denied') url.searchParams.set('error', 'private-provider-error');
-      if (kind === 'missing-code') url.searchParams.delete('code');
-      if (kind === 'duplicate-code') url.searchParams.append('code', 'private-code-2');
-      if (kind === 'deleted-owner') f.findByID.mockResolvedValue(null);
-      if (kind === 'provider') f.fetch.mockRejectedValue(new Error('private-client-secret'));
-      if (kind === 'storage') f.upsert.mockRejectedValue(new Error('private-refresh-token'));
+      fail(f, url);
       const response = await f.endpoints[1].handler(f.request({ ...flow, url: url.href }));
-      expect(response.status).toBe(kind === 'storage' ? 500 : 400);
+      expect(response.status).toBe(status);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(await response.json()).toEqual({ error: 'Connection operation failed' });
-      if (kind !== 'storage') expect(f.upsert).not.toHaveBeenCalled();
+      expect(f.upsert).toHaveBeenCalledTimes(upserts);
       const calls = f.fetch.mock.calls.length;
       expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
       expect(f.fetch).toHaveBeenCalledTimes(calls);
@@ -295,7 +354,7 @@ describe('OAuth linking endpoints', () => {
         ...definition.oauth,
         ...(kind === 'auth'
           ? { toAuth: () => ({ token: 42 }) }
-          : { account: async () => ({ id: '', label: 'private-token' }) }),
+          : { account: () => Promise.resolve({ id: '', label: 'private-token' }) }),
       },
     });
     const flow = await f.start();

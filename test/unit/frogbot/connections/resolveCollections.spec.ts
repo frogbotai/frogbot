@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
@@ -9,13 +9,15 @@ import {
 } from '../../../../packages/frogbot/src/connections/resolveCollections.js';
 import type { ConnectionEntry } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { PieceInstance } from '../../../../packages/frogbot/src/pieces/types.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const oauth = { clientId: 'client', clientSecret: 'secret' };
 const createPiece = definePiece({
   slug: 'linear',
   label: 'Linear',
   auth: z.object({ apiKey: z.string().min(1) }),
-  client: ({ auth }) => auth,
+  client: ({ auth }: { auth: unknown }) => auth,
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
@@ -24,18 +26,21 @@ const createPiece = definePiece({
   actions: [],
 });
 
+// Entries as a JavaScript config may write them; the resolver validates them at runtime.
+type UncheckedConnectionEntry = { piece: PieceInstance; oauth?: unknown; secret?: unknown };
+
 function config({
   collections = [],
   connections = [{ piece: createPiece(), secret: true }],
 }: {
   collections?: CollectionConfig[];
-  connections?: ConnectionEntry[];
+  connections?: UncheckedConnectionEntry[];
 } = {}): FrogBotConfig {
   return {
     secret: 'secret',
     db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [] }, ...collections],
-    connections,
+    connections: connections as ConnectionEntry[],
   };
 }
 
@@ -134,7 +139,7 @@ describe('resolveConnectionsCollections', () => {
       slug: 'static',
       label: 'Static',
       auth: z.string(),
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
     })();
     piece.oauth = oauth;
@@ -159,7 +164,7 @@ describe('resolveConnectionsCollections', () => {
       slug: 'static',
       label: 'Static',
       auth,
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
     })();
     expect(() =>
@@ -197,7 +202,7 @@ describe('resolveConnectionsCollections', () => {
       slug: 'static',
       label: 'Static',
       auth,
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
     })();
     const { connections } = resolveConnectionsCollections(
@@ -246,7 +251,9 @@ describe('resolveConnectionsCollections', () => {
       (field) => 'name' in field && field.name === 'credential',
     );
     expect(encrypted).toMatchObject({ hidden: true, access: { read: expect.any(Function) } });
-    expect(await (encrypted as { access: { read: () => boolean } }).access.read()).toBe(false);
+    assert(encrypted && 'access' in encrypted && encrypted.access?.read);
+    const req = { user: null } as FrogBotRequest;
+    expect(await encrypted.access.read({ req })).toBe(false);
   });
 
   it('requires an encrypted credential and a unique owner/piece pair', () => {

@@ -293,9 +293,7 @@
     "TS18046": 1,
     "TS2322": 2,
     "TS2339": 1,
-    "TS2550": 1,
-    "TS2741": 5,
-    "TS7031": 1
+    "TS2741": 5
   },
   "test/e2e/createFrogBotApp.e2e.spec.ts": {
     "TS2345": 1,
@@ -385,10 +383,6 @@
     "TS2322": 2,
     "TS2339": 3,
     "TS2769": 1
-  },
-  "test/e2e/nativePieceServers.ts": {
-    "TS2550": 1,
-    "TS7031": 2
   },
   "test/e2e/scaffold.e2e.spec.ts": {
     "TS2345": 1,
@@ -748,7 +742,7 @@
   "test/sign-in/int.spec.ts": {
     "TS18048": 1,
     "TS2322": 3,
-    "TS2339": 16,
+    "TS2339": 15,
     "TS7031": 1
   },
   "test/storage-r2/config.ts": {
@@ -1147,166 +1141,35 @@
   "test/unit/eslint/noImportsFromSelf.spec.ts": {
     "TS7016": 1
   },
-  "test/unit/frogbot/agents/endpoints.spec.ts": {
-    "TS2322": 28,
-    "TS2339": 1,
-    "TS7031": 1
-  },
-  "test/unit/frogbot/agents/instance.spec.ts": {
-    "TS2322": 48,
-    "TS2741": 1
-  },
-  "test/unit/frogbot/agents/presets/general.spec.ts": {
-    "TS2322": 2
-  },
-  "test/unit/frogbot/agents/resolveScheduleTasks.spec.ts": {
-    "TS2345": 2,
-    "TS2352": 1,
-    "TS2739": 2,
-    "TS2740": 2
-  },
-  "test/unit/frogbot/agents/service.spec.ts": {
-    "TS2322": 55,
-    "TS2339": 1,
-    "TS2345": 4,
-    "TS2488": 1,
-    "TS2741": 1,
-    "TS7053": 1
-  },
-  "test/unit/frogbot/agents/streamMessage.spec.ts": {
-    "TS2322": 22,
-    "TS2339": 2,
-    "TS2550": 2,
-    "TS7006": 4
-  },
   "test/unit/frogbot/ai/generated.spec.ts": {
     "TS7016": 1
   },
-  "test/unit/frogbot/ai/hooks.spec.ts": {
-    "TS2307": 1,
-    "TS7006": 1
-  },
-  "test/unit/frogbot/ai/init.spec.ts": {
-    "TS2741": 1
-  },
-  "test/unit/frogbot/ai/operations/evaluate.spec.ts": {
-    "TS1360": 1,
-    "TS2741": 6
-  },
-  "test/unit/frogbot/ai/operations/transcribe.spec.ts": {
-    "TS2493": 6,
-    "TS2532": 5,
-    "TS2741": 6
-  },
   "test/unit/frogbot/ai/syncCatalog.spec.ts": {
-    "TS7016": 1,
-    "TS7031": 4
+    "TS7016": 1
   },
   "test/unit/frogbot/ai/types.spec.ts": {
     "TS2554": 1
   },
-  "test/unit/frogbot/auth/signIn.spec.ts": {
-    "TS7031": 2
-  },
   "test/unit/frogbot/auth/userTypegen.spec.ts": {
     "TS2345": 1
   },
-  "test/unit/frogbot/bin/channelsRun.spec.ts": {
-    "TS2345": 1
-  },
-  "test/unit/frogbot/bin/generateImportMap/index.spec.ts": {
-    "TS2322": 1
-  },
-  "test/unit/frogbot/bin/jobsRun.spec.ts": {
-    "TS2322": 6
-  },
-  "test/unit/frogbot/bin/migrate.spec.ts": {
-    "TS2322": 2
-  },
-  "test/unit/frogbot/bin/run.spec.ts": {
-    "TS7006": 1
-  },
-  "test/unit/frogbot/bin/runNext.spec.ts": {
-    "TS2345": 2
-  },
   "test/unit/frogbot/channels/discordQuestionsDatabase.spec.ts": {
-    "TS2322": 4,
-    "TS2741": 2
-  },
-  "test/unit/frogbot/channels/foundationsDatabase.spec.ts": {
-    "TS2571": 1
-  },
-  "test/unit/frogbot/channels/gateway.spec.ts": {
-    "TS2307": 1
-  },
-  "test/unit/frogbot/channels/githubQuestions.spec.ts": {
-    "TS2339": 2
+    "TS2322": 2
   },
   "test/unit/frogbot/channels/githubQuestionsDatabase.spec.ts": {
-    "TS2322": 4
-  },
-  "test/unit/frogbot/channels/host.spec.ts": {
-    "TS2307": 1,
-    "TS2339": 3
-  },
-  "test/unit/frogbot/channels/ingress.spec.ts": {
-    "TS2307": 1
-  },
-  "test/unit/frogbot/channels/ingress.ts": {
-    "TS2352": 1
-  },
-  "test/unit/frogbot/channels/linearQuestions.spec.ts": {
-    "TS2339": 1,
-    "TS2532": 1
-  },
-  "test/unit/frogbot/channels/linearQuestionsDatabase.spec.ts": {
-    "TS2322": 4
-  },
-  "test/unit/frogbot/channels/questionsDatabase.spec.ts": {
     "TS2322": 2
   },
-  "test/unit/frogbot/channels/registry.spec.ts": {
-    "TS2307": 1,
-    "TS7031": 1
+  "test/unit/frogbot/channels/linearQuestionsDatabase.spec.ts": {
+    "TS2322": 2
   },
   "test/unit/frogbot/channels/slackQuestions.spec.ts": {
     "TS2322": 1
   },
-  "test/unit/frogbot/channels/teamsFixtures.ts": {
-    "TS2345": 1
-  },
   "test/unit/frogbot/channels/teamsQuestionsDatabase.spec.ts": {
-    "TS2322": 4,
-    "TS2741": 1
-  },
-  "test/unit/frogbot/channels/telegramFixtures.ts": {
-    "TS2550": 1,
-    "TS7006": 1
-  },
-  "test/unit/frogbot/channels/telegramQuestions.spec.ts": {
-    "TS2741": 2
+    "TS2322": 2
   },
   "test/unit/frogbot/channels/telegramQuestionsDatabase.spec.ts": {
-    "TS2322": 2,
-    "TS2741": 2
-  },
-  "test/unit/frogbot/channels/webhook.spec.ts": {
-    "TS2339": 1,
-    "TS7006": 1,
-    "TS7031": 2
-  },
-  "test/unit/frogbot/chat/chatContext.spec.ts": {
-    "TS2322": 5
-  },
-  "test/unit/frogbot/chat/manifest.spec.ts": {
-    "TS2352": 1,
-    "TS2741": 1
-  },
-  "test/unit/frogbot/chat/resolveChatCollections.spec.ts": {
-    "TS2352": 1
-  },
-  "test/unit/frogbot/chat/types.spec.ts": {
-    "TS2344": 1
+    "TS2322": 1
   },
   "test/unit/frogbot/collections/config/merge.spec.ts": {
     "TS2322": 1
@@ -1315,174 +1178,29 @@
     "TS2339": 11
   },
   "test/unit/frogbot/config/connections.spec.ts": {
-    "TS2322": 2,
-    "TS2353": 1,
-    "TS7031": 2
-  },
-  "test/unit/frogbot/config/pieces.spec.ts": {
-    "TS2322": 4,
-    "TS7031": 2
-  },
-  "test/unit/frogbot/config/rewriteComponentPaths.spec.ts": {
-    "TS2339": 3
-  },
-  "test/unit/frogbot/config/sanitize.spec.ts": {
-    "TS18048": 14,
-    "TS2322": 36,
-    "TS2339": 9,
-    "TS2345": 1,
-    "TS2349": 3,
-    "TS2352": 1,
-    "TS2740": 1,
-    "TS7031": 1
-  },
-  "test/unit/frogbot/config/wrapGraphQLExtension.spec.ts": {
-    "TS2352": 4
-  },
-  "test/unit/frogbot/connections/api.spec.ts": {
-    "TS7031": 1
-  },
-  "test/unit/frogbot/connections/endpoints.spec.ts": {
     "TS2322": 1
   },
-  "test/unit/frogbot/connections/oauth/fixtures.ts": {
+  "test/unit/frogbot/config/sanitize.spec.ts": {
     "TS2322": 1,
-    "TS2352": 1,
-    "TS7031": 2
-  },
-  "test/unit/frogbot/connections/oauth/tokens.spec.ts": {
-    "TS18048": 2,
-    "TS2322": 1,
-    "TS2352": 1,
-    "TS2722": 2
-  },
-  "test/unit/frogbot/connections/resolveCollections.spec.ts": {
-    "TS2322": 5,
-    "TS2352": 1,
-    "TS7031": 2
-  },
-  "test/unit/frogbot/env/builders.spec.ts": {
-    "TS2339": 2
-  },
-  "test/unit/frogbot/env/defineEnv.spec.ts": {
-    "TS2741": 3
-  },
-  "test/unit/frogbot/env/frogbotEnv.spec.ts": {
-    "TS2741": 2
-  },
-  "test/unit/frogbot/fields/baseFields/ai.spec.ts": {
-    "TS2322": 2,
-    "TS2345": 1,
-    "TS2740": 6
-  },
-  "test/unit/frogbot/fields/baseFields/aiSanitize.spec.ts": {
-    "TS2322": 3
-  },
-  "test/unit/frogbot/fields/baseFields/applyFieldKind.spec.ts": {
     "TS2339": 3,
-    "TS2554": 1,
-    "TS2559": 12
-  },
-  "test/unit/frogbot/fields/baseFields/money.spec.ts": {
-    "TS2339": 1
-  },
-  "test/unit/frogbot/fields/guards.spec.ts": {
-    "TS1360": 1,
-    "TS2345": 1
-  },
-  "test/unit/frogbot/fields/optionColors.spec.ts": {
-    "TS18048": 2,
-    "TS2345": 3
-  },
-  "test/unit/frogbot/fields/vector.spec.ts": {
-    "TS2345": 2
-  },
-  "test/unit/frogbot/frogbot.spec.ts": {
     "TS2345": 1,
-    "TS2493": 1,
-    "TS2739": 1,
-    "TS2741": 1
-  },
-  "test/unit/frogbot/jobs/config.spec.ts": {
-    "TS18048": 1
+    "TS2740": 1
   },
   "test/unit/frogbot/jobs/helpers.ts": {
     "TS2322": 1
   },
-  "test/unit/frogbot/jobs/lease.spec.ts": {
-    "TS2322": 2,
-    "TS2339": 1
-  },
   "test/unit/frogbot/jobs/nativeRunner.ts": {
-    "TS2322": 1,
-    "TS2352": 2
+    "TS2352": 1
   },
   "test/unit/frogbot/jobs/typegen.spec.ts": {
     "TS2345": 1
-  },
-  "test/unit/frogbot/pieces/conformance.spec.ts": {
-    "TS18046": 1,
-    "TS2322": 3,
-    "TS2339": 2,
-    "TS7031": 5
-  },
-  "test/unit/frogbot/pieces/definePiece.spec.ts": {
-    "TS7031": 3
-  },
-  "test/unit/frogbot/pieces/definePiece.test-d.ts": {
-    "TS2307": 1
-  },
-  "test/unit/frogbot/search/operation.spec.ts": {
-    "TS2345": 1
-  },
-  "test/unit/frogbot/search/sanitize.spec.ts": {
-    "TS2345": 1
-  },
-  "test/unit/frogbot/skills/tools.spec.ts": {
-    "TS2532": 1,
-    "TS2722": 7
-  },
-  "test/unit/frogbot/tools/todos.spec.ts": {
-    "TS7031": 1
-  },
-  "test/unit/frogbot/triggers/dispatch.spec.ts": {
-    "TS2339": 6
-  },
-  "test/unit/frogbot/triggers/endpoints.spec.ts": {
-    "TS18046": 3,
-    "TS2322": 1,
-    "TS7031": 1
-  },
-  "test/unit/frogbot/triggers/fixtures/piece-echo.ts": {
-    "TS18046": 1,
-    "TS2339": 3
-  },
-  "test/unit/frogbot/triggers/registry.spec.ts": {
-    "TS2322": 5,
-    "TS2740": 1
-  },
-  "test/unit/frogbot/triggers/subscriptions.spec.ts": {
-    "TS18046": 1,
-    "TS2571": 3
-  },
-  "test/unit/frogbot/triggers/task.spec.ts": {
-    "TS2349": 1
   },
   "test/unit/frogbot/typegen/typegen.spec.ts": {
     "TS2322": 4,
     "TS2345": 2
   },
-  "test/unit/frogbot/uploads/office/officeText.spec.ts": {
-    "TS2307": 1
-  },
-  "test/unit/frogbot/uploads/office/xlsxText.spec.ts": {
-    "TS2307": 1
-  },
   "test/unit/frogbot/uploads/storage.spec.ts": {
     "TS2322": 16
-  },
-  "test/unit/frogbot/utilities/chunkGenerator.spec.ts": {
-    "TS2550": 1
   },
   "test/unit/gateway/providers/catalog-sync.spec.ts": {
     "TS7016": 1

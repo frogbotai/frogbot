@@ -29,6 +29,7 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
       evaluate: ({ req }) => !!req.user,
     },
     telemetry: { enabled: false },
+    usage: { slug: 'ai-usage' },
     _internal: { deploymentId: 'test' },
   };
 }

@@ -6,6 +6,7 @@ import { BasePayload } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
+import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import {
   CHANNEL_TASK_SLUG,
   getChannelHost,
@@ -33,6 +34,8 @@ import {
   type TeamsServer,
   textRuns,
 } from './teamsFixtures.js';
+
+const TEST_MODEL = 'test/gpt-4.1-mini' as AgentModelId;
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
@@ -82,14 +85,14 @@ async function boot(directory: string): Promise<FrogBot> {
     agents: [
       {
         slug: 'support',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [teamsInstance('teams')],
       },
       {
         slug: 'open',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [teamsInstance('teams-open')],
@@ -581,6 +584,7 @@ describe('Teams questions with SQLite persistence', () => {
             header: 'Size',
             question: 'Which size?',
             options: [{ label: 'Small' }, { label: 'Large' }],
+            custom: true,
           },
         ],
       },

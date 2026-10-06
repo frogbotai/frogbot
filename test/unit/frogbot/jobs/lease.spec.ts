@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Payload } from 'payload';
+import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 
 import {
   getJobClaimFields,
@@ -12,6 +13,13 @@ import type { LeaseRow } from './helpers.js';
 import { setup } from './helpers.js';
 import { jobRow, nativeRunner } from './nativeRunner.js';
 
+type RunJobs = Payload['jobs']['run'];
+
+// Payload types `run` as resolving to a promise; resolving with the inner promise matches that type.
+function nativeRun(run: () => Promise<Awaited<ReturnType<RunJobs>>>): RunJobs {
+  return () => new Promise((resolve) => resolve(run()));
+}
+
 afterEach(() => vi.useRealTimers());
 
 describe('job lease ownership', () => {
@@ -19,10 +27,10 @@ describe('job lease ownership', () => {
     const { payload, req, database, install } = await setup();
     const owners: string[] = [];
 
-    database.updateJobs = vi.fn(async () => {
+    database.updateJobs = vi.fn(() => {
       owners.push(getJobLeaseContext()!.owner);
 
-      return [];
+      return Promise.resolve([]);
     });
 
     install();
@@ -35,7 +43,7 @@ describe('job lease ownership', () => {
     expect(getJobLeaseContext()).toBeUndefined();
   });
 
-  it.each(['batch', 'by-ID'])(
+  it.each(['batch', 'by-ID'] as const)(
     'executes only the claimed %s jobs without collection hooks',
     async (mode) => {
       const rows = [jobRow(7), jobRow(8)];
@@ -44,7 +52,7 @@ describe('job lease ownership', () => {
       const { payload, req } = await nativeRunner({
         rows,
         jobs: {
-          tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
+          tasks: [{ slug: 'work', handler: () => ({ output: {} }) }],
           jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
             ...defaultJobsCollection,
             hooks: {
@@ -61,8 +69,12 @@ describe('job lease ownership', () => {
         },
       });
 
-      if (mode === 'by-ID') await payload.jobs.runByID({ id: 7, req, silent: true });
-      else await payload.jobs.run({ req, limit: 1, silent: true });
+      const runs = {
+        batch: () => payload.jobs.run({ req, limit: 1, silent: true }),
+        'by-ID': () => payload.jobs.runByID({ id: 7, req, silent: true }),
+      };
+
+      await runs[mode]();
 
       expect(hookIDs).toEqual([]);
       expect(rows[0].completedAt).toEqual(expect.any(String));
@@ -152,7 +164,7 @@ describe('job lease ownership', () => {
     const completions: (() => void)[] = [];
     const owners: string[] = [];
 
-    payload.jobs.run = async () => {
+    payload.jobs.run = nativeRun(async () => {
       const context = getJobLeaseContext()!;
 
       owners.push(context.owner);
@@ -165,7 +177,7 @@ describe('job lease ownership', () => {
       expect(getJobLeaseContext()?.owner).toBe(context.owner);
 
       return { remainingJobsFromQueried: 0 };
-    };
+    });
 
     const jobs = install();
 
@@ -197,20 +209,22 @@ describe('job lease ownership', () => {
 
     let owner: string | undefined;
 
-    database.updateJobs = vi.fn(async () => {
+    database.updateJobs = vi.fn(() => {
       owner = getJobLeaseContext()?.owner;
 
-      return [];
+      return Promise.resolve([]);
     });
 
     req.query = { disableScheduling: 'true' };
     req.user = { id: 1, collection: 'users' };
 
-    const endpoint = payload.config.collections.find(
+    const endpoints = payload.config.collections.find(
       ({ slug }) => slug === 'payload-jobs',
     )!.endpoints;
 
-    const run = endpoint && endpoint.find(({ path }) => path === '/run');
+    assert(endpoints);
+
+    const run = endpoints.find(({ path }) => path === '/run');
 
     const response = await run!.handler(req);
 
@@ -225,9 +239,7 @@ describe('job lease ownership', () => {
     const { payload, req, install } = await setup();
     const failure = new Error('handler failed');
 
-    payload.jobs.run = async () => {
-      throw failure;
-    };
+    payload.jobs.run = () => Promise.reject(failure);
 
     install();
 
@@ -244,14 +256,14 @@ describe('job lease ownership', () => {
     let completeRun!: () => void;
     let completeRenewal!: () => void;
 
-    payload.jobs.run = async () => {
+    payload.jobs.run = nativeRun(async () => {
       recordJobClaims([1]);
       await new Promise<void>((resolve) => {
         completeRun = resolve;
       });
 
       return { remainingJobsFromQueried: 0 };
-    };
+    });
 
     operations.update.mockImplementation(
       () =>

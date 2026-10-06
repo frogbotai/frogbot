@@ -63,7 +63,7 @@ describe('field type guards', () => {
   );
 
   it('fieldIsPresentationalOnly handles UI fields and synthetic tabs', () => {
-    const ui = { name: 'notice', type: 'ui' } satisfies Field;
+    const ui = { name: 'notice', type: 'ui', admin: {} } satisfies Field;
 
     expect(fieldIsPresentationalOnly(ui)).toBe(true);
     expect(fieldIsPresentationalOnly(syntheticTab)).toBe(false);

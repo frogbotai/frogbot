@@ -52,7 +52,7 @@ function thirdPartyKV(): KVAdapterResult {
 function makeJobs(): JobsConfig {
   return {
     autoRun: [{ cron: '*/5 * * * *', queue: 'reports', limit: 7 }],
-    tasks: [{ slug: 'send-report', handler: async () => ({ output: {} }) }],
+    tasks: [{ slug: 'send-report', handler: () => ({ output: {} }) }],
     workflows: [{ slug: 'report-workflow', handler: async () => {} }],
     deleteJobOnComplete: false,
     access: { run: () => true },
@@ -235,7 +235,7 @@ describe('resolveKVCleanupTask', () => {
   });
 
   it('preserves a lazy autoRun provider without invoking it', () => {
-    const autoRun = vi.fn(async () => [{ cron: '*/5 * * * *', queue: 'reports' }]);
+    const autoRun = vi.fn(() => Promise.resolve([{ cron: '*/5 * * * *', queue: 'reports' }]));
     const result = resolveKVCleanupTask({ kv: databaseKVAdapter(), jobs: { autoRun } });
 
     expect(result?.autoRun).toBe(autoRun);
@@ -256,7 +256,7 @@ describe('resolveKVCleanupTask', () => {
 
   it('rejects a reserved task collision for the known database factory', () => {
     const jobs: JobsConfig = {
-      tasks: [{ slug: KV_CLEANUP_TASK_SLUG, handler: async () => ({ output: {} }) }],
+      tasks: [{ slug: KV_CLEANUP_TASK_SLUG, handler: () => ({ output: {} }) }],
     };
 
     expect(() => resolveKVCleanupTask({ kv: databaseKVAdapter(), jobs })).toThrow(
@@ -387,7 +387,7 @@ describe('buildConfig KV wiring', () => {
     await expect(
       buildConfig(
         makeConfig({
-          jobs: { tasks: [{ slug: KV_CLEANUP_TASK_SLUG, handler: async () => ({ output: {} }) }] },
+          jobs: { tasks: [{ slug: KV_CLEANUP_TASK_SLUG, handler: () => ({ output: {} }) }] },
         }),
       ),
     ).rejects.toThrow(`Job task slug '${KV_CLEANUP_TASK_SLUG}' is reserved`);

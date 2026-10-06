@@ -6,6 +6,7 @@ import { BasePayload } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sqliteAdapter } from '../../../../packages/db-sqlite/src/index.js';
+import type { AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import {
   CHANNEL_TASK_SLUG,
   getChannelHost,
@@ -28,6 +29,8 @@ import {
   telegramUsers,
   telegramWebhook,
 } from './telegramFixtures.js';
+
+const TEST_MODEL = 'test/gpt-4.1-mini' as AgentModelId;
 
 vi.mock('frogbot/pieces', () => import('../../../../packages/frogbot/src/exports/pieces.js'));
 
@@ -74,7 +77,7 @@ async function boot(directory: string): Promise<FrogBot> {
     agents: [
       {
         slug: 'support',
-        model: 'test/gpt-4.1-mini',
+        model: TEST_MODEL,
         instructions: 'Ask before acting.',
         tools: [question],
         channels: [telegram],
@@ -433,6 +436,7 @@ describe('Telegram questions with SQLite persistence', { timeout: 30_000 }, () =
             header: 'Size',
             question: 'Which size?',
             options: [{ label: 'Small' }, { label: 'Large' }],
+            custom: true,
           },
         ],
       },
@@ -465,7 +469,12 @@ describe('Telegram questions with SQLite persistence', { timeout: 30_000 }, () =
     const chatId = -100888;
     const size: QuestionInput = {
       questions: [
-        { header: 'Size', question: 'Which size?', options: [{ label: 'S' }, { label: 'L' }] },
+        {
+          header: 'Size',
+          question: 'Which size?',
+          options: [{ label: 'S' }, { label: 'L' }],
+          custom: true,
+        },
       ],
     };
 

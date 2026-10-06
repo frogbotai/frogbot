@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   spawn: vi.fn(),
   existsSync: vi.fn(),
-  resolve: vi.fn(() => '/proj/node_modules/next/dist/bin/next'),
+  resolve: vi.fn((_spec: string) => '/proj/node_modules/next/dist/bin/next'),
 }));
 
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));

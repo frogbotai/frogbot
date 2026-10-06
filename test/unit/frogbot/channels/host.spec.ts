@@ -1,8 +1,8 @@
-import type { Adapter } from 'chat';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import { hasChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
-import { channelFixture, deferred } from './helpers.js';
+import { asyncChunks, channelFixture, deferred } from './helpers.js';
 
 const { claimTurn, releaseTurn, streamTurn, updateIfVersion } = vi.hoisted(() => ({
   claimTurn: vi.fn(),
@@ -25,35 +25,53 @@ const { runQueuedTurn } = await import('../../../../packages/frogbot/src/chat/tu
 const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
 
 function activate(messages: Array<Record<string, unknown>>) {
-  return async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
+  return ({ id, data }: { id: string; data: Record<string, unknown> }) => {
     Object.assign(
       messages.find((message) => message.id === id)!,
       data,
     );
 
-    return true;
+    return Promise.resolve(true);
   };
 }
 
+type Fixture = ReturnType<typeof channelFixture>;
+
+const lifecycles = {
+  registered: {
+    initialize: (fixture: Fixture) => initializeChannelHost(fixture.frogbot as never),
+    finish: (fixture: Fixture) => shutdownChannelHost(fixture.frogbot as never),
+  },
+  local: {
+    initialize: (fixture: Fixture) => fixture.host.initialize(),
+    finish: async (fixture: Fixture) => {
+      await expect(
+        fixture.host.webhook('first', new Request('http://localhost/webhook')),
+      ).resolves.toBeUndefined();
+      await fixture.host.shutdown();
+    },
+  },
+};
+
 describe('ChannelHost initialization cleanup', () => {
   it.each([
-    { registered: false, cleanupFails: false },
-    { registered: false, cleanupFails: true },
-    { registered: true, cleanupFails: false },
-    { registered: true, cleanupFails: true },
-  ])(
+    { lifecycle: 'local', cleanupFails: false },
+    { lifecycle: 'local', cleanupFails: true },
+    { lifecycle: 'registered', cleanupFails: false },
+    { lifecycle: 'registered', cleanupFails: true },
+  ] as const)(
     'drains both adapters and preserves the boot error (%j)',
-    async ({ registered, cleanupFails }) => {
+    async ({ lifecycle, cleanupFails }) => {
       const failure = new Error('second adapter initialization failed');
       const cleanup = deferred();
       const connected = new Set<string>();
       const startGatewayListener = vi.fn();
       const adapters = ['first', 'second'].map((name) => ({
         name,
-        initialize: vi.fn(async () => {
+        initialize: vi.fn(() => {
           connected.add(name);
 
-          if (name === 'second') throw failure;
+          return name === 'second' ? Promise.reject(failure) : Promise.resolve();
         }),
         disconnect: vi.fn(async () => {
           await cleanup.promise;
@@ -72,43 +90,36 @@ describe('ChannelHost initialization cleanup', () => {
       );
 
       let settled = false;
-      const initialization = registered
-        ? initializeChannelHost(first.frogbot as never)
-        : first.host.initialize();
+      const initialization = lifecycles[lifecycle].initialize(first);
       const outcome = initialization.catch((error: unknown) => {
         settled = true;
 
         return error;
       });
 
-      try {
-        await vi.waitFor(() => {
-          expect(adapters[0].disconnect).toHaveBeenCalledOnce();
-          expect(adapters[1].disconnect).toHaveBeenCalledOnce();
-        });
-
-        expect(connected).toEqual(new Set(['first', 'second']));
-        expect(settled).toBe(false);
-        expect(getChannelHost(first.frogbot as never)).toBeUndefined();
-        expect(startGatewayListener).not.toHaveBeenCalled();
-      } finally {
+      onTestFinished(async () => {
         cleanup.resolve();
 
         await outcome;
-      }
+      });
+
+      await vi.waitFor(() => {
+        expect(adapters[0].disconnect).toHaveBeenCalledOnce();
+        expect(adapters[1].disconnect).toHaveBeenCalledOnce();
+      });
+
+      expect(connected).toEqual(new Set(['first', 'second']));
+      expect(settled).toBe(false);
+      expect(getChannelHost(first.frogbot as never)).toBeUndefined();
+      expect(startGatewayListener).not.toHaveBeenCalled();
+
+      cleanup.resolve();
 
       expect(await outcome).toBe(failure);
       expect(connected.size).toBe(0);
       expect(getChannelHost(first.frogbot as never)).toBeUndefined();
 
-      if (registered) {
-        await shutdownChannelHost(first.frogbot as never);
-      } else {
-        await expect(
-          first.host.webhook('first', new Request('http://localhost/webhook')),
-        ).resolves.toBeUndefined();
-        await first.host.shutdown();
-      }
+      await lifecycles[lifecycle].finish(first);
 
       expect(adapters[0].disconnect).toHaveBeenCalledOnce();
       expect(adapters[1].disconnect).toHaveBeenCalledOnce();
@@ -122,14 +133,12 @@ describe('ChannelHost conversation loop', () => {
     releaseTurn.mockReset().mockResolvedValue(true);
     updateIfVersion.mockReset().mockResolvedValue(true);
 
-    streamTurn.mockReset().mockImplementation(async () => ({
-      result: {
-        stream: (async function* () {
-          yield 'Queued reply';
-        })(),
-      },
-      persistence: Promise.resolve(),
-    }));
+    streamTurn.mockReset().mockImplementation(() =>
+      Promise.resolve({
+        result: { stream: asyncChunks('Queued reply') },
+        persistence: Promise.resolve(),
+      }),
+    );
   });
 
   it('waits for durable enqueue and retains every concurrent turn', async () => {
@@ -159,7 +168,10 @@ describe('ChannelHost conversation loop', () => {
     await deliveries;
     await fixture.deliver('message-0');
 
-    expect(new Set(fixture.inputs.map((input) => input.message.id)).size).toBe(12);
+    expect(
+      new Set(fixture.inputs.flatMap((input) => ('message' in input ? [input.message.id] : [])))
+        .size,
+    ).toBe(12);
     expect(fixture.queue).toHaveBeenCalledTimes(12);
 
     await fixture.host.shutdown();
@@ -355,9 +367,7 @@ describe('ChannelHost conversation loop', () => {
 
     fixture.adapter.stream.mockRejectedValue(new Error('post failed'));
     fixture.streamMessage.mockResolvedValueOnce({
-      stream: (async function* () {
-        yield 'First';
-      })(),
+      stream: asyncChunks('First'),
       persistence: persisted.promise,
     });
 
@@ -389,17 +399,12 @@ describe('ChannelHost conversation loop', () => {
     const fixture = channelFixture();
     const error = Object.assign(new Error('turn failed'), { name: 'KVLockContentionError' });
 
-    fixture.streamMessage.mockImplementationOnce(async () => {
+    fixture.streamMessage.mockImplementationOnce(() => {
       const persistence = Promise.reject(error);
 
       void persistence.catch(() => {});
 
-      return {
-        stream: (async function* () {
-          yield 'Reply';
-        })(),
-        persistence,
-      };
+      return Promise.resolve({ stream: asyncChunks('Reply'), persistence });
     });
 
     await fixture.host.initialize(false);
@@ -487,7 +492,7 @@ describe('ChannelHost conversation loop', () => {
     await fixture.host.run(fixture.inputs[0]);
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
-    expect(fixture.streamMessage.mock.calls[0][0].selection).toBeUndefined();
+    expect(fixture.streamMessage.mock.calls[0][0]).not.toHaveProperty('selection');
     expect(fixture.streamMessage.mock.calls[0][0].req?.user).toMatchObject({
       id: 'user-1',
       modelAccess: 'selected',
@@ -508,7 +513,7 @@ describe('ChannelHost conversation loop', () => {
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
     expect(fixture.streamMessage.mock.calls[0][0].req?.user).toBeNull();
-    expect(fixture.streamMessage.mock.calls[0][0].selection).toBeUndefined();
+    expect(fixture.streamMessage.mock.calls[0][0]).not.toHaveProperty('selection');
     expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
     expect(fixture.frogbot.logger.info).not.toHaveBeenCalled();
 

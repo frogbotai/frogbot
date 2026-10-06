@@ -25,7 +25,7 @@ import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/requ
 type StoredMessage = UIMessage & { chat: string; version: number; status?: string };
 
 const turn = vi.hoisted(() => ({
-  messages: [] as Array<Record<string, unknown>>,
+  messages: [] as StoredMessage[],
   claimTurn: vi.fn(),
   holdTurn: vi.fn(),
   promoteQueuedMessage: vi.fn(),
@@ -45,7 +45,7 @@ vi.mock('../../../../packages/frogbot/src/chat/turn/queue.js', () => ({
 }));
 
 vi.mock('../../../../packages/frogbot/src/database/compareAndSet.js', () => ({
-  updateIfVersion: async ({
+  updateIfVersion: ({
     id,
     version,
     data,
@@ -56,11 +56,11 @@ vi.mock('../../../../packages/frogbot/src/database/compareAndSet.js', () => ({
   }) => {
     const stored = turn.messages.find((message) => message.id === id);
 
-    if (!stored || stored.version !== version) return false;
+    if (!stored || stored.version !== version) return Promise.resolve(false);
 
     Object.assign(stored, data, { version: version + 1 });
 
-    return true;
+    return Promise.resolve(true);
   },
 }));
 
@@ -90,11 +90,14 @@ const ai = {
   routers: {},
 };
 
+const LOCAL_THINKER = 'local/thinker' as AgentModelId;
+const LOCAL_WRITER = 'local/writer' as AgentModelId;
+
 const lookup: AnyTool = {
   slug: 'lookup',
   description: 'Look up data',
   inputSchema: z.object({}),
-  execute: async () => ({ found: true }),
+  execute: () => ({ found: true }),
 };
 
 const usage = {
@@ -127,43 +130,46 @@ function modelStream(parts: LanguageModelV4StreamPart[]) {
 function toolLoopStream(): MockLanguageModelV4['doStream'] {
   let step = 0;
 
-  return async () => ({
-    stream: modelStream(
-      step++ === 0
-        ? [
-            { type: 'stream-start', warnings: [] },
-            { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
-            { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
-          ]
-        : response('Found it'),
-    ),
-  });
+  return () =>
+    Promise.resolve({
+      stream: modelStream(
+        step++ === 0
+          ? [
+              { type: 'stream-start', warnings: [] },
+              { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
+              { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
+            ]
+          : response('Found it'),
+      ),
+    });
 }
 
 function toolLoopGenerate(): MockLanguageModelV4['doGenerate'] {
   let step = 0;
 
-  return async (): Promise<LanguageModelV4GenerateResult> =>
-    step++ === 0
-      ? {
-          content: [{ type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' }],
-          finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
-          usage,
-          warnings: [],
-        }
-      : {
-          content: [{ type: 'text', text: 'Found it' }],
-          finishReason: { unified: 'stop', raw: 'stop' },
-          usage,
-          warnings: [],
-        };
+  return () =>
+    Promise.resolve<LanguageModelV4GenerateResult>(
+      step++ === 0
+        ? {
+            content: [{ type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' }],
+            finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+            usage,
+            warnings: [],
+          }
+        : {
+            content: [{ type: 'text', text: 'Found it' }],
+            finishReason: { unified: 'stop', raw: 'stop' },
+            usage,
+            warnings: [],
+          },
+    );
 }
 
 function setup({
   access = () => true,
   user = 'user-1',
   owner = typeof user === 'string' ? user : (user?.id ?? null),
-  doStream = async () => ({ stream: modelStream(response()) }),
+  doStream = () => Promise.resolve({ stream: modelStream(response()) }),
   doGenerate,
   model: agentModel = 'openai/test' as AgentModelId,
   options = [],
@@ -237,14 +243,16 @@ function setup({
         assetsSlug: 'frogbot-chat-assets',
       },
     },
-    createRequest: vi.fn(async (req: Partial<FrogBotRequest>) =>
-      'frogbot' in req ? req : { ...req, payload: { db: {} }, frogbot },
+    createRequest: vi.fn((req: Partial<FrogBotRequest>) =>
+      Promise.resolve('frogbot' in req ? req : { ...req, payload: { db: {} }, frogbot }),
     ),
-    findByID: vi.fn(async ({ collection, id }: { collection: string; id: string }) =>
-      collection === 'messages' ? (messages.find((message) => message.id === id) ?? null) : chat,
+    findByID: vi.fn(({ collection, id }: { collection: string; id: string }) =>
+      Promise.resolve(
+        collection === 'messages' ? (messages.find((message) => message.id === id) ?? null) : chat,
+      ),
     ),
     find: vi.fn(
-      async ({
+      ({
         collection,
         limit,
         where,
@@ -252,27 +260,28 @@ function setup({
         collection: string;
         limit?: number;
         where?: { channelKey?: { equals: string } };
-      }) => ({
-        docs:
-          collection === 'chats'
-            ? where?.channelKey?.equals === chat.channelKey
-              ? [chat]
-              : []
-            : limit === 1
-              ? []
-              : messages,
-      }),
+      }) =>
+        Promise.resolve({
+          docs:
+            collection === 'chats'
+              ? where?.channelKey?.equals === chat.channelKey
+                ? [chat]
+                : []
+              : limit === 1
+                ? []
+                : messages,
+        }),
     ),
-    create: vi.fn(
-      async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
-        if (collection === 'messages') {
-          messages.push({ version: 0, ...structuredClone(data) } as StoredMessage);
-        }
+    create: vi.fn(({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
+      if (collection === 'messages') {
+        messages.push({ version: 0, ...structuredClone(data) } as StoredMessage);
+      }
 
-        return data;
-      },
+      return Promise.resolve(data);
+    }),
+    update: vi.fn(({ data }: { data: Record<string, unknown> }) =>
+      Promise.resolve(Object.assign(chat, data)),
     ),
-    update: vi.fn(async ({ data }: { data: Record<string, unknown> }) => Object.assign(chat, data)),
     delete: vi.fn(async () => {}),
     logger: { error: vi.fn() },
   };
@@ -316,6 +325,23 @@ async function streamMessage(
   if (!('persistence' in result)) throw new Error('Expected the turn to start.');
 
   return result;
+}
+
+type ChannelAccess = Parameters<
+  ReturnType<typeof setup>['agent']['streamMessage']
+>[0]['channelAccess'];
+
+function channelAccessFor(
+  { agent, chat, req }: ReturnType<typeof setup>,
+  scope: Partial<Parameters<typeof createChannelChatAccess>[0]> = {},
+) {
+  return createChannelChatAccess({
+    req,
+    agentSlug: agent.slug,
+    chatId: chat.id,
+    channelKey: chat.channelKey,
+    ...scope,
+  });
 }
 
 describe('agent persisted stream with the installed AI SDK', () => {
@@ -366,19 +392,20 @@ describe('agent persisted stream with the installed AI SDK', () => {
   it('persists text already streamed when aborted before the first step finishes', async () => {
     const abort = new AbortController();
     const { agent, messages, req } = setup({
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.enqueue({ type: 'stream-start', warnings: [] });
-            controller.enqueue({ type: 'text-start', id: 'text-1' });
-            controller.enqueue({ type: 'text-delta', id: 'text-1', delta: 'Partial' });
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.enqueue({ type: 'stream-start', warnings: [] });
+              controller.enqueue({ type: 'text-start', id: 'text-1' });
+              controller.enqueue({ type: 'text-delta', id: 'text-1', delta: 'Partial' });
 
-            abort.signal.addEventListener('abort', () => controller.error(abort.signal.reason), {
-              once: true,
-            });
-          },
+              abort.signal.addEventListener('abort', () => controller.error(abort.signal.reason), {
+                once: true,
+              });
+            },
+          }),
         }),
-      }),
     });
 
     const result = await streamMessage(agent, {
@@ -452,29 +479,33 @@ describe('agent persisted stream with the installed AI SDK', () => {
     },
   );
 
-  it.each(['forged', 'request', 'agent', 'chat', 'key', 'web'])(
-    'rejects a channel capability outside its %s scope',
-    async (scope) => {
-      const { agent, chat, messages, req } = setup({ owner: 'owner', user: 'participant' });
-      const channelAccess =
-        scope === 'forged'
-          ? { channelKey: chat.channelKey }
-          : createChannelChatAccess({
-              req: scope === 'request' ? { ...req } : req,
-              agentSlug: scope === 'agent' ? 'other-agent' : agent.slug,
-              chatId: scope === 'chat' ? 'other-chat' : chat.id,
-              channelKey: scope === 'key' ? 'other-key' : chat.channelKey,
-            });
+  it.each<[string, (context: ReturnType<typeof setup>) => ChannelAccess]>([
+    ['forged', ({ chat }) => ({ channelKey: chat.channelKey })],
+    ['request', (context) => channelAccessFor(context, { req: { ...context.req } })],
+    ['agent', (context) => channelAccessFor(context, { agentSlug: 'other-agent' })],
+    ['chat', (context) => channelAccessFor(context, { chatId: 'other-chat' })],
+    ['key', (context) => channelAccessFor(context, { channelKey: 'other-key' })],
+    [
+      'web',
+      (context) => {
+        const channelAccess = channelAccessFor(context);
 
-      if (scope === 'web') chat.channelKey = '';
+        context.chat.channelKey = '';
 
-      await expect(
-        agent.streamMessage({ req, chatId: chat.id, prompt: 'Denied', channelAccess }),
-      ).rejects.toMatchObject({ status: 404 });
+        return channelAccess;
+      },
+    ],
+  ])('rejects a channel capability outside its %s scope', async (_, capability) => {
+    const context = setup({ owner: 'owner', user: 'participant' });
+    const { agent, chat, messages, req } = context;
+    const channelAccess = capability(context);
 
-      expect(messages).toEqual([]);
-    },
-  );
+    await expect(
+      agent.streamMessage({ req, chatId: chat.id, prompt: 'Denied', channelAccess }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    expect(messages).toEqual([]);
+  });
 
   it('reuses persisted history as identified and anonymous authors alternate in a channel thread', async () => {
     const { agent, chat, messages, model, req: baseReq } = setup({ owner: null });
@@ -590,9 +621,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
   it('finalizes the operation and rejects persistence when the model fails before its first step', async () => {
     const failure = new Error('Model unavailable');
     const { agent, finish, messages, req } = setup({
-      doStream: async () => {
-        throw failure;
-      },
+      doStream: () => Promise.reject(failure),
     });
 
     const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
@@ -612,41 +641,42 @@ describe('agent persisted stream with the installed AI SDK', () => {
           slug: 'lookup',
           description: 'Look up data',
           inputSchema: z.object({}),
-          execute: async () => ({ found: true }),
+          execute: () => ({ found: true }),
         },
       ],
-      doStream: async () => ({
-        stream:
-          step++ === 0
-            ? modelStream([
-                { type: 'stream-start', warnings: [] },
-                { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
-                {
-                  type: 'finish',
-                  finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
-                  usage,
-                },
-              ])
-            : new ReadableStream<LanguageModelV4StreamPart>({
-                start(controller) {
-                  controller.enqueue({ type: 'stream-start', warnings: [] });
-                  controller.enqueue({ type: 'text-start', id: 'partial-2' });
-                  controller.enqueue({
-                    type: 'text-delta',
-                    id: 'partial-2',
-                    delta: 'Second step partial',
-                  });
+      doStream: () =>
+        Promise.resolve({
+          stream:
+            step++ === 0
+              ? modelStream([
+                  { type: 'stream-start', warnings: [] },
+                  { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
+                  {
+                    type: 'finish',
+                    finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+                    usage,
+                  },
+                ])
+              : new ReadableStream<LanguageModelV4StreamPart>({
+                  start(controller) {
+                    controller.enqueue({ type: 'stream-start', warnings: [] });
+                    controller.enqueue({ type: 'text-start', id: 'partial-2' });
+                    controller.enqueue({
+                      type: 'text-delta',
+                      id: 'partial-2',
+                      delta: 'Second step partial',
+                    });
 
-                  abort.signal.addEventListener(
-                    'abort',
-                    () => controller.error(abort.signal.reason),
-                    {
-                      once: true,
-                    },
-                  );
-                },
-              }),
-      }),
+                    abort.signal.addEventListener(
+                      'abort',
+                      () => controller.error(abort.signal.reason),
+                      {
+                        once: true,
+                      },
+                    );
+                  },
+                }),
+        }),
     });
 
     const result = await streamMessage(agent, {
@@ -685,13 +715,13 @@ describe('agent persisted stream with the installed AI SDK', () => {
           slug: 'lookup',
           description: 'Look up data',
           inputSchema: z.object({}),
-          execute: async () => ({ found: true }),
+          execute: () => ({ found: true }),
         },
       ],
-      doStream: async () => {
+      doStream: () => {
         if (step > 0) checkpoint = structuredClone(messages);
 
-        return {
+        return Promise.resolve({
           stream: modelStream(
             step++ === 0
               ? [
@@ -705,7 +735,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
                 ]
               : response('Found it'),
           ),
-        };
+        });
       },
     });
 
@@ -779,20 +809,21 @@ describe('agent persisted stream with the installed AI SDK', () => {
   it('leaves the turn awaiting input when a client tool call is pending', async () => {
     const { agent, messages, req } = setup({
       tools: [question],
-      doStream: async () => ({
-        stream: modelStream([
-          { type: 'stream-start', warnings: [] },
-          {
-            type: 'tool-call',
-            toolCallId: 'call-1',
-            toolName: 'question',
-            input: JSON.stringify({
-              questions: [{ header: 'Size', question: 'Which size?', options: [{ label: 'S' }] }],
-            }),
-          },
-          { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
-        ]),
-      }),
+      doStream: () =>
+        Promise.resolve({
+          stream: modelStream([
+            { type: 'stream-start', warnings: [] },
+            {
+              type: 'tool-call',
+              toolCallId: 'call-1',
+              toolName: 'question',
+              input: JSON.stringify({
+                questions: [{ header: 'Size', question: 'Which size?', options: [{ label: 'S' }] }],
+              }),
+            },
+            { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
+          ]),
+        }),
     });
 
     const result = await streamMessage(agent, {
@@ -827,15 +858,15 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
   it('rejects a model blocked for the turn user before any model call', async () => {
     const { agent, calls, finish, req } = setup({
-      model: 'local/thinker',
-      options: ['local/writer'],
-      user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer'] },
+      model: LOCAL_THINKER,
+      options: [LOCAL_WRITER],
+      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_WRITER] },
     });
 
     await expect(
       agent.aiAgent.stream({
         prompt: 'Hello',
-        options: { req, selection: { model: 'local/thinker' } },
+        options: { req, selection: { model: LOCAL_THINKER } },
       }),
     ).rejects.toMatchObject({
       code: 'selection-unavailable',
@@ -849,9 +880,9 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
   it('stops at the next step when a steer model is blocked for the turn author', async () => {
     const { agent, calls, req } = setup({
-      model: 'local/thinker',
-      options: ['local/writer'],
-      user: { id: 'user-1', modelAccess: 'selected', models: ['local/thinker'] },
+      model: LOCAL_THINKER,
+      options: [LOCAL_WRITER],
+      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_THINKER] },
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -859,7 +890,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
         message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Write it up' }] },
-        selection: { model: 'local/writer' },
+        selection: { model: LOCAL_WRITER },
       },
     ]);
 
@@ -877,30 +908,30 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
         message: "Model 'local/writer' is not allowed for this user",
       }),
     ]);
-    expect(calls).toEqual([{ model: 'local/thinker', providerOptions: undefined }]);
+    expect(calls).toEqual([{ model: LOCAL_THINKER, providerOptions: undefined }]);
   });
 
   it('runs and persists the user fallback when the turn names no model', async () => {
     const { agent, calls, messages, req } = setup({
-      model: 'local/thinker',
-      options: ['local/writer'],
-      user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer'] },
+      model: LOCAL_THINKER,
+      options: [LOCAL_WRITER],
+      user: { id: 'user-1', modelAccess: 'selected', models: [LOCAL_WRITER] },
     });
 
     const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
 
     await result.persistence;
 
-    expect(calls).toEqual([{ model: 'local/writer', providerOptions: undefined }]);
+    expect(calls).toEqual([{ model: LOCAL_WRITER, providerOptions: undefined }]);
     expect(messages[1]).toMatchObject({
-      usage: { model: 'local/writer', provider: 'local', totalTokens: 3 },
+      usage: { model: LOCAL_WRITER, provider: 'local', totalTokens: 3 },
     });
   });
 
   it('runs and persists the agent default when the turn has no user', async () => {
     const { agent, calls, chat, messages, req } = setup({
-      model: 'local/thinker',
-      options: ['local/writer'],
+      model: LOCAL_THINKER,
+      options: [LOCAL_WRITER],
       user: null,
     });
 
@@ -920,15 +951,15 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
     await result.persistence;
 
-    expect(calls).toEqual([{ model: 'local/thinker', providerOptions: undefined }]);
+    expect(calls).toEqual([{ model: LOCAL_THINKER, providerOptions: undefined }]);
     expect(messages[1]).toMatchObject({
-      usage: { model: 'local/thinker', provider: 'local', totalTokens: 3 },
+      usage: { model: LOCAL_THINKER, provider: 'local', totalTokens: 3 },
     });
   });
 
   it('sends the selected variant on every step of a streamed tool loop', async () => {
     const { agent, calls, req } = setup({
-      model: 'local/thinker',
+      model: LOCAL_THINKER,
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -941,32 +972,32 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     await result.consumeStream();
 
     expect(calls).toEqual([
-      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
-      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: LOCAL_THINKER, providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: LOCAL_THINKER, providerOptions: { local: { reasoningEffort: 'high' } } },
     ]);
   });
 
   it('sends the selected model and variant on every step of a generated tool loop', async () => {
     const { agent, calls, req } = setup({
-      options: ['local/writer'],
+      options: [LOCAL_WRITER],
       tools: [lookup],
       doGenerate: toolLoopGenerate(),
     });
 
     await agent.aiAgent.generate({
       prompt: 'Find it',
-      options: { req, selection: { model: 'local/writer', reasoning: 'max' } },
+      options: { req, selection: { model: LOCAL_WRITER, reasoning: 'max' } },
     });
 
     expect(calls).toEqual([
-      { model: 'local/writer', providerOptions: { local: { reasoningEffort: 'max' } } },
-      { model: 'local/writer', providerOptions: { local: { reasoningEffort: 'max' } } },
+      { model: LOCAL_WRITER, providerOptions: { local: { reasoningEffort: 'max' } } },
+      { model: LOCAL_WRITER, providerOptions: { local: { reasoningEffort: 'max' } } },
     ]);
   });
 
   it('sends no reasoning options when no option is selected', async () => {
     const { agent, calls, req } = setup({
-      model: 'local/thinker',
+      model: LOCAL_THINKER,
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -976,15 +1007,15 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     await result.consumeStream();
 
     expect(calls).toEqual([
-      { model: 'local/thinker', providerOptions: undefined },
-      { model: 'local/thinker', providerOptions: undefined },
+      { model: LOCAL_THINKER, providerOptions: undefined },
+      { model: LOCAL_THINKER, providerOptions: undefined },
     ]);
   });
 
   it('switches to a steer message model and variant from the next step', async () => {
     const { agent, calls, req } = setup({
-      model: 'local/thinker',
-      options: ['local/writer'],
+      model: LOCAL_THINKER,
+      options: [LOCAL_WRITER],
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -992,7 +1023,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
         message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Write it up' }] },
-        selection: { model: 'local/writer', reasoning: 'max' },
+        selection: { model: LOCAL_WRITER, reasoning: 'max' },
       },
     ]);
 
@@ -1004,14 +1035,14 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     await result.consumeStream();
 
     expect(calls).toEqual([
-      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
-      { model: 'local/writer', providerOptions: { local: { reasoningEffort: 'max' } } },
+      { model: LOCAL_THINKER, providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: LOCAL_WRITER, providerOptions: { local: { reasoningEffort: 'max' } } },
     ]);
   });
 
   it('drops the previous variant when a steer message selects none', async () => {
     const { agent, calls, req } = setup({
-      model: 'local/thinker',
+      model: LOCAL_THINKER,
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -1031,19 +1062,19 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     await result.consumeStream();
 
     expect(calls).toEqual([
-      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
-      { model: 'local/thinker', providerOptions: undefined },
+      { model: LOCAL_THINKER, providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: LOCAL_THINKER, providerOptions: undefined },
     ]);
   });
 
   it.each([
     [{ reasoning: 'max' }, "Reasoning option 'max' is not available for model 'local/thinker'"],
-    [{ model: 'local/writer' }, "Model 'local/writer' is not allowed for agent 'support'"],
+    [{ model: LOCAL_WRITER }, "Model 'local/writer' is not allowed for agent 'support'"],
   ] as const)(
     'stops before the next model call when steer selection %o is unavailable',
     async (selection, message) => {
       const { agent, calls, req } = setup({
-        model: 'local/thinker',
+        model: LOCAL_THINKER,
         tools: [lookup],
         doStream: toolLoopStream(),
       });
@@ -1074,12 +1105,12 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   );
 
   it('rejects an unavailable selection before any model call', async () => {
-    const { agent, calls, finish, req } = setup({ model: 'local/thinker' });
+    const { agent, calls, finish, req } = setup({ model: LOCAL_THINKER });
 
     await expect(
       agent.aiAgent.stream({
         prompt: 'Hello',
-        options: { req, selection: { model: 'local/writer' } },
+        options: { req, selection: { model: LOCAL_WRITER } },
       }),
     ).rejects.toMatchObject({
       code: 'selection-unavailable',
@@ -1093,8 +1124,8 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
   it('logs usage against the model that ran each step', async () => {
     const { agent, frogbot, req } = setup({
-      model: 'local/thinker',
-      options: ['local/writer'],
+      model: LOCAL_THINKER,
+      options: [LOCAL_WRITER],
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -1102,7 +1133,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
         message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Write it up' }] },
-        selection: { model: 'local/writer' },
+        selection: { model: LOCAL_WRITER },
       },
     ]);
 
@@ -1119,7 +1150,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
           .map(([args]) => args)
           .filter(({ collection }) => collection === 'usage-logs')
           .map(({ data }) => data.model),
-      ).toEqual(['local/thinker', 'local/writer']);
+      ).toEqual([LOCAL_THINKER, LOCAL_WRITER]);
     });
   });
 });

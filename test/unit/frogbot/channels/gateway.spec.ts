@@ -1,6 +1,6 @@
-import type { Adapter } from 'chat';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import type { Adapter } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import { ChannelHost } from '../../../../packages/frogbot/src/channels/host.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 
@@ -16,18 +16,18 @@ function deferred() {
 function gatewayFixture(adapters: object[]) {
   let held = false;
   const kv = {
-    acquireLock: vi.fn(async () => {
-      if (held) return null;
+    acquireLock: vi.fn(() => {
+      if (held) return Promise.resolve(null);
 
       held = true;
 
-      return { key: 'gateway', token: 'owner' };
+      return Promise.resolve({ key: 'gateway', token: 'owner' });
     }),
-    extendLock: vi.fn(async () => held),
-    releaseLock: vi.fn(async () => {
+    extendLock: vi.fn(() => Promise.resolve(held)),
+    releaseLock: vi.fn(() => {
       held = false;
 
-      return true;
+      return Promise.resolve(true);
     }),
     lock: <T>(key: string, ttl: number, fn: Parameters<typeof runKVLock<T>>[0]['fn']) =>
       runKVLock({ kv, key, ttl, fn }),
@@ -46,9 +46,32 @@ function gatewayFixture(adapters: object[]) {
   return { host, kv, shutdown };
 }
 
+function exclusiveLock() {
+  let held = false;
+
+  return vi.fn(
+    async (_key: string, _ttl: number, run: (args: { signal: AbortSignal }) => Promise<void>) => {
+      if (held) {
+        const error = new Error('held');
+
+        error.name = 'KVLockContentionError';
+
+        throw error;
+      }
+
+      held = true;
+
+      try {
+        await run({ signal: new AbortController().signal });
+      } finally {
+        held = false;
+      }
+    },
+  );
+}
+
 describe('channel gateway listener', () => {
   it('elects one listener, forwards to canonical ingress, and permits takeover after drain', async () => {
-    let held = false;
     const drained = deferred();
     const starts: Array<{ signal: AbortSignal; webhookUrl: string }> = [];
     const adapter = {
@@ -62,31 +85,7 @@ describe('channel gateway listener', () => {
         },
       ),
     } as unknown as Adapter;
-    const kv = {
-      lock: vi.fn(
-        async (
-          _key: string,
-          _ttl: number,
-          run: (args: { signal: AbortSignal }) => Promise<void>,
-        ) => {
-          if (held) {
-            const error = new Error('held');
-
-            error.name = 'KVLockContentionError';
-
-            throw error;
-          }
-
-          held = true;
-
-          try {
-            await run({ signal: new AbortController().signal });
-          } finally {
-            held = false;
-          }
-        },
-      ),
-    };
+    const kv = { lock: exclusiveLock() };
     const frogbot = {
       getAPIURL: () => 'https://example.com/api',
       kv,
@@ -170,15 +169,17 @@ describe('channel gateway listener', () => {
       const run = host.runGatewayListener({ durationMs: 60_000 });
       const result = run.catch((error: unknown) => error);
 
-      try {
-        await vi.waitFor(() => expect(listenerSignal?.aborted).toBe(true));
-
-        expect(kv.releaseLock).not.toHaveBeenCalled();
-      } finally {
+      onTestFinished(async () => {
         drain.resolve();
 
         await result;
-      }
+      });
+
+      await vi.waitFor(() => expect(listenerSignal?.aborted).toBe(true));
+
+      expect(kv.releaseLock).not.toHaveBeenCalled();
+
+      drain.resolve();
 
       expect(await result).toBe(failure);
       expect(kv.releaseLock).toHaveBeenCalledOnce();
@@ -191,13 +192,15 @@ describe('channel gateway listener', () => {
     const registered = deferred();
     const { host, kv } = gatewayFixture([
       {
-        startGatewayListener: async ({ waitUntil }: { waitUntil(task: Promise<void>): void }) => {
+        startGatewayListener: ({ waitUntil }: { waitUntil(task: Promise<void>): void }) => {
           waitUntil(
             first.promise.then(() => {
               waitUntil(second.promise);
               registered.resolve();
             }),
           );
+
+          return Promise.resolve();
         },
       },
     ]);
@@ -209,13 +212,17 @@ describe('channel gateway listener', () => {
     await registered.promise;
     await setImmediate();
 
-    try {
-      expect(kv.releaseLock).not.toHaveBeenCalled();
-    } finally {
+    onTestFinished(async () => {
       second.resolve();
 
       await run;
-    }
+    });
+
+    expect(kv.releaseLock).not.toHaveBeenCalled();
+
+    second.resolve();
+
+    await run;
   });
 
   it('waits for listener cleanup after losing the lease', async () => {
@@ -244,19 +251,21 @@ describe('channel gateway listener', () => {
       settled = true;
     });
 
-    try {
-      await started.promise;
-      await vi.advanceTimersByTimeAsync(10_000);
-
-      expect(listenerSignal?.aborted).toBe(true);
-      expect(settled).toBe(false);
-    } finally {
+    onTestFinished(async () => {
       drain.resolve();
 
       await run;
 
       vi.useRealTimers();
-    }
+    });
+
+    await started.promise;
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(listenerSignal?.aborted).toBe(true);
+    expect(settled).toBe(false);
+
+    drain.resolve();
 
     expect(await run).toMatchObject({ name: 'KVLeaseLostError' });
   });
@@ -281,14 +290,18 @@ describe('channel gateway listener', () => {
 
     const stopping = host.shutdown();
 
-    try {
-      expect(listenerSignal?.aborted).toBe(true);
-      expect(shutdown).not.toHaveBeenCalled();
-    } finally {
+    onTestFinished(async () => {
       drain.resolve();
 
       await Promise.all([run, stopping]);
-    }
+    });
+
+    expect(listenerSignal?.aborted).toBe(true);
+    expect(shutdown).not.toHaveBeenCalled();
+
+    drain.resolve();
+
+    await Promise.all([run, stopping]);
 
     expect(shutdown).toHaveBeenCalledOnce();
   });
@@ -314,13 +327,17 @@ describe('channel gateway listener', () => {
 
     await setImmediate();
 
-    try {
-      expect(shutdown).not.toHaveBeenCalled();
-    } finally {
+    onTestFinished(async () => {
       released.resolve();
 
       await Promise.all([run, stopping]);
-    }
+    });
+
+    expect(shutdown).not.toHaveBeenCalled();
+
+    released.resolve();
+
+    await Promise.all([run, stopping]);
 
     expect(shutdown).toHaveBeenCalledOnce();
   });
@@ -344,9 +361,11 @@ describe('channel gateway listener', () => {
     const failure = new Error('forwarding failed');
     const { host } = gatewayFixture([
       {
-        startGatewayListener: async ({ waitUntil }: { waitUntil(task: Promise<void>): void }) => {
+        startGatewayListener: ({ waitUntil }: { waitUntil(task: Promise<void>): void }) => {
           waitUntil(Promise.reject(failure));
           controller.abort();
+
+          return Promise.resolve();
         },
       },
     ]);

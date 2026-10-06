@@ -345,7 +345,7 @@ describe('collection search configuration', () => {
     );
   });
 
-  it.each([
+  it.each<[unknown, string]>([
     [{ lexical: { fields: [] } }, 'lexical.fields'],
     [{ lexical: { fields: ['title', 'title'] } }, 'distinct'],
     [{ lexical: { fields: ['missing'] } }, 'does not exist'],
@@ -378,7 +378,7 @@ describe('collection search configuration', () => {
       },
       'positive finite',
     ],
-    ...[0, -1, 1.5, '10', null].map((defaultCandidates) => [
+    ...[0, -1, 1.5, '10', null].map((defaultCandidates): [unknown, string] => [
       { vector: { field: 'embedding' }, defaultCandidates },
       'defaultCandidates must be a positive integer',
     ]),

@@ -2,7 +2,8 @@ import { once } from 'node:events';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RequestContext } from 'payload';
+import { afterEach, assert, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import {
   exchangeOAuthCode,
@@ -11,6 +12,7 @@ import {
   parseOAuthTokens,
   refreshOAuthTokens,
 } from '../../../../../packages/frogbot/src/connections/oauth/tokens.js';
+import type { OAuthTokens } from '../../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 import { definition, setup } from './fixtures.js';
 
@@ -23,13 +25,15 @@ describe('OAuth token and account transport', () => {
 
   it('exchanges the code with the callback, app credentials and verifier, retaining vendor fields', async () => {
     const { piece } = setup();
-    const fetch = vi.fn(async () =>
-      Response.json({
-        access_token: 'fresh',
-        expires_in: '3600',
-        refresh_token: 'refresh',
-        vendor: { tenant: ['one'] },
-      }),
+    const fetch = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          access_token: 'fresh',
+          expires_in: '3600',
+          refresh_token: 'refresh',
+          vendor: { tenant: ['one'] },
+        }),
+      ),
     );
     vi.stubGlobal('fetch', fetch);
     const tokens = await exchangeOAuthCode({
@@ -71,7 +75,7 @@ describe('OAuth token and account transport', () => {
       },
       { clientId: 'client:id %é', clientSecret: 'secret:% snow☃' },
     );
-    const fetch = vi.fn(async () => Response.json({ access_token: 'fresh' }));
+    const fetch = vi.fn(() => Promise.resolve(Response.json({ access_token: 'fresh' })));
     vi.stubGlobal('fetch', fetch);
 
     await exchangeOAuthCode({
@@ -139,12 +143,14 @@ describe('OAuth token and account transport', () => {
     const { piece } = setup();
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => {
-        if (kind === 'network') throw new Error('secret-error');
-        if (kind === 'json') return new Response('secret-error');
-        return Response.json(
-          { error: 'invalid_grant', error_description: 'secret-error' },
-          { status: kind === 'http' ? 400 : 200 },
+      vi.fn(() => {
+        if (kind === 'network') return Promise.reject(new Error('secret-error'));
+        if (kind === 'json') return Promise.resolve(new Response('secret-error'));
+        return Promise.resolve(
+          Response.json(
+            { error: 'invalid_grant', error_description: 'secret-error' },
+            { status: kind === 'http' ? 400 : 200 },
+          ),
         );
       }),
     );
@@ -188,7 +194,7 @@ describe('OAuth token and account transport', () => {
     ['refresh', 'deadline'],
     ['refresh', 'request'],
     ['refresh', 'lease'],
-  ])(
+  ] as const)(
     'aborts actual %s callback fetch on %s cancellation while retaining the request',
     async (operation, cancellation) => {
       const server = createServer();
@@ -220,6 +226,7 @@ describe('OAuth token and account transport', () => {
           },
         },
       });
+      const context: RequestContext = { tenant: 'one' };
       const req = Object.assign(
         new Request('https://app.test/callback', {
           method: 'POST',
@@ -229,7 +236,7 @@ describe('OAuth token and account transport', () => {
         }),
         {
           user: fixture.req.user,
-          context: { tenant: 'one' },
+          context,
           frogbot: {},
           transactionID: 'transaction',
         },
@@ -243,48 +250,53 @@ describe('OAuth token and account transport', () => {
         req,
         signal: leaseAbort.signal,
       }).catch((error: unknown) => error);
-      try {
-        await accepted;
-        expect(received).toBeInstanceOf(Request);
-        expect(received).not.toBe(req);
-        expect(received.context).toBe(req.context);
-        expect(received.frogbot).toBe(req.frogbot);
-        expect(received.user).toBe(req.user);
-        expect(received.headers).toBe(req.headers);
-        expect(received.url).toBe(req.url);
-        expect(received.transactionID).toBe('transaction');
-        expect(Reflect.get(received, metadata)).toBe(Reflect.get(req, metadata));
-        expect(await received.clone().json()).toEqual({ value: 'body' });
-        expect(await received.json()).toEqual({ value: 'body' });
-        expect(req.bodyUsed).toBe(true);
-        expect(received.signal).not.toBe(req.signal);
-        const fetchOutcome = transport.catch((error: unknown) => error);
-        if (cancellation === 'deadline') await vi.advanceTimersByTimeAsync(15_000);
-        else if (cancellation === 'request') requestAbort.abort();
-        else leaseAbort.abort();
-        expect(await outcome).toMatchObject({
-          code: operation === 'account' ? 'account' : 'tokens',
-        });
-        expect(await fetchOutcome).toMatchObject({ name: 'AbortError' });
-        expect(received.signal.aborted).toBe(true);
-        expect(req.signal.aborted).toBe(cancellation === 'request');
-      } finally {
+      onTestFinished(async () => {
         requestAbort.abort();
         server.closeAllConnections();
         await new Promise<void>((resolve, reject) => {
           server.close((error) => (error ? reject(error) : resolve()));
         });
-      }
+      });
+
+      await accepted;
+      assert(received instanceof Request);
+      expect(received).not.toBe(req);
+      expect(received.context).toBe(req.context);
+      expect(received.frogbot).toBe(req.frogbot);
+      expect(received.user).toBe(req.user);
+      expect(received.headers).toBe(req.headers);
+      expect(received.url).toBe(req.url);
+      expect(received.transactionID).toBe('transaction');
+      expect(Reflect.get(received, metadata)).toBe(Reflect.get(req, metadata));
+      expect(await received.clone().json()).toEqual({ value: 'body' });
+      expect(await received.json()).toEqual({ value: 'body' });
+      expect(req.bodyUsed).toBe(true);
+      expect(received.signal).not.toBe(req.signal);
+      const fetchOutcome = transport.catch((error: unknown) => error);
+      const cancel = {
+        deadline: () => vi.advanceTimersByTimeAsync(15_000),
+        request: () => requestAbort.abort(),
+        lease: () => leaseAbort.abort(),
+      };
+      await cancel[cancellation]();
+      expect(await outcome).toMatchObject({
+        code: operation === 'account' ? 'account' : 'tokens',
+      });
+      expect(await fetchOutcome).toMatchObject({ name: 'AbortError' });
+      expect(received.signal.aborted).toBe(true);
+      expect(req.signal?.aborted).toBe(cancellation === 'request');
     },
   );
 
   it('constructs the account client from freshly parsed auth and factory options without resolving credentials', async () => {
     const client = vi.fn(({ auth, options }) => ({ token: auth.token, region: options.region }));
-    const account = vi.fn(async ({ client }) => ({
-      id: client.token,
-      label: client.region,
-      email: 'user@example.test',
-    }));
+    const account = vi.fn(({ client }) =>
+      Promise.resolve({
+        id: client.token,
+        label: client.region,
+        email: 'user@example.test',
+      }),
+    );
     const { piece, req } = setup({
       ...definition,
       client,
@@ -318,7 +330,10 @@ describe('OAuth token and account transport', () => {
     ).resolves.toBeUndefined();
     const invalid = setup({
       ...definition,
-      oauth: { ...definition.oauth, account: async () => ({ id: '', label: 'secret-error' }) },
+      oauth: {
+        ...definition.oauth,
+        account: () => Promise.resolve({ id: '', label: 'secret-error' }),
+      },
     });
     await expect(
       lookupOAuthAccount({ ...invalid, tokens: { access_token: 'fresh' } }),
@@ -334,8 +349,8 @@ describe('OAuth token and account transport', () => {
 
   it('refreshes using the app and preserves omitted refresh tokens, scope and vendor fields', async () => {
     const fixture = setup();
-    const fetch = vi.fn(async () =>
-      Response.json({ access_token: 'fresh', expires_in: 3600, new_vendor: true }),
+    const fetch = vi.fn(() =>
+      Promise.resolve(Response.json({ access_token: 'fresh', expires_in: 3600, new_vendor: true })),
     );
     vi.stubGlobal('fetch', fetch);
     const tokens = await refreshOAuthTokens({
@@ -365,7 +380,10 @@ describe('OAuth token and account transport', () => {
   });
 
   it('uses recipe refresh and never extends an old expires_in when omitted', async () => {
-    const refresh = vi.fn(async () => ({ access_token: 'custom', refresh_token: undefined }));
+    // A JavaScript recipe can return an explicit undefined, which OAuthTokens cannot express.
+    const custom: OAuthTokens = { access_token: 'custom' };
+    Object.assign(custom, { refresh_token: undefined });
+    const refresh = vi.fn(() => Promise.resolve(custom));
     const fixture = setup({ ...definition, oauth: { ...definition.oauth, refresh } });
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
@@ -393,7 +411,7 @@ describe('OAuth token and account transport', () => {
       },
       { clientId: 'client:id %é', clientSecret: 'secret:% snow☃' },
     );
-    const fetch = vi.fn(async () => Response.json({ access_token: 'fresh' }));
+    const fetch = vi.fn(() => Promise.resolve(Response.json({ access_token: 'fresh' })));
     vi.stubGlobal('fetch', fetch);
 
     await refreshOAuthTokens({

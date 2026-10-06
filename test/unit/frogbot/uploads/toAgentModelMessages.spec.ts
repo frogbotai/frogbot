@@ -92,12 +92,12 @@ function request({
 }
 
 function assets(...docs: Asset[]) {
-  return vi.fn(async ({ id }: { id: string | number }) => {
+  return vi.fn(({ id }: { id: string | number }) => {
     const doc = docs.find((entry) => entry.id === id);
 
-    if (!doc) throw Object.assign(new Error('Not Found'), { status: 404 });
+    if (!doc) return Promise.reject(Object.assign(new Error('Not Found'), { status: 404 }));
 
-    return doc;
+    return Promise.resolve(doc);
   });
 }
 
@@ -110,13 +110,13 @@ function user(...parts: UIMessage['parts']): UIMessage {
 }
 
 function storedFiles(files: Record<string, string | Buffer>) {
-  getFileByPath.mockImplementation(async (filePath: string) => {
+  getFileByPath.mockImplementation((filePath: string) => {
     const name = filePath.replace('/files/', '');
     const content = files[name];
 
-    if (content === undefined) throw new Error('ENOENT');
+    if (content === undefined) return Promise.reject(new Error('ENOENT'));
 
-    return { data: Buffer.isBuffer(content) ? content : Buffer.from(content) };
+    return Promise.resolve({ data: Buffer.isBuffer(content) ? content : Buffer.from(content) });
   });
 }
 
@@ -469,7 +469,7 @@ describe('toAgentModelMessages', () => {
   });
 
   it('reads cloud files through the upload handlers without the caller’s cookies', async () => {
-    const handler = vi.fn(async () => new Response('%PDF'));
+    const handler = vi.fn(() => Promise.resolve(new Response('%PDF')));
     const handlerReq = { headers: new Headers(), handler: true };
     const createRequest = vi.fn().mockResolvedValue(handlerReq);
     const doc = { id: 'a', filename: 'cloud.pdf', mimeType: 'application/pdf', prefix: 'chat' };
@@ -503,7 +503,9 @@ describe('toAgentModelMessages', () => {
   });
 
   it('follows a signed download redirect from an upload handler', async () => {
-    const handler = vi.fn(async () => Response.redirect('https://bucket.example/cloud.pdf', 302));
+    const handler = vi.fn(() =>
+      Promise.resolve(Response.redirect('https://bucket.example/cloud.pdf', 302)),
+    );
     const fetch = vi.fn().mockResolvedValue(new Response('%PDF'));
     const req = request({
       findByID: assets({ id: 'a', filename: 'cloud.pdf', mimeType: 'application/pdf' }),
@@ -519,7 +521,7 @@ describe('toAgentModelMessages', () => {
   });
 
   it('does not call upload handlers for files that become markers', async () => {
-    const handler = vi.fn(async () => new Response('PNG!'));
+    const handler = vi.fn(() => Promise.resolve(new Response('PNG!')));
     const req = request({
       findByID: assets(
         { id: 'old', filename: 'old.png', sha256: 'same', ...png },
@@ -540,7 +542,7 @@ describe('toAgentModelMessages', () => {
   });
 
   it('replaces a cloud file the handler cannot find with a marker on other turns', async () => {
-    const handler = vi.fn(async () => new Response(null, { status: 404 }));
+    const handler = vi.fn(() => Promise.resolve(new Response(null, { status: 404 })));
     const req = request({
       findByID: assets({ id: 'a', filename: 'gone.png', ...png }),
       upload: { disableLocalStorage: true, handlers: [handler] },

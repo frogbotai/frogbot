@@ -6,9 +6,9 @@ import { resolveChatCollections } from '../../../../packages/frogbot/src/chat/re
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 
-const agents = [
-  { slug: 'assistant', model: 'openai/test', instructions: 'Assist.' },
-] as FrogBotConfig['agents'];
+const agents: FrogBotConfig['agents'] = [
+  { slug: 'assistant', model: 'openai/gpt-5-nano', instructions: 'Assist.' },
+];
 
 function make(collections: CollectionConfig[], overrides?: Partial<FrogBotConfig>): FrogBotConfig {
   return {

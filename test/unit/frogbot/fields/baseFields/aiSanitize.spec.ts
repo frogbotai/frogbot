@@ -1,8 +1,10 @@
+import type * as PayloadModule from 'payload';
 import type { JobsConfig } from 'payload';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { AgentConfig } from '../../../../../packages/frogbot/src/agents/types.js';
 import { resolveSmallModel } from '../../../../../packages/frogbot/src/ai/models.js';
-import type { AIConfig } from '../../../../../packages/frogbot/src/ai/types.js';
+import type { AIConfig, ModelId } from '../../../../../packages/frogbot/src/ai/types.js';
 import type { CollectionConfig } from '../../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotConfig } from '../../../../../packages/frogbot/src/config/types.js';
 import { aiField } from '../../../../../packages/frogbot/src/fields/baseFields/ai/index.js';
@@ -10,13 +12,15 @@ import { resolveAIFieldModel } from '../../../../../packages/frogbot/src/fields/
 import type { Field } from '../../../../../packages/frogbot/src/fields/config/types.js';
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: Record<string, unknown>) =>
     Promise.resolve({ globals: [], ...config }),
   ),
 }));
 
 const { sanitize } = await import('../../../../../packages/frogbot/src/config/sanitize.js');
+
+const FAST = 'fast' as ModelId;
 
 const ai: AIConfig = { providers: { openai: true }, defaultModel: 'openai/gpt-5-nano' };
 
@@ -53,11 +57,11 @@ describe('sanitizeAIFields models', () => {
       name: 'summary',
       inputs: ['title'],
       prompt: 'S',
-      model: 'anthropic/x',
+      model: 'anthropic/claude-haiku-4-5',
     });
 
     expect(() => sanitize(makeConfig({ collections: [tasks([field])] }))).toThrow(
-      failure('summary', "model 'anthropic/x' is not configured"),
+      failure('summary', "model 'anthropic/claude-haiku-4-5' is not configured"),
     );
   });
 
@@ -118,7 +122,7 @@ describe('sanitizeAIFields models', () => {
   });
 
   it('accepts a router name as the model', () => {
-    const field = aiField({ name: 'summary', inputs: ['title'], prompt: 'S', model: 'fast' });
+    const field = aiField({ name: 'summary', inputs: ['title'], prompt: 'S', model: FAST });
 
     const config = makeConfig({
       ai: { providers: { openai: true }, routers: { fast: { model: 'openai/gpt-5-nano' } } },
@@ -317,15 +321,15 @@ describe('AI field task', () => {
   });
 
   it('does not repeat the autoRun entry a schedule already added', async () => {
-    const scheduled = {
+    const scheduled: AgentConfig = {
       slug: 'support',
       model: 'openai/gpt-5-nano',
       instructions: 'Help the user',
       triggers: [
         {
-          type: 'schedule' as const,
+          type: 'schedule',
           slug: 'run',
-          schedule: { every: '1h' as const },
+          schedule: { every: '1h' },
           prompt: 'Run',
         },
       ],
@@ -337,7 +341,9 @@ describe('AI field task', () => {
   });
 
   it('keeps an app autoRun function and adds the entry once', async () => {
-    const jobs = await jobsOf(makeConfig({ jobs: { autoRun: async () => [everyMinute] } }));
+    const jobs = await jobsOf(
+      makeConfig({ jobs: { autoRun: () => Promise.resolve([everyMinute]) } }),
+    );
     const autoRun = jobs.autoRun as (payload: never) => Promise<unknown[]>;
 
     expect(await autoRun({} as never)).toEqual([everyMinute]);
