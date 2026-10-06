@@ -2,11 +2,13 @@
 
 A fresh drafter writes `step2_spec.md` from `issue.md` and the research Summary. The spec is the owner's main gate, approved with an `Approve:` line in `.idea/decisions/OPEN.md`.
 
+- Copy the research Summary's rulings into `## Rulings` word for word: the same rows, or the same `none (read: …)` line.
 - Number the requirements, and make each one testable.
 - Where FrogBot does what Payload does, say so under Following Payload with `path:line`; the owner may veto any line. A recommendation equal to Payload's behaviour is not a card: it goes there.
 - A card is for a choice only the owner can make. Facts are research: "which modes exist?" is not a card.
 - Write each card so the owner can answer without asking what it means: a concrete situation and public-API code.
 - Coordinators never paraphrase a card or make rulings. The owner's reply goes into `Answer:` word for word.
+- Run `pnpm check ticket-docs <n>` before returning.
 
 ## Template
 
@@ -18,6 +20,10 @@ Status: Draft | Approved (<date>)
 ## Problem
 
 <Who is affected, what happens today, why it matters. Link the research.>
+
+## Rulings
+
+- DR-<nnn> "<quote>" → <rule>. [source](link)
 
 ## Requirements
 
