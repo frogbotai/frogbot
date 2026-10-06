@@ -29,7 +29,7 @@ describe('custom usage logs', () => {
     expect(Object.keys(booted.frogbot.collections)).toContain('ai-usage');
     expect(Object.keys(booted.frogbot.collections)).not.toContain('usage-logs');
 
-    logUsage({
+    await logUsage({
       requestId: 'custom-write',
       model: 'zen/big-pickle',
       operation: 'chat.completions',

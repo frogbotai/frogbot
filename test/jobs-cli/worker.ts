@@ -71,11 +71,15 @@ export async function startWorker({
   let failure: Error | undefined;
   let result: { code: number | null; signal: NodeJS.Signals | null } | undefined;
 
-  child.stdout.on('data', (chunk: Buffer) => {
+  const { stdout, stderr } = child;
+
+  if (!stdout || !stderr) throw new Error('jobs:run worker output must be piped');
+
+  stdout.on('data', (chunk: Buffer) => {
     output += chunk.toString();
   });
 
-  child.stderr.on('data', (chunk: Buffer) => {
+  stderr.on('data', (chunk: Buffer) => {
     output += chunk.toString();
   });
 

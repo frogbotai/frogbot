@@ -22,7 +22,7 @@ export function storageContractSuite(
 ) {
   describe(`storage contract [${adapterName}]`, () => {
     let booted: BootedFrogBot;
-    let skipSuite = false;
+    let skipReason: string | undefined;
 
     beforeAll(async () => {
       const service = storageServices[adapterName];
@@ -34,12 +34,9 @@ export function storageContractSuite(
               `${service.name} is required in CI but is not reachable at ${service.host}:${service.port}`,
             );
           }
-          skipSuite = true;
-          console.warn(
-            `\x1b[33m⚠ Skipping ${adapterName} storage tests — ` +
-              `${service.name} not reachable at ${service.host}:${service.port}. ` +
-              `Start with: docker compose -f test/docker-compose.yml --profile storage up -d\x1b[0m`,
-          );
+          skipReason =
+            `${service.name} not reachable at ${service.host}:${service.port}. ` +
+            `Start with: docker compose -f test/docker-compose.yml --profile storage up -d`;
           return;
         }
       }
@@ -52,10 +49,7 @@ export function storageContractSuite(
     });
 
     beforeEach(async (ctx) => {
-      if (skipSuite) {
-        ctx.skip();
-        return;
-      }
+      if (skipReason) ctx.skip(skipReason);
       await clearAndSeed(booted.frogbot, 'empty');
     });
 

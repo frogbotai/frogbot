@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -324,17 +324,18 @@ describe('triggers', () => {
         await queue(args);
       });
       const first = deliver({ body, subscription });
-      try {
-        await vi.waitFor(() => expect(holding).toBe(true));
-        const second = await deliver({ body, subscription });
-        expect(second.status === 429 || second.status >= 500).toBe(true);
-        expect(
-          (await findDeliveries()).docs.filter((doc) => doc.event.message === message),
-        ).toEqual([]);
-      } finally {
+      onTestFinished(async () => {
         release();
-        await first.finally(() => enqueue.mockRestore());
-      }
+        await first.catch(() => undefined);
+        enqueue.mockRestore();
+      });
+      await vi.waitFor(() => expect(holding).toBe(true));
+      const second = await deliver({ body, subscription });
+      expect(second.status === 429 || second.status >= 500).toBe(true);
+      expect((await findDeliveries()).docs.filter((doc) => doc.event.message === message)).toEqual(
+        [],
+      );
+      release();
       expect((await first).status).toBe(200);
       expect((await deliver({ body, subscription })).status).toBe(200);
       await runDeliveryJobs({
@@ -355,14 +356,12 @@ describe('triggers', () => {
     const enqueue = vi
       .spyOn(booted.frogbot, 'queue')
       .mockRejectedValueOnce(new Error('Intentional enqueue failure'));
-    try {
-      const response = await deliver({ body, subscription: subscription.id });
-      expect(response.status === 429 || response.status >= 500).toBe(true);
-      expect(enqueue).toHaveBeenCalledTimes(1);
-      expect(await findJobs(eventID)).toEqual([]);
-    } finally {
-      enqueue.mockRestore();
-    }
+    onTestFinished(() => enqueue.mockRestore());
+    const response = await deliver({ body, subscription: subscription.id });
+    expect(response.status === 429 || response.status >= 500).toBe(true);
+    expect(enqueue).toHaveBeenCalledTimes(1);
+    expect(await findJobs(eventID)).toEqual([]);
+    enqueue.mockRestore();
     for (let attempt = 0; attempt < 2; attempt++) {
       expect((await deliver({ body, subscription: subscription.id })).status).toBe(200);
     }
@@ -390,13 +389,11 @@ describe('triggers', () => {
       await queue(args);
       primaryQueued();
     });
-    try {
-      const response = await deliver({ body });
-      expect(response.status === 429 || response.status >= 500).toBe(true);
-      expect(enqueue).toHaveBeenCalledTimes(2);
-    } finally {
-      enqueue.mockRestore();
-    }
+    onTestFinished(() => enqueue.mockRestore());
+    const response = await deliver({ body });
+    expect(response.status === 429 || response.status >= 500).toBe(true);
+    expect(enqueue).toHaveBeenCalledTimes(2);
+    enqueue.mockRestore();
     await runDeliveryJobs({
       eventID,
       trigger: 'received',

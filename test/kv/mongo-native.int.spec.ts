@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { setTimeout as delay } from 'node:timers/promises';
 
 import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { BaseDatabaseAdapter } from 'payload';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from 'vitest';
 
 import { createMongoKV } from '../../packages/frogbot/src/kv/adapters/mongo.js';
 import { KVUnsupportedError } from '../../packages/frogbot/src/kv/errors.js';
@@ -77,6 +76,11 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     }
   });
 
+  async function serverNow() {
+    const { localTime } = await first.db!.admin().command({ hello: 1 });
+    return new Date(localTime).getTime();
+  }
+
   async function block<T>({
     key,
     run,
@@ -128,7 +132,8 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     );
     try {
       await expect.poll(() => started, { timeout: 3000 }).toBe(true);
-      await delay(500);
+      const contended = await serverNow();
+      await expect.poll(serverNow, { timeout: 3000 }).toBeGreaterThanOrEqual(contended + 500);
       expect(settled).toBe(false);
       if (commit) await session.commitTransaction();
       else await session.abortTransaction();
@@ -159,26 +164,37 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     },
   );
 
-  it.each(['missing', 'expired', 'set'] as const)(
-    'starts %s TTL after write contention, not at command start',
-    async (operation) => {
-      if (operation !== 'missing') {
-        await kv.set('held', 'old');
-        await model.collection.updateOne({ key: 'held' }, [
-          { $set: { expiresAt: { $subtract: ['$$NOW', 1] } } },
-        ]);
-      }
-      const result = await block({
-        key: 'held',
-        missing: operation === 'missing',
-        run: async () => {
-          if (operation === 'set') {
-            await kv.set('held', 'new', { ttl: 200 });
-            return true;
-          }
-          return kv.setIfAbsent('held', 'new', { ttl: 200 });
-        },
-      });
+  async function expireHeld() {
+    await kv.set('held', 'old');
+    await model.collection.updateOne({ key: 'held' }, [
+      { $set: { expiresAt: { $subtract: ['$$NOW', 1] } } },
+    ]);
+  }
+
+  it.each([
+    {
+      operation: 'missing',
+      prepare: () => Promise.resolve(),
+      run: () => kv.setIfAbsent('held', 'new', { ttl: 200 }),
+    },
+    {
+      operation: 'expired',
+      prepare: expireHeld,
+      run: () => kv.setIfAbsent('held', 'new', { ttl: 200 }),
+    },
+    {
+      operation: 'set',
+      prepare: expireHeld,
+      run: async () => {
+        await kv.set('held', 'new', { ttl: 200 });
+        return true;
+      },
+    },
+  ])(
+    'starts $operation TTL after write contention, not at command start',
+    async ({ operation, prepare, run }) => {
+      await prepare();
+      const result = await block({ key: 'held', missing: operation === 'missing', run });
       expect(result).toBe(true);
       const [row] = await model.collection
         .aggregate(
@@ -213,7 +229,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     expect(original!.updatedAt).toEqual(original!.createdAt);
     expect(original!.expiresAt.getTime() - original!.createdAt.getTime()).toBe(60_000);
     await model.collection.updateOne({ key: 'record' }, { $set: { source: 'preserved' } });
-    await delay(5);
+    await expect.poll(serverNow).toBeGreaterThan(original!.updatedAt.getTime());
     expect(await peer.extendLock({ key: 'record', token: 'owner' }, 60_000)).toBe(true);
     await kv.set('record', { value: '$$NOW' });
     const replaced = await model.collection.findOne({ key: 'record' }, primary);
@@ -331,22 +347,35 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     expect(await model.collection.findOne({ key: 'existing' }, primary)).toEqual(original);
     expect(await model.collection.findOne({ key: 'missing' }, primary)).toBeNull();
     await model.collection.createIndex({ source: 1 }, { unique: true });
-    try {
-      await expect(kv.setIfAbsent('other', 'value')).rejects.toMatchObject({
-        code: 11000,
-        keyPattern: { source: 1 },
-      });
-      expect(await model.collection.findOne({ key: 'other' }, primary)).toBeNull();
-    } finally {
+    onTestFinished(async () => {
       await model.collection.dropIndex('source_1');
-    }
+    });
+    await expect(kv.setIfAbsent('other', 'value')).rejects.toMatchObject({
+      code: 11000,
+      keyPattern: { source: 1 },
+    });
+    expect(await model.collection.findOne({ key: 'other' }, primary)).toBeNull();
   });
 
-  it.each([false, true])(
-    'rejects expiry overflow after contention, missing=%s',
-    async (missing) => {
+  it.each([
+    {
+      missing: false,
+      prepare: () => kv.set('held', 'original'),
+      run: async (ttl: number) => {
+        await kv.set('held', 'replacement', { ttl });
+        return true;
+      },
+    },
+    {
+      missing: true,
+      prepare: () => Promise.resolve(),
+      run: (ttl: number) => kv.setIfAbsent('held', 'replacement', { ttl }),
+    },
+  ])(
+    'rejects expiry overflow after contention, missing=$missing',
+    async ({ missing, prepare, run }) => {
       await kv.set('clock', 'clock');
-      if (!missing) await kv.set('held', 'original');
+      await prepare();
       const original = await model.collection.findOne({ key: 'held' }, primary);
       const [clock] = await model.collection
         .aggregate(
@@ -355,17 +384,9 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         )
         .toArray();
       const ttl = 8_640_000_000_000_000 - Number(clock.now) - 200;
-      await expect(
-        block({
-          key: 'held',
-          missing,
-          run: async () => {
-            if (missing) return kv.setIfAbsent('held', 'replacement', { ttl });
-            await kv.set('held', 'replacement', { ttl });
-            return true;
-          },
-        }),
-      ).rejects.toThrow(RangeError);
+      await expect(block({ key: 'held', missing, run: () => run(ttl) })).rejects.toThrow(
+        RangeError,
+      );
       expect(await model.collection.findOne({ key: 'held' }, primary)).toEqual(original);
     },
   );

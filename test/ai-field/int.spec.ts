@@ -210,7 +210,7 @@ describe('aiField runs', () => {
     vi.spyOn(booted.frogbot, 'update').mockImplementationOnce(async (args) => {
       await edit();
 
-      return update(args as never);
+      return update(args);
     });
   }
 

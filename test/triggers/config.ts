@@ -93,9 +93,9 @@ export default await buildTestConfig({
         {
           trigger: echo.triggers.subscribed,
           input: { channel: 'failures' },
-          handler: async ({ event }) => {
+          handler: ({ event }) => {
             failedHandlerCalls.push(event);
-            throw new Error('Intentional trigger handler failure');
+            return Promise.reject(new Error('Intentional trigger handler failure'));
           },
         },
       ],

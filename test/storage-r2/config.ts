@@ -1,4 +1,4 @@
-import { r2Storage } from '@frogbotai/storage-r2';
+import { r2Storage, type R2StorageOptions } from '@frogbotai/storage-r2';
 import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
@@ -18,18 +18,27 @@ const Media: CollectionConfig = {
   fields: [{ name: 'alt', type: 'text' }],
 };
 
+const workersOnly = () => new Error('R2 bucket bindings need the Cloudflare Workers runtime');
+const unavailable = () => Promise.reject(workersOnly());
+
+const bucket: R2StorageOptions['bucket'] = {
+  createMultipartUpload: unavailable,
+  delete: unavailable,
+  get: unavailable,
+  head: unavailable,
+  list: unavailable,
+  put: unavailable,
+  resumeMultipartUpload: () => {
+    throw workersOnly();
+  },
+};
+
 export default await buildTestConfig({
   collections: [Users, Media],
   plugins: [
     r2Storage({
       collections: { [mediaSlug]: true },
-      bucket: 'frogbot-test-bucket',
-      config: {
-        credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
-        endpoint: 'http://localhost:4566',
-        forcePathStyle: true,
-        region: 'us-east-1',
-      },
+      bucket,
     }),
   ],
 });

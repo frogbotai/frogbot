@@ -272,7 +272,7 @@ const results = await Promise.all(PROBES.map(runProbe));
 const width = Math.max(...PROBES.map((probe) => probe.name.length)) + 2;
 
 PROBES.forEach((probe, index) => {
-  console.log(`${probe.name.padEnd(width)}${results[index]}`);
+  process.stdout.write(`${probe.name.padEnd(width)}${results[index]}\n`);
 });
 
 if (results.some((result) => result.startsWith('✗'))) process.exitCode = 1;

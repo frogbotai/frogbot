@@ -33,11 +33,6 @@
   "packages/plugins/plugin-mcp/src/access.ts": {
     "TS2322": 1
   },
-  "test/__helpers/shared/StubOAuthProvider.ts": {
-    "TS2344": 1,
-    "TS2345": 2,
-    "TS2504": 1
-  },
   "test/__helpers/shared/bootFrogBot.ts": {
     "TS2352": 1
   },
@@ -65,7 +60,6 @@
   "test/ai-field/int.spec.ts": {
     "TS2322": 13,
     "TS2339": 1,
-    "TS2345": 1,
     "TS2769": 6
   },
   "test/ai/environment/evaluate.int.spec.ts": {
@@ -116,12 +110,6 @@
   "test/auth-strategies/int.spec.ts": {
     "TS2322": 1,
     "TS2739": 1
-  },
-  "test/auth/autoLogin.int.spec.ts": {
-    "TS2345": 1
-  },
-  "test/auth/session.int.spec.ts": {
-    "TS7031": 1
   },
   "test/browser/fixtures/chat-assets/src/app/(frogbot)/[[...segments]]/page.tsx": {
     "TS7016": 1
@@ -236,14 +224,6 @@
     "TS2339": 7,
     "TS2353": 3
   },
-  "test/connections/int.spec.ts": {
-    "TS18046": 2,
-    "TS2322": 1,
-    "TS7031": 1
-  },
-  "test/connections/resolution.int.spec.ts": {
-    "TS18046": 1
-  },
   "test/database/int.spec.ts": {
     "TS2322": 76,
     "TS2339": 18,
@@ -329,15 +309,12 @@
     "TS2339": 3
   },
   "test/email/int.spec.ts": {
-    "TS18046": 1,
     "TS18048": 2,
-    "TS2322": 8,
-    "TS2339": 8,
-    "TS2344": 1,
+    "TS2322": 7,
+    "TS2339": 6,
     "TS2345": 1,
     "TS2353": 3,
-    "TS2739": 2,
-    "TS7031": 1
+    "TS2739": 2
   },
   "test/fields/config.ts": {
     "TS2322": 4
@@ -382,7 +359,7 @@
     "TS2322": 1
   },
   "test/graphql/customResolvers/config.ts": {
-    "TS2322": 4,
+    "TS2322": 3,
     "TS2339": 2
   },
   "test/graphql/customResolvers/int.spec.ts": {
@@ -410,9 +387,6 @@
     "TS2339": 22,
     "TS2353": 15,
     "TS2769": 9
-  },
-  "test/jobs-cli/worker.ts": {
-    "TS18047": 2
   },
   "test/jobs/acceptance.int.spec.ts": {
     "TS2322": 6
@@ -446,17 +420,13 @@
   },
   "test/live/rag.live.spec.ts": {
     "TS2322": 2,
-    "TS2352": 1,
     "TS2353": 1
   },
   "test/local-api/int.spec.ts": {
-    "TS2322": 3,
-    "TS2352": 1
+    "TS2322": 3
   },
   "test/mcp-tools/int.spec.ts": {
-    "TS2322": 7,
-    "TS2339": 4,
-    "TS2345": 1
+    "TS2322": 6
   },
   "test/plugin-mcp/config.ts": {
     "TS2322": 1
@@ -477,21 +447,16 @@
   "test/plugin-seo/tabbed/config.ts": {
     "TS2322": 3
   },
-  "test/rich-text/config.ts": {
-    "TS2322": 2
-  },
   "test/rich-text/htmlField.int.spec.ts": {
-    "TS2322": 28,
+    "TS2322": 27,
     "TS2339": 8,
-    "TS2344": 1,
-    "TS2353": 16,
+    "TS2353": 14,
     "TS2769": 3
   },
   "test/rich-text/int.spec.ts": {
-    "TS2322": 5,
+    "TS2322": 4,
     "TS2339": 2,
-    "TS2353": 2,
-    "TS2367": 1,
+    "TS2353": 1,
     "TS2769": 2
   },
   "test/roles/config.ts": {
@@ -629,15 +594,6 @@
     "TS2353": 4,
     "TS2769": 6
   },
-  "test/sign-in/int.spec.ts": {
-    "TS18048": 1,
-    "TS2322": 3,
-    "TS2339": 15,
-    "TS7031": 1
-  },
-  "test/storage-r2/config.ts": {
-    "TS2322": 1
-  },
   "test/storage-s3/builtins.int.spec.ts": {
     "TS2345": 2,
     "TS2352": 1
@@ -660,8 +616,7 @@
     "TS2769": 3
   },
   "test/system-fields/config.ts": {
-    "TS2322": 3,
-    "TS2698": 1
+    "TS2322": 3
   },
   "test/system-fields/frogbot-types.ts": {
     "TS2717": 2

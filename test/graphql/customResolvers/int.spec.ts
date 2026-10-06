@@ -40,11 +40,11 @@ describe('custom GraphQL resolvers', () => {
   let token: string;
 
   async function createUser(email: string) {
-    const user = (await booted.frogbot.create({
+    const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email, password },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     const login = await booted.restClient.post<{ token: string }>(`/api/${usersSlug}/login`, {
       email,

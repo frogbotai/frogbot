@@ -17,7 +17,7 @@ function generateForSuite(suiteDir: string): Promise<number> {
   if (!configPath) return Promise.resolve(1);
   const outputPath = path.resolve(path.dirname(configPath), 'frogbot-types.ts');
 
-  console.log(`[generate:types] ${path.basename(suiteDir)}`);
+  process.stdout.write(`[generate:types] ${path.basename(suiteDir)}\n`);
 
   return new Promise((resolve) => {
     const child = spawn('node', [binPath, 'generate:types'], {
@@ -40,7 +40,7 @@ async function run() {
   if (targetSuite) {
     const suiteDir = path.resolve(dirname, targetSuite);
     if (!fs.existsSync(path.resolve(suiteDir, 'config.ts'))) {
-      console.error(`[generate:types] no config.ts found in ${suiteDir}`);
+      process.stderr.write(`[generate:types] no config.ts found in ${suiteDir}\n`);
       process.exit(1);
     }
     const code = await generateForSuite(suiteDir);
@@ -58,7 +58,7 @@ async function run() {
     path.resolve(repoRoot, 'templates/blank'),
   ];
 
-  console.log(`[generate:types] found ${suites.length} suites\n`);
+  process.stdout.write(`[generate:types] found ${suites.length} suites\n\n`);
 
   let failures = 0;
   for (const suiteDir of suites) {
@@ -66,7 +66,9 @@ async function run() {
     if (code !== 0) failures++;
   }
 
-  console.log(`\n[generate:types] done. ${suites.length - failures}/${suites.length} succeeded.`);
+  process.stdout.write(
+    `\n[generate:types] done. ${suites.length - failures}/${suites.length} succeeded.\n`,
+  );
   if (failures > 0) process.exit(1);
 }
 

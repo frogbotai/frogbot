@@ -1,12 +1,22 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { setTimeout } from 'node:timers/promises';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { redisKVAdapter } from '@frogbotai/kv-redis';
 import { getPayload, jwtSign, type Payload, type TypedUser } from 'payload';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  type MockSettledResult,
+  onTestFinished,
+  vi,
+} from 'vitest';
 import { z } from 'zod';
 
 import { checkSessionLease } from '../../packages/frogbot/src/auth/operation.js';
@@ -15,6 +25,7 @@ import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { getPayloadConfig } from '../../packages/frogbot/src/config/getPayloadConfig.js';
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import * as locks from '../../packages/frogbot/src/kv/lock.js';
+import type { KV } from '../../packages/frogbot/src/kv/types.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
@@ -57,6 +68,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       await resumed;
       return user;
     });
+    onTestFinished(resume);
     return { read, resume };
   };
   const authRequest = (path: string, token = priorToken, data?: unknown) =>
@@ -113,11 +125,88 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect(response.headers.get('set-cookie')).toContain('frogbot-token=');
     return response.json() as ReturnType<typeof reset>;
   };
+  const waitUntil = (condition: () => void) => vi.waitFor(condition, { timeout: 5_000 });
+  const fulfilled = <T>(results: MockSettledResult<T>[]) =>
+    results.flatMap((result) => (result.type === 'fulfilled' ? [result.value] : []));
+  const sessionLockResults = <T>(spy: {
+    mock: { calls: unknown[][]; settledResults: MockSettledResult<T>[] };
+  }) =>
+    fulfilled(
+      spy.mock.settledResults.filter((_, index) =>
+        String(spy.mock.calls[index][0]).startsWith('auth:session:'),
+      ),
+    );
   const expectWaiting = async (pending: Promise<unknown>) => {
     const settled = vi.fn();
     void pending.then(settled, settled);
-    await setTimeout(100);
+    const get = vi.spyOn(frogbot.kv, 'get');
+    await waitUntil(() => {
+      expect(sessionLockResults(get).filter(Boolean).length).toBeGreaterThanOrEqual(2);
+    });
     expect(settled).not.toHaveBeenCalled();
+  };
+  const waitForRenewals = async (extend: MockInstance<KV['extendLock']>, count: number) => {
+    const renewals = () => fulfilled(extend.mock.settledResults).filter(Boolean).length;
+    const target = renewals() + count;
+    await waitUntil(() => expect(renewals()).toBeGreaterThanOrEqual(target));
+  };
+  const waitForLeaseLoss = (extend: MockInstance<KV['extendLock']>) =>
+    waitUntil(() => expect(fulfilled(extend.mock.settledResults)).toContain(false));
+  const waitForAcquisitions = (acquire: MockInstance<KV['acquireLock']>, count: number) =>
+    waitUntil(() =>
+      expect(sessionLockResults(acquire).filter(Boolean).length).toBeGreaterThanOrEqual(count),
+    );
+  const logoutPastStaleWrite = async () => {
+    const begin = vi.spyOn(payload.db, 'beginTransaction');
+    const loggingOut = logout();
+    if (payload.db.name === 'sqlite') {
+      const settled = vi.fn();
+      void loggingOut.then(settled, settled);
+      await waitUntil(() => {
+        expect(begin.mock.settledResults.map(({ type }) => type)).toContain('incomplete');
+      });
+      expect(settled).not.toHaveBeenCalled();
+    } else {
+      await loggingOut;
+      expect((await readUser())?.sessions).toEqual([]);
+    }
+    return { loggingOut };
+  };
+  const ensureLoggedOut = async (response: Response) => {
+    if (response.status !== 200) await logout();
+  };
+  const expectStaleWriteApplied = (applied: boolean) => {
+    if (payload.db.name !== 'mongoose') expect(applied).toBe(true);
+  };
+  type Outcome = { sessions: string[]; tokens: string[]; revoked: boolean };
+  const signedIn = async (
+    signing: Promise<{ token?: string }>,
+    revoked: boolean,
+  ): Promise<Outcome> => {
+    const { token } = await signing;
+    return {
+      sessions: [...(revoked ? [] : [priorSession.id]), claims(token!).sid],
+      tokens: [token!],
+      revoked,
+    };
+  };
+  const outcomes = {
+    login: () => signedIn(login(), false),
+    loginHTTP: () => signedIn(loginHTTP(), false),
+    reset: () => signedIn(reset(), true),
+    resetHTTP: () => signedIn(resetHTTP(), true),
+    logout: async (): Promise<Outcome> => {
+      await logout();
+      return { sessions: [], tokens: [], revoked: true };
+    },
+    refresh: async (): Promise<Outcome> => {
+      const { refreshedToken } = await refresh();
+      return { sessions: [priorSession.id], tokens: [refreshedToken], revoked: false };
+    },
+  };
+  const expectOutcome = async ({ tokens, revoked }: Outcome) => {
+    for (const token of tokens) await expectAuthenticated(token);
+    await expectAuthenticated(priorToken, revoked ? null : userId);
   };
   const expectAuthenticated = async (token: string, id: string | number | null = userId) => {
     const result = await payload.auth({ headers: new Headers({ authorization: `JWT ${token}` }) });
@@ -134,12 +223,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       slug: 'identity',
       label: 'Identity',
       auth: z.object({ accessToken: z.string() }),
-      client: ({ auth }) => auth,
+      client: ({ auth }: { auth: unknown }) => auth,
       oauth: {
         authorizationUrl: 'https://identity.example.com/authorize',
         tokenUrl: 'https://identity.example.com/token',
         scopes: ['openid', 'email'],
-        account: async () => ({ id: 'identity', label: 'Identity', email: 'person@example.com' }),
+        account: () =>
+          Promise.resolve({ id: 'identity', label: 'Identity', email: 'person@example.com' }),
       },
       actions: [],
     });
@@ -322,7 +412,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const original = await readUser();
     hooks.beforeLogin = [
       async ({ user }) => {
-        await setTimeout(5);
+        await new Promise((resolve) => setImmediate(resolve));
         order.push('before-1');
         return {
           ...user,
@@ -461,7 +551,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       async ({ user }) => {
         active++;
         maximum = Math.max(maximum, active);
-        await setTimeout(650);
+        await waitForRenewals(extend, 3);
         active--;
         return user;
       },
@@ -487,14 +577,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('makes real HTTP logout wait for the issuer read and keeps A revoked', async () => {
     const paused = pauseUserRead();
     const pending = issue();
-    let loggingOut!: Promise<void>;
-    try {
-      await paused.read;
-      loggingOut = logout();
-      await expectWaiting(loggingOut);
-    } finally {
-      paused.resume();
-    }
+    await paused.read;
+    const loggingOut = logout();
+    await expectWaiting(loggingOut);
+    paused.resume();
     const result = await pending;
     await loggingOut;
 
@@ -506,14 +592,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('makes local password login wait for the issuer read and preserves both sessions', async () => {
     const paused = pauseUserRead();
     const pending = issue();
-    let loggingIn!: ReturnType<typeof login>;
-    try {
-      await paused.read;
-      loggingIn = login();
-      await expectWaiting(loggingIn);
-    } finally {
-      paused.resume();
-    }
+    await paused.read;
+    const loggingIn = login();
+    await expectWaiting(loggingIn);
+    paused.resume();
     const result = await pending;
     const loggedIn = await loggingIn;
     const loginSid = claims(loggedIn.token!).sid;
@@ -528,14 +610,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('makes real HTTP refresh wait for the issuer read and preserves its expiry', async () => {
     const paused = pauseUserRead();
     const pending = issue();
-    let refreshing!: ReturnType<typeof refresh>;
-    try {
-      await paused.read;
-      refreshing = refresh();
-      await expectWaiting(refreshing);
-    } finally {
-      paused.resume();
-    }
+    await paused.read;
+    const refreshing = refresh();
+    await expectWaiting(refreshing);
+    paused.resume();
     const result = await pending;
     const refreshed = await refreshing;
     const stored = await readUser();
@@ -555,61 +633,49 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     await expectAuthenticated(result.token);
   });
 
-  it.each(['logout', 'login'] as const)(
-    'makes real %s wait for failure cleanup',
-    async (operation) => {
-      const failure = new Error('Hook failed');
-      let paused!: ReturnType<typeof pauseUserRead>;
-      let notify!: () => void;
-      const cleanup = new Promise<void>((resolve) => {
-        notify = resolve;
-      });
-      payload.collections.members.config.hooks.afterLogin = [
-        () => {
-          paused = pauseUserRead();
-          notify();
-          throw failure;
-        },
-      ];
-      const pending = issue().catch((error: unknown) => error);
-      let expected: string[] = [];
-      let overlapping!: Promise<void> | ReturnType<typeof login>;
-      await cleanup;
-      try {
-        await paused.read;
-        payload.collections.members.config.hooks.afterLogin = [];
-        overlapping = operation === 'logout' ? logout() : login();
-        await expectWaiting(overlapping);
-      } finally {
-        paused.resume();
-      }
+  it.each([
+    ['logout', outcomes.logout],
+    ['login', outcomes.login],
+  ])('makes real %s wait for failure cleanup', async (_operation, overlap) => {
+    const failure = new Error('Hook failed');
+    let paused!: ReturnType<typeof pauseUserRead>;
+    let notify!: () => void;
+    const cleanup = new Promise<void>((resolve) => {
+      notify = resolve;
+    });
+    payload.collections.members.config.hooks.afterLogin = [
+      () => {
+        paused = pauseUserRead();
+        notify();
+        throw failure;
+      },
+    ];
+    const pending = issue().catch((error: unknown) => error);
+    await cleanup;
+    await paused.read;
+    payload.collections.members.config.hooks.afterLogin = [];
+    const overlapping = overlap();
+    await expectWaiting(overlapping);
+    paused.resume();
 
-      expect(await pending).toBe(failure);
-      const loggedIn = await overlapping;
-      if (loggedIn) {
-        expected = [priorSession.id, claims(loggedIn.token!).sid];
-        await expectAuthenticated(loggedIn.token!);
-      } else {
-        await expectAuthenticated(priorToken, null);
-      }
-      expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(expected.sort());
-      expect(req.user).toBeNull();
-    },
-  );
+    expect(await pending).toBe(failure);
+    const outcome = await overlapping;
+    await expectOutcome(outcome);
+    expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
+      outcome.sessions.sort(),
+    );
+    expect(req.user).toBeNull();
+  });
 
   it.each(['local', 'HTTP'])(
     'makes the issuer wait for %s password login from its first read',
     async (transport) => {
       const paused = pauseUserRead();
       const pending = transport === 'local' ? login() : loginHTTP();
-      let issuing!: ReturnType<typeof issue>;
-      try {
-        await paused.read;
-        issuing = issue();
-        await expectWaiting(issuing);
-      } finally {
-        paused.resume();
-      }
+      await paused.read;
+      const issuing = issue();
+      await expectWaiting(issuing);
+      paused.resume();
       const result = await pending;
       const issued = await issuing;
       const issuedSid = claims(issued.token).sid;
@@ -624,11 +690,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('compensates after a lease loss and waits for the in-flight hook before restoring the request', async () => {
     shortenLease();
-    vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     let finished = false;
     payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
-        await setTimeout(450);
+        await waitForLeaseLoss(extend);
         req.user = user;
         finished = true;
         return user;
@@ -658,11 +724,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('rolls back a session write if its lease is lost before commit', async () => {
     shortenLease();
-    vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     const update = payload.db.updateOne.bind(payload.db);
     vi.spyOn(payload.db, 'updateOne').mockImplementationOnce(async (args) => {
       const result = await update(args);
-      await setTimeout(450);
+      await waitForLeaseLoss(extend);
       return result;
     });
 
@@ -710,74 +776,54 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
   });
 
-  it.each(['local login', 'HTTP login', 'local reset', 'HTTP reset', 'logout', 'refresh'] as const)(
-    'keeps the boundary held while %s commits its real transaction',
-    async (operation) => {
-      await prepareReset();
-      let notify!: () => void;
-      let resume!: () => void;
-      const committing = new Promise<void>((resolve) => {
-        notify = resolve;
-      });
-      const resumed = new Promise<void>((resolve) => {
-        resume = resolve;
-      });
-      const commit = payload.db.commitTransaction.bind(payload.db);
-      vi.spyOn(payload.db, 'commitTransaction').mockImplementationOnce(async (id) => {
-        expect(await id).toBeTruthy();
-        notify();
-        await resumed;
-        await commit(id);
-      });
-      const pending =
-        operation === 'local login'
-          ? login()
-          : operation === 'HTTP login'
-            ? loginHTTP()
-            : operation === 'local reset'
-              ? reset()
-              : operation === 'HTTP reset'
-                ? resetHTTP()
-                : operation === 'logout'
-                  ? logout()
-                  : refresh();
-      let issuing!: ReturnType<typeof issue>;
-      try {
-        await committing;
-        issuing = issue();
-        await expectWaiting(issuing);
-        expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
-      } finally {
-        resume();
-      }
-      const result = await pending;
-      const issued = await issuing;
-      const token = result && 'token' in result ? result.token : undefined;
-      const refreshedToken =
-        result && 'refreshedToken' in result ? result.refreshedToken : undefined;
-      const expected = [claims(issued.token).sid];
+  it.each([
+    ['local login', outcomes.login],
+    ['HTTP login', outcomes.loginHTTP],
+    ['local reset', outcomes.reset],
+    ['HTTP reset', outcomes.resetHTTP],
+    ['logout', outcomes.logout],
+    ['refresh', outcomes.refresh],
+  ])('keeps the boundary held while %s commits its real transaction', async (_operation, run) => {
+    await prepareReset();
+    let notify!: () => void;
+    let resume!: () => void;
+    const committing = new Promise<void>((resolve) => {
+      notify = resolve;
+    });
+    const resumed = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    onTestFinished(resume);
+    const commit = payload.db.commitTransaction.bind(payload.db);
+    vi.spyOn(payload.db, 'commitTransaction').mockImplementationOnce(async (id) => {
+      expect(await id).toBeTruthy();
+      notify();
+      await resumed;
+      await commit(id);
+    });
+    const pending = run();
+    await committing;
+    const issuing = issue();
+    await expectWaiting(issuing);
+    expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
+    resume();
+    const outcome = await pending;
+    const issued = await issuing;
 
-      if (operation !== 'logout' && !operation.endsWith('reset')) expected.push(priorSession.id);
-
-      if (token) expected.push(claims(token).sid);
-
-      expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(expected.sort());
-      await expectAuthenticated(issued.token);
-      if (token) await expectAuthenticated(token);
-      if (refreshedToken) await expectAuthenticated(refreshedToken);
-      if (operation === 'logout' || operation.endsWith('reset')) {
-        await expectAuthenticated(priorToken, null);
-      }
-    },
-  );
+    expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
+      [claims(issued.token).sid, ...outcome.sessions].sort(),
+    );
+    await expectAuthenticated(issued.token);
+    await expectOutcome(outcome);
+  });
 
   it('cleans up password-login lease loss', async () => {
     shortenLease();
-    vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     let finished = false;
     payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
-        await setTimeout(450);
+        await waitForLeaseLoss(extend);
         req.user = user;
         finished = true;
       },
@@ -800,7 +846,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const extend = vi.spyOn(frogbot.kv, 'extendLock');
     payload.collections.members.config.hooks.afterLogin = [
       async () => {
-        await setTimeout(650);
+        await waitForRenewals(extend, 3);
       },
     ];
     const result = await login();
@@ -814,6 +860,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const rollback = vi.spyOn(payload.db, 'rollbackTransaction');
     shortenLease();
     vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
     let notify!: () => void;
     const entered = new Promise<void>((resolve) => {
       notify = resolve;
@@ -822,7 +869,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     payload.collections.members.config.hooks.afterLogin = [
       async () => {
         notify();
-        await setTimeout(650);
+        await waitForAcquisitions(acquire, 2);
         finished = true;
       },
     ];
@@ -832,8 +879,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect(await loggingIn).toBeInstanceOf(Error);
     expect(rollback).toHaveBeenCalled();
     expect(Object.keys(payload.db.sessions)).toEqual([]);
-    const response = await loggingOut;
-    if (response.status !== 200) await logout();
+    await ensureLoggedOut(await loggingOut);
     expect(finished).toBe(true);
     expect((await readUser())?.sessions).toEqual([]);
     await expectAuthenticated(priorToken, null);
@@ -904,6 +950,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
+    onTestFinished(resume);
     payload.collections.members.config.hooks.afterLogout = [
       async () => {
         notify();
@@ -911,14 +958,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       },
     ];
     const pending = authRequest('members/logout');
-    let refreshing!: Promise<Response>;
-    try {
-      await entered;
-      refreshing = authRequest('members/refresh-token');
-      await expectWaiting(refreshing);
-    } finally {
-      resume();
-    }
+    await entered;
+    const refreshing = authRequest('members/refresh-token');
+    await expectWaiting(refreshing);
+    resume();
     expect((await pending).status).toBe(200);
     expect((await refreshing).status).toBe(403);
     expect((await readUser())?.sessions).toEqual([]);
@@ -950,14 +993,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('does not treat a reused request outside the owning async call as reentrant', async () => {
     const paused = pauseUserRead();
     const first = issue();
-    let second!: ReturnType<typeof issue>;
-    try {
-      await paused.read;
-      second = issue(req);
-      await expectWaiting(second);
-    } finally {
-      paused.resume();
-    }
+    await paused.read;
+    const second = issue(req);
+    await expectWaiting(second);
+    paused.resume();
     const results = await Promise.all([first, second]);
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([
       priorSession.id,
@@ -999,13 +1038,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     payload.collections.members.config.hooks.afterLogin = [];
     const paused = pauseUserRead();
     const second = issue(await frogbot.createRequest());
-    try {
-      await paused.read;
-      resumeDetached();
-      await expectWaiting(detached);
-    } finally {
-      paused.resume();
-    }
+    await paused.read;
+    resumeDetached();
+    await expectWaiting(detached);
+    paused.resume();
     const results = [first, ...(await Promise.all([second, detached]))];
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([
       priorSession.id,
@@ -1034,17 +1070,14 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     });
     const paused = pauseUserRead();
     const pending = issue();
-    try {
-      await paused.read;
-      const result = await frogbot.login({
-        collection: 'customers',
-        data: { email: 'parallel-customer@example.com', password: 'test-password' },
-      });
-      await expectAuthenticated(result.token!, customer.id);
-      expect(req.user).toBeNull();
-    } finally {
-      paused.resume();
-    }
+    await paused.read;
+    const result = await frogbot.login({
+      collection: 'customers',
+      data: { email: 'parallel-customer@example.com', password: 'test-password' },
+    });
+    await expectAuthenticated(result.token!, customer.id);
+    expect(req.user).toBeNull();
+    paused.resume();
     await expectAuthenticated((await pending).token);
   });
 
@@ -1110,14 +1143,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       await prepareReset();
       const paused = pauseUserRead();
       const pending = transport === 'local' ? reset() : resetHTTP();
-      let issuing!: ReturnType<typeof issue>;
-      try {
-        await paused.read;
-        issuing = issue();
-        await expectWaiting(issuing);
-      } finally {
-        paused.resume();
-      }
+      await paused.read;
+      const issuing = issue();
+      await expectWaiting(issuing);
+      paused.resume();
       const result = await pending;
       const issued = await issuing;
 
@@ -1136,39 +1165,59 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     },
   );
 
-  it.each(['issue', 'login', 'reset', 'logout', 'refresh'] as const)(
-    'rejects transactionless %s before applying a session write',
-    async (operation) => {
-      await prepareReset();
-      vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
-      vi.spyOn(payload.db, 'beginTransaction').mockResolvedValue(null);
-      const update = vi.spyOn(payload.db, 'updateOne');
-      if (operation === 'logout' || operation === 'refresh') {
-        const response = await authRequest(
-          `members/${operation === 'refresh' ? 'refresh-token' : operation}`,
-        );
-        expect(response.status).toBe(500);
-        expect(response.headers.get('set-cookie')).toBeNull();
-      } else {
-        await expect(
-          operation === 'issue' ? issue() : operation === 'login' ? login() : reset(),
-        ).rejects.toThrow(
-          'Coordinated sessions require an active SQLite, PostgreSQL, or MongoDB transaction.',
-        );
-      }
-      expect(update).not.toHaveBeenCalled();
-      expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
-      await expectAuthenticated(priorToken);
-    },
-  );
+  const transactionless = async (pending: Promise<unknown>) => {
+    await expect(pending).rejects.toThrow(
+      'Coordinated sessions require an active SQLite, PostgreSQL, or MongoDB transaction.',
+    );
+  };
+  const transactionlessHTTP = async (path: string) => {
+    const response = await authRequest(path);
+    expect(response.status).toBe(500);
+    expect(response.headers.get('set-cookie')).toBeNull();
+  };
 
-  it.each(['issue', 'login', 'reset', 'HTTP reset', 'refresh'] as const)(
+  it.each([
+    ['issue', () => transactionless(issue())],
+    ['login', () => transactionless(login())],
+    ['reset', () => transactionless(reset())],
+    ['logout', () => transactionlessHTTP('members/logout')],
+    ['refresh', () => transactionlessHTTP('members/refresh-token')],
+  ])('rejects transactionless %s before applying a session write', async (_operation, reject) => {
+    await prepareReset();
+    vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
+    vi.spyOn(payload.db, 'beginTransaction').mockResolvedValue(null);
+    const update = vi.spyOn(payload.db, 'updateOne');
+    await reject();
+    expect(update).not.toHaveBeenCalled();
+    expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
+    await expectAuthenticated(priorToken);
+  });
+
+  it.each([
+    ['issue', () => issue(), expect.any(Error)],
+    ['login', () => login(), expect.any(Error)],
+    ['reset', () => reset(), expect.any(Error)],
+    [
+      'HTTP reset',
+      () =>
+        authRequest('members/reset-password', '', {
+          token: `reset-${sequence}`,
+          password: 'replacement-password',
+        }),
+      expect.objectContaining({ status: 500 }),
+    ],
+    [
+      'refresh',
+      () => authRequest('members/refresh-token'),
+      expect.objectContaining({ status: 500 }),
+    ],
+  ])(
     'rolls back actual delayed %s write application after lease expiry without restoring logout',
-    async (operation) => {
+    async (_operation, run, failure) => {
       await prepareReset();
       shortenLease();
       vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
-      vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+      const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
       let notify!: () => void;
       let resume!: () => void;
       const entered = new Promise<void>((resolve) => {
@@ -1177,6 +1226,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       const resumed = new Promise<void>((resolve) => {
         resume = resolve;
       });
+      onTestFinished(resume);
       const update = payload.db.updateOne.bind(payload.db);
       let staleTransaction: string | number | undefined;
       let applied = false;
@@ -1191,43 +1241,18 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       });
       const rollback = vi.spyOn(payload.db, 'rollbackTransaction');
       const commit = vi.spyOn(payload.db, 'commitTransaction');
-      const pending = (
-        operation === 'issue'
-          ? issue()
-          : operation === 'login'
-            ? login()
-            : operation === 'reset'
-              ? reset()
-              : operation === 'HTTP reset'
-                ? authRequest('members/reset-password', '', {
-                    token: `reset-${sequence}`,
-                    password: 'replacement-password',
-                  })
-                : authRequest('members/refresh-token')
-      ).catch((error: unknown) => error);
-      let loggingOut!: Promise<void>;
-      try {
-        await entered;
-        await setTimeout(350);
-        expect(applied).toBe(false);
-        loggingOut = logout();
-        if (payload.db.name === 'sqlite') {
-          await expectWaiting(loggingOut);
-        } else {
-          await loggingOut;
-          expect((await readUser())?.sessions).toEqual([]);
-        }
-        expect(applied).toBe(false);
-      } finally {
-        resume();
-      }
-      const result = await pending;
+      const pending = run().catch((error: unknown) => error);
+      await entered;
+      await waitForLeaseLoss(extend);
+      expect(applied).toBe(false);
+      const { loggingOut } = await logoutPastStaleWrite();
+      expect(applied).toBe(false);
+      resume();
+      expect(await pending).toEqual(failure);
       await loggingOut;
-      if (result instanceof Response) expect(result.status).toBe(500);
-      else expect(result).toBeInstanceOf(Error);
       expect(rollback).toHaveBeenCalledWith(staleTransaction);
       expect(commit.mock.calls.map(([id]) => id)).not.toContain(staleTransaction);
-      if (payload.db.name !== 'mongoose') expect(applied).toBe(true);
+      expectStaleWriteApplied(applied);
       expect((await readUser())?.sessions).toEqual([]);
       await expectAuthenticated(priorToken, null);
     },
@@ -1243,10 +1268,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       );
       const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
       const cancel = vi.fn();
+      const pull = vi.fn();
       const body = new ReadableStream<Uint8Array>({
         start(controller) {
           controller.enqueue(new TextEncoder().encode('{'));
         },
+        pull,
         cancel,
       });
       const pending = frogbot.handleRequest(
@@ -1257,7 +1284,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
           duplex: 'half',
         } as RequestInit),
       );
-      await setTimeout(30);
+      await waitUntil(() => expect(pull).toHaveBeenCalled());
       expect(acquire).not.toHaveBeenCalled();
       await logout();
       const response = await pending;
@@ -1272,7 +1299,8 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('keeps logout revoked when lease loss occurs during an actual delayed commit', async () => {
     shortenLease();
     vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
-    vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
+    const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
     let notify!: () => void;
     let resume!: () => void;
     const entered = new Promise<void>((resolve) => {
@@ -1281,6 +1309,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
+    onTestFinished(resume);
     const commit = payload.db.commitTransaction.bind(payload.db);
     vi.spyOn(payload.db, 'commitTransaction').mockImplementationOnce(async (id) => {
       notify();
@@ -1288,18 +1317,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       await commit(id);
     });
     const pending = issue().catch((error: unknown) => error);
-    let loggingOut!: Promise<Response>;
-    try {
-      await entered;
-      await setTimeout(350);
-      loggingOut = authRequest('members/logout');
-      await setTimeout(100);
-    } finally {
-      resume();
-    }
+    await entered;
+    await waitForLeaseLoss(extend);
+    const loggingOut = authRequest('members/logout');
+    await waitForAcquisitions(acquire, 2);
+    resume();
     expect(await pending).toBeInstanceOf(Error);
-    const response = await loggingOut;
-    if (response.status !== 200) await logout();
+    await ensureLoggedOut(await loggingOut);
     expect((await readUser())?.sessions).toEqual([]);
     await expectAuthenticated(priorToken, null);
   });
@@ -1337,14 +1361,16 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect(hookReq.data.email).toBe(`session-${sequence}@example.com`);
     });
     payload.collections.members.config.hooks.beforeLogin = [beforeLogin];
-    const body = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        controller.enqueue(bytes.slice(0, 10));
-        await setTimeout(30);
-        controller.enqueue(bytes.slice(10));
-        controller.close();
+    const chunks = [bytes.slice(0, 10), bytes.slice(10)];
+    const body = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          controller.enqueue(chunks.shift());
+          if (!chunks.length) controller.close();
+        },
       },
-    });
+      { highWaterMark: 0 },
+    );
     const response = await frogbot.handleRequest(
       new Request('http://localhost/api/members/login', {
         method: 'POST',
@@ -1363,16 +1389,17 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
     const controller = new AbortController();
     const cancel = vi.fn();
+    const pull = vi.fn();
     const pending = frogbot.handleRequest(
       new Request('http://localhost/api/members/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: new ReadableStream({ cancel }),
+        body: new ReadableStream({ pull, cancel }, { highWaterMark: 0 }),
         signal: controller.signal,
         duplex: 'half',
       } as RequestInit),
     );
-    await setTimeout(30);
+    await waitUntil(() => expect(pull).toHaveBeenCalled());
     controller.abort();
     expect((await pending).status).toBe(408);
     expect(cancel).toHaveBeenCalledOnce();

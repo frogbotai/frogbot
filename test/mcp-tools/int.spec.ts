@@ -8,13 +8,18 @@ import { startStubMCPServer } from '../__helpers/shared/StubMCPServer.js';
 type MCPClient = Awaited<ReturnType<typeof createMCPClient>>;
 type MCPTools = Awaited<ReturnType<MCPClient['tools']>>;
 
-const adaptTools = (mcpTools: MCPTools): NonNullable<AgentConfig['tools']> =>
-  Object.entries(mcpTools).map(([slug, mcpTool]) => ({
-    slug,
-    description: mcpTool.description ?? `MCP tool: ${slug}`,
-    inputSchema: mcpTool.inputSchema,
-    execute: (input, ctx) => mcpTool.execute(input, { toolCallId: ctx.agent.runId, messages: [] }),
-  }));
+const adaptTools = (mcpTools: MCPTools) =>
+  Object.entries(mcpTools).map(
+    ([slug, mcpTool]) =>
+      ({
+        slug,
+        description:
+          typeof mcpTool.description === 'string' ? mcpTool.description : `MCP tool: ${slug}`,
+        inputSchema: mcpTool.inputSchema,
+        execute: (input: unknown, ctx: ToolCtx) =>
+          mcpTool.execute(input, { toolCallId: ctx.agent.runId, messages: [], context: {} }),
+      }) satisfies NonNullable<AgentConfig['tools']>[number],
+  );
 
 describe('MCP agent tool recipe', () => {
   const clients: MCPClient[] = [];

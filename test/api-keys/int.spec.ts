@@ -207,7 +207,7 @@ describe('API keys plugin integration', () => {
 
     const requestId = allowed.headers.get('x-request-id')!;
 
-    const row = await vi.waitFor(async () => {
+    const row: Record<string, unknown> = await vi.waitFor(async () => {
       const logs = await booted.frogbot.find({
         collection: 'usage-logs' as never,
         where: { requestId: { equals: requestId } },
@@ -217,7 +217,7 @@ describe('API keys plugin integration', () => {
 
       expect(logs.docs).toHaveLength(1);
 
-      return logs.docs[0] as Record<string, unknown>;
+      return logs.docs[0];
     });
 
     expect(row.apiKey).toBe(mint.body.id);
