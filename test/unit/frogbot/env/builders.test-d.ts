@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'vitest';
 
-import type { env } from './builders.js';
-import { type EnvBuilderOutput } from './builders.js';
+import type { env } from '../../../../packages/frogbot/src/env/builders.js';
+import { type EnvBuilderOutput } from '../../../../packages/frogbot/src/env/builders.js';
 
 expectTypeOf<EnvBuilderOutput<ReturnType<typeof env.string>>>().toEqualTypeOf<string | undefined>();
 expectTypeOf<

@@ -2,10 +2,11 @@ import { createServer, type Server } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { agentSlug, chatsSlug, messagesSlug, modelPort, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,10 @@ describe('agent endpoint composition', () => {
   afterAll(async () => {
     await booted.shutdown();
     await close(openai);
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   async function expectPersisted(chatId: string | number) {

@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import { modelPort, questionAgentSlug } from './shared.js';
@@ -34,6 +35,10 @@ describe('chat turns: provider errors', () => {
   beforeAll(async () => {
     model = await startStubChatModel(modelPort);
     booted = await bootFrogBot(dirname, 'chat-turn-errors');
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   afterEach(() => {

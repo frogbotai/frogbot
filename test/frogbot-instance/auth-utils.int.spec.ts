@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { testUserEmail, testUserPassword, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -14,15 +15,18 @@ describe('frogbot-instance: Auth + utilities', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
 
     await booted.frogbot.create({
       collection: usersSlug,
       data: { email: testUserEmail, password: testUserPassword, name: 'Test User' },
       overrideAccess: true,
     });
-  });
-  afterAll(async () => {
-    await booted.shutdown();
   });
 
   describe('auth', () => {

@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'vitest';
 
-import type { env } from './builders.js';
-import type { DefinedEnv } from './defineEnv.js';
+import type { env } from '../../../../packages/frogbot/src/env/builders.js';
+import type { DefinedEnv } from '../../../../packages/frogbot/src/env/defineEnv.js';
 
 type DefaultBoolean = ReturnType<typeof env.boolean>['default'] extends (
   value: boolean,

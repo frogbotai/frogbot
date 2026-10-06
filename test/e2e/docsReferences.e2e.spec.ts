@@ -5,7 +5,7 @@ import { join, relative, resolve } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(import.meta.dirname, '..', '..');
-const tempRoot = join(repoRoot, '.idea', 'tmp');
+const tempRoot = join(repoRoot, 'test', '.tmp');
 const script = join(repoRoot, 'scripts', 'check-docs-references.mjs');
 const tempDirs: string[] = [];
 

@@ -3,11 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { Where } from 'payload';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ensureSearchIndexes } from '../../../packages/db-mongodb/src/search/index.js';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import type { SeededArticles } from './shared.js';
 import { articlesSlug, seedArticles, skipSearch, useSearchDatabase, waitFor } from './shared.js';
 
@@ -45,18 +46,23 @@ describe.skipIf(skipSearch)('MongoDB lexical search', () => {
   beforeAll(async () => {
     restoreDatabase = useSearchDatabase();
     booted = await bootFrogBot(dirname, 'search-lexical');
-    ids = await seedArticles(booted.frogbot);
-
-    await waitFor(
-      () => search({ overrideAccess: true }),
-      (result) => result.ids.length === 3,
-    );
   });
 
   afterAll(async () => {
     await booted?.shutdown();
 
     restoreDatabase?.();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+
+    ids = await seedArticles(booted.frogbot);
+
+    await waitFor(
+      () => search({ overrideAccess: true }),
+      (result) => result.ids.length === 3,
+    );
   });
 
   it('ranks text matches with the lexical ranking', async () => {

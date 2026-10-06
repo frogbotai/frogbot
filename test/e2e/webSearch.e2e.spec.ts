@@ -26,7 +26,7 @@ function isListening(port: number): Promise<boolean> {
 
 describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
   const fixtureDir = join(repoRoot, 'test', 'e2e', 'fixtures', 'tool-agent');
-  const tempRoot = join(repoRoot, '.idea', 'tmp');
+  const tempRoot = join(repoRoot, 'test', '.tmp');
   let port: number;
   let client: FrogBotRESTClient;
   let server: ChildProcess;

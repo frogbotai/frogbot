@@ -14,6 +14,7 @@ import { z } from 'zod';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 import { resend, Users } from './config.js';
 import { usersSlug } from './shared.js';
@@ -123,6 +124,10 @@ describe('piece-backed transactional email', () => {
 
   afterAll(async () => {
     await booted?.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   it('boots the native piece and sends through payload.sendEmail with factory defaults', async () => {

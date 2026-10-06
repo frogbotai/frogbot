@@ -19,6 +19,7 @@ export default tseslint.config(
       'packages/frogbot/bin.js',
       '**/*.e2e.spec.ts',
       '**/migrations/**',
+      'test/.tmp/',
     ],
   },
   eslint.configs.recommended,

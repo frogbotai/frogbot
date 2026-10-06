@@ -111,7 +111,7 @@ export default defineConfig({
       {
         test: {
           name: 'gateway-integration',
-          include: ['test/gateway/**/*.int.spec.ts'],
+          include: ['test/gateway/**/*int.spec.ts'],
           exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'node',
           fileParallelism: false,

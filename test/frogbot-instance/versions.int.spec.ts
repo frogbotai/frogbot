@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { postsSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,6 +18,9 @@ describe('frogbot-instance: Version operations', () => {
   });
   afterAll(async () => {
     await booted.shutdown();
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
   });
 
   describe('findVersions', () => {

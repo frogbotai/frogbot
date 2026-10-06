@@ -6,7 +6,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
-const tempRoot = join(repoRoot, '.idea', 'tmp');
+const tempRoot = join(repoRoot, 'test', '.tmp');
 const bin = join(repoRoot, 'packages', 'frogbot', 'bin.js');
 
 function run(cwd: string, args: string[], nodeEnv = 'development') {

@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "rootDir": "../../.."
   },
-  "include": ["src/**/*.test-d.ts"],
+  "include": ["../../../test/unit/plugin-roles/**/*.test-d.ts"],
   "exclude": ["node_modules", "dist"]
 }

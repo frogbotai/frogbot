@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const credentials = { email: 'audit@frogbot.local', password: 'audit-password' };
@@ -24,6 +25,14 @@ describe('audit log plugin integration', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
     const account = await booted.restClient.post<{ doc: { id: number | string } }>(
       '/api/accounts',
       credentials,
@@ -34,10 +43,6 @@ describe('audit log plugin integration', () => {
       credentials,
     );
     authorization = { Authorization: `JWT ${login.body.token}` };
-  });
-
-  afterAll(async () => {
-    await booted.shutdown();
   });
 
   async function entries(documentId: number | string) {
@@ -121,13 +126,17 @@ describe('audit log plugin integration', () => {
   });
 
   it('rejects API writes to audit entries', async () => {
-    const existing = (
-      await booted.frogbot.find({
-        collection: 'audit-logs' as never,
-        overrideAccess: true,
-        limit: 1,
-      })
-    ).docs[0]!;
+    const existing = await booted.frogbot.create({
+      collection: 'audit-logs' as never,
+      data: {
+        collection: 'posts',
+        operation: 'create',
+        documentId: 'existing',
+        changes: {},
+        timestamp: new Date().toISOString(),
+      },
+      overrideAccess: true,
+    });
     expect(
       (await booted.restClient.post('/api/audit-logs', {}, { headers: authorization })).status,
     ).toBe(403);

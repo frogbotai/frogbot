@@ -1,8 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "rootDir": "../..",
+    "paths": { "chat": ["./node_modules/chat"] }
   },
-  "include": ["src/**/*.test-d.ts"],
+  "include": ["../../test/unit/frogbot/**/*.test-d.ts"],
   "exclude": ["node_modules", "dist"]
 }

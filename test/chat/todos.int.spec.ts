@@ -3,10 +3,11 @@ import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
 import { resolveChatContext } from 'frogbot/test';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,15 +23,20 @@ describe('chat persistence: todos', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname, 'chat-todos');
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+
     owner = (await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'todo-owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
     })) as { id: number | string };
-  });
-
-  afterAll(async () => {
-    await booted.shutdown();
   });
 
   async function exerciseTodos(

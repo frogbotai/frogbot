@@ -17,7 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
-const testRoot = join(repo, 'test/unit/scripts');
+const scratchRoot = join(repo, 'test/.tmp');
 const pluginPath = '.claude-plugin/plugin.json';
 const marketplacePath = '.claude-plugin/marketplace.json';
 const skillPath = 'skills/frogbot/SKILL.md';
@@ -112,7 +112,7 @@ function run(args = ['patch']) {
   const script = join(root, 'scripts/bump.mjs');
 
   expect(realpathSync(script)).toBe(script);
-  expect(root.startsWith(`${realpathSync(testRoot)}${sep}`)).toBe(true);
+  expect(root.startsWith(`${realpathSync(scratchRoot)}${sep}`)).toBe(true);
   expect(readFileSync(script)).toEqual(readFileSync(join(repo, 'scripts/bump.mjs')));
 
   return spawnSync(process.execPath, [script, ...args], {
@@ -136,7 +136,8 @@ function expectFailure({ args, diagnostic }: { args?: string[]; diagnostic: stri
 
 beforeEach(async () => {
   originalRoot = readFileSync(join(repo, 'package.json'));
-  temporary = realpathSync(mkdtempSync(join(testRoot, '.bump-')));
+  mkdirSync(scratchRoot, { recursive: true });
+  temporary = realpathSync(mkdtempSync(join(scratchRoot, 'bump-')));
   root = join(temporary, 'repository');
   caller = join(temporary, 'caller');
 

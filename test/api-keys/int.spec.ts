@@ -3,10 +3,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import config, { agentSlug, upstreamPort } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -90,6 +91,17 @@ describe('API keys plugin integration', () => {
     );
   });
 
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+  });
+
+  const createOwner = () =>
+    booted.frogbot.create({
+      collection: 'accounts',
+      data: credentials,
+      overrideAccess: true,
+    });
+
   it('boots the plugin with real persistence and HTTP', async () => {
     const response = await booted.restClient.post<{ doc: { id: number | string } }>(
       '/api/accounts',
@@ -108,6 +120,7 @@ describe('API keys plugin integration', () => {
   });
 
   it('mints, authenticates, and revokes an API key through HTTP', async () => {
+    await createOwner();
     const login = await booted.restClient.post<{ token: string }>(
       '/api/accounts/login',
       credentials,
@@ -150,14 +163,7 @@ describe('API keys plugin integration', () => {
   });
 
   it('enforces user model and budget policy and records spend', async () => {
-    const owner = (
-      await booted.frogbot.find({
-        collection: 'accounts',
-        where: { email: { equals: credentials.email } },
-        overrideAccess: true,
-        limit: 1,
-      })
-    ).docs[0]!;
+    const owner = await createOwner();
     await booted.frogbot.update({
       collection: 'accounts',
       id: owner.id,
@@ -241,7 +247,7 @@ describe('API keys plugin integration', () => {
     let ownerId: number | string;
     let token: string;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       const owner = await booted.frogbot.create({
         collection: 'accounts',
         data: meCredentials,
@@ -266,20 +272,6 @@ describe('API keys plugin integration', () => {
       if (mint.status !== 201) throw new Error(`Mint failed with ${mint.status}.`);
 
       token = mint.body.token;
-    });
-
-    afterAll(async () => {
-      await booted.frogbot.delete({
-        collection: 'credentials',
-        where: { owner: { equals: ownerId } },
-        overrideAccess: true,
-      });
-
-      await booted.frogbot.delete({
-        collection: 'accounts',
-        id: ownerId,
-        overrideAccess: true,
-      });
     });
 
     it('GET /api/accounts/me returns the key owner for a Bearer API key without echoing it', async () => {
@@ -340,11 +332,10 @@ describe('API keys plugin integration', () => {
       email: 'api-key-agent-owner@frogbot.local',
       password: 'frogbot-test-password',
     };
-    let ownerId: number | string | undefined;
+    let ownerId: number | string;
     let headers: { 'x-service-key': string };
 
     beforeEach(async () => {
-      ownerId = undefined;
       modelCalls.length = 0;
 
       const owner = await booted.frogbot.create({
@@ -378,50 +369,6 @@ describe('API keys plugin integration', () => {
       headers = { 'x-service-key': mint.body.token };
     });
 
-    afterEach(async () => {
-      if (ownerId === undefined) return;
-
-      const chats = await booted.frogbot.find({
-        collection: 'chats',
-        where: { user: { equals: ownerId } },
-        pagination: false,
-        depth: 0,
-        overrideAccess: true,
-      });
-
-      for (const chat of chats.docs) {
-        await booted.frogbot.delete({
-          collection: 'messages',
-          where: { chat: { equals: chat.id } },
-          overrideAccess: true,
-        });
-
-        await booted.frogbot.delete({
-          collection: 'frogbot-chat-turns',
-          where: { id: { equals: String(chat.id) } },
-          overrideAccess: true,
-        });
-
-        await booted.frogbot.delete({
-          collection: 'chats',
-          id: chat.id,
-          overrideAccess: true,
-        });
-      }
-
-      await booted.frogbot.delete({
-        collection: 'credentials',
-        where: { owner: { equals: ownerId } },
-        overrideAccess: true,
-      });
-
-      await booted.frogbot.delete({
-        collection: 'accounts',
-        id: ownerId,
-        overrideAccess: true,
-      });
-    });
-
     it('rejects a named model denied to the key owner before calling the model or writing chat state', async () => {
       const response = await booted.restClient.post(
         `/api/agents/${agentSlug}`,
@@ -442,7 +389,7 @@ describe('API keys plugin integration', () => {
     it('uses the key owner allowed model when the agent default is denied and no model is requested', async () => {
       const chat = await booted.frogbot.create({
         collection: 'chats',
-        data: { agent: agentSlug, user: ownerId!, title: 'API key fallback' },
+        data: { agent: agentSlug, user: ownerId, title: 'API key fallback' },
         overrideAccess: true,
       });
 
