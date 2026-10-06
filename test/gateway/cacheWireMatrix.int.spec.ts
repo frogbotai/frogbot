@@ -56,7 +56,7 @@ function buildCacheApp(args: {
   successBody: unknown;
 }) {
   const requests: CapturedRequest[] = [];
-  const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const fetch = (input: RequestInfo | URL, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
     requests.push({
       body,
@@ -109,9 +109,11 @@ function buildCacheApp(args: {
               { type: 'message_stop' },
             ];
       const text = chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('');
-      return new Response(text, { headers: { 'content-type': 'text/event-stream' } });
+      return Promise.resolve(
+        new Response(text, { headers: { 'content-type': 'text/event-stream' } }),
+      );
     }
-    return Response.json(args.successBody);
+    return Promise.resolve(Response.json(args.successBody));
   };
   const provider = args.providerFactory(fetch);
   const registry = { [args.providerName]: provider } as ProviderRegistry;
@@ -395,10 +397,15 @@ const wireCases: WireCase[] = [
   },
 ];
 
+function providerNamed(name: string) {
+  const provider = providers.find((entry) => entry.name === name);
+  if (!provider) throw new Error(`Missing provider ${name}`);
+  return provider;
+}
+
 describe('cache wire matrix', () => {
   it.each(wireCases)('$name', async (wireCase) => {
-    const provider = providers.find((entry) => entry.name === wireCase.provider);
-    if (!provider) throw new Error(`Missing provider ${wireCase.provider}`);
+    const provider = providerNamed(wireCase.provider);
     const { app, requests } = buildCacheApp({
       providerName: provider.name,
       providerFactory: provider.factory,

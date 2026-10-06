@@ -7,11 +7,13 @@ import type { ProviderRegistry } from '../../../../../packages/gateway/src/provi
 describe('speechRoute', () => {
   it('serves POST /v1/audio/speech with buffered audio bytes', async () => {
     const audio = new Uint8Array([1, 2, 3]);
-    const doGenerate = vi.fn(async () => ({
-      audio,
-      warnings: [],
-      response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
-    }));
+    const doGenerate = vi.fn(() =>
+      Promise.resolve({
+        audio,
+        warnings: [],
+        response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
+      }),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -49,11 +51,12 @@ describe('speechRoute', () => {
         openai: new MockProviderV4({
           speechModels: {
             'tts-1': new MockSpeechModelV4({
-              doGenerate: async () => ({
-                audio: new Uint8Array([1]),
-                warnings: [],
-                response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
-              }),
+              doGenerate: () =>
+                Promise.resolve({
+                  audio: new Uint8Array([1]),
+                  warnings: [],
+                  response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
+                }),
             }),
           },
         }),
@@ -78,11 +81,12 @@ describe('speechRoute', () => {
         openai: new MockProviderV4({
           speechModels: {
             'tts-1': new MockSpeechModelV4({
-              doGenerate: async () => ({
-                audio: new Uint8Array([1]),
-                warnings: [warning],
-                response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
-              }),
+              doGenerate: () =>
+                Promise.resolve({
+                  audio: new Uint8Array([1]),
+                  warnings: [warning],
+                  response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
+                }),
             }),
           },
         }),

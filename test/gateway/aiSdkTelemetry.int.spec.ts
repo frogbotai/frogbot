@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage } from './mockModel.js';
 
 function makeSpan() {
   return {
@@ -52,8 +53,11 @@ function createNonStreamingMock(): LanguageModelV4 {
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],
-        finishReason: 'stop',
-        usage: { inputTokens: { total: 5, noCache: 5 }, outputTokens: { total: 4, text: 4 } },
+        finishReason: finish('stop'),
+        usage: mockUsage({
+          inputTokens: { total: 5, noCache: 5 },
+          outputTokens: { total: 4, text: 4 },
+        }),
         warnings: [],
         response: {
           id: 'mock-resp-1',

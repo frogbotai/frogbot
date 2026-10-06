@@ -1,24 +1,38 @@
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import { MockLanguageModelV4, MockProviderV4 } from 'ai/test';
+import type { Mock } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../../../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../../../../packages/gateway/src/providers/registry.js';
 import { forwardResponseParams } from '../../../../../packages/gateway/src/routes/responses/handler.js';
 import { parseResponsesRequest } from '../../../../../packages/gateway/src/routes/responses/schema.js';
+import {
+  firstCallOptions,
+  generateResult,
+  mockDoGenerate,
+  mockDoStream,
+  v4Usage,
+} from '../mockModels.js';
+
+function setTemperature(params: { temperature?: number } | undefined, temperature: number) {
+  if (!params) throw new Error('beforeUpstream received no params');
+  params.temperature = temperature;
+}
 
 describe('responsesRoute', () => {
   it('serves non-streaming POST /v1/responses', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hello frog' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
-      warnings: [],
-      response: {
-        id: 'resp_test',
-        modelId: 'gpt-4o-mini',
-        timestamp: new Date('2026-07-03T00:00:00.000Z'),
-      },
-    }));
+    const doGenerate = mockDoGenerate(
+      generateResult({
+        content: [{ type: 'text', text: 'hello frog' }],
+        usage: v4Usage(3, 2),
+        response: {
+          id: 'resp_test',
+          modelId: 'gpt-4o-mini',
+          timestamp: new Date('2026-07-03T00:00:00.000Z'),
+        },
+      }),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -43,7 +57,7 @@ describe('responsesRoute', () => {
       object: 'response',
       previous_response_id: 'resp_prev',
       output_text: 'hello frog',
-      usage: { input_tokens: 0, output_tokens: 0, total_tokens: 0 },
+      usage: { input_tokens: 3, output_tokens: 2, total_tokens: 5 },
     });
     expect(doGenerate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -54,12 +68,7 @@ describe('responsesRoute', () => {
 
   it('routes responses operation through hooks', async () => {
     const beforeUpstream = vi.fn();
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hi' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
+    const doGenerate = mockDoGenerate(generateResult({ content: [{ type: 'text', text: 'hi' }] }));
     const app = createApp({
       registry: {
         anthropic: new MockProviderV4({
@@ -72,7 +81,7 @@ describe('responsesRoute', () => {
         beforeUpstream: [
           (args) => {
             beforeUpstream(args);
-            args.params.temperature = 0.25;
+            setTemperature(args.params, 0.25);
           },
         ],
       },
@@ -96,24 +105,25 @@ describe('responsesRoute', () => {
   });
 
   it('passes tools, tool_choice, structured output, and instructions to the model', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [
-        {
-          type: 'tool-call' as const,
-          toolCallId: 'call_1',
-          toolName: 'get_weather',
-          input: JSON.stringify({ city: 'Paris' }),
+    const doGenerate = mockDoGenerate(
+      generateResult({
+        content: [
+          {
+            type: 'tool-call',
+            toolCallId: 'call_1',
+            toolName: 'get_weather',
+            input: JSON.stringify({ city: 'Paris' }),
+          },
+        ],
+        finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+        usage: v4Usage(3, 2),
+        response: {
+          id: 'resp_tools',
+          modelId: 'gpt-4o-mini',
+          timestamp: new Date('2026-07-03T00:00:00.000Z'),
         },
-      ],
-      finishReason: 'tool-calls' as const,
-      usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
-      warnings: [],
-      response: {
-        id: 'resp_tools',
-        modelId: 'gpt-4o-mini',
-        timestamp: new Date('2026-07-03T00:00:00.000Z'),
-      },
-    }));
+      }),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -155,7 +165,7 @@ describe('responsesRoute', () => {
       ]),
     );
 
-    const call = doGenerate.mock.calls[0][0] as Record<string, any>;
+    const call = firstCallOptions(doGenerate) as Record<string, any>;
     expect(call.tools).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: 'function', name: 'get_weather' })]),
     );
@@ -170,18 +180,18 @@ describe('responsesRoute', () => {
   });
 
   it('reflects parallel_tool_calls and envelope fields in the non-streaming response', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'done' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
-      warnings: [],
-      providerMetadata: { openai: { service_tier: 'flex' } },
-      response: {
-        id: 'resp_env',
-        modelId: 'gpt-4o-mini',
-        timestamp: new Date('2026-07-03T00:00:00.000Z'),
-      },
-    }));
+    const doGenerate = mockDoGenerate(
+      generateResult({
+        content: [{ type: 'text', text: 'done' }],
+        usage: v4Usage(3, 2),
+        providerMetadata: { openai: { service_tier: 'flex' } },
+        response: {
+          id: 'resp_env',
+          modelId: 'gpt-4o-mini',
+          timestamp: new Date('2026-07-03T00:00:00.000Z'),
+        },
+      }),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -212,9 +222,9 @@ describe('responsesRoute', () => {
   });
 
   it('returns an OpenAI-shaped error envelope when generateText throws', async () => {
-    const doGenerate = vi.fn(async () => {
-      throw new Error('upstream exploded');
-    });
+    const doGenerate = vi.fn<LanguageModelV4['doGenerate']>(() =>
+      Promise.reject(new Error('upstream exploded')),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -236,25 +246,13 @@ describe('responsesRoute', () => {
   });
 
   it('serves streaming POST /v1/responses', async () => {
-    const doStream = vi.fn(async () => ({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'txt_1' });
-          controller.enqueue({ type: 'text-delta', id: 'txt_1', delta: 'hello' });
-          controller.enqueue({ type: 'text-delta', id: 'txt_1', delta: ' stream' });
-          controller.enqueue({ type: 'text-end', id: 'txt_1' });
-          controller.enqueue({
-            type: 'finish',
-            finishReason: { unified: 'stop', raw: 'stop' },
-            usage: {
-              inputTokens: { total: 3, noCache: 3 },
-              outputTokens: { total: 2, text: 2 },
-            },
-          });
-          controller.close();
-        },
-      }),
-    }));
+    const doStream = mockDoStream([
+      { type: 'text-start', id: 'txt_1' },
+      { type: 'text-delta', id: 'txt_1', delta: 'hello' },
+      { type: 'text-delta', id: 'txt_1', delta: ' stream' },
+      { type: 'text-end', id: 'txt_1' },
+      { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: v4Usage(3, 2) },
+    ]);
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -282,24 +280,12 @@ describe('responsesRoute', () => {
 
   it('passes the assembled streaming response to afterUpstream hooks', async () => {
     const afterUpstream = vi.fn();
-    const doStream = vi.fn(async () => ({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'txt_1' });
-          controller.enqueue({ type: 'text-delta', id: 'txt_1', delta: 'hello' });
-          controller.enqueue({ type: 'text-end', id: 'txt_1' });
-          controller.enqueue({
-            type: 'finish',
-            finishReason: { unified: 'stop', raw: 'stop' },
-            usage: {
-              inputTokens: { total: 3, noCache: 3 },
-              outputTokens: { total: 1, text: 1 },
-            },
-          });
-          controller.close();
-        },
-      }),
-    }));
+    const doStream = mockDoStream([
+      { type: 'text-start', id: 'txt_1' },
+      { type: 'text-delta', id: 'txt_1', delta: 'hello' },
+      { type: 'text-end', id: 'txt_1' },
+      { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: v4Usage(3, 1) },
+    ]);
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -463,7 +449,7 @@ describe('responses schema validation', () => {
 });
 
 describe('responsesRoute param forwarding (non-streaming)', () => {
-  const openaiApp = (doGenerate: ReturnType<typeof vi.fn>) =>
+  const openaiApp = (doGenerate: Mock<LanguageModelV4['doGenerate']>) =>
     createApp({
       registry: {
         openai: new MockProviderV4({
@@ -472,7 +458,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       } as unknown as ProviderRegistry,
     });
 
-  const anthropicApp = (doGenerate: ReturnType<typeof vi.fn>) =>
+  const anthropicApp = (doGenerate: Mock<LanguageModelV4['doGenerate']>) =>
     createApp({
       registry: {
         anthropic: new MockProviderV4({
@@ -481,13 +467,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       } as unknown as ProviderRegistry,
     });
 
-  const okGenerate = () =>
-    vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'ok' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
+  const okGenerate = () => mockDoGenerate();
 
   it('forwards Group A params to the model call', async () => {
     const doGenerate = okGenerate();
@@ -507,7 +487,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0][0] as Record<string, unknown>;
+    const call = firstCallOptions(doGenerate);
     expect(call).toMatchObject({
       temperature: 0.4,
       topP: 0.8,
@@ -536,7 +516,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0][0] as { providerOptions?: Record<string, unknown> };
+    const call = firstCallOptions(doGenerate);
     expect(call.providerOptions).toMatchObject({
       openai: {
         previousResponseId: 'resp_prev',
@@ -562,28 +542,19 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0][0] as { providerOptions?: Record<string, unknown> };
+    const call = firstCallOptions(doGenerate);
     expect(call.providerOptions ?? {}).toEqual({});
   });
 });
 
 describe('responsesRoute param forwarding (streaming)', () => {
   const streamModel = () =>
-    vi.fn(async () => ({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'txt_1' });
-          controller.enqueue({ type: 'text-delta', id: 'txt_1', delta: 'hi' });
-          controller.enqueue({ type: 'text-end', id: 'txt_1' });
-          controller.enqueue({
-            type: 'finish',
-            finishReason: { unified: 'stop', raw: 'stop' },
-            usage: { inputTokens: { total: 1, noCache: 1 }, outputTokens: { total: 1, text: 1 } },
-          });
-          controller.close();
-        },
-      }),
-    }));
+    mockDoStream([
+      { type: 'text-start', id: 'txt_1' },
+      { type: 'text-delta', id: 'txt_1', delta: 'hi' },
+      { type: 'text-end', id: 'txt_1' },
+      { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: v4Usage(1, 1) },
+    ]);
 
   it('forwards Group A + Group B params identically in the streaming path', async () => {
     const doStream = streamModel();
@@ -609,9 +580,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doStream.mock.calls[0][0] as Record<string, unknown> & {
-      providerOptions?: Record<string, unknown>;
-    };
+    const call = firstCallOptions(doStream);
     expect(call).toMatchObject({ temperature: 0.4, topK: 20, stopSequences: ['STOP'] });
     expect(call.providerOptions).toMatchObject({
       openai: { previousResponseId: 'resp_prev', serviceTier: 'flex' },
@@ -638,7 +607,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doStream.mock.calls[0][0] as { providerOptions?: Record<string, unknown> };
+    const call = firstCallOptions(doStream);
     expect(call.providerOptions ?? {}).toEqual({});
   });
 

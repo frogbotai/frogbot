@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { googleEmbedDimensions } from '../../../../../packages/gateway/src/providers/google/middleware.js';
 
 describe('googleEmbedDimensions', () => {
-  it('maps neutral dimensions to Google outputDimensionality for embeddings', () => {
+  it('maps neutral dimensions to Google outputDimensionality for embeddings', async () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       unknown: { dimensions: 256 },
     };
 
-    googleEmbedDimensions({
+    await googleEmbedDimensions({
       phase: 'beforeUpstream',
       operation: 'embeddings',
       requestId: 'req_123',

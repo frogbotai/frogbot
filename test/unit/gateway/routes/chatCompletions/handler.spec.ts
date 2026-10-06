@@ -1,5 +1,5 @@
 import { MockLanguageModelV4, MockProviderV4 } from 'ai/test';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../../../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../../../../packages/gateway/src/providers/registry.js';
@@ -8,6 +8,7 @@ import {
   extractReasoningDetails,
 } from '../../../../../packages/gateway/src/routes/chatCompletions/handler.js';
 import type { ChatCompletionRequest } from '../../../../../packages/gateway/src/routes/chatCompletions/schema.js';
+import { firstCallOptions, generateResult, mockDoGenerate } from '../mockModels.js';
 
 function baseRequest(overrides: Partial<ChatCompletionRequest> = {}): ChatCompletionRequest {
   return {
@@ -21,12 +22,9 @@ describe('chatCompletionsRoute', () => {
   it.each(['google', 'vertex'])(
     'routes cached_content to the %s provider namespace',
     async (providerName) => {
-      const doGenerate = vi.fn(async () => ({
-        content: [{ type: 'text' as const, text: 'hello' }],
-        finishReason: 'stop' as const,
-        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-        warnings: [],
-      }));
+      const doGenerate = mockDoGenerate(
+        generateResult({ content: [{ type: 'text', text: 'hello' }] }),
+      );
       const app = createApp({
         registry: {
           [providerName]: new MockProviderV4({
@@ -46,19 +44,16 @@ describe('chatCompletionsRoute', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(doGenerate.mock.calls[0][0].providerOptions?.[providerName]?.cachedContent).toBe(
+      expect(firstCallOptions(doGenerate).providerOptions?.[providerName]?.cachedContent).toBe(
         'cachedContents/abc123',
       );
     },
   );
 
   it('maps prompt_cache_key to Google cachedContent', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hello' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
+    const doGenerate = mockDoGenerate(
+      generateResult({ content: [{ type: 'text', text: 'hello' }] }),
+    );
     const app = createApp({
       registry: {
         google: new MockProviderV4({
@@ -78,19 +73,16 @@ describe('chatCompletionsRoute', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(doGenerate.mock.calls[0][0].providerOptions?.google).toMatchObject({
+    expect(firstCallOptions(doGenerate).providerOptions?.google).toMatchObject({
       cachedContent: 'cachedContents/from-key',
       promptCacheKey: 'cachedContents/from-key',
     });
   });
 
   it('does not map prompt_cache_key to cachedContent for other providers', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hello' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
+    const doGenerate = mockDoGenerate(
+      generateResult({ content: [{ type: 'text', text: 'hello' }] }),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -110,16 +102,13 @@ describe('chatCompletionsRoute', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(doGenerate.mock.calls[0][0].providerOptions?.openai?.cachedContent).toBeUndefined();
+    expect(firstCallOptions(doGenerate).providerOptions?.openai?.cachedContent).toBeUndefined();
   });
 
   it('preserves unrelated passthrough fields', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hello' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
+    const doGenerate = mockDoGenerate(
+      generateResult({ content: [{ type: 'text', text: 'hello' }] }),
+    );
     const app = createApp({
       registry: {
         google: new MockProviderV4({
@@ -139,16 +128,13 @@ describe('chatCompletionsRoute', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(doGenerate.mock.calls[0][0].providerOptions?.google?.someOtherField).toBe('preserved');
+    expect(firstCallOptions(doGenerate).providerOptions?.google?.someOtherField).toBe('preserved');
   });
 
   it('forwards anthropic-aws cache markers through the Anthropic SDK namespace', async () => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hello' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
+    const doGenerate = mockDoGenerate(
+      generateResult({ content: [{ type: 'text', text: 'hello' }] }),
+    );
     const app = createApp({
       registry: {
         'anthropic-aws': new MockProviderV4({
@@ -174,7 +160,7 @@ describe('chatCompletionsRoute', () => {
     });
 
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0][0] as Record<string, any>;
+    const call = firstCallOptions(doGenerate) as Record<string, any>;
     expect(call.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({

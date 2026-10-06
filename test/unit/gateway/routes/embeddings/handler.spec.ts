@@ -9,11 +9,12 @@ describe('embeddingsRoute', () => {
   it('serves POST /v1/embeddings', async () => {
     const model = new MockEmbeddingModelV4({
       maxEmbeddingsPerCall: 2,
-      doEmbed: async ({ values }) => ({
-        embeddings: values.map((_, index) => [index + 1, index + 2]),
-        usage: { tokens: 7 },
-        warnings: [],
-      }),
+      doEmbed: ({ values }) =>
+        Promise.resolve({
+          embeddings: values.map((_, index) => [index + 1, index + 2]),
+          usage: { tokens: 7 },
+          warnings: [],
+        }),
     });
     const app = createApp({
       registry: {
@@ -44,11 +45,12 @@ describe('embeddingsRoute', () => {
   it('accepts token-array inputs and guards non-finite usage tokens', async () => {
     const model = new MockEmbeddingModelV4({
       maxEmbeddingsPerCall: 2,
-      doEmbed: async ({ values }) => ({
-        embeddings: values.map((_, index) => [index + 1]),
-        usage: { tokens: Number.NaN },
-        warnings: [],
-      }),
+      doEmbed: ({ values }) =>
+        Promise.resolve({
+          embeddings: values.map((_, index) => [index + 1]),
+          usage: { tokens: Number.NaN },
+          warnings: [],
+        }),
     });
     const app = createApp({
       registry: {
@@ -108,14 +110,15 @@ describe('embeddingsRoute', () => {
   it('returns OpenAI-shaped 400 for too many embedding values', async () => {
     const model = new MockEmbeddingModelV4({
       maxEmbeddingsPerCall: 2,
-      doEmbed: async ({ values }) => {
-        throw new TooManyEmbeddingValuesForCallError({
-          provider: 'openai',
-          modelId: 'text-embedding-3-small',
-          maxEmbeddingsPerCall: 2,
-          values,
-        });
-      },
+      doEmbed: ({ values }) =>
+        Promise.reject(
+          new TooManyEmbeddingValuesForCallError({
+            provider: 'openai',
+            modelId: 'text-embedding-3-small',
+            maxEmbeddingsPerCall: 2,
+            values,
+          }),
+        ),
     });
     const app = createApp({
       registry: {

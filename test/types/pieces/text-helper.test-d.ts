@@ -14,8 +14,9 @@ expectTypeOf<Parameters<typeof textHelper.splitText>[0]['input']>().toEqualTypeO
 }>();
 expectTypeOf(parts).toEqualTypeOf<Promise<string[]>>();
 
-// @ts-expect-error splitText does not accept concatText input
-textHelper.splitText({ input: { texts: ['a', 'b'] }, req });
+const _splitTextRejectsConcatTextInput = () =>
+  // @ts-expect-error splitText does not accept concatText input
+  textHelper.splitText({ input: { texts: ['a', 'b'] }, req });
 
 expectTypeOf(textHelper.findText({ input: { text: 'frog', expression: 'r' }, req })).toEqualTypeOf<
   Promise<string[] | null>

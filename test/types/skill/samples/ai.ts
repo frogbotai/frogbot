@@ -24,7 +24,7 @@ export async function generateUpdate() {
     prompt: 'Write a one-sentence project update.',
   });
 
-  console.log(result.text);
+  frogbot.logger.info(result.text);
 
   return result;
 }

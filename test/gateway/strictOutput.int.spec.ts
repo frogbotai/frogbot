@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 const SCHEMA = {
   type: 'object',
@@ -30,10 +31,11 @@ const BAD = '{"merchant":"{\\"merchant\\": \\"FROGBOT CAFE\\", \\"total\\": 42.1
 
 type Reply = string | { toolCall: string };
 
-const usage = (input: number, output: number) => ({
-  inputTokens: { total: input, noCache: input, cacheRead: undefined, cacheWrite: undefined },
-  outputTokens: { total: output, text: output, reasoning: undefined },
-});
+const usage = (input: number, output: number) =>
+  mockUsage({
+    inputTokens: { total: input, noCache: input, cacheRead: undefined, cacheWrite: undefined },
+    outputTokens: { total: output, text: output, reasoning: undefined },
+  });
 
 const response = { id: 'r', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') };
 
@@ -52,50 +54,52 @@ function scriptedModel(replies: Reply[]) {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options) => {
+    doGenerate: (options) => {
       const reply = next(options);
 
-      return typeof reply === 'string'
-        ? {
-            content: [{ type: 'text', text: reply }],
-            finishReason: { unified: 'stop', raw: 'stop' },
-            usage: usage(10, 5),
-            warnings: [],
-            response,
-          }
-        : {
-            content: [
-              {
-                type: 'tool-call',
-                toolCallId: 'call_1',
-                toolName: reply.toolCall,
-                input: '{"city":"Paris"}',
-              },
-            ],
-            finishReason: { unified: 'tool-calls', raw: 'tool_use' },
-            usage: usage(10, 5),
-            warnings: [],
-            response,
-          };
+      return Promise.resolve(
+        typeof reply === 'string'
+          ? {
+              content: [{ type: 'text', text: reply }],
+              finishReason: finish('stop', 'stop'),
+              usage: usage(10, 5),
+              warnings: [],
+              response,
+            }
+          : {
+              content: [
+                {
+                  type: 'tool-call',
+                  toolCallId: 'call_1',
+                  toolName: reply.toolCall,
+                  input: '{"city":"Paris"}',
+                },
+              ],
+              finishReason: finish('tool-calls', 'tool_use'),
+              usage: usage(10, 5),
+              warnings: [],
+              response,
+            },
+      );
     },
-    doStream: async (options) => {
+    doStream: (options) => {
       const reply = next(options) as string;
       const parts: LanguageModelV4StreamPart[] = [
         { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 't' },
         { type: 'text-delta', id: 't', delta: reply },
         { type: 'text-end', id: 't' },
-        { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: usage(10, 5) },
+        { type: 'finish', finishReason: finish('stop', 'stop'), usage: usage(10, 5) },
       ];
 
-      return {
+      return Promise.resolve({
         stream: new ReadableStream({
           start(controller) {
             for (const part of parts) controller.enqueue(part);
             controller.close();
           },
         }),
-      };
+      });
     },
   };
 

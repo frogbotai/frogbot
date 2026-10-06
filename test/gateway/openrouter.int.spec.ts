@@ -78,12 +78,12 @@ beforeEach(() => {
   captured = [];
   upstream = () => Response.json(COMPLETION);
 
-  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+  vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
 
     captured.push({ url: String(input), headers: new Headers(init?.headers), body });
 
-    return body.stream === true ? sse() : upstream();
+    return Promise.resolve(body.stream === true ? sse() : upstream());
   });
 });
 
@@ -363,28 +363,30 @@ describe('OpenRouter adversarial cases', () => {
     expect(captured[0]?.body).not.toHaveProperty('reasoning_effort');
   });
 
-  for (const path of ['/chat/completions', '/messages', '/responses']) {
-    it(`maps an OpenRouter 429 through the ${path} error envelope`, async () => {
-      upstream = () =>
-        Response.json(
-          { error: { code: 429, message: 'Rate limit exceeded: free-models-per-min' } },
-          { status: 429 },
-        );
+  it.each([
+    { path: '/chat/completions', error: {} },
+    { path: '/messages', error: { type: 'rate_limit_error' } },
+    { path: '/responses', error: {} },
+  ])('maps an OpenRouter 429 through the $path error envelope', async ({ path, error }) => {
+    upstream = () =>
+      Response.json(
+        { error: { code: 429, message: 'Rate limit exceeded: free-models-per-min' } },
+        { status: 429 },
+      );
 
-      const { status, text } = await post(path, {
-        model: MODEL,
-        max_tokens: 64,
-        ...(path === '/responses'
-          ? { input: 'hi' }
-          : { messages: [{ role: 'user', content: 'hi' }] }),
-      });
-
-      expect(status).toBe(429);
-      const body = JSON.parse(text);
-      expect(JSON.stringify(body)).toContain('Rate limit exceeded');
-      if (path === '/messages') expect(body.error.type).toBe('rate_limit_error');
+    const { status, text } = await post(path, {
+      model: MODEL,
+      max_tokens: 64,
+      ...(path === '/responses'
+        ? { input: 'hi' }
+        : { messages: [{ role: 'user', content: 'hi' }] }),
     });
-  }
+
+    expect(status).toBe(429);
+    const body = JSON.parse(text);
+    expect(JSON.stringify(body)).toContain('Rate limit exceeded');
+    expect(body.error).toMatchObject(error);
+  });
 
   it('redacts a key echoed by an OpenRouter error body', async () => {
     upstream = () =>

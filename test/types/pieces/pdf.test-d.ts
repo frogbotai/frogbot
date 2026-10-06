@@ -15,7 +15,8 @@ expectTypeOf(created).toEqualTypeOf<
   Promise<{ id: string | number; filename: string; url?: string | undefined }>
 >();
 
-// @ts-expect-error createPdfFromText does not accept countPdfPages input
-pdf.createPdfFromText({ input: { file: 1 }, req });
+const _createPdfFromTextRejectsCountPdfPagesInput = () =>
+  // @ts-expect-error createPdfFromText does not accept countPdfPages input
+  pdf.createPdfFromText({ input: { file: 1 }, req });
 
 expectTypeOf(pdf.countPdfPages({ input: { file: 1 }, req })).toEqualTypeOf<Promise<number>>();

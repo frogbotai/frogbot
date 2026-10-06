@@ -6,14 +6,16 @@ import type { ProviderRegistry } from '../../../../../packages/gateway/src/provi
 
 describe('transcriptionsRoute', () => {
   it('serves POST /v1/audio/transcriptions', async () => {
-    const doGenerate = vi.fn(async () => ({
-      text: 'Hello from FrogBot',
-      segments: [{ text: 'Hello from FrogBot', startSecond: 0, endSecond: 1.5 }],
-      language: 'en',
-      durationInSeconds: 1.5,
-      warnings: [],
-      response: { id: 'resp-1', timestamp: new Date(0), modelId: 'whisper-1' },
-    }));
+    const doGenerate = vi.fn(() =>
+      Promise.resolve({
+        text: 'Hello from FrogBot',
+        segments: [{ text: 'Hello from FrogBot', startSecond: 0, endSecond: 1.5 }],
+        language: 'en',
+        durationInSeconds: 1.5,
+        warnings: [],
+        response: { id: 'resp-1', timestamp: new Date(0), modelId: 'whisper-1' },
+      }),
+    );
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -55,14 +57,15 @@ describe('transcriptionsRoute', () => {
         openai: new MockProviderV4({
           transcriptionModels: {
             'whisper-1': new MockTranscriptionModelV4({
-              doGenerate: async () => ({
-                text: 'plain transcript',
-                segments: [],
-                language: undefined,
-                durationInSeconds: undefined,
-                warnings: [],
-                response: { id: 'resp-1', timestamp: new Date(0), modelId: 'whisper-1' },
-              }),
+              doGenerate: () =>
+                Promise.resolve({
+                  text: 'plain transcript',
+                  segments: [],
+                  language: undefined,
+                  durationInSeconds: undefined,
+                  warnings: [],
+                  response: { id: 'resp-1', timestamp: new Date(0), modelId: 'whisper-1' },
+                }),
             }),
           },
         }),
@@ -132,14 +135,16 @@ describe('transcriptionsRoute', () => {
     ['google', { google: { languageCodes: ['fr'] } }],
     ['vertex', { vertex: { languageCodes: ['fr'] } }],
   ])('sends language in the option %s reads', async (providerName, providerOptions) => {
-    const doGenerate = vi.fn(async () => ({
-      text: 'Bonjour',
-      segments: [],
-      language: 'fr',
-      durationInSeconds: 1,
-      warnings: [],
-      response: { timestamp: new Date(0), modelId: 'stt' },
-    }));
+    const doGenerate = vi.fn(() =>
+      Promise.resolve({
+        text: 'Bonjour',
+        segments: [],
+        language: 'fr',
+        durationInSeconds: 1,
+        warnings: [],
+        response: { timestamp: new Date(0), modelId: 'stt' },
+      }),
+    );
 
     const app = createApp({
       registry: {

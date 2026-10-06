@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { gracefulShutdown } from '../../../../packages/gateway/src/observability/setup.js';
 
@@ -6,11 +6,13 @@ describe('gracefulShutdown', () => {
   it('force-flushes then shuts down the provider', async () => {
     const order: string[] = [];
     const provider = {
-      forceFlush: vi.fn(async () => {
+      forceFlush: vi.fn(() => {
         order.push('forceFlush');
+        return Promise.resolve();
       }),
-      shutdown: vi.fn(async () => {
+      shutdown: vi.fn(() => {
         order.push('shutdown');
+        return Promise.resolve();
       }),
     };
 
@@ -23,28 +25,25 @@ describe('gracefulShutdown', () => {
 
   it('does not hang when forceFlush never resolves — the timeout wins and shutdown still runs', async () => {
     vi.useFakeTimers();
-    try {
-      const provider = {
-        forceFlush: vi.fn(() => new Promise<void>(() => {})),
-        shutdown: vi.fn(async () => {}),
-      };
-
-      const done = gracefulShutdown(provider, 10_000);
-      await vi.advanceTimersByTimeAsync(10_000);
-      await done;
-
-      expect(provider.forceFlush).toHaveBeenCalledOnce();
-      expect(provider.shutdown).toHaveBeenCalledOnce();
-    } finally {
+    onTestFinished(() => {
       vi.useRealTimers();
-    }
+    });
+    const provider = {
+      forceFlush: vi.fn(() => new Promise<void>(() => {})),
+      shutdown: vi.fn(async () => {}),
+    };
+
+    const done = gracefulShutdown(provider, 10_000);
+    await vi.advanceTimersByTimeAsync(10_000);
+    await done;
+
+    expect(provider.forceFlush).toHaveBeenCalledOnce();
+    expect(provider.shutdown).toHaveBeenCalledOnce();
   });
 
   it('still shuts down when forceFlush rejects', async () => {
     const provider = {
-      forceFlush: vi.fn(async () => {
-        throw new Error('exporter down');
-      }),
+      forceFlush: vi.fn(() => Promise.reject(new Error('exporter down'))),
       shutdown: vi.fn(async () => {}),
     };
 
@@ -55,9 +54,7 @@ describe('gracefulShutdown', () => {
   it('swallows a shutdown rejection so the caller can still exit', async () => {
     const provider = {
       forceFlush: vi.fn(async () => {}),
-      shutdown: vi.fn(async () => {
-        throw new Error('shutdown failed');
-      }),
+      shutdown: vi.fn(() => Promise.reject(new Error('shutdown failed'))),
     };
 
     await expect(gracefulShutdown(provider, 10_000)).resolves.toBeUndefined();

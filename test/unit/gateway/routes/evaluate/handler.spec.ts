@@ -13,6 +13,10 @@ const questions = {
   approved: { type: 'boolean', instructions: 'Was the request approved?' },
 };
 
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error ? signal.reason : new Error(String(signal.reason));
+}
+
 function makeApp(model: Experimental_EvaluationModelV4, options: Partial<AppContext> = {}) {
   const registry = {
     'typesafe-ai': { evaluationModel: () => model },
@@ -35,30 +39,32 @@ function post(app: ReturnType<typeof createApp>, body: unknown, path = '/v1/eval
 
 describe('evaluateRoute', () => {
   it('evaluates mixed questions against structured state and forwards mutable hook options', async () => {
-    const doEvaluate = vi.fn(async (_options: Experimental_EvaluationModelV4CallOptions) => ({
-      answers: {
-        approved: { type: 'boolean' as const, probability: 0.91 },
-        team: {
-          type: 'choice' as const,
-          choice: 'billing',
-          probabilities: { billing: 0.8, support: 0.2 },
+    const doEvaluate = vi.fn((_options: Experimental_EvaluationModelV4CallOptions) =>
+      Promise.resolve({
+        answers: {
+          approved: { type: 'boolean' as const, probability: 0.91 },
+          team: {
+            type: 'choice' as const,
+            choice: 'billing',
+            probabilities: { billing: 0.8, support: 0.2 },
+          },
+          priority: {
+            type: 'score' as const,
+            score: 1.5,
+            probabilities: { 0: 0, 1: 0.5, 2: 0.5 },
+          },
         },
-        priority: {
-          type: 'score' as const,
-          score: 1.5,
-          probabilities: { 0: 0, 1: 0.5, 2: 0.5 },
+        usage: { inputTokens: 12, outputTokens: 3 },
+        response: {
+          modelId: 'jev-1.13.0',
+          body: { secret: 'raw-provider-body' },
+          headers: { 'x-private': 'secret' },
         },
-      },
-      usage: { inputTokens: 12, outputTokens: 3 },
-      response: {
-        modelId: 'jev-1.13.0',
-        body: { secret: 'raw-provider-body' },
-        headers: { 'x-private': 'secret' },
-      },
-      providerMetadata: { typesafe: { confidence: { team: 0.72 } } },
-      warnings: [],
-      rounding: { probabilityDecimals: 2, scoreDecimals: 2 },
-    }));
+        providerMetadata: { typesafe: { confidence: { team: 0.72 } } },
+        warnings: [],
+        rounding: { probabilityDecimals: 2, scoreDecimals: 2 },
+      }),
+    );
     const model = new Experimental_EvaluationMockModelV4({ doEvaluate });
 
     const phases: string[] = [];
@@ -155,10 +161,11 @@ describe('evaluateRoute', () => {
 
   it('keeps missing usage optional in hooks and omits unreported metadata', async () => {
     const model = new Experimental_EvaluationMockModelV4({
-      doEvaluate: async () => ({
-        answers: { approved: { type: 'boolean', probability: 0.5 } },
-        warnings: [],
-      }),
+      doEvaluate: () =>
+        Promise.resolve({
+          answers: { approved: { type: 'boolean', probability: 0.5 } },
+          warnings: [],
+        }),
     });
     const afterUpstream = vi.fn();
     const afterOperation = vi.fn();
@@ -181,11 +188,12 @@ describe('evaluateRoute', () => {
 
   it('normalizes partially reported usage for hooks without inventing response tokens', async () => {
     const model = new Experimental_EvaluationMockModelV4({
-      doEvaluate: async () => ({
-        answers: { approved: { type: 'boolean', probability: 0.5 } },
-        usage: { inputTokens: 9 },
-        warnings: [],
-      }),
+      doEvaluate: () =>
+        Promise.resolve({
+          answers: { approved: { type: 'boolean', probability: 0.5 } },
+          usage: { inputTokens: 9 },
+          warnings: [],
+        }),
     });
     const afterUpstream = vi.fn();
     const afterOperation = vi.fn();
@@ -320,10 +328,11 @@ describe('evaluateRoute', () => {
 
   it('rejects invalid answers after calling the model and finalizes once', async () => {
     const model = new Experimental_EvaluationMockModelV4({
-      doEvaluate: async () => ({
-        answers: { approved: { type: 'boolean', probability: 2 } },
-        warnings: [],
-      }),
+      doEvaluate: () =>
+        Promise.resolve({
+          answers: { approved: { type: 'boolean', probability: 2 } },
+          warnings: [],
+        }),
     });
     const afterUpstream = vi.fn();
     const afterError = vi.fn();
@@ -403,7 +412,9 @@ describe('evaluateRoute', () => {
     const model = new Experimental_EvaluationMockModelV4({
       doEvaluate: ({ abortSignal }) =>
         new Promise((_, reject) => {
-          abortSignal?.addEventListener('abort', () => reject(abortSignal.reason), { once: true });
+          abortSignal?.addEventListener('abort', () => reject(abortReason(abortSignal)), {
+            once: true,
+          });
         }),
     });
     const afterError = vi.fn();

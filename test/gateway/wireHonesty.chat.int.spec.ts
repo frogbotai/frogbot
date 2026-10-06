@@ -17,6 +17,7 @@ import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
   LanguageModelV4StreamPart,
+  SharedV4ProviderMetadata,
 } from '@ai-sdk/provider';
 import type { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
@@ -26,23 +27,24 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { requiredToolCall } from '../__helpers/gateway/required-tool-call.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Harness — mirrors paramForwarding.int.spec.ts (batch 1)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_USAGE = {
+const DEFAULT_USAGE = mockUsage({
   inputTokens: { total: 5, noCache: 5 },
   outputTokens: { total: 4, text: 4 },
-};
+});
 
 // `LanguageModelV4FinishReason` is `{ unified, raw }`, not a plain string —
 // real providers always shape it this way (see int.spec.ts
 // createDelayedStreamModel). A bare string normalizes to `unknown` and the
 // responses route would terminate with `response.failed`.
-const STOP_FINISH = { unified: 'stop', raw: 'stop' };
+const STOP_FINISH = finish('stop', 'stop');
 
-const TOOL_CALLS_FINISH = { unified: 'tool-calls', raw: 'tool_calls' };
+const TOOL_CALLS_FINISH = finish('tool-calls', 'tool_calls');
 
 /**
  * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
@@ -63,12 +65,12 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
 
       const toolCalls = requiredToolCall(options);
 
-      return {
+      return Promise.resolve({
         content: toolCalls.length > 0 ? toolCalls : [{ type: 'text' as const, text }],
         finishReason: toolCalls.length > 0 ? TOOL_CALLS_FINISH : STOP_FINISH,
         usage: DEFAULT_USAGE,
@@ -78,9 +80,9 @@ function createRecordingModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async (options: LanguageModelV4CallOptions) => {
+    doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
@@ -89,7 +91,7 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
       ];
-      return {
+      return Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             for (const part of parts) {
@@ -98,7 +100,7 @@ function createRecordingModel(opts?: {
             controller.close();
           },
         }),
-      };
+      });
     },
   };
 }
@@ -342,6 +344,13 @@ describe('chat schema accepts spec-valid message shapes', () => {
 // EITHER disposition and fails only on a silent drop.
 // ---------------------------------------------------------------------------
 
+/** Passes on explicit 400; otherwise requires 200 and runs `check`. */
+function expectOkOr400(status: number, check: () => void) {
+  if (status === 400) return; // typed rejection — policy-compliant
+  expect(status).toBe(200);
+  check();
+}
+
 /** Passes on explicit 400; on 2xx requires evidence in upstream callOptions. */
 function expectForwardedOr400(args: {
   field: string;
@@ -393,8 +402,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
       ],
       function_call: 'auto',
     });
-    if (status !== 400) {
-      expect(status).toBe(200);
+    expectOkOr400(status, () => {
       // The model must actually receive tools — old integrations otherwise get
       // plausible prose instead of tool calls, silently.
       expect(
@@ -402,7 +410,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
         '`functions` accepted but the model received no tools — silently dropped',
       ).toBeDefined();
       expect(JSON.stringify(callOptions()?.tools)).toContain('get_weather');
-    }
+    });
   });
 
   // G9 — web_search_options silently dropped (client believes grounded search ran); flip to it() when fixed. See 056_full_gateway_review.
@@ -549,13 +557,12 @@ describe('tool_choice allowed_tools / unknown shapes', () => {
       },
     });
 
-    if (status !== 400) {
-      expect(status).toBe(200);
+    expectOkOr400(status, () => {
       expect(
         callOptions?.toolChoice,
         'allowed_tools mode=required silently degraded to the SDK default (auto)',
       ).toEqual(expect.objectContaining({ type: 'required' }));
-    }
+    });
   });
 
   // G10 — unknown tool_choice shapes must 400 instead of silently degrading to auto.
@@ -587,7 +594,7 @@ describe('tool_choice allowed_tools / unknown shapes', () => {
 // G11
 describe('streaming preserves reasoning_details metadata', () => {
   function reasoningStreamParts(
-    providerMetadata: Record<string, Record<string, unknown>>,
+    providerMetadata: SharedV4ProviderMetadata,
   ): LanguageModelV4StreamPart[] {
     return [
       { type: 'stream-start', warnings: [] },

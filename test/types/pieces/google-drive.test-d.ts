@@ -16,5 +16,6 @@ expectTypeOf<Parameters<typeof drive.listFiles>[0]['input']['depth']>().toEqualT
 expectTypeOf(listed).toEqualTypeOf<Promise<ListFilesOutput>>();
 expectTypeOf<Awaited<typeof listed>['incompleteSearch']>().toEqualTypeOf<boolean>();
 
-// @ts-expect-error listFiles does not accept searchFiles input
-drive.listFiles({ input: { query: 'report' } });
+const _listFilesRejectsSearchFilesInput = () =>
+  // @ts-expect-error listFiles does not accept searchFiles input
+  drive.listFiles({ input: { query: 'report' } });

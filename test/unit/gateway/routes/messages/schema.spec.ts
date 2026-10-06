@@ -156,12 +156,8 @@ describe('parseMessagesRequest — tools & optional params', () => {
   });
 
   test('reports the dotted path of the failing field', () => {
-    try {
-      parseMessagesRequest({ ...valid, max_tokens: 0 });
-      throw new Error('expected throw');
-    } catch (err) {
-      expect(err).toBeInstanceOf(RequestValidationError);
-      expect((err as RequestValidationError).param).toBe('max_tokens');
-    }
+    const parse = () => parseMessagesRequest({ ...valid, max_tokens: 0 });
+    expect(parse).toThrow(RequestValidationError);
+    expect(parse).toThrow(expect.objectContaining({ param: 'max_tokens' }));
   });
 });

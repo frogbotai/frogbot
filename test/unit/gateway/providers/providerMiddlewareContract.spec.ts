@@ -18,7 +18,7 @@ import type { AnthropicProviderOptions } from '@ai-sdk/anthropic';
 import type { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import type { OpenAIChatLanguageModelOptions } from '@ai-sdk/openai';
 import type { OpenRouterProviderOptions } from '@openrouter/ai-sdk-provider';
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHook } from '../../../../packages/gateway/src/hooks.js';
 import { claudeThinkingEffort } from '../../../../packages/gateway/src/providers/anthropic/middleware.js';
@@ -58,8 +58,10 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const thinking = providerOptions['anthropic']?.['thinking'] as Record<string, unknown>;
     expect(thinking).toBeDefined();
     // The camelCase key is what the shipped SDK type declares and reads.
+    const budgetTokens = thinking['budgetTokens'];
+    assert(typeof budgetTokens === 'number', 'thinking.budgetTokens is a number');
     const roundTripped = {
-      thinking: { type: 'enabled' as const, budgetTokens: thinking['budgetTokens'] },
+      thinking: { type: 'enabled' as const, budgetTokens },
     } satisfies AnthropicProviderOptions;
     expect(roundTripped.thinking.budgetTokens).toBeTypeOf('number');
     expect(thinking['budgetTokens']).toBeTypeOf('number');

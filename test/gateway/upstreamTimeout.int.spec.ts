@@ -41,7 +41,6 @@ function createHangingModel(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
@@ -53,7 +52,7 @@ function createHangingModel(): LanguageModelV4 {
           pull: () => hang(options.abortSignal),
         }),
       }),
-  } as LanguageModelV4;
+  };
 }
 
 function makeAppWithHangingProvider(providerName: string) {
@@ -82,15 +81,17 @@ describe('gateway integration — upstream timeout (G32)', () => {
   it('maps a hung non-streaming upstream to 504 gateway_timeout', async () => {
     const app = makeAppWithHangingProvider('groq');
     const controller = new AbortController();
-    const res = app.request('http://localhost/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: 'groq/test-model',
-        messages: [{ role: 'user', content: 'hi' }],
+    const res = Promise.resolve(
+      app.request('http://localhost/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'groq/test-model',
+          messages: [{ role: 'user', content: 'hi' }],
+        }),
+        signal: controller.signal,
       }),
-      signal: controller.signal,
-    });
+    );
 
     const status = await statusOrHang(res, 300);
     // Free the hung upstream so the dangling promise settles after the test.
@@ -106,16 +107,18 @@ describe('gateway integration — upstream timeout (G32)', () => {
   it('maps a hung streaming upstream first-chunk read to 504 gateway_timeout', async () => {
     const app = makeAppWithHangingProvider('groq');
     const controller = new AbortController();
-    const res = app.request('http://localhost/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: 'groq/test-model',
-        messages: [{ role: 'user', content: 'hi' }],
-        stream: true,
+    const res = Promise.resolve(
+      app.request('http://localhost/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'groq/test-model',
+          messages: [{ role: 'user', content: 'hi' }],
+          stream: true,
+        }),
+        signal: controller.signal,
       }),
-      signal: controller.signal,
-    });
+    );
 
     const status = await statusOrHang(res, 300);
     controller.abort();

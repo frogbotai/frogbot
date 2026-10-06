@@ -18,8 +18,9 @@ expectTypeOf<Parameters<typeof trello.createCard>[0]['input']>().toEqualTypeOf<{
 expectTypeOf<Awaited<typeof _card>['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _card>['due']>().toEqualTypeOf<string | null | undefined>();
 
-// @ts-expect-error createCard does not accept getCardAttachment input
-trello.createCard({ input: { cardId: 'card', attachmentId: 'attachment' } });
+const _createCardRejectsGetCardAttachmentInput = () =>
+  // @ts-expect-error createCard does not accept getCardAttachment input
+  trello.createCard({ input: { cardId: 'card', attachmentId: 'attachment' } });
 
 const _attachments = trello.listCardAttachments({ input: { cardId: 'card' } });
 

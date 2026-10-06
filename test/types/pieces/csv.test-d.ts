@@ -15,5 +15,6 @@ expectTypeOf<Parameters<typeof csv.convertCsvToJson>[0]['input']>().toEqualTypeO
 }>();
 expectTypeOf(rows).toEqualTypeOf<Promise<(string[] | Record<string, string>)[]>>();
 
-// @ts-expect-error convertCsvToJson does not accept convertJsonToCsv input
-csv.convertCsvToJson({ input: { jsonArray: [{ a: 1 }] }, req });
+const _convertCsvToJsonRejectsConvertJsonToCsvInput = () =>
+  // @ts-expect-error convertCsvToJson does not accept convertJsonToCsv input
+  csv.convertCsvToJson({ input: { jsonArray: [{ a: 1 }] }, req });

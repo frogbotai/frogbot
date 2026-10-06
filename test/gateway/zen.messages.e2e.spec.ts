@@ -81,6 +81,74 @@ function eventsOf(frames: SseFrame[]): AnthropicEvent[] {
   }));
 }
 
+/** Fails with `failure` unless the reply stopped to use a tool; returns that block. */
+function expectToolUse(body: MessagesBody, failure: string): ContentBlock {
+  const toolUse = (body.content ?? []).find((b) => b.type === 'tool_use');
+  expect(body.stop_reason, `${failure} (stop_reason=${String(body.stop_reason)})`).toBe('tool_use');
+  if (!toolUse) throw new Error(failure);
+  return toolUse;
+}
+
+/**
+ * Ends the two-step loop after turn 2: a second tool use is answered and must
+ * lead to a final answer; a direct answer is the terminal turn. Either is
+ * protocol-valid.
+ */
+async function expectLoopFinish({
+  app,
+  tools,
+  turn2Messages,
+  turn2,
+  useA,
+}: {
+  app: ReturnType<typeof makeZenApp>;
+  tools: unknown[];
+  turn2Messages: Array<Record<string, unknown>>;
+  turn2: MessagesBody;
+  useA: ContentBlock;
+}) {
+  const useB = (turn2.content ?? []).find((b) => b.type === 'tool_use');
+  if (turn2.stop_reason === 'tool_use' && useB) {
+    expect(typeof useB.id).toBe('string');
+    expect(useB.id!.length).toBeGreaterThan(0);
+    expect(useB.id).not.toBe(useA.id);
+    expect(typeof useB.input).toBe('object');
+
+    const assistantB = (turn2.content ?? []).filter(
+      (b) => b.type === 'text' || b.type === 'tool_use',
+    );
+    const turn3 = await postJson<MessagesBody>(app, '/v1/messages', {
+      model: MODEL,
+      messages: [
+        ...turn2Messages,
+        { role: 'assistant', content: assistantB },
+        {
+          role: 'user',
+          content: [{ type: 'tool_result', tool_use_id: useB.id, content: '68 million' }],
+        },
+      ],
+      tools,
+      max_tokens: 1024,
+    });
+    expect(turn3.status).toBe(200);
+    expect(turn3.body.stop_reason).toBe('end_turn');
+    expect(textOf(turn3.body.content).length).toBeGreaterThan(0);
+  } else {
+    expect(turn2.stop_reason).toBe('end_turn');
+    expect(textOf(turn2.content).length).toBeGreaterThan(0);
+  }
+}
+
+/** Reasoning models can hit a stop sequence inside reasoning, leaving the
+ * visible text empty. Wire-legal — warn, don't fail. */
+function warnOnEmptyText(text: string) {
+  if (text.length === 0) {
+    console.warn(
+      '[zen.messages.e2e] stop_sequences produced empty text (stop hit during reasoning?)',
+    );
+  }
+}
+
 async function streamMessages(app: ReturnType<typeof makeZenApp>, body: Record<string, unknown>) {
   const res = await app.request('http://localhost/v1/messages', {
     method: 'POST',
@@ -204,13 +272,7 @@ describeLive(
         });
 
         expect(turn1.status).toBe(200);
-        const toolUse = (turn1.body.content ?? []).find((b) => b.type === 'tool_use');
-
-        if (turn1.body.stop_reason !== 'tool_use' || !toolUse) {
-          throw new Error(
-            `[zen.messages.e2e] model did not use the tool (stop_reason=${String(turn1.body.stop_reason)})`,
-          );
-        }
+        const toolUse = expectToolUse(turn1.body, '[zen.messages.e2e] model did not use the tool');
 
         expect(typeof toolUse.id).toBe('string');
         expect(toolUse.name).toBe('get_weather');
@@ -378,11 +440,7 @@ describeLive(
         expect(status).toBe(200);
         expect(body.stop_reason).toBeTruthy();
         const text = textOf(body.content);
-        if (text.length === 0) {
-          console.warn(
-            '[zen.messages.e2e] stop_sequences produced empty text (stop hit during reasoning?)',
-          );
-        }
+        warnOnEmptyText(text);
         expect(text).not.toContain('omega');
         expect(text).not.toContain('BANANA');
       },
@@ -439,13 +497,7 @@ describeLive(
           max_tokens: 1024,
         });
         expect(turn1.status).toBe(200);
-        const useA = (turn1.body.content ?? []).find((b) => b.type === 'tool_use');
-
-        if (turn1.body.stop_reason !== 'tool_use' || !useA) {
-          throw new Error(
-            `[zen.messages.e2e] seq-loop: model skipped tool A (stop_reason=${String(turn1.body.stop_reason)})`,
-          );
-        }
+        const useA = expectToolUse(turn1.body, '[zen.messages.e2e] seq-loop: model skipped tool A');
         expect(typeof useA.id).toBe('string');
         expect(useA.id!.length).toBeGreaterThan(0);
         expect(typeof useA.input).toBe('object');
@@ -471,36 +523,7 @@ describeLive(
         expect(turn2.status).toBe(200);
         expect(turn2.body.stop_reason).toBeTruthy();
 
-        const useB = (turn2.body.content ?? []).find((b) => b.type === 'tool_use');
-        if (turn2.body.stop_reason === 'tool_use' && useB) {
-          expect(typeof useB.id).toBe('string');
-          expect(useB.id!.length).toBeGreaterThan(0);
-          expect(useB.id).not.toBe(useA.id);
-          expect(typeof useB.input).toBe('object');
-
-          const assistantB = (turn2.body.content ?? []).filter(
-            (b) => b.type === 'text' || b.type === 'tool_use',
-          );
-          const turn3 = await postJson<MessagesBody>(app, '/v1/messages', {
-            model: MODEL,
-            messages: [
-              ...turn2Messages,
-              { role: 'assistant', content: assistantB },
-              {
-                role: 'user',
-                content: [{ type: 'tool_result', tool_use_id: useB.id, content: '68 million' }],
-              },
-            ],
-            tools,
-            max_tokens: 1024,
-          });
-          expect(turn3.status).toBe(200);
-          expect(turn3.body.stop_reason).toBe('end_turn');
-          expect(textOf(turn3.body.content).length).toBeGreaterThan(0);
-        } else {
-          expect(turn2.body.stop_reason).toBe('end_turn');
-          expect(textOf(turn2.body.content).length).toBeGreaterThan(0);
-        }
+        await expectLoopFinish({ app, tools, turn2Messages, turn2: turn2.body, useA });
       },
       TEST_TIMEOUT,
     );

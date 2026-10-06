@@ -15,8 +15,9 @@ expectTypeOf<Parameters<typeof dropbox.createTextFile>[0]['input']>().toEqualTyp
 expectTypeOf<Awaited<typeof _file>['.tag']>().toEqualTypeOf<'file' | 'folder' | 'deleted'>();
 expectTypeOf<Awaited<typeof _file>['name']>().toEqualTypeOf<string>();
 
-// @ts-expect-error createTextFile does not accept copyFile input
-dropbox.createTextFile({ input: { fromPath: '/a.txt', toPath: '/b.txt' } });
+const _createTextFileRejectsCopyFileInput = () =>
+  // @ts-expect-error createTextFile does not accept copyFile input
+  dropbox.createTextFile({ input: { fromPath: '/a.txt', toPath: '/b.txt' } });
 
 const _copied = dropbox.copyFile({ input: { fromPath: '/a.txt', toPath: '/b.txt' } });
 

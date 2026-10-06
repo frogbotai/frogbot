@@ -20,8 +20,9 @@ expectTypeOf<Parameters<typeof dateHelper.dateDifference>[0]['input']>().toEqual
 }>();
 expectTypeOf(difference).toEqualTypeOf<Promise<Record<string, number>>>();
 
-// @ts-expect-error dateDifference does not accept getCurrentDate input
-dateHelper.dateDifference({ input: { timeZone: 'UTC' }, req });
+const _dateDifferenceRejectsGetCurrentDateInput = () =>
+  // @ts-expect-error dateDifference does not accept getCurrentDate input
+  dateHelper.dateDifference({ input: { timeZone: 'UTC' }, req });
 
 expectTypeOf(dateHelper.getCurrentDate({ input: {}, req })).toEqualTypeOf<
   Promise<{ result: string }>

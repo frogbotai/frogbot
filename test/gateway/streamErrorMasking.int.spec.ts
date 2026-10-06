@@ -10,7 +10,7 @@
 // in production instead of streaming raw internals verbatim.
 
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
@@ -31,7 +31,6 @@ function createMidStreamErrorModel(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
@@ -51,7 +50,7 @@ function createMidStreamErrorModel(): LanguageModelV4 {
           },
         }),
       }),
-  } as LanguageModelV4;
+  };
 }
 
 function makeAppWithMockProvider(providerName: string) {
@@ -65,79 +64,73 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
   // not receive the raw internal-host/stacktrace message that the masking
   // contract exists to redact. Currently the transform emits it verbatim.
   it('masks the mid-stream error frame message in a streaming chat response (OpenAI)', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const app = makeAppWithMockProvider('groq');
-      const res = await app.request('http://localhost/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model: 'groq/test-model',
-          messages: [{ role: 'user', content: 'hi' }],
-          stream: true,
-        }),
-      });
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const app = makeAppWithMockProvider('groq');
+    const res = await app.request('http://localhost/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'groq/test-model',
+        messages: [{ role: 'user', content: 'hi' }],
+        stream: true,
+      }),
+    });
 
-      // Content already flowed, so this is a 200 with an in-band error frame.
-      expect(res.status).toBe(200);
-      const raw = await res.text();
-      expect(raw).not.toContain(SENSITIVE);
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    // Content already flowed, so this is a 200 with an in-band error frame.
+    expect(res.status).toBe(200);
+    const raw = await res.text();
+    expect(raw).not.toContain(SENSITIVE);
   });
 
   // Same leak on the Anthropic streaming path — the `event: error` frame's
   // message must be masked in production.
   it('masks the mid-stream error frame message in a streaming messages response (Anthropic)', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const app = makeAppWithMockProvider('anthropic');
-      const res = await app.request('http://localhost/v1/messages', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model: 'anthropic/test-model',
-          messages: [{ role: 'user', content: 'hi' }],
-          max_tokens: 100,
-          stream: true,
-        }),
-      });
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const app = makeAppWithMockProvider('anthropic');
+    const res = await app.request('http://localhost/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'anthropic/test-model',
+        messages: [{ role: 'user', content: 'hi' }],
+        max_tokens: 100,
+        stream: true,
+      }),
+    });
 
-      expect(res.status).toBe(200);
-      const raw = await res.text();
-      const errorFrame = parseSse(raw).find((f) => f.event === 'error');
-      expect(errorFrame?.data ?? '').not.toContain(SENSITIVE);
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    expect(res.status).toBe(200);
+    const raw = await res.text();
+    const errorFrame = parseSse(raw).find((f) => f.event === 'error');
+    expect(errorFrame?.data ?? '').not.toContain(SENSITIVE);
   });
 
   // The responses route shares the OpenAI extractor; its mid-stream `error`
   // frame (and the `failed` terminal envelope derived from it) must also be
   // masked in production.
   it('masks the mid-stream error frame message in a streaming responses response (OpenAI Responses)', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const app = makeAppWithMockProvider('groq');
-      const res = await app.request('http://localhost/v1/responses', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model: 'groq/test-model',
-          input: 'hi',
-          stream: true,
-        }),
-      });
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const app = makeAppWithMockProvider('groq');
+    const res = await app.request('http://localhost/v1/responses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'groq/test-model',
+        input: 'hi',
+        stream: true,
+      }),
+    });
 
-      expect(res.status).toBe(200);
-      const raw = await res.text();
-      expect(raw).not.toContain(SENSITIVE);
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-    }
+    expect(res.status).toBe(200);
+    const raw = await res.text();
+    expect(raw).not.toContain(SENSITIVE);
   });
 });

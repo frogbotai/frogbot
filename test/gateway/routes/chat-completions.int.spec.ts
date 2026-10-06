@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../../packages/gateway/src/app.js';
 import { buildProviderRegistry } from '../../../packages/gateway/src/providers/registry.js';
+import { providerMap } from '../../unit/gateway/config/fixtures.js';
 
 // ---------------------------------------------------------------------------
 // Test harness — an app with a single configured (but never called) provider
@@ -21,7 +22,7 @@ import { buildProviderRegistry } from '../../../packages/gateway/src/providers/r
 
 function makeApp() {
   return createApp({
-    registry: buildProviderRegistry({ openai: { apiKey: 'sk-test-never-called' } }),
+    registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test-never-called' } })),
   });
 }
 

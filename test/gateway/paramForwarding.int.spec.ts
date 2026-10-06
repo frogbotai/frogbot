@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 /**
  * Builds an error that passes `APICallError.isInstance()` at runtime without
@@ -46,14 +47,14 @@ function createRetryableApiCallError(opts: {
  */
 function createRecordingModel(opts?: {
   text?: string;
-  error?: unknown;
+  error?: Error;
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
   const { text = 'Hello from mock!', error, onCall } = opts ?? {};
-  const usage = {
+  const usage = mockUsage({
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
-  };
+  });
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -61,12 +62,12 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      if (error) throw error;
-      return {
+      if (error) return Promise.reject(error);
+      return Promise.resolve({
         content: [{ type: 'text' as const, text }],
-        finishReason: 'stop',
+        finishReason: finish('stop'),
         usage,
         warnings: [],
         response: {
@@ -74,23 +75,23 @@ function createRecordingModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async (options: LanguageModelV4CallOptions) => {
+    doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      if (error) throw error;
-      return {
+      if (error) return Promise.reject(error);
+      return Promise.resolve({
         stream: new ReadableStream({
           start(controller) {
             controller.enqueue({ type: 'stream-start', warnings: [] });
             controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({ type: 'text-delta', id: 'text-0', delta: text });
             controller.enqueue({ type: 'text-end', id: 'text-0' });
-            controller.enqueue({ type: 'finish', finishReason: 'stop', usage });
+            controller.enqueue({ type: 'finish', finishReason: finish('stop'), usage });
             controller.close();
           },
         }),
-      };
+      });
     },
   };
 }

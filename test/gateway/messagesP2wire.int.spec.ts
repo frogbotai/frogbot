@@ -9,7 +9,9 @@
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
+  LanguageModelV4FinishReason,
   LanguageModelV4StreamPart,
+  SharedV4ProviderMetadata,
 } from '@ai-sdk/provider';
 import type { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
@@ -18,24 +20,25 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Shared harness
 // ---------------------------------------------------------------------------
 
-const DEFAULT_USAGE = {
+const DEFAULT_USAGE = mockUsage({
   inputTokens: { total: 5, noCache: 5 },
   outputTokens: { total: 4, text: 4 },
-};
+});
 
-const STOP_FINISH = { unified: 'stop', raw: 'stop' };
+const STOP_FINISH = finish('stop', 'stop');
 
 function createRecordingModel(opts?: {
   text?: string;
   streamParts?: LanguageModelV4StreamPart[];
-  finishReason?: Record<string, string>;
+  finishReason?: LanguageModelV4FinishReason;
   usage?: typeof DEFAULT_USAGE;
-  providerMetadata?: Record<string, Record<string, unknown>>;
+  providerMetadata?: SharedV4ProviderMetadata;
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
   const {
@@ -53,9 +56,9 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      return {
+      return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason,
         usage,
@@ -66,9 +69,9 @@ function createRecordingModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async (options: LanguageModelV4CallOptions) => {
+    doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
@@ -77,7 +80,7 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage, ...(providerMetadata ? { providerMetadata } : {}) },
       ];
-      return {
+      return Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             for (const part of parts) {
@@ -86,7 +89,7 @@ function createRecordingModel(opts?: {
             controller.close();
           },
         }),
-      };
+      });
     },
   };
 }
@@ -118,7 +121,7 @@ describe('G60 — stop_sequence response field always null', () => {
   it('stop_sequence field echoes the matched stop sequence', async () => {
     // Real anthropic provider shape for a stop-sequence halt: unified 'stop',
     // raw 'stop_sequence', matched sequence in providerMetadata.anthropic.
-    const stopSequenceFinish = { unified: 'stop', raw: 'stop_sequence' };
+    const stopSequenceFinish = finish('stop', 'stop_sequence');
 
     const app = makeAppWithModel(
       'anthropic',
@@ -164,7 +167,7 @@ describe('G61 — stop-reason taxonomy: other → null is spec-invalid', () => {
       'anthropic',
       createRecordingModel({
         // AI SDK surfaces context-window / unmapped stops as finishReason 'other'
-        finishReason: { unified: 'other', raw: 'model_context_window_exceeded' },
+        finishReason: finish('other', 'model_context_window_exceeded'),
       }),
     );
 
@@ -193,10 +196,10 @@ describe('G61 — stop-reason taxonomy: other → null is spec-invalid', () => {
 
 describe('G62 — usage detail fields on messages responses', () => {
   it('messages response includes output_tokens_details.thinking_tokens', async () => {
-    const usageWithReasoning = {
+    const usageWithReasoning = mockUsage({
       inputTokens: { total: 10, noCache: 10 },
       outputTokens: { total: 15, text: 10, reasoning: 5 },
-    };
+    });
 
     const app = makeAppWithModel(
       'anthropic',
@@ -262,7 +265,7 @@ describe('G62 — usage detail fields on messages responses', () => {
       {
         type: 'finish',
         finishReason: STOP_FINISH,
-        usage: {
+        usage: mockUsage({
           inputTokens: { total: 10, noCache: 8, cacheRead: 0, cacheWrite: 2 },
           outputTokens: { total: 15, text: 10, reasoning: 5 },
           raw: {
@@ -272,7 +275,7 @@ describe('G62 — usage detail fields on messages responses', () => {
             cache_creation: { ephemeral_5m_input_tokens: 148, ephemeral_1h_input_tokens: 100 },
             output_tokens_details: { thinking_tokens: 5 },
           },
-        },
+        }),
       },
     ] as unknown as LanguageModelV4StreamPart[];
 
@@ -521,17 +524,18 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
       get supportedUrls() {
         return Promise.resolve({});
       },
-      doGenerate: async () => {
-        throw new Error('non-streaming not expected in this test');
+      doGenerate: () => {
+        return Promise.reject(new Error('non-streaming not expected in this test'));
       },
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            // Emit nothing — empty stream
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              // Emit nothing — empty stream
+              controller.close();
+            },
+          }),
         }),
-      }),
     };
 
     const app = makeAppWithModel('anthropic', emptyStreamModel);
@@ -563,16 +567,17 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
       get supportedUrls() {
         return Promise.resolve({});
       },
-      doGenerate: async () => {
-        throw new Error('non-streaming not expected in this test');
+      doGenerate: () => {
+        return Promise.reject(new Error('non-streaming not expected in this test'));
       },
-      doStream: async () => ({
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            controller.close();
-          },
+      doStream: () =>
+        Promise.resolve({
+          stream: new ReadableStream<LanguageModelV4StreamPart>({
+            start(controller) {
+              controller.close();
+            },
+          }),
         }),
-      }),
     };
 
     const app = makeAppWithModel('openai', emptyStreamModel);

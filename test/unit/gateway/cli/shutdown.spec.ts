@@ -1,3 +1,5 @@
+import { createServer } from 'node:http';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installGracefulShutdown } from '../../../../packages/gateway/src/cli/index.js';
@@ -6,12 +8,12 @@ type CloseCb = (err?: Error) => void;
 
 function makeServer() {
   let closeCb: CloseCb | undefined;
-  return {
-    close: vi.fn((cb?: CloseCb) => {
-      closeCb = cb;
-    }),
-    finishDrain: (err?: Error) => closeCb?.(err),
-  };
+  const server = createServer();
+  vi.spyOn(server, 'close').mockImplementation((cb?: CloseCb) => {
+    closeCb = cb;
+    return server;
+  });
+  return { server, finishDrain: (err?: Error) => closeCb?.(err) };
 }
 
 describe('installGracefulShutdown (G91)', () => {
@@ -24,14 +26,14 @@ describe('installGracefulShutdown (G91)', () => {
   // On SIGTERM the handler must stop accepting new connections, wait for the
   // drain callback, flush the exporter, then exit 0 — not force-exit mid-stream.
   it('drains connections, flushes, then exits 0', async () => {
-    const server = makeServer();
-    const exit = vi.fn();
+    const { server, finishDrain } = makeServer();
+    const exit = vi.fn<(code: number) => never>();
     const flush = vi.fn(() => Promise.resolve());
 
     const handler = installGracefulShutdown({
       server,
       flush,
-      exit: exit as unknown as (code: number) => never,
+      exit,
       log: () => {},
       errorLog: () => {},
     });
@@ -40,7 +42,7 @@ describe('installGracefulShutdown (G91)', () => {
     expect(server.close).toHaveBeenCalledTimes(1);
     expect(exit).not.toHaveBeenCalled();
 
-    server.finishDrain();
+    finishDrain();
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
     expect(flush).toHaveBeenCalledTimes(1);
   });
@@ -49,13 +51,13 @@ describe('installGracefulShutdown (G91)', () => {
   // wedged connection can't hang past the grace period.
   it('force-exits 1 when the drain never completes', () => {
     vi.useFakeTimers();
-    const server = makeServer();
-    const exit = vi.fn();
+    const { server } = makeServer();
+    const exit = vi.fn<(code: number) => never>();
 
     const handler = installGracefulShutdown({
       server,
       drainTimeoutMs: 25_000,
-      exit: exit as unknown as (code: number) => never,
+      exit,
       log: () => {},
       errorLog: () => {},
     });
@@ -68,20 +70,20 @@ describe('installGracefulShutdown (G91)', () => {
   });
 
   it('exits 1 when server.close reports an error', () => {
-    const server = makeServer();
-    const exit = vi.fn();
+    const { server, finishDrain } = makeServer();
+    const exit = vi.fn<(code: number) => never>();
     const flush = vi.fn(() => Promise.resolve());
 
     const handler = installGracefulShutdown({
       server,
       flush,
-      exit: exit as unknown as (code: number) => never,
+      exit,
       log: () => {},
       errorLog: () => {},
     });
 
     handler('SIGTERM');
-    server.finishDrain(new Error('boom'));
+    finishDrain(new Error('boom'));
     expect(exit).toHaveBeenCalledWith(1);
     expect(flush).not.toHaveBeenCalled();
   });

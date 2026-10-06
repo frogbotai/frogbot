@@ -6,17 +6,19 @@ import type { ProviderRegistry } from '../../../../../packages/gateway/src/provi
 
 describe('rerankRoute', () => {
   it('serves POST /v1/rerank', async () => {
-    const doRerank = vi.fn(async () => ({
-      ranking: [
-        { index: 1, relevanceScore: 0.9 },
-        { index: 0, relevanceScore: 0.5 },
-      ],
-      warnings: [],
-      response: {
-        id: 'rerank_123',
-        body: { meta: { billed_units: { search_units: 1 } } },
-      },
-    }));
+    const doRerank = vi.fn(() =>
+      Promise.resolve({
+        ranking: [
+          { index: 1, relevanceScore: 0.9 },
+          { index: 0, relevanceScore: 0.5 },
+        ],
+        warnings: [],
+        response: {
+          id: 'rerank_123',
+          body: { meta: { billed_units: { search_units: 1 } } },
+        },
+      }),
+    );
     const model = new MockRerankingModelV4({ doRerank });
     const app = createApp({
       registry: {

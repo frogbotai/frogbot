@@ -94,12 +94,16 @@ describe('createGateway', () => {
     const beforeUpstream = vi.fn();
     const afterUpstream = vi.fn();
     const model = new MockLanguageModelV4({
-      doGenerate: () => ({
-        content: [{ type: 'text', text: 'hello' }],
-        finishReason: 'stop',
-        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-        warnings: [],
-      }),
+      doGenerate: () =>
+        Promise.resolve({
+          content: [{ type: 'text', text: 'hello' }],
+          finishReason: { unified: 'stop', raw: 'stop' },
+          usage: {
+            inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+            outputTokens: { total: 1, text: 1, reasoning: undefined },
+          },
+          warnings: [],
+        }),
     });
     const gw = createGateway({
       providers: { openai: { apiKey: 'test-key' } },

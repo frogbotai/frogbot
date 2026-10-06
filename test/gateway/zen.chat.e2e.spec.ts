@@ -80,6 +80,102 @@ type ErrorBody = {
   error?: { message?: string; type?: string; param?: string; code?: string };
 };
 
+type Choice = NonNullable<ChatCompletionBody['choices']>[number];
+
+type ToolCallChoice = Choice & { message: { tool_calls: ToolCall[] } };
+
+/** Fails with `failure` unless the choice finished by calling at least one tool. */
+function expectToolCallChoice(
+  choice: Choice | undefined,
+  failure: string,
+): asserts choice is ToolCallChoice {
+  expect(choice?.finish_reason, `${failure} (finish_reason=${String(choice?.finish_reason)})`).toBe(
+    'tool_calls',
+  );
+  expect(choice?.message?.tool_calls?.length, failure).toBeGreaterThan(0);
+}
+
+/** Reads to the end; true once the stream finishes or rejects (an abort is a clean end). */
+async function drainTerminates(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<boolean> {
+  try {
+    // Bounded loop: a broken abort chain that keeps streaming to completion
+    // still terminates via done; a hang is caught by the test timeout.
+    for (;;) {
+      const { done } = await reader.read();
+      if (done) return true;
+    }
+  } catch {
+    return true; // abort rejection is a clean termination
+  }
+}
+
+/**
+ * Ends the two-step loop after turn 2.
+ */
+async function expectLoopFinish({
+  app,
+  tools,
+  turn2Messages,
+  callA,
+  c2,
+}: {
+  app: ReturnType<typeof makeZenApp>;
+  tools: unknown[];
+  turn2Messages: Array<Record<string, unknown>>;
+  callA: ToolCall;
+  c2: Choice;
+}) {
+  // If the model called a SECOND tool, complete the loop (turn 3) and
+  // assert the final answer. If it answered directly, that answer is the
+  // terminal turn — either is protocol-valid.
+  if (c2.finish_reason === 'tool_calls' && c2.message?.tool_calls?.length) {
+    const callB = c2.message.tool_calls[0];
+    expect(typeof callB.id).toBe('string');
+    expect(callB.id!.length).toBeGreaterThan(0);
+    // Distinct id from callA — the round-trip must not reuse ids.
+    expect(callB.id).not.toBe(callA.id);
+    expect(typeof JSON.parse(callB.function!.arguments!)).toBe('object');
+
+    const turn3 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
+      model: MODEL,
+      messages: [
+        ...turn2Messages,
+        {
+          role: 'assistant',
+          content: c2.message.content ?? null,
+          tool_calls: [
+            {
+              id: callB.id,
+              type: 'function',
+              function: { name: callB.function!.name, arguments: callB.function!.arguments },
+            },
+          ],
+        },
+        { role: 'tool', tool_call_id: callB.id, content: '{"population":"68 million"}' },
+      ],
+      tools,
+      max_tokens: 1024,
+    });
+    expect(turn3.status).toBe(200);
+    const c3 = turn3.body.choices?.[0];
+    expect(c3?.finish_reason).toBe('stop');
+    expect((c3?.message?.content ?? '').length).toBeGreaterThan(0);
+  } else {
+    expect(c2.finish_reason).toBe('stop');
+    expect((c2.message?.content ?? '').length).toBeGreaterThan(0);
+  }
+}
+
+/** Reasoning models can hit a stop sequence inside reasoning_content, leaving
+ * the visible content empty. Wire-legal — warn, don't fail. */
+function warnOnEmptyContent(content: string) {
+  if (content.length === 0) {
+    console.warn(
+      '[zen.chat.e2e] stop sequence produced empty content (stop hit during reasoning?)',
+    );
+  }
+}
+
 async function streamChat(
   app: ReturnType<typeof makeZenApp>,
   body: Record<string, unknown>,
@@ -205,13 +301,9 @@ describeLive(
         const choice = turn1.body.choices?.[0];
         expect(choice).toBeDefined();
 
-        if (choice!.finish_reason !== 'tool_calls' || !choice!.message?.tool_calls?.length) {
-          throw new Error(
-            `[zen.chat.e2e] model did not call the tool (finish_reason=${String(choice!.finish_reason)})`,
-          );
-        }
+        expectToolCallChoice(choice, '[zen.chat.e2e] model did not call the tool');
 
-        const call = choice!.message.tool_calls[0];
+        const call = choice.message.tool_calls[0];
         expect(typeof call.id).toBe('string');
         expect(call.function?.name).toBe('get_weather');
         const args = JSON.parse(call.function!.arguments!) as Record<string, unknown>;
@@ -224,7 +316,7 @@ describeLive(
             ...turn1Messages,
             {
               role: 'assistant',
-              content: choice!.message.content ?? null,
+              content: choice.message.content ?? null,
               tool_calls: [
                 {
                   id: call.id,
@@ -343,9 +435,7 @@ describeLive(
           }
         }
 
-        if (acc.size === 0) {
-          throw new Error('[zen.chat.e2e] model did not stream a tool call');
-        }
+        expect(acc.size, '[zen.chat.e2e] model did not stream a tool call').toBeGreaterThan(0);
 
         const call = acc.get(0)!;
         expect(call.id.length).toBeGreaterThan(0);
@@ -384,13 +474,7 @@ describeLive(
         const choice = body.choices?.[0];
         expect(choice?.finish_reason).toBeTruthy();
         const content = choice?.message?.content ?? '';
-        if (content.length === 0) {
-          // Reasoning models can hit the stop sequence inside reasoning_content,
-          // leaving the visible content empty. Wire-legal — warn, don't fail.
-          console.warn(
-            '[zen.chat.e2e] stop sequence produced empty content (stop hit during reasoning?)',
-          );
-        }
+        warnOnEmptyContent(content);
         // The text after the stop sequence must never reach the client.
         expect(content).not.toContain('omega');
         expect(content).not.toContain('BANANA');
@@ -461,21 +545,7 @@ describeLive(
         controller.abort();
 
         // The stream must terminate (done or abort rejection) — not hang, not crash.
-        let terminated = false;
-        try {
-          // Bounded loop: a broken abort chain that keeps streaming to completion
-          // still terminates via done; a hang is caught by the test timeout.
-          for (;;) {
-            const { done } = await reader.read();
-            if (done) {
-              terminated = true;
-              break;
-            }
-          }
-        } catch {
-          terminated = true; // abort rejection is a clean termination
-        }
-        expect(terminated).toBe(true);
+        expect(await drainTerminates(reader)).toBe(true);
 
         // The app must still serve requests after the abort (no crashed state).
         const after = await postJson<ErrorBody>(app, '/v1/chat/completions', {
@@ -590,13 +660,9 @@ describeLive(
         const c1 = turn1.body.choices?.[0];
         expect(c1).toBeDefined();
 
-        if (c1!.finish_reason !== 'tool_calls' || !c1!.message?.tool_calls?.length) {
-          throw new Error(
-            `[zen.chat.e2e] seq-loop: model skipped tool A (finish_reason=${String(c1!.finish_reason)})`,
-          );
-        }
+        expectToolCallChoice(c1, '[zen.chat.e2e] seq-loop: model skipped tool A');
 
-        const callA = c1!.message.tool_calls[0];
+        const callA = c1.message.tool_calls[0];
         expect(typeof callA.id).toBe('string');
         expect(callA.id!.length).toBeGreaterThan(0);
         expect(typeof callA.function?.name).toBe('string');
@@ -608,7 +674,7 @@ describeLive(
           ...baseMessages,
           {
             role: 'assistant',
-            content: c1!.message.content ?? null,
+            content: c1.message.content ?? null,
             tool_calls: [
               {
                 id: callA.id,
@@ -635,45 +701,7 @@ describeLive(
         expect(c2).toBeDefined();
         expect(c2!.finish_reason).toBeTruthy();
 
-        // If the model called a SECOND tool, complete the loop (turn 3) and
-        // assert the final answer. If it answered directly, that answer is the
-        // terminal turn — either is protocol-valid.
-        if (c2!.finish_reason === 'tool_calls' && c2!.message?.tool_calls?.length) {
-          const callB = c2!.message.tool_calls[0];
-          expect(typeof callB.id).toBe('string');
-          expect(callB.id!.length).toBeGreaterThan(0);
-          // Distinct id from callA — the round-trip must not reuse ids.
-          expect(callB.id).not.toBe(callA.id);
-          expect(typeof JSON.parse(callB.function!.arguments!)).toBe('object');
-
-          const turn3 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
-            model: MODEL,
-            messages: [
-              ...turn2Messages,
-              {
-                role: 'assistant',
-                content: c2!.message.content ?? null,
-                tool_calls: [
-                  {
-                    id: callB.id,
-                    type: 'function',
-                    function: { name: callB.function!.name, arguments: callB.function!.arguments },
-                  },
-                ],
-              },
-              { role: 'tool', tool_call_id: callB.id, content: '{"population":"68 million"}' },
-            ],
-            tools,
-            max_tokens: 1024,
-          });
-          expect(turn3.status).toBe(200);
-          const c3 = turn3.body.choices?.[0];
-          expect(c3?.finish_reason).toBe('stop');
-          expect((c3?.message?.content ?? '').length).toBeGreaterThan(0);
-        } else {
-          expect(c2!.finish_reason).toBe('stop');
-          expect((c2!.message?.content ?? '').length).toBeGreaterThan(0);
-        }
+        await expectLoopFinish({ app, tools, turn2Messages, callA, c2: c2! });
       },
       TEST_TIMEOUT,
     );
@@ -708,13 +736,9 @@ describeLive(
         const c1 = turn1.body.choices?.[0];
         expect(c1).toBeDefined();
 
-        if (c1!.finish_reason !== 'tool_calls' || !c1!.message?.tool_calls?.length) {
-          throw new Error(
-            `[zen.chat.e2e] parallel: model called no tools (finish_reason=${String(c1!.finish_reason)})`,
-          );
-        }
+        expectToolCallChoice(c1, '[zen.chat.e2e] parallel: model called no tools');
 
-        const calls = c1!.message.tool_calls;
+        const calls = c1.message.tool_calls;
         // Every emitted call is individually well-formed with a unique id.
         const ids = new Set<string>();
         for (const call of calls) {
@@ -726,11 +750,10 @@ describeLive(
           expect(typeof JSON.parse(call.function!.arguments!)).toBe('object');
         }
 
-        if (calls.length < 2) {
-          throw new Error(
-            `[zen.chat.e2e] parallel: model emitted only ${calls.length} tool call(s)`,
-          );
-        }
+        expect(
+          calls.length,
+          `[zen.chat.e2e] parallel: model emitted only ${calls.length} tool call(s)`,
+        ).toBeGreaterThanOrEqual(2);
 
         // Return a result for EACH call, matching tool_call_id. Order of tool
         // results must not matter to the upstream.
@@ -746,7 +769,7 @@ describeLive(
             ...baseMessages,
             {
               role: 'assistant',
-              content: c1!.message.content ?? null,
+              content: c1.message.content ?? null,
               tool_calls: calls.map((call) => ({
                 id: call.id,
                 type: 'function',
@@ -803,9 +826,10 @@ describeLive(
           }
         }
 
-        if (acc.size === 0) {
-          throw new Error('[zen.chat.e2e] streaming+tools: model streamed no tool call');
-        }
+        expect(
+          acc.size,
+          '[zen.chat.e2e] streaming+tools: model streamed no tool call',
+        ).toBeGreaterThan(0);
 
         const call = acc.get(0)!;
         expect(call.id.length).toBeGreaterThan(0);
@@ -1067,19 +1091,7 @@ describeLive(
         await reader.read();
         controller.abort();
 
-        let terminated = false;
-        try {
-          for (;;) {
-            const { done } = await reader.read();
-            if (done) {
-              terminated = true;
-              break;
-            }
-          }
-        } catch {
-          terminated = true;
-        }
-        expect(terminated).toBe(true);
+        expect(await drainTerminates(reader)).toBe(true);
 
         // App still serves requests after aborting a tool-call stream.
         const after = await postJson<ErrorBody>(app, '/v1/chat/completions', {

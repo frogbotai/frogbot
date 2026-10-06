@@ -16,7 +16,7 @@ import type {
 } from 'payload';
 import { expectTypeOf } from 'vitest';
 
-type FunctionOf<T> = Extract<NonNullable<T>, (...args: any[]) => any>;
+type FunctionOf<T> = Extract<NonNullable<T>, (...args: never[]) => unknown>;
 type ArgsOf<T> = Parameters<FunctionOf<T>>[0];
 
 type PayloadDefaultValueArgs = Parameters<FunctionOf<PayloadDefaultValue>>[0];
@@ -47,10 +47,10 @@ const relationship: RelationshipField = {
 };
 
 const relationshipMany: RelationshipField = {
-  filterOptions: async ({ req }) => {
+  filterOptions: ({ req }) => {
     expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
 
-    return true;
+    return Promise.resolve(true);
   },
   hasMany: true,
   name: 'owners',
@@ -180,7 +180,7 @@ export const payloadBlocksFilter: BlocksField = {
 
 export const asyncSelectFilter: SelectField = {
   // @ts-expect-error select filterOptions is called synchronously
-  filterOptions: async ({ options }) => options,
+  filterOptions: ({ options }) => Promise.resolve(options),
   name: 'color',
   options: ['red'],
   type: 'select',

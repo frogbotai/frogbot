@@ -18,7 +18,7 @@ import { expectTypeOf } from 'vitest';
 
 type PayloadHooks = NonNullable<PayloadCollectionConfig['hooks']>;
 
-type HookArgs<T> = T extends ((args: infer A) => any)[] ? A : never;
+type HookArgs<T> = T extends ((args: infer A) => unknown)[] ? A : never;
 
 type FlatPhase = Exclude<
   keyof CollectionHooks,

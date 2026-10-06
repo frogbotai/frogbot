@@ -40,7 +40,7 @@ describe('bedrockCachePoint', () => {
       messages: [message],
     });
     void bedrockCachePoint(args);
-    expect(message.providerOptions.bedrock).toEqual({
+    expect(message.providerOptions).toHaveProperty('bedrock', {
       cachePoint: { type: 'default' },
     });
     expect(message.providerOptions.unknown).toBeUndefined();
@@ -55,7 +55,7 @@ describe('bedrockCachePoint', () => {
     const message = { role: 'user', content: [part] };
     const args = makeArgs('claude-4-sonnet', { messages: [message] });
     void bedrockCachePoint(args);
-    expect(part.providerOptions.bedrock).toEqual({
+    expect(part.providerOptions).toHaveProperty('bedrock', {
       cachePoint: { type: 'default' },
     });
     expect(message).not.toHaveProperty('providerOptions');
@@ -68,7 +68,9 @@ describe('bedrockCachePoint', () => {
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl } } },
     };
     void bedrockCachePoint(makeArgs('claude-4-sonnet', { messages: [message] }));
-    expect(message.providerOptions.bedrock).toEqual({ cachePoint: { type: 'default', ttl } });
+    expect(message.providerOptions).toHaveProperty('bedrock', {
+      cachePoint: { type: 'default', ttl },
+    });
   });
 
   it('omits an unsupported TTL without throwing', () => {
@@ -78,7 +80,7 @@ describe('bedrockCachePoint', () => {
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '24h' } } },
     };
     void bedrockCachePoint(makeArgs('claude-4-sonnet', { messages: [message] }));
-    expect(message.providerOptions.bedrock).toEqual({ cachePoint: { type: 'default' } });
+    expect(message.providerOptions).toHaveProperty('bedrock', { cachePoint: { type: 'default' } });
   });
 
   it('maps request-level cache_control to the last message', () => {

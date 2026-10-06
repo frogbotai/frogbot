@@ -15,8 +15,9 @@ expectTypeOf<Parameters<typeof exa.generateAnswer>[0]['input']>().toEqualTypeOf<
 }>();
 expectTypeOf(answer).toEqualTypeOf<Promise<string>>();
 
-// @ts-expect-error generateAnswer does not accept getContents input
-exa.generateAnswer({ input: { urls: ['https://example.com'] }, req });
+const _generateAnswerRejectsGetContentsInput = () =>
+  // @ts-expect-error generateAnswer does not accept getContents input
+  exa.generateAnswer({ input: { urls: ['https://example.com'] }, req });
 
 const _contents = exa.getContents({ input: { urls: ['https://example.com'] }, req });
 

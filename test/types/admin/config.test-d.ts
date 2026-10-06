@@ -170,11 +170,11 @@ export const filteredLocalization: FrogBotConfig['localization'] = {
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' },
   ],
-  filterAvailableLocales: async ({ locales, req }) => {
+  filterAvailableLocales: ({ locales, req }) => {
     expectTypeOf(locales).toEqualTypeOf<Locale[]>();
     expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
 
-    return locales.filter(({ code }) => code === 'en');
+    return Promise.resolve(locales.filter(({ code }) => code === 'en'));
   },
 };
 

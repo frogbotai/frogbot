@@ -16,8 +16,9 @@ expectTypeOf<Parameters<typeof pagerduty.createIncident>[0]['input']['urgency']>
 expectTypeOf<Awaited<typeof _incident>['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _incident>['status']>().toEqualTypeOf<string | undefined>();
 
-// @ts-expect-error createIncident does not accept getIncident input
-pagerduty.createIncident({ input: { incidentId: 'incident' } });
+const _createIncidentRejectsGetIncidentInput = () =>
+  // @ts-expect-error createIncident does not accept getIncident input
+  pagerduty.createIncident({ input: { incidentId: 'incident' } });
 
 const _resolved = pagerduty.resolveIncident({
   input: { incidentId: 'incident', fromEmail: 'oncall@example.com' },

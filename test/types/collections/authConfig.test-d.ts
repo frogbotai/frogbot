@@ -25,10 +25,10 @@ expectTypeOf<EmailTemplateArgs['token']>().toEqualTypeOf<string>();
 
 export const requestAwareTemplates: AuthConfig = {
   verify: {
-    generateEmailHTML: async ({ req, token }) => {
+    generateEmailHTML: ({ req, token }) => {
       expectTypeOf(req.frogbot).toEqualTypeOf<FrogBot>();
 
-      return `<a href="/verify/${token}">Verify</a>`;
+      return Promise.resolve(`<a href="/verify/${token}">Verify</a>`);
     },
   },
   forgotPassword: {
@@ -47,7 +47,7 @@ export const Customers: CollectionConfig = {
     removeTokenFromResponses: true,
     verify: {
       generateEmailHTML: ({ token }) => `<a href="/verify/${token}">Verify</a>`,
-      generateEmailSubject: async ({ user }) => `Verify ${String(user)}`,
+      generateEmailSubject: ({ user }) => Promise.resolve(`Verify ${String(user)}`),
     },
     forgotPassword: {
       expiration: 600_000,

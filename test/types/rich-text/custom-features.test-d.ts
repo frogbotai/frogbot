@@ -157,10 +157,11 @@ createServerFeature({
 });
 
 createServerFeature<{ enabled: boolean }>({
-  feature: async ({ props }) => ({
-    nodes: [dividerNode, paragraphNode],
-    sanitizedServerFeatureProps: props,
-  }),
+  feature: ({ props }) =>
+    Promise.resolve({
+      nodes: [dividerNode, paragraphNode],
+      sanitizedServerFeatureProps: props,
+    }),
   key: 'asyncHeterogeneous',
 });
 

@@ -25,7 +25,7 @@ export async function runAgent() {
     prompt: "Summarize today's open tasks.",
   });
 
-  console.log(result.text);
+  frogbot.logger.info(result.text);
 
   return result;
 }

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { anthropicProvider } from '../../../../packages/gateway/src/providers/anthropic/index.js';
 import { klingaiProvider } from '../../../../packages/gateway/src/providers/klingai/index.js';
 import { openaiProvider } from '../../../../packages/gateway/src/providers/openai/index.js';
+import { testEnv } from '../config/fixtures.js';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -43,14 +44,16 @@ describe('provider credential fallback', () => {
 
 describe('provider env discovery', () => {
   it('discovers Kling AI from KLINGAI_API_KEY alone', () => {
-    expect(klingaiProvider.fromEnv({ KLINGAI_API_KEY: 'kling-env' })).toEqual({
+    expect(klingaiProvider.fromEnv(testEnv({ KLINGAI_API_KEY: 'kling-env' }))).toEqual({
       apiKey: 'kling-env',
     });
   });
 
   it('discovers Kling AI from KLINGAI_ACCESS_KEY and KLINGAI_SECRET_KEY', () => {
     expect(
-      klingaiProvider.fromEnv({ KLINGAI_ACCESS_KEY: 'access', KLINGAI_SECRET_KEY: 'secret' }),
+      klingaiProvider.fromEnv(
+        testEnv({ KLINGAI_ACCESS_KEY: 'access', KLINGAI_SECRET_KEY: 'secret' }),
+      ),
     ).toEqual({ accessKey: 'access', secretKey: 'secret' });
   });
 });

@@ -1,13 +1,17 @@
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
+  LanguageModelV4FilePart,
+  LanguageModelV4FinishReason,
   LanguageModelV4StreamPart,
+  SharedV4ProviderMetadata,
 } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 /**
  * Builds an error that passes `APICallError.isInstance()` at runtime without
@@ -46,24 +50,24 @@ function createApiCallError(opts: {
  */
 function createRecordingModel(opts?: {
   text?: string;
-  error?: unknown;
-  finishReason?: { unified: string; raw?: string };
-  providerMetadata?: Record<string, Record<string, unknown>>;
+  error?: Error;
+  finishReason?: LanguageModelV4FinishReason;
+  providerMetadata?: SharedV4ProviderMetadata;
   streamParts?: LanguageModelV4StreamPart[];
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
   const {
     text = 'Hello from mock!',
     error,
-    finishReason = { unified: 'stop', raw: 'end_turn' },
+    finishReason = finish('stop', 'end_turn'),
     providerMetadata,
     streamParts,
     onCall,
   } = opts ?? {};
-  const usage = {
+  const usage = mockUsage({
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
-  };
+  });
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -73,10 +77,10 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({ '*': [/.*/] });
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      if (error) throw error;
-      return {
+      if (error) return Promise.reject(error);
+      return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason,
         usage,
@@ -87,11 +91,11 @@ function createRecordingModel(opts?: {
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
-    doStream: async (options: LanguageModelV4CallOptions) => {
+    doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      if (error) throw error;
+      if (error) return Promise.reject(error);
       const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 'text-0' },
@@ -99,7 +103,7 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage },
       ];
-      return {
+      return Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             for (const part of parts) {
@@ -108,7 +112,7 @@ function createRecordingModel(opts?: {
             controller.close();
           },
         }),
-      };
+      });
     },
   };
 }
@@ -143,7 +147,7 @@ describe('messages content-filter → stop_reason refusal', () => {
       'anthropic',
       createRecordingModel({
         text: 'I cannot help with that.',
-        finishReason: { unified: 'content-filter', raw: 'refusal' },
+        finishReason: finish('content-filter', 'refusal'),
       }),
     );
 
@@ -155,10 +159,10 @@ describe('messages content-filter → stop_reason refusal', () => {
 
   // G12
   it('streaming: content-filter finish emits message_delta stop_reason refusal', async () => {
-    const usage = {
+    const usage = mockUsage({
       inputTokens: { total: 5, noCache: 5 },
       outputTokens: { total: 4, text: 4 },
-    };
+    });
     const app = makeAppWithModel(
       'anthropic',
       createRecordingModel({
@@ -169,7 +173,7 @@ describe('messages content-filter → stop_reason refusal', () => {
           { type: 'text-end', id: 'text-0' },
           {
             type: 'finish',
-            finishReason: { unified: 'content-filter', raw: 'refusal' },
+            finishReason: finish('content-filter', 'refusal'),
             usage,
           },
         ],
@@ -266,7 +270,7 @@ describe('messages URL document defaults to application/pdf', () => {
     expect(status).toBe(200);
     const userMessage = callOptions?.prompt.find((m) => m.role === 'user');
     const fileParts = (Array.isArray(userMessage?.content) ? userMessage.content : []).filter(
-      (p): p is { type: 'file'; mediaType: string } => (p as { type: string }).type === 'file',
+      (p): p is LanguageModelV4FilePart => p.type === 'file',
     );
     expect(fileParts).toHaveLength(1);
     expect(fileParts[0].mediaType).toBe('application/pdf');

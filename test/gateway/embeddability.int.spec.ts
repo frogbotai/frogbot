@@ -11,37 +11,35 @@
 // harness never needs the network; only routing/config behavior is exercised.
 
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 
-// `hono` lives in the gateway package's own node_modules; import it from there
-// so the host-app half of the mount recipe uses the exact Hono the gateway does.
-import { Hono } from '../../packages/gateway/node_modules/hono/dist/index.js';
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage } from './mockModel.js';
 
 function createMockLanguageModel(): LanguageModelV4 {
   return {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],
-        finishReason: 'stop',
-        usage: {
+        finishReason: finish('stop'),
+        usage: mockUsage({
           inputTokens: { total: 1, noCache: 1 },
           outputTokens: { total: 1, text: 1 },
-        },
+        }),
         warnings: [],
         response: { id: 'r', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
       }),
     doStream: () => Promise.resolve({ stream: new ReadableStream<LanguageModelV4StreamPart>() }),
-  } as LanguageModelV4;
+  };
 }
 
 function makeAppWithMockProvider(providerName: string) {

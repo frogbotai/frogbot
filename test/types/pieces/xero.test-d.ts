@@ -3,7 +3,7 @@ import { expectTypeOf } from 'vitest';
 
 const xero = createXero({ auth: { accessToken: 'token' } });
 
-xero.allocateCreditNote({
+const _allocated = xero.allocateCreditNote({
   input: { tenantId: 'tenant', creditNoteId: 'credit', invoiceId: 'invoice', amount: 10 },
 });
 
@@ -15,8 +15,9 @@ expectTypeOf<Parameters<typeof xero.allocateCreditNote>[0]['input']>().toEqualTy
   date?: string | undefined;
 }>();
 
-// @ts-expect-error allocateCreditNote does not accept sendInvoiceEmail input
-xero.allocateCreditNote({ input: { tenantId: 'tenant', invoiceId: 'invoice' } });
+const _allocateCreditNoteRejectsSendInvoiceEmailInput = () =>
+  // @ts-expect-error allocateCreditNote does not accept sendInvoiceEmail input
+  xero.allocateCreditNote({ input: { tenantId: 'tenant', invoiceId: 'invoice' } });
 
 const emailed = xero.sendInvoiceEmail({ input: { tenantId: 'tenant', invoiceId: 'invoice' } });
 

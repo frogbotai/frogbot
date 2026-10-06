@@ -6,12 +6,13 @@ declare const req: FrogBotRequest;
 
 const xml = createXml();
 
-xml.convertXmlToJson({ input: { xml: '<frog />' }, req });
+const _converted = xml.convertXmlToJson({ input: { xml: '<frog />' }, req });
 
 expectTypeOf<Parameters<typeof xml.convertXmlToJson>[0]['input']>().toEqualTypeOf<{
   xml: string;
   ignoreAttributes?: boolean | undefined;
 }>();
 
-// @ts-expect-error convertXmlToJson does not accept convertJsonToXml input
-xml.convertXmlToJson({ input: { json: { frog: true } }, req });
+const _convertXmlToJsonRejectsConvertJsonToXmlInput = () =>
+  // @ts-expect-error convertXmlToJson does not accept convertJsonToXml input
+  xml.convertXmlToJson({ input: { json: { frog: true } }, req });

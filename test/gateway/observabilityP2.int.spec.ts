@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { GatewayLogger, LogFn } from '../../packages/gateway/src/observability/logger.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage } from './mockModel.js';
 
 const API_CALL_ERROR_MARKER = Symbol.for('vercel.ai.error.AI_APICallError');
 
@@ -38,11 +39,11 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text }],
-        finishReason: 'stop',
-        usage: {
+        finishReason: finish('stop'),
+        usage: mockUsage({
           inputTokens: { total: 10, noCache: 10 },
           outputTokens: { total: 5, text: 5 },
-        },
+        }),
         warnings: [],
         response: { id: 'r1', modelId: 'mock-model', timestamp: new Date('2026-01-01') },
       }),
@@ -59,12 +60,12 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
             controller.enqueue({ type: 'text-end', id: 't0' });
             controller.enqueue({
               type: 'finish',
-              finishReason: { unified: 'stop', raw: 'stop' },
-              usage: {
+              finishReason: finish('stop', 'stop'),
+              usage: mockUsage({
                 inputTokens: { total: 10, noCache: 10 },
                 outputTokens: { total: 5, text: 5 },
-              },
-            } as LanguageModelV4StreamPart);
+              }),
+            });
             controller.close();
           },
         }),
@@ -128,7 +129,7 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
   // failure is completely silent in the log stream.
   it('logs at least one line for a schema-validation 400', async () => {
     const logLines: Array<{ level: string; msg?: string }> = [];
-    const capture: LogFn = (first, msg) => {
+    const capture: LogFn = (first: Record<string, unknown> | string, msg?: string) => {
       if (typeof first === 'string') {
         logLines.push({ level: 'unknown', msg: first });
       } else {
@@ -162,7 +163,7 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
 
   it('logs at least one line for a provider-not-found 404', async () => {
     const logLines: Array<{ level: string; msg?: string }> = [];
-    const capture: LogFn = (first, msg) => {
+    const capture: LogFn = (first: Record<string, unknown> | string, msg?: string) => {
       if (typeof first === 'string') {
         logLines.push({ level: 'unknown', msg: first });
       } else {

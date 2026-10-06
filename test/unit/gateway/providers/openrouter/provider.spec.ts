@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConfigError } from '../../../../../packages/gateway/src/errors/gatewayError.js';
 import { createGateway } from '../../../../../packages/gateway/src/gateway.js';
 import { openrouterProvider } from '../../../../../packages/gateway/src/providers/openrouter/index.js';
+import { testEnv } from '../../config/fixtures.js';
 
 const completion = {
   id: 'gen-test',
@@ -15,7 +16,9 @@ const completion = {
 };
 
 async function captureHeaders(config: Parameters<typeof openrouterProvider.build>[0]) {
-  const fetch = vi.fn(async () => Response.json(completion));
+  const fetch = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+    Promise.resolve(Response.json(completion)),
+  );
 
   vi.stubGlobal('fetch', fetch);
 
@@ -24,7 +27,7 @@ async function captureHeaders(config: Parameters<typeof openrouterProvider.build
     .languageModel('anthropic/claude-sonnet-4.6')
     .doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] });
 
-  const init = fetch.mock.calls[0]?.[1] as RequestInit | undefined;
+  const init = fetch.mock.calls[0]?.[1];
 
   return new Headers(init?.headers);
 }
@@ -36,18 +39,20 @@ afterEach(() => {
 describe('OpenRouter provider', () => {
   it('discovers credentials only when OPENROUTER_API_KEY is set', () => {
     expect(openrouterProvider.envVars).toEqual(['OPENROUTER_API_KEY', 'OPENROUTER_BASE_URL']);
-    expect(openrouterProvider.fromEnv({})).toBeUndefined();
-    expect(openrouterProvider.fromEnv({ OPENROUTER_BASE_URL: 'https://or.test/v1' })).toBe(
+    expect(openrouterProvider.fromEnv(testEnv())).toBeUndefined();
+    expect(openrouterProvider.fromEnv(testEnv({ OPENROUTER_BASE_URL: 'https://or.test/v1' }))).toBe(
       undefined,
     );
-    expect(openrouterProvider.fromEnv({ OPENROUTER_API_KEY: 'sk-or-test' })).toEqual({
+    expect(openrouterProvider.fromEnv(testEnv({ OPENROUTER_API_KEY: 'sk-or-test' }))).toEqual({
       apiKey: 'sk-or-test',
     });
     expect(
-      openrouterProvider.fromEnv({
-        OPENROUTER_API_KEY: 'sk-or-test',
-        OPENROUTER_BASE_URL: 'https://or.test/v1',
-      }),
+      openrouterProvider.fromEnv(
+        testEnv({
+          OPENROUTER_API_KEY: 'sk-or-test',
+          OPENROUTER_BASE_URL: 'https://or.test/v1',
+        }),
+      ),
     ).toEqual({ apiKey: 'sk-or-test', baseURL: 'https://or.test/v1' });
   });
 

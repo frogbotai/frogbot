@@ -5,6 +5,7 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import type { Hooks } from '../../packages/gateway/src/hooks.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 function createRecordingModel(
   onCall: (options: LanguageModelV4CallOptions) => void,
@@ -16,22 +17,22 @@ function createRecordingModel(
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options) => {
+    doGenerate: (options) => {
       onCall(options);
-      return {
+      return Promise.resolve({
         content: [{ type: 'text', text: 'ok' }],
-        finishReason: 'stop',
-        usage: {
+        finishReason: finish('stop'),
+        usage: mockUsage({
           inputTokens: { total: 1, noCache: 1 },
           outputTokens: { total: 1, text: 1 },
-        },
+        }),
         warnings: [],
         response: {
           id: 'response-1',
           modelId: 'mock-model',
           timestamp: new Date('2026-01-01T00:00:00Z'),
         },
-      };
+      });
     },
     doStream: () => Promise.reject(new Error('unused')),
   };

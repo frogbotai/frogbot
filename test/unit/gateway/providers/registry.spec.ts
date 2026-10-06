@@ -20,10 +20,12 @@ import {
   buildProviderRegistry,
   isProviderInstance,
   PROVIDER_NAMES,
+  type ProviderConfigMap,
   type ProviderRegistry,
   providers,
   resolveProvider,
 } from '../../../../packages/gateway/src/providers/registry.js';
+import { providerMap } from '../config/fixtures.js';
 
 // ---------------------------------------------------------------------------
 // resolveProvider
@@ -316,26 +318,29 @@ describe('resolveProvider', () => {
 
 describe('buildProviderRegistry', () => {
   it('builds registry from provider configs', () => {
-    const registry = buildProviderRegistry({
-      openai: { apiKey: 'sk-test' },
-    });
+    const registry = buildProviderRegistry(
+      providerMap({
+        openai: { apiKey: 'sk-test' },
+      }),
+    );
     expect(registry.openai).toBeDefined();
   });
 
   it('builds an unknown provider key as an openai-compatible endpoint', () => {
-    const registry = buildProviderRegistry({
-      openai: { apiKey: 'sk-test' },
-      ollama: { baseURL: 'http://localhost:11434/v1' },
-    });
+    const registry = buildProviderRegistry(
+      providerMap({
+        openai: { apiKey: 'sk-test' },
+        ollama: { baseURL: 'http://localhost:11434/v1' },
+      }),
+    );
     expect(registry.openai).toBeDefined();
     expect((registry as Record<string, unknown>)['ollama']).toBeDefined();
   });
 
   it('skips providers with undefined config', () => {
-    const registry = buildProviderRegistry({
-      openai: { apiKey: 'sk-test' },
-      groq: undefined,
-    });
+    const config = providerMap({ openai: { apiKey: 'sk-test' } });
+    config.groq = undefined;
+    const registry = buildProviderRegistry(config);
     expect(registry.openai).toBeDefined();
     expect(registry.groq).toBeUndefined();
   });
@@ -344,10 +349,9 @@ describe('buildProviderRegistry', () => {
   it('does not mutate Object.prototype for a hostile openai-compatible key', () => {
     const before = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__');
     // A JSON-sourced config can carry a genuine own `__proto__` key.
-    const hostile = JSON.parse('{"__proto__": {"baseURL": "http://localhost:11434/v1"}}') as Record<
-      string,
-      unknown
-    >;
+    const hostile = JSON.parse(
+      '{"__proto__": {"baseURL": "http://localhost:11434/v1"}}',
+    ) as ProviderConfigMap;
     const registry = buildProviderRegistry(hostile);
     // Object.prototype's native __proto__ accessor is untouched (still an accessor,
     // not a data property holding the provider instance).
@@ -359,7 +363,7 @@ describe('buildProviderRegistry', () => {
 
   // G36.5
   it('builds a null-prototype registry so prototype keys resolve to undefined', () => {
-    const registry = buildProviderRegistry({ openai: { apiKey: 'sk-test' } });
+    const registry = buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } }));
     expect(Object.getPrototypeOf(registry)).toBe(null);
     expect((registry as Record<string, unknown>)['constructor']).toBeUndefined();
     expect((registry as Record<string, unknown>)['toString']).toBeUndefined();
@@ -367,18 +371,20 @@ describe('buildProviderRegistry', () => {
 
   // G80 — config value shape #2: pre-built provider instance used as-is.
   it('passes a pre-built provider instance through as-is (no rebuild)', () => {
-    const prebuilt = new MockProviderV4();
-    const registry = buildProviderRegistry({ openai: prebuilt });
+    const prebuilt = createOpenAI({ apiKey: 'sk-test' });
+    const registry = buildProviderRegistry(providerMap({ openai: prebuilt }));
     expect(registry.openai).toBe(prebuilt);
   });
 
   // G80 — instance passthrough coexists with shorthand-built providers.
   it('mixes pre-built instances and shorthand configs in one registry', () => {
-    const prebuilt = new MockProviderV4();
-    const registry = buildProviderRegistry({
-      openai: prebuilt,
-      groq: { apiKey: 'gsk-test' },
-    });
+    const prebuilt = createOpenAI({ apiKey: 'sk-test' });
+    const registry = buildProviderRegistry(
+      providerMap({
+        openai: prebuilt,
+        groq: { apiKey: 'gsk-test' },
+      }),
+    );
     expect(registry.openai).toBe(prebuilt);
     expect(registry.groq).toBeDefined();
     expect(registry.groq).not.toBe(prebuilt);
@@ -391,7 +397,9 @@ describe('buildProviderRegistry', () => {
     expect(isProviderInstance(languageOnly)).toBe(true);
     expect(isProviderInstance(createOpenAI({ apiKey: 'sk-test' }))).toBe(true);
     expect(isProviderInstance(settings)).toBe(false);
-    expect(buildProviderRegistry({ openrouter: settings }).openrouter).not.toBe(settings);
+    expect(buildProviderRegistry(providerMap({ openrouter: settings })).openrouter).not.toBe(
+      settings,
+    );
   });
 });
 

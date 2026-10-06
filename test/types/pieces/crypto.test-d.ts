@@ -14,5 +14,6 @@ expectTypeOf<Parameters<typeof crypto.hashText>[0]['input']>().toEqualTypeOf<{
 }>();
 expectTypeOf(hash).toEqualTypeOf<Promise<string>>();
 
-// @ts-expect-error hashText does not accept encodeBase64 input
-crypto.hashText({ input: { text: 'frog' }, req });
+const _hashTextRejectsEncodeBase64Input = () =>
+  // @ts-expect-error hashText does not accept encodeBase64 input
+  crypto.hashText({ input: { text: 'frog' }, req });

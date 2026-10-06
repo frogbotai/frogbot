@@ -14,17 +14,17 @@ const endpoint: Endpoint = {
   },
 };
 
-const asyncHandler: Handler = async (req) => {
+const asyncHandler: Handler = (req) => {
   expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
-  return new Response('ok');
+  return Promise.resolve(new Response('ok'));
 };
 
 // @ts-expect-error Endpoint handlers must return a Response, not a string.
 const invalidHandler: Handler = () => 'ok';
 
 // @ts-expect-error Async endpoint handlers must resolve to a Response, not a string.
-const invalidAsyncHandler: Handler = async () => 'ok';
+const invalidAsyncHandler: Handler = () => Promise.resolve('ok');
 
 // @ts-expect-error FrogBot requests don't expose payload.
 const payloadHandler: Handler = ({ payload }) => new Response(String(payload));

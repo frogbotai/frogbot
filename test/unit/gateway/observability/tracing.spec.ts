@@ -1,5 +1,5 @@
 import type { Span, SpanOptions, Tracer } from '@opentelemetry/api';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../packages/gateway/src/hooks.js';
 import {
@@ -216,68 +216,64 @@ describe('tracing', () => {
   });
 
   it('records the full error on the span in non-production', async () => {
-    const previous = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
-    try {
-      const span = makeSpan();
-      const hooks = createTracingHooks({
-        tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
-      });
-      const args = makeArgs();
+    vi.stubEnv('NODE_ENV', 'development');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const span = makeSpan();
+    const hooks = createTracingHooks({
+      tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
+    });
+    const args = makeArgs();
 
-      await hooks.beforeUpstream?.[0]?.(args);
-      const error = new Error('leaked sk-secret-123');
-      await hooks.afterError?.[0]?.({
-        phase: 'afterError',
-        operation: args.operation,
-        requestId: args.requestId,
-        startedAt: args.startedAt,
-        context: args.context,
-        otel: args.otel,
-        model: args.model,
-        provider: args.provider,
-        failedPhase: 'beforeUpstream',
-        error,
-      });
+    await hooks.beforeUpstream?.[0]?.(args);
+    const error = new Error('leaked sk-secret-123');
+    await hooks.afterError?.[0]?.({
+      phase: 'afterError',
+      operation: args.operation,
+      requestId: args.requestId,
+      startedAt: args.startedAt,
+      context: args.context,
+      otel: args.otel,
+      model: args.model,
+      provider: args.provider,
+      failedPhase: 'beforeUpstream',
+      error,
+    });
 
-      expect(span.recordException).toHaveBeenCalledWith(error);
-    } finally {
-      process.env.NODE_ENV = previous;
-    }
+    expect(span.recordException).toHaveBeenCalledWith(error);
   });
 
   it('records only the error name/type in production, stripping message and stack', async () => {
-    const previous = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      const span = makeSpan();
-      const hooks = createTracingHooks({
-        tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
-      });
-      const args = makeArgs();
+    vi.stubEnv('NODE_ENV', 'production');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const span = makeSpan();
+    const hooks = createTracingHooks({
+      tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
+    });
+    const args = makeArgs();
 
-      await hooks.beforeUpstream?.[0]?.(args);
-      const error = Object.assign(new Error('leaked sk-secret-123'), { name: 'ProviderError' });
-      await hooks.afterError?.[0]?.({
-        phase: 'afterError',
-        operation: args.operation,
-        requestId: args.requestId,
-        startedAt: args.startedAt,
-        context: args.context,
-        otel: args.otel,
-        model: args.model,
-        provider: args.provider,
-        failedPhase: 'beforeUpstream',
-        error,
-      });
+    await hooks.beforeUpstream?.[0]?.(args);
+    const error = Object.assign(new Error('leaked sk-secret-123'), { name: 'ProviderError' });
+    await hooks.afterError?.[0]?.({
+      phase: 'afterError',
+      operation: args.operation,
+      requestId: args.requestId,
+      startedAt: args.startedAt,
+      context: args.context,
+      otel: args.otel,
+      model: args.model,
+      provider: args.provider,
+      failedPhase: 'beforeUpstream',
+      error,
+    });
 
-      expect(span.recordException).toHaveBeenCalledWith({ name: 'ProviderError' });
-      const recorded = (span.recordException as unknown as { mock: { calls: unknown[][] } }).mock
-        .calls[0]?.[0];
-      expect(JSON.stringify(recorded)).not.toContain('sk-secret-123');
-    } finally {
-      process.env.NODE_ENV = previous;
-    }
+    expect(span.recordException).toHaveBeenCalledWith({ name: 'ProviderError' });
+    const recorded = (span.recordException as unknown as { mock: { calls: unknown[][] } }).mock
+      .calls[0]?.[0];
+    expect(JSON.stringify(recorded)).not.toContain('sk-secret-123');
   });
 
   it('skips the body parse when every base signal level is off', async () => {

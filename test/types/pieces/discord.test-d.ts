@@ -17,8 +17,9 @@ expectTypeOf<Parameters<typeof discord.sendWebhookMessage>[0]['input']>().toEqua
 }>();
 expectTypeOf(sent).toEqualTypeOf<Promise<{ success: boolean }>>();
 
-// @ts-expect-error sendWebhookMessage does not accept renameChannel input
-discord.sendWebhookMessage({ input: { channelId: 'channel', name: 'general' } });
+const _sendWebhookMessageRejectsRenameChannelInput = () =>
+  // @ts-expect-error sendWebhookMessage does not accept renameChannel input
+  discord.sendWebhookMessage({ input: { channelId: 'channel', name: 'general' } });
 
 expectTypeOf<keyof typeof discord.triggers>().toEqualTypeOf<
   'commandReceived' | 'componentReceived' | 'messageCreated' | 'reactionAdded' | 'reactionRemoved'

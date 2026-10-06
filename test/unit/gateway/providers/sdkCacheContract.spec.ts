@@ -8,9 +8,9 @@ import { providerOptionsNamespace } from '../../../../packages/gateway/src/utils
 
 function captureProvider(successBody: unknown) {
   let body: Record<string, any> | undefined;
-  const fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fetch = (_input: RequestInfo | URL, init?: RequestInit) => {
     body = JSON.parse(String(init?.body)) as Record<string, any>;
-    return Response.json(successBody);
+    return Promise.resolve(Response.json(successBody));
   };
   return {
     fetch,

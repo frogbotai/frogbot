@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // A mock model that records the options it was called with, so a test can
 // assert exactly which provider options the gateway forwarded to the SDK seam.
@@ -26,7 +27,6 @@ function createCapturingModel(
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
@@ -37,17 +37,17 @@ function createCapturingModel(
       // on the forwarded provider options, not an incidental parse error.
       return Promise.resolve({
         content: [{ type: 'text', text: '{}' }],
-        finishReason: { unified: 'stop', raw: 'stop' },
-        usage: {
+        finishReason: finish('stop', 'stop'),
+        usage: mockUsage({
           inputTokens: { total: 1, noCache: 1 },
           outputTokens: { total: 1, text: 1 },
-        },
+        }),
         warnings: [],
         response: { id: 'r', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
       });
     },
     doStream: () => Promise.resolve({ stream: new ReadableStream() }),
-  } as LanguageModelV4;
+  };
 }
 
 // A non-streaming model that finishes with finishReason 'error' — the exact
@@ -59,23 +59,22 @@ function createErrorFinishModel(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: '' }],
-        finishReason: { unified: 'error', raw: 'error' },
-        usage: {
+        finishReason: finish('error', 'error'),
+        usage: mockUsage({
           inputTokens: { total: 3, noCache: 3 },
           outputTokens: { total: 0, text: 0 },
-        },
+        }),
         warnings: [],
         response: { id: 'r', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
       }),
     doStream: () => Promise.resolve({ stream: new ReadableStream() }),
-  } as LanguageModelV4;
+  };
 }
 
 function makeApp(providerName: string, model: LanguageModelV4) {

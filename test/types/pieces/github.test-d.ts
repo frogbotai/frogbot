@@ -13,8 +13,9 @@ expectTypeOf<Parameters<typeof github.createGist>[0]['input']>().toEqualTypeOf<{
 }>();
 expectTypeOf<Awaited<typeof _gist>['html_url']>().toEqualTypeOf<string>();
 
-// @ts-expect-error createGist does not accept getIssue input
-github.createGist({ input: { repository: 'frogbotai/frogbot', issueNumber: 97 } });
+const _createGistRejectsGetIssueInput = () =>
+  // @ts-expect-error createGist does not accept getIssue input
+  github.createGist({ input: { repository: 'frogbotai/frogbot', issueNumber: 97 } });
 
 expectTypeOf<keyof typeof github.triggers>().toEqualTypeOf<
   | 'pullRequestActivity'

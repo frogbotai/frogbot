@@ -2,6 +2,7 @@ import type {
   EmbeddingModelV4,
   Experimental_VideoModelV4,
   ImageModelV4,
+  JSONObject,
   RerankingModelV4,
   SpeechModelV4,
   TranscriptionModelV4,
@@ -42,6 +43,14 @@ const transcriptionModel = null as never as TranscriptionModelV4;
 const rerankingModel = null as never as RerankingModelV4;
 const languageModel = null as never as LanguageModel;
 
+function firstStringValue(values: readonly unknown[]): string {
+  const value = values[0];
+  if (typeof value !== 'string') {
+    throw new Error('contract fixture must use string input');
+  }
+  return value;
+}
+
 describe('AI SDK modality signature contracts', () => {
   it('embeddings translator output satisfies embed params', () => {
     const { values, providerOptions } = toEmbedParams({
@@ -49,10 +58,7 @@ describe('AI SDK modality signature contracts', () => {
       input: 'hello',
       dimensions: 256,
     } satisfies EmbeddingsRequest);
-    const value = values[0];
-    if (typeof value !== 'string') {
-      throw new Error('contract fixture must use string input');
-    }
+    const value = firstStringValue(values);
 
     const params = {
       model: embeddingModel,
@@ -153,7 +159,7 @@ describe('AI SDK modality signature contracts', () => {
       model: rerankingModel,
       ...rerankParams,
       providerOptions,
-    } satisfies Parameters<typeof rerank<string>>[0];
+    } satisfies Parameters<typeof rerank<string | JSONObject>>[0];
 
     expect(params.topN).toBe(2);
   });

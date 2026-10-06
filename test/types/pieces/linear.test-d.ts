@@ -14,8 +14,9 @@ expectTypeOf<Parameters<typeof linear.createComment>[0]['input']>().toEqualTypeO
 }>();
 expectTypeOf<Awaited<typeof _comment>['success']>().toEqualTypeOf<boolean>();
 
-// @ts-expect-error createComment does not accept rawGraphqlQuery input
-linear.createComment({ input: { query: '{ viewer { id } }' } });
+const _createCommentRejectsRawGraphqlQueryInput = () =>
+  // @ts-expect-error createComment does not accept rawGraphqlQuery input
+  linear.createComment({ input: { query: '{ viewer { id } }' } });
 
 expectTypeOf<keyof typeof linear.triggers>().toEqualTypeOf<
   | 'commentCreated'

@@ -15,13 +15,14 @@ import { describe, expect, it } from 'vitest';
 import { azureProvider } from '../../../../packages/gateway/src/providers/azure/index.js';
 import { bedrockProvider } from '../../../../packages/gateway/src/providers/bedrock/index.js';
 import { vertexProvider } from '../../../../packages/gateway/src/providers/vertex/index.js';
+import { testEnv } from '../config/fixtures.js';
 
 describe('provider fromEnv skips (not throws) on common partial env — G41', () => {
   // AWS_REGION alone is set on virtually every AWS runtime (EC2/ECS/Lambda/CI).
   // Per the contract, no AWS *credential* gate => skip bedrock.
   it('bedrock returns undefined when only AWS_REGION is set', () => {
     // G41 — partial AWS env skips instead of throwing.
-    const result = bedrockProvider.fromEnv({ AWS_REGION: 'us-east-1' });
+    const result = bedrockProvider.fromEnv(testEnv({ AWS_REGION: 'us-east-1' }));
     expect(result).toBeUndefined();
   });
 
@@ -29,7 +30,7 @@ describe('provider fromEnv skips (not throws) on common partial env — G41', ()
   // so Vertex can't be configured — the contract says skip.
   it('vertex returns undefined when only GOOGLE_VERTEX_PROJECT is set', () => {
     // G41 — partial Vertex env skips instead of throwing.
-    const result = vertexProvider.fromEnv({ GOOGLE_VERTEX_PROJECT: 'my-project' });
+    const result = vertexProvider.fromEnv(testEnv({ GOOGLE_VERTEX_PROJECT: 'my-project' }));
     expect(result).toBeUndefined();
   });
 
@@ -37,7 +38,7 @@ describe('provider fromEnv skips (not throws) on common partial env — G41', ()
   // per the contract Azure skips.
   it('azure returns undefined when AZURE_API_KEY is set without resource/baseURL', () => {
     // G41 — partial Azure env skips instead of throwing.
-    const result = azureProvider.fromEnv({ AZURE_API_KEY: 'azure-key-123' });
+    const result = azureProvider.fromEnv(testEnv({ AZURE_API_KEY: 'azure-key-123' }));
     expect(result).toBeUndefined();
   });
 });

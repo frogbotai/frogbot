@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { startupBanner } from '../../../../packages/gateway/src/cli/banner.js';
+import { providerMap } from '../config/fixtures.js';
 
 describe('startupBanner', () => {
   it('summarizes startup state under 20 lines', () => {
     const banner = startupBanner({
       config: {
-        providers: { openai: { apiKey: 'test' } },
+        providers: providerMap({ openai: { apiKey: 'test' } }),
         hooks: { beforeUpstream: [() => {}], afterOperation: [() => {}] },
         logger: { level: 'debug' },
         tracing: { endpoint: 'http://otel.test/v1/traces' },

@@ -13,18 +13,19 @@ import {
   requireEvaluationModel,
 } from '../../../../packages/gateway/src/providers/registry.js';
 import { typeSafeAiProvider } from '../../../../packages/gateway/src/providers/typesafe-ai/index.js';
+import { providerMap, testEnv } from '../config/fixtures.js';
 
 describe('TypeSafe AI provider', () => {
   it('discovers credentials only when TYPESAFE_AI_API_KEY is set', () => {
     expect(typeSafeAiProvider.envVars).toEqual(['TYPESAFE_AI_API_KEY']);
-    expect(typeSafeAiProvider.fromEnv({})).toBeUndefined();
-    expect(typeSafeAiProvider.fromEnv({ TYPESAFE_AI_API_KEY: 'secret' })).toEqual({
+    expect(typeSafeAiProvider.fromEnv(testEnv())).toBeUndefined();
+    expect(typeSafeAiProvider.fromEnv(testEnv({ TYPESAFE_AI_API_KEY: 'secret' }))).toEqual({
       apiKey: 'secret',
     });
   });
 
   it('builds the real SDK evaluation provider with an explicit key', () => {
-    const registry = buildProviderRegistry({ 'typesafe-ai': { apiKey: 'secret' } });
+    const registry = buildProviderRegistry(providerMap({ 'typesafe-ai': { apiKey: 'secret' } }));
     const provider = registry['typesafe-ai'];
 
     expect(provider).toBeDefined();
@@ -42,7 +43,7 @@ describe('TypeSafe AI provider', () => {
 
   it('rejects non-evaluation SDK modalities and missing evaluation capability', () => {
     const provider = typeSafeAiProvider.build({ apiKey: 'secret' });
-    const otherProvider = buildProviderRegistry({ groq: { apiKey: 'secret' } }).groq;
+    const otherProvider = buildProviderRegistry(providerMap({ groq: { apiKey: 'secret' } })).groq;
 
     expect(() => provider.languageModel('jev-latest')).toThrow(NoSuchModelError);
     expect(() => provider.embeddingModel('jev-latest')).toThrow(NoSuchModelError);

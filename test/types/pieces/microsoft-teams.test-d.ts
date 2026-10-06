@@ -12,8 +12,9 @@ expectTypeOf<Parameters<typeof teams.findTeamMember>[0]['input']>().toEqualTypeO
 }>();
 expectTypeOf<Awaited<typeof _found>['found']>().toEqualTypeOf<boolean>();
 
-// @ts-expect-error findTeamMember does not accept sendChatMessage input
-teams.findTeamMember({ input: { chatId: 'chat', content: 'Hello' } });
+const _findTeamMemberRejectsSendChatMessageInput = () =>
+  // @ts-expect-error findTeamMember does not accept sendChatMessage input
+  teams.findTeamMember({ input: { chatId: 'chat', content: 'Hello' } });
 
 expectTypeOf<keyof typeof teams.triggers>().toEqualTypeOf<
   | 'channelMessageCreated'

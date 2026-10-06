@@ -25,12 +25,7 @@ expectTypeOf<'payload'>().not.toMatchTypeOf<keyof typeof blockLabel.req>();
 expectTypeOf<'payload'>().not.toMatchTypeOf<keyof typeof inlineBlock.req>();
 expectTypeOf<'payload'>().not.toMatchTypeOf<keyof typeof inlineBlockLabel.req>();
 
-type ClientProps =
-  | LexicalBlockClientProps
-  | LexicalBlockLabelClientProps
-  | LexicalInlineBlockClientProps
-  | LexicalInlineBlockLabelClientProps;
-
-declare const clientProps: ClientProps;
-
-expectTypeOf(clientProps.path).toEqualTypeOf<string>();
+expectTypeOf<LexicalBlockClientProps['path']>().toEqualTypeOf<string>();
+expectTypeOf<LexicalBlockLabelClientProps['path']>().toEqualTypeOf<string>();
+expectTypeOf<LexicalInlineBlockClientProps['path']>().toEqualTypeOf<string>();
+expectTypeOf<LexicalInlineBlockLabelClientProps['path']>().toEqualTypeOf<string>();

@@ -91,7 +91,7 @@ type ChatBody = {
   }>;
 };
 
-export async function runChatToolRoundTrip(app: LiveApp, model: string): Promise<void> {
+export async function expectChatToolRoundTrip(app: LiveApp, model: string): Promise<void> {
   const first = await post<ChatBody>(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: TOOL_PROMPT }],
@@ -144,7 +144,7 @@ type MessagesBody = {
   error?: { type?: string; message?: string };
 };
 
-export async function runMessagesToolRoundTrip(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesToolRoundTrip(app: LiveApp, model: string): Promise<void> {
   const first = await post<MessagesBody>(app, '/v1/messages', {
     model,
     messages: [{ role: 'user', content: TOOL_PROMPT }],
@@ -206,7 +206,7 @@ type ResponsesBody = {
 
 // G3 regression territory: function_call/function_call_output input items
 // must round-trip on the Responses wire.
-export async function runResponsesToolRoundTrip(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesToolRoundTrip(app: LiveApp, model: string): Promise<void> {
   const first = await post<ResponsesBody>(app, '/v1/responses', {
     model,
     input: TOOL_PROMPT,
@@ -247,7 +247,7 @@ export async function runResponsesToolRoundTrip(app: LiveApp, model: string): Pr
 // Parallel tool calls (chat wire).
 // ---------------------------------------------------------------------------
 
-export async function runChatParallelToolCalls(app: LiveApp, model: string): Promise<void> {
+export async function expectChatParallelToolCalls(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ChatBody>(app, '/v1/chat/completions', {
     model,
     messages: [
@@ -283,7 +283,7 @@ const PLANT_ACK = 'Nice to meet you, Waldo.';
 const RECALL = 'What is my name? Reply with just the name.';
 const RECALLED = /waldo/i;
 
-export async function runChatMultiTurn(app: LiveApp, model: string): Promise<void> {
+export async function expectChatMultiTurn(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ChatBody>(app, '/v1/chat/completions', {
     model,
     messages: [
@@ -298,7 +298,7 @@ export async function runChatMultiTurn(app: LiveApp, model: string): Promise<voi
   expect(body.choices?.[0]?.message?.content ?? '').toMatch(RECALLED);
 }
 
-export async function runMessagesMultiTurn(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesMultiTurn(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<MessagesBody>(app, '/v1/messages', {
     model,
     messages: [
@@ -317,7 +317,7 @@ export async function runMessagesMultiTurn(app: LiveApp, model: string): Promise
   expect(text).toMatch(RECALLED);
 }
 
-export async function runResponsesMultiTurn(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesMultiTurn(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ResponsesBody>(app, '/v1/responses', {
     model,
     input: [
@@ -339,7 +339,7 @@ export async function runResponsesMultiTurn(app: LiveApp, model: string): Promis
 const LONG_ASK = 'Write a detailed 2000-word essay about the history of frogs.';
 const TINY_BUDGET = 16;
 
-export async function runChatTruncation(app: LiveApp, model: string): Promise<void> {
+export async function expectChatTruncation(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ChatBody>(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: LONG_ASK }],
@@ -350,7 +350,7 @@ export async function runChatTruncation(app: LiveApp, model: string): Promise<vo
   expect(body.choices?.[0]?.finish_reason).toBe('length');
 }
 
-export async function runMessagesTruncation(app: LiveApp, model: string): Promise<void> {
+export async function expectMessagesTruncation(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<MessagesBody>(app, '/v1/messages', {
     model,
     messages: [{ role: 'user', content: LONG_ASK }],
@@ -361,7 +361,7 @@ export async function runMessagesTruncation(app: LiveApp, model: string): Promis
   expect(body.stop_reason).toBe('max_tokens');
 }
 
-export async function runResponsesTruncation(app: LiveApp, model: string): Promise<void> {
+export async function expectResponsesTruncation(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ResponsesBody>(app, '/v1/responses', {
     model,
     input: LONG_ASK,
@@ -388,7 +388,7 @@ const BOGUS_MODEL_SUFFIX = 'does-not-exist-xyz';
 type OpenAIErrorBody = { error?: { message?: string; type?: string; code?: string | null } };
 type AnthropicErrorBody = { type?: string; error?: { type?: string; message?: string } };
 
-export async function runChatErrorEnvelope(app: LiveApp, label: string): Promise<void> {
+export async function expectChatErrorEnvelope(app: LiveApp, label: string): Promise<void> {
   const { status, body } = await post<OpenAIErrorBody>(app, '/v1/chat/completions', {
     model: `${label}/${BOGUS_MODEL_SUFFIX}`,
     messages: [{ role: 'user', content: 'hi' }],
@@ -401,7 +401,7 @@ export async function runChatErrorEnvelope(app: LiveApp, label: string): Promise
   expect(typeof body.error?.type).toBe('string');
 }
 
-export async function runMessagesErrorEnvelope(app: LiveApp, label: string): Promise<void> {
+export async function expectMessagesErrorEnvelope(app: LiveApp, label: string): Promise<void> {
   const { status, body } = await post<AnthropicErrorBody>(app, '/v1/messages', {
     model: `${label}/${BOGUS_MODEL_SUFFIX}`,
     messages: [{ role: 'user', content: 'hi' }],
@@ -415,7 +415,7 @@ export async function runMessagesErrorEnvelope(app: LiveApp, label: string): Pro
   expect(typeof body.error?.message).toBe('string');
 }
 
-export async function runResponsesErrorEnvelope(app: LiveApp, label: string): Promise<void> {
+export async function expectResponsesErrorEnvelope(app: LiveApp, label: string): Promise<void> {
   const { status, body } = await post<OpenAIErrorBody>(app, '/v1/responses', {
     model: `${label}/${BOGUS_MODEL_SUFFIX}`,
     input: 'hi',
@@ -432,7 +432,7 @@ export async function runResponsesErrorEnvelope(app: LiveApp, label: string): Pr
 // wedge (the follow-up request must still get a well-formed response).
 // ---------------------------------------------------------------------------
 
-export async function runChatStreamAbort(
+export async function expectChatStreamAbort(
   app: LiveApp,
   model: string,
   label: string,
@@ -452,7 +452,7 @@ export async function runChatStreamAbort(
 
   // Liveness probe: the app must still serve requests cleanly (cheap: bogus
   // model → error envelope, no tokens spent).
-  await runChatErrorEnvelope(app, label);
+  await expectChatErrorEnvelope(app, label);
 }
 
 // ---------------------------------------------------------------------------
@@ -464,7 +464,7 @@ const OVERSIZED_PROMPT = Array.from({ length: 1_300_000 }, (_, index) => `w${ind
   ' ',
 );
 
-export async function runChatContextOverflow(app: LiveApp, model: string): Promise<void> {
+export async function expectChatContextOverflow(app: LiveApp, model: string): Promise<void> {
   const res = await postRaw(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: OVERSIZED_PROMPT }],
@@ -495,7 +495,7 @@ type ChatChunk = {
   }>;
 };
 
-export async function runChatStreamingToolCall(app: LiveApp, model: string): Promise<void> {
+export async function expectChatStreamingToolCall(app: LiveApp, model: string): Promise<void> {
   const res = await postRaw(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: TOOL_PROMPT }],

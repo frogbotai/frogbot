@@ -9,7 +9,9 @@
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
+  LanguageModelV4FinishReason,
   LanguageModelV4StreamPart,
+  SharedV4ProviderMetadata,
 } from '@ai-sdk/provider';
 import type { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
@@ -18,24 +20,25 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { finish, mockUsage, partStream } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Shared harness (mirrors wireHonesty.chat.int.spec.ts)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_USAGE = {
+const DEFAULT_USAGE = mockUsage({
   inputTokens: { total: 5, noCache: 5 },
   outputTokens: { total: 4, text: 4 },
-};
+});
 
-const STOP_FINISH = { unified: 'stop', raw: 'stop' };
+const STOP_FINISH = finish('stop', 'stop');
 
 function createRecordingModel(opts?: {
   text?: string;
   streamParts?: LanguageModelV4StreamPart[];
-  finishReason?: Record<string, string>;
+  finishReason?: LanguageModelV4FinishReason;
   onCall?: (options: LanguageModelV4CallOptions) => void;
-  providerMetadata?: Record<string, Record<string, unknown>>;
+  providerMetadata?: SharedV4ProviderMetadata;
   responseBody?: unknown;
 }): LanguageModelV4 {
   const {
@@ -53,9 +56,9 @@ function createRecordingModel(opts?: {
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async (options: LanguageModelV4CallOptions) => {
+    doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      return {
+      return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason,
         usage: DEFAULT_USAGE,
@@ -67,9 +70,9 @@ function createRecordingModel(opts?: {
           ...(responseBody !== undefined ? { body: responseBody } : {}),
         },
         ...(providerMetadata ? { providerMetadata } : {}),
-      };
+      });
     },
-    doStream: async (options: LanguageModelV4CallOptions) => {
+    doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
@@ -78,16 +81,7 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage: DEFAULT_USAGE },
       ];
-      return {
-        stream: new ReadableStream<LanguageModelV4StreamPart>({
-          start(controller) {
-            for (const part of parts) {
-              controller.enqueue(part);
-            }
-            controller.close();
-          },
-        }),
-      };
+      return Promise.resolve({ stream: partStream(parts) });
     },
   };
 }
@@ -547,7 +541,7 @@ describe('G56 — over-broad 400s on benign values', () => {
 
 describe('G57 — mapFinishReason masks error/unknown as stop', () => {
   it('streaming: error finish reason appears as error not stop on wire', async () => {
-    const errorFinish = { unified: 'error', raw: 'error' };
+    const errorFinish = finish('error', 'error');
     const streamParts: LanguageModelV4StreamPart[] = [
       { type: 'stream-start', warnings: [] },
       { type: 'text-start', id: 'text-0' },

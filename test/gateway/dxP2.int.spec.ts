@@ -35,6 +35,7 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import { loadLayeredConfig } from '../../packages/gateway/src/config/layered.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { finish, mockUsage } from './mockModel.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,42 +46,43 @@ function makeMockModel(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    defaultObjectGenerationMode: undefined,
     get supportedUrls() {
       return Promise.resolve({});
     },
-    doGenerate: async () => ({
-      content: [{ type: 'text' as const, text: 'hi' }],
-      finishReason: 'stop',
-      usage: {
-        inputTokens: { total: 2, noCache: 2 },
-        outputTokens: { total: 1, text: 1 },
-      },
-      warnings: [],
-      response: { id: 'r1', modelId: 'mock-model', timestamp: new Date() },
-    }),
-    doStream: async () => ({
-      stream: new ReadableStream<LanguageModelV4StreamPart>({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 'text-0' });
-          controller.enqueue({
-            type: 'text-delta',
-            id: 'text-0',
-            delta: 'hi',
-          });
-          controller.enqueue({ type: 'text-end', id: 'text-0' });
-          controller.enqueue({
-            type: 'finish',
-            finishReason: 'stop',
-            usage: {
-              inputTokens: { total: 2, noCache: 2 },
-              outputTokens: { total: 1, text: 1 },
-            },
-          });
-          controller.close();
-        },
+    doGenerate: () =>
+      Promise.resolve({
+        content: [{ type: 'text' as const, text: 'hi' }],
+        finishReason: finish('stop'),
+        usage: mockUsage({
+          inputTokens: { total: 2, noCache: 2 },
+          outputTokens: { total: 1, text: 1 },
+        }),
+        warnings: [],
+        response: { id: 'r1', modelId: 'mock-model', timestamp: new Date() },
       }),
-    }),
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream<LanguageModelV4StreamPart>({
+          start(controller) {
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
+            controller.enqueue({
+              type: 'text-delta',
+              id: 'text-0',
+              delta: 'hi',
+            });
+            controller.enqueue({ type: 'text-end', id: 'text-0' });
+            controller.enqueue({
+              type: 'finish',
+              finishReason: finish('stop'),
+              usage: mockUsage({
+                inputTokens: { total: 2, noCache: 2 },
+                outputTokens: { total: 1, text: 1 },
+              }),
+            });
+            controller.close();
+          },
+        }),
+      }),
   };
 }
 
@@ -138,7 +140,7 @@ describe('G92 — project config walk stops at the project root (DX10)', () => {
       JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }),
     );
 
-    const result = await loadLayeredConfig({ cwd: project, env: {} });
+    const result = await loadLayeredConfig({ cwd: project, env: { NODE_ENV: 'test' } });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'project-key' });
     const projectPaths = result.sources
