@@ -42,12 +42,13 @@ export const CHECK_INPUTS = {
   'single-frogbot': MANIFESTS,
   tests: ['test/**', 'packages/**/src/**', 'vitest.config.ts'],
   'ticket-docs': [],
+  'typed-lint': ['**/*.{ts,tsx,js,mjs}'],
   'ui-architecture': ['packages/ui/src/**'],
 };
 
 // These check the shape of code (import paths, file layout), not what it does, so they run for a
 // file without covering it.
-const STRUCTURAL_CHECKS = ['dist-imports', 'tests', 'ui-architecture'];
+const STRUCTURAL_CHECKS = ['dist-imports', 'tests', 'typed-lint', 'ui-architecture'];
 
 // Verify runs the groups in this order and stops at the first that fails. Passing every group
 // with a level reaches the highest of those levels; browser projects add no level of their own.

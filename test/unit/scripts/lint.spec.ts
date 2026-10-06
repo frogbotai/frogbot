@@ -5,7 +5,15 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { eslintResult } from '../../../scripts/check.mjs';
+import { eslintResult, fullOnlyChecks } from '../../../scripts/check.mjs';
+import {
+  PRUNE_LINE,
+  typedLintArgs,
+  typedLintCommand,
+  typedLintEnv,
+  typedLintLines,
+} from '../../../scripts/check-typed-lint.mjs';
+import { BASE_GATES } from '../../../scripts/ticket.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 
@@ -28,18 +36,19 @@ function lintScriptArgs(script: string) {
   );
 }
 
-function lint(args: string[], input?: string) {
+function lint(args: string[], input?: string, env = process.env) {
   const result = spawnSync(eslintBin, [...lintScriptArgs(pkg.scripts.lint), ...args], {
     cwd: root,
     encoding: 'utf8',
     input,
+    env,
   });
 
   return { code: result.status, stdout: result.stdout, output: result.stdout + result.stderr };
 }
 
-function lintText(filename: string, code: string, args: string[] = []) {
-  return lint([...args, '--stdin', '--stdin-filename', filename], code);
+function lintText(filename: string, code: string, args: string[] = [], env = process.env) {
+  return lint([...args, '--stdin', '--stdin-filename', filename], code, env);
 }
 
 function messages(stdout: string): Message[] {
@@ -424,5 +433,206 @@ describe('test lint', () => {
           '});\n',
       ),
     ).toEqual([]);
+  });
+});
+
+describe('typed and React lint', () => {
+  const TYPED_TIMEOUT = 60_000;
+
+  function emptySuppressions() {
+    const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));
+    const suppressions = path.join(dir, 'eslint-suppressions.json');
+
+    temporary.push(dir);
+    writeFileSync(suppressions, '{}');
+
+    return suppressions;
+  }
+
+  function reported(filename: string, code: string, env = process.env) {
+    const args = ['--format', 'json', '--suppressions-location', emptySuppressions()];
+
+    return messages(lintText(filename, code, args, env).stdout).map(
+      ({ ruleId, severity }) => `${ruleId} ${severity}`,
+    );
+  }
+
+  const typed = (filename: string, code: string) => reported(filename, code, typedLintEnv());
+
+  it.each([
+    [
+      'react-hooks/exhaustive-deps',
+      'the calendar load effect from cb04a783',
+      'packages/next/src/views/Calendar/CalendarView.client.tsx',
+      "'use client';\n" +
+        "import { useEffect } from 'react';\n\n" +
+        'export function CalendarView({ date }: { date: string }) {\n' +
+        '  const load = async (signal: AbortSignal) => {\n' +
+        '    await fetch(`/api/events?date=${date}`, { signal });\n' +
+        '  };\n\n' +
+        '  useEffect(() => {\n' +
+        '    const controller = new AbortController();\n' +
+        '    void load(controller.signal);\n' +
+        '    return () => controller.abort();\n' +
+        '  }, [date]);\n\n' +
+        '  return null;\n' +
+        '}\n',
+    ],
+    [
+      'react-hooks/rules-of-hooks',
+      'the useState in a mocked provider from 9d2f0561',
+      'test/ui/next/elements/StepNavReset.spec.tsx',
+      "import type { ReactNode } from 'react';\n" +
+        "import { useState } from 'react';\n\n" +
+        'export const mocks = {\n' +
+        '  StepNavProvider: undefined as unknown as (props: { children: ReactNode }) => ReactNode,\n' +
+        '};\n\n' +
+        'mocks.StepNavProvider = ({ children }: { children: ReactNode }) => {\n' +
+        '  const [stepNav] = useState<string[]>([]);\n\n' +
+        '  return stepNav.length > 0 ? children : null;\n' +
+        '};\n',
+    ],
+    [
+      'jsx-a11y/click-events-have-key-events',
+      'the collapsed sidebar strip from c8419043',
+      'packages/next/src/elements/Nav/AppSidebar.tsx',
+      'export function AppSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {\n' +
+        '  return (\n' +
+        '    <div data-collapsed={!open} onClick={!open ? onToggle : undefined}>\n' +
+        '      <nav />\n' +
+        '    </div>\n' +
+        '  );\n' +
+        '}\n',
+    ],
+  ])('pnpm lint reports %s as an error: %s', (rule, _source, filename, code) => {
+    expect(reported(filename, code)).toContain(`${rule} 2`);
+  });
+
+  const floatingPromise =
+    'declare const chat: { processAction(action: object, options: object): Promise<void> };\n\n' +
+    'export async function handleAction(action: object, messageId: string) {\n' +
+    '  chat.processAction({ ...action, messageId }, {});\n' +
+    '}\n';
+
+  it.each([
+    [
+      '@typescript-eslint/no-floating-promises',
+      'the unawaited Teams processAction from c608750b',
+      'packages/pieces/piece-microsoft-teams/src/adapter.ts',
+      floatingPromise,
+    ],
+    [
+      '@typescript-eslint/await-thenable',
+      'the awaited Slack config from 328088a6',
+      'packages/pieces/piece-slack/src/index.ts',
+      'declare const req: { frogbot: { config: { _internal: { payloadConfig: Promise<object> } } } };\n\n' +
+        'export async function payloadConfig() {\n' +
+        '  const config = await req.frogbot.config;\n\n' +
+        '  return config._internal.payloadConfig;\n' +
+        '}\n',
+    ],
+    [
+      '@typescript-eslint/no-misused-promises',
+      'the promise tested as a condition in resolveConfig from d45e2c40',
+      'packages/richtext-lexical/src/utilities/resolveConfig.ts',
+      'declare const resolved: { _internal: { payloadConfig: Promise<object> } };\n\n' +
+        'export function assertConfig() {\n' +
+        "  if (!resolved?._internal?.payloadConfig) throw new Error('no config');\n" +
+        '}\n',
+    ],
+  ])(
+    'pnpm check typed-lint reports %s as an error: %s',
+    (rule, _source, filename, code) => {
+      expect(typed(filename, code)).toContain(`${rule} 2`);
+    },
+    TYPED_TIMEOUT,
+  );
+
+  it(
+    'pnpm check typed-lint allows the async onClick from 1ba6d933, as Payload does',
+    () => {
+      expect(
+        typed(
+          'packages/next/src/elements/ViewSwitcher/index.client.tsx',
+          'declare function setPreference(key: string, value: object): Promise<void>;\n\n' +
+            'export function ViewLink({ slug }: { slug: string }) {\n' +
+            '  return (\n' +
+            '    <a\n' +
+            '      href={`/${slug}`}\n' +
+            '      onClick={async (event) => {\n' +
+            '        event.preventDefault();\n' +
+            "        await setPreference('frogbot:collection-view', { view: slug });\n" +
+            '      }}\n' +
+            '    >\n' +
+            '      {slug}\n' +
+            '    </a>\n' +
+            '  );\n' +
+            '}\n',
+        ),
+      ).toEqual([]);
+    },
+    TYPED_TIMEOUT,
+  );
+
+  it('pnpm lint passes the floating promise from c608750b, which only the typed run sees', () => {
+    expect(
+      reported('packages/pieces/piece-microsoft-teams/src/adapter.ts', floatingPromise),
+    ).toEqual([]);
+  });
+
+  it('runs the typed rules in pnpm check --full and so in the pnpm ticket land gate', () => {
+    expect(fullOnlyChecks()).toContain('typed-lint');
+    expect(BASE_GATES).toContain('check --full');
+    expect(typedLintArgs()).toEqual(
+      expect.arrayContaining(['--suppressions-location', 'eslint-suppressions.typed.json']),
+    );
+  });
+
+  it('prints the typed prune command when typed suppressions are left over', () => {
+    expect(
+      typedLintLines({
+        code: 2,
+        stdout: '[]',
+        stderr: 'There are suppressions left that do not occur anymore. Consider re-running',
+      }),
+    ).toEqual([PRUNE_LINE]);
+  });
+
+  it('pnpm check typed-lint lints only the lintable changed files, as Payload lint-staged does', () => {
+    const args = typedLintCommand([], () => [
+      'docs/guides/lint.md',
+      'eslint-suppressions.typed.json',
+      'packages/frogbot/src/config/sanitize.ts',
+      'packages/ui/src/chat/markdown.tsx',
+      'scripts/check-typed-lint.mjs',
+      'test/unit/scripts/lint.spec.ts',
+    ]);
+
+    expect(args?.slice(0, args.indexOf('--max-warnings=0'))).toEqual([
+      'packages/frogbot/src/config/sanitize.ts',
+      'packages/ui/src/chat/markdown.tsx',
+      'scripts/check-typed-lint.mjs',
+      'test/unit/scripts/lint.spec.ts',
+      '--no-warn-ignored',
+    ]);
+    expect(args).not.toContain('.');
+  });
+
+  it('pnpm check typed-lint --all lints the whole repo and passes the other args to ESLint', () => {
+    const args = typedLintCommand(['--all', '--prune-suppressions'], () => [
+      'packages/frogbot/src/config/sanitize.ts',
+    ]);
+
+    expect(args?.[0]).toBe('.');
+    expect(args).toContain('--prune-suppressions');
+    expect(args).not.toContain('--all');
+    expect(args).not.toContain('packages/frogbot/src/config/sanitize.ts');
+  });
+
+  it('pnpm check typed-lint skips when no changed file is lintable', () => {
+    expect(typedLintCommand([], () => [])).toBeNull();
+    expect(
+      typedLintCommand([], () => ['docs/guides/lint.md', 'deleted-in-this-diff.ts']),
+    ).toBeNull();
   });
 });

@@ -1,11 +1,43 @@
 import eslint from '@eslint/js';
 import vitest from '@vitest/eslint-plugin';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import playwright from 'eslint-plugin-playwright';
+import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 import frogbot from './scripts/eslint-plugin/index.mjs';
+import { reactA11yRules } from './scripts/lib/eslint-react-a11y.mjs';
+
+const TYPED = process.env.FROGBOT_LINT === 'typed';
+
+const IGNORES = [
+  '**/node_modules/*',
+  '**/dist/*',
+  '**/build/*',
+  '**/.next/*',
+  '**/*.tsbuildinfo',
+  '**/frogbot-types.ts',
+  '**/piece-types.ts',
+  '**/importMap.js',
+  '**/next-env.d.ts',
+  'packages/frogbot/bin.js',
+  '**/migrations/**',
+  'test/.tmp/',
+];
+
+const DEFAULT_PROJECT = [
+  '.opencode/plugins/frogbot/index.ts',
+  '.opencode/plugins/frogbot/supervision.ts',
+  'packages/ui/src/vitest.setup.ts',
+  'test/e2e/fixtures/plugin-wrappers/next.config.ts',
+  'test/e2e/fixtures/rich-text/next.config.ts',
+  'test/e2e/fixtures/sdk-frontend/types/index.ts',
+  'test/e2e/fixtures/sdk-frontend/vite.config.ts',
+  'test/types/duplicate/augment.ts',
+  'vitest.config.ts',
+];
 
 const SPECS = ['**/*.spec.ts', '**/*.spec.tsx'];
 
@@ -71,23 +103,8 @@ function uiImports(...patterns) {
   return ['error', { patterns: [...UI_LIBRARIES, ...patterns] }];
 }
 
-export default tseslint.config(
-  {
-    ignores: [
-      '**/node_modules/*',
-      '**/dist/*',
-      '**/build/*',
-      '**/.next/*',
-      '**/*.tsbuildinfo',
-      '**/frogbot-types.ts',
-      '**/piece-types.ts',
-      '**/importMap.js',
-      '**/next-env.d.ts',
-      'packages/frogbot/bin.js',
-      '**/migrations/**',
-      'test/.tmp/',
-    ],
-  },
+const untypedConfig = tseslint.config(
+  { ignores: IGNORES },
   { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   eslint.configs.recommended,
   tseslint.configs.recommended,
@@ -208,4 +225,64 @@ export default tseslint.config(
       }),
     },
   })),
+  {
+    files: ['**/*.tsx'],
+    plugins: { 'react-hooks': reactHooks, 'jsx-a11y': jsxA11y },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-hooks/exhaustive-deps': 'error',
+      ...reactA11yRules,
+      'jsx-a11y/anchor-is-valid': 'off',
+      'jsx-a11y/control-has-associated-label': 'off',
+      'jsx-a11y/no-static-element-interactions': 'off',
+      'jsx-a11y/label-has-associated-control': 'off',
+    },
+  },
 );
+
+const requiresTypes = (name) =>
+  name.startsWith('@typescript-eslint/') &&
+  tseslint.plugin.rules[name.slice('@typescript-eslint/'.length)].meta.docs?.requiresTypeChecking;
+
+const typedRules = {
+  ...Object.fromEntries(
+    tseslint.configs.recommendedTypeChecked
+      .flatMap(({ rules = {} }) => Object.entries(rules))
+      .filter(([name]) => requiresTypes(name)),
+  ),
+  '@typescript-eslint/no-misused-promises': [
+    'error',
+    { checksVoidReturn: { attributes: false, arguments: false } },
+  ],
+  '@typescript-eslint/no-unsafe-assignment': 'off',
+  '@typescript-eslint/no-unsafe-member-access': 'off',
+  '@typescript-eslint/no-unsafe-call': 'off',
+  '@typescript-eslint/no-unsafe-argument': 'off',
+  '@typescript-eslint/no-unsafe-return': 'off',
+  '@typescript-eslint/unbound-method': 'off',
+  '@typescript-eslint/no-base-to-string': 'off',
+  '@typescript-eslint/restrict-template-expressions': 'off',
+  '@typescript-eslint/no-redundant-type-constituents': 'off',
+};
+
+const typedConfig = tseslint.config(
+  { ignores: [...IGNORES, '**/*.{js,mjs,cjs}'] },
+  { linterOptions: { reportUnusedDisableDirectives: 'off' } },
+  { plugins: Object.assign({}, ...untypedConfig.map(({ plugins }) => plugins)) },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    extends: [tseslint.configs.base],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: DEFAULT_PROJECT,
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: DEFAULT_PROJECT.length,
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: typedRules,
+  },
+);
+
+export default TYPED ? typedConfig : untypedConfig;
