@@ -74,7 +74,7 @@ describe('test files under src', () => {
         'packages/plugins/plugin-roles/src/allow.test-d.ts',
         'packages/ui/src/Button.spec.tsx',
         'packages/frogbot/src/index.test.ts',
-      ]).map(({ file }) => file),
+      ]).map(({ file }: { file: string }) => file),
     ).toEqual([
       'packages/plugins/plugin-roles/src/allow.test-d.ts',
       'packages/ui/src/Button.spec.tsx',

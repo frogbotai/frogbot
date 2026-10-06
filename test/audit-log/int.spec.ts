@@ -10,14 +10,6 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const credentials = { email: 'audit@frogbot.local', password: 'audit-password' };
 
-type AuditEntry = {
-  apiKeyId?: number | string;
-  changes: Record<string, { old: unknown; new: unknown }>;
-  documentId: string;
-  operation: 'create' | 'delete' | 'update';
-  user?: number | string;
-};
-
 describe('audit log plugin integration', () => {
   let booted: BootedFrogBot;
   let accountId: number | string;
@@ -48,7 +40,7 @@ describe('audit log plugin integration', () => {
   async function entries(documentId: number | string) {
     await vi.waitFor(async () => {
       const result = await booted.frogbot.find({
-        collection: 'audit-logs' as never,
+        collection: 'audit-logs',
         where: { documentId: { equals: String(documentId) } },
         overrideAccess: true,
         depth: 0,
@@ -57,14 +49,14 @@ describe('audit log plugin integration', () => {
       expect(result.docs.length).toBeGreaterThan(0);
     });
     const result = await booted.frogbot.find({
-      collection: 'audit-logs' as never,
+      collection: 'audit-logs',
       where: { documentId: { equals: String(documentId) } },
       overrideAccess: true,
       depth: 0,
       limit: 20,
       sort: '-timestamp',
     });
-    return result.docs as unknown as AuditEntry[];
+    return result.docs;
   }
 
   it('records session CRUD exactly once with stable field boundaries', async () => {
@@ -94,10 +86,10 @@ describe('audit log plugin integration', () => {
     expect(audit.filter((entry) => entry.operation === 'update')).toHaveLength(1);
     expect(audit.filter((entry) => entry.operation === 'delete')).toHaveLength(1);
     expect(audit.every((entry) => String(entry.user) === String(accountId))).toBe(true);
-    expect(audit.find((entry) => entry.operation === 'update')?.changes.optional).toEqual({
-      old: 'remove-me',
-      new: null,
-    });
+    expect(audit.find((entry) => entry.operation === 'update')?.changes).toHaveProperty(
+      'optional',
+      { old: 'remove-me', new: null },
+    );
   });
 
   it('attributes verified API-key writes and userless local writes', async () => {
@@ -127,7 +119,7 @@ describe('audit log plugin integration', () => {
 
   it('rejects API writes to audit entries', async () => {
     const existing = await booted.frogbot.create({
-      collection: 'audit-logs' as never,
+      collection: 'audit-logs',
       data: {
         collection: 'posts',
         operation: 'create',
@@ -157,7 +149,7 @@ describe('audit log plugin integration', () => {
 
   it('prunes expired entries through the retention task', async () => {
     const old = await booted.frogbot.create({
-      collection: 'audit-logs' as never,
+      collection: 'audit-logs',
       data: {
         collection: 'posts',
         operation: 'create',
@@ -167,13 +159,11 @@ describe('audit log plugin integration', () => {
       },
       overrideAccess: true,
     });
-    const task = booted.payload.config.jobs?.tasks?.find(
-      (candidate) => candidate.slug === 'frogbot-prune-audit-logs',
-    );
-    await task?.handler({ req: { payload: booted.payload } });
+    const job = await booted.frogbot.jobs.queue({ task: 'frogbot-prune-audit-logs', input: {} });
+    await booted.frogbot.jobs.runByID({ id: job.id });
     await expect(
       booted.frogbot.findByID({
-        collection: 'audit-logs' as never,
+        collection: 'audit-logs',
         id: old.id,
         overrideAccess: true,
       }),

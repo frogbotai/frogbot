@@ -24,11 +24,11 @@ describe('training data export: custom chat collections', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
-    const chat = (await booted.frogbot.create({
+    const chat = await booted.frogbot.create({
       collection: 'conversations',
       data: { title: 'custom' },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     await booted.frogbot.create({
       collection: 'turns',

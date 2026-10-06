@@ -1,13 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { fullOnlyChecks } from '../../../scripts/check.mjs';
 import {
   baselineTotal,
   compareBaseline,
   countErrors,
+  discoverPrograms,
+  layoutProblems,
   lowerBaseline,
+  mergeErrors,
   parseTsc,
+  poolSize,
   reportLines,
+  stableConfig,
   WRITE_LINE,
 } from '../../../scripts/check-test-types.mjs';
 
@@ -31,6 +40,7 @@ describe('check test-types', () => {
     expect(errors[0]).toEqual({
       file: 'test/a.spec.ts',
       line: 3,
+      column: 7,
       code: 'TS2322',
       message: "Type 'string' is not assignable to type 'number'.",
     });
@@ -41,11 +51,114 @@ describe('check test-types', () => {
     });
   });
 
-  it('keeps config errors out of the counts', () => {
+  it('keeps config errors out of the counts, labelled with their program', () => {
     expect(parseTsc("error TS5101: Option 'baseUrl' is deprecated.")).toEqual({
       errors: [],
       global: ["test/tsconfig.json TS5101 Option 'baseUrl' is deprecated."],
     });
+    expect(
+      parseTsc("error TS5101: Option 'baseUrl' is deprecated.", 'test/chat/tsconfig.json'),
+    ).toEqual({
+      errors: [],
+      global: ["test/chat/tsconfig.json TS5101 Option 'baseUrl' is deprecated."],
+    });
+  });
+
+  it('counts an error that several programs report once', () => {
+    const shared = 'test/__helpers/boot.ts(4,2): error TS2740: Type is missing';
+
+    const errors = mergeErrors([
+      parseTsc(`${shared} 43 more.`).errors,
+      parseTsc(`${shared} 45 more.\ntest/__helpers/boot.ts(4,2): error TS2322: Other.`).errors,
+      parseTsc(`${shared} 43 more.\ntest/__helpers/boot.ts(9,2): error TS2740: Again.`).errors,
+    ]);
+
+    expect(countErrors(errors)).toEqual({ 'test/__helpers/boot.ts': { TS2322: 1, TS2740: 2 } });
+  });
+
+  it('requires each program to exclude exactly the programs nearest inside it', () => {
+    const programs = [
+      { config: 'test/tsconfig.json', exclude: ['node_modules', 'types', 'chat', 'gone'] },
+      { config: 'test/chat/tsconfig.json', exclude: [] },
+      { config: 'test/unit/tsconfig.json', exclude: ['frogbot'] },
+      { config: 'test/unit/frogbot/tsconfig.json', exclude: [] },
+      { config: 'test/unit/roles/tsconfig.json', exclude: [] },
+    ];
+
+    expect(layoutProblems({ programs, augmented: [] })).toEqual([
+      'test/tsconfig.json compiles test/unit again; add "unit" to its exclude',
+      'test/tsconfig.json compiles test/e2e/fixtures/sdk-frontend again; add "e2e/fixtures/sdk-frontend" to its exclude',
+      'test/tsconfig.json excludes "gone", which has no tsconfig.json',
+      'test/unit/tsconfig.json compiles test/unit/roles again; add "roles" to its exclude',
+    ]);
+  });
+
+  it('requires every frogbot augmentation to have a program of its own', () => {
+    const programs = [
+      { config: 'test/tsconfig.json', exclude: ['types', 'e2e/fixtures/sdk-frontend', 'chat'] },
+      { config: 'test/chat/tsconfig.json', exclude: [] },
+    ];
+
+    expect(
+      layoutProblems({
+        programs,
+        augmented: ['test/chat/frogbot-types.ts', 'test/jobs/frogbot-types.ts'],
+      }),
+    ).toEqual([
+      'test/jobs/frogbot-types.ts augments frogbot for all of test/tsconfig.json; give its folder a tsconfig.json',
+    ]);
+  });
+
+  it('finds every program, largest first, and every frogbot augmentation', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'check-test-types-'));
+    const files = {
+      'test/tsconfig.json': '{}',
+      'test/a.spec.ts': '',
+      'test/chat/tsconfig.json': '{}',
+      'test/chat/frogbot-types.ts': "declare module 'frogbot' {}",
+      'test/chat/a.spec.ts': 'expect(output).toContain("declare module \'frogbot\'");',
+      'test/chat/b.spec.ts': '',
+      'test/types/tsconfig.json': '{}',
+      'test/chat/node_modules/x/tsconfig.json': '{}',
+      'test/browser/fixtures/app/.next/tsconfig.json': '{}',
+    };
+
+    onTestFinished(() => rmSync(root, { recursive: true, force: true }));
+
+    for (const [file, content] of Object.entries(files)) {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), content);
+    }
+
+    expect(discoverPrograms(root)).toEqual({
+      programs: ['test/chat/tsconfig.json', 'test/tsconfig.json'],
+      augmented: ['test/chat/frogbot-types.ts'],
+    });
+  });
+
+  it('checks a Next fixture without its build output', () => {
+    const next = {
+      compilerOptions: { incremental: true },
+      include: ['next-env.d.ts', '**/*.ts', '.next/types/**/*.ts'],
+      exclude: ['node_modules'],
+    };
+
+    expect(
+      stableConfig(next, { dir: '/repo/test/app', buildInfo: '/tmp/app.tsbuildinfo' }),
+    ).toEqual({
+      extends: '/repo/test/app/tsconfig.json',
+      compilerOptions: { tsBuildInfoFile: '/tmp/app.tsbuildinfo' },
+      include: ['/repo/test/app/next-env.d.ts', '/repo/test/app/**/*.ts'],
+    });
+    expect(
+      stableConfig({ include: ['./**/*.ts'] }, { dir: '/repo/test/chat', buildInfo: '' }),
+    ).toBeUndefined();
+  });
+
+  it('sizes the pool to memory and cores', () => {
+    expect(poolSize({ cores: 14, memoryMB: 49_152 })).toBe(6);
+    expect(poolSize({ cores: 4, memoryMB: 131_072 })).toBe(4);
+    expect(poolSize({ cores: 8, memoryMB: 4_096 })).toBe(1);
   });
 
   it('passes when the errors match the baseline exactly', () => {

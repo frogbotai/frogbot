@@ -342,7 +342,7 @@ describe('capLines', () => {
 
     expect(kept).toHaveLength(MAX_LINES);
     expect(kept).toEqual(expect.arrayContaining(['tsc0', 'tsc1', 'x4']));
-    expect(kept.filter((line) => line.startsWith('eslint'))).toHaveLength(MAX_LINES - 7);
+    expect(kept.filter((line: string) => line.startsWith('eslint'))).toHaveLength(MAX_LINES - 7);
     expect(cut).toBe(107 - MAX_LINES);
   });
 });

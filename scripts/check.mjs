@@ -254,7 +254,7 @@ function seconds(ms) {
   return ms < 10_000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms / 1000)}s`;
 }
 
-function openLog(argv) {
+export function openLog(argv) {
   const stamp = new Date().toISOString().slice(0, 23).replace(/[:.]/g, '-');
   const file = path.join(ROOT, TMP, `check-${stamp}.log`);
 
@@ -467,7 +467,7 @@ export async function buildStale(log) {
   return build(log, { packages, changed: changedPackages({ files: changedFiles(log), packages }) });
 }
 
-async function importMaps(log) {
+export async function importMaps(log) {
   const started = performance.now();
   const listed = sh(log, 'git', ['ls-files', '-z', ...FIXTURES]);
 

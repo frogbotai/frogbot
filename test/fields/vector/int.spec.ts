@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
+import type { VectorDocument } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const collection = 'vector-documents';
@@ -255,7 +256,7 @@ describe('vector field CRUD', () => {
     ).rejects.toThrow('embedding');
   });
 
-  it.each([
+  it.each<{ name: string; data: Partial<VectorDocument>; path: string }>([
     { name: 'group', data: { group: { embedding: [1, 2] } }, path: 'group.embedding' },
     { name: 'tab and row', data: { details: { embedding: [1, 2] } }, path: 'details.embedding' },
     { name: 'collapsible', data: { extraEmbedding: [1, 2] }, path: 'extraEmbedding' },

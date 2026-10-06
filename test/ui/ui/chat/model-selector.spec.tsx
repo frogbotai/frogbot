@@ -88,7 +88,7 @@ function openTrigger() {
 }
 
 function stopLabels() {
-  const slider = screen.getByRole('slider', { name: 'Reasoning' }) as HTMLInputElement;
+  const slider = screen.getByRole<HTMLInputElement>('slider', { name: 'Reasoning' });
   const initial = slider.value;
 
   const labels = Array.from({ length: Number(slider.max) + 1 }, (_, index) => {
@@ -111,7 +111,7 @@ function searchBox() {
 }
 
 function row(name: string) {
-  return screen.getByRole('button', { name, exact: true });
+  return screen.getByRole('button', { name });
 }
 
 function rowNames() {
@@ -135,7 +135,7 @@ describe('ModelSelector', () => {
     expect(input.getAttribute('autocomplete')).toBe('off');
     expect(input.getAttribute('spellcheck')).toBe('false');
     expect(input.closest('.fb-search-input')?.querySelector('.fb-search-input__icon')).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'GPT-5', exact: true }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'GPT-5' }));
   });
 
   it.each([
@@ -192,7 +192,7 @@ describe('ModelSelector', () => {
     expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(0);
     expect(screen.queryByRole('group')).toBeNull();
 
-    await user.click(screen.getByRole('button', { name: 'Clear', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
 
     const selected = screen.getByRole('button', { name: 'GPT-5', current: true });
 
@@ -230,9 +230,7 @@ describe('ModelSelector', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     await openList(user, 'GPT-5');
 
-    expect((screen.getByRole('textbox', { name: 'Search models' }) as HTMLInputElement).value).toBe(
-      '',
-    );
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Search models' }).value).toBe('');
     expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(4);
   });
 
@@ -244,12 +242,10 @@ describe('ModelSelector', () => {
     await user.click(trigger());
     await openList(user, 'GPT-5');
     await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'opus');
-    await user.click(screen.getByRole('button', { name: 'Claude Opus', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Claude Opus' }));
     await openList(user, 'Claude Opus');
 
-    expect((screen.getByRole('textbox', { name: 'Search models' }) as HTMLInputElement).value).toBe(
-      '',
-    );
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Search models' }).value).toBe('');
     expect(
       screen
         .getByRole('button', { name: 'Claude Opus', current: true })
@@ -271,9 +267,9 @@ describe('ModelSelector', () => {
     await user.click(trigger());
     await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'model-339');
 
-    expect(
-      screen.getByRole('button', { name: 'Model 339', exact: true }).getAttribute('title'),
-    ).toBe(choices[339].id);
+    expect(screen.getByRole('button', { name: 'Model 339' }).getAttribute('title')).toBe(
+      choices[339].id,
+    );
     expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(1);
   });
 
@@ -308,7 +304,7 @@ describe('ModelSelector', () => {
     await user.click(trigger());
     await openList(user, 'GPT-5');
 
-    const row = screen.getByRole('button', { name: 'Nova Micro', exact: true });
+    const row = screen.getByRole('button', { name: 'Nova Micro' });
     const logo = row.querySelector('.fb-model-selector__logo');
 
     expect(logo?.tagName.toLowerCase()).toBe('svg');
@@ -352,21 +348,17 @@ describe('ModelSelector', () => {
     await openList(user, 'GPT-5');
 
     expect(
-      screen
-        .getByRole('button', { name: 'GPT-5', exact: true })
-        .querySelector('.fb-model-selector__option-id'),
+      screen.getByRole('button', { name: 'GPT-5' }).querySelector('.fb-model-selector__option-id'),
     ).toBeNull();
 
     duplicates.forEach(({ id, name }) => {
-      const row = screen.getByRole('button', { name: `${name} ${id}`, exact: true });
+      const row = screen.getByRole('button', { name: `${name} ${id}` });
 
       expect(row.querySelector('.fb-model-selector__option-id')?.textContent).toBe(id);
       expect(row.getAttribute('title')).toBe(id);
     });
 
-    expect(screen.getByRole('button', { name: 'GPT-5', exact: true }).getAttribute('title')).toBe(
-      gpt.id,
-    );
+    expect(screen.getByRole('button', { name: 'GPT-5' }).getAttribute('title')).toBe(gpt.id);
   });
 
   it('shows the display name rather than the ID in the trigger and model heading', async () => {
@@ -630,7 +622,7 @@ describe('ModelSelector', () => {
     await openList(user, 'GPT-5');
     await user.keyboard('opus');
 
-    expect(screen.queryByRole('button', { name: 'GPT-5', exact: true })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'GPT-5' })).toBeNull();
 
     await user.keyboard('{Escape}');
 
@@ -798,9 +790,7 @@ describe('ModelSelector', () => {
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'GPT-4o, change model' })).toBeNull();
     expect(screen.queryByRole('slider')).toBeNull();
-    expect(document.activeElement).toBe(
-      screen.getByRole('button', { name: 'GPT-4o', exact: true }),
-    );
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'GPT-4o' }));
   });
 
   it('offers Default followed by the model levels as slider stops', async () => {
@@ -841,7 +831,7 @@ describe('ModelSelector', () => {
 
     await user.click(trigger());
 
-    const slider = screen.getByRole('slider') as HTMLInputElement;
+    const slider = screen.getByRole<HTMLInputElement>('slider');
 
     expect(slider.value).toBe('2');
     expect(slider.getAttribute('aria-valuetext')).toBe('Max · 32k');
@@ -1114,7 +1104,7 @@ describe('ModelSelector', () => {
     render(<Harness initialModel={plain.id} onModelChange={onModelChange} />);
 
     await user.click(trigger());
-    await user.click(screen.getByRole('button', { name: 'GPT-4o', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'GPT-4o' }));
 
     expect(onModelChange).not.toHaveBeenCalled();
     expect(screen.queryByRole('textbox', { name: 'Search models' })).toBeNull();

@@ -9,6 +9,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import config, { agentSlug, upstreamPort } from './config.js';
+import type { Account } from './frogbot-types.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -141,11 +142,11 @@ describe('API keys plugin integration', () => {
     expect(authenticated.status).toBe(200);
     expect(authenticated.body.docs).toHaveLength(1);
 
-    const stored = (await booted.frogbot.findByID({
+    const stored = await booted.frogbot.findByID({
       collection: 'credentials',
       id: mint.body.id,
       overrideAccess: true,
-    })) as Record<string, unknown>;
+    });
     expect(stored).not.toHaveProperty('token');
     expect(stored.tokenHash).toEqual(expect.any(String));
     expect(stored.prefix).toBe(mint.body.prefix);
@@ -207,9 +208,9 @@ describe('API keys plugin integration', () => {
 
     const requestId = allowed.headers.get('x-request-id')!;
 
-    const row: Record<string, unknown> = await vi.waitFor(async () => {
+    const row = await vi.waitFor(async () => {
       const logs = await booted.frogbot.find({
-        collection: 'usage-logs' as never,
+        collection: 'usage-logs',
         where: { requestId: { equals: requestId } },
         depth: 0,
         overrideAccess: true,
@@ -222,11 +223,11 @@ describe('API keys plugin integration', () => {
 
     expect(row.apiKey).toBe(mint.body.id);
 
-    const key = (await booted.frogbot.findByID({
+    const key = await booted.frogbot.findByID({
       collection: 'credentials',
       id: mint.body.id,
       overrideAccess: true,
-    })) as Record<string, unknown>;
+    });
 
     expect(key.totalCostUSD).toBe(3);
 
@@ -244,7 +245,7 @@ describe('API keys plugin integration', () => {
       email: 'api-key-me-owner@frogbot.local',
       password: 'frogbot-test-password',
     };
-    let ownerId: number | string;
+    let ownerId: Account['id'];
     let token: string;
 
     beforeEach(async () => {
@@ -332,7 +333,7 @@ describe('API keys plugin integration', () => {
       email: 'api-key-agent-owner@frogbot.local',
       password: 'frogbot-test-password',
     };
-    let ownerId: number | string;
+    let ownerId: Account['id'];
     let headers: { 'x-service-key': string };
 
     beforeEach(async () => {
@@ -379,7 +380,7 @@ describe('API keys plugin integration', () => {
       expect(response.status).toBe(403);
       expect(modelCalls).toEqual([]);
 
-      for (const collection of ['chats', 'messages', 'frogbot-chat-turns']) {
+      for (const collection of ['chats', 'messages', 'frogbot-chat-turns'] as const) {
         const records = await booted.frogbot.count({ collection, overrideAccess: true });
 
         expect(records.totalDocs).toBe(0);

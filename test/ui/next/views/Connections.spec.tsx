@@ -163,7 +163,7 @@ describe('linked accounts', () => {
     const credential = screen.getByLabelText('Credential');
     expect(credential.getAttribute('type')).toBe('password');
     fireEvent.change(credential, { target: { value: 'raw-secret' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Connect', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/custom-api/connections/mail',
@@ -180,7 +180,7 @@ describe('linked accounts', () => {
     fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
     fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
     fireEvent.change(screen.getByLabelText('Credential'), { target: { value: 'bad-secret' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Connect', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
       'These credentials were not accepted. Check the values and try again.',
@@ -226,10 +226,10 @@ describe('linked accounts', () => {
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'token value mode' }), {
       key: 'ArrowDown',
     });
-    fireEvent.click(await screen.findByRole('option', { name: 'Null', exact: true }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Null' }));
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'port' }), { key: 'ArrowDown' });
     fireEvent.click(await screen.findByRole('option', { name: '443' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/custom-api/connections/static',
@@ -268,7 +268,7 @@ describe('linked accounts', () => {
     fireEvent.change(screen.getByLabelText('port'), { target: { value: '443' } });
     fireEvent.click(screen.getByRole('checkbox', { name: 'enabled' }));
     expect(within(screen.getByRole('dialog')).queryByRole('textbox')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Connect', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/custom-api/connections/static',

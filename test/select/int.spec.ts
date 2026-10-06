@@ -9,21 +9,22 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import type { SelectUser } from './frogbot-types.js';
 import { databasePath, postsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Local API select', () => {
   let booted: BootedFrogBot;
-  let sqlite: SQLiteAdapter;
-  let owner: { id: number | string };
-  let other: { id: number | string };
+  let sqlite: SQLiteAdapter['client'];
+  let owner: SelectUser;
+  let other: SelectUser;
   let testIndex = 0;
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
 
-    sqlite = booted.payload.db as SQLiteAdapter;
+    sqlite = booted.payload.db.drizzle.$client;
   });
 
   afterAll(async () => {
@@ -205,7 +206,7 @@ describe('Local API select', () => {
       details: { summary: 'Persisted summary', budget: 25 },
     });
 
-    const stored = await sqlite.client.execute({
+    const stored = await sqlite.execute({
       sql: 'select body, details_summary, details_budget from select_posts where id = ?',
       args: [created.id],
     });
@@ -454,7 +455,7 @@ describe('Local API select', () => {
       depth: 0,
     });
 
-    const stored = await sqlite.client.execute({
+    const stored = await sqlite.execute({
       sql: 'select * from _select_posts_v where id = ? and parent_id = ?',
       args: [snapshot.id, post.id],
     });
@@ -496,12 +497,12 @@ describe('Local API select', () => {
         depth: 0,
       });
 
-      const storedParentBefore = await sqlite.client.execute({
+      const storedParentBefore = await sqlite.execute({
         sql: 'select * from select_posts where id = ?',
         args: [post.id],
       });
 
-      const storedVersionsBefore = await sqlite.client.execute({
+      const storedVersionsBefore = await sqlite.execute({
         sql: 'select * from _select_posts_v where parent_id = ? order by id',
         args: [post.id],
       });
@@ -532,12 +533,12 @@ describe('Local API select', () => {
         pagination: false,
       });
 
-      const storedParentAfter = await sqlite.client.execute({
+      const storedParentAfter = await sqlite.execute({
         sql: 'select * from select_posts where id = ?',
         args: [post.id],
       });
 
-      const storedVersionsAfter = await sqlite.client.execute({
+      const storedVersionsAfter = await sqlite.execute({
         sql: 'select * from _select_posts_v where parent_id = ? order by id',
         args: [post.id],
       });

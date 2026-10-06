@@ -179,7 +179,9 @@ describe('provider logo sync', () => {
   const probe = 'frogbot-missing-provider-logo';
 
   function logoFetch(responses: Record<string, Response | Error> = {}) {
-    return vi.fn((url: string) => {
+    return vi.fn<typeof fetch>((input) => {
+      const url = input instanceof Request ? input.url : input.toString();
+
       if (url === 'https://models.dev/api.json') {
         const provider = {
           models: { 'claude-current': source.anthropic.models['claude-current'] },

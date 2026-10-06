@@ -210,7 +210,7 @@ describe('readSessions and summarize', () => {
   it('reads the coordinator tree of tagged sessions in this project', () => {
     expect(
       run()
-        .read.map(({ id }) => id)
+        .read.map(({ id }: { id: string }) => id)
         .sort(),
     ).toEqual([
       'ses_a1',
@@ -253,7 +253,7 @@ describe('readSessions and summarize', () => {
   it('prints one row per ticket, then other, coordinator and total', () => {
     const rows = statsRows(run().summary);
 
-    expect(rows.map(({ ticket }) => ticket)).toEqual([
+    expect(rows.map(({ ticket }: { ticket: string }) => ticket)).toEqual([
       '211a',
       '211b',
       'other',

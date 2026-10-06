@@ -1,7 +1,4 @@
 {
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "allowJs": true
-  },
-  "include": ["./*.ts", "../unit/frogbot/kv/*.spec.ts", "../unit/kv-redis/*.spec.ts"]
+  "extends": "../tsconfig.base.json",
+  "include": ["./**/*.ts"]
 }

@@ -125,11 +125,13 @@ export function createTelegramApi() {
       return messageId;
     },
     message(id: number) {
-      return calls.findLast(
-        (call) =>
-          (call.method === 'sendMessage' || call.method === 'editMessageText') &&
-          call.result?.message_id === id,
-      )?.body;
+      return [...calls]
+        .reverse()
+        .find(
+          (call) =>
+            (call.method === 'sendMessage' || call.method === 'editMessageText') &&
+            call.result?.message_id === id,
+        )?.body;
     },
   };
 }

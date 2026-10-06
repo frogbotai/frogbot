@@ -8,6 +8,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import config from './config.js';
+import type { Chat, User as UserDoc } from './frogbot-types.js';
 import {
   allowedOrigin,
   chatsSlug,
@@ -30,7 +31,7 @@ type GraphQLBody<TData = Record<string, unknown>> = {
   errors?: { message: string; extensions?: { statusCode?: number } }[];
 };
 
-type User = { id: number | string; token: string };
+type User = { id: UserDoc['id']; token: string };
 
 async function query<TData = Record<string, unknown>>(
   source: string,
@@ -59,15 +60,15 @@ describe('GraphQL routes', () => {
   let booted: BootedFrogBot;
   let userA: User;
   let userB: User;
-  let chatA: number | string;
-  let chatB: number | string;
+  let chatA: Chat['id'];
+  let chatB: Chat['id'];
 
   async function createUser(email: string): Promise<User> {
-    const { id } = (await booted.frogbot.create({
+    const { id } = await booted.frogbot.create({
       collection: usersSlug,
       data: { email, password },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     const response = await booted.restClient.post<{ token: string }>(`/api/${usersSlug}/login`, {
       email,
@@ -78,11 +79,11 @@ describe('GraphQL routes', () => {
   }
 
   async function createChat(user: User) {
-    const chat = (await booted.frogbot.create({
+    const chat = await booted.frogbot.create({
       collection: chatsSlug,
       data: { title: `chat for ${user.id}`, user: user.id },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     return chat.id;
   }

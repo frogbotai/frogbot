@@ -1,4 +1,4 @@
-import { type AgentPieceTrigger, definePiece } from 'frogbot';
+import { type AgentConfig, type AgentPieceTrigger, definePiece } from 'frogbot';
 
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { defineEchoPiece } from '../unit/frogbot/triggers/fixtures/piece-echo.js';
@@ -12,7 +12,7 @@ const west = createEcho({ slug: 'echo-west', prefix: 'west: ' });
 export const failedHandlerCalls: unknown[] = [];
 
 const recordDelivery =
-  (handler: string): AgentPieceTrigger['handler'] =>
+  (handler: string): AgentPieceTrigger<typeof echo.triggers.received>['handler'] =>
   async ({ event, agent, req }) => {
     await req.frogbot.create({
       collection: 'trigger-deliveries',
@@ -24,12 +24,12 @@ const recordDelivery =
         request: {
           hasHeaders: req.headers instanceof Headers,
           hasUser: Boolean(req.user),
-          matchesAgent: req.frogbot.agents[agent.slug] === agent,
+          matchesAgent: new Map(Object.entries(req.frogbot.agents)).get(agent.slug) === agent,
         },
       },
       req,
       overrideAccess: true,
-    } as never);
+    });
   };
 
 export default await buildTestConfig({
@@ -70,7 +70,7 @@ export default await buildTestConfig({
         },
       ],
     },
-    ...['app-primary', 'app-secondary'].map((slug) => ({
+    ...['app-primary', 'app-secondary'].map((slug): AgentConfig => ({
       slug,
       model: 'test/gpt-4.1-mini',
       instructions: 'Record echo events.',

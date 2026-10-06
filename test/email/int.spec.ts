@@ -216,7 +216,7 @@ describe('piece-backed transactional email', () => {
   });
 
   it('delivers a usable verification token when a user is created', async () => {
-    const user = await booted.payload.create({
+    const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'verify@example.com', password: 'initial-password' },
     });
@@ -232,25 +232,25 @@ describe('piece-backed transactional email', () => {
 
     expect(token).toMatch(/^[a-f0-9]+$/);
 
-    const before = await booted.payload.findByID({ collection: usersSlug, id: user.id });
+    const before = await booted.frogbot.findByID({ collection: usersSlug, id: user.id });
 
     expect(before._verified).toBe(false);
 
-    await expect(booted.payload.verifyEmail({ collection: usersSlug, token })).resolves.toBe(true);
+    await expect(booted.frogbot.verifyEmail({ collection: usersSlug, token })).resolves.toBe(true);
 
-    const verified = await booted.payload.findByID({ collection: usersSlug, id: user.id });
-    const login = await booted.payload.login({
+    const verified = await booted.frogbot.findByID({ collection: usersSlug, id: user.id });
+    const login = await booted.frogbot.login({
       collection: usersSlug,
       data: { email: user.email, password: 'initial-password' },
     });
 
     expect(verified._verified).toBe(true);
-    expect(login.user.id).toBe(user.id);
+    expect(login.user?.id).toBe(user.id);
     expect(fetch).toHaveBeenCalledOnce();
   });
 
   it('delivers a usable password-reset token using factory auth despite a linked user credential', async () => {
-    const user = await booted.payload.create({
+    const user = await booted.frogbot.create({
       collection: usersSlug,
       disableVerificationEmail: true,
       data: { email: 'reset@example.com', password: 'old-password', _verified: true },
@@ -271,7 +271,7 @@ describe('piece-backed transactional email', () => {
       apiKey: 'user-connection-key',
     });
 
-    const token = await booted.payload.forgotPassword({
+    const token = await booted.frogbot.forgotPassword({
       collection: usersSlug,
       data: { email: user.email },
       req,
@@ -288,17 +288,17 @@ describe('piece-backed transactional email', () => {
       html: expect.stringContaining(`/reset/${token}`),
     });
 
-    await booted.payload.resetPassword({
+    await booted.frogbot.resetPassword({
       collection: usersSlug,
       data: { token, password: 'new-password' },
     });
 
-    const login = await booted.payload.login({
+    const login = await booted.frogbot.login({
       collection: usersSlug,
       data: { email: user.email, password: 'new-password' },
     });
 
-    expect(login.user.id).toBe(user.id);
+    expect(login.user?.id).toBe(user.id);
     expect(await store.get({ owner, piece: 'resend' })).toMatchObject({
       credential: { apiKey: 'user-connection-key' },
     });
