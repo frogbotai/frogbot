@@ -21,7 +21,6 @@
   "scripts": {
     "build": "node ../../../scripts/build-package.mjs",
     "clean": "rm -rf dist",
-    "generate:types": "frogbot generate:piece-types src/index.ts --export createAirtable --output src/piece-types.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

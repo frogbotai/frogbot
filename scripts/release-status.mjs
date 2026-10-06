@@ -52,6 +52,8 @@ if (stale.length) {
   console.log(`  Version drift — run \`pnpm bump <major|minor|patch>\` to realign.\n`);
 }
 if (missing.length) {
-  console.log(`  Resume with \`pnpm release:resume\` — already-published versions are skipped.\n`);
+  console.log(
+    `  Resume with \`pnpm release --resume\` — already-published versions are skipped.\n`,
+  );
 }
 if (missing.length || errored.length || stale.length) process.exit(1);

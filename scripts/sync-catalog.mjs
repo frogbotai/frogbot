@@ -4,8 +4,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { format, resolveConfig } from 'prettier';
 
-import { renderAIModelTypes } from './generate-ai-types.mjs';
-
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const overlaysPath = resolve(root, 'scripts/model-catalog-overlays.json');
 const catalogPath = resolve(root, 'packages/frogbot/src/ai/catalog.json');
@@ -292,6 +290,42 @@ export function renderGatewayCatalog(gateway) {
     )
     .join('\n');
   return `import { defineModelCatalog, presetFor, type ModelCatalog } from './catalog.js';\n\nconst model = presetFor<string>();\n\nexport const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(\n${entries}\n);\n`;
+}
+
+function typeName(provider) {
+  return provider
+    .split(/[^a-zA-Z0-9]+/)
+    .map((part) => {
+      if (part === 'openai') return 'OpenAI';
+      if (part === 'xai') return 'XAI';
+      if (part === 'togetherai') return 'TogetherAI';
+      return `${part[0].toUpperCase()}${part.slice(1)}`;
+    })
+    .join('');
+}
+
+function union(values, indent = '  ') {
+  return values.map((value) => `${indent}| '${value}'`).join('\n');
+}
+
+function typeUnion(values, indent = '  ') {
+  return values.map((value) => `${indent}| ${value}`).join('\n');
+}
+
+export async function renderAIModelTypes(catalog) {
+  const providers = [...new Set(catalog.map((entry) => entry.provider))].sort();
+  const sections = providers.map((provider) => {
+    const ids = catalog
+      .filter((entry) => entry.provider === provider)
+      .map((entry) => entry.id)
+      .sort();
+    return `export type ${typeName(provider)}ModelId =\n${union(ids)};`;
+  });
+  const combined = providers.map((provider) => `${typeName(provider)}ModelId`);
+  const source = `export type ProviderSlug =\n${union(providers)};\n\n${sections.join('\n\n')}\n\nexport type CatalogModelId =\n${typeUnion(combined)};\n`;
+  const options = (await resolveConfig(typesPath)) ?? {};
+
+  return format(source, { ...options, filepath: typesPath, parser: 'typescript' });
 }
 
 function logoAttributes(source) {

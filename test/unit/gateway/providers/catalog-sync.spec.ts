@@ -8,9 +8,8 @@ import {
   calculateCostUSD,
   supportsOperation,
 } from '../../../../packages/gateway/src/providers/catalog.js';
-import { renderAIModelTypes } from '../../../../scripts/generate-ai-types.mjs';
 import overlays from '../../../../scripts/model-catalog-overlays.json';
-import { buildCatalogs } from '../../../../scripts/sync-catalog.mjs';
+import { buildCatalogs, renderAIModelTypes } from '../../../../scripts/sync-catalog.mjs';
 
 const model = {
   id: 'openai.gpt-5.6-luna',

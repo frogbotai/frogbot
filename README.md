@@ -223,7 +223,7 @@ pnpm test
 Integration tests run against real databases via Docker:
 
 ```bash
-pnpm docker:start <profile> up -d
+pnpm docker:start
 pnpm test:int:sqlite   # or test:int:pg / test:int:mongo
 ```
 

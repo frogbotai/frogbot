@@ -39,9 +39,7 @@
   "scripts": {
     "build": "node ../../scripts/build-package.mjs",
     "clean": "rm -rf dist",
-    "test": "vitest run --root ../.. --project=unit test/unit/sdk/index.spec.ts",
-    "typecheck": "tsc --noEmit && pnpm typecheck:types",
-    "typecheck:types": "tsc --noEmit -p ../../test/types/sdk/tsconfig.generated.json && tsc --noEmit -p ../../test/types/sdk/tsconfig.fallback.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p ../../test/types/sdk/tsconfig.generated.json && tsc --noEmit -p ../../test/types/sdk/tsconfig.fallback.json"
   },
   "devDependencies": {
     "frogbot": "workspace:*",

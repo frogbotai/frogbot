@@ -26,8 +26,11 @@ docker compose -f test/docker-compose.yml --profile postgres up -d
 pnpm test:int:pg
 
 # All services (storage, kv, db)
-docker compose -f test/docker-compose.yml --profile all up -d
+pnpm docker:start
 pnpm test:int
+
+# Only the kv and storage adapter suites
+pnpm test:int test/kv/int.spec.ts test/storage/int.spec.ts test/storage-s3/int.spec.ts test/storage-gcs/int.spec.ts test/storage-azure/int.spec.ts test/storage-vercel-blob/int.spec.ts
 ```
 
 ## Layout
@@ -137,6 +140,7 @@ test/
 pnpm test:int:mongo    # FROGBOT_DATABASE=mongodb
 pnpm test:int:pg       # FROGBOT_DATABASE=postgres
 pnpm test:int:sqlite   # FROGBOT_DATABASE=sqlite
+pnpm docker:start      # Start every service the int suites use
 pnpm docker:clean      # Tear down all containers + volumes
 ```
 
@@ -308,7 +312,7 @@ describe('my-feature', () => {
 ### 5. Generate types
 
 ```sh
-pnpm dev:generate-types my-feature
+pnpm generate:types my-feature
 ```
 
 This creates `frogbot-types.ts` in your suite directory. Commit it.
@@ -431,8 +435,8 @@ Fully mocked — no real API calls. Resend tests mock `global.fetch`, Nodemailer
 ## Running
 
 ```sh
-pnpm dev:generate-types          # regenerate frogbot-types.ts for ALL suites
-pnpm dev:generate-types database # regenerate for a single suite
+pnpm generate:types              # regenerate frogbot-types.ts for ALL suites
+pnpm generate:types database     # regenerate for a single suite
 pnpm test                        # unit + int
 pnpm test:unit                   # colocated *.spec.ts under packages/ + apps/
 pnpm test:int                    # test/**/*int.spec.ts
@@ -463,10 +467,10 @@ Pass `--project` to narrow a run: a spec path alone still builds and starts ever
 
 ## Live tests (real credentials)
 
-Live tests call real providers and services with your own keys. They run locally only. `pnpm bump` starts Docker Desktop if needed, starts the Docker services (`pnpm test:services`) and runs `pnpm test:release`: every project with live suites on, then the Postgres and MongoDB adapter suites. `pnpm release` only builds and publishes.
+Live tests call real providers and services with your own keys. They run locally only. `pnpm bump` starts Docker Desktop if needed, starts the Docker services (`pnpm docker:start`) and runs every project with live suites on (`RUN_E2E=1 pnpm test`), then the Postgres and MongoDB adapter suites (`pnpm test:int:pg` and `pnpm test:int:mongo` with `test/database`, `test/search/*` and `test/kv/mongo-native.int.spec.ts`). Before the services it runs the UI packaging checks (`scripts/test-ui-package.mjs`, `scripts/test-ui-next.mjs`). `pnpm release` only builds and publishes.
 
 1. Copy `.env.live.example` to `.env.live.local` and fill in keys. Put credential files (GitHub app key, Vertex service account) in `.live-credentials/`. Both locations are gitignored.
-2. Run `pnpm test:live:doctor` to check every key with one cheap read-only call.
+2. Run `node test/live/doctor.ts` to check every key with one cheap read-only call.
 3. Run `pnpm test:live`. Narrow a run with `E2E_PROVIDERS=openai,anthropic` or `E2E_ROUTES=cache,chat`, and override models with `E2E_MODEL_<LABEL>_<ROUTE>` (for example `E2E_MODEL_OPENAI_TEXT=gpt-5.5`).
 
 A suite whose keys are missing is skipped with the missing names in its title.
@@ -499,4 +503,4 @@ This test infrastructure is modeled after Payload's (v3.85.1). Key differences:
 - **Docker images** download on first `docker compose up` (~1-2 GB total for all profiles).
 - **Playwright Chromium** downloads ~150 MB; cached at
   `~/Library/Caches/ms-playwright/` (macOS).
-  First run: `pnpm exec playwright install --with-deps chromium`
+  First run: `pnpm exec playwright install chromium firefox webkit` (the browser projects use all three)

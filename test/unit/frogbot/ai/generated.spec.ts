@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 import catalog from '../../../../packages/frogbot/src/ai/catalog.json' with { type: 'json' };
-import { renderAIModelTypes } from '../../../../scripts/generate-ai-types.mjs';
+import { renderAIModelTypes } from '../../../../scripts/sync-catalog.mjs';
 
 describe('generated AI model types', () => {
   it('matches the canonical catalog', async () => {
