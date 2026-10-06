@@ -32,6 +32,7 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `next` gives a ticket number;
   - `new` creates the worktree and branch;
   - `status` shows every ticket's stage;
+  - `decisions` writes the open cards and gates to `.idea/decisions/OPEN.md` and records the owner's answers;
   - `land` rebases, runs the gates, squashes to one commit and fast-forwards local `main`, never pushing.
 - **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops and whole-suite test runs, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents.
 
@@ -84,4 +85,4 @@ The plan's `touches:` list is matched against globs in `scripts/ticket.mjs`.
 
 ## Not built yet
 
-`pnpm ticket decisions` (223), `pnpm check ticket-docs` (222), and `pnpm ticket verify [--ui]` (236, 237). Until then the coordinator does these by hand.
+`pnpm check ticket-docs` (222) and `pnpm ticket verify [--ui]` (236, 237). Until then the coordinator does these by hand.

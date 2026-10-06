@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 import { checkCommitMessage, TYPES } from './commit-msg.mjs';
 import { affectedRuns } from './lib/affected.mjs';
+import { recordDecisions } from './lib/decisions.mjs';
 
 export const FULL_TIER = [
   '**/migrations/**',
@@ -45,7 +46,7 @@ const MAIN = 'main';
 const DEFAULT_TYPE = 'feat';
 
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | next';
+  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | next | decisions';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -95,6 +96,7 @@ export function parseArgs(argv) {
     land: { ticket: true, flags: ['message'] },
     status: { ticket: false, flags: ['batch'] },
     next: { ticket: false, flags: [] },
+    decisions: { ticket: false, flags: [] },
   }[command];
 
   if (!allowed) return { error: command ? `unknown command "${command}"` : 'no command' };
@@ -707,6 +709,15 @@ function commandStatus(main, options) {
   console.log(formatTable(rows).join('\n'));
 }
 
+export function commandDecisions(main, { date = new Date().toLocaleDateString('en-CA') } = {}) {
+  const tickets = folders(main).map((folder) => readTicket(main, folder));
+  const { messages, problems } = recordDecisions(path.join(main, '.idea'), tickets, date);
+
+  if (problems.length > 0) refuse(`nothing written:\n${problems.join('\n')}`);
+
+  console.log(messages.join('\n'));
+}
+
 function commandNew(main, { ticket, type }) {
   const { folder } = findTicket(main, ticket);
   const branch = branchName({ type, ticket, slug: slugOf(folder) });
@@ -861,6 +872,7 @@ function main() {
       land: commandLand,
       status: commandStatus,
       next: commandNext,
+      decisions: commandDecisions,
     };
 
     commands[options.command](root, options);
