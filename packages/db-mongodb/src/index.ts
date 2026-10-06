@@ -11,6 +11,7 @@ import { updateJobLeases } from './updateJobLeases.js';
 import { createUpdateJobs } from './updateJobs.js';
 
 export type { Args, MigrateDownArgs, MigrateUpArgs, MongooseAdapter } from '@payloadcms/db-mongodb';
+export { compatibilityOptions } from '@payloadcms/db-mongodb';
 
 export const mongooseAdapter = (
   args: Args,

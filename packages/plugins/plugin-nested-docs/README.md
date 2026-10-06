@@ -12,4 +12,4 @@ export default buildConfig({
 });
 ```
 
-This package delegates to `@payloadcms/plugin-nested-docs` and preserves its collection, custom field slug, label, and URL options.
+It supports the collection, custom field slug, label, and URL options.

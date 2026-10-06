@@ -72,6 +72,11 @@ On PostgreSQL and SQLite, polymorphic or many-valued relationships normally use 
 | `hidden` | `false` | `false` | Join fields can't be hidden. Use `access.read` or `admin.hidden` instead. |
 | `required` | `boolean` | `false` | No effect: Join fields have no built-in validator and their values are never written. |
 | `disableDuplicate` | `boolean` | `false` | No effect: Join values are not stored, so there is nothing to copy. |
+| `unique` | `boolean` | `false` | No effect: Join values are not stored, so there is nothing to index. |
+| `validate` | `Validate` | — | No effect: Join values are never written. |
+| `virtual` | `boolean \| string` | `false` | No effect: Join fields are never stored. |
+| `saveToJWT` | `boolean \| string` | `false` | In an auth-enabled collection, copies the value into the user's token. A string sets the token key. See [token data](/authentication/token-data). |
+| `sanitizedMany` | `JoinField[]` | — | Internal. Set by FrogBot for polymorphic joins; don't set it yourself. |
 | `index` | `undefined` | — | Not supported. |
 | `defaultValue` | `undefined` | — | Not supported. |
 | `graphQL` | `{ complexity?: number }` | `{ complexity: 10 }` | Query complexity used only when an application mounts its own GraphQL executor. FrogBot does not ship a GraphQL endpoint. |

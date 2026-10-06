@@ -12,8 +12,6 @@ metadata:
 
 # FrogBot Application Development
 
-FrogBot's collections, fields, hooks, access control and Local API behave like Payload CMS; FrogBot names apply.
-
 Use FrogBot names, imports, generated types, and request APIs. Check the installed source and types before assuming an API exists.
 
 ## Task Routing

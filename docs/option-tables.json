@@ -1,0 +1,1712 @@
+[
+  {
+    "page": "access-control/collections",
+    "heading": "Create",
+    "type": "import('frogbot').AccessArgs"
+  },
+  {
+    "page": "access-control/collections",
+    "heading": "Read",
+    "type": "import('frogbot').AccessArgs"
+  },
+  {
+    "page": "access-control/collections",
+    "heading": "Update",
+    "type": "import('frogbot').AccessArgs"
+  },
+  {
+    "page": "access-control/collections",
+    "heading": "Delete",
+    "type": "import('frogbot').AccessArgs"
+  },
+  {
+    "page": "access-control/collections",
+    "heading": "Admin",
+    "type": "Parameters<NonNullable<import('frogbot').CollectionAccess['admin']>>[0]"
+  },
+  {
+    "page": "access-control/collections",
+    "heading": "Unlock",
+    "type": "import('frogbot').AccessArgs"
+  },
+  {
+    "page": "access-control/collections",
+    "heading": "Read Versions",
+    "type": "import('frogbot').AccessArgs"
+  },
+  {
+    "page": "access-control/fields",
+    "heading": "Create",
+    "type": "import('frogbot').FieldAccessArgs"
+  },
+  {
+    "page": "access-control/fields",
+    "heading": "Read",
+    "type": "import('frogbot').FieldAccessArgs"
+  },
+  {
+    "page": "access-control/fields",
+    "heading": "Update",
+    "type": "import('frogbot').FieldAccessArgs"
+  },
+  {
+    "page": "admin/admin-navigation",
+    "heading": "Navigation item options",
+    "type": "import('frogbot').NavItem"
+  },
+  {
+    "page": "admin/admin-navigation",
+    "heading": "Settings entry options",
+    "type": "import('frogbot').SettingsEntry"
+  },
+  {
+    "page": "admin/overview",
+    "heading": "Admin options",
+    "type": "import('frogbot').RootAdminConfig"
+  },
+  {
+    "page": "admin/overview",
+    "heading": "Import map options",
+    "type": "NonNullable<import('frogbot').RootAdminConfig['importMap']>"
+  },
+  {
+    "page": "admin/overview",
+    "heading": "FrogBot metadata options",
+    "type": "Pick<import('frogbot').RootAdminMetaConfig, 'defaultOGImageType' | 'titleSuffix'>"
+  },
+  {
+    "page": "admin/overview",
+    "heading": "Next.js metadata options",
+    "type": "Omit<import('frogbot').RootAdminMetaConfig, 'defaultOGImageType' | 'titleSuffix'>"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Agent options",
+    "type": "import('frogbot').AgentConfig"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Model options",
+    "type": "import('frogbot').AgentModelOptions"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Profile options",
+    "type": "import('frogbot').AgentProfile"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Tool options",
+    "type": "import('frogbot').Tool"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Add skills",
+    "type": "import('frogbot').SkillConfig"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Add skills",
+    "type": "import('frogbot').SkillResource"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Run options",
+    "type": "import('frogbot').AgentGenerateOpts"
+  },
+  {
+    "page": "agents/overview",
+    "heading": "Schedule runs",
+    "type": "import('frogbot').AgentScheduleTrigger"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "AI options",
+    "type": "import('frogbot').AIConfig"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Built-in provider options",
+    "type": "Exclude<NonNullable<NonNullable<import('frogbot').AIConfig['providers']>['openai']>, true>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Bedrock provider options",
+    "type": "Exclude<NonNullable<NonNullable<import('frogbot').AIConfig['providers']>['bedrock']>, true>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Custom provider options",
+    "type": "Extract<NonNullable<import('frogbot').AIConfig['providers']>[string], { type: 'openai-compatible' }>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Custom model options",
+    "type": "Extract<NonNullable<import('frogbot').AIConfig['providers']>[string], { type: 'openai-compatible' }>['models'][number]"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Router options",
+    "type": "import('frogbot').RouterConfig"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Shared options",
+    "type": "import('frogbot').BaseAIOpts"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Text generation options",
+    "type": "Omit<import('frogbot').GenerateTextOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Text generation options",
+    "type": "Omit<import('frogbot').StreamTextOpts, keyof import('frogbot').GenerateTextOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Embedding options",
+    "type": "Omit<import('frogbot').EmbedOpts, keyof import('frogbot').BaseAIOpts> | Omit<import('frogbot').EmbedManyOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Image options",
+    "type": "Omit<import('frogbot').GenerateImageOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Speech options",
+    "type": "Omit<import('frogbot').GenerateSpeechOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Transcription options",
+    "type": "Omit<import('frogbot').TranscribeOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Video options",
+    "type": "Omit<import('frogbot').GenerateVideoOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Rerank options",
+    "type": "Omit<import('frogbot').RerankOpts, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Evaluate options",
+    "type": "Omit<import('frogbot').EvaluateOpts<any>, keyof import('frogbot').BaseAIOpts>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Question options",
+    "type": "import('frogbot').EvaluationQuestion"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Control access",
+    "type": "NonNullable<import('frogbot').AIConfig['access']>"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Observe calls",
+    "type": "import('frogbot').AIHooks"
+  },
+  {
+    "page": "ai/overview",
+    "heading": "Trace calls",
+    "type": "NonNullable<import('frogbot').AIConfig['telemetry']>"
+  },
+  {
+    "page": "authentication/email",
+    "heading": "Email Verification",
+    "type": "NonNullable<import('frogbot').AuthConfig['verify']>"
+  },
+  {
+    "page": "authentication/email",
+    "heading": "Forgot Password",
+    "type": "NonNullable<import('frogbot').AuthConfig['forgotPassword']>"
+  },
+  {
+    "page": "authentication/overview",
+    "heading": "Config Options",
+    "type": "import('frogbot').AuthConfig"
+  },
+  {
+    "page": "authentication/overview",
+    "heading": "Cookie options",
+    "type": "NonNullable<import('frogbot').AuthConfig['cookies']>"
+  },
+  {
+    "page": "authentication/overview",
+    "heading": "Disable local strategy",
+    "type": "NonNullable<import('frogbot').AuthConfig['disableLocalStrategy']>"
+  },
+  {
+    "page": "authentication/overview",
+    "heading": "Login With Username",
+    "type": "NonNullable<import('frogbot').AuthConfig['loginWithUsername']>"
+  },
+  {
+    "page": "authentication/overview",
+    "heading": "Auto-Login",
+    "type": "NonNullable<import('frogbot').RootAdminConfig['autoLogin']>"
+  },
+  {
+    "page": "authentication/sign-in",
+    "heading": "Enable Google sign-in",
+    "type": "Parameters<typeof import('@frogbotai/piece-google').createGoogle>[0]"
+  },
+  {
+    "page": "chat/questions",
+    "heading": "Build a client tool",
+    "type": "Omit<import('frogbot').ClientTool, Exclude<keyof import('frogbot').Tool, 'execute'>>"
+  },
+  {
+    "page": "chat/training-data",
+    "heading": "Export from the Local API",
+    "type": "import('frogbot').ReadTrainingDataOptions"
+  },
+  {
+    "page": "chat/ui-chat",
+    "heading": "Channel conversations",
+    "type": "import('@frogbotai/ui/chat').UseChatDocumentOptions"
+  },
+  {
+    "page": "chat/ui-provider",
+    "heading": "Adapter options",
+    "type": "import('@frogbotai/ui/chat').ChatPlatformAdapter"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Tool renderer options",
+    "type": "import('@frogbotai/ui/chat').ToolRenderer"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Artifact options",
+    "type": "import('@frogbotai/ui/chat/artifacts').ArtifactRegistryItem"
+  },
+  {
+    "page": "chat/ui-registries",
+    "heading": "Artifact options",
+    "type": "import('@frogbotai/ui/chat/artifacts').ArtifactPersistence"
+  },
+  {
+    "page": "configuration/collections",
+    "heading": "Collection config options",
+    "type": "import('frogbot').CollectionConfig"
+  },
+  {
+    "page": "configuration/collections",
+    "heading": "Admin Options",
+    "type": "import('frogbot').CollectionAdminConfig"
+  },
+  {
+    "page": "configuration/collections",
+    "heading": "Custom Components",
+    "type": "NonNullable<import('frogbot').CollectionAdminConfig['components']>"
+  },
+  {
+    "page": "configuration/collections",
+    "heading": "Edit View Options",
+    "type": "NonNullable<NonNullable<import('frogbot').CollectionAdminConfig['components']>['edit']>"
+  },
+  {
+    "page": "configuration/collections",
+    "heading": "Pagination",
+    "type": "import('frogbot').ViewPagination"
+  },
+  {
+    "page": "configuration/collections",
+    "heading": "GraphQL",
+    "type": "NonNullable<import('frogbot').CollectionConfig['graphQL']>"
+  },
+  {
+    "page": "configuration/i18n",
+    "heading": "Config Options",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['i18n']>"
+  },
+  {
+    "page": "configuration/localization",
+    "heading": "Config Options",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['localization']>"
+  },
+  {
+    "page": "configuration/localization",
+    "heading": "Locale Object",
+    "type": "Extract<Extract<NonNullable<import('frogbot').FrogBotConfig['localization']>, object>['locales'][number], object>"
+  },
+  {
+    "page": "configuration/overview",
+    "heading": "Set core options",
+    "type": "Parameters<typeof import('frogbot').buildConfig>[0]"
+  },
+  {
+    "page": "configuration/overview",
+    "heading": "Routes",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['routes']>"
+  },
+  {
+    "page": "configuration/overview",
+    "heading": "Folders",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['folders']>"
+  },
+  {
+    "page": "configuration/overview",
+    "heading": "Query presets",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['queryPresets']>"
+  },
+  {
+    "page": "configuration/overview",
+    "heading": "Key-value store",
+    "type": "import('frogbot').DatabaseKVAdapterOptions"
+  },
+  {
+    "page": "configuration/overview",
+    "heading": "Key-value store",
+    "type": "import('@frogbotai/kv-redis').RedisKVAdapterOptions"
+  },
+  {
+    "page": "connections/overview",
+    "heading": "Configure linking",
+    "type": "import('frogbot').ConnectionsConfig"
+  },
+  {
+    "page": "custom-components/custom-views",
+    "heading": "View options",
+    "type": "NonNullable<import('frogbot').AdminViews[string]>"
+  },
+  {
+    "page": "custom-components/dashboard",
+    "heading": "Dashboard options",
+    "type": "import('frogbot').DashboardConfig"
+  },
+  {
+    "page": "custom-components/dashboard",
+    "heading": "Dashboard options",
+    "type": "import('frogbot').Widget"
+  },
+  {
+    "page": "custom-components/dashboard",
+    "heading": "Default Layout",
+    "type": "NonNullable<import('frogbot').DashboardConfig['defaultLayout']>"
+  },
+  {
+    "page": "custom-components/overview",
+    "heading": "Component Config",
+    "type": "import('frogbot').FrogBotComponent"
+  },
+  {
+    "page": "custom-components/root-components",
+    "heading": "Config Options",
+    "type": "import('frogbot').RootAdminComponents"
+  },
+  {
+    "page": "custom-components/root-components",
+    "heading": "Config Options",
+    "type": "NonNullable<import('frogbot').RootAdminComponents['chat']>"
+  },
+  {
+    "page": "database/indexes",
+    "heading": "Compound Indexes",
+    "type": "NonNullable<import('frogbot').CollectionConfig['indexes']>[number]"
+  },
+  {
+    "page": "database/mongodb",
+    "heading": "Options",
+    "type": "import('@frogbotai/db-mongodb').Args"
+  },
+  {
+    "page": "database/postgres",
+    "heading": "Options",
+    "type": "import('@frogbotai/db-postgres').PostgresAdapterArgs"
+  },
+  {
+    "page": "database/postgres",
+    "heading": "Vercel Postgres options",
+    "type": "Pick<import('@frogbotai/db-vercel-postgres').VercelPostgresAdapterArgs, Exclude<keyof import('@frogbotai/db-vercel-postgres').VercelPostgresAdapterArgs, keyof import('@frogbotai/db-postgres').PostgresAdapterArgs> | 'pool'>"
+  },
+  {
+    "page": "database/sqlite",
+    "heading": "Options",
+    "type": "import('@frogbotai/db-sqlite').SQLiteAdapterArgs"
+  },
+  {
+    "page": "database/sqlite",
+    "heading": "D1 Database",
+    "type": "Omit<Parameters<typeof import('@frogbotai/db-d1-sqlite').sqliteD1Adapter>[0], keyof import('@frogbotai/db-sqlite').SQLiteAdapterArgs>"
+  },
+  {
+    "page": "email/overview",
+    "heading": "Configure Resend",
+    "type": "Parameters<typeof import('@frogbotai/piece-resend').createResend>[0]"
+  },
+  {
+    "page": "email/overview",
+    "heading": "Send email",
+    "type": "Pick<import('frogbot').SendEmailOptions, 'to' | 'cc' | 'bcc' | 'from' | 'replyTo' | 'subject' | 'html' | 'text' | 'attachments'>"
+  },
+  {
+    "page": "fields/ai",
+    "heading": "Config options",
+    "type": "import('frogbot').AIFieldArgs"
+  },
+  {
+    "page": "fields/ai",
+    "heading": "Config options",
+    "type": "Pick<import('frogbot').AISelectFieldArgs, Exclude<keyof import('frogbot').AISelectFieldArgs, keyof import('frogbot').AIFieldArgs> | 'options' | 'hasMany'>"
+  },
+  {
+    "page": "fields/ai",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').TextField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/ai",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').SelectField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/array",
+    "heading": "Config options",
+    "type": "import('frogbot').ArrayField"
+  },
+  {
+    "page": "fields/array",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').ArrayField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>> & { components?: Omit<NonNullable<NonNullable<import('frogbot').ArrayField['admin']>['components']>, keyof NonNullable<NonNullable<import('frogbot').CheckboxField['admin']>['components']>> }"
+  },
+  {
+    "page": "fields/autonumber",
+    "heading": "Config options",
+    "type": "import('frogbot').AutonumberFieldArgs"
+  },
+  {
+    "page": "fields/autonumber",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').AutonumberFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/barcode",
+    "heading": "Config options",
+    "type": "import('frogbot').BarcodeFieldArgs"
+  },
+  {
+    "page": "fields/barcode",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').BarcodeFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/blocks",
+    "heading": "Field config options",
+    "type": "import('frogbot').BlocksField"
+  },
+  {
+    "page": "fields/blocks",
+    "heading": "Field admin options",
+    "type": "Omit<NonNullable<import('frogbot').BlocksField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/blocks",
+    "heading": "Block config options",
+    "type": "import('frogbot').Block"
+  },
+  {
+    "page": "fields/blocks",
+    "heading": "Block admin options",
+    "type": "NonNullable<import('frogbot').Block['admin']>"
+  },
+  {
+    "page": "fields/checkbox",
+    "heading": "Config options",
+    "type": "import('frogbot').CheckboxField"
+  },
+  {
+    "page": "fields/code",
+    "heading": "Config options",
+    "type": "import('frogbot').CodeField"
+  },
+  {
+    "page": "fields/code",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').CodeField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/collapsible",
+    "heading": "Config options",
+    "type": "import('frogbot').CollapsibleField"
+  },
+  {
+    "page": "fields/collapsible",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').CollapsibleField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>> & { components?: Pick<NonNullable<NonNullable<import('frogbot').CollapsibleField['admin']>['components']>, 'Label'> }"
+  },
+  {
+    "page": "fields/created-by",
+    "heading": "Config options",
+    "type": "import('frogbot').CreatedByFieldArgs"
+  },
+  {
+    "page": "fields/created-by",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').CreatedByFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/date",
+    "heading": "Config options",
+    "type": "import('frogbot').DateField"
+  },
+  {
+    "page": "fields/date",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').DateField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/date",
+    "heading": "Timezones",
+    "type": "Extract<NonNullable<import('frogbot').DateField['timezone']>, object>"
+  },
+  {
+    "page": "fields/duration",
+    "heading": "Config options",
+    "type": "import('frogbot').DurationFieldArgs"
+  },
+  {
+    "page": "fields/duration",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').DurationFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/email",
+    "heading": "Config options",
+    "type": "import('frogbot').EmailField"
+  },
+  {
+    "page": "fields/email",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').EmailField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/group",
+    "heading": "Config options",
+    "type": "import('frogbot').GroupField"
+  },
+  {
+    "page": "fields/group",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').GroupField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/join",
+    "heading": "Config options",
+    "type": "import('frogbot').JoinField"
+  },
+  {
+    "page": "fields/join",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').JoinField['admin']>, Exclude<keyof NonNullable<import('frogbot').CheckboxField['admin']>, 'disableBulkEdit' | 'readOnly'>>"
+  },
+  {
+    "page": "fields/join",
+    "heading": "Query options",
+    "type": "Exclude<NonNullable<import('frogbot').FindArgs<any>['joins']>, false>[string]"
+  },
+  {
+    "page": "fields/json",
+    "heading": "Config options",
+    "type": "import('frogbot').JSONField"
+  },
+  {
+    "page": "fields/json",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').JSONField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/last-modified-by",
+    "heading": "Config options",
+    "type": "import('frogbot').LastModifiedByFieldArgs"
+  },
+  {
+    "page": "fields/last-modified-by",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').LastModifiedByFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/money",
+    "heading": "Config options",
+    "type": "import('frogbot').MoneyFieldArgs"
+  },
+  {
+    "page": "fields/money",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').MoneyFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/number",
+    "heading": "Config options",
+    "type": "import('frogbot').NumberField"
+  },
+  {
+    "page": "fields/number",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').NumberField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/overview",
+    "heading": "Admin options",
+    "type": "NonNullable<import('frogbot').CheckboxField['admin']>"
+  },
+  {
+    "page": "fields/percent",
+    "heading": "Config options",
+    "type": "import('frogbot').PercentFieldArgs"
+  },
+  {
+    "page": "fields/percent",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').PercentFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/phone",
+    "heading": "Config options",
+    "type": "import('frogbot').PhoneFieldArgs"
+  },
+  {
+    "page": "fields/phone",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').PhoneFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/point",
+    "heading": "Config options",
+    "type": "import('frogbot').PointField"
+  },
+  {
+    "page": "fields/point",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').PointField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/radio",
+    "heading": "Config options",
+    "type": "import('frogbot').RadioField"
+  },
+  {
+    "page": "fields/radio",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').RadioField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/rating",
+    "heading": "Config options",
+    "type": "import('frogbot').RatingFieldArgs"
+  },
+  {
+    "page": "fields/rating",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').RatingFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/relationship",
+    "heading": "Config options",
+    "type": "import('frogbot').RelationshipField"
+  },
+  {
+    "page": "fields/relationship",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').RelationshipField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/relationship",
+    "heading": "Filtering relationship options",
+    "type": "Parameters<Extract<NonNullable<import('frogbot').RelationshipField['filterOptions']>, (...args: any) => any>>[0]"
+  },
+  {
+    "page": "fields/rich-text",
+    "heading": "Config options",
+    "type": "import('frogbot').RichTextField"
+  },
+  {
+    "page": "fields/row",
+    "heading": "Config options",
+    "type": "import('frogbot').RowField"
+  },
+  {
+    "page": "fields/select",
+    "heading": "Config options",
+    "type": "import('frogbot').SelectField"
+  },
+  {
+    "page": "fields/select",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').SelectField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/tabs",
+    "heading": "Config options",
+    "type": "import('frogbot').TabsField"
+  },
+  {
+    "page": "fields/tabs",
+    "heading": "Config options",
+    "type": "import('frogbot').Tab"
+  },
+  {
+    "page": "fields/text",
+    "heading": "Config options",
+    "type": "import('frogbot').TextField"
+  },
+  {
+    "page": "fields/text",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').TextField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/text",
+    "heading": "Slug field",
+    "type": "Parameters<typeof import('frogbot').slugField>[0]"
+  },
+  {
+    "page": "fields/textarea",
+    "heading": "Config options",
+    "type": "import('frogbot').TextareaField"
+  },
+  {
+    "page": "fields/textarea",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').TextareaField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/ui",
+    "heading": "Config options",
+    "type": "import('frogbot').UIField"
+  },
+  {
+    "page": "fields/ui",
+    "heading": "Admin options",
+    "type": "NonNullable<import('frogbot').UIField['admin']>"
+  },
+  {
+    "page": "fields/upload",
+    "heading": "Config options",
+    "type": "import('frogbot').UploadField"
+  },
+  {
+    "page": "fields/upload",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').UploadField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/upload",
+    "heading": "Filtering upload options",
+    "type": "Parameters<Extract<NonNullable<import('frogbot').UploadField['filterOptions']>, (...args: any) => any>>[0]"
+  },
+  {
+    "page": "fields/url",
+    "heading": "Config options",
+    "type": "import('frogbot').UrlFieldArgs"
+  },
+  {
+    "page": "fields/url",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').UrlFieldArgs['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "fields/vector",
+    "heading": "Config options",
+    "type": "import('frogbot').VectorField"
+  },
+  {
+    "page": "fields/vector",
+    "heading": "Admin options",
+    "type": "Omit<NonNullable<import('frogbot').VectorField['admin']>, keyof NonNullable<import('frogbot').CheckboxField['admin']>>"
+  },
+  {
+    "page": "gateway/configuration",
+    "heading": "Config options",
+    "type": "import('@frogbotai/gateway').GatewayConfig"
+  },
+  {
+    "page": "gateway/embedding",
+    "heading": "Seed hook context from a request",
+    "type": "Parameters<import('@frogbotai/gateway').GatewayHandler>[1]"
+  },
+  {
+    "page": "gateway/embedding",
+    "heading": "In-process model calls",
+    "type": "import('@frogbotai/gateway').GatewayOperationOptions"
+  },
+  {
+    "page": "gateway/hooks",
+    "heading": "Phases",
+    "type": "import('@frogbotai/gateway').Hooks"
+  },
+  {
+    "page": "gateway/observability",
+    "heading": "Bootstrap tracing yourself",
+    "type": "import('@frogbotai/gateway/setup').SetupTracingOptions"
+  },
+  {
+    "page": "gateway/observability",
+    "heading": "Metrics",
+    "type": "import('@frogbotai/gateway/setup').SetupMetricsOptions"
+  },
+  {
+    "page": "gateway/providers",
+    "heading": "Built-in provider options",
+    "type": "Pick<Exclude<NonNullable<import('@frogbotai/gateway').GatewayConfig['providers']['openai']>, { languageModel: unknown }>, 'models' | 'apiKey' | 'baseURL' | 'headers'>"
+  },
+  {
+    "page": "gateway/providers",
+    "heading": "Built-in provider options",
+    "type": "{ [K in keyof typeof import('./packages/gateway/dist/providers/registry.js').providers as keyof Omit<Parameters<typeof import('./packages/gateway/dist/providers/registry.js').providers[K]['build']>[0], Exclude<'models' | 'apiKey' | 'baseURL' | 'headers', K extends 'klingai' ? 'apiKey' : K extends 'vercel' ? 'headers' : K extends 'vertex' ? 'apiKey' | 'headers' : never>> extends never ? never : K]: Omit<Parameters<typeof import('./packages/gateway/dist/providers/registry.js').providers[K]['build']>[0], Exclude<'models' | 'apiKey' | 'baseURL' | 'headers', K extends 'klingai' ? 'apiKey' : K extends 'vercel' ? 'headers' : K extends 'vertex' ? 'apiKey' | 'headers' : never>> }"
+  },
+  {
+    "page": "gateway/providers",
+    "heading": "Custom OpenAI-compatible endpoints",
+    "type": "Extract<import('@frogbotai/gateway').GatewayConfig['providers'][string], { baseURL: string }>"
+  },
+  {
+    "page": "graphql/overview",
+    "heading": "GraphQL Options",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['graphQL']>"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "Config Options",
+    "type": "import('frogbot').CollectionHooks"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "beforeOperation",
+    "type": "Parameters<import('frogbot').CollectionBeforeOperationHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "beforeValidate",
+    "type": "Parameters<import('frogbot').CollectionBeforeValidateHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "beforeChange",
+    "type": "Parameters<import('frogbot').CollectionBeforeChangeHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterChange",
+    "type": "Parameters<import('frogbot').CollectionAfterChangeHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "beforeRead",
+    "type": "Parameters<import('frogbot').CollectionBeforeReadHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterRead",
+    "type": "Parameters<import('frogbot').CollectionAfterReadHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "beforeDelete",
+    "type": "Parameters<import('frogbot').CollectionBeforeDeleteHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterDelete",
+    "type": "Parameters<import('frogbot').CollectionAfterDeleteHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterOperation",
+    "type": "Parameters<import('frogbot').CollectionAfterOperationHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterError",
+    "type": "Parameters<import('frogbot').CollectionAfterErrorHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "beforeLogin",
+    "type": "Parameters<import('frogbot').CollectionBeforeLoginHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterLogin",
+    "type": "Parameters<import('frogbot').CollectionAfterLoginHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterLogout",
+    "type": "Parameters<import('frogbot').CollectionAfterLogoutHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterMe",
+    "type": "Parameters<import('frogbot').CollectionAfterMeHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterRefresh",
+    "type": "Parameters<import('frogbot').CollectionAfterRefreshHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "afterForgotPassword",
+    "type": "Parameters<import('frogbot').CollectionAfterForgotPasswordHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "refresh",
+    "type": "Parameters<import('frogbot').CollectionRefreshHook>[0]"
+  },
+  {
+    "page": "hooks/collections",
+    "heading": "me",
+    "type": "Parameters<import('frogbot').CollectionMeHook>[0]"
+  },
+  {
+    "page": "hooks/fields",
+    "heading": "Config Options",
+    "type": "NonNullable<import('frogbot').TextField['hooks']>"
+  },
+  {
+    "page": "hooks/fields",
+    "heading": "Config Options",
+    "type": "import('frogbot').FieldHookArgs"
+  },
+  {
+    "page": "hooks/overview",
+    "heading": "Root Hooks",
+    "type": "import('frogbot').RootHooks"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Method options",
+    "type": "import('frogbot').JobQueueArgs<any>"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Method options",
+    "type": "Parameters<import('frogbot').Jobs['run']>[0]"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Durable workflow waits",
+    "type": "Parameters<import('frogbot').WorkflowHandler>[0]['waitFor'] extends { (name: string, options: infer A): unknown; (name: string, options: infer B): unknown } ? A | B : never"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Expiry",
+    "type": "{ jobs: { waitpoints: NonNullable<import('frogbot').JobsConfig['waitpoints']> } }"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Jobs options",
+    "type": "import('frogbot').JobsConfig"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Access options",
+    "type": "NonNullable<import('frogbot').JobsConfig['access']>"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Autorun options",
+    "type": "NonNullable<import('frogbot').JobsConfig['autoRun']>"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Task options",
+    "type": "NonNullable<import('frogbot').JobsConfig['tasks']>[number]"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Workflow options",
+    "type": "import('frogbot').WorkflowConfig"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Retry options",
+    "type": "NonNullable<import('frogbot').WorkflowConfig['retries']>"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Concurrency options",
+    "type": "NonNullable<import('frogbot').WorkflowConfig['concurrency']>"
+  },
+  {
+    "page": "jobs-queue/overview",
+    "heading": "Schedule options",
+    "type": "NonNullable<import('frogbot').WorkflowConfig['schedule']>[number]"
+  },
+  {
+    "page": "live-preview/client",
+    "heading": "Client-side Live Preview",
+    "type": "Parameters<typeof import('@frogbotai/live-preview-vue').useLivePreview>[0]"
+  },
+  {
+    "page": "live-preview/client",
+    "heading": "Building your own hook",
+    "type": "Parameters<typeof import('@frogbotai/live-preview').subscribe>[0]"
+  },
+  {
+    "page": "live-preview/overview",
+    "heading": "Options",
+    "type": "import('frogbot').RootLivePreviewConfig"
+  },
+  {
+    "page": "live-preview/overview",
+    "heading": "Breakpoints",
+    "type": "NonNullable<import('frogbot').LivePreviewConfig['breakpoints']>[number]"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Importing it",
+    "type": "import('frogbot').InitOptions"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Create#collection-create",
+    "type": "Omit<import('frogbot').CreateArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Find#collection-find",
+    "type": "Omit<import('frogbot').FindArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Find by ID#collection-find-by-id",
+    "type": "Omit<import('frogbot').FindByIDArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Count#collection-count",
+    "type": "Omit<import('frogbot').CountArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "FindDistinct#collection-find-distinct",
+    "type": "Omit<import('frogbot').FindDistinctArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Update by ID#collection-update-by-id",
+    "type": "Omit<import('frogbot').UpdateByIDArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Update Many#collection-update-many",
+    "type": "Omit<import('frogbot').UpdateManyArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Delete#collection-delete",
+    "type": "Omit<import('frogbot').DeleteByIDArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Delete Many#collection-delete-many",
+    "type": "Omit<import('frogbot').DeleteManyArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Duplicate#collection-duplicate",
+    "type": "Omit<import('frogbot').DuplicateArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Find Versions#collection-find-versions",
+    "type": "Omit<import('frogbot').FindVersionsArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Find Version by ID#collection-find-version-by-id",
+    "type": "Omit<import('frogbot').FindVersionByIDArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Count Versions#collection-count-versions",
+    "type": "Omit<import('frogbot').CountVersionsArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Restore Version#collection-restore-version",
+    "type": "Omit<import('frogbot').RestoreVersionArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Auth",
+    "type": "import('frogbot').AuthArgs"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Login",
+    "type": "Omit<import('frogbot').LoginArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Forgot Password",
+    "type": "Omit<import('frogbot').ForgotPasswordArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Reset Password",
+    "type": "Omit<import('frogbot').ResetPasswordArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Unlock",
+    "type": "Omit<import('frogbot').UnlockArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "local-api/overview",
+    "heading": "Verify",
+    "type": "Omit<import('frogbot').VerifyEmailArgs<any>, 'context' | 'depth' | 'disableErrors' | 'fallbackLocale' | 'locale' | 'overrideAccess' | 'populate' | 'req' | 'select' | 'showHiddenFields' | 'user'>"
+  },
+  {
+    "page": "pieces/discord",
+    "heading": "Connect an agent",
+    "type": "Parameters<typeof import('@frogbotai/piece-discord').createDiscord>[0]"
+  },
+  {
+    "page": "pieces/github",
+    "heading": "Connect an agent",
+    "type": "Parameters<typeof import('@frogbotai/piece-github').createGithub>[0]"
+  },
+  {
+    "page": "pieces/index",
+    "heading": "Google factory options",
+    "type": "Parameters<typeof import('@frogbotai/piece-google-sheets').createGoogleSheets>[0]"
+  },
+  {
+    "page": "pieces/linear",
+    "heading": "Connect an agent",
+    "type": "Parameters<typeof import('@frogbotai/piece-linear').createLinear>[0]"
+  },
+  {
+    "page": "pieces/overview",
+    "heading": "Factory options",
+    "type": "Parameters<ReturnType<typeof import('frogbot/pieces').definePiece>>[0]"
+  },
+  {
+    "page": "pieces/overview",
+    "heading": "Factory options",
+    "type": "import('frogbot').OAuthApp"
+  },
+  {
+    "page": "pieces/slack",
+    "heading": "Connect an agent",
+    "type": "Parameters<typeof import('@frogbotai/piece-slack').createSlack>[0]"
+  },
+  {
+    "page": "pieces/teams",
+    "heading": "Connect an agent",
+    "type": "Parameters<typeof import('@frogbotai/piece-microsoft-teams').createMicrosoftTeams>[0]"
+  },
+  {
+    "page": "pieces/telegram",
+    "heading": "Connect an agent",
+    "type": "Parameters<typeof import('@frogbotai/piece-telegram-bot').createTelegramBot>[0]"
+  },
+  {
+    "page": "pieces/triggers",
+    "heading": "Mount a trigger",
+    "type": "Exclude<NonNullable<import('frogbot').AgentConfig['triggers']>[number], import('frogbot').AgentScheduleTrigger>"
+  },
+  {
+    "page": "pieces/triggers",
+    "heading": "Runtime subscriptions",
+    "type": "import('frogbot').SubscriptionEnableProps"
+  },
+  {
+    "page": "pieces/web-search",
+    "heading": "Use a developer key",
+    "type": "Parameters<typeof import('@frogbotai/piece-brave-search').createBraveSearch>[0]"
+  },
+  {
+    "page": "plugins/api-keys",
+    "heading": "Configuration options",
+    "type": "import('@frogbotai/plugin-api-keys').ApiKeysPluginOptions"
+  },
+  {
+    "page": "plugins/audit-log",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-audit-log').AuditLogPluginOptions"
+  },
+  {
+    "page": "plugins/capture",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-capture').CapturePluginOptions"
+  },
+  {
+    "page": "plugins/import-export",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-import-export').ImportExportPluginOptions"
+  },
+  {
+    "page": "plugins/import-export",
+    "heading": "Collection entries",
+    "type": "NonNullable<import('@frogbotai/plugin-import-export').ImportExportPluginOptions['collections']>[number]"
+  },
+  {
+    "page": "plugins/import-export",
+    "heading": "Collection entries",
+    "type": "NonNullable<NonNullable<import('@frogbotai/plugin-import-export').ImportExportPluginOptions['collections']>[number]['export']>"
+  },
+  {
+    "page": "plugins/import-export",
+    "heading": "Collection entries",
+    "type": "NonNullable<NonNullable<import('@frogbotai/plugin-import-export').ImportExportPluginOptions['collections']>[number]['import']>"
+  },
+  {
+    "page": "plugins/mcp",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-mcp').McpPluginOptions"
+  },
+  {
+    "page": "plugins/mcp",
+    "heading": "Collection and global entries",
+    "type": "NonNullable<NonNullable<import('@frogbotai/plugin-mcp').McpPluginOptions['collections']>[string]> | NonNullable<NonNullable<import('@frogbotai/plugin-mcp').McpPluginOptions['globals']>[string]>"
+  },
+  {
+    "page": "plugins/mcp",
+    "heading": "Server options",
+    "type": "Pick<import('@frogbotai/plugin-mcp').McpPluginOptions, 'mcp'>"
+  },
+  {
+    "page": "plugins/nested-docs",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-nested-docs').NestedDocsPluginOptions"
+  },
+  {
+    "page": "plugins/redirects",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-redirects').RedirectsPluginOptions"
+  },
+  {
+    "page": "plugins/roles",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-roles').RolesPluginOptions"
+  },
+  {
+    "page": "plugins/sentry",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-sentry').SentryPluginOptions"
+  },
+  {
+    "page": "plugins/seo",
+    "heading": "Configure",
+    "type": "import('@frogbotai/plugin-seo').SEOPluginOptions"
+  },
+  {
+    "page": "plugins/stripe",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-stripe').StripePluginOptions"
+  },
+  {
+    "page": "plugins/stripe",
+    "heading": "Synchronization",
+    "type": "NonNullable<import('@frogbotai/plugin-stripe').StripePluginOptions['sync']>[number]"
+  },
+  {
+    "page": "plugins/usage-reports",
+    "heading": "Options",
+    "type": "import('@frogbotai/plugin-usage-reports').UsageReportsPluginOptions"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Install and types",
+    "type": "import('@frogbotai/sdk').FrogBotSDKConfig"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').FindOptions<any, any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').FindByIDOptions<any, any, any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').CountOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').CreateOptions<any, any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').UpdateOptions<any, any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').DeleteOptions<any, any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').FindVersionsOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').FindVersionByIDOptions<any, any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').RestoreVersionByIDOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').SearchOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').SearchManyOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('frogbot').SearchManyCollection"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').LoginOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').MeOptions<any, any> | import('@frogbotai/sdk').RefreshOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').ForgotPasswordOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').ResetPasswordOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "import('@frogbotai/sdk').VerifyEmailOptions<any, any>"
+  },
+  {
+    "page": "rest-api/overview",
+    "heading": "Options reference",
+    "type": "Parameters<import('@frogbotai/sdk').FrogBotSDK['request']> extends [infer P, (infer I)?] ? { path: P; init: I } : never"
+  },
+  {
+    "page": "rich-text/blocks",
+    "heading": "BlocksFeature options",
+    "type": "import('@frogbotai/richtext-lexical').BlocksFeatureProps"
+  },
+  {
+    "page": "rich-text/blocks",
+    "heading": "CodeBlock options",
+    "type": "import('@frogbotai/richtext-lexical').CodeBlockArgs"
+  },
+  {
+    "page": "rich-text/blocks",
+    "heading": "TypeScript support",
+    "type": "NonNullable<import('@frogbotai/richtext-lexical').CodeBlockArgs['typescript']>"
+  },
+  {
+    "page": "rich-text/converters",
+    "heading": "Retrieving the editor config",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').editorConfigFactory['fromEditor']>[0] | Parameters<typeof import('@frogbotai/richtext-lexical').editorConfigFactory['fromFeatures']>[0] | Parameters<typeof import('@frogbotai/richtext-lexical').editorConfigFactory['fromField']>[0] | Parameters<typeof import('@frogbotai/richtext-lexical').editorConfigFactory['fromUnsanitizedField']>[0]"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "Rich Text to HTML",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical/html').convertLexicalToHTML>[0]"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "Dynamic population",
+    "type": "Omit<Parameters<typeof import('@frogbotai/richtext-lexical/html-async').convertLexicalToHTMLAsync>[0], keyof Parameters<typeof import('@frogbotai/richtext-lexical/html').convertLexicalToHTML>[0]>"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "Dynamic population",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').getFrogBotPopulateFn>[0]"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "Dynamic population",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').getRestPopulateFn>[0]"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "HTML field",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').lexicalHTMLField>[0]"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "HTML to Rich Text",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').convertHTMLToLexical>[0]"
+  },
+  {
+    "page": "rich-text/converting-html",
+    "heading": "buildEditorState options",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').buildEditorState>[0]"
+  },
+  {
+    "page": "rich-text/converting-jsx",
+    "heading": "Internal links",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical/react').LinkJSXConverter>[0]"
+  },
+  {
+    "page": "rich-text/converting-markdown",
+    "heading": "Rich Text to Markdown",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').convertLexicalToMarkdown>[0]"
+  },
+  {
+    "page": "rich-text/converting-markdown",
+    "heading": "Markdown to Rich Text",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').convertMarkdownToLexical>[0]"
+  },
+  {
+    "page": "rich-text/converting-markdown",
+    "heading": "Defining a custom block",
+    "type": "NonNullable<import('frogbot').Block['jsx']>"
+  },
+  {
+    "page": "rich-text/converting-plaintext",
+    "heading": "Rich Text to plain text",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical/plaintext').convertLexicalToPlaintext>[0]"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Server feature",
+    "type": "import('@frogbotai/richtext-lexical').CreateServerFeatureArgs<any, any, any>"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Server feature properties",
+    "type": "import('@frogbotai/richtext-lexical').ServerFeature<any, any>"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Nodes {#server-feature-nodes}",
+    "type": "import('@frogbotai/richtext-lexical').NodeWithHooks"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Client feature",
+    "type": "import('@frogbotai/richtext-lexical').ClientFeature<any>"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Plugins",
+    "type": "NonNullable<import('@frogbotai/richtext-lexical').ClientFeature<any>['plugins']>[number]"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Toolbar groups",
+    "type": "import('@frogbotai/richtext-lexical').ToolbarGroup"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Toolbar items",
+    "type": "import('@frogbotai/richtext-lexical').ToolbarGroupItem"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Slash-menu groups",
+    "type": "import('@frogbotai/richtext-lexical').SlashMenuGroup"
+  },
+  {
+    "page": "rich-text/custom-features",
+    "heading": "Slash-menu items",
+    "type": "import('@frogbotai/richtext-lexical').SlashMenuItem"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure headings",
+    "type": "import('@frogbotai/richtext-lexical').HeadingFeatureProps"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure indentation",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').IndentFeature>[0]"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure links",
+    "type": "import('@frogbotai/richtext-lexical').LinkFeatureServerProps"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure relationships",
+    "type": "import('@frogbotai/richtext-lexical').RelationshipFeatureProps"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure files",
+    "type": "import('@frogbotai/richtext-lexical').UploadFeatureProps"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure toolbars",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').FixedToolbarFeature>[0]"
+  },
+  {
+    "page": "rich-text/official-features",
+    "heading": "Configure text state",
+    "type": "Parameters<typeof import('@frogbotai/richtext-lexical').TextStateFeature>[0]"
+  },
+  {
+    "page": "rich-text/overview",
+    "heading": "Editor options",
+    "type": "NonNullable<Parameters<typeof import('@frogbotai/richtext-lexical').lexicalEditor>[0]>"
+  },
+  {
+    "page": "rich-text/overview",
+    "heading": "Admin customization",
+    "type": "import('@frogbotai/richtext-lexical').LexicalFieldAdminProps"
+  },
+  {
+    "page": "rich-text/views",
+    "heading": "View configuration",
+    "type": "NonNullable<import('@frogbotai/richtext-lexical/client').LexicalEditorViewMap[string]>"
+  },
+  {
+    "page": "rich-text/views",
+    "heading": "Node overrides",
+    "type": "import('@frogbotai/richtext-lexical/client').NodeMapValue | NonNullable<NonNullable<import('@frogbotai/richtext-lexical/client').LexicalEditorNodeMap['blocks']>[string]>"
+  },
+  {
+    "page": "search/overview",
+    "heading": "Index options",
+    "type": "import('frogbot').SearchIndexConfig"
+  },
+  {
+    "page": "search/overview",
+    "heading": "Search options",
+    "type": "import('frogbot').SearchOptions"
+  },
+  {
+    "page": "search/overview",
+    "heading": "Search many options",
+    "type": "import('frogbot').SearchManyOptions"
+  },
+  {
+    "page": "search/overview",
+    "heading": "Collection entries",
+    "type": "import('frogbot').SearchManyCollection"
+  },
+  {
+    "page": "typescript/generating-types",
+    "heading": "Type generation options",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['typescript']>"
+  },
+  {
+    "page": "upload/overview",
+    "heading": "Collection Upload Options",
+    "type": "Extract<NonNullable<import('frogbot').CollectionConfig['upload']>, object>"
+  },
+  {
+    "page": "upload/overview",
+    "heading": "FrogBot-wide Upload Options",
+    "type": "NonNullable<import('frogbot').FrogBotConfig['upload']>"
+  },
+  {
+    "page": "upload/overview",
+    "heading": "Upload limits",
+    "type": "NonNullable<NonNullable<import('frogbot').FrogBotConfig['upload']>['limits']>"
+  },
+  {
+    "page": "upload/overview",
+    "heading": "Image size options",
+    "type": "NonNullable<import('frogbot').UploadConfig['imageSizes']>[number]"
+  },
+  {
+    "page": "upload/overview",
+    "heading": "Admin List View Options",
+    "type": "NonNullable<NonNullable<import('frogbot').UploadConfig['imageSizes']>[number]['admin']>"
+  },
+  {
+    "page": "upload/overview",
+    "heading": "`AllowItem` Properties",
+    "type": "Extract<NonNullable<import('frogbot').UploadConfig['skipSafeFetch']>, unknown[]>[number]"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Configuration Options#vercel-blob-configuration",
+    "type": "Omit<import('@frogbotai/storage-vercel-blob').VercelBlobStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Configuration Options#s3-configuration",
+    "type": "Omit<import('@frogbotai/storage-s3').S3StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Signed downloads",
+    "type": "Extract<NonNullable<import('@frogbotai/storage-s3').S3StorageOptions['signedDownloads']>, object>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Configuration Options#azure-configuration",
+    "type": "Omit<import('@frogbotai/storage-azure').AzureStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Configuration Options#gcs-configuration",
+    "type": "Omit<import('@frogbotai/storage-gcs').GcsStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Configuration Options#uploadthing-configuration",
+    "type": "Omit<import('@frogbotai/storage-uploadthing').UploadthingStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Configuration Options#r2-configuration",
+    "type": "Omit<import('@frogbotai/storage-r2').R2StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Shared storage options",
+    "type": "Pick<import('@frogbotai/storage-s3').S3StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
+  },
+  {
+    "page": "upload/storage-adapters",
+    "heading": "Collection-specific options",
+    "type": "Exclude<NonNullable<NonNullable<import('@frogbotai/storage-s3').S3StorageOptions['collections']>[string]>, boolean>"
+  },
+  {
+    "page": "versions/autosave",
+    "heading": "Options",
+    "type": "Extract<NonNullable<Extract<NonNullable<Extract<NonNullable<import('frogbot').CollectionConfig['versions']>, object>['drafts']>, object>['autosave']>, object>"
+  },
+  {
+    "page": "versions/drafts",
+    "heading": "Scheduled publish",
+    "type": "Extract<NonNullable<Extract<NonNullable<Extract<NonNullable<import('frogbot').CollectionConfig['versions']>, object>['drafts']>, object>['schedulePublish']>, object>"
+  },
+  {
+    "page": "versions/overview",
+    "heading": "Collection config",
+    "type": "Extract<NonNullable<import('frogbot').CollectionConfig['versions']>, object>"
+  }
+]

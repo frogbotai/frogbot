@@ -12,4 +12,4 @@ export default buildConfig({
 });
 ```
 
-This package delegates to `@payloadcms/plugin-redirects` and preserves its collection targets, redirect types, field override, and collection override options.
+It supports collection targets, redirect types, and field and collection overrides.
