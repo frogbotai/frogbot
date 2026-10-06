@@ -72,14 +72,14 @@ async function failedAdvance() {
   const fixture = channelFixture({ questions: hooks });
 
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
-  fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' } as never);
+  fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' });
 
   await fixture.host.initialize(false);
   await fixture.deliver();
 
   listPendingCalls.mockResolvedValueOnce([pendingCall]);
 
-  await fixture.host.run(fixture.inputs[0]!);
+  await fixture.host.run(fixture.inputs[0]);
 
   hooks.updated.mockRejectedValueOnce(new Error('Slack is down'));
 

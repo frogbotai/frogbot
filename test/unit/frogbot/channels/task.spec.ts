@@ -9,7 +9,7 @@ import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instan
 
 describe('channel jobs', () => {
   it('fails instead of completing work without its runtime or host', async () => {
-    const task = resolveChannelTask().tasks![0]!;
+    const task = resolveChannelTask().tasks![0];
     const payload = {};
 
     if (typeof task.handler !== 'function') throw new Error('Missing task handler');

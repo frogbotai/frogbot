@@ -246,7 +246,7 @@ describe('RecentsSection', () => {
       ['Previous 30 days', ['seven', 'thirty-after']],
       ['Older', ['thirty']],
     ]);
-    expect(bucketRecents([docs[0]!], now).map(({ label }) => label)).toEqual(['Today']);
+    expect(bucketRecents([docs[0]], now).map(({ label }) => label)).toEqual(['Today']);
   });
 
   it('renders nonempty groups in order and tracks the active admin route', async () => {

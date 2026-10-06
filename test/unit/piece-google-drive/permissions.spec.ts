@@ -26,7 +26,7 @@ describe('Google Drive permissions', () => {
       expect(requests[0]?.url.pathname).toBe('/drive/v3/files/file/permissions');
       expect(requests[0]?.url.searchParams.get('sendNotificationEmail')).toBe('true');
       expect(requests[0]?.url.searchParams.get('supportsAllDrives')).toBe('true');
-      expect(JSON.parse(requests[0]!.body.toString())).toEqual({
+      expect(JSON.parse(requests[0].body.toString())).toEqual({
         type: 'user',
         emailAddress: 'user@example.com',
         role,
@@ -118,7 +118,7 @@ describe('Google Drive permissions', () => {
       });
       expect(result.permission).toEqual({ id: 'public', type: 'anyone', role: 'reader' });
       expect(result.webViewLink).toBe('https://drive.google.com/view/file');
-      expect(JSON.parse(requests[0]!.body.toString())).toEqual({
+      expect(JSON.parse(requests[0].body.toString())).toEqual({
         type: 'anyone',
         role: 'reader',
         allowFileDiscovery: false,
@@ -128,7 +128,7 @@ describe('Google Drive permissions', () => {
         expect(create).not.toHaveBeenCalled();
       } else {
         expect(result.download).toMatchObject({ id: 'saved', name: 'report.txt', size: 14 });
-        expect(create.mock.calls[0]![0].file.data).toEqual(Buffer.from('public content'));
+        expect(create.mock.calls[0][0].file.data).toEqual(Buffer.from('public content'));
       }
       expect(
         requests.every(({ url }) => url.searchParams.get('supportsAllDrives') === 'true'),

@@ -272,7 +272,7 @@ export default {
       const found = failureAlert({
         title: info.title ?? sessionID,
         root: !info.parentID,
-        error: error as { type?: string; message?: string } | undefined,
+        error,
       });
 
       if (!found || !alerts(found, Date.now())) return;

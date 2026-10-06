@@ -378,7 +378,7 @@ describe('Chat', () => {
     });
     vi.mocked(emitChatMutation).mockClear();
 
-    state.options?.onFinish?.({} as never);
+    state.options?.onFinish?.({});
     expect(emitChatMutation).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(2_500);
     expect(emitChatMutation).toHaveBeenCalledOnce();

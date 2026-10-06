@@ -28,11 +28,11 @@ describe('chat persistence: chat context', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
-    owner = (await booted.frogbot.create({
+    owner = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
   });
 
   afterEach(() => {
@@ -109,7 +109,7 @@ describe('chat persistence: chat context', () => {
 
     const chat = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: result.chatId!,
+      id: result.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { agent: string; user: number | string };
@@ -139,7 +139,7 @@ describe('chat persistence: chat context', () => {
 
     const chat = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { user: null };
@@ -249,7 +249,7 @@ describe('chat persistence: chat context', () => {
     });
     await persistAssistantMessage({
       req,
-      chatId: chatId!,
+      chatId,
       message: {
         id: 'edit-assistant-1',
         role: 'assistant',
@@ -293,7 +293,7 @@ describe('chat persistence: chat context', () => {
 
     await persistAssistantMessage({
       req,
-      chatId: chatId!,
+      chatId,
       message: {
         id: 'assistant-portable-id',
         role: 'assistant',
@@ -305,7 +305,7 @@ describe('chat persistence: chat context', () => {
     });
     await persistAssistantMessage({
       req,
-      chatId: chatId!,
+      chatId,
       message: {
         id: 'assistant-portable-id',
         role: 'assistant',
@@ -325,7 +325,7 @@ describe('chat persistence: chat context', () => {
 
     const chat = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: chatId!,
+      id: chatId,
       depth: 0,
       overrideAccess: true,
     })) as { lastMessageAt?: string };
@@ -350,19 +350,19 @@ describe('chat persistence: chat context', () => {
 
     await persistAssistantMessage({
       req,
-      chatId: first.chatId!,
+      chatId: first.chatId,
       message: assistant,
     });
     await generateChatTitle({
       req,
-      chatId: first.chatId!,
+      chatId: first.chatId,
       history: first.uiMessages,
       mainModel: 'test/gpt-4.1-mini',
       assistantMessage: assistant,
     });
     const titled = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { title?: string | null };
@@ -370,14 +370,14 @@ describe('chat persistence: chat context', () => {
 
     await generateChatTitle({
       req,
-      chatId: first.chatId!,
+      chatId: first.chatId,
       history: [...first.uiMessages, assistant, userMessage('And when?', 'title-user-2')],
       mainModel: 'test/gpt-4.1-mini',
       assistantMessage: { ...assistant, id: 'title-assistant-2' },
     });
     const named = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { title?: string | null };
@@ -385,20 +385,20 @@ describe('chat persistence: chat context', () => {
 
     await booted.frogbot.update({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       data: { title: 'My Frog Notes' },
       overrideAccess: true,
     });
     await generateChatTitle({
       req,
-      chatId: first.chatId!,
+      chatId: first.chatId,
       history: [userMessage('Fresh first prompt', 'title-user-3')],
       mainModel: 'test/gpt-4.1-mini',
       assistantMessage: { ...assistant, id: 'title-assistant-3' },
     });
     const renamed = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { title?: string | null };
@@ -414,7 +414,7 @@ describe('chat persistence: chat context', () => {
       tools: {},
     });
 
-    expect(await chatTitle(chatId!)).toBe('Why do frogs sing at night?');
+    expect(await chatTitle(chatId)).toBe('Why do frogs sing at night?');
   });
 
   it('cuts a long first message to a 48-character title ending in an ellipsis', async () => {
@@ -427,7 +427,7 @@ describe('chat persistence: chat context', () => {
       tools: {},
     });
 
-    const title = await chatTitle(chatId!);
+    const title = await chatTitle(chatId);
 
     expect(title).toBe('How do frogs survive the winter under the ice o…');
     expect(title).toHaveLength(48);
@@ -443,7 +443,7 @@ describe('chat persistence: chat context', () => {
       tools: {},
     });
 
-    expect(await chatTitle(chatId!)).toBeFalsy();
+    expect(await chatTitle(chatId)).toBeFalsy();
   });
 
   it('replaces the placeholder with the generated title', async () => {
@@ -456,9 +456,9 @@ describe('chat persistence: chat context', () => {
       tools: {},
     });
 
-    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+    await nameChat({ chatId: first.chatId, history: first.uiMessages });
 
-    expect(await chatTitle(first.chatId!)).toBe('Singing Frogs');
+    expect(await chatTitle(first.chatId)).toBe('Singing Frogs');
   });
 
   it('keeps the placeholder when title generation fails', async () => {
@@ -471,9 +471,9 @@ describe('chat persistence: chat context', () => {
       tools: {},
     });
 
-    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+    await nameChat({ chatId: first.chatId, history: first.uiMessages });
 
-    expect(await chatTitle(first.chatId!)).toBe('Why do frogs sing at night?');
+    expect(await chatTitle(first.chatId)).toBe('Why do frogs sing at night?');
   });
 
   it('keeps a rename made before title generation starts', async () => {
@@ -488,14 +488,14 @@ describe('chat persistence: chat context', () => {
 
     await booted.frogbot.update({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       data: { title: 'My Frog Notes' },
       overrideAccess: true,
     });
 
-    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+    await nameChat({ chatId: first.chatId, history: first.uiMessages });
 
-    expect(await chatTitle(first.chatId!)).toBe('My Frog Notes');
+    expect(await chatTitle(first.chatId)).toBe('My Frog Notes');
   });
 
   it('keeps a rename made while the title is being generated', async () => {
@@ -509,7 +509,7 @@ describe('chat persistence: chat context', () => {
     vi.spyOn(booted.frogbot, 'generateText').mockImplementation(async () => {
       await booted.frogbot.update({
         collection: chatsSlug,
-        id: first.chatId!,
+        id: first.chatId,
         data: { title: 'My Frog Notes' },
         overrideAccess: true,
       });
@@ -517,9 +517,9 @@ describe('chat persistence: chat context', () => {
       return { text: 'Singing Frogs' } as never;
     });
 
-    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+    await nameChat({ chatId: first.chatId, history: first.uiMessages });
 
-    expect(await chatTitle(first.chatId!)).toBe('My Frog Notes');
+    expect(await chatTitle(first.chatId)).toBe('My Frog Notes');
   });
 
   it('replaces a rename that exactly matches the placeholder text', async () => {
@@ -534,14 +534,14 @@ describe('chat persistence: chat context', () => {
 
     await booted.frogbot.update({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       data: { title: 'Why do frogs sing at night?' },
       overrideAccess: true,
     });
 
-    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+    await nameChat({ chatId: first.chatId, history: first.uiMessages });
 
-    expect(await chatTitle(first.chatId!)).toBe('Singing Frogs');
+    expect(await chatTitle(first.chatId)).toBe('Singing Frogs');
   });
 
   it('keeps the old placeholder when the first message is edited after generation failed', async () => {
@@ -556,11 +556,11 @@ describe('chat persistence: chat context', () => {
       tools: {},
     });
 
-    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+    await nameChat({ chatId: first.chatId, history: first.uiMessages });
 
     await persistAssistantMessage({
       req: await makeOwnerReq(),
-      chatId: first.chatId!,
+      chatId: first.chatId,
       message: assistantReply('placeholder-edit-reply'),
     });
 
@@ -574,9 +574,9 @@ describe('chat persistence: chat context', () => {
 
     generateText.mockResolvedValue({ text: 'Singing Frogs' } as never);
 
-    await nameChat({ chatId: first.chatId!, history: edited.uiMessages });
+    await nameChat({ chatId: first.chatId, history: edited.uiMessages });
 
-    expect(await chatTitle(first.chatId!)).toBe('Original question');
+    expect(await chatTitle(first.chatId)).toBe('Original question');
   });
 
   it('saves the placeholder on the first turn of an existing untitled chat', async () => {

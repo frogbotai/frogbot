@@ -371,7 +371,7 @@ describe('FrogBot SDK against a running app', () => {
         init,
       );
 
-      const first = versions.docs[0]!;
+      const first = versions.docs[0];
       const version = await sdk.findVersionByID({ collection: pagesSlug, id: first.id }, init);
       const restored = await sdk.restoreVersion({ collection: pagesSlug, id: first.id }, init);
       const current = await sdk.findByID({ collection: pagesSlug, id: page.id });

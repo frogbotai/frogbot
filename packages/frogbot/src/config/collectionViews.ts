@@ -129,7 +129,7 @@ export function compileCollectionViews({
       );
     }
     slugs.add(slug);
-    return { ...view, slug } as CollectionView;
+    return { ...view, slug };
   });
 
   const fullPage = views.find((view) => view.type === 'custom' && view.shell === false);
@@ -183,7 +183,7 @@ export function compileCollectionViews({
 
   for (const view of views) {
     const isDefault = view === views[0];
-    const key = isDefault ? 'list' : (view.slug as string);
+    const key = isDefault ? 'list' : view.slug;
     const path = isDefault ? '' : `/${view.slug}`;
     const { access: _access, components, filter: _filter, ...clientView } = view;
     const { component: _component, ...safeView } = clientView as typeof clientView & {
@@ -192,10 +192,10 @@ export function compileCollectionViews({
     metadata.push({
       ...safeView,
       label: view.label ?? labelFor(view.type),
-      ...(view.type === 'board' ? { orderField: getBoardOrderFieldName(view.slug as string) } : {}),
+      ...(view.type === 'board' ? { orderField: getBoardOrderFieldName(view.slug) } : {}),
       path,
-      slug: view.slug as string,
-    } as CollectionViewMetadata);
+      slug: view.slug,
+    });
 
     if (view.type === 'board') {
       runtimeViews[key] = {
@@ -267,5 +267,5 @@ export function compileCollectionViews({
         views: metadata,
       },
     },
-  } as CollectionConfig['admin'];
+  };
 }

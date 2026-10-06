@@ -73,7 +73,7 @@ function numberField(
       admin: { custom: { frogbot: { kind } } },
     } as ClientField & NumberFieldClientProps['field'],
     path: name,
-  } as NumberFieldClientProps;
+  };
 }
 
 const percentProps = numberField('progress', 'Progress', { type: 'percent', precision: 1 });

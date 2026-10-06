@@ -71,7 +71,7 @@ async function listSubscriptions({ frogbot }: TriggerState): Promise<Subscriptio
     collection: TRIGGER_SUBSCRIPTIONS_SLUG,
     pagination: false,
     overrideAccess: true,
-  } as never);
+  });
 
   return result.docs as Subscription[];
 }
@@ -321,7 +321,7 @@ async function enableSubscription(
         attempt,
         state,
         compensated: false,
-        disable: () => trigger.onDisable({ ...context, state: state as never }),
+        disable: () => trigger.onDisable({ ...context, state }),
       },
       signal,
     });
@@ -489,9 +489,9 @@ async function cleanup(
   signal.throwIfAborted();
 
   await trigger.onDisable({
-    input: input as never,
-    state: subscription.state as never,
-    client: client as never,
+    input,
+    state: subscription.state,
+    client,
     options: runtime.options as never,
     req,
   });
@@ -537,7 +537,7 @@ async function write(
   const args = { collection: TRIGGER_SUBSCRIPTIONS_SLUG, data, overrideAccess: true };
   const result =
     id === undefined
-      ? await triggers.frogbot.create(args as never)
+      ? await triggers.frogbot.create(args)
       : await triggers.frogbot.update({ ...args, id } as never);
 
   signal.throwIfAborted();

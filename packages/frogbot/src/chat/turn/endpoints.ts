@@ -230,5 +230,5 @@ async function validateParts({
     agent.aiAgent.tools as never,
   );
 
-  return validated!.parts;
+  return validated.parts;
 }

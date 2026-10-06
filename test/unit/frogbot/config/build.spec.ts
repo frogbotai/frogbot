@@ -341,7 +341,7 @@ describe('frogbot buildConfig', () => {
       const result = await buildConfig(config);
       const payloadConfig = await result._internal.payloadConfig;
       const users = payloadConfig.collections.find((collection) => collection.slug === 'users')!;
-      const adapted = users.auth.strategies[0]!;
+      const adapted = users.auth.strategies[0];
       const payload = {};
       const frogbot = { config: result } as FrogBot;
 
@@ -377,7 +377,7 @@ describe('frogbot buildConfig', () => {
     ])('preserves %s app onInit and appends the warning last', async (_name, appOnInit) => {
       const calls: string[] = [];
       const callbacks = Array.isArray(appOnInit) ? appOnInit : [appOnInit];
-      callbacks[0]!.mockImplementation(() => calls.push('app'));
+      callbacks[0].mockImplementation(() => calls.push('app'));
       const result = await buildConfig(
         makeConfig({
           collections: [{ slug: 'posts', fields: [] }],

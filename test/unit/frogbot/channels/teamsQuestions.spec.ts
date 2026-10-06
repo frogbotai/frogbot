@@ -162,7 +162,7 @@ describe('Teams native questions through the channel host', () => {
 
     expect(card).toMatchObject({ conversationId: '19:general@thread.tacv2;messageid=1000' });
     expect(cardOf(card)).toMatchObject({ type: 'AdaptiveCard', version: '1.5' });
-    expect(cardInputs(card)[0]!.choices).toEqual([
+    expect(cardInputs(card)[0].choices).toEqual([
       { title: 'Red, barn — Classic', value: '0' },
       { title: 'Blue', value: '1' },
       { title: 'White', value: '2' },
@@ -174,7 +174,7 @@ describe('Teams native questions through the channel host', () => {
     );
 
     expect(record).toMatchObject({
-      messages: [{ id: card!.sentId, postedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) }],
+      messages: [{ id: card.sentId, postedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) }],
       revision: 0,
     });
 
@@ -198,7 +198,7 @@ describe('Teams native questions through the channel host', () => {
       expect.objectContaining({ author: expect.objectContaining({ email: 'grace@example.com' }) }),
     );
     expect(settleClientToolCall).toHaveBeenCalledOnce();
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: ['Red, barn'] }] } },
       actor: {
         user: { id: 'user:grace@example.com', collection: 'users' },
@@ -362,7 +362,7 @@ describe('Teams native questions through the channel host', () => {
       toolCallId: 'call-1',
     });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
     expect(JSON.stringify(cardOf(server.updates()[0]))).toContain('Dismissed by Grace Hopper');
     expect(fixture.inputs.filter(({ kind }) => kind === 'continue')).toEqual([]);
 
@@ -413,7 +413,7 @@ describe('Teams native questions through the channel host', () => {
       toolCallId: 'call-1',
     });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
     expect(JSON.stringify(cardOf(server.updates()[0]))).toContain('Dismissed by Grace Hopper');
 
     await fixture.host.shutdown();
@@ -461,7 +461,7 @@ describe('Teams native questions through the channel host', () => {
       );
       await fixture.host.run(JSON.parse(JSON.stringify(fixture.inputs[0])));
 
-      expect(fixture.streamMessage.mock.calls[0]![0].clientTools).toEqual({ kinds: ['question'] });
+      expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
 
       await fixture.host.shutdown();
     },

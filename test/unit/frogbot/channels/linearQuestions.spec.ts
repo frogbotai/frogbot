@@ -94,7 +94,7 @@ function linearFixture({ mode = 'agent-sessions' }: { mode?: 'agent-sessions' | 
   });
 
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
-  fixture.identity.mockResolvedValue({ id: 'user-2', collection: 'users' } as never);
+  fixture.identity.mockResolvedValue({ id: 'user-2', collection: 'users' });
 
   return fixture;
 }
@@ -130,7 +130,7 @@ async function prompt(
 
   const queued = fixture.inputs.length;
 
-  await fixture.host.run(clone(inputs[0]!));
+  await fixture.host.run(clone(inputs[0]));
 
   return { activities: api.activities.slice(activities), queued: fixture.inputs.slice(queued) };
 }
@@ -148,7 +148,7 @@ async function asked({ calls = [pendingCall()] }: { calls?: PendingCall[] } = {}
 
   listPendingCalls.mockResolvedValueOnce(calls);
 
-  await fixture.host.run(clone(inputs[0]!));
+  await fixture.host.run(clone(inputs[0]));
 
   return fixture;
 }
@@ -176,7 +176,7 @@ describe('Linear questions through the channel host', () => {
   it('offers the question tool in a session and posts only the elicitation for a question-only step', async () => {
     const fixture = await asked();
 
-    expect(fixture.streamMessage.mock.calls[0]![0].clientTools).toEqual({ kinds: ['question'] });
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
     expect(api.activities).toEqual([
       {
         id: 'activity-1',
@@ -203,7 +203,7 @@ describe('Linear questions through the channel host', () => {
     const { activities, queued } = await prompt(fixture, { body: 'Blue' });
 
     expect(settleClientToolCall).toHaveBeenCalledOnce();
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       chatId: 'chat-1',
       toolCallId: 'call-1',
       outcome: { output: { answers: [{ header: 'Color', selected: ['Blue'] }] } },
@@ -230,9 +230,9 @@ describe('Linear questions through the channel host', () => {
 
     continueTurn.mockResolvedValueOnce(textTurn('Painting it blue.'));
 
-    await fixture.host.run(clone(queued[0]!));
+    await fixture.host.run(clone(queued[0]));
 
-    expect(continueTurn.mock.calls[0]![0].clientTools).toEqual({ kinds: ['question'] });
+    expect(continueTurn.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });
     expect(api.sessionActivities('session-1').at(-1)?.input.content).toEqual({
       type: 'response',
       body: 'Painting it blue.',
@@ -243,12 +243,12 @@ describe('Linear questions through the channel host', () => {
 
   it('settles numbered choices on a multi-select question with exact labels', async () => {
     const fixture = await asked({
-      calls: [pendingCall({ input: { questions: [{ ...color.questions[0]!, multiple: true }] } })],
+      calls: [pendingCall({ input: { questions: [{ ...color.questions[0], multiple: true }] } })],
     });
 
     await prompt(fixture, { body: '3, 1' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: ['Red', 'Green'] }] },
     });
 
@@ -260,7 +260,7 @@ describe('Linear questions through the channel host', () => {
 
     await prompt(fixture, { body: 'A deep purple' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: [], custom: 'A deep purple' }] },
     });
 
@@ -272,7 +272,7 @@ describe('Linear questions through the channel host', () => {
 
     const { activities, queued } = await prompt(fixture, { body: '', signal: 'stop' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
     expect(activities.map(({ input }) => input.content)).toEqual([
       { type: 'response', body: 'Stopped. Toad dismissed the question.' },
     ]);
@@ -308,8 +308,8 @@ describe('Linear questions through the channel host', () => {
     const { activities, queued } = await prompt(fixture, { body: 'Red' });
 
     expect(activities).toHaveLength(1);
-    expect(activities[0]!.input).toMatchObject({ signal: 'select' });
-    expect(activities[0]!.input.content.body).toMatch(/^> Toad can't answer this question/);
+    expect(activities[0].input).toMatchObject({ signal: 'select' });
+    expect(activities[0].input.content.body).toMatch(/^> Toad can't answer this question/);
     expect(queued).toEqual([]);
 
     await fixture.host.shutdown();
@@ -323,7 +323,7 @@ describe('Linear questions through the channel host', () => {
     const { activities } = await prompt(fixture, { body: 'Red', user: frog });
 
     expect(settleClientToolCall).not.toHaveBeenCalled();
-    expect(activities[0]!.input.content.body).toMatch(
+    expect(activities[0].input.content.body).toMatch(
       /^> Frog can't answer this question without access to this agent\. It is still open\./,
     );
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
@@ -333,7 +333,7 @@ describe('Linear questions through the channel host', () => {
 
   it('asks again with the reason when a typed reply is not allowed, and consumes it', async () => {
     const fixture = await asked({
-      calls: [pendingCall({ input: { questions: [{ ...color.questions[0]!, custom: false }] } })],
+      calls: [pendingCall({ input: { questions: [{ ...color.questions[0], custom: false }] } })],
     });
 
     const { activities, queued } = await prompt(fixture, { body: 'Purple' });
@@ -341,7 +341,7 @@ describe('Linear questions through the channel host', () => {
     expect(settleClientToolCall).not.toHaveBeenCalled();
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
     expect(queued).toEqual([]);
-    expect(activities[0]!.input.content.body).toMatch(
+    expect(activities[0].input.content.body).toMatch(
       /^> Reply to “Color” with one of the options\.\n\n\*\*Color\*\*/,
     );
 
@@ -356,7 +356,7 @@ describe('Linear questions through the channel host', () => {
 
     await prompt(fixture, { body: 'Blue' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: ['Blue'] }] },
     });
 
@@ -371,7 +371,7 @@ describe('Linear questions through the channel host', () => {
     const { activities } = await prompt(fixture, { body: '', signal: 'stop', user: frog });
 
     expect(settleClientToolCall).not.toHaveBeenCalled();
-    expect(activities[0]!.input.content.body).toMatch(/^> Frog can't answer this question/);
+    expect(activities[0].input.content.body).toMatch(/^> Frog can't answer this question/);
 
     await fixture.host.shutdown();
   });
@@ -457,7 +457,7 @@ describe('Linear questions through the channel host', () => {
     const followUp = await prompt(fixture, { body: 'Also make it round' });
 
     expect(fixture.streamMessage).toHaveBeenCalledTimes(2);
-    expect(fixture.streamMessage.mock.calls[1]![0].messages[0]!.parts).toEqual([
+    expect(fixture.streamMessage.mock.calls[1][0].messages[0].parts).toEqual([
       { type: 'text', text: 'Also make it round' },
     ]);
     expect(followUp.activities.map(({ input }) => input.content)).toEqual([
@@ -491,18 +491,18 @@ describe('Linear questions through the channel host', () => {
     const fixture = await asked({ calls: [first, second] });
 
     expect(api.activities).toHaveLength(1);
-    expect(api.activities[0]!.input.content.body).toContain('**Color**');
+    expect(api.activities[0].input.content.body).toContain('**Color**');
 
     settleClientToolCall.mockResolvedValueOnce({ status: 'settled', part: {}, allSettled: false });
     listPendingCalls.mockResolvedValueOnce([second]);
 
     const answered = await prompt(fixture, { body: 'Red' });
 
-    expect(settleClientToolCall.mock.calls[0]![0].toolCallId).toBe('call-a');
+    expect(settleClientToolCall.mock.calls[0][0].toolCallId).toBe('call-a');
     expect(answered.queued).toEqual([]);
     expect(answered.activities).toHaveLength(1);
-    expect(answered.activities[0]!.input.content.body).toContain('**Size**');
-    expect(answered.activities[0]!.input.signalMetadata?.options).toEqual([
+    expect(answered.activities[0].input.content.body).toContain('**Size**');
+    expect(answered.activities[0].input.signalMetadata?.options).toEqual([
       { label: 'Small', value: 'Small' },
       { label: 'Large', value: 'Large' },
     ]);
@@ -525,7 +525,7 @@ describe('Linear questions through the channel host', () => {
 
     const last = await prompt(fixture, { body: 'Large' });
 
-    expect(settleClientToolCall.mock.calls[1]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[1][0]).toMatchObject({
       toolCallId: 'call-b',
       outcome: { output: { answers: [{ header: 'Size', selected: ['Large'] }] } },
     });
@@ -546,10 +546,10 @@ describe('Linear questions through the channel host', () => {
       commentCreated({ body: '@frogbot pick a color', id: 'comment-9', user: frog }),
     );
 
-    await fixture.host.run(clone(inputs[0]!));
+    await fixture.host.run(clone(inputs[0]));
 
-    expect(inputs[0]!.thread.id).toBe('linear:issue-1:c:comment-9');
-    expect(fixture.streamMessage.mock.calls[0]![0].clientTools).toEqual({ kinds: [] });
+    expect(inputs[0].thread.id).toBe('linear:issue-1:c:comment-9');
+    expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: [] });
     expect(api.activities).toEqual([]);
 
     await fixture.host.shutdown();

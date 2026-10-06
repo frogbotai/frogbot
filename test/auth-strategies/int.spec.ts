@@ -88,8 +88,8 @@ describe('auth strategies', () => {
 
     expect(response.body.user?.id).toBe(user.id);
     expect(strategyCalls).toHaveLength(1);
-    expect(strategyCalls[0]!.frogbot).toBe(booted.frogbot);
-    expect(strategyCalls[0]!.requestFrogBot).toBe(booted.frogbot);
+    expect(strategyCalls[0].frogbot).toBe(booted.frogbot);
+    expect(strategyCalls[0].requestFrogBot).toBe(booted.frogbot);
     expect(strategyCalls[0]).not.toHaveProperty('payload');
   });
 
@@ -112,8 +112,8 @@ describe('auth strategies', () => {
     expect(body.errors).toBeUndefined();
     expect(body.data.meUser.user).toEqual({ id: user.id, email: null });
     expect(strategyCalls).toHaveLength(1);
-    expect(strategyCalls[0]!.isGraphQL).toBe(true);
-    expect(strategyCalls[0]!.requestFrogBot).toBe(booted.frogbot);
+    expect(strategyCalls[0].isGraphQL).toBe(true);
+    expect(strategyCalls[0].requestFrogBot).toBe(booted.frogbot);
   });
 
   it('GET /api/users/me logs a broken strategy and authenticates with the next strategy', async () => {

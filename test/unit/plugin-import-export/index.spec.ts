@@ -90,8 +90,8 @@ describe('importExportPlugin', () => {
       });
 
       expect(queue).toHaveBeenCalledOnce();
-      expect(queue.mock.calls[0]![0]).toMatchObject({ task: 'createCollectionImport', req });
-      expect(queue.mock.calls[0]![0].req).toBe(req);
+      expect(queue.mock.calls[0][0]).toMatchObject({ task: 'createCollectionImport', req });
+      expect(queue.mock.calls[0][0].req).toBe(req);
     },
   );
 
@@ -109,8 +109,8 @@ describe('importExportPlugin', () => {
       });
 
       expect(queue).toHaveBeenCalledOnce();
-      expect(queue.mock.calls[0]![0]).toMatchObject({ task: 'createCollectionExport', req });
-      expect(queue.mock.calls[0]![0].req).toBe(req);
+      expect(queue.mock.calls[0][0]).toMatchObject({ task: 'createCollectionExport', req });
+      expect(queue.mock.calls[0][0].req).toBe(req);
     },
   );
 

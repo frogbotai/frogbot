@@ -34,7 +34,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   };
   const claims = (token: string) =>
-    JSON.parse(Buffer.from(token.split('.')[1]!, 'base64url').toString());
+    JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
   const readUser = () =>
     payload.db.findOne<TypedUser>({ collection: 'members', where: { id: { equals: userId } } });
   const writeUser = (data: Record<string, unknown>) =>
@@ -180,12 +180,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     });
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
     payload = await getPayload({ config: await getPayloadConfig(config) });
-    initialHooks = { ...payload.collections.members!.config.hooks };
+    initialHooks = { ...payload.collections.members.config.hooks };
   });
 
   beforeEach(async () => {
     vi.restoreAllMocks();
-    const collection = payload.collections.members!.config;
+    const collection = payload.collections.members.config;
     collection.hooks = { ...initialHooks };
     collection.hooks.beforeLogin = [];
     collection.hooks.afterLogin = [];
@@ -274,7 +274,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   });
 
   it('enforces hidden locks even when attempt tracking is disabled', async () => {
-    payload.collections.members!.config.auth.maxLoginAttempts = 0;
+    payload.collections.members.config.auth.maxLoginAttempts = 0;
     await writeUser({ lockUntil: new Date(Date.now() + 60_000).toISOString() });
     await expect(issue()).rejects.toMatchObject({ name: 'LockedAuth' });
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
@@ -317,7 +317,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   });
 
   it('runs login hooks sequentially and pins identity through replacement and in-place mutation', async () => {
-    const hooks = payload.collections.members!.config.hooks;
+    const hooks = payload.collections.members.config.hooks;
     const order: string[] = [];
     const original = await readUser();
     hooks.beforeLogin = [
@@ -351,7 +351,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         order.push('after-1');
         expect(req.user).toBe(user);
         expect(user).toMatchObject({ id: userId, collection: 'members', _strategy: 'local-jwt' });
-        expect(claims(token!)).toMatchObject({
+        expect(claims(token)).toMatchObject({
           id: userId,
           collection: 'members',
           claim: 'from-hook',
@@ -386,7 +386,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       const otherSession = { ...priorSession, id: `another-session-${sequence}` };
       const previousUser = { id: 'previous-user', collection: 'customers' };
       req.user = previousUser;
-      payload.collections.members!.config.hooks[phase] = [
+      payload.collections.members.config.hooks[phase] = [
         async ({ user, req }) => {
           const current = await readUser();
           await writeUser({ sessions: [...current!.sessions!, otherSession] });
@@ -408,10 +408,8 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('revokes the new SID when signing fails', async () => {
     const afterLogin = vi.fn();
-    payload.collections.members!.config.hooks.beforeLogin = [
-      ({ user }) => ({ ...user, claim: 1n }),
-    ];
-    payload.collections.members!.config.hooks.afterLogin = [afterLogin];
+    payload.collections.members.config.hooks.beforeLogin = [({ user }) => ({ ...user, claim: 1n })];
+    payload.collections.members.config.hooks.afterLogin = [afterLogin];
 
     await expect(issue()).rejects.toThrow();
 
@@ -435,13 +433,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   });
 
   it('sets request identity and runs hooks without sessions', async () => {
-    payload.collections.members!.config.auth.useSessions = false;
+    payload.collections.members.config.auth.useSessions = false;
     const afterLogin = vi.fn(({ user, req }) => {
       expect(req.user).toBe(user);
       expect(user).toMatchObject({ id: userId, collection: 'members', _strategy: 'local-jwt' });
       return { ...user, name: 'Stateless' };
     });
-    payload.collections.members!.config.hooks.afterLogin = [afterLogin];
+    payload.collections.members.config.hooks.afterLogin = [afterLogin];
     const update = vi.spyOn(payload.db, 'updateOne');
 
     const result = await issue();
@@ -459,7 +457,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const extend = vi.spyOn(frogbot.kv, 'extendLock');
     let active = 0;
     let maximum = 0;
-    payload.collections.members!.config.hooks.beforeLogin = [
+    payload.collections.members.config.hooks.beforeLogin = [
       async ({ user }) => {
         active++;
         maximum = Math.max(maximum, active);
@@ -548,7 +546,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     ]);
     expect(stored?.sessions?.[0]?.expiresAt).not.toEqual(priorSession.expiresAt);
 
-    const storedExp = Math.floor(new Date(stored!.sessions![0]!.expiresAt).getTime() / 1000);
+    const storedExp = Math.floor(new Date(stored!.sessions![0].expiresAt).getTime() / 1000);
 
     expect(storedExp).toBeLessThanOrEqual(refreshed.exp);
     expect(storedExp).toBeGreaterThan(refreshed.exp - 5);
@@ -566,7 +564,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       const cleanup = new Promise<void>((resolve) => {
         notify = resolve;
       });
-      payload.collections.members!.config.hooks.afterLogin = [
+      payload.collections.members.config.hooks.afterLogin = [
         () => {
           paused = pauseUserRead();
           notify();
@@ -579,7 +577,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       await cleanup;
       try {
         await paused.read;
-        payload.collections.members!.config.hooks.afterLogin = [];
+        payload.collections.members.config.hooks.afterLogin = [];
         overlapping = operation === 'logout' ? logout() : login();
         await expectWaiting(overlapping);
       } finally {
@@ -628,7 +626,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     shortenLease();
     vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     let finished = false;
-    payload.collections.members!.config.hooks.afterLogin = [
+    payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
         await setTimeout(450);
         req.user = user;
@@ -777,7 +775,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     shortenLease();
     vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     let finished = false;
-    payload.collections.members!.config.hooks.afterLogin = [
+    payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
         await setTimeout(450);
         req.user = user;
@@ -800,7 +798,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('renews a slow password login using an independent KV store', async () => {
     shortenLease();
     const extend = vi.spyOn(frogbot.kv, 'extendLock');
-    payload.collections.members!.config.hooks.afterLogin = [
+    payload.collections.members.config.hooks.afterLogin = [
       async () => {
         await setTimeout(650);
       },
@@ -821,7 +819,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       notify = resolve;
     });
     let finished = false;
-    payload.collections.members!.config.hooks.afterLogin = [
+    payload.collections.members.config.hooks.afterLogin = [
       async () => {
         notify();
         await setTimeout(650);
@@ -906,7 +904,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
-    payload.collections.members!.config.hooks.afterLogout = [
+    payload.collections.members.config.hooks.afterLogout = [
       async () => {
         notify();
         await resumed;
@@ -928,7 +926,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('reenters session issuance from a password-login hook and keeps hook context changes', async () => {
     let nested: Awaited<ReturnType<typeof issue>> | undefined;
-    payload.collections.members!.config.hooks.beforeLogin = [
+    payload.collections.members.config.hooks.beforeLogin = [
       async ({ req: hookReq }) => {
         if (hookReq.context.nested) return;
         hookReq.context.nested = true;
@@ -969,7 +967,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('revokes a failed nested issuance even when the password-login hook catches its error', async () => {
     const failure = new Error('Nested login hook failed');
-    const hooks = payload.collections.members!.config.hooks;
+    const hooks = payload.collections.members.config.hooks;
     hooks.beforeLogin = [
       async ({ req: hookReq }) => {
         if (hookReq.context.nested) throw failure;
@@ -991,14 +989,14 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       resumeDetached = resolve;
     });
     let detached!: ReturnType<typeof issue>;
-    payload.collections.members!.config.hooks.afterLogin = [
+    payload.collections.members.config.hooks.afterLogin = [
       ({ req: hookReq }) => {
         const copied = { ...hookReq, context: { ...hookReq.context } } as unknown as FrogBotRequest;
         detached = resumed.then(() => issue(copied));
       },
     ];
     const first = await issue();
-    payload.collections.members!.config.hooks.afterLogin = [];
+    payload.collections.members.config.hooks.afterLogin = [];
     const paused = pauseUserRead();
     const second = issue(await frogbot.createRequest());
     try {
@@ -1018,7 +1016,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('reports cleanup failures while retrying compensation without leaving an orphan', async () => {
     const failure = new Error('Login hook failed');
     const cleanupFailure = new Error('Revocation read failed');
-    payload.collections.members!.config.hooks.afterLogin = [
+    payload.collections.members.config.hooks.afterLogin = [
       () => {
         vi.spyOn(payload.db, 'findOne').mockRejectedValueOnce(cleanupFailure);
         throw failure;
@@ -1052,7 +1050,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('preserves canonical hook ordering, access arguments, and cookie-only login responses', async () => {
     const order: string[] = [];
-    const collection = payload.collections['cookie-members']!.config;
+    const collection = payload.collections['cookie-members'].config;
     const credentials = { email: `cookie-${sequence}@example.com`, password: 'test-password' };
     await payload.create({ collection: 'cookie-members', data: credentials });
     await expect(
@@ -1312,7 +1310,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect(hookReq.file).toMatchObject({ name: 'proof.txt', mimetype: 'text/plain' });
       expect(hookReq.file.data.toString()).toBe('proof');
     });
-    payload.collections.members!.config.hooks.beforeLogin = [beforeLogin];
+    payload.collections.members.config.hooks.beforeLogin = [beforeLogin];
     const body = new FormData();
     body.set(
       '_payload',
@@ -1338,7 +1336,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect(hookReq.headers.get('content-type')).toBe('application/json; charset=utf-8');
       expect(hookReq.data.email).toBe(`session-${sequence}@example.com`);
     });
-    payload.collections.members!.config.hooks.beforeLogin = [beforeLogin];
+    payload.collections.members.config.hooks.beforeLogin = [beforeLogin];
     const body = new ReadableStream<Uint8Array>({
       async start(controller) {
         controller.enqueue(bytes.slice(0, 10));

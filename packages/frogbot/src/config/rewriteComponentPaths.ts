@@ -258,7 +258,7 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     }
   }
 
-  const blocks = (config as SanitizedConfig & { blocks?: object[] }).blocks;
+  const blocks = config.blocks;
 
   for (const block of blocks ?? []) {
     rewriteBlock(block, visited);

@@ -13,7 +13,7 @@ const Usage: CollectionConfig = {
   slug: 'ai-usage',
   usageLog: true,
   fields: [],
-} as never;
+};
 
 export default await buildTestConfig({
   collections: [Users, Usage],

@@ -13,7 +13,7 @@ function projectBudget(overrides: Record<string, unknown> = {}): Field {
     type: 'number',
     virtual: 'project.budget',
     ...overrides,
-  } as Field;
+  };
 }
 
 function config({ blocks, fields }: { blocks?: Block[]; fields: Field[] }): FrogBotConfig {
@@ -36,7 +36,7 @@ function sanitizeOne(field: Field): Field & { admin?: Record<string, any> } {
     collection: 'tasks',
     fields: [field],
     users: { authSlugs: [], resolve: () => 'users' },
-  })[0] as Field & { admin?: Record<string, any> };
+  })[0];
 }
 
 function findField(fields: unknown, name: string): Record<string, any> | undefined {
@@ -131,7 +131,7 @@ describe('virtual path fields', () => {
       type: 'select',
       virtual: 'project.status',
       options: [{ label: 'Active', value: 'active', color: 'green' }, 'paused'],
-    } as Field);
+    });
 
     expect(result.admin).toEqual({
       components: { Cell: FIELD_CELL },
@@ -140,7 +140,7 @@ describe('virtual path fields', () => {
   });
 
   it.each<[string, Field]>([
-    ['virtual: true', { name: 'total', type: 'number', virtual: true } as Field],
+    ['virtual: true', { name: 'total', type: 'number', virtual: true }],
     ['an ordinary field', { name: 'title', type: 'text' }],
   ])('returns %s as the same object', (_, field) => {
     expect(sanitizeOne(field)).toBe(field);

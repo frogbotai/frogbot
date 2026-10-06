@@ -32,11 +32,11 @@ describe('chat persistence: todos', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
-    owner = (await booted.frogbot.create({
+    owner = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'todo-owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
   });
 
   async function exerciseTodos(
@@ -74,7 +74,7 @@ describe('chat persistence: todos', () => {
 
     const chat = (await booted.frogbot.findByID({
       collection: chatsSlug,
-      id: first.chatId!,
+      id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { todos: unknown };

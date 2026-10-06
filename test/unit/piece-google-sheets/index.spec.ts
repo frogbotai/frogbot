@@ -146,7 +146,7 @@ async function fixture({
       return respond({ spreadsheetId: 'book', clearedRanges: config.data.ranges }, config);
     }
     if (path.includes('/values/')) {
-      const range = path.split('/values/')[1]!;
+      const range = path.split('/values/')[1];
       if (path.endsWith(':append')) {
         return respond(
           {
@@ -862,13 +862,13 @@ describe('native Google Sheets', () => {
         { id: 'second', name: 'second' },
       ],
     });
-    expect(transport.mock.calls[0]![0].params).toMatchObject({
+    expect(transport.mock.calls[0][0].params).toMatchObject({
       q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and name = 'Owner\\'s \\\\ budget'",
       corpora: 'allDrives',
       includeItemsFromAllDrives: true,
       supportsAllDrives: true,
     });
-    expect(transport.mock.calls[1]![0].params.pageToken).toBe('next');
+    expect(transport.mock.calls[1][0].params.pageToken).toBe('next');
   });
 
   it('inserts columns at explicit indices or after the last header and handles AA/ZZZ boundaries', async () => {
@@ -897,7 +897,7 @@ describe('native Google Sheets', () => {
     expect(
       await piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
     ).toEqual({ format: 'csv', text: 'Name,Count\r\nAlice,"1,234.50"\r\n' });
-    expect(new URL(String(transport.mock.calls[0]![0].url)).searchParams.get('gid')).toBe('0');
+    expect(new URL(String(transport.mock.calls[0][0].url)).searchParams.get('gid')).toBe('0');
     expect(await piece.exportWorksheet({ req, input: { ...selection, format: 'tsv' } })).toEqual({
       format: 'tsv',
       file: { id: 'saved', filename: 'exported_sheet.tsv', url: '/files/export.csv' },
@@ -927,8 +927,8 @@ describe('native Google Sheets', () => {
     expect(
       await piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
     ).toMatchObject({ text: 'export' });
-    expect(transport.mock.calls[0]![0].headers.get('authorization')).toBe('Bearer access-test');
-    expect(transport.mock.calls[1]![0].headers).toBeUndefined();
+    expect(transport.mock.calls[0][0].headers.get('authorization')).toBe('Bearer access-test');
+    expect(transport.mock.calls[1][0].headers).toBeUndefined();
     transport.mockImplementationOnce(async (config) =>
       respond('', config, 302, { location: 'https://attacker.test/export' }),
     );
@@ -952,7 +952,7 @@ describe('native Google Sheets', () => {
         },
       }),
     ).toMatchObject({ status: 200, body: { spreadsheetId: 'book', replies: [] } });
-    const call = transport.mock.calls[0]![0];
+    const call = transport.mock.calls[0][0];
     expect(String(call.url)).toBe('https://sheets.googleapis.com/v4/spreadsheets/book:batchUpdate');
     expect(call).toMatchObject({
       params: { prettyPrint: false },
@@ -1004,9 +1004,9 @@ describe('native Google Sheets', () => {
     expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'file', req, overrideAccess: false }),
     );
-    expect(fetch.mock.calls[0]![1].headers.get('authorization')).toBe('Bearer app');
-    expect(fetch.mock.calls[0]![1]).toMatchObject({ signal: req.signal, redirect: 'error' });
-    expect(transport.mock.calls[0]![0].data.get('text')).toBe('value');
+    expect(fetch.mock.calls[0][1].headers.get('authorization')).toBe('Bearer app');
+    expect(fetch.mock.calls[0][1]).toMatchObject({ signal: req.signal, redirect: 'error' });
+    expect(transport.mock.calls[0][0].data.get('text')).toBe('value');
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         overrideAccess: false,
@@ -1024,7 +1024,7 @@ describe('native Google Sheets', () => {
         },
       }),
     ).toMatchObject({ body: 'plain' });
-    expect(transport.mock.calls[1]![0].data).toBe('plain');
+    expect(transport.mock.calls[1][0].data).toBe('plain');
   });
 
   it('does not forward app credentials to external file storage and rejects reserved custom headers', async () => {
@@ -1040,7 +1040,7 @@ describe('native Google Sheets', () => {
         body: { type: 'form', fields: [{ name: 'file', file: { fileId: 'file' } }] },
       },
     });
-    expect([...fetch.mock.calls[0]![1].headers]).toEqual([]);
+    expect([...fetch.mock.calls[0][1].headers]).toEqual([]);
     transport.mockClear();
     await expect(
       piece.customApiCall({
@@ -1143,15 +1143,15 @@ describe('persistent row cursors', () => {
     ]) {
       const { piece, req, kv } = await fixture({ user: owner });
       await piece.getNextRows({ req, input: selection });
-      keys.push(kv.get.mock.calls[0]![0]);
+      keys.push(kv.get.mock.calls[0][0]);
     }
     const other = await fixture({ slug: 'sheets-other' });
     await other.piece.getNextRows({ req: other.req, input: selection });
-    keys.push(other.kv.get.mock.calls[0]![0]);
+    keys.push(other.kv.get.mock.calls[0][0]);
     await other.piece.getNextRows({ req: other.req, input: { ...selection, memoryKey: 'other' } });
-    keys.push(other.kv.get.mock.calls[1]![0]);
+    keys.push(other.kv.get.mock.calls[1][0]);
     await other.piece.getNextRows({ req: other.req, input: { ...selection, sheetId: 7 } });
-    keys.push(other.kv.get.mock.calls[2]![0]);
+    keys.push(other.kv.get.mock.calls[2][0]);
     other.transport.mockImplementationOnce(async (config) =>
       other.respond({ sheets: [{ properties }] }, config),
     );
@@ -1159,7 +1159,7 @@ describe('persistent row cursors', () => {
       req: other.req,
       input: { ...selection, spreadsheetId: 'another-book' },
     });
-    keys.push(other.kv.get.mock.calls[3]![0]);
+    keys.push(other.kv.get.mock.calls[3][0]);
     expect(new Set(keys).size).toBe(keys.length);
   });
 
@@ -1219,7 +1219,7 @@ describe('persistent row cursors', () => {
     transport.mockRejectedValueOnce(new Error('unavailable'));
     await expect(piece.getNextRows({ req, input: selection })).rejects.toThrow('unavailable');
     expect(kv.set).not.toHaveBeenCalled();
-    const key = kv.get.mock.calls[0]![0];
+    const key = kv.get.mock.calls[0][0];
     state.set(key, 'not-a-number');
     await expect(piece.getNextRows({ req, input: selection })).rejects.toThrow();
     expect(kv.set).not.toHaveBeenCalled();

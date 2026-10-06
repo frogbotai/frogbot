@@ -31,7 +31,7 @@ function validate(config: FrogBotConfig): void {
 function stripPluginGlobals(config: FrogBotConfig): FrogBotConfig {
   if (!('globals' in config)) return config;
 
-  const { globals, ...rest } = config as FrogBotConfig & { globals: unknown };
+  const { globals, ...rest } = config;
 
   if (globals !== undefined && !(Array.isArray(globals) && globals.length === 0)) {
     throw new Error(GLOBALS_ERROR);

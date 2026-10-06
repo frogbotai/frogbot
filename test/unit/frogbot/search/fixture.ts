@@ -112,12 +112,12 @@ export function searchFixture({
   const db = {} as Payload['db'];
 
   const find = vi.fn(async (args: Record<string, unknown>) => ({
-    docs: collectionDocs[args.collection as string]!,
+    docs: collectionDocs[args.collection as string],
   }));
 
   const search = vi.fn(async ({ collection: slug }: AdapterSearchArgs) => ({
     ranking: rowRanking,
-    rows: collectionRows[slug]!,
+    rows: collectionRows[slug],
   }));
 
   const readiness = vi.fn();

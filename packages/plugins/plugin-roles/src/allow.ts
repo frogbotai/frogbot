@@ -72,7 +72,7 @@ function compile<TArgs extends RoleAccessArgs, TResult extends boolean | Where>(
       if (result !== false) wheres.push(result);
     }
     if (wheres.length === 0) return false;
-    if (wheres.length === 1) return wheres[0]!;
+    if (wheres.length === 1) return wheres[0];
     return { or: wheres };
   };
   const compiled = access as CompiledAccess<TArgs, TResult>;

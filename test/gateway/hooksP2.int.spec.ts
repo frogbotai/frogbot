@@ -72,15 +72,15 @@ function makeLanguageModel(opts?: { error?: unknown }): LanguageModelV4 {
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
           if (opts?.error) {
-            controller.enqueue({ type: 'error', error: opts.error } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'error', error: opts.error });
           } else {
-            controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-start', id: 'text-0' });
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hi',
-            } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
+            });
+            controller.enqueue({ type: 'text-end', id: 'text-0' });
             controller.enqueue({
               type: 'finish',
               finishReason: 'stop',

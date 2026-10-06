@@ -268,9 +268,9 @@ describe('Chat for a channel conversation', () => {
     renderChat();
 
     await screen.findByText('This conversation happens in Slack.');
-
+    // The chat and its messages load separately; wait for the messages before checking actions.
+    expect((await screen.findAllByRole('button', { name: 'Copy' })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Copy' }).length).toBeGreaterThan(0);
   });
 
   it('branches at the last message and opens the private chat', async () => {
@@ -280,15 +280,18 @@ describe('Chat for a channel conversation', () => {
 
     const { container } = renderChat();
 
-    const notice = (await screen.findByText('This conversation happens in Slack.')).closest(
-      '.fb-channel-notice',
-    ) as HTMLElement;
+    // Branch needs the last message, which loads separately from the chat.
+    await screen.findByText('Waiting for an answer in Slack');
+
+    const notice = screen
+      .getByText('This conversation happens in Slack.')
+      .closest('.fb-channel-notice') as HTMLElement;
 
     fireEvent.click(within(notice).getByRole('button', { name: 'Branch' }));
 
     await waitFor(() => expect(container.querySelector('.fb-composer')).toBeTruthy());
 
-    expect(JSON.parse(String(requests('/api/frogbot/chat/branch')[0]![1]?.body))).toEqual({
+    expect(JSON.parse(String(requests('/api/frogbot/chat/branch')[0][1]?.body))).toEqual({
       chatId,
       messageId: 'assistant-1',
     });
@@ -344,7 +347,8 @@ describe('Chat for a channel conversation', () => {
 
     expect(await screen.findByText('This conversation happens in Slack.')).toBeTruthy();
     expect(container.querySelector('.fb-composer')).toBeNull();
-    expect(screen.queryByText('Ship it anyway')).toBeNull();
+    // The refused message goes when the messages reload, which can land after the notice.
+    await waitFor(() => expect(screen.queryByText('Ship it anyway')).toBeNull());
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 });

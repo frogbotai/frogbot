@@ -79,6 +79,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 | `scripts`         | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                              |
 | `ui-architecture` | `packages/ui` uses forbidden imports, globals or strings                                                                                     |
 | `generated`       | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                           |
+| `test-types`      | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                  |
 | `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                    |
 | `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                          |
 | `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/decisions.md` or the plan (main checkout only)                                          |

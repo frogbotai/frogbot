@@ -230,7 +230,7 @@ describe('discord', () => {
     if (!trigger || trigger.type !== 'app') throw new Error(`Missing Discord trigger '${event}'.`);
 
     const events = await trigger.run({
-      client: {} as never,
+      client: {},
       input: {},
       options: {},
       req: { data: delivery } as never,
@@ -253,7 +253,7 @@ describe('discord', () => {
 
     await expect(
       trigger.run({
-        client: {} as never,
+        client: {},
         input: {},
         options: {},
         req: { data: { type: event, data: {} } } as never,

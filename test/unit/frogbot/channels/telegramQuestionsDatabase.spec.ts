@@ -227,7 +227,7 @@ describe('Telegram questions with SQLite persistence', { timeout: 30_000 }, () =
     const chatId = telegramUsers.frog.id;
     const card = await ask({ chatId, toolCallId: 'call-dm' });
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
     expect(api.cards().at(-1)).toMatchObject({ chat_id: '42', parse_mode: 'HTML' });
 
     model.respond({ text: 'Painting it blue.' });
@@ -258,7 +258,7 @@ describe('Telegram questions with SQLite persistence', { timeout: 30_000 }, () =
     await tap({ card, chatId, data: 'q:0:o:0' });
 
     expect(edits(card, chatId).slice(before)).toEqual([
-      expect.objectContaining({ text: edits(card, chatId)[before - 1]!.text }),
+      expect.objectContaining({ text: edits(card, chatId)[before - 1].text }),
     ]);
     expect(await continuations(chatId)).toHaveLength(1);
     expect(model.requests).toHaveLength(2);

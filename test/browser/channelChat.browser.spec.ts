@@ -146,7 +146,7 @@ test('a branch continues privately without touching the channel conversation', a
   const channelMessages = await storedMessages(page, chatId);
 
   expect(channelMessages).toHaveLength(2);
-  expect(channelMessages[1]!.parts).toContainEqual(
+  expect(channelMessages[1].parts).toContainEqual(
     expect.objectContaining({ toolCallId: 'channel-call-1', state: 'input-available' }),
   );
 });

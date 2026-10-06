@@ -318,7 +318,7 @@ describe('file references', () => {
     const card = await screen.findByRole('group', { name: 'notes.md, MD, ready' });
 
     expect(card.className).toContain('fb-attachment-card--large');
-    expect(document.getElementById(card.getAttribute('aria-describedby')!)?.textContent).toBe(
+    expect(document.getElementById(card.getAttribute('aria-describedby'))?.textContent).toBe(
       largeHint,
     );
   });

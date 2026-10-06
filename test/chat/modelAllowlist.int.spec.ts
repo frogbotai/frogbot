@@ -155,7 +155,7 @@ describe('per-user agent model allowlists', () => {
     return {
       id: user.id,
       jwt: { Authorization: `JWT ${login.token}` },
-      cookie: { Cookie: response.headers.get('set-cookie')!.split(';')[0]! },
+      cookie: { Cookie: response.headers.get('set-cookie')!.split(';')[0] },
     };
   }
 
@@ -362,7 +362,7 @@ describe('per-user agent model allowlists', () => {
     ).docs;
 
     const steer = await post(`/agents/${questionAgentSlug}`, {
-      chatId: chat!.id,
+      chatId: chat.id,
       prompt: 'Write it up.',
       model: 'test/writer',
       delivery: 'steer',
@@ -403,7 +403,7 @@ describe('per-user agent model allowlists', () => {
       collection: messagesSlug,
       data: {
         id: 'sam-steer-writer',
-        chat: chat!.id,
+        chat: chat.id,
         role: 'user',
         parts: [{ type: 'text', text: 'Write it up.' }],
         status: 'queued',
@@ -424,7 +424,7 @@ describe('per-user agent model allowlists', () => {
     });
     expect(model.requests.map(({ model }) => model)).toEqual(['thinker']);
     await expect(
-      findTurnState({ req: await booted.frogbot.createRequest({}), chatId: chat!.id }),
+      findTurnState({ req: await booted.frogbot.createRequest({}), chatId: chat.id }),
     ).resolves.toBe('idle');
   });
 

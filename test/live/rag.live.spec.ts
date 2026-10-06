@@ -206,9 +206,9 @@ for (const target of TARGETS) {
         disableOnInit: true,
         cron: false,
       });
-      frogbot = (await initFrogBotFromPayload(payload, config, {
+      frogbot = await initFrogBotFromPayload(payload, config, {
         disableOnInit: true,
-      })) as unknown as FrogBotInstance;
+      });
       current = { frogbot, payload };
 
       const payloadDb = payload.db as unknown as {

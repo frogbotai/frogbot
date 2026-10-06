@@ -155,7 +155,7 @@ describe('frogbot sanitize', () => {
     );
     expect(posts?.hooks?.beforeChange).toHaveLength(1);
     expect(posts?.admin.defaultSort).toBe('-createdAt');
-    expect((posts?.admin.custom?.frogbot as any).views[1].orderField).toBe('_order_by_stage');
+    expect(posts?.admin.custom?.frogbot.views[1].orderField).toBe('_order_by_stage');
   });
 
   it('leaves collections without boards non-orderable', async () => {
@@ -191,7 +191,7 @@ describe('frogbot sanitize', () => {
     expect(events?.admin.components?.views?.list).toEqual({
       Component: '@frogbotai/next/views#CalendarView',
     });
-    expect((events?.admin.custom?.frogbot as any).views[0]).not.toHaveProperty('orderField');
+    expect(events?.admin.custom?.frogbot.views[0]).not.toHaveProperty('orderField');
   });
   it('compiles collection views into runtime routes and metadata', () => {
     const admin = compileCollectionViews({
@@ -551,7 +551,7 @@ describe('frogbot sanitize', () => {
   it('rejects unknown built-in nav item icons', () => {
     const config = makeConfig({
       admin: {
-        components: { navItems: [{ icon: 'hmoe' as never, label: 'Home', path: '/home' }] },
+        components: { navItems: [{ icon: 'hmoe', label: 'Home', path: '/home' }] },
       },
     });
 
@@ -560,9 +560,7 @@ describe('frogbot sanitize', () => {
 
   it('rejects unknown built-in settings icons', () => {
     const config = makeConfig({
-      settings: [
-        { icon: 'Robot' as never, label: 'Usage', path: 'usage', Component: './Usage#Page' },
-      ],
+      settings: [{ icon: 'Robot', label: 'Usage', path: 'usage', Component: './Usage#Page' }],
     });
 
     expect(() => sanitize(config)).toThrowError("[frogbot] Unknown admin icon 'Robot'. Valid:");
@@ -1431,7 +1429,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const task = payloadConfig.jobs?.tasks?.find(({ slug }) => slug === 'frogbot-reset-ai-budgets');
     const update = vi.fn();
-    await task?.handler({ req: { payload: { update } } } as never);
+    await task?.handler({ req: { payload: { update } } });
     expect(task?.schedule).toEqual([{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }]);
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1522,7 +1520,7 @@ describe('frogbot sanitize', () => {
 
       expect(result._internal.noEmail).toBe(false);
       expect(adapter).toBeTypeOf('function');
-      expect(adapter!({ payload: payload as never })).toMatchObject({
+      expect(adapter({ payload: payload as never })).toMatchObject({
         name: 'mailer',
         defaultFromAddress: 'sender@example.com',
         defaultFromName: 'mailer',
@@ -1622,7 +1620,7 @@ describe('frogbot sanitize', () => {
           auth: true,
           fields: [],
           hooks: { beforeOperation: [existingHook] },
-        } as unknown as CollectionConfig,
+        },
       ],
     });
     const result = sanitize(config);
@@ -1661,10 +1659,10 @@ describe('frogbot sanitize', () => {
     registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
 
     for (const phase of ['afterMe', 'afterLogout', 'afterError'] as const) {
-      const hooks = users.hooks[phase]!;
+      const hooks = users.hooks[phase];
       const req = { payload };
 
-      const setupResult = await hooks[0]!({ req } as never);
+      const setupResult = await hooks[0]({ req } as never);
 
       expect(hooks).toHaveLength(3);
       expect(hooks[1]).toBe(first);
@@ -1722,7 +1720,7 @@ describe('frogbot sanitize', () => {
     } as never);
 
     expect(users.hooks.afterMe).toHaveLength(2);
-    expect(users.hooks.afterMe![1]).toBe(afterMe);
+    expect(users.hooks.afterMe[1]).toBe(afterMe);
     expect(afterMe).toHaveBeenCalledOnce();
     expect(response).toEqual({ user: null });
   });
@@ -1752,7 +1750,7 @@ describe('frogbot sanitize', () => {
 
     const withoutSetup = {
       ...users,
-      hooks: { ...users.hooks, afterMe: users.hooks.afterMe!.slice(1) },
+      hooks: { ...users.hooks, afterMe: users.hooks.afterMe.slice(1) },
     };
 
     const before = await meOperation({
@@ -1790,7 +1788,7 @@ describe('frogbot sanitize', () => {
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
     const req = {};
 
-    await expect(users.hooks.beforeOperation[0]!({ req } as never)).resolves.toBeUndefined();
+    await expect(users.hooks.beforeOperation[0]({ req } as never)).resolves.toBeUndefined();
 
     expect(req).not.toHaveProperty('frogbot');
     expect(onInit).not.toHaveBeenCalled();
@@ -1823,8 +1821,8 @@ describe('frogbot sanitize', () => {
     const defaultRead = vi.fn(({ req }) => Boolean(req.frogbot));
 
     vi.mocked(payloadBuildConfig).mockImplementationOnce(async (config) => {
-      config.collections[0]!.access = {
-        ...config.collections[0]!.access,
+      config.collections[0].access = {
+        ...config.collections[0].access,
         read: defaultRead,
       };
 
@@ -2171,7 +2169,7 @@ describe('frogbot sanitize', () => {
 
   it('preserves configured admin nav sections', async () => {
     const navSections = ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'];
-    const result = sanitize(makeConfig({ admin: { components: { navSections } } } as never));
+    const result = sanitize(makeConfig({ admin: { components: { navSections } } }));
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(
@@ -2180,7 +2178,7 @@ describe('frogbot sanitize', () => {
   });
 
   it('preserves empty admin nav sections', async () => {
-    const result = sanitize(makeConfig({ admin: { components: { navSections: [] } } } as never));
+    const result = sanitize(makeConfig({ admin: { components: { navSections: [] } } }));
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(
@@ -2199,7 +2197,7 @@ describe('frogbot sanitize', () => {
 
   it('appends the step-nav reset provider after configured providers in order', async () => {
     const providers = ['./providers/Theme#Theme', './providers/Analytics#Analytics'];
-    const result = sanitize(makeConfig({ admin: { components: { providers } } } as never));
+    const result = sanitize(makeConfig({ admin: { components: { providers } } }));
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.providers).toEqual([
@@ -2209,9 +2207,7 @@ describe('frogbot sanitize', () => {
   });
 
   it('keeps the step-nav reset provider when the admin Nav is replaced', async () => {
-    const result = sanitize(
-      makeConfig({ admin: { components: { Nav: './components/Nav#Nav' } } } as never),
-    );
+    const result = sanitize(makeConfig({ admin: { components: { Nav: './components/Nav#Nav' } } }));
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.Nav).toBe('./components/Nav#Nav');
@@ -2259,7 +2255,7 @@ describe('frogbot sanitize', () => {
           },
           components: { views: { dashboard: dashboardView } },
         },
-      } as never),
+      }),
     );
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -2270,7 +2266,7 @@ describe('frogbot sanitize', () => {
   it('preserves a Chat dashboard view at the admin root', async () => {
     const dashboardView = { Component: '@frogbotai/next/views#ChatView', path: '/' as const };
     const result = sanitize(
-      makeConfig({ admin: { components: { views: { dashboard: dashboardView } } } } as never),
+      makeConfig({ admin: { components: { views: { dashboard: dashboardView } } } }),
     );
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -2285,7 +2281,7 @@ describe('frogbot sanitize', () => {
             widgets: [{ Component: './Widget#Widget', slug: 'summary' }],
           },
         },
-      } as never),
+      }),
     );
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -2341,7 +2337,7 @@ describe('frogbot sanitize', () => {
             widgets: [{ Component: './Widget#Widget', slug: 'summary' }],
           },
         },
-      } as never),
+      }),
     );
     const payloadConfig = await result._internal.payloadConfig;
     const req = { payload: makePayload(payloadConfig), context: {} } as never;
@@ -3751,7 +3747,7 @@ describe('frogbot sanitize', () => {
           makeConfig({
             ai,
             agents: [{ slug: 'support', instructions: 'Help the user' }],
-          } as never),
+          }),
         ),
       ).toThrow("[frogbot] Agent 'support' requires a `model` or `ai.defaultModel`.");
     });

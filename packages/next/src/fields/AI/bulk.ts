@@ -255,7 +255,7 @@ export function aiRegenerateRequest({
     targets: [{ draft, id }],
   });
 
-  return request as AIBulkRequest;
+  return request;
 }
 
 export function aiBulkResultMessage({

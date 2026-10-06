@@ -18,7 +18,7 @@ export async function generatePieceTypesCommand(args: string[]): Promise<void> {
       '[frogbot] usage: frogbot generate:piece-types <module> --export <factory> --output <file> [--check]',
     );
   }
-  const module = await import(pathToFileURL(resolve(positionals[0]!)).href);
+  const module = await import(pathToFileURL(resolve(positionals[0])).href);
   const output = resolve(values.output);
   const content = await format(await generatePieceTypes({ piece: module[values.export] }), {
     ...(await resolveConfig(output)),

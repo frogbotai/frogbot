@@ -302,8 +302,6 @@ function wrapAuthEmail(email: AuthEmail, attachFrogBot: AttachFrogBot): Record<s
   };
 }
 
-type PayloadLocalization = Exclude<NonNullable<PayloadConfig['localization']>, false>;
-
 function wrapLocalization(
   localization: FrogBotConfig['localization'],
   attachFrogBot: AttachFrogBot,
@@ -318,7 +316,7 @@ function wrapLocalization(
     ...localization,
     filterAvailableLocales: async (args) =>
       filterAvailableLocales({ ...args, req: await attachFrogBot(args.req) }),
-  } as PayloadLocalization;
+  };
 }
 
 function wrapEndpoints(
@@ -1198,7 +1196,7 @@ function sanitizeAgents(
     return {
       ...agent,
       model: {
-        default: modelId as AgentModelId,
+        default: modelId,
         options: [...new Set([modelId, ...modelOptions])] as AgentModelId[],
       },
       access: agent.access ?? defaultAccessFn,

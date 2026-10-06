@@ -193,7 +193,7 @@ export async function startDiscordApi() {
     const channel = /^\/channels\/([^/]+)$/.exec(path);
 
     if (method === 'GET' && channel) {
-      const id = channel[1]!;
+      const id = channel[1];
 
       return reply(200, { id, type: 11, parent_id: parents.get(id) ?? null });
     }
@@ -203,7 +203,7 @@ export async function startDiscordApi() {
     if (method === 'POST' && thread) {
       const id = snowflake();
 
-      parents.set(id, thread[1]!);
+      parents.set(id, thread[1]);
 
       return reply(201, { id, parent_id: thread[1], name: body.name });
     }

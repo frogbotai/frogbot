@@ -28,7 +28,7 @@ const valueText =
   'Generated automatically by AI from: title, notes. Writing a value keeps it and stops automatic updates';
 
 function make(args: Partial<AIFieldArgs> = {}) {
-  const row = aiField({ ...base, ...args } as AIFieldArgs);
+  const row = aiField({ ...base, ...args });
   const [value, status, error] = row.fields as AnyField[];
 
   return { error, row, status, value };
@@ -46,7 +46,7 @@ function makeSelect(args: Partial<AISelectFieldArgs> = {}) {
     name: 'type',
     options: typeOptions,
     ...args,
-  } as AISelectFieldArgs);
+  });
   const [value, status, error] = row.fields as AnyField[];
 
   return { error, row, status, value };
@@ -252,7 +252,7 @@ describe('aiField call-time errors', () => {
     [{ virtual: 'author.name' }, 'virtual is not supported'],
     [{ hidden: true }, 'hidden is not supported'],
   ])('rejects %o', (options, message) => {
-    expect(() => aiField({ ...base, ...(options as object) } as AIFieldArgs)).toThrow(
+    expect(() => aiField({ ...base, ...(options as object) })).toThrow(
       new Error(`aiField "summary": ${message}`),
     );
   });
@@ -310,9 +310,9 @@ describe('aiField select output', () => {
     [{ options: typeOptions, virtual: true }, 'virtual is not supported'],
     [{ options: typeOptions, hidden: true }, 'hidden is not supported'],
   ])('rejects %o', (options, message) => {
-    expect(() =>
-      aiField({ ...base, name: 'type', ...(options as object) } as AISelectFieldArgs),
-    ).toThrow(new Error(`aiField "type": ${message}`));
+    expect(() => aiField({ ...base, name: 'type', ...(options as object) })).toThrow(
+      new Error(`aiField "type": ${message}`),
+    );
   });
 });
 

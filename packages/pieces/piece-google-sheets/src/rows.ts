@@ -423,7 +423,7 @@ async function searchRows(args: SheetsArgs<z.output<typeof searchInput>>) {
         startRow: row.row,
         headers,
         useHeaderNames: true,
-      })[0]!,
+      })[0],
   );
 }
 export const findRows = defineAction({
@@ -465,7 +465,7 @@ export const findOrCreateRow = defineAction({
         startRow: result.row,
         headers,
         useHeaderNames: args.input.useHeaderNames,
-      })[0]!,
+      })[0],
       found: false,
       created: true,
     };

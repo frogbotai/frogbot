@@ -40,6 +40,7 @@ export const CHECK_INPUTS = {
   packages: ['pnpm-workspace.yaml', ...MANIFESTS],
   scripts: ['CONTRIBUTING.md', ...MANIFESTS],
   'single-frogbot': MANIFESTS,
+  'test-types': ['test/**', 'packages/**/src/**', '.opencode/**'],
   tests: ['test/**', 'packages/**/src/**', 'vitest.config.ts'],
   'ticket-docs': [],
   'typed-lint': ['**/*.{ts,tsx,js,mjs}'],
@@ -48,7 +49,7 @@ export const CHECK_INPUTS = {
 
 // These check the shape of code (import paths, file layout), not what it does, so they run for a
 // file without covering it.
-const STRUCTURAL_CHECKS = ['dist-imports', 'tests', 'typed-lint', 'ui-architecture'];
+const STRUCTURAL_CHECKS = ['dist-imports', 'test-types', 'tests', 'typed-lint', 'ui-architecture'];
 
 // Verify runs the groups in this order and stops at the first that fails. Passing every group
 // with a level reaches the highest of those levels; browser projects add no level of their own.

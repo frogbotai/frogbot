@@ -88,7 +88,7 @@ function parseAction({
   if (actionId !== choose && !actionId.startsWith(`${choose}:`)) return { kind: 'ignore' };
 
   const action = payload.actions?.find(({ action_id }) => action_id === actionId);
-  const item = call.input.questions[0]!;
+  const item = call.input.questions[0];
   const option = item.options[Number(action?.selected_option?.value ?? action?.value)];
 
   if (!option) return { kind: 'ignore' };
@@ -128,7 +128,7 @@ function parseSubmit({
       .map(({ value }) => Number(value))
       .filter((index) => item.options[index] !== undefined)
       .sort((a, b) => a - b)
-      .map((index) => item.options[index]!.label);
+      .map((index) => item.options[index].label);
 
     return {
       header: item.header,
@@ -170,7 +170,7 @@ function parseCustomAnswer({
 
   if (!text) return { kind: 'rejected', reason: 'Type an answer before submitting.' };
 
-  const item = call.input.questions[0]!;
+  const item = call.input.questions[0];
 
   return {
     kind: 'answer',

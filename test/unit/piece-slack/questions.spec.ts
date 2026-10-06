@@ -154,8 +154,8 @@ describe('Slack question blocks', () => {
         private_metadata: string;
       };
 
-    expect(view(call({ header: 'Color' })).blocks[1]!.optional).toBe(false);
-    expect(view(call({ header: 'Color', multiple: true })).blocks[1]!.optional).toBe(true);
+    expect(view(call({ header: 'Color' })).blocks[1].optional).toBe(false);
+    expect(view(call({ header: 'Color', multiple: true })).blocks[1].optional).toBe(true);
     expect(view(call({ header: 'Color' })).private_metadata).toBe('{"m":"locator"}');
   });
 });
@@ -364,10 +364,10 @@ describe('Slack question hooks', () => {
       thread,
     });
 
-    const view = requests[0]!.body.view as { private_metadata: string };
+    const view = requests[0].body.view as { private_metadata: string };
     const locator = decodeQuestionModalMetadata(JSON.parse(view.private_metadata).m);
 
-    expect(requests[0]!.method).toBe('views.open');
+    expect(requests[0].method).toBe('views.open');
     expect(locator).toEqual({ threadId: thread.id, messageId: '1.000003' });
   });
 

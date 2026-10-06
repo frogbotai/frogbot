@@ -9,7 +9,9 @@ const execFileAsync = promisify(execFile);
 const packageDirectory = resolve(import.meta.dirname, '../../../../packages/frogbot');
 const consumerRoot = resolve(import.meta.dirname, '../../../../test/.tmp');
 
-describe('frogbot internal exports', () => {
+// Every step runs a child process (npm pack, tar, a fresh Node importing the packed build), which
+// takes about 1.5 s idle and several times that when the machine is busy.
+describe('frogbot internal exports', { timeout: 30_000 }, () => {
   let consumerDirectory: string;
 
   beforeAll(async () => {
@@ -38,7 +40,7 @@ describe('frogbot internal exports', () => {
     );
     await mkdir(nodeModulesDirectory);
     await symlink(join(packDirectory, 'package'), join(nodeModulesDirectory, 'frogbot'), 'dir');
-  });
+  }, 60_000);
 
   afterAll(async () => {
     await rm(consumerDirectory, { recursive: true, force: true });

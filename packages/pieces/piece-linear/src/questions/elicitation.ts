@@ -10,7 +10,7 @@ type QuestionItem = QuestionInput['questions'][number];
 export function isSelectQuestion(input: QuestionInput): boolean {
   const [item] = input.questions;
 
-  return input.questions.length === 1 && !item!.multiple && item!.options.length <= SELECT_OPTIONS;
+  return input.questions.length === 1 && !item.multiple && item.options.length <= SELECT_OPTIONS;
 }
 
 export function elicitation({
@@ -22,7 +22,7 @@ export function elicitation({
 }): LinearActivity {
   const { input } = call;
   const select = isSelectQuestion(input);
-  const sections = select ? selectSections(input.questions[0]!) : listSections(input);
+  const sections = select ? selectSections(input.questions[0]) : listSections(input);
   const body = [...(notice ? [`> ${notice}`] : []), ...sections].join('\n\n');
 
   if (!select) return { content: { type: AgentActivityType.Elicitation, body } };
@@ -31,7 +31,7 @@ export function elicitation({
     content: { type: AgentActivityType.Elicitation, body },
     signal: AgentActivitySignal.Select,
     signalMetadata: {
-      options: input.questions[0]!.options.map(({ label }) => ({ label, value: label })),
+      options: input.questions[0].options.map(({ label }) => ({ label, value: label })),
     },
   };
 }

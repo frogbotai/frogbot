@@ -133,7 +133,7 @@ describe('Slack native piece', () => {
           ok: true,
           user: { profile: { email: ' Frog@Example.com ' } },
         }),
-      } as never,
+      },
       req: {
         frogbot: {
           config: {
@@ -171,7 +171,7 @@ describe('Slack native piece', () => {
         author: { userId: 'U1' } as never,
         client: {
           request: vi.fn().mockResolvedValue({ ok: true, user: { profile: {} } }),
-        } as never,
+        },
         req,
       }),
     ).resolves.toBeNull();
@@ -185,7 +185,7 @@ describe('Slack native piece', () => {
             ok: true,
             user: { profile: { email: 'unknown@example.com' } },
           }),
-        } as never,
+        },
         req,
       }),
     ).resolves.toBeNull();
@@ -198,7 +198,7 @@ describe('Slack native piece', () => {
     await expect(
       definition.channel?.identity({
         author: { userId: 'U1' } as never,
-        client: { request: vi.fn().mockRejectedValue(error) } as never,
+        client: { request: vi.fn().mockRejectedValue(error) },
         req: {} as FrogBotRequest,
       }),
     ).rejects.toBe(error);

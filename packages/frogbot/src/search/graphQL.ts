@@ -1,7 +1,6 @@
 import type { GraphQLExtension, PayloadRequest, TypedLocale, Where } from 'payload';
 import { isolateObjectProperty } from 'payload';
 
-import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 type SearchQueryArgs = {
@@ -149,7 +148,7 @@ export function buildSearchQueries({
 
           return req.frogbot.search({
             ...options,
-            collection: slug as CollectionSlug,
+            collection: slug,
             index,
             query: { text, vector },
             overrideAccess: false,

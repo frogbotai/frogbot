@@ -23,7 +23,7 @@ export function questionPages({
   q: number;
 }): string[] {
   const { questions } = call.input;
-  const item = questions[q]!;
+  const item = questions[q];
 
   const blocks: Block[] = [
     { separator: '\n\n', text: escapeBlock(item.question) },
@@ -66,7 +66,7 @@ export function answeredComment({
 }
 
 export function closedPageComment({ call, q }: { call: ChannelQuestionCall; q: number }): string {
-  return `${continuedHeading(call.input.questions[q]!)}: this question is closed.`;
+  return `${continuedHeading(call.input.questions[q])}: this question is closed.`;
 }
 
 export function instructions({ item, total }: { item: QuestionItem; total: number }): string {
@@ -106,7 +106,7 @@ function heading({ item, q, total }: { item: QuestionItem; q: number; total: num
 }
 
 function closedHeading({ call, q }: { call: ChannelQuestionCall; q: number }): string {
-  const item = call.input.questions[q]!;
+  const item = call.input.questions[q];
 
   return [
     heading({ item, q, total: call.input.questions.length }),
@@ -168,7 +168,7 @@ function chunks({ size, text }: { size: number; text: string }): string[] {
   while (rest.length > size) {
     let end = size;
 
-    if (/[\uD800-\uDBFF]/.test(rest[end - 1]!)) end--;
+    if (/[\uD800-\uDBFF]/.test(rest[end - 1])) end--;
 
     if (trailingBackslashes(rest.slice(0, end)) % 2 === 1) end--;
 

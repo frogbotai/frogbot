@@ -123,7 +123,7 @@ describe('Google Drive custom API transport', () => {
       mimeType: 'application/pdf',
       size: 3,
     });
-    expect(create.mock.calls[0]![0].file.data).toEqual(Buffer.from(bytes));
+    expect(create.mock.calls[0][0].file.data).toEqual(Buffer.from(bytes));
   });
 
   it.each([

@@ -55,7 +55,7 @@ export async function CalendarView(props: AdminViewServerProps) {
   const queryColumns: ViewColumnsSource =
     typeof query.columns === 'string' ||
     (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
-      ? (query.columns as string | string[])
+      ? query.columns
       : undefined;
   const preferenceKey = getViewPreferenceKey(collectionSlug, calendar.slug);
   const preference = initPageResult.req.user

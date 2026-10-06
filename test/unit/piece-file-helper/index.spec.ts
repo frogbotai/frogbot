@@ -125,7 +125,7 @@ describe('file-helper', () => {
 
     expect(fetch).toHaveBeenCalledOnce();
 
-    const headers = fetch.mock.calls[0]![1]!.headers;
+    const headers = fetch.mock.calls[0][1]!.headers;
 
     expect([...headers]).toEqual([]);
   });

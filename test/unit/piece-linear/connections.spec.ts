@@ -84,7 +84,7 @@ describe('Linear connections', () => {
       collection: 'users',
       callbackUrl: 'https://app.test/api/connections/linear/callback',
       returnTo: '/',
-      req: { user: { id: 'owner', collection: 'users' } } as FrogBotRequest,
+      req: { user: { id: 'owner', collection: 'users' } },
     });
 
     const url = new URL(flow.authorizationUrl);

@@ -43,7 +43,7 @@ describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) 
 
     payload.collections = Object.fromEntries(
       payload.config.collections.map((config) => [config.slug, { config }]),
-    ) as Payload['collections'];
+    );
 
     const database = descriptor.init({ payload });
 

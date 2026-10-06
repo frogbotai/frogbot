@@ -86,9 +86,7 @@ export function ConnectionFields({
               label={key}
               optional={!field.required?.includes(key)}
               value={
-                Object.hasOwn(value as object, key)
-                  ? (value as Record<string, unknown>)[key]
-                  : undefined
+                Object.hasOwn(value, key) ? (value as Record<string, unknown>)[key] : undefined
               }
               onChange={(next) => onChange({ ...(value as Record<string, unknown>), [key]: next })}
             />

@@ -133,7 +133,7 @@ describe('SQLite search migrations', () => {
     const current = (await kit.generateDrizzleJson(db.schema)) as Snapshot;
     const { frogbot: _search, ...base } = current;
 
-    const down = await kit.generateMigration(current as never, base as never);
+    const down = await kit.generateMigration(current, base);
 
     expect(down.every((statement) => statement.startsWith('DROP '))).toBe(true);
 
@@ -150,7 +150,7 @@ describe('SQLite search migrations', () => {
 
     await expect(searchIDs('migrated')).rejects.toMatchObject({ name: 'SearchReadinessError' });
 
-    await run(await kit.generateMigration(base as never, current as never));
+    await run(await kit.generateMigration(base, current));
 
     expect(await searchIDs('migrated')).toHaveLength(1);
 
@@ -173,7 +173,7 @@ describe('SQLite search migrations', () => {
 
     delete previous.tables.search_articles.columns.rating;
 
-    const statements = await kit.generateMigration(previous as never, current as never);
+    const statements = await kit.generateMigration(previous, current);
     const alter = statements.findIndex((statement) => statement.includes('`search_articles`'));
     const drops = statements.slice(0, alter);
     const creates = statements.slice(alter + 1);
@@ -200,7 +200,7 @@ describe('SQLite search migrations', () => {
 
     search[group].objects[0].sql = search[group].objects[0].sql.replace(', "summary"', '');
 
-    const statements = await kit.generateMigration(previous as never, current as never);
+    const statements = await kit.generateMigration(previous, current);
 
     expect(statements[0]).toBe(
       'DROP TRIGGER IF EXISTS "frogbot_search_search_pages_content_update"',

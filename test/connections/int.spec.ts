@@ -60,7 +60,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     const callback = new URL(url.searchParams.get('redirect_uri')!);
     callback.searchParams.set('state', url.searchParams.get('state')!);
     callback.searchParams.set('code', 'success');
-    return { url, callback, cookie: response.headers.get('set-cookie')!.split(';')[0]! };
+    return { url, callback, cookie: response.headers.get('set-cookie')!.split(';')[0] };
   };
   const callback = (flow: { callback: URL; cookie: string }, token?: string) =>
     request(flow.callback.href, {
@@ -403,14 +403,14 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(accounts).toEqual([{ auth: { apiKey: 'fresh-success' }, user: null }]);
       expect(exchanges).toHaveLength(1);
-      expect(exchanges[0]!.get('code_verifier')).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(exchanges[0].get('code_verifier')).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(
-        createHash('sha256').update(exchanges[0]!.get('code_verifier')!).digest('base64url'),
+        createHash('sha256').update(exchanges[0].get('code_verifier')!).digest('base64url'),
       ).toBe(flow.url.searchParams.get('code_challenge'));
-      expect(exchanges[0]!.get('grant_type')).toBe('authorization_code');
-      expect(exchanges[0]!.get('client_id')).toBe('private-client-id');
-      expect(exchanges[0]!.get('client_secret')).toBe('private-client-secret');
-      expect(exchanges[0]!.get('redirect_uri')).toBe(flow.url.searchParams.get('redirect_uri'));
+      expect(exchanges[0].get('grant_type')).toBe('authorization_code');
+      expect(exchanges[0].get('client_id')).toBe('private-client-id');
+      expect(exchanges[0].get('client_secret')).toBe('private-client-secret');
+      expect(exchanges[0].get('redirect_uri')).toBe(flow.url.searchParams.get('redirect_uri'));
       const row = await store.get({ owner, piece });
       expect(row).toMatchObject({
         method: 'oauth',
@@ -427,8 +427,8 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         collection: 'connections',
         pagination: false,
       });
-      expect(raw.docs[0]!.credential).toMatch(/^v1\./);
-      expect(raw.docs[0]!.credential).not.toContain('fresh-success');
+      expect(raw.docs[0].credential).toMatch(/^v1\./);
+      expect(raw.docs[0].credential).not.toContain('fresh-success');
       const publicResponse = await request('/rest/v1/connections', { headers: { authorization } });
       expect(publicResponse.status).toBe(200);
       const body = await publicResponse.text();
@@ -590,7 +590,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     url.searchParams.set('state', provider.searchParams.get('state')!);
     url.searchParams.set('code', 'success');
     await frogbot.delete({ collection: 'users', id: created.id, overrideAccess: true });
-    const flow = { callback: url, cookie: response.headers.get('set-cookie')!.split(';')[0]! };
+    const flow = { callback: url, cookie: response.headers.get('set-cookie')!.split(';')[0] };
     const failed = await callback(flow);
     expect(failed.status).toBe(400);
     expect(failed.headers.get('set-cookie')).toContain('Max-Age=0');

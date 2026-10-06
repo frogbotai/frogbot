@@ -201,7 +201,7 @@ describe('Linear questions with SQLite persistence', () => {
 
     const [message] = await jobs(session);
 
-    await run(message!);
+    await run(message);
   }
 
   async function deliver({
@@ -243,7 +243,7 @@ describe('Linear questions with SQLite persistence', () => {
   async function runContinuation(session: string) {
     const [continuation] = (await continuations(session)).slice(-1);
 
-    await run(continuation!);
+    await run(continuation);
   }
 
   function toolResults() {
@@ -291,7 +291,7 @@ describe('Linear questions with SQLite persistence', () => {
 
     await ask({ session, toolCallId: 'call-color' });
 
-    expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toContain('question');
+    expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toContain('question');
     expect(activities(session)).toEqual([
       {
         agentSessionId: session,
@@ -335,7 +335,7 @@ describe('Linear questions with SQLite persistence', () => {
       'elicitation',
       'elicitation',
     ]);
-    expect(activities(session)[1]!.content.body).toContain('**Size**');
+    expect(activities(session)[1].content.body).toContain('**Size**');
 
     model.respond({ text: 'Painting a large blue button.' });
 
@@ -367,7 +367,7 @@ describe('Linear questions with SQLite persistence', () => {
             multiple: true,
             custom: false,
           },
-          { ...sizeQuestion.questions[0]! },
+          { ...sizeQuestion.questions[0] },
         ],
       },
     });
@@ -453,7 +453,7 @@ describe('Linear questions with SQLite persistence', () => {
     expect(first).toHaveLength(1);
     expect(second).toEqual([]);
 
-    await run(first[0]!);
+    await run(first[0]);
 
     expect(await settlements(session)).toHaveLength(1);
     expect(await continuations(session)).toHaveLength(1);
@@ -524,7 +524,7 @@ describe('Linear questions with SQLite persistence', () => {
     await reply({ body: 'Now round the corners', session });
 
     expect(model.requests).toHaveLength(3);
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Now round the corners');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Now round the corners');
     expect(activities(session).at(-1)!.content).toEqual({
       type: 'response',
       body: 'Rounding the corners.',
@@ -551,11 +551,11 @@ describe('Linear questions with SQLite persistence', () => {
 
     expect(promotion).toBeDefined();
     expect(model.requests).toHaveLength(2);
-    expect(JSON.stringify(model.requests[1]!.messages)).not.toContain('Make it matte');
+    expect(JSON.stringify(model.requests[1].messages)).not.toContain('Make it matte');
 
     await run(promotion!);
 
-    expect(JSON.stringify(model.requests[2]!.messages)).toContain('Make it matte');
+    expect(JSON.stringify(model.requests[2].messages)).toContain('Make it matte');
     expect(activities(session).at(-1)!.content).toEqual({ type: 'response', body: 'Matte it is.' });
   });
 

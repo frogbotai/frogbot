@@ -79,7 +79,7 @@ describe('branchChat on a channel conversation', () => {
       overrideAccess: true,
     });
 
-    owner = await frogbot.createRequest({ user: { ...user, collection: 'users' } } as never);
+    owner = await frogbot.createRequest({ user: { ...user, collection: 'users' } });
   }, 30_000);
 
   afterAll(async () => {
@@ -148,12 +148,12 @@ describe('branchChat on a channel conversation', () => {
   }
 
   async function chatOf(chatId: ChatDocument['id']): Promise<ChatDocument> {
-    return (await frogbot.findByID({
+    return await frogbot.findByID({
       collection: 'chats',
       id: chatId,
       depth: 0,
       overrideAccess: true,
-    })) as unknown as ChatDocument;
+    });
   }
 
   it('closes the pending question in the branch', async () => {
@@ -168,7 +168,7 @@ describe('branchChat on a channel conversation', () => {
     const messages = await messagesOf(chatId);
 
     expect(messages.map(({ role }) => role)).toEqual(['user', 'assistant']);
-    expect(messages[1]!.parts).toEqual([
+    expect(messages[1].parts).toEqual([
       { type: 'step-start' },
       { ...question, state: 'output-error', errorText: INTERRUPTED_TOOL_ERROR },
     ]);

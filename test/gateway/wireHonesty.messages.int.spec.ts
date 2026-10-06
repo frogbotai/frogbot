@@ -94,9 +94,9 @@ function createRecordingModel(opts?: {
       if (error) throw error;
       const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
-        { type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart,
-        { type: 'text-delta', id: 'text-0', delta: text } as LanguageModelV4StreamPart,
-        { type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart,
+        { type: 'text-start', id: 'text-0' },
+        { type: 'text-delta', id: 'text-0', delta: text },
+        { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage },
       ];
       return {
@@ -164,9 +164,9 @@ describe('messages content-filter → stop_reason refusal', () => {
       createRecordingModel({
         streamParts: [
           { type: 'stream-start', warnings: [] },
-          { type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart,
-          { type: 'text-delta', id: 'text-0', delta: 'nope' } as LanguageModelV4StreamPart,
-          { type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart,
+          { type: 'text-start', id: 'text-0' },
+          { type: 'text-delta', id: 'text-0', delta: 'nope' },
+          { type: 'text-end', id: 'text-0' },
           {
             type: 'finish',
             finishReason: { unified: 'content-filter', raw: 'refusal' },
@@ -269,7 +269,7 @@ describe('messages URL document defaults to application/pdf', () => {
       (p): p is { type: 'file'; mediaType: string } => (p as { type: string }).type === 'file',
     );
     expect(fileParts).toHaveLength(1);
-    expect(fileParts[0]!.mediaType).toBe('application/pdf');
+    expect(fileParts[0].mediaType).toBe('application/pdf');
   });
 });
 

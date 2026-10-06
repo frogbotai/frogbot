@@ -7,7 +7,7 @@ import {
 import type { AIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 
 function ai(overrides: Partial<AIConfig> = {}): AIConfig {
-  return { providers: { openai: true }, ...overrides } as AIConfig;
+  return { providers: { openai: true }, ...overrides };
 }
 
 describe('resolveSmallModel', () => {

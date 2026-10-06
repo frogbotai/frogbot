@@ -1,5 +1,4 @@
 import type { Endpoint } from '../endpoints/types.js';
-import type { CollectionSlug } from '../types/generated.js';
 import { SearchValidationError } from './errors.js';
 import type { SearchManyOptions, SearchOptions } from './types.js';
 
@@ -64,7 +63,7 @@ export function buildSearchEndpoints({ collection }: { collection: string }): En
 
         const result = await req.frogbot.search({
           ...body,
-          collection: collection as CollectionSlug,
+          collection,
           overrideAccess: false,
           req,
         });

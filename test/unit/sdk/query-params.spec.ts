@@ -66,7 +66,7 @@ describe('FrogBotSDK query strings', () => {
     );
 
     await frogbot.find({ collection: 'sdk-pages', ...args } as never);
-    await payload.find({ collection: 'sdk-pages', ...args } as never);
+    await payload.find({ collection: 'sdk-pages', ...args });
 
     expect(frogbotRequests[0]?.url).toBe(payloadRequests[0]?.url);
     expect(frogbotRequests[0]?.url.startsWith(`${baseURL}/sdk-pages`)).toBe(true);

@@ -71,7 +71,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
     };
 
     const upSQL = (source: string) =>
-      source.split('export async function down')[0]!.replace(/\\`/g, '`');
+      source.split('export async function down')[0].replace(/\\`/g, '`');
 
     const readMigration = async (name: string) =>
       readFile(await migrationFile({ name, extension: '.ts' }), 'utf8');

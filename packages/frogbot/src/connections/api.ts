@@ -41,7 +41,7 @@ function canonicalJSON(value: PieceJSON): string {
   if (value && typeof value === 'object') {
     return `{${Object.keys(value)
       .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalJSON(value[key]!)}`)
+      .map((key) => `${JSON.stringify(key)}:${canonicalJSON(value[key])}`)
       .join(',')}}`;
   }
   return JSON.stringify(value);

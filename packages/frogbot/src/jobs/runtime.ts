@@ -84,7 +84,7 @@ export function installJobsRuntime({
       return nativeUpdateJobs(args);
     }
 
-    await operations.prune({ id, keep: (rearm.log ?? []).map((entry) => entry.id!), req });
+    await operations.prune({ id, keep: (rearm.log ?? []).map((entry) => entry.id), req });
 
     await compareAndSet({
       req,
@@ -130,7 +130,7 @@ export function installJobsRuntime({
     });
   };
 
-  payload.create = ((args) => {
+  payload.create = (args) => {
     const context = queueContext.getStore();
 
     if (args.collection !== 'payload-jobs' || context?.payload !== payload) {
@@ -143,7 +143,7 @@ export function installJobsRuntime({
         data: { ...args.data, ...context.seed },
       }),
     );
-  }) as Payload['create'];
+  };
 
   payload.db.create = (args) => {
     const context = queueContext.getStore();

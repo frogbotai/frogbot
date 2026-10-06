@@ -23,7 +23,7 @@ export const updateDiscordQuestion: NonNullable<
     body: questionPayload({ call, state }),
   });
 
-  const layout = questionLayout({ item: call.input.questions[state.q]!, page: state.page });
+  const layout = questionLayout({ item: call.input.questions[state.q], page: state.page });
   const selects = layout.kind === 'selects' ? layout.selects : [];
 
   return { state: withoutPicks({ selects, state }) };

@@ -90,13 +90,13 @@ export async function nativeRunner({
 
       if (row.completedAt || row.hasError) return;
 
-      row.log = (row.log ?? []).filter((entry) => keep.includes(entry.id!));
+      row.log = (row.log ?? []).filter((entry) => keep.includes(entry.id));
     }),
   };
 
   database.updateOne = vi.fn(async ({ id, where, data }) => {
     const row = rows.find((candidate) =>
-      id === undefined ? matches(candidate, where!) : candidate.id === id,
+      id === undefined ? matches(candidate, where) : candidate.id === id,
     );
 
     return row ? write({ id: row.id, data }) : null;

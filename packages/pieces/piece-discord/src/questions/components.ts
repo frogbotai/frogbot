@@ -84,7 +84,7 @@ export function questionPayload({
   state: DiscordQuestionState;
 }): DiscordMessageBody {
   const { questions } = call.input;
-  const item = questions[state.q]!;
+  const item = questions[state.q];
   const final = state.q === questions.length - 1;
   const layout = questionLayout({ item, page: state.page });
   const key = callKey(call.toolCallId);
@@ -263,7 +263,7 @@ function statusLines({
   const lines: string[] = [];
 
   if (layout.kind === 'selects' && layout.pages > 1) {
-    const [start] = selectRange({ item, n: layout.selects[0]! });
+    const [start] = selectRange({ item, n: layout.selects[0] });
     const [, end] = selectRange({ item, n: layout.selects.at(-1)! });
     const kept = item.multiple ? ' Picks on other pages are kept.' : '';
 
@@ -300,7 +300,7 @@ function shortenedOptions({
   item: QuestionItem;
   layout: Extract<QuestionLayout, { kind: 'selects' }>;
 }): string {
-  const [start] = selectRange({ item, n: layout.selects[0]! });
+  const [start] = selectRange({ item, n: layout.selects[0] });
   const [, end] = selectRange({ item, n: layout.selects.at(-1)! });
   const title = '-# Full text of shortened options:';
 

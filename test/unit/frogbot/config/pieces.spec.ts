@@ -89,8 +89,7 @@ const createTrigger = definePiece({
 });
 
 function instances(config: Partial<FrogBotConfig>): PieceInstance[] {
-  return sanitize({ secret: 'secret', db, collections, ai, ...config } as FrogBotConfig).pieces
-    .instances;
+  return sanitize({ secret: 'secret', db, collections, ai, ...config }).pieces.instances;
 }
 
 describe('piece instances', () => {

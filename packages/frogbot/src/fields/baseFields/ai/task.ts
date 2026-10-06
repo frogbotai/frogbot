@@ -126,7 +126,7 @@ async function loadUser({
     overrideAccess: true,
   });
 
-  return doc ? ({ ...doc, collection: user.collection } as FrogBotRequest['user']) : null;
+  return doc ? { ...doc, collection: user.collection } : null;
 }
 
 async function runAIField({ input, req }: { input: AIFieldRunInput; req: PayloadRequest }) {
@@ -161,7 +161,7 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
       disableErrors: true,
       draft: drafts,
       fallbackLocale: 'none',
-      ...(input.locale ? { locale: input.locale as never } : {}),
+      ...(input.locale ? { locale: input.locale } : {}),
       overrideAccess,
       req: runReq,
     }) as Promise<null | RunDoc>;
@@ -198,9 +198,9 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
 
     const { docs, errors } = await frogbot.update({
       ...args,
-      data: (status === 'published' ? { ...data, _status: status } : data) as never,
+      data: status === 'published' ? { ...data, _status: status } : data,
       draft: true,
-      where: { and: [{ id: { equals: input.id } }, { _status: { equals: status } }] } as never,
+      where: { and: [{ id: { equals: input.id } }, { _status: { equals: status } }] },
     });
 
     if (errors.length > 0) throw new Error(errors[0]?.message);

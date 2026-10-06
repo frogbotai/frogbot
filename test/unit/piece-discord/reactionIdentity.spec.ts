@@ -84,18 +84,18 @@ describe('Installed Discord Gateway reaction identity constraints', () => {
 
       await vi.waitFor(() => expect(forwarded).toHaveLength(4));
 
-      expect(JSON.parse(forwarded[0]!.body)).toEqual({
+      expect(JSON.parse(forwarded[0].body)).toEqual({
         type: 'GATEWAY_MESSAGE_REACTION_ADD',
         timestamp: receivedAt,
         data: reaction,
       });
-      expect(JSON.parse(forwarded[1]!.body)).toEqual({
+      expect(JSON.parse(forwarded[1].body)).toEqual({
         type: 'GATEWAY_MESSAGE_REACTION_REMOVE',
         timestamp: receivedAt,
         data: reaction,
       });
-      expect(forwarded[2]!.body).toBe(forwarded[0]!.body);
-      expect(JSON.parse(forwarded[3]!.body)).toEqual({
+      expect(forwarded[2].body).toBe(forwarded[0].body);
+      expect(JSON.parse(forwarded[3].body)).toEqual({
         type: 'GATEWAY_MESSAGE_REACTION_ADD',
         timestamp: receivedAt + 10,
         data: reaction,

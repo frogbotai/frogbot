@@ -124,7 +124,7 @@ describe('Teams question card', () => {
     expect(ten).toMatchObject({ style: 'expanded' });
     expect(ten).not.toHaveProperty('placeholder');
     expect(eleven).toMatchObject({ style: 'compact', placeholder: 'Choose an option' });
-    expect(eleven!.choices).toHaveLength(11);
+    expect(eleven.choices).toHaveLength(11);
   });
 
   it('keeps several questions on one card, separated, with one pair of buttons', () => {
@@ -154,7 +154,7 @@ describe('Teams question card', () => {
       questionCard({ call: questionCall({ options: labels.map((label) => ({ label })) }) }),
     );
 
-    expect(choices!.choices).toEqual(
+    expect(choices.choices).toEqual(
       labels.map((title, index) => ({ title, value: String(index) })),
     );
   });
@@ -166,7 +166,7 @@ describe('Teams question card', () => {
       }),
     );
 
-    expect(choices!.choices).toEqual([
+    expect(choices.choices).toEqual([
       { title: 'Red — Warm', value: '0' },
       { title: 'Blue', value: '1' },
     ]);
@@ -201,9 +201,9 @@ describe('Teams question card', () => {
 
     expect(cardSize(card)).toBeLessThanOrEqual(CARD_BUDGET);
     expect(choices).toMatchObject({ style: 'compact', isMultiSelect: true });
-    expect(choices!.choices).toHaveLength(400);
+    expect(choices.choices).toHaveLength(400);
     expect(
-      (choices!.choices as Array<{ title: string; value: string }>).every(
+      (choices.choices as Array<{ title: string; value: string }>).every(
         ({ title, value }, index) =>
           value === String(index) && title.startsWith(`Option ${index + 1}`),
       ),
@@ -216,7 +216,7 @@ describe('Teams question card', () => {
       questionCard({ call: questionCall({ options: options(60, () => long) }) }),
     );
 
-    expect((choices!.choices as Array<{ title: string }>)[0]!.title).toBe(`Option 1 — ${long}`);
+    expect((choices.choices as Array<{ title: string }>)[0].title).toBe(`Option 1 — ${long}`);
   });
 
   it('shortens descriptions before titles when the card is too large', () => {
@@ -225,7 +225,7 @@ describe('Teams question card', () => {
       questionCard({ call: questionCall({ options: options(100, () => long) }) }),
     );
 
-    expect((choices!.choices as Array<{ title: string }>)[99]!.title).toBe(
+    expect((choices.choices as Array<{ title: string }>)[99].title).toBe(
       `Option 100 — ${'x'.repeat(119)}…`,
     );
   });
@@ -238,7 +238,7 @@ describe('Teams question card', () => {
     });
 
     const [choices] = choiceSets(questionCard({ call }));
-    const titles = choices!.choices as Array<{ title: string; value: string }>;
+    const titles = choices.choices as Array<{ title: string; value: string }>;
 
     expect(titles).toHaveLength(150);
     expect(titles[149]).toEqual({ title: `149-${'y'.repeat(75)}…`, value: '149' });
@@ -255,7 +255,7 @@ describe('Teams question card', () => {
     const card = questionCard({ call: questionCall({ question }) });
 
     expect(cardSize(card)).toBeLessThanOrEqual(CARD_BUDGET);
-    expect(String(choiceSets(card)[0]!.label)).toHaveLength(500);
+    expect(String(choiceSets(card)[0].label)).toHaveLength(500);
     expect(card.fallbackText).toHaveLength('Question 1: '.length + 200);
   });
 
@@ -357,7 +357,7 @@ describe('Teams question card', () => {
     ];
 
     expect(cards.flatMap(({ body }) => body.map(({ type }) => type))).not.toContain('TextBlock');
-    expect(textRuns(cards[1]!.body).map(({ text }) => text)).toEqual([
+    expect(textRuns(cards[1].body).map(({ text }) => text)).toEqual([
       '**Color**',
       'Pick [one](https://example.com)',
       '✅ “[Click](https://x.test)”',

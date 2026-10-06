@@ -157,7 +157,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     await fixture.tap('Blue');
 
     expect(settleClientToolCall).toHaveBeenCalledOnce();
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: ['Blue'] }] } },
       actor: {
         user: null,
@@ -190,7 +190,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     expect(settleClientToolCall).toHaveBeenCalledOnce();
     expect(fixture.edits().slice(edits)).toEqual([
       expect.objectContaining({
-        text: fixture.edits()[edits - 1]!.text,
+        text: fixture.edits()[edits - 1].text,
         reply_markup: { inline_keyboard: [] },
       }),
     ]);
@@ -221,7 +221,7 @@ describe('Telegram native questions through the installed adapter and channel ho
   it('keeps toggles on the server and submits them in option order with Done', async () => {
     const fixture = await asked({
       input: {
-        questions: [{ ...colorQuestion.questions[0]!, multiple: true, custom: false }],
+        questions: [{ ...colorQuestion.questions[0], multiple: true, custom: false }],
       },
     });
 
@@ -234,11 +234,11 @@ describe('Telegram native questions through the installed adapter and channel ho
         .map(({ text }) => text),
     ).toContain('☑ Green');
 
-    expect(keyboard(fixture.card())[0]!.map(({ text }) => text)).toEqual(['☑ Red', '☐ Blue']);
+    expect(keyboard(fixture.card())[0].map(({ text }) => text)).toEqual(['☑ Red', '☐ Blue']);
 
     await fixture.tap('Done');
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: { answers: [{ header: 'Color', selected: ['Red', 'Green'] }] },
     });
     expect(fixture.edits()).toHaveLength(3);
@@ -248,7 +248,7 @@ describe('Telegram native questions through the installed adapter and channel ho
 
   it('redraws every toggle and ends on the settled card', async () => {
     const fixture = await asked({
-      input: { questions: [{ ...colorQuestion.questions[0]!, multiple: true }] },
+      input: { questions: [{ ...colorQuestion.questions[0], multiple: true }] },
     });
 
     await fixture.tap('Red');
@@ -258,7 +258,7 @@ describe('Telegram native questions through the installed adapter and channel ho
 
     expect(fixture.edits()).toHaveLength(4);
     expect(fixture.card()).toMatchObject({ reply_markup: { inline_keyboard: [] } });
-    expect(settleClientToolCall.mock.calls[0]![0].outcome.output.answers[0].selected).toEqual([
+    expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers[0].selected).toEqual([
       'Red',
       'Blue',
       'Green',
@@ -271,7 +271,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     const fixture = await asked({
       input: {
         questions: [
-          colorQuestion.questions[0]!,
+          colorQuestion.questions[0],
           {
             header: 'Size',
             question: 'Pick a size',
@@ -291,7 +291,7 @@ describe('Telegram native questions through the installed adapter and channel ho
 
     await fixture.tap('L');
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({
       output: {
         answers: [
           { header: 'Color', selected: ['Red'] },
@@ -307,7 +307,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     const fixture = await asked({
       input: {
         questions: [
-          colorQuestion.questions[0]!,
+          colorQuestion.questions[0],
           { header: 'Size', question: 'Pick a size', options: [{ label: 'S' }, { label: 'L' }] },
         ],
       },
@@ -331,7 +331,7 @@ describe('Telegram native questions through the installed adapter and channel ho
       chatId: group,
       input: {
         questions: [
-          colorQuestion.questions[0]!,
+          colorQuestion.questions[0],
           { header: 'Size', question: 'Pick a size', options: [{ label: 'S' }, { label: 'L' }] },
         ],
       },
@@ -366,7 +366,7 @@ describe('Telegram native questions through the installed adapter and channel ho
       callbackUpdate({ chatId: group, messageId: fixture.cardId, data: 'q:1:o:1' }),
     );
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome.output.answers).toEqual([
+    expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers).toEqual([
       { header: 'Color', selected: ['Red'] },
       { header: 'Size', selected: ['L'] },
     ]);
@@ -391,7 +391,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     );
     await fixture.run();
 
-    expect(settleClientToolCall.mock.calls[0]![0]).toMatchObject({
+    expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
       outcome: { output: { answers: [{ header: 'Color', selected: [], custom: 'Teal' }] } },
       actor: { channel: { id: '7', name: 'Toad Hall' } },
     });
@@ -416,7 +416,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     await fixture.run();
 
     expect(fixture.inputs.at(-1)!.thread.id).toBe(`telegram:${group}`);
-    expect(settleClientToolCall.mock.calls[0]![0].outcome.output.answers[0].custom).toBe('/teal');
+    expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers[0].custom).toBe('/teal');
 
     await fixture.host.shutdown();
   });
@@ -436,7 +436,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     );
     await fixture.run();
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome.output.answers[0].custom).toBe('Teal');
+    expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers[0].custom).toBe('Teal');
 
     await fixture.host.shutdown();
   });
@@ -484,7 +484,7 @@ describe('Telegram native questions through the installed adapter and channel ho
 
     await fixture.tap('Green');
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome.output.answers[0].selected).toEqual([
+    expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers[0].selected).toEqual([
       'Green',
     ]);
 
@@ -548,7 +548,7 @@ describe('Telegram native questions through the installed adapter and channel ho
 
     await fixture.tap('Dismiss');
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({ dismissed: true });
+    expect(settleClientToolCall.mock.calls[0][0].outcome).toEqual({ dismissed: true });
     expect(String(fixture.card()!.text)).toMatch(/🚫 Dismissed by Frog Smith/);
     expect(fixture.inputs).toHaveLength(jobs);
 
@@ -575,7 +575,7 @@ describe('Telegram native questions through the installed adapter and channel ho
 
     await fixture.tap('City 12');
 
-    expect(settleClientToolCall.mock.calls[0]![0].outcome.output.answers[0].selected).toEqual([
+    expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers[0].selected).toEqual([
       'City 12',
     ]);
 

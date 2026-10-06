@@ -163,7 +163,7 @@ describe.skipIf(!RUN_E2E)(
       });
 
       return messages.docs.flatMap((doc) =>
-        Object.entries(((doc as { settlements?: object }).settlements ?? {}) as object),
+        Object.entries((doc as { settlements?: object }).settlements ?? {}),
       );
     }
 
@@ -279,9 +279,7 @@ describe.skipIf(!RUN_E2E)(
 
       await start(session);
 
-      expect(model.requests[0]!.tools?.map(({ function: tool }) => tool.name)).toEqual([
-        'question',
-      ]);
+      expect(model.requests[0].tools?.map(({ function: tool }) => tool.name)).toEqual(['question']);
       expect(activities(session)).toEqual([
         {
           agentSessionId: session,
@@ -398,7 +396,7 @@ describe.skipIf(!RUN_E2E)(
 
       await reply({ body: 'Huge', session });
 
-      expect(activities(session)[2]!.content.body).toMatch(
+      expect(activities(session)[2].content.body).toMatch(
         /^> Reply to “Size” with one of the options\./,
       );
 

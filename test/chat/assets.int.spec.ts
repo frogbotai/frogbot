@@ -197,7 +197,7 @@ describe('chat assets', () => {
       tools: {},
     });
 
-    return result.chatId!;
+    return result.chatId;
   }
 
   async function readAsset(id: number | string): Promise<Asset> {

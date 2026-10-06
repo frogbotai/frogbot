@@ -55,7 +55,7 @@ describe.skipIf(process.platform === 'win32')('test server process groups', () =
       { stdio: ['ignore', 'pipe', 'ignore'] },
     );
     const pgid = await new Promise<number>((resolve) =>
-      worker.stdout!.once('data', (chunk: Buffer) => resolve(Number(String(chunk).trim()))),
+      worker.stdout.once('data', (chunk: Buffer) => resolve(Number(String(chunk).trim()))),
     );
     await waitFor(() => groupMembers(pgid).length >= 3);
 

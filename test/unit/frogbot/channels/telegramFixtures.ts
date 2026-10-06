@@ -66,7 +66,7 @@ export function createTelegramApi() {
 
     const result = results[method]?.() ?? true;
 
-    if (typeof result === 'object') call.result = result as TelegramApiCall['result'];
+    if (typeof result === 'object') call.result = result;
 
     return { status: 200, payload: { ok: true, result } };
   };
@@ -182,7 +182,7 @@ export function messageUpdate({
       date: 1_789_000_000,
       text: body,
       ...(body.startsWith('/')
-        ? { entities: [{ type: 'bot_command', offset: 0, length: body.split(' ')[0]!.length }] }
+        ? { entities: [{ type: 'bot_command', offset: 0, length: body.split(' ')[0].length }] }
         : {}),
       from: { ...from, is_bot: false },
       chat: telegramChat(chatId, { forum }),

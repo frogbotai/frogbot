@@ -12,7 +12,7 @@ import {
   useTranslation,
 } from '@payloadcms/ui';
 import { formatDocTitle } from '@payloadcms/ui/shared';
-import type { ClientCollectionConfig, Column, TypeWithID } from 'payload';
+import type { ClientCollectionConfig, Column } from 'payload';
 import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
 import { FieldCell } from '../../fields/FieldCell/index.client.js';
@@ -57,7 +57,7 @@ function BoardDocumentCard({
   } = useConfig();
   const title = formatDocTitle({
     collectionConfig,
-    data: row as unknown as TypeWithID,
+    data: row,
     dateFormat,
     i18n,
   });
@@ -105,7 +105,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const { columns: columnState } = useTableColumns();
   const collectionConfig = getEntityConfig({
     collectionSlug: props.collectionSlug,
-  }) as ClientCollectionConfig;
+  });
   const useAsTitle = collectionConfig.admin?.useAsTitle;
   const cardColumns = useMemo(
     () => getViewCardColumns(columnState, useAsTitle),

@@ -113,7 +113,7 @@ export function createQuestionStore({
         messages: normalizeMessages(question.messages),
       }));
 
-      const { chatId, thread } = saved[0]!;
+      const { chatId, thread } = saved[0];
 
       await Promise.all(saved.map((question) => write(question, QUESTION_TTL)));
 

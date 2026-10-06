@@ -137,7 +137,7 @@ describe('Discord question hooks', () => {
       thread: thread('discord:G1:C1:T1'),
     });
 
-    expect(rendered[0]!.messages).toEqual([{ id: '900', postedAt: '2026-09-26T12:00:00.123Z' }]);
+    expect(rendered[0].messages).toEqual([{ id: '900', postedAt: '2026-09-26T12:00:00.123Z' }]);
   });
 
   it('redraws the card in place after arming, and skips a multi-select pick', async () => {
@@ -154,7 +154,7 @@ describe('Discord question hooks', () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0]).toMatchObject({ method: 'PATCH', path: '/channels/T1/messages/900' });
-    expect(JSON.stringify(requests[0]!.body)).toContain('<@U7>, reply in this thread');
+    expect(JSON.stringify(requests[0].body)).toContain('<@U7>, reply in this thread');
   });
 
   it('redraws the next question of a set after a typed answer', async () => {
@@ -166,7 +166,7 @@ describe('Discord question hooks', () => {
     });
 
     expect(requests).toHaveLength(1);
-    expect(JSON.stringify(requests[0]!.body)).toContain('**Size** · 2 of 2');
+    expect(JSON.stringify(requests[0].body)).toContain('**Size** · 2 of 2');
   });
 
   it('redraws the current card from the saved record when the retry job runs', async () => {
@@ -177,7 +177,7 @@ describe('Discord question hooks', () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0]).toMatchObject({ method: 'PATCH', path: '/channels/T1/messages/901' });
-    expect(JSON.stringify(requests[0]!.body)).toContain('**Size** · 2 of 2');
+    expect(JSON.stringify(requests[0].body)).toContain('**Size** · 2 of 2');
   });
 
   it('forgets the picks in the menus a redraw resets', async () => {
@@ -214,8 +214,8 @@ describe('Discord question hooks', () => {
       path: '/channels/T1/messages/900',
       body: { flags: 32768, allowed_mentions: { parse: [] } },
     });
-    expect(JSON.stringify(requests[0]!.body)).toContain('Answered by **Toad** (@toad)');
-    expect(JSON.stringify(requests[0]!.body)).not.toContain('custom_id');
+    expect(JSON.stringify(requests[0].body)).toContain('Answered by **Toad** (@toad)');
+    expect(JSON.stringify(requests[0].body)).not.toContain('custom_id');
   });
 
   it('retires a card answered elsewhere without naming anyone', async () => {
@@ -227,8 +227,8 @@ describe('Discord question hooks', () => {
       outcome: { dismissed: true },
     });
 
-    expect(JSON.stringify(requests[0]!.body)).toContain('-# Dismissed');
-    expect(JSON.stringify(requests[0]!.body)).not.toContain('<@');
+    expect(JSON.stringify(requests[0].body)).toContain('-# Dismissed');
+    expect(JSON.stringify(requests[0].body)).not.toContain('<@');
   });
 
   it('tells a denied participant in the thread, mentioning only them', async () => {
@@ -258,7 +258,7 @@ describe('Discord question hooks', () => {
 
     await discordQuestions.rejected!({ ...hookArgs(client), interaction, reason: 'Try again.' });
 
-    expect(requests[0]!.body).toEqual({
+    expect(requests[0].body).toEqual({
       content: '<@U8> Try again.',
       allowed_mentions: { users: ['U8'] },
       message_reference: { message_id: '555', fail_if_not_exists: false },

@@ -63,8 +63,8 @@ describe('SQLite search through the FrogBot SDK', () => {
       method: 'sqlite-fts5',
     });
     expect(result.hits.map(({ doc }) => doc.id)).toEqual([strong.id, weak.id]);
-    expect(result.hits[0]!.doc).toMatchObject({ title: 'Account recovery' });
-    expect(result.hits[0]!.score).toBeGreaterThan(result.hits[1]!.score);
+    expect(result.hits[0].doc).toMatchObject({ title: 'Account recovery' });
+    expect(result.hits[0].score).toBeGreaterThan(result.hits[1].score);
   });
 
   it('search applies where, limit, and select', async () => {
@@ -81,7 +81,7 @@ describe('SQLite search through the FrogBot SDK', () => {
     });
 
     expect(result.hits).toHaveLength(1);
-    expect(result.hits[0]!.doc).toEqual({ id: expect.any(Number), title: 'Frog ponds' });
+    expect(result.hits[0].doc).toEqual({ id: expect.any(Number), title: 'Frog ponds' });
   });
 
   it('searchMany returns the same lists as the Local API', async () => {

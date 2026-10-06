@@ -58,7 +58,7 @@ async function applySEO({
 
   const result = await seoPlugin(options)(config);
 
-  return { collection, result, updated: result.collections![0] };
+  return { collection, result, updated: result.collections[0] };
 }
 
 describe('seoPlugin', () => {
@@ -271,7 +271,7 @@ describe('seoPlugin', () => {
       interfaceName: 'PostSEO',
     })(config);
 
-    expect(result.collections![0].fields).toMatchObject([
+    expect(result.collections[0].fields).toMatchObject([
       {
         name: 'meta',
         interfaceName: 'PostSEO',

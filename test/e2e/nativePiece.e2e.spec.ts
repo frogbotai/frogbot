@@ -148,7 +148,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     const parts = assistant.parts.filter(({ type }) => type === `tool-${instance}_send`);
     expect(parts).toHaveLength(1);
     expect(assistant.parts).toContainEqual({ type: 'text', state: 'done', text: body.text });
-    return { body, chatId, part: parts[0]! };
+    return { body, chatId, part: parts[0] };
   }
 
   async function sendBoth({

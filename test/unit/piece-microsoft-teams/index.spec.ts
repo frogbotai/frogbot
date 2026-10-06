@@ -283,7 +283,7 @@ describe('native Microsoft Teams channel', () => {
 
     const identity = await definition.channel?.identity({
       author: { userId: '29:user', email: 'ADA@example.com' },
-      client: {} as never,
+      client: {},
       req: request as never,
     });
 

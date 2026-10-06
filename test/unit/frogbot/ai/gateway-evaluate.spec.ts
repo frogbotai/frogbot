@@ -18,7 +18,7 @@ function makeRequest() {
 }
 
 function makeFrogBot({
-  user = { id: 'user-1' } as object | null,
+  user = { id: 'user-1' },
   evaluate = () => true,
 }: {
   user?: object | null;

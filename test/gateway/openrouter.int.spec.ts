@@ -317,7 +317,7 @@ describe('OpenRouter adversarial cases', () => {
     expect(status, text).toBe(200);
     expect(upstream?.body.model).toBe('google/gemma-4-31b-it:free');
     expect(
-      calculateModelCostUSD('openrouter/google/gemma-4-31b-it:free', operations[0]!.usage!),
+      calculateModelCostUSD('openrouter/google/gemma-4-31b-it:free', operations[0].usage!),
     ).toBe(0);
   });
 

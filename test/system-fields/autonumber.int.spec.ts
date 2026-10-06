@@ -78,7 +78,7 @@ describe('autonumber', () => {
   async function create(data: Record<string, unknown>): Promise<Ticket> {
     return (await booted.frogbot.create({
       collection: ticketsSlug,
-      data: { title: 'Printer', ...data } as never,
+      data: { title: 'Printer', ...data },
     })) as unknown as Ticket;
   }
 
@@ -162,12 +162,12 @@ describe('autonumber', () => {
     it('deleting a record leaves a gap and the next create is higher', async () => {
       const [first, second, third] = [await create({}), await create({}), await create({})];
 
-      await booted.frogbot.delete({ collection: ticketsSlug, id: second!.id });
+      await booted.frogbot.delete({ collection: ticketsSlug, id: second.id });
 
       const next = await create({});
 
-      expect(next.number).toBeGreaterThan(third!.number!);
-      expect(await numbers()).toEqual([first!.number, third!.number, next.number]);
+      expect(next.number).toBeGreaterThan(third.number!);
+      expect(await numbers()).toEqual([first.number, third.number, next.number]);
     });
 
     it('a failed save leaves the next number unique and higher', async () => {
@@ -345,7 +345,7 @@ describe('autonumber', () => {
       });
 
       const restore = await booted.restClient.post(
-        `/api/${ticketsSlug}/versions/${versions.docs[0]!.id}`,
+        `/api/${ticketsSlug}/versions/${versions.docs[0].id}`,
         {},
       );
 

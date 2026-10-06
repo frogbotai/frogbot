@@ -187,10 +187,7 @@ export function useCalendar<T extends CalendarEvent>({
   const onDragMove = (drag: DragMoveEvent) => {
     const id = String(drag.active.data.current?.eventId ?? drag.active.id);
     const event = currentEvents.find((candidate) => getId(candidate) === id);
-    const next = resolveCalendarDrop(
-      drag.over?.data.current as CalendarDropData | undefined,
-      getCalendarPointerPosition(drag),
-    );
+    const next = resolveCalendarDrop(drag.over?.data.current, getCalendarPointerPosition(drag));
     if (!event || !canEdit(event)) return place(null);
     place(
       next && !isCalendarNoopDrop(event, next)
@@ -203,10 +200,7 @@ export function useCalendar<T extends CalendarEvent>({
     const { active, over } = drag;
     const id = String(active.data.current?.eventId ?? active.id);
     const event = currentEvents.find((candidate) => getId(candidate) === id);
-    const resolved = resolveCalendarDrop(
-      over?.data.current as CalendarDropData | undefined,
-      getCalendarPointerPosition(drag),
-    );
+    const resolved = resolveCalendarDrop(over?.data.current, getCalendarPointerPosition(drag));
     const dropped = placementRef.current ?? resolved;
     reset();
     if (over && dropped && event && canEdit(event) && !isCalendarNoopDrop(event, dropped)) {

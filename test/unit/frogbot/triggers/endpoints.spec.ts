@@ -385,9 +385,9 @@ describe('trigger endpoints', () => {
       const endpoint = type === 'app' ? post : subscribedPost;
       await expect(endpoint.handler(req as never)).resolves.toMatchObject({ status: 200 });
       expect(verificationBodies).toEqual([raw]);
-      expect(verify.mock.calls[0]![0].req.user).toBe(user);
+      expect(verify.mock.calls[0][0].req.user).toBe(user);
       expect(resolvePieceCredential).toHaveBeenCalledTimes(1);
-      expect(resolvePieceCredential.mock.calls[0]![0].req.user).toBeNull();
+      expect(resolvePieceCredential.mock.calls[0][0].req.user).toBeNull();
       expect(client).toHaveBeenCalledWith({
         req: expect.objectContaining({ user: null, data, context: req.context, frogbot }),
       });
@@ -455,8 +455,8 @@ describe('trigger endpoints', () => {
     });
     await expect(subscribedPost.handler(req as never)).resolves.toMatchObject({ status: 200 });
     expect(run).toHaveBeenCalledTimes(1);
-    expect(run.mock.calls[0]![0].input).toEqual({ since: new Date(since) });
-    expect(run.mock.calls[0]![0].input.since).toBeInstanceOf(Date);
+    expect(run.mock.calls[0][0].input).toEqual({ since: new Date(since) });
+    expect(run.mock.calls[0][0].input.since).toBeInstanceOf(Date);
     expect(frogbot.queue).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.objectContaining({ event: { dedupeKey: 'date', data: { since } } }),

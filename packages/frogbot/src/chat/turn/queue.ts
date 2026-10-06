@@ -182,7 +182,7 @@ export async function promoteSteerMessages({
   }
 
   return promoted.map((message) => ({
-    message: messagesToUIMessages([message as never])[0]!,
+    message: messagesToUIMessages([message as never])[0],
     selection: readSelection(message),
   }));
 }
@@ -288,7 +288,7 @@ async function requestForActor({
   const threadId = chat.channelThread?.thread.id;
 
   return frogbot.createRequest({
-    user: user ? ({ ...user, collection } as FrogBotRequest['user']) : null,
+    user: user ? { ...user, collection } : null,
     ...(channel && threadId
       ? {
           context: {

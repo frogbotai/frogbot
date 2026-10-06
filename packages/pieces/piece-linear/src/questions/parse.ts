@@ -60,7 +60,7 @@ function parseReply({ input, text }: { input: QuestionInput; text: string }): Re
   }
 
   const results = questions.map((item, index) =>
-    parseLine({ item, line: lines[index]!, numbered, unmarkCustom: questions.length > 1 }),
+    parseLine({ item, line: lines[index], numbered, unmarkCustom: questions.length > 1 }),
   );
 
   const failure = results.find((result): result is { reason: string } => 'reason' in result);
@@ -105,7 +105,7 @@ function selectOptions({
 }: OptionMatch & { line: string }): string[] | undefined {
   const whole = optionIndex({ item, numbered, token: line });
 
-  if (whole !== undefined) return [item.options[whole]!.label];
+  if (whole !== undefined) return [item.options[whole].label];
 
   const segments = numbered && NUMBER_LIST.test(line) ? line.split(/[\s,]+/) : line.split(',');
   const indexes = matchSegments({ item, numbered, segments });
@@ -116,7 +116,7 @@ function selectOptions({
 
   if (!item.multiple && unique.length !== 1) return undefined;
 
-  return unique.map((index) => item.options[index]!.label);
+  return unique.map((index) => item.options[index].label);
 }
 
 function matchSegments({
@@ -130,7 +130,7 @@ function matchSegments({
   matches[segments.length] = [];
 
   for (let start = segments.length - 1; start >= 0; start--) {
-    if (!segments[start]!.trim()) {
+    if (!segments[start].trim()) {
       matches[start] = matches[start + 1];
 
       continue;

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '../../../../packages/ui/src/components/tooltip';
@@ -13,11 +13,12 @@ describe('PageContextButton', () => {
   it('opens, toggles, and closes the tab menu', async () => {
     const PageContextButton = await loadPageContextButton();
     const addPageContext = vi.fn();
+    const openTabs = Promise.resolve({ success: true, tabs: [tab] });
     render(
       <TooltipProvider>
         <PageContextButton
           isLoading={false}
-          getOpenTabs={vi.fn().mockResolvedValue({ success: true, tabs: [tab] })}
+          getOpenTabs={() => openTabs}
           addPageContext={addPageContext}
           removePageContext={vi.fn()}
           selectedTabIds={new Set()}
@@ -25,11 +26,16 @@ describe('PageContextButton', () => {
         <button>Outside</button>
       </TooltipProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
-    fireEvent.click(await screen.findByText('Example tab'));
+    // The outside-click listener is added in an effect after the menu renders; opening inside
+    // `act` runs that effect before the outside press below.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
+      await openTabs;
+    });
+    fireEvent.click(screen.getByText('Example tab'));
     expect(addPageContext).toHaveBeenCalledWith(1);
     fireEvent.mouseDown(document.body);
-    await waitFor(() => expect(screen.queryByText('Example tab')).toBeNull());
+    expect(screen.queryByText('Example tab')).toBeNull();
   });
 
   it('removes selected tab context', async () => {

@@ -45,13 +45,13 @@ describe('GitHub App channel conversation', () => {
           const jwt = headers.get('authorization')!.replace(/^bearer /i, '');
           const [header, payload, signature] = jwt.split('.');
 
-          expect(JSON.parse(Buffer.from(payload!, 'base64url').toString()).iss).toBe('12345');
+          expect(JSON.parse(Buffer.from(payload, 'base64url').toString()).iss).toBe('12345');
           expect(
             verify(
               'RSA-SHA256',
               Buffer.from(`${header}.${payload}`),
               keys.publicKey,
-              Buffer.from(signature!, 'base64url'),
+              Buffer.from(signature, 'base64url'),
             ),
           ).toBe(true);
 
@@ -122,12 +122,12 @@ describe('GitHub App channel conversation', () => {
       expect((await deliver(3, '@frogbot help'))?.status).toBe(200);
       expect(fixture.inputs).toHaveLength(1);
 
-      await fixture.host.run(fixture.inputs[0]!);
+      await fixture.host.run(fixture.inputs[0]);
       await deliver(4, 'Follow-up without a mention');
 
       expect(fixture.inputs).toHaveLength(2);
 
-      await fixture.host.run(fixture.inputs[1]!);
+      await fixture.host.run(fixture.inputs[1]);
       await deliver(4, 'Follow-up without a mention');
 
       expect(fixture.inputs).toHaveLength(2);

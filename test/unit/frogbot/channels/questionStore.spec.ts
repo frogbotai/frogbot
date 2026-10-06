@@ -11,7 +11,7 @@ function storeFixture() {
   const memory = createMemoryKV();
 
   const store = createQuestionStore({
-    adapter: { channelIdFromThreadId: (id: string) => id.split(':')[0]! },
+    adapter: { channelIdFromThreadId: (id: string) => id.split(':')[0] },
     kv: memory.kv as unknown as KV,
     namespace: 'support:slack',
   });
@@ -112,7 +112,7 @@ describe('channel question store', () => {
 
     const saved = await store.find({ chatId: 'chat-1', toolCallId: 'call-1' });
 
-    expect(new Date(saved!.messages[0]!.postedAt).getTime()).toBeGreaterThanOrEqual(before);
+    expect(new Date(saved!.messages[0].postedAt).getTime()).toBeGreaterThanOrEqual(before);
   });
 
   it('refuses a question without messages', async () => {

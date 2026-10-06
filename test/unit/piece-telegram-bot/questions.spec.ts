@@ -109,9 +109,10 @@ describe('Telegram question messages', () => {
       ['Red', 'Blue'],
       ['Type your answer', 'Dismiss'],
     ]);
-    expect(body.reply_markup.inline_keyboard[0]!.map(({ callback_data }) => callback_data)).toEqual(
-      ['q:0:o:0', 'q:0:o:1'],
-    );
+    expect(body.reply_markup.inline_keyboard[0].map(({ callback_data }) => callback_data)).toEqual([
+      'q:0:o:0',
+      'q:0:o:1',
+    ]);
   });
 
   it('omits the typed answer when custom answers are off', () => {
@@ -146,7 +147,7 @@ describe('Telegram question messages', () => {
 
     expect(buttons(body)).toEqual([['☐ Red', '☑ Blue'], ['Done'], ['Dismiss']]);
     expect(body.text).toContain('<i>Select all that apply, then tap Done.</i>');
-    expect(body.reply_markup.inline_keyboard[1]![0]!.callback_data).toBe('q:0:d');
+    expect(body.reply_markup.inline_keyboard[1][0].callback_data).toBe('q:0:d');
   });
 
   it('shows progress through several questions', () => {
@@ -156,7 +157,7 @@ describe('Telegram question messages', () => {
     });
 
     expect(body.text.split('\n')[0]).toBe('<b>Size</b> · 2 of 3');
-    expect(body.reply_markup.inline_keyboard[0]![0]!.callback_data).toBe('q:1:o:0');
+    expect(body.reply_markup.inline_keyboard[0][0].callback_data).toBe('q:1:o:0');
   });
 
   it('asks for a reply in typing mode and offers Back', () => {
@@ -194,7 +195,7 @@ describe('Telegram question messages', () => {
     [11, [10, 1]],
     [25, [10, 10, 5]],
   ])('pages %i options', (count, sizes) => {
-    const item = call({ header: 'City', options: options(count) }).input.questions[0]!;
+    const item = call({ header: 'City', options: options(count) }).input.questions[0];
 
     expect(optionPages(item).map((page) => page.length)).toEqual(sizes);
   });
@@ -207,7 +208,7 @@ describe('Telegram question messages', () => {
     expect(buttons(first).at(-2)).toEqual(['Next ›']);
     expect(first.text).toContain('Options 1–10 of 11.');
     expect(buttons(second)).toEqual([['Option 11'], ['‹ Prev'], ['Type your answer', 'Dismiss']]);
-    expect(second.reply_markup.inline_keyboard[1]![0]!.callback_data).toBe('q:0:p:0');
+    expect(second.reply_markup.inline_keyboard[1][0].callback_data).toBe('q:0:p:0');
   });
 
   it('keeps 100 long options with descriptions within the text budget without dropping any', () => {
@@ -221,7 +222,7 @@ describe('Telegram question messages', () => {
       })),
     });
 
-    const item = question.input.questions[0]!;
+    const item = question.input.questions[0];
     const pages = optionPages(item);
 
     expect(pages.flat()).toEqual(item.options.map((_, index) => index));
@@ -261,7 +262,7 @@ describe('Telegram question messages', () => {
     });
 
     expect(body.text).toBe('<b>A&lt;B</b>\nUse &lt;script&gt; &amp; stuff?');
-    expect(body.reply_markup.inline_keyboard[0]![0]!.text).toBe(label);
+    expect(body.reply_markup.inline_keyboard[0][0].text).toBe(label);
   });
 
   it('summarizes answers with the responder and removes the keyboard', () => {

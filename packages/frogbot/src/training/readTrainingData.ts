@@ -1,5 +1,4 @@
 import type { FrogBot } from '../frogbot.js';
-import type { CollectionSlug } from '../types/generated.js';
 import type { ReadTrainingDataOptions, TrainingDataDocument, TrainingDataRecord } from './types.js';
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -28,7 +27,7 @@ export async function* readTrainingData(
   while (true) {
     const chats = await frogbot.find({
       ...common,
-      collection: frogbot.config.chat.chatsSlug as CollectionSlug,
+      collection: frogbot.config.chat.chatsSlug,
       page: chatPage,
       sort: ['createdAt', 'id'],
       where: options.where,
@@ -41,7 +40,7 @@ export async function* readTrainingData(
       while (true) {
         const result = await frogbot.find({
           ...common,
-          collection: frogbot.config.chat.messagesSlug as CollectionSlug,
+          collection: frogbot.config.chat.messagesSlug,
           page: messagePage,
           sort: ['createdAt', 'id'],
           where: { chat: { equals: chat.id } },

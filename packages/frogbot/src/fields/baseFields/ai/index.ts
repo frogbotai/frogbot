@@ -86,7 +86,7 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
   const paths = aiFieldPaths(args.name);
   const localized = rest.localized ? { localized: true } : {};
 
-  const hooks = (rest.hooks ?? {}) as NonNullable<TextField['hooks']>;
+  const hooks = rest.hooks ?? {};
 
   const valueHooks = {
     ...hooks,

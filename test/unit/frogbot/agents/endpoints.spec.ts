@@ -190,7 +190,7 @@ describe('agent endpoints', () => {
     agent.config = {
       ...agent.config,
       profile: { name: 'Ada', avatar: '/ada.png' },
-    } as AgentInstance['config'];
+    };
     const response = await listHandler()(makeRequest({ agent }));
 
     expect(await response.json()).toEqual({
@@ -424,7 +424,7 @@ describe('agent endpoints', () => {
 
     await postHandler()(req);
 
-    const { onError } = streamTurn.mock.calls[0]![0] as { onError?: (error: unknown) => string };
+    const { onError } = streamTurn.mock.calls[0][0] as { onError?: (error: unknown) => string };
     const failure = new Error('model failed');
 
     expect(() => onError?.(failure)).toThrow(failure);

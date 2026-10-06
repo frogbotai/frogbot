@@ -151,7 +151,7 @@ describe('pieceConformance', () => {
     missing.actions.pop();
     await expect(pieceConformance(createValid(), missing)).rejects.toThrow('must cover exactly');
     const duplicate = validFixtures();
-    duplicate.actions.push(duplicate.actions[0]!);
+    duplicate.actions.push(duplicate.actions[0]);
     await expect(pieceConformance(createValid(), duplicate)).rejects.toThrow(
       "Action fixtures contains duplicate 'getItem'",
     );
@@ -164,16 +164,16 @@ describe('pieceConformance', () => {
       'factory options are invalid',
     );
     const input = validFixtures();
-    input.actions[0]!.input = { id: 1 };
+    input.actions[0].input = { id: 1 };
     await expect(pieceConformance(createValid(), input)).rejects.toThrow('expected string');
   });
 
   it('rejects incorrect results and error expectations', async () => {
     const result = validFixtures();
-    result.actions[0]!.expect = { result: { id: 'wrong', region: 'us' } };
+    result.actions[0].expect = { result: { id: 'wrong', region: 'us' } };
     await expect(pieceConformance(createValid(), result)).rejects.toThrow('unexpected result');
     const error = validFixtures();
-    error.actions[1]!.expect = { error: 'different error' };
+    error.actions[1].expect = { error: 'different error' };
     await expect(pieceConformance(createValid(), error)).rejects.toThrow(
       "threw 'vendor unavailable'",
     );
@@ -202,12 +202,12 @@ describe('pieceConformance', () => {
 
   it('requires declared option callbacks and their exact choices', async () => {
     const missing = validFixtures();
-    missing.options![0]!.field = 'missing';
+    missing.options[0].field = 'missing';
     await expect(pieceConformance(createValid(), missing)).rejects.toThrow(
       "has no options callback for 'missing'",
     );
     const choices = validFixtures();
-    choices.options![0]!.expect = [];
+    choices.options[0].expect = [];
     await expect(pieceConformance(createValid(), choices)).rejects.toThrow('unexpected choices');
   });
 
@@ -282,7 +282,7 @@ describe('pieceConformance', () => {
     'rejects an unexpected delivered %s',
     async (field) => {
       const fixtures = channelFixtures();
-      fixtures.channel.webhook.requests[0]!.delivery.messages[0]![field] = 'wrong';
+      fixtures.channel.webhook.requests[0].delivery.messages[0][field] = 'wrong';
 
       await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
         'channel webhook dispatched unexpected messages',
@@ -292,7 +292,7 @@ describe('pieceConformance', () => {
 
   it('rejects an unexpected webhook status', async () => {
     const fixtures = channelFixtures();
-    fixtures.channel.webhook.requests[0]!.delivery.status = 200;
+    fixtures.channel.webhook.requests[0].delivery.status = 200;
 
     await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
       'channel webhook returned status 202, expected 200',
@@ -302,7 +302,7 @@ describe('pieceConformance', () => {
   it('rejects unexpected dispatch and disconnects state after a failure', async () => {
     const fixtures = channelFixtures();
     const disconnect = vi.spyOn(fixtures.channel.webhook.state, 'disconnect');
-    fixtures.channel.webhook.requests[0]!.delivery.messages = [];
+    fixtures.channel.webhook.requests[0].delivery.messages = [];
 
     await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
       'channel webhook dispatched unexpected messages',
@@ -313,7 +313,7 @@ describe('pieceConformance', () => {
 
   it('requires adapter-owned authentication expectations to match denial', async () => {
     const fixtures = channelFixtures();
-    fixtures.channel.webhook.requests[1]!.verified = true;
+    fixtures.channel.webhook.requests[1].verified = true;
 
     await expect(pieceConformance(createChannel({ adapterOwned: true }), fixtures)).rejects.toThrow(
       'channel adapter verification returned an unexpected result',
@@ -322,7 +322,7 @@ describe('pieceConformance', () => {
 
   it('requires explicit message expectations for webhook delivery', async () => {
     const fixtures = channelFixtures();
-    fixtures.channel.webhook.requests[0]!.delivery.messages = undefined as never;
+    fixtures.channel.webhook.requests[0].delivery.messages = undefined as never;
 
     await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
       'channel webhook delivery requires expected messages',
@@ -358,7 +358,7 @@ describe('pieceConformance', () => {
     );
 
     const verification = channelFixtures();
-    verification.channel.webhook.requests[0]!.verified = false;
+    verification.channel.webhook.requests[0].verified = false;
 
     await expect(pieceConformance(createChannel(), verification)).rejects.toThrow(
       'channel webhook verification returned an unexpected result',

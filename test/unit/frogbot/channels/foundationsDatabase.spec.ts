@@ -147,7 +147,7 @@ describe('channel foundations with SQLite', () => {
     await expect(
       frogbot.create({
         collection: 'chats',
-        data: { channelKey: rows.docs[0]!.channelKey },
+        data: { channelKey: rows.docs[0].channelKey },
         overrideAccess: true,
       }),
     ).rejects.toThrow();

@@ -23,7 +23,7 @@ function isRenderableSchema(schema: ConnectionSchema | boolean): boolean {
     const values = schema.anyOf.filter(
       (entry) => typeof entry === 'boolean' || entry.type !== 'null',
     );
-    return values.length === 1 && isRenderableSchema(values[0]!);
+    return values.length === 1 && isRenderableSchema(values[0]);
   }
   if (schema.type === 'object') {
     const fields = Object.values(schema.properties ?? {});

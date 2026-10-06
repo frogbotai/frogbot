@@ -71,7 +71,7 @@ describe('aiField runs with concurrency control off', () => {
   function createTask(data: Record<string, unknown>): Promise<Doc> {
     return booted.frogbot.create({
       collection: tasksSlug,
-      data: data as never,
+      data,
     }) as Promise<unknown> as Promise<Doc>;
   }
 

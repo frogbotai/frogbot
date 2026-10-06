@@ -32,11 +32,11 @@ describe('roles', () => {
   });
 
   async function createUser(email: string, roles?: string[]): Promise<User> {
-    return (await booted.frogbot.create({
+    return await booted.frogbot.create({
       collection: 'users',
       data: { email, password, ...(roles ? { roles } : {}) },
       overrideAccess: true,
-    })) as User;
+    });
   }
 
   async function requestFor(user: User) {

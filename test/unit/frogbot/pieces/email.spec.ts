@@ -136,8 +136,8 @@ describe('piece email adapter', () => {
 
     await adapter.sendEmail(original);
 
-    expect(send.mock.calls[0]![0].message).toEqual(original);
-    expect(send.mock.calls[0]![0].message.from).toBe(from);
+    expect(send.mock.calls[0][0].message).toEqual(original);
+    expect(send.mock.calls[0][0].message.from).toBe(from);
   });
 
   it('uses the instance slug for adapter identity and unnamed senders', () => {
@@ -167,7 +167,7 @@ describe('piece email adapter', () => {
     await email.sendEmail({ ...message, from });
 
     expect(from).toBe('"FrogBot" <sender@example.com>');
-    expect(send.mock.calls[0]![0].message.from).toBe(from);
+    expect(send.mock.calls[0][0].message.from).toBe(from);
   });
 
   it('shares one pending client across concurrent sends and later sends', async () => {
@@ -208,9 +208,9 @@ describe('piece email adapter', () => {
     await factory(second).sendEmail(message);
 
     expect(client).toHaveBeenCalledTimes(2);
-    expect(send.mock.calls[0]![0].req.frogbot).toBe(first.frogbot);
-    expect(send.mock.calls[1]![0].req.frogbot).toBe(second.frogbot);
-    expect(send.mock.calls[0]![0].client).not.toBe(send.mock.calls[1]![0].client);
+    expect(send.mock.calls[0][0].req.frogbot).toBe(first.frogbot);
+    expect(send.mock.calls[1][0].req.frogbot).toBe(second.frogbot);
+    expect(send.mock.calls[0][0].client).not.toBe(send.mock.calls[1][0].client);
   });
 
   it('fails loudly before registration and permits sending after registration', async () => {

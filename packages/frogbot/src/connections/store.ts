@@ -196,10 +196,7 @@ export class ConnectionStore {
           upsert: async (data) => {
             check();
 
-            if (
-              !['oauth', 'secret'].includes(data.method) ||
-              !config.entries[piece]![data.method]
-            ) {
+            if (!['oauth', 'secret'].includes(data.method) || !config.entries[piece][data.method]) {
               throw new Error(`Connection method '${data.method}' is not enabled for '${piece}'.`);
             }
 

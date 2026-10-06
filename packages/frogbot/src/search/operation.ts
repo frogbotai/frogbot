@@ -3,7 +3,7 @@ import { createLocalReq, validateQueryPaths } from 'payload';
 
 import type { Field } from '../fields/config/types.js';
 import type { FrogBot } from '../frogbot.js';
-import type { CollectionSlug, TypedCollection } from '../types/generated.js';
+import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
   describeSearchIndex,
@@ -186,7 +186,7 @@ function prepareSearch<T extends CollectionSlug>(
   }
 
   const query: SearchQuery = {
-    ...(input.text === undefined ? {} : { text: input.text as string }),
+    ...(input.text === undefined ? {} : { text: input.text }),
     ...(input.vector === undefined ? {} : { vector: input.vector as number[] }),
   };
 
@@ -263,7 +263,7 @@ async function createSearchRequest(
     payload,
   );
 
-  return Object.assign(payloadReq, { frogbot }) as FrogBotRequest;
+  return Object.assign(payloadReq, { frogbot });
 }
 
 async function runSearch<T extends CollectionSlug>(
@@ -412,7 +412,7 @@ async function runSearch<T extends CollectionSlug>(
     select: options.select,
   });
 
-  const docsByID = new Map(docs.map((doc) => [String(doc.id), doc as TypedCollection<T>]));
+  const docsByID = new Map(docs.map((doc) => [String(doc.id), doc]));
 
   const hits = result.rows.flatMap(({ components, id, score }) => {
     const doc = docsByID.get(String(id));

@@ -44,7 +44,7 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
     const redirect = await fetch(started.authorizationUrl, { redirect: 'manual' });
     expect(redirect.status).toBe(302);
     const callback = new URL(redirect.headers.get('location')!);
-    fixture.req.headers.set('cookie', started.setCookie.split(';')[0]!);
+    fixture.req.headers.set('cookie', started.setCookie.split(';')[0]);
     const consume = () =>
       consumeOAuthState({
         ...fixture.binding,
@@ -65,8 +65,8 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
       client_secret: 'secret',
       redirect_uri: fixture.binding.callbackUrl,
     });
-    expect(pkceChallenge(provider.requests.token[0]!.code_verifier!)).toBe(
-      provider.requests.authorize[0]!.get('code_challenge'),
+    expect(pkceChallenge(provider.requests.token[0].code_verifier)).toBe(
+      provider.requests.authorize[0].get('code_challenge'),
     );
     await expect(
       lookupOAuthAccount({ piece: fixture.piece, tokens, req: fixture.req }),

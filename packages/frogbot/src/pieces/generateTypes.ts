@@ -60,7 +60,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
         if (def.type !== 'tuple' || jsonSchema.minItems !== undefined) return;
 
         let required = def.items.length;
-        while (required > 0 && def.items[required - 1]!._zod[optional] === 'optional') required--;
+        while (required > 0 && def.items[required - 1]._zod[optional] === 'optional') required--;
 
         if (required > 0) jsonSchema.minItems = required;
       },

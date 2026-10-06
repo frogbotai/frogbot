@@ -42,15 +42,15 @@ async function findPackageRoot(path: string, name: string): Promise<string> {
 }
 
 function words(slug: string): string[] {
-  return slug.split('-').map((part) => `${part[0]!.toUpperCase()}${part.slice(1)}`);
+  return slug.split('-').map((part) => `${part[0].toUpperCase()}${part.slice(1)}`);
 }
 
 export async function piecesPort(args: string[], root = process.cwd()): Promise<void> {
-  if (args.length !== 1 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(args[0]!)) {
+  if (args.length !== 1 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(args[0])) {
     throw new Error('[frogbot] usage: frogbot pieces:port <slug>');
   }
 
-  const slug = args[0]!;
+  const slug = args[0];
   const piece = resolve(root, 'packages', 'pieces', `piece-${slug}`);
   const legacy = `${piece}.legacy`;
   const test = resolve(root, 'test', 'unit', `piece-${slug}`);
@@ -125,7 +125,6 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
     compilerOptions: {
       outDir: './dist',
       rootDir: './src',
-      baseUrl: '.',
       declaration: true,
       declarationMap: true,
       sourceMap: true,

@@ -97,7 +97,7 @@ function telegramFixture() {
             date: 1_789_000_000,
             text,
             entities: text.startsWith('/')
-              ? [{ type: 'bot_command', offset: 0, length: text.split(' ')[0]!.length }]
+              ? [{ type: 'bot_command', offset: 0, length: text.split(' ')[0].length }]
               : [],
             from: { id: userId, is_bot: false, first_name: 'Frog', username: 'frog' },
             chat: { id: chatId, type: chatId > 0 ? 'private' : 'supergroup' },
@@ -108,7 +108,7 @@ function telegramFixture() {
     );
 
   const run = async (index: number) => {
-    const task = fixture.host.run(fixture.inputs[index]!);
+    const task = fixture.host.run(fixture.inputs[index]);
 
     await vi.runAllTimersAsync();
     await task;
@@ -150,7 +150,7 @@ describe('Telegram commands through the installed adapter and channel host', () 
         'chat-1',
         'chat-1',
       ]);
-      expect(fixture.streamMessage.mock.calls[0]![0].req).toMatchObject({
+      expect(fixture.streamMessage.mock.calls[0][0].req).toMatchObject({
         user: null,
         context: { channel: { piece: 'telegramBot', author: { id: '42' } } },
       });
@@ -188,7 +188,7 @@ describe('Telegram commands through the installed adapter and channel host', () 
       await fixture.deliver({ updateId: 2, text: '/start referral' });
 
       expect(fixture.inputs).toHaveLength(1);
-      expect(fixture.inputs[0]!.message).toMatchObject({ id: '42:1', text: '/start referral' });
+      expect(fixture.inputs[0].message).toMatchObject({ id: '42:1', text: '/start referral' });
     } finally {
       held.resolve();
       await delivery;
@@ -251,7 +251,7 @@ describe('Telegram commands through the installed adapter and channel host', () 
       await fixture.deliver({ id: 9, text: 'Follow-up', chatId: -100, topic: 7 });
       await fixture.run(2);
 
-      expect(fixture.streamMessage.mock.calls[2]![0].chatId).toBe('chat-1');
+      expect(fixture.streamMessage.mock.calls[2][0].chatId).toBe('chat-1');
     } finally {
       await fixture.host.shutdown();
     }

@@ -492,7 +492,7 @@ export function searchesArchive(tool: string, input: unknown): boolean {
   if (typeof input !== 'object' || input === null) return false;
 
   const fields = input as Record<string, unknown>;
-  const text = (key: string) => (typeof fields[key] === 'string' ? (fields[key] as string) : '');
+  const text = (key: string) => (typeof fields[key] === 'string' ? fields[key] : '');
 
   if (tool === 'grep') {
     return (

@@ -219,9 +219,9 @@ describe('front', () => {
     );
 
     for (const callback of callbacks) {
-      await expect(
-        callback({ input: {}, client, options: {}, req: req() } as never),
-      ).resolves.toEqual([expect.objectContaining({ value: 'one' })]);
+      await expect(callback({ input: {}, client, options: {}, req: req() })).resolves.toEqual([
+        expect.objectContaining({ value: 'one' }),
+      ]);
     }
 
     expect(callbacks.length).toBeGreaterThan(0);
@@ -256,7 +256,7 @@ describe('front', () => {
     };
 
     await expect(
-      definition.run({ client, input, cursor: 1_500, options: {}, req: req() } as never),
+      definition.run({ client, input, cursor: 1_500, options: {}, req: req() }),
     ).resolves.toEqual({
       events: [
         { id: 'new', type, emitted_at: 2, conversation: { id: 'cnv' } },
@@ -291,7 +291,7 @@ describe('front', () => {
         cursor: 1_000,
         options: {},
         req: req(),
-      } as never),
+      }),
     ).resolves.toEqual({
       events: [{ id: 'cnv', status: 'archived', updated_at: 2 }],
       cursor: 2_000,
@@ -303,7 +303,7 @@ describe('front', () => {
         cursor: 2_000,
         options: {},
         req: req(),
-      } as never),
+      }),
     ).resolves.toEqual({ events: [], cursor: 2_000 });
   });
 

@@ -213,7 +213,7 @@ describe('pagerduty', () => {
       options: {},
       req: req(),
       webhookUrl: 'https://example.com/pagerduty',
-    } as never);
+    });
     const delivery = {
       event: { id: 'event-1', event_type: eventType, data: { id: 'incident-1' } },
     };
@@ -243,7 +243,7 @@ describe('pagerduty', () => {
         options: {},
         req: req(),
         state,
-      } as never),
+      }),
     ).resolves.toBeUndefined();
   });
 

@@ -14,10 +14,7 @@
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import {
-  buildProviderRegistry,
-  type ProviderRegistry,
-} from '../../packages/gateway/src/providers/registry.js';
+import { buildProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { describeLive } from '../live/live.js';
 
@@ -31,7 +28,7 @@ const TEST_TIMEOUT = 90_000;
 function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-  }) as ProviderRegistry;
+  });
   return createApp({ registry });
 }
 

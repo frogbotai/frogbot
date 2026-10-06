@@ -157,7 +157,7 @@ describe('evaluateOperation', () => {
           model: 'typesafe-ai/jev',
           state: 'State',
           questions: { refunded: questions.refunded },
-          req: { user: { id: 'user-1' } } as never,
+          req: { user: { id: 'user-1' } },
         },
       ),
     ).rejects.toThrow('Access denied for AI evaluate');

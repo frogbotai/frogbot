@@ -30,11 +30,11 @@ describe('Board column headers', () => {
     const { container } = renderBoard();
 
     const [done] = getHeaders(container);
-    const pill = done!.querySelector('.fb-option-pill.fb-option-pill--green');
+    const pill = done.querySelector('.fb-option-pill.fb-option-pill--green');
 
     expect(pill?.textContent).toBe('Done');
-    expect(done!.querySelector('strong')).toBeNull();
-    expect(done!.querySelector('.frog-board__column-count')?.textContent).toBe('0');
+    expect(done.querySelector('strong')).toBeNull();
+    expect(done.querySelector('.frog-board__column-count')?.textContent).toBe('0');
   });
 
   it('draws uncoloured and Uncategorized labels as plain text', () => {
@@ -42,10 +42,10 @@ describe('Board column headers', () => {
 
     const [, backlog, uncategorized] = getHeaders(container);
 
-    expect(backlog!.querySelector('strong')?.textContent).toBe('Backlog');
-    expect(backlog!.querySelector('.fb-option-pill')).toBeNull();
-    expect(uncategorized!.querySelector('strong')?.textContent).toBe('Uncategorized');
-    expect(uncategorized!.querySelector('.fb-option-pill')).toBeNull();
+    expect(backlog.querySelector('strong')?.textContent).toBe('Backlog');
+    expect(backlog.querySelector('.fb-option-pill')).toBeNull();
+    expect(uncategorized.querySelector('strong')?.textContent).toBe('Uncategorized');
+    expect(uncategorized.querySelector('.fb-option-pill')).toBeNull();
   });
 
   it('passes the column colour to renderColumnHeader', () => {

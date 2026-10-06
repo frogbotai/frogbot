@@ -270,7 +270,7 @@ function postCard({
   q: number;
   threadId: string;
 }) {
-  const item = call.input.questions[q]!;
+  const item = call.input.questions[q];
 
   return postPage({
     client,
@@ -325,7 +325,7 @@ function answerFor({
   selected: string[];
   state: PagesState;
 }) {
-  const answers = [...state.answers, { header: call.input.questions[q]!.header, selected }];
+  const answers = [...state.answers, { header: call.input.questions[q].header, selected }];
 
   return q + 1 < call.input.questions.length
     ? { kind: 'partial' as const, state: { q: q + 1, answers } satisfies PagesState }
@@ -339,13 +339,13 @@ const pagesQuestions: PieceChannelQuestions<PagesClient> = {
     if (!call) return [];
 
     const overflow =
-      call.input.questions[0]!.question.length > 200
+      call.input.questions[0].question.length > 200
         ? [
             {
               ...(await postPage({
                 client,
                 threadId: thread.id,
-                text: `(continued) ${call.input.questions[0]!.question}`,
+                text: `(continued) ${call.input.questions[0].question}`,
               })),
               question: 0,
             },
@@ -383,7 +383,7 @@ const pagesQuestions: PieceChannelQuestions<PagesClient> = {
 
     if (Number(q) !== state.q) return { kind: 'stale' };
 
-    const option = call.input.questions[state.q]!.options[Number(n)];
+    const option = call.input.questions[state.q].options[Number(n)];
 
     return option
       ? answerFor({ call, q: state.q, selected: [option.label], state })
@@ -605,14 +605,14 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       overrideAccess: true,
     });
 
-    return result.docs as unknown as Job[];
+    return result.docs;
   }
 
   async function work({ timeout = 20_000 }: { timeout?: number } = {}) {
     await expect
       .poll(
         async () => {
-          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() } as never);
+          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() });
 
           return (await jobs({ completedAt: { exists: false }, hasError: { not_equals: true } }))
             .length;
@@ -690,7 +690,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       overrideAccess: true,
     });
 
-    return result.docs as unknown as StoredMessage[];
+    return result.docs;
   }
 
   async function record({
@@ -848,9 +848,9 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
     server = await startPieceServer(app);
 
-    alice = await signIn(people.U1!);
-    bob = await signIn(people.U2!);
-    await signIn(people.U3!);
+    alice = await signIn(people.U1);
+    bob = await signIn(people.U2);
+    await signIn(people.U3);
   });
 
   beforeEach(() => {
@@ -892,7 +892,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
       await click('pages', {
         action: `pages:${toolCallId}:0:0`,
-        card: q1!,
+        card: q1,
         thread,
         user: 'U1',
         value: '0',
@@ -912,7 +912,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
       await click('pages', {
         action: `pages:${toolCallId}:0:1`,
-        card: q1!,
+        card: q1,
         thread,
         user: 'U2',
         value: '1',
@@ -943,7 +943,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
       await click('pages', {
         action: `pages:${toolCallId}:1:1`,
-        card: q2!,
+        card: q2,
         thread,
         user: 'U3',
         value: '1',
@@ -955,7 +955,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
           { header: 'Size', selected: ['Large'] },
         ],
       });
-      expect(updates(mark, [q1!, q2!])).toEqual([
+      expect(updates(mark, [q1, q2])).toEqual([
         { ts: q1, text: 'Answered by U3' },
         { ts: q2, text: 'Answered by U3' },
       ]);
@@ -979,7 +979,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
             'pages',
             clickRequest({
               action: `pages:${toolCallId}:0:${index === 0 ? 0 : 1}`,
-              card: q1!,
+              card: q1,
               thread,
               user,
               value: String(index === 0 ? 0 : 1),
@@ -1020,7 +1020,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         'pages',
         clickRequest({
           action: `pages:${toolCallId}:0:1`,
-          card: q1!,
+          card: q1,
           thread,
           user: 'U1',
           value: '1',
@@ -1099,7 +1099,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       await frogbot.jobs.queue({
         task: UPDATE_TASK,
         queue: 'frogbot-channel:support:pages',
-        input: queued!.input,
+        input: queued.input,
       } as never);
       await work();
 
@@ -1120,7 +1120,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         'pages',
         clickRequest({
           action: `pages:${toolCallId}:0:0`,
-          card: q1!,
+          card: q1,
           thread,
           user: 'U1',
           value: '0',
@@ -1156,11 +1156,11 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       await frogbot.jobs.queue({
         task: UPDATE_TASK,
         queue: 'frogbot-channel:support:pages',
-        input: stale!.input,
+        input: stale.input,
       } as never);
       await work();
 
-      expect(stale!.input.revision).toBe(1);
+      expect(stale.input.revision).toBe(1);
       expect(since(mark)).toEqual([]);
       expect(await record({ instance: 'pages', thread, toolCallId })).toMatchObject({
         revision: 2,
@@ -1191,7 +1191,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
       await click('pages', {
         action: `pages:${toolCallId}:0:1`,
-        card: q1!,
+        card: q1,
         thread,
         user: 'U2',
         value: '1',
@@ -1202,7 +1202,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       expect(ephemerals(mark)).toEqual([{ user: 'U2', text: STILL_POSTING }]);
       expect(posts(mark, thread)).toHaveLength(1);
       expect(healed.pending).toBeUndefined();
-      expect(healed.messages.map(({ id }) => id)).toEqual([q1, posts(mark, thread)[0]!.ts]);
+      expect(healed.messages.map(({ id }) => id)).toEqual([q1, posts(mark, thread)[0].ts]);
 
       mark = slackApi.calls.length;
       model.respond({ text: 'Healed.' });
@@ -1238,15 +1238,15 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       expect(overflow).toBeDefined();
       expect(card).toBeDefined();
       expect((await record({ instance: 'pages', thread, toolCallId }))!.messages).toEqual([
-        { id: overflow, postedAt: slackTime(overflow!), question: 0 },
-        { id: card, postedAt: slackTime(card!), question: 0 },
+        { id: overflow, postedAt: slackTime(overflow), question: 0 },
+        { id: card, postedAt: slackTime(card), question: 0 },
       ]);
 
       let mark = slackApi.calls.length;
 
       await click('pages', {
         action: `pages:${toolCallId}:0:0`,
-        card: overflow!,
+        card: overflow,
         thread,
         user: 'U2',
         value: '0',
@@ -1260,13 +1260,13 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
       await click('pages', {
         action: `pages:${toolCallId}:0:0`,
-        card: card!,
+        card,
         thread,
         user: 'U2',
         value: '0',
       });
 
-      expect(updates(mark, [overflow!, card!])).toEqual([
+      expect(updates(mark, [overflow, card])).toEqual([
         { ts: overflow, text: 'Answered by U2' },
         { ts: card, text: 'Answered by U2' },
       ]);
@@ -1291,7 +1291,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       card = posts(mark, thread).find(({ body }) => body.blocks)!.ts!;
       chat = await chatOf(thread);
 
-      expect(JSON.stringify(posts(mark, thread)[0]!.body.blocks)).toContain(
+      expect(JSON.stringify(posts(mark, thread)[0].body.blocks)).toContain(
         `frogbot:question:choose:${toolCallId}:0:1`,
       );
     });
@@ -1521,7 +1521,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       const chat = await chatOf(thread);
       const before = await messagesOf(chat.id);
 
-      const duplicate = await request('POST', `/messages/${before[0]!.id}/duplicate`, {
+      const duplicate = await request('POST', `/messages/${before[0].id}/duplicate`, {
         body: {
           id: 'web-duplicate',
           parts: [{ type: 'text', text: 'Injected through duplicate.' }],

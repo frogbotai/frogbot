@@ -72,7 +72,7 @@ describe('agent trigger task', () => {
     registerFrogBotInstance(payload, frogbot as never);
     const task = resolveTriggerTasks().tasks!.find(({ slug }) => slug === AGENT_TRIGGER_TASK_SLUG)!;
 
-    await task.handler!({
+    await task.handler({
       input: {
         agentSlug: 'ops',
         instanceSlug: 'echo',
@@ -80,7 +80,7 @@ describe('agent trigger task', () => {
         event: { dedupeKey: 'one', data: { message: 'hello' } },
       },
       req: { payload, context: { requestId: 'one' } },
-    } as never);
+    });
     expect(handler).toHaveBeenCalledWith({
       event: { message: 'hello' },
       agent,

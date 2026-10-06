@@ -149,9 +149,7 @@ describe('linear', () => {
     expect(fallback?.encodeThreadId({ issueId: 'issue', commentId: 'comment' })).toBe(
       'linear:issue:c:comment',
     );
-    expect(() => definition.channel?.adapter({ auth, options: {} as never })).toThrow(
-      'webhookSecret',
-    );
+    expect(() => definition.channel?.adapter({ auth, options: {} })).toThrow('webhookSecret');
   });
 
   it('maps stored OAuth tokens and declares app-actor authorization', () => {
@@ -184,7 +182,7 @@ describe('linear', () => {
 
     const identity = await pieceFactoryDefinition(createLinear).channel?.identity({
       author: { userId: 'linear-user', userName: 'frog' } as never,
-      client: client as never,
+      client,
       req,
     });
 

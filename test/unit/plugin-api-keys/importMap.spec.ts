@@ -30,7 +30,7 @@ describe('api keys import map', () => {
       secret: 'test-secret',
       db: { defaultIDType: 'number' } as never,
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogBotConfig);
+    });
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(

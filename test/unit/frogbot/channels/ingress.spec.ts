@@ -50,7 +50,7 @@ describe('ChannelHost ingress-only lifecycle', () => {
   it.each([false, true])('skips unnecessary bindings (%s)', async (verify) => {
     const { initialize, frogbot, factory } = fixture({ verify });
 
-    if (!verify) frogbot.config._internal.triggers.adapter!.subscribers = [];
+    if (!verify) frogbot.config._internal.triggers.adapter.subscribers = [];
 
     await initialize();
 
@@ -102,8 +102,8 @@ describe('ChannelHost ingress-only lifecycle', () => {
     expect(first.adapter.initialize).toHaveBeenCalledOnce();
     expect(second.adapter.initialize).toHaveBeenCalledOnce();
 
-    const firstChat = first.adapter.initialize.mock.calls[0]![0] as ChatInstance;
-    const secondChat = second.adapter.initialize.mock.calls[0]![0] as ChatInstance;
+    const firstChat = first.adapter.initialize.mock.calls[0][0] as ChatInstance;
+    const secondChat = second.adapter.initialize.mock.calls[0][0] as ChatInstance;
 
     await firstChat.getState().set('key', 'first');
     await secondChat.getState().set('key', 'second');
@@ -149,14 +149,11 @@ describe('ChannelHost ingress-only lifecycle', () => {
       },
     );
 
-    result.factory.mockImplementation(
-      () =>
-        ({
-          ...result.adapter,
-          disconnect: result.disconnect,
-          startGatewayListener,
-        }) as unknown as Adapter,
-    );
+    result.factory.mockImplementation(() => ({
+      ...result.adapter,
+      disconnect: result.disconnect,
+      startGatewayListener,
+    }));
 
     await result.initialize(true);
 

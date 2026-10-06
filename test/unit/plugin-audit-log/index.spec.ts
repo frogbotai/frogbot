@@ -73,7 +73,7 @@ describe('auditLogPlugin', () => {
     const task = result.jobs?.tasks?.at(-1);
     const remove = vi.fn().mockResolvedValue({});
     expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'frogbot-prune-audit-logs' }]);
-    await task?.handler({ req: { payload: { delete: remove } } } as never);
+    await task?.handler({ req: { payload: { delete: remove } } });
     expect(remove).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'audit-logs',

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -124,6 +124,7 @@ describe('affectedSet on past commits', () => {
       'docs-links',
       'docs-references',
       'option-tables',
+      'test-types',
       'tests',
       'typed-lint',
     ]);
@@ -161,7 +162,7 @@ describe('affectedSet on past commits', () => {
 
     expect(set.typecheck).toEqual([]);
     expect(set.specs.unit).toEqual(['test/unit/scripts/checkPackages.spec.ts']);
-    expect(set.checks).toEqual(['packages', 'scripts', 'tests', 'typed-lint']);
+    expect(set.checks).toEqual(['packages', 'scripts', 'test-types', 'tests', 'typed-lint']);
     expect(set.uncovered).toEqual([]);
   });
 });
@@ -363,5 +364,40 @@ describe('worktreePatchId', () => {
 
     expect(before).toBe(committed);
     expect(worktreePatchId(repo)).toBe(committed);
+  });
+
+  // A same-size rewrite within the index's own timestamp only shows up through git's racy-git
+  // check, which needs the scratch index to keep the real index's mtime.
+  it('sees a same-size rewrite made in the same second as the last index write', () => {
+    repo = mkdtempSync(path.join(os.tmpdir(), 'verify-patch-'));
+
+    const file = path.join(repo, 'a.txt');
+    const stamp = new Date('2020-01-01T00:00:00Z');
+
+    git(repo, 'init', '--quiet', '--initial-branch=main');
+    git(repo, 'config', 'user.email', 'test@example.com');
+    git(repo, 'config', 'user.name', 'Test');
+    git(repo, 'config', 'core.trustctime', 'false');
+    writeFileSync(file, 'one\n');
+    utimesSync(file, stamp, stamp);
+    git(repo, 'add', '.');
+    git(repo, 'commit', '--quiet', '-m', 'chore: start');
+    git(repo, 'switch', '--quiet', '-c', 'work');
+    writeFileSync(file, 'two\n');
+    utimesSync(file, stamp, stamp);
+    utimesSync(path.join(repo, '.git', 'index'), stamp, stamp);
+
+    const before = worktreePatchId(repo);
+
+    git(repo, 'add', '.');
+    git(repo, 'commit', '--quiet', '-m', 'feat: change');
+
+    const committed = execFileSync('git', ['patch-id', '--stable'], {
+      cwd: repo,
+      input: git(repo, 'diff', 'main...HEAD') + '\n',
+      encoding: 'utf8',
+    }).split(' ')[0];
+
+    expect(before).toBe(committed);
   });
 });

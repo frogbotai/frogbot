@@ -353,8 +353,8 @@ describe('aiBulkRequests', () => {
   it('sends the IDs and the choice filter in each chunk', () => {
     const requests = aiBulkRequests({ ...base, drafts: false, targets: targets(101) });
 
-    expect(path(requests[1]!.url)).toBe('/api/tasks');
-    expect(query(requests[1]!.url)).toEqual({
+    expect(path(requests[1].url)).toBe('/api/tasks');
+    expect(query(requests[1].url)).toEqual({
       depth: '0',
       'where[and][0][id][in][0]': 'p100',
       [`where[and][1][${statusPath}][equals]`]: 'error',
@@ -364,16 +364,16 @@ describe('aiBulkRequests', () => {
   it('passes the locale through', () => {
     const requests = aiBulkRequests({ ...base, drafts: false, locale: 'fr', targets: targets(1) });
 
-    expect(query(requests[0]!.url)).toMatchObject({ locale: 'fr' });
+    expect(query(requests[0].url)).toMatchObject({ locale: 'fr' });
   });
 
   it('sends no draft state without drafts', () => {
     const requests = aiBulkRequests({ ...base, drafts: false, targets: targets(2) });
 
     expect(requests).toHaveLength(1);
-    expect(requests[0]!.body).toEqual({ [statusPath]: 'pending' });
-    expect(query(requests[0]!.url)).not.toHaveProperty('draft');
-    expect(Object.keys(query(requests[0]!.url)).some((key) => key.includes('[_status]'))).toBe(
+    expect(requests[0].body).toEqual({ [statusPath]: 'pending' });
+    expect(query(requests[0].url)).not.toHaveProperty('draft');
+    expect(Object.keys(query(requests[0].url)).some((key) => key.includes('[_status]'))).toBe(
       false,
     );
   });
@@ -390,13 +390,13 @@ describe('aiBulkRequests', () => {
       { body: { _status: 'published', [statusPath]: 'pending' }, url: expect.any(String) },
     ]);
 
-    expect(query(requests[0]!.url)).toMatchObject({
+    expect(query(requests[0].url)).toMatchObject({
       draft: 'true',
       'where[and][0][id][in][0]': 'd0',
       'where[and][2][_status][equals]': 'draft',
     });
 
-    expect(query(requests[1]!.url)).toMatchObject({
+    expect(query(requests[1].url)).toMatchObject({
       draft: 'true',
       'where[and][0][id][in][0]': 'p0',
       'where[and][2][_status][equals]': 'published',

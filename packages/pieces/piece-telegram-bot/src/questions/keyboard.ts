@@ -104,10 +104,10 @@ export function questionMessage({
   state: TelegramQuestionState;
 }): TelegramMessageBody {
   const { questions } = call.input;
-  const item = questions[state.q]!;
+  const item = questions[state.q];
   const pages = optionPages(item);
   const pageIndex = Math.min(state.page, pages.length - 1);
-  const page = pages[pageIndex]!;
+  const page = pages[pageIndex];
 
   const title =
     questions.length > 1
@@ -130,21 +130,21 @@ export function questionMessage({
     ]);
   }
 
-  const details = page.flatMap((index) => optionLine(item.options[index]!) ?? []);
+  const details = page.flatMap((index) => optionLine(item.options[index]) ?? []);
 
   if (details.length > 0) lines.push(blank(), ...details);
 
   const hints = [
     ...(item.multiple ? ['Select all that apply, then tap Done.'] : []),
     ...(pages.length > 1
-      ? [`Options ${page[0]! + 1}–${page.at(-1)! + 1} of ${item.options.length}.`]
+      ? [`Options ${page[0] + 1}–${page.at(-1)! + 1} of ${item.options.length}.`]
       : []),
   ];
 
   if (hints.length > 0) lines.push(blank(), italic(hints.join(' ')));
 
   const options = page.map((index) => {
-    const label = truncate(item.options[index]!.label, BUTTON_LIMIT);
+    const label = truncate(item.options[index].label, BUTTON_LIMIT);
 
     if (!item.multiple) return button(label, actionIds.choose(state.q, index));
 
@@ -154,7 +154,7 @@ export function questionMessage({
   });
 
   const paired = page.every(
-    (index) => Array.from(item.options[index]!.label).length <= PAIRED_BUTTON_LIMIT,
+    (index) => Array.from(item.options[index].label).length <= PAIRED_BUTTON_LIMIT,
   );
 
   const navigation = [

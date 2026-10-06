@@ -22,7 +22,7 @@ export function createQuestionsBinding({
   if (!hooks || !agent) return undefined;
 
   return {
-    hooks: hooks as PieceChannelQuestions,
+    hooks,
     store: createQuestionStore({ adapter, kv, namespace }),
   };
 }

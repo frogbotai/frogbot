@@ -43,13 +43,11 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       ? RenderServerComponent({ Component, clientProps, importMap, serverProps: props })
       : undefined;
   const components = collectionConfig.admin.components;
-  const listMenuItems = viewComponents?.menuItems
-    ? [render(viewComponents.menuItems) as ReactNode]
-    : undefined;
+  const listMenuItems = viewComponents?.menuItems ? [render(viewComponents.menuItems)] : undefined;
 
   return (
     <CollectionViewShellClient
-      Actions={viewComponents?.actions ? [render(viewComponents.actions) as ReactNode] : undefined}
+      Actions={viewComponents?.actions ? [render(viewComponents.actions)] : undefined}
       AfterList={render(viewComponents?.afterView)}
       AfterListTable={render(viewComponents?.afterColumns ?? viewComponents?.afterCalendar)}
       BeforeList={render(viewComponents?.beforeView)}
@@ -63,7 +61,7 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       newDocumentURL={clientProps.newDocumentURL}
       enableSort={props.enableSort}
       manualSortField={props.manualSortField}
-      query={props.query ?? ((initPageResult.req.query ?? {}) as ListQuery)}
+      query={props.query ?? initPageResult.req.query ?? {}}
     >
       {children}
     </CollectionViewShellClient>
