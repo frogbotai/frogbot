@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PayloadRequest } from 'payload';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, expect, it, onTestFinished } from 'vitest';
 
 import { createSearchDatabase, describePostgres, driver, type SearchDatabase } from './fixture.js';
 import {
@@ -152,7 +152,7 @@ describePostgres(`postgres vector search [${driver}]`, () => {
     const { drizzle } = booted.payload.db as unknown as {
       drizzle: {
         transaction<T>(
-          callback: (tx: { execute(query: unknown): Promise<{ rows: T[] }> }) => Promise<T>,
+          callback: (tx: { execute<R>(query: unknown): Promise<{ rows: R[] }> }) => Promise<T>,
         ): Promise<T>;
       };
     };
@@ -162,11 +162,11 @@ describePostgres(`postgres vector search [${driver}]`, () => {
         drizzle.transaction<string>(async (tx) => {
           await tx.execute(sql`select '[1,2,3]'::vector`);
 
-          const { rows } = await tx.execute(
+          const { rows } = await tx.execute<{ value: string }>(
             sql`select current_setting('hnsw.iterative_scan') || ',' || current_setting('hnsw.ef_search') as value, pg_sleep(0.05)`,
           );
 
-          return (rows[0] as { value: string }).value;
+          return rows[0].value;
         }),
       ),
     );
@@ -178,28 +178,29 @@ describePostgres(`postgres vector search [${driver}]`, () => {
     const { payload } = booted;
     const req = (await booted.frogbot.createRequest()) as unknown as PayloadRequest;
 
-    req.transactionID = (await payload.db.beginTransaction()) ?? undefined;
+    const transactionID = (await payload.db.beginTransaction()) ?? undefined;
 
-    try {
-      const created = await payload.create({
-        collection: articlesSlug,
-        data: { title: 'Uncommitted', embedding: query, _status: 'published' },
-        req,
-      });
+    req.transactionID = transactionID;
+    onTestFinished(() => payload.db.rollbackTransaction(transactionID ?? ''));
 
-      const result = await booted.frogbot.search({
-        collection: articlesSlug,
-        index: 'content',
-        query: { vector: query },
-        limit: 1,
-        overrideAccess: true,
-        req: req as never,
-      });
+    const created = await payload.create({
+      collection: articlesSlug,
+      data: { title: 'Uncommitted', embedding: query, _status: 'published' },
+      req,
+    });
 
-      expect(result.hits.map(({ doc }) => doc.id)).toEqual([created.id]);
-    } finally {
-      await payload.db.rollbackTransaction(req.transactionID!);
-    }
+    const result = await booted.frogbot.search({
+      collection: articlesSlug,
+      index: 'content',
+      query: { vector: query },
+      limit: 1,
+      overrideAccess: true,
+      req: req as never,
+    });
+
+    expect(result.hits.map(({ doc }) => doc.id)).toEqual([created.id]);
+
+    await payload.db.rollbackTransaction(transactionID ?? '');
 
     const outside = await search('content', { limit: 1 });
 

@@ -9,7 +9,7 @@ const repoRoot = resolve(import.meta.dirname, '..', '..');
 const tempRoot = join(repoRoot, 'test', '.tmp');
 const bin = join(repoRoot, 'packages', 'frogbot', 'bin.js');
 
-function run(cwd: string, args: string[], nodeEnv = 'development') {
+function run(cwd: string, args: string[], nodeEnv: NodeJS.ProcessEnv['NODE_ENV'] = 'development') {
   const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: nodeEnv };
 
   delete env.DATABASE_URL;
@@ -29,8 +29,8 @@ function run(cwd: string, args: string[], nodeEnv = 'development') {
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (chunk: Buffer) => (stdout += chunk));
-      child.stderr.on('data', (chunk: Buffer) => (stderr += chunk));
+      child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()));
+      child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
       child.on('error', reject);
       child.on('close', (code) => resolveExit({ code, stdout, stderr }));
     },

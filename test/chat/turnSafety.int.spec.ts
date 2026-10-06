@@ -9,6 +9,7 @@ import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
+import type { Chat } from './frogbot-types.js';
 import {
   chatsSlug,
   lookupCalls,
@@ -35,7 +36,7 @@ const answer = { answers: [{ header: 'Color', selected: ['Blue'] }] };
 
 type AgentJSON = {
   status: string;
-  chatId: number | string;
+  chatId: Chat['id'];
   code?: string;
   messageId?: string;
   pending?: unknown[];

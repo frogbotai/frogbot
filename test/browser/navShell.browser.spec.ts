@@ -185,7 +185,7 @@ test.describe('nav shell on desktop', () => {
   test('collapsed sidebar stays visible as an icon rail', async ({ page }) => {
     await loadWithSidebarOpen(page);
 
-    await page.click('button[aria-label="Close sidebar"]');
+    await page.locator('button[aria-label="Close sidebar"]').click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
     await expect(shell(page)).toHaveCSS('opacity', '1');
     await expect.poll(() => shellWidth(page)).toBe(collapsedWidth);
@@ -196,7 +196,7 @@ test.describe('nav shell on desktop', () => {
     await expect(collectionNavIcon(page, 'chats')).toHaveCount(0);
     await noHorizontalOverflow(page);
 
-    await page.click('button[aria-label="Open sidebar"]');
+    await page.locator('button[aria-label="Open sidebar"]').click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
   });
 
@@ -277,7 +277,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
     const collapseSaved = waitForNavPreferenceSave(page);
 
-    await page.click('button[aria-label="Close sidebar"]');
+    await page.locator('button[aria-label="Close sidebar"]').click();
     await collapseSaved;
     await page.reload();
     await waitForNavSettled(page);
@@ -286,7 +286,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
     const openSaved = waitForNavPreferenceSave(page);
 
-    await page.click('button[aria-label="Open sidebar"]');
+    await page.locator('button[aria-label="Open sidebar"]').click();
     await openSaved;
     await page.reload();
     await waitForNavSettled(page);
@@ -320,7 +320,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
     const collapseSaved = waitForNavPreferenceSave(page);
 
-    await page.click('button[aria-label="Close sidebar"]');
+    await page.locator('button[aria-label="Close sidebar"]').click();
     await collapseSaved;
     await page.setViewportSize({ width: 1600, height: 800 });
     await waitForNavSettled(page);
@@ -353,14 +353,14 @@ test.describe('nav shell keeps the saved desktop state', () => {
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
 
-    await page.click('button[aria-label="Close sidebar"]');
-    await page.click('#card-users .card__click');
+    await page.locator('button[aria-label="Close sidebar"]').click();
+    await page.locator('#card-users .card__click').click();
     await page.waitForURL((url) => url.pathname === '/collections/users');
     await waitForNavSettled(page);
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
 
-    await page.click('button[aria-label="Open sidebar"]');
+    await page.locator('button[aria-label="Open sidebar"]').click();
     await page.goBack();
     await page.waitForURL((url) => url.pathname === '/');
     await waitForNavSettled(page);
@@ -427,7 +427,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     await page.setViewportSize(mobile);
     await page.goto('/');
     await waitForNavSettled(page);
-    await page.click('button[aria-label="Open navigation"]');
+    await page.locator('button[aria-label="Open navigation"]').click();
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
 
@@ -450,7 +450,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     await page.setViewportSize(mobile);
     await page.goto('/');
     await waitForNavSettled(page);
-    await page.click('button[aria-label="Open navigation"]');
+    await page.locator('button[aria-label="Open navigation"]').click();
 
     await page
       .locator('#frogbot-nav-section-collections')
@@ -489,7 +489,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
 
       const collapseSaved = waitForNavPreferenceSave(page);
 
-      await page.click('button[aria-label="Close sidebar"]');
+      await page.locator('button[aria-label="Close sidebar"]').click();
       await collapseSaved;
       await page.setViewportSize(mobile);
       await waitForNavSettled(page);
@@ -508,9 +508,9 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
     await page.goto('/');
     await waitForNavSettled(page);
 
-    await page.click('button[aria-label="Close sidebar"]');
-    await page.click('button[aria-label="Open sidebar"]');
-    await page.click('button[aria-label="Close sidebar"]');
+    await page.locator('button[aria-label="Close sidebar"]').click();
+    await page.locator('button[aria-label="Open sidebar"]').click();
+    await page.locator('button[aria-label="Close sidebar"]').click();
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
     await expect
@@ -572,8 +572,8 @@ test.describe('nav shell on mobile', () => {
 
     await page.goto('/');
     await waitForNavSettled(page);
-    await page.click('button[aria-label="Open navigation"]');
-    await page.click('button[aria-label="Close sidebar"]');
+    await page.locator('button[aria-label="Open navigation"]').click();
+    await page.locator('button[aria-label="Close sidebar"]').click();
 
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
 
@@ -585,7 +585,7 @@ test.describe('nav shell on mobile', () => {
 
     const collapseSaved = waitForNavPreferenceSave(page);
 
-    await page.click('button[aria-label="Close sidebar"]');
+    await page.locator('button[aria-label="Close sidebar"]').click();
     await collapseSaved;
 
     expect(savedValues).toEqual(['resized', { open: false }]);
@@ -607,7 +607,7 @@ test.describe('nav shell on mobile', () => {
     await page.goto('/');
     await waitForNavSettled(page);
 
-    await page.click('button[aria-label="Open navigation"]');
+    await page.locator('button[aria-label="Open navigation"]').click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
     await expect(shell(page)).toHaveCSS('position', 'fixed');
     await expect.poll(() => shellWidth(page)).toBe(await expandedWidth(page));
@@ -625,7 +625,7 @@ test.describe('nav shell on mobile', () => {
     await page.goto('/');
     await waitForNavSettled(page);
 
-    await page.click('button[aria-label="Open navigation"]');
+    await page.locator('button[aria-label="Open navigation"]').click();
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
     await page.keyboard.press('Escape');
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');

@@ -9,7 +9,17 @@ import { buildConfig } from 'frogbot';
 import type { PieceJSON } from 'frogbot/pieces';
 import { FrogBot } from 'frogbot/test';
 import { Hono } from 'hono';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from 'vitest';
 
 import type { ConnectionRow } from '../../packages/frogbot/src/connections/store.js';
 import { startPieceProviders, startPieceServer } from './nativePieceServers.js';
@@ -266,8 +276,14 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
   });
 
   afterEach(() => {
-    expect(blockedRequests).toEqual([]);
-    expect(providers.requests.unexpected).toEqual([]);
+    if (blockedRequests.length) {
+      throw new Error(`Unexpected outbound requests: ${JSON.stringify(blockedRequests)}`);
+    }
+    if (providers.requests.unexpected.length) {
+      throw new Error(
+        `Unexpected provider requests: ${JSON.stringify(providers.requests.unexpected)}`,
+      );
+    }
   });
 
   afterAll(async () => {
@@ -432,23 +448,26 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       }),
     );
     const pending = direct({ user: alice, input: emailInput('in-flight') });
-    try {
-      await expect.poll(() => providers.requests.resend.length).toBe(1);
-      expect(providers.requests.resend[0]?.authorization).toBe('Bearer alice-key');
-      await saveConnection({ user: alice, credentials: { apiKey: 'rotated-key' } });
-      await sendBoth({ user: alice, input: emailInput('after-rotation') });
-      expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
-        'Bearer alice-key',
-        'Bearer rotated-key',
-        'Bearer rotated-key',
-      ]);
-    } finally {
+    onTestFinished(async () => {
       release();
-      expect(await pending).toMatchObject({
-        status: 200,
-        body: { body: { id: 'email-in-flight' } },
-      });
-    }
+      await pending;
+    });
+
+    await expect.poll(() => providers.requests.resend.length).toBe(1);
+    expect(providers.requests.resend[0]?.authorization).toBe('Bearer alice-key');
+    await saveConnection({ user: alice, credentials: { apiKey: 'rotated-key' } });
+    await sendBoth({ user: alice, input: emailInput('after-rotation') });
+    expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
+      'Bearer alice-key',
+      'Bearer rotated-key',
+      'Bearer rotated-key',
+    ]);
+
+    release();
+    expect(await pending).toMatchObject({
+      status: 200,
+      body: { body: { id: 'email-in-flight' } },
+    });
   });
 
   it('expands a whole piece instance and resolves its canonical piece credentials', async () => {

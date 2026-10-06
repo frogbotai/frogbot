@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogBotRESTClient } from '../__helpers/shared/FrogBotRESTClient';
-import { getFreePort, spawnServer, terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const hasSearchKey = Boolean(process.env.BRAVE_API_KEY || process.env.EXA_API_KEY);
@@ -50,22 +50,21 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
     });
     server.stdout?.resume();
     server.stderr?.pipe(process.stderr);
-    const deadline = Date.now() + 210000;
-    while (!(await isListening(port))) {
-      if (server.exitCode !== null) {
-        throw new Error(`web search agent dev server exited with code ${server.exitCode}`);
-      }
-      if (Date.now() > deadline) {
-        throw new Error('web search agent dev server did not become ready');
-      }
-      await new Promise((resolveWait) => setTimeout(resolveWait, 2000));
-    }
+    await waitForServer(server, () => isListening(port), {
+      name: 'web search agent dev server',
+      timeout: 210000,
+      interval: 2000,
+    });
     const registration = await client.post<{ token: string }>('/api/users/first-register', {
       email: 'web-search@frogbot.test',
       password: 'frogbot-e2e-password',
       name: 'Web Search Test',
     });
-    expect(registration.status, JSON.stringify(registration.body)).toBe(200);
+    if (registration.status !== 200) {
+      throw new Error(
+        `first-register returned ${registration.status}: ${JSON.stringify(registration.body)}`,
+      );
+    }
     token = registration.body.token;
   }, 240000);
 
@@ -75,14 +74,14 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
   });
 
   it.skipIf(!process.env.BRAVE_API_KEY)('performs and persists a Brave search', async () => {
-    await runSearch('brave-search', 'brave-search_searchWeb');
+    await expectSearch('brave-search', 'brave-search_searchWeb');
   });
 
   it.skipIf(!process.env.EXA_API_KEY)('performs and persists an Exa search', async () => {
-    await runSearch('exa-search', 'exa_search');
+    await expectSearch('exa-search', 'exa_search');
   });
 
-  async function runSearch(agent: string, toolType: string): Promise<void> {
+  async function expectSearch(agent: string, toolType: string): Promise<void> {
     const auth = { headers: { authorization: `Bearer ${token}` } };
     const response = await client.post<{ text: string; chatId: string | number }>(
       `/api/agents/${agent}`,

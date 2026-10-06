@@ -13,8 +13,8 @@ export const fieldArgumentsSlug = 'field-arguments';
 export const observedBlockSlug = 'observed-block';
 
 export const countRequests: {
-  context: FrogBotRequest['context'];
-  req: FrogBotRequest;
+  context: FrogBotRequest['context'] | undefined;
+  req: FrogBotRequest | undefined;
   transactionID: FrogBotRequest['transactionID'];
   userID: number | string | undefined;
 }[] = [];

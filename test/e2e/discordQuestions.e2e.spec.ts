@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { AgentModelId, FrogBotInstance } from 'frogbot';
+import type { AgentModelId, FrogBotInstance, Where } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { FrogBot } from 'frogbot/test';
 import { question, type QuestionInput } from 'frogbot/tools';
@@ -133,7 +133,7 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
     return counts;
   }
 
-  async function channelJobsWhere(where: Record<string, unknown>) {
+  async function channelJobsWhere(where: Where) {
     const result = await frogbot.find({
       collection: 'payload-jobs' as never,
       where: { and: [{ taskSlug: { equals: CHANNEL_TASK } }, where] },
@@ -312,7 +312,7 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
   });
 
   afterEach(() => {
-    expect(blocked).toEqual([]);
+    if (blocked.length) throw new Error(`Unexpected outbound requests: ${JSON.stringify(blocked)}`);
   });
 
   afterAll(async () => {

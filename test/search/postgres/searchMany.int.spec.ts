@@ -1,5 +1,5 @@
 import type { FrogBotConfig, SearchManyOptions, SearchQuery } from 'frogbot';
-import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, expect, it, type MockInstance, vi } from 'vitest';
 
 import { createSearchDatabase, describePostgres, driver, type SearchDatabase } from './fixture.js';
 import { articles, articlesSlug, guides, guidesSlug, localization } from './shared.js';
@@ -29,7 +29,7 @@ describePostgres(`postgres searchMany [${driver}]`, () => {
   let database: SearchDatabase;
   let booted: Booted;
   let transactionID: number | string | undefined;
-  let emitWarning: ReturnType<typeof vi.spyOn>;
+  let emitWarning: MockInstance<typeof process.emitWarning>;
 
   const collections = [
     { collection: guidesSlug, index: 'guides' },

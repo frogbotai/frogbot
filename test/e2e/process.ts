@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
+import { vi } from 'vitest';
+
 const guardian = fileURLToPath(new URL('./guardian.mjs', import.meta.url));
 const live = new Set<ChildProcess>();
 
@@ -62,6 +64,34 @@ export async function terminateProcess(child?: ChildProcess): Promise<void> {
   if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
   await closed;
   live.delete(child);
+}
+
+/**
+ * Poll `ready` until it resolves true, failing as soon as the server exits.
+ * `output` adds the server's logs to the failure message.
+ */
+export async function waitForServer(
+  child: ChildProcess,
+  ready: () => Promise<boolean>,
+  {
+    name,
+    timeout,
+    interval,
+    output = () => '',
+  }: { name: string; timeout: number; interval: number; output?: () => string },
+): Promise<void> {
+  const exited = () => child.exitCode !== null;
+  const details = () => (output() ? `:\n${output()}` : '');
+
+  await vi.waitFor(
+    async () => {
+      if (exited()) return;
+      if (!(await ready())) throw new Error(`${name} did not become ready${details()}`);
+    },
+    { timeout, interval },
+  );
+
+  if (exited()) throw new Error(`${name} exited with code ${child.exitCode}${details()}`);
 }
 
 /** Ask the OS for a free TCP port instead of hard-coding one. */

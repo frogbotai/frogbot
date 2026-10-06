@@ -10,6 +10,7 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import { generalAgentSlug, wildcardAgentSlug } from './config.js';
+import type { Chat, User } from './frogbot-types.js';
 import {
   agentSlug,
   chatsSlug,
@@ -34,7 +35,7 @@ const questionInput = {
 };
 
 type AgentJSON = {
-  chatId: number | string;
+  chatId: Chat['id'];
   status?: string;
   error?: string;
   code?: string;
@@ -59,7 +60,7 @@ function deferred() {
 describe('per-user agent model allowlists', () => {
   let booted: BootedFrogBot;
   let model: StubChatModel;
-  let samId: number | string;
+  let samId: Awaited<ReturnType<typeof loginHeaders>>['id'];
   let sam: Record<string, string>;
   let cookie: Record<string, string>;
   let hold: ReturnType<typeof deferred> | undefined;
@@ -114,7 +115,7 @@ describe('per-user agent model allowlists', () => {
   });
 
   async function clearData() {
-    for (const collection of [turnsSlug, messagesSlug, chatsSlug, usersSlug]) {
+    for (const collection of [turnsSlug, messagesSlug, chatsSlug, usersSlug] as const) {
       await booted.frogbot.delete({ collection, where: {}, overrideAccess: true });
     }
   }
@@ -129,11 +130,7 @@ describe('per-user agent model allowlists', () => {
     return { status: response.status, body: (await response.json()) as AgentJSON };
   }
 
-  async function loginHeaders(data: {
-    email: string;
-    modelAccess?: 'all' | 'selected' | null;
-    models?: string[] | null;
-  }) {
+  async function loginHeaders(data: Pick<User, 'email' | 'modelAccess' | 'models'>) {
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { ...data, password },
@@ -176,7 +173,7 @@ describe('per-user agent model allowlists', () => {
 
   async function rowCounts() {
     const counts = await Promise.all(
-      [chatsSlug, messagesSlug, turnsSlug].map(async (collection) => {
+      ([chatsSlug, messagesSlug, turnsSlug] as const).map(async (collection) => {
         const result = await booted.frogbot.count({ collection, overrideAccess: true });
 
         return result.totalDocs;
@@ -199,7 +196,7 @@ describe('per-user agent model allowlists', () => {
     return result.docs as unknown as StoredMessage[];
   }
 
-  async function setSamModels(models: string[]) {
+  async function setSamModels(models: NonNullable<User['models']>) {
     await booted.frogbot.update({
       collection: usersSlug,
       id: samId,
@@ -491,8 +488,8 @@ describe('per-user agent model allowlists', () => {
     ).resolves.toBe('idle');
   });
 
-  it.each([
-    { name: 'an unrestricted user', modelAccess: 'all' as const, models: ['test/thinker'] },
+  it.each<{ name: string } & Pick<User, 'modelAccess' | 'models'>>([
+    { name: 'an unrestricted user', modelAccess: 'all', models: ['test/thinker'] },
     { name: 'a user without a model policy', modelAccess: null, models: null },
   ])('GET /api/agents shows the full manifest for $name', async ({ modelAccess, models }) => {
     const login = await loginHeaders({ email: 'unrestricted@frogbot.local', modelAccess, models });

@@ -65,7 +65,7 @@ const questionInput = {
 
 const noopInput = z.object({});
 
-const noop: Tool<typeof noopInput, string> = {
+const noop: Tool = {
   slug: 'noop',
   description: 'Do nothing.',
   inputSchema: noopInput,
@@ -136,7 +136,7 @@ function deferred() {
 describe('chat attachments reach the agent model', () => {
   let booted: BootedFrogBot;
   let model: StubChatModel;
-  let user: { id: number | string };
+  let user: Awaited<ReturnType<typeof signIn>>['user'];
   let token: string;
   let sequence = 0;
 
@@ -146,7 +146,7 @@ describe('chat attachments reach the agent model', () => {
   });
 
   beforeEach(async () => {
-    for (const collection of [turnsSlug, messagesSlug]) {
+    for (const collection of [turnsSlug, messagesSlug] as const) {
       await booted.frogbot.delete({ collection, where: {}, overrideAccess: true });
     }
 
@@ -158,11 +158,11 @@ describe('chat attachments reach the agent model', () => {
   async function signIn() {
     const email = `owner-${++sequence}@frogbot.local`;
 
-    const created = (await booted.frogbot.create({
+    const created = await booted.frogbot.create({
       collection: usersSlug,
       data: { email, password },
       overrideAccess: true,
-    })) as { id: number | string };
+    });
 
     const login = await fetch(`${booted.baseUrl}/api/${usersSlug}/login`, {
       method: 'POST',

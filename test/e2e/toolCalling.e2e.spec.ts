@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogBotRESTClient } from '../__helpers/shared/FrogBotRESTClient';
-import { getFreePort, spawnServer, terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -71,21 +71,22 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     server.stdout?.resume();
     server.stderr?.pipe(process.stderr);
 
-    const deadline = Date.now() + 210000;
-    while (!(await isListening(port))) {
-      if (server.exitCode !== null) {
-        throw new Error(`tool agent dev server exited with code ${server.exitCode}`);
-      }
-      if (Date.now() > deadline) throw new Error('tool agent dev server did not become ready');
-      await new Promise((resolveWait) => setTimeout(resolveWait, 2000));
-    }
+    await waitForServer(server, () => isListening(port), {
+      name: 'tool agent dev server',
+      timeout: 210000,
+      interval: 2000,
+    });
 
     const registration = await client.post<RegisterBody>('/api/users/first-register', {
       email: 'tool-calling@frogbot.test',
       password: 'frogbot-e2e-password',
       name: 'Tool Calling Test',
     });
-    expect(registration.status, JSON.stringify(registration.body)).toBe(200);
+    if (registration.status !== 200) {
+      throw new Error(
+        `first-register returned ${registration.status}: ${JSON.stringify(registration.body)}`,
+      );
+    }
     token = registration.body.token;
     userId = registration.body.user.id;
   }, 240000);

@@ -137,11 +137,13 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       mimeType: string;
     }) => {
       const createdAt = '2026-01-01T00:00:00.000Z';
+      const raw = `INSERT INTO "${assetsTable}" ("id", "filename", "mime_type", "filesize", "updated_at", "created_at") VALUES (${id}, '${filename}', '${mimeType}', 3, '${createdAt}', '${createdAt}')`;
 
-      await db.execute({
-        drizzle: db.drizzle,
-        raw: `INSERT INTO "${assetsTable}" ("id", "filename", "mime_type", "filesize", "updated_at", "created_at") VALUES (${id}, '${filename}', '${mimeType}', 3, '${createdAt}', '${createdAt}')`,
-      });
+      if ('pool' in db) {
+        await db.execute({ drizzle: db.drizzle, raw });
+      } else {
+        await db.client.execute(raw);
+      }
     };
 
     beforeAll(async () => {
@@ -183,7 +185,6 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
         config: await buildConfig({
           secret: 'frogbot-chat-migrations-secret',
           db: descriptor,
-          admin: { disable: true },
           typescript: { autoGenerate: false },
           collections: [
             { slug: usersSlug, auth: true, fields: [] },

@@ -9,9 +9,10 @@ import {
   applyLocalOverrides,
   packLocalClosure,
   run,
+  runSetup,
   subprocessEnvironment,
 } from './fixtures/create-frogbot-app/harness';
-import { getFreePort, spawnServer, terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
@@ -60,21 +61,13 @@ describe.skipIf(!RUN_E2E)('GraphQL in a scaffolded application', () => {
       errors += chunk.toString();
     });
 
-    const deadline = Date.now() + 180000;
+    await waitForServer(
+      child,
+      async () => (await fetch(`${baseURL}/api/users/me`).catch(() => undefined))?.status === 200,
+      { name: `next ${command}`, timeout: 180000, interval: 500, output: () => errors },
+    );
 
-    for (;;) {
-      if (child.exitCode !== null) throw new Error(`next ${command} exited:\n${errors}`);
-
-      const response = await fetch(`${baseURL}/api/users/me`).catch(() => undefined);
-
-      if (response?.status === 200) return { baseURL, child };
-
-      if (Date.now() > deadline) {
-        throw new Error(`next ${command} did not become ready:\n${errors}`);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+    return { baseURL, child };
   }
 
   async function restart(command: 'dev' | 'start'): Promise<Server> {
@@ -101,13 +94,11 @@ describe.skipIf(!RUN_E2E)('GraphQL in a scaffolded application', () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'frogbot-graphql-e2e-'));
     app = path.join(root, 'graphql-app');
 
-    const scaffold = run(
+    runSetup(
       process.execPath,
       [cli, 'graphql-app', '--yes', '--no-git', '--no-install', '--db', 'sqlite', '--ai', 'none'],
       { cwd: root },
     );
-
-    expect(scaffold.status, scaffold.output).toBe(0);
 
     const packagePath = path.join(app, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8')) as {
@@ -123,13 +114,13 @@ describe.skipIf(!RUN_E2E)('GraphQL in a scaffolded application', () => {
       repoRoot,
     });
 
-    expect(packages.map(({ name }) => name)).toContain('@frogbotai/graphql');
+    if (!packages.some(({ name }) => name === '@frogbotai/graphql')) {
+      throw new Error('The local package closure is missing @frogbotai/graphql');
+    }
 
     applyLocalOverrides(app, packages);
 
-    const install = run('pnpm', ['install', '--store-dir', path.join(root, 'store')], { cwd: app });
-
-    expect(install.status, install.output).toBe(0);
+    runSetup('pnpm', ['install', '--store-dir', path.join(root, 'store')], { cwd: app });
   }, 300000);
 
   afterAll(async () => {

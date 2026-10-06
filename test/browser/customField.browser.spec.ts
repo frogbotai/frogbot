@@ -79,9 +79,7 @@ test('lists ungrouped collections directly under one Collections heading', async
 
   const shell = page.locator('.frogbot-nav-shell');
 
-  if ((await shell.getAttribute('data-nav-state')) === 'desktop-nav-closed') {
-    await page.click('button[aria-label="Open sidebar"]');
-  }
+  await expandSidebar(page);
 
   const collections = page.locator('#frogbot-nav-section-collections');
 
@@ -120,11 +118,7 @@ test('renders the API Keys collection with the key icon directly under Collectio
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
 
-  const shell = page.locator('.frogbot-nav-shell');
-
-  if ((await shell.getAttribute('data-nav-state')) === 'desktop-nav-closed') {
-    await page.click('button[aria-label="Open sidebar"]');
-  }
+  await expandSidebar(page);
 
   const apiKeys = page
     .locator('#frogbot-nav-section-collections .frogbot-nav-section__scroll > .frogbot-nav-item')

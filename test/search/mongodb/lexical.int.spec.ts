@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { Where } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -10,7 +9,14 @@ import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import type { SeededArticles } from './shared.js';
-import { articlesSlug, seedArticles, skipSearch, useSearchDatabase, waitFor } from './shared.js';
+import {
+  articlesSlug,
+  mongooseAdapterOf,
+  seedArticles,
+  skipSearch,
+  useSearchDatabase,
+  waitFor,
+} from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -183,7 +189,7 @@ describe.skipIf(skipSearch)('MongoDB lexical search', () => {
   });
 
   it('reports a dropped index as not ready until it is reconciled', async () => {
-    const db = booted.payload.db as MongooseAdapter;
+    const db = mongooseAdapterOf(booted.payload.db);
 
     await db.collections[articlesSlug].collection.dropSearchIndex('content_lexical');
 

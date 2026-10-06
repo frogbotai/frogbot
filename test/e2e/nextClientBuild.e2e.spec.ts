@@ -21,8 +21,8 @@ function runInFixture(fixtureDir: string, args: string[]) {
       },
     });
     let output = '';
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk));
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk));
+    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
+    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.on('close', (code) => resolveExit({ code: code ?? 1, output }));
   });
 }

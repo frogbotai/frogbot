@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { AgentModelId, FrogBotInstance } from 'frogbot';
+import type { AgentModelId, FrogBotInstance, Where } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { FrogBot } from 'frogbot/test';
 import { question, type QuestionInput } from 'frogbot/tools';
@@ -30,7 +30,7 @@ const RUN_E2E = process.env.RUN_E2E === '1';
 const MODEL_PORT = testPort(4097);
 const CHANNEL_TASKS = ['frogbot-run-channel-message', 'frogbot-update-channel-question'];
 
-type ChannelJob = { input: { kind?: string; thread: { id: string } } };
+type ChannelJob = { id: number | string; input: { kind?: string; thread: { id: string } } };
 
 const alice: GithubPerson = { id: 41, login: 'alice', email: 'alice@example.com' };
 const bob: GithubPerson = { id: 42, login: 'bob', email: 'bob@example.com' };
@@ -93,7 +93,7 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
 
   const threadId = (issue: number) => `github:frogbotai/frogbot:issue:${issue}`;
 
-  async function channelJobs(where: Record<string, unknown> = {}): Promise<ChannelJob[]> {
+  async function channelJobs(where: Where = {}): Promise<ChannelJob[]> {
     const result = await frogbot.find({
       collection: 'payload-jobs' as never,
       where: { and: [{ taskSlug: { in: CHANNEL_TASKS } }, where] },

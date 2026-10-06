@@ -13,8 +13,8 @@ function run(root: string) {
   return new Promise<{ code: number; output: string }>((resolveExit) => {
     const child = spawn(process.execPath, [script, root], { cwd: repoRoot });
     let output = '';
-    child.stdout.on('data', (chunk: Buffer) => (output += chunk));
-    child.stderr.on('data', (chunk: Buffer) => (output += chunk));
+    child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
+    child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.on('close', (code) => resolveExit({ code: code ?? 1, output }));
   });
 }

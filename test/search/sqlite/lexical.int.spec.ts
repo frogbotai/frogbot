@@ -2,7 +2,6 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
 import { sql } from '@frogbotai/db-sqlite';
 import type { FrogBotRequest } from 'frogbot';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -10,7 +9,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import { articlesSlug, databasePath, notesSlug, pagesSlug, usersSlug } from './shared.js';
+import {
+  articlesSlug,
+  databasePath,
+  notesSlug,
+  pagesSlug,
+  sqliteAdapterOf,
+  usersSlug,
+} from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -132,7 +138,7 @@ describe('SQLite lexical search', () => {
     expect(await searchIDs('original')).toEqual([]);
     expect(await searchIDs('replacement')).toEqual([created.id]);
 
-    const db = booted.payload.db as unknown as SQLiteAdapter;
+    const db = sqliteAdapterOf(booted.payload.db);
     const req = await booted.frogbot.createRequest();
     req.transactionID = (await db.beginTransaction()) as number;
 

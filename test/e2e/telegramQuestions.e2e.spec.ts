@@ -217,7 +217,9 @@ describe.skipIf(!RUN_E2E)(
     });
 
     afterEach(() => {
-      expect(blocked).toEqual([]);
+      if (blocked.length) {
+        throw new Error(`Unexpected outbound requests: ${JSON.stringify(blocked)}`);
+      }
     });
 
     afterAll(async () => {

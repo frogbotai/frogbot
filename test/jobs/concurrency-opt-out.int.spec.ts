@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { adapterName, bootJobsFixture } from './fixture.js';
+import { adapterName, bootJobsFixture, type FrogBotJob } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
@@ -33,7 +33,7 @@ describe(`concurrency control opt-out: ${adapterName}`, () => {
 
     await fixture.frogbot.jobs.run({ queue: marker });
 
-    const jobs = await fixture.payload.db.find({
+    const jobs = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       where: { id: { equals: job.id } },
       pagination: false,

@@ -10,7 +10,7 @@ import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import { sqlitePushChanges } from '../../__helpers/shared/db/sqlitePushChanges.js';
-import { articlesSlug, databasePath } from './shared.js';
+import { articlesSlug, databasePath, sqliteAdapterOf } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const fts = 'frogbot_search_search_articles_content_fts';
@@ -44,7 +44,7 @@ describe('SQLite search schema push', () => {
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname, 'search-sqlite-schema');
-    db = booted.payload.db as unknown as SQLiteAdapter;
+    db = sqliteAdapterOf(booted.payload.db);
   });
 
   afterAll(async () => {

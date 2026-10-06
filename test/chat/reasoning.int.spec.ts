@@ -77,7 +77,7 @@ describe('chat reasoning selection', () => {
   });
 
   beforeEach(async () => {
-    for (const collection of [turnsSlug, messagesSlug]) {
+    for (const collection of [turnsSlug, messagesSlug] as const) {
       await booted.frogbot.delete({ collection, where: {}, overrideAccess: true });
     }
 

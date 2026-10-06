@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { createLocalReq } from 'payload';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { adapterName, bootJobsFixture } from './fixture.js';
+import { adapterName, bootJobsFixture, type FrogBotJob } from './fixture.js';
 
 let fixture: Awaited<ReturnType<typeof bootJobsFixture>>;
 
@@ -21,7 +21,7 @@ afterAll(async () => {
 });
 
 async function readJob(id: number | string) {
-  const result = await fixture.payload.db.find({
+  const result = await fixture.payload.db.find<FrogBotJob>({
     collection: 'payload-jobs',
     where: { id: { equals: id } },
     limit: 1,
@@ -37,22 +37,25 @@ function queueJob(marker: string) {
 }
 
 describe(`native jobs runtime regressions: ${adapterName}`, () => {
-  it.each([false, true])(
-    'preserves ordinary allowed by-ID updates from handlers (already processing=%s)',
-    async (processing) => {
+  it.each([
+    { processing: false, preProcessed: [] },
+    { processing: true, preProcessed: ['outside', 'inside'] },
+  ] as const)(
+    'preserves ordinary allowed by-ID updates from handlers (already processing=$processing)',
+    async ({ preProcessed }) => {
       const marker = randomUUID();
       const outside = await queueJob(`${marker}-outside`);
       const inside = await queueJob(`${marker}-inside`);
       const worker = await queueJob(marker);
 
-      if (processing) {
-        for (const target of [outside, inside]) {
-          await fixture.payload.db.updateOne({
-            collection: 'payload-jobs',
-            id: target.id,
-            data: { processing: true },
-          });
-        }
+      const queued = { outside, inside };
+
+      for (const name of preProcessed) {
+        await fixture.payload.db.updateOne({
+          collection: 'payload-jobs',
+          id: queued[name].id,
+          data: { processing: true },
+        });
       }
 
       const before = await readJob(inside.id);
@@ -117,17 +120,18 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
         req.payload,
       );
 
-      try {
-        await req.payload.update({
+      rejected = await req.payload
+        .update({
           collection: 'payload-jobs',
           id: inside.id,
           data: { processing: true, priority: 99 },
           overrideAccess: false,
           req: deniedReq,
-        });
-      } catch (error) {
-        rejected = error;
-      }
+        })
+        .then(
+          () => undefined,
+          (error: unknown) => error,
+        );
     });
 
     await fixture.frogbot.jobs.runByID({ id: worker.id });

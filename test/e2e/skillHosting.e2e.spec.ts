@@ -92,13 +92,6 @@ describe('hosted skill protocol with prepared real clients', () => {
   beforeAll(() => {
     entry = readFileSync(join(canonical, 'SKILL.md'));
     references = readdirSync(join(canonical, 'reference')).sort();
-
-    expect(references).toHaveLength(23);
-    expect(readdirSync(canonical).sort()).toEqual(['SKILL.md', 'reference']);
-    expect(readlinkSync(join(repoRoot, 'docs/.mintlify/skills'))).toBe('../../skills');
-    expect(realpathSync(join(repoRoot, 'docs/.mintlify/skills/frogbot'))).toBe(
-      realpathSync(canonical),
-    );
   });
 
   beforeEach(async () => {
@@ -130,87 +123,104 @@ describe('hosted skill protocol with prepared real clients', () => {
     rmSync(profile.root, { recursive: true, force: true });
   });
 
-  describe.skipIf(Boolean(skills.missing))(skills.missing || 'skills hosted installs', () => {
-    it('identifies the prepared skills client version', async () => {
-      const result = await runClient({
-        executable: skills.executable,
-        args: ['--version'],
-        profile,
-      });
-
-      console.info(`Prepared skills ${result.stdout.trim()}: ${skills.executable}`);
-      expect(result.stdout.trim()).toBe('1.5.23');
-    });
-
-    it.each(['v0.2', 'legacy'] as const)(
-      'installs only the canonical entry through %s and retains 23 fallbacks',
-      async (protocol) => {
-        host[protocol === 'v0.2' ? 'modern' : 'legacy']();
-
-        const result = await install();
-
-        expect(result.stdout).toContain('Found 1 skill');
-        expect(result.signal).toBeNull();
-        expectEntryOnly(profile.installed);
-        expectRequest(modernIndex, protocol === 'v0.2' ? 200 : 404);
-        expectRequest(legacyIndex, protocol === 'legacy' ? 200 : 404);
-        expectRequest(protocol === 'v0.2' ? modernEntry : legacyEntry, 200);
-        expect(host.requests.every(({ path }) => !path.includes('/reference/'))).toBe(true);
-      },
-    );
-
-    it.each([
-      {
-        name: 'v0.2 digest mismatch',
-        setup: () => host.modern({ mismatch: true }),
-        path: modernEntry,
-        status: 200,
-      },
-      {
-        name: 'v0.2 missing entry',
-        setup: () => host.modern({ missing: true }),
-        path: modernEntry,
-        status: 404,
-      },
-      { name: 'missing indices', setup: () => host.routes.clear(), path: modernIndex, status: 404 },
-      {
-        name: 'legacy missing entry',
-        setup: () => host.legacy({ missing: true }),
-        path: legacyEntry,
-        status: 404,
-      },
-      {
-        name: 'legacy lowercase-only route',
-        setup: () => host.legacy({ lowercase: true }),
-        path: legacyEntry,
-        status: 404,
-      },
-    ])(
-      'does not install from $name and exposes the actual diagnostic',
-      async ({ setup, path, status }) => {
-        setup();
-
-        const result = await install();
-
-        expect(existsSync(profile.installed)).toBe(false);
-        expect(result.stdout + result.stderr).toContain(
-          'No well-known skills found; trying direct download...',
-        );
-        expect(result.stdout + result.stderr).toContain('Download failed with HTTP 404');
-        expect(result.stdout + result.stderr).toContain('Installation failed');
-        expectRequest(path, status);
-        expectRequest('/', 404);
-        expect(host.requests.filter((request) => request.path.endsWith('/skill.md'))).toEqual([]);
-        expectRequest(
-          path.startsWith('/.well-known/agent-skills') ? legacyIndex : modernIndex,
-          404,
-        );
-      },
+  it('serves the canonical skill with its references through the docs link', () => {
+    expect(references).toHaveLength(23);
+    expect(readdirSync(canonical).sort()).toEqual(['SKILL.md', 'reference']);
+    expect(readlinkSync(join(repoRoot, 'docs/.mintlify/skills'))).toBe('../../skills');
+    expect(realpathSync(join(repoRoot, 'docs/.mintlify/skills/frogbot'))).toBe(
+      realpathSync(canonical),
     );
   });
 
+  describe.skipIf(Boolean(skills.missing))(
+    'skills hosted installs (SKILL_HOSTING_SKILLS_BIN required)',
+    () => {
+      it('identifies the prepared skills client version', async () => {
+        const result = await runClient({
+          executable: skills.executable,
+          args: ['--version'],
+          profile,
+        });
+
+        console.info(`Prepared skills ${result.stdout.trim()}: ${skills.executable}`);
+        expect(result.stdout.trim()).toBe('1.5.23');
+      });
+
+      it.each(['v0.2', 'legacy'] as const)(
+        'installs only the canonical entry through %s and retains 23 fallbacks',
+        async (protocol) => {
+          host[protocol === 'v0.2' ? 'modern' : 'legacy']();
+
+          const result = await install();
+
+          expect(result.stdout).toContain('Found 1 skill');
+          expect(result.signal).toBeNull();
+          expectEntryOnly(profile.installed);
+          expectRequest(modernIndex, protocol === 'v0.2' ? 200 : 404);
+          expectRequest(legacyIndex, protocol === 'legacy' ? 200 : 404);
+          expectRequest(protocol === 'v0.2' ? modernEntry : legacyEntry, 200);
+          expect(host.requests.every(({ path }) => !path.includes('/reference/'))).toBe(true);
+        },
+      );
+
+      it.each([
+        {
+          name: 'v0.2 digest mismatch',
+          setup: () => host.modern({ mismatch: true }),
+          path: modernEntry,
+          status: 200,
+        },
+        {
+          name: 'v0.2 missing entry',
+          setup: () => host.modern({ missing: true }),
+          path: modernEntry,
+          status: 404,
+        },
+        {
+          name: 'missing indices',
+          setup: () => host.routes.clear(),
+          path: modernIndex,
+          status: 404,
+        },
+        {
+          name: 'legacy missing entry',
+          setup: () => host.legacy({ missing: true }),
+          path: legacyEntry,
+          status: 404,
+        },
+        {
+          name: 'legacy lowercase-only route',
+          setup: () => host.legacy({ lowercase: true }),
+          path: legacyEntry,
+          status: 404,
+        },
+      ])(
+        'does not install from $name and exposes the actual diagnostic',
+        async ({ setup, path, status }) => {
+          setup();
+
+          const result = await install();
+
+          expect(existsSync(profile.installed)).toBe(false);
+          expect(result.stdout + result.stderr).toContain(
+            'No well-known skills found; trying direct download...',
+          );
+          expect(result.stdout + result.stderr).toContain('Download failed with HTTP 404');
+          expect(result.stdout + result.stderr).toContain('Installation failed');
+          expectRequest(path, status);
+          expectRequest('/', 404);
+          expect(host.requests.filter((request) => request.path.endsWith('/skill.md'))).toEqual([]);
+          expectRequest(
+            path.startsWith('/.well-known/agent-skills') ? legacyIndex : modernIndex,
+            404,
+          );
+        },
+      );
+    },
+  );
+
   describe.skipIf(Boolean(opencode.missing))(
-    opencode.missing || 'opencode hosted discovery',
+    'opencode hosted discovery (SKILL_HOSTING_OPENCODE_BIN required)',
     () => {
       it('identifies the prepared opencode client version', async () => {
         const result = await runClient({
@@ -234,7 +244,11 @@ describe('hosted skill protocol with prepared real clients', () => {
           result.stdout
             .trim()
             .split('\n')
-            .map((line) => line.trim().split(/\s+/)),
+            .map((line): [string, string] => {
+              const [key, value] = line.trim().split(/\s+/);
+
+              return [key, value];
+            }),
         );
 
         expect(paths.home).toBe(profile.env.HOME);

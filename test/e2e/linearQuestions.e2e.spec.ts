@@ -247,8 +247,12 @@ describe.skipIf(!RUN_E2E)(
     });
 
     afterEach(() => {
-      expect(blockedRequests).toEqual([]);
-      expect(api.unexpected).toEqual([]);
+      if (blockedRequests.length) {
+        throw new Error(`Unexpected outbound requests: ${JSON.stringify(blockedRequests)}`);
+      }
+      if (api.unexpected.length) {
+        throw new Error(`Unexpected Linear API requests: ${JSON.stringify(api.unexpected)}`);
+      }
     });
 
     afterAll(async () => {

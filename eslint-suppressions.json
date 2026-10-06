@@ -37,19 +37,6 @@
       "count": 11
     }
   },
-  "test/browser/chatAssets.browser.spec.ts": {
-    "playwright/prefer-web-first-assertions": {
-      "count": 1
-    }
-  },
-  "test/browser/customField.browser.spec.ts": {
-    "playwright/no-conditional-in-test": {
-      "count": 2
-    },
-    "playwright/prefer-locator": {
-      "count": 2
-    }
-  },
   "test/browser/fixtures/custom-field/src/app/(site)/theme-check/system/page.tsx": {
     "jsx-a11y/aria-role": {
       "count": 1
@@ -60,160 +47,9 @@
       "count": 1
     }
   },
-  "test/browser/livePreview.browser.spec.ts": {
-    "playwright/prefer-locator": {
-      "count": 1
-    }
-  },
-  "test/browser/navShell.browser.spec.ts": {
-    "playwright/prefer-locator": {
-      "count": 19
-    }
-  },
-  "test/browser/richText.browser.spec.ts": {
-    "playwright/prefer-locator": {
-      "count": 5
-    }
-  },
-  "test/browser/topBarPhone.browser.spec.ts": {
-    "playwright/prefer-web-first-assertions": {
-      "count": 2
-    }
-  },
-  "test/chat/persistence.int.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 2
-    }
-  },
   "test/connections/int.spec.ts": {
     "vitest/no-conditional-in-test": {
       "count": 3
-    }
-  },
-  "test/e2e/channelQuestions.e2e.spec.ts": {
-    "vitest/no-conditional-in-test": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/chatAssets.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/coldRest.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/connections-ui.mjs": {
-    "no-console": {
-      "count": 7
-    }
-  },
-  "test/e2e/createFrogBotApp.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/expect-expect": {
-      "count": 3
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 5
-    },
-    "vitest/no-standalone-expect": {
-      "count": 2
-    }
-  },
-  "test/e2e/discordQuestions.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/fixtures/skill-distribution/hosting/probe-public.mjs": {
-    "no-console": {
-      "count": 5
-    }
-  },
-  "test/e2e/fixtures/skill-distribution/installation/harness.ts": {
-    "no-console": {
-      "count": 2
-    }
-  },
-  "test/e2e/graphql.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 3
-    }
-  },
-  "test/e2e/linearQuestions.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 2
-    }
-  },
-  "test/e2e/nativePiece.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 2
-    }
-  },
-  "test/e2e/scaffold.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/sdkPackaging.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 2
-    }
-  },
-  "test/e2e/skillDistribution.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 2
-    }
-  },
-  "test/e2e/skillHosting.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 4
-    },
-    "vitest/valid-title": {
-      "count": 2
-    }
-  },
-  "test/e2e/telegramQuestions.e2e.spec.ts": {
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/toolCalling.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 1
-    }
-  },
-  "test/e2e/webSearch.e2e.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/expect-expect": {
-      "count": 2
-    },
-    "vitest/no-standalone-expect": {
-      "count": 1
     }
   },
   "test/email/int.spec.ts": {
@@ -229,19 +65,6 @@
   "test/hooks-access/int.spec.ts": {
     "no-restricted-syntax": {
       "count": 2
-    }
-  },
-  "test/jobs/acceptance.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
-  "test/jobs/runtime-regressions.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    },
-    "vitest/no-conditional-in-test": {
-      "count": 1
     }
   },
   "test/kv/db.int.spec.ts": {
@@ -281,11 +104,6 @@
     }
   },
   "test/search/mongodb/hybrid.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/search/postgres/vector.int.spec.ts": {
     "no-restricted-syntax": {
       "count": 1
     }

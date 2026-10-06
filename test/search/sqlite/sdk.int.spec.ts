@@ -96,7 +96,7 @@ describe('SQLite search through the FrogBot SDK', () => {
 
     const options = {
       collections: [
-        { collection: articlesSlug, index: 'content', select: { title: true } },
+        { collection: articlesSlug, index: 'content', select: { title: true } as const },
         { collection: pagesSlug, index: 'content' },
       ],
       limit: 1,

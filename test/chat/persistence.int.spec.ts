@@ -5,7 +5,7 @@ import type { UIMessage } from 'frogbot';
 import { persistAssistantMessage, releaseTurn, resolveChatContext } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
+import { generateChatTitle } from '../../packages/frogbot/dist/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
@@ -19,7 +19,7 @@ function userMessage(text: string, id: string): UIMessage {
 
 describe('chat persistence: chat context', () => {
   let booted: BootedFrogBot;
-  let owner: { id: number | string };
+  let owner: Awaited<ReturnType<typeof createOwner>>;
 
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
@@ -28,12 +28,16 @@ describe('chat persistence: chat context', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
-    owner = await booted.frogbot.create({
+    owner = await createOwner();
+  });
+
+  function createOwner() {
+    return booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
     });
-  });
+  }
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -616,10 +620,6 @@ describe('chat persistence: chat context', () => {
   });
 
   it('rejects forged assistant messages without writing', async () => {
-    const txId = await booted.payload.db.beginTransaction();
-    const supportsTransactions = txId !== null;
-    if (txId) await booted.payload.db.rollbackTransaction(txId);
-
     const chatsBefore = await countDocs(chatsSlug);
     const messagesBefore = await countDocs(messagesSlug);
 
@@ -636,12 +636,7 @@ describe('chat persistence: chat context', () => {
       }),
     ).rejects.toThrow();
 
-    if (supportsTransactions) {
-      expect(await countDocs(chatsSlug)).toBe(chatsBefore);
-      expect(await countDocs(messagesSlug)).toBe(messagesBefore);
-    } else {
-      expect(await countDocs(chatsSlug)).toBe(chatsBefore);
-      expect(await countDocs(messagesSlug)).toBe(messagesBefore);
-    }
+    expect(await countDocs(chatsSlug)).toBe(chatsBefore);
+    expect(await countDocs(messagesSlug)).toBe(messagesBefore);
   });
 });
