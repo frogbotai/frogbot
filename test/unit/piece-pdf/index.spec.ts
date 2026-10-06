@@ -20,23 +20,26 @@ const actions = [
 
 const files = new Map<string, { data: Buffer; filename: string; mimeType: string }>();
 
-const findByID = vi.fn(async ({ id }: { id: string }) => {
+const findByID = vi.fn(({ id }: { id: string }) => {
   const file = files.get(id);
 
-  if (!file) throw new Error(`Missing fixture ${id}`);
+  if (!file) return Promise.reject(new Error(`Missing fixture ${id}`));
 
-  return { id, url: `/files/${id}`, filename: file.filename, mimeType: file.mimeType };
+  return Promise.resolve({
+    id,
+    url: `/files/${id}`,
+    filename: file.filename,
+    mimeType: file.mimeType,
+  });
 });
 
-const create = vi.fn(
-  async ({ file }: { file: { data: Buffer; name: string; mimetype: string } }) => {
-    const id = `output-${create.mock.calls.length}`;
+const create = vi.fn(({ file }: { file: { data: Buffer; name: string; mimetype: string } }) => {
+  const id = `output-${create.mock.calls.length}`;
 
-    files.set(id, { data: file.data, filename: file.name, mimeType: file.mimetype });
+  files.set(id, { data: file.data, filename: file.name, mimeType: file.mimetype });
 
-    return { id, url: `/files/${id}` };
-  },
-);
+  return Promise.resolve({ id, url: `/files/${id}` });
+});
 const req = {
   headers: new Headers({ authorization: 'Bearer test' }),
   signal: undefined,
@@ -89,11 +92,11 @@ beforeEach(async () => {
 
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (input: URL) => {
+    vi.fn((input: URL) => {
       const id = new URL(String(input)).pathname.split('/').pop()!;
       const file = files.get(id);
 
-      return new Response(file?.data, { status: file ? 200 : 404 });
+      return Promise.resolve(new Response(file?.data, { status: file ? 200 : 404 }));
     }),
   );
 });

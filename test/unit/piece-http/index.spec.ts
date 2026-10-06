@@ -14,6 +14,15 @@ afterEach(() =>
   ),
 );
 
+async function listen(server: ReturnType<typeof createServer>): Promise<number> {
+  servers.push(server);
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Missing fixture address.');
+  return address.port;
+}
+
 describe('http execution', () => {
   it('sends a request to a local server', async () => {
     const server = createServer((req, res) => {
@@ -31,16 +40,12 @@ describe('http execution', () => {
         );
       });
     });
-    servers.push(server);
-    server.listen(0, '127.0.0.1');
-    await once(server, 'listening');
-    const address = server.address();
-    if (!address || typeof address === 'string') throw new Error('Missing fixture address.');
+    const port = await listen(server);
 
     const result = await http.sendRequest({
       input: {
         method: 'POST',
-        url: `http://127.0.0.1:${address.port}/items?existing=yes`,
+        url: `http://127.0.0.1:${port}/items?existing=yes`,
         queryParams: { tag: ['one', 'two'], page: 2 },
         authType: 'BEARER_TOKEN',
         authFields: { token: 'secret' },

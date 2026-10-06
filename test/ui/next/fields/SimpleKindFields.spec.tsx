@@ -1,5 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ClientField, NumberFieldClientProps, TextFieldClientProps, Validate } from 'payload';
+import type {
+  NumberFieldClient,
+  NumberFieldClientProps,
+  TextFieldClientProps,
+  Validate,
+} from 'payload';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,15 +20,17 @@ const { dispatchField, form, setModified, setValue, TextField, translation, useF
       setValue,
       TextField: vi.fn((_props: unknown) => <div data-testid="text-field" />),
       translation: { language: 'en' },
-      useField: vi.fn(({ potentiallyStalePath }: { potentiallyStalePath: string }) => ({
-        customComponents: {},
-        disabled: false,
-        formSubmitted: form.formSubmitted,
-        path: potentiallyStalePath,
-        setValue,
-        showError: false,
-        value: form.value,
-      })),
+      useField: vi.fn(
+        ({ potentiallyStalePath }: { potentiallyStalePath: string; validate?: Validate }) => ({
+          customComponents: {},
+          disabled: false,
+          formSubmitted: form.formSubmitted,
+          path: potentiallyStalePath,
+          setValue,
+          showError: false,
+          value: form.value,
+        }),
+      ),
     };
   },
 );
@@ -66,14 +73,24 @@ function numberField(
   kind: Record<string, unknown>,
 ): NumberFieldClientProps {
   return {
-    field: {
+    field: numberFieldClient({
       name,
       type: 'number',
       label,
       admin: { custom: { frogbot: { kind } } },
-    } as ClientField & NumberFieldClientProps['field'],
+    }),
     path: name,
   };
+}
+
+// Payload's client `admin` type Picks from an optional type, which makes every picked key
+// required; a fixture states only the admin keys it uses.
+function numberFieldClient(
+  field: Omit<NumberFieldClient, 'admin'> & {
+    admin?: Partial<NonNullable<NumberFieldClient['admin']>>;
+  },
+): NumberFieldClient {
+  return field as NumberFieldClient;
 }
 
 const percentProps = numberField('progress', 'Progress', { type: 'percent', precision: 1 });
@@ -330,7 +347,7 @@ describe('RatingField', () => {
     render(<RatingField {...ratingProps} />);
 
     const group = screen.getByRole('radiogroup', { name: 'Score' });
-    const names = Array.from(group.querySelectorAll('input[type="radio"]'), (radio) =>
+    const names = Array.from(group.querySelectorAll('input[type="radio"]'), (radio: Element) =>
       radio.getAttribute('name'),
     );
 

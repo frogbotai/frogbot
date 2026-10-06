@@ -1,18 +1,21 @@
+import type { UseChatOptions } from '@ai-sdk/react';
+import type { AgentManifest } from '@frogbotai/sdk';
 import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ChatInit, UIMessage } from 'ai';
 import { APICallError } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
   status: 'ready',
   error: undefined as Error | undefined,
-  messages: [] as import('ai').UIMessage[],
+  messages: [] as UIMessage[],
   sendMessage: vi.fn(),
   stop: vi.fn(),
   setMessages: vi.fn(),
   addToolOutput: vi.fn(),
   clearError: vi.fn(),
-  options: undefined as import('@ai-sdk/react').UseChatOptions | undefined,
+  options: undefined as UseChatOptions | undefined,
   refresh: vi.fn(),
   adapter: {
     fetch: vi.fn(),
@@ -22,17 +25,17 @@ const state = vi.hoisted(() => ({
   sdk: undefined as unknown as ReturnType<typeof createFrogBotSDK>,
   agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
   assetsSlug: undefined as string | undefined,
-  agentManifest: undefined as import('@frogbotai/sdk').AgentManifest | undefined,
+  agentManifest: undefined as AgentManifest | undefined,
   history: {
-    messages: [] as import('ai').UIMessage[],
-    queued: [] as import('ai').UIMessage[],
+    messages: [] as UIMessage[],
+    queued: [] as UIMessage[],
     loadedChatId: undefined as string | undefined,
     loading: false,
   },
 }));
 
 vi.mock('@ai-sdk/react', () => ({
-  useChat: (options: import('@ai-sdk/react').UseChatOptions) => {
+  useChat: (options: UseChatOptions) => {
     state.options = options;
     return state;
   },
@@ -58,7 +61,7 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
 }));
 vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
   useChatMessages: () => state.history,
-  loadChatMessages: async () => ({ messages: [], queued: [] }),
+  loadChatMessages: () => Promise.resolve({ messages: [], queued: [] }),
 }));
 vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   emitChatMutation: vi.fn(),
@@ -96,7 +99,7 @@ const props = {
   abortedContent: 'Aborted',
   renderSidebar,
 };
-const message: import('ai').UIMessage = {
+const message: UIMessage = {
   id: 'user-1',
   role: 'user',
   parts: [{ type: 'text', text: 'Hello' }],
@@ -106,7 +109,7 @@ async function sendTransportMessage() {
   state.adapter.fetch.mockResolvedValue(
     new Response(new ReadableStream({ start: (controller) => controller.close() })),
   );
-  const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport;
+  const transport = (state.options as ChatInit<UIMessage>).transport;
   await transport?.sendMessages({
     trigger: 'submit-message',
     chatId: 'chat',
@@ -327,7 +330,7 @@ describe('Chat', () => {
 
   it('carries a server-created chat id into the next turn on the same transport', async () => {
     render(<Chat agent="support" />);
-    const chatInit = () => state.options as import('ai').ChatInit<import('ai').UIMessage>;
+    const chatInit = () => state.options as ChatInit<UIMessage>;
     const transport = chatInit().transport;
     const send = () =>
       transport?.sendMessages({
@@ -348,8 +351,8 @@ describe('Chat', () => {
       messages: [message],
     });
 
-    await act(async () => {
-      await (state.options as { onFinish?: () => void }).onFinish?.();
+    act(() => {
+      (state.options as { onFinish?: () => void }).onFinish?.();
     });
 
     expect(chatInit().transport).toBe(transport);
@@ -368,7 +371,7 @@ describe('Chat', () => {
         headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
       }),
     );
-    const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport;
+    const transport = (state.options as ChatInit<UIMessage>).transport;
     await transport?.sendMessages({
       trigger: 'submit-message',
       chatId: 'new:support',
@@ -436,7 +439,7 @@ describe('Chat', () => {
       }),
     );
     const { rerender } = render(<Chat agent="support" />);
-    const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport;
+    const transport = (state.options as ChatInit<UIMessage>).transport;
     await transport?.sendMessages({
       trigger: 'submit-message',
       chatId: 'new:support',
@@ -464,8 +467,12 @@ describe('Chat', () => {
 
   it('refreshes history after rename and delete', async () => {
     state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old chat' }] }];
-    state.adapter.fetch.mockImplementation(async (input) =>
-      String(input).startsWith('/api/messages?') ? Response.json({ docs: [] }) : Response.json({}),
+    state.adapter.fetch.mockImplementation((input) =>
+      Promise.resolve(
+        String(input).startsWith('/api/messages?')
+          ? Response.json({ docs: [] })
+          : Response.json({}),
+      ),
     );
     render(
       <Chat

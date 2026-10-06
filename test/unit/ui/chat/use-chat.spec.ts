@@ -5,7 +5,7 @@ import { loadChat } from '../../../../packages/ui/src/chat/use-chat';
 
 describe('loadChat', () => {
   it('uses the manifest message slug and returns mapped messages in creation order', async () => {
-    const fetch = vi.fn(() =>
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         Response.json({ docs: [{ id: 7, role: 'user', parts: [{ type: 'text', text: 'hi' }] }] }),
       ),

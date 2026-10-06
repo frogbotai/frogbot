@@ -8,9 +8,9 @@ describe('AudioWaveform', () => {
     const { container } = render(<AudioWaveform audioData={null} />);
     const bars = container.querySelectorAll('.fb-audio-waveform__bar');
     expect(bars).toHaveLength(40);
-    expect(Array.from(bars).every((bar) => bar.getAttribute('style') === 'height: 3px;')).toBe(
-      true,
-    );
+    expect(
+      Array.from<Element>(bars).every((bar) => bar.getAttribute('style') === 'height: 3px;'),
+    ).toBe(true);
   });
 
   it('maps audio samples to bar heights and updates them', () => {

@@ -27,7 +27,7 @@ vi.mock('@payloadcms/ui', async () => {
     AnimateHeight: ({ children, height }: { children: React.ReactNode; height: number | string }) =>
       createElement('div', { 'data-height': height, 'data-testid': 'sort-height' }, children),
     ChevronIcon: () => createElement('svg', { 'data-testid': 'chevron' }),
-    ListControls: (props: Record<string, unknown>) => {
+    ListControls: (props: { beforeActions?: React.ReactNode } & Record<string, unknown>) => {
       mocks.ListControls(props);
       const [drawer, setDrawer] = useState<string>();
       const toggle = (id: string, value: string) =>
@@ -49,7 +49,21 @@ vi.mock('@payloadcms/ui', async () => {
         toggle('toggle-group-by', 'group-by'),
       ]);
     },
-    Pill: ({ children, className, icon, id, onClick, pillStyle }: Record<string, unknown>) =>
+    Pill: ({
+      children,
+      className,
+      icon,
+      id,
+      onClick,
+      pillStyle,
+    }: {
+      children?: React.ReactNode;
+      className?: string;
+      icon?: React.ReactNode;
+      id?: string;
+      onClick?: () => void;
+      pillStyle?: string;
+    }) =>
       createElement(
         'button',
         { className, 'data-pill-style': pillStyle, id, onClick, type: 'button' },

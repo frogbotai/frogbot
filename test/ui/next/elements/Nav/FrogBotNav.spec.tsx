@@ -75,7 +75,17 @@ function accountMenuProbe(name: string) {
   };
 }
 
-function accountMenuProps({ withReq = true } = {}) {
+const accountMenuComponents = {
+  afterAccountMenu: [afterAccountPath],
+  beforeAccountMenu: [beforeAccountPath],
+  logout: { Button: logoutPath },
+  settingsMenu: [settingsMenuPath],
+};
+
+function accountMenuProps({
+  components = accountMenuComponents,
+  withReq = true,
+}: { components?: Record<string, unknown>; withReq?: boolean } = {}) {
   const base = props();
 
   return {
@@ -86,12 +96,7 @@ function accountMenuProps({ withReq = true } = {}) {
         ...base.payload.config,
         admin: {
           ...base.payload.config.admin,
-          components: {
-            afterAccountMenu: [afterAccountPath],
-            beforeAccountMenu: [beforeAccountPath],
-            logout: { Button: logoutPath },
-            settingsMenu: [settingsMenuPath],
-          },
+          components,
         },
       },
       importMap: {
@@ -165,7 +170,15 @@ function props() {
   } as unknown as { req: PayloadRequest } & ServerProps;
 }
 
-function defaultSectionProps() {
+function defaultSectionProps(
+  permissions: {
+    collections: Record<string, { read: boolean }>;
+    globals: Record<string, never>;
+  } = {
+    collections: { chats: { read: true }, posts: { read: true } },
+    globals: {},
+  },
+) {
   const base = props();
 
   return {
@@ -190,10 +203,7 @@ function defaultSectionProps() {
       },
       importMap: { [collectionsSectionPath]: CollectionsSection },
     },
-    permissions: {
-      collections: { chats: { read: true }, posts: { read: true } },
-      globals: {},
-    },
+    permissions,
   } as unknown as { req: PayloadRequest } & ServerProps;
 }
 
@@ -241,20 +251,9 @@ describe('FrogBotNav', () => {
   });
 
   it('renders only the configured account-menu list when the other is empty', async () => {
-    const base = accountMenuProps();
-    const navProps = {
-      ...base,
-      payload: {
-        ...base.payload,
-        config: {
-          ...base.payload.config,
-          admin: {
-            ...base.payload.config.admin,
-            components: { afterAccountMenu: [afterAccountPath], beforeAccountMenu: [] },
-          },
-        },
-      },
-    } as typeof base;
+    const navProps = accountMenuProps({
+      components: { afterAccountMenu: [afterAccountPath], beforeAccountMenu: [] },
+    });
 
     render(await FrogBotNav(navProps));
 
@@ -326,12 +325,10 @@ describe('FrogBotNav', () => {
   });
 
   it('omits collections the user cannot read from the default Collections section', async () => {
-    const defaults = defaultSectionProps();
-
-    defaults.permissions = {
+    const defaults = defaultSectionProps({
       collections: { chats: { read: true }, posts: { read: false } },
       globals: {},
-    };
+    });
 
     render(await FrogBotNav(defaults));
 

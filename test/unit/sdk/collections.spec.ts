@@ -33,8 +33,7 @@ const calls: { name: string; call: Call }[] = [
   },
   {
     name: 'create with a file',
-    call: (sdk) =>
-      sdk.create({ collection: 'sdk-media', data: { alt: 'Frog' }, file: file() } as never),
+    call: (sdk) => sdk.create({ collection: 'sdk-media', data: { alt: 'Frog' }, file: file() }),
   },
   {
     name: 'update by ID',
@@ -108,7 +107,7 @@ describe('FrogBotSDK collection methods', () => {
   });
 
   it('create fetches a file URL before uploading it, as the Payload client does', async () => {
-    const fileFetch = vi.fn(async () => new Response(file()));
+    const fileFetch = vi.fn(() => Promise.resolve(new Response(file())));
     const { frogbot, frogbotRequests, payload, payloadRequests } = createClients();
 
     vi.stubGlobal('fetch', fileFetch);
@@ -214,7 +213,7 @@ describe('FrogBotSDK collection methods', () => {
       collection: 'sdk-media',
       data: {},
       file: new File(['ribbit'], 'frog.txt'),
-    } as never);
+    });
 
     expect(uploaded).toEqual({ filename: 'frog.txt', id: 1, mimeType: 'text/plain' });
     expect(frogbotRequests[0]).toEqual(frogbotRequests[1]);

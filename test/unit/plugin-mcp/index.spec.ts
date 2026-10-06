@@ -6,9 +6,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { mcpPlugin } from '../../../packages/plugins/plugin-mcp/src/index.js';
 
-const baseConfig = {
+type BuildConfigInput = Parameters<typeof buildConfig>[0];
+
+function frogbotConfig(fields: Partial<FrogBotConfig>): FrogBotConfig {
+  return fields as FrogBotConfig;
+}
+
+const baseConfig = frogbotConfig({
   collections: [{ slug: 'users', auth: true, fields: [] }],
-} as FrogBotConfig;
+});
 
 const authenticatedConfig = () => apiKeysPlugin()(baseConfig);
 
@@ -40,7 +46,10 @@ describe('MCP plugin', () => {
           slug: 'users',
           auth: {
             strategies: [
-              { name: 'api-key', authenticate: async () => ({ user: { id: 'fake' } as never }) },
+              {
+                name: 'api-key',
+                authenticate: () => Promise.resolve({ user: { id: 'fake' } as never }),
+              },
             ],
           },
           fields: [],
@@ -111,9 +120,9 @@ describe('MCP plugin', () => {
   });
 
   it('rejects a throwing strategy and logs its collection and name once', async () => {
-    const config = await apiKeysPlugin({ authCollection: 'members' })({
-      collections: [{ slug: 'members', auth: true, fields: [] }],
-    } as FrogBotConfig);
+    const config = await apiKeysPlugin({ authCollection: 'members' })(
+      frogbotConfig({ collections: [{ slug: 'members', auth: true, fields: [] }] }),
+    );
     const result = await mcpPlugin({})(config);
     const endpoint = result.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',
@@ -150,7 +159,7 @@ describe('MCP plugin', () => {
         apiKeysPlugin(),
         mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
       ],
-    } as FrogBotConfig);
+    } as BuildConfigInput);
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(payloadConfig.endpoints?.filter(({ path }) => path === '/mcp')).toHaveLength(2);
@@ -172,7 +181,7 @@ describe('MCP plugin', () => {
         apiKeysPlugin(),
         mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
       ],
-    } as FrogBotConfig);
+    } as BuildConfigInput);
     const payloadConfig = await config._internal.payloadConfig;
     const endpoint = payloadConfig.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',

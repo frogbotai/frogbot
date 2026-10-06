@@ -1,7 +1,12 @@
 import type { FrogBotRequest } from 'frogbot';
+import { pieceConformance } from 'frogbot/pieces/test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+vi.mock(
+  'frogbot/pieces/test',
+  () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
+);
 vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
@@ -9,7 +14,6 @@ vi.mock(
 
 import { sanitize } from '../../../packages/frogbot/src/config/sanitize.js';
 import { runKVLock } from '../../../packages/frogbot/src/kv/lock.js';
-import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
@@ -27,6 +31,16 @@ import {
 const auth = { accessToken: 'access-test', refreshToken: 'refresh-test' };
 const selection = { spreadsheetId: 'book', sheetId: 0 };
 const title = "Owner's sheet";
+type SheetsClient = Awaited<ReturnType<ReturnType<typeof createGoogleSheets>['client']>>;
+
+function useTransport(client: SheetsClient, transport: (config: any) => Promise<unknown>) {
+  Object.assign(client.auth.transporter, { request: transport });
+}
+
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error ? signal.reason : new Error(String(signal.reason));
+}
+
 const properties = {
   sheetId: 0,
   title,
@@ -41,17 +55,18 @@ async function fixture({
   const state = new Map<string, unknown>();
   const leases = new Map<string, string>();
   const kv = {
-    get: vi.fn(async (key: string) => state.get(key)),
-    set: vi.fn(async (key: string, value: unknown) => {
+    get: vi.fn((key: string) => Promise.resolve(state.get(key))),
+    set: vi.fn((key: string, value: unknown) => {
       state.set(key, value);
+      return Promise.resolve();
     }),
-    acquireLock: vi.fn(async (key: string) => {
-      if (leases.has(key)) return null;
+    acquireLock: vi.fn((key: string) => {
+      if (leases.has(key)) return Promise.resolve(null);
       leases.set(key, 'lease');
-      return { key, token: 'lease' };
+      return Promise.resolve({ key, token: 'lease' });
     }),
-    extendLock: vi.fn(async ({ key }: { key: string }) => leases.has(key)),
-    releaseLock: vi.fn(async ({ key }: { key: string }) => leases.delete(key)),
+    extendLock: vi.fn(({ key }: { key: string }) => Promise.resolve(leases.has(key))),
+    releaseLock: vi.fn(({ key }: { key: string }) => Promise.resolve(leases.delete(key))),
     lock: async <T>(key: string, ttl: number, fn: (args: { signal: AbortSignal }) => Promise<T>) =>
       runKVLock({ kv, key, ttl, fn }),
   };
@@ -64,6 +79,7 @@ async function fixture({
   });
   const create = vi.fn().mockResolvedValue({ id: 'saved', url: '/files/export.csv' });
   const key = {};
+  const instances: object[] = [piece];
   const req = {
     url: 'https://app.test/api',
     headers: new Headers({ authorization: 'Bearer app', cookie: 'session=app' }),
@@ -74,7 +90,7 @@ async function fixture({
       findByID,
       create,
       config: {
-        pieces: { instances: [piece] },
+        pieces: { instances },
         files: { slug: 'files' },
         _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://app.test' }) },
       },
@@ -95,7 +111,7 @@ async function fixture({
     status = 200,
     headers: Record<string, string> = {},
   ) => ({ data, config, status, statusText: 'OK', headers: new Headers(headers) });
-  const transport = vi.fn(async (config: any) => {
+  const route = (config: any) => {
     const url = new URL(String(config.url));
     const path = decodeURIComponent(url.pathname);
     if (url.hostname === 'docs.google.com') {
@@ -200,9 +216,25 @@ async function fixture({
       );
     }
     return respond({ ok: true }, config);
-  });
-  client.auth.transporter.request = transport as typeof client.auth.transporter.request;
-  return { piece, client, req, kv, state, leases, transport, respond, rows, findByID, create };
+  };
+  const transport = vi.fn(
+    (config: any) => new Promise<ReturnType<typeof respond>>((resolve) => resolve(route(config))),
+  );
+  useTransport(client, transport);
+  return {
+    piece,
+    client,
+    req,
+    kv,
+    state,
+    leases,
+    transport,
+    respond,
+    rows,
+    findByID,
+    create,
+    instances,
+  };
 }
 
 function calls(transport: Awaited<ReturnType<typeof fixture>>['transport'], suffix: string) {
@@ -842,12 +874,14 @@ describe('native Google Sheets', () => {
 
   it('escapes Drive search literals, follows every page, and includes shared drives when requested', async () => {
     const { piece, req, transport, respond } = await fixture();
-    transport.mockImplementation(async (config) =>
-      respond(
-        config.params.pageToken
-          ? { files: [{ id: 'second', name: 'second' }] }
-          : { files: [{ id: 'first', name: 'first' }], nextPageToken: 'next' },
-        config,
+    transport.mockImplementation((config) =>
+      Promise.resolve(
+        respond(
+          config.params.pageToken
+            ? { files: [{ id: 'second', name: 'second' }] }
+            : { files: [{ id: 'first', name: 'first' }], nextPageToken: 'next' },
+          config,
+        ),
       ),
     );
     expect(
@@ -918,19 +952,21 @@ describe('native Google Sheets', () => {
   it('follows only Google export redirects and never forwards bearer credentials to signed download hosts', async () => {
     const { piece, req, transport, respond } = await fixture();
     transport
-      .mockImplementationOnce(async (config) =>
-        respond('', config, 302, {
-          location: 'https://sheets.googleusercontent.com/export/signed',
-        }),
+      .mockImplementationOnce((config) =>
+        Promise.resolve(
+          respond('', config, 302, {
+            location: 'https://sheets.googleusercontent.com/export/signed',
+          }),
+        ),
       )
-      .mockImplementationOnce(async (config) => respond(Buffer.from('export'), config));
+      .mockImplementationOnce((config) => Promise.resolve(respond(Buffer.from('export'), config)));
     expect(
       await piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
     ).toMatchObject({ text: 'export' });
     expect(transport.mock.calls[0][0].headers.get('authorization')).toBe('Bearer access-test');
     expect(transport.mock.calls[1][0].headers).toBeUndefined();
-    transport.mockImplementationOnce(async (config) =>
-      respond('', config, 302, { location: 'https://attacker.test/export' }),
+    transport.mockImplementationOnce((config) =>
+      Promise.resolve(respond('', config, 302, { location: 'https://attacker.test/export' })),
     );
     await expect(
       piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
@@ -982,8 +1018,8 @@ describe('native Google Sheets', () => {
     const { piece, req, transport, findByID, create, respond } = await fixture();
     const fetch = vi.fn().mockResolvedValue(new Response('source'));
     vi.stubGlobal('fetch', fetch);
-    transport.mockImplementation(async (config) =>
-      respond(Buffer.from('binary'), config, 200, { 'content-type': 'text/csv' }),
+    transport.mockImplementation((config) =>
+      Promise.resolve(respond(Buffer.from('binary'), config, 200, { 'content-type': 'text/csv' })),
     );
     await piece.customApiCall({
       req,
@@ -1013,7 +1049,7 @@ describe('native Google Sheets', () => {
         file: expect.objectContaining({ data: Buffer.from('binary'), name: 'download.csv' }),
       }),
     );
-    transport.mockImplementationOnce(async (config) => respond('plain', config));
+    transport.mockImplementationOnce((config) => Promise.resolve(respond('plain', config)));
     expect(
       await piece.customApiCall({
         req,
@@ -1119,7 +1155,7 @@ describe('persistent row cursors', () => {
     req.frogbot.config.pieces.instances = [restarted];
     const nextClient = await restarted.client({ req });
     expect(nextClient).not.toBe(client);
-    nextClient.auth.transporter.request = transport as typeof nextClient.auth.transporter.request;
+    useTransport(nextClient, transport);
     expect((await restarted.getNextRows({ req, input })).map((row: any) => row.row)).toEqual([
       4, 5,
     ]);
@@ -1152,8 +1188,8 @@ describe('persistent row cursors', () => {
     keys.push(other.kv.get.mock.calls[1][0]);
     await other.piece.getNextRows({ req: other.req, input: { ...selection, sheetId: 7 } });
     keys.push(other.kv.get.mock.calls[2][0]);
-    other.transport.mockImplementationOnce(async (config) =>
-      other.respond({ sheets: [{ properties }] }, config),
+    other.transport.mockImplementationOnce((config) =>
+      Promise.resolve(other.respond({ sheets: [{ properties }] }, config)),
     );
     await other.piece.getNextRows({
       req: other.req,
@@ -1199,7 +1235,9 @@ describe('persistent row cursors', () => {
     transport.mockImplementationOnce(async (config) => {
       started();
       return new Promise((_resolve, reject) =>
-        config.signal.addEventListener('abort', () => reject(config.signal.reason), { once: true }),
+        config.signal.addEventListener('abort', () => reject(abortReason(config.signal)), {
+          once: true,
+        }),
       );
     });
     const pending = piece.getNextRows({
@@ -1239,7 +1277,9 @@ describe('persistent row cursors', () => {
     transport.mockImplementationOnce(async (config) => {
       started();
       return new Promise((_resolve, reject) =>
-        config.signal.addEventListener('abort', () => reject(config.signal.reason), { once: true }),
+        config.signal.addEventListener('abort', () => reject(abortReason(config.signal)), {
+          once: true,
+        }),
       );
     });
     kv.extendLock.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
@@ -1255,7 +1295,7 @@ describe('persistent row cursors', () => {
   });
 
   it('advances the cursor for an instance used only through selected agent actions', async () => {
-    const { piece, req, state, rows } = await fixture();
+    const { piece, req, state, rows, instances } = await fixture();
     rows.splice(0, rows.length, ['Name'], ['first'], ['second']);
     const config = sanitize({
       secret: 'secret',
@@ -1271,7 +1311,7 @@ describe('persistent row cursors', () => {
         },
       ],
     });
-    req.frogbot.config.pieces.instances = config.pieces.instances;
+    instances.splice(0, instances.length, ...config.pieces.instances);
     const input = { ...selection, startRow: 2, batchSize: 1 };
 
     const first = await piece.getNextRows({ req, input });
@@ -1286,10 +1326,10 @@ describe('persistent row cursors', () => {
   });
 
   it('keeps a separate cursor for each Sheets instance on the list', async () => {
-    const { piece, req, state, transport } = await fixture();
+    const { piece, req, state, transport, instances } = await fixture();
     const other = createGoogleSheets({ auth, slug: 'sheets-other' });
     const otherClient = await other.client({ req });
-    otherClient.auth.transporter.request = transport as typeof otherClient.auth.transporter.request;
+    useTransport(otherClient, transport);
     const config = sanitize({
       secret: 'secret',
       db: {} as never,
@@ -1310,7 +1350,7 @@ describe('persistent row cursors', () => {
         },
       ],
     });
-    req.frogbot.config.pieces.instances = config.pieces.instances;
+    instances.splice(0, instances.length, ...config.pieces.instances);
     const input = { ...selection, startRow: 2, batchSize: 1 };
 
     await piece.getNextRows({ req, input });

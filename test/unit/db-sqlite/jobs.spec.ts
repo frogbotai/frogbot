@@ -32,8 +32,8 @@ const descriptor = sqliteAdapter({
 let database: ReturnType<typeof descriptor.init>;
 let req: PayloadRequest;
 
-async function create(data: Record<string, unknown> = {}) {
-  return database.create<Job>({
+function create(data: Record<string, unknown> = {}) {
+  return database.create({
     collection: 'payload-jobs',
     data: {
       taskSlug: 'work',
@@ -45,6 +45,14 @@ async function create(data: Record<string, unknown> = {}) {
       ...data,
     },
   });
+}
+
+async function beginTransaction(): Promise<number | string> {
+  const transactionID = await database.beginTransaction();
+
+  if (transactionID === null) throw new Error('The SQLite adapter did not start a transaction.');
+
+  return transactionID;
 }
 
 function claim(args: Partial<UpdateJobsArgs> = {}) {
@@ -74,7 +82,7 @@ beforeAll(async () => {
     db: descriptor,
     collections: [{ slug: 'groups', fields: [{ name: 'title', type: 'text' }] }],
     jobs: resolveJobsConfig({
-      tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }],
+      tasks: [{ slug: 'work', handler: () => ({ output: {} }) }],
       jobsCollectionOverrides: ({ defaultJobsCollection }) => ({
         ...defaultJobsCollection,
         dbName: 'custom_jobs',
@@ -94,6 +102,10 @@ beforeAll(async () => {
 
   database = descriptor.init({ payload });
   payload.db = database;
+
+  if (!database.init || !database.connect) {
+    throw new Error('The SQLite adapter must define init and connect.');
+  }
 
   await database.init();
   await database.connect();
@@ -312,7 +324,11 @@ describe('SQLite atomic jobs', () => {
       ),
     ).toBe(true);
 
-    const rows = await database.find({ collection: 'payload-jobs', pagination: false, sort: 'id' });
+    const rows = await database.find<Job & { leaseUntil?: string | null }>({
+      collection: 'payload-jobs',
+      pagination: false,
+      sort: 'id',
+    });
 
     expect(rows.docs[0]).toMatchObject({ processing: true, leaseOwner: 'active' });
     expect(rows.docs[0].leaseUntil).not.toBe(future);
@@ -322,7 +338,7 @@ describe('SQLite atomic jobs', () => {
 
   it('rejects lease mutations from a different runtime', async () => {
     await expect(
-      (database as JobLeaseDatabase)[jobLeaseOperations]!.update({
+      (payload.db as JobLeaseDatabase)[jobLeaseOperations]!.update({
         data: { leaseUntil: null },
         where: {},
         req: { ...req, payload: new BasePayload() },
@@ -359,15 +375,12 @@ describe('SQLite atomic jobs', () => {
 
   it('hydrates claims from their transaction and rolls back the lease with the claim', async () => {
     const job = await create();
-    const transactionID = await database.beginTransaction();
+    const transactionID = await beginTransaction();
+    const result = await claim({ id: job.id, req: { transactionID } }).finally(() =>
+      database.rollbackTransaction(transactionID),
+    );
 
-    try {
-      const result = await claim({ id: job.id, req: { transactionID } });
-
-      expect(result.jobs![0]).toMatchObject({ id: job.id, processing: true });
-    } finally {
-      await database.rollbackTransaction(transactionID!);
-    }
+    expect(result.jobs![0]).toMatchObject({ id: job.id, processing: true });
 
     const rows = await database.find({
       collection: 'payload-jobs',

@@ -1,6 +1,9 @@
 import { RobotIcon, SettingIcon } from '@frogbotai/ui/icons';
+import type * as frogbotModule from 'frogbot';
 import type { FrogBotSanitizedConfig } from 'frogbot';
-import { type ComponentProps, createElement } from 'react';
+import type * as frogbotInternalModule from 'frogbot/internal';
+import type * as payloadModule from 'payload';
+import { type ComponentProps, createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -33,7 +36,9 @@ const mocks = vi.hoisted(() => {
     RootPage: vi.fn(() => null),
     NotFoundPage: vi.fn(() => null),
     generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
-    RenderServerComponent: vi.fn(() => 'rendered-setting'),
+    RenderServerComponent: vi.fn(
+      (_props: { Component?: unknown }): ReactNode => 'rendered-setting',
+    ),
     redirect: vi.fn(),
     ListControls: vi.fn(() => null),
     ListHeader: vi.fn(() => null),
@@ -111,7 +116,7 @@ vi.mock('../../../../packages/next/src/views/controls/ViewControls.client.js', (
 }));
 vi.mock('../../../../packages/next/src/elements/Nav/index.js', () => ({ FrogBotNav: () => null }));
 vi.mock('frogbot', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('frogbot')>()),
+  ...(await importOriginal<typeof frogbotModule>()),
   getCachedFrogBot: mocks.getCachedFrogBot,
   messagesToUIMessages: (messages: Array<Record<string, unknown>>) =>
     messages.map(({ id, role, parts, metadata }) => ({
@@ -122,11 +127,11 @@ vi.mock('frogbot', async (importOriginal) => ({
     })),
 }));
 vi.mock('frogbot/internal', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('frogbot/internal')>()),
+  ...(await importOriginal<typeof frogbotInternalModule>()),
   attachRegisteredFrogBot: mocks.attachRegisteredFrogBot,
 }));
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof payloadModule>()),
   createLocalReq: mocks.createLocalReq,
   executeAuthStrategies: mocks.executeAuthStrategies,
   getPayload: mocks.getPayload,
@@ -152,6 +157,10 @@ function makeConfig(admin?: Record<string, unknown>) {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
   } as unknown as FrogBotSanitizedConfig;
   return { config, payloadConfig };
+}
+
+function settingsViewProps(props: object): Parameters<typeof SettingsView>[0] {
+  return props as Parameters<typeof SettingsView>[0];
 }
 
 const params = Promise.resolve({ segments: [] });
@@ -334,9 +343,7 @@ describe('@frogbotai/next views', () => {
 
   it('SettingsView renders accessible nested entries with their icon and canonical path', async () => {
     mocks.RenderServerComponent.mockClear();
-    mocks.RenderServerComponent.mockReturnValueOnce(
-      createElement('svg', { 'data-icon': 'usage' }) as never,
-    );
+    mocks.RenderServerComponent.mockReturnValueOnce(createElement('svg', { 'data-icon': 'usage' }));
     const access = vi.fn(() => true);
     const props = {
       importMap: { Icon: 'resolved' },
@@ -363,9 +370,9 @@ describe('@frogbotai/next views', () => {
         },
       },
       routeSegments: ['settings', 'workspace', 'usage'],
-    } as never;
+    };
 
-    const element = await SettingsView(props);
+    const element = await SettingsView(settingsViewProps(props));
     const html = renderToStaticMarkup(element);
 
     expect(access).toHaveBeenCalledWith({ req: props.initPageResult.req });
@@ -435,8 +442,9 @@ describe('@frogbotai/next views', () => {
       routeSegments: ['settings', 'usage'],
     } as never;
 
-    mocks.RenderServerComponent.mockImplementation((({ Component }: { Component: unknown }) =>
-      Component === icon ? createElement('svg', { 'data-icon': 'object' }) : null) as never);
+    mocks.RenderServerComponent.mockImplementation(({ Component }) =>
+      Component === icon ? createElement('svg', { 'data-icon': 'object' }) : null,
+    );
 
     const html = renderToStaticMarkup(await SettingsView(props));
 

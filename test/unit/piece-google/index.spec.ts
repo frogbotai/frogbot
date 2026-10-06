@@ -54,9 +54,16 @@ describe('Google identity', () => {
     expect(googleOAuth.params).toMatchObject({ access_type: 'offline' });
   });
 
-  it.each(['google', 'gmail', 'gmail-missing-permission'])(
+  it.each([
+    ['google', { value: expect.objectContaining({ accessToken: 'google-token' }) }],
+    ['gmail', { value: expect.objectContaining({ accessToken: 'google-token' }) }],
+    [
+      'gmail-missing-permission',
+      { error: expect.objectContaining({ code: 'scopes', missingScopes: [gmailScopes[0]] }) },
+    ],
+  ])(
     'resolves canonical returned scopes and rejects missing Gmail permission: %s',
-    async (scenario) => {
+    async (scenario, expected) => {
       const google = createGoogle({ oauth: { clientId: 'client', clientSecret: 'secret' } });
       const piece = scenario === 'google' ? google : createGmail({ oauth: google.oauth });
       const granted = [
@@ -73,8 +80,10 @@ describe('Google identity', () => {
       ].filter((scope) => scenario !== 'gmail-missing-permission' || scope !== gmailScopes[0]);
       vi.stubGlobal(
         'fetch',
-        vi.fn(async () =>
-          Response.json({ access_token: 'google-token', scope: granted.join(' ') }),
+        vi.fn(() =>
+          Promise.resolve(
+            Response.json({ access_token: 'google-token', scope: granted.join(' ') }),
+          ),
         ),
       );
       const tokens = await exchangeOAuthCode({
@@ -98,7 +107,7 @@ describe('Google identity', () => {
       };
       const frogbot = {
         config: { _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) } },
-        find: vi.fn(async () => ({ docs: [row] })),
+        find: vi.fn(() => Promise.resolve({ docs: [row] })),
       };
       const api = new Connections(frogbot as never, {
         enabled: true,
@@ -111,16 +120,12 @@ describe('Google identity', () => {
         frogbot,
       } as unknown as FrogBotRequest;
       expect(metadata.scopes).toEqual(granted);
-      if (scenario === 'gmail-missing-permission') {
-        await expect(api.resolve({ piece, req })).rejects.toMatchObject({
-          code: 'scopes',
-          missingScopes: [gmailScopes[0]],
-        });
-      } else {
-        await expect(api.resolve({ piece, req })).resolves.toMatchObject({
-          accessToken: 'google-token',
-        });
-      }
+      await expect(
+        api.resolve({ piece, req }).then(
+          (value) => ({ value }),
+          (error: unknown) => ({ error }),
+        ),
+      ).resolves.toEqual(expected);
     },
   );
 

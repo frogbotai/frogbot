@@ -1,3 +1,4 @@
+import type { FrogBotRequest as PieceRequest } from 'frogbot/pieces';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -13,16 +14,19 @@ import {
   telegramBotActions,
   telegramBotTriggers,
 } from '../../../packages/pieces/piece-telegram-bot/src/index.js';
+import { newUpdate } from '../../../packages/pieces/piece-telegram-bot/src/triggers/newUpdate.js';
 import { conformanceChannelState } from '../frogbot/pieces/channelState.js';
 
 const auth = { botToken: 'telegram_test_key' };
-const req = () =>
+const req = (): PieceRequest =>
   ({
     frogbot: {
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
     },
     user: null,
-  }) as never;
+  }) as unknown as PieceRequest;
+
+type TelegramBot = ReturnType<typeof createTelegramBot>;
 const response = (result: unknown = { message_id: 42 }) =>
   new Response(JSON.stringify({ ok: true, result }), {
     status: 200,
@@ -49,12 +53,14 @@ describe('telegram-bot', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url) => {
+      vi.fn((url) => {
         if (String(url).endsWith('/getMe')) {
-          return response({ id: 99, is_bot: true, first_name: 'FrogBot', username: 'frogbot' });
+          return Promise.resolve(
+            response({ id: 99, is_bot: true, first_name: 'FrogBot', username: 'frogbot' }),
+          );
         }
 
-        throw new Error(`Unexpected Telegram request: ${url}`);
+        return Promise.reject(new Error(`Unexpected Telegram request: ${url}`));
       }),
     );
 
@@ -129,7 +135,8 @@ describe('telegram-bot', () => {
   it.each([
     [
       'sendTextMessage',
-      { chatId: 10, message: 'Hello' },
+      (telegram: TelegramBot, request: PieceRequest) =>
+        telegram.sendTextMessage({ input: { chatId: 10, message: 'Hello' }, req: request }),
       'sendMessage',
       {
         chat_id: 10,
@@ -142,14 +149,22 @@ describe('telegram-bot', () => {
     ],
     [
       'deleteMessage',
-      { chatId: '@channel', messageId: 12 },
+      (telegram: TelegramBot, request: PieceRequest) =>
+        telegram.deleteMessage({ input: { chatId: '@channel', messageId: 12 }, req: request }),
       'deleteMessage',
       { chat_id: '@channel', message_id: 12 },
     ],
-    ['getChatMember', { chatId: 10, userId: 20 }, 'getChatMember', { chat_id: 10, user_id: 20 }],
+    [
+      'getChatMember',
+      (telegram: TelegramBot, request: PieceRequest) =>
+        telegram.getChatMember({ input: { chatId: 10, userId: 20 }, req: request }),
+      'getChatMember',
+      { chat_id: 10, user_id: 20 },
+    ],
     [
       'sendLocation',
-      { chatId: 10, latitude: 1, longitude: 2 },
+      (telegram: TelegramBot, request: PieceRequest) =>
+        telegram.sendLocation({ input: { chatId: 10, latitude: 1, longitude: 2 }, req: request }),
       'sendLocation',
       {
         chat_id: 10,
@@ -159,13 +174,13 @@ describe('telegram-bot', () => {
         protect_content: false,
       },
     ],
-  ] as const)('maps %s to the Telegram Bot API', async (slug, input, method, body) => {
+  ] as const)('maps %s to the Telegram Bot API', async (_slug, run, method, body) => {
     const fetch = vi.fn().mockResolvedValue(response());
 
     vi.stubGlobal('fetch', fetch);
 
     const telegram = createTelegramBot({ auth });
-    const result = await telegram[slug]({ input, req: req() });
+    const result = await run(telegram, req());
 
     expect(result).toEqual({ ok: true, result: { message_id: 42 } });
     expect(fetch).toHaveBeenCalledWith(
@@ -263,9 +278,9 @@ describe('telegram-bot', () => {
   });
 
   it('emits and filters shared webhook updates', async () => {
-    const definition = pieceFactoryDefinition(createTelegramBot).triggers?.[0];
+    const definition = newUpdate;
 
-    if (!definition || definition.type !== 'app') throw new Error('Missing Telegram app trigger.');
+    expect(pieceFactoryDefinition(createTelegramBot).triggers?.[0]).toBe(newUpdate);
 
     const client = { call: vi.fn().mockResolvedValue({ ok: true }) };
     const input = definition.input.parse({ updateTypes: ['callback_query'] });
@@ -304,15 +319,13 @@ describe('telegram-bot', () => {
       options: { webhookSecret: 'secret' },
     });
 
-    if (!adapter) throw new Error('Missing Telegram channel adapter.');
-
-    expect(adapter.encodeThreadId({ chatId: '42' })).toBe('telegram:42');
-    expect(adapter.encodeThreadId({ chatId: '-100123' })).toBe('telegram:-100123');
-    expect(adapter.encodeThreadId({ chatId: '-100123', messageThreadId: 7 })).toBe(
+    expect(adapter?.encodeThreadId({ chatId: '42' })).toBe('telegram:42');
+    expect(adapter?.encodeThreadId({ chatId: '-100123' })).toBe('telegram:-100123');
+    expect(adapter?.encodeThreadId({ chatId: '-100123', messageThreadId: 7 })).toBe(
       'telegram:-100123:7',
     );
-    expect(adapter.isDM('telegram:42')).toBe(true);
-    expect(adapter.isDM('telegram:-100123')).toBe(false);
+    expect(adapter?.isDM?.('telegram:42')).toBe(true);
+    expect(adapter?.isDM?.('telegram:-100123')).toBe(false);
   });
 
   it('requires explicit webhook verification for channels', () => {

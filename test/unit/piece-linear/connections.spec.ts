@@ -1,3 +1,4 @@
+import type { FrogBotRequest as PieceRequest } from 'frogbot/pieces';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -15,6 +16,67 @@ import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js
 import { memoryKV } from '../frogbot/connections/oauth/fixtures.js';
 
 afterEach(() => vi.unstubAllGlobals());
+
+async function linkedConnection(method: 'oauth' | 'secret', credential: object) {
+  const auth = { accessToken: 'fixed-bot-token' };
+  const linear = createLinear({
+    auth,
+    oauth: { clientId: 'client', clientSecret: 'secret' },
+  });
+
+  const { connections } = resolveConnectionsCollections({
+    db: {} as never,
+    secret: 'test-secret',
+    collections: [{ slug: 'users', auth: true, fields: [] }],
+    connections: [{ piece: linear, secret: true, oauth: true }],
+  });
+
+  const row = {
+    id: 'connection',
+    owner: 'owner',
+    piece: 'linear',
+    method,
+    status: 'active',
+    credential: await connections.encryption.encrypt(JSON.stringify(credential)),
+    scopes: ['read', 'write', 'comments:create', 'issues:create', 'app:mentionable'],
+  };
+
+  const frogbot = {
+    config: { _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) } },
+    find: vi.fn().mockResolvedValue({ docs: [row] }),
+  };
+
+  const api = new Connections(frogbot as never, connections);
+  const request = {
+    user: { id: 'owner', collection: 'users' },
+    frogbot: { ...frogbot, connections: api },
+  };
+
+  const fetch = vi
+    .fn()
+    .mockResolvedValue(Response.json({ data: { viewer: { id: 'linear-user' } } }));
+
+  vi.stubGlobal('fetch', fetch);
+
+  return {
+    api,
+    auth,
+    fetch,
+    frogbot,
+    linear,
+    pieceReq: pieceRequest(request),
+    req: coreRequest(request),
+    row,
+  };
+}
+
+function coreRequest(request: object): FrogBotRequest {
+  return request as FrogBotRequest;
+}
+
+function pieceRequest(request: object): PieceRequest {
+  return request as PieceRequest;
+}
 
 describe('Linear connections', () => {
   it('enables the existing API-key credential form without an OAuth application', () => {
@@ -113,47 +175,12 @@ describe('Linear connections', () => {
   ] as const)(
     'uses $authorization from a linked $method connection for actions',
     async ({ method, credential, authorization }) => {
-      const auth = { accessToken: 'fixed-bot-token' };
-      const linear = createLinear({
-        auth,
-        oauth: { clientId: 'client', clientSecret: 'secret' },
-      });
-
-      const { connections } = resolveConnectionsCollections({
-        db: {} as never,
-        secret: 'test-secret',
-        collections: [{ slug: 'users', auth: true, fields: [] }],
-        connections: [{ piece: linear, secret: true, oauth: true }],
-      });
-
-      const row = {
-        id: 'connection',
-        owner: 'owner',
-        piece: 'linear',
+      const { api, auth, fetch, frogbot, linear, pieceReq, req } = await linkedConnection(
         method,
-        status: 'active',
-        credential: await connections.encryption.encrypt(JSON.stringify(credential)),
-        scopes: ['read', 'write', 'comments:create', 'issues:create', 'app:mentionable'],
-      };
+        credential,
+      );
 
-      const frogbot = {
-        config: { _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) } },
-        find: vi.fn().mockResolvedValue({ docs: [row] }),
-      };
-
-      const api = new Connections(frogbot as never, connections);
-      const req = {
-        user: { id: 'owner', collection: 'users' },
-        frogbot: { ...frogbot, connections: api },
-      } as unknown as FrogBotRequest;
-
-      const fetch = vi
-        .fn()
-        .mockResolvedValue(Response.json({ data: { viewer: { id: 'linear-user' } } }));
-
-      vi.stubGlobal('fetch', fetch);
-
-      const client = await linear.client({ req });
+      const client = await linear.client({ req: pieceReq });
       const viewer = await client.viewer;
 
       expect(viewer.id).toBe('linear-user');
@@ -162,18 +189,23 @@ describe('Linear connections', () => {
       );
       expect(pieceInstanceRuntime(linear).auth).toEqual(auth);
 
-      if (method === 'oauth') {
-        row.scopes.pop();
-
-        await expect(api.resolve({ piece: linear, req })).rejects.toMatchObject({
-          code: 'scopes',
-          missingScopes: ['app:mentionable'],
-        });
-      }
-
       frogbot.find.mockResolvedValue({ docs: [] });
 
       await expect(api.resolve({ piece: linear, req })).resolves.toEqual(auth);
     },
   );
+
+  it('rejects a linked OAuth connection missing a required scope', async () => {
+    const { api, linear, req, row } = await linkedConnection('oauth', {
+      access_token: 'user-token',
+      scope: 'read write comments:create issues:create app:mentionable',
+    });
+
+    row.scopes.pop();
+
+    await expect(api.resolve({ piece: linear, req })).rejects.toMatchObject({
+      code: 'scopes',
+      missingScopes: ['app:mentionable'],
+    });
+  });
 });

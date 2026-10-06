@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { getCachedFrogBot } from 'frogbot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConnectionsViewClient } from '../../../../packages/next/src/views/Connections/ConnectionsView.client.js';
@@ -11,7 +10,9 @@ import {
 } from '../../../../packages/next/src/views/Connections/schema.js';
 import type { ConnectionPiece } from '../../../../packages/next/src/views/Connections/types.js';
 
-vi.mock('frogbot', () => ({ getCachedFrogBot: vi.fn() }));
+const getCachedFrogBot = vi.hoisted(() => vi.fn<() => unknown>());
+
+vi.mock('frogbot', () => ({ getCachedFrogBot }));
 
 const pieces: ConnectionPiece[] = [
   { slug: 'mail', label: 'Mail', oauth: true, secret: true, secretSchema: { type: 'string' } },
@@ -33,7 +34,7 @@ const props = {
 const fetchMock = vi.fn();
 
 beforeEach(() => {
-  vi.mocked(getCachedFrogBot).mockReset();
+  getCachedFrogBot.mockReset();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
   vi.stubGlobal('matchMedia', () => ({
@@ -45,10 +46,19 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
+// A Next admin request carries no `req.frogbot`, so the view reads the cached instance.
+function asNextAdminRequest(req: { frogbot?: unknown }) {
+  getCachedFrogBot.mockReturnValue(req.frogbot);
+  Reflect.deleteProperty(req, 'frogbot');
+}
+
 describe('linked accounts', () => {
-  it.each([false, true])(
-    'projects safe owner metadata with a Next admin request: %s',
-    async (adminRequest) => {
+  it.each([
+    { adminRequest: false, prepare: (_req: { frogbot?: unknown }) => undefined },
+    { adminRequest: true, prepare: asNextAdminRequest },
+  ])(
+    'projects safe owner metadata with a Next admin request: $adminRequest',
+    async ({ prepare }) => {
       const list = vi.fn().mockResolvedValue([
         {
           ...row,
@@ -80,10 +90,7 @@ describe('linked accounts', () => {
           connections: { list },
         },
       };
-      if (adminRequest) {
-        vi.mocked(getCachedFrogBot).mockReturnValue(req.frogbot as never);
-        Reflect.deleteProperty(req, 'frogbot');
-      }
+      prepare(req);
       const view = await ConnectionsView({
         initPageResult: { req },
         payload: { config: { routes: { api: '/custom-api', admin: '/control' } } },

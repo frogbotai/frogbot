@@ -44,6 +44,16 @@ function fixture(conversational = false) {
   return result;
 }
 
+async function initializeWithoutTriggers({ initialize, frogbot }: ReturnType<typeof fixture>) {
+  const registry = frogbot.config._internal.triggers;
+
+  frogbot.config._internal.triggers = {};
+
+  await initialize();
+
+  frogbot.config._internal.triggers = registry;
+}
+
 function signed(body: object, valid = true) {
   const raw = JSON.stringify(body);
   const timestamp = String(Math.floor(Date.now() / 1000));
@@ -206,19 +216,15 @@ describe('Discord adapter-verified ingress', () => {
     expect(getChannelHost(result.frogbot as never)).toBeUndefined();
   });
 
-  it.each([false, true])('requires a ready host/binding (%s)', async (initialized) => {
-    const { initialize, request, frogbot } = fixture();
+  it.each([
+    { state: 'uninitialized', prepare: () => Promise.resolve() },
+    { state: 'initialized without a binding', prepare: initializeWithoutTriggers },
+  ])('requires a ready host/binding ($state)', async ({ prepare }) => {
+    const current = fixture();
+    const { request, frogbot } = current;
     const { raw, headers } = signed({ type: 1 });
 
-    if (initialized) {
-      const registry = frogbot.config._internal.triggers;
-
-      frogbot.config._internal.triggers = {};
-
-      await initialize();
-
-      frogbot.config._internal.triggers = registry;
-    }
+    await prepare(current);
 
     const response = await post.handler(request(raw, headers) as never);
 

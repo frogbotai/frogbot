@@ -150,7 +150,9 @@ describe('stripe actions', () => {
   it('loads every dynamic resource choice through the client', async () => {
     const fetch = vi
       .fn()
-      .mockImplementation(async () => response({ data: [{ id: 'resource', name: 'Frog' }] }));
+      .mockImplementation(() =>
+        Promise.resolve(response({ data: [{ id: 'resource', name: 'Frog' }] })),
+      );
     vi.stubGlobal('fetch', fetch);
     const stripe = createStripe({ auth });
     const client = await stripe.client({ req: req() });
@@ -170,7 +172,8 @@ describe('stripe actions', () => {
       ['getPaymentIntent', 'paymentIntentId'],
     ] as const) {
       const definition = stripeActionDefinitions.find((action) => action.slug === slug)!;
-      const loadOptions = definition.options![field] as (args: {
+      const options: Partial<Record<string, unknown>> = definition.options ?? {};
+      const loadOptions = options[field] as (args: {
         client: typeof client;
         input: Record<string, unknown>;
         options: Record<string, never>;

@@ -54,7 +54,11 @@ async function applySEO({
   options?: SEOPluginOptions;
 }) {
   const collection: CollectionConfig = { slug: slugs.pages, fields };
-  const config: FrogBotConfig = { secret: 'test-secret', collections: [collection] };
+  const config: FrogBotConfig = {
+    secret: 'test-secret',
+    db: {} as FrogBotConfig['db'],
+    collections: [collection],
+  };
 
   const result = await seoPlugin(options)(config);
 
@@ -261,6 +265,7 @@ describe('seoPlugin', () => {
   it('passes the field override and existing endpoints through upstream', async () => {
     const config: FrogBotConfig = {
       secret: 'test-secret',
+      db: {} as FrogBotConfig['db'],
       collections: [{ slug: slugs.posts, fields: [] }],
       endpoints: [{ path: '/existing', method: 'get', handler: () => new Response('ok') }],
     };

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import type { FrogBotRequest as PieceRequest } from 'frogbot/pieces';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -10,6 +11,13 @@ import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import {
+  createChannel,
+  createChatAndSendMessage,
+  sendChannelMessage,
+  sendChatMessage,
+} from '../../../packages/pieces/piece-microsoft-teams/src/actions.js';
 import {
   createMicrosoftTeams,
   defineMicrosoftTeams,
@@ -66,7 +74,7 @@ function json(value: unknown, status = 200) {
   });
 }
 
-function req(credential = auth) {
+function requestFixture(credential: unknown) {
   return {
     frogbot: {
       connections: {
@@ -76,6 +84,38 @@ function req(credential = auth) {
     user: null,
   };
 }
+
+function req(credential: unknown = auth): PieceRequest {
+  return requestFixture(credential) as unknown as PieceRequest;
+}
+
+function coreReq(credential: unknown = auth): FrogBotRequest {
+  return requestFixture(credential) as unknown as FrogBotRequest;
+}
+
+const teamsOptions = { botAppType: 'MultiTenant', botUsername: 'bot' } as const;
+
+type TeamsPiece = ReturnType<typeof createMicrosoftTeams>;
+type DeltaArgs = {
+  client: Awaited<ReturnType<TeamsPiece['client']>>;
+  req: PieceRequest;
+  cursor?: { since: string; deltaLink: string };
+};
+
+const deltaTriggers = {
+  channelMessageCreated: (piece: TeamsPiece, args: DeltaArgs) =>
+    piece.triggers.channelMessageCreated.run({
+      ...args,
+      input: { teamId: 'team', channelId: 'channel' },
+      options: teamsOptions,
+    }),
+  chatMessageCreated: (piece: TeamsPiece, args: DeltaArgs) =>
+    piece.triggers.chatMessageCreated.run({
+      ...args,
+      input: { chatId: 'chat' },
+      options: teamsOptions,
+    }),
+};
 
 function body(call: { init?: RequestInit } | undefined) {
   return JSON.parse(String(call?.init?.body));
@@ -138,6 +178,26 @@ function graphFixture(url: string, init?: RequestInit): Promise<Response> {
   return Promise.resolve(json({ error: `Unhandled ${method} ${target.pathname}` }, 404));
 }
 
+function deltaFixture(url: string, root: string): Response {
+  const target = new URL(url);
+
+  if (!target.pathname.endsWith('/delta') && !target.searchParams.has('page')) {
+    return json({ value: [message] });
+  }
+
+  if (target.searchParams.get('page') === '2') {
+    return json({
+      value: [{ ...message, id: 'newer', createdDateTime: '2026-09-13T12:00:00Z' }],
+      '@odata.deltaLink': `${target.origin}/v1.0${root}/delta?$deltatoken=next`,
+    });
+  }
+
+  return json({
+    value: [{ ...message, id: 'new', createdDateTime: '2026-09-13T11:00:00Z' }],
+    '@odata.nextLink': `${target.origin}/v1.0${root}/delta?page=2`,
+  });
+}
+
 beforeEach(() => {
   calls.length = 0;
   transport = graphFixture;
@@ -167,12 +227,14 @@ describe('native Microsoft Teams OAuth', () => {
     expect(definition.oauth?.toAuth?.({ tokens: { access_token: 'stored-access-token' } })).toEqual(
       auth,
     );
-    expect(z.toJSONSchema(definition.auth).properties?.accessToken).toMatchObject({ secret: true });
+    expect(z.toJSONSchema(definition.auth!).properties?.accessToken).toMatchObject({
+      secret: true,
+    });
 
     const account = await definition.oauth?.account?.({
       tokens: { access_token: 'stored-access-token' },
       client: await piece.client({ req: req() }),
-      req: req(),
+      req: coreReq(),
     });
 
     expect(account).toEqual({ id: 'me', label: 'Test User', email: 'test@example.com' });
@@ -199,7 +261,8 @@ describe('native Microsoft Teams OAuth', () => {
       tenantId: 'contoso.onmicrosoft.com',
     });
 
-    transport = async () => json({ id: 'me', displayName: 'Government', mail: 'gov@example.us' });
+    transport = () =>
+      Promise.resolve(json({ id: 'me', displayName: 'Government', mail: 'gov@example.us' }));
 
     await piece
       .client({ req: req(stored) })
@@ -280,7 +343,14 @@ describe('native Microsoft Teams channel', () => {
     };
 
     const identity = await definition.channel?.identity({
-      author: { userId: '29:user', email: 'ADA@example.com' },
+      author: {
+        userId: '29:user',
+        email: 'ADA@example.com',
+        fullName: 'Ada',
+        isBot: false,
+        isMe: false,
+        userName: 'ada',
+      },
       client: {},
       req: request as never,
     });
@@ -420,24 +490,26 @@ describe('native Microsoft Teams actions', () => {
     const piece = createMicrosoftTeams({ auth });
     const definition = pieceFactoryDefinition(createMicrosoftTeams);
     const client = await piece.client({ req: req() });
-    const create = definition.actions.find((action) => action.slug === 'createChannel');
-    const send = definition.actions.find((action) => action.slug === 'sendChannelMessage');
-    const createChat = definition.actions.find(
-      (action) => action.slug === 'createChatAndSendMessage',
-    );
-    const sendChat = definition.actions.find((action) => action.slug === 'sendChatMessage');
-    const context = { client, options: {}, req: req() };
+    const context = { client, options: teamsOptions, req: req() };
 
-    await expect(create?.options?.teamId?.({ ...context, input: {} })).resolves.toEqual([
+    expect(definition.actions).toEqual(
+      expect.arrayContaining([
+        createChannel,
+        sendChannelMessage,
+        createChatAndSendMessage,
+        sendChatMessage,
+      ]),
+    );
+    await expect(createChannel.options?.teamId?.({ ...context, input: {} })).resolves.toEqual([
       { label: 'Team', value: 'team' },
     ]);
     await expect(
-      send?.options?.channelId?.({ ...context, input: { teamId: 'team' } }),
+      sendChannelMessage.options?.channelId?.({ ...context, input: { teamId: 'team' } }),
     ).resolves.toEqual([{ label: 'Channel', value: 'channel' }]);
     await expect(
-      createChat?.options?.members?.({ ...context, input: { teamId: 'team' } }),
+      createChatAndSendMessage.options?.members?.({ ...context, input: { teamId: 'team' } }),
     ).resolves.toEqual([{ label: 'Member', value: 'member' }]);
-    await expect(sendChat?.options?.chatId?.({ ...context, input: {} })).resolves.toEqual([
+    await expect(sendChatMessage.options?.chatId?.({ ...context, input: {} })).resolves.toEqual([
       { label: 'chat', value: 'chat' },
     ]);
 
@@ -510,26 +582,26 @@ describe('native Microsoft Teams polling', () => {
     const firstChannel = await piece.triggers.channelCreated.run({
       client,
       input: { teamId: 'team' },
-      options: {},
+      options: teamsOptions,
       req: request,
     });
     const nextChannel = await piece.triggers.channelCreated.run({
       client,
       input: { teamId: 'team' },
-      options: {},
+      options: teamsOptions,
       req: request,
       cursor: firstChannel.cursor,
     });
     const firstChat = await piece.triggers.chatCreated.run({
       client,
       input: {},
-      options: {},
+      options: teamsOptions,
       req: request,
     });
     const nextChat = await piece.triggers.chatCreated.run({
       client,
       input: {},
-      options: {},
+      options: teamsOptions,
       req: request,
       cursor: firstChat.cursor,
     });
@@ -543,45 +615,21 @@ describe('native Microsoft Teams polling', () => {
   });
 
   it.each([
-    [
-      'channelMessageCreated',
-      { teamId: 'team', channelId: 'channel' },
-      '/teams/team/channels/channel/messages',
-    ],
-    ['chatMessageCreated', { chatId: 'chat' }, '/chats/chat/messages'],
-  ])(
+    ['channelMessageCreated', '/teams/team/channels/channel/messages'],
+    ['chatMessageCreated', '/chats/chat/messages'],
+  ] as const)(
     'runs initial and multipage resumed delta polling for %s',
-    async (triggerName, input, root) => {
+    async (triggerName, root) => {
       const piece = createMicrosoftTeams({ auth });
       const request = req();
       const client = await piece.client({ req: request });
-      const trigger = piece.triggers[triggerName];
+      const run = deltaTriggers[triggerName];
 
-      transport = async (url) => {
-        const target = new URL(url);
+      transport = (url) => Promise.resolve(deltaFixture(url, root));
 
-        if (!target.pathname.endsWith('/delta') && !target.searchParams.has('page')) {
-          return json({ value: [message] });
-        }
-
-        if (target.searchParams.get('page') === '2') {
-          return json({
-            value: [{ ...message, id: 'newer', createdDateTime: '2026-09-13T12:00:00Z' }],
-            '@odata.deltaLink': `${target.origin}/v1.0${root}/delta?$deltatoken=next`,
-          });
-        }
-
-        return json({
-          value: [{ ...message, id: 'new', createdDateTime: '2026-09-13T11:00:00Z' }],
-          '@odata.nextLink': `${target.origin}/v1.0${root}/delta?page=2`,
-        });
-      };
-
-      const first = await trigger.run({ client, input, options: {}, req: request });
-      const resumed = await trigger.run({
+      const first = await run(piece, { client, req: request });
+      const resumed = await run(piece, {
         client,
-        input,
-        options: {},
         req: request,
         cursor: {
           since: '2026-09-13T10:30:00Z',
@@ -590,7 +638,7 @@ describe('native Microsoft Teams polling', () => {
       });
 
       expect(first.events).toEqual([message]);
-      expect(resumed.events.map((event) => event.id)).toEqual(['new', 'newer']);
+      expect(resumed.events).toMatchObject([{ id: 'new' }, { id: 'newer' }]);
       expect(resumed.cursor).toEqual({
         since: '2026-09-13T12:00:00Z',
         deltaLink: `https://graph.microsoft.com/v1.0${root}/delta?$deltatoken=next`,

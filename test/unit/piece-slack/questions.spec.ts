@@ -1,3 +1,4 @@
+import type { FrogBotRequest } from 'frogbot/pieces';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Thread } from '../../../packages/frogbot/node_modules/chat/dist/index.js';
@@ -6,7 +7,6 @@ import type {
   QuestionInteraction,
 } from '../../../packages/frogbot/src/exports/pieces.js';
 import { decodeQuestionModalMetadata } from '../../../packages/frogbot/src/exports/pieces.js';
-import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import type { SlackClient } from '../../../packages/pieces/piece-slack/src/client.js';
 import {
   customAnswerView,
@@ -324,10 +324,10 @@ describe('Slack question hooks', () => {
     const requests: Array<{ method: string; body: Record<string, unknown> }> = [];
 
     const client = {
-      request: vi.fn(async (method: string, body: Record<string, unknown>) => {
+      request: vi.fn((method: string, body: Record<string, unknown>) => {
         requests.push({ method, body });
 
-        return { ok: true, ts: '1712345678.000100' };
+        return Promise.resolve({ ok: true, ts: '1712345678.000100' });
       }),
     };
 

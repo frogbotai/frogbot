@@ -19,6 +19,10 @@ const actions = [
   'generateRandomNumber',
 ] as const;
 
+function invalidNumbers(input: unknown): { firstNumber: number; secondNumber: number } {
+  return input as { firstNumber: number; secondNumber: number };
+}
+
 describe('math helper', () => {
   it('exposes every upstream action under a semantic native name', () => {
     expect(Object.keys(mathHelper)).toEqual(['slug', 'piece', 'triggers', 'client', ...actions]);
@@ -27,7 +31,7 @@ describe('math helper', () => {
   it('requires number inputs for every action', async () => {
     for (const action of actions) {
       await expect(
-        mathHelper[action]({ input: { firstNumber: '1', secondNumber: 2 }, req }),
+        mathHelper[action]({ input: invalidNumbers({ firstNumber: '1', secondNumber: 2 }), req }),
       ).rejects.toThrow();
     }
   });

@@ -78,7 +78,7 @@ function adapterWith(create: typeof createTelegramAdapter) {
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => Response.json({ ok: true, result: true })),
+    vi.fn(() => Promise.resolve(Response.json({ ok: true, result: true }))),
   );
 });
 

@@ -20,7 +20,7 @@ describe('AccountMenu', () => {
       </AccountMenu>,
     );
     await user.click(screen.getByRole('button', { name: 'Open account' }));
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+    expect(screen.getAllByRole('menuitem').map((item: HTMLElement) => item.textContent)).toEqual([
       'Account',
       'Settings',
       'Log out',

@@ -1,13 +1,17 @@
+import { pieceConformance } from 'frogbot/pieces/test';
 import { google } from 'googleapis';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 vi.mock(
+  'frogbot/pieces/test',
+  () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
+);
+vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
 );
 
-import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
@@ -37,7 +41,7 @@ describe('native Google Drive contract', () => {
       expect(action.input).toBeDefined();
       expect(action.output).toBeDefined();
       expect(typeof action.idempotent).toBe('boolean');
-      expect(typeof drive[action.slug]).toBe('function');
+      expect(drive).toHaveProperty(action.slug, expect.any(Function));
     }
   });
 
@@ -79,7 +83,7 @@ describe('native Google Drive contract', () => {
     const setCredentials = google.auth.OAuth2.prototype.setCredentials;
     vi.spyOn(google.auth.OAuth2.prototype, 'setCredentials').mockImplementation(function (
       this: InstanceType<typeof google.auth.OAuth2>,
-      credentials,
+      credentials: Parameters<typeof setCredentials>[0],
     ) {
       setCredentials.call(this, credentials);
       this.transporter.defaults.fetchImplementation = network;

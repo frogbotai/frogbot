@@ -124,12 +124,13 @@ describe('API key services', () => {
     const find = vi
       .fn()
       .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
-    const update = vi.fn().mockImplementation(async () => {
+    const update = vi.fn().mockImplementation(() => {
       operations.push('revoke');
+      return Promise.resolve();
     });
-    const create = vi.fn().mockImplementation(async () => {
+    const create = vi.fn().mockImplementation(() => {
       operations.push('mint');
-      return { id: 'key-2' };
+      return Promise.resolve({ id: 'key-2' });
     });
     const req = request({ frogbot: { find, update, create } });
 

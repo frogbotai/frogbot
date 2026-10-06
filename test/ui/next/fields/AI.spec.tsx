@@ -2,37 +2,29 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type {
   ClientField,
   DefaultCellComponentProps,
+  SelectFieldClient,
   SelectFieldClientProps,
   TextFieldClientProps,
 } from 'payload';
 import type { ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
-const {
-  DefaultCell,
-  ReactSelect,
-  auth,
-  collections,
-  documentInfo,
-  fetchMock,
-  form,
-  locale,
-  setValue,
-  toast,
-} = vi.hoisted(() => ({
+type SelectProps = Record<string, unknown> & { onChange: (next: unknown) => void };
+
+const { DefaultCell, ReactSelect, auth, fetchMock, setValue, toast } = vi.hoisted(() => ({
   DefaultCell: vi.fn(({ cellData }: { cellData?: unknown }) => (
     <span data-testid="default-cell">{String(cellData)}</span>
   )),
-  ReactSelect: vi.fn(() => <div data-testid="react-select" />),
+  ReactSelect: vi.fn((_props: SelectProps) => <div data-testid="react-select" />),
   auth: { update: true },
-  collections: {} as Record<string, unknown>,
-  documentInfo: {} as Record<string, unknown>,
   fetchMock: vi.fn(),
-  form: { value: undefined as unknown },
-  locale: { code: 'en' as string | undefined },
   setValue: vi.fn(),
   toast: { error: vi.fn() },
 }));
+const collections = vi.hoisted((): Record<string, unknown> => ({}));
+const documentInfo = vi.hoisted((): Record<string, unknown> => ({}));
+const form = vi.hoisted((): { value: unknown } => ({ value: undefined }));
+const locale = vi.hoisted((): { code: string | undefined } => ({ code: 'en' }));
 
 vi.mock('@payloadcms/ui', () => ({
   DefaultCell,
@@ -89,7 +81,17 @@ const summaryField = {
   },
 } as ClientField & TextFieldClientProps['field'];
 
-const typeField = {
+// Payload's client `admin` type Picks from an optional type, which makes every picked key
+// required; a fixture states only the admin keys it uses.
+function selectField(
+  field: Omit<SelectFieldClient, 'admin'> & {
+    admin?: Partial<NonNullable<SelectFieldClient['admin']>>;
+  },
+): SelectFieldClient {
+  return field as SelectFieldClient;
+}
+
+const typeField = selectField({
   name: 'type',
   type: 'select',
   label: 'Type',
@@ -102,18 +104,14 @@ const typeField = {
       },
     },
   },
-} as ClientField & SelectFieldClientProps['field'];
+});
 
-const plainTypeField = {
+const plainTypeField = selectField({
   ...typeField,
   admin: { custom: { frogbot: { kind: typeField.admin?.custom?.frogbot.kind } } },
-} as ClientField & SelectFieldClientProps['field'];
+});
 
-const labelsField = {
-  ...typeField,
-  name: 'labels',
-  hasMany: true,
-} as ClientField & SelectFieldClientProps['field'];
+const labelsField = selectField({ ...typeField, name: 'labels', hasMany: true });
 
 type Row = Record<string, unknown> & { id: number | string };
 
@@ -168,16 +166,14 @@ function renderPills(): { className: string; text: string | null }[] {
 
   const { container } = render(<>{options[0]?.label}</>);
 
-  return Array.from(container.querySelectorAll('.option-pills > span'), (pill) => ({
+  return Array.from(container.querySelectorAll('.option-pills > span'), (pill: Element) => ({
     className: pill.className,
     text: pill.textContent,
   }));
 }
 
-function selectProps(): Record<string, unknown> & { onChange: (next: unknown) => void } {
-  return ReactSelect.mock.lastCall?.[0] as unknown as Record<string, unknown> & {
-    onChange: (next: unknown) => void;
-  };
+function selectProps(): SelectProps {
+  return ReactSelect.mock.lastCall?.[0] as SelectProps;
 }
 
 function respond(body: unknown, ok = true) {
@@ -323,7 +319,7 @@ describe('AICell in a list', () => {
   it('renders the plain value when the row has no status key', () => {
     const { _summary_status: _status, ...rowData } = row();
 
-    const { container } = render(cell(rowData as Row));
+    const { container } = render(cell(rowData));
 
     expect(screen.getByTestId('default-cell').textContent).toBe('Old summary');
     expect(container.querySelector('.ai-cell')).toBeNull();
@@ -334,9 +330,11 @@ describe('AICell actions', () => {
   it('queues a run with the locale without triggering the row link', async () => {
     const rowClick = vi.fn();
 
+    document.addEventListener('click', rowClick);
+    onTestFinished(() => document.removeEventListener('click', rowClick));
     fetchMock.mockReturnValue(respond({ doc: row({ _summary_status: 'pending' }) }));
 
-    render(<div onClick={rowClick}>{cell(row())}</div>);
+    render(cell(row()));
 
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
 
@@ -514,10 +512,9 @@ describe('AICell polling', () => {
     expect(requestURL()).toBe(
       '/api/tasks?depth=0&pagination=false&where[id][in][0]=1&where[id][in][1]=2&select[summary]=true&select[_summary_status]=true&select[_summary_error]=true&locale=en',
     );
-    expect(screen.getAllByTestId('default-cell').map((node) => node.textContent)).toStrictEqual([
-      'First',
-      'Second',
-    ]);
+    expect(
+      screen.getAllByTestId('default-cell').map((node: HTMLElement) => node.textContent),
+    ).toStrictEqual(['First', 'Second']);
 
     await nextTick();
 
@@ -630,7 +627,7 @@ describe('AIField', () => {
       admin: { ...summaryField.admin, autoComplete: 'off', rtl: true },
     };
 
-    const { container } = renderField({ field } as Partial<TextFieldClientProps>);
+    const { container } = renderField({ field });
     const input = container.querySelector('input');
 
     expect(input?.getAttribute('autocomplete')).toBe('off');

@@ -27,6 +27,27 @@ const json = (body: unknown = { id: 'result' }, status = 200) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
+type OptionCallback = (args: {
+  input: object;
+  client: unknown;
+  options: object;
+  req: never;
+}) => Promise<unknown>;
+
+function isOptionCallback(value: unknown): value is OptionCallback {
+  return typeof value === 'function';
+}
+
+function pollingTrigger(slug: string) {
+  const trigger = pieceFactoryDefinition(createFront).triggers?.find(
+    (candidate) => candidate.slug === slug,
+  );
+
+  if (!trigger || trigger.type !== 'polling') throw new Error(`Missing polling trigger ${slug}.`);
+
+  return trigger;
+}
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('front', () => {
@@ -208,14 +229,16 @@ describe('front', () => {
   it('loads every dynamic option through the authenticated client', async () => {
     const fetch = vi
       .fn()
-      .mockImplementation(async () =>
-        json({ _results: [{ id: 'one', name: 'One', subject: 'Subject', username: 'user' }] }),
+      .mockImplementation(() =>
+        Promise.resolve(
+          json({ _results: [{ id: 'one', name: 'One', subject: 'Subject', username: 'user' }] }),
+        ),
       );
     vi.stubGlobal('fetch', fetch);
     const front = createFront({ auth });
     const client = await front.client({ req: req() });
     const callbacks = frontActions.flatMap((slug) =>
-      Object.values(pieceActionDefinition(front[slug])?.options ?? {}),
+      Object.values(pieceActionDefinition(front[slug])?.options ?? {}).filter(isOptionCallback),
     );
 
     for (const callback of callbacks) {
@@ -233,12 +256,7 @@ describe('front', () => {
     ['outboundMessageCreated', {}, 'outbound', 15],
     ['conversationTagAdded', { conversationId: 'cnv' }, 'tag', 50],
   ] as const)('polls and advances the %s cursor', async (slug, input, type, limit) => {
-    const definition = pieceFactoryDefinition(createFront).triggers?.find(
-      (trigger) => trigger.slug === slug,
-    );
-    if (!definition || definition.type !== 'polling') {
-      throw new Error(`Missing polling trigger ${slug}.`);
-    }
+    const definition = pollingTrigger(slug);
     const client = {
       request: vi
         .fn()
@@ -276,10 +294,7 @@ describe('front', () => {
   });
 
   it('polls conversation status without repeating an old state', async () => {
-    const definition = pieceFactoryDefinition(createFront).triggers?.find(
-      (trigger) => trigger.slug === 'conversationStatusChanged',
-    );
-    if (!definition || definition.type !== 'polling') throw new Error('Missing status trigger.');
+    const definition = pollingTrigger('conversationStatusChanged');
     const client = {
       request: vi.fn().mockResolvedValue({ id: 'cnv', status: 'archived', updated_at: 2 }),
     };

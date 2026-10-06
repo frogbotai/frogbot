@@ -5,13 +5,15 @@ import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 import { apiKeyMeHook } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 
+const db = {} as FrogBotConfig['db'];
+
 describe('apiKeysPlugin', () => {
   it('provides a FrogBot plugin with zero configuration', async () => {
     const plugin = apiKeysPlugin();
     expectTypeOf(plugin).toMatchTypeOf<Plugin>();
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig;
     const result = await plugin(config);
@@ -30,10 +32,10 @@ describe('apiKeysPlugin', () => {
     const existing = { label: 'Usage', path: 'usage', Component: '@app/Usage' };
     const result = await apiKeysPlugin({ collectionSlug: 'credentials' })({
       secret: 'test',
-      db: {},
+      db,
       settings: [existing],
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogBotConfig);
+    });
 
     expect(result.settings).toEqual([existing]);
     expect(result.collections.at(-1)).toMatchObject({
@@ -46,7 +48,7 @@ describe('apiKeysPlugin', () => {
     const existing = { name: 'existing', authenticate: () => ({ user: null }) };
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: { strategies: [existing] }, fields: [] }],
     } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
@@ -60,7 +62,7 @@ describe('apiKeysPlugin', () => {
     const existing = () => undefined;
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [
         { slug: 'users', auth: true, hooks: { me: [existing] }, fields: [] },
         { slug: 'posts', fields: [] },
@@ -78,7 +80,7 @@ describe('apiKeysPlugin', () => {
     const existingHook = () => undefined;
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [
         { slug: 'users', auth: true, fields: [] },
         { slug: 'ai-usage', usageLog: true, fields: [{ name: 'team', type: 'text' }] },
@@ -113,7 +115,7 @@ describe('apiKeysPlugin', () => {
   it('adds no usage attribution surfaces without AI', async () => {
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
@@ -125,7 +127,7 @@ describe('apiKeysPlugin', () => {
   it('does not inject user policy fields', async () => {
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
@@ -140,7 +142,7 @@ describe('apiKeysPlugin', () => {
   it('adds API key usage attribution without policy hooks', async () => {
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
@@ -155,7 +157,7 @@ describe('apiKeysPlugin', () => {
   it('attributes a numeric API key id unchanged', async () => {
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
@@ -171,7 +173,7 @@ describe('apiKeysPlugin', () => {
   it('does not attribute an apiKeyId on a session login', async () => {
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
@@ -187,7 +189,7 @@ describe('apiKeysPlugin', () => {
   it.each([null, {}])('does not attribute an API key id of %j', async (apiKeyId) => {
     const config = {
       secret: 'test',
-      db: {},
+      db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;

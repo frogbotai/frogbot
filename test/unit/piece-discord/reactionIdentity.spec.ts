@@ -19,7 +19,11 @@ const { Client } = adapterRequire('discord.js') as {
   };
 };
 
-afterEach(() => {
+const cleanups: Array<() => Promise<void>> = [];
+
+afterEach(async () => {
+  await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -41,16 +45,16 @@ describe('Installed Discord Gateway reaction identity constraints', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string, init: RequestInit) => {
+      vi.fn((url: string, init: RequestInit) => {
         expect(url).toBe('https://frogbot.example/api/webhooks/discord');
 
         forwarded.push({ body: String(init.body), headers: new Headers(init.headers) });
 
-        return new Response(null, { status: 200 });
+        return Promise.resolve(new Response(null, { status: 200 }));
       }),
     );
 
-    vi.spyOn(Client.prototype, 'login').mockImplementation(async function (this: {
+    vi.spyOn(Client.prototype, 'login').mockImplementation(function (this: {
       emit(event: string, packet: unknown): void;
     }) {
       this.emit('raw', { op: 0, s: 101, t: 'MESSAGE_REACTION_ADD', d: reaction });
@@ -60,7 +64,7 @@ describe('Installed Discord Gateway reaction identity constraints', () => {
       now.mockReturnValue(receivedAt + 10);
       this.emit('raw', { op: 0, s: 103, t: 'MESSAGE_REACTION_ADD', d: reaction });
 
-      return 'bot-token';
+      return Promise.resolve('bot-token');
     });
 
     const adapter = createDiscordAdapter({
@@ -74,43 +78,43 @@ describe('Installed Discord Gateway reaction identity constraints', () => {
 
     await fixture.host.initialize(false);
 
-    try {
-      await adapter.startGatewayListener(
-        { waitUntil: (task) => pending.push(task) },
-        60_000,
-        controller.signal,
-        'https://frogbot.example/api/webhooks/discord',
-      );
-
-      await vi.waitFor(() => expect(forwarded).toHaveLength(4));
-
-      expect(JSON.parse(forwarded[0].body)).toEqual({
-        type: 'GATEWAY_MESSAGE_REACTION_ADD',
-        timestamp: receivedAt,
-        data: reaction,
-      });
-      expect(JSON.parse(forwarded[1].body)).toEqual({
-        type: 'GATEWAY_MESSAGE_REACTION_REMOVE',
-        timestamp: receivedAt,
-        data: reaction,
-      });
-      expect(forwarded[2].body).toBe(forwarded[0].body);
-      expect(JSON.parse(forwarded[3].body)).toEqual({
-        type: 'GATEWAY_MESSAGE_REACTION_ADD',
-        timestamp: receivedAt + 10,
-        data: reaction,
-      });
-      expect(forwarded.map(({ headers }) => headers.get('x-discord-gateway-token'))).toEqual([
-        'bot-token',
-        'bot-token',
-        'bot-token',
-        'bot-token',
-      ]);
-    } finally {
+    cleanups.push(async () => {
       controller.abort();
 
       await Promise.all(pending);
       await fixture.host.shutdown();
-    }
+    });
+
+    await adapter.startGatewayListener(
+      { waitUntil: (task) => pending.push(task) },
+      60_000,
+      controller.signal,
+      'https://frogbot.example/api/webhooks/discord',
+    );
+
+    await vi.waitFor(() => expect(forwarded).toHaveLength(4));
+
+    expect(JSON.parse(forwarded[0].body)).toEqual({
+      type: 'GATEWAY_MESSAGE_REACTION_ADD',
+      timestamp: receivedAt,
+      data: reaction,
+    });
+    expect(JSON.parse(forwarded[1].body)).toEqual({
+      type: 'GATEWAY_MESSAGE_REACTION_REMOVE',
+      timestamp: receivedAt,
+      data: reaction,
+    });
+    expect(forwarded[2].body).toBe(forwarded[0].body);
+    expect(JSON.parse(forwarded[3].body)).toEqual({
+      type: 'GATEWAY_MESSAGE_REACTION_ADD',
+      timestamp: receivedAt + 10,
+      data: reaction,
+    });
+    expect(forwarded.map(({ headers }) => headers.get('x-discord-gateway-token'))).toEqual([
+      'bot-token',
+      'bot-token',
+      'bot-token',
+      'bot-token',
+    ]);
   });
 });

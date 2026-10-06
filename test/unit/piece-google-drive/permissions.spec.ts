@@ -100,15 +100,23 @@ describe('Google Drive permissions', () => {
     ).rejects.toThrow('repeated a page token');
   });
 
-  it.each(['folder', 'file'])(
-    'publishes a %s and returns its native download result',
-    async (type) => {
+  it.each([
+    { type: 'folder', mimeType: folderMimeType, download: null, saved: [] },
+    {
+      type: 'file',
+      mimeType: 'text/plain',
+      download: expect.objectContaining({ id: 'saved', name: 'report.txt', size: 14 }),
+      saved: [Buffer.from('public content')],
+    },
+  ])(
+    'publishes a $type and returns its native download result',
+    async ({ mimeType, download, saved }) => {
       const { drive, req, requests, create } = await fixture(({ url, method }) => {
         if (method === 'POST') return json({ id: 'public', type: 'anyone', role: 'reader' });
         if (url.searchParams.get('alt') === 'media') return new Response('public content');
         return json({
           ...metadata,
-          mimeType: type === 'folder' ? folderMimeType : 'text/plain',
+          mimeType,
           webViewLink: 'https://drive.google.com/view/file',
         });
       });
@@ -123,13 +131,8 @@ describe('Google Drive permissions', () => {
         role: 'reader',
         allowFileDiscovery: false,
       });
-      if (type === 'folder') {
-        expect(result.download).toBeNull();
-        expect(create).not.toHaveBeenCalled();
-      } else {
-        expect(result.download).toMatchObject({ id: 'saved', name: 'report.txt', size: 14 });
-        expect(create.mock.calls[0][0].file.data).toEqual(Buffer.from('public content'));
-      }
+      expect(result.download).toEqual(download);
+      expect(create.mock.calls.map(([args]) => args.file.data)).toEqual(saved);
       expect(
         requests.every(({ url }) => url.searchParams.get('supportsAllDrives') === 'true'),
       ).toBe(true);

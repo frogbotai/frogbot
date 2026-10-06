@@ -5,16 +5,18 @@ import type { ImportExportPluginOptions } from '../../../packages/plugins/plugin
 import { importExportPlugin } from '../../../packages/plugins/plugin-import-export/src/index.js';
 
 type Hook = (args: Record<string, unknown>) => unknown;
+type CollectionOverride = NonNullable<ImportExportPluginOptions['overrideImportCollection']>;
 
-function rename(slug: string) {
-  return ({ collection }: { collection: CollectionConfig }) => ({ ...collection, slug });
+function rename(slug: string): CollectionOverride {
+  return ({ collection }) => ({ ...collection, slug });
 }
 
 const setups: { name: string; options: ImportExportPluginOptions; slugs: [string, string] }[] = [
-  { name: 'the default collections', options: {}, slugs: ['imports', 'exports'] },
+  { name: 'the default collections', options: { collections: [] }, slugs: ['imports', 'exports'] },
   {
     name: 'renamed collections',
     options: {
+      collections: [],
       overrideImportCollection: rename('csv-imports'),
       overrideExportCollection: rename('csv-exports'),
     },
@@ -133,7 +135,7 @@ describe('importExportPlugin', () => {
       const { importExportPlugin: mockedPlugin } =
         await import('../../../packages/plugins/plugin-import-export/src/index.js');
 
-      await expect(mockedPlugin({})({} as FrogBotConfig)).rejects.toThrow(
+      await expect(mockedPlugin({ collections: [] })({} as FrogBotConfig)).rejects.toThrow(
         `[plugin-import-export] Expected ${expected} afterChange hooks on Payload's ${kind} collection '${kind}s', found 0.`,
       );
     },

@@ -1,3 +1,4 @@
+import type { FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 import * as XLSX from 'xlsx';
 
@@ -22,7 +23,8 @@ function excelRequest({
   fileUrl?: string;
   signal?: AbortSignal;
 } = {}) {
-  return {
+  const findByID = vi.fn().mockResolvedValue({ id: 'workbook', url: fileUrl });
+  const req = {
     headers: new Headers({ authorization: 'Bearer test', cookie: 'session=test' }),
     signal,
     url: 'https://app.test/api',
@@ -31,9 +33,11 @@ function excelRequest({
         files: { slug: 'files' },
         _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://app.test' }) },
       },
-      findByID: vi.fn().mockResolvedValue({ id: 'workbook', url: fileUrl }),
+      findByID,
     },
-  } as never;
+  } as unknown as FrogBotRequest;
+
+  return { req, findByID };
 }
 
 describe('csv', () => {
@@ -93,7 +97,7 @@ describe('csv', () => {
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([['ignored']]), 'Other');
 
     const data = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    const req = excelRequest();
+    const { req, findByID } = excelRequest();
     const fetch = vi.fn().mockResolvedValue(new Response(data));
 
     vi.stubGlobal('fetch', fetch);
@@ -108,7 +112,7 @@ describe('csv', () => {
       sheetName: 'Frogs',
       availableSheets: ['Frogs', 'Other'],
     });
-    expect(req.frogbot.findByID).toHaveBeenCalledWith(
+    expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'files', id: 'workbook', overrideAccess: false }),
     );
     expect(fetch).toHaveBeenCalledWith(
@@ -122,7 +126,7 @@ describe('csv', () => {
 
   it('strips caller credentials from cross-origin file requests', async () => {
     const controller = new AbortController();
-    const req = excelRequest({
+    const { req, findByID } = excelRequest({
       fileUrl: 'https://files.example/workbook.xlsx',
       signal: controller.signal,
     });
@@ -132,7 +136,7 @@ describe('csv', () => {
 
     await loadFile(req, 'workbook');
 
-    expect(req.frogbot.findByID).toHaveBeenCalledWith(
+    expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'workbook', req, overrideAccess: false }),
     );
     expect(fetch).toHaveBeenCalledWith(new URL('https://files.example/workbook.xlsx'), {
@@ -145,7 +149,7 @@ describe('csv', () => {
   it.each(['file:///tmp/workbook.xlsx', 'https://user:secret@files.example/workbook.xlsx'])(
     'rejects unsafe file URL %s',
     async (fileUrl) => {
-      const req = excelRequest({ fileUrl });
+      const { req } = excelRequest({ fileUrl });
       const fetch = vi.fn();
 
       vi.stubGlobal('fetch', fetch);
@@ -157,7 +161,7 @@ describe('csv', () => {
   );
 
   it('rejects content that is not an Excel workbook', async () => {
-    const req = excelRequest();
+    const { req } = excelRequest();
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not excel')));
 

@@ -6,6 +6,7 @@ import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { getMeeting } from '../../../packages/pieces/piece-zoom/src/actions/meetings.js';
 import {
   createZoom,
   zoomActions,
@@ -110,11 +111,9 @@ describe('zoom', () => {
     vi.stubGlobal('fetch', fetch);
     const zoom = createZoom({ auth: storedAuth });
     const client = await zoom.client({ req });
-    const action = pieceFactoryDefinition(createZoom).actions?.find(
-      ({ slug }) => slug === 'getMeeting',
-    );
-    const options = await action?.options?.meeting_id?.({ client });
+    const options = await getMeeting.options?.meeting_id?.({ client, input: {}, options: {}, req });
 
+    expect(pieceFactoryDefinition(createZoom).actions).toContain(getMeeting);
     expect(options).toEqual([
       { label: 'First', value: '1' },
       { label: 'Meeting 2', value: '2' },

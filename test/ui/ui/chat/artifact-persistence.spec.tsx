@@ -8,8 +8,8 @@ describe('artifact persistence', () => {
   it('loads and saves through the injected accessor', async () => {
     const artifact = { id: 'a1', kind: 'external', title: 'Loaded artifact', content: 'content' };
     const persistence: ArtifactPersistence = {
-      load: vi.fn(async () => artifact),
-      save: vi.fn(async (value) => value),
+      load: vi.fn(() => Promise.resolve(artifact)),
+      save: vi.fn((value) => Promise.resolve(value)),
     };
     render(
       <ArtifactProvider persistence={persistence}>

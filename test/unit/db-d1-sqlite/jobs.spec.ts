@@ -21,24 +21,26 @@ const binding = {
     return {
       bind(...params: SQLInputValue[]) {
         return {
-          async raw() {
+          raw() {
             statements.push({ sql: query, params, method: 'raw' });
 
-            return sqlite
-              .prepare(query)
-              .all(...params)
-              .map((row) => Object.values(row));
+            return Promise.resolve(
+              sqlite
+                .prepare(query)
+                .all(...params)
+                .map((row) => Object.values(row)),
+            );
           },
-          async run() {
+          run() {
             statements.push({ sql: query, params, method: 'run' });
 
             const result = sqlite.prepare(query).run(...params);
 
-            return {
+            return Promise.resolve({
               success: true,
               results: [],
               meta: { changes: result.changes, last_row_id: result.lastInsertRowid },
-            };
+            });
           },
         };
       },
@@ -58,7 +60,7 @@ beforeAll(async () => {
     secret: 'd1-jobs-test',
     db: descriptor,
     collections: [],
-    jobs: resolveJobsConfig({ tasks: [{ slug: 'work', handler: async () => ({ output: {} }) }] }),
+    jobs: resolveJobsConfig({ tasks: [{ slug: 'work', handler: () => ({ output: {} }) }] }),
   });
 
   payload.collections = Object.fromEntries(
@@ -67,6 +69,10 @@ beforeAll(async () => {
 
   database = descriptor.init({ payload });
   payload.db = database;
+
+  if (!database.init || !database.connect) {
+    throw new Error('The D1 adapter must define init and connect.');
+  }
 
   await database.init();
   await database.connect();

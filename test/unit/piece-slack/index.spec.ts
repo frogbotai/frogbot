@@ -1,10 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FrogBotRequest } from 'frogbot/pieces';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { pieceInstanceRuntime } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest as CoreRequest } from '../../../packages/frogbot/src/types/request.js';
 import { getFile, uploadFile } from '../../../packages/pieces/piece-slack/src/actions.js';
 import { createSlackClient } from '../../../packages/pieces/piece-slack/src/client.js';
 import {
@@ -26,7 +27,7 @@ vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pi
 const signingSecret = 'slack-signing-secret';
 const now = 1_789_200_000_000;
 
-function signedRequest(body: string, timestamp = Math.floor(now / 1000)) {
+function signedHttpRequest(body: string, timestamp = Math.floor(now / 1000)): Request {
   const signature = `v0=${createHmac('sha256', signingSecret)
     .update(`v0:${timestamp}:${body}`)
     .digest('hex')}`;
@@ -39,7 +40,33 @@ function signedRequest(body: string, timestamp = Math.floor(now / 1000)) {
       'x-slack-signature': signature,
     },
     body,
-  }) as FrogBotRequest;
+  });
+}
+
+function pieceRequest(request: Request): FrogBotRequest {
+  return request as FrogBotRequest;
+}
+
+function coreRequest(request: Request): CoreRequest {
+  return request as CoreRequest;
+}
+
+function signedRequest(body: string, timestamp?: number): FrogBotRequest {
+  return pieceRequest(signedHttpRequest(body, timestamp));
+}
+
+function uploadResponse(url: string): Response {
+  if (url === 'https://example.com/files/test') return new Response('file contents');
+  if (url === 'https://files.slack.com/upload/test') return new Response('ok');
+  if (url.endsWith('/files.getUploadURLExternal')) {
+    return Response.json({
+      ok: true,
+      upload_url: 'https://files.slack.com/upload/test',
+      file_id: 'F1',
+    });
+  }
+
+  return Response.json({ ok: true, files: [{ id: 'F1' }] });
 }
 
 afterEach(() => {
@@ -74,7 +101,7 @@ describe('Slack native piece', () => {
       definition.oauth?.account?.({
         tokens: { access_token: 'xoxb-bot' },
         client: { request: vi.fn().mockResolvedValue({ ok: true, team_id: 'T1', team: 'Frogs' }) },
-        req: {} as FrogBotRequest,
+        req: {} as CoreRequest,
       }),
     ).resolves.toEqual({ id: 'T1', label: 'Frogs' });
   });
@@ -96,16 +123,15 @@ describe('Slack native piece', () => {
 
   it('requires the signing secret used by shared ingress even when an environment fallback exists', () => {
     vi.stubEnv('SLACK_SIGNING_SECRET', 'environment-secret');
-
-    try {
-      const definition = pieceInstanceRuntime(createSlack()).definition;
-
-      expect(() =>
-        definition.channel?.adapter({ auth: { botToken: 'xoxb-test' }, options: {} }),
-      ).toThrow('signingSecret');
-    } finally {
+    onTestFinished(() => {
       vi.unstubAllEnvs();
-    }
+    });
+
+    const definition = pieceInstanceRuntime(createSlack()).definition;
+
+    expect(() =>
+      definition.channel?.adapter({ auth: { botToken: 'xoxb-test' }, options: {} }),
+    ).toThrow('signingSecret');
   });
 
   it('ships a channel manifest templated by the piece instance slug', async () => {
@@ -141,7 +167,7 @@ describe('Slack native piece', () => {
           },
           find,
         },
-      } as unknown as FrogBotRequest,
+      } as unknown as CoreRequest,
     });
 
     expect(identity).toEqual({ ...user, collection: 'members' });
@@ -164,7 +190,7 @@ describe('Slack native piece', () => {
         },
         find,
       },
-    } as unknown as FrogBotRequest;
+    } as unknown as CoreRequest;
 
     await expect(
       definition.channel?.identity({
@@ -199,7 +225,7 @@ describe('Slack native piece', () => {
       definition.channel?.identity({
         author: { userId: 'U1' } as never,
         client: { request: vi.fn().mockRejectedValue(error) },
-        req: {} as FrogBotRequest,
+        req: {} as CoreRequest,
       }),
     ).rejects.toBe(error);
   });
@@ -222,21 +248,9 @@ describe('Slack native piece', () => {
   });
 
   it('loads a local file safely and completes Slack external upload', async () => {
-    const fetch = vi.fn(async (value: URL | RequestInfo) => {
-      const url = String(value);
-
-      if (url === 'https://example.com/files/test') return new Response('file contents');
-      if (url === 'https://files.slack.com/upload/test') return new Response('ok');
-      if (url.endsWith('/files.getUploadURLExternal')) {
-        return Response.json({
-          ok: true,
-          upload_url: 'https://files.slack.com/upload/test',
-          file_id: 'F1',
-        });
-      }
-
-      return Response.json({ ok: true, files: [{ id: 'F1' }] });
-    });
+    const fetch = vi.fn((value: URL | RequestInfo) =>
+      Promise.resolve(uploadResponse(String(value))),
+    );
     vi.stubGlobal('fetch', fetch);
     const signal = new AbortController().signal;
     const req = {
@@ -334,19 +348,20 @@ describe('Slack native piece', () => {
 
   it('answers challenges and accepts valid Slack retries within the timestamp window', async () => {
     const body = `\n${JSON.stringify({ challenge: 'challenge' }, null, 2)}\n`;
-    const req = signedRequest(body);
+    const http = signedHttpRequest(body);
+    const req = pieceRequest(http);
     req.data = { challenge: 'challenge' };
 
     await expect(
-      verifySlackWebhook({ req: req.clone() as FrogBotRequest, options: { signingSecret } }),
+      verifySlackWebhook({ req: pieceRequest(http.clone()), options: { signingSecret } }),
     ).resolves.toBe(true);
     await expect(
-      verifySlackWebhook({ req: req.clone() as FrogBotRequest, options: { signingSecret } }),
+      verifySlackWebhook({ req: pieceRequest(http.clone()), options: { signingSecret } }),
     ).resolves.toBe(true);
 
     const response = await pieceInstanceRuntime(
       createSlack({ signingSecret }),
-    ).definition.webhook?.handshake?.({ req, options: { signingSecret } });
+    ).definition.webhook?.handshake?.({ req: coreRequest(http), options: { signingSecret } });
 
     await expect(response?.text()).resolves.toBe('challenge');
   });

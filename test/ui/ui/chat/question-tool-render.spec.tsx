@@ -113,7 +113,7 @@ describe('QuestionToolRender', () => {
       />,
     );
 
-    expect(screen.getAllByRole('tab').map(({ textContent }) => textContent)).toEqual([
+    expect(screen.getAllByRole('tab').map(({ textContent }: HTMLElement) => textContent)).toEqual([
       'Target',
       'Checks',
     ]);
@@ -200,10 +200,12 @@ describe('QuestionToolRender', () => {
       true,
     );
 
-    await act(async () => request.resolve());
+    request.resolve();
 
-    expect((screen.getByRole('button', { name: /Staging/ }) as HTMLButtonElement).disabled).toBe(
-      false,
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: /Staging/ }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
     );
   });
 

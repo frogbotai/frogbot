@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChannelConversationNotice } from '../../../../packages/ui/src/chat/channel-conversation-notice';
 import { Chat } from '../../../../packages/ui/src/chat/chat';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import type { ChatDocument } from '../../../../packages/ui/src/chat/use-chats';
 import { QuestionToolRender } from '../../../../packages/ui/src/exports/chat-tools';
 
 const api = 'https://frogbot.example/api';
@@ -25,8 +26,17 @@ const channelChat = {
   title: 'Deploy thread',
   channel: 'slack',
   channelLabel: 'Slack',
-  channelThread: { account: 'slack-support', thread: { id: 'slack:C1:1.000001' } },
-};
+  channelThread: {
+    account: 'slack-support',
+    thread: {
+      _type: 'chat:Thread',
+      adapterName: 'slack',
+      channelId: 'slack:C1',
+      id: 'slack:C1:1.000001',
+      isDM: false,
+    },
+  },
+} satisfies ChatDocument;
 
 const webChat = {
   id: chatId,

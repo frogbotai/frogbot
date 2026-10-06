@@ -1,12 +1,10 @@
+import type { ChannelQuestionCall, QuestionInteraction, QuestionParseResult } from 'frogbot/pieces';
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  ChannelQuestionCall,
-  QuestionInteraction,
-  QuestionParseResult,
-} from '../../../packages/frogbot/src/exports/pieces.js';
 import {
   DISCORD_LIMITS,
+  type DiscordComponent,
+  type DiscordMessageBody,
   questionPayload,
   settledPayload,
 } from '../../../packages/pieces/piece-discord/src/questions/components.js';
@@ -137,11 +135,23 @@ function partialState(result: QuestionParseResult): DiscordQuestionState {
   return readState((result as { state?: unknown }).state);
 }
 
-function flatten(components: Component[]): Component[] {
-  return components.flatMap((component) => [component, ...flatten(component.components ?? [])]);
+function isComponent(value: DiscordComponent): value is Component {
+  return (
+    typeof value.type === 'number' &&
+    (value.content === undefined || typeof value.content === 'string') &&
+    (value.components === undefined || Array.isArray(value.components))
+  );
 }
 
-function inspect(body: { components: Component[] }) {
+function flatten(components: readonly DiscordComponent[]): Component[] {
+  return components.flatMap((component) => {
+    if (!isComponent(component)) throw new Error('Expected a typed Discord component.');
+
+    return [component, ...flatten(component.components ?? [])];
+  });
+}
+
+function inspect(body: DiscordMessageBody) {
   const all = flatten(body.components);
 
   return {

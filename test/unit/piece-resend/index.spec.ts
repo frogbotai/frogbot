@@ -75,11 +75,11 @@ describe('resend', () => {
       from_name: 'FrogBot',
       from: 'from@example.com',
       subject: 'Test',
-      content_type: 'text',
+      content_type: 'text' as const,
       content: 'Body',
     };
     await resend.send({ input, req });
-    await pieceInstanceTools(resend)?.[0]?.execute(input, { req } as never);
+    await pieceInstanceTools(resend)?.[0]?.execute?.(input, { req } as never);
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(fetch.mock.calls[0]?.[1]?.headers).toMatchObject({ Authorization: 'Bearer sk-test' });
     const body = JSON.parse(fetch.mock.calls[0]?.[1]?.body as string);

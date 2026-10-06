@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 
+import type { FrogBotRequest } from 'frogbot/pieces';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -9,20 +10,28 @@ import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { createIncident } from '../../../packages/pieces/piece-pagerduty/src/actions.js';
+import { createPagerdutyClient } from '../../../packages/pieces/piece-pagerduty/src/client.js';
 import {
   createPagerduty,
   pagerdutyActions,
   pagerdutyTriggers,
 } from '../../../packages/pieces/piece-pagerduty/src/index.js';
+import {
+  incidentAcknowledged,
+  incidentResolved,
+  newIncident,
+} from '../../../packages/pieces/piece-pagerduty/src/triggers.js';
 
 const auth = { apiKey: 'pd_test_key' };
-const req = () =>
+const req = (): FrogBotRequest =>
   ({
     frogbot: {
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
     },
     user: null,
-  }) as never;
+  }) as unknown as FrogBotRequest;
+const webhookTriggers = { newIncident, incidentResolved, incidentAcknowledged };
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -149,10 +158,10 @@ describe('pagerduty', () => {
     vi.stubGlobal('fetch', fetch);
     const piece = createPagerduty({ auth });
     const client = await piece.client({ req: req() });
-    const definition = pieceActionDefinition(piece.createIncident)!;
 
+    expect(pieceActionDefinition(piece.createIncident)).toBe(createIncident);
     await expect(
-      definition.options?.serviceId?.({ input: {}, client, options: {}, req: req() }),
+      createIncident.options?.serviceId?.({ input: {}, client, options: {}, req: req() }),
     ).resolves.toEqual([
       { label: 'API', value: 'S1' },
       { label: 'Web', value: 'S2' },
@@ -199,16 +208,13 @@ describe('pagerduty', () => {
     ['incidentResolved', 'incident.resolved'],
     ['incidentAcknowledged', 'incident.acknowledged'],
   ] as const)('models manual registration and filters %s deliveries', async (slug, eventType) => {
-    const definition = pieceFactoryDefinition(createPagerduty).triggers?.find(
-      (trigger) => trigger.slug === slug,
-    );
+    const definition = webhookTriggers[slug];
+    const client = createPagerdutyClient({ auth });
 
-    if (!definition || definition.type !== 'webhook') {
-      throw new Error(`Missing webhook trigger '${slug}'.`);
-    }
+    expect(pieceFactoryDefinition(createPagerduty).triggers).toContain(definition);
 
     const state = await definition.onEnable({
-      client: {},
+      client,
       input: {},
       options: {},
       req: req(),
@@ -238,7 +244,7 @@ describe('pagerduty', () => {
     ).resolves.toEqual([]);
     await expect(
       definition.onDisable({
-        client: {},
+        client,
         input: {},
         options: {},
         req: req(),
@@ -257,25 +263,25 @@ describe('pagerduty', () => {
     });
 
     await expect(
-      webhook.verify({
+      webhook.verify!({
         req: request(`v2=ignored, v1=${signature}`) as never,
         options: { signingSecret: 'secret' },
       }),
     ).resolves.toBe(true);
     await expect(
-      webhook.verify({
+      webhook.verify!({
         req: request(`v1=${signature}`, Buffer.from('{}')) as never,
         options: { signingSecret: 'secret' },
       }),
     ).resolves.toBe(false);
     await expect(
-      webhook.verify({
+      webhook.verify!({
         req: request('v1=not-hex') as never,
         options: { signingSecret: 'secret' },
       }),
     ).resolves.toBe(false);
     await expect(
-      webhook.verify({
+      webhook.verify!({
         req: request(null) as never,
         options: {},
       }),

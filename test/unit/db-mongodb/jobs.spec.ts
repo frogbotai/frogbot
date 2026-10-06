@@ -4,22 +4,22 @@ import { createRequire } from 'node:module';
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { mongooseAdapter } from '../../../../packages/db-mongodb/src/index.js';
-import { resolveJobsConfig } from '../../../../packages/frogbot/src/jobs/config.js';
-import type { JobLeaseDatabase } from '../../../../packages/frogbot/src/jobs/lease.js';
+import { mongooseAdapter } from '../../../packages/db-mongodb/src/index.js';
+import { resolveJobsConfig } from '../../../packages/frogbot/src/jobs/config.js';
+import type { JobLeaseDatabase } from '../../../packages/frogbot/src/jobs/lease.js';
 import {
   getJobLeaseContext,
   jobLeaseOperations,
   renewJobLease,
   resetJobLease,
   withJobLease,
-} from '../../../../packages/frogbot/src/jobs/lease.js';
-import { installJobsRuntime } from '../../../../packages/frogbot/src/jobs/runtime.js';
+} from '../../../packages/frogbot/src/jobs/lease.js';
+import { installJobsRuntime } from '../../../packages/frogbot/src/jobs/runtime.js';
 
-vi.mock('frogbot/jobs', () => import('../../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
 
 const require = createRequire(
-  new URL('../../../../packages/db-mongodb/package.json', import.meta.url),
+  new URL('../../../packages/db-mongodb/package.json', import.meta.url),
 );
 
 const upstreamRequire = createRequire(require.resolve('@payloadcms/db-mongodb'));
@@ -59,7 +59,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
           tasks: [
             {
               slug: 'noop',
-              handler: async ({ job }) => {
+              handler: ({ job }) => {
                 executions.push(job.id);
 
                 return { output: {} };
@@ -121,7 +121,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     return doc._id.toString() as string;
   }
 
-  async function claim(args: Partial<Parameters<MongooseAdapter['updateJobs']>[0]> = {}) {
+  function claim(args: Partial<Parameters<MongooseAdapter['updateJobs']>[0]> = {}) {
     return withJobLease({
       payload,
       leaseDuration: 300_000,
@@ -139,7 +139,7 @@ describe.skipIf(!mongoURL)('Mongo job claims and lease CAS', () => {
     });
   }
 
-  async function read(id: string) {
+  function read(id: string) {
     return Model.findById(id).lean();
   }
 

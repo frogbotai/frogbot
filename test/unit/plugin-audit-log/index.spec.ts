@@ -3,19 +3,30 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
 
+type Task = NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number];
+
 function config(): FrogBotConfig {
   return {
     secret: 'test',
+    db: {} as FrogBotConfig['db'],
     collections: [
       { slug: 'users', auth: true, fields: [] },
       { slug: 'posts', fields: [], hooks: { afterChange: [vi.fn()] } },
       { slug: 'notes', fields: [] },
     ],
-  } as FrogBotConfig;
+  };
 }
 
-async function apply(options: Parameters<typeof auditLogPlugin>[0] = {}) {
-  return auditLogPlugin(options)(config()) as FrogBotConfig;
+function apply(options: Parameters<typeof auditLogPlugin>[0] = {}): Promise<FrogBotConfig> {
+  return Promise.resolve(auditLogPlugin(options)(config()));
+}
+
+async function runTask(task: Task | undefined, req: object): Promise<void> {
+  const handler = task?.handler;
+
+  if (typeof handler !== 'function') throw new Error('Expected an inline task handler.');
+
+  await handler({ req } as unknown as Parameters<typeof handler>[0]);
 }
 
 function fieldNames(value: FrogBotConfig, slug = 'audit-logs') {
@@ -62,7 +73,7 @@ describe('auditLogPlugin', () => {
     expect(fieldNames(result)).toEqual(expect.arrayContaining(['ip', 'userAgent']));
   });
 
-  it('rejects collection slug collisions', async () => {
+  it('rejects collection slug collisions', () => {
     expect(() => auditLogPlugin({ collectionSlug: 'posts' })(config())).toThrow(
       "Collection slug 'posts' already exists",
     );
@@ -73,7 +84,7 @@ describe('auditLogPlugin', () => {
     const task = result.jobs?.tasks?.at(-1);
     const remove = vi.fn().mockResolvedValue({});
     expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'frogbot-prune-audit-logs' }]);
-    await task?.handler({ req: { payload: { delete: remove } } });
+    await runTask(task, { payload: { delete: remove } });
     expect(remove).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'audit-logs',

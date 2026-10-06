@@ -1,7 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { setTimeout } from 'node:timers/promises';
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from 'vitest';
 
 import { KVLeaseLostError } from '../../../packages/frogbot/src/kv/errors.js';
 import { runKVLock } from '../../../packages/frogbot/src/kv/lock.js';
@@ -44,28 +53,26 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
   it('preserves inherited CRUD, prefix isolation, and raw JSON serialization', async () => {
     const outsideKey = `frogbot-kv-outside:${randomUUID()}`;
     await owner.redisClient.set(outsideKey, 'untouched');
-    try {
-      await owner.set('nested', { nested: ['value', 42, true, null] });
-      await owner.set('string', 'value');
-      expect(await owner.redisClient.get(`${keyPrefix}string`)).toBe('"value"');
-      expect(await contender.get('nested')).toEqual({ nested: ['value', 42, true, null] });
-      expect(await owner.has('nested')).toBe(true);
-      expect((await owner.keys()).sort()).toEqual(['nested', 'string']);
-      await owner.delete('nested');
-      expect(await contender.get('nested')).toBeNull();
-      await owner.clear();
-      expect(await owner.keys()).toEqual([]);
-      expect(await owner.redisClient.get(outsideKey)).toBe('untouched');
-    } finally {
+    onTestFinished(async () => {
       await owner.redisClient.del(outsideKey);
-    }
+    });
+    await owner.set('nested', { nested: ['value', 42, true, null] });
+    await owner.set('string', 'value');
+    expect(await owner.redisClient.get(`${keyPrefix}string`)).toBe('"value"');
+    expect(await contender.get('nested')).toEqual({ nested: ['value', 42, true, null] });
+    expect(await owner.has('nested')).toBe(true);
+    expect((await owner.keys()).sort()).toEqual(['nested', 'string']);
+    await owner.delete('nested');
+    expect(await contender.get('nested')).toBeNull();
+    await owner.clear();
+    expect(await owner.keys()).toEqual([]);
+    expect(await owner.redisClient.get(outsideKey)).toBe('untouched');
   });
 
   it('expires values and hides them from inherited reads', async () => {
     await owner.set('temporary', { value: 42 }, { ttl: 40 });
     expect(await contender.get('temporary')).toEqual({ value: 42 });
-    await setTimeout(80);
-    expect(await contender.get('temporary')).toBeNull();
+    await expect.poll(() => contender.get('temporary')).toBeNull();
     expect(await contender.has('temporary')).toBe(false);
     expect(await contender.keys()).toEqual([]);
   });
@@ -79,17 +86,24 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
     expect(await owner.redisClient.pttl(`${keyPrefix}key`)).toBe(-1);
   });
 
-  it.each([undefined, 10_000])('allows one independent-client winner with ttl %s', async (ttl) => {
-    const results = await Promise.all(
-      Array.from({ length: 32 }, (_, index) =>
-        (index % 2 === 0 ? owner : contender).setIfAbsent('race', `token-${index}`, { ttl }),
-      ),
-    );
-    expect(results.filter(Boolean)).toHaveLength(1);
-    expect(await owner.get('race')).toBe(`token-${results.indexOf(true)}`);
-    if (ttl === undefined) expect(await owner.redisClient.pttl(`${keyPrefix}race`)).toBe(-1);
-    else expect(await owner.redisClient.pttl(`${keyPrefix}race`)).toBeGreaterThan(0);
-  });
+  it.each([
+    { ttl: undefined, minExpiry: -1, maxExpiry: -1 },
+    { ttl: 10_000, minExpiry: 1, maxExpiry: 10_000 },
+  ])(
+    'allows one independent-client winner with ttl $ttl',
+    async ({ ttl, minExpiry, maxExpiry }) => {
+      const results = await Promise.all(
+        Array.from({ length: 32 }, (_, index) =>
+          (index % 2 === 0 ? owner : contender).setIfAbsent('race', `token-${index}`, { ttl }),
+        ),
+      );
+      expect(results.filter(Boolean)).toHaveLength(1);
+      expect(await owner.get('race')).toBe(`token-${results.indexOf(true)}`);
+      const expiry = await owner.redisClient.pttl(`${keyPrefix}race`);
+      expect(expiry).toBeGreaterThanOrEqual(minExpiry);
+      expect(expiry).toBeLessThanOrEqual(maxExpiry);
+    },
+  );
 
   it('does not mutate an occupied key or its expiry when a claim fails', async () => {
     await owner.set('key', 'owner', { ttl: 10_000 });
@@ -103,7 +117,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
   it('reclaims expired keys without cleanup and rejects an expired owner', async () => {
     const lock = { key: 'key', token: 'old-owner' };
     expect(await owner.setIfAbsent(lock.key, lock.token, { ttl: 40 })).toBe(true);
-    await setTimeout(80);
+    await expect.poll(() => owner.redisClient.pttl(`${keyPrefix}key`)).toBe(-2);
     expect(await owner.extendLock(lock, 10_000)).toBe(false);
     expect(await owner.releaseLock(lock)).toBe(false);
     expect(await contender.setIfAbsent('key', 'new-owner', { ttl: 10_000 })).toBe(true);

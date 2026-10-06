@@ -811,8 +811,7 @@
     "TS2307": 1
   },
   "test/ui/next/elements/Nav/AccountMenu.spec.tsx": {
-    "TS2307": 2,
-    "TS7006": 1
+    "TS2307": 2
   },
   "test/ui/next/elements/Nav/AppSidebar.spec.tsx": {
     "TS2307": 2
@@ -821,9 +820,7 @@
     "TS2307": 1
   },
   "test/ui/next/elements/Nav/FrogBotNav.spec.tsx": {
-    "TS2307": 1,
-    "TS2352": 1,
-    "TS2540": 1
+    "TS2307": 1
   },
   "test/ui/next/elements/Nav/FrogBotNavClient.spec.tsx": {
     "TS2307": 1
@@ -841,8 +838,7 @@
     "TS2307": 1
   },
   "test/ui/next/elements/Nav/RecentsSection.spec.tsx": {
-    "TS2307": 2,
-    "TS7031": 1
+    "TS2307": 2
   },
   "test/ui/next/elements/Nav/renderNavIcon.spec.tsx": {
     "TS2307": 1
@@ -851,8 +847,7 @@
     "TS2307": 1
   },
   "test/ui/next/elements/StepNavReset.spec.tsx": {
-    "TS2307": 2,
-    "TS7031": 1
+    "TS2307": 2
   },
   "test/ui/next/elements/TabTitleSync.spec.tsx": {
     "TS2307": 1
@@ -861,38 +856,25 @@
     "TS2307": 2
   },
   "test/ui/next/fields/AI.spec.tsx": {
-    "TS18046": 2,
-    "TS2307": 1,
-    "TS2352": 2,
-    "TS2493": 1,
-    "TS7006": 1
+    "TS2307": 1
   },
   "test/ui/next/fields/AIBulk.spec.tsx": {
-    "TS2307": 1,
-    "TS2345": 1,
-    "TS7006": 3
+    "TS2307": 1
   },
   "test/ui/next/fields/ChannelCell.spec.tsx": {
     "TS2307": 1
   },
   "test/ui/next/fields/FieldCell.spec.tsx": {
-    "TS18046": 2,
-    "TS2307": 1,
-    "TS2339": 1,
-    "TS2352": 2
+    "TS2307": 1
   },
   "test/ui/next/fields/Money.spec.tsx": {
-    "TS2307": 1,
-    "TS2352": 1
+    "TS2307": 1
   },
   "test/ui/next/fields/SimpleKindCells.spec.tsx": {
     "TS2307": 1
   },
   "test/ui/next/fields/SimpleKindFields.spec.tsx": {
-    "TS18046": 1,
-    "TS2307": 1,
-    "TS2339": 1,
-    "TS2352": 1
+    "TS2307": 1
   },
   "test/ui/next/views/CollectionViewShell.spec.tsx": {
     "TS2307": 1
@@ -901,8 +883,7 @@
     "TS2307": 1
   },
   "test/ui/next/views/ViewControls.spec.tsx": {
-    "TS2307": 1,
-    "TS2769": 2
+    "TS2307": 1
   },
   "test/ui/plugin-api-keys/client/ApiKeysManager.spec.tsx": {
     "TS2307": 1
@@ -929,19 +910,16 @@
     "TS2307": 1
   },
   "test/ui/ui/chat/attachment-card.spec.tsx": {
-    "TS2307": 2,
-    "TS7006": 2
+    "TS2307": 2
   },
   "test/ui/ui/chat/attachment-parts.spec.tsx": {
     "TS2307": 1
   },
   "test/ui/ui/chat/audio-waveform.spec.tsx": {
-    "TS18046": 1,
     "TS2307": 1
   },
   "test/ui/ui/chat/channel-conversation.spec.tsx": {
-    "TS2307": 1,
-    "TS2322": 1
+    "TS2307": 1
   },
   "test/ui/ui/chat/chat-history.spec.tsx": {
     "TS2307": 2
@@ -950,7 +928,7 @@
     "TS2307": 2
   },
   "test/ui/ui/chat/chat.spec.tsx": {
-    "TS2307": 3,
+    "TS2307": 2,
     "TS2322": 3
   },
   "test/ui/ui/chat/code-block.spec.tsx": {
@@ -960,8 +938,7 @@
     "TS2307": 2
   },
   "test/ui/ui/chat/composer.spec.tsx": {
-    "TS2307": 2,
-    "TS7031": 2
+    "TS2307": 2
   },
   "test/ui/ui/chat/data-part.spec.tsx": {
     "TS2307": 1
@@ -977,12 +954,10 @@
     "TS2554": 1
   },
   "test/ui/ui/chat/markdown.spec.tsx": {
-    "TS18046": 1,
     "TS2307": 1
   },
   "test/ui/ui/chat/message-controls.spec.tsx": {
-    "TS2307": 1,
-    "TS7031": 1
+    "TS2307": 1
   },
   "test/ui/ui/chat/message-list.spec.tsx": {
     "TS2307": 1
@@ -997,8 +972,7 @@
     "TS2307": 1
   },
   "test/ui/ui/chat/mic-control.spec.tsx": {
-    "TS2307": 1,
-    "TS2352": 1
+    "TS2307": 1
   },
   "test/ui/ui/chat/model-selector.spec.tsx": {
     "TS2307": 2
@@ -1007,8 +981,7 @@
     "TS2307": 1
   },
   "test/ui/ui/chat/question-tool-render.spec.tsx": {
-    "TS2307": 1,
-    "TS7031": 1
+    "TS2307": 1
   },
   "test/ui/ui/chat/reasoning-part.spec.tsx": {
     "TS2307": 1
@@ -1020,10 +993,7 @@
     "TS2307": 2
   },
   "test/ui/ui/chat/renamed-slugs.spec.tsx": {
-    "TS2307": 1,
-    "TS2339": 1,
-    "TS2493": 1,
-    "TS2741": 1
+    "TS2307": 1
   },
   "test/ui/ui/chat/todo-tool-render.spec.tsx": {
     "TS2307": 1
@@ -1038,9 +1008,7 @@
     "TS2307": 1
   },
   "test/ui/ui/chat/use-transcription.spec.tsx": {
-    "TS2307": 1,
-    "TS2345": 1,
-    "TS7006": 1
+    "TS2307": 1
   },
   "test/ui/ui/components/as-child-links.spec.tsx": {
     "TS2307": 1
@@ -1076,8 +1044,7 @@
     "TS2307": 1
   },
   "test/ui/ui/icons/icons.spec.tsx": {
-    "TS2307": 1,
-    "TS2769": 3
+    "TS2307": 1
   },
   "test/ui/ui/icons/registry.spec.tsx": {
     "TS2307": 1
@@ -1088,48 +1055,22 @@
   "test/ui/ui/theme/provider.spec.tsx": {
     "TS2307": 2
   },
-  "test/unit/create-frogbot-app/cli.spec.ts": {
-    "TS2345": 3,
-    "TS2741": 1
-  },
-  "test/unit/create-frogbot-app/harness.spec.ts": {
-    "TS2345": 1,
-    "TS2741": 1
-  },
   "test/unit/create-frogbot-app/prompts.spec.ts": {
-    "TS2307": 1,
-    "TS7031": 2
-  },
-  "test/unit/create-frogbot-app/scaffold.spec.ts": {
-    "TS2345": 1
+    "TS2307": 1
   },
   "test/unit/db-d1-sqlite/jobs.spec.ts": {
-    "TS2722": 2,
     "TS2740": 1
   },
-  "test/unit/db-mongodb/index.spec.ts": {
-    "TS2307": 2
-  },
   "test/unit/db-mongodb/jobs.spec.ts": {
-    "TS2307": 7,
+    "TS2307": 1,
     "TS7006": 2,
     "TS7019": 3,
-    "TS7031": 10
-  },
-  "test/unit/db-mongodb/search.spec.ts": {
-    "TS2307": 12
+    "TS7031": 4
   },
   "test/unit/db-postgres/jobs.spec.ts": {
-    "TS2322": 1,
-    "TS2352": 1,
-    "TS2722": 1
+    "TS2322": 1
   },
   "test/unit/db-sqlite/jobs.spec.ts": {
-    "TS2322": 1,
-    "TS2339": 1,
-    "TS2352": 1,
-    "TS2558": 1,
-    "TS2722": 2,
     "TS2740": 1
   },
   "test/unit/eslint/clientImports.spec.ts": {
@@ -1211,9 +1152,6 @@
   "test/unit/graphql/exports.spec.ts": {
     "TS2307": 1
   },
-  "test/unit/jobs/resume-endpoints.spec.ts": {
-    "TS2353": 1
-  },
   "test/unit/live-preview-react/index.spec.ts": {
     "TS2307": 1
   },
@@ -1223,63 +1161,17 @@
   "test/unit/live-preview/index.spec.ts": {
     "TS2307": 1
   },
-  "test/unit/next/elements/Nav/buildNavModel.spec.ts": {
-    "TS18048": 1,
-    "TS2322": 1
-  },
-  "test/unit/next/exports/views.spec.ts": {
-    "TS2339": 2,
-    "TS2345": 1,
-    "TS7031": 1
-  },
-  "test/unit/next/fields/aiBulk.spec.ts": {
-    "TS2322": 2
-  },
-  "test/unit/next/utilities/brandImportMapErrors.spec.ts": {
-    "TS2322": 1
-  },
-  "test/unit/opencode/supervision.spec.ts": {
-    "TS5097": 1
-  },
-  "test/unit/piece-airtable/index.spec.ts": {
-    "TS2322": 2,
-    "TS2345": 2
-  },
-  "test/unit/piece-attio/index.spec.ts": {
-    "TS2339": 1
-  },
   "test/unit/piece-crypto/index.spec.ts": {
     "TS2307": 1
   },
   "test/unit/piece-csv/index.spec.ts": {
-    "TS2307": 1,
-    "TS2339": 2
+    "TS2307": 1
   },
   "test/unit/piece-discord/gatewayConfig.spec.ts": {
     "TS2322": 2
   },
-  "test/unit/piece-discord/index.spec.ts": {
-    "TS2322": 1,
-    "TS2339": 3,
-    "TS2345": 1
-  },
   "test/unit/piece-discord/ingress.spec.ts": {
     "TS2322": 2
-  },
-  "test/unit/piece-discord/questionHooks.spec.ts": {
-    "TS2345": 10,
-    "TS2493": 1
-  },
-  "test/unit/piece-discord/questions.spec.ts": {
-    "TS2345": 21
-  },
-  "test/unit/piece-dropbox/index.spec.ts": {
-    "TS18048": 1,
-    "TS2532": 1,
-    "TS2740": 24
-  },
-  "test/unit/piece-front/index.spec.ts": {
-    "TS18046": 1
   },
   "test/unit/piece-github/channelFlow.spec.ts": {
     "TS2741": 1
@@ -1292,160 +1184,60 @@
     "TS2322": 1,
     "TS2345": 1
   },
-  "test/unit/piece-github/index.spec.ts": {
-    "TS18046": 1,
-    "TS2322": 7,
-    "TS2339": 1,
-    "TS2345": 1,
-    "TS2740": 11
-  },
-  "test/unit/piece-gmail/index.spec.ts": {
-    "TS2339": 2
-  },
   "test/unit/piece-google-calendar/index.spec.ts": {
-    "TS2307": 1,
-    "TS2345": 2,
-    "TS2769": 1
+    "TS2307": 1
   },
   "test/unit/piece-google-drive/index.spec.ts": {
-    "TS2307": 1,
-    "TS2345": 1,
-    "TS7006": 1,
-    "TS7053": 1
-  },
-  "test/unit/piece-google-sheets/index.spec.ts": {
-    "TS2322": 2,
-    "TS2345": 1,
-    "TS2352": 3
+    "TS2307": 1
   },
   "test/unit/piece-google/index.spec.ts": {
-    "TS2322": 5
-  },
-  "test/unit/piece-graphql/index.spec.ts": {
-    "TS18048": 1
+    "TS2322": 4
   },
   "test/unit/piece-image-helper/index.spec.ts": {
     "TS2307": 2
   },
-  "test/unit/piece-linear/actionTransport.spec.ts": {
-    "TS2339": 2
-  },
   "test/unit/piece-linear/connections.spec.ts": {
-    "TS2322": 6,
+    "TS2322": 5,
     "TS2345": 1
   },
   "test/unit/piece-linear/index.spec.ts": {
     "TS2345": 1
   },
   "test/unit/piece-linear/webhook.spec.ts": {
-    "TS2322": 2,
-    "TS2345": 5,
-    "TS2722": 3
-  },
-  "test/unit/piece-math-helper/index.spec.ts": {
-    "TS2322": 1
+    "TS2345": 2
   },
   "test/unit/piece-microsoft-teams/activityIngress.spec.ts": {
     "TS2322": 1
   },
   "test/unit/piece-microsoft-teams/index.spec.ts": {
-    "TS2339": 4,
-    "TS2345": 2,
-    "TS2739": 5,
-    "TS2740": 28,
-    "TS2769": 1,
-    "TS7006": 1,
-    "TS7053": 1
+    "TS2345": 1
   },
   "test/unit/piece-microsoft-teams/ingress.spec.ts": {
     "TS2322": 2
   },
-  "test/unit/piece-monday/index.spec.ts": {
-    "TS18048": 4,
-    "TS2339": 8,
-    "TS2345": 2,
-    "TS2769": 1
-  },
   "test/unit/piece-notion/index.spec.ts": {
-    "TS2322": 2,
     "TS2345": 1
-  },
-  "test/unit/piece-pagerduty/index.spec.ts": {
-    "TS2339": 1,
-    "TS2722": 4
   },
   "test/unit/piece-pdf/index.spec.ts": {
     "TS2307": 1
   },
-  "test/unit/piece-resend/index.spec.ts": {
-    "TS2322": 1,
-    "TS2722": 1
-  },
   "test/unit/piece-slack/index.spec.ts": {
-    "TS2322": 9,
-    "TS2345": 9,
-    "TS2722": 2
-  },
-  "test/unit/piece-slack/questions.spec.ts": {
-    "TS2322": 5
-  },
-  "test/unit/piece-stripe/index.spec.ts": {
-    "TS7053": 1
+    "TS2345": 7
   },
   "test/unit/piece-telegram-bot/commands.spec.ts": {
-    "TS2339": 2,
     "TS2741": 1
   },
   "test/unit/piece-telegram-bot/index.spec.ts": {
-    "TS2322": 1,
-    "TS2345": 1,
-    "TS2698": 1,
-    "TS2722": 2
+    "TS2345": 1
   },
   "test/unit/piece-trello/index.spec.ts": {
-    "TS18046": 2,
-    "TS2339": 3,
     "TS2345": 1
-  },
-  "test/unit/piece-twilio/index.spec.ts": {
-    "TS2339": 2
   },
   "test/unit/piece-xero/index.spec.ts": {
-    "TS18048": 1,
-    "TS2322": 24,
-    "TS2339": 2,
-    "TS2345": 3,
-    "TS2722": 4,
-    "TS2740": 19
-  },
-  "test/unit/piece-zoom/index.spec.ts": {
-    "TS2339": 1
-  },
-  "test/unit/plugin-api-keys/collection.spec.ts": {
-    "TS2352": 2
-  },
-  "test/unit/plugin-api-keys/index.spec.ts": {
-    "TS2345": 1,
-    "TS2352": 11
-  },
-  "test/unit/plugin-api-keys/server/token.spec.ts": {
     "TS2345": 1
   },
-  "test/unit/plugin-audit-log/index.spec.ts": {
-    "TS2349": 1,
-    "TS2352": 1
-  },
-  "test/unit/plugin-capture/index.spec.ts": {
-    "TS2345": 14
-  },
-  "test/unit/plugin-import-export/index.spec.ts": {
-    "TS2322": 4,
-    "TS2345": 1,
-    "TS2741": 1
-  },
-  "test/unit/plugin-mcp/index.spec.ts": {
-    "TS2345": 2,
-    "TS2352": 2
+  "test/unit/plugin-api-keys/index.spec.ts": {
+    "TS2345": 1
   },
   "test/unit/plugin-roles/allow.test-d.ts": {
     "TS2578": 2,
@@ -1462,14 +1254,7 @@
     "TS2769": 10
   },
   "test/unit/plugin-seo/seoPlugin.spec.ts": {
-    "TS2322": 9
-  },
-  "test/unit/plugin-usage-reports/importExport.spec.ts": {
-    "TS2339": 1,
-    "TS2352": 1
-  },
-  "test/unit/plugin-usage-reports/index.spec.ts": {
-    "TS2339": 1
+    "TS2322": 7
   },
   "test/unit/richtext-lexical/blocksFeature.spec.ts": {
     "TS2307": 1
@@ -1480,9 +1265,6 @@
   },
   "test/unit/richtext-lexical/docs.spec.ts": {
     "TS2307": 1
-  },
-  "test/unit/richtext-lexical/lexicalHTMLField.spec.ts": {
-    "TS2339": 1
   },
   "test/unit/richtext-lexical/linkUploadFeatures.spec.ts": {
     "TS2307": 1
@@ -1561,44 +1343,8 @@
     "TS7016": 1,
     "TS7031": 2
   },
-  "test/unit/sdk/auth.spec.ts": {
-    "TS2322": 8
-  },
-  "test/unit/sdk/collections.spec.ts": {
-    "TS2322": 14,
-    "TS2353": 1,
-    "TS2769": 4
-  },
-  "test/unit/sdk/index.spec.ts": {
-    "TS2339": 10,
-    "TS2493": 9
-  },
-  "test/unit/sdk/search.spec.ts": {
-    "TS2322": 11
-  },
   "test/unit/ui/calendar.spec.ts": {
     "TS2307": 1
-  },
-  "test/unit/ui/chat/auth.spec.ts": {
-    "TS2339": 1,
-    "TS2493": 1
-  },
-  "test/unit/ui/chat/foundation-contracts.spec.ts": {
-    "TS2339": 1,
-    "TS2353": 2,
-    "TS2493": 1
-  },
-  "test/unit/ui/chat/transport.spec.ts": {
-    "TS2339": 6,
-    "TS2345": 7,
-    "TS2493": 6,
-    "TS2554": 1
-  },
-  "test/unit/ui/chat/use-chat.spec.ts": {
-    "TS2493": 2
-  },
-  "test/unit/ui/chat/use-chats.spec.ts": {
-    "TS2493": 1
   },
   "test/usage-logs/frogbot-types.ts": {
     "TS2717": 1

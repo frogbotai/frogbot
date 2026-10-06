@@ -28,7 +28,9 @@ describe('useChatDocument', () => {
   beforeEach(() => {
     request
       .mockReset()
-      .mockImplementation(async () => Response.json({ ...initialChat, title: 'Generated title' }));
+      .mockImplementation(() =>
+        Promise.resolve(Response.json({ ...initialChat, title: 'Generated title' })),
+      );
   });
 
   it('re-fetches the chat when a chat mutation is announced with revalidate', async () => {

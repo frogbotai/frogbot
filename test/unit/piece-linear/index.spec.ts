@@ -48,28 +48,32 @@ describe('linear', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (_url, init) => {
+      vi.fn((_url, init) => {
         const { query } = JSON.parse(init.body);
 
         if (query.includes('LinearAdapterViewerOrganization')) {
-          return Response.json({
-            data: {
-              viewer: {
-                id: 'app-user-id',
-                displayName: 'FrogBot',
-                organization: { id: 'organization-id' },
+          return Promise.resolve(
+            Response.json({
+              data: {
+                viewer: {
+                  id: 'app-user-id',
+                  displayName: 'FrogBot',
+                  organization: { id: 'organization-id' },
+                },
               },
-            },
-          });
+            }),
+          );
         }
 
         if (query.includes('user')) {
-          return Response.json({
-            data: { user: { id: 'user-id', name: 'Frog', email: 'frog@example.com' } },
-          });
+          return Promise.resolve(
+            Response.json({
+              data: { user: { id: 'user-id', name: 'Frog', email: 'frog@example.com' } },
+            }),
+          );
         }
 
-        throw new Error(`Unexpected Linear query: ${query}`);
+        return Promise.reject(new Error(`Unexpected Linear query: ${query}`));
       }),
     );
 

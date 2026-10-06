@@ -1,3 +1,4 @@
+import type { FrogBotRequest } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -68,8 +69,15 @@ function requestFixture(
   return requests;
 }
 
-function request() {
-  return {
+function requestFixtures() {
+  const findByID = vi.fn().mockResolvedValue({
+    id: 'source',
+    url: '/api/files/source/report.txt',
+    filename: 'report.txt',
+    mimeType: 'text/plain',
+  });
+  const create = vi.fn().mockResolvedValue({ id: 'saved', url: '/api/files/saved/report.txt' });
+  const req = {
     url: 'https://app.test/api',
     headers: new Headers({ authorization: 'Bearer local', cookie: 'session=private' }),
     user: null,
@@ -78,16 +86,17 @@ function request() {
         files: { slug: 'files' },
         _internal: { payloadConfig: Promise.resolve({ serverURL: 'https://app.test' }) },
       },
-      findByID: vi.fn().mockResolvedValue({
-        id: 'source',
-        url: '/api/files/source/report.txt',
-        filename: 'report.txt',
-        mimeType: 'text/plain',
-      }),
-      create: vi.fn().mockResolvedValue({ id: 'saved', url: '/api/files/saved/report.txt' }),
+      findByID,
+      create,
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: {} }) },
     },
-  };
+  } as unknown as FrogBotRequest;
+
+  return { req, findByID, create };
+}
+
+function request(): FrogBotRequest {
+  return requestFixtures().req;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -98,7 +107,7 @@ describe('native Dropbox contract', () => {
     const dropbox = createDropbox({ auth });
 
     expect(definition.actions.map((action) => action.slug)).toEqual(dropboxActions);
-    expect(definition.triggers.map((trigger) => trigger.slug)).toEqual(['newFolder']);
+    expect(definition.triggers?.map((trigger) => trigger.slug)).toEqual(['newFolder']);
     expect(pieceInstanceTools(dropbox)?.map((tool) => tool.slug)).toEqual(
       dropboxActions.map((slug) => `dropbox_${slug}`),
     );
@@ -164,7 +173,7 @@ describe('native Dropbox contract', () => {
       return json(file);
     });
     const dropbox = createDropbox({ auth });
-    const req = request();
+    const { req, findByID, create } = requestFixtures();
     const results = await Promise.all([
       dropbox.searchFiles({ req, input: { query: 'report' } }),
       dropbox.createTextFile({ req, input: { path: '/text.txt', text: 'text' } }),
@@ -190,10 +199,10 @@ describe('native Dropbox contract', () => {
     ]);
 
     expect(results).toHaveLength(14);
-    expect(req.frogbot.findByID).toHaveBeenCalledWith(
+    expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'files', overrideAccess: false, req }),
     );
-    expect(req.frogbot.create).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'files', overrideAccess: false, req }),
     );
     expect(requests.some(({ url }) => url.pathname.endsWith('/upload'))).toBe(true);
@@ -228,7 +237,7 @@ describe('Dropbox transport details', () => {
       ),
     );
     const dropbox = createDropbox({ auth });
-    const req = request();
+    const { req, create } = requestFixtures();
 
     await expect(dropbox.downloadFile({ req, input: { path: '/binary.dat' } })).resolves.toEqual({
       file: {
@@ -239,7 +248,7 @@ describe('Dropbox transport details', () => {
         url: '/api/files/saved/report.txt',
       },
     });
-    expect(req.frogbot.create).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'files',
         overrideAccess: false,
@@ -268,10 +277,9 @@ describe('Dropbox transport details', () => {
     const dropbox = createDropbox({ auth });
     const req = request();
     const client = await dropbox.client({ req });
-    const trigger = pieceFactoryDefinition(createDropbox).triggers[0];
+    const trigger = dropbox.triggers.newFolder;
 
-    if (!trigger || trigger.type !== 'polling') throw new Error('Expected polling trigger.');
-
+    expect(trigger.type).toBe('polling');
     await expect(dropbox.listFolder({ req, input: { path: '' } })).resolves.toEqual({
       entries: [file, folder],
       cursor: 'cursor-2',

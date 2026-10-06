@@ -153,7 +153,9 @@ describe('RecentsSection', () => {
     render(await RecentsSection(props()));
 
     expect(screen.getByRole('link', { name: 'Seed chat' })).not.toBeNull();
-    await act(async () => window.dispatchEvent(new Event('frogbot:chats:mutated')));
+    act(() => {
+      window.dispatchEvent(new Event('frogbot:chats:mutated'));
+    });
 
     expect(await screen.findByRole('link', { name: 'New chat' })).not.toBeNull();
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -212,7 +214,9 @@ describe('RecentsSection', () => {
     find.mockResolvedValueOnce({ docs: [] });
     render(await RecentsSection(props()));
 
-    await act(async () => window.dispatchEvent(new Event('focus')));
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
     await act(async () => vi.advanceTimersByTimeAsync(30_000));
 
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -259,10 +263,9 @@ describe('RecentsSection', () => {
     pathname = '/control/collections/conversations/today';
     const view = render(await RecentsSection(props()));
 
-    expect(screen.getAllByRole('heading').map(({ textContent }) => textContent)).toEqual([
-      'Today',
-      'Older',
-    ]);
+    expect(
+      screen.getAllByRole('heading').map(({ textContent }: HTMLElement) => textContent),
+    ).toEqual(['Today', 'Older']);
     expect(screen.getByRole('link', { name: 'Today chat' }).getAttribute('aria-current')).toBe(
       'page',
     );

@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import type { FrogBotRequest } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -39,6 +40,40 @@ function capture(): CaptureRecord {
     request: { messages: [{ role: 'user', content: 'hello' }] },
     response: { text: 'hi' },
   };
+}
+
+type CaptureHooks = ReturnType<typeof createCaptureHooks>;
+type HookBase = ReturnType<typeof hookBase>;
+type Completion =
+  { response: unknown } | { error: Error; failedPhase: 'beforeUpstream' | 'upstream' };
+
+function request(fields: {
+  user: Record<string, unknown>;
+  frogbot: Record<string, unknown>;
+}): FrogBotRequest {
+  return fields as unknown as FrogBotRequest;
+}
+
+function hookBase(requestId: string, req: FrogBotRequest) {
+  return {
+    requestId,
+    operation: 'responses' as const,
+    startedAt: Date.now(),
+    context: {} as Record<string, unknown>,
+    otel: {},
+    req,
+    user: req.user,
+  };
+}
+
+async function complete(hooks: CaptureHooks, base: HookBase, completion: Completion) {
+  const upstream = { ...base, model: 'gpt-5', provider: 'openai' };
+
+  if ('error' in completion) {
+    await hooks.afterError?.[0]?.({ ...upstream, phase: 'afterError', ...completion });
+  } else {
+    await hooks.afterUpstream?.[0]?.({ ...upstream, phase: 'afterUpstream', ...completion });
+  }
 }
 
 describe('capture blobs', () => {
@@ -80,20 +115,23 @@ describe('capture hooks', () => {
   it('captures success and error without storing headers', async () => {
     const blobs = new Map<string, Uint8Array>();
     const storage: CaptureStorage = {
-      put: vi.fn(async (key, bytes) => void blobs.set(key, bytes)),
-      get: vi.fn(async (key) => blobs.get(key)!),
-      delete: vi.fn(async () => undefined),
+      put: vi.fn((key, bytes) => {
+        blobs.set(key, bytes);
+        return Promise.resolve();
+      }),
+      get: vi.fn((key) => Promise.resolve(blobs.get(key)!)),
+      delete: vi.fn(() => Promise.resolve()),
       async *list() {},
     };
-    const create = vi.fn(async () => ({}));
+    const create = vi.fn(() => Promise.resolve({}));
     const logger = { error: vi.fn() };
-    const req = {
+    const req = request({
       user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
       frogbot: {
         create,
         logger,
       },
-    };
+    });
     const hooks = createCaptureHooks({
       enabled: true,
       sampleRate: 1,
@@ -101,17 +139,12 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage,
     });
-    for (const error of [undefined, new Error('upstream failed')]) {
-      const context: Record<string, unknown> = {};
-      const base = {
-        requestId: `request-${error ? 'error' : 'success'}`,
-        operation: 'responses' as const,
-        startedAt: Date.now(),
-        context,
-        otel: {},
-        req,
-        user: req.user,
-      };
+    const completions: [string, Completion][] = [
+      ['success', { response: { text: 'hi' } }],
+      ['error', { error: new Error('upstream failed'), failedPhase: 'beforeUpstream' }],
+    ];
+    for (const [outcome, completion] of completions) {
+      const base = hookBase(`request-${outcome}`, req);
       await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
       await hooks.beforeUpstream?.[0]?.({
         ...base,
@@ -122,24 +155,7 @@ describe('capture hooks', () => {
         headers: new Headers({ authorization: 'secret' }),
         providerOptions: {},
       });
-      if (error) {
-        await hooks.afterError?.[0]?.({
-          ...base,
-          phase: 'afterError',
-          failedPhase: 'beforeUpstream',
-          model: 'gpt-5',
-          provider: 'openai',
-          error,
-        });
-      } else {
-        await hooks.afterUpstream?.[0]?.({
-          ...base,
-          phase: 'afterUpstream',
-          model: 'gpt-5',
-          provider: 'openai',
-          response: { text: 'hi' },
-        });
-      }
+      await complete(hooks, base, completion);
     }
     await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(2));
     const records = await Promise.all([...blobs.values()].map(decodeCapture));
@@ -152,14 +168,12 @@ describe('capture hooks', () => {
   });
 
   it('is off by default, honors an API-key override, caps bodies, and isolates writes', async () => {
-    const put = vi.fn(async () => {
-      throw new Error('storage down');
-    });
+    const put = vi.fn(() => Promise.reject(new Error('storage down')));
     const logger = { error: vi.fn() };
-    const req = {
+    const req = request({
       user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
       frogbot: { create: vi.fn(), logger },
-    };
+    });
     const hooks = createCaptureHooks({
       enabled: false,
       sampleRate: 1,
@@ -167,15 +181,7 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} },
     });
-    const base = {
-      requestId: 'request-1',
-      operation: 'responses' as const,
-      startedAt: Date.now(),
-      context: {} as Record<string, unknown>,
-      otel: {},
-      req,
-      user: req.user,
-    };
+    const base = hookBase('request-1', req);
     await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
     await hooks.beforeUpstream?.[0]?.({
       ...base,
@@ -203,16 +209,19 @@ describe('capture hooks', () => {
   ])('%s', async (_name, strategy, apiKey) => {
     const blobs = new Map<string, Uint8Array>();
     const storage: CaptureStorage = {
-      put: vi.fn(async (key, bytes) => void blobs.set(key, bytes)),
-      get: vi.fn(async (key) => blobs.get(key)!),
-      delete: vi.fn(async () => undefined),
+      put: vi.fn((key, bytes) => {
+        blobs.set(key, bytes);
+        return Promise.resolve();
+      }),
+      get: vi.fn((key) => Promise.resolve(blobs.get(key)!)),
+      delete: vi.fn(() => Promise.resolve()),
       async *list() {},
     };
-    const create = vi.fn(async (_args: { data: Record<string, unknown> }) => ({}));
-    const req = {
+    const create = vi.fn((_args: { data: Record<string, unknown> }) => Promise.resolve({}));
+    const req = request({
       user: { id: 'user-1', _strategy: strategy, apiKeyId: 3, capture: true },
       frogbot: { create, logger: { error: vi.fn() } },
-    };
+    });
     const hooks = createCaptureHooks({
       enabled: true,
       sampleRate: 1,
@@ -220,15 +229,7 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage,
     });
-    const base = {
-      requestId: 'request-key',
-      operation: 'responses' as const,
-      startedAt: Date.now(),
-      context: {} as Record<string, unknown>,
-      otel: {},
-      req,
-      user: req.user,
-    };
+    const base = hookBase('request-key', req);
 
     await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
     await hooks.beforeUpstream?.[0]?.({
@@ -255,17 +256,17 @@ describe('capture hooks', () => {
     expect(record?.apiKey).toBe(apiKey);
   });
 
-  it.each([
+  it.each<[string, Completion]>([
     ['response', { response: { text: 'x'.repeat(2_000) } }],
-    ['error', { error: new Error('x'.repeat(2_000)), failedPhase: 'upstream' as const }],
+    ['error', { error: new Error('x'.repeat(2_000)), failedPhase: 'upstream' }],
   ])('rejects an oversized %s without writing either half', async (_name, completion) => {
     const put = vi.fn();
     const create = vi.fn();
     const logger = { error: vi.fn() };
-    const req = {
+    const req = request({
       user: { id: 'user-1', capture: true },
       frogbot: { create, logger },
-    };
+    });
     const hooks = createCaptureHooks({
       enabled: false,
       sampleRate: 1,
@@ -273,15 +274,7 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} },
     });
-    const base = {
-      requestId: 'request-large',
-      operation: 'responses' as const,
-      startedAt: Date.now(),
-      context: {} as Record<string, unknown>,
-      otel: {},
-      req,
-      user: req.user,
-    };
+    const base = hookBase('request-large', req);
     await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
     await hooks.beforeUpstream?.[0]?.({
       ...base,
@@ -292,23 +285,7 @@ describe('capture hooks', () => {
       headers: new Headers(),
       providerOptions: {},
     });
-    if ('error' in completion) {
-      await hooks.afterError?.[0]?.({
-        ...base,
-        phase: 'afterError',
-        model: 'gpt-5',
-        provider: 'openai',
-        ...completion,
-      });
-    } else {
-      await hooks.afterUpstream?.[0]?.({
-        ...base,
-        phase: 'afterUpstream',
-        model: 'gpt-5',
-        provider: 'openai',
-        ...completion,
-      });
-    }
+    await complete(hooks, base, completion);
     await vi.waitFor(() => expect(logger.error).toHaveBeenCalledOnce());
     expect(put).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();

@@ -1,3 +1,4 @@
+import type { FrogBotRequest } from 'frogbot/pieces';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -6,6 +7,7 @@ import {
   pieceActionDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { sendSms } from '../../../packages/pieces/piece-twilio/src/actions.js';
 import { createTwilioClient } from '../../../packages/pieces/piece-twilio/src/client.js';
 import {
   createTwilio,
@@ -14,14 +16,20 @@ import {
 } from '../../../packages/pieces/piece-twilio/src/index.js';
 
 const auth = { username: 'AC_test', password: 'token' };
-const req = {
-  frogbot: {
-    config: { files: { slug: 'files' } },
-    connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
-    create: vi.fn().mockResolvedValue({ id: 'file-1', url: '/files/RE1.wav' }),
-  },
-  user: null,
-} as never;
+const create = vi.fn().mockResolvedValue({ id: 'file-1', url: '/files/RE1.wav' });
+
+function request(): FrogBotRequest {
+  return {
+    frogbot: {
+      config: { files: { slug: 'files' } },
+      connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
+      create,
+    },
+    user: null,
+  } as unknown as FrogBotRequest;
+}
+
+const req = request();
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -75,7 +83,7 @@ describe('twilio', () => {
   it('maps lookup, call, message, and custom requests exactly', async () => {
     const fetch = vi
       .fn()
-      .mockImplementation(async () => json({ sid: 'CA1', phone_number: '+15550002' }));
+      .mockImplementation(() => Promise.resolve(json({ sid: 'CA1', phone_number: '+15550002' })));
 
     vi.stubGlobal('fetch', fetch);
 
@@ -139,7 +147,7 @@ describe('twilio', () => {
       mimeType: 'audio/wav',
       url: '/files/RE1.wav',
     });
-    expect(req.frogbot.create).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'files',
         file: expect.objectContaining({ name: 'RE1.wav', mimetype: 'audio/wav', size: 3 }),
@@ -160,12 +168,12 @@ describe('twilio', () => {
     );
 
     const piece = createTwilio({ auth });
-    const definition = pieceActionDefinition(piece.sendSms)!;
     const client = await piece.client({ req });
 
-    await expect(
-      definition.options?.from?.({ input: {}, client, options: {}, req }),
-    ).resolves.toEqual([{ label: 'Support', value: '+15550001' }]);
+    expect(pieceActionDefinition(piece.sendSms)).toBe(sendSms);
+    await expect(sendSms.options?.from?.({ input: {}, client, options: {}, req })).resolves.toEqual(
+      [{ label: 'Support', value: '+15550001' }],
+    );
   });
 
   it('keeps Twilio API errors useful', async () => {
@@ -209,13 +217,15 @@ describe('twilio', () => {
 
   it('establishes a polling baseline and orders timestamp ties by SID', async () => {
     const date = '2026-01-02T00:00:00Z';
-    const fetch = vi.fn().mockImplementation(async () =>
-      json({
-        calls: [
-          { sid: 'CA2', status: 'completed', date_created: date },
-          { sid: 'CA1', status: 'completed', date_created: date },
-        ],
-      }),
+    const fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        json({
+          calls: [
+            { sid: 'CA2', status: 'completed', date_created: date },
+            { sid: 'CA1', status: 'completed', date_created: date },
+          ],
+        }),
+      ),
     );
 
     vi.stubGlobal('fetch', fetch);

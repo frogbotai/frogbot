@@ -142,7 +142,7 @@ describe('firmware icons', () => {
 
   it('renders every exported icon', () => {
     for (const name of [...iconNames, 'CheckIcon', 'MenuIcon', 'SquareIcon', 'StarIcon'] as const) {
-      const component = icons[name as keyof typeof icons];
+      const component = icons[name];
       const { container, unmount } = render(createElement(component));
       expect(container.querySelector('svg')).not.toBeNull();
       unmount();
@@ -150,13 +150,13 @@ describe('firmware icons', () => {
   });
 
   it('renders both structural outliers', () => {
-    const gemini = render(createElement(icons['GoogleGeminiIcon' as keyof typeof icons]));
+    const gemini = render(createElement(icons.GoogleGeminiIcon));
     expect(gemini.container.querySelector('defs')).not.toBeNull();
     expect(gemini.container.querySelector('radialGradient')).not.toBeNull();
     expect(gemini.container.querySelector('clipPath')).not.toBeNull();
     gemini.unmount();
 
-    const invalid = render(createElement(icons['InvalidStepIcon' as keyof typeof icons]));
+    const invalid = render(createElement(icons.InvalidStepIcon));
     expect(invalid.container.querySelector('svg')).not.toBeNull();
   });
 

@@ -9,14 +9,14 @@ describe('message controls', () => {
     render(<MessageActions text="Answer" onRegenerate={() => {}} onEdit={() => {}} />);
 
     expect(screen.getByLabelText('Message actions').className).toBe('fb-message-actions');
-    expect(screen.getAllByRole('button').map(({ className }) => className)).toEqual([
+    expect(screen.getAllByRole('button').map(({ className }: HTMLElement) => className)).toEqual([
       'fb-message-actions__button fb-slide-up-1',
       'fb-message-actions__button fb-slide-up-1',
       'fb-message-actions__button fb-slide-up-1',
     ]);
   });
 
-  it('delegates copy, regenerate, and edit actions', async () => {
+  it('delegates copy, regenerate, and edit actions', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     const regenerate = vi.fn();

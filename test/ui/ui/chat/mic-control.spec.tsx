@@ -30,7 +30,7 @@ describe('MicControl', () => {
     transcribe: Response,
     capability: { model: string } | false = { model: 'whisper-1' },
   ) {
-    const fetch = vi.fn((input: RequestInfo | URL) =>
+    const fetch = vi.fn((input: RequestInfo | URL, _init?: RequestInit) =>
       Promise.resolve(
         String(input).endsWith('/frogbot')
           ? Response.json({

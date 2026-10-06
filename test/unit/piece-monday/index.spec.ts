@@ -1,3 +1,4 @@
+import type { FrogBotRequest as PieceRequest } from 'frogbot/pieces';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -7,12 +8,18 @@ import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import {
+  createItem,
+  uploadFileToColumn,
+} from '../../../packages/pieces/piece-monday/src/actions.js';
 import { createMondayClient } from '../../../packages/pieces/piece-monday/src/client.js';
 import {
   createMonday,
   mondayActionNames,
   mondayTriggerNames,
 } from '../../../packages/pieces/piece-monday/src/index.js';
+import { columnUpdated, itemCreated } from '../../../packages/pieces/piece-monday/src/triggers.js';
 
 const auth = { apiToken: 'monday-test-token' };
 const fetchMock = vi.fn<typeof fetch>();
@@ -21,7 +28,7 @@ function response(data: unknown, status = 200) {
   return Response.json(data, { status });
 }
 
-function request(data?: unknown, signal?: AbortSignal) {
+function requestFixture(data?: unknown, signal?: AbortSignal) {
   const key = {};
 
   return {
@@ -29,7 +36,15 @@ function request(data?: unknown, signal?: AbortSignal) {
     signal,
     frogbot: { connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key }) } },
     user: null,
-  } as never;
+  };
+}
+
+function request(data?: unknown, signal?: AbortSignal): PieceRequest {
+  return requestFixture(data, signal) as unknown as PieceRequest;
+}
+
+function coreRequest(data?: unknown): FrogBotRequest {
+  return requestFixture(data) as unknown as FrogBotRequest;
 }
 
 async function fixture() {
@@ -45,6 +60,59 @@ function body(call = fetchMock.mock.calls.at(-1)) {
     query: string;
     variables: Record<string, unknown>;
   };
+}
+
+function remainingActionResponse(init: RequestInit | undefined): Response {
+  const payload = JSON.parse(String(init?.body)) as {
+    query: string;
+    variables: Record<string, unknown>;
+  };
+
+  if (payload.query.includes('groups {')) {
+    return response({
+      data: {
+        boards: [
+          {
+            groups: [],
+            columns: [{ id: 'text', title: 'Text', type: 'text' }],
+            items_page: { items: [] },
+          },
+        ],
+      },
+    });
+  }
+  if (payload.query.includes('create_group')) {
+    return response({ data: { create_group: { id: 'group-1' } } });
+  }
+  if (payload.query.includes('create_item')) {
+    return response({ data: { create_item: { id: 'item-1' } } });
+  }
+  if (payload.query.includes('create_update')) {
+    return response({ data: { create_update: { id: 'update-1' } } });
+  }
+  if (payload.query.includes('items_page(query_params')) {
+    return response({
+      data: {
+        boards: [
+          {
+            items_page: {
+              items: [
+                {
+                  id: 'item-1',
+                  name: 'Original',
+                  column_values: [{ id: 'text', type: 'text', value: '"Value"' }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  return response({
+    data: { change_multiple_column_values: { id: 'item-1', name: 'Renamed' } },
+  });
 }
 
 beforeEach(() => {
@@ -63,7 +131,7 @@ describe('native Monday', () => {
       mondayActionNames.map((name) => `monday_${name}`),
     );
     expect(Object.keys(piece.triggers)).toEqual(mondayTriggerNames);
-    expect(z.toJSONSchema(definition.auth)).toMatchObject({
+    expect(z.toJSONSchema(definition.auth!)).toMatchObject({
       properties: { apiToken: { secret: true } },
       required: ['apiToken'],
     });
@@ -74,7 +142,7 @@ describe('native Monday', () => {
       expect(action.output).toBeDefined();
     }
 
-    for (const trigger of definition.triggers) expect(trigger.output).toBeDefined();
+    for (const trigger of definition.triggers!) expect(trigger.output).toBeDefined();
   });
 
   it('maps create, update, and read operations through authenticated GraphQL', async () => {
@@ -163,58 +231,7 @@ describe('native Monday', () => {
   });
 
   it('executes every remaining action with exact provider results', async () => {
-    fetchMock.mockImplementation(async (_url, init) => {
-      const request = JSON.parse(String(init?.body)) as {
-        query: string;
-        variables: Record<string, unknown>;
-      };
-
-      if (request.query.includes('groups {')) {
-        return response({
-          data: {
-            boards: [
-              {
-                groups: [],
-                columns: [{ id: 'text', title: 'Text', type: 'text' }],
-                items_page: { items: [] },
-              },
-            ],
-          },
-        });
-      }
-      if (request.query.includes('create_group')) {
-        return response({ data: { create_group: { id: 'group-1' } } });
-      }
-      if (request.query.includes('create_item')) {
-        return response({ data: { create_item: { id: 'item-1' } } });
-      }
-      if (request.query.includes('create_update')) {
-        return response({ data: { create_update: { id: 'update-1' } } });
-      }
-      if (request.query.includes('items_page(query_params')) {
-        return response({
-          data: {
-            boards: [
-              {
-                items_page: {
-                  items: [
-                    {
-                      id: 'item-1',
-                      name: 'Original',
-                      column_values: [{ id: 'text', type: 'text', value: '"Value"' }],
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        });
-      }
-
-      return response({
-        data: { change_multiple_column_values: { id: 'item-1', name: 'Renamed' } },
-      });
-    });
+    fetchMock.mockImplementation((_url, init) => Promise.resolve(remainingActionResponse(init)));
     const { monday, req } = await fixture();
 
     await expect(
@@ -273,11 +290,12 @@ describe('native Monday', () => {
         ],
       },
     };
-    fetchMock.mockImplementation(async () => response(details));
+    fetchMock.mockImplementation(() => Promise.resolve(response(details)));
     const { client, req } = await fixture();
     const definition = pieceFactoryDefinition(createMonday);
-    const createItem = definition.actions.find((action) => action.slug === 'createItem')!;
-    const upload = definition.actions.find((action) => action.slug === 'uploadFileToColumn')!;
+    const upload = uploadFileToColumn;
+
+    expect(definition.actions).toEqual(expect.arrayContaining([createItem, uploadFileToColumn]));
 
     fetchMock.mockResolvedValueOnce(
       response({ data: { workspaces: [{ id: 'workspace-1', name: 'Workspace' }] } }),
@@ -346,8 +364,8 @@ describe('native Monday', () => {
     const definition = pieceFactoryDefinition(createMonday);
     const client = createMondayClient({ auth });
     const req = request();
-    const itemCreated = definition.triggers.find((trigger) => trigger.slug === 'itemCreated')!;
-    const columnUpdated = definition.triggers.find((trigger) => trigger.slug === 'columnUpdated')!;
+
+    expect(definition.triggers).toEqual(expect.arrayContaining([itemCreated, columnUpdated]));
 
     expect('options' in itemCreated).toBe(false);
     expect('options' in columnUpdated).toBe(false);
@@ -400,22 +418,21 @@ describe('native Monday', () => {
         client,
         options: {},
         req: request({ event: { pulseId: 1 } }),
+        state: { webhookId: 'hook-2' },
       }),
     ).resolves.toEqual([{ dedupeKey: expect.any(String), data: { event: { pulseId: 1 } } }]);
     const handshake = await definition.webhook?.handshake?.({
-      req: request({ challenge: 'challenge-token' }),
+      req: coreRequest({ challenge: 'challenge-token' }),
       options: {},
     });
     expect(await handshake?.json()).toEqual({ challenge: 'challenge-token' });
     await expect(
-      definition.webhook?.handshake?.({ req: request({ event: {} }), options: {} }),
+      definition.webhook?.handshake?.({ req: coreRequest({ event: {} }), options: {} }),
     ).resolves.toBeNull();
   });
 
   it('delivers the original item event when enrichment is unavailable', async () => {
     fetchMock.mockResolvedValueOnce(response({ errors: [{ message: 'Item is not visible' }] }));
-    const definition = pieceFactoryDefinition(createMonday);
-    const itemCreated = definition.triggers.find((trigger) => trigger.slug === 'itemCreated')!;
     const delivery = { event: { boardId: 1, pulseId: 2 } };
 
     await expect(
@@ -424,6 +441,7 @@ describe('native Monday', () => {
         client: createMondayClient({ auth }),
         options: {},
         req: request(delivery),
+        state: { webhookId: 'hook-1' },
       }),
     ).resolves.toEqual([{ dedupeKey: expect.any(String), data: delivery }]);
   });

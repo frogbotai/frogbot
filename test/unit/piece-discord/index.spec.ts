@@ -4,14 +4,23 @@ import { readFile } from 'node:fs/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+vi.mock(
+  'frogbot/pieces/test',
+  () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
+);
 
-import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
+import type { FrogBotRequest } from 'frogbot';
+import { pieceConformance } from 'frogbot/pieces/test';
+
 import {
-  pieceActionDefinition,
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import {
+  addRoleToMember,
+  sendMessage,
+} from '../../../packages/pieces/piece-discord/src/actions.js';
+import { discordOptions } from '../../../packages/pieces/piece-discord/src/config.js';
 import {
   createDiscord,
   discordActions,
@@ -36,6 +45,20 @@ function json(value: unknown, status = 200) {
 
 function empty(status = 204) {
   return new Response(null, { status });
+}
+
+function discordPiece() {
+  return createDiscord({ auth: { botToken: 'discord_test_token' } });
+}
+
+function appTrigger(event: string) {
+  const trigger = pieceFactoryDefinition(createDiscord).triggers?.find(
+    (candidate) => candidate.slug === event,
+  );
+
+  if (!trigger || trigger.type !== 'app') throw new Error(`Missing Discord trigger '${event}'.`);
+
+  return trigger;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -63,7 +86,7 @@ describe('discord', () => {
       channel: {
         adapter: { name: 'discord' },
         identity: {
-          author: { userId: '42', userName: 'frog' },
+          author: { userId: '42', userName: 'frog', fullName: 'Frog', isBot: false, isMe: false },
           req: {} as FrogBotRequest,
           expect: null,
         },
@@ -225,11 +248,7 @@ describe('discord', () => {
 
     expect(definition.webhook?.parse?.({ req: { data: { type } } as never })).toEqual({ event });
 
-    const trigger = definition.triggers?.find((candidate) => candidate.slug === event);
-
-    if (!trigger || trigger.type !== 'app') throw new Error(`Missing Discord trigger '${event}'.`);
-
-    const events = await trigger.run({
+    const events = await appTrigger(event).run({
       client: {},
       input: {},
       options: {},
@@ -245,14 +264,8 @@ describe('discord', () => {
   });
 
   it.each(discordTriggers)('filters %s deliveries without a stable platform key', async (event) => {
-    const trigger = pieceFactoryDefinition(createDiscord).triggers?.find(
-      (candidate) => candidate.slug === event,
-    );
-
-    if (!trigger || trigger.type !== 'app') throw new Error(`Missing Discord trigger '${event}'.`);
-
     await expect(
-      trigger.run({
+      appTrigger(event).run({
         client: {},
         input: {},
         options: {},
@@ -271,28 +284,67 @@ describe('discord', () => {
   });
 
   it.each([
-    [
-      'addRoleToMember',
-      { guildId: 'g', userId: 'u', roleId: 'r' },
-      'PUT',
-      '/guilds/g/members/u/roles/r',
-    ],
-    [
-      'removeRoleFromMember',
-      { guildId: 'g', userId: 'u', roleId: 'r' },
-      'DELETE',
-      '/guilds/g/members/u/roles/r',
-    ],
-    ['removeMember', { guildId: 'g', userId: 'u' }, 'DELETE', '/guilds/g/members/u'],
-    ['unbanMember', { guildId: 'g', userId: 'u', reason: 'appeal' }, 'DELETE', '/guilds/g/bans/u'],
-    ['banMember', { guildId: 'g', userId: 'u', reason: 'spam' }, 'PUT', '/guilds/g/bans/u'],
-    ['deleteRole', { guildId: 'g', roleId: 'r', reason: 'unused' }, 'DELETE', '/guilds/g/roles/r'],
-  ] as const)('maps %s to the Discord endpoint', async (slug, input, method, path) => {
+    {
+      slug: 'addRoleToMember',
+      call: () =>
+        discordPiece().addRoleToMember({
+          input: { guildId: 'g', userId: 'u', roleId: 'r' },
+          req: req(),
+        }),
+      method: 'PUT',
+      path: '/guilds/g/members/u/roles/r',
+    },
+    {
+      slug: 'removeRoleFromMember',
+      call: () =>
+        discordPiece().removeRoleFromMember({
+          input: { guildId: 'g', userId: 'u', roleId: 'r' },
+          req: req(),
+        }),
+      method: 'DELETE',
+      path: '/guilds/g/members/u/roles/r',
+    },
+    {
+      slug: 'removeMember',
+      call: () => discordPiece().removeMember({ input: { guildId: 'g', userId: 'u' }, req: req() }),
+      method: 'DELETE',
+      path: '/guilds/g/members/u',
+    },
+    {
+      slug: 'unbanMember',
+      call: () =>
+        discordPiece().unbanMember({
+          input: { guildId: 'g', userId: 'u', reason: 'appeal' },
+          req: req(),
+        }),
+      method: 'DELETE',
+      path: '/guilds/g/bans/u',
+    },
+    {
+      slug: 'banMember',
+      call: () =>
+        discordPiece().banMember({
+          input: { guildId: 'g', userId: 'u', reason: 'spam' },
+          req: req(),
+        }),
+      method: 'PUT',
+      path: '/guilds/g/bans/u',
+    },
+    {
+      slug: 'deleteRole',
+      call: () =>
+        discordPiece().deleteRole({
+          input: { guildId: 'g', roleId: 'r', reason: 'unused' },
+          req: req(),
+        }),
+      method: 'DELETE',
+      path: '/guilds/g/roles/r',
+    },
+  ])('maps $slug to the Discord endpoint', async ({ call, method, path }) => {
     const fetch = vi.fn().mockResolvedValue(empty());
     vi.stubGlobal('fetch', fetch);
 
-    const discord = createDiscord({ auth: { botToken: 'discord_test_token' } });
-    await discord[slug]({ input, req: req() });
+    await call();
 
     expect(fetch).toHaveBeenCalledWith(
       `https://discord.com/api/v10${path}`,
@@ -304,7 +356,7 @@ describe('discord', () => {
   });
 
   it('maps message, webhook, channel, member, and role actions', async () => {
-    const fetch = vi.fn().mockImplementation(async (url: string, init: RequestInit) => {
+    const respond = (url: string, init: RequestInit) => {
       const path = new URL(url).pathname;
 
       if (path.endsWith('/members')) return json([{ user: { id: 'u', username: 'Frog' } }]);
@@ -316,7 +368,10 @@ describe('discord', () => {
       if (path.endsWith('/webhooks/1')) return empty();
 
       return json({ id: 'c', name: 'renamed', content: 'sent' });
-    });
+    };
+    const fetch = vi
+      .fn()
+      .mockImplementation((url: string, init: RequestInit) => Promise.resolve(respond(url, init)));
     vi.stubGlobal('fetch', fetch);
 
     const discord = createDiscord({ auth: { botToken: 'discord_test_token' } });
@@ -419,19 +474,17 @@ describe('discord', () => {
       .mockResolvedValueOnce(json([{ id: 'r', name: 'Role' }]));
     vi.stubGlobal('fetch', fetch);
 
-    const discord = createDiscord({ auth: { botToken: 'discord_test_token' } });
-    const client = await discord.client({ req: req() });
-    const addRole = pieceActionDefinition(discord.addRoleToMember)!;
-    const send = pieceActionDefinition(discord.sendMessage)!;
+    const client = await discordPiece().client({ req: req() });
+    const options = discordOptions.parse({});
 
     await expect(
-      addRole.options?.guildId?.({ input: {}, client, options: {}, req: req() }),
+      addRoleToMember.options?.guildId?.({ input: {}, client, options, req: req() }),
     ).resolves.toEqual([{ label: 'Guild', value: 'g' }]);
     await expect(
-      send.options?.channelId?.({ input: {}, client, options: {}, req: req() }),
+      sendMessage.options?.channelId?.({ input: {}, client, options, req: req() }),
     ).resolves.toEqual([{ label: 'Channel', value: 'c' }]);
     await expect(
-      addRole.options?.roleId?.({ input: { guildId: 'g' }, client, options: {}, req: req() }),
+      addRoleToMember.options?.roleId?.({ input: { guildId: 'g' }, client, options, req: req() }),
     ).resolves.toEqual([{ label: 'Role', value: 'r' }]);
   });
 

@@ -1,6 +1,6 @@
 import { PayloadSDK } from '@payloadcms/sdk';
 
-import { createFrogBotSDK } from '../../../packages/sdk/src/index';
+import { createFrogBotSDK, type UntypedFrogBotSDKTypes } from '../../../packages/sdk/src/index';
 
 export const baseURL = 'https://frogbot.example/api';
 
@@ -55,7 +55,7 @@ export function createClients(respond: ResponseFactory = () => Response.json({ d
   const frogbotRequests: RecordedRequest[] = [];
   const payloadRequests: RecordedRequest[] = [];
 
-  const frogbot = createFrogBotSDK({
+  const frogbot = createFrogBotSDK<UntypedFrogBotSDKTypes>({
     baseURL,
     fetch: recordingFetch({ requests: frogbotRequests, respond }),
   });

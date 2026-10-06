@@ -37,7 +37,7 @@ describe('AttachmentCard', () => {
     expect(
       within(card)
         .getAllByRole('button')
-        .map((button) => button.getAttribute('aria-label')),
+        .map((button: HTMLElement) => button.getAttribute('aria-label')),
     ).toEqual(['Remove report.pdf']);
   });
 
@@ -145,7 +145,7 @@ describe('AttachmentCard', () => {
     expect(
       within(card)
         .getAllByRole('button')
-        .map((button) => button.getAttribute('aria-label')),
+        .map((button: HTMLElement) => button.getAttribute('aria-label')),
     ).toEqual(['Retry uploading notes.md', 'Remove notes.md']);
   });
 

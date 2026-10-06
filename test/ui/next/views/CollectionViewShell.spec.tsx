@@ -1,11 +1,11 @@
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  pathname: '/admin/collections/tasks/board',
-  plural: { tasks: 'Tasks', notes: 'Notes' } as Record<string, string>,
-  setStepNav: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const plural: Record<string, string> = { tasks: 'Tasks', notes: 'Notes' };
+
+  return { pathname: '/admin/collections/tasks/board', plural, setStepNav: vi.fn() };
+});
 
 vi.mock('@payloadcms/ui', () => ({
   ListHeader: () => null,

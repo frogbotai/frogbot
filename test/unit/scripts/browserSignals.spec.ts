@@ -47,15 +47,6 @@ function portOpen(port: number) {
   });
 }
 
-async function until(check: () => Promise<boolean>, timeout = 15_000) {
-  const deadline = Date.now() + timeout;
-
-  while (!(await check())) {
-    if (Date.now() > deadline) throw new Error('timed out');
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-}
-
 function fixture(port: number, stop: boolean) {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'frogbot-signals-'));
   const server = `require('node:http').createServer((q, s) => s.end('ok')).listen(${port})`;
@@ -95,7 +86,7 @@ async function runAndTerminate(stop: boolean) {
   const exited = new Promise((resolve) => child.once('exit', resolve));
 
   groups.push(child.pid!);
-  await until(() => portOpen(port));
+  await expect.poll(() => portOpen(port), { timeout: 15_000 }).toBe(true);
   process.kill(-child.pid!, 'SIGTERM');
   await exited;
 
@@ -106,8 +97,6 @@ describe('stopServersOnSignal', () => {
   it('a SIGTERM to the Playwright run stops its web servers', async () => {
     const port = await runAndTerminate(true);
 
-    await until(async () => !(await portOpen(port)), 5_000);
-
-    expect(await portOpen(port)).toBe(false);
+    await expect.poll(() => portOpen(port), { timeout: 5_000 }).toBe(false);
   }, 30_000);
 });

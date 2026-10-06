@@ -8,6 +8,10 @@ import { run, subprocessEnvironment } from '../../e2e/fixtures/create-frogbot-ap
 
 let root: string;
 
+function processEnv(values: Record<string, string>): NodeJS.ProcessEnv {
+  return values as NodeJS.ProcessEnv;
+}
+
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-environment-'));
 
@@ -72,14 +76,14 @@ describe('generated app subprocess environment', () => {
   ])('retains the intentional database selection %s', (databaseUrl) => {
     const result = run(process.execPath, ['-e', 'console.log(process.env.DATABASE_URL)'], {
       cwd: root,
-      env: { DATABASE_URL: databaseUrl },
+      env: processEnv({ DATABASE_URL: databaseUrl }),
     });
 
     expect(result.status, result.output).toBe(0);
     expect(result.output.trim()).toBe(databaseUrl);
-    expect(subprocessEnvironment(root, { DATABASE_URL: databaseUrl }).DATABASE_URL).toBe(
-      databaseUrl,
-    );
+    expect(
+      subprocessEnvironment(root, processEnv({ DATABASE_URL: databaseUrl })).DATABASE_URL,
+    ).toBe(databaseUrl);
   });
 
   it('uses different database files for different generated apps', () => {

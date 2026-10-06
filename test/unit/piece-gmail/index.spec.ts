@@ -51,7 +51,7 @@ function response(data: unknown, config: unknown) {
 async function fixture(request = req) {
   const gmail = createGmail({ auth });
   const client = await gmail.client({ req: request });
-  const transport = vi.fn(async (config: any) => {
+  const route = (config: any) => {
     const url = String(config.url);
     if (url.endsWith('/profile')) return response({ emailAddress: 'user@example.com' }, config);
     if (url.includes('/messages/original/attachments/attachment')) {
@@ -98,7 +98,8 @@ async function fixture(request = req) {
       );
     }
     return response({ ok: true }, config);
-  });
+  };
+  const transport = vi.fn((config: any) => Promise.resolve(route(config)));
   (client.context._options.auth as any).transporter = { request: transport };
   return { gmail, client, transport };
 }
@@ -157,7 +158,7 @@ describe('gmail', () => {
     const call = transport.mock.calls.find(([config]) =>
       String(config.url).endsWith('/messages/send'),
     )?.[0];
-    if (!call) throw new Error('Missing Gmail send request.');
+    expect(call).toBeDefined();
     expect(call.data).toMatchObject({ raw: expect.any(String) });
     const raw = Buffer.from(
       call.data.raw.replaceAll('-', '+').replaceAll('_', '/'),
@@ -267,16 +268,15 @@ describe('gmail', () => {
   });
 
   it('polls directly with the previous cursor and returns a replacement cursor', async () => {
-    const { client, transport } = await fixture();
-    const trigger = pieceFactoryDefinition(createGmail).triggers?.[0];
-    if (!trigger) throw new Error('Missing Gmail polling trigger.');
+    const { gmail, client, transport } = await fixture();
+    const trigger = gmail.triggers.newEmail;
     const result = await trigger.run({
       client,
       input: trigger.input.parse({ from: 'sender@example.com' }),
       cursor: 1_700_000_000_000,
       options: {},
       req,
-    } as never);
+    });
     expect(result.events).toEqual([expect.objectContaining({ id: 'found' })]);
     expect(typeof result.cursor).toBe('number');
     const call = transport.mock.calls.find(([config]) => String(config.url).endsWith('/messages'));
