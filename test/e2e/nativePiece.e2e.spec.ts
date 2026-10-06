@@ -226,8 +226,9 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
           path: '/piece-test/:instance',
           method: 'post',
           handler: async (req) => {
-            if (!req.user)
+            if (!req.user) {
               return Response.json({ error: 'Authentication required' }, { status: 401 });
+            }
             const send = req.routeParams?.instance === 'required' ? required.send : detachedSend;
             try {
               return Response.json(await send({ input: await req.json!(), req }));

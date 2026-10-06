@@ -121,7 +121,7 @@ describe('check ticket-docs', () => {
   });
 
   describe('status', () => {
-    it('rejects a research Status that is not Draft or Done (ticket 242 research)', () => {
+    it('rejects a research Status that is not Draft or Done', () => {
       const lines = problems(
         edit(
           RESEARCH,

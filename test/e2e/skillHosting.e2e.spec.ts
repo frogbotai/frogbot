@@ -1,7 +1,7 @@
 import {
   existsSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   readlinkSync,
   realpathSync,
   rmSync,
@@ -15,6 +15,10 @@ import {
   createHost,
   createProfile,
   fallbackURLs,
+  type HostingHost,
+  type HostingProfile,
+  type HostingRequest,
+  type HostingResult,
   legacyBase,
   legacyEntry,
   legacyIndex,
@@ -23,10 +27,6 @@ import {
   preparedClient,
   repoRoot,
   runClient,
-  type HostingHost,
-  type HostingProfile,
-  type HostingRequest,
-  type HostingResult,
 } from './fixtures/skill-distribution/hosting/harness.js';
 
 const skills = preparedClient('SKILL_HOSTING_SKILLS_BIN');
@@ -313,7 +313,7 @@ describe('hosted skill protocol with prepared real clients', () => {
 
         const stale = entry
           .toString()
-          .replace(/(  version: ')[^']+(')/, (_, prefix, suffix) => `${prefix}0.0.0${suffix}`);
+          .replace(/( {2}version: ')[^']+(')/, (_, prefix, suffix) => `${prefix}0.0.0${suffix}`);
 
         expect(stale).not.toBe(entry.toString());
         writeFileSync(join(profile.cached, 'SKILL.md'), stale);

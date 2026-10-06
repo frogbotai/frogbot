@@ -8,11 +8,11 @@ import { createPostgresDatabase } from '../__helpers/shared/db/postgres';
 import {
   applyLocalOverrides,
   copyCLIWithoutSkill,
+  type LocalPackage,
   packLocalClosure,
   run,
   serviceAvailable,
   subprocessEnvironment,
-  type LocalPackage,
 } from './fixtures/create-frogbot-app/harness';
 import { getFreePort, spawnServer, terminateProcess } from './process';
 
@@ -53,8 +53,9 @@ async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
     const deadline = Date.now() + 90000;
 
     for (;;) {
-      if (child.exitCode !== null)
+      if (child.exitCode !== null) {
         throw new Error(`Generated app exited with ${child.exitCode}:\n${output}`);
+      }
 
       // A request can hang while the app waits on startup, so each attempt has its own limit.
       const response = await fetch(`http://127.0.0.1:${port}/api/users/me`, {
@@ -144,8 +145,9 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     ) as { dependencies: Record<string, string> };
 
     for (const [name, version] of Object.entries(firstPackage.dependencies)) {
-      if (name === 'frogbot' || name.startsWith('@frogbotai/'))
+      if (name === 'frogbot' || name.startsWith('@frogbotai/')) {
         expect(version).toBe(`^${cliPackage.version}`);
+      }
     }
 
     localPackages = packLocalClosure({

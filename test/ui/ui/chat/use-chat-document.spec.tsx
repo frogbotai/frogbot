@@ -40,8 +40,7 @@ describe('useChatDocument', () => {
 
     await waitFor(() => expect(result.current.chat?.title).toBe('Generated title'));
 
-    expect(request).toHaveBeenCalledOnce();
-    expect(request).toHaveBeenCalledWith('/chats/chat-1?depth=0', undefined);
+    expect(request).toHaveBeenCalledExactlyOnceWith('/chats/chat-1?depth=0', undefined);
   });
 
   it('re-fetches the chat when the window regains focus with revalidate', async () => {

@@ -237,7 +237,7 @@ describe('chat persistence: chat context', () => {
     expect(after.totalDocs).toBe(before.totalDocs);
   });
 
-  it.todo('anonymous caller vs. another anonymous caller chat (.idea/issue_triage.md ticket 33)');
+  it.todo('anonymous caller vs. another anonymous caller chat');
 
   it('replaces an edited user message and truncates later history', async () => {
     const req = await makeOwnerReq();

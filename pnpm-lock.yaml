@@ -61,6 +61,9 @@ importers:
       eslint:
         specifier: ^9.16.0
         version: 9.39.5(jiti@2.7.0)
+      eslint-plugin-playwright:
+        specifier: ^2.12.1
+        version: 2.12.1(eslint@9.39.5(jiti@2.7.0))
       eslint-plugin-simple-import-sort:
         specifier: ^12.1.1
         version: 12.1.1(eslint@9.39.5(jiti@2.7.0))
@@ -10670,6 +10673,15 @@ packages:
         integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==,
       }
     engines: { node: '>=12' }
+
+  eslint-plugin-playwright@2.12.1:
+    resolution:
+      {
+        integrity: sha512-JhavNuYBIq7SE/Zg9Esf9RGHkXoDbzrEKS383cowzMyvZ4JMbmdNCN6CoW+RU1Cjzwcoea1tou0je58uXmT/9A==,
+      }
+    engines: { node: '>=16.9.0' }
+    peerDependencies:
+      eslint: '>=8.40.0'
 
   eslint-plugin-simple-import-sort@12.1.1:
     resolution:
@@ -22330,6 +22342,11 @@ snapshots:
   escape-string-regexp@4.0.0: {}
 
   escape-string-regexp@5.0.0: {}
+
+  eslint-plugin-playwright@2.12.1(eslint@9.39.5(jiti@2.7.0)):
+    dependencies:
+      eslint: 9.39.5(jiti@2.7.0)
+      globals: 17.8.0
 
   eslint-plugin-simple-import-sort@12.1.1(eslint@9.39.5(jiti@2.7.0)):
     dependencies:

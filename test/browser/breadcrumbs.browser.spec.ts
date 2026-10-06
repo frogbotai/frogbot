@@ -43,10 +43,6 @@ test.beforeAll(async ({ modelPort }) => {
   model = await startStubChatModel(modelPort);
 });
 
-test.afterAll(async () => {
-  await model.close();
-});
-
 test.beforeEach(async ({ page }) => {
   model.reset();
 
@@ -57,6 +53,10 @@ test.afterEach(async ({ page }) => {
   releases.splice(0).forEach((release) => release());
 
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
+});
+
+test.afterAll(async () => {
+  await model.close();
 });
 
 const stepNav = (page: Page) => page.locator('.app-header__step-nav');

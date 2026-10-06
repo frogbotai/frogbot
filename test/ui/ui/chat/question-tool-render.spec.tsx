@@ -70,8 +70,7 @@ describe('QuestionToolRender', () => {
     fireEvent.click(staging);
     fireEvent.click(staging);
 
-    expect(addToolOutput).toHaveBeenCalledOnce();
-    expect(addToolOutput).toHaveBeenCalledWith({
+    expect(addToolOutput).toHaveBeenCalledExactlyOnceWith({
       answers: [{ header: 'Target', selected: ['Staging'] }],
     });
     expect((staging as HTMLButtonElement).disabled).toBe(true);

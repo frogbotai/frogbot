@@ -6,7 +6,7 @@
 //
 // Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.e2e.spec.ts
 
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import {
