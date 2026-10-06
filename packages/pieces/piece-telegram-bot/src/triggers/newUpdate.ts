@@ -43,18 +43,18 @@ export const newUpdate = defineAppTrigger({
     update_id: 351114420,
     message: { message_id: 21, text: 'Hello world', chat: { id: 55169542059, type: 'private' } },
   },
-  async run({ input, req }) {
+  run({ input, req }) {
     const delivery = update.parse(req.data);
     const selected = input.updateTypes;
     const matches = selected.length === 0 || selected.some((type) => type in delivery);
 
-    if (!matches) return [];
+    if (!matches) return Promise.resolve([]);
 
     const dedupeKey =
       delivery.update_id === undefined
         ? createHash('sha256').update(JSON.stringify(delivery)).digest('hex')
         : String(delivery.update_id);
 
-    return [{ dedupeKey, data: delivery }];
+    return Promise.resolve([{ dedupeKey, data: delivery }]);
   },
 });

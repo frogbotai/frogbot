@@ -29,6 +29,7 @@ import type {
   CollectionMeHook as PayloadCollectionMeHook,
   CollectionRefreshHook as PayloadCollectionRefreshHook,
   CollectionSlug as PayloadCollectionSlug,
+  Document as PayloadDocument,
   FieldAccessArgs as PayloadFieldAccessArgs,
   TypeWithID,
 } from 'payload';
@@ -163,9 +164,11 @@ export type Collection = {
 
 export type AccessResult = boolean | Where;
 
-export type AccessArgs<TData = any> = FrogBotArgs<PayloadAccessArgs<TData>>;
+export type AccessArgs<TData = PayloadDocument> = FrogBotArgs<PayloadAccessArgs<TData>>;
 
-export type Access<TData = any> = (args: AccessArgs<TData>) => AccessResult | Promise<AccessResult>;
+export type Access<TData = PayloadDocument> = (
+  args: AccessArgs<TData>,
+) => AccessResult | Promise<AccessResult>;
 
 type PayloadCollectionAccess = NonNullable<PayloadCollectionConfig['access']>;
 
@@ -179,13 +182,15 @@ export type CollectionAccess = {
 
 // ── Field-level access ────────────────────────────────────────────────
 
-export type FieldAccessArgs<TData extends TypeWithID = any, TSiblingData = any> = FrogBotArgs<
-  PayloadFieldAccessArgs<TData, TSiblingData>
->;
+export type FieldAccessArgs<
+  TData extends TypeWithID = PayloadDocument,
+  TSiblingData = PayloadDocument,
+> = FrogBotArgs<PayloadFieldAccessArgs<TData, TSiblingData>>;
 
-export type FieldAccess<TData extends TypeWithID = any, TSiblingData = any> = (
-  args: FieldAccessArgs<TData, TSiblingData>,
-) => boolean | Promise<boolean>;
+export type FieldAccess<
+  TData extends TypeWithID = PayloadDocument,
+  TSiblingData = PayloadDocument,
+> = (args: FieldAccessArgs<TData, TSiblingData>) => boolean | Promise<boolean>;
 
 // FrogBot's collection hook types.
 //
@@ -214,23 +219,23 @@ export type CollectionBeforeOperationHook<TSlug extends PayloadCollectionSlug = 
       Exclude<Awaited<ReturnType<PayloadCollectionBeforeOperationHook<TSlug>>>, void>
     > | void>;
 
-export type CollectionBeforeValidateHook<T extends TypeWithID = any> = (
+export type CollectionBeforeValidateHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeValidateHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionBeforeValidateHook<T>>;
 
-export type CollectionBeforeChangeHook<T extends TypeWithID = any> = (
+export type CollectionBeforeChangeHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeChangeHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionBeforeChangeHook<T>>;
 
-export type CollectionAfterChangeHook<T extends TypeWithID = any> = (
+export type CollectionAfterChangeHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterChangeHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterChangeHook<T>>;
 
-export type CollectionBeforeReadHook<T extends TypeWithID = any> = (
+export type CollectionBeforeReadHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeReadHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionBeforeReadHook<T>>;
 
-export type CollectionAfterReadHook<T extends TypeWithID = any> = (
+export type CollectionAfterReadHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterReadHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterReadHook<T>>;
 
@@ -238,7 +243,7 @@ export type CollectionBeforeDeleteHook = (
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeDeleteHook>[0]>,
 ) => ReturnType<PayloadCollectionBeforeDeleteHook>;
 
-export type CollectionAfterDeleteHook<T extends TypeWithID = any> = (
+export type CollectionAfterDeleteHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterDeleteHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterDeleteHook<T>>;
 
@@ -246,31 +251,31 @@ export type CollectionAfterOperationHook<TSlug extends PayloadCollectionSlug = s
   args: SwapOperationArgs<Parameters<PayloadCollectionAfterOperationHook<TSlug>>[0]>,
 ) => ReturnType<PayloadCollectionAfterOperationHook<TSlug>>;
 
-export type CollectionBeforeLoginHook<T extends TypeWithID = any> = (
+export type CollectionBeforeLoginHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionBeforeLoginHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionBeforeLoginHook<T>>;
 
-export type CollectionAfterLoginHook<T extends TypeWithID = any> = (
+export type CollectionAfterLoginHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterLoginHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterLoginHook<T>>;
 
-export type CollectionAfterLogoutHook<T extends TypeWithID = any> = (
+export type CollectionAfterLogoutHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterLogoutHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterLogoutHook<T>>;
 
-export type CollectionAfterMeHook<T extends TypeWithID = any> = (
+export type CollectionAfterMeHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterMeHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterMeHook<T>>;
 
-export type CollectionRefreshHook<T extends TypeWithID = any> = (
+export type CollectionRefreshHook<T extends TypeWithID = PayloadDocument> = (
   args: SwapOperationArgs<Parameters<PayloadCollectionRefreshHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionRefreshHook<T>>;
 
-export type CollectionMeHook<T extends TypeWithID = any> = (
+export type CollectionMeHook<T extends TypeWithID = PayloadDocument> = (
   args: SwapOperationArgs<Parameters<PayloadCollectionMeHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionMeHook<T>>;
 
-export type CollectionAfterRefreshHook<T extends TypeWithID = any> = (
+export type CollectionAfterRefreshHook<T extends TypeWithID = PayloadDocument> = (
   args: FrogBotArgs<Parameters<PayloadCollectionAfterRefreshHook<T>>[0]>,
 ) => ReturnType<PayloadCollectionAfterRefreshHook<T>>;
 
@@ -280,7 +285,7 @@ export type CollectionAfterErrorHook = (
 
 export type CollectionAfterForgotPasswordHook = PayloadCollectionAfterForgotPasswordHook;
 
-export type CollectionHooks<T extends TypeWithID = any> = {
+export type CollectionHooks<T extends TypeWithID = PayloadDocument> = {
   afterChange?: CollectionAfterChangeHook<T>[];
   afterDelete?: CollectionAfterDeleteHook<T>[];
   afterError?: CollectionAfterErrorHook[];

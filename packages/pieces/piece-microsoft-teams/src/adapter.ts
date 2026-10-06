@@ -59,7 +59,7 @@ export class FrogBotTeamsAdapter extends TeamsAdapter {
     const user = await this.responder(ctx);
     const messageId = activity.replyToId || activity.id;
 
-    this.chat.processAction(
+    void this.chat.processAction(
       { ...action, user, messageId, threadId, adapter: this, raw: activity },
       this.bridgeAdapter.getWebhookOptions(activity.id),
     );

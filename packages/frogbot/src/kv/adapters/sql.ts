@@ -41,7 +41,7 @@ export function createSQLKV({
   adapter: input,
   collectionSlug,
 }: {
-  adapter: BaseDatabaseAdapter;
+  adapter: Omit<BaseDatabaseAdapter, 'sessions'>;
   collectionSlug: string;
 }): KVDatabaseAdapter {
   const adapter = input as DrizzleAdapter;

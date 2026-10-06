@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const telegramFile = z.object({
@@ -14,10 +14,7 @@ const storedFile = z.object({
 });
 
 export async function loadTelegramFile(req: FrogBotRequest, value: z.output<typeof telegramFile>) {
-  const collection = filesCollectionSlug(req, 'Telegram');
-
-  const result = await req.frogbot.findByID({
-    collection,
+  const result = await findPieceFile(req, 'Telegram', {
     id: value.fileId,
     depth: 0,
     req,

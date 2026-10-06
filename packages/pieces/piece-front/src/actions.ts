@@ -1,5 +1,10 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug, type PieceActionDefinition, type PieceRunArgs } from 'frogbot/pieces';
+import {
+  filesCollectionSlug,
+  findPieceFile,
+  type PieceActionDefinition,
+  type PieceRunArgs,
+} from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { FrontClient, FrontResponse } from './client.js';
@@ -58,12 +63,11 @@ function query(values: ActionInput) {
 }
 
 async function loadAttachments(req: FrogBotRequest, attachments: z.output<typeof fileReference>[]) {
-  const collection = filesCollectionSlug(req, 'Front');
+  filesCollectionSlug(req, 'Front');
 
   return Promise.all(
     attachments.map(async (attachment) => {
-      const doc = await req.frogbot.findByID({
-        collection,
+      const doc = await findPieceFile(req, 'Front', {
         id: attachment.fileId,
         depth: 0,
         req,

@@ -80,7 +80,7 @@ type MongoKVModel = {
     path(name: string): { instance: string; options: { auto?: boolean } } | undefined;
   };
 };
-type MongoKVCreateArgs = { adapter: BaseDatabaseAdapter; collectionSlug: string };
+type MongoKVCreateArgs = { adapter: Omit<BaseDatabaseAdapter, 'sessions'>; collectionSlug: string };
 type MongoMutation = {
   data?: KVStoreValue;
   key: string;

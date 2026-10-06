@@ -351,7 +351,7 @@ async function recoverEnable(
   triggers.recoveries.set(recovery.attempt, recovery);
 
   try {
-    if (signal.aborted) await lock(triggers, async () => undefined);
+    if (signal.aborted) await lock(triggers, () => undefined);
     else await recoverAttempt(triggers, { recovery, signal, verifyAttempt: false });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);

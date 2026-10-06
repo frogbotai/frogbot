@@ -24,8 +24,8 @@ const concatText = defineAction({
   description: 'Concatenate two or more texts.',
   input: concatTextInput,
   output: textOutput,
-  async run({ input }) {
-    return input.texts.join(input.separator ?? '');
+  run({ input }) {
+    return Promise.resolve(input.texts.join(input.separator ?? ''));
   },
 });
 
@@ -47,10 +47,10 @@ const replaceText = defineAction({
   description: 'Replace matches of a word, character, phrase, or regular expression.',
   input: replaceTextInput,
   output: textOutput,
-  async run({ input }) {
+  run({ input }) {
     const expression = new RegExp(input.searchValue, input.replaceOnlyFirst ? undefined : 'g');
 
-    return input.text.replace(expression, input.replaceValue ?? '');
+    return Promise.resolve(input.text.replace(expression, input.replaceValue ?? ''));
   },
 });
 
@@ -65,8 +65,8 @@ const splitText = defineAction({
   description: 'Split text by a delimiter.',
   input: splitTextInput,
   output: z.array(z.string()),
-  async run({ input }) {
-    return input.text.split(input.delimiter);
+  run({ input }) {
+    return Promise.resolve(input.text.split(input.delimiter));
   },
 });
 
@@ -81,10 +81,10 @@ const findText = defineAction({
   description: 'Find a substring using text or a regular expression.',
   input: findTextInput,
   output: z.array(z.string()).nullable(),
-  async run({ input }) {
+  run({ input }) {
     const match = input.text.match(new RegExp(input.expression));
 
-    return match ? Array.from(match) : null;
+    return Promise.resolve(match ? Array.from(match) : null);
   },
 });
 
@@ -111,7 +111,7 @@ const convertMarkdownToHtml = defineAction({
   description: 'Convert Markdown to HTML.',
   input: markdownToHtmlInput,
   output: textOutput,
-  async run({ input }) {
+  run({ input }) {
     const converter = new Showdown.Converter({
       headerLevelStart: input.headerLevelStart,
       omitExtraWLInCodeBlocks: true,
@@ -123,7 +123,7 @@ const convertMarkdownToHtml = defineAction({
 
     converter.setFlavor(input.flavor);
 
-    return converter.makeHtml(input.markdown);
+    return Promise.resolve(converter.makeHtml(input.markdown));
   },
 });
 
@@ -135,12 +135,12 @@ const convertHtmlToMarkdown = defineAction({
   description: 'Convert HTML to Markdown.',
   input: htmlInput,
   output: textOutput,
-  async run({ input }) {
+  run({ input }) {
     const service = new TurndownService();
 
     service.remove('script');
 
-    return service.turndown(input.html);
+    return Promise.resolve(service.turndown(input.html));
   },
 });
 
@@ -150,8 +150,8 @@ const stripHtml = defineAction({
   description: 'Remove HTML tags and return plain text.',
   input: htmlInput,
   output: textOutput,
-  async run({ input }) {
-    return removeHtml(input.html).result;
+  run({ input }) {
+    return Promise.resolve(removeHtml(input.html).result);
   },
 });
 
@@ -163,8 +163,8 @@ const slugifyText = defineAction({
   description: 'Convert text to a URL-friendly slug.',
   input: textInput,
   output: textOutput,
-  async run({ input }) {
-    return slugify(input.text);
+  run({ input }) {
+    return Promise.resolve(slugify(input.text));
   },
 });
 
@@ -182,12 +182,12 @@ const useDefaultValue = defineAction({
   description: 'Return a default value when the input is empty.',
   input: defaultValueInput,
   output: z.union([z.string(), z.array(z.unknown())]),
-  async run({ input }) {
+  run({ input }) {
     if (input.value === undefined || input.value === '' || input.value.length === 0) {
-      return input.defaultValue;
+      return Promise.resolve(input.defaultValue);
     }
 
-    return input.value;
+    return Promise.resolve(input.value);
   },
 });
 
@@ -200,8 +200,8 @@ const createTextTable = defineAction({
   description: 'Convert a list of objects to an ASCII text table.',
   input: createTextTableInput,
   output: textOutput,
-  async run({ input }) {
-    if (input.data.length === 0) return '';
+  run({ input }) {
+    if (input.data.length === 0) return Promise.resolve('');
 
     const keys = Array.from(new Set(input.data.flatMap((row) => Object.keys(row))));
     const widths = keys.map((key) =>
@@ -215,7 +215,7 @@ const createTextTable = defineAction({
         `|${keys.map((key, index) => ` ${String(row[key] ?? '').padEnd(widths[index])} `).join('|')}|`,
     );
 
-    return [separator, header, separator, ...rows, separator].join('\n');
+    return Promise.resolve([separator, header, separator, ...rows, separator].join('\n'));
   },
 });
 
@@ -236,7 +236,7 @@ const extractFromHtml = defineAction({
   description: 'Extract specific elements or data from an HTML document.',
   input: extractFromHtmlInput,
   output: z.union([z.string(), z.array(z.string()), z.null()]),
-  async run({ input }) {
+  run({ input }) {
     const selectors = {
       title: 'title',
       links: 'a[href]',
@@ -282,9 +282,9 @@ const extractFromHtml = defineAction({
         return element.textContent?.trim() ?? '';
       };
 
-      if (input.returnMultiple) return Array.from(elements, extract);
+      if (input.returnMultiple) return Promise.resolve(Array.from(elements, extract));
 
-      return elements[0] ? extract(elements[0]) : null;
+      return Promise.resolve(elements[0] ? extract(elements[0]) : null);
     } finally {
       dom.window.close();
     }

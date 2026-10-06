@@ -20,7 +20,7 @@ async function resolveSlug({
   customSlugify?: Slugify;
   data: TypeWithID;
   req: Parameters<Slugify>[0]['req'];
-  valueToSlugify?: any;
+  valueToSlugify?: Parameters<Slugify>[0]['valueToSlugify'];
 }) {
   if (customSlugify) {
     return await customSlugify({ data, req, valueToSlugify });

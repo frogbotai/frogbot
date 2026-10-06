@@ -44,7 +44,7 @@ function hasSeoField(fields: Field[]): boolean {
 
 export function seoPlugin<const S extends CollectionSlug>(options: SEOPluginOptions<S>): Plugin {
   return (config) => {
-    const handPlacedCollections = new Map<CollectionSlug, CollectionConfig>();
+    const handPlacedCollections = new Map<string, CollectionConfig>();
 
     for (const collection of config.collections ?? []) {
       if (options.collections?.includes(collection.slug as S) && hasSeoField(collection.fields)) {

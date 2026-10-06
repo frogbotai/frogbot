@@ -18,9 +18,11 @@ export const generateHmac = defineAction({
   description: 'Generate a keyed hash-based message authentication code.',
   input: inputSchema,
   output: z.string().min(1),
-  async run({ input }) {
+  run({ input }) {
     const key = Buffer.from(input.secretKey, input.secretKeyEncoding);
 
-    return createHmac(input.method, key).update(input.text).digest(input.outputEncoding);
+    return Promise.resolve(
+      createHmac(input.method, key).update(input.text).digest(input.outputEncoding),
+    );
   },
 });

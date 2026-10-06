@@ -56,12 +56,36 @@ const createComponents = (role: MessageRole): Components => ({
       </a>
     );
   },
-  h1: ({ node: _, ...props }) => <h1 className="fb-markdown__heading-1" {...props} />,
-  h2: ({ node: _, ...props }) => <h2 className="fb-markdown__heading-2" {...props} />,
-  h3: ({ node: _, ...props }) => <h3 className="fb-markdown__heading-3" {...props} />,
-  h4: ({ node: _, ...props }) => <h4 className="fb-markdown__heading-4" {...props} />,
-  h5: ({ node: _, ...props }) => <h5 className="fb-markdown__heading-5" {...props} />,
-  h6: ({ node: _, ...props }) => <h6 className="fb-markdown__heading-6" {...props} />,
+  h1: ({ children, node: _, ...props }) => (
+    <h1 className="fb-markdown__heading-1" {...props}>
+      {children}
+    </h1>
+  ),
+  h2: ({ children, node: _, ...props }) => (
+    <h2 className="fb-markdown__heading-2" {...props}>
+      {children}
+    </h2>
+  ),
+  h3: ({ children, node: _, ...props }) => (
+    <h3 className="fb-markdown__heading-3" {...props}>
+      {children}
+    </h3>
+  ),
+  h4: ({ children, node: _, ...props }) => (
+    <h4 className="fb-markdown__heading-4" {...props}>
+      {children}
+    </h4>
+  ),
+  h5: ({ children, node: _, ...props }) => (
+    <h5 className="fb-markdown__heading-5" {...props}>
+      {children}
+    </h5>
+  ),
+  h6: ({ children, node: _, ...props }) => (
+    <h6 className="fb-markdown__heading-6" {...props}>
+      {children}
+    </h6>
+  ),
   table: ({ children, node: _, ...props }) => (
     <div className="fb-markdown__table-container">
       <table className="fb-markdown__table" {...props}>

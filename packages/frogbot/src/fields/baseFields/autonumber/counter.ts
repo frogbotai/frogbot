@@ -1,4 +1,9 @@
-import { type DatabaseAdapter, type PayloadRequest, ValidationError } from 'payload';
+import {
+  type BaseDatabaseAdapter,
+  type DatabaseAdapter,
+  type PayloadRequest,
+  ValidationError,
+} from 'payload';
 
 import type { AutonumberEntry } from '../../../config/sanitized.js';
 import type { FrogBot } from '../../../frogbot.js';
@@ -7,7 +12,7 @@ import type { KV } from '../../../kv/types.js';
 import { AUTONUMBERS_SLUG } from './collection.js';
 
 type AutonumberCounterArgs = {
-  db: DatabaseAdapter;
+  db: Pick<BaseDatabaseAdapter, 'findOne' | 'updateOne'>;
   key: string;
   req?: PayloadRequest;
 };

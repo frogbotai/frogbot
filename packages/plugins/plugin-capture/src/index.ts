@@ -1,4 +1,4 @@
-import type { Field, Plugin } from 'frogbot';
+import type { Field, JobsConfig, Plugin } from 'frogbot';
 
 import { createCapturesCollection } from './collection.js';
 import { createCaptureHooks } from './hooks.js';
@@ -38,7 +38,7 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
     throw new Error('[plugin-capture] retentionDays must be a positive integer.');
   }
   const storage = options.storage ?? filesystemCaptureStorage(options.storageRoot);
-  return async (config) => {
+  return (config) => {
     if (!config.ai) throw new Error('[plugin-capture] AI configuration is required.');
     const hooks = createCaptureHooks({
       enabled: options.enabled ?? false,
@@ -65,12 +65,12 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
         ? { ...collection, fields: [...collection.fields, ...captureFields] }
         : collection;
     });
-    const task = options.retentionDays
+    const task: NonNullable<JobsConfig['tasks']>[number] | undefined = options.retentionDays
       ? {
           slug: 'frogbot-prune-ai-captures',
           interfaceName: 'TaskFrogBotPruneAiCaptures',
           schedule: [{ cron: '0 3 * * *', queue: 'frogbot-prune-ai-captures' }],
-          handler: async ({ req }: { req: { payload: any } }) => {
+          handler: async ({ req }) => {
             const cutoff = new Date(Date.now() - options.retentionDays! * 86_400_000).toISOString();
             while (true) {
               const result = await req.payload.find({
@@ -103,9 +103,7 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
         [captureConfigKey]: { collectionSlug, storage } satisfies CaptureRegistration,
       },
       collections: [...collections, createCapturesCollection(collectionSlug, options.access)],
-      jobs: task
-        ? { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), task as never] }
-        : config.jobs,
+      jobs: task ? { ...config.jobs, tasks: [...(config.jobs?.tasks ?? []), task] } : config.jobs,
       ai: {
         ...config.ai,
         hooks: {

@@ -15,9 +15,9 @@ export const findMinMax = defineAction({
   description: 'Find the smallest and greatest values in a list.',
   input: inputSchema,
   output: outputSchema,
-  async run({ input }) {
+  run({ input }) {
     const values = parseNumbers(input.values);
 
-    return { min: Math.min(...values), max: Math.max(...values) };
+    return Promise.resolve({ min: Math.min(...values), max: Math.max(...values) });
   },
 });

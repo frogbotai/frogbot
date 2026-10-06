@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug, findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const fileId = z.union([z.string(), z.number()]);
@@ -11,15 +11,7 @@ export const savedFile = z.object({
 });
 
 export async function loadFile(req: FrogBotRequest, id: z.output<typeof fileId>) {
-  const collection = filesCollectionSlug(req, 'PDF');
-
-  const doc = await req.frogbot.findByID({
-    collection,
-    id,
-    depth: 0,
-    req,
-    overrideAccess: false,
-  });
+  const doc = await findPieceFile(req, 'PDF', { id, depth: 0, req, overrideAccess: false });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${id}' is unavailable.`);
 
@@ -67,14 +59,12 @@ export async function saveFile({
   name: string;
   mimeType: string;
 }) {
-  const collection = filesCollectionSlug(req, 'PDF');
+  filesCollectionSlug(req, 'PDF');
 
   req.signal?.throwIfAborted();
 
   const buffer = Buffer.from(data);
-  const doc = await req.frogbot.create({
-    collection,
-    data: {},
+  const doc = await createPieceFile(req, 'PDF', {
     req,
     overrideAccess: false,
     file: { data: buffer, name, mimetype: mimeType, size: buffer.length },

@@ -1,4 +1,4 @@
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import {
@@ -286,13 +286,11 @@ export const getFile = defineAction({
     const mimeType =
       downloaded.headers.get('content-type')?.split(';')[0] || 'application/octet-stream';
 
-    const collection = filesCollectionSlug(req, 'Slack');
+    filesCollectionSlug(req, 'Slack');
 
     req.signal?.throwIfAborted();
 
-    const saved = await req.frogbot.create({
-      collection,
-      data: {},
+    const saved = await createPieceFile(req, 'Slack', {
       file: { data, name, mimetype: mimeType, size: data.length },
       req,
       overrideAccess: false,
@@ -597,13 +595,13 @@ export const markdownToSlack = defineAction({
   input: markdownToSlackInput,
   output: markdownToSlackOutput,
   idempotent: true,
-  async run({ input }) {
+  run({ input }) {
     const text = input.markdown
       .replace(/\[([^\]]+)]\((https?:\/\/[^)]+)\)/g, '<$2|$1>')
       .replace(/\*\*([^*]+)\*\*/g, '*$1*')
       .replace(/^[-+] /gm, '• ');
 
-    return { text };
+    return Promise.resolve({ text });
   },
 });
 

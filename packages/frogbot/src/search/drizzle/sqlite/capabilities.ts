@@ -22,9 +22,15 @@ export function getLexicalCapability(index: SearchIndexDescriptor): SearchCapabi
   return 'supported';
 }
 
-export const capabilities: SearchCapabilities = ({ db, index }) => {
-  const prerequisites = getSearchPrerequisites(db);
-  const kind = getConnectionKind(db as unknown as SQLiteSearchAdapter);
+export const capabilities: SearchCapabilities = ({ db, index }) =>
+  adapterCapabilities(db as unknown as SQLiteSearchAdapter, index);
+
+export function adapterCapabilities(
+  adapter: SQLiteSearchAdapter,
+  index: SearchIndexDescriptor,
+): Record<SearchMode, SearchCapability> {
+  const prerequisites = getSearchPrerequisites(adapter);
+  const kind = getConnectionKind(adapter);
 
   let lexical = getLexicalCapability(index);
 
@@ -58,4 +64,4 @@ export const capabilities: SearchCapabilities = ({ db, index }) => {
       : vector;
 
   return { hybrid, lexical, vector };
-};
+}

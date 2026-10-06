@@ -39,11 +39,11 @@ export const createTrello = definePiece({
   auth: trelloAuth,
   client: createTrelloClient,
   webhook: {
-    async verify() {
-      return true;
+    verify() {
+      return Promise.resolve(true);
     },
-    async handshake({ req }) {
-      return req.method === 'HEAD' ? new Response(null, { status: 200 }) : null;
+    handshake({ req }) {
+      return Promise.resolve(req.method === 'HEAD' ? new Response(null, { status: 200 }) : null);
     },
   },
   actions: [

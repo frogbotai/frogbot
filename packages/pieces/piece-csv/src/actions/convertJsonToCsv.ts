@@ -37,9 +37,9 @@ export const convertJsonToCsv = defineAction({
   description: 'Flatten a JSON array and convert it into CSV text.',
   input: inputSchema,
   output: z.string(),
-  async run({ input }) {
+  run({ input }) {
     const flattened = input.jsonArray.map((item) => flatten(item));
 
-    return stringify(flattened, { header: true, delimiter: input.delimiter });
+    return Promise.resolve(stringify(flattened, { header: true, delimiter: input.delimiter }));
   },
 });

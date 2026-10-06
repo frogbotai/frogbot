@@ -95,7 +95,7 @@ export function createWaitFor({
   const jobId = replay?.jobId ?? String(job.id);
   const results = { ...replay?.results };
   const names = new Set<string>();
-  const signal = Symbol('FrogBot workflow waiting');
+  const signal = new Error('FrogBot workflow waiting');
   let waitUntil: string;
   let waiting: string;
 

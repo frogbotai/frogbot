@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug, findPieceFile } from 'frogbot/pieces';
 import { lookup } from 'mime-types';
 import { z } from 'zod';
 
@@ -20,10 +20,7 @@ function resolveMimeType(value: unknown, filename: string) {
 }
 
 export async function loadFile({ req, id }: { req: FrogBotRequest; id: string | number }) {
-  const collection = filesCollectionSlug(req, 'Files Helper');
-
-  const doc = await req.frogbot.findByID({
-    collection,
+  const doc = await findPieceFile(req, 'Files Helper', {
     id,
     depth: 0,
     req,
@@ -75,15 +72,13 @@ export async function saveFile({
   filename: string;
   mimeType?: string;
 }) {
-  const collection = filesCollectionSlug(req, 'Files Helper');
+  filesCollectionSlug(req, 'Files Helper');
 
   req.signal?.throwIfAborted();
 
   const resolvedMimeType = resolveMimeType(mimeType, filename);
 
-  const doc = await req.frogbot.create({
-    collection,
-    data: {},
+  const doc = await createPieceFile(req, 'Files Helper', {
     req,
     overrideAccess: false,
     file: { data, name: filename, mimetype: resolvedMimeType, size: data.length },

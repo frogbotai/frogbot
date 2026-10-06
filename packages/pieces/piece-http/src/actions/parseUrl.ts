@@ -17,7 +17,7 @@ export const parseUrl = defineAction({
   description: 'Extract the domain, path, and query parameters from a URL.',
   input: inputSchema,
   output,
-  async run({ input }) {
+  run({ input }) {
     try {
       const url = new URL(input.url);
       const queryParameters: Record<string, string | string[] | null> = {};
@@ -26,13 +26,13 @@ export const parseUrl = defineAction({
           ? url.searchParams.getAll(key)
           : url.searchParams.get(key);
       }
-      return {
+      return Promise.resolve({
         baseUrl: `${url.protocol}//${url.host}`,
         domain: url.hostname,
         path: url.pathname,
         queryParameters,
         hash: url.hash.slice(1),
-      };
+      });
     } catch (error) {
       throw new Error(
         `Failed to parse URL. Please ensure it is a valid, absolute URL. Details: ${error instanceof Error ? error.message : String(error)}`,

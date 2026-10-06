@@ -20,10 +20,12 @@ export const convertCsvToJson = defineAction({
   description: 'Read CSV text and convert it into a JSON array.',
   input: inputSchema,
   output,
-  async run({ input }) {
-    return parse(input.csvText, {
-      columns: input.hasHeaders,
-      delimiter: input.delimiter,
-    });
+  run({ input }) {
+    return Promise.resolve(
+      parse(input.csvText, {
+        columns: input.hasHeaders,
+        delimiter: input.delimiter,
+      }),
+    );
   },
 });

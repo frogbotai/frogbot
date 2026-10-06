@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { SavedFile } from './schemas.js';
@@ -18,8 +18,7 @@ export async function loadFile({
 }): Promise<Buffer> {
   req.signal?.throwIfAborted();
 
-  const doc = await req.frogbot.findByID({
-    collection: filesCollectionSlug(req, 'Dropbox'),
+  const doc = await findPieceFile(req, 'Dropbox', {
     id: file.fileId,
     depth: 0,
     req,
@@ -72,9 +71,7 @@ export async function saveFile({
 }): Promise<SavedFile> {
   req.signal?.throwIfAborted();
 
-  const doc = await req.frogbot.create({
-    collection: filesCollectionSlug(req, 'Dropbox'),
-    data: {},
+  const doc = await createPieceFile(req, 'Dropbox', {
     file: { data, name, mimetype: mimeType, size: data.length },
     req,
     overrideAccess: false,

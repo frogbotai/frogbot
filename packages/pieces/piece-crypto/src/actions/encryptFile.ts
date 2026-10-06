@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug, findPieceFile } from 'frogbot/pieces';
 import { createMessage, encrypt, readKey } from 'openpgp';
 import { z } from 'zod';
 
@@ -16,9 +16,7 @@ const output = z.discriminatedUnion('success', [
 ]);
 
 async function loadFile(req: FrogBotRequest, id: string | number) {
-  const collection = filesCollectionSlug(req, 'Crypto');
-
-  const doc = await req.frogbot.findByID({ collection, id, depth: 0, req, overrideAccess: false });
+  const doc = await findPieceFile(req, 'Crypto', { id, depth: 0, req, overrideAccess: false });
 
   if (typeof doc.url !== 'string') throw new Error(`File '${id}' is unavailable.`);
 
@@ -71,13 +69,11 @@ export const encryptFile = defineAction({
       });
       const filename = `${source.name}.pgp`;
       const data = Buffer.from(encrypted);
-      const collection = filesCollectionSlug(req, 'Crypto');
+      filesCollectionSlug(req, 'Crypto');
 
       req.signal?.throwIfAborted();
 
-      const doc = await req.frogbot.create({
-        collection,
-        data: {},
+      const doc = await createPieceFile(req, 'Crypto', {
         req,
         file: { data, mimetype: 'application/pgp-encrypted', name: filename, size: data.length },
         overrideAccess: false,

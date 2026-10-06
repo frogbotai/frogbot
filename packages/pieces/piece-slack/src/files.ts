@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const slackFile = z.object({
@@ -8,10 +8,7 @@ export const slackFile = z.object({
 });
 
 export async function loadSlackFile(req: FrogBotRequest, value: z.output<typeof slackFile>) {
-  const collection = filesCollectionSlug(req, 'Slack');
-
-  const file = await req.frogbot.findByID({
-    collection,
+  const file = await findPieceFile(req, 'Slack', {
     id: value.fileId,
     depth: 0,
     req,

@@ -27,7 +27,7 @@ import {
   useStepNav,
   useTranslation,
 } from '@payloadcms/ui';
-import type { UIMessage } from 'frogbot';
+import type { AgentReasoningOption, UIMessage } from 'frogbot';
 import { usePathname, useRouter } from 'next/navigation.js';
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 
@@ -276,7 +276,7 @@ function ChatViewInner({
   useEffect(() => {
     if (!manifest || entry || chatId !== undefined) return;
     setSelectedAgent(manifest.defaultAgent);
-  }, [chatId, entry, manifest]);
+  }, [chatId, entry, manifest, setSelectedAgent]);
 
   useEffect(() => {
     if (!manifest) return;
@@ -314,8 +314,11 @@ function ChatViewInner({
     };
   }, [chatId, getPreference, initialAgent, initialSelection, manifest, setSelectedAgent]);
 
-  const activeModel = entry?.models.find((model) => model === selectedModel) ?? entry?.defaultModel;
-  const reasoningOptions = activeModel ? entry?.reasoning?.[activeModel] : undefined;
+  const models: readonly string[] | undefined = entry?.models;
+  const names: Partial<Record<string, string>> | undefined = entry?.names;
+  const reasoning: Partial<Record<string, AgentReasoningOption[]>> | undefined = entry?.reasoning;
+  const activeModel = models?.find((model) => model === selectedModel) ?? entry?.defaultModel;
+  const reasoningOptions = activeModel ? reasoning?.[activeModel] : undefined;
   const rememberedReasoning = activeModel ? reasoningByModel[activeModel] : undefined;
 
   const activeReasoning = reasoningOptions?.some(({ key }) => key === rememberedReasoning)
@@ -376,14 +379,14 @@ function ChatViewInner({
       ) : null}
       {entry.models.length > 1 || reasoningOptions?.length ? (
         <ModelSelector
-          models={entry.models.map((id) => {
+          models={entry.models.map((id: string) => {
             const separator = id.indexOf('/');
 
             return {
               id,
-              name: entry.names?.[id] ?? (separator === -1 ? id : id.slice(separator + 1)),
+              name: names?.[id] ?? (separator === -1 ? id : id.slice(separator + 1)),
               provider: separator === -1 ? undefined : id.slice(0, separator),
-              reasoning: entry.reasoning?.[id],
+              reasoning: reasoning?.[id],
             };
           })}
           selectedModelId={activeModel}

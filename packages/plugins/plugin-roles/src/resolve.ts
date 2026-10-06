@@ -16,7 +16,7 @@ type FrogBotWithResolver = object & {
 export const defaultRoleResolver: RoleResolver = (req) => {
   const roles = (req.user as { roles?: unknown } | null)?.roles;
   return Array.isArray(roles)
-    ? (roles.filter((role): role is string => typeof role === 'string') as RoleSlug[])
+    ? roles.filter((role): role is RoleSlug => typeof role === 'string')
     : [];
 };
 

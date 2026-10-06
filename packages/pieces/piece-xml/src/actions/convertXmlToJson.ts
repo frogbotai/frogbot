@@ -18,12 +18,12 @@ export const convertXmlToJson = defineAction({
   description: 'Convert XML to JSON.',
   input: inputSchema,
   output: z.json().meta({ label: 'JSON' }),
-  async run({ input }) {
+  run({ input }) {
     const parser = new XMLParser({
       ignoreAttributes: input.ignoreAttributes ?? false,
       ignoreDeclaration: true,
     });
 
-    return parser.parse(input.xml);
+    return Promise.resolve(parser.parse(input.xml));
   },
 });

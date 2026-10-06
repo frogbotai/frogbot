@@ -1,4 +1,4 @@
-import { filesCollectionSlug, type PieceJSON } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug, type PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { defineAction } from '../define.js';
@@ -71,9 +71,7 @@ export const customApiCall = defineAction({
 
     const contentType = response.headers['content-type'] ?? 'application/octet-stream';
     const extension = contentType.split('/')[1]?.split(';')[0] || 'bin';
-    const doc = await req.frogbot.create({
-      collection,
-      data: {},
+    const doc = await createPieceFile(req, 'Resend', {
       file: {
         data: Buffer.from(response.body),
         mimetype: contentType,
@@ -82,7 +80,7 @@ export const customApiCall = defineAction({
       },
       overrideAccess: true,
     });
-    const url = (doc as Record<string, unknown>).url;
+    const url = doc.url;
     if (typeof url !== 'string' || !url) {
       throw new Error(`[frogbot] Upload collection '${collection}' did not return a file URL.`);
     }

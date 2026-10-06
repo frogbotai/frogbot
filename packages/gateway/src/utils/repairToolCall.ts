@@ -22,8 +22,8 @@ import type { ToolCallRepairFunction, ToolSet } from 'ai';
 export function createRepairToolCall<TOOLS extends ToolSet>():
   ToolCallRepairFunction<TOOLS> | undefined {
   try {
-    const repair: ToolCallRepairFunction<TOOLS> = async ({ toolCall }) => {
-      return {
+    const repair: ToolCallRepairFunction<TOOLS> = ({ toolCall }) => {
+      return Promise.resolve({
         type: 'tool-call',
         toolCallId: toolCall.toolCallId,
         toolName: 'invalid',
@@ -34,7 +34,7 @@ export function createRepairToolCall<TOOLS extends ToolSet>():
         providerExecuted: false,
         providerMetadata: undefined,
         invalid: false,
-      } as Awaited<ReturnType<ToolCallRepairFunction<TOOLS>>>;
+      } as Awaited<ReturnType<ToolCallRepairFunction<TOOLS>>>);
     };
     return repair;
   } catch {

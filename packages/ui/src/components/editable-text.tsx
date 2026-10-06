@@ -47,7 +47,6 @@ export function EditableText({
       className={`fb-editable-text${isEditing ? ' fb-editable-text--editing' : ''}${className ? ` ${className}` : ''}`}
       contentEditable={isEditing}
       suppressContentEditableWarning
-      tabIndex={isEditing ? 0 : undefined}
       title={tooltipContent ?? value}
       onClick={() => {
         if (!readonly && !disallowEditingOnClick) setIsEditing(true);

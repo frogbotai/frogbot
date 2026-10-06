@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug, findPieceFile } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { type GoogleDriveClient, requestOptions } from './client.js';
@@ -22,8 +22,7 @@ export async function loadFile({
   signal?: AbortSignal;
 }): Promise<FileContent> {
   signal?.throwIfAborted();
-  const doc = await req.frogbot.findByID({
-    collection: filesCollectionSlug(req, 'Google Drive'),
+  const doc = await findPieceFile(req, 'Google Drive', {
     id: file.fileId,
     depth: 0,
     req,
@@ -72,9 +71,7 @@ export async function saveFile({
   mimeType,
 }: FileContent & { req: FrogBotRequest }): Promise<SavedFile> {
   req.signal?.throwIfAborted();
-  const doc = await req.frogbot.create({
-    collection: filesCollectionSlug(req, 'Google Drive'),
-    data: {},
+  const doc = await createPieceFile(req, 'Google Drive', {
     file: { data, name, mimetype: mimeType, size: data.length },
     req,
     overrideAccess: false,

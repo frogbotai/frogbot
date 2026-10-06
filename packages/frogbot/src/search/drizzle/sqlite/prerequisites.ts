@@ -1,8 +1,6 @@
-import type { Payload } from 'payload';
-
 import { SearchCapabilityError } from '../../errors.js';
 import type { SearchCollection } from '../../types.js';
-import { capabilities } from './capabilities.js';
+import { adapterCapabilities } from './capabilities.js';
 import type { SQLiteSearchAdapter } from './types.js';
 
 export type SearchPrerequisites = {
@@ -86,11 +84,7 @@ export async function assertSearchPrerequisites({
 
   for (const { slug, search } of collections) {
     for (const index of Object.values(search)) {
-      const modes = capabilities({
-        collection: slug,
-        db: adapter as unknown as Payload['db'],
-        index,
-      });
+      const modes = adapterCapabilities(adapter, index);
 
       for (const mode of ['lexical', 'vector'] as const) {
         const capability = modes[mode];

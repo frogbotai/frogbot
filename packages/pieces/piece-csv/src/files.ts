@@ -1,11 +1,8 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { findPieceFile } from 'frogbot/pieces';
 
 export async function loadFile(req: FrogBotRequest, fileId: string | number) {
-  const collection = filesCollectionSlug(req, 'CSV');
-
-  const file = await req.frogbot.findByID({
-    collection,
+  const file = await findPieceFile(req, 'CSV', {
     id: fileId,
     depth: 0,
     req,

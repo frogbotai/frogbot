@@ -14,7 +14,7 @@ export const addNumbers = defineAction({
   description: 'Add the first number and the second number.',
   input: inputSchema,
   output,
-  async run({ input }) {
-    return input.firstNumber + input.secondNumber;
+  run({ input }) {
+    return Promise.resolve(input.firstNumber + input.secondNumber);
   },
 });

@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { createPieceFile, filesCollectionSlug } from 'frogbot/pieces';
 import { type gmail_v1 } from 'googleapis';
 import { z } from 'zod';
 
@@ -78,7 +78,7 @@ export async function saveAttachments(
 
   if (parts.length === 0) return { ...message, attachments: [] };
 
-  const collection = filesCollectionSlug(req, 'Gmail');
+  filesCollectionSlug(req, 'Gmail');
 
   const attachments = await Promise.all(
     parts.map(async (part) => {
@@ -94,9 +94,7 @@ export async function saveAttachments(
         'base64',
       );
       const name = part.filename || 'attachment';
-      const doc = await req.frogbot.create({
-        collection,
-        data: {},
+      const doc = await createPieceFile(req, 'Gmail', {
         file: {
           data,
           mimetype: part.mimeType ?? 'application/octet-stream',

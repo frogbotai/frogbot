@@ -1,5 +1,5 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug, type PieceRunArgs } from 'frogbot/pieces';
+import { findPieceFile, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { AirtableClient } from '../client.js';
@@ -193,10 +193,7 @@ const uploadInput = z.object({
 });
 
 async function loadFile(req: FrogBotRequest, fileId: string | number) {
-  const collection = filesCollectionSlug(req, 'Airtable');
-
-  const doc = await req.frogbot.findByID({
-    collection,
+  const doc = await findPieceFile(req, 'Airtable', {
     id: fileId,
     depth: 0,
     req,

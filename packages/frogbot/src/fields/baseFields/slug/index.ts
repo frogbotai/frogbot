@@ -1,15 +1,14 @@
-import type { TypeWithID } from 'payload';
+import type { Document, TypeWithID } from 'payload';
 import { slugField as upstreamSlugField } from 'payload';
+import type { Slugify as PayloadSlugify } from 'payload/shared';
 
-import type { FrogBotRequest } from '../../../types/request.js';
+import type { FrogBotArgs } from '../../../types/request.js';
 import type { RowField } from '../../config/types.js';
 import { generateSlug } from './generateSlug.js';
 
-export type Slugify<T extends TypeWithID = any> = (args: {
-  data: T;
-  req: FrogBotRequest;
-  valueToSlugify?: any;
-}) => Promise<string | undefined> | string | undefined;
+export type Slugify<T extends TypeWithID = Document> = (
+  args: FrogBotArgs<Parameters<PayloadSlugify<T>>[0]>,
+) => ReturnType<PayloadSlugify<T>>;
 
 type UpstreamSlugFieldArgs = NonNullable<Parameters<typeof upstreamSlugField>[0]>;
 

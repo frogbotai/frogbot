@@ -16,7 +16,7 @@ export const previousMonthInput = z.object({
   timeZone: timeZoneSchema,
 });
 
-export async function previousMonthBoundary(
+export function previousMonthBoundary(
   value: z.output<typeof previousMonthInput>,
   boundary: 'startOf' | 'endOf',
 ) {
@@ -31,5 +31,5 @@ export async function previousMonthBoundary(
   const wallTime = `${previousMonth.year()}-${String(previousMonth.month() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
   const result = dayjs.tz(wallTime, value.timeZone);
 
-  return { result: result.format(correctedFormat(value.timeFormat)) };
+  return Promise.resolve({ result: result.format(correctedFormat(value.timeFormat)) });
 }

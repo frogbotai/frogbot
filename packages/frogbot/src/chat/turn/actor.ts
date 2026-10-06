@@ -1,9 +1,10 @@
+import type { DocID } from '../../collections/config/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { TurnActor } from './types.js';
 
 export function actorFromRequest(req: FrogBotRequest): TurnActor {
   const channel = req.context.channel;
-  const user = req.user as (FrogBotRequest['user'] & { collection?: string }) | null;
+  const user: { collection?: string; id: DocID } | null = req.user;
 
   return {
     user: user ? { collection: user.collection ?? '', id: user.id } : null,

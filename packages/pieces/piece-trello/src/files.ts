@@ -1,14 +1,11 @@
 import type { FrogBotRequest } from 'frogbot';
-import { filesCollectionSlug } from 'frogbot/pieces';
+import { findPieceFile } from 'frogbot/pieces';
 
 export async function loadAttachment(
   req: FrogBotRequest,
   value: { fileId: number | string; name?: string },
 ) {
-  const collection = filesCollectionSlug(req, 'Trello');
-
-  const doc = await req.frogbot.findByID({
-    collection,
+  const doc = await findPieceFile(req, 'Trello', {
     id: value.fileId,
     depth: 0,
     req,
