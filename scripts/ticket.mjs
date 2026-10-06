@@ -17,7 +17,7 @@ import { checkCommitMessage, TYPES } from './commit-msg.mjs';
 import { docsOnly, landGates } from './lib/affected.mjs';
 import { recordDecisions } from './lib/decisions.mjs';
 import { flakyRetry } from './lib/flaky.mjs';
-import { appendFinding } from './lib/found.mjs';
+import { appendFinding, findingProblem } from './lib/found.mjs';
 import { readSessions, statsRows, summarize } from './lib/stats.mjs';
 
 export const FULL_TIER = [
@@ -48,8 +48,10 @@ const MAIN = 'main';
 
 const DEFAULT_TYPE = 'feat';
 
+const FOUND_USAGE = `pnpm ticket found [--source <path>] <<'EOF' … EOF`;
+
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | stats [--batch <n>] | found "<kind> · <area> · <text>" [--source <path>] | next | decisions';
+  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -103,7 +105,7 @@ export function parseArgs(argv) {
     land: { ticket: true, flags: ['message'] },
     status: { ticket: false, flags: ['batch'] },
     stats: { ticket: false, flags: ['batch'] },
-    found: { ticket: false, text: true, flags: ['source'] },
+    found: { ticket: false, stdin: true, flags: ['source'] },
     next: { ticket: false, flags: [] },
     decisions: { ticket: false, flags: [] },
   }[command];
@@ -116,12 +118,12 @@ export function parseArgs(argv) {
 
   if (extra) return { error: `${command} takes no --${extra}` };
 
-  if (positional.length !== (allowed.ticket || allowed.text ? 1 : 0)) {
+  if (positional.length !== (allowed.ticket ? 1 : 0)) {
     return {
       error: allowed.ticket
         ? `${command} needs one ticket number`
-        : allowed.text
-          ? `${command} needs one quoted finding`
+        : allowed.stdin
+          ? `${command} reads its row from stdin, not an argument: ${FOUND_USAGE}`
           : `${command} takes no arguments`,
     };
   }
@@ -135,8 +137,6 @@ export function parseArgs(argv) {
 
     if (key[2]) options.part = key[2].toLowerCase();
   }
-
-  if (allowed.text) options.text = positional[0];
 
   if (command === 'new') {
     options.type ??= DEFAULT_TYPE;
@@ -768,7 +768,14 @@ function commandStats(main, options) {
   console.log(formatTable(statsRows(summary)).join('\n'));
 }
 
-function commandFound(main, { text, source }) {
+function commandFound(main, { source }) {
+  if (process.stdin.isTTY) refuse(`found reads its row from stdin: ${FOUND_USAGE}`);
+
+  const text = readFileSync(0, 'utf8');
+  const problem = findingProblem(text);
+
+  if (problem) refuse(`${problem}. Usage: ${FOUND_USAGE}`);
+
   const idea = path.join(main, '.idea');
   const { line } = appendFinding({
     file: path.join(idea, 'found.md'),

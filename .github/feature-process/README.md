@@ -35,10 +35,10 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `decisions` writes the open cards and gates to `.idea/decisions/OPEN.md` and records the owner's answers;
   - `land` rebases, runs the gates, squashes to one commit and fast-forwards local `main`, never pushing. It takes more than 10 minutes when browser specs run, so start it as a background shell and wait for the notification. A docs-only diff skips `test:unit` and `test:ui`, except the unit specs that read Markdown. A known-flaky browser spec (`scripts/lib/flaky.mjs`) is retried once and logged as `flaky` in the ledger;
   - `stats [--batch <n>]` reads `~/.local/share/opencode/opencode.db` (read-only) and shows each ticket's wall and active time, cost, tokens, turns, stage sessions, fix rounds and land attempts;
-  - `found "<kind> · <area> · <text>" [--source <path>]` adds a row to `.idea/found.md` with the next free `F-` number.
+  - `found [--source <path>] <<'EOF'` reads one `<kind> · <area> · <text>` row from stdin and adds it to `.idea/found.md` with the next free `F-` number. The quoted here-doc keeps backticks from running; text that looks like captured terminal output is refused.
 - **Ticket keys.** A ticket split into parts uses a letter: `pnpm ticket new 210b` makes `frogbot-ticket210b` and `feat/ticket-210b-<slug>`, and its ledger rows say `210b`.
 - **Subagent descriptions** start with the ticket key, for example `211a stage 4: autonumber` or `250 lint: pnpm check`, so `stats` can count the session. A description with no number is fine and counts as "other"; the plugin refuses only one that starts with a number it can't read as a key.
-- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops and whole-suite test runs, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents. A failed top-level turn, or any provider sign-in error, raises a macOS notification.
+- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs, `git stash` while other worktrees exist, and background calls inside subagents, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents. A failed top-level turn, or any provider sign-in error, raises a macOS notification.
 
 ## Where things live
 
@@ -68,6 +68,8 @@ Both gates are answered in `.idea/decisions/OPEN.md`:
 
 - an `Approve:` line per spec sets it to `Status: Approved (<date>)`;
 - a `Go:` line per batch, once all its plans exist, sets each plan to `Status: Go (<date>)`.
+
+At Go, the coordinator plans the landing lanes from `pnpm ticket status`: tickets in different lanes run together, and tickets in one lane share files or depend on each other, so they land in order.
 
 A new decision card found while planning goes back into the spec and the inbox. Nothing else needs the owner.
 

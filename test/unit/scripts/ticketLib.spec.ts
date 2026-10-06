@@ -5,7 +5,12 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { failedTests, flakyRetry } from '../../../scripts/lib/flaky.mjs';
-import { appendFinding, findingLine, nextFindingId } from '../../../scripts/lib/found.mjs';
+import {
+  appendFinding,
+  findingLine,
+  findingProblem,
+  nextFindingId,
+} from '../../../scripts/lib/found.mjs';
 
 const summary = (entries: string[], failed = entries.length) =>
   [
@@ -90,10 +95,24 @@ describe('found ids', () => {
     expect(nextFindingId(['- F-003 bug · x · same as F-099\n'])).toBe('F-004');
   });
 
-  it('writes one row on one line', () => {
-    expect(findingLine({ id: 'F-052', text: ' bug · land ·\n two lines ', source: 'a.md' })).toBe(
-      '- F-052 bug · land · two lines [source](a.md)',
+  it('writes one row', () => {
+    expect(findingLine({ id: 'F-052', text: ' bug · land · text\n', source: 'a.md' })).toBe(
+      '- F-052 bug · land · text [source](a.md)',
     );
+  });
+
+  it('accepts one row from a here-doc', () => {
+    expect(findingProblem('bug · land · `pnpm test:ui` flakes on the login spec\n')).toBeNull();
+  });
+
+  it.each([
+    ['', 'no row on stdin'],
+    ['bug · land · first\nsecond line\n', '2 lines'],
+    ['bug · land · \u001b[31mFAIL\u001b[39m login', 'terminal escape codes'],
+    ['bug · land · Test Files  1 failed | 3 passed (4)', 'vitest output'],
+    ['bug · land · stderr | test/browser/login.spec.ts > logs in', 'vitest output'],
+  ])('refuses %j as captured output', (text, problem) => {
+    expect(findingProblem(text)).toContain(problem);
   });
 
   it('appends the next free id, counting archived rows', () => {

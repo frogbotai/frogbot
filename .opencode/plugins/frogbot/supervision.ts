@@ -26,6 +26,10 @@ export const MESSAGES = {
   archive:
     "Subagents can't search `.idea/archive/`: name the file or folder you need, such as `.idea/found.md` or `.idea/tickets/<folder>`, or read `.idea/decisions.md`.",
   tag: 'The subagent description starts with a number but not a ticket key: start it with the key and a space or colon (`211A stage 4: …`, `250 lint: pnpm check`), or with no number for work outside a ticket.',
+  stash:
+    '`git stash` is not allowed while other worktrees exist: they share one stash list. Read the committed version with `git show HEAD:<file>`, or keep a temp copy of the file instead.',
+  background:
+    '`background: true` is not allowed in a subagent: run the call in the foreground with a timeout.',
 } as const;
 
 export type Denial = keyof typeof MESSAGES;
@@ -222,18 +226,32 @@ const COMMIT_SHORT_VALUES = 'mFCct';
 
 const COMMIT_SHORT_ATTACHED = 'Su';
 
-function gitDenial(args: string[]): Denial | undefined {
+const STASH_READS = new Set(['list', 'show']);
+
+function gitSubcommand(args: string[]) {
   let i = 0;
 
   while (i < args.length && args[i].startsWith('-')) {
     i += GIT_VALUE_OPTIONS.has(args[i]) ? 2 : 1;
   }
 
-  const subcommand = args[i];
+  return { subcommand: args[i], rest: args.slice(i + 1) };
+}
+
+function changesStash(words: string[]) {
+  if (commandName(words[0]) !== 'git') return false;
+
+  const { subcommand, rest } = gitSubcommand(words.slice(1));
+
+  return subcommand === 'stash' && !STASH_READS.has(rest[0]);
+}
+
+function gitDenial(args: string[]): Denial | undefined {
+  const { subcommand, rest } = gitSubcommand(args);
 
   if (subcommand === 'push') return 'push';
   if (subcommand === 'merge') return 'merge';
-  if (subcommand === 'commit' && skipsHooks(args.slice(i + 1))) return 'noVerify';
+  if (subcommand === 'commit' && skipsHooks(rest)) return 'noVerify';
 
   return undefined;
 }
@@ -325,7 +343,7 @@ function isBareSuite(words: string[]) {
   return true;
 }
 
-export function denial(command: string): Denial | undefined {
+export function denial(command: string, { worktrees = 1 } = {}): Denial | undefined {
   for (const words of simpleCommands(command)) {
     const name = commandName(words[0]);
 
@@ -334,11 +352,26 @@ export function denial(command: string): Denial | undefined {
       if (found) return found;
     }
 
+    if (worktrees > 1 && changesStash(words)) return 'stash';
     if (name === 'sleep' || (name === 'kill' && words[1] === '-0')) return 'poll';
     if (isBareSuite(words)) return 'suite';
   }
 
   return undefined;
+}
+
+export function stashes(command: string) {
+  return simpleCommands(command).some(changesStash);
+}
+
+export function worktreeCount(porcelain: string) {
+  return porcelain.split('\n').filter((line) => line.startsWith('worktree ')).length;
+}
+
+export function backgroundCall(tool: string, input: unknown) {
+  if (tool !== 'shell' && tool !== 'subagent') return false;
+
+  return (input as { background?: unknown } | null)?.background === true;
 }
 
 const ARCHIVE = /(?:^|\/)\.idea\/archive(?:\/|$)/;

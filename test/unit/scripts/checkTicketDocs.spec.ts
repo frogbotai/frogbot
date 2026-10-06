@@ -316,6 +316,17 @@ describe('check ticket-docs', () => {
       ]);
     });
 
+    it('rejects a plan with more than 3 stages', () => {
+      const stage = (n: number) =>
+        `${n}. Step ${n}.\n   - Verify: \`pnpm test:unit test/unit/assets.spec.ts\`\n   - Evidence: unit\n`;
+
+      const lines = problems({
+        [PLAN]: `${fixture(PLAN)}${[2, 3, 4].map(stage).join('')}`,
+      });
+
+      expect(lines).toEqual([`.idea/${PLAN}:30 4 stages (max 3); split the ticket`]);
+    });
+
     it('rejects a plan with no touches:', () => {
       expect(problems(edit(PLAN, 'touches:\n\n- src/example.ts\n\n', ''))).toEqual([
         `.idea/${PLAN}:1 missing "touches:"`,
@@ -462,6 +473,16 @@ describe('check ticket-docs', () => {
         '.idea/audits/process/PLAN.md:8 ticket 902 is cut or merged but has a folder: tickets/ticket902_idea',
         '.idea/audits/process/PLAN.md:9 ticket 903 has no folder in tickets/',
       ]);
+    });
+
+    it('counts an archived folder as present and does not check it', () => {
+      const result = check({
+        'archive/tickets/ticket903_later/issue.md': '# Ticket 903 — no header\n',
+        'archive/tickets/ticket903_later/step3_plan.md': '# Plan\n',
+        'audits/process/PLAN.md': `${fixture('audits/process/PLAN.md')}| 903 | Later | P2 | 900 | 2 |\n`,
+      });
+
+      expect(result).toEqual({ code: 0, lines: ['ticket-docs: OK · 1 ticket'] });
     });
   });
 

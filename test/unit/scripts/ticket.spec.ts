@@ -70,11 +70,7 @@ describe('parseArgs', () => {
 
   it('reads stats and found', () => {
     expect(parseArgs(['stats', '--batch', '27'])).toEqual({ command: 'stats', batch: 27 });
-    expect(parseArgs(['found', 'bug · land · text', '--source', 'x.md'])).toEqual({
-      command: 'found',
-      text: 'bug · land · text',
-      source: 'x.md',
-    });
+    expect(parseArgs(['found', '--source', 'x.md'])).toEqual({ command: 'found', source: 'x.md' });
   });
 
   it('defaults the branch type to feat', () => {
@@ -93,7 +89,7 @@ describe('parseArgs', () => {
     [['status', '--batch', 'soon'], '--batch "soon" is not a batch'],
     [['status', '--all'], 'unknown argument "--all"'],
     [['land', '210bc'], '"210bc" is not a ticket number'],
-    [['found'], 'found needs one quoted finding'],
+    [['found', 'bug · land · `pnpm test:ui`'], 'found reads its row from stdin, not an argument'],
     [['stats', '27'], 'stats takes no arguments'],
   ])('rejects %j', (argv, error) => {
     expect(parseArgs(argv).error).toContain(error);
