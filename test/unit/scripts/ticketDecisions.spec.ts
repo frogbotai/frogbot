@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseCards, rulingLine } from '../../../scripts/lib/decisions.mjs';
 import { commandDecisions, parseArgs } from '../../../scripts/ticket.mjs';
 
-const FIXTURE = join(import.meta.dirname, 'fixtures', 'decisions', 'idea');
+const FIXTURE = join(import.meta.dirname, 'fixtures', 'decisions', '_process');
 
 const DATE = '2026-10-05';
 
@@ -15,13 +15,15 @@ const ALPHA = 'tickets/ticket901_alpha/step2_spec.md';
 
 let main: string;
 
-const file = (name: string) => join(main, '.idea', name);
+const processDir = () => join(main, '.idea', '_process');
+
+const file = (name: string) => join(processDir(), name);
 
 const read = (name: string) => readFileSync(file(name), 'utf8');
 
 const snapshot = () =>
   Object.fromEntries(
-    readdirSync(join(main, '.idea'), { recursive: true, withFileTypes: true })
+    readdirSync(processDir(), { recursive: true, withFileTypes: true })
       .filter((entry) => entry.isFile())
       .map((entry) => {
         const path = join(entry.parentPath, entry.name);
@@ -36,11 +38,11 @@ const answer = (open: string, card: string, text: string) =>
   open.replace(new RegExp(`(### 901 ${card} [\\s\\S]*?- \\*\\*Answer:\\*\\*)`), `$1 ${text}`);
 
 const editOpen = (edit: (open: string) => string) =>
-  writeFileSync(file('decisions/OPEN.md'), edit(read('decisions/OPEN.md')));
+  writeFileSync(file('open_decisions.md'), edit(read('open_decisions.md')));
 
 beforeEach(() => {
   main = mkdtempSync(join(tmpdir(), 'ticket-decisions-'));
-  cpSync(FIXTURE, join(main, '.idea'), { recursive: true });
+  cpSync(FIXTURE, processDir(), { recursive: true });
   vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
@@ -58,12 +60,12 @@ describe('pnpm ticket decisions', () => {
   it('lists open cards verbatim, Following Payload, Approve and ready batches', () => {
     run();
 
-    const open = read('decisions/OPEN.md');
+    const open = read('open_decisions.md');
     const spec = read(ALPHA);
     const card = spec.slice(spec.indexOf('### 901 D1'), spec.indexOf('### 901 D2')).trimEnd();
 
     expect(open).toContain('## 901 — Alpha');
-    expect(open).toContain('Spec: [step2_spec.md](../tickets/ticket901_alpha/step2_spec.md)');
+    expect(open).toContain('Spec: [step2_spec.md](tickets/ticket901_alpha/step2_spec.md)');
     expect(open).toContain(card);
     expect(open).toContain('### 901 D2 — Which colour?');
     expect(open).toContain(
@@ -71,7 +73,7 @@ describe('pnpm ticket decisions', () => {
     );
     expect(open).toContain('\nApprove:\n');
     expect(open).toContain('## Batch 42 plans');
-    expect(open).toContain('- 902: [step3_plan.md](../tickets/ticket902_beta/step3_plan.md)');
+    expect(open).toContain('- 902: [step3_plan.md](tickets/ticket902_beta/step3_plan.md)');
     expect(open).toContain('\nGo:\n');
     expect(open).not.toContain('Batch 41');
     expect(open).not.toContain('Batch 43');
@@ -108,7 +110,7 @@ describe('pnpm ticket decisions', () => {
     );
     expect(rulings.match(/DR-04\d/g)).toEqual(['DR-041']);
 
-    const open = read('decisions/OPEN.md');
+    const open = read('open_decisions.md');
 
     expect(open).not.toContain('### 901 D1');
     expect(open).not.toContain('### 901 D2');
@@ -127,13 +129,13 @@ describe('pnpm ticket decisions', () => {
     run();
 
     expect(read(ALPHA)).toContain('Status: Draft');
-    expect(read('decisions/OPEN.md')).toContain('\nApprove: yes\n');
+    expect(read('open_decisions.md')).toContain('\nApprove: yes\n');
 
     editOpen((open) => answer(open, 'D2', 'A'));
     run();
 
     expect(read(ALPHA)).toContain(`Status: Approved (${DATE})`);
-    expect(read('decisions/OPEN.md')).not.toContain('## 901');
+    expect(read('open_decisions.md')).not.toContain('## 901');
   });
 
   it('copies any other Approve text into Owner notes and keeps the spec Draft', () => {
@@ -145,7 +147,7 @@ describe('pnpm ticket decisions', () => {
 
     expect(spec).toContain('Status: Draft');
     expect(spec.endsWith(`\n\n## Owner notes\n\n- ${DATE}: drop the Payload line\n`)).toBe(true);
-    expect(read('decisions/OPEN.md')).toContain('\nApprove:\n');
+    expect(read('open_decisions.md')).toContain('\nApprove:\n');
   });
 
   it('sets every plan in the batch to Go with Go: yes', () => {
@@ -158,7 +160,7 @@ describe('pnpm ticket decisions', () => {
     }
 
     expect(read('tickets/ticket904_delta/step3_plan.md')).toContain('Status: Draft');
-    expect(read('decisions/OPEN.md')).not.toContain('Batch 42');
+    expect(read('open_decisions.md')).not.toContain('Batch 42');
   });
 
   it('matches cards by ticket and ID, refusing an answer to a card that is gone', () => {

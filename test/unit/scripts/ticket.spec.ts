@@ -251,8 +251,8 @@ describe('lanes', () => {
       { number: 216, depends: [], touches: ['scripts/check.mjs', 'package.json'] },
       { number: 217, depends: [216], touches: ['scripts/check-generated.mjs'] },
       { number: 221, depends: [], touches: ['.github/feature-process/'] },
-      { number: 224, depends: [100], touches: ['.idea/archive/**'] },
-      { number: 230, depends: [], touches: ['.idea/archive/decisions.md'] },
+      { number: 224, depends: [100], touches: ['.idea/_process/archive/**'] },
+      { number: 230, depends: [], touches: ['.idea/_process/archive/decisions.md'] },
     ]);
 
     expect(Object.fromEntries(result)).toEqual({

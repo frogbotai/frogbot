@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../../../scripts/check-ticket-docs.mjs';
 
 const FIXTURES = path.join(import.meta.dirname, 'fixtures', 'ticketDocs');
-const GOOD = 'tickets/ticket900_good';
+const GOOD = '_process/tickets/ticket900_good';
 const RESEARCH = `${GOOD}/step1_research.md`;
 const SPEC = `${GOOD}/step2_spec.md`;
 const PLAN = `${GOOD}/step3_plan.md`;
@@ -45,7 +45,7 @@ function check(
   cpSync(path.join(FIXTURES, 'idea'), idea, { recursive: true });
 
   for (const folder of copy) {
-    cpSync(path.join(FIXTURES, 'broken', folder), path.join(idea, 'tickets', folder), {
+    cpSync(path.join(FIXTURES, 'broken', folder), path.join(idea, '_process', 'tickets', folder), {
       recursive: true,
     });
   }
@@ -84,12 +84,14 @@ describe('check ticket-docs', () => {
 
     expect(run({ idea, root: FIXTURES, home: FIXTURES })).toEqual({
       code: 0,
-      lines: ['ticket-docs: skipped, no .idea/tickets/ here (run it in the main checkout)'],
+      lines: [
+        'ticket-docs: skipped, no .idea/_process/tickets/ here (run it in the main checkout)',
+      ],
     });
   });
 
   it('reports every problem in a broken folder as file:line message and exits 1', () => {
-    const folder = '.idea/tickets/ticket901_broken';
+    const folder = '.idea/_process/tickets/ticket901_broken';
 
     expect(check({}, { copy: ['ticket901_broken'] })).toEqual({
       code: 1,
@@ -109,8 +111,8 @@ describe('check ticket-docs', () => {
 
   it('checks only the named tickets', () => {
     const result = check(
-      { 'found.md': '- F-1 broken row\n' },
-      { argv: ['.idea/tickets/ticket900_good/'], copy: ['ticket901_broken'] },
+      { '_process/found.md': '- F-1 broken row\n' },
+      { argv: ['.idea/_process/tickets/ticket900_good/'], copy: ['ticket901_broken'] },
     );
 
     expect(result).toEqual({ code: 0, lines: ['ticket-docs: OK · 1 ticket'] });
@@ -465,20 +467,20 @@ describe('check ticket-docs', () => {
 
     it('rejects a folder for a cut ticket and a live ticket with no folder', () => {
       const lines = problems({
-        'tickets/ticket902_idea/issue.md': '# Ticket 902 — cut\n',
+        '_process/tickets/ticket902_idea/issue.md': '# Ticket 902 — cut\n',
         'audits/process/PLAN.md': `${fixture('audits/process/PLAN.md')}| 903 | Later | P2 | 900 | 2 |\n`,
       });
 
       expect(lines).toEqual([
-        '.idea/audits/process/PLAN.md:8 ticket 902 is cut or merged but has a folder: tickets/ticket902_idea',
-        '.idea/audits/process/PLAN.md:9 ticket 903 has no folder in tickets/',
+        '.idea/audits/process/PLAN.md:8 ticket 902 is cut or merged but has a folder: _process/tickets/ticket902_idea',
+        '.idea/audits/process/PLAN.md:9 ticket 903 has no folder in _process/tickets/',
       ]);
     });
 
     it('counts an archived folder as present and does not check it', () => {
       const result = check({
-        'archive/tickets/ticket903_later/issue.md': '# Ticket 903 — no header\n',
-        'archive/tickets/ticket903_later/step3_plan.md': '# Plan\n',
+        '_process/archive/tickets/ticket903_later/issue.md': '# Ticket 903 — no header\n',
+        '_process/archive/tickets/ticket903_later/step3_plan.md': '# Plan\n',
         'audits/process/PLAN.md': `${fixture('audits/process/PLAN.md')}| 903 | Later | P2 | 900 | 2 |\n`,
       });
 
@@ -489,14 +491,14 @@ describe('check ticket-docs', () => {
   describe('decisions.md and found.md', () => {
     it('rejects malformed and duplicate rows', () => {
       const lines = problems({
-        'decisions.md': `${fixture('decisions.md')}- DR-003 keep it simple, Prefer the smallest change.\n${ROW_2}\n`,
-        'found.md': `${fixture('found.md')}- F-002 cleanup · repo · Untracked folders. [source](x.md)\n`,
+        '_process/decisions.md': `${fixture('_process/decisions.md')}- DR-003 keep it simple, Prefer the smallest change.\n${ROW_2}\n`,
+        '_process/found.md': `${fixture('_process/found.md')}- F-002 cleanup · repo · Untracked folders. [source](x.md)\n`,
       });
 
       expect(lines).toEqual([
-        '.idea/decisions.md:10 row is not `- DR-nnn "quote" → rule. [source](link)` (or `(summary)` for the quote)',
-        '.idea/decisions.md:11 DR-002 is also on line 9',
-        '.idea/found.md:4 row is not `- F-nnn <bug|pre-existing failure|test gap|docs|idea> · area · description. [source](link)`',
+        '.idea/_process/decisions.md:10 row is not `- DR-nnn "quote" → rule. [source](link)` (or `(summary)` for the quote)',
+        '.idea/_process/decisions.md:11 DR-002 is also on line 9',
+        '.idea/_process/found.md:4 row is not `- F-nnn <bug|pre-existing failure|test gap|docs|idea> · area · description. [source](link)`',
       ]);
     });
 
@@ -508,8 +510,12 @@ describe('check ticket-docs', () => {
       );
 
       expect(
-        problems({ 'decisions.md': `${fixture('decisions.md')}${rows.join('\n')}\n` }),
-      ).toEqual(['.idea/decisions.md:1 61 rulings (max 60); move enforced rows to the archive']);
+        problems({
+          '_process/decisions.md': `${fixture('_process/decisions.md')}${rows.join('\n')}\n`,
+        }),
+      ).toEqual([
+        '.idea/_process/decisions.md:1 61 rulings (max 60); move enforced rows to the archive',
+      ]);
     });
   });
 });

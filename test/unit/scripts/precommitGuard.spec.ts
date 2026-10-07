@@ -16,7 +16,7 @@ function manifest(patchedDependencies?: Record<string, string>) {
 describe('findPathViolations', () => {
   it.each([
     ['.idea/t.md', '.idea/ is private; unstage it'],
-    ['.idea/tickets/ticket215/issue.md', '.idea/ is private; unstage it'],
+    ['.idea/_process/tickets/ticket215/issue.md', '.idea/ is private; unstage it'],
     ['CHANGELOG.md', 'changelogs are not committed; unstage it'],
     ['packages/frogbot/CHANGELOG.md', 'changelogs are not committed; unstage it'],
     ['.changeset/a.md', 'changesets are not used; unstage it'],
@@ -165,10 +165,12 @@ describe('findPatchedDependencyViolation', () => {
 describe('formatViolation', () => {
   it('prints the path and the rule on one line', () => {
     const line = formatViolation({
-      path: '.idea/tickets/x.md',
+      path: '.idea/_process/tickets/x.md',
       reason: '.idea/ is private; unstage it',
     });
 
-    expect(line).toBe('precommit-guard: .idea/tickets/x.md — .idea/ is private; unstage it');
+    expect(line).toBe(
+      'precommit-guard: .idea/_process/tickets/x.md — .idea/ is private; unstage it',
+    );
   });
 });

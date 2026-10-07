@@ -24,7 +24,7 @@ export const MESSAGES = {
   suite:
     'The full test suite is not allowed here: run the affected files or `--project`; the full suite runs in `pnpm ticket land`.',
   archive:
-    "Subagents can't search `.idea/archive/`: name the file or folder you need, such as `.idea/found.md` or `.idea/tickets/<folder>`, or read `.idea/decisions.md`.",
+    "Subagents can't search `.idea/_process/archive/`: name the file or folder you need, such as `.idea/_process/found.md` or `.idea/_process/tickets/<folder>`, or read `.idea/_process/decisions.md`.",
   tag: 'The subagent description starts with a number but not a ticket key: start it with the key and a space or colon (`211A stage 4: …`, `250 lint: pnpm check`), or with no number for work outside a ticket.',
   stash:
     '`git stash` is not allowed while other worktrees exist: they share one stash list. Read the committed version with `git show HEAD:<file>`, or keep a temp copy of the file instead.',
@@ -374,9 +374,13 @@ export function backgroundCall(tool: string, input: unknown) {
   return (input as { background?: unknown } | null)?.background === true;
 }
 
-const ARCHIVE = /(?:^|\/)\.idea\/archive(?:\/|$)/;
+const ARCHIVE_DIR = '.idea/_process/archive';
 
-const IDEA_WILDCARD = /(?:^|\/)\.idea\/[*?[{]/;
+const ARCHIVE = /(?:^|\/)\.idea\/_process\/archive(?:\/|$)/;
+
+const ARCHIVE_PARENT = /(?:^|\/)\.idea(?:\/_process)?$/;
+
+const IDEA_WILDCARD = /(?:^|\/)\.idea\/(?:_process\/)?[^/]*[*?[{]/;
 
 const SEARCHERS = new Set(['rg', 'ag', 'ack', 'fd', 'find', 'tree']);
 
@@ -410,7 +414,7 @@ function normalizePath(value: string) {
 function scopesArchive(path: string) {
   const normalized = normalizePath(path);
 
-  return normalized === '.idea' || normalized.endsWith('/.idea') || ARCHIVE.test(normalized);
+  return ARCHIVE_PARENT.test(normalized) || ARCHIVE.test(normalized);
 }
 
 function recursive(name: string, args: string[]) {
@@ -485,7 +489,7 @@ function shellSearchesArchive(command: string, workdir: string) {
 function patternTouchesArchive(pattern: string) {
   const normalized = normalizePath(pattern);
 
-  return normalized.includes('.idea/archive') || IDEA_WILDCARD.test(normalized);
+  return normalized.includes(ARCHIVE_DIR) || IDEA_WILDCARD.test(normalized);
 }
 
 export function searchesArchive(tool: string, input: unknown): boolean {

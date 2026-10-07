@@ -10,6 +10,16 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const USAGE = 'Usage: pnpm check ticket-docs [<ticket number or folder>...]';
 
+const PROCESS = '_process';
+
+const TICKETS = path.join(PROCESS, 'tickets');
+
+const ARCHIVED_TICKETS = path.join(PROCESS, 'archive', 'tickets');
+
+const RULINGS = path.join(PROCESS, 'decisions.md');
+
+const FOUND = path.join(PROCESS, 'found.md');
+
 const DOCS = {
   research: 'step1_research.md',
   spec: 'step2_spec.md',
@@ -727,9 +737,7 @@ function checkIssue({ text, ticket, row, planFile }, problem) {
   }
 }
 
-function ticketFolders(idea) {
-  const dir = path.join(idea, 'tickets');
-
+function ticketFolders(dir) {
   if (!existsSync(dir)) return [];
 
   return readdirSync(dir, { withFileTypes: true })
@@ -753,10 +761,12 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
   const warnings = [];
   const at = (list, file) => (line, message) => list.push({ file, line, message });
   const resolve = resolver({ root, home });
-  const decisionsText = readOptional(path.join(idea, 'decisions.md'));
+  const decisionsText = readOptional(path.join(idea, RULINGS));
   const decisions = parseDecisions(decisionsText ?? '');
-  const folders = ticketFolders(idea);
-  const archived = new Set(ticketFolders(path.join(idea, 'archive')).map(({ ticket }) => ticket));
+  const folders = ticketFolders(path.join(idea, TICKETS));
+  const archived = new Set(
+    ticketFolders(path.join(idea, ARCHIVED_TICKETS)).map(({ ticket }) => ticket),
+  );
   const filtered = only.length > 0;
   const rows = new Map();
 
@@ -766,18 +776,18 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
     }
   }
 
-  if (decisionsText === null) problems.push({ file: 'decisions.md', line: 1, message: 'missing' });
+  if (decisionsText === null) problems.push({ file: RULINGS, line: 1, message: 'missing' });
   else if (!filtered) {
     for (const { line, message } of decisions.problems) {
-      problems.push({ file: 'decisions.md', line, message });
+      problems.push({ file: RULINGS, line, message });
     }
   }
 
-  const foundText = readOptional(path.join(idea, 'found.md'));
+  const foundText = readOptional(path.join(idea, FOUND));
 
   if (!filtered && foundText !== null) {
     for (const { line, message } of parseFound(foundText).problems) {
-      problems.push({ file: 'found.md', line, message });
+      problems.push({ file: FOUND, line, message });
     }
   }
 
@@ -794,21 +804,21 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
         problems.push({
           file: row.planFile,
           line: row.line,
-          message: `ticket ${row.ticket} is cut or merged but has a folder: tickets/${name}`,
+          message: `ticket ${row.ticket} is cut or merged but has a folder: ${TICKETS}/${name}`,
         });
       }
     } else if (matches.length === 0 && !archived.has(row.ticket)) {
       problems.push({
         file: row.planFile,
         line: row.line,
-        message: `ticket ${row.ticket} has no folder in tickets/`,
+        message: `ticket ${row.ticket} has no folder in ${TICKETS}/`,
       });
     }
   }
 
   for (const folder of folders) {
     const row = rows.get(folder.ticket);
-    const dir = path.join(idea, 'tickets', folder.name);
+    const dir = path.join(idea, TICKETS, folder.name);
     const docs = Object.fromEntries(
       Object.entries(DOCS).map(([kind, name]) => [kind, readOptional(path.join(dir, name))]),
     );
@@ -819,7 +829,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
 
     checked.push(folder.ticket);
 
-    const file = (name) => path.join('tickets', folder.name, name);
+    const file = (name) => path.join(TICKETS, folder.name, name);
 
     checkIssue(
       {
@@ -878,10 +888,10 @@ function parseTickets(argv) {
 }
 
 export function run({ idea, root, home, argv = [] }) {
-  if (!existsSync(path.join(idea, 'tickets'))) {
+  if (!existsSync(path.join(idea, TICKETS))) {
     return {
       code: 0,
-      lines: ['ticket-docs: skipped, no .idea/tickets/ here (run it in the main checkout)'],
+      lines: [`ticket-docs: skipped, no .idea/${TICKETS}/ here (run it in the main checkout)`],
     };
   }
 

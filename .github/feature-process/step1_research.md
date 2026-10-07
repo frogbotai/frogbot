@@ -6,7 +6,7 @@ A fresh research agent writes `step1_research.md` from `issue.md`. Later agents 
 - Cite `path:line`. Write reference paths as `~/code/<repo>/path:line`; a bare path is FrogBot.
 - Read the implementation, its types and its tests, not only search hits. A claim that something doesn't exist needs several searches and a read of the closest module.
 - List choices only the owner can make under "Decisions for the spec", one line each. The spec turns them into cards.
-- Read `.idea/decisions.md` and copy every ruling that applies into the Summary, each row whole. If none applies, write `- **Rulings:** none (read: <topic>, <topic>)` with the headings you read.
+- Read `.idea/_process/decisions.md` and copy every ruling that applies into the Summary, each row whole. If none applies, write `- **Rulings:** none (read: <topic>, <topic>)` with the headings you read.
 - Run `pnpm check ticket-docs <n>` before returning.
 
 ## Template

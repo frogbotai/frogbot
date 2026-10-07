@@ -35,22 +35,22 @@
     { "action": "shell", "resource": "pnpm run test:browser", "effect": "deny" },
 
     // Only the primary agents below may read the archive or start subagents.
-    { "action": "read", "resource": ".idea/archive/*", "effect": "deny" },
-    { "action": "read", "resource": "*/.idea/archive/*", "effect": "deny" },
+    { "action": "read", "resource": ".idea/_process/archive/*", "effect": "deny" },
+    { "action": "read", "resource": "*/.idea/_process/archive/*", "effect": "deny" },
     { "action": "subagent", "resource": "*", "effect": "deny" },
   ],
   "agents": {
     "build": {
       "permissions": [
-        { "action": "read", "resource": ".idea/archive/*", "effect": "allow" },
-        { "action": "read", "resource": "*/.idea/archive/*", "effect": "allow" },
+        { "action": "read", "resource": ".idea/_process/archive/*", "effect": "allow" },
+        { "action": "read", "resource": "*/.idea/_process/archive/*", "effect": "allow" },
         { "action": "subagent", "resource": "*", "effect": "allow" },
       ],
     },
     "plan": {
       "permissions": [
-        { "action": "read", "resource": ".idea/archive/*", "effect": "allow" },
-        { "action": "read", "resource": "*/.idea/archive/*", "effect": "allow" },
+        { "action": "read", "resource": ".idea/_process/archive/*", "effect": "allow" },
+        { "action": "read", "resource": "*/.idea/_process/archive/*", "effect": "allow" },
         { "action": "subagent", "resource": "*", "effect": "allow" },
       ],
     },
