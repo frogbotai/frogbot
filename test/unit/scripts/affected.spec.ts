@@ -206,6 +206,43 @@ describe('affectedSet', () => {
     expect(set.uncovered).toEqual(['packages/frogbot/src/chat/stream.ts']);
   });
 
+  it('runs the gateway integration specs for a gateway change, with test:gateway', () => {
+    const gateway = { name: '@frogbotai/gateway', dir: 'packages/gateway', typecheck: true };
+    const set = affectedSet({
+      files: ['packages/gateway/src/routes/chatCompletions/handler.ts'],
+      packages: [...packages, gateway],
+      vitest: [
+        ...vitest,
+        { name: 'gateway-integration', specs: ['test/gateway/chatCompletions.int.spec.ts'] },
+      ],
+      browser,
+      checks: [],
+    });
+
+    expect(set.specs['gateway-integration']).toEqual(['test/gateway/chatCompletions.int.spec.ts']);
+    expect(verifyGroups(set).find(({ group }) => group === 'int')?.commands).toEqual([
+      ['pnpm', 'test:gateway', 'test/gateway/chatCompletions.int.spec.ts'],
+    ]);
+  });
+
+  it('runs the browser projects of the fixtures on a changed database adapter', () => {
+    const set = affectedSet({
+      files: ['packages/db-sqlite/src/index.ts'],
+      packages,
+      vitest,
+      browser: {
+        ...browser,
+        fixturePackages: {
+          ...browser.fixturePackages,
+          'templates/blank': ['@frogbotai/db-sqlite'],
+        },
+      },
+      checks: [],
+    });
+
+    expect(set.browser).toEqual(['blank']);
+  });
+
   it('maps a package index and a skills folder to their mirrors and area', () => {
     expect(map(['packages/next/src/fields/FieldCell/index.client.tsx']).specs.ui).toEqual([
       'test/ui/next/fields/FieldCell.spec.tsx',

@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL_CATALOG } from '@frogbotai/gateway';
+import { canonicalizeModelId, DEFAULT_MODEL_CATALOG } from '@frogbotai/gateway';
 
 import { catalog } from './catalog.js';
 import type { AIConfig, CustomProviderEntry, ModelMode, SanitizedAIConfig } from './types.js';
@@ -26,11 +26,13 @@ function configuredModels(
       (entry as CustomProviderEntry).type === 'openai-compatible'
         ? undefined
         : (entry as { models?: string[] }).models;
+    const allowed =
+      allowlist && new Set(allowlist.map((name) => canonicalizeModelId(`${provider}/${name}`)));
 
     for (const model of catalog) {
       const modelName = model.id.slice(model.id.indexOf('/') + 1);
 
-      if (model.provider === provider && (!allowlist || allowlist.includes(modelName))) {
+      if (model.provider === provider && (!allowed || allowed.has(canonicalizeModelId(model.id)))) {
         models.set(`${provider}/${modelName}`, model.mode);
       }
     }

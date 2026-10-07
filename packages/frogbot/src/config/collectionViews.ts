@@ -1,4 +1,8 @@
-import type { CollectionBeforeChangeHook, PayloadComponent } from 'payload';
+import type {
+  CollectionBeforeChangeHook,
+  CollectionConfig as PayloadCollectionConfig,
+  PayloadComponent,
+} from 'payload';
 import { flattenTopLevelFields, generateKeyBetween } from 'payload/shared';
 
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
@@ -110,7 +114,7 @@ export function compileCollectionViews({
 }: {
   collection: CollectionConfig;
   onRuntimeViews?: (views: CollectionView[]) => void;
-}): CollectionConfig['admin'] {
+}): PayloadCollectionConfig['admin'] {
   const source = collection.admin;
   const configured = source?.views ?? [DEFAULT_VIEW];
   if (configured.length === 0) {
@@ -267,5 +271,5 @@ export function compileCollectionViews({
         views: metadata,
       },
     },
-  };
+  } as PayloadCollectionConfig['admin'];
 }

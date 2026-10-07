@@ -64,7 +64,11 @@ ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')
 /** Default output filename, matching Payload's `payload-types.ts` convention. */
 const DEFAULT_FILENAME = 'frogbot-types.ts';
 
-type SchemaGroup = { properties?: Record<string, unknown>; required?: string[] };
+type SchemaGroup = {
+  properties?: Record<string, unknown>;
+  required?: string[];
+  [key: string]: unknown;
+};
 type ConfigJSONSchema = {
   properties?: Record<string, SchemaGroup | undefined>;
   definitions?: Record<string, unknown>;

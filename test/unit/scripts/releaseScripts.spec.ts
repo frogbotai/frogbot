@@ -99,7 +99,7 @@ describe('release scripts', () => {
     );
   });
 
-  it('the root has 25 commands plus the git hook scripts', () => {
+  it('the root has 26 commands plus the git hook scripts', () => {
     expect(Object.keys(scripts).sort()).toEqual(
       [
         'build',
@@ -116,6 +116,7 @@ describe('release scripts', () => {
         'test:int:pg',
         'test:int:mongo',
         'test:int:sqlite',
+        'test:gateway',
         'test:e2e',
         'test:browser',
         'test:live',

@@ -526,7 +526,9 @@ describe('landGates', () => {
 describe('affectedRuns', () => {
   it.each([
     [['README.md', 'scripts/ticket.mjs'], []],
-    [['packages/gateway/package.json'], ['test:int:sqlite']],
+    [['packages/gateway/package.json'], ['test:int:sqlite', 'test:gateway']],
+    [['test/gateway/chatCompletions.int.spec.ts'], ['test:gateway']],
+    [['packages/db-sqlite/src/index.ts'], ['test:int:sqlite', 'test:browser']],
     [['packages/ui/src/components/button.tsx'], ['test:int:sqlite', 'test:browser']],
     [['test/browser/chat.spec.ts'], ['test:browser']],
     [['templates/blank/src/app.tsx'], ['test:browser']],

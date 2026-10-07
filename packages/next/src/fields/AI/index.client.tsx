@@ -297,7 +297,7 @@ export function AICell(props: DefaultCellComponentProps) {
                   <InvalidStepIcon aria-hidden size={14} />
                 </Button>
               ) : (
-                <span aria-label={message} className="ai-cell__warning" role="img" tabIndex={0}>
+                <span aria-label={message} className="ai-cell__warning" role="img">
                   <InvalidStepIcon aria-hidden size={14} />
                 </span>
               )}

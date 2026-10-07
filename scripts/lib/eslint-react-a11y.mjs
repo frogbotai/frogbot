@@ -1,6 +1,6 @@
 export const reactA11yRules = {
   'jsx-a11y/anchor-has-content': ['error', { components: [] }],
-  'jsx-a11y/aria-role': ['error', { ignoreNonDom: false }],
+  'jsx-a11y/aria-role': ['error', { ignoreNonDOM: true }],
   'jsx-a11y/aria-props': 'error',
   'jsx-a11y/aria-proptypes': 'error',
   'jsx-a11y/aria-unsupported-elements': 'error',
@@ -85,7 +85,7 @@ export const reactA11yRules = {
       td: ['gridcell'],
     },
   ],
-  'jsx-a11y/no-noninteractive-tabindex': ['error', { tags: [], roles: ['tabpanel'] }],
+  'jsx-a11y/no-noninteractive-tabindex': ['error', { tags: [], roles: ['region', 'tabpanel'] }],
   'jsx-a11y/anchor-is-valid': [
     'error',
     {

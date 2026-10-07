@@ -227,7 +227,7 @@ async function validateParts({
 }): Promise<UIMessage['parts']> {
   const [validated] = await validateChatMessages(
     [{ id: message.id, role: 'user', parts }],
-    agent.aiAgent.tools as never,
+    agent.aiAgent.tools,
   );
 
   return validated.parts;
