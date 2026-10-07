@@ -134,7 +134,7 @@ describe('denial', () => {
     expect(MESSAGES.suite).toContain(
       'run the affected files or `--project`; the full suite runs in `pnpm ticket land`',
     );
-    expect(MESSAGES.archive).toContain('such as `.idea/found.md`');
+    expect(MESSAGES.archive).toContain('such as `.idea/_process/found.md`');
     expect(MESSAGES.stash).toContain('`git show HEAD:<file>`');
     expect(MESSAGES.stash).toContain('temp copy');
     expect(MESSAGES.background).toContain('run the call in the foreground');
@@ -208,23 +208,31 @@ describe('backgroundCall', () => {
 
 describe('searchesArchive', () => {
   it.each([
-    ['grep', { pattern: 'DR-0', path: '.idea/archive' }],
-    ['grep', { pattern: 'DR-0', path: '.idea/archive/tickets' }],
+    ['grep', { pattern: 'DR-0', path: '.idea/_process/archive' }],
+    ['grep', { pattern: 'DR-0', path: '.idea/_process/archive/tickets' }],
     ['grep', { pattern: 'DR-0', path: '.idea' }],
-    ['grep', { pattern: 'DR-0', include: '.idea/archive/**/*.md' }],
-    ['glob', { pattern: '.idea/archive/**' }],
+    ['grep', { pattern: 'DR-0', include: '.idea/_process/archive/**/*.md' }],
+    ['glob', { pattern: '.idea/_process/archive/**' }],
     ['glob', { pattern: '.idea/**/*.md' }],
     ['glob', { pattern: '**/*.md', path: '.idea' }],
-    ['shell', { command: 'cat .idea/archive/decisions.md' }],
+    ['shell', { command: 'cat .idea/_process/archive/decisions.md' }],
     ['shell', { command: 'rg DR-0 /Users/me/code/frogbot/.idea' }],
     ['shell', { command: 'ls .idea/*/' }],
     ['shell', { command: 'grep -rn DR-0 .idea' }],
     ['shell', { command: 'grep -R --include=*.md DR-0 /Users/me/code/frogbot/.idea/' }],
     ['shell', { command: 'cd .idea && rg DR-0' }],
     ['shell', { command: 'cd /Users/me/code/frogbot/.idea && grep -r DR-0 .' }],
-    ['shell', { command: 'cd .idea/archive && cat decisions.md' }],
+    ['shell', { command: 'cd .idea/_process/archive && cat decisions.md' }],
     ['shell', { command: 'rg DR-0', workdir: '/Users/me/code/frogbot/.idea' }],
-    ['shell', { command: 'cat decisions.md', workdir: '/Users/me/code/frogbot/.idea/archive' }],
+    ['shell', { command: 'rg DR-0', workdir: '/Users/me/code/frogbot/.idea/_process' }],
+    [
+      'shell',
+      { command: 'cat decisions.md', workdir: '/Users/me/code/frogbot/.idea/_process/archive' },
+    ],
+    ['shell', { command: 'cd .idea/_process && rg DR-0' }],
+    ['grep', { pattern: 'DR-0', path: '.idea/_process' }],
+    ['glob', { pattern: '.idea/_process/*/decisions.md' }],
+    ['glob', { pattern: '.idea/_process/arch*/**' }],
     ['shell', { command: "find .idea -name '*.md'" }],
     ['shell', { command: 'ls -R .idea' }],
   ])('blocks %s %j', (tool, input) => {
@@ -232,23 +240,33 @@ describe('searchesArchive', () => {
   });
 
   it.each([
-    ['grep', { pattern: '.idea/archive', path: 'scripts' }],
-    ['grep', { pattern: 'Status:', path: '.idea/tickets' }],
-    ['glob', { pattern: '.idea/tickets/ticket219*/*.md' }],
-    ['shell', { command: 'cat /Users/me/code/frogbot/.idea/tickets/ticket219/step2_spec.md' }],
-    ['shell', { command: 'cat .idea/decisions.md' }],
-    ['read', { path: '.idea/archive/decisions.md' }],
+    ['grep', { pattern: '.idea/_process/archive', path: 'scripts' }],
+    ['grep', { pattern: 'Status:', path: '.idea/_process/tickets' }],
+    ['glob', { pattern: '.idea/_process/tickets/ticket219*/*.md' }],
     [
       'shell',
-      { command: 'cd /Users/me/code/frogbot/.idea && grep -n F-019 found.md issue_triage.md' },
+      { command: 'cat /Users/me/code/frogbot/.idea/_process/tickets/ticket219/step2_spec.md' },
     ],
-    ['shell', { command: 'grep -n F-0 .idea/found.md .idea/issue_triage.md | tail -5' }],
-    ['shell', { command: 'grep -n F-0 found.md', workdir: '/Users/me/code/frogbot/.idea' }],
-    ['shell', { command: 'rg -n "Status:" .idea/tickets' }],
-    ['shell', { command: 'grep -rn ".idea/archive" scripts' }],
+    ['shell', { command: 'cat .idea/_process/decisions.md' }],
+    ['read', { path: '.idea/_process/archive/decisions.md' }],
+    [
+      'shell',
+      {
+        command: 'cd /Users/me/code/frogbot/.idea/_process && grep -n F-019 found.md decisions.md',
+      },
+    ],
+    ['shell', { command: 'grep -n F-0 .idea/_process/found.md .idea/issue_triage.md | tail -5' }],
+    [
+      'shell',
+      { command: 'grep -n F-0 found.md', workdir: '/Users/me/code/frogbot/.idea/_process' },
+    ],
+    ['shell', { command: 'rg -n "Status:" .idea/_process/tickets' }],
+    ['shell', { command: 'grep -rn ".idea/_process/archive" scripts' }],
     ['shell', { command: 'ls .idea' }],
     ['shell', { command: 'ls -la /Users/me/code/frogbot/.idea/' }],
-    ['shell', { command: 'cd .idea && grep -rn DR-0 tickets' }],
+    ['shell', { command: 'cd .idea && grep -rn DR-0 research' }],
+    ['shell', { command: 'cd .idea/_process && grep -rn DR-0 tickets' }],
+    ['glob', { pattern: '.idea/research/*.md' }],
     ['shell', { command: 'cd .idea && cd .. && rg DR-0' }],
   ])('allows %s %j', (tool, input) => {
     expect(searchesArchive(tool, input)).toBe(false);

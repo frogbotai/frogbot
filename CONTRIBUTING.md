@@ -84,7 +84,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 | `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                                                |
 | `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                      |
 | `peer-variants`   | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                               |
-| `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/decisions.md` or the plan (main checkout only)                                                                      |
+| `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/_process/decisions.md` or the plan (main checkout only)                                                             |
 
 ## Code style
 
@@ -158,7 +158,7 @@ A failing test shows behavior to understand; it doesn't by itself decide what th
 
 - **Fix now** when it breaks a requirement or supported behavior, however rare. Rerun the affected checks.
 - **Document** an agreed limitation: what users need to know and how to handle it.
-- **Defer** anything that adds behavior or guarantees beyond the agreed work: add a row to `.idea/found.md` with `pnpm ticket found` and carry on.
+- **Defer** anything that adds behavior or guarantees beyond the agreed work: add a row to `.idea/_process/found.md` with `pnpm ticket found` and carry on.
 
 Raise security and data-loss findings right away, even when the fix is out of scope: what can happen to a user, how, how likely, and the simpler alternatives. A fix that needs a different core library or a substantial redesign waits for the owner; a new problem is not permission to redesign. Never patch a dependency or work around one with architecture; record the limitation and continue.
 

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-export const OPEN = path.join('decisions', 'OPEN.md');
+export const OPEN = 'open_decisions.md';
 
 export const RULINGS = 'decisions.md';
 
@@ -276,7 +276,7 @@ export function renderOpen({ specs, batches }) {
 
   for (const spec of specs) {
     out.push('', `## ${spec.ticket} — ${spec.title}`, '');
-    out.push(`Spec: [step2_spec.md](../${relative(spec.folder, 'step2_spec.md')})`);
+    out.push(`Spec: [step2_spec.md](${relative(spec.folder, 'step2_spec.md')})`);
 
     for (const card of spec.cards) {
       out.push('', ...card.lines);
@@ -293,7 +293,7 @@ export function renderOpen({ specs, batches }) {
     out.push('', `## Batch ${batch.batch} plans`, '');
 
     for (const plan of batch.plans) {
-      out.push(`- ${plan.ticket}: [step3_plan.md](../${relative(plan.folder, 'step3_plan.md')})`);
+      out.push(`- ${plan.ticket}: [step3_plan.md](${relative(plan.folder, 'step3_plan.md')})`);
     }
 
     out.push('', `Go:${batch.go ? ` ${batch.go}` : ''}`);
@@ -312,20 +312,20 @@ function read(file) {
   return existsSync(file) ? readFileSync(file, 'utf8') : null;
 }
 
-export function recordDecisions(idea, tickets, date) {
+export function recordDecisions(processDir, tickets, date) {
   const files = new Map();
   const messages = [];
   const problems = [];
-  const openPath = path.join(idea, OPEN);
+  const openPath = path.join(processDir, OPEN);
   const open = parseOpen(read(openPath) ?? '');
-  const specPath = (ticket) => path.join(idea, relative(ticket.folder, 'step2_spec.md'));
-  const planPath = (ticket) => path.join(idea, relative(ticket.folder, 'step3_plan.md'));
+  const specPath = (ticket) => path.join(processDir, relative(ticket.folder, 'step2_spec.md'));
+  const planPath = (ticket) => path.join(processDir, relative(ticket.folder, 'step3_plan.md'));
   const current = (file, fallback) => (files.has(file) ? files.get(file) : fallback);
   const byNumber = new Map(tickets.map((ticket) => [ticket.ticket, ticket]));
   const pendingApprove = new Map();
   const pendingGo = new Map();
-  let rulings = read(path.join(idea, RULINGS));
-  let nextId = nextRulingId(rulings, read(path.join(idea, ARCHIVED_RULINGS)));
+  let rulings = read(path.join(processDir, RULINGS));
+  let nextId = nextRulingId(rulings, read(path.join(processDir, ARCHIVED_RULINGS)));
 
   for (const [number, entry] of open.specs) {
     const ticket = byNumber.get(number);
@@ -429,7 +429,9 @@ export function recordDecisions(idea, tickets, date) {
 
   if (problems.length > 0) return { messages: [], problems };
 
-  if (rulings !== read(path.join(idea, RULINGS))) files.set(path.join(idea, RULINGS), rulings);
+  if (rulings !== read(path.join(processDir, RULINGS))) {
+    files.set(path.join(processDir, RULINGS), rulings);
+  }
 
   const specs = tickets
     .filter((ticket) => ticket.spec != null && isDraft(current(specPath(ticket), ticket.spec)))

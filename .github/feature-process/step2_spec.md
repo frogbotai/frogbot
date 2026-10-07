@@ -1,6 +1,6 @@
 # Step 2: Spec
 
-A fresh drafter writes `step2_spec.md` from `issue.md` and the research Summary. The spec is the owner's main gate, approved with an `Approve:` line in `.idea/decisions/OPEN.md`.
+A fresh drafter writes `step2_spec.md` from `issue.md` and the research Summary. The spec is the owner's main gate, approved with an `Approve:` line in `.idea/_process/open_decisions.md`.
 
 - Copy the research Summary's rulings into `## Rulings` word for word: the same rows, or the same `none (read: …)` line.
 - Number the requirements, and make each one testable.

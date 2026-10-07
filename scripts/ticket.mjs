@@ -53,7 +53,11 @@ export const LEDGER_COLUMNS = ['ticket', 'patch-id', 'level', 'evidence', 'verif
 
 const PASS_LEVELS = ['typecheck', 'unit', 'int', 'ui'];
 
-const TESTER_CHECK = false;
+const PROCESS_DIR = path.join('.idea', '_process');
+
+const TICKETS_DIR = path.join(PROCESS_DIR, 'tickets');
+
+const LEDGER = path.join(PROCESS_DIR, 'ledger.tsv');
 
 const TAIL_LINES = 20;
 
@@ -614,7 +618,7 @@ function mainCheckout() {
 }
 
 function ticketsDir(main) {
-  return path.join(main, '.idea', 'tickets');
+  return path.join(main, TICKETS_DIR);
 }
 
 function folders(main) {
@@ -656,7 +660,7 @@ function headerProblems(tickets) {
 function findTicket(main, ticket) {
   const matches = folders(main).filter((folder) => FOLDER.exec(folder)[1] === String(ticket));
 
-  if (matches.length === 0) refuse(`no folder .idea/tickets/ticket${ticket}_<slug>/`);
+  if (matches.length === 0) refuse(`no folder ${TICKETS_DIR}/ticket${ticket}_<slug>/`);
 
   if (matches.length > 1) {
     refuse(`ticket ${ticket} has ${matches.length} folders: ${matches.join(', ')}`);
@@ -739,7 +743,7 @@ function patchId(cwd) {
 }
 
 function appendLedger(main, row) {
-  const file = path.join(main, '.idea', 'ledger.tsv');
+  const file = path.join(main, LEDGER);
 
   mkdirSync(path.dirname(file), { recursive: true });
 
@@ -749,7 +753,7 @@ function appendLedger(main, row) {
 }
 
 function readLedger(main) {
-  return parseLedger(readOptional(path.join(main, '.idea', 'ledger.tsv')) ?? '');
+  return parseLedger(readOptional(path.join(main, LEDGER)) ?? '');
 }
 
 function commandNext(main) {
@@ -825,7 +829,7 @@ function commandStatus(main, options) {
 
 export function commandDecisions(main, { date = new Date().toLocaleDateString('en-CA') } = {}) {
   const tickets = folders(main).map((folder) => readTicket(main, folder));
-  const { messages, problems } = recordDecisions(path.join(main, '.idea'), tickets, date);
+  const { messages, problems } = recordDecisions(path.join(main, PROCESS_DIR), tickets, date);
 
   if (problems.length > 0) refuse(`nothing written:\n${problems.join('\n')}`);
 
@@ -853,10 +857,10 @@ function commandFound(main, { source }) {
 
   if (problem) refuse(`${problem}. Usage: ${FOUND_USAGE}`);
 
-  const idea = path.join(main, '.idea');
+  const dir = path.join(main, PROCESS_DIR);
   const { line } = appendFinding({
-    file: path.join(idea, 'found.md'),
-    archive: path.join(idea, 'archive', 'found.md'),
+    file: path.join(dir, 'found.md'),
+    archive: path.join(dir, 'archive', 'found.md'),
     text,
     source,
   });
@@ -934,11 +938,11 @@ async function landRound({ main, found, key, dir, branch, message }) {
   const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
   const id = patchId(dir);
 
-  if (tier === 'full' && TESTER_CHECK) {
+  if (tier === 'full') {
     if (!hasTesterRow(readLedger(main), { ticket: key, patchId: id, worker: LAND })) {
-      refuse(`full tier: no tester row in .idea/ledger.tsv for patch-id ${id}`);
+      refuse(`full tier: no tester row in ${LEDGER} for patch-id ${id}`);
     }
-  } else if (tier === 'full') console.log('full tier: tester check off until ticket 236');
+  }
 
   const gates = landGates({
     base: BASE_GATES,
