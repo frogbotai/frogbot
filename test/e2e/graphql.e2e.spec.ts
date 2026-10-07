@@ -11,7 +11,7 @@ import {
   run,
   runSetup,
   subprocessEnvironment,
-} from './fixtures/create-frogbot-app/harness';
+} from './create-frogbot-app/harness';
 import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';

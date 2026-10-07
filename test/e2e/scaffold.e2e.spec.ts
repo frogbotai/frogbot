@@ -14,9 +14,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createFrogBotSDK } from '../../packages/sdk/src/index';
 import { FrogBotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
 import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 

@@ -119,13 +119,15 @@ describe('vector field CRUD', () => {
     { embedding: [] },
     { embedding: null },
   ])('rejects a malformed vector write: $embedding', async ({ embedding }) => {
-    await expect(
-      booted.frogbot.create({
-        collection,
-        data: { title: 'Invalid', embedding },
-        overrideAccess: true,
-      }),
-    ).rejects.toThrow(/embedding/i);
+    const rejected = await booted.restClient.post(`/api/${collection}`, {
+      title: 'Invalid',
+      embedding,
+    });
+
+    expect(rejected.status).toBe(400);
+    expect(rejected.body).toMatchObject({
+      errors: [{ data: { errors: [{ path: 'embedding' }] } }],
+    });
 
     const remaining = await booted.frogbot.count({ collection, overrideAccess: true });
 

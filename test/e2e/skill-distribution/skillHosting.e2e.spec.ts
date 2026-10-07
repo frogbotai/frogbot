@@ -27,7 +27,7 @@ import {
   preparedClient,
   repoRoot,
   runClient,
-} from './fixtures/skill-distribution/hosting/harness.js';
+} from './hosting/harness.js';
 
 const skills = preparedClient('SKILL_HOSTING_SKILLS_BIN');
 const opencode = preparedClient('SKILL_HOSTING_OPENCODE_BIN');

@@ -27,9 +27,9 @@ interface PackageJson {
 
 export function subprocessEnvironment(
   cwd: string,
-  overrides: NodeJS.ProcessEnv = {},
+  overrides: Partial<NodeJS.ProcessEnv> = {},
 ): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {};
+  const env: Partial<NodeJS.ProcessEnv> = {};
 
   for (const key of [
     'PATH',
@@ -75,7 +75,7 @@ export function copyCLIWithoutSkill(source: string, dest: string): string {
 export function run(
   command: string,
   args: string[],
-  options: { cwd: string; env?: NodeJS.ProcessEnv },
+  options: { cwd: string; env?: Partial<NodeJS.ProcessEnv> },
 ): { output: string; status: number } {
   const result = spawnSync(command, args, {
     cwd: options.cwd,
@@ -93,7 +93,7 @@ export function run(
 export function runSetup(
   command: string,
   args: string[],
-  options: { cwd: string; env?: NodeJS.ProcessEnv },
+  options: { cwd: string; env?: Partial<NodeJS.ProcessEnv> },
 ): { output: string; status: number } {
   const result = run(command, args, options);
 

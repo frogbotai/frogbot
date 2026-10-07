@@ -4,13 +4,9 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { run, subprocessEnvironment } from '../../e2e/fixtures/create-frogbot-app/harness.js';
+import { run, subprocessEnvironment } from '../../e2e/create-frogbot-app/harness.js';
 
 let root: string;
-
-function processEnv(values: Record<string, string>): NodeJS.ProcessEnv {
-  return values as NodeJS.ProcessEnv;
-}
 
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-environment-'));
@@ -76,14 +72,14 @@ describe('generated app subprocess environment', () => {
   ])('retains the intentional database selection %s', (databaseUrl) => {
     const result = run(process.execPath, ['-e', 'console.log(process.env.DATABASE_URL)'], {
       cwd: root,
-      env: processEnv({ DATABASE_URL: databaseUrl }),
+      env: { DATABASE_URL: databaseUrl },
     });
 
     expect(result.status, result.output).toBe(0);
     expect(result.output.trim()).toBe(databaseUrl);
-    expect(
-      subprocessEnvironment(root, processEnv({ DATABASE_URL: databaseUrl })).DATABASE_URL,
-    ).toBe(databaseUrl);
+    expect(subprocessEnvironment(root, { DATABASE_URL: databaseUrl }).DATABASE_URL).toBe(
+      databaseUrl,
+    );
   });
 
   it('uses different database files for different generated apps', () => {

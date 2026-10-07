@@ -24,58 +24,14 @@
   "test/__helpers/shared/bootFrogBot.ts": {
     "TS2352": 1
   },
-  "test/browser/fixtures/chat-assets/src/frogbot.config.ts": {
-    "TS2352": 1
-  },
   "test/browser/fixtures/question/src/frogbot.config.ts": {
-    "TS2322": 2
-  },
-  "test/database/sqlite-busy.int.spec.ts": {
-    "TS2322": 27,
-    "TS2353": 1,
-    "TS2769": 11
-  },
-  "test/e2e/channelQuestions.e2e.spec.ts": {
-    "TS2322": 2
-  },
-  "test/e2e/createFrogBotApp.e2e.spec.ts": {
-    "TS2345": 1,
-    "TS2741": 10
-  },
-  "test/e2e/fixtures/create-frogbot-app/harness.ts": {
-    "TS2741": 2
-  },
-  "test/e2e/fixtures/skill-distribution/hosting/harness.ts": {
-    "TS2741": 1
-  },
-  "test/e2e/fixtures/skill-distribution/installation/harness.ts": {
-    "TS2741": 1
-  },
-  "test/e2e/githubQuestions.e2e.spec.ts": {
     "TS2322": 1
   },
-  "test/e2e/scaffold.e2e.spec.ts": {
-    "TS2741": 1
-  },
-  "test/fields/vector/int.spec.ts": {
-    "TS2322": 1
-  },
-  "test/graphql/bin/unconfiguredProvider.config.ts": {
-    "TS2322": 1
-  },
-  "test/mcp-tools/int.spec.ts": {
-    "TS2322": 2
-  },
-  "test/training-data/export.int.spec.ts": {
+  "test/e2e/create-frogbot-app/harness.ts": {
     "TS2322": 1
   },
   "test/triggers/config.ts": {
-    "TS2322": 1,
-    "TS2345": 1
-  },
-  "test/ui/ui/chat/chat.spec.tsx": {
-    "TS2322": 3,
-    "TS2353": 2
+    "TS2322": 1
   },
   "test/unit/db-d1-sqlite/jobs.spec.ts": {
     "TS2740": 1
@@ -100,29 +56,14 @@
   "test/unit/frogbot/collections/config/merge.spec.ts": {
     "TS2322": 1
   },
-  "test/unit/frogbot/config/connections.spec.ts": {
-    "TS2322": 1
-  },
   "test/unit/frogbot/config/sanitize.spec.ts": {
-    "TS2322": 1,
     "TS2339": 1,
-    "TS2345": 1,
-    "TS2740": 1
+    "TS2345": 1
   },
   "test/unit/frogbot/jobs/helpers.ts": {
     "TS2322": 1
   },
   "test/unit/frogbot/jobs/nativeRunner.ts": {
     "TS2352": 1
-  },
-  "test/unit/scripts/checkTests.spec.ts": {
-    "TS2740": 1,
-    "TS7006": 1
-  },
-  "test/unit/scripts/ticket.spec.ts": {
-    "TS2345": 1
-  },
-  "test/unit/scripts/ticketLib.spec.ts": {
-    "TS2345": 3
   }
 }

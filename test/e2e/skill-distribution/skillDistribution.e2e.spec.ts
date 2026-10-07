@@ -25,7 +25,7 @@ import {
   skillsAgents,
   skillsClient,
   successful,
-} from './fixtures/skill-distribution/installation/harness';
+} from './installation/harness';
 
 describe('skill distribution local installation', () => {
   let fixture: InstallationFixture;

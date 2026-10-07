@@ -8,7 +8,8 @@ import {
   definePiece,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { buildTriggerEndpoints } from '../../../../packages/frogbot/src/triggers/endpoints.js';
-import { createEchoPiece, echoCalls, echoSecret, resetEchoCalls } from './fixtures/piece-echo.js';
+import { createEchoPiece } from './fixtures/createEchoPiece.js';
+import { echoCalls, echoSecret, resetEchoCalls } from './fixtures/piece-echo.js';
 
 const { defineAppTrigger, defineWebhookTrigger } = createPieceHelpers();
 

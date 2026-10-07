@@ -9,21 +9,26 @@ import {
   sqliteAdapter,
   type SQLiteAdapterArgs,
 } from '@frogbotai/db-sqlite';
-import { type CollectionConfig, definePiece, type FrogBotInstance } from 'frogbot';
+import type { CollectionConfig, FrogBotInstance } from 'frogbot';
 import { FrogBot, getFrogBotPayload, resetFrogBotCache } from 'frogbot/test';
 import Database from 'libsql';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { z } from 'zod';
 
-import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
-import { getCurrentDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
+import { buildTestConfig } from '../../__helpers/shared/buildTestConfig.js';
+import { getCurrentDatabaseAdapter } from '../../__helpers/shared/db/dbAdapters.js';
+import {
+  membersCollection,
+  membersSlug,
+  notesCollection,
+  notesSlug,
+  postsCollection,
+  postsSlug,
+} from './shared.js';
 
-const notesSlug = 'notes';
 const databasePath = fileURLToPath(new URL('./sqlite-busy.db', import.meta.url));
 const isSQLite = getCurrentDatabaseAdapter() === 'sqlite';
 const lockTimeoutMessage =
   /waited \d+ ms for the write lock.*ran without `req` while a transaction was open.*long transaction held the lock/s;
-type Note = { id: number; title: string };
 type Request = Awaited<ReturnType<FrogBotInstance['createRequest']>>;
 
 function isBusy(error: unknown): boolean {
@@ -63,10 +68,7 @@ async function boot({
       busyTimeout,
       writeLockTimeout,
     }),
-    collections: [
-      { slug: notesSlug, access: openAccess, hooks, fields: [{ name: 'title', type: 'text' }] },
-      ...collections,
-    ],
+    collections: [notesCollection(hooks), ...collections],
   });
 
   const environment = {
@@ -123,11 +125,7 @@ function useFrogBot(options: BootOptions) {
       return (app.frogbot.db as unknown as SQLiteAdapter).client;
     },
     async create(title: string, req?: Request) {
-      return (await app.frogbot.create({
-        collection: notesSlug,
-        data: { title },
-        req,
-      })) as unknown as Note;
+      return app.frogbot.create({ collection: notesSlug, data: { title }, req });
     },
     async begin() {
       const transactionID = await getFrogBotPayload(app.frogbot).db.beginTransaction();
@@ -150,7 +148,7 @@ function useFrogBot(options: BootOptions) {
         sort: 'title',
       });
 
-      return (docs as unknown as Note[]).map((doc) => doc.title);
+      return docs.map((doc) => doc.title);
     },
     async titlesAfterRestart() {
       await app.frogbot.destroy();
@@ -794,9 +792,9 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
     const titles = await app.titlesAfterRestart();
     const payload = getFrogBotPayload(app.frogbot);
 
-    expect(titles.filter((title) => title.endsWith('updated'))).toHaveLength(10);
-    expect(titles.filter((title) => title.startsWith('Created'))).toHaveLength(10);
-    expect(titles.filter((title) => title.startsWith('Raw'))).toHaveLength(10);
+    expect(titles.filter((title) => title?.endsWith('updated'))).toHaveLength(10);
+    expect(titles.filter((title) => title?.startsWith('Created'))).toHaveLength(10);
+    expect(titles.filter((title) => title?.startsWith('Raw'))).toHaveLength(10);
     expect(await app.frogbot.kv.keys()).toEqual(
       expect.arrayContaining(Array.from({ length: 10 }, (_, index) => `key-${index}`)),
     );
@@ -852,44 +850,21 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
   });
 });
 
-const identity = definePiece({
-  slug: 'identity',
-  label: 'Identity',
-  auth: z.object({ accessToken: z.string() }),
-  client: ({ auth }: { auth: unknown }) => auth,
-  oauth: {
-    authorizationUrl: 'https://identity.example.com/authorize',
-    tokenUrl: 'https://identity.example.com/token',
-    scopes: ['openid', 'email'],
-    account: () =>
-      Promise.resolve({ id: 'identity', label: 'Identity', email: 'person@example.com' }),
-  },
-  actions: [],
-})({ oauth: { clientId: 'client', clientSecret: 'secret' } });
-
-const membersSlug = 'members';
-
 describe.skipIf(!isSQLite)('SQLite sign-in beside another transaction', () => {
   let background: Promise<unknown> | undefined;
 
   const app = useFrogBot({
     hooks: edgeHooks,
     collections: [
-      {
-        slug: membersSlug,
-        auth: { signIn: [identity] },
-        access: { read: () => true },
-        hooks: {
-          afterLogin: [
-            ({ user }) => {
-              background = app.create('Slow note beside the login');
+      membersCollection({
+        afterLogin: [
+          ({ user }) => {
+            background = app.create('Slow note beside the login');
 
-              return user;
-            },
-          ],
-        },
-        fields: [],
-      },
+            return user;
+          },
+        ],
+      }),
     ],
   });
 
@@ -1250,24 +1225,11 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     const integrity = await client.execute('pragma integrity_check');
 
     expect({
-      titles: docs.map((doc) => (doc as unknown as Note).title),
+      titles: docs.map((doc) => doc.title),
       integrity: integrity.rows[0].integrity_check,
     }).toEqual({ titles: ['After close', 'Fresh'], integrity: 'ok' });
   });
 });
-
-const postsSlug = 'posts';
-const postsCollection: CollectionConfig = {
-  slug: postsSlug,
-  access: openAccess,
-  versions: { drafts: true },
-  fields: [
-    { name: 'title', type: 'text' },
-    { name: 'tags', type: 'array', fields: [{ name: 'name', type: 'text' }] },
-    { name: 'related', type: 'relationship', relationTo: notesSlug, hasMany: true },
-    { name: 'kind', type: 'select', hasMany: true, options: ['a', 'b'] },
-  ],
-};
 
 type Statement = string | { sql: string; args?: unknown };
 
@@ -1457,14 +1419,7 @@ describe.skipIf(!isSQLite)(
           },
         ],
       },
-      collections: [
-        {
-          slug: membersSlug,
-          auth: { signIn: [identity] },
-          access: { read: () => true },
-          fields: [],
-        },
-      ],
+      collections: [membersCollection()],
     });
     let slow: Promise<unknown> | undefined;
 

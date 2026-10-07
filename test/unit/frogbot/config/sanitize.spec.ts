@@ -1,5 +1,5 @@
 import type * as PayloadModule from 'payload';
-import type { Job, Locale, Payload, PayloadRequest, TaskConfig } from 'payload';
+import type { Job, Locale, Payload, TaskConfig } from 'payload';
 import { buildConfig as payloadBuildConfig, meOperation, MissingEditorProp } from 'payload';
 import { afterEach, assert, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { z } from 'zod';
@@ -24,6 +24,7 @@ import {
   registerFrogBotInstance,
 } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { makeRequest } from './request.js';
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
@@ -94,7 +95,7 @@ function runTask(task: TaskConfig | undefined, payload: Partial<Payload>) {
     input: {},
     inlineTask: vi.fn(),
     job,
-    req: { payload } as PayloadRequest,
+    req: makeRequest(payload),
     tasks: {},
   });
 }
@@ -2041,7 +2042,7 @@ describe('frogbot sanitize', () => {
     const collection = payloadConfig.collections[0];
     const bootstrap = collection.hooks.beforeOperation[0];
     const payload = makePayload(payloadConfig);
-    const req = { payload };
+    const req = makeRequest(payload);
 
     await bootstrap({ req });
 
@@ -2104,7 +2105,7 @@ describe('frogbot sanitize', () => {
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
     registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
-    const req = { payload };
+    const req = makeRequest(payload);
 
     const args = {
       req,
@@ -4106,6 +4107,7 @@ describe('frogbot sanitize', () => {
     ])(
       'preserves user endpoint configuration for empty agents',
       async ({ endpoints, expected }) => {
+        // @ts-expect-error sanitize must keep the user's `endpoints: false` at runtime
         const result = sanitize(makeConfig({ agents: [], endpoints }));
         const payloadConfig = await result._internal.payloadConfig;
         const payloadEndpoints = (payloadConfig as { endpoints?: false | { path: string }[] })

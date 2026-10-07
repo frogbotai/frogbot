@@ -92,6 +92,7 @@ describe('training data export', () => {
       { id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }, imagePart] },
       { id: 'm2', role: 'assistant', parts: [reasoningPart, toolCallPart] },
       { id: 'm3', role: 'user', parts: [videoPart, filePart] },
+      // @ts-expect-error a part type the SDK does not know must pass through export at runtime
       { id: 'm4', role: 'assistant', parts: [unknownPart], metadata: { custom: { a: 1 } } },
     ];
     for (const message of messages) {

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { UIMessage, UIMessageChunk } from 'ai';
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -88,7 +88,7 @@ describe('QuestionToolRender', () => {
       />,
     );
 
-    const submit = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
+    const submit = screen.getByRole<HTMLButtonElement>('button', { name: 'Submit' });
 
     expect(submit.disabled).toBe(true);
 
@@ -121,7 +121,7 @@ describe('QuestionToolRender', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Production/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    const submit = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
+    const submit = screen.getByRole<HTMLButtonElement>('button', { name: 'Submit' });
 
     expect(screen.getByText('Which checks should run?')).toBeTruthy();
     expect(screen.queryByRole('textbox')).toBeNull();
@@ -196,14 +196,12 @@ describe('QuestionToolRender', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
 
     expect(dismiss).toHaveBeenCalledOnce();
-    expect((screen.getByRole('button', { name: /Staging/ }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: /Staging/ }).disabled).toBe(true);
 
     request.resolve();
 
     await waitFor(() =>
-      expect((screen.getByRole('button', { name: /Staging/ }) as HTMLButtonElement).disabled).toBe(
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: /Staging/ }).disabled).toBe(
         false,
       ),
     );
@@ -212,9 +210,7 @@ describe('QuestionToolRender', () => {
   it('renders a read-only question without callbacks', () => {
     render(<QuestionToolRender part={questionPart([target])} />);
 
-    expect((screen.getByRole('button', { name: /Staging/ }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: /Staging/ }).disabled).toBe(true);
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Submit' })).toBeNull();
   });
@@ -607,9 +603,17 @@ describe('QuestionToolRender in Chat', () => {
     expect(await queuedIndicator()).toBeTruthy();
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull());
-    await act(() => new Promise((resolve) => setTimeout(resolve)));
 
-    expect(requests(`/api/agents/${agent}`)).toHaveLength(1);
+    // A resubmit would start as the first turn finished, so it would reach the server before a
+    // message sent after the turn.
+    fireEvent.change(composer, { target: { value: 'One more thing' } });
+    fireEvent.keyDown(composer, { key: 'Enter' });
+
+    await waitFor(() => expect(requests(`/api/agents/${agent}`)).toHaveLength(2));
+
+    const sent = body(requests(`/api/agents/${agent}`)[1]) as { messages: UIMessage[] };
+
+    expect(sent.messages.at(-1)?.parts).toEqual([{ type: 'text', text: 'One more thing' }]);
   });
 
   it('restores queued messages from history into the queued indicator', async () => {

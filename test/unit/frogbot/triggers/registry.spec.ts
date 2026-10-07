@@ -14,7 +14,7 @@ import {
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceTriggerReference } from '../../../../packages/frogbot/src/pieces/types.js';
 import { buildIngressRegistry } from '../../../../packages/frogbot/src/triggers/registry.js';
-import { createEchoPiece } from './fixtures/piece-echo.js';
+import { createEchoPiece } from './fixtures/createEchoPiece.js';
 
 // Tolerates the invalid references some tests pass on purpose.
 function isAppTrigger(

@@ -53,7 +53,7 @@ export const reasoningModels = {
   deliberator: 'deliberator',
   sprinter: 'sprinter',
   verbose: 'verbose',
-};
+} as const;
 
 export const deliberatorEfforts = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
 export const deliberatorLevels = ['Default', 'Off', 'Low', 'Medium', 'High', 'Extra High', 'Max'];
@@ -74,6 +74,12 @@ export const channelChat = {
   channelKey: 'slack:browser:1.000001',
   channelThread: {
     account: 'slack',
-    thread: { _type: 'chat:Thread', id: 'slack:C1:1.000001', channelId: 'slack:C1' },
+    thread: {
+      _type: 'chat:Thread' as const,
+      adapterName: 'slack',
+      id: 'slack:C1:1.000001',
+      channelId: 'slack:C1',
+      isDM: false,
+    },
   },
 };

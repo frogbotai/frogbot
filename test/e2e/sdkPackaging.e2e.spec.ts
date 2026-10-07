@@ -15,7 +15,7 @@ import {
   packLocalClosure,
   run,
   runSetup,
-} from './fixtures/create-frogbot-app/harness';
+} from './create-frogbot-app/harness';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');

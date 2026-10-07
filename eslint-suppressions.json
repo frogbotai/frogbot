@@ -1,12 +1,2 @@
 {
-  "test/search/mongodb/hybrid.int.spec.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/ui/ui/chat/question-tool-render.spec.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  }
 }

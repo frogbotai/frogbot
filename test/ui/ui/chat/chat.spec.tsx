@@ -258,10 +258,10 @@ describe('Chat', () => {
           slug: 'support',
           label: 'Support',
           source: 'config',
-          defaultModel: 'test/vision',
-          models: ['test/vision', 'test/text-only'],
-          names: { 'test/text-only': 'Text Only' },
-          inputs: { 'test/text-only': ['text'] },
+          defaultModel: 'openai/gpt-4o',
+          models: ['openai/gpt-4o', 'openai/gpt-4o-mini'],
+          names: { 'openai/gpt-4o-mini': 'Text Only' },
+          inputs: { 'openai/gpt-4o-mini': ['text'] },
         },
       ],
     };
@@ -271,7 +271,7 @@ describe('Chat', () => {
 
     expect(accept()).toContain('image/png');
 
-    rerender(<Chat agent="support" model="test/text-only" />);
+    rerender(<Chat agent="support" model="openai/gpt-4o-mini" />);
 
     expect(accept()).not.toContain('image/png');
 

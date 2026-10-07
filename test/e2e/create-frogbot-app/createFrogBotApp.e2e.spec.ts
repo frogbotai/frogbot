@@ -4,7 +4,8 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createPostgresDatabase } from '../__helpers/shared/db/postgres';
+import { createPostgresDatabase } from '../../__helpers/shared/db/postgres';
+import { getFreePort, spawnServer, terminateProcess, waitForServer } from '../process';
 import {
   applyLocalOverrides,
   copyCLIWithoutSkill,
@@ -14,12 +15,11 @@ import {
   runSetup,
   serviceAvailable,
   subprocessEnvironment,
-} from './fixtures/create-frogbot-app/harness';
-import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
+} from './harness';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const RUN_COMPILER_CHECKS = process.env.RUN_COMPILER_CHECKS === '1';
-const repoRoot = path.resolve(import.meta.dirname, '..', '..');
+const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 const cli = path.join(repoRoot, 'packages', 'create-frogbot-app', 'bin.js');
 const cliPackage = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'packages', 'create-frogbot-app', 'package.json'), 'utf8'),

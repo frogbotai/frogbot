@@ -5,7 +5,7 @@ import { stripVTControlCharacters } from 'node:util';
 
 import { expect } from 'vitest';
 
-export const repoRoot = path.resolve(import.meta.dirname, '../../../../..');
+export const repoRoot = path.resolve(import.meta.dirname, '../../../..');
 export const cliRoot = path.join(repoRoot, 'packages/create-frogbot-app');
 export const canonicalSkill = path.join(repoRoot, 'skills/frogbot');
 export const skillsClient = process.env.SKILL_DISTRIBUTION_SKILLS_BIN;

@@ -23,15 +23,11 @@ function writeFakeManager(name: string, script: string): void {
   fs.chmodSync(file, 0o755);
 }
 
-function processEnv(values: Record<string, string>): NodeJS.ProcessEnv {
-  return values as NodeJS.ProcessEnv;
-}
-
 function createApp(argv: string[], env: Record<string, string> = {}) {
   const result = spawnSync(process.execPath, [cli, ...argv], {
     cwd: root,
     encoding: 'utf8',
-    env: processEnv({
+    env: {
       GIT_AUTHOR_EMAIL: 'test@frogbot.test',
       GIT_AUTHOR_NAME: 'FrogBot Test',
       GIT_COMMITTER_EMAIL: 'test@frogbot.test',
@@ -41,7 +37,7 @@ function createApp(argv: string[], env: Record<string, string> = {}) {
       HOME: root,
       PATH: `${fakeBin}${path.delimiter}${process.env.PATH}`,
       ...env,
-    }),
+    },
   });
 
   return { status: result.status, stderr: result.stderr, stdout: result.stdout };

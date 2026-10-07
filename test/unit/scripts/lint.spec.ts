@@ -230,6 +230,27 @@ describe('test lint', () => {
     ).toEqual(['vitest/prefer-called-exactly-once-with 2']);
   });
 
+  it('requires a reason on @ts-expect-error, as on the off-type MCP tools in test/mcp-tools/int.spec.ts', () => {
+    const code = (comment: string) =>
+      "import { expect, it } from 'vitest';\n\n" +
+      'declare function defineTool(tool: { slug: string }): { slug: string };\n\n' +
+      "it('rejects a tool without a slug', () => {\n" +
+      `  ${comment}\n` +
+      '  expect(() => defineTool({})).toThrow(/slug/);\n' +
+      '});\n';
+    const filename = 'test/mcp-tools/int.spec.ts';
+
+    expect(reported(filename, code('// @ts-expect-error'))).toEqual([
+      '@typescript-eslint/ban-ts-comment 2',
+    ]);
+    expect(
+      reported(
+        filename,
+        code('// @ts-expect-error a tool without a slug must be rejected at runtime'),
+      ),
+    ).toEqual([]);
+  });
+
   it('gives browser specs the Playwright rules instead of the vitest rules', async () => {
     const { ESLint } = await import('eslint');
     const config = await new ESLint({ cwd: root }).calculateConfigForFile(
