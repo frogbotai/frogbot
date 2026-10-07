@@ -996,10 +996,7 @@ describe('array-of-text-parts content (G8)', () => {
 describe('compatibility tolerance', () => {
   test('unknown role is forwarded as system message with [role=X] prefix', () => {
     const logger = makeLogger();
-    const result = toModelMessages(
-      [{ role: 'function', content: '{"result":42}' } as OpenAIMessage],
-      logger,
-    );
+    const result = toModelMessages([{ role: 'function', content: '{"result":42}' }], logger);
     expect(result).toEqual([{ role: 'system', content: '[role=function] {"result":42}' }]);
     expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
       { role: 'function' },
@@ -1008,10 +1005,7 @@ describe('compatibility tolerance', () => {
   });
 
   test('vendor-specific role with non-string content is JSON-serialised', () => {
-    const result = toModelMessages(
-      [{ role: 'thought', content: null } as unknown as OpenAIMessage],
-      makeLogger(),
-    );
+    const result = toModelMessages([{ role: 'thought', content: null }], makeLogger());
     expect(result[0]).toEqual({
       role: 'system',
       content: '[role=thought] ""',
@@ -1025,7 +1019,7 @@ describe('compatibility tolerance', () => {
         content: 'hi',
         thinking: 'internal reasoning',
         vendor_field: 123,
-      } as OpenAIMessage,
+      },
     ]);
     expect(result).toEqual([{ role: 'user', content: 'hi' }]);
   });
@@ -1037,7 +1031,7 @@ describe('compatibility tolerance', () => {
         content: 'hello',
         reasoning_signature: 'abc123',
         provider_metadata: { model_version: '2.0' },
-      } as OpenAIMessage,
+      },
     ]);
     expect(result).toEqual([{ role: 'assistant', content: 'hello' }]);
   });

@@ -46,7 +46,7 @@ export const CHECK_INPUTS = {
   'test-types': ['test/**', 'packages/**/src/**', '.opencode/**'],
   tests: ['test/**', 'packages/**/src/**', 'vitest.config.ts'],
   'ticket-docs': [],
-  'typed-lint': ['**/*.{ts,tsx,js,mjs}'],
+  'typed-lint': ['**/*.{ts,tsx}', '.oxlintrc.json', '**/tsconfig*.json'],
   'ui-architecture': ['packages/ui/src/**'],
 };
 
