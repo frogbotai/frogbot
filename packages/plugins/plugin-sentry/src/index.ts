@@ -1,9 +1,10 @@
 import type { PluginOptions } from '@payloadcms/plugin-sentry';
 import { sentryPlugin as payloadSentryPlugin } from '@payloadcms/plugin-sentry';
 import type { Plugin } from 'frogbot';
+import { wrapPayloadPlugin } from 'frogbot/internal';
 
 export type SentryPluginOptions = PluginOptions;
 
 export function sentryPlugin(options: SentryPluginOptions): Plugin {
-  return (config) => payloadSentryPlugin(options)(config as never) as unknown as typeof config;
+  return wrapPayloadPlugin(payloadSentryPlugin(options));
 }

@@ -10,7 +10,6 @@ import type {
 import { SearchReadinessError } from 'frogbot/search';
 
 import { getSearchIndexes } from './getSearchIndexes.js';
-import type { SearchPipeline } from './getSearchModel.js';
 import { getSearchModel } from './getSearchModel.js';
 import { getSearchFields, getSearchPath } from './getSearchPath.js';
 import { isDraftSearch } from './isDraftSearch.js';
@@ -211,7 +210,7 @@ export const search: AdapterSearch = async ({
 
   if (scoreStage) pipeline.push(scoreStage);
 
-  const rows: SearchRow[] = await Model.aggregate(pipeline as unknown as SearchPipeline).exec();
+  const rows = await Model.collection.aggregate<SearchRow>(pipeline).toArray();
 
   return {
     ranking,

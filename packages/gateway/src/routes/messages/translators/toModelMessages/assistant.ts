@@ -77,10 +77,10 @@ export function parseAssistantMessage(
       default: {
         // Reachable at runtime for forward-compat unknown block types the
         // schema lets through.
-        const unknown = block as unknown as { type: string };
+        const blockType: unknown = Reflect.get(block, 'type');
         logger.warn(
-          { blockType: unknown.type, messageIndex },
-          `unsupported assistant content block type "${unknown.type}" in messages[${messageIndex}] — skipped`,
+          { blockType, messageIndex },
+          `unsupported assistant content block type "${String(blockType)}" in messages[${messageIndex}] — skipped`,
         );
         break;
       }

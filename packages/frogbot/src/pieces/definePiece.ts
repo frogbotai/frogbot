@@ -2,12 +2,14 @@ import { createDefaultRequest } from '../getFrogBot.js';
 import type { AnyTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
+  type DefinedPiece,
   type OAuthApp,
   type PieceAction,
   type PieceActionDefinition,
   pieceCapabilities,
   type PieceDefinition,
   type PieceFactory,
+  type PieceFactoryOptions,
   type PieceHelpers,
   type PieceInstance,
 } from './types.js';
@@ -39,7 +41,7 @@ type ActionMetadata = {
 type InstanceMetadata = {
   actions: AnyTool[];
   definition: PieceDefinition;
-  options: unknown;
+  options: object;
   auth: unknown;
 };
 type LiteralSlugEntries<TEntries, TMessage extends string> = {
@@ -113,7 +115,7 @@ export function pieceToolInstance(tool: AnyTool): PieceInstance | undefined {
 export function pieceInstanceRuntime(instance: PieceInstance): {
   client: PieceInstance['client'];
   definition: PieceDefinition;
-  options: unknown;
+  options: object;
   auth: unknown;
 } {
   if (!isPieceInstance(instance)) {
@@ -237,7 +239,12 @@ export function definePiece<const T extends PieceDefinition>(
     }
   }
 
-  const factory = (config: Record<string, unknown> = {}) => {
+  // Action methods are defined per definition at runtime, so the typed call
+  // signature is an overload over the untyped implementation.
+  function factory<const TConfig extends PieceFactoryOptions<T>>(
+    ...args: object extends PieceFactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
+  ): DefinedPiece<T, TConfig>;
+  function factory(config: Record<string, unknown> = {}): Record<string | symbol, unknown> {
     if (config.oauth && !definition.oauth) {
       throw new Error(`[frogbot] Piece '${definition.slug}' does not declare OAuth.`);
     }
@@ -368,8 +375,8 @@ export function definePiece<const T extends PieceDefinition>(
     }
 
     return instance;
-  };
+  }
 
   definitions.set(factory, definition);
-  return factory as unknown as PieceFactory<T>;
+  return factory;
 }

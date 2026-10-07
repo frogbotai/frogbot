@@ -5,14 +5,15 @@ import {
   type PayloadRequest,
 } from 'payload';
 
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 export function addDataAndFileToRequest(req: FrogBotRequest): Promise<void> {
-  return addPayloadDataAndFileToRequest(req as unknown as PayloadRequest);
+  return addPayloadDataAndFileToRequest(toPayloadRequest(req));
 }
 
 export function addLocalesToRequestFromData(req: FrogBotRequest): void {
-  addPayloadLocalesToRequestFromData(req as unknown as PayloadRequest);
+  addPayloadLocalesToRequestFromData(toPayloadRequest(req));
 }
 
 export function headersWithCors({

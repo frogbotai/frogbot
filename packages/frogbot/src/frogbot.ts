@@ -5,7 +5,7 @@
 // and standalone servers.
 
 import type { Gateway } from '@frogbotai/gateway';
-import type { Payload, PayloadRequest } from 'payload';
+import type { Payload } from 'payload';
 import { createLocalReq, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
 
 import { createAgentInstance } from './agents/instance.js';
@@ -77,6 +77,7 @@ import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
 import type { FrogBotLocalAPI } from './localAPI.js';
 import { createFrogBotLocalAPI } from './localAPI.js';
+import { toPayloadRequest } from './seams/request.js';
 import { searchManyOperation, searchOperation } from './search/operation.js';
 import type {
   SearchManyOptions,
@@ -134,6 +135,10 @@ type FrogBotState = {
 };
 
 const states = new WeakMap<FrogBot, FrogBotState>();
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 function state(frogbot: FrogBot): FrogBotState {
   const current = states.get(frogbot);
@@ -223,8 +228,11 @@ export class FrogBot {
     return Object.assign(localReq, { frogbot: this });
   }
 
-  async queue(args: { task: string; queue: string; input: unknown }): Promise<void> {
-    await state(this).payload.jobs.queue(args as never);
+  async queue({ input, ...args }: { task: string; queue: string; input: unknown }): Promise<void> {
+    if (!isRecord(input)) {
+      throw new TypeError(`[frogbot] Task '${args.task}' input must be an object.`);
+    }
+    await state(this).payload.jobs.queue({ ...args, input });
   }
 
   // ── CRUD ────────────────────────────────────────────────────────────────
@@ -336,7 +344,7 @@ export class FrogBot {
       collectionSlug: args.collection,
       operation: 'resetPassword',
       fn: async () => {
-        const payloadReq = req as unknown as PayloadRequest;
+        const payloadReq = toPayloadRequest(req);
         const collection = state(this).payload.collections[args.collection];
         const result = await resetPasswordOperation({
           collection,

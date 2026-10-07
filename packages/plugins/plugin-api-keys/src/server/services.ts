@@ -34,7 +34,7 @@ async function mintForOwner({
   const token = createApiKeyToken({ tokenPrefix });
   const prefix = getApiKeyPrefix(token);
   const doc = (await req.frogbot.create({
-    collection: collectionSlug as never,
+    collection: collectionSlug,
     data: { name, owner, prefix, tokenHash: hashApiKeyToken(token) },
     overrideAccess: true,
     req,
@@ -77,7 +77,7 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
   const result = await req.frogbot.find({
-    collection: collectionSlug as never,
+    collection: collectionSlug,
     depth: 0,
     limit: 1,
     overrideAccess: true,
@@ -97,7 +97,7 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
   }
   const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
   await req.frogbot.update({
-    collection: collectionSlug as never,
+    collection: collectionSlug,
     id: key.id,
     data: { revokedAt },
     overrideAccess: true,

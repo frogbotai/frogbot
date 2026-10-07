@@ -1,5 +1,5 @@
 import type { CollectionConfig, Field, FrogBotConfig, Plugin } from 'frogbot';
-import { type Field as PayloadField, formatLabels } from 'payload';
+import { formatLabels } from 'payload';
 
 import { bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
 import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
@@ -21,11 +21,11 @@ export type {
 } from './types.js';
 
 function bindFields(
-  fields: PayloadField[],
+  fields: Field[],
   roles: ReadonlySet<string>,
   resolver: RoleResolver,
   authCollection: boolean,
-): PayloadField[] {
+): Field[] {
   return fields.map((field) => {
     let next = field;
     const generatedRolesField = authCollection && 'name' in next && next.name === 'roles';
@@ -82,7 +82,7 @@ function bindAccess(
 ): FrogBotConfig {
   const listed = new Set(roleSlugs);
   const collections = config.collections.map((collection) => {
-    const fields = namedFields(collection.fields as unknown as PayloadField[]);
+    const fields = namedFields(collection.fields);
     const access = collection.access
       ? Object.fromEntries(
           Object.entries(collection.access).map(([operation, value]) => {
@@ -124,11 +124,11 @@ function bindAccess(
       ? create[compiledAccess].clauses.filter((clause) => typeof clause === 'object')
       : [];
     const boundFields = bindFields(
-      collection.fields as unknown as PayloadField[],
+      collection.fields,
       listed,
       resolver,
       collection.slug === 'users',
-    ) as unknown as Field[];
+    );
     if (own.length === 0) return { ...collection, access, fields: boundFields };
     const stamp: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = ({
       data,
@@ -176,8 +176,8 @@ function distance(left: string, right: string): number {
   return row[right.length];
 }
 
-function namedFields(fields: PayloadField[]): Array<PayloadField & { name: string }> {
-  const result: Array<PayloadField & { name: string }> = [];
+function namedFields(fields: Field[]): Array<Field & { name: string }> {
+  const result: Array<Field & { name: string }> = [];
   for (const field of fields) {
     if ('name' in field) result.push(field);
     if ('fields' in field && Array.isArray(field.fields)) result.push(...namedFields(field.fields));
@@ -191,7 +191,7 @@ function namedFields(fields: PayloadField[]): Array<PayloadField & { name: strin
 function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly string[]): void {
   const authSlug = 'users';
   for (const collection of config.collections) {
-    const fields = namedFields(collection.fields as unknown as PayloadField[]);
+    const fields = namedFields(collection.fields);
     for (const value of Object.values(collection.access ?? {})) {
       if (!isCompiledAccess(value)) continue;
       for (const clause of value[compiledAccess].clauses) {

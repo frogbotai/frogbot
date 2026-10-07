@@ -27,7 +27,7 @@ import { serve, type ServerType } from '@hono/node-server';
 import { loadLayeredConfig } from '../config/layered.js';
 import { finalizeConfig } from '../config/parse.js';
 import type { GatewayConfig } from '../config/schema.js';
-import { createGateway } from '../gateway.js';
+import { buildGateway } from '../gateway.js';
 import { PROVIDER_NAMES, type ProviderConfigMap, providers } from '../providers/registry.js';
 import { helpText, parseCliArgs, parsePort } from './args.js';
 import { startupBanner } from './banner.js';
@@ -168,7 +168,7 @@ async function main() {
     flushTracing = setupTracing({ endpoint: finalized.tracing?.endpoint });
   }
 
-  const gw = createGateway(finalized as never);
+  const gw = buildGateway(finalized);
 
   if (!args.quiet) {
     console.log(startupBanner({ config: finalized, host, port, sources }));

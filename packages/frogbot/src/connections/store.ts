@@ -82,7 +82,7 @@ function assertOwner({ userSlug }: ConnectionStoreState, owner: ConnectionOwner)
   }
 }
 
-function assertKey(state: ConnectionStoreState, { owner, piece }: ConnectionStoreKey) {
+function assertKey(state: ConnectionStoreState, { owner, piece }: ConnectionStoreKey): string {
   const { config } = state;
 
   assertOwner(state, owner);
@@ -90,14 +90,17 @@ function assertKey(state: ConnectionStoreState, { owner, piece }: ConnectionStor
   if (!config.enabled || !config.slug || !Object.hasOwn(config.entries, piece)) {
     throw new Error(`Connection piece '${piece}' is not configured.`);
   }
+
+  return config.slug;
 }
 
 async function findRow(
-  { config, frogbot }: ConnectionStoreState,
+  { frogbot }: ConnectionStoreState,
+  slug: string,
   { owner, piece }: ConnectionStoreKey,
 ): Promise<ConnectionRow | undefined> {
   const result = await frogbot.find({
-    collection: config.slug as never,
+    collection: slug,
     where: { and: [{ owner: { equals: owner.id } }, { piece: { equals: piece } }] },
     depth: 0,
     limit: 1,
@@ -105,7 +108,7 @@ async function findRow(
     showHiddenFields: true,
   });
 
-  return result.docs[0] as unknown as ConnectionRow | undefined;
+  return result.docs[0] as ConnectionRow | undefined;
 }
 
 export class ConnectionStore {
@@ -130,21 +133,21 @@ export class ConnectionStore {
     if (!config.enabled || !config.slug) return [];
 
     const result = await frogbot.find({
-      collection: config.slug as never,
+      collection: config.slug,
       where: { owner: { equals: owner.id } },
       depth: 0,
       pagination: false,
       overrideAccess: true,
     });
-    return (result.docs as unknown as ConnectionRow[]).map(metadata);
+    return (result.docs as ConnectionRow[]).map(metadata);
   }
 
   async get(key: ConnectionStoreKey): Promise<ConnectionStoredValue | undefined> {
     const state = storeState(this);
 
-    assertKey(state, key);
+    const slug = assertKey(state, key);
 
-    const row = await findRow(state, key);
+    const row = await findRow(state, slug, key);
 
     if (!row) return;
 
@@ -172,10 +175,10 @@ export class ConnectionStore {
     const state = storeState(this);
     const { config, frogbot } = state;
 
-    assertKey(state, { owner, piece });
+    const slug = assertKey(state, { owner, piece });
 
     const key = { owner: { ...owner }, piece };
-    const lockKey = `connections:${JSON.stringify([config.slug, owner.collection, String(owner.id), piece])}`;
+    const lockKey = `connections:${JSON.stringify([slug, owner.collection, String(owner.id), piece])}`;
 
     return frogbot.kv.lock(lockKey, 30_000, async ({ signal }) => {
       let open = true;
@@ -204,7 +207,7 @@ export class ConnectionStore {
             if (serialized === undefined) throw new Error('Connection credential must be JSON.');
             const credential = await config.encryption.encrypt(serialized);
             check();
-            const row = await findRow(state, key);
+            const row = await findRow(state, slug, key);
             check();
 
             const write = {
@@ -218,7 +221,7 @@ export class ConnectionStore {
               status: data.status ?? 'active',
             };
             const options = {
-              collection: config.slug as never,
+              collection: slug,
               data: write,
               depth: 0,
               overrideAccess: true,
@@ -229,16 +232,16 @@ export class ConnectionStore {
               : await frogbot.create(options);
             check();
 
-            return metadata(saved as unknown as ConnectionRow);
+            return metadata(saved as ConnectionRow);
           },
           delete: async ({ id } = {}) => {
             check();
-            const row = await findRow(state, key);
+            const row = await findRow(state, slug, key);
             check();
             if (!row || (id !== undefined && String(id) !== String(row.id))) return false;
 
             await frogbot.delete({
-              collection: config.slug as never,
+              collection: slug,
               id: row.id,
               overrideAccess: true,
             });

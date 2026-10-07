@@ -1,15 +1,13 @@
-import {
-  buildQuery,
-  type DrizzleAdapter,
-  type GenericColumn,
-  type GenericTable,
-} from '@payloadcms/drizzle';
-import type { SQL } from 'drizzle-orm';
+import { buildQuery } from '@payloadcms/drizzle';
+import { is, type SQL } from 'drizzle-orm';
+import { PgDatabase } from 'drizzle-orm/pg-core';
+import type { BaseSQLiteDatabase, SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import type { DatabaseAdapter, FlattenedField, PayloadRequest, Where } from 'payload';
 import toSnakeCase from 'to-snake-case';
 
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { assertDrizzleAdapter } from './guards.js';
 
 export type CompareAndSetProps = {
   req: FrogBotRequest | PayloadRequest;
@@ -24,16 +22,6 @@ export type UpdateIfVersionProps = {
   id: DocID;
   version: number;
   data: Record<string, unknown>;
-};
-
-type SQLWriter = {
-  update: (table: GenericTable) => {
-    set: (data: Record<string, unknown>) => {
-      where: (where: SQL | undefined) => {
-        returning: (fields: { id: GenericColumn }) => PromiseLike<{ id: DocID }[]>;
-      };
-    };
-  };
 };
 
 const MONGO_PACKAGES = new Set(['@frogbotai/db-mongodb', '@payloadcms/db-mongodb']);
@@ -59,7 +47,7 @@ export async function compareAndSet({
     return result !== null;
   }
 
-  const adapter = database as unknown as DrizzleAdapter;
+  const adapter = assertDrizzleAdapter(database, 'Atomic updates');
   const tableName = adapter.tableNameMap?.get(toSnakeCase(collection));
 
   if (!tableName) {
@@ -88,11 +76,9 @@ export async function compareAndSet({
     adapter.primaryDrizzle ||
     adapter.drizzle;
 
-  const rows = await (db as unknown as SQLWriter)
-    .update(table)
-    .set(columns)
-    .where(query.where)
-    .returning({ id: table.id });
+  const rows: unknown[] = is(db, PgDatabase)
+    ? await db.update(table).set(columns).where(query.where).returning({ id: table.id })
+    : await updateSQLite({ db, table, columns, where: query.where });
 
   adapter.lastWriteTimestamp = Date.now();
 
@@ -112,6 +98,20 @@ export async function updateIfVersion({
     where: { and: [{ id: { equals: id } }, { version: { equals: version } }] },
     data: { ...data, version: version + 1 },
   });
+}
+
+async function updateSQLite({
+  db,
+  table,
+  columns,
+  where,
+}: {
+  db: Pick<BaseSQLiteDatabase<'async', unknown>, 'update'>;
+  table: SQLiteTable & { id: SQLiteColumn };
+  columns: Record<string, unknown>;
+  where: SQL | undefined;
+}): Promise<unknown[]> {
+  return db.update(table).set(columns).where(where).returning({ id: table.id });
 }
 
 function getDatabase(req: FrogBotRequest | PayloadRequest): DatabaseAdapter {

@@ -3,6 +3,7 @@ import { commitTransaction, initTransaction, killTransaction } from 'payload';
 
 import type { AgentSelection } from '../agents/types.js';
 import type { DocID } from '../collections/config/types.js';
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelChatAccess } from './channelAccess.js';
 import type { ChatDocument } from './findChat.js';
@@ -43,8 +44,6 @@ export type ResolveChatContextProps = {
   delivery?: MessageDelivery;
   queue?: boolean;
 };
-
-type TransactionReq = Parameters<typeof initTransaction>[0];
 
 export async function resolveChatContext({
   req,
@@ -185,13 +184,13 @@ async function persistIncoming({
   const overrideAccess = true;
   const author = actorFromRequest(req);
 
-  const transactionReq = req as unknown as TransactionReq;
+  const transactionReq = toPayloadRequest(req);
   const ownsTransaction = await initTransaction(transactionReq);
 
   try {
     for (const message of messages) {
       const existing = (
-        (await req.frogbot.find({
+        await req.frogbot.find({
           collection: messagesSlug,
           where: { and: [{ id: { equals: message.id } }, { chat: { equals: chatId } }] },
           limit: 1,
@@ -199,9 +198,7 @@ async function persistIncoming({
           depth: 0,
           req,
           overrideAccess,
-        })) as unknown as {
-          docs: Array<{ id: DocID; role: string; status?: string | null; createdAt: string }>;
-        }
+        })
       ).docs[0];
 
       if (existing && delivery) {

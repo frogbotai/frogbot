@@ -63,6 +63,26 @@ const mockBans = [
   },
 ];
 
+const CAST_MESSAGE =
+  'No `as never` or `as unknown as` in product code (DR-047). Type the value, or cross a seam with a checked converter: toPayloadRequest / attachRegisteredFrogBot, toPayloadConfig / toPayloadFields / wrapPayloadPlugin (frogbot/src/seams), or an adapter guard such as assertDrizzleAdapter (frogbot/src/database/guards.ts).';
+
+const castBans = [
+  { selector: "TSAsExpression[typeAnnotation.type='TSNeverKeyword']", message: CAST_MESSAGE },
+  {
+    selector:
+      "TSAsExpression[expression.type='TSAsExpression'][expression.typeAnnotation.type='TSUnknownKeyword']",
+    message: CAST_MESSAGE,
+  },
+];
+
+// The checked converters, the only product files that may cast across a seam. Each cast there
+// sits beside a type-level check that fails tsc when FrogBot's and Payload's types drift.
+const CAST_CONVERTERS = [
+  'packages/frogbot/src/seams/config.ts',
+  'packages/frogbot/src/seams/request.ts',
+  'packages/richtext-lexical/src/utilities/seams.ts',
+];
+
 const UI_SOURCE = 'packages/ui/src/**/*.{ts,tsx}';
 
 const UI_LIBRARIES = [
@@ -193,6 +213,11 @@ export default tseslint.config(
   {
     files: ['packages/{ui,next}/**'],
     rules: { 'frogbot/client-imports': 'error' },
+  },
+  {
+    files: ['packages/**/src/**/*.{ts,tsx}'],
+    ignores: [...SPECS, '**/vitest.setup.ts', ...CAST_CONVERTERS],
+    rules: { 'no-restricted-syntax': ['error', ...castBans] },
   },
   {
     files: [UI_SOURCE],

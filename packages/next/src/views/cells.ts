@@ -27,9 +27,8 @@ export function getPath(value: Record<string, unknown>, path: string): unknown {
 }
 
 export function setPath(path: string, value: unknown): Record<string, unknown> {
-  return path
-    .split('.')
-    .reduceRight<Record<string, unknown>>((result, key) => ({ [key]: result }), value as never);
+  const [first, ...rest] = path.split('.');
+  return { [first]: rest.reduceRight<unknown>((result, key) => ({ [key]: result }), value) };
 }
 
 export function appendQuery(params: URLSearchParams, key: string, value: unknown): void {

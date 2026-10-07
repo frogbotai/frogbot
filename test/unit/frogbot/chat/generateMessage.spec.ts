@@ -1,4 +1,4 @@
-import type { UIMessage } from 'ai';
+import { jsonSchema, tool, type UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 
 import type { AgentGenerateResult } from '../../../../packages/frogbot/src/agents/types.js';
@@ -38,7 +38,7 @@ describe('generateMessage', () => {
     const message = await generateMessage({
       result,
       originalMessages,
-      tools: { lookup: {} },
+      tools: { lookup: tool({ inputSchema: jsonSchema({ type: 'object' }) }) },
       model: 'openai/test',
     });
 

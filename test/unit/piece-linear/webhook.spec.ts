@@ -30,7 +30,7 @@ function request({ body = payload(), signature = sign({ body }) } = {}) {
 
 function verify(req: FrogBotRequest) {
   const runtime = pieceInstanceRuntime(createLinear({ webhookSecret }));
-  return runtime.definition.webhook!.verify!({ req, options: runtime.options as object });
+  return runtime.definition.webhook!.verify!({ req, options: runtime.options });
 }
 
 function signedRequest(signature: string) {
@@ -113,7 +113,7 @@ describe('Linear webhook verification', () => {
   it('fails closed without a configured secret', async () => {
     const runtime = pieceInstanceRuntime(createLinear());
     await expect(
-      runtime.definition.webhook!.verify!({ req: request(), options: runtime.options as object }),
+      runtime.definition.webhook!.verify!({ req: request(), options: runtime.options }),
     ).resolves.toBe(false);
   });
 
@@ -251,7 +251,7 @@ describe('Linear webhook lifecycle', () => {
     await expect(
       runtime.definition.webhook!.verify!({
         req: request({ body: payload(Date.now()) }),
-        options: runtime.options as object,
+        options: runtime.options,
       }),
     ).resolves.toBe(true);
   });

@@ -1,6 +1,7 @@
-import type { DrizzleAdapter, PostgresDB, SQLiteDB } from '@payloadcms/drizzle';
+import type { DrizzleAdapter, SQLiteDB } from '@payloadcms/drizzle';
 import type { SQL } from 'drizzle-orm';
-import { and, getTableColumns, isNull, or, sql } from 'drizzle-orm';
+import { and, getTableColumns, is, isNull, or, sql } from 'drizzle-orm';
+import { PgDatabase, PgTable } from 'drizzle-orm/pg-core';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import type { BaseDatabaseAdapter, KVStoreValue } from 'payload';
 import toSnakeCase from 'to-snake-case';
@@ -66,7 +67,8 @@ export function createSQLKV({
   }
 
   const tableName = adapter.tableNameMap?.get(toSnakeCase(collectionSlug));
-  const mappedTable = tableName ? (adapter.tables[tableName] as SQLKVTable | undefined) : undefined;
+  const rawTable = tableName ? adapter.tables[tableName] : undefined;
+  const mappedTable = rawTable as SQLKVTable | undefined;
   if (!mappedTable?.key || !mappedTable.data || !mappedTable.expiresAt) {
     unsupported(`SQL KV collection "${collectionSlug}" requires key, data, and expiresAt columns`);
   }
@@ -74,6 +76,11 @@ export function createSQLKV({
   const table = mappedTable;
   const columns = getTableColumns(table);
   const primary = () => (adapter.primaryDrizzle ?? adapter.drizzle) as SQLiteDB;
+  const postgres = () => {
+    const db = adapter.primaryDrizzle ?? adapter.drizzle;
+    if (!is(db, PgDatabase)) throw new Error('SQL KV expected a PostgreSQL connection');
+    return db;
+  };
   const now = sqlite ? sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')` : sql`clock_timestamp()`;
   const nowMilliseconds = sqlite
     ? sql`cast(strftime('%s', 'now') as integer) * 1000 + cast(substr(strftime('%f', 'now'), 4, 3) as integer)`
@@ -148,17 +155,31 @@ export function createSQLKV({
       return rows.length > 0;
     }
 
-    const db = primary() as unknown as PostgresDB;
+    if (!is(rawTable, PgTable)) throw new Error('SQL KV expected a PostgreSQL table');
+    const pgTable = rawTable;
+    const pgColumns = getTableColumns(pgTable);
     return mutation(
-      db.transaction(async (transaction) => {
-        const writer = transaction as unknown as SQLiteDB;
-        const inserted = await insert(writer, null);
+      postgres().transaction(async (transaction) => {
+        const updates = { data, expiresAt: null, ...timestamps };
+        const inserted = await transaction
+          .insert(pgTable)
+          .values({
+            ...updates,
+            key,
+            ...(columns.createdAt ? { createdAt: now } : {}),
+          })
+          .onConflictDoUpdate({
+            target: pgColumns.key,
+            set: updates,
+            setWhere: ifAbsent ? expired : undefined,
+          })
+          .returning({ key: pgColumns.key });
         if (!inserted.length) return false;
-        const finalized = await writer
-          .update(table)
+        const finalized = await transaction
+          .update(pgTable)
           .set({ expiresAt, ...timestamps })
           .where(sql`${table.key} = ${key}`)
-          .returning({ key: table.key });
+          .returning({ key: pgColumns.key });
         if (!finalized.length) throw new Error('SQL KV could not finalize expiration');
         return true;
       }),
@@ -184,9 +205,8 @@ export function createSQLKV({
         ? sql`delete from ${table}`
         : sql`update ${table} set ${sql.identifier(table.expiresAt.name)} = ${expiresAt}
           ${columns.updatedAt ? sql`, ${sql.identifier(columns.updatedAt.name)} = ${now}` : sql``}`;
-    const db = primary() as unknown as PostgresDB;
     const result = await mutation(
-      db.execute(sql`
+      postgres().execute(sql`
       with kv_owner as materialized (
         select ${table.key} as key, ${table.data} as data, ${table.expiresAt} as expires_at
         from ${table} where ${table.key} = ${lock.key} for update

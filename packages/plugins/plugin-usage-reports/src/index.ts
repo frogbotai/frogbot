@@ -127,7 +127,7 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
       let page = 1;
       while (true) {
         const result = await req.frogbot.find({
-          collection: slug as never,
+          collection: slug,
           where: {
             and: [
               { requestedAt: { greater_than_equal: query.from } },

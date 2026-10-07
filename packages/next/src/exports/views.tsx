@@ -17,9 +17,8 @@ import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType } from '@payloadcms/ui/shared';
-import type { FrogBotRequest } from 'frogbot';
 import { getCachedFrogBot, messagesToUIMessages } from 'frogbot';
-import { getPayloadConfig } from 'frogbot/internal';
+import { attachRegisteredFrogBot, getPayloadConfig } from 'frogbot/internal';
 import { redirect } from 'next/navigation';
 import type { AdminViewServerProps, DocumentViewServerProps, PayloadComponent } from 'payload';
 import { formatAdminURL } from 'payload/shared';
@@ -112,7 +111,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     component
       ? getFromImportMap<ComponentType<TProps>>({
           importMap: payload.importMap,
-          PayloadComponent: component as never,
+          PayloadComponent: component,
           schemaPath: '',
         })
       : undefined;
@@ -235,7 +234,9 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
       chatId={routeID}
       documentPath={documentPath}
       initialChat={initialChat}
-      initialMessages={messagesToUIMessages(result.docs as never)}
+      initialMessages={messagesToUIMessages(
+        result.docs.map(({ id, metadata, parts, role }) => ({ id, metadata, parts, role })),
+      )}
       initialSelection={initialSelection}
       {...componentProps}
     />
@@ -262,7 +263,7 @@ export async function SettingsView(props: SettingsViewProps) {
 
   const { accessible, matched, title } = await resolveSettingsSection({
     entries: settings,
-    req: req as unknown as FrogBotRequest,
+    req: attachRegisteredFrogBot(req),
     routePath,
   });
 

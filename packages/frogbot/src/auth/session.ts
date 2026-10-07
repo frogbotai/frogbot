@@ -5,13 +5,13 @@ import {
   getFieldsToSign,
   initTransaction,
   jwtSign,
-  type PayloadRequest,
   resetLoginAttempts,
   type TypedUser,
   UnverifiedEmail,
 } from 'payload';
 import { addSessionToUser } from 'payload/shared';
 
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
   hasSessionTransaction,
@@ -34,7 +34,7 @@ export async function issueSession({
   collectionSlug,
   userId,
 }: SessionIssueArgs): Promise<SessionIssueResult> {
-  const payloadReq = req as unknown as PayloadRequest;
+  const payloadReq = toPayloadRequest(req);
   const { payload } = payloadReq;
   const collectionConfig = payload.collections[collectionSlug]?.config;
   if (!collectionConfig?.auth) throw new AuthenticationError(payloadReq.t);

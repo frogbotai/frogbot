@@ -1,4 +1,4 @@
-import type { DrizzleAdapter, GenericColumn } from '@payloadcms/drizzle';
+import type { GenericColumn } from '@payloadcms/drizzle';
 import type { BasePostgresAdapter } from '@payloadcms/drizzle/postgres';
 import {
   and,
@@ -15,6 +15,7 @@ import {
 import { type PgTable, QueryBuilder } from 'drizzle-orm/pg-core';
 import type { PayloadRequest } from 'payload';
 
+import { assertPostgresAdapter } from '../../../database/guards.js';
 import type { AdapterSearch } from '../../../database/types.js';
 import { SearchReadinessError } from '../../errors.js';
 import type { SearchComponentRanking, SearchIndexDescriptor, SearchRanking } from '../../types.js';
@@ -129,7 +130,7 @@ export const search: AdapterSearch = async ({
   req,
   where,
 }) => {
-  const adapter = db as unknown as BasePostgresAdapter;
+  const adapter = assertPostgresAdapter(db, 'Search');
 
   const approximate =
     mode !== 'lexical' &&
@@ -168,7 +169,7 @@ export const search: AdapterSearch = async ({
 
   try {
     const parts = buildSearchQuery({
-      adapter: db as unknown as DrizzleAdapter,
+      adapter,
       collection,
       draft,
       locale,

@@ -2,13 +2,13 @@ import { isDeepStrictEqual } from 'node:util';
 
 import { jsonSchema, Output } from 'ai';
 import type { FlattenedField, JobsConfig, PayloadRequest, TaskConfig } from 'payload';
-import { flattenTopLevelFields } from 'payload/shared';
 
 import { resolveSmallModel } from '../../../ai/models.js';
 import type { AIConfig, ModelId, SanitizedAIConfig } from '../../../ai/types.js';
 import type { CollectionConfig } from '../../../collections/config/types.js';
 import type { FrogBot } from '../../../frogbot.js';
 import { getFrogBotInstance } from '../../../instanceRegistry.js';
+import { flattenTopLevelFields } from '../../../seams/config.js';
 import type { FrogBotRequest } from '../../../types/request.js';
 import type { Field } from '../../config/types.js';
 import {
@@ -119,7 +119,7 @@ async function loadUser({
   user: NonNullable<AIFieldRunInput['user']>;
 }): Promise<FrogBotRequest['user']> {
   const doc = await frogbot.findByID({
-    collection: user.collection as never,
+    collection: user.collection,
     id: user.id,
     depth: 0,
     disableErrors: true,
@@ -155,7 +155,7 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
 
   const read = (overrideAccess: boolean) =>
     frogbot.findByID({
-      collection: input.collection as never,
+      collection: input.collection,
       id: input.id,
       depth: 0,
       disableErrors: true,
@@ -172,10 +172,10 @@ async function runAIField({ input, req }: { input: AIFieldRunInput; req: Payload
     isCurrent?: () => Promise<boolean>,
   ): Promise<boolean> => {
     const args = {
-      collection: input.collection as never,
-      data: data as never,
+      collection: input.collection,
+      data: data,
       depth: 0,
-      ...(input.locale ? { locale: input.locale as never } : {}),
+      ...(input.locale ? { locale: input.locale } : {}),
       overrideAccess: true,
       req: runReq,
       context: {
@@ -303,7 +303,7 @@ export function resolveAIFieldTask<T extends JobsConfig>({
   jobs: T;
 }): T {
   const hasAIField = collections.some(({ fields }) =>
-    flattenTopLevelFields(fields as never).some((field) => getAIKind(field as Field)),
+    flattenTopLevelFields(fields).some((field) => field.type !== 'tab' && getAIKind(field)),
   );
 
   if (!hasAIField) return jobs;

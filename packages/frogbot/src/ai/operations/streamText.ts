@@ -12,6 +12,7 @@ import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { SanitizedAIConfig, StreamTextOpts } from '../types.js';
+import { toProviderOptions } from './options.js';
 
 export type StreamTextDeps = {
   gateway: Gateway;
@@ -34,6 +35,7 @@ export async function streamTextOperation(
     onEnd,
     onError,
     onAbort,
+    providerOptions,
     ...aiSdkOpts
   } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
@@ -75,6 +77,7 @@ export async function streamTextOperation(
     return aiStreamText({
       ...aiSdkOpts,
       model: op.chatModel(),
+      providerOptions: toProviderOptions(providerOptions),
       ...(tools?.length && { tools: aiTools, toolsContext }),
       onEnd: async (event: { usage: LanguageModelUsage; finishReason: string }) => {
         await op.finish({
@@ -100,7 +103,7 @@ export async function streamTextOperation(
           await onAbort(event);
         }
       },
-    } as unknown as Parameters<typeof aiStreamText>[0]);
+    });
   } catch (error) {
     await op.finish({ error });
     throw error;

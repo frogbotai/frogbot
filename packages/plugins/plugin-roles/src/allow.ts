@@ -35,12 +35,14 @@ function isOwnClause<TArgs extends RoleAccessArgs>(clause: Clause<TArgs>): claus
 }
 
 function ownWhere(req: FrogBotRequest, field: string, polymorphic: boolean): Where {
+  const user = req.user!;
   const value = polymorphic
     ? {
-        relationTo: (req.user as unknown as { collection: string }).collection,
-        value: req.user!.id,
+        relationTo:
+          'collection' in user && typeof user.collection === 'string' ? user.collection : undefined,
+        value: user.id,
       }
-    : req.user!.id;
+    : user.id;
   return { [field]: { equals: value } };
 }
 

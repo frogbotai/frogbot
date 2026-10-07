@@ -1,6 +1,7 @@
 import { importExportPlugin as payloadImportExportPlugin } from '@payloadcms/plugin-import-export';
 import type { ImportExportPluginConfig } from '@payloadcms/plugin-import-export/types';
 import type { Plugin } from 'frogbot';
+import { wrapPayloadPlugin } from 'frogbot/internal';
 import type { CollectionAfterChangeHook, PayloadRequest } from 'payload';
 
 export type ImportExportPluginOptions = ImportExportPluginConfig;
@@ -24,8 +25,7 @@ export function importExportPlugin(options: ImportExportPluginOptions): Plugin {
     ...(options.collections && { collections: options.collections.map(withCollectionQueues) }),
   };
 
-  return async (config) =>
-    (await payloadImportExportPlugin(pluginOptions)(config as never)) as unknown as typeof config;
+  return wrapPayloadPlugin(payloadImportExportPlugin(pluginOptions));
 }
 
 function withCollectionQueues(collection: PluginCollection): PluginCollection {

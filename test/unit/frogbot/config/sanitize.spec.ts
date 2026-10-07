@@ -704,6 +704,38 @@ describe('frogbot sanitize', () => {
     expect(pages?.admin.livePreview).toEqual(livePreview);
   });
 
+  it('attaches req.frogbot before calling a dashboard widget field function', async () => {
+    const read = vi.fn(({ req }: { req: { frogbot?: unknown } }) => Boolean(req.frogbot));
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          dashboard: {
+            widgets: [
+              {
+                slug: 'summary',
+                Component: './Widget#Widget',
+                fields: [{ name: 'title', type: 'text', access: { read } }],
+              },
+            ],
+          },
+        },
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+    const [field] = payloadConfig.admin.dashboard.widgets[0].fields;
+    const fieldRead = ('access' in field ? field.access?.read : undefined) as
+      ((args: Record<string, unknown>) => Promise<unknown>) | undefined;
+    const allowed = await fieldRead?.({ req: { payload } });
+
+    expect(allowed).toBe(true);
+    expect(read).toHaveBeenCalledWith(
+      expect.objectContaining({ req: expect.objectContaining({ frogbot }) }),
+    );
+  });
+
   it('attaches req.frogbot before calling a root livePreview url', async () => {
     const url = vi.fn(({ req }) => (req.frogbot ? '/pages' : null));
     const result = sanitize(makeConfig({ admin: { livePreview: { url } } }));

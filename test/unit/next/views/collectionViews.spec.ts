@@ -9,7 +9,7 @@ describe('collection view resolution', () => {
   it('evaluates access on the server and removes denied metadata', async () => {
     const allowed = vi.fn(() => true);
     const denied = vi.fn(() => false);
-    const req = { user: { id: '1' } };
+    const req = { frogbot: {}, user: { id: '1' } };
     const result = await resolveCollectionViews({
       collectionConfig: {
         admin: {

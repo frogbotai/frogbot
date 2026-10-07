@@ -43,7 +43,7 @@ export async function exportCaptures(args: string[]): Promise<void> {
     let page = 1;
     while (true) {
       const result = await frogbot.find({
-        collection: registration.collectionSlug as never,
+        collection: registration.collectionSlug,
         where: whereFor(parsed),
         depth: 0,
         limit: 100,

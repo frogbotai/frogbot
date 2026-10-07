@@ -1,8 +1,9 @@
 import { Cron } from 'croner';
-import type { Payload, PayloadRequest } from 'payload';
+import type { Payload } from 'payload';
 
 import { loadConfig } from '../config/load.js';
 import type { FrogBot } from '../frogbot.js';
+import { toPayloadRequest } from '../seams/request.js';
 import { formatCliError } from './formatCliError.js';
 import type { JobsRunOptions } from './jobsRunOptions.js';
 import { jobsRunUsage, parseJobsRunOptions } from './jobsRunOptions.js';
@@ -60,7 +61,7 @@ export async function jobsRun(args: string[]): Promise<void> {
     if (stopping || activeTick) return;
 
     activeTick = (async () => {
-      const req = (await frogbot.createRequest()) as unknown as PayloadRequest;
+      const req = toPayloadRequest(await frogbot.createRequest());
 
       if (stopping) return;
 

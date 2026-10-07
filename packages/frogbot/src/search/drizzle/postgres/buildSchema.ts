@@ -3,6 +3,7 @@ import type { BasePostgresAdapter } from '@payloadcms/drizzle/postgres';
 import { type ExtraConfigColumn, index as pgIndex, type PgIndexOpClass } from 'drizzle-orm/pg-core';
 import toSnakeCase from 'to-snake-case';
 
+import { assertPostgresAdapter } from '../../../database/guards.js';
 import type { BuildSearchSchema } from '../../../database/types.js';
 import type { SearchIndexDescriptor, SearchMetric } from '../../types.js';
 import { resolveSearchColumn, type SearchColumn } from '../resolveSearchColumn.js';
@@ -46,8 +47,7 @@ function resolveColumn({
 }
 
 export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
-  const adapter = db as unknown as BasePostgresAdapter;
-  const drizzleAdapter = db as unknown as DrizzleAdapter;
+  const adapter = assertPostgresAdapter(db, 'Search');
   const plans = new Map<string, SearchIndexPlan>();
 
   adapter.beforeSchemaInit.push(({ schema }) => {
@@ -61,7 +61,7 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
           if (index.vector) {
             const { approximate, dimensions, metric, path } = index.vector;
             const { key, tableName } = resolveColumn({
-              adapter: drizzleAdapter,
+              adapter,
               collection: slug,
               index,
               path,
@@ -85,7 +85,7 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
                 type: 'hnsw',
                 key,
                 name: buildIndexName({
-                  adapter: drizzleAdapter,
+                  adapter,
                   name: `${tableName}_${name}_${toSnakeCase(metric)}`,
                 }),
                 operatorClass,
@@ -96,7 +96,7 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
 
           if (index.lexical && searchable) {
             const columns = index.lexical.fields.map(({ path }) =>
-              resolveColumn({ adapter: drizzleAdapter, collection: slug, index, path, versions }),
+              resolveColumn({ adapter, collection: slug, index, path, versions }),
             );
 
             const [{ tableName }] = columns;
@@ -109,7 +109,7 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
                 keys,
                 language: index.lexical.language,
                 name: buildIndexName({
-                  adapter: drizzleAdapter,
+                  adapter,
                   name: `${tableName}_${toSnakeCase(index.name)}_search`,
                 }),
                 tableName,
@@ -127,22 +127,18 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
     for (const plan of plans.values()) {
       extendTable({
         table: schema.tables[plan.tableName],
-        extraConfig: (table) => {
-          const columns = table as unknown as Record<string, ExtraConfigColumn>;
-
-          return {
-            [plan.name]:
-              plan.type === 'hnsw'
-                ? pgIndex(plan.name).using('hnsw', columns[plan.key].op(plan.operatorClass))
-                : pgIndex(plan.name).using(
-                    'gin',
-                    buildTSVector({
-                      columns: plan.keys.map((key) => columns[key]),
-                      language: plan.language,
-                    }),
-                  ),
-          };
-        },
+        extraConfig: (columns: Record<string, ExtraConfigColumn>) => ({
+          [plan.name]:
+            plan.type === 'hnsw'
+              ? pgIndex(plan.name).using('hnsw', columns[plan.key].op(plan.operatorClass))
+              : pgIndex(plan.name).using(
+                  'gin',
+                  buildTSVector({
+                    columns: plan.keys.map((key) => columns[key]),
+                    language: plan.language,
+                  }),
+                ),
+        }),
       });
     }
 

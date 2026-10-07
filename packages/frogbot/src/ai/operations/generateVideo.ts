@@ -9,6 +9,7 @@ import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { GenerateVideoOpts, SanitizedAIConfig } from '../types.js';
+import { toProviderOptions } from './options.js';
 
 export type GenerateVideoDeps = {
   gateway: Gateway;
@@ -49,9 +50,9 @@ export async function generateVideoOperation(
     const result = await aiGenerateVideo({
       model: op.videoModel(),
       prompt,
-      providerOptions,
+      providerOptions: toProviderOptions(providerOptions),
       abortSignal,
-    } as unknown as Parameters<typeof aiGenerateVideo>[0]);
+    });
     await op.finish();
     return result;
   } catch (error) {

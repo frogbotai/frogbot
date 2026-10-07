@@ -30,7 +30,7 @@ function writeAudit(
 
   void req.frogbot
     .create({
-      collection: options.auditSlug as never,
+      collection: options.auditSlug,
       data: {
         collection: options.collectionSlug,
         operation,

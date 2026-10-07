@@ -2,6 +2,7 @@ import { isApiKeyStrategy } from '@frogbotai/plugin-api-keys';
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp';
 import { mcpPlugin as payloadMcpPlugin } from '@payloadcms/plugin-mcp';
 import type { Plugin } from 'frogbot';
+import { wrapPayloadPlugin } from 'frogbot/internal';
 
 import { resolveMcpAccess, validateMcpCapabilities } from './access.js';
 
@@ -32,15 +33,17 @@ export function mcpPlugin(pluginOptions: McpPluginOptions = {}): Plugin {
       ...options
     } = pluginOptions as MCPPluginConfig;
 
-    return (await payloadMcpPlugin({
-      ...options,
-      overrideAuth: (req) =>
-        resolveMcpAccess({
-          collection: apiKeyStrategy.collection,
-          strategy: apiKeyStrategy.strategy,
-          pluginOptions: options,
-          req,
-        }),
-    })(config as never)) as unknown as typeof config;
+    return wrapPayloadPlugin(
+      payloadMcpPlugin({
+        ...options,
+        overrideAuth: (req) =>
+          resolveMcpAccess({
+            collection: apiKeyStrategy.collection,
+            strategy: apiKeyStrategy.strategy,
+            pluginOptions: options,
+            req,
+          }),
+      }),
+    )(config);
   };
 }

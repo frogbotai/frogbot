@@ -1,10 +1,10 @@
-import type { DrizzleAdapter } from '@payloadcms/drizzle';
 import { type SQL, sql } from 'drizzle-orm';
 import type { PayloadRequest } from 'payload';
 
 import type { AdapterSearch } from '../../../database/types.js';
 import type { SearchComponentRanking, SearchRanking } from '../../types.js';
 import { buildSearchQuery } from '../buildSearchQuery.js';
+import { assertSQLiteSearchAdapter, getSearchDatabase } from './guards.js';
 import { buildHybridQuery } from './queries/buildHybridQuery.js';
 import { buildLexicalQuery } from './queries/buildLexicalQuery.js';
 import { buildMatchQuery } from './queries/buildMatchQuery.js';
@@ -28,8 +28,9 @@ async function getDatabase(
 ): Promise<SearchDatabase> {
   const transactionID = await req.transactionID;
 
-  return ((transactionID && adapter.sessions[transactionID]?.db) ||
-    adapter.drizzle) as SearchDatabase;
+  return getSearchDatabase(
+    (transactionID && adapter.sessions[transactionID]?.db) || adapter.drizzle,
+  );
 }
 
 function getComponent(rank: null | number | undefined, score: null | number | undefined) {
@@ -51,7 +52,7 @@ export const search: AdapterSearch = async ({
   req,
   where,
 }) => {
-  const adapter = db as unknown as SQLiteSearchAdapter;
+  const adapter = assertSQLiteSearchAdapter(db);
   const { localization } = adapter.payload.config;
   const versions =
     draft && Boolean(adapter.payload.collections[collection].config.versions?.drafts);
@@ -59,7 +60,7 @@ export const search: AdapterSearch = async ({
   const approximate = mode !== 'lexical' && Boolean(target.vector?.index);
 
   const parts = buildSearchQuery({
-    adapter: db as unknown as DrizzleAdapter,
+    adapter,
     collection,
     draft,
     locale,

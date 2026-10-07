@@ -22,7 +22,7 @@ import { type GatewayConfig, parseGatewayConfig } from './schema.js';
 import { interpolateConfigText } from './variable.js';
 
 /** Symbol placed on the parsed config object so we can detect and skip re-parsing. */
-export const kParsed: unique symbol = Symbol.for('frogbotai.gateway.parsed') as never;
+export const kParsed: unique symbol = Symbol.for('frogbotai.gateway.parsed');
 
 type ParsedMarked = GatewayConfig & { [kParsed]?: true };
 

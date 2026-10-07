@@ -281,9 +281,9 @@ async function enableSubscription(
   signal.throwIfAborted();
 
   const context = {
-    input: parsedInput as never,
-    client: client as never,
-    options: runtime.options as never,
+    input: parsedInput,
+    client: client,
+    options: runtime.options,
     req,
   };
 
@@ -492,7 +492,7 @@ async function cleanup(
     input,
     state: subscription.state,
     client,
-    options: runtime.options as never,
+    options: runtime.options,
     req,
   });
 
@@ -517,7 +517,7 @@ async function disableSubscription(
     collection: TRIGGER_SUBSCRIPTIONS_SLUG,
     id: subscription.id,
     overrideAccess: true,
-  } as never);
+  });
 }
 
 async function write(
@@ -538,7 +538,7 @@ async function write(
   const result =
     id === undefined
       ? await triggers.frogbot.create(args)
-      : await triggers.frogbot.update({ ...args, id } as never);
+      : await triggers.frogbot.update({ ...args, id });
 
   signal.throwIfAborted();
 

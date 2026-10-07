@@ -1,18 +1,11 @@
-import {
-  buildIndexName,
-  buildQuery,
-  type DrizzleAdapter,
-  find,
-  type GenericColumn,
-  type GenericTable,
-} from '@payloadcms/drizzle';
-import type { BasePostgresAdapter } from '@payloadcms/drizzle/postgres';
+import { buildIndexName, buildQuery, type DrizzleAdapter, find } from '@payloadcms/drizzle';
 import {
   and,
   asc,
   eq,
   getTableName,
   inArray,
+  is,
   max,
   min,
   notInArray,
@@ -20,17 +13,24 @@ import {
   sql,
 } from 'drizzle-orm';
 import {
+  PgDatabase,
   type PgTable,
   QueryBuilder as PgQueryBuilder,
   uniqueIndex as pgUniqueIndex,
 } from 'drizzle-orm/pg-core';
 import {
+  type BaseSQLiteDatabase,
   QueryBuilder as SQLiteQueryBuilder,
   type SQLiteTable,
   uniqueIndex as sqliteUniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { DatabaseAdapter, Job, PayloadRequest, Sort, Where } from 'payload';
 
+import {
+  assertDrizzleAdapter,
+  assertPostgresAdapter,
+  assertSQLiteAdapter,
+} from '../database/guards.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import {
   getJobClaimFields,
@@ -43,35 +43,57 @@ import { type JobLogDatabase, jobLogOperations } from './log.js';
 
 type JobSQLDialect = 'postgres' | 'sqlite';
 
-type JobSQLUpdate = PromiseLike<unknown> & {
-  returning: (fields: { id: GenericColumn }) => PromiseLike<{ id: number | string }[]>;
-};
+type JobDatabase = Awaited<ReturnType<typeof getJobDatabase>>;
 
-type JobSQLWriter = {
-  delete: (table: GenericTable) => {
-    where: (predicate: SQL | undefined) => PromiseLike<unknown>;
-  };
-  update: (table: GenericTable) => {
-    set: (data: Record<string, unknown>) => {
-      where: (predicate: SQL | undefined) => JobSQLUpdate;
-    };
-  };
-};
+type JobTable = DrizzleAdapter['tables'][string];
 
-function getJobUpdate({
+type JobSQLiteWriter = Pick<BaseSQLiteDatabase<'async', unknown>, 'delete' | 'update'>;
+
+const feature = 'FrogBot SQL jobs';
+
+async function updateJobRows({
   db,
   table,
   data,
   where,
 }: {
-  db: Awaited<ReturnType<typeof getJobDatabase>>;
-  table: GenericTable;
+  db: JobDatabase;
+  table: JobTable;
   data: Record<string, unknown>;
   where: SQL | undefined;
-}): JobSQLUpdate {
-  const writer = db as unknown as JobSQLWriter;
+}): Promise<void> {
+  if (is(db, PgDatabase)) {
+    await db.update(table).set(data).where(where);
 
-  return writer.update(table).set(data).where(where);
+    return;
+  }
+
+  const writer: JobSQLiteWriter = db;
+
+  await writer.update(table).set(data).where(where);
+}
+
+async function claimJobRows({
+  db,
+  table,
+  data,
+  where,
+}: {
+  db: JobDatabase;
+  table: JobTable;
+  data: Record<string, unknown>;
+  where: SQL | undefined;
+}): Promise<(number | string)[]> {
+  if (is(db, PgDatabase)) {
+    const rows = await db.update(table).set(data).where(where).returning({ id: table.id });
+
+    return rows.map((row) => row.id);
+  }
+
+  const writer: JobSQLiteWriter = db;
+  const rows = await writer.update(table).set(data).where(where).returning({ id: table.id });
+
+  return rows.map((row) => row.id);
 }
 
 function getJoinedJobQuery({
@@ -220,7 +242,7 @@ export function installSQLJobOperations({
   adapter: Pick<DatabaseAdapter, 'updateJobs'>;
   dialect: JobSQLDialect;
 }): void {
-  const adapter = database as unknown as DrizzleAdapter;
+  const adapter = assertDrizzleAdapter(database, feature);
   const updateJobs = database.updateJobs;
   const inserts = new Map<string | number, Promise<void>>();
 
@@ -278,41 +300,69 @@ export function installSQLJobOperations({
       if (!jobs || !table) throw new Error('FrogBot jobs log table is unavailable.');
 
       const live = sql`exists (select 1 from ${jobs} where ${jobs.id} = ${id} and ${jobs.completedAt} is null and ${jobs.hasError} is not true)`;
-      const db = (await getJobDatabase(adapter, req)) as unknown as JobSQLWriter;
+      const db = await getJobDatabase(adapter, req);
+      const where = and(
+        eq(table._parentID, id),
+        keep.length ? notInArray(table.id, keep) : undefined,
+        live,
+      );
 
-      await db
-        .delete(table)
-        .where(
-          and(eq(table._parentID, id), keep.length ? notInArray(table.id, keep) : undefined, live),
-        );
+      if (is(db, PgDatabase)) {
+        await db.delete(table).where(where);
+      } else {
+        const writer: JobSQLiteWriter = db;
+
+        await writer.delete(table).where(where);
+      }
 
       adapter.lastWriteTimestamp = Date.now();
     },
   };
 
-  const schemaAdapter = database as unknown as BasePostgresAdapter;
-
-  schemaAdapter.afterSchemaInit.push(({ extendTable, schema }) => {
+  const getLiveJobIndex = () => {
     const tableName = adapter.tableNameMap.get('payload_jobs');
 
-    if (!tableName) return schema;
+    if (!tableName) return undefined;
 
     const name = buildIndexName({ adapter, name: 'payload_jobs_job_id_live' });
     const falseLiteral = sql.raw(dialect === 'sqlite' ? '0' : 'false');
+    const where = (columns: Record<string, unknown>) =>
+      sql`${columns.jobId} is not null and ${columns.completedAt} is null and coalesce(${columns.hasError}, ${falseLiteral}) = ${falseLiteral}`;
 
-    extendTable({
-      table: schema.tables[tableName],
-      extraConfig: (columns) => ({
-        [name]: (dialect === 'postgres' ? pgUniqueIndex(name) : sqliteUniqueIndex(name))
-          .on(columns.jobId)
-          .where(
-            sql`${columns.jobId} is not null and ${columns.completedAt} is null and coalesce(${columns.hasError}, ${falseLiteral}) = ${falseLiteral}`,
-          ),
-      }),
+    return { name, tableName, where };
+  };
+
+  if (dialect === 'postgres') {
+    assertPostgresAdapter(database, feature).afterSchemaInit.push(({ extendTable, schema }) => {
+      const index = getLiveJobIndex();
+
+      if (!index) return schema;
+
+      extendTable({
+        table: schema.tables[index.tableName],
+        extraConfig: (columns) => ({
+          [index.name]: pgUniqueIndex(index.name).on(columns.jobId).where(index.where(columns)),
+        }),
+      });
+
+      return schema;
     });
+  } else {
+    assertSQLiteAdapter(database, feature).afterSchemaInit.push(({ extendTable, schema }) => {
+      const index = getLiveJobIndex();
 
-    return schema;
-  });
+      if (!index) return schema;
+
+      extendTable({
+        table: schema.tables[index.tableName],
+        extraConfig: (columns) => ({
+          [index.name]: sqliteUniqueIndex(index.name).on(columns.jobId).where(index.where(columns)),
+        }),
+      });
+
+      return schema;
+    });
+  }
 
   database.updateJobs = async (args) => {
     if (args.data.processing !== true) return updateJobs.call(database, args);
@@ -359,14 +409,12 @@ export function installSQLJobOperations({
       limit: args.id !== undefined ? 1 : args.limit,
     });
 
-    const rows = await getJobUpdate({
+    const ids = await claimJobRows({
       db,
       table: query.table,
       data,
       where: and(eq(query.table.processing, false), inArray(query.table.id, sql`(${candidates})`)),
-    }).returning({ id: query.table.id });
-
-    const ids = rows.map((row) => row.id);
+    });
 
     recordJobClaims(ids);
 
@@ -402,7 +450,7 @@ export function installSQLJobOperations({
 
       const db = await getJobDatabase(adapter, req);
 
-      await getJobUpdate({ db, table: query.table, data, where: query.where });
+      await updateJobRows({ db, table: query.table, data, where: query.where });
 
       adapter.lastWriteTimestamp = Date.now();
     },

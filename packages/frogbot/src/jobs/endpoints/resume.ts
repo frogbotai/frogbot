@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import { APIError, type PayloadRequest } from 'payload';
+import { APIError } from 'payload';
 
 import type { Endpoint } from '../../endpoints/types.js';
+import { toPayloadRequest } from '../../seams/request.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { findWaitpoint, resumeWaitpoint, WaitpointResumeError } from '../waitpoints/operations.js';
 
@@ -97,7 +98,7 @@ async function confirmation(req: FrogBotRequest): Promise<Response> {
   }
 
   try {
-    const waitpoint = await findWaitpoint({ req: req as unknown as PayloadRequest, token });
+    const waitpoint = await findWaitpoint({ req: toPayloadRequest(req), token });
 
     if (!waitpoint || waitpoint.kind !== 'resumable') {
       return failure({ status: 404, code: 'WAITPOINT_NOT_FOUND', html: true, head });
@@ -166,7 +167,7 @@ async function resume(req: FrogBotRequest): Promise<Response> {
       }
     }
 
-    await resumeWaitpoint({ req: req as unknown as PayloadRequest, token, data });
+    await resumeWaitpoint({ req: toPayloadRequest(req), token, data });
 
     if (form) {
       return page({

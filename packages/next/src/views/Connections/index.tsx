@@ -1,5 +1,5 @@
-import type { FrogBotRequest } from 'frogbot';
 import { getCachedFrogBot } from 'frogbot';
+import { hasFrogBot } from 'frogbot/internal';
 import type { AdminViewServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
@@ -8,9 +8,11 @@ import { projectConnectionSchema } from './schema.js';
 import type { ConnectionItem, ConnectionPiece } from './types.js';
 
 export async function ConnectionsView({ initPageResult, payload }: AdminViewServerProps) {
-  const req = initPageResult.req as unknown as FrogBotRequest;
-  const frogbot = req.frogbot ?? getCachedFrogBot();
-  if (!req.user || !frogbot?.config.connections.enabled) return null;
+  const { req: payloadReq } = initPageResult;
+  // A Next admin request may carry no `req.frogbot`; the view then reads the cached instance.
+  const frogbot = hasFrogBot(payloadReq) ? payloadReq.frogbot : getCachedFrogBot();
+  if (!payloadReq.user || !frogbot?.config.connections.enabled) return null;
+  const req = Object.assign(payloadReq, { frogbot });
   const connections = frogbot.config.connections;
 
   const pieces: ConnectionPiece[] = Object.values(connections.entries).map(

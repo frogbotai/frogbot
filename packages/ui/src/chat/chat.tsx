@@ -506,7 +506,7 @@ function ChatInner({
     ];
     const message: UIMessage = { id: '', role: 'user', parts: parts as UIMessage['parts'] };
     const metadata = await adapter.buildMetadata?.(message);
-    await chat.sendMessage({ parts, metadata } as never);
+    await chat.sendMessage({ parts: message.parts, metadata });
   };
   const stop = () => {
     setAborted(true);

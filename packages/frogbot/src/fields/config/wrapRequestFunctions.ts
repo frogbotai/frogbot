@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload';
 
 import { attachRegisteredFrogBot } from '../../config/attachFrogBot.js';
+import { toPayloadRequest } from '../../seams/request.js';
 import type { Block, Field } from './types.js';
 
 type RequestArgs = { req?: PayloadRequest } | undefined;
@@ -30,7 +31,7 @@ const wrappedFunctions = new WeakSet<object>();
 function attachRequest(args: RequestArgs): RequestArgs {
   if (!args?.req?.payload) return args;
 
-  return { ...args, req: attachRegisteredFrogBot(args.req) as unknown as PayloadRequest };
+  return { ...args, req: toPayloadRequest(attachRegisteredFrogBot(args.req)) };
 }
 
 function wrapRequestFunction(fn: unknown): unknown {
@@ -107,5 +108,5 @@ function wrapField<T extends FieldSlots>(field: T): T {
 }
 
 export function wrapFieldRequestFunctions<T extends Field>(fields: T[]): T[] {
-  return fields.map((field) => wrapField(field as unknown as FieldSlots) as unknown as T);
+  return fields.map((field) => wrapField(field));
 }

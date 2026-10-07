@@ -3,11 +3,12 @@ import type {
   CollectionConfig as PayloadCollectionConfig,
   PayloadComponent,
 } from 'payload';
-import { flattenTopLevelFields, generateKeyBetween } from 'payload/shared';
+import { generateKeyBetween } from 'payload/shared';
 
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-import type { Field, TextField } from '../fields/config/types.js';
+import type { Field, TabAsField, TextField } from '../fields/config/types.js';
+import { flattenTopLevelFields } from '../seams/config.js';
 
 const DEFAULT_VIEW: CollectionView = { type: 'list' };
 const GROUP_BY_FIELD_TYPES: Field['type'][] = [
@@ -23,27 +24,22 @@ const GROUP_BY_FIELD_TYPES: Field['type'][] = [
   'upload',
 ];
 
-function resolveField(fields: unknown[], path: string): Field | undefined {
+function resolveField(fields: Field[], path: string): Field | TabAsField | undefined {
   const [name, ...rest] = path.replace(/^-/, '').split('.');
-  const flattened: unknown[] = flattenTopLevelFields(fields as never);
-  const field = flattened.find(
-    (candidate): candidate is Field =>
-      typeof candidate === 'object' &&
-      candidate !== null &&
-      'name' in candidate &&
-      candidate.name === name,
+  const field = flattenTopLevelFields(fields).find(
+    (candidate) => 'name' in candidate && candidate.name === name,
   );
 
   if (!field) return undefined;
   if (rest.length === 0) return field;
-  return 'fields' in field && Array.isArray(field.fields)
-    ? resolveField(field.fields, rest.join('.'))
-    : undefined;
+  return 'fields' in field ? resolveField(field.fields, rest.join('.')) : undefined;
 }
 
-function resolveGroupByField(fields: unknown[], path: string): Field | undefined {
+function resolveGroupByField(fields: Field[], path: string): Field | undefined {
   const field = resolveField(fields, path);
-  return field && GROUP_BY_FIELD_TYPES.includes(field.type) ? field : undefined;
+  return field && field.type !== 'tab' && GROUP_BY_FIELD_TYPES.includes(field.type)
+    ? field
+    : undefined;
 }
 
 function normalizeSlug(value: string): string {

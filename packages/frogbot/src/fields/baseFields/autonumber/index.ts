@@ -1,7 +1,6 @@
-import type { PayloadRequest } from 'payload';
-
 import type { FieldAccess } from '../../../collections/config/types.js';
 import { KVLockContentionError } from '../../../kv/errors.js';
+import { toPayloadRequest } from '../../../seams/request.js';
 import type { FieldHook, NumberField } from '../../config/types.js';
 import { applyFieldKind } from '../applyFieldKind.js';
 import { rejectFieldOptions } from '../rejectFieldOptions.js';
@@ -46,7 +45,7 @@ const assignAutonumber: FieldHook = async ({
   siblingData,
   value,
 }) => {
-  const payloadReq = req as unknown as PayloadRequest;
+  const payloadReq = toPayloadRequest(req);
 
   if (operation !== 'create') {
     if (typeof previousValue === 'number') return previousValue;

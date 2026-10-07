@@ -35,7 +35,25 @@ describe('toResponsesTools', () => {
     const tools = toResponsesTools([{ type: 'web_search' }], 'openai');
 
     expect(tools).toBeDefined();
-    expect(tools!.web_search).toEqual({ type: 'provider', id: 'openai.web_search', args: {} });
+    expect(tools!.web_search).toMatchObject({
+      type: 'provider',
+      id: 'openai.web_search',
+      args: {},
+      isProviderExecuted: true,
+    });
+  });
+
+  it('marks hosted tools the caller executes as not provider-executed (openai)', () => {
+    const tools = toResponsesTools([{ type: 'local_shell' }, { type: 'apply_patch' }], 'openai');
+
+    expect(tools!.local_shell).toMatchObject({
+      id: 'openai.local_shell',
+      isProviderExecuted: false,
+    });
+    expect(tools!.apply_patch).toMatchObject({
+      id: 'openai.apply_patch',
+      isProviderExecuted: false,
+    });
   });
 
   it('forwards an mcp tool with its server config captured as args (openai)', () => {
@@ -47,9 +65,10 @@ describe('toResponsesTools', () => {
     };
     const tools = toResponsesTools([mcpTool], 'openai');
 
-    expect(tools!.mcp).toEqual({
+    expect(tools!.mcp).toMatchObject({
       type: 'provider',
       id: 'openai.mcp',
+      isProviderExecuted: true,
       args: {
         server_label: 'deepwiki',
         server_url: 'https://mcp.deepwiki.com/mcp',
@@ -68,7 +87,12 @@ describe('toResponsesTools', () => {
     );
 
     expect(Object.keys(tools!).sort()).toEqual(['get_weather', 'web_search']);
-    expect(tools!.web_search).toEqual({ type: 'provider', id: 'openai.web_search', args: {} });
+    expect(tools!.web_search).toMatchObject({
+      type: 'provider',
+      id: 'openai.web_search',
+      args: {},
+      isProviderExecuted: true,
+    });
   });
 
   it('rejects hosted tools on a non-OpenAI provider with UnsupportedModalityError', () => {

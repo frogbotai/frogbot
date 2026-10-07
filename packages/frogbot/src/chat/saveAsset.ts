@@ -16,6 +16,19 @@ export type ChatAsset = {
   url: string;
 };
 
+function isChatAsset<T extends { id: string | number }>(doc: T): doc is T & ChatAsset {
+  return (
+    'filename' in doc &&
+    typeof doc.filename === 'string' &&
+    'mimeType' in doc &&
+    typeof doc.mimeType === 'string' &&
+    'filesize' in doc &&
+    typeof doc.filesize === 'number' &&
+    'url' in doc &&
+    typeof doc.url === 'string'
+  );
+}
+
 export async function saveChatAsset({
   ctx,
   filename,
@@ -44,7 +57,13 @@ export async function saveChatAsset({
       overrideAccess: true,
     });
 
-    return doc as unknown as ChatAsset;
+    if (!isChatAsset(doc)) {
+      throw new Error(
+        `[frogbot] Chat asset collection '${chat.assetsSlug}' returned a non-upload document.`,
+      );
+    }
+
+    return doc;
   } finally {
     if (skipText === undefined) delete ctx.req.context[SKIP_ASSET_TEXT_CONTEXT_KEY];
     else ctx.req.context[SKIP_ASSET_TEXT_CONTEXT_KEY] = skipText;

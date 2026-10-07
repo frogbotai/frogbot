@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { ModelMessage } from 'ai';
+import type { ModelMessage, ToolResultPart, UserContent } from 'ai';
 
 import type { ModelModality } from '../ai/types.js';
 import type { AttachmentKind, AttachmentMediaKind } from './attachmentParts.js';
@@ -49,7 +49,11 @@ export type AttachmentSlot = {
 
 type Slot = AttachmentSlot & { kind: AttachmentKind; data?: InlineData };
 
-type Part = { type: string } & Record<string, unknown>;
+type UserPart = Exclude<UserContent, string>[number];
+
+type ToolOutputItem = Extract<ToolResultPart['output'], { type: 'content' }>['value'][number];
+
+type TextReplacement = { type: 'text'; text: string };
 
 type Visit = (attachment: Attachment) => string | undefined;
 
@@ -151,7 +155,7 @@ function attachment({
   return { mediaType: type, filename: typeof filename === 'string' ? filename : undefined, data };
 }
 
-function userAttachment(part: Part): Attachment | undefined {
+function userAttachment(part: UserPart): Attachment | undefined {
   if (part.type === 'image') {
     const data = inlineData(part.image);
 
@@ -167,7 +171,7 @@ function userAttachment(part: Part): Attachment | undefined {
   });
 }
 
-function toolAttachment(item: Part): Attachment | undefined {
+function toolAttachment(item: ToolOutputItem): Attachment | undefined {
   switch (item.type) {
     case 'file':
       return attachment({
@@ -179,7 +183,7 @@ function toolAttachment(item: Part): Attachment | undefined {
     case 'image-data':
       return attachment({
         mediaType: item.mediaType,
-        filename: item.filename,
+        filename: 'filename' in item ? item.filename : undefined,
         data: typeof item.data === 'string' ? stringData(item.data) : undefined,
       });
     case 'file-url':
@@ -207,15 +211,15 @@ function mapList<T>(list: T[], map: (item: T) => T): T[] {
   return changed ? mapped : list;
 }
 
-function replaced({
+function replaced<T>({
   part,
   found,
   visit,
 }: {
-  part: Part;
+  part: T;
   found: Attachment | undefined;
   visit: Visit;
-}): Part {
+}): T | TextReplacement {
   if (!found) return part;
 
   const text = visit(found);
@@ -223,12 +227,8 @@ function replaced({
   return text === undefined ? part : { type: 'text', text };
 }
 
-function mapPart({ part, role, visit }: { part: Part; role: string; visit: Visit }): Part {
-  if (role === 'user') return replaced({ part, found: userAttachment(part), visit });
-
-  if (part.type !== 'tool-result') return part;
-
-  const output = part.output as { type: string; value: Part[] };
+function mapToolResult(part: ToolResultPart, visit: Visit): ToolResultPart {
+  const { output } = part;
 
   if (output.type !== 'content' || !Array.isArray(output.value)) return part;
 
@@ -239,17 +239,38 @@ function mapPart({ part, role, visit }: { part: Part; role: string; visit: Visit
   return value === output.value ? part : { ...part, output: { ...output, value } };
 }
 
+function mapToolResults<T extends { type: string }>(
+  content: (T | ToolResultPart)[],
+  visit: Visit,
+): (T | ToolResultPart)[] {
+  return mapList(content, (part) => (isToolResult(part) ? mapToolResult(part, visit) : part));
+}
+
+function isToolResult(part: { type: string }): part is ToolResultPart {
+  return part.type === 'tool-result';
+}
+
 function mapAttachments(messages: ModelMessage[], visit: Visit): ModelMessage[] {
-  return mapList(messages, (message) => {
+  return mapList(messages, (message): ModelMessage => {
     if (message.role === 'system' || typeof message.content === 'string') return message;
 
-    const content = mapList(message.content as unknown as Part[], (part) =>
-      mapPart({ part, role: message.role, visit }),
-    );
+    if (message.role === 'user') {
+      const content = mapList(message.content, (part) =>
+        replaced({ part, found: userAttachment(part), visit }),
+      );
 
-    return content === (message.content as unknown)
-      ? message
-      : ({ ...message, content } as unknown as ModelMessage);
+      return content === message.content ? message : { ...message, content };
+    }
+
+    if (message.role === 'assistant') {
+      const content = mapToolResults(message.content, visit);
+
+      return content === message.content ? message : { ...message, content };
+    }
+
+    const content = mapToolResults(message.content, visit);
+
+    return content === message.content ? message : { ...message, content };
   });
 }
 
