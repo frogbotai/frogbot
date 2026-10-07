@@ -32,6 +32,7 @@ function gatewayFixture(adapters: object[]) {
     lock: <T>(key: string, ttl: number, fn: Parameters<typeof runKVLock<T>>[0]['fn']) =>
       runKVLock({ kv, key, ttl, fn }),
   };
+
   const host = new ChannelHost({ kv, getAPIURL: () => 'https://example.com/api' } as never);
   const shutdown = vi.fn(async () => {});
 
@@ -85,11 +86,13 @@ describe('channel gateway listener', () => {
         },
       ),
     } as unknown as Adapter;
+
     const kv = { lock: exclusiveLock() };
     const frogbot = {
       getAPIURL: () => 'https://example.com/api',
       kv,
     };
+
     const first = new ChannelHost(frogbot as never);
     const second = new ChannelHost(frogbot as never);
     const binding = {
@@ -109,6 +112,7 @@ describe('channel gateway listener', () => {
     });
 
     await vi.waitFor(() => expect(starts).toHaveLength(1));
+
     await expect(second.runGatewayListener({ durationMs: 60_000 })).resolves.toBe(false);
 
     firstController.abort();
@@ -166,6 +170,7 @@ describe('channel gateway listener', () => {
           },
         },
       ]);
+
       const run = host.runGatewayListener({ durationMs: 60_000 });
       const result = run.catch((error: unknown) => error);
 
@@ -204,6 +209,7 @@ describe('channel gateway listener', () => {
         },
       },
     ]);
+
     const run = host.runGatewayListener({ durationMs: 60_000 });
 
     await vi.waitFor(() => expect(kv.acquireLock).toHaveBeenCalledOnce());
@@ -284,6 +290,7 @@ describe('channel gateway listener', () => {
         },
       },
     ]);
+
     const run = host.runGatewayListener({ durationMs: 60_000 });
 
     await started.promise;
@@ -375,4 +382,5 @@ describe('channel gateway listener', () => {
     ).rejects.toMatchObject({ errors: [failure] });
   });
 });
+
 import { setImmediate } from 'node:timers/promises';

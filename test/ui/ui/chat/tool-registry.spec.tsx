@@ -16,6 +16,7 @@ describe('tool registry', () => {
       { kind: 'search', render: First },
       { kind: 'search', render: Second },
     ];
+
     expect(resolveToolRenderer(renderers, 'search')?.render).toBe(First);
     expect(resolveToolRenderer(renderers, 'Search')).toBeUndefined();
   });
@@ -32,6 +33,7 @@ describe('tool registry', () => {
         }}
       />,
     );
+
     expect(screen.getByText('external')).toBeTruthy();
     expect(screen.getByText(/frog/)).toBeTruthy();
   });
@@ -44,11 +46,15 @@ describe('tool registry', () => {
       state: 'input-available' as const,
       input: {},
     };
+
     const { rerender } = render(
       <ToolPart part={part} renderers={[{ kind: 'search', render: First }]} />,
     );
+
     expect(screen.getByText('first')).toBeTruthy();
+
     rerender(<ToolPart part={part} />);
+
     expect(screen.getByText('search')).toBeTruthy();
   });
 });

@@ -29,6 +29,7 @@ export function toModelMessages(input: string | ResponsesInputItem[]): ModelMess
   // A `function_call_output` has no `name` in the OpenAI wire format; the tool
   // name is resolved from the matching `function_call` earlier in the input.
   const toolNameByCallId = new Map<string, string>();
+
   for (const item of input) {
     if (!('role' in item) && 'type' in item && item.type === 'function_call') {
       toolNameByCallId.set(item.call_id, item.name);
@@ -108,9 +109,11 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
         if (part.type === 'output_text' || part.type === 'input_text') {
           return { type: 'text', text: part.text ?? '' };
         }
+
         reject(`assistant content part type "${part.type}"`, `${path}.type`);
       },
     );
+
     return { role: 'assistant', content };
   }
 
@@ -124,9 +127,11 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
           if (part.file_id) {
             reject('provider image file references', `${path}.file_id`);
           }
+
           if (!part.image_url) {
             reject('missing image_url', `${path}.image_url`);
           }
+
           return {
             type: 'file',
             mediaType: 'image/*',
@@ -136,10 +141,12 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
             },
           };
         }
+
         case 'input_file': {
           if (part.file_id) {
             reject('provider file references', `${path}.file_id`);
           }
+
           if (part.file_url) {
             return {
               type: 'file',
@@ -150,13 +157,16 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
               },
             };
           }
+
           if (!part.file_data) {
             reject('missing file_data', `${path}.file_data`);
           }
+
           const dataUrl = parseDataUrl(part.file_data);
           if (!dataUrl) {
             reject('non-data-URL file_data', `${path}.file_data`);
           }
+
           return {
             type: 'file',
             mediaType: dataUrl.mediaType,
@@ -164,20 +174,24 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
             data: { type: 'data', data: dataUrl.data },
           };
         }
+
         case 'input_audio': {
           if (!part.input_audio) {
             reject('missing input_audio', `${path}.input_audio`);
           }
+
           const mediaType = AUDIO_FORMAT_MIME[part.input_audio.format];
           if (!mediaType) {
             reject(`audio format "${part.input_audio.format}"`, `${path}.input_audio.format`);
           }
+
           return {
             type: 'file',
             mediaType,
             data: { type: 'data', data: part.input_audio.data },
           };
         }
+
         default:
           reject(`content part type "${part.type}"`, `${path}.type`);
       }

@@ -35,6 +35,7 @@ function captureLogger() {
     info: (obj: unknown, msg: string) => entries.push({ level: 'info', obj, msg }),
     error: (obj: unknown, msg: string) => entries.push({ level: 'error', obj, msg }),
   } as unknown as GatewayLogger;
+
   return { entries, logger };
 }
 
@@ -46,6 +47,7 @@ function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<strin
       cb();
     },
   });
+
   const logger = pino({ level: 'trace' }, stream) as unknown as GatewayLogger;
   const lines = () =>
     chunks
@@ -53,6 +55,7 @@ function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<strin
       .split('\n')
       .filter(Boolean)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
+
   return { logger, lines };
 }
 
@@ -76,8 +79,10 @@ describe('GatewayLogger structural compatibility', () => {
     // GatewayLogger, so `createGateway({ logger: payload.logger })` type-checks
     // with no adapter.
     expectTypeOf<PinoLogger>().toExtend<GatewayLogger>();
+
     const pinoLogger = null as unknown as PinoLogger;
     const asGateway: GatewayLogger = pinoLogger;
+
     expect(asGateway).toBe(pinoLogger);
   });
 });
@@ -93,10 +98,12 @@ describe('createLogger (console default)', () => {
     logger.warn('bare');
 
     const first = JSON.parse(spy.mock.calls[0]?.[0] as string);
+
     expect(first).toMatchObject({ level: 'info', msg: 'hello', requestId: 'req_1' });
     expect(typeof first.time).toBe('number');
 
     const second = JSON.parse(spy.mock.calls[1]?.[0] as string);
+
     expect(second).toMatchObject({ level: 'warn', msg: 'bare' });
   });
 
@@ -111,6 +118,7 @@ describe('createLogger (console default)', () => {
     logger.error('e');
 
     const levels = spy.mock.calls.map((c) => JSON.parse(c[0] as string).level);
+
     expect(levels).toEqual(['warn', 'error']);
   });
 
@@ -143,6 +151,7 @@ describe('createLoggingHooks', () => {
       headers: new Headers(),
       providerOptions: {},
     } satisfies BeforeUpstreamHookArgs);
+
     await hooks.afterOperation?.[0]?.({
       ...base,
       phase: 'afterOperation',
@@ -278,6 +287,7 @@ describe('createLoggingHooks', () => {
     } satisfies AfterErrorHookArgs);
 
     const serialized = (entries[0]?.obj as { error: Record<string, unknown> }).error;
+
     expect(serialized.responseBody).toBe('a'.repeat(2046));
     expect(
       new TextEncoder().encode(String(serialized.responseBody)).byteLength,
@@ -383,6 +393,7 @@ describe('createLoggingHooks with a real pino instance', () => {
       headers: new Headers(),
       providerOptions: {},
     } satisfies BeforeUpstreamHookArgs);
+
     await hooks.afterOperation?.[0]?.({
       ...base,
       phase: 'afterOperation',
@@ -392,6 +403,7 @@ describe('createLoggingHooks with a real pino instance', () => {
     } satisfies AfterOperationHookArgs);
 
     const [start, end] = lines();
+
     expect(start).toMatchObject({
       level: 30,
       msg: 'request-start',
@@ -424,13 +436,16 @@ describe('createLoggingHooks with a real pino instance', () => {
     } satisfies AfterErrorHookArgs);
 
     const [entry] = lines();
+
     expect(entry).toMatchObject({
       level: 50,
       msg: 'request-error',
       requestId: 'req_123',
       phase: 'beforeUpstream',
     });
+
     const err = entry.error as Record<string, unknown>;
+
     expect(err.name).toBe('Error');
     expect(err.message).toBe('boom');
     expect(typeof err.stack).toBe('string');
@@ -450,6 +465,7 @@ describe('createLoggingHooks with a real pino instance', () => {
     } satisfies AfterErrorHookArgs);
 
     const [entry] = lines();
+
     expect(entry).toMatchObject({
       level: 50,
       msg: 'request-error',
@@ -489,9 +505,11 @@ describe('logGatewayError with a real pino instance', () => {
 
   it('logs the raw 500 message in production', () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const { logger, lines } = capturePino();
 
     logGatewayError(logger, {
@@ -559,6 +577,7 @@ describe('createAiSdkWarningLogger', () => {
   it('does not throw when warnings array is empty', () => {
     const warn = vi.fn();
     const fn = createAiSdkWarningLogger({ warn } as unknown as GatewayLogger);
+
     expect(() => fn({ warnings: [] })).not.toThrow();
     expect(warn).not.toHaveBeenCalled();
   });
@@ -569,6 +588,7 @@ describe('createAiSdkWarningLogger', () => {
         throw new Error('logger exploded');
       },
     } as unknown as GatewayLogger);
+
     expect(() => fn({ warnings: [{ type: 'other', message: 'x' }] })).not.toThrow();
   });
 });

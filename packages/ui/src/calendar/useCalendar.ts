@@ -14,11 +14,15 @@ import {
 } from './core/index.js';
 
 export type CalendarPlacement = { end: string; key: string; start: string };
+
 export type CalendarDropData = {
   slotAt?: (clientX: number, clientY: number) => CalendarPlacement | null;
 };
+
 export type CalendarChange<T> = { end: string; event: T; start: string };
+
 export type CalendarCreate = { end: string; start: string };
+
 export type CalendarResizeEdge = 'end' | 'start';
 
 export type UseCalendarProps<T extends CalendarEvent> = {
@@ -46,8 +50,10 @@ export function getCalendarPointerPosition({
     clientY?: number;
     touches?: { clientX: number; clientY: number }[];
   } | null;
+
   const x = event?.clientX ?? event?.touches?.[0]?.clientX;
   const y = event?.clientY ?? event?.touches?.[0]?.clientY;
+
   return x === undefined || y === undefined ? null : { x: x + delta.x, y: y + delta.y };
 }
 
@@ -64,6 +70,7 @@ export function moveCalendarEvent<T extends CalendarEvent>(
 ): CalendarChange<T> {
   const duration = Date.parse(event.end ?? event.start) - Date.parse(event.start);
   const start = new Date(placement.start).toISOString();
+
   return { end: new Date(Date.parse(start) + duration).toISOString(), event, start };
 }
 
@@ -86,10 +93,12 @@ export function resizeCalendarEvent<T extends CalendarEvent>({
     edge === 'start'
       ? new Date(Math.min(Date.parse(snapped), Date.parse(originalEnd) - interval)).toISOString()
       : originalStart;
+
   const end =
     edge === 'end'
       ? new Date(Math.max(Date.parse(snapped), Date.parse(originalStart) + interval)).toISOString()
       : originalEnd;
+
   return { end, event, start };
 }
 
@@ -99,6 +108,7 @@ export function createCalendarRange(start: string, end: string, snap: number): C
   const interval = snap * 60_000;
   const firstTime = Date.parse(first);
   const secondTime = Date.parse(second);
+
   return {
     end: new Date(
       Math.max(firstTime, secondTime, Math.min(firstTime, secondTime) + interval),
@@ -143,8 +153,10 @@ export function useCalendar<T extends CalendarEvent>({
 
   const displayedEvents = currentEvents.map((event) => {
     const override = overrides[getId(event)];
+
     return override ? { ...event, ...override } : event;
   });
+
   const range = getVisibleRange({ date, mode, timeZone, weekStartsOn });
   const cells = expandToCells(displayedEvents, range);
   const lanes = layoutLanes(displayedEvents);
@@ -153,11 +165,13 @@ export function useCalendar<T extends CalendarEvent>({
     placementRef.current = next;
     setPlacement(next);
   };
+
   const reset = () => {
     setActiveId(null);
     setActiveHeight(0);
     place(null);
   };
+
   const commit = async (
     change: CalendarChange<T>,
     handler: ((change: CalendarChange<T>) => Promise<void> | void) | undefined,
@@ -170,8 +184,10 @@ export function useCalendar<T extends CalendarEvent>({
       setOverrides((value) => {
         const next = { ...value };
         delete next[id];
+
         return next;
       });
+
       throw error;
     }
   };
@@ -184,17 +200,20 @@ export function useCalendar<T extends CalendarEvent>({
     setActiveId(id);
     setActiveHeight(rect?.height ?? 0);
   };
+
   const onDragMove = (drag: DragMoveEvent) => {
     const id = String(drag.active.data.current?.eventId ?? drag.active.id);
     const event = currentEvents.find((candidate) => getId(candidate) === id);
     const next = resolveCalendarDrop(drag.over?.data.current, getCalendarPointerPosition(drag));
     if (!event || !canEdit(event)) return place(null);
+
     place(
       next && !isCalendarNoopDrop(event, next)
         ? { ...moveCalendarEvent(event, next), key: next.key }
         : null,
     );
   };
+
   const onDragCancel = reset;
   const onDragEnd = async (drag: DragEndEvent) => {
     const { active, over } = drag;
@@ -207,13 +226,16 @@ export function useCalendar<T extends CalendarEvent>({
       await commit({ ...moveCalendarEvent(event, dropped), event }, onMove);
     }
   };
+
   const resize = async (event: T, edge: CalendarResizeEdge, instant: string) => {
     if (!canEdit(event)) return;
     await commit(resizeCalendarEvent({ edge, event, instant, snap }), onResize);
   };
+
   const create = async (start: string, end: string) => {
     await onCreate?.(createCalendarRange(start, end, snap));
   };
+
   const navigate = (direction: 'next' | 'previous' | 'today') => {
     if (direction === 'today') return onNavigate?.(new Date().toISOString());
     const amount = direction === 'next' ? 1 : -1;
@@ -221,6 +243,7 @@ export function useCalendar<T extends CalendarEvent>({
       mode === 'month'
         ? addMonths(new Date(date), amount)
         : addDays(new Date(date), amount * (mode === 'week' ? 7 : 1));
+
     onNavigate?.(next.toISOString());
   };
 

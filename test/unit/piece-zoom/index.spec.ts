@@ -87,6 +87,7 @@ describe('zoom', () => {
         redirect: 'error',
       }),
     );
+
     const body = JSON.parse(fetch.mock.calls[0]?.[1]?.body);
 
     expect(body).toMatchObject({
@@ -108,6 +109,7 @@ describe('zoom', () => {
       .mockResolvedValueOnce(
         Response.json({ meetings: [{ id: 2, topic: '' }], next_page_token: '' }),
       );
+
     vi.stubGlobal('fetch', fetch);
     const zoom = createZoom({ auth: storedAuth });
     const client = await zoom.client({ req });
@@ -132,11 +134,13 @@ describe('zoom', () => {
       occurrences: [],
       participant_pin_code: 1234,
     };
+
     const fetch = vi
       .fn()
       .mockResolvedValueOnce(Response.json(registrant, { status: 201 }))
       .mockResolvedValueOnce(Response.json(meeting))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
     vi.stubGlobal('fetch', fetch);
     const zoom = createZoom({ auth: storedAuth });
 
@@ -200,6 +204,7 @@ describe('zoom', () => {
 
   it('looks up the native Zoom account and preserves API errors', async () => {
     const zoom = createZoom({ auth: storedAuth });
+
     vi.stubGlobal(
       'fetch',
       vi
@@ -208,6 +213,7 @@ describe('zoom', () => {
           Response.json({ id: 'zoom-user', email: 'user@example.com', display_name: 'Zoom User' }),
         ),
     );
+
     const client = await zoom.client({ req });
 
     await expect(
@@ -226,6 +232,7 @@ describe('zoom', () => {
           Response.json({ code: 300, message: 'Invalid meeting' }, { status: 404 }),
         ),
     );
+
     const failed = createZoom({ auth: { accessToken: 'other' } });
 
     await expect(

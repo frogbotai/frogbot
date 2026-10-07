@@ -35,7 +35,9 @@ describe('redactKeyFragments (G34)', () => {
   it('redacts an OpenAI 401 key fragment, keeping the actionable text', () => {
     const message =
       'Incorrect API key provided: sk-proj-abcd1234efgh5678. You can find your API key at https://platform.openai.com/account/api-keys.';
+
     const redacted = redactKeyFragments(message);
+
     expect(redacted).not.toContain('sk-proj-abcd1234efgh5678');
     expect(redacted).toContain('Incorrect API key provided: [REDACTED_KEY].');
     expect(redacted).toContain('https://platform.openai.com/account/api-keys');
@@ -72,6 +74,7 @@ describe('redactKeyFragments (G34)', () => {
       'max_tokens must be greater than 0',
       'Your credit balance is too low to access the Anthropic API.',
     ];
+
     for (const message of messages) {
       expect(redactKeyFragments(message)).toBe(message);
     }

@@ -25,6 +25,7 @@ describe('message controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
     expect(writeText).toHaveBeenCalledWith('Answer');
     expect(regenerate).toHaveBeenCalledOnce();
     expect(edit).toHaveBeenCalledOnce();
@@ -35,6 +36,7 @@ describe('message controls', () => {
     const { container: userActions } = render(
       <MessageActions text="Question" timestamp={timestamp} timestampPlacement="start" />,
     );
+
     const { container: assistantActions } = render(
       <MessageActions text="Answer" timestamp={timestamp} timestampPlacement="end" />,
     );
@@ -43,6 +45,7 @@ describe('message controls', () => {
       Array.from(container.querySelector('.fb-message-actions')!.children).map(
         (child) => child.tagName,
       );
+
     expect(children(userActions)[0]).toBe('TIME');
     expect(children(assistantActions).at(-1)).toBe('TIME');
     expect(screen.getAllByText('Jan 12 6:58 PM')).toHaveLength(2);
@@ -51,10 +54,13 @@ describe('message controls', () => {
   it('edits and resubmits without owning chat state', () => {
     const submit = vi.fn();
     render(<MessageEditor initialValue="Original" onSubmit={submit} />);
+
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit message' }), {
       target: { value: 'Revised' },
     });
+
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
     expect(submit).toHaveBeenCalledWith('Revised');
   });
 });

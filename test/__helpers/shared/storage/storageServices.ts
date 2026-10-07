@@ -16,6 +16,7 @@ export const storageServices: Record<string, StorageService> = {
 
 export async function isServiceReachable(service: StorageService): Promise<boolean> {
   if (!service.port) return true;
+
   return new Promise((resolve) => {
     const socket = createConnection({ host: service.host, port: service.port });
     const timer = setTimeout(() => {
@@ -23,11 +24,13 @@ export async function isServiceReachable(service: StorageService): Promise<boole
       socket.destroy();
       resolve(false);
     }, 1000);
+
     socket.once('connect', () => {
       clearTimeout(timer);
       socket.destroy();
       resolve(true);
     });
+
     socket.once('error', () => {
       clearTimeout(timer);
       socket.destroy();

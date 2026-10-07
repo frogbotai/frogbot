@@ -71,6 +71,7 @@ describe('skill distribution local installation', () => {
     expect(fs.lstatSync(link).isSymbolicLink()).toBe(true);
     expect(fs.readlinkSync(link)).toBe('../skills');
     expect(() => fs.readFileSync(path.join(link, 'frogbot/SKILL.md'))).toThrow(/ENOENT/);
+
     expectFullSkill(path.join(fixture.repository, 'skills/frogbot'));
   });
 
@@ -99,6 +100,7 @@ describe('skill distribution local installation', () => {
 
         expect(result.output).toMatch(/Found 1 skill/);
         expect(result.output).toMatch(/\bfrogbot\b/);
+
         expectNoProjectSkill(fixture.project);
         expectFullSkill(path.join(fixture.repository, 'skills/frogbot'));
       });
@@ -121,6 +123,7 @@ describe('skill distribution local installation', () => {
         expect(fs.lstatSync(canonical).isDirectory()).toBe(true);
         expect(fs.lstatSync(claude).isSymbolicLink()).toBe(true);
         expect(fs.realpathSync(claude)).toBe(fs.realpathSync(canonical));
+
         expectFullSkill(canonical);
         expectFullSkill(claude);
         expectInstalledAgents(fixture);
@@ -144,6 +147,7 @@ describe('skill distribution local installation', () => {
         expect(fs.lstatSync(canonical).isDirectory()).toBe(true);
         expect(fs.lstatSync(claude).isDirectory()).toBe(true);
         expect(fs.realpathSync(claude)).not.toBe(fs.realpathSync(canonical));
+
         expectFullSkill(canonical);
         expectFullSkill(claude);
         expectInstalledAgents(fixture);
@@ -173,6 +177,7 @@ describe('skill distribution local installation', () => {
         ]);
 
         expect(result.output).toMatch(/valid|passed/i);
+
         expectFullSkill(path.join(fixture.repository, 'skills/frogbot'));
       });
 
@@ -228,6 +233,7 @@ describe('skill distribution local installation', () => {
             ),
           ),
         );
+
         expectFullSkill(path.join(plugins[0].installPath, 'skills/frogbot'));
 
         const pluginManifest = path.join(plugins[0].installPath, '.claude-plugin/plugin.json');
@@ -252,6 +258,7 @@ describe('skill distribution local installation', () => {
           'details',
           'frogbot@frogbot',
         ]);
+
         const marketplaces = readJSON<{
           frogbot: { source: { source: string; path: string }; installLocation: string };
         }>(path.join(fixture.env.CLAUDE_CONFIG_DIR!, 'plugins/known_marketplaces.json'));
@@ -286,6 +293,7 @@ describe('skill distribution local installation', () => {
 
     it('packs all 24 unchanged skill files, the blank template, bin and synchronized version', () => {
       expectFullSkill(path.join(packed, 'dist/skills/frogbot'));
+
       expect(readJSON<{ version: string }>(path.join(packed, 'package.json')).version).toBe(
         packageVersion,
       );
@@ -316,6 +324,7 @@ describe('skill distribution local installation', () => {
 
       expectScaffold(project);
       expectProjectSkill(project);
+
       expect(fs.readFileSync(path.join(project, 'src/frogbot.config.ts'), 'utf8')).not.toMatch(
         /^ {2}ai:/m,
       );
@@ -349,6 +358,7 @@ describe('skill distribution local installation', () => {
 
       expect(result.output).toContain('skill is not bundled');
       expect(result.output).toContain('npx skills add frogbotai/frogbot');
+
       expectScaffold(project);
       expectNoProjectSkill(project);
       expectFullSkill(canonicalSkill);

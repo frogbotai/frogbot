@@ -10,6 +10,7 @@ function makeSDK(suggestion: string | null = 'Night frogs') {
     .fn()
     .mockResolvedValueOnce(new Response(JSON.stringify({ suggestion })))
     .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'chat-1', title: suggestion })));
+
   return { sdk: { request } as unknown as FrogBotSDK, request };
 }
 
@@ -17,6 +18,7 @@ describe('RenameChatDialog', () => {
   it('selects the current title and accepts the automatic suggestion', async () => {
     const user = userEvent.setup();
     const { sdk } = makeSDK();
+
     render(
       <RenameChatDialog
         chatId="chat-1"
@@ -31,6 +33,7 @@ describe('RenameChatDialog', () => {
     const input = screen.getByRole('textbox', { name: 'Chat title' }) as HTMLInputElement;
     await waitFor(() => expect(input.selectionStart).toBe(0));
     await user.click(await screen.findByRole('button', { name: 'Night frogs' }));
+
     expect(input.value).toBe('Night frogs');
   });
 
@@ -39,6 +42,7 @@ describe('RenameChatDialog', () => {
     const onOpenChange = vi.fn();
     const onRenamed = vi.fn();
     const { sdk, request } = makeSDK(null);
+
     render(
       <RenameChatDialog
         chatId="chat-1"
@@ -52,11 +56,14 @@ describe('RenameChatDialog', () => {
     );
 
     await user.clear(screen.getByRole('textbox', { name: 'Chat title' }));
+
     expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+
     await user.type(screen.getByRole('textbox', { name: 'Chat title' }), 'Manual title');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(onRenamed).toHaveBeenCalledWith('Manual title'));
+
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(request).toHaveBeenLastCalledWith(
       '/chats/chat-1',
@@ -66,6 +73,7 @@ describe('RenameChatDialog', () => {
 
   it('remains usable when suggestion generation fails', () => {
     const request = vi.fn().mockRejectedValue(new Error('offline'));
+
     render(
       <RenameChatDialog
         chatId="chat-1"

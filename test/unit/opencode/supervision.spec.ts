@@ -455,6 +455,7 @@ describe('createResumeCap', () => {
     const cap = createResumeCap(store, child);
 
     expect(await resume(cap, 'call_1')).toBeUndefined();
+
     await cap.settle('call_1', { status: 'completed' });
 
     expect(await resume(cap, 'call_2')).toEqual({
@@ -486,6 +487,7 @@ describe('createResumeCap', () => {
     await resume(first, 'call_1');
     await first.settle('call_1', { status: 'completed' });
     await resume(first, 'call_2');
+
     await first.settle('call_2', {
       status: 'error',
       error: { message: 'Subagent failed (sessionID: ses_child): boom' },

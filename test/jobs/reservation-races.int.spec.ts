@@ -226,6 +226,7 @@ describe(`reservation races: ${adapterName}`, () => {
       input: {},
       jobId,
     });
+
     const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
     inFlight.push(run);
@@ -479,6 +480,7 @@ describe(`reservation races: ${adapterName}`, () => {
         input: { marker: 'unrelated' },
         waitUntil: new Date(until),
       });
+
       const before = await readJob(replacement.id);
 
       expect(replacement.id).toBe(source.id);

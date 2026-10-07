@@ -18,7 +18,9 @@ import {
 } from './state.js';
 
 type ActionInteraction = Extract<QuestionInteraction, { type: 'action' }>;
+
 type MessageInteraction = Extract<QuestionInteraction, { type: 'message' }>;
+
 type ComponentPayload = { id?: unknown; data?: { values?: unknown } };
 
 const ignore: QuestionParseResult = { kind: 'ignore' };
@@ -180,6 +182,7 @@ function withoutBotMentions(message: MessageInteraction['message']): string {
   const mentions = (
     message.raw as { mentions?: Array<{ id?: unknown; bot?: unknown }> } | undefined
   )?.mentions;
+
   const bots = new Set((mentions ?? []).filter(({ bot }) => bot === true).map(({ id }) => id));
 
   let text = message.text;

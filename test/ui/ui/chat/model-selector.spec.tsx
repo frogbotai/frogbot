@@ -282,6 +282,7 @@ describe('ModelSelector', () => {
 
       await user.click(trigger());
       await openList(user, 'GPT-5');
+
       await user.type(
         screen.getByRole('textbox', { name: 'Search models' }),
         query.replaceAll('[', '[['),

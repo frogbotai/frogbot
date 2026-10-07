@@ -58,16 +58,22 @@ function action<const TSlug extends string, TInput extends ActionInput>({
 
 const customerOptions = async ({ client }: { client: StripeClient }) =>
   client.options('customers', (item) => String(item.name || item.email || item.id));
+
 const productOptions = async ({ client }: { client: StripeClient }) =>
   client.options('products', (item) => String(item.name || item.id));
+
 const subscriptionOptions = async ({ client }: { client: StripeClient }) =>
   client.options('subscriptions', (item) => String(item.id));
+
 const invoiceOptions = async ({ client }: { client: StripeClient }) =>
   client.options('invoices', (item) => String(item.number || item.id));
+
 const payoutOptions = async ({ client }: { client: StripeClient }) =>
   client.options('payouts', (item) => String(item.id));
+
 const paymentIntentOptions = async ({ client }: { client: StripeClient }) =>
   client.options('payment_intents', (item) => String(item.description || item.id));
+
 const paymentLinkOptions = async ({ client }: { client: StripeClient }) =>
   client.options('payment_links', (item) => String(item.url || item.id));
 
@@ -160,6 +166,7 @@ export const searchSubscriptions = action({
     expand: includeCustomerDetails ? ['data.customer'] : undefined,
   }),
 });
+
 searchSubscriptions.run = async ({ client, input }) => {
   const subscriptions: StripeResponse[] = [];
   let startingAfter: string | undefined;
@@ -178,9 +185,11 @@ searchSubscriptions.run = async ({ client, input }) => {
       starting_after: startingAfter,
       expand: input.includeCustomerDetails ? ['data.customer'] : undefined,
     });
+
     const pageItems = Array.isArray(page.data) ? (page.data as StripeResponse[]) : [];
 
     subscriptions.push(...pageItems);
+
     startingAfter =
       page.has_more === true && typeof pageItems.at(-1)?.id === 'string'
         ? (pageItems.at(-1)?.id as string)
@@ -199,6 +208,7 @@ searchSubscriptions.run = async ({ client, input }) => {
         );
       })
     : subscriptions;
+
   const data = input.limit === 0 ? filtered : filtered.slice(0, input.limit);
 
   return { data, has_more: startingAfter !== undefined };
@@ -260,6 +270,7 @@ export const createPaymentIntent = action({
     if (confirm && !paymentMethodId) {
       throw new Error('Payment Method ID is required when confirming a payment.');
     }
+
     return {
       amount: Math.round(amount * 100),
       currency,
@@ -477,6 +488,7 @@ const customOutput = z.object({
   headers: z.record(z.string(), z.string()),
   body: z.record(z.string(), z.json()),
 });
+
 const customInput = z.object({
   method: z.enum(['DELETE', 'GET', 'POST']),
   path: z.string().regex(/^\/(?!\/)/, 'Path must be relative to the Stripe API.'),

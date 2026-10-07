@@ -10,6 +10,7 @@ export async function start(args: string[] = []) {
       const result = await generateImportMap(await config._internal.payloadConfig, {
         dryRun: true,
       });
+
       if (result?.changed) {
         process.stderr.write(
           '[frogbot] import map is stale; run `frogbot generate:importmap` before starting production\n',
@@ -19,5 +20,6 @@ export async function start(args: string[] = []) {
   } catch (error) {
     process.stderr.write(`${formatCliError(error, 'could not check import map')}\n`);
   }
+
   runNext('start', args);
 }

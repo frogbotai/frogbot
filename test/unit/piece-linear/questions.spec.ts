@@ -243,6 +243,7 @@ describe('Linear question rendering', () => {
       req,
       thread,
     });
+
     await linearQuestions.render({
       calls: [call(single({ options: options(SELECT_OPTIONS + 35) }))],
       client: client as never,
@@ -434,6 +435,7 @@ describe('Linear reply parsing', () => {
       'ÄÖÜ',
       '🐸 frog',
     ];
+
     const input = single({ options: labels.map((label) => ({ label })), custom: false });
 
     labels.forEach((label) => {

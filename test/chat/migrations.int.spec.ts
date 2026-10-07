@@ -118,6 +118,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
       const snapshot = JSON.parse(await readFile(snapshotPath, 'utf8')) as {
         tables: Record<string, { columns: Record<string, unknown> }>;
       };
+
       const table = Object.entries(snapshot.tables).find(([name]) =>
         name.endsWith(assetsTable),
       )?.[1];
@@ -166,6 +167,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
         };
 
         adapterImport = pathToFileURL(upstream).href;
+
         descriptor = postgresAdapter({
           pool: { connectionString: database.url.toString() },
           push: false,

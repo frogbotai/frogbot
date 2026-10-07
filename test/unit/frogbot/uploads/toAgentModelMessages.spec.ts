@@ -160,6 +160,7 @@ describe('toAgentModelMessages', () => {
       { id: 'note', filename: 'notes.md', mimeType: 'text/markdown', filesize: 5 },
       { id: 'logo', filename: 'logo.png', ...png },
     );
+
     const req = request({ findByID });
 
     storedFiles({ 'notes.md': '# Hi\n', 'logo.png': 'PNG!' });
@@ -478,6 +479,7 @@ describe('toAgentModelMessages', () => {
       upload: { disableLocalStorage: true, handlers: [handler] },
       createRequest,
     });
+
     const fetch = vi.fn();
 
     vi.stubGlobal('fetch', fetch);
@@ -506,6 +508,7 @@ describe('toAgentModelMessages', () => {
     const handler = vi.fn(() =>
       Promise.resolve(Response.redirect('https://bucket.example/cloud.pdf', 302)),
     );
+
     const fetch = vi.fn().mockResolvedValue(new Response('%PDF'));
     const req = request({
       findByID: assets({ id: 'a', filename: 'cloud.pdf', mimeType: 'application/pdf' }),

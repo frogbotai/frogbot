@@ -20,6 +20,7 @@ export function statusToOpenAIType(status: number): OpenAIErrorType {
   if (status === 404) return 'not_found_error';
   if (status === 429) return 'rate_limit_error';
   if (status >= 500) return 'server_error';
+
   return 'invalid_request_error';
 }
 

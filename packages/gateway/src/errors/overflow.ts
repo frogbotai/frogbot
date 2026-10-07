@@ -74,6 +74,7 @@ export function isContextOverflow(input: {
   const msg = input.message ?? '';
   if (!msg) return false;
   if (EMPTY_BODY_OVERFLOW.test(msg)) return true;
+
   return OVERFLOW_PATTERNS.some((p) => p.test(msg));
 }
 

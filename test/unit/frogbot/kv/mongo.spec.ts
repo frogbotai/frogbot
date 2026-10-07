@@ -20,16 +20,19 @@ function fixture() {
     }),
     updateOne: vi.fn().mockResolvedValue({ matchedCount: 0 }),
   };
+
   const session = {
     abortTransaction: vi.fn().mockResolvedValue(undefined),
     endSession: vi.fn().mockResolvedValue(undefined),
     withTransaction: vi.fn(async (callback: () => Promise<unknown>) => callback()),
   };
+
   class Document {
     constructor(private readonly data: Record<string, unknown>) {}
     toObject() {
       return { _id: { _bsontype: 'ObjectId' }, ...this.data };
     }
+
     validateSync() {
       return undefined;
     }
@@ -48,8 +51,10 @@ function fixture() {
       path: vi.fn().mockReturnValue({ instance: 'ObjectId', options: { auto: true } }),
     },
   });
+
   const upsert = vi.fn().mockResolvedValue({});
   const adapter = { collections: { customKV: model }, upsert } as unknown as BaseDatabaseAdapter;
+
   return {
     kv: createMongoKV({ adapter, collectionSlug: 'customKV' }),
     model,
@@ -64,6 +69,7 @@ describe('Mongo KV', () => {
     'rejects invalid TTL %s before accessing the database',
     async (ttl) => {
       const { kv, model, native } = fixture();
+
       await expect(kv.set('key', 'value', { ttl })).rejects.toThrow(RangeError);
       await expect(kv.setIfAbsent('key', 'value', { ttl })).rejects.toThrow(RangeError);
       await expect(kv.extendLock({ key: 'key', token: 'value' }, ttl)).rejects.toThrow(RangeError);
@@ -74,13 +80,17 @@ describe('Mongo KV', () => {
 
   it('uses the configured model and explicitly routes every read to primary', async () => {
     const { kv, model, native } = fixture();
+
     expect(kv[kvAtomic]).toBe(true);
+
     await kv.get('key');
     await kv.has('key');
     await kv.keys();
+
     expect(model.init).toHaveBeenCalledOnce();
     expect(native.listIndexes).not.toHaveBeenCalled();
     expect(model.db.db.command).not.toHaveBeenCalled();
+
     for (const [, options] of [...native.findOne.mock.calls, ...native.find.mock.calls]) {
       expect(options).toMatchObject({
         collation: { locale: 'simple' },
@@ -100,6 +110,7 @@ describe('Mongo KV', () => {
   )('refuses unsafe key indexes: %j', async ({ indexes }) => {
     const { kv, native } = fixture();
     native.listIndexes.mockReturnValue({ toArray: () => Promise.resolve(indexes) });
+
     await expect(kv.setIfAbsent('key', 'value')).rejects.toThrow('unique, non-partial key index');
     expect(native.updateOne).not.toHaveBeenCalled();
   });
@@ -107,11 +118,13 @@ describe('Mongo KV', () => {
   it('retries a same-key insertion conflict in a new transaction before deciding contention', async () => {
     const { kv, native, session } = fixture();
     native.findOneAndUpdate.mockResolvedValueOnce(null);
+
     native.insertOne.mockRejectedValueOnce({
       code: 11000,
       keyPattern: { key: 1 },
       keyValue: { key: 'key' },
     });
+
     await expect(kv.setIfAbsent('key', 'value')).resolves.toBe(false);
     expect(session.withTransaction).toHaveBeenCalledTimes(2);
     expect(native.findOneAndUpdate).toHaveBeenCalledTimes(2);
@@ -129,6 +142,7 @@ describe('Mongo KV', () => {
     const { kv, native, session } = fixture();
     native.findOneAndUpdate.mockResolvedValueOnce(null);
     native.insertOne.mockRejectedValueOnce(error);
+
     await expect(kv.setIfAbsent('key', 'value')).rejects.toBe(error);
     expect(session.withTransaction).toHaveBeenCalledOnce();
     expect(session.endSession).toHaveBeenCalledOnce();
@@ -138,12 +152,14 @@ describe('Mongo KV', () => {
     const { kv, native } = fixture();
     const error = Object.assign(new Error('unrelated conversion failure'), { code: 241 });
     native.updateOne.mockRejectedValueOnce(error);
+
     await expect(kv.set('key', 'value', { ttl: 1000 })).rejects.toBe(error);
   });
 
   it('reports a renewal match even if no bytes changed', async () => {
     const { kv, native } = fixture();
     native.updateOne.mockResolvedValue({ matchedCount: 1, modifiedCount: 0 });
+
     await expect(kv.extendLock({ key: 'key', token: 'value' }, 1000)).resolves.toBe(true);
     expect(native.findOne).not.toHaveBeenCalled();
   });
@@ -154,6 +170,7 @@ describe('Mongo KV', () => {
     native.updateOne.mockRejectedValueOnce(error);
     native.deleteOne.mockRejectedValue(error);
     native.deleteMany.mockRejectedValue(error);
+
     await expect(kv.extendLock({ key: 'key', token: 'value' }, 1000)).rejects.toBe(error);
     await expect(kv.releaseLock({ key: 'key', token: 'value' })).rejects.toBe(error);
     await expect(kv.cleanup()).rejects.toBe(error);
@@ -164,6 +181,7 @@ describe('Mongo KV', () => {
     async (hello) => {
       const { kv, model, native } = fixture();
       model.db.db.command.mockResolvedValue(hello);
+
       await expect(kv.set('key', 'value', { ttl: 1000 })).rejects.toMatchObject({
         name: 'KVUnsupportedError',
         message: expect.stringContaining('replica set with transaction support'),
@@ -183,6 +201,7 @@ describe('Mongo KV', () => {
   it.each(['Number', 'String', 'BigInt'])('rejects %s IDs before mutation', async (instance) => {
     const { kv, model, native } = fixture();
     model.schema.path.mockReturnValue({ instance, options: {} });
+
     await expect(kv.set('key', 'value', { ttl: 1000 })).rejects.toMatchObject({
       name: 'KVUnsupportedError',
       message: expect.stringContaining('custom IDs are unsupported'),
@@ -202,6 +221,7 @@ describe('Mongo KV', () => {
     const { kv, native, session } = fixture();
     const error = { code: 11000, keyPattern: { key: 1 }, keyValue: { key: 'key' } };
     native.findOneAndUpdate.mockRejectedValueOnce(error);
+
     await expect(kv.setIfAbsent('key', 'value')).rejects.toBe(error);
     expect(session.withTransaction).toHaveBeenCalledOnce();
   });
@@ -211,6 +231,7 @@ describe('Mongo KV', () => {
     const error = { code: 11000, keyPattern: { key: 1 }, keyValue: { key: 'key' } };
     native.findOneAndUpdate.mockResolvedValue(null);
     native.insertOne.mockRejectedValue(error);
+
     await expect(kv.setIfAbsent('key', 'value')).rejects.toBe(error);
     expect(session.withTransaction).toHaveBeenCalledTimes(3);
     expect(session.endSession).toHaveBeenCalledOnce();
@@ -218,6 +239,7 @@ describe('Mongo KV', () => {
 
   it('aborts unsuccessful conditional mutations and scopes every write to the transaction', async () => {
     const { kv, native, session } = fixture();
+
     await expect(kv.extendLock({ key: 'key', token: 'owner' }, 1000)).resolves.toBe(false);
     expect(session.abortTransaction).toHaveBeenCalledOnce();
     expect(session.endSession).toHaveBeenCalledOnce();
@@ -226,6 +248,7 @@ describe('Mongo KV', () => {
       readConcern: { level: 'snapshot' },
       writeConcern: { w: 'majority' },
     });
+
     for (const [, , options] of [
       ...native.findOneAndUpdate.mock.calls,
       ...native.updateOne.mock.calls,
@@ -238,6 +261,7 @@ describe('Mongo KV', () => {
   it('rejects a custom timestamp clock before mutation', async () => {
     const { kv, model, native } = fixture();
     Object.assign(model.schema.options, { timestamps: { currentTime: () => 0 } });
+
     await expect(kv.set('key', 'value', { ttl: 1000 })).rejects.toThrow(
       'custom currentTime is unsupported',
     );
@@ -265,6 +289,7 @@ describe('Mongo KV', () => {
     configure(setup);
     native.findOne.mockResolvedValue({ key: 'key', data: 'value' });
     native.find.mockReturnValue({ toArray: () => Promise.resolve([{ key: 'key' }]) });
+
     await expect(kv.set('key', 'value')).resolves.toBeUndefined();
     expect(upsert).toHaveBeenCalledWith({
       collection: 'customKV',
@@ -284,10 +309,12 @@ describe('Mongo KV', () => {
     expect(model.schema.path).not.toHaveBeenCalled();
     expect(native.listIndexes).not.toHaveBeenCalled();
     expect(model.db.startSession).not.toHaveBeenCalled();
+
     for (const [filter, options] of [...native.findOne.mock.calls, ...native.find.mock.calls]) {
       expect(filter).toHaveProperty('$expr');
       expect(options).toMatchObject({ readPreference: 'primary' });
     }
+
     expect(native.deleteMany).toHaveBeenLastCalledWith(
       { $expr: expect.any(Object) },
       expect.objectContaining({ readPreference: 'primary' }),
@@ -306,10 +333,13 @@ describe('Mongo KV', () => {
     const error = new Error('connection reset');
     model.db.db.command.mockRejectedValueOnce(error);
     native.updateOne.mockResolvedValue({ matchedCount: 1 });
+
     await expect(kv.setIfAbsent('key', 'value')).rejects.toBe(error);
     expect(native.findOneAndUpdate).not.toHaveBeenCalled();
     await expect(kv.get('key')).resolves.toBeNull();
+
     await kv.set('key', 'basic');
+
     expect(upsert).toHaveBeenCalledOnce();
     await expect(kv.setIfAbsent('key', 'value')).resolves.toBe(true);
     expect(model.db.db.command).toHaveBeenCalledTimes(2);
@@ -326,6 +356,7 @@ describe('Mongo KV', () => {
     const { kv, model } = fixture();
     const error = new Error('initialization interrupted');
     model.init.mockRejectedValueOnce(error);
+
     await expect(kv.get('key')).rejects.toBe(error);
     await expect(kv.get('key')).resolves.toBeNull();
     expect(model.init).toHaveBeenCalledTimes(2);
@@ -335,6 +366,7 @@ describe('Mongo KV', () => {
     const { kv, native, upsert, model } = fixture();
     const error = new Error('upsert failed');
     upsert.mockRejectedValueOnce(error);
+
     await expect(kv.set('key', 'value')).rejects.toBe(error);
     expect(native.updateOne).not.toHaveBeenCalled();
     expect(model.db.startSession).not.toHaveBeenCalled();

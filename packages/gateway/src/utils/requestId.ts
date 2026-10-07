@@ -13,5 +13,6 @@ export function ensureRequestId(request: Request): string {
   // and unique by construction.
   const requestId = `req_${crypto.randomUUID()}`;
   requestIds.set(request, requestId);
+
   return requestId;
 }

@@ -8,8 +8,10 @@ export function filesystemCaptureStorage(root = '.frogbot/captures'): CaptureSto
     const target = path.resolve(root, key);
     const base = `${path.resolve(root)}${path.sep}`;
     if (!target.startsWith(base)) throw new Error('Invalid capture key');
+
     return target;
   };
+
   return {
     async put(key, bytes) {
       const target = resolve(key);
@@ -24,6 +26,7 @@ export function filesystemCaptureStorage(root = '.frogbot/captures'): CaptureSto
     },
     async *list(prefix) {
       const directory = resolve(prefix || '.');
+
       for (const entry of await readdir(directory, { recursive: true }).catch(() => [])) {
         const key = path.posix.join(prefix, String(entry).split(path.sep).join('/'));
         if (key.endsWith('.json.gz')) yield key;

@@ -175,6 +175,7 @@ describe('model catalog sync', () => {
 describe('provider logo sync', () => {
   const svg =
     '<svg viewBox="0 0 40 40"><path d="M0 0h40v40H0z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" opacity="0.5"/></svg>';
+
   const generic = '<svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>';
   const probe = 'frogbot-missing-provider-logo';
 

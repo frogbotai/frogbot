@@ -21,6 +21,7 @@ describe('parseStreamErrorFrame', () => {
         param: null,
       },
     };
+
     expect(parseStreamErrorFrame(frame)).toEqual({
       message: 'Rate limit reached',
       code: 'rate_limit_exceeded',
@@ -34,6 +35,7 @@ describe('parseStreamErrorFrame', () => {
       type: 'response.failed',
       response: { error: { code: 'server_error', message: 'response failed' } },
     };
+
     expect(parseStreamErrorFrame(frame)).toEqual({
       message: 'response failed',
       code: 'server_error',
@@ -45,6 +47,7 @@ describe('parseStreamErrorFrame', () => {
   it('tolerates a missing top-level "type" field when error object is present', () => {
     const frame = { error: { code: 'server_error', message: 'down' } };
     const result = parseStreamErrorFrame(frame);
+
     expect(result?.message).toBe('down');
     expect(result?.code).toBe('server_error');
   });
@@ -54,11 +57,13 @@ describe('parseStreamErrorFrame', () => {
       type: 'error',
       error: { code: 'server_error', message: 'boom', type: 'server_error' },
     });
+
     expect(parseStreamErrorFrame(json)?.message).toBe('boom');
   });
 
   it('preserves numeric upstream codes', () => {
     const frame = { type: 'error', error: { code: 429, message: 'rate limited' } };
+
     expect(parseStreamErrorFrame(frame)?.code).toBe(429);
   });
 
@@ -149,6 +154,7 @@ describe('streamErrorFrameToEnvelope', () => {
         param: null,
       },
     });
+
     expect(result).toEqual({
       status: 429,
       body: {
@@ -167,6 +173,7 @@ describe('streamErrorFrameToEnvelope', () => {
       type: 'response.failed',
       response: { error: { code: 'server_error', message: 'response failed' } },
     });
+
     expect(result?.status).toBe(500);
     expect(result?.body.error.type).toBe('server_error');
     expect(result?.body.error.code).toBe('server_error');
@@ -177,6 +184,7 @@ describe('streamErrorFrameToEnvelope', () => {
       type: 'error',
       error: { code: 429, message: 'rate limited' },
     });
+
     expect(result?.body.error.code).toBe('429');
     expect(result?.status).toBe(429);
   });

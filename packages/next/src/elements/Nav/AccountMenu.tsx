@@ -39,6 +39,7 @@ const renderIcon = (icon: AccountMenuIcon | undefined) => {
   if (isValidElement(icon)) {
     return <span className={`${baseClass}__item-icon`}>{icon}</span>;
   }
+
   return createElement(icon as ComponentType<{ className?: string; size?: number }>, {
     className: `${baseClass}__item-icon`,
     size: 20,

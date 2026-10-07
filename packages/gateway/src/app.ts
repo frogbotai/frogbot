@@ -97,6 +97,7 @@ const normalizeBasePath = (basePath: string | undefined): string => {
   if (trimmed === '') {
     return '';
   }
+
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 };
 
@@ -110,6 +111,7 @@ export function createApp(ctx: AppContext) {
     tracer: ctx.tracer,
     logger,
   });
+
   const loggingHooks = createLoggingHooks(logger);
   const genAiHooks = createGenAiHooks(signalLevel, logger);
   const hooks = mergeHooks(tracingHooks, loggingHooks, genAiHooks, ctx.hooks ?? {});
@@ -154,6 +156,7 @@ export function createApp(ctx: AppContext) {
     maxBodyBytes: ctx.maxBodyBytes,
     upstreamTimeoutMs: ctx.upstreamTimeoutMs,
   };
+
   const routeApps = {
     '/chat/completions': chatCompletionsRoute({ ...routeCtx, telemetry }),
     '/embeddings': embeddingsRoute(routeCtx),
@@ -171,16 +174,20 @@ export function createApp(ctx: AppContext) {
     '/audio/transcriptions': transcriptionsRoute(routeCtx),
     '/videos/generations': videosRoute(routeCtx),
   } as const;
+
   const basePath = normalizeBasePath(ctx.basePath);
   const routes = {} as GatewayRoutes;
+
   for (const path of Object.keys(routeApps) as (keyof typeof routeApps)[]) {
     const route = routeApps[path];
     app.route('/', route);
     if (basePath) {
       app.route(basePath, route);
     }
+
     routes[path] = { handler: (request: Request) => route.fetch(request) };
   }
+
   routesByApp.set(app, routes);
 
   // Health endpoint — unauthenticated liveness check for Docker HEALTHCHECK
@@ -193,6 +200,7 @@ export function createApp(ctx: AppContext) {
     ),
     modalities: ['chat', 'embeddings', 'images', 'audio', 'video', 'rerank', 'evaluate'],
   };
+
   app.get('/health', (c) => c.json(healthResponse, 200));
   if (basePath) {
     app.get(`${basePath}/health`, (c) => c.json(healthResponse, 200));
@@ -203,13 +211,16 @@ export function createApp(ctx: AppContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
     const headers = headersForError(err, status);
+
     for (const [k, v] of Object.entries(headers)) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 
@@ -222,10 +233,13 @@ export function createApp(ctx: AppContext) {
     const { body, status } = toOpenAIErrorResponse(new NotFoundError(), {
       requestId,
     });
+
     const headers = headersForError(undefined, status);
+
     for (const [k, v] of Object.entries(headers)) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

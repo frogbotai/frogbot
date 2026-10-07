@@ -10,6 +10,7 @@ export const listAudiences = defineAction({
   input: z.object({}),
   async run({ client }) {
     const result = await client.request({ path: '/audiences' });
+
     return (result as { data?: PieceJSON[] })?.data ?? [];
   },
 });

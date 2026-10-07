@@ -16,9 +16,11 @@ describe('frogbot-instance: Version operations', () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
   });
+
   afterAll(async () => {
     await booted.shutdown();
   });
+
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
   });
@@ -249,6 +251,7 @@ describe('frogbot-instance: Version operations', () => {
         draft: true,
         overrideAccess: true,
       });
+
       expect(current.title).toEqual('Restore Original');
     });
   });

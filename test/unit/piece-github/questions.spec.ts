@@ -240,6 +240,7 @@ describe('GitHub question comments', () => {
       label: `Option ${index + 1}`,
       description: 'd'.repeat(40),
     }));
+
     const target = call({ ...color, options });
 
     const pages = questionPages({ call: target, limit: 1_000, q: 0 });

@@ -44,6 +44,7 @@ export async function generateSpeechOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
@@ -52,7 +53,9 @@ export async function generateSpeechOperation(
       providerOptions: toProviderOptions(providerOptions),
       model: op.speechModel(),
     });
+
     await op.finish();
+
     return result;
   } catch (error) {
     await op.finish({ error });

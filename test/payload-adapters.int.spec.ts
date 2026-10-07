@@ -30,6 +30,7 @@ describe('Payload plugin adapters', () => {
       handler: vi.fn(),
       slug: 'app-task',
     } as never;
+
     const config = await payloadConfig(
       baseConfig({
         admin: { components: { providers: [appProvider] } },
@@ -73,6 +74,7 @@ describe('Payload plugin adapters', () => {
         plugins: [nestedDocsPlugin({ collections: ['pages'] })],
       }),
     );
+
     const pages = config.collections.find(({ slug }) => slug === 'pages');
 
     expect(pages?.fields).toEqual(
@@ -96,6 +98,7 @@ describe('Payload plugin adapters', () => {
         ],
       }),
     );
+
     const redirects = config.collections.find(({ slug }) => slug === 'app-redirects');
 
     expect(config.collections.find(({ slug }) => slug === 'posts')).toBeDefined();
@@ -147,6 +150,7 @@ describe('Payload plugin adapters', () => {
         ],
       }),
     );
+
     const products = config.collections.find(({ slug }) => slug === 'products');
 
     expect(config.endpoints?.map(({ path }) => path)).toEqual(

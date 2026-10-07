@@ -193,6 +193,7 @@ export function summarize({ sessions, messages, ledger, tickets }) {
   const ordered = [...rows.values()].sort(
     (a, b) => keyTicket(a.name) - keyTicket(b.name) || a.name.localeCompare(b.name),
   );
+
   const all = [...ordered, extra[OTHER], extra[COORDINATOR]];
   const total = emptyRow('total');
   const summed = [
@@ -209,6 +210,7 @@ export function summarize({ sessions, messages, ledger, tickets }) {
 
   for (const row of all) {
     for (const field of summed) total[field] += row[field];
+
     total.intervals.push(...row.intervals);
   }
 

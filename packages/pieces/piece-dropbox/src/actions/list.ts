@@ -34,6 +34,7 @@ export const listFolder = defineAction({
       listPage,
       requestSignal(req),
     );
+
     const entries = [...first.entries];
     let cursor = first.cursor;
     let hasMore = first.has_more;
@@ -75,6 +76,7 @@ const searchMatch = z
     ]),
   })
   .catchall(z.json());
+
 const searchOutput = z
   .object({
     matches: z.array(searchMatch),

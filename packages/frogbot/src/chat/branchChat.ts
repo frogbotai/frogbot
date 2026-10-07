@@ -65,12 +65,15 @@ async function duplicateTitle({
     req,
     overrideAccess: true,
   });
+
   let next = 1;
+
   for (const chat of chats.docs) {
     const title = typeof chat.title === 'string' ? chat.title.trim() : undefined;
     const match = title?.match(/^(.*) \((\d+)\)$/);
     if (match?.[1] === base) next = Math.max(next, Number(match[2]) + 1);
   }
+
   return `${base} (${next})`;
 }
 
@@ -89,6 +92,7 @@ export async function branchChat({
     req,
     overrideAccess: false,
   })) as ChatDocument;
+
   const ownerId = relationID(source.user);
   if (ownerId === null || ownerId !== req.user?.id) throw new NotFound(req.t);
 
@@ -101,6 +105,7 @@ export async function branchChat({
     req,
     overrideAccess: false,
   });
+
   const sourceDocs = sourceMessages.docs as MessageDocument[];
   const selectedIndex = sourceDocs.findIndex((message) => String(message.id) === String(messageId));
   if (selectedIndex === -1) throw new NotFound(req.t);
@@ -116,6 +121,7 @@ export async function branchChat({
       ownerId,
       sourceTitle,
     });
+
     const chat = await req.frogbot.create({
       collection: config.chatsSlug,
       data: {
@@ -128,8 +134,10 @@ export async function branchChat({
       req,
       overrideAccess: true,
     });
+
     const idPrefix = `branch-${generateId()}`;
     const width = String(messages.length - 1).length;
+
     for (const [index, message] of messages.entries()) {
       await req.frogbot.create({
         collection: config.messagesSlug,
@@ -148,7 +156,9 @@ export async function branchChat({
         overrideAccess: true,
       });
     }
+
     if (ownsTransaction) await commitTransaction(transactionReq);
+
     return { chatId: chat.id };
   } catch (error) {
     if (ownsTransaction) await killTransaction(transactionReq);

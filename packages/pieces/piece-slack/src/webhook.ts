@@ -110,6 +110,7 @@ export async function verifySlackWebhook({
   const expected = `v0=${createHmac('sha256', options.signingSecret)
     .update(`v0:${timestampHeader}:${rawBody}`)
     .digest('hex')}`;
+
   const suppliedBytes = Buffer.from(signature);
   const expectedBytes = Buffer.from(expected);
 

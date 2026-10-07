@@ -15,12 +15,14 @@ function bedrockFromEnv() {
     AWS_REGION,
     AWS_SESSION_TOKEN,
   } = process.env;
+
   if (AWS_BEARER_TOKEN_BEDROCK) {
     return {
       apiKey: AWS_BEARER_TOKEN_BEDROCK,
       region: AWS_REGION ?? 'us-east-1',
     };
   }
+
   if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_REGION) {
     return {
       accessKeyId: AWS_ACCESS_KEY_ID,
@@ -29,6 +31,7 @@ function bedrockFromEnv() {
       ...(AWS_SESSION_TOKEN ? { sessionToken: AWS_SESSION_TOKEN } : {}),
     };
   }
+
   return undefined;
 }
 
@@ -51,6 +54,7 @@ const gateway = createGateway({
         const reasoning = usage?.reasoningTokens
           ? ` reasoningTokens=${usage.reasoningTokens}`
           : '';
+
         console.log(
           `[usage] ${operation} model=${model} totalTokens=${usage?.totalTokens ?? 0}${reasoning} durationMs=${Math.round(durationMs)}`,
         );

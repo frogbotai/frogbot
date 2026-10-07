@@ -8,6 +8,7 @@ import { testEnv } from '../../config/fixtures.js';
 describe('vertexProvider.fromEnv', () => {
   it('returns undefined when no Vertex credentials are present', () => {
     const result = vertexProvider.fromEnv(testEnv());
+
     expect(result).toBeUndefined();
   });
 
@@ -17,6 +18,7 @@ describe('vertexProvider.fromEnv', () => {
         GOOGLE_VERTEX_API_KEY: 'AIza-test-key',
       }),
     );
+
     expect(result).toEqual({ apiKey: 'AIza-test-key' });
   });
 
@@ -28,6 +30,7 @@ describe('vertexProvider.fromEnv', () => {
         GOOGLE_VERTEX_PROJECT: 'my-project',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'AIza-test-key',
       location: 'us-central1',
@@ -42,6 +45,7 @@ describe('vertexProvider.fromEnv', () => {
         GOOGLE_VERTEX_LOCATION: 'us-central1',
       }),
     );
+
     expect(result).toEqual({
       project: 'my-project',
       location: 'us-central1',
@@ -68,6 +72,7 @@ describe('vertexProvider.fromEnv', () => {
         GOOGLE_VERTEX_LOCATION: 'us-central1',
       }),
     );
+
     // Express mode wins — apiKey present
     expect(result).toHaveProperty('apiKey', 'AIza-key');
   });

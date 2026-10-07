@@ -164,6 +164,7 @@ describe('agent service', () => {
       const { agent, config: ai } = await sanitizeAgent(model, {
         fast: { model: LOCAL_THINKER },
       });
+
       const req = makeRequest({ agents: { support: agent }, ai });
 
       const manifest = await getAgentManifest({ req });
@@ -184,6 +185,7 @@ describe('agent service', () => {
       { default: FAST, options: '*' },
       { fast: { model: LOCAL_THINKER } },
     );
+
     const req = makeRequest({ agents: { support: agent }, ai });
 
     const manifest = await getAgentManifest({ req });
@@ -603,6 +605,7 @@ describe('agent service', () => {
         { slug: 'write', description: 'write', input: z.object({}), run: () => Promise.resolve() },
       ],
     })({ slug: 'work-sheets' });
+
     agent.config.tools = pieceInstanceTools(piece)!.map((tool) => ({ ...tool }));
     const req = makeRequest({ agents: { support: agent }, authorizations });
 

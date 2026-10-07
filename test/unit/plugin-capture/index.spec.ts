@@ -43,7 +43,9 @@ function capture(): CaptureRecord {
 }
 
 type CaptureHooks = ReturnType<typeof createCaptureHooks>;
+
 type HookBase = ReturnType<typeof hookBase>;
+
 type Completion =
   { response: unknown } | { error: Error; failedPhase: 'beforeUpstream' | 'upstream' };
 
@@ -88,11 +90,17 @@ describe('capture blobs', () => {
     roots.push(root);
     const storage = filesystemCaptureStorage(root);
     await storage.put('2026-08-20/a.json.gz', new Uint8Array([1, 2, 3]));
+
     expect([...(await storage.get('2026-08-20/a.json.gz'))]).toEqual([1, 2, 3]);
+
     const keys: string[] = [];
+
     for await (const key of storage.list('2026-08-20')) keys.push(key);
+
     expect(keys).toEqual(['2026-08-20/a.json.gz']);
+
     await storage.delete(keys[0]);
+
     await expect(storage.get(keys[0])).rejects.toThrow();
   });
 });
@@ -101,6 +109,7 @@ describe('capture index', () => {
   it('contains metadata only and is immutable through collection access', () => {
     const collection = createCapturesCollection('captures');
     const names = collection.fields.flatMap((field) => ('name' in field ? [field.name] : []));
+
     expect(names).toEqual(
       expect.arrayContaining(['captureId', 'requestId', 'blobKey', 'sizeBytes']),
     );
@@ -117,12 +126,14 @@ describe('capture hooks', () => {
     const storage: CaptureStorage = {
       put: vi.fn((key, bytes) => {
         blobs.set(key, bytes);
+
         return Promise.resolve();
       }),
       get: vi.fn((key) => Promise.resolve(blobs.get(key)!)),
       delete: vi.fn(() => Promise.resolve()),
       async *list() {},
     };
+
     const create = vi.fn(() => Promise.resolve({}));
     const logger = { error: vi.fn() };
     const req = request({
@@ -132,6 +143,7 @@ describe('capture hooks', () => {
         logger,
       },
     });
+
     const hooks = createCaptureHooks({
       enabled: true,
       sampleRate: 1,
@@ -139,13 +151,16 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage,
     });
+
     const completions: [string, Completion][] = [
       ['success', { response: { text: 'hi' } }],
       ['error', { error: new Error('upstream failed'), failedPhase: 'beforeUpstream' }],
     ];
+
     for (const [outcome, completion] of completions) {
       const base = hookBase(`request-${outcome}`, req);
       await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+
       await hooks.beforeUpstream?.[0]?.({
         ...base,
         phase: 'beforeUpstream',
@@ -155,10 +170,13 @@ describe('capture hooks', () => {
         headers: new Headers({ authorization: 'secret' }),
         providerOptions: {},
       });
+
       await complete(hooks, base, completion);
     }
+
     await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(2));
     const records = await Promise.all([...blobs.values()].map(decodeCapture));
+
     expect(records.map((record) => (record.error ? 'error' : 'success')).sort()).toEqual([
       'error',
       'success',
@@ -174,6 +192,7 @@ describe('capture hooks', () => {
       user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
       frogbot: { create: vi.fn(), logger },
     });
+
     const hooks = createCaptureHooks({
       enabled: false,
       sampleRate: 1,
@@ -181,8 +200,10 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} },
     });
+
     const base = hookBase('request-1', req);
     await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+
     await hooks.beforeUpstream?.[0]?.({
       ...base,
       phase: 'beforeUpstream',
@@ -192,6 +213,7 @@ describe('capture hooks', () => {
       headers: new Headers(),
       providerOptions: {},
     });
+
     await hooks.afterUpstream?.[0]?.({
       ...base,
       phase: 'afterUpstream',
@@ -199,6 +221,7 @@ describe('capture hooks', () => {
       provider: 'openai',
       response: {},
     });
+
     expect(put).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledOnce();
   });
@@ -211,17 +234,20 @@ describe('capture hooks', () => {
     const storage: CaptureStorage = {
       put: vi.fn((key, bytes) => {
         blobs.set(key, bytes);
+
         return Promise.resolve();
       }),
       get: vi.fn((key) => Promise.resolve(blobs.get(key)!)),
       delete: vi.fn(() => Promise.resolve()),
       async *list() {},
     };
+
     const create = vi.fn((_args: { data: Record<string, unknown> }) => Promise.resolve({}));
     const req = request({
       user: { id: 'user-1', _strategy: strategy, apiKeyId: 3, capture: true },
       frogbot: { create, logger: { error: vi.fn() } },
     });
+
     const hooks = createCaptureHooks({
       enabled: true,
       sampleRate: 1,
@@ -229,9 +255,11 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage,
     });
+
     const base = hookBase('request-key', req);
 
     await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+
     await hooks.beforeUpstream?.[0]?.({
       ...base,
       phase: 'beforeUpstream',
@@ -241,6 +269,7 @@ describe('capture hooks', () => {
       headers: new Headers(),
       providerOptions: {},
     });
+
     await hooks.afterUpstream?.[0]?.({
       ...base,
       phase: 'afterUpstream',
@@ -248,6 +277,7 @@ describe('capture hooks', () => {
       provider: 'openai',
       response: { text: 'hi' },
     });
+
     await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
 
     const [record] = await Promise.all([...blobs.values()].map(decodeCapture));
@@ -267,6 +297,7 @@ describe('capture hooks', () => {
       user: { id: 'user-1', capture: true },
       frogbot: { create, logger },
     });
+
     const hooks = createCaptureHooks({
       enabled: false,
       sampleRate: 1,
@@ -274,8 +305,10 @@ describe('capture hooks', () => {
       collectionSlug: 'captures',
       storage: { put, get: vi.fn(), delete: vi.fn(), async *list() {} },
     });
+
     const base = hookBase('request-large', req);
     await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+
     await hooks.beforeUpstream?.[0]?.({
       ...base,
       phase: 'beforeUpstream',
@@ -285,8 +318,10 @@ describe('capture hooks', () => {
       headers: new Headers(),
       providerOptions: {},
     });
+
     await complete(hooks, base, completion);
     await vi.waitFor(() => expect(logger.error).toHaveBeenCalledOnce());
+
     expect(put).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
@@ -298,6 +333,7 @@ describe('capture plugin', () => {
     const existingBeforeUpstream = vi.fn(() => {
       throw new Error('blocked before upstream');
     });
+
     const plugin = capturePlugin({ storage: {} as CaptureStorage, enabled: true });
     const config = await plugin({
       secret: 'secret',
@@ -316,6 +352,7 @@ describe('capture plugin', () => {
         hooks: { beforeOperation: [existing], beforeUpstream: [existingBeforeUpstream] },
       },
     } as never);
+
     expect(config.ai?.hooks?.beforeOperation?.[0]).toBe(existing);
     expect(config.ai?.hooks?.beforeOperation).toHaveLength(2);
     expect(config.ai?.hooks?.beforeUpstream?.[1]).toBe(existingBeforeUpstream);

@@ -21,6 +21,7 @@ const createSpreadsheetInput = z.object({
   title: z.string().min(1),
   folderId: z.string().min(1).optional(),
 });
+
 const spreadsheetOutput = z
   .object({
     id: z.string(),
@@ -30,6 +31,7 @@ const spreadsheetOutput = z
     modifiedTime: z.string().nullish(),
   })
   .passthrough();
+
 export const createSpreadsheet = defineAction({
   slug: 'createSpreadsheet',
   description: 'Create a spreadsheet, optionally in a Drive folder.',
@@ -61,12 +63,14 @@ const createInput = z.object({
   title: z.string().min(1),
   headers: z.array(z.string()).optional(),
 });
+
 async function addWorksheet(args: SheetsArgs<z.output<typeof createInput>>) {
   const result = await batch(args, [{ addSheet: { properties: { title: args.input.title } } }]);
   const properties = result.replies?.[0]?.addSheet?.properties;
   if (properties?.sheetId == null || !properties.title) {
     throw new Error('Google Sheets did not return the created worksheet.');
   }
+
   if (args.input.headers?.length) {
     await args.client.sheets.spreadsheets.values.update(
       {
@@ -78,8 +82,10 @@ async function addWorksheet(args: SheetsArgs<z.output<typeof createInput>>) {
       requestOptions(args.req),
     );
   }
+
   return worksheetOutput.parse(properties);
 }
+
 export const createWorksheet = defineAction({
   slug: 'createWorksheet',
   description: 'Create a worksheet with optional headers.',
@@ -99,9 +105,11 @@ export const findOrCreateWorksheet = defineAction({
       { spreadsheetId: args.input.spreadsheetId, fields: 'sheets.properties' },
       requestOptions(args.req),
     );
+
     const found = data.sheets?.find(
       (sheet) => sheet.properties?.title === args.input.title,
     )?.properties;
+
     return found
       ? { found: true, created: false, worksheet: worksheetOutput.parse(found) }
       : { found: false, created: true, worksheet: await addWorksheet(args) };
@@ -112,10 +120,12 @@ const clearSheetInput = sheetInput.extend({
   preserveHeaders: z.boolean().default(false),
   headerRow: rowNumber.default(1),
 });
+
 const clearOutput = z.object({
   spreadsheetId: z.string().nullish(),
   clearedRange: z.string().nullish(),
 });
+
 export const clearWorksheet = defineAction({
   slug: 'clearWorksheet',
   description: 'Clear worksheet values while retaining formatting and, optionally, headers.',
@@ -128,6 +138,7 @@ export const clearWorksheet = defineAction({
     if (sheet.gridProperties?.rowCount != null && start > sheet.gridProperties.rowCount) {
       return { spreadsheetId: args.input.spreadsheetId };
     }
+
     return (
       await args.client.sheets.spreadsheets.values.clear(
         {
@@ -145,6 +156,7 @@ const rangeInput = sheetInput
     (input) => input.endRow == null || input.endRow >= input.startRow,
     'End row must not precede start row.',
   );
+
 export const clearRows = defineAction({
   slug: 'clearRows',
   description: 'Clear values in a row range without deleting rows or formatting.',
@@ -153,6 +165,7 @@ export const clearRows = defineAction({
   idempotent: true,
   async run(args) {
     const sheet = await worksheet(args);
+
     return (
       await args.client.sheets.spreadsheets.values.clear(
         {
@@ -212,15 +225,18 @@ const formatInput = rangeInput
       ),
     'Specify at least one format property.',
   );
+
 function rgb(hex: string) {
   const raw = hex.replace(/^#/, '');
   const full = raw.length === 3 ? [...raw].map((char) => char.repeat(2)).join('') : raw;
+
   return {
     red: parseInt(full.slice(0, 2), 16) / 255,
     green: parseInt(full.slice(2, 4), 16) / 255,
     blue: parseInt(full.slice(4, 6), 16) / 255,
   };
 }
+
 export const formatRows = defineAction({
   slug: 'formatRows',
   description:
@@ -239,6 +255,7 @@ export const formatRows = defineAction({
     }
 
     const text: sheets_v4.Schema$TextFormat = {};
+
     for (const key of ['bold', 'italic', 'strikethrough'] as const) {
       if (input[key] != null) {
         text[key] = input[key];
@@ -252,6 +269,7 @@ export const formatRows = defineAction({
     }
 
     if (Object.keys(text).length) format.textFormat = text;
+
     return batchOutput.parse(
       await batch(args, [
         {
@@ -282,6 +300,7 @@ const readRangeInput = sheetInput.extend({
     .enum(['FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'])
     .default('FORMATTED_VALUE'),
 });
+
 export const readRange = defineAction({
   slug: 'readRange',
   description: 'Read a worksheet-local A1 range, with row/column orientation and value rendering.',
@@ -304,6 +323,7 @@ export const readRange = defineAction({
       },
       requestOptions(args.req),
     );
+
     return {
       range: data.range ?? range,
       majorDimension: args.input.majorDimension,
@@ -317,6 +337,7 @@ const findSpreadsheetInput = z.object({
   exactMatch: z.boolean().default(false),
   includeSharedDrives: z.boolean().default(false),
 });
+
 export const findSpreadsheets = defineAction({
   slug: 'findSpreadsheets',
   description: 'Find spreadsheets by exact or partial name across all result pages.',
@@ -327,6 +348,7 @@ export const findSpreadsheets = defineAction({
     const spreadsheets = [];
     let pageToken: string | undefined;
     const seen = new Set<string>();
+
     do {
       const name = input.name.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
       const { data } = await client.drive.files.list(
@@ -341,13 +363,16 @@ export const findSpreadsheets = defineAction({
         },
         requestOptions(req),
       );
+
       spreadsheets.push(...z.array(spreadsheetOutput).parse(data.files ?? []));
       pageToken = data.nextPageToken ?? undefined;
       if (pageToken && seen.has(pageToken)) {
         throw new Error('Google Drive returned a repeated pagination token.');
       }
+
       if (pageToken) seen.add(pageToken);
     } while (pageToken);
+
     return { found: spreadsheets.length > 0, spreadsheets };
   },
 });
@@ -356,6 +381,7 @@ const findWorksheetInput = z.object({
   title: z.string(),
   exactMatch: z.boolean().default(false),
 });
+
 export const findWorksheets = defineAction({
   slug: 'findWorksheets',
   description: 'Find worksheet properties by exact or partial title.',
@@ -367,6 +393,7 @@ export const findWorksheets = defineAction({
       { spreadsheetId: input.spreadsheetId, fields: 'sheets.properties' },
       requestOptions(req),
     );
+
     const worksheets = (data.sheets ?? []).flatMap((sheet) =>
       sheet.properties?.title != null &&
       (input.exactMatch
@@ -375,6 +402,7 @@ export const findWorksheets = defineAction({
         ? [sheet.properties]
         : [],
     );
+
     return { found: worksheets.length > 0, worksheets: z.array(worksheetOutput).parse(worksheets) };
   },
 });
@@ -405,6 +433,7 @@ const columnInput = sheetInput.extend({
   index: z.number().int().max(18278).optional(),
   headerRow: rowNumber.default(1),
 });
+
 export const createColumn = defineAction({
   slug: 'createColumn',
   description:
@@ -445,6 +474,7 @@ export const createColumn = defineAction({
             },
           },
     ]);
+
     const { data } = await args.client.sheets.spreadsheets.values.update(
       {
         spreadsheetId: args.input.spreadsheetId,

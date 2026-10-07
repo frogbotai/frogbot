@@ -83,9 +83,11 @@ function rewriteComponents(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(rewriteComponents);
   }
+
   if ('path' in value && typeof value.path === 'string') {
     return rewriteComponent(value as PayloadComponent);
   }
+
   return Object.fromEntries(
     Object.entries(value).map(([key, component]) => [key, rewriteComponents(component)]),
   );
@@ -169,6 +171,7 @@ function rewriteFields(fields: unknown[], visited: WeakSet<object>): void {
         }
       }
     }
+
     const blocks = Array.isArray(value.blockReferences) ? value.blockReferences : value.blocks;
 
     if (Array.isArray(blocks)) {
@@ -207,6 +210,7 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
 
   const navItems = (admin?.components as { navItems?: { icon?: PayloadComponent }[] } | undefined)
     ?.navItems;
+
   for (const item of navItems ?? []) {
     if (item.icon) item.icon = rewriteComponent(item.icon);
   }
@@ -248,12 +252,14 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
       const collectionAdmin = collection.admin as typeof collection.admin & {
         icon?: PayloadComponent;
       };
+
       if (collectionAdmin?.icon) collectionAdmin.icon = rewriteComponent(collectionAdmin.icon);
       if (collection.admin?.components) {
         collection.admin.components = rewriteComponents(
           collection.admin.components,
         ) as typeof collection.admin.components;
       }
+
       if (collection.fields) rewriteFields(collection.fields, visited);
     }
   }

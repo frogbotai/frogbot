@@ -196,10 +196,12 @@ describe('agent endpoints', () => {
 
   it('returns the agent manifest', async () => {
     const agent = makeAgent();
+
     agent.config = {
       ...agent.config,
       profile: { name: 'Ada', avatar: '/ada.png' },
     };
+
     const response = await listHandler()(makeRequest({ agent }));
 
     expect(await response.json()).toEqual({
@@ -349,14 +351,17 @@ describe('agent endpoints', () => {
         },
       ],
     })({ slug: 'sheets', oauth: { clientId: 'client-id', clientSecret: 'client-secret' } });
+
     const requirements = [
       { piece: 'google-sheets', oauth: true, secret: false, scopes: ['sheets'] },
     ];
+
     const authorizations = vi.fn().mockResolvedValue(requirements);
     const agent = makeAgent();
     agent.config.tools = pieceInstanceTools(sheets);
     const req = makeRequest({ agent, authorizations });
     const response = await authorizationsHandler()(req);
+
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       authorizations: requirements,
@@ -365,8 +370,10 @@ describe('agent endpoints', () => {
       pieces: [sheets],
       req,
     });
+
     authorizations.mockClear();
     const anonymous = await authorizationsHandler()(makeRequest({ user: null, authorizations }));
+
     expect(anonymous.status).toBe(401);
     expect(authorizations).not.toHaveBeenCalled();
   });
@@ -648,6 +655,7 @@ describe('agent endpoints', () => {
       { type: 'text', text: 'Read' },
       { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' },
     ] as UIMessage['parts'];
+
     const uiMessages: UIMessage[] = [{ id: 'one', role: 'user', parts }];
 
     resolveChatContext.mockResolvedValue({
@@ -791,6 +799,7 @@ describe('agent endpoints', () => {
 
   it('returns 404 for unknown agent slugs', async () => {
     const response = await postHandler()(makeRequest({ slug: 'missing' }));
+
     expect(response.status).toBe(404);
   });
 });

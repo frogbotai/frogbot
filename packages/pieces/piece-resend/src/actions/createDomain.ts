@@ -19,6 +19,7 @@ export const createDomain = defineAction({
       path: '/domains',
       body: compact({ name: input.name, region: input.region }),
     })) as Record<string, unknown>;
+
     return {
       id: result.id,
       name: result.name,

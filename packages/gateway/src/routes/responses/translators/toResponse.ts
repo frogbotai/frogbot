@@ -41,6 +41,7 @@ export function toResponsesResponse(args: {
   const createdAt = args.result.response.timestamp
     ? Math.floor(args.result.response.timestamp.getTime() / 1000)
     : Math.floor(Date.now() / 1000);
+
   const { status, incompleteDetails } = toResponseStatus(args.result.finishReason);
   const serviceTier = normalizeServiceTier(args.result.providerMetadata);
   const body = args.body ?? {};
@@ -121,6 +122,7 @@ function toOutputItems(result: {
   }
 
   const toolCalls = result.toolCalls ?? [];
+
   for (const call of toolCalls) {
     output.push({
       id: `fc_${crypto.randomUUID()}`,
@@ -166,6 +168,7 @@ export function reasoningEncryptedContent(
   providerMetadata: Record<string, Record<string, unknown>> | undefined,
 ): string | undefined {
   const value = providerMetadata?.openai?.reasoningEncryptedContent;
+
   return typeof value === 'string' ? value : undefined;
 }
 
@@ -178,6 +181,7 @@ export function toResponseUsage(usage: LanguageModelUsage): Record<string, unkno
       ? { cache_write_tokens: usage.inputTokenDetails.cacheWriteTokens }
       : {}),
   };
+
   return {
     input_tokens: usage.inputTokens ?? 0,
     ...(Object.keys(inputTokenDetails).length > 0

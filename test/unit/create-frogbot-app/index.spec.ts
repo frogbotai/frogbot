@@ -11,12 +11,14 @@ const packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../packages/create-frogbot-app',
 );
+
 const templateDir = path.join(packageRoot, 'dist', 'templates', 'blank');
 const roots: string[] = [];
 
 function createDest(projectName = 'test-app'): { dest: string; projectName: string } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-'));
   roots.push(root);
+
   return { dest: path.join(root, projectName), projectName };
 }
 
@@ -38,6 +40,7 @@ describe('scaffold', () => {
       private?: boolean;
       scripts?: Record<string, string>;
     };
+
     expect(pkg).toMatchObject({ name: 'frog.test-app' });
     expect(pkg.private).toBeUndefined();
     expect(pkg.scripts).toMatchObject({
@@ -55,11 +58,15 @@ describe('scaffold', () => {
       'Users.ts',
     ]);
     expect(fs.existsSync(path.join(options.dest, 'src', 'frogbot.config.ts'))).toBe(true);
+
     const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
+
     expect(config).toContain("import { todoTools } from 'frogbot/tools'");
     expect(config).toContain('tools: [...todoTools]');
     expect(fs.existsSync(path.join(options.dest, 'app'))).toBe(false);
+
     const readme = fs.readFileSync(path.join(options.dest, 'README.md'), 'utf8');
+
     expect(readme).toContain('Any package manager works');
     expect(readme).toContain('`src/frogbot.config.ts`');
     expect(readme).toContain('To use a root layout instead');
@@ -70,9 +77,11 @@ describe('scaffold', () => {
     scaffold({ ...options, templateDir });
 
     const files = fs.readdirSync(options.dest, { recursive: true, withFileTypes: true });
+
     for (const file of files) {
       if (!file.isFile()) continue;
       const content = fs.readFileSync(path.join(file.parentPath, file.name), 'utf8');
+
       expect(content).not.toContain('@payloadcms/');
     }
   });
@@ -83,6 +92,7 @@ describe('scaffold', () => {
 
     const env = fs.readFileSync(path.join(options.dest, '.env'), 'utf8');
     const secret = /^FROGBOT_SECRET=(.+)$/m.exec(env)?.[1];
+
     expect(secret).toMatch(/^[0-9a-f]{48}$/);
     expect(env).toContain('DATABASE_URL=file:./frogbot.db');
     expect(fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8')).toContain(
@@ -117,7 +127,9 @@ describe('scaffold', () => {
     expect(fs.readFileSync(path.join(options.dest, '.env'), 'utf8')).toContain(
       'GOOGLE_GENERATIVE_AI_API_KEY=AIza-test',
     );
+
     const example = fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8');
+
     expect(example).toContain('GOOGLE_GENERATIVE_AI_API_KEY=\n');
     expect(example).not.toContain('AIza-test');
   });
@@ -149,16 +161,19 @@ describe('scaffold', () => {
     expect(fs.readFileSync(path.join(pnpmOptions.dest, 'pnpm-workspace.yaml'), 'utf8')).toBe(
       "packages:\n  - '.'\nallowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
     );
+
     const pkg = JSON.parse(
       fs.readFileSync(path.join(pnpmOptions.dest, 'package.json'), 'utf8'),
     ) as {
       pnpm?: unknown;
     };
+
     expect(pkg.pnpm).toBeUndefined();
 
     for (const packageManager of ['bun', 'npm', 'yarn'] as const) {
       const options = createDest();
       scaffold({ ...options, packageManager, templateDir });
+
       expect(fs.existsSync(path.join(options.dest, 'pnpm-workspace.yaml'))).toBe(false);
     }
   });

@@ -16,6 +16,7 @@ expectTypeOf<Parameters<typeof googleCalendar.createQuickEvent>[0]['input']>().t
   text: string;
   sendUpdates?: 'all' | 'externalOnly' | 'none' | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _quickEvent>['htmlLink']>().toEqualTypeOf<string | null | undefined>();
 
 const _createQuickEventRejectsDeleteEventInput = () =>

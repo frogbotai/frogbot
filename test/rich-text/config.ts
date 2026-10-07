@@ -35,6 +35,7 @@ const customConverters: HTMLConvertersFunctionAsync = ({ defaultConverters }) =>
         : child && typeof child === 'object'
           ? 'populated'
           : 'id';
+
     const secret = 'secret' in value ? String(value.secret) : 'hidden';
     const status = '_status' in value ? String(value._status) : 'none';
 

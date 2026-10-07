@@ -28,12 +28,14 @@ describe('resolveChatCollections', () => {
   it('is disabled when neither agents nor markers are present', () => {
     const collections = [{ slug: 'posts', fields: [] }];
     const result = resolveChatCollections(make(collections, { agents: undefined }));
+
     expect(result.chat).toEqual({ enabled: false });
     expect(result.collections).toBe(collections);
   });
 
   it('injects default chat, message, asset, and turn collections when agents are configured', () => {
     const result = resolveChatCollections(make([]));
+
     expect(slugs(result.collections)).toEqual([
       'chats',
       'messages',
@@ -50,6 +52,7 @@ describe('resolveChatCollections', () => {
 
   it('keeps user collections and appends the injected chat collections', () => {
     const result = resolveChatCollections(make([{ slug: 'posts', fields: [] }]));
+
     expect(slugs(result.collections)).toEqual([
       'posts',
       'chats',
@@ -63,6 +66,7 @@ describe('resolveChatCollections', () => {
     const result = resolveChatCollections(
       make([{ slug: 'convos', chat: true, fields: [] }], { agents: undefined }),
     );
+
     expect(result.chat).toEqual({
       enabled: true,
       chatsSlug: 'convos',
@@ -81,13 +85,16 @@ describe('resolveChatCollections', () => {
     const result = resolveChatCollections(
       make([{ slug: 'conversations', chat: true, fields: [{ name: 'department', type: 'text' }] }]),
     );
+
     expect(result.chat).toEqual({
       enabled: true,
       chatsSlug: 'conversations',
       messagesSlug: 'messages',
       assetsSlug: CHAT_ASSETS_SLUG,
     });
+
     const chats = result.collections.find((c) => c.slug === 'conversations');
+
     expect(chats?.fields.map((f) => ('name' in f ? f.name : undefined))).toEqual([
       'department',
       'title',
@@ -110,14 +117,17 @@ describe('resolveChatCollections', () => {
         { slug: 'turns', message: true, fields: [] },
       ]),
     );
+
     expect(result.chat).toEqual({
       enabled: true,
       chatsSlug: 'conversations',
       messagesSlug: 'turns',
       assetsSlug: CHAT_ASSETS_SLUG,
     });
+
     const turns = result.collections.find((c) => c.slug === 'turns');
     const chat = turns?.fields.find((f) => 'name' in f && f.name === 'chat');
+
     expect(chat).toMatchObject({ relationTo: 'conversations' });
   });
 
@@ -162,6 +172,7 @@ describe('resolveChatCollections', () => {
     const result = resolveChatCollections(make([{ slug: 'members', auth: true, fields: [] }]));
     const chats = result.collections.find((c) => c.slug === 'chats');
     const user = chats?.fields.find((f) => 'name' in f && f.name === 'user');
+
     expect(user).toMatchObject({ relationTo: 'members' });
   });
 
@@ -170,6 +181,7 @@ describe('resolveChatCollections', () => {
       { slug: 'admins', auth: true, fields: [] },
       { slug: 'customers', auth: true, fields: [] },
     ];
+
     expect(() => resolveChatCollections(make(collections))).toThrow(
       '[frogbot] Multiple auth collections found',
     );
@@ -180,6 +192,7 @@ describe('resolveChatCollections', () => {
       { slug: 'a', chat: true, fields: [] },
       { slug: 'b', chat: true, fields: [] },
     ];
+
     expect(() => resolveChatCollections(make(collections))).toThrow(
       '[frogbot] Multiple collections marked `chat: true` (a, b). Mark exactly one.',
     );

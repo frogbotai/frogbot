@@ -29,6 +29,7 @@ function createMockImageModel(opts?: {
     maxImagesPerCall: undefined,
     doGenerate: (options: ImageModelV4CallOptions) => {
       opts?.onCall?.(options);
+
       return Promise.resolve({
         images: [Buffer.from('fake-image').toString('base64')],
         warnings: [],
@@ -53,7 +54,9 @@ function makeImageApp(imageModel?: ImageModelV4) {
       throw new Error('not used');
     },
   };
+
   const registry = { openai: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 

@@ -16,6 +16,7 @@ describe('transcriptionsRoute', () => {
         response: { id: 'resp-1', timestamp: new Date(0), modelId: 'whisper-1' },
       }),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -23,6 +24,7 @@ describe('transcriptionsRoute', () => {
         }),
       } as unknown as ProviderRegistry,
     });
+
     const form = new FormData();
     form.set('model', 'openai/whisper-1');
     form.set('file', new File([new Uint8Array([1, 2, 3])], 'audio.mp3', { type: 'audio/mpeg' }));
@@ -71,6 +73,7 @@ describe('transcriptionsRoute', () => {
         }),
       } as unknown as ProviderRegistry,
     });
+
     const form = new FormData();
     form.set('model', 'openai/whisper-1');
     form.set('file', new File([new Uint8Array([1])], 'audio.wav', { type: 'audio/wav' }));
@@ -101,6 +104,7 @@ describe('transcriptionsRoute', () => {
       method: 'POST',
       body: noFile,
     });
+
     expect(noFileRes.status).toBe(400);
     expect(await noFileRes.json()).toHaveProperty('error.param', 'file');
 
@@ -108,6 +112,7 @@ describe('transcriptionsRoute', () => {
       method: 'POST',
       headers: { 'content-length': String(26 * 1024 * 1024) },
     });
+
     expect(oversizedRes.status).toBe(413);
     expect(await oversizedRes.json()).toHaveProperty('error.param', 'content-length');
 
@@ -116,6 +121,7 @@ describe('transcriptionsRoute', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ model: 'openai/whisper-1' }),
     });
+
     expect(wrongTypeRes.status).toBe(400);
     expect(await wrongTypeRes.json()).toHaveProperty('error.param', 'model');
 
@@ -123,6 +129,7 @@ describe('transcriptionsRoute', () => {
       method: 'POST',
       headers: { 'content-length': '0' },
     });
+
     expect(emptyRes.status).toBe(400);
     expect(await emptyRes.json()).toHaveProperty('error.param', 'model');
   });

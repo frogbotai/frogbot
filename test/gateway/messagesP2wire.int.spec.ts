@@ -49,6 +49,7 @@ function createRecordingModel(opts?: {
     providerMetadata,
     onCall,
   } = opts ?? {};
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -58,6 +59,7 @@ function createRecordingModel(opts?: {
     },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason,
@@ -80,12 +82,14 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage, ...(providerMetadata ? { providerMetadata } : {}) },
       ];
+
       return Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             for (const part of parts) {
               controller.enqueue(part);
             }
+
             controller.close();
           },
         }),
@@ -97,6 +101,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -106,6 +111,7 @@ async function postRaw(app: Hono, path: string, body: unknown) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+
   return { status: res.status, headers: res.headers, text: await res.text() };
 }
 
@@ -139,8 +145,10 @@ describe('G60 — stop_sequence response field always null', () => {
     });
 
     expect(status).toBe(200);
+
     // When stop_reason is 'stop_sequence', the stop_sequence field should be the matched sequence.
     const resp = body as Record<string, unknown>;
+
     expect(resp.stop_reason).toBe('stop_sequence');
     // stop_sequence should echo which one was matched, not null.
     expect(
@@ -178,7 +186,9 @@ describe('G61 — stop-reason taxonomy: other → null is spec-invalid', () => {
     });
 
     expect(status).toBe(200);
+
     const resp = body as Record<string, unknown>;
+
     // Anthropic clients switch on stop_reason; null breaks the discriminant.
     expect(resp.stop_reason, 'completed message must carry a non-null stop_reason').not.toBeNull();
   });
@@ -215,12 +225,16 @@ describe('G62 — usage detail fields on messages responses', () => {
     });
 
     expect(status).toBe(200);
+
     const resp = body as Record<string, unknown>;
     const usage = resp.usage as Record<string, unknown>;
+
     expect(usage).toBeDefined();
     // Anthropic's API surfaces thinking tokens in output_tokens_details
     expect(usage).toHaveProperty('output_tokens_details');
+
     const details = usage.output_tokens_details as Record<string, unknown>;
+
     expect(details.thinking_tokens).toBe(5);
   });
 
@@ -249,7 +263,9 @@ describe('G62 — usage detail fields on messages responses', () => {
     });
 
     expect(status).toBe(200);
+
     const usage = (body as Record<string, unknown>).usage as Record<string, unknown>;
+
     expect(usage.cache_creation).toEqual({
       ephemeral_5m_input_tokens: 148,
       ephemeral_1h_input_tokens: 100,
@@ -288,12 +304,16 @@ describe('G62 — usage detail fields on messages responses', () => {
     });
 
     expect(status).toBe(200);
+
     const deltaFrame = parseSse(text).find((f) => f.event === 'message_delta');
+
     expect(deltaFrame).toBeDefined();
+
     const usage = (JSON.parse(deltaFrame!.data) as Record<string, unknown>).usage as Record<
       string,
       unknown
     >;
+
     expect(usage).toHaveProperty('output_tokens_details.thinking_tokens', 5);
     expect(usage.cache_creation).toEqual({
       ephemeral_5m_input_tokens: 148,
@@ -311,7 +331,9 @@ describe('G62 — usage detail fields on messages responses', () => {
     });
 
     expect(status).toBe(200);
+
     const usage = (body as Record<string, unknown>).usage as Record<string, unknown>;
+
     // Never backfill 0/0 — omit the fields when the upstream has no data.
     expect(usage).not.toHaveProperty('output_tokens_details');
     expect(usage).not.toHaveProperty('cache_creation');
@@ -353,7 +375,9 @@ describe('G63 — messages tools: strict and cache_control forwarded', () => {
     });
 
     expect(status).toBe(200);
+
     const toolsStr = JSON.stringify(capturedOptions?.tools ?? {});
+
     // AI SDK Anthropic provider reads per-tool cache_control from
     // tool.providerOptions.anthropic.cacheControl (get-cache-control.ts:15-18
     // prefers `cacheControl`, snake `cache_control` also accepted). Tools are
@@ -402,9 +426,13 @@ describe('G64 — assistant cache_control forwarded in messages route', () => {
     });
 
     expect(status).toBe(200);
+
     const assistantMsg = capturedOptions?.prompt.find((m) => m.role === 'assistant');
+
     expect(assistantMsg).toBeDefined();
+
     const promptStr = JSON.stringify(capturedOptions?.prompt ?? {});
+
     expect(promptStr, 'assistant cache_control not forwarded').toContain('ephemeral');
   });
 });
@@ -444,6 +472,7 @@ describe('G65 — system block array: cache_control breakpoints preserved', () =
     });
 
     expect(status).toBe(200);
+
     // Two blocks carry cache_control, so the prompt must carry two cache
     // breakpoints. Since SystemModelMessage.content is string-only, that means
     // multiple system messages (each with its own cacheControl), not one.
@@ -452,8 +481,10 @@ describe('G65 — system block array: cache_control breakpoints preserved', () =
     const cacheBreakpoints = systemMsgs.filter((m) => {
       const anthropic = (m.providerOptions as Record<string, Record<string, unknown>> | undefined)
         ?.anthropic;
+
       return anthropic?.cacheControl !== undefined;
     });
+
     expect(cacheBreakpoints.length, 'both system cache_control breakpoints should survive').toBe(2);
   });
 });
@@ -489,8 +520,10 @@ describe('G66 — top-level mcp_servers forwarded', () => {
     });
 
     expect(status).toBe(200);
+
     const anthropicOpts = capturedOptions?.providerOptions?.anthropic as
       Record<string, unknown> | undefined;
+
     // The MCP servers must reach the provider; otherwise the client's tools vanish.
     expect(anthropicOpts?.mcpServers ?? anthropicOpts?.mcp_servers).toBeDefined();
   });
@@ -547,9 +580,11 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
     });
 
     expect(status).toBe(200);
+
     const events = parseSse(text)
       .map((f) => f.event)
       .filter(Boolean);
+
     expect(events, 'empty stream must emit at least message_start + message_stop').toContain(
       'message_start',
     );
@@ -592,7 +627,9 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
+
     expect(text).toContain('[DONE]');
   });
 });
@@ -640,10 +677,12 @@ describe('G69 — document title dropped in translation', () => {
     });
 
     expect(status).toBe(200);
+
     // Find the file/text part the document was translated into and confirm the
     // title survived somewhere on it (providerOptions or a filename).
     const prompt = capturedOptions?.prompt ?? [];
     const serialized = JSON.stringify(prompt);
+
     expect(serialized, 'document title should be forwarded to the model').toContain(
       'Q3 Financials',
     );
@@ -695,11 +734,15 @@ describe('G51 — messages stream terminal-frame count', () => {
     });
 
     expect(status).toBe(200);
+
     const stopFrames = parseSse(text).filter((f) => f.event === 'message_stop');
+
     expect(stopFrames, 'messages stream must terminate with exactly one message_stop').toHaveLength(
       1,
     );
+
     const doneCount = (text.match(/^data: \[DONE\]$/gm) ?? []).length;
+
     expect(doneCount, 'messages wire must not carry the OpenAI-only [DONE] sentinel').toBe(0);
   });
 });

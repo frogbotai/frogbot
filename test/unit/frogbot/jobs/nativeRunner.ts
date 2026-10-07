@@ -77,6 +77,7 @@ export async function nativeRunner({
   database.beginTransaction = vi.fn(() => Promise.resolve(null));
   database.commitTransaction = vi.fn(() => Promise.resolve());
   database.rollbackTransaction = vi.fn(() => Promise.resolve());
+
   database.find = vi.fn(({ where }) => {
     const docs = structuredClone(rows.filter((row) => !where || matches(row, where)));
 
@@ -90,10 +91,13 @@ export async function nativeRunner({
       totalPages: 1,
     });
   }) as typeof database.find;
+
   database.findOne = vi.fn(({ where }) =>
     Promise.resolve(structuredClone(rows.find((row) => !where || matches(row, where)) ?? null)),
   ) as typeof database.findOne;
+
   database.packageName = '@frogbotai/db-mongodb';
+
   (database as JobLogDatabase)[jobLogOperations] = {
     prune: vi.fn(({ id, keep }) => {
       const row = rows.find((candidate) => candidate.id === id)!;
@@ -119,6 +123,7 @@ export async function nativeRunner({
       const candidates = rows
         .filter((row) => !row.processing && (args.id === undefined || row.id === args.id))
         .slice(0, args.limit ?? rows.length);
+
       const fields = getJobClaimFields();
 
       for (const row of candidates) {

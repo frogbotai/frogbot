@@ -52,6 +52,7 @@ async function setup({
         ...row,
       }
     : undefined;
+
   const find = vi.fn(() => Promise.resolve({ docs: stored ? [stored] : [] }));
   const frogbot = {
     find,
@@ -64,20 +65,24 @@ async function setup({
       },
     },
   };
+
   const api = new Connections(frogbot as never, {
     enabled: true,
     slug: 'connections',
     encryption,
     entries: { example: { piece, oauth, secret } },
   });
+
   const req = { user: { id: 'owner', collection: 'users' }, frogbot } as unknown as FrogBotRequest;
   Object.assign(frogbot, { connections: api });
+
   return { api, req, piece, factory, stored, encryption, find };
 }
 
 describe('connections API', () => {
   it('resolves a canonical user row before factory auth', async () => {
     const { api, req, piece, find } = await setup({ auth: { token: 'factory' }, row: {} });
+
     await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'user' });
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -91,6 +96,7 @@ describe('connections API', () => {
     async (user) => {
       const { api, req, piece, find } = await setup({ auth: { token: 'factory' }, row: {} });
       req.user = user as never;
+
       await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'factory' });
       expect(find).not.toHaveBeenCalled();
     },
@@ -98,6 +104,7 @@ describe('connections API', () => {
 
   it('falls back only when no row exists and errors without factory auth', async () => {
     const { api, req, piece, factory } = await setup({ auth: { token: 'factory' } });
+
     await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'factory' });
     await expect(api.resolve({ piece: factory(), req })).rejects.toMatchObject({
       name: 'ConnectionError',
@@ -117,6 +124,7 @@ describe('connections API', () => {
     [{ method: 'legacy' }, 'error'],
   ])('never falls back for an unusable existing row %j', async (row, code) => {
     const { api, req, piece } = await setup({ auth: { token: 'factory' }, row: row as never });
+
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({
       name: 'ConnectionError',
       code,
@@ -125,6 +133,7 @@ describe('connections API', () => {
 
   it('rejects disabled stored methods', async () => {
     const { api, req, piece } = await setup({ secret: false, row: {}, auth: { token: 'factory' } });
+
     await expect(api.resolve({ piece, req })).rejects.toMatchObject({ code: 'error' });
   });
 
@@ -136,6 +145,7 @@ describe('connections API', () => {
         scopes: ['read'],
       },
     });
+
     await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'oauth-token' });
     await expect(
       api.resolve({ piece, req, scopes: ['read', 'write', 'write'] }),
@@ -155,6 +165,7 @@ describe('connections API', () => {
       },
       row: { method: 'oauth', value: { access_token: 'oauth-token' }, scopes: ['read'] },
     });
+
     await expect(api.resolve({ piece, req })).resolves.toEqual({ accessToken: 'oauth-token' });
   });
 
@@ -182,7 +193,9 @@ describe('connections API', () => {
         pieceDefinition,
         row: { method: 'oauth', value: { access_token: 'secret-value' }, scopes: ['read'] },
       });
+
       const error = await api.resolve({ piece, req }).catch((error: unknown) => error);
+
       expect(error).toMatchObject({ name: 'ConnectionError', code: 'error' });
       expect(String(error)).not.toContain('secret-value');
     }
@@ -192,14 +205,18 @@ describe('connections API', () => {
     const { api, req, piece, stored, encryption } = await setup({
       row: { value: { token: 'one', extra: 'same' } },
     });
+
     const first = await api.resolvePieceCredential({ piece, req });
     stored!.credential = await encryption.encrypt(JSON.stringify({ extra: 'same', token: 'one' }));
     stored!.updatedAt = '2030-01-01T00:00:00Z';
     stored!.scopes = ['read'];
     const second = await api.resolvePieceCredential({ piece, req });
+
     expect(second.key).toBe(first.key);
+
     stored!.credential = await encryption.encrypt(JSON.stringify({ token: 'two' }));
     const third = await api.resolvePieceCredential({ piece, req });
+
     expect(third.key).not.toBe(first.key);
     expect(third.auth).toEqual({ token: 'two' });
   });
@@ -210,9 +227,13 @@ describe('connections API', () => {
       row: {},
       pieceDefinition: { ...definition, client },
     });
+
     const first = await piece.client({ req });
+
     expect(await piece.client({ req: { ...req } })).toBe(first);
+
     stored!.credential = await encryption.encrypt(JSON.stringify({ token: 'next' }));
+
     expect(await piece.client({ req })).not.toBe(first);
     expect(client).toHaveBeenCalledTimes(2);
   });
@@ -221,14 +242,20 @@ describe('connections API', () => {
     const { api, req, piece, stored } = await setup({ row: {} });
     const resolve = async (id: string) => {
       stored!.owner = id;
+
       return piece.client({ req: { ...req, user: { id, collection: 'users' } } });
     };
+
     const first = await resolve('owner-0');
     const second = await resolve('owner-1');
+
     for (let i = 2; i < 512; i++) await resolve(`owner-${i}`);
+
     expect(connectionsState(api).credentialKeys.size).toBe(512);
     expect(await resolve('owner-0')).toBe(first);
+
     await resolve('owner-512');
+
     expect(connectionsState(api).credentialKeys.size).toBe(512);
     expect(await resolve('owner-0')).toBe(first);
     expect(await resolve('owner-1')).not.toBe(second);
@@ -239,6 +266,7 @@ describe('connections API', () => {
     const { api, req, piece, find } = await setup({ row: {}, auth: { token: 'factory' } });
     const first = await piece.client({ req });
     find.mockResolvedValueOnce({ docs: [] });
+
     expect(await piece.client({ req })).toEqual({ auth: { token: 'factory' } });
     expect(connectionsState(api).credentialKeys.size).toBe(0);
     expect(await piece.client({ req })).not.toBe(first);
@@ -248,9 +276,12 @@ describe('connections API', () => {
     const { api, req, piece, stored } = await setup({ row: {} });
     const first = await piece.client({ req });
     stored!.id = 'replacement';
+
     expect(await piece.client({ req })).not.toBe(first);
     expect(connectionsState(api).credentialKeys.size).toBe(1);
+
     stored!.id = 'connection';
+
     expect(await piece.client({ req })).not.toBe(first);
     expect(connectionsState(api).credentialKeys.size).toBe(1);
   });
@@ -261,6 +292,7 @@ describe('connections API', () => {
     const otherReq = { ...req, user: { id: 'other-owner', collection: 'users' } };
     const other = await piece.client({ req: otherReq });
     find.mockResolvedValueOnce({ docs: [] });
+
     expect(await api.list({ req })).toEqual([]);
     expect(connectionsState(api).credentialKeys.size).toBe(1);
     expect(await piece.client({ req: otherReq })).toBe(other);
@@ -271,6 +303,7 @@ describe('connections API', () => {
     const { api, req, piece } = await setup({ row: {} });
     const first = await piece.client({ req });
     vi.spyOn(await api.store, 'delete').mockResolvedValue(true);
+
     expect(await api.delete({ req, id: 'connection' })).toBe(true);
     expect(connectionsState(api).credentialKeys.size).toBe(0);
     expect(await piece.client({ req })).not.toBe(first);
@@ -280,12 +313,14 @@ describe('connections API', () => {
     const { req, piece, factory } = await setup({ auth: { token: 'factory' } });
     req.user = undefined as never;
     const first = await piece.client({ req });
+
     expect(await piece.client({ req })).toBe(first);
     expect(await factory({ auth: { token: 'factory' } }).client({ req })).not.toBe(first);
   });
 
   it('reports canonical pieces and both linking methods with the configured API path', async () => {
     const { api, req, piece } = await setup();
+
     expect(await api.authorizations({ pieces: [piece, piece], req })).toEqual([
       {
         piece: 'example',
@@ -295,7 +330,9 @@ describe('connections API', () => {
         authorizeUrl: '/custom-api/connections/example/authorize',
       },
     ]);
+
     const factory = await setup({ auth: { token: 'factory' } });
+
     expect(await factory.api.authorizations({ pieces: [factory.piece], req: factory.req })).toEqual(
       [],
     );
@@ -307,6 +344,7 @@ describe('connections API', () => {
       oauth: false,
       row: { status: 'error' },
     });
+
     expect(await api.authorizations({ pieces: [piece], req })).toEqual([
       {
         piece: 'example',
@@ -320,6 +358,7 @@ describe('connections API', () => {
   it('denies metadata and deletion to non-admin auth collection owners', async () => {
     const { api, req, find } = await setup({ row: {} });
     req.user = { id: 'owner', collection: 'customers' };
+
     await expect(api.list({ req })).rejects.toThrow('admin user collection');
     await expect(api.delete({ req, id: 'connection' })).rejects.toThrow('admin user collection');
     expect(find).not.toHaveBeenCalled();

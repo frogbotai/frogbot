@@ -114,6 +114,7 @@ function main() {
 
   if (problems.length === 0 && unused.length === 0) {
     console.log(`✔ No workspace dependency in ${LOCKFILE} installs as two peer variants.`);
+
     return;
   }
 
@@ -132,6 +133,7 @@ function main() {
   console.error(
     '\nAlign the peer sets (the same peers installed in each folder), or add an ALLOWED entry with its reason.',
   );
+
   process.exit(1);
 }
 

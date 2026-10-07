@@ -12,6 +12,7 @@ export const gladiaProvider = {
   envVars: ['GLADIA_API_KEY'],
   fromEnv: (env) => {
     if (!env.GLADIA_API_KEY) return undefined;
+
     return { apiKey: env.GLADIA_API_KEY };
   },
   build: (cfg) => createGladia(cfg),

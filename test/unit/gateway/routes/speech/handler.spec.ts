@@ -14,6 +14,7 @@ describe('speechRoute', () => {
         response: { id: 'resp-1', timestamp: new Date(0), modelId: 'tts-1' },
       }),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({

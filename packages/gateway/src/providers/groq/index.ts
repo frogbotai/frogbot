@@ -14,6 +14,7 @@ export const groqProvider = {
   envVars: ['GROQ_API_KEY', 'GROQ_BASE_URL'],
   fromEnv: (env) => {
     if (!env.GROQ_API_KEY) return undefined;
+
     return {
       apiKey: env.GROQ_API_KEY,
       ...(env.GROQ_BASE_URL && { baseURL: env.GROQ_BASE_URL }),

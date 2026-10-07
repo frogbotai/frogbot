@@ -68,6 +68,7 @@ export function recordGenAiTokenUsage(
       '[telemetry] cached input tokens exceed input total; clamping uncached to 0',
     );
   }
+
   if (usage.outputTokens - (usage.reasoningTokens ?? 0) < 0) {
     logger.warn(
       { outputTokens: usage.outputTokens, reasoningTokens: usage.reasoningTokens },
@@ -81,6 +82,7 @@ export function recordGenAiTokenUsage(
     'gen_ai.request.model': ctx.model,
     'gen_ai.system': ctx.provider,
   };
+
   const tokenUsage = getTokenUsage();
   const emit = (value: number, extra: Record<string, unknown>) =>
     tokenUsage.record(value, { ...base, ...extra });
@@ -133,6 +135,7 @@ export function recordRequestDuration(
   const effective = ctx.otel?.['frogbot.status_code_effective'];
   const status =
     typeof effective === 'number' ? effective : error !== undefined ? statusForError(error) : 200;
+
   if (status !== 200) {
     base['error.type'] = `${status} ${httpStatusText(status).toLowerCase()}`;
   }
@@ -142,6 +145,7 @@ export function recordRequestDuration(
 
 export function createGenAiHooks(trace?: SignalLevelInput, logger?: GatewayLogger): Hooks {
   const baseLevels = resolveSignalLevels(trace);
+
   return {
     afterOperation: [
       (args) => {

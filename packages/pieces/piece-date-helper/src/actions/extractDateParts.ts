@@ -28,6 +28,7 @@ export const extractDateParts = defineAction({
       dayOfWeek: date.format('dddd'),
       monthName: date.format('MMMM'),
     };
+
     const result: Record<string, string | number> = {};
 
     value.unitExtract.forEach((unit) => {

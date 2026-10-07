@@ -49,6 +49,7 @@ export function partStream(
   return new ReadableStream({
     start(controller) {
       for (const part of parts) controller.enqueue(part);
+
       controller.close();
     },
   });
@@ -77,5 +78,6 @@ export function asV4(model: LanguageModelV4 | LanguageModelV3): LanguageModelV4 
   if (model.specificationVersion !== 'v4') {
     throw new Error(`expected a v4 language model, got ${model.specificationVersion}`);
   }
+
   return model;
 }

@@ -34,8 +34,10 @@ async function replyMessage({
         )
       : [findHeader(original, 'From')].filter(Boolean)
   ) as string[];
+
   const cc =
     input.replyType === 'replyAll' ? splitAddresses(findHeader(original, 'Cc')) : undefined;
+
   const message = {
     threadId: original.threadId ?? undefined,
     raw: await createRawMessage({
@@ -44,6 +46,7 @@ async function replyMessage({
       extraHeaders: [`In-Reply-To: ${messageId}`, `References: ${messageId}`],
     }),
   };
+
   const sent = draft
     ? ((await client.users.drafts.create({ userId: 'me', requestBody: { message } })).data
         .message ?? {})

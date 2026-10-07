@@ -10,11 +10,13 @@ export function resolveEnvConfigPath(cwd: string): string | null {
   if (!existsSync(abs)) {
     throw new Error(`[frogbot] FROGBOT_CONFIG_PATH points to a missing file: ${abs}`);
   }
+
   return abs;
 }
 
 export function findConfigFile(startDir: string): string | null {
   let dir = resolve(startDir);
+
   for (;;) {
     for (const subDir of ['src', '.']) {
       for (const name of CONFIG_FILENAMES) {
@@ -22,6 +24,7 @@ export function findConfigFile(startDir: string): string | null {
         if (existsSync(candidate)) return candidate;
       }
     }
+
     const parent = dirname(dir);
     if (parent === dir) return null;
     dir = parent;
@@ -32,8 +35,11 @@ export function resolveConfigDir(cwd: string): string | null {
   const fromEnv = process.env.FROGBOT_CONFIG_PATH;
   if (fromEnv) {
     const abs = isAbsolute(fromEnv) ? fromEnv : resolve(cwd, fromEnv);
+
     return existsSync(abs) ? dirname(abs) : null;
   }
+
   const configPath = findConfigFile(cwd);
+
   return configPath ? dirname(configPath) : null;
 }

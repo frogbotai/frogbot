@@ -23,6 +23,7 @@ describe('provider fromEnv skips (not throws) on common partial env — G41', ()
   it('bedrock returns undefined when only AWS_REGION is set', () => {
     // G41 — partial AWS env skips instead of throwing.
     const result = bedrockProvider.fromEnv(testEnv({ AWS_REGION: 'us-east-1' }));
+
     expect(result).toBeUndefined();
   });
 
@@ -31,6 +32,7 @@ describe('provider fromEnv skips (not throws) on common partial env — G41', ()
   it('vertex returns undefined when only GOOGLE_VERTEX_PROJECT is set', () => {
     // G41 — partial Vertex env skips instead of throwing.
     const result = vertexProvider.fromEnv(testEnv({ GOOGLE_VERTEX_PROJECT: 'my-project' }));
+
     expect(result).toBeUndefined();
   });
 
@@ -39,6 +41,7 @@ describe('provider fromEnv skips (not throws) on common partial env — G41', ()
   it('azure returns undefined when AZURE_API_KEY is set without resource/baseURL', () => {
     // G41 — partial Azure env skips instead of throwing.
     const result = azureProvider.fromEnv(testEnv({ AZURE_API_KEY: 'azure-key-123' }));
+
     expect(result).toBeUndefined();
   });
 });

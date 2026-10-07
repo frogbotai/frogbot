@@ -21,6 +21,7 @@ export const createBroadcast = defineAction({
   input,
   async run({ input, client }) {
     const { content, content_type, ...values } = input;
+
     return client.request({
       method: 'POST',
       path: '/broadcasts',

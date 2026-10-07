@@ -12,12 +12,14 @@ expectTypeOf<AISelectFieldArgs['inputs']>().toEqualTypeOf<string[]>();
 expectTypeOf<AISelectFieldArgs['prompt']>().toEqualTypeOf<string>();
 expectTypeOf<AISelectFieldArgs['model']>().toEqualTypeOf<ModelId | undefined>();
 expectTypeOf<AIFieldStatus>().toEqualTypeOf<'pending' | 'done' | 'error' | 'manual'>();
+
 expectTypeOf<AIKind>().toEqualTypeOf<{
   type: 'ai';
   inputs: string[];
   prompt: string;
   model?: string;
 }>();
+
 expectTypeOf(aiFieldPaths).returns.toEqualTypeOf<{ status: string; error: string }>();
 expectTypeOf(isAIFieldInputSet).returns.toEqualTypeOf<boolean>();
 

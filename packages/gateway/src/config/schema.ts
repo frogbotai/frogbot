@@ -109,9 +109,11 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
   if (!input || typeof input !== 'object') {
     throw new ConfigError(['config must be an object']);
   }
+
   if (!input.providers || typeof input.providers !== 'object') {
     throw new ConfigError(['providers must be an object']);
   }
+
   const configured = Object.values(input.providers).filter((v) => v != null);
   if (configured.length === 0) {
     throw new ConfigError(['at least one provider must be configured']);
@@ -132,9 +134,11 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
     if (cfg == null) {
       continue;
     }
+
     if (isProviderInstance(cfg)) {
       continue;
     }
+
     if (typeof cfg !== 'object') {
       issues.push(`providers.${name} must be a config object`);
       continue;
@@ -146,12 +150,14 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
       if (name.includes('/')) {
         issues.push(`providers.${name} name must not contain "/"`);
       }
+
       const baseURL = (cfg as Record<string, unknown>).baseURL;
       if (typeof baseURL !== 'string' || baseURL.length === 0) {
         issues.push(
           `providers.${name}.baseURL must be a non-empty string (custom OpenAI-compatible providers require a baseURL)`,
         );
       }
+
       continue;
     }
 
@@ -161,9 +167,11 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
         issues.push(`providers.${name}.models must be an array`);
       } else {
         const catalog = input.catalog ?? DEFAULT_MODEL_CATALOG;
+
         for (const model of models) {
           const canonicalId =
             typeof model === 'string' ? canonicalizeModelId(`${name}/${model}`) : '';
+
           if (!model || typeof model !== 'string' || !catalog.has(canonicalId)) {
             issues.push(`providers.${name}.models contains unknown model: ${String(model)}`);
           }
@@ -182,6 +190,7 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
   if (issues.length > 0) {
     throw new ConfigError(issues);
   }
+
   return input;
 }
 

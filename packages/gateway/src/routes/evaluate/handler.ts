@@ -75,6 +75,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = requireEvaluationModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
@@ -92,6 +93,7 @@ export function evaluateRoute(ctx: EvaluateRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       const providerOptions = body.providerOptions ?? {};

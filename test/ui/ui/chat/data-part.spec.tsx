@@ -8,7 +8,9 @@ describe('data and boundary parts', () => {
   it('renders data by default or through a consumer renderer', () => {
     const part = { type: 'data-weather' as const, data: { temperature: 72 } };
     const { rerender } = render(<MessagePart part={part} />);
+
     expect(screen.getByText(/"temperature": 72/).className).toBe('fb-data-part');
+
     rerender(
       <MessagePart
         part={part}
@@ -17,16 +19,19 @@ describe('data and boundary parts', () => {
         )}
       />,
     );
+
     expect(screen.getByText('72 degrees')).toBeTruthy();
   });
 
   it('does not render step boundaries', () => {
     const { container } = render(<MessagePart part={{ type: 'step-start' }} />);
+
     expect(container.innerHTML).toBe('');
   });
 
   it('streams custom-rendered data into artifacts', () => {
     const onStreamPart = vi.fn();
+
     render(
       <ArtifactProvider registry={[{ kind: 'weather', render: () => null, onStreamPart }]}>
         <MessagePart
@@ -35,6 +40,7 @@ describe('data and boundary parts', () => {
         />
       </ArtifactProvider>,
     );
+
     expect(screen.getByText('Custom')).toBeTruthy();
     expect(onStreamPart).toHaveBeenCalledOnce();
   });

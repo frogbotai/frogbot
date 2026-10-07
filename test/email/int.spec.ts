@@ -74,6 +74,7 @@ const transactionalAuth = z.object({ apiKey: z.string() });
 const transactionalOptions = z.object({ from: z.string() });
 
 type TransactionalClient = { apiKey: string };
+
 type TransactionalTypes = {
   auth: z.output<typeof transactionalAuth>;
   options: z.output<typeof transactionalOptions>;
@@ -125,6 +126,7 @@ beforeEach(() => {
   vi.stubEnv('PAYLOAD_FORCE_DRIZZLE_PUSH', 'true');
 
   fetch.mockReset();
+
   fetch.mockImplementation((url) => {
     if (String(url) !== 'https://api.resend.com/emails') {
       return Promise.reject(new Error(`Unexpected email request: ${String(url)}`));
@@ -452,6 +454,7 @@ describe('email piece boot and runtime isolation', () => {
       firstPayload.sendEmail(message),
       secondPayload.sendEmail(message),
     ]);
+
     await firstPayload.sendEmail(message);
 
     expect(clients).toHaveLength(2);
@@ -531,10 +534,12 @@ describe('auth email templates', () => {
         },
       ],
     });
+
     const customer = await runtime.create({
       collection: customersSlug,
       data: { email: 'customer@example.com', password: 'password' },
     });
+
     const verifyToken = requestBody().html.match(
       /^<a href="\/verify\/([a-f0-9]+)">Verify<\/a>$/,
     )?.[1];
@@ -552,6 +557,7 @@ describe('auth email templates', () => {
       collection: customersSlug,
       data: { email: customer.email },
     });
+
     const stored = await getFrogBotPayload(runtime).db.findOne<Customer>({
       collection: customersSlug,
       where: { id: { equals: customer.id } },
@@ -562,6 +568,7 @@ describe('auth email templates', () => {
       subject: `Reset ${customer.email}`,
       html: `<a href="/reset/${token}">Reset</a>`,
     });
+
     const expiresAt = Date.parse(String(stored?.resetPasswordExpiration));
 
     expect(expiresAt - requestedAt).toBeGreaterThanOrEqual(600_000);
@@ -580,6 +587,7 @@ describe('auth email templates', () => {
     const forgetFrogBot = (req: FrogBotRequest) => Reflect.deleteProperty(req, 'frogbot');
     const template = ({ req, token }: { req: FrogBotRequest; token: string }) =>
       req.frogbot ? `token ${token}` : 'missing';
+
     const runtime = await bootRuntime({
       email: resend,
       collections: [

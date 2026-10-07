@@ -374,6 +374,7 @@ describe.skipIf(!RUN_E2E)(
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(credentials),
       });
+
       const { token } = (await login.json()) as { token: string };
 
       const settle = (headers: Record<string, string>) =>

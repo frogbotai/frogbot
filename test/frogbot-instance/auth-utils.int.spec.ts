@@ -16,9 +16,11 @@ describe('frogbot-instance: Auth + utilities', () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
   });
+
   afterAll(async () => {
     await booted.shutdown();
   });
+
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
 
@@ -72,6 +74,7 @@ describe('frogbot-instance: Auth + utilities', () => {
       expect(encrypted).not.toEqual(original);
 
       const decrypted = booted.frogbot.decrypt(encrypted);
+
       expect(decrypted).toEqual(original);
     });
 

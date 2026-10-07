@@ -56,6 +56,7 @@ export function peekRawValue(rawValue: unknown): RawPeekExtras | undefined {
     (Array.isArray(choices) && choices.length > 0
       ? (choices[0] as Record<string, unknown>)?.content_filter_results
       : undefined);
+
   if (cfr && typeof cfr === 'object') {
     extras.contentFilterResults = cfr as Record<string, unknown>;
     found = true;

@@ -383,7 +383,9 @@ describe('OpenRouter adversarial cases', () => {
     });
 
     expect(status).toBe(429);
+
     const body = JSON.parse(text);
+
     expect(JSON.stringify(body)).toContain('Rate limit exceeded');
     expect(body.error).toMatchObject(error);
   });
@@ -420,6 +422,7 @@ describe('Raw provider clients', () => {
         body: JSON.stringify({ model, messages: [{ role: 'user', content: 'hi' }] }),
       }),
     );
+
     return { status: response.status, text: await response.text() };
   }
 
@@ -428,6 +431,7 @@ describe('Raw provider clients', () => {
     const client = Object.assign(createOpenRouter({ apiKey: 'sk-or-v1-raw' }), {
       models: ['openai/gpt-5'],
     });
+
     const gateway = createGateway({ providers: { openrouter: client } as never });
 
     const { status, text } = await chat(gateway, MODEL);
@@ -452,6 +456,7 @@ describe('Raw provider clients', () => {
 
   it('accepts a real createOpenAI() instance for the openai provider', async () => {
     const { createOpenAI } = await import('@ai-sdk/openai');
+
     upstream = () =>
       Response.json({
         id: 'resp_1',
@@ -470,6 +475,7 @@ describe('Raw provider clients', () => {
         ],
         usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
       });
+
     const gateway = createGateway({
       providers: { openai: createOpenAI({ apiKey: 'sk-raw-openai-instance' }) },
     });

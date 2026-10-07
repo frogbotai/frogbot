@@ -3,6 +3,7 @@ import { deriveName } from './deriveName.js';
 import { type EnvIssue, FrogBotEnvError } from './error.js';
 
 type SchemaBuilder = { readonly _output: unknown };
+
 type EnvSchema = Record<string, SchemaBuilder>;
 
 export type DefinedEnv<TSchema extends EnvSchema> = Readonly<{

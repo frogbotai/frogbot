@@ -37,6 +37,7 @@ export function serializeSort(rows: SortRow[]): string {
 
 export function syncSortRows(rows: SortRow[], sort?: string | string[]): SortRow[] {
   const nextRows = parseSort(sort);
+
   return serializeSort(rows.filter(({ field }) => field)) === serializeSort(nextRows)
     ? rows
     : [...nextRows, ...rows.filter(({ field }) => !field)];
@@ -57,6 +58,7 @@ export function resolveBoardSort({
     [querySort, preferenceSort, defaultSort].find((value) =>
       Array.isArray(value) ? value.length > 0 : Boolean(value),
     ) ?? orderField;
+
   return Array.isArray(sort) ? sort.join(',') : sort;
 }
 
@@ -95,6 +97,7 @@ export function resolveBoardGroupBy({
 }): string {
   if (hasQueryGroupBy) return queryGroupBy ?? '';
   if (preferenceGroupBy !== undefined) return preferenceGroupBy;
+
   return configuredGroupBy ?? '';
 }
 
@@ -128,10 +131,13 @@ export function getBoardColumnKey(value: unknown): string {
         relatedValue && typeof relatedValue === 'object'
           ? (relatedValue as { id?: unknown }).id
           : relatedValue;
+
       return `relationship:${String(relationship.relationTo)}:${getBoardColumnKey(id)}`;
     }
+
     if (relationship.id !== undefined) return `relationship:${getBoardColumnKey(relationship.id)}`;
   }
+
   return `${typeof value}:${String(value)}`;
 }
 
@@ -143,6 +149,7 @@ export function buildColumnWhere(
   const group = {
     [groupBy]: value === null || value === undefined ? { exists: false } : { equals: value },
   };
+
   return where && typeof where === 'object' && Object.keys(where).length > 0
     ? { and: [where, group] }
     : group;

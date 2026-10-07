@@ -9,10 +9,13 @@ type CloseCb = (err?: Error) => void;
 function makeServer() {
   let closeCb: CloseCb | undefined;
   const server = createServer();
+
   vi.spyOn(server, 'close').mockImplementation((cb?: CloseCb) => {
     closeCb = cb;
+
     return server;
   });
+
   return { server, finishDrain: (err?: Error) => closeCb?.(err) };
 }
 
@@ -39,11 +42,13 @@ describe('installGracefulShutdown (G91)', () => {
     });
 
     handler('SIGTERM');
+
     expect(server.close).toHaveBeenCalledTimes(1);
     expect(exit).not.toHaveBeenCalled();
 
     finishDrain();
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
+
     expect(flush).toHaveBeenCalledTimes(1);
   });
 
@@ -63,9 +68,11 @@ describe('installGracefulShutdown (G91)', () => {
     });
 
     handler('SIGTERM');
+
     expect(exit).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(25_000);
+
     expect(exit).toHaveBeenCalledWith(1);
   });
 
@@ -84,6 +91,7 @@ describe('installGracefulShutdown (G91)', () => {
 
     handler('SIGTERM');
     finishDrain(new Error('boom'));
+
     expect(exit).toHaveBeenCalledWith(1);
     expect(flush).not.toHaveBeenCalled();
   });

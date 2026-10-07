@@ -38,6 +38,7 @@ export function webhookTrigger<const TSlug extends string, TInput extends z.ZodT
       if (!options.webhookSecret) {
         throw new Error(`Linear ${slug} webhook requires createLinear({ webhookSecret }).`);
       }
+
       const team =
         typeof input === 'object' &&
         input !== null &&
@@ -45,6 +46,7 @@ export function webhookTrigger<const TSlug extends string, TInput extends z.ZodT
         typeof input.teamId === 'string'
           ? input.teamId
           : undefined;
+
       const response = await client.createWebhook({
         label: `FrogBot ${slug}`,
         url: webhookUrl,
@@ -52,10 +54,12 @@ export function webhookTrigger<const TSlug extends string, TInput extends z.ZodT
         resourceTypes: [resourceType],
         ...(team ? { teamId: team } : { allPublicTeams: true }),
       });
+
       const webhook = response.success ? await response.webhook : undefined;
       if (!webhook) {
         throw new Error(`Linear failed to create the ${slug} webhook.`);
       }
+
       return { webhookId: webhook.id };
     },
     async onDisable({ client, state }) {
@@ -66,6 +70,7 @@ export function webhookTrigger<const TSlug extends string, TInput extends z.ZodT
     },
     run({ input, req }) {
       const delivery = req.data as Delivery;
+
       return Promise.resolve(
         delivery?.type === resourceType &&
           delivery.action === action &&

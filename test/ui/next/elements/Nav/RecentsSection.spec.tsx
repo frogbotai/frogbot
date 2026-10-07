@@ -47,6 +47,7 @@ import { NavSection, RecentsSection } from '../../../../../packages/next/src/ind
 
 function props(): { req: PayloadRequest } & ServerProps {
   const req = { user: { id: 'user-1' } } as PayloadRequest;
+
   return {
     i18n: {} as ServerProps['i18n'],
     payload: {
@@ -64,6 +65,7 @@ describe('RecentsSection', () => {
     find.mockReset();
     pathname = '/control';
     push.mockReset();
+
     vi.stubGlobal('matchMedia', () => ({
       addEventListener: vi.fn(),
       matches: false,
@@ -78,6 +80,7 @@ describe('RecentsSection', () => {
         { id: 2, title: null },
       ],
     });
+
     const componentProps = props();
     render(await RecentsSection(componentProps));
 
@@ -139,6 +142,7 @@ describe('RecentsSection', () => {
 
   it('keeps the server seed and refreshes immediately after a chat mutation', async () => {
     vi.stubGlobal('fetch', fetch);
+
     fetch.mockResolvedValueOnce(
       Response.json({
         docs: [{ id: 'new', title: 'New chat', agent: 'general' }],
@@ -149,22 +153,26 @@ describe('RecentsSection', () => {
         hasPrevPage: false,
       }),
     );
+
     find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
     render(await RecentsSection(props()));
 
     expect(screen.getByRole('link', { name: 'Seed chat' })).not.toBeNull();
+
     act(() => {
       window.dispatchEvent(new Event('frogbot:chats:mutated'));
     });
 
     expect(await screen.findByRole('link', { name: 'New chat' })).not.toBeNull();
     expect(fetch).toHaveBeenCalledTimes(1);
+
     vi.unstubAllGlobals();
   });
 
   it('confirms deletion and leaves an active recent document', async () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', fetch);
+
     fetch
       .mockResolvedValueOnce(
         Response.json({
@@ -187,6 +195,7 @@ describe('RecentsSection', () => {
         }),
       )
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
     find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
     pathname = '/control/collections/conversations/seed';
     render(await RecentsSection(props()));
@@ -210,6 +219,7 @@ describe('RecentsSection', () => {
       hasNextPage: false,
       hasPrevPage: false,
     };
+
     fetch.mockResolvedValue(Response.json(result));
     find.mockResolvedValueOnce({ docs: [] });
     render(await RecentsSection(props()));
@@ -217,9 +227,11 @@ describe('RecentsSection', () => {
     act(() => {
       window.dispatchEvent(new Event('focus'));
     });
+
     await act(async () => vi.advanceTimersByTimeAsync(30_000));
 
     expect(fetch).toHaveBeenCalledTimes(2);
+
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
@@ -260,6 +272,7 @@ describe('RecentsSection', () => {
         { id: 'old', title: 'Old chat', agent: '', lastMessageAt: '2020-01-01T00:00:00.000Z' },
       ],
     });
+
     pathname = '/control/collections/conversations/today';
     const view = render(await RecentsSection(props()));
 
@@ -273,6 +286,7 @@ describe('RecentsSection', () => {
 
     pathname = '/control/collections/conversations/old';
     view.rerender(await RecentsSection(props()));
+
     expect(screen.getByRole('link', { name: 'Old chat' }).getAttribute('aria-current')).toBe(
       'page',
     );

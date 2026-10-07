@@ -29,6 +29,7 @@ function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
   });
+
   return createApp({ registry });
 }
 
@@ -93,13 +94,16 @@ describeLive(
         // 2. Each in ITS OWN correct wire envelope — the shapes must differ.
         // chat.completions — OpenAI chatcmpl envelope.
         expect(chat.body.object).toBe('chat.completion');
+
         const chatText = chat.body.choices?.[0]?.message?.content ?? '';
+
         expect(typeof chatText).toBe('string');
 
         // messages — Anthropic message envelope.
         expect(messages.body.type).toBe('message');
         expect(messages.body.role).toBe('assistant');
         expect(Array.isArray(messages.body.content)).toBe(true);
+
         const messagesText = (messages.body.content ?? [])
           .filter((b) => b.type === 'text')
           .map((b) => b.text ?? '')
@@ -109,6 +113,7 @@ describeLive(
         expect(responses.body.object).toBe('response');
         expect(responses.body.status).toBe('completed');
         expect(typeof responses.body.output_text).toBe('string');
+
         const responsesText = responses.body.output_text ?? '';
 
         // The three envelopes are genuinely distinct surfaces (no route leaking

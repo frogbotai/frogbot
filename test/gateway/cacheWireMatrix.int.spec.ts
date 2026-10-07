@@ -58,10 +58,12 @@ function buildCacheApp(args: {
   const requests: CapturedRequest[] = [];
   const fetch = (input: RequestInfo | URL, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+
     requests.push({
       body,
       url: input instanceof Request ? input.url : String(input),
     });
+
     if (body.stream === true) {
       const chunks =
         args.providerName === 'openai'
@@ -108,15 +110,20 @@ function buildCacheApp(args: {
               },
               { type: 'message_stop' },
             ];
+
       const text = chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('');
+
       return Promise.resolve(
         new Response(text, { headers: { 'content-type': 'text/event-stream' } }),
       );
     }
+
     return Promise.resolve(Response.json(args.successBody));
   };
+
   const provider = args.providerFactory(fetch);
   const registry = { [args.providerName]: provider } as ProviderRegistry;
+
   return { app: createApp({ registry }), requests };
 }
 
@@ -147,6 +154,7 @@ const providers = [
     successBody: successBodies.openai,
     factory: (fetch: typeof globalThis.fetch) => {
       const provider = createOpenAI({ apiKey: 'test', fetch });
+
       return { ...provider, languageModel: provider.chat };
     },
   },
@@ -179,6 +187,7 @@ describe('cache wire matrix harness', () => {
         providerFactory: provider.factory,
         successBody: provider.successBody,
       });
+
       const { status } = await postJson(app, '/v1/chat/completions', {
         model: `${provider.name}/${provider.model}`,
         messages: [{ role: 'user', content: 'hello' }],
@@ -400,6 +409,7 @@ const wireCases: WireCase[] = [
 function providerNamed(name: string) {
   const provider = providers.find((entry) => entry.name === name);
   if (!provider) throw new Error(`Missing provider ${name}`);
+
   return provider;
 }
 
@@ -411,6 +421,7 @@ describe('cache wire matrix', () => {
       providerFactory: provider.factory,
       successBody: provider.successBody,
     });
+
     const { status, body } = await postJson(app, wireCase.route, {
       model: `${provider.name}/${wireCase.model ?? provider.model}`,
       max_tokens: 32,
@@ -419,6 +430,7 @@ describe('cache wire matrix', () => {
 
     expect(status, JSON.stringify(body)).toBe(200);
     expect(requests).toHaveLength(1);
+
     wireCase.assertBody(requests[0].body);
   });
 });
@@ -426,12 +438,14 @@ describe('cache wire matrix', () => {
 describe('cache wire streaming matrix', () => {
   for (const route of ['/v1/chat/completions', '/v1/messages'] as const) {
     const provider = providers.find((entry) => entry.name === 'anthropic')!;
+
     it(`captures Anthropic cache control for streaming ${route}`, async () => {
       const { app, requests } = buildCacheApp({
         providerName: provider.name,
         providerFactory: provider.factory,
         successBody: provider.successBody,
       });
+
       const requestBody =
         route === '/v1/messages'
           ? {
@@ -455,11 +469,13 @@ describe('cache wire streaming matrix', () => {
                 },
               ],
             };
+
       const response = await app.request(route, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(requestBody),
       });
+
       await response.text();
 
       expect(response.status).toBe(200);
@@ -482,6 +498,7 @@ describe('cache wire streaming matrix', () => {
       providerFactory: provider.factory,
       successBody: provider.successBody,
     });
+
     const response = await app.request('/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -497,6 +514,7 @@ describe('cache wire streaming matrix', () => {
         ],
       }),
     });
+
     await response.text();
 
     expect(response.status).toBe(200);

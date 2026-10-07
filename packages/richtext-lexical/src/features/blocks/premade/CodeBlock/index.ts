@@ -4,6 +4,7 @@ import { fromPayloadFields } from 'frogbot/internal';
 import type { Block as PayloadBlock } from 'payload';
 
 type UpstreamCodeBlockArgs = NonNullable<Parameters<typeof upstreamCodeBlock>[0]>;
+
 type CodeBlockConfig = Omit<PayloadBlock, 'fields'> & { fields: Field[] };
 
 export type CodeBlockArgs = Omit<UpstreamCodeBlockArgs, 'fieldOverrides'> & {

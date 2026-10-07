@@ -1,7 +1,9 @@
 import type { SQLiteAdapter } from '@payloadcms/db-sqlite';
 
 type Client = SQLiteAdapter['client'];
+
 type Transaction = Awaited<ReturnType<Client['transaction']>>;
+
 type Mode = 'deferred' | 'read' | 'write';
 
 const locked = new WeakSet<Client>();
@@ -162,6 +164,7 @@ function createLock(timeout: number) {
       const grant = () => {
         clearTimeout(timer);
         held = true;
+
         resolve(() => {
           if (released) return;
 
@@ -174,6 +177,7 @@ function createLock(timeout: number) {
 
       timer = setTimeout(() => {
         waiting.splice(waiting.indexOf(grant), 1);
+
         reject(
           new Error(
             `SQLite write waited ${Date.now() - started} ms for the write lock and gave up (\`writeLockTimeout\` is ${timeout} ms). Either a write ran without \`req\` while a transaction was open, so it waited on the transaction it belongs to (pass \`req\` so it joins the transaction), or a long transaction held the lock (shorten it, or raise \`writeLockTimeout\`).`,
@@ -210,6 +214,7 @@ const readPragmasWithArgument = new Set([
   'table_list',
   'table_xinfo',
 ]);
+
 const writePragmas = new Set(['incremental_vacuum', 'optimize', 'wal_checkpoint']);
 
 /**

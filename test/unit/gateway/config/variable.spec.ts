@@ -18,6 +18,7 @@ describe('interpolateConfigText', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ FROGBOTAI_VAR_KEY: 'plain-key' }),
     });
+
     expect(JSON.parse(out)).toEqual({ apiKey: 'plain-key' });
   });
 
@@ -28,6 +29,7 @@ describe('interpolateConfigText', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ FROGBOTAI_VAR_SPECIAL: value }),
     });
+
     expect(JSON.parse(out)).toEqual({ apiKey: value });
   });
 
@@ -56,11 +58,13 @@ describe('interpolateConfigText', () => {
       source: join(dir, 'gateway.config.json'),
       env: testEnv(),
     });
+
     expect(JSON.parse(out)).toEqual({ apiKey: 'line"1\nline\\2' });
   });
 
   it('throws ConfigError for an unreadable file', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:./nope.txt}' }),
@@ -78,6 +82,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ FOO: 'resolved' }),
     });
+
     expect(out).toBe('{env:FOO}');
   });
 
@@ -87,6 +92,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ FOO: 'resolved' }),
     });
+
     expect(out).toBe('resolved');
   });
 
@@ -96,6 +102,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv(),
     });
+
     expect(out).toBe('{file:./secret.txt}');
   });
 
@@ -105,6 +112,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ FOO: 'resolved' }),
     });
+
     expect(out).toBe('\\resolved');
   });
 
@@ -114,6 +122,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ A: 'aa', B: 'bb' }),
     });
+
     expect(out).toBe('{env:A}bb');
   });
 
@@ -123,6 +132,7 @@ describe('interpolateConfigText escape syntax (D5c)', () => {
       source: '/tmp/gateway.config.json',
       env: testEnv({ FOO: 'resolved' }),
     });
+
     expect(out).toBe('{file:./{env:FOO}.txt}');
   });
 });
@@ -136,6 +146,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       source: join(dir, 'gateway.config.json'),
       env: testEnv(),
     });
+
     expect(JSON.parse(out)).toEqual({ apiKey: 'ok' });
   });
 
@@ -148,11 +159,13 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       source: join(dir, 'gateway.config.json'),
       env: testEnv(),
     });
+
     expect(JSON.parse(out)).toEqual({ apiKey: 'deep' });
   });
 
   it('blocks an absolute path outside the config directory', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:/etc/passwd}' }),
@@ -164,6 +177,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
 
   it('blocks relative traversal escaping the config directory', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:../../etc/shadow}' }),
@@ -175,6 +189,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
 
   it('blocks the filesystem root', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:/}' }),
@@ -192,6 +207,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
     mkdirSync(outside);
     writeFileSync(join(outside, 'secret.txt'), 'exfiltrated');
     symlinkSync(join(outside, 'secret.txt'), join(dir, 'link.txt'));
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:./link.txt}' }),
@@ -210,11 +226,13 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
       source: join(dir, 'gateway.config.json'),
       env: testEnv(),
     });
+
     expect(JSON.parse(out)).toEqual({ apiKey: 'inside' });
   });
 
   it('produces a distinguishable error for a not-found file inside the directory', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:./missing.txt}' }),
@@ -226,6 +244,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
 
   it('does not report a not-found error for a path escaping the directory', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:/etc/definitely-not-here-xyz}' }),
@@ -237,6 +256,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
 
   it('throws a graceful error for an empty file path', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:}' }),
@@ -248,6 +268,7 @@ describe('interpolateConfigText path traversal guard (D5b)', () => {
 
   it('blocks a home-relative path that escapes the config directory', async () => {
     const dir = scratch();
+
     await expect(
       interpolateConfigText({
         text: JSON.stringify({ apiKey: '{file:~/../outside}' }),

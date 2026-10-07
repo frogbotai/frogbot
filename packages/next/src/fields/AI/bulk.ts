@@ -221,6 +221,7 @@ export function aiBulkRequests({
           ...(status ? [{ _status: { equals: status } }] : []),
         ],
       });
+
       appendQuery(params, 'locale', locale);
 
       if (status) params.set('draft', 'true');

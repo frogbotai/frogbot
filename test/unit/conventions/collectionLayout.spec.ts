@@ -23,6 +23,7 @@ const sourcePattern = /\.(?:ts|tsx|js|mjs)$/;
 const generatedFiles = new Set(['frogbot-types.ts', 'importMap.js']);
 const collectionReferencePattern =
   /(['"`])((?:\.{1,2}|@)\/(?:[^'"`\n]*\/)?collections(?:\/[^'"`\n/]+)?)\1/g;
+
 const importPrefixPattern = /(?:\bfrom\s*|\bimport\s*\(\s*)$/;
 const extensionPattern = /\.[cm]?[jt]sx?$/;
 const barrelImportPattern = /from ['"](\.{1,2}\/)+(src\/)?collections['"]/;

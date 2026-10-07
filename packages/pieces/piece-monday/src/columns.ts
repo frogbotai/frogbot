@@ -109,11 +109,13 @@ export function formatColumnValue(type: string, value: unknown): unknown {
 
       return { countryCode, countryName };
     }
+
     case 'date': {
       const date = new Date(String(value));
 
       return { date: date.toISOString().slice(0, 10), time: date.toISOString().slice(11, 19) };
     }
+
     case 'dropdown':
       return { labels: value };
     case 'email':
@@ -123,6 +125,7 @@ export function formatColumnValue(type: string, value: unknown): unknown {
 
       return { hour, minute };
     }
+
     case 'link':
       return { url: value, text: value };
     case 'location': {
@@ -130,6 +133,7 @@ export function formatColumnValue(type: string, value: unknown): unknown {
 
       return { lat, lng, address };
     }
+
     case 'long_text':
       return { text: value };
     case 'numbers':
@@ -143,6 +147,7 @@ export function formatColumnValue(type: string, value: unknown): unknown {
 
       return { phone: `+${phone}`, countryShortName };
     }
+
     case 'rating':
       return { rating: Number(value) };
     case 'status':
@@ -152,11 +157,13 @@ export function formatColumnValue(type: string, value: unknown): unknown {
 
       return { from, to };
     }
+
     case 'week': {
       const [startDate, endDate] = String(value).split(';');
 
       return { startDate, endDate };
     }
+
     case 'world_clock':
       return { timezone: value };
     default:

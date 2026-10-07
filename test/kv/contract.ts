@@ -74,13 +74,16 @@ export function kvContract({
           await stores[0].set(key, 'expired owner', { ttl: expiryTTL });
           await waitForExpiry();
         }
+
         const attempts = Array.from({ length: 24 }, (_, index) => ({
           store: stores[index % stores.length],
           value: `owner-${index}`,
         }));
+
         const results = await Promise.all(
           attempts.map(({ store, value }) => store.setIfAbsent(key, value, { ttl: 10_000 })),
         );
+
         expect(results.filter(Boolean)).toHaveLength(1);
         const winner = attempts[results.indexOf(true)].value;
         expect(await stores[0].get(key)).toBe(winner);
@@ -95,6 +98,7 @@ export function kvContract({
           stores[index % stores.length].acquireLock('lock-contention', 10_000),
         ),
       );
+
       const winners = results.filter((lock): lock is KVLock => lock !== null);
       expect(winners).toHaveLength(1);
       expect(await stores[1].get(winners[0].key)).toBe(winners[0].token);
@@ -157,13 +161,17 @@ export function kvContract({
     it('rejects invalid TTLs without mutating an existing value', async () => {
       const [a, b] = clients();
       await a.set('invalid-ttl', 'keep');
+
       for (const ttl of [0, -1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
         await expect(b.set('invalid-ttl', 'bad', { ttl })).rejects.toBeInstanceOf(RangeError);
+
         await expect(b.setIfAbsent('invalid-absent', 'bad', { ttl })).rejects.toBeInstanceOf(
           RangeError,
         );
+
         await expect(b.acquireLock('invalid-lock', ttl)).rejects.toBeInstanceOf(RangeError);
       }
+
       expect(await a.get('invalid-ttl')).toBe('keep');
       expect(await a.has('invalid-absent')).toBe(false);
       expect(await a.has('invalid-lock')).toBe(false);

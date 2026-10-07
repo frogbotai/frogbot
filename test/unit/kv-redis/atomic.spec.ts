@@ -53,24 +53,32 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
   it('preserves inherited CRUD, prefix isolation, and raw JSON serialization', async () => {
     const outsideKey = `frogbot-kv-outside:${randomUUID()}`;
     await owner.redisClient.set(outsideKey, 'untouched');
+
     onTestFinished(async () => {
       await owner.redisClient.del(outsideKey);
     });
+
     await owner.set('nested', { nested: ['value', 42, true, null] });
     await owner.set('string', 'value');
+
     expect(await owner.redisClient.get(`${keyPrefix}string`)).toBe('"value"');
     expect(await contender.get('nested')).toEqual({ nested: ['value', 42, true, null] });
     expect(await owner.has('nested')).toBe(true);
     expect((await owner.keys()).sort()).toEqual(['nested', 'string']);
+
     await owner.delete('nested');
+
     expect(await contender.get('nested')).toBeNull();
+
     await owner.clear();
+
     expect(await owner.keys()).toEqual([]);
     expect(await owner.redisClient.get(outsideKey)).toBe('untouched');
   });
 
   it('expires values and hides them from inherited reads', async () => {
     await owner.set('temporary', { value: 42 }, { ttl: 40 });
+
     expect(await contender.get('temporary')).toEqual({ value: 42 });
     await expect.poll(() => contender.get('temporary')).toBeNull();
     expect(await contender.has('temporary')).toBe(false);
@@ -80,8 +88,11 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
   it('replaces expiration and clears it on ordinary overwrite', async () => {
     await owner.set('key', 'first', { ttl: 10_000 });
     await owner.set('key', 'second', { ttl: 20_000 });
+
     expect(await owner.redisClient.pttl(`${keyPrefix}key`)).toBeGreaterThan(10_000);
+
     await owner.set('key', 'permanent');
+
     expect(await contender.get('key')).toBe('permanent');
     expect(await owner.redisClient.pttl(`${keyPrefix}key`)).toBe(-1);
   });
@@ -97,9 +108,12 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
           (index % 2 === 0 ? owner : contender).setIfAbsent('race', `token-${index}`, { ttl }),
         ),
       );
+
       expect(results.filter(Boolean)).toHaveLength(1);
       expect(await owner.get('race')).toBe(`token-${results.indexOf(true)}`);
+
       const expiry = await owner.redisClient.pttl(`${keyPrefix}race`);
+
       expect(expiry).toBeGreaterThanOrEqual(minExpiry);
       expect(expiry).toBeLessThanOrEqual(maxExpiry);
     },
@@ -107,6 +121,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
 
   it('does not mutate an occupied key or its expiry when a claim fails', async () => {
     await owner.set('key', 'owner', { ttl: 10_000 });
+
     expect(await contender.setIfAbsent('key', 'other', { ttl: 100_000 })).toBe(false);
     expect(await contender.setIfAbsent('key', 'other')).toBe(false);
     expect(await owner.get('key')).toBe('owner');
@@ -116,6 +131,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
 
   it('reclaims expired keys without cleanup and rejects an expired owner', async () => {
     const lock = { key: 'key', token: 'old-owner' };
+
     expect(await owner.setIfAbsent(lock.key, lock.token, { ttl: 40 })).toBe(true);
     await expect.poll(() => owner.redisClient.pttl(`${keyPrefix}key`)).toBe(-2);
     expect(await owner.extendLock(lock, 10_000)).toBe(false);
@@ -129,6 +145,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
   it('renews and releases only the current JSON-encoded token', async () => {
     const lock = { key: 'key', token: 'owner-"\\-🐸' };
     await owner.setIfAbsent(lock.key, lock.token, { ttl: 10_000 });
+
     expect(await owner.redisClient.get(`${keyPrefix}key`)).toBe(JSON.stringify(lock.token));
     expect(await contender.extendLock({ key: 'key', token: 'wrong' }, 30_000)).toBe(false);
     expect(await contender.releaseLock({ key: 'key', token: 'wrong' })).toBe(false);
@@ -143,6 +160,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
     const lock = { key: 'key', token: 'owner' };
     await owner.setIfAbsent(lock.key, lock.token, { ttl: 10_000 });
     await contender.set(lock.key, lock.token);
+
     expect(await owner.extendLock(lock, 30_000)).toBe(false);
     expect(await owner.releaseLock(lock)).toBe(false);
     expect(await owner.get(lock.key)).toBe(lock.token);
@@ -156,6 +174,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
       owner.extendLock(lock, 30_000),
       contender.releaseLock(lock),
     ]);
+
     expect(released).toBe(true);
     expect(await owner.has(lock.key)).toBe(false);
     expect(await owner.extendLock(lock, 30_000)).toBe(false);
@@ -170,12 +189,16 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
 
     await owner.set('near-limit', 'value', { ttl: validTTL });
     const expiresAt = Number(await owner.redisClient.call('PEXPIRETIME', `${keyPrefix}near-limit`));
+
     expect(expiresAt).toBeGreaterThan(8_640_000_000_000_000 - 60_001);
     expect(expiresAt).toBeLessThanOrEqual(8_640_000_000_000_000);
+
     await owner.setIfAbsent('claim', 'owner', { ttl: 10_000 });
+
     expect(await owner.extendLock({ key: 'claim', token: 'owner' }, 20_000)).toBe(true);
 
     vi.mocked(Date.now).mockReturnValue(0);
+
     await expect(owner.set('near-limit', 'wrong', { ttl: overflowTTL })).rejects.toBeInstanceOf(
       RangeError,
     );
@@ -192,6 +215,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
 
   it('rejects safe-integer overflow without changing an existing value', async () => {
     await owner.set('key', 'original');
+
     await expect(
       owner.set('key', 'wrong', { ttl: Number.MAX_SAFE_INTEGER }),
     ).rejects.toBeInstanceOf(RangeError);
@@ -205,6 +229,7 @@ describe.skipIf(!process.env.REDIS_TEST_URL)('Redis atomic contract', () => {
       kv: {
         acquireLock: async (key, ttl): Promise<KVLock | null> => {
           const token = randomUUID();
+
           return (await owner.setIfAbsent(key, token, { ttl })) ? { key, token } : null;
         },
         extendLock: owner.extendLock.bind(owner),

@@ -112,6 +112,7 @@ async function asked({
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
 
   await fixture.host.initialize(false);
+
   await fixture.host.webhook(
     'discord',
     forwardedGateway({
@@ -220,11 +221,13 @@ describe('Discord native questions through the channel host', () => {
   beforeEach(() => {
     api.reset();
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},
       allSettled: true,
     });
+
     continueTurn.mockReset();
   });
 
@@ -245,6 +248,7 @@ describe('Discord native questions through the channel host', () => {
     expect(card.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
     expect(JSON.stringify(card.body)).toContain(control('option', 1));
   });
+
   it('records the card with the time Discord posted it', async () => {
     const { fixture, messageId } = await asked();
     const [card] = api.cards('T1');
@@ -368,6 +372,7 @@ describe('Discord native questions through the channel host', () => {
         }),
       ],
     });
+
     const before = api.calls.length;
 
     await click({ fixture, messageId, customId: control('select', 0), values: ['2', '0'] });
@@ -392,6 +397,7 @@ describe('Discord native questions through the channel host', () => {
         }),
       ],
     });
+
     const before = api.calls.length;
 
     await click({ fixture, messageId, customId: control('submit') });
@@ -586,6 +592,7 @@ describe('Discord native questions through the channel host', () => {
       "[frogbot] Channel question 'settled' hook failed.",
     );
   });
+
   it('keeps a set unchanged when a participant without access answers its first question', async () => {
     const { fixture, messageId } = await asked({ calls: [colorSet] });
 
@@ -680,6 +687,7 @@ describe('Discord native questions through the channel host', () => {
         }),
       }),
     );
+
     await fixture.host.run(JSON.parse(JSON.stringify(fixture.inputs.at(-1))));
 
     expect(settleClientToolCall).not.toHaveBeenCalled();

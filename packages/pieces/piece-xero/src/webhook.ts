@@ -14,6 +14,7 @@ export const xeroWebhook: PieceWebhook<XeroOptions> = {
       const expected = createHmac('sha256', options.webhookKey)
         .update(Buffer.from(await req.arrayBuffer()))
         .digest();
+
       const actual = Buffer.from(signature, 'base64');
 
       return actual.length === expected.length && timingSafeEqual(actual, expected);

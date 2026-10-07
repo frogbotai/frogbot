@@ -15,6 +15,7 @@ function userID(req: FrogBotRequest): number | string | undefined {
 
 const owner: Access = ({ req }) => {
   const id = userID(req);
+
   return id !== undefined ? { user: { equals: id } } : false;
 };
 

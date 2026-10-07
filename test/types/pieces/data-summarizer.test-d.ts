@@ -15,6 +15,7 @@ expectTypeOf<Parameters<typeof dataSummarizer.countUniqueValues>[0]['input']>().
   values: unknown[];
   fields?: string[] | undefined;
 }>();
+
 expectTypeOf(uniques).toEqualTypeOf<Promise<{ numUniques: number }>>();
 
 const _calculateSumRejectsCountUniqueValuesInput = () =>

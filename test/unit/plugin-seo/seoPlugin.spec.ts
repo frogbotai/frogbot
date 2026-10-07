@@ -299,6 +299,7 @@ describe('seoPlugin', () => {
         ],
         plugins: [seoPlugin({ collections: [slugs.posts, slugs.pages], tabbedUI })],
       });
+
       const payloadConfig = await config._internal.payloadConfig;
       const posts = payloadConfig.collections.find(({ slug }) => slug === slugs.posts)!;
       const pages = payloadConfig.collections.find(({ slug }) => slug === slugs.pages)!;
@@ -315,6 +316,7 @@ describe('seoPlugin', () => {
       collections: [{ slug: slugs.users, auth: true, fields: [] }],
       plugins: [seoPlugin({ collections: [] })],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(payloadConfig.endpoints).toEqual(

@@ -4,6 +4,7 @@ import { CredentialCryptoError } from './encryption.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
 export type ConnectionOwner = { id: number | string; collection: string };
+
 export type ConnectionRow = {
   id: number | string;
   owner: number | string;
@@ -19,8 +20,11 @@ export type ConnectionRow = {
 };
 
 export type ConnectionMetadata = Omit<ConnectionRow, 'credential'>;
+
 export type ConnectionStoredValue = ConnectionMetadata & { credential: PieceJSON };
+
 export type ConnectionStoreKey = { owner: ConnectionOwner; piece: string };
+
 export type ConnectionStoreWrite = {
   method: ConnectionRow['method'];
   credential: PieceJSON;
@@ -29,6 +33,7 @@ export type ConnectionStoreWrite = {
   expiresAt?: string | null;
   status?: ConnectionRow['status'];
 };
+
 export type ConnectionStoreLock = {
   signal: AbortSignal;
   get(): Promise<ConnectionStoredValue | undefined>;
@@ -139,6 +144,7 @@ export class ConnectionStore {
       pagination: false,
       overrideAccess: true,
     });
+
     return (result.docs as ConnectionRow[]).map(metadata);
   }
 
@@ -153,6 +159,7 @@ export class ConnectionStore {
 
     try {
       const credential = JSON.parse(await state.config.encryption.decrypt(row.credential));
+
       return { ...metadata(row), credential };
     } catch {
       throw new CredentialCryptoError();
@@ -194,6 +201,7 @@ export class ConnectionStore {
             check();
             const value = await this.get(key);
             check();
+
             return value;
           },
           upsert: async (data) => {
@@ -220,6 +228,7 @@ export class ConnectionStore {
               expiresAt: data.expiresAt ?? null,
               status: data.status ?? 'active',
             };
+
             const options = {
               collection: slug,
               data: write,
@@ -230,6 +239,7 @@ export class ConnectionStore {
             const saved = row
               ? await frogbot.update({ ...options, id: row.id })
               : await frogbot.create(options);
+
             check();
 
             return metadata(saved as ConnectionRow);
@@ -245,6 +255,7 @@ export class ConnectionStore {
               id: row.id,
               overrideAccess: true,
             });
+
             check();
 
             return true;

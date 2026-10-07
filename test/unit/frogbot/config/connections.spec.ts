@@ -57,6 +57,7 @@ describe('connection config boot', () => {
     const enabled = combination.secret || combination.oauth;
     const result = sanitize(config({ connections }));
     const payload = await result._internal.payloadConfig;
+
     expect(result.connections.enabled).toBe(enabled);
     expect(payload.collections.filter(({ slug }) => slug === 'connections')).toHaveLength(
       enabled ? 1 : 0,
@@ -91,6 +92,7 @@ describe('connection config boot', () => {
       oauth: false,
       connect: () => {
         const piece = createPiece({ slug });
+
         return { piece, connections: [{ piece, secret: true }] };
       },
     },
@@ -100,6 +102,7 @@ describe('connection config boot', () => {
       oauth: true,
       connect: () => {
         const piece = createPiece({ slug, oauth });
+
         return { piece, connections: [{ piece, oauth: true }] };
       },
     },
@@ -109,6 +112,7 @@ describe('connection config boot', () => {
       oauth: false,
       connect: () => {
         const piece = createPiece({ slug, auth });
+
         return { piece, connections: [{ piece, secret: true }] };
       },
     },
@@ -118,6 +122,7 @@ describe('connection config boot', () => {
       oauth: true,
       connect: () => {
         const piece = createPiece({ slug, auth, oauth });
+
         return { piece, connections: [{ piece, oauth: true }] };
       },
     },
@@ -127,6 +132,7 @@ describe('connection config boot', () => {
       oauth: true,
       connect: () => {
         const piece = createPiece({ slug, oauth });
+
         return { piece, connections: [{ piece, secret: true, oauth: true }] };
       },
     },
@@ -136,6 +142,7 @@ describe('connection config boot', () => {
       oauth: true,
       connect: () => {
         const piece = createPiece({ slug, auth, oauth });
+
         return { piece, connections: [{ piece, secret: true, oauth: true }] };
       },
     },
@@ -149,14 +156,18 @@ describe('connection config boot', () => {
         expect.objectContaining({ method: 'delete', path: '/:id' }),
       ]),
     );
+
     const entry = result.connections.entries.example;
+
     expect(entry?.piece).toBe(piece);
     expect(entry).toMatchObject({ secret: combination.secret, oauth: combination.oauth });
     expect(JSON.stringify(entry?.secretSchema ?? {})).not.toContain('developer-secret');
     expect(Boolean(entry?.secretSchema)).toBe(combination.secret);
+
     const owner = payload.collections
       .find(({ slug }) => slug === 'connections')
       ?.fields.find((field) => 'name' in field && field.name === 'owner');
+
     expect(owner).toMatchObject({ relationTo: 'users' });
   });
 
@@ -177,7 +188,9 @@ describe('connection config boot', () => {
         ],
       }),
     );
+
     const payload = await result._internal.payloadConfig;
+
     expect(result.pieces.instances).toEqual(expect.arrayContaining([linked, mounted]));
     expect(result.pieces.instances.filter((instance) => instance === linked)).toHaveLength(1);
     expect(result.agents?.[0]?.tools?.map(({ slug }) => slug)).toEqual(['mounted_read']);
@@ -191,6 +204,7 @@ describe('connection config boot', () => {
   it.each([undefined, []])('keeps linking disabled without entries %j', async (connections) => {
     const result = sanitize(config({ connections }));
     const payload = await result._internal.payloadConfig;
+
     expect(result.connections.enabled).toBe(false);
     expect(payload.collections.some(({ slug }) => slug === 'connections')).toBe(false);
   });
@@ -258,6 +272,7 @@ describe('connection config boot', () => {
       // @ts-expect-error OAuth on a piece without factory OAuth must be rejected at runtime
       sanitize(config({ connections: [{ piece: createPiece(), oauth: true }] })),
     ).toThrow('requires factory OAuth clientId and clientSecret');
+
     const opaque = definePiece({
       slug: 'opaque',
       label: 'Opaque',
@@ -270,6 +285,7 @@ describe('connection config boot', () => {
       },
       actions: [],
     })({ oauth });
+
     expect(() =>
       sanitize(config({ connections: [{ piece: opaque, oauth: true, secret: true }] })),
     ).toThrow('requires a user-enterable static credential schema');

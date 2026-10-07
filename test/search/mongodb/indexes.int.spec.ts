@@ -146,6 +146,7 @@ describe.skipIf(skipSearch)('MongoDB search indexes', () => {
       db.collections[postsSlug],
       db.versions[postsSlug],
     ];
+
     const creates = models.map((model) => vi.spyOn(model, 'createSearchIndex'));
     const updates = models.map((model) => vi.spyOn(model, 'updateSearchIndex'));
 

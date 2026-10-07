@@ -148,6 +148,7 @@ export function extractThinkingTokens(
 ): number | undefined {
   const details = rawUsage?.output_tokens_details as Record<string, unknown> | undefined;
   const thinking = details?.thinking_tokens;
+
   return typeof thinking === 'number' ? thinking : undefined;
 }
 
@@ -159,11 +160,14 @@ export function extractCacheCreation(
     typeof breakdown?.ephemeral_5m_input_tokens === 'number'
       ? breakdown.ephemeral_5m_input_tokens
       : undefined;
+
   const ephemeral1h =
     typeof breakdown?.ephemeral_1h_input_tokens === 'number'
       ? breakdown.ephemeral_1h_input_tokens
       : undefined;
+
   if (ephemeral5m === undefined && ephemeral1h === undefined) return undefined;
+
   return { ephemeral5mInputTokens: ephemeral5m, ephemeral1hInputTokens: ephemeral1h };
 }
 
@@ -197,6 +201,7 @@ export function mapStopReason(reason: string, rawReason?: string): AnthropicStop
   if (rawReason !== undefined && ANTHROPIC_STOP_REASONS.has(rawReason)) {
     return rawReason as AnthropicStopReason;
   }
+
   switch (reason) {
     case 'stop':
       return 'end_turn';

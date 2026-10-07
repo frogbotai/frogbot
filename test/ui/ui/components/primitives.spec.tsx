@@ -32,6 +32,7 @@ describe('primitives', () => {
         <Skeleton data-testid="skeleton" />
       </>,
     );
+
     expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
     expect(screen.getByRole('textbox', { name: 'Message' })).toBeTruthy();
     expect(screen.getByText('Card')).toBeTruthy();
@@ -47,15 +48,19 @@ describe('primitives', () => {
       ghost: 'fb-button--ghost',
       link: 'fb-button--link',
     } as const;
+
     for (const variant of Object.keys(variants) as Array<keyof typeof variants>) {
       const { unmount } = render(<Button variant={variant}>{variant}</Button>);
+
       expect(screen.getByRole('button').className).toContain(variants[variant]);
+
       unmount();
     }
   });
 
   it('opens tooltips from keyboard focus', async () => {
     const user = userEvent.setup();
+
     render(
       <TooltipProvider delayDuration={0}>
         <Tooltip>
@@ -64,12 +69,15 @@ describe('primitives', () => {
         </Tooltip>
       </TooltipProvider>,
     );
+
     await user.tab();
+
     expect((await screen.findByRole('tooltip')).textContent).toContain('Details');
   });
 
   it('supports dropdown keyboard focus and Escape', async () => {
     const user = userEvent.setup();
+
     render(
       <DropdownMenu>
         <DropdownMenuTrigger>Menu</DropdownMenuTrigger>
@@ -78,11 +86,17 @@ describe('primitives', () => {
         </DropdownMenuContent>
       </DropdownMenu>,
     );
+
     await user.click(screen.getByRole('button', { name: 'Menu' }));
+
     expect(screen.getByRole('menu')).toBeTruthy();
+
     await user.keyboard('{ArrowDown}');
+
     expect(document.activeElement).toBe(screen.getByRole('menuitem'));
+
     await user.keyboard('{Escape}');
+
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Menu' }));
   });
@@ -90,6 +104,7 @@ describe('primitives', () => {
   it('selects an item with the keyboard', async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn();
+
     render(
       <Select onValueChange={onValueChange}>
         <SelectTrigger aria-label="Choice">
@@ -101,9 +116,11 @@ describe('primitives', () => {
         </SelectContent>
       </Select>,
     );
+
     screen.getByRole('combobox').focus();
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' });
     await user.keyboard('{ArrowDown}{Enter}');
+
     expect(onValueChange).toHaveBeenCalled();
   });
 });

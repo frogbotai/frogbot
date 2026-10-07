@@ -25,6 +25,7 @@ describe('genAi metrics', () => {
     vi.resetModules();
     metrics.disable();
   });
+
   afterEach(() => {
     metrics.disable();
     vi.restoreAllMocks();
@@ -33,6 +34,7 @@ describe('genAi metrics', () => {
   it('is a no-op without a registered MeterProvider and does not throw', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     expect(() => recordGenAiTokenUsage(ctx, usage, 'recommended')).not.toThrow();
   });
 
@@ -42,6 +44,7 @@ describe('genAi metrics', () => {
     const provider = {
       getMeter: () => ({ createHistogram }) as unknown as Meter,
     } as unknown as MeterProvider;
+
     metrics.setGlobalMeterProvider(provider);
 
     const { recordGenAiTokenUsage } =
@@ -79,7 +82,9 @@ describe('genAi metrics', () => {
 
     const { createGenAiHooks } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     const hooks = createGenAiHooks('required');
+
     await hooks.afterOperation?.[0]?.({
       phase: 'afterOperation',
       operation: ctx.operation,
@@ -108,6 +113,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   const collectPoints = async (metricName: string): Promise<Point[]> => {
     await reader.forceFlush();
     const histograms: HistogramMetricData[] = [];
+
     for (const rm of exporter.getMetrics()) {
       for (const sm of rm.scopeMetrics) {
         for (const metric of sm.metrics) {
@@ -120,6 +126,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
         }
       }
     }
+
     return histograms.flatMap((h) =>
       h.dataPoints
         .filter((dp) => (dp.value.count ?? 0) > 0)
@@ -130,6 +137,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   const tokenPoints = () => collectPoints('gen_ai.client.token.usage');
   const inputPoints = async () =>
     (await tokenPoints()).filter((p) => p.attributes['gen_ai.token.type'] === 'input');
+
   const outputPoints = async () =>
     (await tokenPoints()).filter((p) => p.attributes['gen_ai.token.type'] === 'output');
 
@@ -143,16 +151,19 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
       error: vi.fn(),
       fatal: vi.fn(),
     } as unknown as GatewayLogger;
+
     return { logger, warn };
   };
 
   beforeAll(() => {
     exporter = new InMemoryMetricExporter(AggregationTemporality.DELTA);
+
     reader = new PeriodicExportingMetricReader({
       exporter,
       exportIntervalMillis: 60_000,
       exportTimeoutMillis: 10_000,
     });
+
     provider = new SdkMeterProvider({ readers: [reader] });
     metrics.setGlobalMeterProvider(provider);
   });
@@ -169,6 +180,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('emits partitioned input and output points with values and attributes', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordGenAiTokenUsage(ctx, usage, 'recommended');
 
     const inputs = await inputPoints();
@@ -220,6 +232,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('clamps and warns on output sum-invariant violation (outputTokens < reasoningTokens)', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     const { logger, warn } = makeLogger();
 
     recordGenAiTokenUsage(
@@ -232,6 +245,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
     const outputs = await outputPoints();
     const text = outputs.find((p) => p.attributes['gen_ai.token.reasoning'] === false);
+
     expect(text?.value ?? 0).toBe(0);
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({ outputTokens: 50, reasoningTokens: 60 }),
@@ -243,6 +257,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('clamps and warns on input sum-invariant violation (inputTokens < cachedInputTokens)', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     const { logger, warn } = makeLogger();
 
     recordGenAiTokenUsage(
@@ -255,6 +270,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
     const inputs = await inputPoints();
     const uncached = inputs.find((p) => p.attributes['gen_ai.token.cache'] === 'uncached');
+
     expect(uncached?.value ?? 0).toBe(0);
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({ inputTokens: 30, cachedInputTokens: 50 }),
@@ -283,6 +299,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
     const inputs = await inputPoints();
     const outputs = await outputPoints();
+
     for (const p of [...inputs, ...outputs]) {
       expect(Number.isFinite(p.value)).toBe(true);
       expect(p.value).toBe(0);
@@ -292,10 +309,12 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('handles zero-token usage as all-zero points', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordGenAiTokenUsage(ctx, { inputTokens: 0, outputTokens: 0, totalTokens: 0 }, 'recommended');
 
     const inputs = await inputPoints();
     const outputs = await outputPoints();
+
     for (const p of [...inputs, ...outputs]) {
       expect(p.value).toBe(0);
     }
@@ -304,6 +323,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('emits bare (unpartitioned) points when no cache/reasoning breakdown is reported', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordGenAiTokenUsage(
       ctx,
       { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
@@ -327,6 +347,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('emits a cache=creation partition point for cache-write tokens', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordGenAiTokenUsage(
       ctx,
       {
@@ -351,9 +372,11 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('records request duration in seconds with the required gen_ai attributes', async () => {
     const { recordRequestDuration } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordRequestDuration(ctx, 1500, undefined, 'recommended');
 
     const points = await durationPoints();
+
     expect(points).toHaveLength(1);
     expect(points[0].value).toBeCloseTo(1.5, 6);
     expect(points[0].attributes).toEqual({
@@ -367,11 +390,14 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('adds error.type derived from the error status when the operation failed', async () => {
     const { recordRequestDuration } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     const { ModelNotFoundError } =
       await import('../../../../packages/gateway/src/errors/gatewayError.js');
+
     recordRequestDuration(ctx, 200, new ModelNotFoundError('openai/nope'), 'recommended');
 
     const points = await durationPoints();
+
     expect(points).toHaveLength(1);
     expect(points[0].attributes['error.type']).toBe('404 not found');
   });
@@ -379,6 +405,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('prefers the abort-effective status code from the otel bag for error.type', async () => {
     const { recordRequestDuration } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordRequestDuration(
       { ...ctx, otel: { 'frogbot.status_code_effective': 499 } },
       200,
@@ -387,6 +414,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     );
 
     const points = await durationPoints();
+
     expect(points).toHaveLength(1);
     expect(points[0].attributes['error.type']).toBe('499 error');
   });
@@ -394,6 +422,7 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   it('does not record duration when the gen_ai signal level is below recommended', async () => {
     const { recordRequestDuration } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
+
     recordRequestDuration(ctx, 1000, undefined, 'required');
 
     expect(await durationPoints()).toHaveLength(0);

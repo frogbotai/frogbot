@@ -28,7 +28,9 @@ const createComponents = (role: MessageRole): Components => ({
         </code>
       );
     }
+
     const language = className?.match(/language-(\w+)/)?.[1];
+
     return <CodeBlock code={code} language={language} role={role} />;
   },
   pre: ({ children }) => <>{children}</>,
@@ -44,6 +46,7 @@ const createComponents = (role: MessageRole): Components => ({
   del: ({ node: _, ...props }) => <span className="fb-markdown__strikethrough" {...props} />,
   a: ({ children, href, node: _, ...props }) => {
     if (!href || !safeUrl(href)) return <Fragment>{children}</Fragment>;
+
     return (
       <a
         className="fb-markdown__link"

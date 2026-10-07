@@ -27,6 +27,7 @@ function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
   });
+
   return createApp({ registry });
 }
 
@@ -77,6 +78,7 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
       expect(typeof body.model).toBe('string');
 
       const choice = body.choices?.[0];
+
       expect(choice).toBeDefined();
       expect(typeof choice!.message?.content).toBe('string');
       expect(choice!.message!.content!.length).toBeGreaterThan(0);
@@ -109,6 +111,7 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
       const frames = parseSse(raw);
       const dataFrames = frames.filter((f) => f.data !== '[DONE]');
       const chunks = dataFrames.map((f) => JSON.parse(f.data) as ChatChunk);
+
       expect(chunks.length).toBeGreaterThan(0);
 
       // First content-bearing chunk carries the assistant role.
@@ -116,18 +119,21 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
 
       // Deltas accumulate to non-empty text.
       const text = chunks.map((c) => c.choices?.[0]?.delta?.content ?? '').join('');
+
       expect(text.length).toBeGreaterThan(0);
 
       // Some chunk carries a terminal finish_reason.
       const finishReasons = chunks
         .map((c) => c.choices?.[0]?.finish_reason)
         .filter((r): r is string => typeof r === 'string' && r.length > 0);
+
       expect(finishReasons.length).toBeGreaterThan(0);
 
       // [DONE] sentinel present. G5 (double [DONE] on every chat stream) is a
       // known open bug, so we assert presence (>=1), not exactly-once.
       // TODO tighten to exactly-once when G5 fixed
       const doneCount = frames.filter((f) => f.data === '[DONE]').length;
+
       expect(doneCount).toBeGreaterThanOrEqual(1);
     },
     TEST_TIMEOUT,
@@ -162,22 +168,28 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
       });
 
       expect(status).toBe(200);
+
       const choice = body.choices?.[0];
+
       expect(choice).toBeDefined();
 
       expect(choice!.finish_reason, '[zen.e2e] model did not call the tool').toBe('tool_calls');
 
       const toolCalls = choice!.message?.tool_calls as ToolCall[] | undefined;
+
       expect(Array.isArray(toolCalls)).toBe(true);
       expect(toolCalls!.length).toBeGreaterThan(0);
 
       const call = toolCalls![0];
+
       expect(typeof call.id).toBe('string');
       expect(call.id!.length).toBeGreaterThan(0);
       expect(call.function?.name).toBe('get_weather');
       expect(typeof call.function?.arguments).toBe('string');
+
       // arguments must be valid JSON
       const args = JSON.parse(call.function!.arguments!) as Record<string, unknown>;
+
       expect(typeof args).toBe('object');
     },
     TEST_TIMEOUT,

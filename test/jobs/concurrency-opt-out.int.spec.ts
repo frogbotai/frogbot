@@ -38,6 +38,7 @@ describe(`concurrency control opt-out: ${adapterName}`, () => {
       where: { id: { equals: job.id } },
       pagination: false,
     });
+
     const effects = await fixture.payload.db.find({
       collection: 'effects',
       where: { marker: { equals: marker } },

@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof crypto.hashText>[0]['input']>().toEqualTypeOf<{
   method: 'md5' | 'sha256' | 'sha512' | 'sha3-512';
   text: string;
 }>();
+
 expectTypeOf(hash).toEqualTypeOf<Promise<string>>();
 
 const _hashTextRejectsEncodeBase64Input = () =>

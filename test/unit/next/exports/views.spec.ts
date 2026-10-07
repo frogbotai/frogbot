@@ -51,9 +51,11 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock('@payloadcms/next/views', () => mocks);
+
 vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
   RenderServerComponent: mocks.RenderServerComponent,
 }));
+
 vi.mock('@payloadcms/ui', () => ({
   Button: () => null,
   Card: ({ buttonAriaLabel, href, id, title }: Record<string, string>) =>
@@ -97,6 +99,7 @@ vi.mock('@payloadcms/ui', () => ({
   ViewDescription: () => null,
   withCondition: <T>(Component: T) => Component,
 }));
+
 vi.mock('@payloadcms/ui/elements/ColumnSelector', () => ({}));
 vi.mock('@payloadcms/ui/elements/GroupByBuilder', () => ({}));
 vi.mock('@payloadcms/ui/elements/NoListResults', () => ({ NoListResults: () => null }));
@@ -104,19 +107,25 @@ vi.mock('@payloadcms/ui/elements/QueryPresets/QueryPresetBar', () => ({}));
 vi.mock('@payloadcms/ui/elements/SearchBar', () => ({}));
 vi.mock('@payloadcms/ui/elements/WhereBuilder', () => ({}));
 vi.mock('@payloadcms/ui/icons/Dots', () => ({}));
+
 vi.mock('@payloadcms/ui/rsc', () => ({
   getColumns: vi.fn(() => []),
   renderTable: vi.fn(() => ({ columnState: [], Table: null })),
 }));
+
 vi.mock('@payloadcms/ui/utilities/reduceFieldsToOptions', () => ({}));
+
 vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,
   useRouter: () => ({ refresh: vi.fn() }),
 }));
+
 vi.mock('../../../../packages/next/src/views/controls/ViewControls.client.js', () => ({
   ViewControls: mocks.ViewControls,
 }));
+
 vi.mock('../../../../packages/next/src/elements/Nav/index.js', () => ({ FrogBotNav: () => null }));
+
 vi.mock('frogbot', async (importOriginal) => ({
   ...(await importOriginal<typeof frogbotModule>()),
   getCachedFrogBot: mocks.getCachedFrogBot,
@@ -128,16 +137,19 @@ vi.mock('frogbot', async (importOriginal) => ({
       ...(metadata == null ? {} : { metadata }),
     })),
 }));
+
 vi.mock('frogbot/internal', async (importOriginal) => ({
   ...(await importOriginal<typeof frogbotInternalModule>()),
   attachRegisteredFrogBot: mocks.attachRegisteredFrogBot,
 }));
+
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof payloadModule>()),
   createLocalReq: mocks.createLocalReq,
   executeAuthStrategies: mocks.executeAuthStrategies,
   getPayload: mocks.getPayload,
 }));
+
 vi.mock('@payloadcms/next/utilities', () => ({ getNextRequestI18n: mocks.getNextRequestI18n }));
 vi.mock('next/headers', () => ({ headers: mocks.headers }));
 
@@ -150,6 +162,7 @@ const {
   CollectionViewShell,
   DefaultListView,
 } = await import('../../../../packages/next/src/exports/views.js');
+
 const { getSettingsTitle } =
   await import('../../../../packages/next/src/views/Settings/metadata.js');
 
@@ -158,6 +171,7 @@ function makeConfig(admin?: Record<string, unknown>) {
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
   } as unknown as FrogBotSanitizedConfig;
+
   return { config, payloadConfig };
 }
 
@@ -280,6 +294,7 @@ describe('@frogbotai/next views', () => {
         routes: { admin: '/admin' },
       },
     };
+
     const props = {
       importMap: {},
       initPageResult: { req, visibleEntities: { collections: [], globals: [] } },
@@ -309,6 +324,7 @@ describe('@frogbotai/next views', () => {
         routes: { admin: '/admin' },
       },
     };
+
     const element = await SettingsView({
       importMap: {},
       initPageResult: {
@@ -320,7 +336,9 @@ describe('@frogbotai/next views', () => {
     } as never);
 
     expect(mocks.RenderServerComponent).not.toHaveBeenCalled();
+
     const content = element.props.children[1].props.children[1].props.children;
+
     expect(content.props.className).toBe('frogbot-settings__not-found');
   });
 
@@ -410,6 +428,7 @@ describe('@frogbotai/next views', () => {
       },
       routeSegments: ['settings', 'robot'],
     } as never);
+
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain(renderToStaticMarkup(createElement(RobotIcon, { size: 18 })));
@@ -491,6 +510,7 @@ describe('@frogbotai/next views', () => {
       } as never);
 
       const html = renderToStaticMarkup(element);
+
       expect(html).toContain(`href="${expected}"`);
       expect(html).not.toContain('href="//');
     },
@@ -520,6 +540,7 @@ describe('@frogbotai/next views', () => {
     } as never);
 
     const html = renderToStaticMarkup(element);
+
     expect(denied).toHaveBeenCalledOnce();
     expect(html).not.toContain('Secret');
     expect(html).toContain('href="/admin/settings/collections"');
@@ -535,6 +556,7 @@ describe('@frogbotai/next views', () => {
             ? 'Globals'
             : `Show all ${args?.label}`,
     };
+
     const element = await SettingsView({
       importMap: {},
       initPageResult: {
@@ -587,6 +609,7 @@ describe('@frogbotai/next views', () => {
       t: (key: string) =>
         ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
     };
+
     const element = await SettingsView({
       importMap: {},
       initPageResult: {
@@ -789,6 +812,7 @@ describe('@frogbotai/next views', () => {
     await generatePageMetadata({ config, params, searchParams });
 
     const forwarded = mocks.generatePageMetadata.mock.calls[0][0] as { config: Promise<unknown> };
+
     await expect(forwarded.config).resolves.toBe(payloadConfig);
   });
 
@@ -831,11 +855,13 @@ describe('@frogbotai/next views', () => {
     const withImages = makeConfig({
       meta: { defaultOGImageType: 'static', openGraph: { images: [{ url: '/og.png' }] } },
     });
+
     const dynamicMode = makeConfig({ meta: { defaultOGImageType: 'dynamic' } });
 
     const a = (await generatePageMetadata({ config: withImages.config, params, searchParams })) as {
       openGraph?: unknown;
     };
+
     const b = (await generatePageMetadata({
       config: dynamicMode.config,
       params,
@@ -903,6 +929,7 @@ describe('@frogbotai/next views', () => {
 
     beforeEach(() => {
       mocks.executeAuthStrategies.mockClear();
+
       mocks.generatePageMetadata.mockImplementation(() =>
         Promise.resolve(structuredClone(payloadMetadata)),
       );

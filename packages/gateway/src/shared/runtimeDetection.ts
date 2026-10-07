@@ -16,7 +16,9 @@ export function readEnv(name: string): string | undefined {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[name];
   }
+
   const value = (globalThis as Record<string, unknown>)[name];
+
   return typeof value === 'string' ? value : undefined;
 }
 

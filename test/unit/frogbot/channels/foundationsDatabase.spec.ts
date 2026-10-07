@@ -34,6 +34,7 @@ describe('channel foundations with SQLite', () => {
         { slug: 'chats', chat: true, fields: [] },
       ],
     });
+
     const payload = await new BasePayload().init({
       config: config._internal.payloadConfig,
       disableOnInit: true,
@@ -56,6 +57,7 @@ describe('channel foundations with SQLite', () => {
         slug: `slack-sqlite-${retry}`,
         adapter: createSlackAdapter({ botToken: 'xoxb-test', botUserId: 'UBOT', signingSecret }),
       });
+
       const queue = vi.fn(frogbot.queue.bind(frogbot));
 
       Object.assign(current.frogbot, { kv: frogbot.kv, queue });
@@ -75,6 +77,7 @@ describe('channel foundations with SQLite', () => {
             username: 'frog',
           },
         });
+
         const signature = createHmac('sha256', signingSecret)
           .update(`v0:${timestamp}:${body}`)
           .digest('hex');
@@ -132,11 +135,13 @@ describe('channel foundations with SQLite', () => {
       peer: 'C1',
       thread: 'slack:C1:123.456',
     };
+
     const requests = await Promise.all(Array.from({ length: 6 }, () => frogbot.createRequest()));
 
     const ids = await Promise.all(
       requests.map((req) => resolveChannelChat({ req, identity, user: null })),
     );
+
     const rows = await frogbot.find({ collection: 'chats', overrideAccess: true });
 
     expect(new Set(ids).size).toBe(1);
@@ -177,8 +182,10 @@ describe('channel foundations with SQLite', () => {
 
     await first.set('value', 'expires', 50);
     await first.appendToList('history', 'expires', { ttlMs: 50 });
+
     await expect(first.setIfNotExists('delivery', true, 50)).resolves.toBe(true);
     await expect(second.setIfNotExists('delivery', true, 50)).resolves.toBe(false);
+
     await first.subscribe('thread');
 
     await vi.waitFor(async () => {
@@ -208,7 +215,9 @@ describe('channel foundations with SQLite', () => {
     expect(successor).not.toBeNull();
 
     await first.releaseLock(expired!);
+
     await expect(first.acquireLock('thread', 1000)).resolves.toBeNull();
+
     await second.forceReleaseLock('thread');
 
     const replacement = await first.acquireLock('thread', 1000);
@@ -216,6 +225,7 @@ describe('channel foundations with SQLite', () => {
     await second.releaseLock(successor!);
 
     await expect(first.extendLock(replacement!, 1000)).resolves.toBe(true);
+
     await first.releaseLock(replacement!);
   });
 });

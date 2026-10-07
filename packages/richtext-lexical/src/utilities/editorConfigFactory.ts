@@ -12,8 +12,11 @@ import { type ConfigInput, resolveConfig } from './resolveConfig.js';
 type FeaturesInput = NonNullable<
   Parameters<typeof upstreamEditorConfigFactory.fromFeatures>[0]['features']
 >;
+
 type LexicalRichTextAdapterProvider = ReturnType<typeof upstreamLexicalEditor>;
+
 type RichTextEditorField = Pick<Extract<Field, { type: 'richText' }>, 'editor' | 'type'>;
+
 type UpstreamRichTextField = Parameters<
   typeof upstreamEditorConfigFactory.fromUnsanitizedField
 >[0]['field'];

@@ -27,12 +27,14 @@ import { resolveBoardField, resolveColumns } from './resolveColumns.js';
 export async function BoardView(props: AdminViewServerProps) {
   const { clientConfig, collectionConfig, collectionSlug, importMap, initPageResult, payload } =
     props;
+
   if (!collectionConfig || !collectionSlug) return null;
   const { runtime, views } = await resolveCollectionViews(props);
   const activeSlug = getActiveViewSlug(props) ?? runtime[0]?.slug;
   const board = runtime.find(
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
+
   if (!board || board.type !== 'board') notFound();
   const orderField = views.find(({ slug }) => slug === board.slug)?.orderField;
   if (!orderField) notFound();
@@ -41,6 +43,7 @@ export async function BoardView(props: AdminViewServerProps) {
     groupBy?: unknown;
     sort?: unknown;
   };
+
   const hasQueryGroupBy = Object.prototype.hasOwnProperty.call(query, 'groupBy');
   const queryGroupBy = typeof query.groupBy === 'string' ? query.groupBy : undefined;
   const querySort =
@@ -50,11 +53,13 @@ export async function BoardView(props: AdminViewServerProps) {
       : Object.prototype.hasOwnProperty.call(query, 'sort')
         ? ''
         : undefined;
+
   const queryColumns: ViewColumnsSource =
     typeof query.columns === 'string' ||
     (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
       ? query.columns
       : undefined;
+
   const preferenceKey = getViewPreferenceKey(collectionSlug, board.slug);
   const preference = initPageResult.req.user
     ? await payload.find({
@@ -72,28 +77,34 @@ export async function BoardView(props: AdminViewServerProps) {
         },
       })
     : undefined;
+
   const preferenceValue = preference?.docs[0]?.value as BoardPreferenceValue | undefined;
   const preferenceGroupBy =
     typeof preferenceValue?.groupBy === 'string' ? preferenceValue.groupBy : undefined;
+
   const preferenceSort =
     typeof preferenceValue?.sort === 'string' ? preferenceValue.sort : undefined;
+
   const selectedGroupBy = resolveBoardGroupBy({
     configuredGroupBy: board.groupBy,
     hasQueryGroupBy,
     preferenceGroupBy,
     queryGroupBy,
   });
+
   const selectedSort = resolveBoardSort({
     defaultSort: board.defaultSort,
     orderField,
     preferenceSort,
     querySort,
   });
+
   const groupBy = getBoardGroupBy(selectedGroupBy);
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
   const clientCollectionConfig = clientConfig.collections.find(
     ({ slug }) => slug === collectionSlug,
   );
+
   const columnPreferences = resolveViewColumnPreferences({
     defaultFields: board.defaultFields,
     preferenceColumns: Array.isArray(preferenceValue?.columns)
@@ -102,6 +113,7 @@ export async function BoardView(props: AdminViewServerProps) {
     queryColumns,
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
+
   const cardColumns = getColumns({
     clientConfig,
     collectionConfig: clientCollectionConfig,
@@ -110,6 +122,7 @@ export async function BoardView(props: AdminViewServerProps) {
     i18n: initPageResult.req.i18n,
     permissions: initPageResult.permissions,
   });
+
   const { columnState } = renderTable({
     clientCollectionConfig,
     collectionConfig,
@@ -122,6 +135,7 @@ export async function BoardView(props: AdminViewServerProps) {
     req: initPageResult.req,
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
+
   const { queryByGroup: _queryByGroup, ...restQuery } = initPageResult.req.query ?? {};
   const initialQuery = {
     ...restQuery,
@@ -129,6 +143,7 @@ export async function BoardView(props: AdminViewServerProps) {
     groupBy: selectedGroupBy,
     sort: selectedSort,
   };
+
   const preferenceWriter = (
     <BoardPreference
       collectionSlug={collectionSlug}
@@ -138,6 +153,7 @@ export async function BoardView(props: AdminViewServerProps) {
       viewSlug={board.slug}
     />
   );
+
   if (!groupBy) {
     return (
       <CollectionViewShell
@@ -155,6 +171,7 @@ export async function BoardView(props: AdminViewServerProps) {
       </CollectionViewShell>
     );
   }
+
   const groupField = resolveBoardField(collectionConfig.fields, groupBy);
   if (!groupField) notFound();
   const columns = await resolveColumns({
@@ -163,20 +180,25 @@ export async function BoardView(props: AdminViewServerProps) {
     path: groupBy,
     req: initPageResult.req,
   });
+
   const filter =
     typeof board.filter === 'function'
       ? await board.filter({ req: attachRegisteredFrogBot(initPageResult.req) })
       : board.filter;
+
   let fieldPermission: SanitizedFieldPermissions | undefined;
   let fieldPermissions = permissions?.fields;
+
   for (const key of groupBy.split('.')) {
     if (!fieldPermissions || fieldPermissions === true) {
       fieldPermission = fieldPermissions;
       break;
     }
+
     fieldPermission = fieldPermissions[key];
     fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
   }
+
   const resolve = <TProps extends object>(component: PayloadComponent | undefined) =>
     component
       ? getFromImportMap<ComponentType<TProps>>({
@@ -185,6 +207,7 @@ export async function BoardView(props: AdminViewServerProps) {
           schemaPath: '',
         })
       : undefined;
+
   return (
     <CollectionViewShell
       {...props}

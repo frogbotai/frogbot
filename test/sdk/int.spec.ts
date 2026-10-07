@@ -240,6 +240,7 @@ describe('FrogBot SDK against a running app', () => {
         collection: pagesSlug,
         where: { title: { equals: 'Doomed' } },
       });
+
       const remaining = await sdk.find({ collection: pagesSlug });
 
       expect(result.docs).toHaveLength(2);

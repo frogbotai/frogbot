@@ -73,6 +73,7 @@ describe('agent schedule tasks', () => {
       agents,
       jobs: { tasks: [userTask], workflows: [], autoRun: [userAutoRun] },
     });
+
     const second = resolveScheduleTasks({ agents });
 
     expect(first?.tasks?.[0]).toBe(userTask);
@@ -90,6 +91,7 @@ describe('agent schedule tasks', () => {
     const defaultBeforeSchedule = vi
       .fn()
       .mockResolvedValue({ shouldSchedule: true, waitUntil: new Date(0) });
+
     await expect(
       beforeSchedule!({
         defaultBeforeSchedule,
@@ -119,6 +121,7 @@ describe('agent schedule tasks', () => {
 
     const autoRun = jobs?.autoRun;
     assert(typeof autoRun === 'function', 'Expected autoRun function');
+
     expect(await autoRun(payload)).toEqual([
       { queue: 'user' },
       { allQueues: true, cron: '* * * * *' },
@@ -132,6 +135,7 @@ describe('agent schedule tasks', () => {
     const createRequest = vi.fn(({ context }: { context: unknown }) =>
       Promise.resolve({ context, user: null }),
     );
+
     const agent = {
       slug: 'reporter',
       config: {
@@ -144,6 +148,7 @@ describe('agent schedule tasks', () => {
       },
       generate,
     } as unknown as AgentInstance;
+
     const frogbot = { agents: { reporter: agent }, createRequest };
     registerFrogBotInstance(payload, frogbot as never);
     const config = resolveScheduleTasks({ agents: [agent.config] });
@@ -159,6 +164,7 @@ describe('agent schedule tasks', () => {
       inlineTask: vi.fn(),
       tasks: {},
     });
+
     expect(generate).toHaveBeenCalledWith(
       expect.objectContaining({ prompt: 'Run report', overrideAccess: true }),
     );
@@ -173,6 +179,7 @@ describe('agent schedule tasks', () => {
       inlineTask: vi.fn(),
       tasks: {},
     });
+
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         frogbot,
@@ -195,6 +202,7 @@ describe('agent schedule tasks', () => {
     registerFrogBotInstance(payload, {
       agents: { reporter: { config: staleAgent, generate } },
     } as never);
+
     const config = resolveScheduleTasks({
       agents: [
         {
@@ -203,6 +211,7 @@ describe('agent schedule tasks', () => {
         },
       ],
     });
+
     const run = taskHandler(config);
     const args = {
       job: makeJob(),
@@ -210,6 +219,7 @@ describe('agent schedule tasks', () => {
       inlineTask: vi.fn(),
       tasks: {},
     };
+
     await expect(
       run({ ...args, input: { agentSlug: 'missing', triggerSlug: 'run' } }),
     ).resolves.toEqual({ output: {} });

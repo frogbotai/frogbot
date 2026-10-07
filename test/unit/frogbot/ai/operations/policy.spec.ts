@@ -29,6 +29,7 @@ describe('AI operation policy', () => {
     const req = {
       user: { id: 'user-1', modelAccess: 'selected', models: ['router'] },
     };
+
     await expect(
       operation({} as never, { model: 'openai/gpt-4o', req } as never),
     ).rejects.toMatchObject({ code: 'model_not_allowed', status: 403 });

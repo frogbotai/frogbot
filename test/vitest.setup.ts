@@ -59,6 +59,7 @@ async function assertDbReachable(adapterName: DatabaseAdapterType): Promise<void
     '\x1b[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m',
     '',
   ];
+
   process.stderr.write(lines.join('\n'));
   process.exit(1);
 }
@@ -71,11 +72,14 @@ function tcpPing(host: string, port: number, timeoutMs: number): Promise<string 
       socket.destroy();
       resolve(value);
     };
+
     const timer = setTimeout(() => done(`timed out after ${timeoutMs}ms`), timeoutMs);
+
     socket.once('connect', () => {
       clearTimeout(timer);
       done(true);
     });
+
     socket.once('error', (err: NodeJS.ErrnoException) => {
       clearTimeout(timer);
       done(err.code || err.message || String(err));

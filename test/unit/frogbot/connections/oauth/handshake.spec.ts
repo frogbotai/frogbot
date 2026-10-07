@@ -17,6 +17,7 @@ import { definition, setup } from './fixtures.js';
 
 it('completes a real provider redirect, PKCE exchange, userinfo lookup and refresh', async () => {
   const provider = await startStubOAuthProvider();
+
   onTestFinished(async () => {
     await provider.close();
   });
@@ -32,11 +33,14 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
         const response = await fetch(`${provider.url}/userinfo`, {
           headers: { authorization: `Bearer ${tokens.access_token}` },
         });
+
         const account = await response.json();
+
         return { id: account.id, label: account.name, email: account.email };
       },
     },
   });
+
   const started = await createOAuthState({
     ...fixture.binding,
     kv: fixture.kv,
@@ -44,8 +48,11 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
     req: fixture.req,
     returnTo: '/settings/connections',
   });
+
   const redirect = await fetch(started.authorizationUrl, { redirect: 'manual' });
+
   expect(redirect.status).toBe(302);
+
   const callback = new URL(redirect.headers.get('location')!);
   fixture.req.headers.set('cookie', started.setCookie.split(';')[0]);
   const consume = () =>
@@ -56,6 +63,7 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
       req: fixture.req,
       state: callback.searchParams.get('state')!,
     });
+
   const { intent } = await consume();
   const tokens = await exchangeOAuthCode({
     piece: fixture.piece,
@@ -63,6 +71,7 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
     callbackUrl: fixture.binding.callbackUrl,
     verifier: intent.verifier,
   });
+
   expect(provider.requests.token[0]).toMatchObject({
     client_id: 'client',
     client_secret: 'secret',

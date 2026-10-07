@@ -96,6 +96,7 @@ function main() {
 
   if (!command) {
     console.log(SKIP_LINE);
+
     return;
   }
 

@@ -347,9 +347,11 @@ function channelAccessFor(
 describe('agent persisted stream with the installed AI SDK', () => {
   beforeEach(() => {
     turn.claimTurn.mockReset().mockResolvedValue(claim);
+
     turn.holdTurn
       .mockReset()
       .mockReturnValue({ signal: new AbortController().signal, stop: vi.fn() });
+
     turn.promoteQueuedMessage.mockReset();
     turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
     turn.releaseTurn.mockReset().mockResolvedValue(true);
@@ -661,6 +663,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
                   start(controller) {
                     controller.enqueue({ type: 'stream-start', warnings: [] });
                     controller.enqueue({ type: 'text-start', id: 'partial-2' });
+
                     controller.enqueue({
                       type: 'text-delta',
                       id: 'partial-2',
@@ -848,9 +851,11 @@ describe('agent persisted stream with the installed AI SDK', () => {
 describe('agent model and reasoning selection with the installed AI SDK', () => {
   beforeEach(() => {
     turn.claimTurn.mockReset().mockResolvedValue(claim);
+
     turn.holdTurn
       .mockReset()
       .mockReturnValue({ signal: new AbortController().signal, stop: vi.fn() });
+
     turn.promoteQueuedMessage.mockReset();
     turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
     turn.releaseTurn.mockReset().mockResolvedValue(true);

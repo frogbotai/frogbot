@@ -38,6 +38,7 @@ export async function streamTextOperation(
     providerOptions,
     ...aiSdkOpts
   } = opts;
+
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model (router slug → model ID).
@@ -84,6 +85,7 @@ export async function streamTextOperation(
           finishReason: event.finishReason,
           usage: toHookUsage(event.usage),
         });
+
         if (userEnd) {
           await userEnd(event);
         }
@@ -99,6 +101,7 @@ export async function streamTextOperation(
           error:
             opts.abortSignal?.reason ?? new DOMException('The operation was aborted', 'AbortError'),
         });
+
         if (onAbort) {
           await onAbort(event);
         }

@@ -8,10 +8,12 @@ describe('gracefulShutdown', () => {
     const provider = {
       forceFlush: vi.fn(() => {
         order.push('forceFlush');
+
         return Promise.resolve();
       }),
       shutdown: vi.fn(() => {
         order.push('shutdown');
+
         return Promise.resolve();
       }),
     };
@@ -25,9 +27,11 @@ describe('gracefulShutdown', () => {
 
   it('does not hang when forceFlush never resolves — the timeout wins and shutdown still runs', async () => {
     vi.useFakeTimers();
+
     onTestFinished(() => {
       vi.useRealTimers();
     });
+
     const provider = {
       forceFlush: vi.fn(() => new Promise<void>(() => {})),
       shutdown: vi.fn(async () => {}),

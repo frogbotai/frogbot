@@ -17,6 +17,7 @@ export function toEmbedParams(body: EmbeddingsRequest): EmbedParams {
   if (body.dimensions != null) {
     unknown.dimensions = body.dimensions;
   }
+
   if (body.user != null) {
     unknown.user = body.user;
   }

@@ -69,6 +69,7 @@ export function getVisibleRange({
 
 export function getRangeDays(range: CalendarRange, count: number): Date[] {
   const start = new TZDate(range.start, range.timeZone);
+
   return Array.from({ length: count }, (_, index) => addDays(start, index));
 }
 
@@ -87,6 +88,7 @@ export function expandToCells<T extends CalendarEvent>(
       Math.max(eventStart.getTime(), rangeStart.getTime()),
       range.timeZone,
     );
+
     const clippedEnd = new TZDate(Math.min(eventEnd.getTime(), rangeEnd.getTime()), range.timeZone);
 
     if (clippedEnd < rangeStart || clippedStart >= rangeEnd || clippedEnd < clippedStart) continue;
@@ -94,11 +96,13 @@ export function expandToCells<T extends CalendarEvent>(
     const firstDay = startOfDay(clippedStart);
     const lastInstant =
       clippedEnd.getTime() > clippedStart.getTime() ? addMinutes(clippedEnd, -1) : clippedEnd;
+
     const dayCount = differenceInCalendarDays(startOfDay(lastInstant), firstDay);
 
     for (let offset = 0; offset <= dayCount; offset++) {
       const dayStart = addDays(firstDay, offset);
       const dayEnd = addDays(dayStart, 1);
+
       cells.push({
         cell: format(dayStart, 'yyyy-MM-dd'),
         end: new Date(Math.min(clippedEnd.getTime(), dayEnd.getTime())).toISOString(),
@@ -119,6 +123,7 @@ export function layoutLanes<T extends CalendarEvent>(events: T[]): CalendarLane<
       Date.parse(a.start) - Date.parse(b.start) ||
       Date.parse(b.end ?? b.start) - Date.parse(a.end ?? a.start),
   );
+
   const result: CalendarLane<T>[] = [];
 
   for (let groupStart = 0; groupStart < sorted.length;) {
@@ -136,6 +141,7 @@ export function layoutLanes<T extends CalendarEvent>(events: T[]): CalendarLane<
       let lane = laneEnds.findIndex((end) => end <= start);
       if (lane === -1) lane = laneEnds.length;
       laneEnds[lane] = Date.parse(event.end ?? event.start);
+
       return { event, lane };
     });
 
@@ -150,6 +156,8 @@ export function snapTo(date: string, minutes: number): string {
   if (!Number.isInteger(minutes) || minutes <= 0) {
     throw new RangeError('minutes must be a positive integer');
   }
+
   const interval = minutes * 60_000;
+
   return new Date(Math.round(Date.parse(date) / interval) * interval).toISOString();
 }

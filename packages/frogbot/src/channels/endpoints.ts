@@ -31,6 +31,7 @@ export function buildChannelGatewayEndpoints(): Endpoint[] {
           Number.isSafeInteger(configured) && configured > 0
             ? Math.min(configured, MAX_DURATION)
             : DEFAULT_DURATION;
+
         const host = getChannelHost(req.frogbot);
 
         if (!host?.hasGatewayAdapters()) return Response.json({ ran: false });

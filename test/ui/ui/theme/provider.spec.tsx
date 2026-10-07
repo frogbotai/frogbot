@@ -12,6 +12,7 @@ import { ThemeProvider, ThemeScript, useTheme } from '../../../../packages/ui/sr
 
 function Toggle() {
   const { resolvedMode, setMode } = useTheme();
+
   return <button onClick={() => setMode('dark')}>{resolvedMode}</button>;
 }
 

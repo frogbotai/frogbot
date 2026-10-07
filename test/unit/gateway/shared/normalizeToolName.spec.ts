@@ -14,6 +14,7 @@ describe('normalizeToolName', () => {
 
   test('truncates names longer than 128 chars', () => {
     const result = normalizeToolName('a'.repeat(200));
+
     expect(result).toHaveLength(128);
     expect(result).toBe('a'.repeat(128));
   });

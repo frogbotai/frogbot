@@ -16,6 +16,7 @@ async function bufferAuthRequest(req: PayloadRequest): Promise<PayloadRequest> {
     AbortSignal.timeout(10_000),
     ...(req.signal ? [req.signal] : []),
   ]);
+
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -23,14 +24,17 @@ async function bufferAuthRequest(req: PayloadRequest): Promise<PayloadRequest> {
   const aborted = new Promise<never>((_, fail) => {
     reject = fail;
   });
+
   const abort = () => {
     const error = new APIError('Authentication request body timed out or was aborted.', 408);
     reject(error);
     void reader.cancel(error).catch(() => undefined);
   };
+
   signal.addEventListener('abort', abort, { once: true });
   try {
     signal.throwIfAborted();
+
     for (;;) {
       const { done, value } = await Promise.race([reader.read(), aborted]);
       if (done) break;
@@ -39,8 +43,10 @@ async function bufferAuthRequest(req: PayloadRequest): Promise<PayloadRequest> {
         void reader.cancel().catch(() => undefined);
         throw new APIError('Authentication request body exceeds 1 MiB.', 413);
       }
+
       chunks.push(value);
     }
+
     signal.throwIfAborted();
     const buffered = Object.assign(
       new Request(req.url, {
@@ -51,7 +57,9 @@ async function bufferAuthRequest(req: PayloadRequest): Promise<PayloadRequest> {
       }),
       Object.fromEntries(Object.entries(req)),
     ) as PayloadRequest;
+
     buffered.payloadDataLoader = getDataLoader(buffered);
+
     return buffered;
   } finally {
     signal.removeEventListener('abort', abort);
@@ -69,6 +77,7 @@ export function coordinateAuthEndpoints({
   if (!coordinatesSessions(collection)) return;
   collection.hooks.afterOperation = [...collection.hooks.afterOperation, checkSessionLease];
   if (!collection.endpoints) return;
+
   collection.endpoints = collection.endpoints.map((endpoint) => {
     if (
       endpoint.method !== 'post' ||
@@ -76,10 +85,12 @@ export function coordinateAuthEndpoints({
     ) {
       return endpoint;
     }
+
     return {
       ...endpoint,
       handler: async (incoming) => {
         const req = await bufferAuthRequest(incoming);
+
         return withAuthOperation({
           req: await attachFrogBot(req),
           collectionSlug: collection.slug,

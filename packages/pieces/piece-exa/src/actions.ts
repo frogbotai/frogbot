@@ -12,6 +12,7 @@ const result = z
     text: z.string().optional(),
   })
   .passthrough();
+
 const results = z.array(result);
 const dates = {
   startCrawlDate: z.string().datetime({ offset: true }).optional(),
@@ -19,6 +20,7 @@ const dates = {
   startPublishedDate: z.string().datetime({ offset: true }).optional(),
   endPublishedDate: z.string().datetime({ offset: true }).optional(),
 };
+
 const filters = {
   numResults: z.number().int().min(1).max(100).optional(),
   includeDomains: z.array(z.string()).optional(),

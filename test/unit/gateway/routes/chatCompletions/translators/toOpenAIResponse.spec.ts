@@ -47,6 +47,7 @@ describe('toOpenAIResponse', () => {
 
     test('omits detail fields when not provided', () => {
       const result = toOpenAIResponse(baseArgs);
+
       expect(result.usage.prompt_tokens_details).toBeUndefined();
       expect(result.usage.completion_tokens_details).toBeUndefined();
     });
@@ -77,6 +78,7 @@ describe('toOpenAIResponse', () => {
       });
 
       const parsed = JSON.parse(result.choices[0].message.tool_calls![0].function.arguments);
+
       expect(parsed['']).toBeUndefined();
       expect(parsed.city).toBe('San Francisco');
       expect(parsed.nested['']).toEqual({});
@@ -107,16 +109,19 @@ describe('toOpenAIResponse', () => {
   describe('finish reason mapping', () => {
     test('maps tool-calls to tool_calls', () => {
       const result = toOpenAIResponse({ ...baseArgs, finishReason: 'tool-calls' });
+
       expect(result.choices[0].finish_reason).toBe('tool_calls');
     });
 
     test('maps content-filter to content_filter', () => {
       const result = toOpenAIResponse({ ...baseArgs, finishReason: 'content-filter' });
+
       expect(result.choices[0].finish_reason).toBe('content_filter');
     });
 
     test('defaults unknown reasons to stop', () => {
       const result = toOpenAIResponse({ ...baseArgs, finishReason: 'unknown-reason' });
+
       expect(result.choices[0].finish_reason).toBe('stop');
     });
   });
@@ -124,11 +129,13 @@ describe('toOpenAIResponse', () => {
   describe('service_tier', () => {
     test('sets service_tier when provided', () => {
       const result = toOpenAIResponse({ ...baseArgs, serviceTier: 'flex' });
+
       expect(result.service_tier).toBe('flex');
     });
 
     test('omits service_tier when not provided', () => {
       const result = toOpenAIResponse(baseArgs);
+
       expect(result).not.toHaveProperty('service_tier');
     });
   });

@@ -73,10 +73,12 @@ export const githubOAuth = {
         name: z.string().nullable().optional(),
       }),
     );
+
     const emails = await client.request(
       '/user/emails',
       z.array(z.looseObject({ email: z.email(), primary: z.boolean(), verified: z.boolean() })),
     );
+
     const email = emails.find((value) => value.primary && value.verified)?.email;
 
     if (!email) throw new Error('GitHub did not return a verified primary email address.');
@@ -118,6 +120,7 @@ const githubChannel = {
       `/users/${encodeURIComponent(author.userName)}`,
       z.looseObject({ email: z.string().nullable().optional() }),
     );
+
     const email = z.email().safeParse(account.email?.trim().toLowerCase());
 
     if (!email.success) return null;

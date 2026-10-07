@@ -36,6 +36,7 @@ export async function wireTypesMatchCore(sdk: SDK) {
     index: 'content',
     query: { text: 'frogs' },
   });
+
   const many = await sdk.searchMany({
     collections: [
       { collection: 'sdk-pages', index: 'content' },

@@ -26,6 +26,7 @@ describe('calendar UI', () => {
         renderEvent={(item) => item.title}
       />,
     );
+
     expect(screen.getByText('Planning')).toBeTruthy();
 
     view.rerender(
@@ -34,6 +35,7 @@ describe('calendar UI', () => {
         <div className="frog-calendar__overlay">Planning overlay</div>
       </DndContext>,
     );
+
     expect(view.container.querySelector('.frog-calendar__event--dragging')).toBeTruthy();
     expect(view.container.querySelectorAll('.frog-calendar__overlay')).toHaveLength(1);
   });
@@ -41,6 +43,7 @@ describe('calendar UI', () => {
   it('keeps the drag source in layout so the overlay can measure it', () => {
     const css = readFileSync('packages/ui/src/calendar/calendar.css', 'utf8');
     const rule = css.match(/\.frog-calendar__event--dragging\s*{([^}]*)}/)?.[1] ?? '';
+
     expect(rule).toContain('opacity: 0');
     expect(rule).not.toContain('display');
 
@@ -56,7 +59,9 @@ describe('calendar UI', () => {
         renderEvent={(item) => item.title}
       />,
     );
+
     const chip = screen.getByText('Planning').closest<HTMLElement>('.frog-calendar__event');
+
     expect(chip?.style.width).toBe('50%');
     expect(chip?.style.height).not.toBe('');
   });
@@ -67,6 +72,7 @@ describe('calendar UI', () => {
       id: `event-${index}`,
       title: `Event ${index}`,
     }));
+
     const { container } = render(
       <MonthGrid
         date="2026-09-06T12:00:00.000Z"
@@ -76,6 +82,7 @@ describe('calendar UI', () => {
         renderEvent={(item) => item.title}
       />,
     );
+
     expect(container.querySelectorAll('.frog-calendar__month-cell')).toHaveLength(42);
     expect(container.querySelectorAll('.frog-calendar__event').length).toBeGreaterThan(4);
     expect(screen.getAllByText('+1 more').length).toBeGreaterThan(0);

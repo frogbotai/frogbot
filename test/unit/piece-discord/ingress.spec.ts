@@ -17,6 +17,7 @@ const publicKey = keys.publicKey
   .export({ type: 'spki', format: 'der' })
   .subarray(-32)
   .toString('hex');
+
 const post = buildTriggerEndpoints().find(
   ({ method, path }) => method === 'post' && path === '/webhooks/:instance',
 )!;

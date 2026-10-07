@@ -9,6 +9,7 @@ const fallbacks = [
     /https:\/\/raw\.githubusercontent\.com\/frogbotai\/frogbot\/main\/skills\/frogbot\/reference\/[A-Z-]+\.md/g,
   ),
 ].map((match) => match[0]);
+
 const origin = 'https://docs.frogbot.ai';
 const modern = `${origin}/.well-known/agent-skills/index.json`;
 const legacy = `${origin}/.well-known/skills/index.json`;
@@ -22,6 +23,7 @@ const urls = [
   `${origin}/llms.txt`,
   'https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/SKILL.md',
 ];
+
 const results = [];
 
 if (fallbacks.length !== 23 || new Set(fallbacks).size !== 23) {
@@ -37,6 +39,7 @@ async function probe(url) {
       redirect: 'follow',
       headers: { 'user-agent': 'FrogBot-Ticket129-hosted-acceptance' },
     });
+
     const chunks = [];
     let size = 0;
 

@@ -54,6 +54,7 @@ export function ToolPart({
         : part.state === 'output-denied'
           ? part.approval.reason || 'Denied'
           : part.input;
+
   return (
     <div data-part="tool" data-state={part.state} className="fb-tool-part">
       <div className="fb-tool-part__header">

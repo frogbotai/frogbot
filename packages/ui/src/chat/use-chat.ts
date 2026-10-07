@@ -78,6 +78,7 @@ export function useChatMessages(options: UseChatOptions) {
   useEffect(() => {
     let active = true;
     setLoading(options.chatId !== undefined);
+
     void loadChatMessages(options)
       .then((next) => {
         if (active) {
@@ -93,6 +94,7 @@ export function useChatMessages(options: UseChatOptions) {
           setLoading(false);
         }
       });
+
     return () => {
       active = false;
     };

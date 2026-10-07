@@ -14,12 +14,14 @@ vi.mock('@ai-sdk/react', () => ({ useChat: vi.fn(() => ({ messages })) }));
 
 function ConsumerShell() {
   const chat = useChat();
+
   return <MessageList messages={chat.messages} />;
 }
 
 describe('chat composability', () => {
   it('renders from a consumer useChat call without ChatProvider', () => {
     render(<ConsumerShell />);
+
     expect(screen.getByText('Consumer message')).toBeTruthy();
     expect(screen.getByText('Composed response')).toBeTruthy();
   });

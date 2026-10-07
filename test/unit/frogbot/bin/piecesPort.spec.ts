@@ -41,20 +41,24 @@ async function workspace(installed = true): Promise<string> {
   await mkdir(join(root, 'test/unit'), { recursive: true });
   await writeFile(join(root, 'package.json'), '{"version":"1.2.3"}\n');
   await writeFile(join(root, 'packages/pieces/PORTING.md'), '# Porting\n');
+
   await writeFile(
     join(piece, 'package.json'),
     '{"name":"@frogbotai/piece-demo","dependencies":{"@activepieces/piece-demo":"1.0.0"}}\n',
   );
+
   await writeFile(join(piece, 'src/index.ts'), 'export {};\n');
 
   if (installed) {
     const upstream = join(piece, 'node_modules/@activepieces/piece-demo');
 
     await mkdir(join(upstream, 'dist'), { recursive: true });
+
     await writeFile(
       join(upstream, 'package.json'),
       '{"name":"@activepieces/piece-demo","main":"dist/index.js"}\n',
     );
+
     await writeFile(join(upstream, 'dist/index.js'), 'export {};\n');
   }
 
@@ -162,6 +166,7 @@ describe('piecesPort', () => {
     const workspacePackages = (await readdir(join(root, 'packages/pieces'))).filter(
       (name) => name.startsWith('piece-') && !name.endsWith('.legacy'),
     );
+
     const names = await Promise.all(
       workspacePackages.map(async (directory) =>
         JSON.parse(

@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof mathHelper.addNumbers>[0]['input']>().toEqualType
   firstNumber: number;
   secondNumber: number;
 }>();
+
 expectTypeOf(sum).toEqualTypeOf<Promise<number>>();
 
 const _addNumbersRequiresBothNumbers = () =>

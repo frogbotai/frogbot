@@ -7,6 +7,7 @@ import { createResendClient } from '../../../packages/pieces/piece-resend/src/cl
 import { resendEmail } from '../../../packages/pieces/piece-resend/src/email.js';
 
 type ResendEmailMessage = Parameters<typeof resendEmail.send>[0]['message'];
+
 type ResendEmailOptions = Parameters<typeof resendEmail.send>[0]['options'];
 
 const fetch = vi.fn<typeof globalThis.fetch>();

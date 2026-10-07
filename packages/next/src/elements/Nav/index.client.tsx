@@ -83,7 +83,9 @@ export function FrogBotNavClient({
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setNavOpen(false);
     };
+
     document.addEventListener('keydown', closeOnEscape);
+
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [navState, setNavOpen]);
 
@@ -126,6 +128,7 @@ export function FrogBotNavClient({
               onToggle={() => {
                 if (isMobile) {
                   setNavOpen(!navOpen);
+
                   return;
                 }
 

@@ -72,6 +72,7 @@ export const findBases = defineAction({
       key: 'bases',
       signal: req.signal ?? undefined,
     });
+
     const term = input.name.toLowerCase();
 
     return bases.filter(({ name }) => name.toLowerCase().includes(term));
@@ -109,6 +110,7 @@ export const getTable = defineAction({
       key: 'tables',
       signal: req.signal ?? undefined,
     });
+
     const selected = tables.find(({ id }) => id === input.tableId);
 
     if (!selected) throw new Error(`Airtable table '${input.tableId}' was not found.`);

@@ -153,6 +153,7 @@ export class ChannelHost {
 
       if (binding.questions) {
         chat.onAction((event) => routeQuestionAction({ binding, event, frogbot: this.frogbot }));
+
         chat.onModalSubmit(async (event) => {
           await routeQuestionModalSubmit({ binding, event, frogbot: this.frogbot });
         });
@@ -231,6 +232,7 @@ export class ChannelHost {
                 }),
               );
             };
+
             const listeners = [...this.bindings.values()]
               .filter((binding): binding is ChannelBinding & { adapter: GatewayAdapter } =>
                 this.isGatewayAdapter(binding.adapter),
@@ -395,6 +397,7 @@ export class ChannelHost {
       frogbot: this.frogbot,
       thread,
     });
+
     const { req } = channel;
     const identity = channelThreadIdentity({ binding, thread });
 
@@ -571,6 +574,7 @@ export class ChannelHost {
         signal.removeEventListener('abort', done);
         resolve();
       };
+
       const timer = setTimeout(done, GATEWAY_RETRY_DELAY);
 
       signal.addEventListener('abort', done, { once: true });

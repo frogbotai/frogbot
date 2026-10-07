@@ -16,6 +16,7 @@ const forbiddenHeaders = new Set([
 ]);
 
 type QueryValue = boolean | number | string | undefined;
+
 type RequestOptions = {
   body?: unknown;
   headers?: Record<string, string>;

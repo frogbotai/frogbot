@@ -75,6 +75,7 @@ describe('custom GraphQL resolvers', () => {
       data: { title: 'Owner chat', user: owner.id },
       overrideAccess: true,
     });
+
     await booted.frogbot.create({
       collection: chatsSlug,
       data: { title: 'Other chat', user: other.id },

@@ -36,9 +36,11 @@ async function post(body: unknown): Promise<{
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+
   const data = (await res.json()) as {
     error: { message: string; type: string; code: string | null; param: string | null };
   };
+
   return { status: res.status, body: data };
 }
 
@@ -49,6 +51,7 @@ async function post(body: unknown): Promise<{
 describe('chat-completions route — top-level validation', () => {
   it('rejects empty body with 400 and param=model', async () => {
     const { status, body } = await post({});
+
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.code).toBe('invalid_request_body');
@@ -57,12 +60,14 @@ describe('chat-completions route — top-level validation', () => {
 
   it('rejects missing messages with 400 and param=messages', async () => {
     const { status, body } = await post({ model: 'openai/gpt-4o-mini' });
+
     expect(status).toBe(400);
     expect(body.error.param).toBe('messages');
   });
 
   it('rejects empty messages array with 400 and param=messages', async () => {
     const { status, body } = await post({ model: 'openai/gpt-4o-mini', messages: [] });
+
     expect(status).toBe(400);
     expect(body.error.param).toBe('messages');
     expect(body.error.message).toMatch(/at least one message/);
@@ -73,6 +78,7 @@ describe('chat-completions route — top-level validation', () => {
       model: 42,
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(400);
     expect(body.error.param).toBe('model');
   });
@@ -84,6 +90,7 @@ describe('chat-completions route — top-level validation', () => {
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('invalid_model_id');
     expect(body.error.param).toBe('model');
@@ -94,6 +101,7 @@ describe('chat-completions route — top-level validation', () => {
       model: 'anthropic/claude-3-5-sonnet',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(404);
     expect(body.error.code).toBe('provider_not_configured');
     expect(body.error.param).toBe('model');
@@ -105,6 +113,7 @@ describe('chat-completions route — top-level validation', () => {
       messages: [{ role: 'user', content: 'hi' }],
       stream: true,
     });
+
     expect(status).toBe(404);
     expect(body.error.code).toBe('provider_not_configured');
     expect(body.error.param).toBe('model');
@@ -125,6 +134,7 @@ describe('chat-completions route — per-message validation', () => {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'wizard', content: 'hi' }],
     });
+
     expect(body.error.code).not.toBe('invalid_request_body');
   });
 
@@ -135,6 +145,7 @@ describe('chat-completions route — per-message validation', () => {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi', thinking: 'blah', vendor_field: 123 }],
     });
+
     expect(body.error.code).not.toBe('invalid_request_body');
   });
 
@@ -146,6 +157,7 @@ describe('chat-completions route — per-message validation', () => {
       messages: [{ role: 'user', content: 'hi' }],
       response_format: { type: 'json_schema', json_schema: { name: 'Foo', schema: {} } },
     });
+
     expect(body.error.code).not.toBe('invalid_request_body');
   });
 
@@ -159,6 +171,7 @@ describe('chat-completions route — per-message validation', () => {
         },
       ],
     });
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('unsupported_modality');
     expect(body.error.param).toBe('messages[0].content[0].input_audio.format');
@@ -169,6 +182,7 @@ describe('chat-completions route — per-message validation', () => {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user' }],
     });
+
     expect(status).toBe(400);
     expect(body.error.param).toBe('messages[0].content');
   });
@@ -178,6 +192,7 @@ describe('chat-completions route — per-message validation', () => {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'tool', content: 'result' }],
     });
+
     expect(status).toBe(400);
     expect(body.error.param).toBe('messages[0].tool_call_id');
   });
@@ -193,6 +208,7 @@ describe('chat-completions route — per-message validation', () => {
         },
       ],
     });
+
     expect(status).toBe(400);
     expect(body.error.param).toBe('messages[0].tool_calls[0].function.name');
   });
@@ -207,6 +223,7 @@ describe('chat-completions route — per-message validation', () => {
         },
       ],
     });
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('unsupported_modality');
     expect(body.error.param).toMatch(/messages\[0\]\.content/);
@@ -228,6 +245,7 @@ describe('chat-completions route — translator semantic rejections', () => {
         },
       ],
     });
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('unsupported_modality');
     expect(body.error.param).toBe('messages[0].content[0].image_url.url');
@@ -250,6 +268,7 @@ describe('chat-completions route — translator semantic rejections', () => {
         },
       ],
     });
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('invalid_tool_arguments');
     expect(body.error.param).toBe('messages[0].tool_calls[0].function.arguments');
@@ -265,6 +284,7 @@ describe('chat-completions route — translator semantic rejections', () => {
         },
       ],
     });
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('unsupported_modality');
     expect(body.error.param).toBe('messages[0].content[0].file.file_id');
@@ -299,6 +319,7 @@ describe('chat-completions route — regression: 500→400 conversion', () => {
     ],
   ])('%s produces 400, not 500', async (_, payload) => {
     const { status, body } = await post(payload);
+
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
   });

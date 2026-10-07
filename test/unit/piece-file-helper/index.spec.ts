@@ -29,12 +29,14 @@ function fixture({
     filename,
     mimeType,
   });
+
   const create = vi.fn().mockImplementation(({ file }: { file: { name: string } }) =>
     Promise.resolve({
       id: `saved-${create.mock.calls.length}`,
       url: `/api/files/${file.name}`,
     }),
   );
+
   const req = {
     url: 'https://app.test/actions',
     headers: new Headers({ authorization: 'Bearer token', cookie: 'session=private' }),
@@ -47,6 +49,7 @@ function fixture({
       create,
     },
   } as never;
+
   const fetch = vi.fn().mockImplementation(() => Promise.resolve(new Response(bytes)));
 
   vi.stubGlobal('fetch', fetch);

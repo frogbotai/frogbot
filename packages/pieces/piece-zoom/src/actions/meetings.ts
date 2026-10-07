@@ -10,6 +10,7 @@ const occurrence = z.object({
   start_time: z.string(),
   status: z.string(),
 });
+
 const meeting = z.object({
   id: z.number().optional(),
   assistant_id: z.string().optional(),
@@ -134,6 +135,7 @@ export const getMeeting = defineAction({
             next_page_token: nextPageToken || undefined,
           },
         });
+
         const page = z
           .object({
             meetings: z.array(z.object({ id: z.number(), topic: z.string() })),
@@ -185,6 +187,7 @@ const updateMeetingInput = z.object({
   mute_upon_entry: z.boolean().optional(),
   waiting_room: z.boolean().optional(),
 });
+
 const updateMeetingOutput = z.object({
   success: z.literal(true),
   message: z.literal('Meeting updated successfully'),
@@ -210,6 +213,7 @@ export const updateMeeting = defineAction({
       waiting_room,
       ...body
     } = input;
+
     const settings = {
       auto_recording,
       audio: selectedAudio,
@@ -219,6 +223,7 @@ export const updateMeeting = defineAction({
       mute_upon_entry,
       waiting_room,
     };
+
     const definedSettings = Object.fromEntries(
       Object.entries(settings).filter((entry) => entry[1] !== undefined),
     );

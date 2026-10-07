@@ -526,6 +526,7 @@ describe('aiField runs', () => {
         text: '',
         error: { status: 400, body: { error: { message: 'Bad request.' } } },
       });
+
       editBeforeRunWrite(() => patchTask(task.id, { summary: 'Mine' }, headers));
 
       await runJobs();

@@ -9,6 +9,7 @@ describe('MobileNavToggle', () => {
     render(<MobileNavToggle navState="mobile-nav-closed" onOpen={onOpen} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+
     expect(onOpen).toHaveBeenCalledOnce();
   });
 

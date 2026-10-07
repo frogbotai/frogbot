@@ -12,6 +12,7 @@ export const lumaProvider = {
   envVars: ['LUMA_API_KEY', 'LUMA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.LUMA_API_KEY) return undefined;
+
     return {
       apiKey: env.LUMA_API_KEY,
       ...(env.LUMA_BASE_URL && { baseURL: env.LUMA_BASE_URL }),

@@ -7,10 +7,12 @@ async function* encodeRecords(
 ): AsyncGenerator<Uint8Array> {
   for await (const record of records) {
     yield encoder.encode(`{"chat":${JSON.stringify(record.chat)},"messages":[`);
+
     for (let index = 0; index < record.messages.length; index += 1) {
       if (index > 0) yield encoder.encode(',');
       yield encoder.encode(JSON.stringify(record.messages[index]));
     }
+
     yield encoder.encode(']}\n');
   }
 }

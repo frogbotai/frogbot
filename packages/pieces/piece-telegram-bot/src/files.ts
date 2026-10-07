@@ -20,6 +20,7 @@ export async function loadTelegramFile(req: FrogBotRequest, value: z.output<type
     req,
     overrideAccess: false,
   });
+
   const file = storedFile.safeParse(result);
 
   if (!file.success) throw new Error(`[frogbot] File '${value.fileId}' is unavailable.`);

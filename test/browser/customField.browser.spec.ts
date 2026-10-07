@@ -213,6 +213,7 @@ test('edits, persists, and resets the modular dashboard layout', async ({ page }
 test('the phone dashboard breadcrumb dropdown keeps its options clickable', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto('/');
+
   await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'mobile-nav-closed',
@@ -307,10 +308,13 @@ test.describe('sidebar icon line weight', () => {
       await expectTwoPixelStroke(
         page.getByRole('button', { name: 'New Chat' }).locator('svg.lucide-pencil-edit'),
       );
+
       await expectTwoPixelStroke(
         page.getByRole('button', { name: 'Reports' }).locator('svg.lucide-home-icon'),
       );
+
       await expectTwoPixelStroke(collectionNavIcon(page, 'posts'));
+
       await expectTwoPixelStroke(
         page.locator('#frogbot-nav-section-collections svg.lucide-key-round-icon'),
       );

@@ -33,6 +33,7 @@ describe('responsesRoute', () => {
         },
       }),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -124,6 +125,7 @@ describe('responsesRoute', () => {
         },
       }),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -158,7 +160,9 @@ describe('responsesRoute', () => {
     });
 
     expect(res.status).toBe(200);
+
     const body = await res.json();
+
     expect(body.output).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: 'function_call', name: 'get_weather', call_id: 'call_1' }),
@@ -166,16 +170,19 @@ describe('responsesRoute', () => {
     );
 
     const call = firstCallOptions(doGenerate) as Record<string, any>;
+
     expect(call.tools).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: 'function', name: 'get_weather' })]),
     );
     expect(call.toolChoice).toMatchObject({ type: 'auto' });
     expect(call.responseFormat).toMatchObject({ type: 'json' });
+
     const instructionMsg = call.prompt.find((m: any) => m.role === 'system');
     const instructionText =
       typeof instructionMsg?.content === 'string'
         ? instructionMsg.content
         : instructionMsg?.content?.map((p: any) => p.text).join('');
+
     expect(instructionText).toContain('You are a weather bot');
   });
 
@@ -192,6 +199,7 @@ describe('responsesRoute', () => {
         },
       }),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -225,6 +233,7 @@ describe('responsesRoute', () => {
     const doGenerate = vi.fn<LanguageModelV4['doGenerate']>(() =>
       Promise.reject(new Error('upstream exploded')),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -240,7 +249,9 @@ describe('responsesRoute', () => {
     });
 
     expect(res.status).toBe(500);
+
     const body = await res.json();
+
     expect(body).toHaveProperty('error');
     expect(body.error).toMatchObject({ type: 'server_error', message: expect.any(String) });
   });
@@ -253,6 +264,7 @@ describe('responsesRoute', () => {
       { type: 'text-end', id: 'txt_1' },
       { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: v4Usage(3, 2) },
     ]);
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -269,7 +281,9 @@ describe('responsesRoute', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/event-stream');
+
     const text = await res.text();
+
     expect(text).toContain('event: response.created');
     expect(text).toContain('event: response.output_text.delta');
     expect(text).toContain('"delta":"hello"');
@@ -286,6 +300,7 @@ describe('responsesRoute', () => {
       { type: 'text-end', id: 'txt_1' },
       { type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: v4Usage(3, 1) },
     ]);
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -302,7 +317,9 @@ describe('responsesRoute', () => {
     });
 
     expect(res.status).toBe(200);
+
     await res.text();
+
     expect(afterUpstream).toHaveBeenCalledWith(
       expect.objectContaining({
         response: expect.objectContaining({ messages: expect.any(Array) }),
@@ -328,6 +345,7 @@ describe('forwardResponseParams', () => {
       }),
       'openai',
     );
+
     expect(params).toMatchObject({
       temperature: 0.7,
       topP: 0.9,
@@ -341,11 +359,13 @@ describe('forwardResponseParams', () => {
 
   it('normalizes a string stop into stopSequences array', () => {
     const { params } = forwardResponseParams(parse({ stop: 'STOP' }), 'openai');
+
     expect(params.stopSequences).toEqual(['STOP']);
   });
 
   it('passes through an array stop as stopSequences', () => {
     const { params } = forwardResponseParams(parse({ stop: ['STOP', 'END'] }), 'openai');
+
     expect(params.stopSequences).toEqual(['STOP', 'END']);
   });
 
@@ -354,6 +374,7 @@ describe('forwardResponseParams', () => {
       parse({ previous_response_id: 'resp_prev' }),
       'openai',
     );
+
     expect(providerOptions).toEqual({ openai: { previousResponseId: 'resp_prev' } });
   });
 
@@ -362,6 +383,7 @@ describe('forwardResponseParams', () => {
       parse({ previous_response_id: 'resp_prev' }),
       'anthropic',
     );
+
     expect(providerOptions).toEqual({});
   });
 
@@ -383,6 +405,7 @@ describe('forwardResponseParams', () => {
       }),
       'openai',
     );
+
     expect(providerOptions.openai).toEqual({
       previousResponseId: 'resp_prev',
       user: 'user-1',
@@ -404,11 +427,13 @@ describe('forwardResponseParams', () => {
       parse({ user: 'user-1', store: true, service_tier: 'flex' }),
       'anthropic',
     );
+
     expect(providerOptions).toEqual({});
   });
 
   it('leaves providerOptions empty when no OpenAI params are present', () => {
     const { providerOptions } = forwardResponseParams(parse({ temperature: 0.5 }), 'openai');
+
     expect(providerOptions).toEqual({});
   });
 });
@@ -422,12 +447,14 @@ describe('responses schema validation', () => {
       presence_penalty: -2,
       stop: 'STOP',
     });
+
     expect(parsed.frequency_penalty).toBe(2);
     expect(parsed.stop).toBe('STOP');
   });
 
   it('accepts an array stop', () => {
     const parsed = parseResponsesRequest({ model: 'x', input: 'hi', stop: ['A', 'B'] });
+
     expect(parsed.stop).toEqual(['A', 'B']);
   });
 
@@ -486,8 +513,11 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
         stop: 'STOP',
       }),
     });
+
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doGenerate);
+
     expect(call).toMatchObject({
       temperature: 0.4,
       topP: 0.8,
@@ -515,8 +545,11 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
         max_tool_calls: 2,
       }),
     });
+
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doGenerate);
+
     expect(call.providerOptions).toMatchObject({
       openai: {
         previousResponseId: 'resp_prev',
@@ -541,8 +574,11 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
         user: 'user-1',
       }),
     });
+
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doGenerate);
+
     expect(call.providerOptions ?? {}).toEqual({});
   });
 });
@@ -565,6 +601,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
         }),
       } as unknown as ProviderRegistry,
     });
+
     const res = await app.request('/v1/responses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -579,8 +616,11 @@ describe('responsesRoute param forwarding (streaming)', () => {
         service_tier: 'flex',
       }),
     });
+
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doStream);
+
     expect(call).toMatchObject({ temperature: 0.4, topK: 20, stopSequences: ['STOP'] });
     expect(call.providerOptions).toMatchObject({
       openai: { previousResponseId: 'resp_prev', serviceTier: 'flex' },
@@ -596,6 +636,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
         }),
       } as unknown as ProviderRegistry,
     });
+
     const res = await app.request('/v1/responses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -606,8 +647,11 @@ describe('responsesRoute param forwarding (streaming)', () => {
         previous_response_id: 'resp_prev',
       }),
     });
+
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doStream);
+
     expect(call.providerOptions ?? {}).toEqual({});
   });
 
@@ -620,6 +664,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
         }),
       } as unknown as ProviderRegistry,
     });
+
     const res = await app.request('/v1/responses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -630,8 +675,11 @@ describe('responsesRoute param forwarding (streaming)', () => {
         previous_response_id: 'resp_prev',
       }),
     });
+
     expect(res.status).toBe(200);
+
     const text = await res.text();
+
     expect(text).toContain('"previous_response_id":"resp_prev"');
   });
 });

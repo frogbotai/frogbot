@@ -37,6 +37,7 @@ export function normalizeServiceTier(
     // Direct service_tier field (OpenAI, Groq, Bedrock)
     if (typeof metadata.service_tier === 'string') {
       const raw = metadata.service_tier;
+
       return PROVIDER_TIER_MAP[raw] ?? raw;
     }
 

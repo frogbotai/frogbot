@@ -29,7 +29,9 @@ export function resolvePolicy(user: unknown): AIUserPolicy {
   const targets = Array.isArray(value.models)
     ? value.models.filter((target): target is string => typeof target === 'string')
     : [];
+
   const selected = value.modelAccess === 'selected' || (!value.modelAccess && targets.length > 0);
+
   return {
     models: selected ? { mode: 'selected', targets } : { mode: 'all' },
     ...(typeof value.monthlyBudget === 'number' && { monthlyBudgetUSD: value.monthlyBudget }),
@@ -49,6 +51,7 @@ export async function backfillAIUserPolicy({
   authCollection: string;
 }): Promise<void> {
   let hasMore = true;
+
   while (hasMore) {
     const result = await api.find({
       collection: authCollection,
@@ -57,8 +60,10 @@ export async function backfillAIUserPolicy({
       limit: 100,
       overrideAccess: true,
     });
+
     for (const user of result.docs) {
       if (user.id === undefined) continue;
+
       await api.update({
         collection: authCollection,
         id: user.id,
@@ -66,6 +71,7 @@ export async function backfillAIUserPolicy({
         overrideAccess: true,
       });
     }
+
     hasMore = result.docs.length === 100;
   }
 }
@@ -100,8 +106,10 @@ class SerialQueue {
     const release = () => {
       if (this.updates.get(subject) === owner) this.updates.delete(subject);
     };
+
     owner = next.then(release, release);
     this.updates.set(subject, owner);
+
     return next;
   }
 }
@@ -125,6 +133,7 @@ export function createPolicyHooks({
       ) {
         throw new BudgetExceededError();
       }
+
       if (policy) args.context.policy = policy;
     },
     afterOperation: async (args: {
@@ -139,6 +148,7 @@ export function createPolicyHooks({
       if (id === undefined) return;
       const cost = calculateUsageCostUSD({ model: args.model, providers, usage: args.usage });
       if (cost <= 0) return;
+
       await queue.run(String(id), async () => {
         const current = (await args.req!.frogbot.findByID({
           collection: authCollection,
@@ -147,6 +157,7 @@ export function createPolicyHooks({
           overrideAccess: true,
           req: args.req,
         })) as PolicyDocument;
+
         await args.req!.frogbot.update({
           collection: authCollection,
           id,

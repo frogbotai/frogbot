@@ -23,10 +23,12 @@ export async function RecentsSection({ payload, req }: RecentsSectionProps) {
       req,
       sort: '-lastMessageAt',
     });
+
     collectionPath = formatAdminURL({
       adminRoute: payload.config.routes.admin,
       path: `/collections/${chat.chatsSlug}`,
     });
+
     recents = result.docs.map((doc) => ({
       id: doc.id,
       title: typeof doc.title === 'string' && doc.title ? doc.title : 'Untitled',

@@ -24,11 +24,13 @@ describe('gateway evaluation model', () => {
         warnings: [],
       }),
     );
+
     const beforeUpstream = vi.fn();
     const gateway = createGateway({
       providers: { 'typesafe-ai': { apiKey: 'secret', models: ['jev'] } },
       hooks: { beforeUpstream: [beforeUpstream] },
     });
+
     const provider = gateway.registry['typesafe-ai']!;
 
     gateway.registry['typesafe-ai'] = {
@@ -93,6 +95,7 @@ describe('gateway evaluation model', () => {
         warnings: [],
       }),
     );
+
     const gateway = createGateway({
       providers: { 'typesafe-ai': { apiKey: 'secret' } },
       hooks: {
@@ -105,7 +108,9 @@ describe('gateway evaluation model', () => {
         beforeUpstream: [
           (args) => {
             phases.push(args.phase);
+
             expect(args.context.seeded).toBe(true);
+
             args.headers.set('x-eval', 'test');
           },
         ],
@@ -123,6 +128,7 @@ describe('gateway evaluation model', () => {
         ],
       },
     });
+
     const provider = gateway.registry['typesafe-ai']!;
 
     gateway.registry['typesafe-ai'] = {
@@ -185,6 +191,7 @@ describe('gateway evaluation model', () => {
       providers: { 'typesafe-ai': { apiKey: 'secret' } },
       hooks: { afterError: [afterError], afterOperation: [afterOperation] },
     });
+
     const provider = gateway.registry['typesafe-ai']!;
 
     gateway.registry['typesafe-ai'] = {

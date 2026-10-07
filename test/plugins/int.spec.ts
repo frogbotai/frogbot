@@ -11,10 +11,13 @@ describe('plugins', () => {
       const order: number[] = [];
       const plugin1: Plugin = (config) => {
         order.push(1);
+
         return config;
       };
+
       const plugin2: Plugin = (config) => {
         order.push(2);
+
         return config;
       };
 
@@ -24,7 +27,9 @@ describe('plugins', () => {
         collections: [{ slug: 'users', auth: true, fields: [] }],
         plugins: [plugin1, plugin2],
       };
+
       await buildConfig(testConfig);
+
       expect(order).toEqual([1, 2]);
     });
 
@@ -43,8 +48,10 @@ describe('plugins', () => {
         collections: [{ slug: 'users', auth: true, fields: [] }],
         plugins: [addCollection],
       };
+
       const sanitized = await buildConfig(testConfig);
       const notes = sanitized.collections.find((c) => c.slug === 'notes');
+
       expect(notes).toBeDefined();
     });
 
@@ -67,6 +74,7 @@ describe('plugins', () => {
         ],
         plugins: [stampCreatedBy],
       };
+
       const sanitized = await buildConfig(testConfig);
       // `FrogBotSanitizedConfig.collections` intentionally exposes only
       // FrogBot-vocab metadata (slug/auth/roleMarkers), not Payload field
@@ -77,6 +85,7 @@ describe('plugins', () => {
       const hasCreatedBy = (projects?.fields ?? []).some(
         (f) => (f as { name?: string }).name === 'createdBy',
       );
+
       expect(hasCreatedBy).toBe(true);
     });
   });
@@ -104,7 +113,9 @@ describe('plugins', () => {
         collections: [{ slug: 'users', auth: true, fields: [] }],
         plugins: [],
       };
+
       const sanitized = await buildConfig(testConfig);
+
       expect(sanitized.collections).toBeDefined();
     });
   });

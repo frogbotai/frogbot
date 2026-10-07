@@ -12,6 +12,7 @@ const getTime: Tool<typeof getTimeSchema> = {
   execute: ({ timezone }) => {
     const now = new Date();
     const zone = timezone ?? 'UTC';
+
     return {
       iso: now.toISOString(),
       formatted: now.toLocaleString('en-US', { timeZone: zone }),

@@ -17,6 +17,7 @@ async function collectChunks(
       for (const part of parts) {
         controller.enqueue(part);
       }
+
       controller.close();
     },
   })
@@ -24,11 +25,13 @@ async function collectChunks(
     .getReader();
 
   const frames: string[] = [];
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
       break;
     }
+
     frames.push(value);
   }
 
@@ -73,6 +76,7 @@ describe('createOpenAIStreamTransform', () => {
     ]);
 
     const detail = chunks[0].choices[0].delta.reasoning_details![0];
+
     expect(detail).toMatchObject({
       type: 'reasoning.text',
       id: 'r-0',
@@ -93,6 +97,7 @@ describe('createOpenAIStreamTransform', () => {
     ]);
 
     const detail = chunks[0].choices[0].delta.reasoning_details![0];
+
     expect(detail).toMatchObject({
       type: 'reasoning.encrypted',
       id: 'r-0',
@@ -149,6 +154,7 @@ describe('createOpenAIStreamTransform', () => {
 
     // First chunk: tool-input-start
     const tc0 = chunks[0].choices[0].delta.tool_calls![0];
+
     expect(tc0.index).toBe(0);
     expect(tc0.id).toBe('call_1');
     expect(tc0.type).toBe('function');
@@ -157,11 +163,13 @@ describe('createOpenAIStreamTransform', () => {
 
     // Second chunk: tool-input-delta
     const tc1 = chunks[1].choices[0].delta.tool_calls![0];
+
     expect(tc1.index).toBe(0);
     expect(tc1.function!.arguments).toBe('{"city"');
 
     // Third chunk
     const tc2 = chunks[2].choices[0].delta.tool_calls![0];
+
     expect(tc2.function!.arguments).toBe(':"NYC"}');
   });
 
@@ -199,6 +207,7 @@ describe('createOpenAIStreamTransform', () => {
     ]);
 
     const finishChunk = chunks[1];
+
     expect(finishChunk.choices[0].finish_reason).toBe('stop');
     expect(finishChunk.usage).toEqual({
       prompt_tokens: 10,
@@ -253,8 +262,10 @@ describe('createOpenAIStreamTransform', () => {
     expect(chunks[0].choices[0].delta.content).toBe('Hi');
     expect(chunks[1].usage).toBeNull();
     expect(chunks[1].choices[0].finish_reason).toBe('stop');
+
     // Dedicated final chunk: empty choices, populated usage, shared id/model.
     const usageChunk = chunks[2];
+
     expect(usageChunk.choices).toEqual([]);
     expect(usageChunk.usage).toEqual({
       prompt_tokens: 10,
@@ -340,6 +351,7 @@ describe('createOpenAIStreamTransform', () => {
           type: 'text-delta',
           text: 'Hi',
         } as TextStreamPart<ToolSet>);
+
         controller.close();
       },
     })
@@ -347,11 +359,13 @@ describe('createOpenAIStreamTransform', () => {
       .getReader();
 
     const frames: string[] = [];
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
         break;
       }
+
       frames.push(value);
     }
 

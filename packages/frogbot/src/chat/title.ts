@@ -44,10 +44,12 @@ export async function suggestChatTitleForChat({
     req,
     overrideAccess: false,
   })) as ChatDocument;
+
   const owner = typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
   if (owner === undefined || owner === null || String(owner) !== String(req.user?.id)) {
     return undefined;
   }
+
   const messages = await req.frogbot.find({
     collection: config.messagesSlug,
     where: { and: [{ chat: { equals: chatId } }, { status: { not_equals: 'queued' } }] },
@@ -57,6 +59,7 @@ export async function suggestChatTitleForChat({
     req,
     overrideAccess: false,
   });
+
   const agent = getAgent({ req, slug: chat.agent ?? undefined });
   try {
     return await suggestChatTitle({
@@ -66,6 +69,7 @@ export async function suggestChatTitleForChat({
     });
   } catch (error) {
     req.frogbot.logger.error({ err: error, chatId }, '[frogbot] Failed to suggest chat title');
+
     return undefined;
   }
 }
@@ -139,7 +143,9 @@ function cleanTitle(text: string): string | undefined {
     .find(Boolean)
     ?.replace(/^(["'`]|#+\s*)|(["'`])$/g, '')
     .trim();
+
   if (!title) return undefined;
+
   return title.length > 100 ? `${title.slice(0, 99).trimEnd()}…` : title;
 }
 

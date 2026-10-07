@@ -26,6 +26,7 @@ describe('usage reports import map', () => {
       ai: { providers: { openai: { apiKey: 'test' } } },
       plugins: [usageReportsPlugin()],
     } as FrogBotConfig);
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');

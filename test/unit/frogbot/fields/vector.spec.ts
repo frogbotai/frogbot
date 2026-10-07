@@ -232,6 +232,7 @@ describe('vector fields', () => {
     ]);
 
     input.db = { ...input.db, mapVectorField };
+
     input.blocks = [
       { slug: 'shared', fields: [{ name: 'embedding', type: 'vector', dimensions: 2 }] },
     ];

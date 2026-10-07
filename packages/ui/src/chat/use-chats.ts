@@ -54,7 +54,9 @@ export async function loadChats({
     page: String(page),
     limit: String(limit),
   });
+
   if (agent) params.set('where[agent][equals]', agent);
+
   return chatRequest(sdk, `/${encodeURIComponent(chatsSlug)}?${params}`);
 }
 
@@ -148,6 +150,7 @@ export function useChats(options: UseChatsOptions) {
   const refresh = useCallback(() => {
     const current = ++request.current;
     if (!hasResult.current) setLoading(true);
+
     void loadChats(options)
       .then((next) => {
         if (request.current === current) {
@@ -167,6 +170,7 @@ export function useChats(options: UseChatsOptions) {
 
   useEffect(() => {
     if (!options.initialData) refresh();
+
     return () => {
       request.current++;
     };
@@ -177,6 +181,7 @@ export function useChats(options: UseChatsOptions) {
     const interval = window.setInterval(refresh, options.refreshInterval ?? 30_000);
     window.addEventListener('focus', refresh);
     window.addEventListener(CHAT_MUTATION_EVENT, refresh);
+
     return () => {
       window.clearInterval(interval);
       window.removeEventListener('focus', refresh);

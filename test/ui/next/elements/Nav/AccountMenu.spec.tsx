@@ -14,18 +14,23 @@ describe('AccountMenu', () => {
   it('opens from its trigger and navigates default items', async () => {
     const user = userEvent.setup();
     const onNavigate = vi.fn();
+
     render(
       <AccountMenu {...props} logoutPath="/admin/logout" onNavigate={onNavigate}>
         <button type="button">Open account</button>
       </AccountMenu>,
     );
+
     await user.click(screen.getByRole('button', { name: 'Open account' }));
+
     expect(screen.getAllByRole('menuitem').map((item: HTMLElement) => item.textContent)).toEqual([
       'Account',
       'Settings',
       'Log out',
     ]);
+
     await user.click(screen.getByRole('menuitem', { name: 'Account' }));
+
     expect(onNavigate).toHaveBeenCalledWith('/admin/account');
     expect(screen.queryByRole('menu')).toBeNull();
   });
@@ -33,19 +38,23 @@ describe('AccountMenu', () => {
   it('navigates to the account page from the identity header', async () => {
     const user = userEvent.setup();
     const onNavigate = vi.fn();
+
     render(
       <AccountMenu {...props} email="colby@frogbot.ai" name="Colby Gilbert" onNavigate={onNavigate}>
         <button type="button">Open account</button>
       </AccountMenu>,
     );
+
     await user.click(screen.getByRole('button', { name: 'Open account' }));
     await user.click(screen.getByRole('menuitem', { name: /Colby Gilbert/ }));
+
     expect(onNavigate).toHaveBeenCalledWith('/admin/account');
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('renders identity, avatar, slots, and a logout override', async () => {
     const user = userEvent.setup();
+
     render(
       <AccountMenu
         {...props}
@@ -59,7 +68,9 @@ describe('AccountMenu', () => {
         <button type="button">Open account</button>
       </AccountMenu>,
     );
+
     await user.click(screen.getByRole('button', { name: 'Open account' }));
+
     expect(screen.getByText('Colby Gilbert')).toBeTruthy();
     expect(screen.getByText('colby@frogbot.ai')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Avatar' })).toBeTruthy();
@@ -71,12 +82,15 @@ describe('AccountMenu', () => {
 
   it('omits the logout row without a path or override', async () => {
     const user = userEvent.setup();
+
     render(
       <AccountMenu {...props}>
         <button type="button">Open account</button>
       </AccountMenu>,
     );
+
     await user.click(screen.getByRole('button', { name: 'Open account' }));
+
     expect(screen.queryByText('Log out')).toBeNull();
   });
 });

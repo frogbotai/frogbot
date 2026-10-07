@@ -42,15 +42,18 @@ describe('bedrock shorthand alias resolves to canonical ID before upstream — G
   it('passes the resolved canonical Bedrock ID to languageModel(), not the shorthand alias', async () => {
     const alias = 'claude-4-sonnet';
     const canonical = BEDROCK_CANONICAL_IDS[alias];
+
     expect(canonical, 'fixture alias must exist in the canonical map').toBeDefined();
 
     let receivedModelId: string | undefined;
     const fakeProvider = {
       languageModel: (id: string) => {
         receivedModelId = id;
+
         return createMockModel();
       },
     };
+
     const registry = { bedrock: fakeProvider } as ProviderRegistry;
     const app = createApp({ registry });
 

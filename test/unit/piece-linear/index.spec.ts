@@ -42,6 +42,7 @@ describe('linear', () => {
         },
       },
     };
+
     const body = JSON.stringify(delivery);
     const webhookSecret = 'linear-webhook-secret';
     const signature = createHmac('sha256', webhookSecret).update(body).digest('hex');
@@ -148,6 +149,7 @@ describe('linear', () => {
       auth,
       options: { webhookSecret: 'secret', channelMode: 'agent-sessions' },
     });
+
     const fallback = definition.channel?.adapter({
       auth: { apiKey: 'linear-api-key' },
       options: { webhookSecret: 'secret', channelMode: 'comments' },

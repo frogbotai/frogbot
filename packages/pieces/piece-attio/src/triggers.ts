@@ -16,6 +16,7 @@ const webhookEvent = z.object({
     entry_id: z.string().optional(),
   }),
 });
+
 const webhookDelivery = z.object({ events: z.array(webhookEvent).optional() });
 const webhookRegistration = z.object({
   data: z.object({ id: z.object({ webhook_id: z.string() }), secret: z.string() }),
@@ -77,6 +78,7 @@ function trigger<const TSlug extends string, TInput extends z.ZodType>({
         },
         signal: req.signal ?? undefined,
       });
+
       const registration = webhookRegistration.parse(response);
 
       return {

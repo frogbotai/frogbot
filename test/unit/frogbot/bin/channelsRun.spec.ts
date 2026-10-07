@@ -16,9 +16,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../../../packages/frogbot/src/channels/host.js', () => ({
   getChannelHost: () => mocks.host,
 }));
+
 vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
   loadConfig: mocks.loadConfig,
 }));
+
 vi.mock('../../../../packages/frogbot/src/frogbot.js', () => ({
   initFrogBotFromPayload: mocks.initFrogBot,
 }));
@@ -29,22 +31,27 @@ describe('channels:run lifecycle', () => {
   beforeEach(() => {
     mocks.destroy.mockReset().mockResolvedValue(undefined);
     mocks.host.hasGatewayAdapters.mockReset().mockReturnValue(true);
+
     mocks.host.runGatewayListener.mockReset().mockImplementation(async ({ signal }) => {
       await new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve()));
 
       return true;
     });
+
     mocks.loadConfig.mockReset().mockResolvedValue({
       _internal: { payloadConfig: Promise.resolve({}) },
     });
+
     mocks.initFrogBot.mockReset().mockResolvedValue({ destroy: mocks.destroy });
 
     vi.spyOn(BasePayload.prototype, 'init').mockImplementation(function (this: BasePayload) {
       return Promise.resolve(this);
     });
+
     vi.spyOn(process, 'exit').mockImplementation((code) => {
       throw new Error(`exit:${code}`);
     });
+
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
   });

@@ -6,6 +6,7 @@ import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { startStubMCPServer } from '../__helpers/shared/StubMCPServer.js';
 
 type MCPClient = Awaited<ReturnType<typeof createMCPClient>>;
+
 type MCPTools = Awaited<ReturnType<MCPClient['tools']>>;
 
 const adaptTools = (mcpTools: MCPTools) =>
@@ -40,12 +41,15 @@ describe('MCP agent tool recipe', () => {
         headers: { Authorization: 'Bearer test-token' },
       },
     });
+
     clients.push(client);
+
     return { client, server, mcpTools: await client.tools() };
   }
 
   it('maps record keys to tool slugs', async () => {
     const { mcpTools } = await connect();
+
     expect(adaptTools(mcpTools).map((tool) => tool.slug)).toEqual([
       'echo_secret',
       'without_description',
@@ -54,6 +58,7 @@ describe('MCP agent tool recipe', () => {
 
   it('rejects unadapted MCP tools without slugs', async () => {
     const { mcpTools } = await connect();
+
     await expect(
       buildTestConfig({
         collections: [],
@@ -79,6 +84,7 @@ describe('MCP agent tool recipe', () => {
       ai: { providers: { openai: { apiKey: 'test' } } },
       agents: [{ slug: 'support', model: 'openai/gpt-4o-mini', instructions: 'Help', tools }],
     });
+
     expect(config.agents?.[0].tools).toEqual(tools);
   });
 
@@ -87,6 +93,7 @@ describe('MCP agent tool recipe', () => {
     const tools = adaptTools(mcpTools).map((tool) =>
       tool.slug === 'without_description' ? { ...tool, description: undefined } : tool,
     );
+
     await expect(
       buildTestConfig({
         collections: [],
@@ -101,6 +108,7 @@ describe('MCP agent tool recipe', () => {
     const { mcpTools, server } = await connect();
     const tool = adaptTools(mcpTools).find((candidate) => candidate.slug === 'echo_secret');
     const ctx = { agent: { slug: 'support', runId: 'run-1' } } as ToolCtx;
+
     await expect(tool?.execute({ value: 'frog' }, ctx)).resolves.toEqual({
       content: [{ type: 'text', text: 'stub:{"value":"frog"}' }],
       isError: false,
@@ -111,6 +119,7 @@ describe('MCP agent tool recipe', () => {
   it('rejects duplicate adapted slugs', async () => {
     const { mcpTools } = await connect();
     const [tool] = adaptTools(mcpTools);
+
     await expect(
       buildTestConfig({
         collections: [],

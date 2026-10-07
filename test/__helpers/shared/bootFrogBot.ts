@@ -48,6 +48,7 @@ export async function bootFrogBot(
   if (dbType === 'mongodb') {
     const baseUri =
       process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0';
+
     const parsed = new URL(baseUri);
     parsed.pathname = `/${testDatabaseName(`frogbot-test-${suiteName}`)}`;
     process.env.MONGODB_URI = parsed.toString();
@@ -57,6 +58,7 @@ export async function bootFrogBot(
   const mod = (await import(pathToFileURL(configPath).href)) as {
     default: FrogBotSanitizedConfig | Promise<FrogBotSanitizedConfig>;
   };
+
   const config = await mod.default;
 
   const frogbot: FrogBotInstance = await new FrogBot().init({ config });
@@ -65,6 +67,7 @@ export async function bootFrogBot(
     const db = payload.db as MongooseAdapter;
     await Promise.all(Object.values(db.connection.models).map((model) => model.init()));
   }
+
   const app = createTestServer(frogbot);
   const port = await getEphemeralPort();
   const closeServer = await listen(app, port);
@@ -86,12 +89,15 @@ function createTestServer(frogbot: FrogBotInstance): Hono {
     const gatewayHandler = createGatewayHandler(frogbot);
     app.all('/api/v1/*', (c) => gatewayHandler(c.req.raw));
   }
+
   app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()));
+
   return app;
 }
 
 function listen(app: Hono, port: number): Promise<() => Promise<void>> {
   const server = serve({ fetch: app.fetch, port });
+
   return Promise.resolve(
     () =>
       new Promise<void>((resolve, reject) => {
@@ -108,10 +114,12 @@ function listen(app: Hono, port: number): Promise<() => Promise<void>> {
 
 async function getEphemeralPort(): Promise<number> {
   const net = await import('net');
+
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
     server.on('error', reject);
+
     server.listen(0, () => {
       const address = server.address();
       if (typeof address === 'object' && address) {

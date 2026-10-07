@@ -15,9 +15,11 @@ export const linearWebhook: PieceWebhook<LinearOptions> = {
         typeof delivery === 'object' && delivery !== null && 'webhookTimestamp' in delivery
           ? delivery.webhookTimestamp
           : undefined;
+
       if (typeof timestamp !== 'number' || !Number.isSafeInteger(timestamp) || timestamp <= 0) {
         return false;
       }
+
       return new LinearWebhookClient(options.webhookSecret).verify(body, signature, timestamp);
     } catch {
       return false;

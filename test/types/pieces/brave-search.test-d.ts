@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof braveSearch.searchWeb>[0]['input']>().toEqualType
   query: string;
   count?: number | undefined;
 }>();
+
 expectTypeOf<
   NonNullable<Awaited<typeof _results>['web']>['results'][number]['url']
 >().toEqualTypeOf<string>();

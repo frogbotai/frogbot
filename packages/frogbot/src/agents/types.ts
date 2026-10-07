@@ -142,6 +142,7 @@ type AgentRunOpts = (
 export type AgentGenerateOpts = AgentRunOpts & { chatId?: DocID };
 
 export type AgentStreamOpts = AgentRunOpts;
+
 export type AgentStreamMessageOpts = AgentRunOpts & {
   chatId: DocID;
   channelAccess?: ChannelChatAccess;
@@ -150,6 +151,7 @@ export type AgentStreamMessageOpts = AgentRunOpts & {
 };
 
 export type AgentGenerateResult = GenerateTextResult<ToolSet, Record<string, unknown>, never>;
+
 export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown>, never>;
 
 export type AgentStreamMessageResult = AgentStreamResult & {

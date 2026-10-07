@@ -22,6 +22,7 @@ export function installSkill(dest: string, skillSource: string, agents: AgentTar
   if (usesClaude) {
     fs.cpSync(skillSource, path.join(dest, '.claude', 'skills', 'frogbot'), { recursive: true });
   }
+
   if (usesAgents) {
     fs.cpSync(skillSource, path.join(dest, '.agents', 'skills', 'frogbot'), { recursive: true });
   }
@@ -37,10 +38,12 @@ export function installSkill(dest: string, skillSource: string, agents: AgentTar
     const file = path.join(dest, pointer.file);
 
     fs.mkdirSync(path.dirname(file), { recursive: true });
+
     fs.writeFileSync(
       file,
       `# ${pointer.heading}\n\nThis project uses the FrogBot skill at \`${skillDir}/\`.\nStart with \`${skillDir}/SKILL.md\` for a quick reference, then see \`${skillDir}/reference/\` for detailed docs.\n`,
     );
+
     written.add(pointer.file);
   }
 

@@ -6,11 +6,13 @@ const { createAmazonBedrock, standardLanguageModel } = vi.hoisted(() => ({
   createAmazonBedrock: vi.fn(),
   standardLanguageModel: vi.fn((modelId: string) => `standard:${modelId}`),
 }));
+
 const { createBedrockMantle, mantleChat, mantleResponses } = vi.hoisted(() => ({
   createBedrockMantle: vi.fn(),
   mantleChat: vi.fn((modelId: string) => `chat:${modelId}`),
   mantleResponses: vi.fn((modelId: string) => `responses:${modelId}`),
 }));
+
 const { chain, fromNodeProviderChain } = vi.hoisted(() => ({
   chain: vi.fn(() => Promise.resolve({ accessKeyId: 'AKID', secretAccessKey: 'secret' })),
   fromNodeProviderChain: vi.fn(),
@@ -27,6 +29,7 @@ import { testEnv } from '../../config/fixtures.js';
 describe('bedrockProvider.fromEnv', () => {
   it('returns undefined when no AWS credentials are present', () => {
     const result = bedrockProvider.fromEnv(testEnv());
+
     expect(result).toBeUndefined();
   });
 
@@ -36,6 +39,7 @@ describe('bedrockProvider.fromEnv', () => {
         AWS_BEARER_TOKEN_BEDROCK: 'token-123',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'token-123',
       region: 'us-east-1',
@@ -49,6 +53,7 @@ describe('bedrockProvider.fromEnv', () => {
         AWS_REGION: 'eu-west-1',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'token-123',
       region: 'eu-west-1',
@@ -63,6 +68,7 @@ describe('bedrockProvider.fromEnv', () => {
         AWS_REGION: 'us-west-2',
       }),
     );
+
     expect(result).toEqual({
       accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
       secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
@@ -79,6 +85,7 @@ describe('bedrockProvider.fromEnv', () => {
         AWS_SESSION_TOKEN: 'session-token',
       }),
     );
+
     expect(result).toEqual({
       accessKeyId: 'AKID',
       secretAccessKey: 'secret',
@@ -111,6 +118,7 @@ describe('bedrockProvider.fromEnv', () => {
         AWS_REGION: 'us-east-1',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'token-123',
       region: 'us-east-1',
@@ -154,6 +162,7 @@ describe('bedrockProvider.build', () => {
     chain.mockClear();
     fromNodeProviderChain.mockReset();
     fromNodeProviderChain.mockReturnValue(chain);
+
     for (const name of [
       'AWS_BEARER_TOKEN_BEDROCK',
       'AWS_ACCESS_KEY_ID',
@@ -207,8 +216,10 @@ describe('bedrockProvider.build', () => {
     const config = createAmazonBedrock.mock.calls[0]?.[0] as {
       credentialProvider: () => Promise<unknown>;
     };
+
     await config.credentialProvider();
     await config.credentialProvider();
+
     expect(fromNodeProviderChain).toHaveBeenCalledOnce();
     expect(chain).toHaveBeenCalledTimes(2);
   });
@@ -255,16 +266,19 @@ describe('bedrockProvider.build', () => {
     const entry = DEFAULT_MODEL_CATALOG.get('bedrock/openai.gpt-5.6-luna');
     assert(entry, 'bedrock/openai.gpt-5.6-luna is in the default catalog');
     const original = entry.sdk;
+
     entry.sdk = {
       npm: '@ai-sdk/amazon-bedrock/mantle',
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
       shape: 'chat',
     };
+
     onTestFinished(() => {
       entry.sdk = original;
     });
 
     const provider = bedrockProvider.build({ apiKey: 'token-123', region: 'us-east-2' });
+
     expect(provider.languageModel('openai.gpt-5.6-luna')).toBe('chat:openai.gpt-5.6-luna');
     expect(mantleChat).toHaveBeenCalledWith('openai.gpt-5.6-luna');
   });

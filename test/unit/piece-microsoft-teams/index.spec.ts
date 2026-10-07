@@ -33,17 +33,21 @@ const auth = {
   cloud: 'login.microsoftonline.com',
   tenantId: 'common',
 };
+
 const botAuth = {
   ...auth,
   appId: 'bot-app-id',
   appPassword: 'bot-app-password',
 };
+
 const messageActivity = JSON.parse(
   readFileSync(new URL('./fixtures/message.json', import.meta.url), 'utf8'),
 );
+
 const adaptiveCardAction = JSON.parse(
   readFileSync(new URL('./fixtures/adaptive-card-action.json', import.meta.url), 'utf8'),
 );
+
 const calls: { url: string; init?: RequestInit }[] = [];
 let transport: (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -53,17 +57,20 @@ const channel = {
   displayName: 'Channel',
   createdDateTime: '2026-09-13T10:00:00Z',
 };
+
 const chat = {
   id: 'chat',
   chatType: 'oneOnOne',
   createdDateTime: '2026-09-13T10:00:00Z',
 };
+
 const member = { id: 'member', displayName: 'Member', email: 'member@example.com' };
 const message = {
   id: 'message',
   createdDateTime: '2026-09-13T10:00:00Z',
   body: { content: 'Hello', contentType: 'text' },
 };
+
 const transcript = { id: 'transcript', createdDateTime: '2026-09-13T09:00:00Z' };
 const recording = { id: 'recording', createdDateTime: '2026-09-13T09:30:00Z' };
 
@@ -96,6 +103,7 @@ function coreReq(credential: unknown = auth): FrogBotRequest {
 const teamsOptions = { botAppType: 'MultiTenant', botUsername: 'bot' } as const;
 
 type TeamsPiece = ReturnType<typeof createMicrosoftTeams>;
+
 type DeltaArgs = {
   client: Awaited<ReturnType<TeamsPiece['client']>>;
   req: PieceRequest;
@@ -164,6 +172,7 @@ function graphFixture(url: string, init?: RequestInit): Promise<Response> {
   if (target.pathname.endsWith('/transcripts')) {
     return Promise.resolve(json({ value: [transcript] }));
   }
+
   if (target.pathname.endsWith('/recordings/recording')) return Promise.resolve(json(recording));
   if (target.pathname.endsWith('/recordings')) return Promise.resolve(json({ value: [recording] }));
 
@@ -246,6 +255,7 @@ describe('native Microsoft Teams OAuth', () => {
       cloud: 'usGovernment',
       tenantId: 'contoso.onmicrosoft.com',
     });
+
     const piece = createGovernmentTeams({ oauth: { clientId: 'client', clientSecret: 'secret' } });
     const definition = pieceFactoryDefinition(createGovernmentTeams);
     const stored = definition.oauth?.toAuth?.({ tokens: { access_token: 'government-token' } });
@@ -591,6 +601,7 @@ describe('native Microsoft Teams polling', () => {
       options: teamsOptions,
       req: request,
     });
+
     const nextChannel = await piece.triggers.channelCreated.run({
       client,
       input: { teamId: 'team' },
@@ -598,12 +609,14 @@ describe('native Microsoft Teams polling', () => {
       req: request,
       cursor: firstChannel.cursor,
     });
+
     const firstChat = await piece.triggers.chatCreated.run({
       client,
       input: {},
       options: teamsOptions,
       req: request,
     });
+
     const nextChat = await piece.triggers.chatCreated.run({
       client,
       input: {},

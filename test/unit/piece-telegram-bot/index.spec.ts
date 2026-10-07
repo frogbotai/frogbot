@@ -27,6 +27,7 @@ const req = (): PieceRequest =>
   }) as unknown as PieceRequest;
 
 type TelegramBot = ReturnType<typeof createTelegramBot>;
+
 const response = (result: unknown = { message_id: 42 }) =>
   new Response(JSON.stringify({ ok: true, result }), {
     status: 200,
@@ -49,6 +50,7 @@ describe('telegram-bot', () => {
         is_topic_message: true,
       },
     });
+
     const webhookSecret = 'telegram-webhook-secret';
 
     vi.stubGlobal(
@@ -217,6 +219,7 @@ describe('telegram-bot', () => {
         new Response('frog', { status: 200, headers: { 'Content-Type': 'image/png' } }),
       )
       .mockResolvedValueOnce(response());
+
     vi.stubGlobal('fetch', fetch);
     const request = {
       ...req(),

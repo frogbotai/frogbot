@@ -18,12 +18,14 @@ function normalize(input: unknown, ancestors = new Set<object>()): JSONValue {
       '[frogbot] Raw trigger input must be JSON data without cycles or non-JSON values.',
     );
   }
+
   ancestors.add(input);
   try {
     if (Array.isArray(input)) return Array.from(input, (value) => normalize(value, ancestors));
     if (Object.getOwnPropertySymbols(input).length) {
       throw new Error('[frogbot] Raw trigger input cannot contain symbol keys.');
     }
+
     return Object.fromEntries(
       Object.keys(input)
         .sort()
@@ -53,7 +55,9 @@ export function parseSubscriptionInput({
   ) {
     throw new Error('[frogbot] Subscription input must be a raw-input envelope.');
   }
+
   if (Object.hasOwn(input, 'value')) return schema.parse(normalize(input.value));
   const result = schema.safeParse(undefined);
+
   return result.success ? result.data : schema.parse({});
 }

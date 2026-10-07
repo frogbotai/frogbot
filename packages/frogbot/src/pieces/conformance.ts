@@ -19,6 +19,7 @@ type ConformanceError = string | RegExp;
 type ConformanceRequest = Pick<FrogBotRequest, 'user'> & {
   frogbot: { connections: Pick<FrogBot['connections'], 'resolvePieceCredential'> };
 };
+
 type ConformanceExpectation = { result: unknown } | { error: ConformanceError };
 
 type ConformanceAction = {
@@ -96,6 +97,7 @@ function assertEqual(actual: unknown, expected: unknown, message: string): void 
 
 function assertUnique(slugs: string[], subject: string): void {
   const seen = new Set<string>();
+
   for (const slug of slugs) {
     if (seen.has(slug)) fail(`${subject} contains duplicate '${slug}'.`);
     seen.add(slug);
@@ -104,6 +106,7 @@ function assertUnique(slugs: string[], subject: string): void {
 
 function matchesError(error: unknown, expected: ConformanceError): boolean {
   const message = error instanceof Error ? error.message : String(error);
+
   return typeof expected === 'string' ? message.includes(expected) : expected.test(message);
 }
 
@@ -127,6 +130,7 @@ export async function pieceConformance<T extends PieceDefinition>(
   const actionSlugs = definition.actions.map(({ slug }) => slug);
   const fixtureSlugs = fixtures.actions.map(({ slug }) => slug);
   assertUnique(fixtureSlugs, 'Action fixtures');
+
   assertEqual(
     [...fixtureSlugs].sort(),
     [...actionSlugs].sort(),
@@ -152,6 +156,7 @@ export async function pieceConformance<T extends PieceDefinition>(
     },
     user: null,
   };
+
   const req = stub as FrogBotRequest;
 
   for (const fixture of fixtures.actions) {
@@ -164,11 +169,13 @@ export async function pieceConformance<T extends PieceDefinition>(
         input: fixture.input,
         req,
       });
+
       if ('error' in fixture.expect) {
         fail(
           `action '${fixture.slug}' resolved but expected error ${String(fixture.expect.error)}.`,
         );
       }
+
       assertEqual(
         result,
         fixture.expect.result,
@@ -181,6 +188,7 @@ export async function pieceConformance<T extends PieceDefinition>(
           `action '${fixture.slug}' threw '${error instanceof Error ? error.message : String(error)}', expected ${String(fixture.expect.error)}.`,
         );
       }
+
       throw error;
     }
   }
@@ -194,7 +202,9 @@ export async function pieceConformance<T extends PieceDefinition>(
         ),
       )
     : {};
+
   const client = await instance.client({ req });
+
   for (const fixture of fixtures.options ?? []) {
     const action = definition.actions.find(({ slug }) => slug === fixture.action);
     if (!action) fail(`options fixture references unknown action '${fixture.action}'.`);
@@ -209,16 +219,19 @@ export async function pieceConformance<T extends PieceDefinition>(
           }) => Promise<PieceOption[]>
         >
       | undefined = action.options;
+
     const callback = callbacks?.[fixture.field];
     if (!callback) {
       fail(`action '${fixture.action}' has no options callback for '${fixture.field}'.`);
     }
+
     const result = await callback({
       input: fixture.input ?? {},
       client,
       options: parsedOptions,
       req,
     });
+
     assertEqual(
       result,
       fixture.expect,
@@ -227,10 +240,12 @@ export async function pieceConformance<T extends PieceDefinition>(
   }
 
   const declaredTriggers = (definition.triggers ?? []).map(({ slug, type }) => ({ slug, type }));
+
   assertUnique(
     (fixtures.triggers ?? []).map(({ slug }) => slug),
     'Trigger fixtures',
   );
+
   assertEqual(
     fixtures.triggers ?? [],
     declaredTriggers,
@@ -331,6 +346,7 @@ export async function pieceConformance<T extends PieceDefinition>(
           req: channelRequest(fixture.request),
           options: parsedOptions,
         });
+
         const actual = response ? { status: response.status, body: await response.text() } : null;
 
         assertEqual(

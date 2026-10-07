@@ -50,6 +50,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       if (!isProviderName(key)) {
         throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
+
       setGatewayProvider(providers, key, {});
       continue;
     }
@@ -60,11 +61,13 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
           `[frogbot] Custom provider '${key}' conflicts with a built-in provider name.`,
         );
       }
+
       providers[key] = {
         baseURL: entry.baseUrl,
         ...(entry.apiKey !== undefined && { apiKey: entry.apiKey }),
         ...(entry.headers !== undefined && { headers: entry.headers }),
       };
+
       continue;
     }
 
@@ -78,10 +81,12 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
           "[frogbot] Provider 'replicate' requires a non-empty apiKey when configured with an object.",
         );
       }
+
       providers.replicate = {
         apiToken: entry.apiKey,
         ...(entry.models !== undefined && { models: entry.models }),
       };
+
       continue;
     }
 
@@ -91,6 +96,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
           "[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.",
         );
       }
+
       providers.bedrock = entry;
       continue;
     }
@@ -100,6 +106,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
         `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
       );
     }
+
     setGatewayProvider(providers, key, {
       apiKey: entry.apiKey,
       ...(entry.models !== undefined && { models: entry.models }),
@@ -107,6 +114,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
   }
 
   const hooks = toGatewayHooks(config.hooks);
+
   return {
     providers,
     hooks: {
@@ -118,6 +126,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
 
 export function createAIGateway(config: SanitizedAIConfig, logger?: Logger): Gateway {
   const create = createGateway as (config: GatewayConfig) => Gateway;
+
   return create({
     ...buildGatewayConfig(config),
     ...(logger && { logger }),

@@ -15,6 +15,7 @@ expectTypeOf<Parameters<typeof monday.createItem>[0]['input']>().toEqualTypeOf<{
   columnValues: Record<string, unknown>;
   createLabelsIfMissing?: boolean | undefined;
 }>();
+
 expectTypeOf(item).toEqualTypeOf<Promise<Record<string, unknown>>>();
 
 const _createItemRejectsCreateUpdateInput = () =>

@@ -17,12 +17,14 @@ function request(fields: { user?: { id: string; roles: string[] } } = {}): FrogB
 
 async function getCollection(options: Parameters<typeof apiKeysPlugin>[0] = {}) {
   const config = await apiKeysPlugin(options)(makeConfig());
+
   return config.collections.find((collection) => collection.slug === 'api-keys')!;
 }
 
 describe('API keys collection', () => {
   it('injects secure owner-scoped fields and access', async () => {
     const collection = await getCollection();
+
     expect(collection.fields.map((field) => ('name' in field ? field.name : null))).toEqual([
       'name',
       'owner',
@@ -50,10 +52,13 @@ describe('API keys collection', () => {
     expect(await collection.access?.delete?.({ req: request() })).toBe(false);
     expect(await collection.access?.read?.({ req: request() })).toBe(false);
     expect(await collection.access?.update?.({ req: request() })).toBe(false);
+
     for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
+
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
     }
+
     expect(collection.admin?.views).toEqual([
       {
         type: 'list',
@@ -65,10 +70,13 @@ describe('API keys collection', () => {
       name: 'actions',
       admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
     });
+
     const revokedAt = collection.fields.find(
       (field) => 'name' in field && field.name === 'revokedAt',
     );
+
     const condition = 'admin' in revokedAt! ? revokedAt.admin?.condition : undefined;
+
     expect(condition?.({}, { revokedAt: null }, {} as never)).toBe(false);
     expect(condition?.({}, { revokedAt: '2026-08-02T00:00:00.000Z' }, {} as never)).toBe(true);
   });
@@ -79,11 +87,13 @@ describe('API keys collection', () => {
       .fn()
       .mockResolvedValueOnce({ id: 'key-1', createdAt: 'now' })
       .mockResolvedValueOnce({ id: 'key-2', createdAt: 'now' });
+
     const req = {
       user: { id: 'user-1' },
       json: () => Promise.resolve({ name: 'Deploy' }),
       frogbot: { create },
     } as unknown as FrogBotRequest;
+
     const endpoint = collection.endpoints!.find((item) => item.path === '/mint')!;
     const first = await endpoint.handler(req);
     const second = await endpoint.handler(req);
@@ -103,6 +113,7 @@ describe('API keys collection', () => {
 
     for (const path of ['/mint', '/:id/revoke', '/:id/rotate']) {
       const endpoint = collection.endpoints!.find((item) => item.path === path)!;
+
       expect((await endpoint.handler(req)).status).toBe(401);
     }
   });
@@ -116,6 +127,7 @@ describe('API keys collection', () => {
     const find = vi
       .fn()
       .mockResolvedValue({ docs: [{ costUSD: 0.012 }, { costUSD: 0.003 }, { costUSD: null }] });
+
     const hook = 'hooks' in field! ? field.hooks?.afterRead?.[0] : undefined;
 
     expect(field).toMatchObject({
@@ -162,6 +174,7 @@ describe('API keys collection', () => {
         update,
       },
     } as unknown as FrogBotRequest;
+
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
     const response = await endpoint.handler(req);
 
@@ -177,6 +190,7 @@ describe('API keys collection', () => {
       canRevokeAnyKey: (req) =>
         (req.user as { roles?: string[] } | null)?.roles?.includes('support') === true,
     });
+
     const req = {
       user: { id: 'support-1', roles: ['support'] },
       routeParams: { id: 'key-1' },
@@ -187,6 +201,7 @@ describe('API keys collection', () => {
         update: vi.fn().mockResolvedValue({}),
       },
     } as unknown as FrogBotRequest;
+
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
 
     expect((await endpoint.handler(req)).status).toBe(200);
@@ -207,14 +222,17 @@ describe('API keys collection', () => {
           .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update: vi.fn().mockImplementation(() => {
           operations.push('revoke');
+
           return Promise.resolve();
         }),
         create: vi.fn().mockImplementation(() => {
           operations.push('mint');
+
           return Promise.resolve({ id: 'key-2', createdAt: 'now' });
         }),
       },
     } as unknown as FrogBotRequest;
+
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
     const response = await endpoint.handler(req);
     const body = await response.json();
@@ -245,6 +263,7 @@ describe('API keys collection', () => {
         create: vi.fn().mockRejectedValue(new Error('database unavailable')),
       },
     } as unknown as FrogBotRequest;
+
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
 
     await expect(endpoint.handler(req)).rejects.toThrow('database unavailable');
@@ -253,6 +272,7 @@ describe('API keys collection', () => {
 
   it('merges an existing transformed collection and explicit overrides', async () => {
     const config = makeConfig();
+
     config.collections.push({
       slug: 'api-keys',
       fields: [{ name: 'tenant', type: 'text' }],
@@ -268,9 +288,11 @@ describe('API keys collection', () => {
       access: { read: () => true },
       endpoints: [{ method: 'get', path: '/custom', handler: () => Response.json({}) }],
     });
+
     const result = await apiKeysPlugin({
       collection: { fields: [{ name: 'metadata', type: 'json' }] },
     })(config);
+
     const collection = result.collections.find((item) => item.slug === 'api-keys')!;
     const names = collection.fields.map((field) => ('name' in field ? field.name : null));
 

@@ -30,6 +30,7 @@ export const dateDifference = defineAction({
       minute: difference.minutes(),
       second: difference.seconds(),
     };
+
     const result: Record<string, number> = {};
 
     value.unitDifference.forEach((unit) => {

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+
 export type EditableTextProps = {
   className?: string;
   disallowEditingOnClick?: boolean;
@@ -10,6 +11,7 @@ export type EditableTextProps = {
   tooltipContent?: string;
   value?: string;
 };
+
 export function EditableText({
   className,
   disallowEditingOnClick,
@@ -23,6 +25,7 @@ export function EditableText({
   const [value, setValue] = useState(externalValue);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => setValue(externalValue), [externalValue]);
+
   useEffect(() => {
     if (isEditing) {
       ref.current?.focus();
@@ -35,12 +38,14 @@ export function EditableText({
       }
     }
   }, [isEditing]);
+
   const commit = () => {
     const next = ref.current?.textContent?.trim() || value || '';
     setValue(next);
     if (next && next !== externalValue) onValueChange(next);
     setIsEditing(false);
   };
+
   return (
     <div
       ref={ref}

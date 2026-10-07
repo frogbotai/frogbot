@@ -70,6 +70,7 @@ vi.mock('@frogbotai/ui/chat', async () => {
     Chat: mocks.chat,
     ChatProvider: (props: { children: ReactNode; toolRenderers?: unknown }) => {
       mocks.provider(props);
+
       return props.children;
     },
     cookieFetch: () => vi.fn(),
@@ -401,6 +402,7 @@ describe('ChatViewClient', () => {
 
   it('starts a new chat from the saved model and its remembered level', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'anthropic/opus',
@@ -415,6 +417,7 @@ describe('ChatViewClient', () => {
 
   it('restores the remembered level of the model the user switches to', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -431,6 +434,7 @@ describe('ChatViewClient', () => {
 
   it('shows Default after switching to a model without a remembered level', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -447,6 +451,7 @@ describe('ChatViewClient', () => {
 
   it('drops a remembered level the model no longer offers', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -464,6 +469,7 @@ describe('ChatViewClient', () => {
     const user = userEvent.setup();
 
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -490,6 +496,7 @@ describe('ChatViewClient', () => {
     const user = userEvent.setup();
 
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -531,6 +538,7 @@ describe('ChatViewClient', () => {
 
   it('starts an existing chat at its latest message selection before preferences', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -548,6 +556,7 @@ describe('ChatViewClient', () => {
 
   it('starts an existing chat at Default when its latest message used Default', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'openai/gpt-5',
@@ -562,6 +571,7 @@ describe('ChatViewClient', () => {
 
   it('falls back to preferences when the chat selection is no longer allowed', async () => {
     useManifest(reasoningAgent);
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'anthropic/opus',
@@ -578,6 +588,7 @@ describe('ChatViewClient', () => {
 
   it('uses the default when narrowing general removes the saved preference model', async () => {
     useManifest(agentEntry('general'));
+
     mocks.getPreference.mockResolvedValue({
       agent: 'general',
       model: 'anthropic/opus',

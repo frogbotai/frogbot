@@ -321,6 +321,7 @@ function checkCitations(doc, { resolve, problem, warn }) {
         ? line.slice(match.index + match[0].length, matches[at + 1].index)
         : '',
     );
+
     const places = [];
     let last = null;
 
@@ -341,6 +342,7 @@ function checkCitations(doc, { resolve, problem, warn }) {
       if (found.missing) {
         if (!warned.has(found.missing)) {
           warned.add(found.missing);
+
           warn(
             index + 1,
             `reference repo ${found.missing} is missing; its citations are not checked`,
@@ -767,6 +769,7 @@ function checkTicketDocs({ idea, root, home = os.homedir(), only = [] }) {
   const archived = new Set(
     ticketFolders(path.join(idea, ARCHIVED_TICKETS)).map(({ ticket }) => ticket),
   );
+
   const filtered = only.length > 0;
   const rows = new Map();
 

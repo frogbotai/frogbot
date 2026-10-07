@@ -46,13 +46,16 @@ const noopSpan = trace.wrapSpanContext({
 
 export function createGatewayTracer(options: TracingOptions = {}): Tracer {
   const tracer = options.tracer ?? trace.getTracer('@frogbotai/gateway');
+
   return new Proxy(tracer, {
     get(target, prop, receiver) {
       if (prop !== 'startSpan') return Reflect.get(target, prop, receiver);
+
       return (name: string, spanOptions?: SpanOptions, ctx = context.active()) => {
         const span = target.startSpan(name, spanOptions, ctx);
         const hookArgs = ctx.getValue(hookContextKey) as TracedHookArgs | undefined;
         tagSpan(span, hookArgs);
+
         return span;
       };
     },
@@ -75,8 +78,10 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
         // override — skip the body clone + JSON parse entirely.
         if (baseAllOff) {
           args.context[traceOverrideKey] = 'off';
+
           return;
         }
+
         // The `trace` override is a gateway extension field carried only in JSON
         // request bodies. Skip the body clone + parse for non-JSON requests
         // (multipart uploads on transcriptions/images/speech routes) so a large
@@ -84,19 +89,24 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
         // In-process operations have no HTTP request — nothing to parse.
         if (!args.request) {
           args.context[traceOverrideKey] = undefined;
+
           return;
         }
+
         const contentType = args.request.headers.get('content-type') ?? '';
         if (!contentType.includes('application/json')) {
           args.context[traceOverrideKey] = undefined;
+
           return;
         }
+
         let body: unknown;
         try {
           body = await args.request.clone().json();
         } catch {
           // Not valid JSON — leave `body` undefined.
         }
+
         args.context[traceOverrideKey] = signalLevelFromBody(body);
       },
     ],
@@ -106,6 +116,7 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
           args.context[traceOverrideKey] as SignalLevelInput,
           baseLevels,
         );
+
         if (!includesSignalLevel(levels.frogbot, 'required')) return;
         const parent = context.active().setValue(hookContextKey, args);
         const span = tracer.startSpan(
@@ -113,6 +124,7 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
           { attributes: baseAttributes(args) },
           parent,
         );
+
         spans.set(args.requestId, span);
         // Stash the span's context so handlers can activate it around the
         // upstream AI SDK call — SDK-created spans become children of the
@@ -123,6 +135,7 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
     afterUpstream: [
       (args: AfterUpstreamHookArgs) => {
         const span = spans.get(args.requestId) ?? noopSpan;
+
         for (const warning of args.warnings ?? []) {
           span.addEvent('ai.sdk.warning', { warning: JSON.stringify(warning) });
         }
@@ -138,11 +151,13 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
     afterOperation: [
       (args: AfterOperationHookArgs) => {
         const span = spans.get(args.requestId) ?? noopSpan;
+
         span.setAttributes({
           ...args.otel,
           'frogbot.duration_ms': args.durationMs,
           'gen_ai.response.finish_reasons': args.finishReason ?? '',
         });
+
         span.end();
         spans.delete(args.requestId);
       },
@@ -166,6 +181,7 @@ function sanitizeForTelemetry(error: unknown): Exception {
   if (!isProduction()) {
     return error instanceof Error ? error : String(error);
   }
+
   return { name: error instanceof Error ? error.name : 'Error' };
 }
 
@@ -188,12 +204,14 @@ function tagSpan(span: Span, args: TracedHookArgs | undefined): void {
         apiKey?: { id?: string };
       }
     | undefined;
+
   if (!auth) return;
   const tenantId = auth.tenantId ?? auth.tenant?.id;
   const apiKeyId = auth.apiKeyId ?? auth.apiKey?.id;
   if (tenantId) {
     span.setAttribute('tenant.id', tenantId);
   }
+
   if (apiKeyId) {
     span.setAttribute('api_key.id', apiKeyId);
   }

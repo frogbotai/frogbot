@@ -23,6 +23,7 @@ export async function channelsRun(): Promise<void> {
       import('payload'),
       import('../frogbot.js'),
     ]);
+
     const runtime = new BasePayload();
 
     payload = runtime;

@@ -17,6 +17,7 @@ const now = 1_789_200_000_000;
 const delivery = { action: 'create', type: 'Issue', data: { id: 'issue', title: 'Hello 🐸' } };
 const payload = (webhookTimestamp: unknown = now) =>
   JSON.stringify({ ...delivery, webhookTimestamp });
+
 const sign = ({ body, secret = webhookSecret }: { body: string; secret?: string }) =>
   createHmac('sha256', secret).update(body).digest('hex');
 
@@ -30,12 +31,14 @@ function request({ body = payload(), signature = sign({ body }) } = {}) {
 
 function verify(req: FrogBotRequest) {
   const runtime = pieceInstanceRuntime(createLinear({ webhookSecret }));
+
   return runtime.definition.webhook!.verify!({ req, options: runtime.options });
 }
 
 function signedRequest(signature: string) {
   const req = request({ signature });
   if (!signature) req.headers.delete('linear-signature');
+
   return req;
 }
 
@@ -61,6 +64,7 @@ describe('Linear webhook verification', () => {
     const body = `\n${JSON.stringify({ ...delivery, webhookTimestamp: now }, null, 2)}\n`;
     const req = request({ body });
     req.data = { webhookTimestamp: 0 };
+
     await expect(
       verify(Object.assign(req.clone!(), { data: req.data }) as FrogBotRequest),
     ).resolves.toBe(true);
@@ -97,6 +101,7 @@ describe('Linear webhook verification', () => {
       const req = request({ body: payload(timestamp) });
       req.headers.set('linear-timestamp', String(now));
       req.data = { ...delivery, webhookTimestamp: now };
+
       await expect(verify(req)).resolves.toBe(false);
     },
   );
@@ -106,12 +111,14 @@ describe('Linear webhook verification', () => {
     async (body) => {
       const req = request({ body });
       req.headers.set('linear-timestamp', String(now));
+
       await expect(verify(req)).resolves.toBe(false);
     },
   );
 
   it('fails closed without a configured secret', async () => {
     const runtime = pieceInstanceRuntime(createLinear());
+
     await expect(
       runtime.definition.webhook!.verify!({ req: request(), options: runtime.options }),
     ).resolves.toBe(false);
@@ -120,6 +127,7 @@ describe('Linear webhook verification', () => {
   it('fails closed when the raw body is unavailable', async () => {
     const req = request();
     await req.text!();
+
     await expect(verify(req)).resolves.toBe(false);
   });
 });
@@ -135,6 +143,7 @@ describe('Linear webhook lifecycle', () => {
         }),
       ),
     );
+
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'lin_api_test' };
     const linear = createLinear({ auth, webhookSecret });
@@ -144,6 +153,7 @@ describe('Linear webhook lifecycle', () => {
       },
       user: null,
     } as unknown as PieceRequest;
+
     const client = await linear.client({ req });
     const args = {
       client,
@@ -151,10 +161,12 @@ describe('Linear webhook lifecycle', () => {
       options: { webhookSecret, channelMode: 'agent-sessions' as const },
       req,
     };
+
     const state = await issueCreated.onEnable({
       ...args,
       webhookUrl: 'https://example.com/api/webhooks/linear/subscription',
     });
+
     expect(state).toEqual({ webhookId: 'hook' });
     expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toMatchObject({
       query: expect.stringContaining('WebhookCreate'),
@@ -168,7 +180,9 @@ describe('Linear webhook lifecycle', () => {
         },
       },
     });
+
     await issueCreated.onDisable({ ...args, state });
+
     expect(JSON.parse(fetch.mock.calls.at(-1)?.[1]?.body as string)).toMatchObject({
       query: expect.stringContaining('mutation deleteWebhook'),
       variables: { id: 'hook' },
@@ -177,6 +191,7 @@ describe('Linear webhook lifecycle', () => {
 
   it('requires a secret before attempting registration', async () => {
     const client = { createWebhook: vi.fn() };
+
     await expect(
       issueCreated.onEnable({
         client,
@@ -212,7 +227,9 @@ describe('Linear webhook lifecycle', () => {
         }),
       ),
     );
+
     const client = createLinearClient({ auth: { apiKey: 'lin_api_test' } });
+
     await expect(
       issueCreated.onDisable({ client, state: { webhookId: 'hook' } } as never),
     ).rejects.toThrow("Linear failed to delete the issueCreated webhook 'hook'.");
@@ -225,6 +242,7 @@ describe('Linear webhook lifecycle', () => {
       input: { teamId: 'team' },
       handler: vi.fn(),
     };
+
     const config = await buildConfig({
       secret: 'test-secret',
       serverURL: 'https://example.com',
@@ -240,13 +258,17 @@ describe('Linear webhook lifecycle', () => {
         },
       ],
     });
+
     await config._internal.payloadConfig;
     const entry = config._internal.triggers.linear;
+
     expect(entry.instance).toBe(linear);
     expect(entry.subscribers).toEqual([
       { agentSlug: 'ops', piece: linear, trigger: mounted, input: { teamId: 'team' } },
     ]);
+
     const runtime = pieceInstanceRuntime(entry.instance);
+
     expect(runtime.options).toEqual({ webhookSecret, channelMode: 'agent-sessions' });
     await expect(
       runtime.definition.webhook!.verify!({

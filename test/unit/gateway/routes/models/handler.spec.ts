@@ -35,6 +35,7 @@ describe('modelsRoute', () => {
       catalog,
       allowlists: new Map([['openai', new Set(['openai/allowed'])]]),
     });
+
     const response = await app.request('/models');
     const body = (await response.json()) as { data: Array<{ id: string }> };
 

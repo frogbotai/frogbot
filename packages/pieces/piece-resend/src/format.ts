@@ -6,6 +6,7 @@ export function compact(value: Record<string, unknown>): Record<string, unknown>
 
 export function emailBody(input: Record<string, unknown>, fallbackReplyTo = false) {
   const { content, content_type, from, from_name, ...values } = input;
+
   return compact({
     ...values,
     from: from_name ? `${from_name} <${from}>` : from,
@@ -17,6 +18,7 @@ export function emailBody(input: Record<string, unknown>, fallbackReplyTo = fals
 export function address(value: unknown): unknown {
   if (!value || typeof value !== 'object') return value;
   const candidate = value as { address?: string; name?: string };
+
   return candidate.name && candidate.address
     ? `${candidate.name} <${candidate.address}>`
     : candidate.address;

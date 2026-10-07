@@ -19,6 +19,7 @@ export function resolveCalendarMode({
   const modes: CalendarMode[] = configuredModes?.length
     ? configuredModes
     : ['month', 'week', 'day'];
+
   return (
     modes.find((mode) => mode === queryMode) ??
     modes.find((mode) => mode === preferenceMode) ??

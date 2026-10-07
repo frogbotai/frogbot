@@ -18,6 +18,7 @@ expectTypeOf<Parameters<typeof dateHelper.dateDifference>[0]['input']>().toEqual
   endDateFormat?: string | undefined;
   unitDifference?: ('year' | 'month' | 'day' | 'hour' | 'minute' | 'second')[] | undefined;
 }>();
+
 expectTypeOf(difference).toEqualTypeOf<Promise<Record<string, number>>>();
 
 const _dateDifferenceRejectsGetCurrentDateInput = () =>

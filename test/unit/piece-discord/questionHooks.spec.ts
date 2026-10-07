@@ -147,6 +147,7 @@ describe('Discord question hooks', () => {
       ...hookArgs(client, { armed: { U7: { at: 1, picks: [] } } }),
       interaction: click('custom'),
     });
+
     await discordQuestions.updated!({
       ...hookArgs(client, { picks: { U7: { 0: [1] } } }),
       interaction: click('select', 0),

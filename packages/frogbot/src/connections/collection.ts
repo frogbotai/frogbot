@@ -50,6 +50,7 @@ export function defaultConnectionsCollection({
           if (value == null) return true;
           if (typeof value !== 'object' || Array.isArray(value)) return 'Invalid account.';
           const account = value as Record<string, unknown>;
+
           return (
             (typeof account.id === 'string' &&
               !!account.id &&

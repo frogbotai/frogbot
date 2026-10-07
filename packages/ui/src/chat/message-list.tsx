@@ -22,6 +22,7 @@ export function MessageList({ className, messages, renderMessage, ...props }: Me
   useEffect(() => {
     if (!anchored.current) return;
     const frame = requestAnimationFrame(scrollToBottom);
+
     return () => cancelAnimationFrame(frame);
   }, [messages]);
 

@@ -3,8 +3,11 @@ import { TeamsAdapter } from '@chat-adapter/teams';
 import { type AdaptiveCard, cardActivity, QUESTION_ACTION_PREFIX } from './questions/card.js';
 
 type MessageContext = Parameters<TeamsAdapter['handleMessageActivity']>[0];
+
 type ChatInstance = NonNullable<TeamsAdapter['chat']>;
+
 type QuestionActionEvent = Parameters<ChatInstance['processAction']>[0];
+
 type Responder = QuestionActionEvent['user'];
 
 type QuestionAction = { actionId: string; value: string };

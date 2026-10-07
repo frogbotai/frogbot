@@ -42,10 +42,12 @@ export function mergePolicyFields(fields: Field[], base: Field[]): Field[] {
       .filter((field) => 'name' in field && names.has(field.name))
       .map((field) => [(field as { name: string }).name, field]),
   );
+
   const policy = base.map((field) => {
     if (!('name' in field)) return field;
     const override = overrides.get(field.name);
     if (!override) return field;
+
     return {
       ...field,
       ...override,
@@ -67,5 +69,6 @@ export function mergePolicyFields(fields: Field[], base: Field[]): Field[] {
         : {}),
     } as Field;
   });
+
   return [...fields.filter((field) => !('name' in field) || !names.has(field.name)), ...policy];
 }

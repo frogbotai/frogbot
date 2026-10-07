@@ -55,6 +55,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/sdk packaging', () => {
 
     fs.cpSync(path.join(fixtures, 'sdk-frontend'), frontend, { recursive: true });
     fs.cpSync(path.join(fixtures, 'sdk-only'), sdkOnly, { recursive: true });
+
     fs.copyFileSync(
       path.join(repoRoot, 'test', 'sdk', 'frogbot-types.ts'),
       path.join(frontend, 'types', 'frogbot-types.ts'),
@@ -180,6 +181,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/sdk packaging', () => {
 
     it('performs a typed find against a live app', async () => {
       await clearAndSeed(booted.frogbot, 'empty');
+
       await booted.frogbot.create({
         collection: 'sdk-pages',
         data: { _status: 'published', title: 'Hello' },

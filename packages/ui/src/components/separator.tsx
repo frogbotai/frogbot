@@ -1,6 +1,7 @@
 'use client';
 import * as Primitive from '@radix-ui/react-separator';
 import type { ComponentProps } from 'react';
+
 export function Separator({
   className,
   orientation = 'horizontal',
@@ -16,6 +17,7 @@ export function Separator({
     />
   );
 }
+
 export function HorizontalSeparatorWithText({
   className,
   children,

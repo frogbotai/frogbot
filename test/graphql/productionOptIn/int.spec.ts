@@ -46,6 +46,7 @@ describe('GraphQL production opt-ins', () => {
         body: JSON.stringify({ query: '{ __schema { queryType { name } } }' }),
       }),
     );
+
     const body = await response.json();
 
     expect(response.status).toBe(200);

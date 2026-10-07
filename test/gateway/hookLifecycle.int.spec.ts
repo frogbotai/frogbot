@@ -29,6 +29,7 @@ function makeAppWithModel(providerName: string, model: LanguageModelV4, hooks?: 
   const registry = {
     [providerName]: { languageModel: () => model },
   } as unknown as ProviderRegistry;
+
   return createApp({ registry, hooks });
 }
 
@@ -74,10 +75,12 @@ function makeSpan() {
     recordException: vi.fn(),
     setAttribute(key: string, value: unknown) {
       this.attributes[key] = value;
+
       return this as unknown as Span;
     },
     setAttributes(attrs: Record<string, unknown>) {
       Object.assign(this.attributes, attrs);
+
       return this as unknown as Span;
     },
     setStatus: vi.fn(),
@@ -151,6 +154,7 @@ describe('gateway streaming lifecycle — reader-level stream rejection (G26)', 
         stream: true,
       }),
     });
+
     await res.text().catch(() => undefined);
 
     // The upstream failed before any byte reached the client → a pre-flight
@@ -192,6 +196,7 @@ describe('gateway streaming lifecycle — reader-level stream rejection (G26)', 
         stream: true,
       }),
     });
+
     await res.text().catch(() => undefined);
 
     expect(res.status).toBe(500);
@@ -229,6 +234,7 @@ describe('gateway streaming lifecycle — reader-level stream rejection (G26)', 
         stream: true,
       }),
     });
+
     await res.text().catch(() => undefined);
 
     expect(res.status).toBe(500);

@@ -32,6 +32,7 @@ describe('resolveUserSlug', () => {
       { slug: 'admins', auth: true, fields: [] },
       { slug: 'customers', auth: true, fields: [] },
     ];
+
     expect(resolveUserSlug(make(collections, 'customers'))).toBe('customers');
   });
 
@@ -40,6 +41,7 @@ describe('resolveUserSlug', () => {
       { slug: 'admins', auth: true, fields: [] },
       { slug: 'customers', auth: true, fields: [] },
     ];
+
     expect(() => resolveUserSlug(make(collections))).toThrow(
       '[frogbot] Multiple auth collections found (admins, customers). ' +
         'Set `admin.user` to the slug of your user collection.',
@@ -51,6 +53,7 @@ describe('resolveUserSlug', () => {
       { slug: 'admins', auth: true, fields: [] },
       { slug: 'customers', auth: true, fields: [] },
     ];
+
     expect(() => resolveUserSlug(make(collections, 'posts'))).toThrow(
       "[frogbot] `admin.user` is 'posts' but no auth collection has that slug (found: admins, customers).",
     );

@@ -24,6 +24,7 @@ const createIdentity = definePiece({
   },
   actions: [],
 });
+
 const method = createIdentity({ oauth, slug: 'work' });
 const config = (auth: unknown = { signIn: [method] }, fields: unknown[] = []): FrogBotConfig => ({
   secret: 'test-secret',
@@ -41,9 +42,12 @@ describe('collection sign-in configuration', () => {
         { slug: 'customers', auth: { signIn: [method] }, fields: [] },
       ],
     });
+
     const built = await result._internal.payloadConfig;
+
     for (const slug of ['users', 'customers']) {
       const collection = built.collections.find((entry) => entry.slug === slug)!;
+
       expect(collection.auth).not.toHaveProperty('signIn');
       expect(collection.auth.disableLocalStrategy).toBeFalsy();
       expect(collection.custom.frogbot.signIn).toEqual([
@@ -57,6 +61,7 @@ describe('collection sign-in configuration', () => {
       );
       expect(JSON.stringify(collection.custom)).not.toContain(oauth.clientSecret);
     }
+
     expect(built.admin.components.afterLogin).toEqual([
       'custom#AfterLogin',
       '@frogbotai/next/rsc#SignInButtons',
@@ -74,6 +79,7 @@ describe('collection sign-in configuration', () => {
         { slug: 'customers', auth: { signIn: [method] }, fields: [] },
       ],
     });
+
     expect((await result._internal.payloadConfig).admin.components.afterLogin ?? []).not.toContain(
       '@frogbotai/next/rsc#SignInButtons',
     );
@@ -104,6 +110,7 @@ describe('collection sign-in configuration', () => {
         scopes: [],
       },
     })({ oauth });
+
     expect(() => sanitize(config({ signIn: [piece] }))).toThrow('account function');
   });
 
@@ -123,9 +130,11 @@ describe('collection sign-in configuration', () => {
         disableLocalStrategy: { enableFields: true, optionalPassword: true },
       }),
     );
+
     const users = (await result._internal.payloadConfig).collections.find(
       ({ slug }) => slug === 'users',
     )!;
+
     expect(users.flattenedFields).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'email', unique: true }),
@@ -155,6 +164,7 @@ describe('sign-in identity matching', () => {
         },
       },
     } as unknown as FrogBotRequest;
+
     return {
       req,
       find,
@@ -167,6 +177,7 @@ describe('sign-in identity matching', () => {
   it('normalizes email and excludes trash using an authoritative collection-scoped query', async () => {
     const { resolve, find, create } = setup();
     find.mockResolvedValue({ docs: [{ id: 1, email: 'person@example.com', _verified: true }] });
+
     expect(await resolve(' Person@Example.com ')).toBe(1);
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -184,6 +195,7 @@ describe('sign-in identity matching', () => {
     'rejects invalid account email %j',
     async (email) => {
       const { req, find } = setup();
+
       await expect(resolveSignInIdentity({ req, collectionSlug: 'users', email })).rejects.toThrow(
         'account',
       );
@@ -201,18 +213,22 @@ describe('sign-in identity matching', () => {
   ])('fails closed for ambiguous or locally unverified identity %j', async (...docs) => {
     const { resolve, find, create } = setup();
     find.mockResolvedValue({ docs });
+
     await expect(resolve()).rejects.toThrow('account');
     expect(create).not.toHaveBeenCalled();
   });
 
   it('recovers only an email uniqueness conflict by re-reading the winning user', async () => {
     const { resolve, find, create } = setup();
+
     find
       .mockResolvedValueOnce({ docs: [] })
       .mockResolvedValueOnce({ docs: [{ id: 2, email: 'person@example.com', _verified: true }] });
+
     create.mockRejectedValue(
       new ValidationError({ errors: [{ path: 'email', message: 'Value must be unique' }] }),
     );
+
     expect(await resolve()).toBe(2);
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -230,6 +246,7 @@ describe('sign-in identity matching', () => {
     const { resolve, find, create } = setup();
     find.mockResolvedValue({ docs: [] });
     create.mockRejectedValue(new Error('denied'));
+
     await expect(resolve()).rejects.toThrow('denied');
     expect(find).toHaveBeenCalledTimes(1);
   });

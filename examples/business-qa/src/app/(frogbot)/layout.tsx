@@ -10,6 +10,7 @@ import { importMap } from './importMap.js';
 
 const serverFunction: ServerFunctionClient = async function (args) {
   'use server';
+
   return handleServerFunctions({ ...args, config, importMap });
 };
 

@@ -86,6 +86,7 @@ export function createXeroClient({ auth }: { auth: unknown }) {
           : input.base === 'identity'
             ? identityBaseUrl
             : accountingBaseUrl;
+
     const base = requestBase(baseUrl);
     const url = new URL(input.path.slice(1), base);
 
@@ -111,6 +112,7 @@ export function createXeroClient({ auth }: { auth: unknown }) {
       signal: input.signal,
       redirect: 'error',
     });
+
     const text = await response.text();
     const data: unknown = text ? JSON.parse(text) : null;
 

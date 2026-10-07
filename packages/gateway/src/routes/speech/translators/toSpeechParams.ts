@@ -12,6 +12,7 @@ export type SpeechParams = {
 
 export function toSpeechParams(body: SpeechRequest): SpeechParams {
   const format = body.response_format ?? 'mp3';
+
   return {
     text: body.input,
     voice: body.voice,

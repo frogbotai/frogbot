@@ -29,6 +29,7 @@ const API_CALL_ERROR_MARKER = Symbol.for('vercel.ai.error.AI_APICallError');
 
 function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
   const text = opts.text ?? 'hi';
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -52,12 +53,15 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 't0' });
+
             controller.enqueue({
               type: 'text-delta',
               id: 't0',
               delta: text,
             });
+
             controller.enqueue({ type: 'text-end', id: 't0' });
+
             controller.enqueue({
               type: 'finish',
               finishReason: finish('stop', 'stop'),
@@ -66,6 +70,7 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
                 outputTokens: { total: 5, text: 5 },
               }),
             });
+
             controller.close();
           },
         }),
@@ -75,6 +80,7 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
 
 function makeApp(hooks = {}) {
   const registry = { openai: { languageModel: () => makeModel() } } as unknown as ProviderRegistry;
+
   return createApp({ registry, hooks });
 }
 
@@ -86,6 +92,7 @@ function capturePino() {
       callback();
     },
   });
+
   const logger = pino({ level: 'info' }, sink) as unknown as GatewayLogger;
   const lines = () =>
     chunks
@@ -93,6 +100,7 @@ function capturePino() {
       .split('\n')
       .filter(Boolean)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
+
   return { logger, lines };
 }
 
@@ -136,6 +144,7 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
         logLines.push({ level: (first as { level?: string }).level ?? 'unknown', msg });
       }
     };
+
     const logger: GatewayLogger = {
       trace: capture,
       debug: capture,
@@ -144,9 +153,11 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
       error: capture,
       fatal: capture,
     };
+
     const registry = {
       openai: { languageModel: () => makeModel() },
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry, logger });
 
     // Sending a body that fails Zod schema: missing required `messages` field.
@@ -170,6 +181,7 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
         logLines.push({ level: (first as { level?: string }).level ?? 'unknown', msg });
       }
     };
+
     const logger: GatewayLogger = {
       trace: capture,
       debug: capture,
@@ -178,9 +190,11 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
       error: capture,
       fatal: capture,
     };
+
     const registry = {
       openai: { languageModel: () => makeModel() },
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry, logger });
 
     // Provider `badprovider` is not in the registry → ProviderNotConfiguredError.
@@ -205,6 +219,7 @@ describe('gateway errors with a real pino instance', () => {
     const registry = {
       openai: { languageModel: () => makeModel() },
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry, logger });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -228,6 +243,7 @@ describe('gateway errors with a real pino instance', () => {
         param: null,
       },
     };
+
     const error = Object.assign(new Error('Forbidden'), {
       [API_CALL_ERROR_MARKER]: true,
       statusCode: 403,
@@ -236,10 +252,12 @@ describe('gateway errors with a real pino instance', () => {
       data: upstreamBody,
       isRetryable: false,
     });
+
     const model = { ...makeModel(), doGenerate: () => Promise.reject(error) } as LanguageModelV4;
     const registry = {
       openai: { languageModel: () => model },
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry, logger });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -277,6 +295,7 @@ describe('G103 — x-request-id injection: no sanitisation or prefix', () => {
     });
 
     const echoed = res.headers.get('x-request-id') ?? '';
+
     // G103: the echoed ID must not contain path-traversal sequences.
     expect(echoed).not.toContain('..');
     // And must be normalised to a safe charset. The gateway generates bare
@@ -321,8 +340,10 @@ describe('G103 — x-request-id injection: no sanitisation or prefix', () => {
     // meaning the gateway must not allow externally-supplied IDs to collide.
     expect(res1.status).toBe(200);
     expect(res2.status).toBe(200);
+
     const id1 = res1.headers.get('x-request-id');
     const id2 = res2.headers.get('x-request-id');
+
     expect(id1).not.toBe(id2);
 
     void ended;

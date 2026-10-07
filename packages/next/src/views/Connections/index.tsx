@@ -24,6 +24,7 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
       ...(secret && secretSchema ? { secretSchema: projectConnectionSchema(secretSchema) } : {}),
     }),
   );
+
   let initialConnections: ConnectionItem[] = [];
   let initialError: string | undefined;
   try {

@@ -43,14 +43,18 @@ const triggerInput = z.object({ project: z.string() });
 const triggerOutput = z.object({ id: z.string() });
 
 type TokenClient = z.output<typeof tokenAuth>;
+
 type OAuthClient = z.output<typeof oauthAuth>;
+
 type TriggerState = { webhookId: string };
+
 type PlainTypes = {
   auth: undefined;
   options: Record<string, never>;
   actions: Record<string, never>;
   triggers: Record<string, never>;
 };
+
 type CredentialedTypes = {
   auth: z.output<typeof tokenAuth>;
   options: Record<string, never>;
@@ -59,36 +63,42 @@ type CredentialedTypes = {
   };
   triggers: Record<string, never>;
 };
+
 type WidenedTypes = {
   auth: undefined;
   options: Record<string, never>;
   actions: { widened: { input: z.output<typeof empty>; output: null } };
   triggers: Record<string, never>;
 };
+
 type OAuthTypes = {
   auth: z.output<typeof oauthAuth>;
   options: Record<string, never>;
   actions: Record<string, never>;
   triggers: Record<string, never>;
 };
+
 type RequiredOptionsTypes = {
   auth: undefined;
   options: z.output<typeof requiredOptions>;
   actions: Record<string, never>;
   triggers: Record<string, never>;
 };
+
 type DefaultOptionsTypes = {
   auth: undefined;
   options: z.output<typeof defaultOptions>;
   actions: { getRegion: { input: z.output<typeof empty>; output: string } };
   triggers: Record<string, never>;
 };
+
 type ChannelTypes = {
   auth: z.output<typeof tokenAuth>;
   options: Record<string, never>;
   actions: Record<string, never>;
   triggers: Record<string, never>;
 };
+
 type TriggerTypes = {
   auth: undefined;
   options: Record<string, never>;
@@ -105,6 +115,7 @@ type TriggerTypes = {
 type TransformedTypes = Omit<PlainTypes, 'actions'> & {
   actions: { read: { input: Record<string, never>; output: string } };
 };
+
 const createTransformed = definePiece({
   slug: 'transformed',
   label: 'Transformed',
@@ -120,7 +131,9 @@ const createTransformed = definePiece({
     },
   ],
 } satisfies PieceDefinition<TransformedTypes, undefined>);
+
 expectTypeOf(createTransformed().read({ input: {}, req })).toEqualTypeOf<Promise<number>>();
+
 expectTypeOf<PieceDefinition<TransformedTypes>['actions'][number]['run']>().returns.toEqualTypeOf<
   Promise<string>
 >();
@@ -132,6 +145,7 @@ const createCredentialed = definePiece({
   client: ({ auth, options }) => {
     expectTypeOf(auth).toEqualTypeOf<CredentialedTypes['auth']>();
     expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
+
     return { token: auth.token };
   },
   actions: [
@@ -145,9 +159,11 @@ const createCredentialed = definePiece({
           expectTypeOf(input).toEqualTypeOf<
             Partial<CredentialedTypes['actions']['getValue']['input']>
           >();
+
           expectTypeOf(client).toEqualTypeOf<TokenClient>();
           expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
           expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
           return Promise.resolve([{ label: 'Value', value: 'id' }]);
         },
       },
@@ -158,6 +174,7 @@ const createCredentialed = definePiece({
         expectTypeOf(client.token).toEqualTypeOf<string>();
         expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
         return Promise.resolve({ value: input.id });
       },
     },
@@ -165,20 +182,26 @@ const createCredentialed = definePiece({
 } satisfies PieceDefinition<CredentialedTypes, TokenClient>);
 
 const developer = createCredentialed({ auth: { token: 'token' } });
+
 expectTypeOf(developer.getValue({ input: { id: 'id' } })).toEqualTypeOf<
   Promise<{ value: string }>
 >();
+
 expectTypeOf(developer.client({})).toEqualTypeOf<Promise<TokenClient>>();
 const connected = createCredentialed();
 const undefinedAuth = createCredentialed({ auth: undefined });
+
 expectTypeOf(undefinedAuth.getValue({ input: { id: 'id' }, req })).toEqualTypeOf<
   Promise<{ value: string }>
 >();
+
 expectTypeOf<Parameters<typeof undefinedAuth.getValue>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<Parameters<typeof undefinedAuth.client>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
+
 expectTypeOf(connected.getValue({ input: { id: 'id' }, req })).toEqualTypeOf<
   Promise<{ value: string }>
 >();
+
 expectTypeOf(connected.client({ req })).toEqualTypeOf<Promise<TokenClient>>();
 expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogBotRequest }>();
 expectTypeOf<'missing'>().not.toExtend<keyof typeof connected>();
@@ -197,12 +220,14 @@ const actions = [
     },
   },
 ];
+
 const widenedDefinition = {
   slug: 'widened',
   label: 'Widened',
   // @ts-expect-error factored arrays require literal slugs
   actions,
 } satisfies PieceDefinition<WidenedTypes, undefined>;
+
 void widenedDefinition;
 
 const createWithoutOAuth = definePiece({
@@ -210,6 +235,7 @@ const createWithoutOAuth = definePiece({
   label: 'Plain',
   actions: [],
 } satisfies PieceDefinition<PlainTypes, undefined>);
+
 createWithoutOAuth();
 // @ts-expect-error oauth requires a piece recipe
 createWithoutOAuth({ oauth: { clientId: 'id', clientSecret: 'secret' } });
@@ -224,12 +250,14 @@ const createOAuth = definePiece({
     scopes: [],
     toAuth: ({ tokens }) => {
       expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
+
       return { accessToken: tokens.access_token ?? '' };
     },
   },
   client: ({ auth }) => auth,
   actions: [],
 } satisfies PieceDefinition<OAuthTypes, OAuthClient>);
+
 createOAuth({ oauth: { clientId: 'id', clientSecret: 'secret' } });
 
 const createRequiredOptions = definePiece({
@@ -238,6 +266,7 @@ const createRequiredOptions = definePiece({
   options: requiredOptions,
   actions: [],
 } satisfies PieceDefinition<RequiredOptionsTypes, undefined>);
+
 // @ts-expect-error required factory options require an argument
 createRequiredOptions();
 createRequiredOptions({ region: 'us-east-1' });
@@ -257,11 +286,13 @@ const createDefaultOptions = definePiece({
         expectTypeOf(options).toEqualTypeOf<DefaultOptionsTypes['options']>();
         expectTypeOf(options.region).toEqualTypeOf<string>();
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
         return Promise.resolve(options.region);
       },
     },
   ],
 } satisfies PieceDefinition<DefaultOptionsTypes, undefined>);
+
 createDefaultOptions();
 createDefaultOptions({});
 createDefaultOptions({ region: 'eu-west-1' });
@@ -273,6 +304,7 @@ const missingClient = {
   auth: tokenAuth,
   actions: [],
 };
+
 // @ts-expect-error pieces with auth require a client
 definePiece(missingClient satisfies PieceDefinition<ChannelTypes, TokenClient>);
 
@@ -286,10 +318,12 @@ const createEmail = definePiece({
       expectTypeOf(client).toEqualTypeOf<undefined>();
       expectTypeOf(options).toEqualTypeOf<PlainTypes['options']>();
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
       return Promise.resolve(null);
     },
   },
 } satisfies PieceDefinition<PlainTypes, undefined>);
+
 const email = createEmail({});
 const emailConfig: Pick<FrogBotConfig, 'email'> = { email };
 expectTypeOf(emailConfig.email).not.toBeNever();
@@ -307,22 +341,26 @@ const createChannel = definePiece({
     adapter: ({ auth, options }) => {
       expectTypeOf(auth).toEqualTypeOf<ChannelTypes['auth']>();
       expectTypeOf(options).toEqualTypeOf<ChannelTypes['options']>();
+
       return {} as Adapter;
     },
     identity({ author, client, req }) {
       expectTypeOf(author).toEqualTypeOf<Author>();
       expectTypeOf(client).toEqualTypeOf<TokenClient>();
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
       return Promise.resolve(null);
     },
   },
 } satisfies PieceDefinition<ChannelTypes, TokenClient>);
+
 const channel = createChannel({ auth: { token: 'token' } });
 const channelAgent: AgentConfig = {
   slug: 'channel-agent',
   instructions: 'Channel',
   channels: [channel],
 };
+
 expectTypeOf(channelAgent.channels).not.toBeNever();
 const invalidChannelAgent: AgentConfig = {
   slug: 'invalid-channel',
@@ -330,6 +368,7 @@ const invalidChannelAgent: AgentConfig = {
   // @ts-expect-error a plain piece cannot fill the channel slot
   channels: [createWithoutOAuth({})],
 };
+
 void invalidChannelAgent;
 
 const createTrigger = definePiece({
@@ -348,6 +387,7 @@ const createTrigger = definePiece({
       },
       onDisable({ state }) {
         expectTypeOf(state).toEqualTypeOf<TriggerState>();
+
         return Promise.resolve();
       },
       run({ input, client, options, req, state }) {
@@ -356,22 +396,29 @@ const createTrigger = definePiece({
         expectTypeOf(options).toEqualTypeOf<TriggerTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
         expectTypeOf(state).toEqualTypeOf<TriggerState>();
+
         return Promise.resolve([{ dedupeKey: 'created', data: { id: input.project } }]);
       },
     },
   ],
 } satisfies PieceDefinition<TriggerTypes, undefined>);
+
 const trigger = createTrigger({});
+
 expectTypeOf(pieceTriggerInstance(trigger.triggers.created)).toEqualTypeOf<
   PieceInstance | undefined
 >();
+
 expectTypeOf<keyof typeof trigger.triggers>().toEqualTypeOf<'created'>();
+
 expectTypeOf<ReturnType<typeof trigger.triggers.created.run>>().toEqualTypeOf<
   Promise<TriggerEvent<TriggerTypes['triggers']['created']['output']>[]>
 >();
+
 expectTypeOf<AgentPieceTrigger<typeof trigger.triggers.created>['input']>().toEqualTypeOf<
   TriggerTypes['triggers']['created']['input']
 >();
+
 const triggerAgent: AgentConfig = {
   slug: 'trigger-agent',
   instructions: 'Trigger',
@@ -387,6 +434,7 @@ const triggerAgent: AgentConfig = {
     } satisfies AgentPieceTrigger<typeof trigger.triggers.created>,
   ],
 };
+
 expectTypeOf(triggerAgent.triggers).not.toBeNever();
 
 const inferredTriggerAgent: AgentConfig<typeof trigger.triggers.created> = {
@@ -405,13 +453,17 @@ const inferredTriggerAgent: AgentConfig<typeof trigger.triggers.created> = {
     { type: 'schedule', slug: 'daily', schedule: { every: '1d' }, prompt: 'Run' },
   ],
 };
+
 expectTypeOf(inferredTriggerAgent).toExtend<AgentConfig>();
+
 type CreatedBinding = AgentPieceTrigger<typeof trigger.triggers.created>;
+
 expectTypeOf<{
   trigger: typeof trigger.triggers.created;
   input: { project: number };
   handler: CreatedBinding['handler'];
 }>().not.toExtend<CreatedBinding>();
+
 expectTypeOf<Omit<CreatedBinding, 'input'>>().not.toExtend<CreatedBinding>();
 
 const unparameterizedAgent: AgentConfig = {
@@ -428,6 +480,7 @@ const unparameterizedAgent: AgentConfig = {
     },
   ],
 };
+
 void unparameterizedAgent;
 
 const createParsedTrigger = definePiece({
@@ -448,14 +501,19 @@ const createParsedTrigger = definePiece({
     },
   ],
 });
+
 const parsedTrigger = createParsedTrigger();
+
 type ParsedBinding = AgentPieceTrigger<typeof parsedTrigger.triggers.parsed>;
+
 expectTypeOf<ParsedBinding['input']>().toEqualTypeOf<{ count?: string } | undefined>();
+
 expectTypeOf<{
   trigger: typeof parsedTrigger.triggers.parsed;
   input: { count: number };
   handler: ParsedBinding['handler'];
 }>().not.toExtend<ParsedBinding>();
+
 const parsedAgent: AgentConfig<typeof parsedTrigger.triggers.parsed> = {
   slug: 'parsed',
   instructions: '',
@@ -468,6 +526,7 @@ const parsedAgent: AgentConfig<typeof parsedTrigger.triggers.parsed> = {
     },
   ],
 };
+
 expectTypeOf(parsedAgent).toExtend<AgentConfig>();
 
 const createSignIn = definePiece({
@@ -482,15 +541,18 @@ const createSignIn = definePiece({
       expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
       expectTypeOf(client).toEqualTypeOf<OAuthClient>();
       expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
+
       return Promise.resolve({ id: 'id', label: 'Account', email: 'user@example.com' });
     },
   },
   client: ({ auth }) => auth,
   actions: [],
 } satisfies PieceDefinition<OAuthTypes, OAuthClient>);
+
 const signIn: SignInMethod = createSignIn({
   oauth: { clientId: 'id', clientSecret: 'secret' },
 });
+
 expectTypeOf(signIn).toExtend<SignInMethod>();
 // @ts-expect-error sign-in requires a factory OAuth app
 const missingAppSignIn: SignInMethod = createSignIn({});
@@ -499,20 +561,24 @@ void missingAppSignIn;
 const missingIdentitySignIn: SignInMethod = createOAuth({
   oauth: { clientId: 'id', clientSecret: 'secret' },
 });
+
 void missingIdentitySignIn;
 
 const oauthConnectionPiece = createOAuth({
   oauth: { clientId: 'id', clientSecret: 'secret' },
 });
+
 const oauthConnection: ConnectionEntry<typeof oauthConnectionPiece> = {
   piece: oauthConnectionPiece,
   oauth: true,
 };
+
 const bothConnection: ConnectionEntry<typeof oauthConnectionPiece> = {
   piece: oauthConnectionPiece,
   oauth: true,
   secret: true,
 };
+
 void oauthConnection;
 void bothConnection;
 const secretPiece = createCredentialed();
@@ -520,17 +586,20 @@ const secretConnection: ConnectionEntry<typeof secretPiece> = {
   piece: secretPiece,
   secret: true,
 };
+
 void secretConnection;
 // @ts-expect-error a connection requires at least one enabled method
 const emptyConnection: ConnectionEntry<typeof oauthConnectionPiece> = {
   piece: oauthConnectionPiece,
 };
+
 void emptyConnection;
 const falseConnection: ConnectionEntry<typeof oauthConnectionPiece> = {
   piece: oauthConnectionPiece,
   // @ts-expect-error false does not enable a connection method
   oauth: false,
 };
+
 void falseConnection;
 const plainPiece = createWithoutOAuth();
 // @ts-expect-error pieces without auth or OAuth cannot be linked
@@ -542,58 +611,73 @@ const missingAppConnection: ConnectionEntry<typeof oauthWithoutApp> = {
   // @ts-expect-error OAuth linking requires a factory OAuth app
   oauth: true,
 };
+
 void missingAppConnection;
 
 type PublicConnections = NonNullable<FrogBotConfig['connections']>;
+
 type PublicConnection = PublicConnections[number];
+
 expectTypeOf<PublicConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
 expectTypeOf<PublicPieceConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
 expectTypeOf<ConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
 expectTypeOf<PublicConnection>().toEqualTypeOf<DomainConnectionEntry>();
+
 expectTypeOf<PublicConnectionEntry<typeof oauthConnectionPiece>>().toEqualTypeOf<
   PublicPieceConnectionEntry<typeof oauthConnectionPiece>
 >();
+
 expectTypeOf<PublicConnectionEntry<typeof plainPiece>>().toBeNever();
+
 expectTypeOf<PublicConnectionEntry<typeof oauthWithoutApp>>().toEqualTypeOf<{
   piece: typeof oauthWithoutApp;
   oauth?: never;
   secret: true;
 }>();
+
 expectTypeOf<
   PublicConnectionEntry<typeof oauthConnectionPiece | typeof secretPiece>
 >().toEqualTypeOf<
   PublicConnectionEntry<typeof oauthConnectionPiece> | PublicConnectionEntry<typeof secretPiece>
 >();
+
 const connectionsConfig = {
   connections: [oauthConnection, bothConnection, secretConnection],
 } satisfies Pick<FrogBotConfig, 'connections'>;
+
 expectTypeOf(connectionsConfig.connections).toExtend<PublicConnections>();
 expectTypeOf<typeof oauthConnection>().toExtend<PublicConnection>();
 expectTypeOf<typeof bothConnection>().toExtend<PublicConnection>();
 expectTypeOf<typeof secretConnection>().toExtend<PublicConnection>();
 expectTypeOf<{ piece: typeof oauthConnectionPiece }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<{
   piece: typeof oauthConnectionPiece;
   oauth: false;
   secret: false;
 }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<{
   piece: typeof oauthConnectionPiece;
   oauth: boolean;
 }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<{
   piece: typeof plainPiece;
   secret: true;
 }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<{
   piece: typeof secretPiece;
   oauth: true;
 }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<{
   piece: typeof oauthWithoutApp;
   oauth: true;
   secret: true;
 }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<{ piece: PieceInstance; secret: true }>().not.toExtend<PublicConnection>();
 expectTypeOf<PublicConnection['piece']>().not.toBeAny();
 expectTypeOf<PublicConnection['piece']['client']>().returns.toEqualTypeOf<Promise<unknown>>();
@@ -607,21 +691,27 @@ const createOAuthOnly = definePiece({
   },
   actions: [],
 } satisfies PieceDefinition<PlainTypes, undefined>);
+
 const oauthOnlyPiece = createOAuthOnly({
   oauth: { clientId: 'id', clientSecret: 'secret' },
 });
+
 expectTypeOf(oauthOnlyPiece).toExtend<PieceInstance>();
+
 expectTypeOf<{
   piece: typeof oauthOnlyPiece;
   oauth: true;
 }>().toExtend<PublicConnection>();
+
 expectTypeOf<{
   piece: typeof oauthOnlyPiece;
   oauth: true;
   secret: true;
 }>().not.toExtend<PublicConnection>();
+
 expectTypeOf<ConnectionSchema>().toEqualTypeOf<z.core.JSONSchema.JSONSchema>();
 expectTypeOf(z.toJSONSchema(tokenAuth, { io: 'input' })).toExtend<ConnectionSchema>();
+
 expectTypeOf<ConnectionSchema['properties']>().toEqualTypeOf<
   Record<string, boolean | ConnectionSchema> | undefined
 >();
@@ -637,6 +727,7 @@ const invalidEmailDefinition = {
     },
   },
 } satisfies PieceDefinition<PlainTypes, undefined>;
+
 void invalidEmailDefinition;
 
 const invalidTriggerDefinition = {
@@ -657,4 +748,5 @@ const invalidTriggerDefinition = {
     },
   ],
 } satisfies PieceDefinition<TriggerTypes, undefined>;
+
 void invalidTriggerDefinition;

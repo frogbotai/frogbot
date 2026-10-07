@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof textHelper.splitText>[0]['input']>().toEqualTypeO
   text: string;
   delimiter: string;
 }>();
+
 expectTypeOf(parts).toEqualTypeOf<Promise<string[]>>();
 
 const _splitTextRejectsConcatTextInput = () =>

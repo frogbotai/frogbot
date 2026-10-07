@@ -18,6 +18,7 @@ import { toModelMessages } from '../../../../../../../packages/gateway/src/route
 describe('system parameter', () => {
   test('returns no system message when system is absent', () => {
     const result = toModelMessages({ messages: [{ role: 'user', content: 'hi' }] });
+
     expect(result).toEqual([{ role: 'user', content: 'hi' }]);
   });
 
@@ -26,6 +27,7 @@ describe('system parameter', () => {
       messages: [{ role: 'user', content: 'hi' }],
       system: 'You are helpful.',
     });
+
     expect(result[0]).toEqual({ role: 'system', content: 'You are helpful.' });
   });
 
@@ -37,6 +39,7 @@ describe('system parameter', () => {
         { type: 'text', text: 'block two' },
       ],
     });
+
     expect(result.slice(0, 2)).toEqual([
       { role: 'system', content: 'block one' },
       { role: 'system', content: 'block two' },
@@ -48,6 +51,7 @@ describe('system parameter', () => {
       messages: [{ role: 'user', content: 'hi' }],
       system: [{ type: 'text', text: 'cached', cache_control: { type: 'ephemeral' } }],
     });
+
     expect(result[0]).toEqual({
       role: 'system',
       content: 'cached',
@@ -63,6 +67,7 @@ describe('system parameter', () => {
 describe('user messages', () => {
   test('passes through string content unchanged', () => {
     const result = toModelMessages({ messages: [{ role: 'user', content: 'Hello' }] });
+
     expect(result).toEqual([{ role: 'user', content: 'Hello' }]);
   });
 
@@ -70,6 +75,7 @@ describe('user messages', () => {
     const result = toModelMessages({
       messages: [{ role: 'user', content: [{ type: 'text', text: 'part' }] }],
     });
+
     expect(result).toEqual([{ role: 'user', content: [{ type: 'text', text: 'part' }] }]);
   });
 
@@ -82,6 +88,7 @@ describe('user messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'user',
@@ -107,6 +114,7 @@ describe('user messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'user',
@@ -124,7 +132,9 @@ describe('user messages', () => {
         },
       ],
     });
+
     const part = (result[0].content as Array<Record<string, unknown>>)[0];
+
     expect(part.type).toBe('file');
     expect(part.mediaType).toBe('image');
     expect((part.data as { type: string; url: URL }).url.href).toBe('https://example.com/x.png');
@@ -147,6 +157,7 @@ describe('user messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'user',
@@ -178,6 +189,7 @@ describe('user messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'user',
@@ -200,6 +212,7 @@ describe('user messages', () => {
     const result = toModelMessages({
       messages: [{ role: 'user', content: [] as unknown as never }],
     });
+
     expect(result).toEqual([{ role: 'user', content: '' }]);
   });
 });
@@ -258,7 +271,9 @@ describe('tool_result handling', () => {
         { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'call_9', content: 'ok' }] },
       ],
     });
+
     const toolMsg = result.find((m) => m.role === 'tool');
+
     expect((toolMsg?.content as Array<{ toolName: string }>)[0].toolName).toBe('lookup');
   });
 
@@ -268,7 +283,9 @@ describe('tool_result handling', () => {
         { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'orphan', content: 'x' }] },
       ],
     });
+
     const toolMsg = result.find((m) => m.role === 'tool');
+
     expect((toolMsg?.content as Array<{ toolName: string }>)[0].toolName).toBe('');
   });
 
@@ -278,7 +295,9 @@ describe('tool_result handling', () => {
         { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'c', content: '{"a":1}' }] },
       ],
     });
+
     const toolMsg = result.find((m) => m.role === 'tool');
+
     expect((toolMsg?.content as Array<{ output: unknown }>)[0].output).toEqual({
       type: 'json',
       value: { a: 1 },
@@ -289,7 +308,9 @@ describe('tool_result handling', () => {
     const result = toModelMessages({
       messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'c' }] }],
     });
+
     const toolMsg = result.find((m) => m.role === 'tool');
+
     expect((toolMsg?.content as Array<{ output: unknown }>)[0].output).toEqual({
       type: 'text',
       value: '',
@@ -314,7 +335,9 @@ describe('tool_result handling', () => {
         },
       ],
     });
+
     const toolMsg = result.find((m) => m.role === 'tool');
+
     expect((toolMsg?.content as Array<{ output: unknown }>)[0].output).toEqual({
       type: 'content',
       value: [
@@ -340,7 +363,9 @@ describe('tool_result handling', () => {
         },
       ],
     });
+
     const toolMsg = result.find((m) => m.role === 'tool');
+
     expect((toolMsg?.content as Array<{ providerOptions: unknown }>)[0].providerOptions).toEqual({
       unknown: { cache_control: { type: 'ephemeral' } },
     });
@@ -356,6 +381,7 @@ describe('assistant messages', () => {
     const result = toModelMessages({
       messages: [{ role: 'assistant', content: 'sure' }],
     });
+
     expect(result).toEqual([{ role: 'assistant', content: 'sure' }]);
   });
 
@@ -363,6 +389,7 @@ describe('assistant messages', () => {
     const result = toModelMessages({
       messages: [{ role: 'assistant', content: [{ type: 'text', text: 'answer' }] }],
     });
+
     expect(result).toEqual([{ role: 'assistant', content: 'answer' }]);
   });
 
@@ -375,6 +402,7 @@ describe('assistant messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'assistant',
@@ -395,6 +423,7 @@ describe('assistant messages', () => {
         { role: 'assistant', content: [{ type: 'thinking', thinking: 'hmm', signature: 'sig' }] },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'assistant',
@@ -409,6 +438,7 @@ describe('assistant messages', () => {
     const result = toModelMessages({
       messages: [{ role: 'assistant', content: [{ type: 'redacted_thinking', data: 'REDACTED' }] }],
     });
+
     expect(result).toEqual([
       {
         role: 'assistant',
@@ -432,6 +462,7 @@ describe('assistant messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([
       {
         role: 'assistant',
@@ -451,6 +482,7 @@ describe('assistant messages', () => {
       error: vi.fn(),
       fatal: vi.fn(),
     };
+
     const result = toModelMessages({
       logger,
       messages: [
@@ -463,6 +495,7 @@ describe('assistant messages', () => {
         },
       ],
     });
+
     expect(result).toEqual([{ role: 'assistant', content: 'kept' }]);
     expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
       { blockType: 'server_tool_use', messageIndex: 0 },

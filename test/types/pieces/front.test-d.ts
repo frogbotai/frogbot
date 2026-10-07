@@ -17,7 +17,9 @@ expectTypeOf<Parameters<typeof front.createLink>[0]['input']>().toEqualTypeOf<{
   externalUrl: string;
   pattern?: string | undefined;
 }>();
+
 expectTypeOf(link).toEqualTypeOf<Promise<Record<string, unknown>>>();
+
 expectTypeOf(
   developerFront.createLink({
     input: { name: 'Order', externalUrl: 'https://example.com/orders/1' },
@@ -34,6 +36,7 @@ const handle = front.addContactHandle({
 });
 
 expectTypeOf(handle).toEqualTypeOf<Promise<{ success: true; message: string }>>();
+
 expectTypeOf<Parameters<typeof front.updateLink>[0]['input']>().toEqualTypeOf<{
   linkId: string;
   name?: string | undefined;
@@ -47,4 +50,5 @@ expectTypeOf<keyof typeof front.triggers>().toEqualTypeOf<
   | 'conversationTagAdded'
   | 'conversationStatusChanged'
 >();
+
 expectTypeOf(front.triggers.conversationStatusChanged.type).toEqualTypeOf<'polling'>();

@@ -81,6 +81,7 @@ export function checkPackages({ patterns, listDirs, tracked }) {
       return parts.slice(1).map((_, index) => parts.slice(0, index + 1).join('/'));
     }),
   );
+
   const literal = new Set(patterns.filter((pattern) => !GLOB_CHARS.test(pattern)));
 
   for (const folder of [...new Set(include)].sort()) {

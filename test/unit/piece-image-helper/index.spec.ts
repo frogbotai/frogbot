@@ -102,6 +102,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', left: 1, top: 0, width: 2, height: 1, resultFileName: 'crop' },
       req: request(),
     });
+
     const saved = await Jimp.read(uploads[0].data);
 
     expect(result).toMatchObject({ name: 'crop.png', mimeType: 'image/png' });
@@ -113,6 +114,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', degrees: 90 },
       req: request(),
     });
+
     const saved = await Jimp.read(uploads[0].data);
 
     expect(result.name).toBe('image.png');
@@ -124,6 +126,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', width: 8, height: 8, maintainAspectRatio: true },
       req: request(),
     });
+
     await imageHelper.resize({
       input: { image: 'source', width: 8, height: 8, maintainAspectRatio: false },
       req: request(),
@@ -156,6 +159,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', outputFormat, resultFileName: 'converted' },
       req: request(),
     });
+
     const converted = await Jimp.read(uploads[0].data);
 
     expect(result).toMatchObject({
@@ -170,6 +174,7 @@ describe('image-helper execution', () => {
       input: { image: 'source', outputFormat: 'AVIF' },
       req: request(),
     });
+
     const metadata = await sharp(uploads[0].data).metadata();
 
     expect(result.file).toMatchObject({ name: 'image.avif', mimeType: 'image/avif' });

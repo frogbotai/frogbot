@@ -7,5 +7,6 @@ export async function dev(args: string[] = []) {
   if (config.admin?.importMap?.autoGenerate !== false) {
     await generateImportMap(await config._internal.payloadConfig);
   }
+
   runNext('dev', args);
 }

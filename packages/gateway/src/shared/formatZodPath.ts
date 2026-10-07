@@ -1,5 +1,6 @@
 export function formatZodPath(path: readonly PropertyKey[]): string {
   let out = '';
+
   for (const segment of path) {
     if (typeof segment === 'number') {
       out += `[${segment}]`;
@@ -7,5 +8,6 @@ export function formatZodPath(path: readonly PropertyKey[]): string {
       out += out === '' ? segment : `.${segment}`;
     }
   }
+
   return out || '(body)';
 }

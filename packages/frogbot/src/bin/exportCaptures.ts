@@ -24,7 +24,9 @@ function whereFor(args: ExportCapturesArgs): Where | undefined {
   if (args.from) {
     and.push({ requestedAt: { greater_than_equal: new Date(args.from).toISOString() } });
   }
+
   if (args.to) and.push({ requestedAt: { less_than_equal: new Date(args.to).toISOString() } });
+
   return and.length ? ({ and } as Where) : undefined;
 }
 
@@ -41,6 +43,7 @@ export async function exportCaptures(args: string[]): Promise<void> {
     destination = parsed.output ? createWriteStream(parsed.output) : undefined;
     const output = destination ?? process.stdout;
     let page = 1;
+
     while (true) {
       const result = await frogbot.find({
         collection: registration.collectionSlug,
@@ -51,14 +54,17 @@ export async function exportCaptures(args: string[]): Promise<void> {
         sort: 'requestedAt',
         overrideAccess: true,
       });
+
       for (const value of result.docs) {
         const blobKey = String((value as Record<string, unknown>).blobKey);
         const json = (await gunzipAsync(await registration.storage.get(blobKey))).toString('utf8');
         await writeCaptureLine(output, json);
       }
+
       if (!result.hasNextPage) break;
       page = result.nextPage ?? page + 1;
     }
+
     if (destination) {
       await new Promise<void>((resolve, reject) =>
         destination!.end((error?: Error) => (error ? reject(error) : resolve())),

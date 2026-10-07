@@ -120,6 +120,7 @@ describe('field type guards', () => {
       type: 'text',
       admin: { position: 'sidebar' },
     } satisfies Field;
+
     const disabled = { name: 'locked', type: 'text', admin: { disabled: true } } satisfies Field;
     const hidden = { name: 'hidden', type: 'text', hidden: true } satisfies Field;
     const adminHidden = { name: 'shown', type: 'text', admin: { hidden: true } } satisfies Field;

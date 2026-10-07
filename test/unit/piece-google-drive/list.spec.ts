@@ -12,6 +12,7 @@ describe('Google Drive listing and search', () => {
           ? json({ error: { message: 'Download denied' } }, 403)
           : new Response('contents');
       }
+
       if (url.searchParams.get('q')?.startsWith("'child'")) {
         return json({
           files: [
@@ -21,14 +22,17 @@ describe('Google Drive listing and search', () => {
           incompleteSearch: true,
         });
       }
+
       if (url.searchParams.get('pageToken') === 'page2') {
         return json({ files: [{ ...metadata, id: 'bad' }] });
       }
+
       return json({
         files: [metadata, { id: 'child', mimeType: folderMimeType }],
         nextPageToken: 'page2',
       });
     });
+
     const result = await drive.listFiles({
       req,
       input: {
@@ -38,6 +42,7 @@ describe('Google Drive listing and search', () => {
         includeSharedDrives: true,
       },
     });
+
     expect(result.files.map((file) => file.id)).toEqual([
       'file',
       'child',
@@ -51,7 +56,9 @@ describe('Google Drive listing and search', () => {
       { fileId: 'bad', message: 'Request failed with status code 403' },
     ]);
     expect(create).toHaveBeenCalledTimes(2);
+
     const lists = requests.filter(({ url }) => url.pathname === '/drive/v3/files');
+
     expect(lists).toHaveLength(3);
     expect(lists[1]?.url.searchParams.get('pageToken')).toBe('page2');
     expect(lists[2]?.url.searchParams.get('q')).toBe("'child' in parents and trashed = false");
@@ -65,7 +72,9 @@ describe('Google Drive listing and search', () => {
     const { drive, req, requests } = await fixture(() =>
       json({ files: [{ id: 'child', mimeType: folderMimeType }] }),
     );
+
     await drive.listFiles({ req, input: { folderId: 'root', includeTrashed: true } });
+
     expect(requests).toHaveLength(1);
     expect(requests[0]?.url.searchParams.get('q')).toBe("'root' in parents");
     expect(requests[0]?.url.searchParams.get('corpora')).toBe('user');
@@ -74,8 +83,11 @@ describe('Google Drive listing and search', () => {
   it('guards recursive cycles and repeated page tokens', async () => {
     const cycle = await fixture(() => json({ files: [{ id: 'root', mimeType: folderMimeType }] }));
     await cycle.drive.listFiles({ req: cycle.req, input: { folderId: 'root', depth: 100 } });
+
     expect(cycle.requests).toHaveLength(1);
+
     const pages = await fixture(() => json({ files: [], nextPageToken: 'same' }));
+
     await expect(
       pages.drive.searchFiles({ req: pages.req, input: { query: 'report' } }),
     ).rejects.toThrow('repeated a page token');
@@ -90,6 +102,7 @@ describe('Google Drive listing and search', () => {
           : { files: [metadata], nextPageToken: 'next' },
       ),
     );
+
     const result = await drive.searchFiles({
       req,
       input: {
@@ -101,6 +114,7 @@ describe('Google Drive listing and search', () => {
         includeSharedDrives: true,
       },
     });
+
     expect(result.map((file) => file.id)).toEqual(['file', 'second']);
     expect(requests[0]?.url.searchParams.get('q')).toBe(
       "fullText contains 'O\\'Brien\\\\report' and 'folder\\'\\\\' in parents and mimeType != 'application/vnd.google-apps.folder'",
@@ -110,6 +124,7 @@ describe('Google Drive listing and search', () => {
 
   it('searches MIME types and folders and returns empty results', async () => {
     const { drive, req, requests } = await fixture(() => json({}));
+
     await expect(
       drive.searchFiles({
         req,
@@ -125,6 +140,7 @@ describe('Google Drive listing and search', () => {
     const { client, req, requests } = await fixture(() =>
       json({ files: [{ id: 'folder', name: 'Invoices' }, { name: 'No ID' }] }),
     );
+
     await expect(
       folderOptions({ client, req, input: { includeSharedDrives: true } }),
     ).resolves.toEqual([{ label: 'Invoices', value: 'folder' }]);
@@ -139,8 +155,10 @@ describe('Google Drive listing and search', () => {
         context.controller.abort(new Error('Stop downloading'));
         throw new Error('Aborted');
       }
+
       return json({ files: [metadata] });
     });
+
     await expect(
       context.drive.listFiles({
         req: context.req,
@@ -151,6 +169,7 @@ describe('Google Drive listing and search', () => {
 
   it.each([0, -1, 1.5])('rejects invalid recursive depth %s before any request', async (depth) => {
     const { drive, req, requests } = await fixture();
+
     await expect(drive.listFiles({ req, input: { folderId: 'root', depth } })).rejects.toThrow();
     expect(requests).toEqual([]);
   });

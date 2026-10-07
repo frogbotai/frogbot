@@ -88,6 +88,7 @@ describe('toModelMessages', () => {
       toModelMessages([
         { role: 'user', content: [{ type: 'input_image', image_url: 'not a url' }] },
       ]);
+
     expect(translate).toThrow(RequestValidationError);
     expect(translate).toThrow(
       expect.objectContaining({
@@ -101,6 +102,7 @@ describe('toModelMessages', () => {
   it('throws a 400 RequestValidationError for a malformed file_url', () => {
     const translate = () =>
       toModelMessages([{ role: 'user', content: [{ type: 'input_file', file_url: '::bad::' }] }]);
+
     expect(translate).toThrow(RequestValidationError);
     expect(translate).toThrow(
       expect.objectContaining({

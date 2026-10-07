@@ -13,6 +13,7 @@ expectTypeOf<Parameters<typeof exa.generateAnswer>[0]['input']>().toEqualTypeOf<
   text?: boolean | undefined;
   model?: 'exa' | 'exa-pro' | undefined;
 }>();
+
 expectTypeOf(answer).toEqualTypeOf<Promise<string>>();
 
 const _generateAnswerRejectsGetContentsInput = () =>

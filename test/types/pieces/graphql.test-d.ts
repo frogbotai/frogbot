@@ -26,5 +26,6 @@ expectTypeOf<Parameters<typeof graphql.sendRequest>[0]['input']>().toEqualTypeOf
   timeout?: number | undefined;
   failsafe?: boolean | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _response>['status']>().toEqualTypeOf<number>();
 expectTypeOf<Awaited<typeof _response>['headers']>().toEqualTypeOf<Record<string, string>>();

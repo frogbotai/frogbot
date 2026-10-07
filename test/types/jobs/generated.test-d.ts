@@ -85,6 +85,7 @@ export async function generatedJobs(frogbot: FrogBot) {
 
   expectTypeOf(notification.input).toEqualTypeOf<{ recipient: string }>();
   expectTypeOf(notification.id).toEqualTypeOf<number | string>();
+
   expectTypeOf(notification.taskStatus['send-notification']['notify'].input).toEqualTypeOf<{
     recipient: string;
   }>();
@@ -99,6 +100,7 @@ export async function generatedJobs(frogbot: FrogBot) {
   });
 
   expectTypeOf(onboarding.input).toEqualTypeOf<{ accountID: number }>();
+
   expectTypeOf(onboarding.taskStatus['count-items']['count'].output).toEqualTypeOf<{
     total: number;
   }>();

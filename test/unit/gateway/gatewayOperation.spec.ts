@@ -28,9 +28,11 @@ const okGenerate = () =>
 
 function makeGateway(hooks: Hooks, doGenerate = okGenerate(), logger?: GatewayLogger): Gateway {
   const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } }, hooks, logger });
+
   gw.registry.openai = {
     languageModel: () => new MockLanguageModelV4({ doGenerate }),
   } as unknown as typeof gw.registry.openai;
+
   return gw;
 }
 
@@ -47,7 +49,9 @@ describe('gateway.operation', () => {
     await op.start();
 
     expect(beforeOperation).toHaveBeenCalledOnce();
+
     const args = beforeOperation.mock.calls[0][0];
+
     expect(args).toMatchObject({
       phase: 'beforeOperation',
       operation: 'chat.completions',
@@ -66,6 +70,7 @@ describe('gateway.operation', () => {
         },
       ],
     });
+
     const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
 
     await expect(op.start()).rejects.toThrow('denied');
@@ -86,6 +91,7 @@ describe('gateway.operation', () => {
         },
       ],
     });
+
     const op = gw.operation({
       operation: 'chat.completions',
       model: 'openai/gpt-4o-mini',
@@ -96,10 +102,12 @@ describe('gateway.operation', () => {
     await generateText({ model: op.chatModel(), prompt: 'hi' });
 
     expect(seen.map((s) => s.phase)).toEqual(['beforeUpstream', 'afterUpstream']);
+
     for (const entry of seen) {
       expect(entry.requestId).toBe(op.requestId);
       expect(entry.context).toBe(op.context);
     }
+
     expect(op.context.fromHook).toBe(true);
     expect(op.context.seed).toBe(1);
   });
@@ -116,7 +124,9 @@ describe('gateway.operation', () => {
     await op.finish();
 
     expect(afterOperation).toHaveBeenCalledOnce();
+
     const args = afterOperation.mock.calls[0][0];
+
     expect(args).toMatchObject({
       phase: 'afterOperation',
       operation: 'chat.completions',
@@ -139,15 +149,18 @@ describe('gateway.operation', () => {
       error: vi.fn(),
       fatal: vi.fn(),
     };
+
     const afterOperation = vi.fn(() => {
       throw new Error('hook boom');
     });
+
     const gw = makeGateway({ afterOperation: [afterOperation] }, okGenerate(), logger);
     const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
     const explicitError = new Error('explicit failure');
 
     await op.start();
     await generateText({ model: op.chatModel(), prompt: 'hi' });
+
     await expect(
       op.finish({
         finishReason: 'abort',
@@ -155,6 +168,7 @@ describe('gateway.operation', () => {
         error: explicitError,
       }),
     ).resolves.toBeUndefined();
+
     await op.finish();
 
     expect(afterOperation).toHaveBeenCalledExactlyOnceWith(
@@ -184,12 +198,15 @@ describe('gateway.operation', () => {
         throw upstreamError;
       }),
     );
+
     const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
 
     await op.start();
+
     await expect(
       generateText({ model: op.chatModel(), prompt: 'hi', maxRetries: 0 }),
     ).rejects.toThrow('upstream failed');
+
     await op.finish();
 
     expect(afterError).toHaveBeenCalledOnce();
@@ -219,7 +236,9 @@ describe('gateway.handler context seed', () => {
 
     expect(res.status).toBe(200);
     expect(beforeOperation).toHaveBeenCalledOnce();
+
     const args = beforeOperation.mock.calls[0][0];
+
     expect(args.context).toBe(seed);
     expect(args.context.foo).toBe(1);
   });
@@ -235,6 +254,7 @@ describe('gateway.handler context seed', () => {
         },
       ],
     });
+
     const makeRequest = () =>
       new Request('http://localhost/v1/chat/completions', {
         method: 'POST',
@@ -264,6 +284,7 @@ describe('gateway.chatModel default path', () => {
         },
       ],
     });
+
     const model = gw.chatModel('openai/gpt-4o-mini');
 
     await generateText({ model, prompt: 'one' });

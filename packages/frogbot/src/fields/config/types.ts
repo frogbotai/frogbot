@@ -167,31 +167,50 @@ interface TabList {
 }
 
 export type ArrayField = RetypedField<Omit<PayloadArrayField, 'fields'>> & FieldContainer;
+
 export type BlocksField = RetypedField<Omit<PayloadBlocksField, 'blockReferences' | 'blocks'>> &
   BlockList;
+
 export type CheckboxField = RetypedField<PayloadCheckboxField>;
+
 export type CodeField = RetypedField<PayloadCodeField>;
+
 export type CollapsibleField = DistributiveOmit<
   PayloadCollapsibleField,
   'fields' | LayoutIgnoredKey
 > &
   FieldContainer;
+
 export type DateField = RetypedField<PayloadDateField>;
+
 export type EmailField = RetypedField<PayloadEmailField>;
+
 export type JoinField = RetypedField<PayloadJoinField>;
+
 export type JSONField = RetypedField<PayloadJSONField>;
+
 export type NumberField = RetypedField<PayloadNumberField>;
+
 export type PointField = RetypedField<PayloadPointField>;
+
 export type RadioField = RetypedField<Omit<PayloadRadioField, 'options'> & { options: Option[] }>;
+
 export type RelationshipField = RetypedField<PayloadRelationshipField>;
+
 export type RowField = Omit<PayloadRowField, 'fields' | LayoutIgnoredKey> & FieldContainer;
+
 export type SelectField = RetypedField<
   DistributiveOmit<PayloadSelectField, 'options'> & { options: Option[] }
 >;
+
 export type TextareaField = RetypedField<PayloadTextareaField>;
+
 export type TextField = RetypedField<PayloadTextField>;
+
 export type UIField = RetypedField<PayloadUIField>;
+
 export type UploadField = RetypedField<PayloadUploadField>;
+
 export type VectorField = Omit<
   RetypedField<Omit<PayloadJSONField, 'jsonSchema' | 'type'>>,
   'validate'
@@ -208,19 +227,26 @@ export type RichTextField<
 > = RetypedField<PayloadRichTextField<TValue, TAdapterProps, TExtraProperties>>;
 
 export type NamedGroupField = RetypedField<Omit<PayloadNamedGroupField, 'fields'>> & FieldContainer;
+
 export type UnnamedGroupField = RetypedField<Omit<PayloadUnnamedGroupField, 'fields'>> &
   FieldContainer;
+
 export type GroupField = NamedGroupField | UnnamedGroupField;
 
 export type NamedTab = RetypedField<Omit<PayloadNamedTab, 'fields' | 'index' | 'unique'>> &
   FieldContainer;
+
 type UnnamedTabConfig = Omit<PayloadUnnamedTab, 'fields' | 'hidden' | LayoutIgnoredKey> &
   FieldContainer;
+
 export type UnnamedTab = UnnamedTabConfig & {
   [K in Exclude<keyof NamedTab, keyof UnnamedTabConfig>]?: never;
 };
+
 export type Tab = NamedTab | UnnamedTab;
+
 export type TabAsField = Tab & { type: 'tab' };
+
 export type TabsField = Omit<PayloadTabsField, 'label' | 'tabs' | LayoutIgnoredKey> & TabList;
 
 type BlockReference = Exclude<
@@ -283,8 +309,11 @@ export type Option = OptionObject | string;
 export type ValueWithRelation = PayloadValueWithRelation;
 
 type FieldWithSubFields = ArrayField | CollapsibleField | GroupField | RowField;
+
 type FieldWithMany = RelationshipField | SelectField | UploadField;
+
 type FieldWithMaxDepth = JoinField | RelationshipField | UploadField;
+
 type FieldAffectingData =
   Exclude<Extract<Field, { name: string }>, UIField> | (TabAsField & { name: string });
 

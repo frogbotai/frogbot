@@ -965,6 +965,7 @@ async function landRound({ main, found, key, dir, branch }) {
     const conflicts = lines(git(dir, ['diff', '--name-only', '--diff-filter=U']).out);
 
     git(dir, ['rebase', '--abort']);
+
     refuse(
       conflicts.length > 0
         ? `git rebase ${MAIN} conflicts in ${conflicts.join(', ')}; aborted, nothing changed`
@@ -983,6 +984,7 @@ async function landRound({ main, found, key, dir, branch }) {
         .split('\0')
         .filter((text) => text.trim()),
     );
+
   const problem = message && checkCommitMessage(message);
 
   if (problem) refuse(`the squash message: ${problem}`);
@@ -1002,6 +1004,7 @@ async function landRound({ main, found, key, dir, branch }) {
     files,
     specs: docsOnly(files) ? markdownReaders(dir) : [],
   });
+
   const log = openLog(main, key);
 
   if (docsOnly(files)) console.log('docs only: test:unit and test:ui skipped');
@@ -1042,6 +1045,7 @@ async function landRound({ main, found, key, dir, branch }) {
         evidence: `pnpm ${gate}`,
         verifier: LAND,
       });
+
       console.log(tail(result.output).join('\n'));
       refuse(`pnpm ${gate} is red; ${MAIN} untouched; full log: ${path.relative(main, log)}`);
     }
@@ -1164,6 +1168,7 @@ async function commandVerify(main, { list }) {
       evidence: `${result.failed.command} failed`,
       verifier: VERIFY,
     });
+
     console.log(tail(result.failed.output).join('\n'));
     refuse(`${result.failed.group} is red; full log: ${path.relative(main, log)}`);
   }

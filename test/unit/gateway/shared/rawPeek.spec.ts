@@ -16,11 +16,13 @@ describe('peekRawValue', () => {
 
   it('extracts system_fingerprint from top level', () => {
     const result = peekRawValue({ system_fingerprint: 'fp_abc123' });
+
     expect(result).toEqual({ systemFingerprint: 'fp_abc123' });
   });
 
   it('extracts service_tier from top level', () => {
     const result = peekRawValue({ service_tier: 'scale' });
+
     expect(result).toEqual({ serviceTier: 'scale' });
   });
 
@@ -28,6 +30,7 @@ describe('peekRawValue', () => {
     const result = peekRawValue({
       choices: [{ delta: { refusal: 'I cannot help with that.' } }],
     });
+
     expect(result).toEqual({ refusal: 'I cannot help with that.' });
   });
 
@@ -35,12 +38,14 @@ describe('peekRawValue', () => {
     const result = peekRawValue({
       choices: [{ delta: { refusal: '' } }],
     });
+
     expect(result).toBeUndefined();
   });
 
   it('extracts content_filter_results from top level', () => {
     const cfr = { hate: { filtered: false, severity: 'safe' } };
     const result = peekRawValue({ content_filter_results: cfr });
+
     expect(result).toEqual({ contentFilterResults: cfr });
   });
 
@@ -49,6 +54,7 @@ describe('peekRawValue', () => {
     const result = peekRawValue({
       choices: [{ content_filter_results: cfr, delta: {} }],
     });
+
     expect(result).toEqual({ contentFilterResults: cfr });
   });
 
@@ -58,6 +64,7 @@ describe('peekRawValue', () => {
       service_tier: 'default',
       choices: [{ delta: { refusal: 'No.' } }],
     });
+
     expect(result).toEqual({
       systemFingerprint: 'fp_xyz',
       serviceTier: 'default',

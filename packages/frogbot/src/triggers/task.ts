@@ -9,6 +9,7 @@ type AgentTriggerTask = {
   input: { agentSlug: string; instanceSlug: string; triggerSlug: string; event: unknown };
   output: Record<string, never>;
 };
+
 type AutorunCronConfig = Extract<NonNullable<JobsConfig['autoRun']>, unknown[]>[number];
 
 export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
@@ -28,6 +29,7 @@ export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
               subscriber.agentSlug === input.agentSlug && subscriber.trigger === trigger,
           ),
       );
+
       if (!agent || !configured || !('trigger' in configured)) return { output: {} };
       const triggerReq = await frogbot.createRequest({
         context: {
@@ -39,18 +41,22 @@ export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
           },
         },
       });
+
       await configured.handler({
         event: (input.event as { data: unknown }).data,
         agent,
         req: triggerReq,
       });
+
       return { output: {} };
     },
   };
+
   const tasks = [...(jobs?.tasks ?? []), task];
   if (tasks.some(({ slug }) => slug === AGENT_SCHEDULE_TASK_SLUG)) return { ...jobs, tasks };
   const autoRun = jobs?.autoRun;
   const frogAutoRun: AutorunCronConfig = { allQueues: true, cron: '* * * * *' };
+
   return {
     ...jobs,
     tasks,

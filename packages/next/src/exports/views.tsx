@@ -121,9 +121,11 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const UserMessageActions = resolveChatComponent<MessageActionsSlotProps>(
     chatComponents?.UserMessageActions,
   );
+
   const AssistantMessageActions = resolveChatComponent<MessageActionsSlotProps>(
     chatComponents?.AssistantMessageActions,
   );
+
   const toolRenderersByAgent = Object.fromEntries(
     Object.entries(chatComponents?.toolComponents ?? {}).map(([agent, components]) => [
       agent,
@@ -136,6 +138,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
 
   const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
     component && typeof component === 'object' ? component.clientProps : undefined;
+
   const graphicsLogo = adminComponents?.graphics?.Logo;
   const chatUser = user as { firstName?: unknown; name?: unknown } | undefined;
   const chatComponentProps = clientProps(chatComponents?.Chat);
@@ -179,6 +182,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
 
   if (routeID === 'create') {
     const agent = frogbot?.config.agents?.[0]?.slug;
+
     return agent ? (
       <ChatViewClient
         agent={agent}
@@ -251,6 +255,7 @@ export async function SettingsView(props: SettingsViewProps) {
   const routePath = getSettingsRoutePath(
     props.routeSegments ?? (params?.segments as string[] | undefined) ?? [],
   );
+
   const adminRoute = payload.config.routes.admin;
 
   if (routePath === '') {
@@ -277,6 +282,7 @@ export async function SettingsView(props: SettingsViewProps) {
       path: entry.path,
     })),
   ];
+
   const collectionGroups =
     routePath === 'collections'
       ? splitNavGroups({

@@ -225,6 +225,7 @@ function looseJson(input: unknown): Record<string, unknown> | undefined {
       return undefined;
     }
   }
+
   if (typeof value !== 'object' || value === null) return undefined;
 
   const obj = value as Record<string, unknown>;
@@ -261,12 +262,14 @@ function asLooseOpenAIBody(obj: Record<string, unknown> | undefined): LooseOpenA
   if (!obj) return undefined;
   const err = obj.error;
   if (typeof err !== 'object' || err === null) return undefined;
+
   return obj as LooseOpenAIBody;
 }
 
 function normalizeCode(code: unknown): string | null {
   if (typeof code === 'string') return code;
   if (typeof code === 'number') return String(code);
+
   return null;
 }
 
@@ -277,6 +280,7 @@ function normalizeParam(param: unknown): string | null {
 function hasContentPolicySignal(args: { status: number; code: unknown; message: string }): boolean {
   if (args.status !== 400) return false;
   if (args.code === 'content_policy_violation') return true;
+
   return /content[ _-]?policy|safety system|safety policy/i.test(args.message);
 }
 
@@ -306,9 +310,11 @@ function htmlBodyMessage(body: string | undefined, status: number | undefined): 
   if (status === 401) {
     return 'Unauthorized: request was blocked by a gateway or proxy. The upstream credentials may be missing or expired.';
   }
+
   if (status === 403) {
     return 'Forbidden: request was blocked by a gateway or proxy. The upstream credentials may lack permission for this resource.';
   }
+
   return 'Upstream returned an HTML response. The request likely did not reach the provider.';
 }
 
@@ -348,6 +354,7 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
   // (fired server deadline or aborted upstream fetch) → 504 gateway_timeout.
   if (isUpstreamAbortError(err)) {
     const message = err.message || 'The upstream request timed out.';
+
     return envelope(message, 'server_error', openAICodeForStatus(504), null, 504);
   }
 
@@ -390,9 +397,11 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
   if (NoSuchModelError.isInstance(err)) {
     return envelope(err.message, 'not_found_error', 'model_not_found', 'model', 404);
   }
+
   if (InvalidPromptError.isInstance(err)) {
     return envelope(err.message, 'invalid_request_error', 'invalid_prompt', null, 400);
   }
+
   if (TooManyEmbeddingValuesForCallError.isInstance(err)) {
     return envelope(
       err.message,
@@ -402,9 +411,11 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
       400,
     );
   }
+
   if (LoadAPIKeyError.isInstance(err)) {
     return envelope(err.message, 'server_error', 'missing_api_key', null, 500);
   }
+
   if (JSONParseError.isInstance(err) || TypeValidationError.isInstance(err)) {
     return envelope(
       `Upstream returned a response the gateway could not parse: ${err.message}`,
@@ -422,9 +433,11 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     if (classified.bucket === 'client') {
       return envelope(message, 'invalid_request_error', openAICodeForStatus(422), null, 422);
     }
+
     if (classified.bucket === 'upstream') {
       return envelope(message, 'server_error', openAICodeForStatus(502), null, 502);
     }
+
     return envelope(message, 'server_error', null, null, 500);
   }
 
@@ -435,6 +448,7 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
 
   // 7. Unknown / non-Error
   const message = err instanceof Error && err.message ? err.message : 'Internal server error';
+
   return envelope(message, 'server_error', null, null, 500);
 }
 
@@ -492,6 +506,7 @@ function fromAPICallError(err: APICallError): {
         (err.message && err.message.trim()) ||
         'Input exceeds the context window of this model.',
     );
+
     return {
       body: {
         error: {
@@ -508,6 +523,7 @@ function fromAPICallError(err: APICallError): {
   // 2b. HTML body from proxy/gateway
   const htmlMessage =
     typeof err.responseBody === 'string' ? htmlBodyMessage(err.responseBody, status) : undefined;
+
   if (htmlMessage) {
     return envelope(
       htmlMessage,
@@ -678,6 +694,7 @@ export function toAnthropicErrorResponse(
 ): { body: AnthropicErrorEnvelope; status: GatewayHttpStatus } {
   return maskAnthropicResponse(toAnthropicErrorResponseUnmasked(err), opts);
 }
+
 function toAnthropicErrorResponseUnmasked(err: unknown): {
   body: AnthropicErrorEnvelope;
   status: GatewayHttpStatus;
@@ -701,6 +718,7 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
   // translator above for the classification rationale).
   if (isUpstreamAbortError(err)) {
     const message = err.message || 'The upstream request timed out.';
+
     return anthropicEnvelope(message, 'timeout_error', 504);
   }
 
@@ -737,12 +755,15 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
   if (NoSuchModelError.isInstance(err)) {
     return anthropicEnvelope(err.message, 'not_found_error', 404);
   }
+
   if (InvalidPromptError.isInstance(err)) {
     return anthropicEnvelope(err.message, 'invalid_request_error', 400);
   }
+
   if (LoadAPIKeyError.isInstance(err)) {
     return anthropicEnvelope(err.message, 'api_error', 500);
   }
+
   if (JSONParseError.isInstance(err) || TypeValidationError.isInstance(err)) {
     return anthropicEnvelope(
       `Upstream returned a response the gateway could not parse: ${err.message}`,
@@ -758,9 +779,11 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     if (classified.bucket === 'client') {
       return anthropicEnvelope(message, 'invalid_request_error', 422);
     }
+
     if (classified.bucket === 'upstream') {
       return anthropicEnvelope(message, 'api_error', 502);
     }
+
     return anthropicEnvelope(message, 'api_error', 500);
   }
 
@@ -771,6 +794,7 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
 
   // 7. Unknown
   const message = err instanceof Error && err.message ? err.message : 'Internal server error';
+
   return anthropicEnvelope(message, 'api_error', 500);
 }
 

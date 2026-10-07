@@ -19,6 +19,7 @@ describe('rerankRoute', () => {
         },
       }),
     );
+
     const model = new MockRerankingModelV4({ doRerank });
     const app = createApp({
       registry: {

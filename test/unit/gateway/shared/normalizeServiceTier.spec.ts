@@ -18,6 +18,7 @@ describe('normalizeServiceTier', () => {
       const result = normalizeServiceTier({
         [provider]: { service_tier: value },
       });
+
       expect(result).toBe(expected);
     });
   }
@@ -35,6 +36,7 @@ describe('normalizeServiceTier', () => {
       const result = normalizeServiceTier({
         vertex: { usage_metadata: { traffic_type: trafficType } },
       });
+
       expect(result).toBe(expected);
     });
   }

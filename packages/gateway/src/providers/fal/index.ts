@@ -13,6 +13,7 @@ export const falProvider = {
   fromEnv: (env) => {
     const apiKey = env.FAL_API_KEY ?? env.FAL_KEY;
     if (!apiKey) return undefined;
+
     return {
       apiKey,
       ...(env.FAL_BASE_URL && { baseURL: env.FAL_BASE_URL }),

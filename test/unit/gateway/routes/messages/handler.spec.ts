@@ -10,6 +10,7 @@ describe('messagesRoute', () => {
     const doGenerate = mockDoGenerate(
       generateResult({ content: [{ type: 'text', text: 'hello' }] }),
     );
+
     const app = createApp({
       registry: {
         'anthropic-aws': new MockProviderV4({
@@ -44,7 +45,9 @@ describe('messagesRoute', () => {
     });
 
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doGenerate) as Record<string, any>;
+
     expect(call.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({

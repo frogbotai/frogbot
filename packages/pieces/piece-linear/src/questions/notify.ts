@@ -45,6 +45,7 @@ export const staleLinearQuestion: LinearQuestions['stale'] = async ({
 function authorName(interaction: QuestionInteraction): string {
   const author =
     interaction.type === 'message' ? interaction.message.author : interaction.event.user;
+
   const name = author.fullName || author.userName;
 
   return name ? escapeMarkdown(name) : 'This participant';

@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
+
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import {
@@ -62,6 +63,7 @@ describe('csv', () => {
       input: { csvText: 'name\tage\nFrogBot\t2', hasHeaders: true, delimiter: '\t' },
       req: {} as never,
     });
+
     const withoutHeaders = await csv.convertCsvToJson({
       input: { csvText: 'FrogBot,2', hasHeaders: false, delimiter: ',' },
       req: {} as never,
@@ -94,6 +96,7 @@ describe('csv', () => {
       ]),
       'Frogs',
     );
+
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([['ignored']]), 'Other');
 
     const data = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
@@ -130,6 +133,7 @@ describe('csv', () => {
       fileUrl: 'https://files.example/workbook.xlsx',
       signal: controller.signal,
     });
+
     const fetch = vi.fn().mockResolvedValue(new Response('file'));
 
     vi.stubGlobal('fetch', fetch);

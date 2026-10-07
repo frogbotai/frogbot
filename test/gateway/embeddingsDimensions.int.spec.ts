@@ -33,6 +33,7 @@ function createCapturingEmbeddingModel(
     supportsParallelCalls: true,
     doEmbed: (options) => {
       capture(options.providerOptions);
+
       return Promise.resolve({
         embeddings: options.values.map(() => [0.1, 0.2, 0.3]),
         usage: { tokens: 4 },
@@ -49,6 +50,7 @@ function makeApp(
 ) {
   const fakeProvider = { embeddingModel: () => createCapturingEmbeddingModel(capture) };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 

@@ -9,6 +9,7 @@ import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 
 type DoGenerate = LanguageModelV4['doGenerate'];
+
 type DoStream = LanguageModelV4['doStream'];
 
 export function v4Usage(inputTokens: number, outputTokens: number): LanguageModelV4Usage {
@@ -47,6 +48,7 @@ export function mockDoStream(parts: LanguageModelV4StreamPart[]): Mock<DoStream>
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
           for (const part of parts) controller.enqueue(part);
+
           controller.close();
         },
       }),
@@ -59,5 +61,6 @@ export function firstCallOptions(
 ): LanguageModelV4CallOptions {
   const call = fn.mock.calls[0];
   if (!call) throw new Error('the model was not called');
+
   return call[0];
 }

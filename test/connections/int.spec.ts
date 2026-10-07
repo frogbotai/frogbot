@@ -66,6 +66,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         }),
         account: ({ client, req }) => {
           accounts.push({ auth: client.auth, user: req.user });
+
           return Promise.resolve({
             id: client.auth.apiKey === 'fresh-bad-account' ? '' : 'account',
             label: 'Linked account',
@@ -88,19 +89,24 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
 
   const request = (path: string, init: RequestInit = {}) =>
     fetch(new URL(path, baseURL), { ...init, redirect: 'manual' });
+
   const authorize = async (piece = 'case-c', returnTo?: string) => {
     const response = await request(
       `/rest/v1/connections/${piece}/authorize${returnTo === undefined ? '' : `?returnTo=${encodeURIComponent(returnTo)}`}`,
       { headers: { authorization } },
     );
+
     expect(response.status).toBe(302);
     expect(response.headers.get('cache-control')).toBe('no-store');
+
     const url = new URL(response.headers.get('location')!);
     const callback = new URL(url.searchParams.get('redirect_uri')!);
     callback.searchParams.set('state', url.searchParams.get('state')!);
     callback.searchParams.set('code', 'success');
+
     return { url, callback, cookie: response.headers.get('set-cookie')!.split(';')[0] };
   };
+
   const callback = (flow: { callback: URL; cookie: string }, token?: string) =>
     request(flow.callback.href, {
       headers: { cookie: flow.cookie, ...(token ? { authorization: token } : {}) },
@@ -113,6 +119,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         (address) => resolve(`http://127.0.0.1:${address.port}`),
       );
     });
+
     const providerURL = await new Promise<string>((resolve) => {
       provider = serve(
         {
@@ -125,7 +132,9 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
             if (code === 'provider-error') {
               return Response.json({ error: 'private-provider-error' }, { status: 400 });
             }
+
             if (code === 'malformed') return Response.json({ access_token: '' });
+
             return Response.json({
               access_token: `fresh-${code}`,
               ...(code === 'replacement'
@@ -140,13 +149,16 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         (address) => resolve(`http://127.0.0.1:${address.port}`),
       );
     });
+
     linkedPieces = ['case-c', 'case-ac', 'case-bc', 'case-abc'].map((slug) =>
       linkedPiece(providerURL, slug),
     );
+
     const instance = createPiece({
       slug: 'custom-instance',
       oauth: { clientId: 'client', clientSecret: 'secret' },
     });
+
     const config = await buildConfig({
       secret: 'connection-storage-test-secret',
       serverURL: baseURL,
@@ -169,31 +181,39 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         ),
       ],
     });
+
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
     store = new ConnectionStore({ frogbot, config: config.connections, userSlug: 'users' });
     const first = await frogbot.create({
       collection: 'users',
       data: { email: 'first@example.com', password: 'test-password' },
     });
+
     const second = await frogbot.create({
       collection: 'users',
       data: { email: 'second@example.com', password: 'test-password' },
     });
+
     owner = { id: first.id, collection: 'users' };
     other = { id: second.id, collection: 'users' };
+
     await frogbot.create({
       collection: 'customers',
       data: { email: 'customer@example.com', password: 'test-password' },
     });
+
     const login = async (email: string, collection = 'users') => {
       const response = await request(`/rest/v1/${collection}/login`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, password: 'test-password' }),
       });
+
       expect(response.status).toBe(200);
+
       return `JWT ${(await response.json()).token}`;
     };
+
     authorization = await login('first@example.com');
     otherAuthorization = await login('second@example.com');
     customerAuthorization = await login('customer@example.com', 'customers');
@@ -207,6 +227,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         );
       }
     }
+
     await frogbot?.destroy();
   });
 
@@ -218,12 +239,16 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
 
   it('stores only ciphertext and decrypts only through the server helper', async () => {
     const saved = await store.upsert({ owner, piece, method: 'oauth', credential });
+
     expect(saved).not.toHaveProperty('credential');
+
     const raw = await frogbot.db.find<ConnectionRow>({
       collection: 'connections',
       pagination: false,
     });
+
     const ciphertext = raw.docs[0].credential;
+
     expect(ciphertext).toMatch(/^v1\./);
     expect(ciphertext).not.toContain(credential.accessToken);
     expect(ciphertext).not.toContain(credential.refreshToken);
@@ -246,15 +271,18 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       showHiddenFields: true,
       depth: 0,
     });
+
     expect(result.docs).toHaveLength(1);
     expect(result.docs[0].id).toBe(saved.id);
     expect(result.docs[0]).not.toHaveProperty('credential');
     expect(JSON.stringify(result)).not.toContain(credential.accessToken);
+
     for (const user of [null, { ...owner, collection: 'customers' }]) {
       await expect(
         frogbot.find({ collection: 'connections', user, overrideAccess: false }),
       ).rejects.toThrow();
     }
+
     await expect(
       frogbot.findByID({
         collection: 'connections',
@@ -268,6 +296,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
   it('denies public create, update, and delete', async () => {
     const saved = await store.upsert({ owner, piece, method: 'oauth', credential });
     const options = { collection: 'connections', user: owner, overrideAccess: false };
+
     await expect(
       frogbot.create({ ...options, data: { owner: owner.id, piece, credential: 'plaintext' } }),
     ).rejects.toThrow();
@@ -288,6 +317,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       credential: encrypted,
       status: 'active',
     };
+
     await expect(frogbot.db.create({ collection: 'connections', data })).rejects.toThrow();
     await expect(
       frogbot.db.create({ collection: 'connections', data: { ...data, owner: other.id } }),
@@ -309,12 +339,14 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expiresAt: '2030-01-01T00:00:00.000Z',
       status: 'error',
     });
+
     const replacement = await store.upsert({
       owner,
       piece,
       method: 'secret',
       credential: { apiKey: 'replacement-secret' },
     });
+
     expect(replacement).toMatchObject({
       id: saved.id,
       piece,
@@ -332,6 +364,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
 
   it('deletes only the matching owner row and optional row ID', async () => {
     const saved = await store.upsert({ owner, piece, method: 'oauth', credential });
+
     expect(await store.delete({ owner: other, piece, id: saved.id })).toBe(false);
     expect(await store.delete({ owner, piece, id: 'wrong-id' })).toBe(false);
     expect(await store.delete({ owner, piece, id: saved.id })).toBe(true);
@@ -341,6 +374,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
 
   it('rejects malformed account metadata without replacing the credential', async () => {
     await store.upsert({ owner, piece, method: 'oauth', credential });
+
     await expect(
       store.upsert({
         owner,
@@ -360,6 +394,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       config: frogbot.config.connections,
       userSlug: 'users',
     });
+
     await store.withLock({
       owner,
       piece,
@@ -374,19 +409,24 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
           }),
         ).rejects.toBeInstanceOf(KVLockContentionError);
         await expect(second.delete({ owner, piece })).rejects.toBeInstanceOf(KVLockContentionError);
+
         await second.upsert({ owner: other, piece, method: 'secret', credential: 'independent' });
         await locked.upsert({ method: 'oauth', credential: { accessToken: 'refreshed' } });
       },
     });
+
     expect(await store.get({ owner, piece })).toMatchObject({
       credential: { accessToken: 'refreshed' },
     });
+
     await second.upsert({ owner, piece, method: 'secret', credential: 'replacement' });
+
     expect(await store.get({ owner, piece })).toMatchObject({ credential: 'replacement' });
   });
 
   const developerFallback = (resolution: Promise<unknown>) =>
     expect(resolution).resolves.toEqual({ apiKey: 'developer-fallback' });
+
   const notLinked = (resolution: Promise<unknown>) =>
     expect(resolution).rejects.toMatchObject({ code: 'missing' });
 
@@ -402,13 +442,16 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       const req = await frogbot.createRequest({ user: owner });
       await unlinked(frogbot.connections.resolve({ piece: instance, req }));
       const flow = await authorize(piece);
+
       expect(await store.list({ owner })).toEqual([]);
       expect(flow.url.searchParams.get('scope')).toBe('read write');
       expect(flow.url.searchParams.get('code_challenge_method')).toBe('S256');
       expect(flow.url.searchParams.get('redirect_uri')).toBe(
         `${baseURL}/rest/v1/connections/${piece}/callback`,
       );
+
       const response = await callback(flow);
+
       expect(response.status).toBe(302);
       expect(response.headers.get('location')).toBe('/control/settings/connections');
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
@@ -423,7 +466,9 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expect(exchanges[0].get('client_id')).toBe('private-client-id');
       expect(exchanges[0].get('client_secret')).toBe('private-client-secret');
       expect(exchanges[0].get('redirect_uri')).toBe(flow.url.searchParams.get('redirect_uri'));
+
       const row = await store.get({ owner, piece });
+
       expect(row).toMatchObject({
         method: 'oauth',
         status: 'active',
@@ -435,18 +480,26 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expect(await frogbot.connections.resolve({ piece: instance, req })).toEqual({
         apiKey: 'fresh-success',
       });
+
       const raw = await frogbot.db.find<ConnectionRow>({
         collection: 'connections',
         pagination: false,
       });
+
       expect(raw.docs[0].credential).toMatch(/^v1\./);
       expect(raw.docs[0].credential).not.toContain('fresh-success');
+
       const publicResponse = await request('/rest/v1/connections', { headers: { authorization } });
+
       expect(publicResponse.status).toBe(200);
+
       const body = await publicResponse.text();
+
       expect(body).not.toContain('fresh-success');
       expect(body).not.toContain('private-refresh-token');
+
       const byID = await request(`/rest/v1/connections/${row!.id}`, { headers: { authorization } });
+
       expect(byID.status).toBe(200);
       expect((await byID.json()).id).toBe(row!.id);
     },
@@ -461,17 +514,23 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
           headers: { authorization, 'content-type': 'application/json' },
           body: JSON.stringify({ apiKey: 'static-secret' }),
         });
+
       const saved = await saveSecret();
+
       expect(saved.status).toBe(200);
+
       const id = (await saved.json()).id;
+
       expect((await callback(await authorize(piece))).status).toBe(302);
       expect(await store.get({ owner, piece })).toMatchObject({
         id,
         method: 'oauth',
         credential: { refresh_token: 'private-refresh-token' },
       });
+
       const replacement = await authorize(piece);
       replacement.callback.searchParams.set('code', 'replacement');
+
       expect((await callback(replacement, authorization)).status).toBe(302);
       expect(await store.get({ owner, piece })).toMatchObject({
         id,
@@ -498,8 +557,10 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       'case-c',
       `${baseURL}/control/settings/connections?tab=linked#account`,
     );
+
     flow.callback.searchParams.set('code', code);
     const response = await callback(flow);
+
     expect(response.headers.get('location')).toBe(
       '/control/settings/connections?tab=linked#account',
     );
@@ -517,6 +578,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         })
       ).status,
     ).toBe(403);
+
     for (const piece of ['unknown', 'case-c-instance', '__proto__']) {
       for (const route of ['authorize', 'callback']) {
         expect(
@@ -525,6 +587,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         ).toBe(404);
       }
     }
+
     expect(exchanges).toHaveLength(0);
     expect(await store.list({ owner })).toEqual([]);
   });
@@ -537,6 +600,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         kind === 'browser'
           ? await callback({ ...flow, cookie: '' })
           : await callback(flow, kind === 'owner' ? otherAuthorization : customerAuthorization);
+
       expect(response.status).toBe(400);
       expect(exchanges).toHaveLength(0);
       expect(await store.list({ owner })).toEqual([]);
@@ -568,12 +632,16 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         method: 'secret',
         credential: { apiKey: 'existing-secret' },
       });
+
       const flow = await authorize(piece);
       flow.callback.searchParams.set('code', code);
+
       for (const [name, value] of Object.entries(params)) {
         flow.callback.searchParams.set(name, value);
       }
+
       const response = await callback(flow);
+
       expect(response.status).toBe(400);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
@@ -586,11 +654,14 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       expect(exchanges).toHaveLength(exchanged);
       expect((await callback(flow)).status).toBe(400);
       expect(exchanges).toHaveLength(exchanged);
+
       const emptyFlow = await authorize('case-c');
       emptyFlow.callback.searchParams.set('code', code);
+
       for (const [name, value] of Object.entries(emptyParams)) {
         emptyFlow.callback.searchParams.set(name, value);
       }
+
       expect((await callback(emptyFlow)).status).toBe(400);
       expect(await store.get({ owner, piece: 'case-c' })).toBeUndefined();
     },
@@ -601,15 +672,19 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       collection: 'users',
       data: { email: 'deleted@example.com', password: 'test-password' },
     });
+
     const login = await request('/rest/v1/users/login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'deleted@example.com', password: 'test-password' }),
     });
+
     const response = await request('/rest/v1/connections/case-c/authorize', {
       headers: { authorization: `JWT ${(await login.json()).token}` },
     });
+
     expect(response.status).toBe(302);
+
     const provider = new URL(response.headers.get('location')!);
     const url = new URL(provider.searchParams.get('redirect_uri')!);
     url.searchParams.set('state', provider.searchParams.get('state')!);
@@ -617,6 +692,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     await frogbot.delete({ collection: 'users', id: created.id, overrideAccess: true });
     const flow = { callback: url, cookie: response.headers.get('set-cookie')!.split(';')[0] };
     const failed = await callback(flow);
+
     expect(failed.status).toBe(400);
     expect(failed.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(failed.headers.get('cache-control')).toBe('no-store');

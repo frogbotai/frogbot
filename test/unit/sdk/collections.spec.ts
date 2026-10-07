@@ -4,6 +4,7 @@ import { FrogBotSDKError } from '../../../packages/sdk/src/index';
 import { createClients } from './clients';
 
 type Client = ReturnType<typeof createClients>['frogbot'];
+
 type Call = (client: Client) => Promise<unknown>;
 
 const where = { title: { equals: 'Frogs' } };
@@ -209,6 +210,7 @@ describe('FrogBotSDK collection methods', () => {
     );
 
     const uploaded = await frogbot.upload('sdk-media', new File(['ribbit'], 'frog.txt'));
+
     await frogbot.create({
       collection: 'sdk-media',
       data: {},

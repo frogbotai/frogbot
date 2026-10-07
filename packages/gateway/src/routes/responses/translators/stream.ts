@@ -87,6 +87,7 @@ export function createResponsesStreamTransform(
       if (!state.started && events.length > 0 && part.type !== 'error') {
         emitPreamble(controller, state, args.previousResponseId);
       }
+
       for (const event of events) {
         enqueue(controller, state, event.type, event);
       }
@@ -106,6 +107,7 @@ export function createResponsesStreamTransform(
           content_index: 0,
           text: state.text,
         });
+
         enqueue(controller, state, 'response.content_part.done', {
           type: 'response.content_part.done',
           item_id: state.messageId,
@@ -113,6 +115,7 @@ export function createResponsesStreamTransform(
           content_index: 0,
           part: { type: 'output_text', text: state.text, annotations: [] },
         });
+
         enqueue(controller, state, 'response.output_item.done', {
           type: 'response.output_item.done',
           output_index: state.textOutputIndex,
@@ -121,6 +124,7 @@ export function createResponsesStreamTransform(
       }
 
       const { event, status } = terminalEvent(state.finishReason);
+
       enqueue(controller, state, event, {
         type: event,
         response: responseEnvelope(state, args.previousResponseId, status),
@@ -135,10 +139,12 @@ function emitPreamble(
   previousResponseId: string | null | undefined,
 ) {
   state.started = true;
+
   enqueue(controller, state, 'response.created', {
     type: 'response.created',
     response: responseEnvelope(state, previousResponseId, 'in_progress'),
   });
+
   enqueue(controller, state, 'response.in_progress', {
     type: 'response.in_progress',
     response: responseEnvelope(state, previousResponseId, 'in_progress'),
@@ -169,6 +175,7 @@ function partToEvents(
     case 'text-delta': {
       const events = ensureOutputStarted(state);
       state.text += part.text;
+
       events.push({
         type: 'response.output_text.delta',
         item_id: state.messageId,
@@ -176,16 +183,21 @@ function partToEvents(
         content_index: 0,
         delta: part.text,
       });
+
       return events;
     }
+
     case 'reasoning-start': {
       const outputIndex = state.nextOutputIndex++;
+
       state.reasoning = {
         outputIndex,
         itemId: `rs_${crypto.randomUUID()}`,
         summaryText: '',
       };
+
       captureEncryptedContent(state.reasoning, part.providerMetadata);
+
       return [
         {
           type: 'response.output_item.added',
@@ -201,9 +213,11 @@ function partToEvents(
         },
       ];
     }
+
     case 'reasoning-delta': {
       const reasoning = ensureReasoning(state);
       reasoning.summaryText += part.text;
+
       return [
         {
           type: 'response.reasoning_summary_text.delta',
@@ -214,10 +228,12 @@ function partToEvents(
         },
       ];
     }
+
     case 'reasoning-end': {
       const reasoning = state.reasoning;
       if (!reasoning) return [];
       captureEncryptedContent(reasoning, part.providerMetadata);
+
       return [
         {
           type: 'response.reasoning_summary_text.done',
@@ -240,6 +256,7 @@ function partToEvents(
         },
       ];
     }
+
     case 'finish-step': {
       // G7: responseId/model/createdAt are frozen at construction (synthetic
       // resp id + user-requested model). `response.created` and
@@ -247,15 +264,19 @@ function partToEvents(
       // provider's response id/modelId from `finish-step` is NOT adopted.
       state.finishReason = mapFinishReason(part.finishReason);
       state.usage = toResponseUsage(part.usage);
+
       return [];
     }
+
     case 'raw': {
       const extras = peekRawValue(part.rawValue);
       if (extras?.serviceTier) {
         state.serviceTier = extras.serviceTier;
       }
+
       return [];
     }
+
     case 'tool-input-start': {
       const outputIndex = state.nextOutputIndex++;
       const call: ResponsesToolCallState = {
@@ -265,7 +286,9 @@ function partToEvents(
         itemId: `fc_${crypto.randomUUID()}`,
         arguments: '',
       };
+
       state.toolCalls.set(part.id, call);
+
       return [
         {
           type: 'response.output_item.added',
@@ -274,10 +297,12 @@ function partToEvents(
         },
       ];
     }
+
     case 'tool-input-delta': {
       const call = state.toolCalls.get(part.id);
       if (!call) return [];
       call.arguments += part.delta;
+
       return [
         {
           type: 'response.function_call_arguments.delta',
@@ -287,9 +312,11 @@ function partToEvents(
         },
       ];
     }
+
     case 'tool-input-end': {
       const call = state.toolCalls.get(part.id);
       if (!call) return [];
+
       return [
         {
           type: 'response.function_call_arguments.done',
@@ -304,12 +331,14 @@ function partToEvents(
         },
       ];
     }
+
     case 'tool-call': {
       let call = state.toolCalls.get(part.toolCallId);
       // Non-streaming providers may emit `tool-call` without prior
       // `tool-input-*` parts — synthesize the full item lifecycle.
       if (!call) {
         const outputIndex = state.nextOutputIndex++;
+
         call = {
           callId: part.toolCallId,
           toolName: part.toolName,
@@ -317,7 +346,9 @@ function partToEvents(
           itemId: `fc_${crypto.randomUUID()}`,
           arguments: typeof part.input === 'string' ? part.input : JSON.stringify(part.input ?? {}),
         };
+
         state.toolCalls.set(part.toolCallId, call);
+
         return [
           {
             type: 'response.output_item.added',
@@ -337,15 +368,19 @@ function partToEvents(
           },
         ];
       }
+
       if (!call.arguments && part.input != null) {
         call.arguments = typeof part.input === 'string' ? part.input : JSON.stringify(part.input);
       }
+
       return [];
     }
+
     case 'error': {
       const error = extractOpenAIStreamErrorInfo(part.error, state.maskOpts);
       state.finishReason = 'error';
       state.errorInfo = { code: error.code, message: error.message };
+
       return [
         {
           type: 'error',
@@ -353,6 +388,7 @@ function partToEvents(
         },
       ];
     }
+
     default:
       return [];
   }
@@ -378,11 +414,13 @@ function mapFinishReason(finishReason: string | null | undefined): ResponsesFini
 function ensureReasoning(state: ResponsesStreamState): ResponsesReasoningState {
   if (state.reasoning) return state.reasoning;
   const outputIndex = state.nextOutputIndex++;
+
   state.reasoning = {
     outputIndex,
     itemId: `rs_${crypto.randomUUID()}`,
     summaryText: '',
   };
+
   return state.reasoning;
 }
 
@@ -392,6 +430,7 @@ function ensureOutputStarted(
   if (state.outputStarted) return [];
   state.outputStarted = true;
   state.textOutputIndex = state.nextOutputIndex++;
+
   return [
     {
       type: 'response.output_item.added',
@@ -454,6 +493,7 @@ function responseEnvelope(
   status: StreamStatus,
 ) {
   const terminal = status !== 'in_progress';
+
   return {
     id: state.responseId,
     object: 'response',
@@ -492,18 +532,21 @@ function completedOutput(state: ResponsesStreamState) {
       item: reasoningItem(state.reasoning, 'completed'),
     });
   }
+
   if (state.outputStarted) {
     items.push({
       outputIndex: state.textOutputIndex,
       item: messageItem(state, 'completed'),
     });
   }
+
   for (const call of state.toolCalls.values()) {
     items.push({
       outputIndex: call.outputIndex,
       item: functionCallItem(call, 'completed'),
     });
   }
+
   return items.sort((a, b) => a.outputIndex - b.outputIndex).map((entry) => entry.item);
 }
 

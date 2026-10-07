@@ -25,6 +25,7 @@ export async function buildFilters({
   const database = databaseSchema.parse(
     await client.request({ path: `/databases/${databaseId}`, signal }),
   );
+
   const filters: Record<string, unknown>[] = [];
 
   Object.entries(fields).forEach(([name, value]) => {
@@ -55,6 +56,7 @@ export async function buildFilters({
         (Array.isArray(value) ? value : [value]).forEach((item) => {
           filters.push({ property: name, multi_select: { contains: String(item) } });
         });
+
         break;
       case 'people':
         filters.push({ property: name, people: { contains: String(value) } });

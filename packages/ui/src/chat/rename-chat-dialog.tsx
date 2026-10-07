@@ -45,11 +45,13 @@ export function RenameChatDialog({
     let current = true;
     setValue(title);
     setSuggestion(undefined);
+
     void suggestChatTitle({ sdk, chatId })
       .then((next) => {
         if (current) setSuggestion(next);
       })
       .catch(() => undefined);
+
     return () => {
       current = false;
     };

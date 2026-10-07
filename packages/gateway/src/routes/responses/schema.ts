@@ -223,9 +223,13 @@ export const responsesRequestSchema = z
   .loose();
 
 export type ResponsesRequest = z.infer<typeof responsesRequestSchema>;
+
 export type ResponsesInputMessage = z.infer<typeof messageSchema>;
+
 export type ResponsesInputItem = z.infer<typeof inputItemSchema>;
+
 export type ResponsesFunctionTool = z.infer<typeof functionToolSchema>;
+
 export type ResponsesTextConfig = z.infer<typeof textConfigSchema>;
 
 export function parseResponsesRequest(input: unknown): ResponsesRequest {

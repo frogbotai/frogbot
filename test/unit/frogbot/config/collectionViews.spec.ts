@@ -21,20 +21,24 @@ describe('collection views', () => {
     ).toEqual(['_order_by_stage']);
 
     const field = buildBoardOrderField('_order_by_stage');
+
     expect(field).toMatchObject({
       name: '_order_by_stage',
       type: 'text',
       index: true,
       admin: { hidden: true, readOnly: true, disableListColumn: true },
     });
+
     const siblingData = { _order_by_stage: 'a0' };
     field.hooks?.beforeDuplicate?.[0]?.({ siblingData } as never);
+
     expect(siblingData).toEqual({});
   });
 
   it('assigns missing board order keys after the last document', async () => {
     const find = vi.fn().mockResolvedValue({ docs: [{ _order_board: 'a0' }] });
     const data: Record<string, unknown> = {};
+
     await buildBoardOrderHook(['_order_board'])({
       collection: { slug: 'posts' },
       data,
@@ -48,20 +52,24 @@ describe('collection views', () => {
 
   it('keeps existing board order keys', async () => {
     const find = vi.fn();
+
     await buildBoardOrderHook(['_order_board'])({
       collection: { slug: 'posts' },
       data: { _order_board: 'a0' },
       originalDoc: {},
       req: { payload: { find } },
     } as never);
+
     await buildBoardOrderHook(['_order_board'])({
       collection: { slug: 'posts' },
       data: {},
       originalDoc: { _order_board: 'a0' },
       req: { payload: { find } },
     } as never);
+
     expect(find).not.toHaveBeenCalled();
   });
+
   it('provides a default list view', () => {
     const admin = compileCollectionViews({ collection: { slug: 'posts', fields: [] } });
 
@@ -153,6 +161,7 @@ describe('collection views', () => {
       currentRoute: '/admin/collections/posts/map-view',
       views: admin?.components?.views as never,
     });
+
     expect(result.view).toEqual({
       payloadComponent: '@frogbotai/next/views#CustomCollectionView',
     });
@@ -417,6 +426,7 @@ describe('collection views', () => {
       'email',
       'upload',
     ];
+
     for (const type of supported) {
       expect(() =>
         compileCollectionViews({
@@ -434,6 +444,7 @@ describe('collection views', () => {
         }),
       ).not.toThrow();
     }
+
     expect(() =>
       compileCollectionViews({
         collection: {
@@ -487,6 +498,7 @@ describe('collection views', () => {
         admin: { views: [{ type: 'custom', component: './Report', shell: false }] },
       },
     });
+
     expect(admin?.components?.views?.list).toMatchObject({
       Component: '@frogbotai/next/views#CustomCollectionView',
     });

@@ -25,6 +25,7 @@ const inputSchema = z.object({
   timeout: z.number().positive().optional(),
   followRedirects: z.boolean().default(true),
 });
+
 const output = z.object({ status: z.number().int(), headers, body: z.unknown() });
 
 function createBody(bodyType: z.output<typeof inputSchema>['bodyType'], body: unknown) {
@@ -35,7 +36,9 @@ function createBody(bodyType: z.output<typeof inputSchema>['bodyType'], body: un
   const fields = z
     .array(z.object({ fieldName: z.string(), value: z.union([z.string(), z.instanceof(Blob)]) }))
     .parse(body);
+
   for (const field of fields) form.append(field.fieldName, field.value);
+
   return form;
 }
 
@@ -47,6 +50,7 @@ export const sendRequest = defineAction({
   output,
   async run({ input }) {
     const url = new URL(input.url);
+
     for (const [key, value] of Object.entries(input.queryParams)) {
       for (const entry of Array.isArray(value) ? value : [value]) {
         url.searchParams.append(key, String(entry));

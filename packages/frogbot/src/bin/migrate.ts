@@ -119,19 +119,23 @@ export async function migrate(args: string[]): Promise<void> {
             })
             .then(({ docs }) => docs.length > 0)
             .catch(() => false);
+
           if (hasDevModeMigrations) {
             throw new Error(
               'dev-mode schema changes detected; run `frogbot migrate` interactively to confirm migration',
             );
           }
         }
+
         await adapter.migrate({});
         if (frogbotConfig.ai) {
           const { backfillAIUserPolicy } = await import('../ai/policy.js');
           const authCollection =
             frogbotConfig.collections.find(({ auth }) => auth)?.slug ?? 'users';
+
           await backfillAIUserPolicy({ api: payload, authCollection });
         }
+
         break;
       case 'migrate:create':
         await adapter.createMigration({
@@ -141,6 +145,7 @@ export async function migrate(args: string[]): Promise<void> {
           payload,
           skipEmpty: flags.skipEmpty,
         });
+
         break;
       case 'migrate:down':
         await adapter.migrateDown();

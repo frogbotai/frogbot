@@ -204,6 +204,7 @@ describe('Chat for a channel conversation', () => {
     server.messages = { [chatId]: conversation, [branchId]: branchConversation };
     server.routes = [];
     server.fetch.mockReset();
+
     server.fetch.mockImplementation(async (input, init) => {
       const url = new URL(String(input));
 
@@ -268,6 +269,7 @@ describe('Chat for a channel conversation', () => {
     const { container } = renderChat({ chatId, initialChat: channelChat });
 
     expect(await screen.findByText('This conversation happens in Slack.')).toBeTruthy();
+
     await screen.findByText('Waiting for an answer in Slack');
 
     expect(container.querySelector('.fb-composer')).toBeNull();
@@ -278,6 +280,7 @@ describe('Chat for a channel conversation', () => {
     renderChat();
 
     await screen.findByText('This conversation happens in Slack.');
+
     // The chat and its messages load separately; wait for the messages before checking actions.
     expect((await screen.findAllByRole('button', { name: 'Copy' })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
@@ -315,6 +318,7 @@ describe('Chat for a channel conversation', () => {
     const { container } = renderChat();
 
     expect(await screen.findByRole('button', { name: /Staging/ })).toBeTruthy();
+
     await waitFor(() => expect(requests(`/api/chats/${chatId}`, 'GET')).toHaveLength(1));
 
     expect(container.querySelector('.fb-composer')).toBeTruthy();
@@ -357,6 +361,7 @@ describe('Chat for a channel conversation', () => {
 
     expect(await screen.findByText('This conversation happens in Slack.')).toBeTruthy();
     expect(container.querySelector('.fb-composer')).toBeNull();
+
     // The refused message goes when the messages reload, which can land after the notice.
     await waitFor(() => expect(screen.queryByText('Ship it anyway')).toBeNull());
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());

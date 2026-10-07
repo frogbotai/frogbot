@@ -10,6 +10,7 @@ export const listBroadcasts = defineAction({
   async run({ client }) {
     const result = await client.request({ path: '/broadcasts' });
     const broadcasts = (result as { data?: Array<Record<string, unknown>> })?.data ?? [];
+
     return broadcasts.map((broadcast) => ({
       id: broadcast.id,
       name: broadcast.name ?? '',

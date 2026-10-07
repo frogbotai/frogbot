@@ -207,6 +207,7 @@ const createTextTable = defineAction({
     const widths = keys.map((key) =>
       Math.max(key.length, ...input.data.map((row) => String(row[key] ?? '').length)),
     );
+
     const separator = `+${widths.map((width) => '-'.repeat(width + 2)).join('+')}+`;
     const header = `|${keys.map((key, index) => ` ${key.padEnd(widths[index])} `).join('|')}|`;
 

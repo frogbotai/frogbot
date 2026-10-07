@@ -85,6 +85,7 @@ function createMockLanguageModel(opts?: {
   const content: LanguageModelV4Content[] = toolCalls
     ? toolCalls.map((tc) => ({ type: 'tool-call' as const, ...tc }))
     : [{ type: 'text' as const, text }];
+
   const usage = mockUsage({
     inputTokens: {
       total: inputTokens,
@@ -103,6 +104,7 @@ function createMockLanguageModel(opts?: {
     doGenerate: (options) => {
       onCall?.(options);
       if (error) return Promise.reject(error);
+
       return Promise.resolve({
         content,
         finishReason: finish(finishReason),
@@ -128,6 +130,7 @@ function createMockLanguageModel(opts?: {
           : []),
         { type: 'finish' as const, finishReason: finish(finishReason), usage },
       ];
+
       return Promise.resolve({ stream: partStream(parts) });
     },
   });
@@ -138,6 +141,7 @@ function languageParams(
   args: BeforeUpstreamHookArgs,
 ): NonNullable<BeforeUpstreamHookArgs['params']> {
   if (!args.params) throw new Error('beforeUpstream args carry no language params');
+
   return args.params;
 }
 
@@ -148,6 +152,7 @@ function makeAppWithMockProvider(providerName: string, mockModel?: LanguageModel
   const model = mockModel ?? createMockLanguageModel();
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry, hooks });
 }
 
@@ -173,6 +178,7 @@ function createDelayedStreamModel(opts: {
     inputTokens = 42,
     outputTokens = 17,
   } = opts;
+
   return {
     ...createMockLanguageModel(),
     doStream: () =>
@@ -180,12 +186,15 @@ function createDelayedStreamModel(opts: {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' });
+
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: text,
             });
+
             controller.enqueue({ type: 'text-end', id: 'text-0' });
+
             setTimeout(() => {
               controller.enqueue({
                 type: 'finish',
@@ -197,6 +206,7 @@ function createDelayedStreamModel(opts: {
                   outputTokens: { total: outputTokens, text: outputTokens },
                 }),
               });
+
               controller.close();
             }, delayMs);
           },
@@ -219,11 +229,13 @@ function createMidStreamErrorModel(error: unknown): LanguageModelV4 {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' });
+
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hello',
             });
+
             controller.enqueue({ type: 'error', error });
             controller.close();
           },
@@ -240,6 +252,7 @@ function createMockEmbeddingModel(opts?: {
   onCall?: (options: EmbeddingModelV4CallOptions) => void;
 }): EmbeddingModelV4 {
   const { embeddings, tokens = 8, maxEmbeddingsPerCall, error, onCall } = opts ?? {};
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -249,6 +262,7 @@ function createMockEmbeddingModel(opts?: {
     doEmbed: (options) => {
       onCall?.(options);
       if (error) return Promise.reject(error);
+
       return Promise.resolve({
         embeddings: embeddings ?? options.values.map((_, index) => [index + 0.25, index + 0.5]),
         usage: { tokens },
@@ -266,6 +280,7 @@ function createMockImageModel(opts?: {
   onCall?: (options: ImageModelV4CallOptions) => void;
 }): ImageModelV4 {
   const { images, warnings = [], error, onCall } = opts ?? {};
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -274,6 +289,7 @@ function createMockImageModel(opts?: {
     doGenerate: (options) => {
       onCall?.(options);
       if (error) return Promise.reject(error);
+
       return Promise.resolve({
         images:
           images ??
@@ -303,7 +319,9 @@ function makeAppWithMockModalityProvider(
     embeddingModel: () => opts.embeddingModel ?? createMockEmbeddingModel(),
     imageModel: () => opts.imageModel ?? createMockImageModel(),
   };
+
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -318,6 +336,7 @@ describe('gateway integration — /v1/chat/completions', () => {
       model: 'bare-model',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(400);
     expect(headers.get('x-request-id')).toEqual(expect.any(String));
     expect(body).toHaveProperty('error.code', 'invalid_model_id');
@@ -328,6 +347,7 @@ describe('gateway integration — /v1/chat/completions', () => {
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
     });
+
     expect(status).toBe(400);
     expect(body).toHaveProperty('error.type', 'invalid_request_error');
     expect(body).toHaveProperty('error.param', 'messages');
@@ -340,6 +360,7 @@ describe('gateway integration — /v1/chat/completions', () => {
       model: 'anthropic/claude-sonnet-4-20250514',
       messages: [{ role: 'user', content: 'hello' }],
     });
+
     // Should get an upstream auth error (401), not a validation error (400)
     expect(status).toBe(401);
     expect(body).toHaveProperty('error.type', 'authentication_error');
@@ -357,6 +378,7 @@ describe('gateway integration — /v1/messages', () => {
       messages: [{ role: 'user', content: 'hi' }],
       max_tokens: 100,
     });
+
     expect(status).toBe(400);
     expect(body).toHaveProperty('type', 'error');
     expect(body).toHaveProperty('error.type', 'invalid_request_error');
@@ -366,11 +388,13 @@ describe('gateway integration — /v1/messages', () => {
     const app = createApp({
       registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
+
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
       messages: [{ role: 'user', content: 'hi' }],
       max_tokens: 100,
     });
+
     expect(status).toBe(404);
     expect(body).toHaveProperty('error.type', 'not_found_error');
   });
@@ -382,6 +406,7 @@ describe('gateway integration — /v1/messages', () => {
       messages: [{ role: 'user', content: 'hello' }],
       max_tokens: 100,
     });
+
     // Passes validation, then fails at the upstream call with the mock key.
     // Must be a 401 auth error from upstream, NOT a 400 validation error.
     expect(status).toBe(401);
@@ -446,6 +471,7 @@ describe('gateway integration — error headers', () => {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(401);
     expect(headers.get('x-should-retry')).toBe('false');
   });
@@ -462,6 +488,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       model: 'groq/llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.content', 'Hello from mock!');
     expect(body).toHaveProperty('usage');
@@ -474,6 +501,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       messages: [{ role: 'user', content: 'hi' }],
       max_tokens: 100,
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('content[0].text', 'Hello from mock!');
   });
@@ -484,6 +512,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       model: 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.content', 'Hello from mock!');
   });
@@ -494,6 +523,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       model: 'vertex/gemini-2.0-flash',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.content', 'Hello from mock!');
   });
@@ -504,6 +534,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       model: 'azure/my-gpt4o-deployment',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.content', 'Hello from mock!');
   });
@@ -514,6 +545,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       model: 'ollama/llama3.2',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.content', 'Hello from mock!');
   });
@@ -722,6 +754,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         { toolCallId: 'call_123', toolName: 'get_weather', input: JSON.stringify({ city: 'SF' }) },
       ],
     });
+
     const app = makeAppWithMockProvider('groq', model);
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'groq/llama-3.3-70b-versatile',
@@ -736,9 +769,12 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         },
       ],
     });
+
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.tool_calls');
+
     const toolCalls = (body as any).choices[0].message.tool_calls;
+
     expect(toolCalls).toHaveLength(1);
     expect(toolCalls[0]).toHaveProperty('id', 'call_123');
     expect(toolCalls[0]).toHaveProperty('function.name', 'get_weather');
@@ -755,6 +791,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         stream: true,
       }),
     });
+
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/event-stream');
   });
@@ -767,6 +804,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
       ...createMockLanguageModel(),
       doStream: (options) => {
         upstreamSignal = options.abortSignal;
+
         observedAbort = new Promise((resolve) => {
           options.abortSignal?.addEventListener('abort', () => resolve(), { once: true });
         });
@@ -775,6 +813,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
@@ -800,12 +839,14 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     });
 
     expect(res.status).toBe(200);
+
     const reader = res.body?.getReader();
     await reader?.read();
     controller.abort();
 
     await expect(observedAbort).resolves.toBeUndefined();
     expect(upstreamSignal?.aborted).toBe(true);
+
     await reader?.cancel().catch(() => undefined);
   });
 
@@ -950,11 +991,13 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hello',
               });
+
               controller.enqueue({ type: 'error', error });
               controller.close();
             },
@@ -975,8 +1018,10 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
     const eventOrder = [...text.matchAll(/^event: (.+)$/gm)].map((match) => match[1]);
+
     expect(eventOrder).toEqual([
       'message_start',
       'ping',
@@ -1026,9 +1071,11 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('masks production 5xx provider errors and preserves x-request-id', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const app = makeAppWithMockProvider(
       'openai',
       createMockLanguageModel({
@@ -1047,8 +1094,10 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     );
 
     expect(status).toBe(500);
+
     // G103: the gateway mints its own id and does not echo the client value.
     const requestId = headers.get('x-request-id') ?? '';
+
     expect(requestId).not.toBe('req-stage-7');
     expect(requestId).toMatch(/^req_[A-Za-z0-9-]+$/);
     expect(body).toHaveProperty(
@@ -1211,6 +1260,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       outputTokens: 17,
       finishReason: 'stop',
     });
+
     const app = makeAppWithMockProvider('groq', model, {
       afterOperation: [
         (args) => {
@@ -1237,7 +1287,9 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     await res.text(); // drains the SSE stream to completion
 
     expect(afterOperationCalls).toHaveLength(1);
+
     const [call] = afterOperationCalls;
+
     expect(call.finishReason).toBe('stop');
     expect(call.usage).toEqual({
       inputTokens: 42,
@@ -1286,6 +1338,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     // The stream already emitted real content before the error, so this is
     // a 200 with an in-band SSE error frame, not a pre-flight JSON error.
     expect(res.status).toBe(200);
+
     await res.text();
 
     expect(order).toEqual(['afterError', 'afterOperation']);
@@ -1338,6 +1391,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
         stream: true,
       }),
     });
+
     await res.text();
 
     expect(res.status).toBe(200);
@@ -1357,6 +1411,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
@@ -1393,6 +1448,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     });
 
     expect(res.status).toBe(200);
+
     const reader = res.body?.getReader();
     await reader?.read();
     controller.abort();
@@ -1403,7 +1459,9 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     });
 
     expect(afterErrorCalls).toHaveLength(0);
+
     const [call] = afterOperationCalls;
+
     expect(call.finishReason).toBe('abort');
     expect(call.otel['frogbot.status_code_effective']).toBe(499);
   });
@@ -1432,6 +1490,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
 
     expect(res.status).toBe(200);
     expect(afterOperationCalls).toHaveLength(0);
+
     await res.text();
 
     expect(afterOperationCalls).toHaveLength(1);
@@ -1468,6 +1527,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
 
     expect(res.status).toBe(200);
     expect(afterOperationCalls).toHaveLength(0);
+
     await res.text();
 
     expect(afterOperationCalls).toHaveLength(1);
@@ -1487,6 +1547,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       text: 'hi',
       finishReason: 'stop',
     });
+
     const app = makeAppWithMockProvider('openai', model);
 
     const res = await app.request('http://localhost/v1/responses', {
@@ -1496,6 +1557,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     });
 
     expect(res.status).toBe(200);
+
     const body = await res.text();
     const events = body
       .split('\n\n')
@@ -1512,7 +1574,9 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     expect(events[0].event).toBe('response.created');
     expect(events[1].event).toBe('response.in_progress');
     expect(events[events.length - 1].event).toBe('response.completed');
+
     const sequences = events.map((entry) => entry.data.sequence_number);
+
     expect(sequences).toEqual(sequences.map((_, index) => index));
   });
 
@@ -1522,6 +1586,7 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       text: 'hi',
       finishReason: 'length',
     });
+
     const app = makeAppWithMockProvider('openai', model);
 
     const res = await app.request('http://localhost/v1/responses', {
@@ -1531,12 +1596,14 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     });
 
     expect(res.status).toBe(200);
+
     const body = await res.text();
     const terminal = body
       .split('\n\n')
       .map((block) => block.match(/^event: (.+)$/m)?.[1])
       .filter((event): event is string => Boolean(event))
       .at(-1);
+
     expect(terminal).toBe('response.incomplete');
   });
 
@@ -1609,9 +1676,11 @@ describe('gateway integration — P1-C7 warnings parity', () => {
     const afterUpstream = vi.fn(() => {
       order.push('afterUpstream');
     });
+
     const afterOperation = vi.fn(() => {
       order.push('afterOperation');
     });
+
     const model = createMockLanguageModel({ warnings: [warning] });
     const app = makeAppWithMockProvider('openai', model, {
       afterUpstream: [afterUpstream],
@@ -1629,6 +1698,7 @@ describe('gateway integration — P1-C7 warnings parity', () => {
     });
 
     expect(res.status).toBe(200);
+
     await res.text();
 
     expect(afterUpstream).toHaveBeenCalledWith(expect.objectContaining({ warnings: [warning] }));
@@ -1744,6 +1814,7 @@ describe('gateway integration — M3 embeddings and images', () => {
       prompt: 'frog',
       response_format: 'url',
     });
+
     expect(unsupported.status).toBe(400);
     expect(unsupported.body).toHaveProperty('error.param', 'response_format');
 
@@ -1751,6 +1822,7 @@ describe('gateway integration — M3 embeddings and images', () => {
       model: 'replicate/black-forest-labs/flux-schnell',
       prompt: 'blocked prompt',
     });
+
     expect(refused.status).toBe(500);
     expect(refused.body).toHaveProperty('error.type', 'server_error');
   });
@@ -1765,6 +1837,7 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       maxVideosPerCall: 1,
       doGenerate: async () => {
         await new Promise((resolve) => setImmediate(resolve));
+
         return {
           videos: [{ type: 'base64', data: 'dmlkZW8=', mediaType: 'video/mp4' }],
           warnings: [],
@@ -1773,6 +1846,7 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
         };
       },
     };
+
     const app = createApp({
       registry: {
         replicate: { videoModel: () => model },
@@ -1801,6 +1875,7 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
           response: { id: 'speech_1', timestamp: new Date(0), modelId: 'tts-1' },
         }),
     };
+
     const app = createApp({
       registry: {
         openai: { speechModel: () => model },
@@ -1838,11 +1913,13 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
           response: { id: 'transcription_1', timestamp: new Date(0), modelId: 'whisper-1' },
         }),
     };
+
     const app = createApp({
       registry: {
         openai: { transcriptionModel: () => model },
       } as unknown as ProviderRegistry,
     });
+
     const form = new FormData();
     form.set('model', 'openai/whisper-1');
     form.set('file', new File([new Uint8Array([1, 2, 3])], 'tiny.wav', { type: 'audio/wav' }));
@@ -1868,7 +1945,9 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
     );
 
     expect(res.status).toBe(413);
+
     const body = (await res.json()) as Record<string, unknown>;
+
     expect(body).toHaveProperty('error.code', 'request_entity_too_large');
     expect(body).toHaveProperty('error.param', 'content-length');
   });
@@ -1914,6 +1993,7 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
           response: { id: 'rerank_1' },
         }),
     };
+
     const app = createApp({
       registry: {
         cohere: { rerankingModel: () => model },
@@ -1941,10 +2021,12 @@ describe('gateway integration — credential validation', () => {
     const app = createApp({
       registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
+
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'groq/llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(404);
     expect(body).toHaveProperty('error.code', 'provider_not_configured');
   });
@@ -1953,10 +2035,12 @@ describe('gateway integration — credential validation', () => {
     const app = createApp({
       registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
+
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(404);
     expect(body).toHaveProperty('error.code', 'provider_not_configured');
   });
@@ -1965,10 +2049,12 @@ describe('gateway integration — credential validation', () => {
     const app = createApp({
       registry: buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } })),
     });
+
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'nonexistent-provider/some-model',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(status).toBe(404);
     expect(body).toHaveProperty('error.code', 'model_not_found');
   });
@@ -1984,6 +2070,7 @@ describe('gateway integration — credential validation', () => {
       model: 'groq/llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(groqStatus).toBe(200);
     expect(groqBody).toHaveProperty('choices[0].message.content', 'from groq');
 
@@ -1991,6 +2078,7 @@ describe('gateway integration — credential validation', () => {
       model: 'openai/gpt-4o',
       messages: [{ role: 'user', content: 'hi' }],
     });
+
     expect(openaiStatus).toBe(200);
     expect(openaiBody).toHaveProperty('choices[0].message.content', 'from openai');
   });

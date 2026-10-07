@@ -44,6 +44,7 @@ export function ArtifactProvider({
     async (id: string) => {
       const loaded = await persistence?.load(id);
       if (loaded) setArtifact(loaded);
+
       return loaded;
     },
     [persistence],
@@ -53,6 +54,7 @@ export function ArtifactProvider({
     if (!artifact || !persistence) return undefined;
     const saved = await persistence.save(artifact);
     setArtifact(saved);
+
     return saved;
   }
 
@@ -98,6 +100,7 @@ export function ArtifactView({ artifact: artifactProp }: { artifact?: Artifact }
   if (definition && context) {
     return <definition.render artifact={artifact} setArtifact={context.setArtifact} />;
   }
+
   return (
     <div data-artifact-kind={artifact.kind} className="fb-artifact">
       <strong>{artifact.title ?? artifact.kind}</strong>
@@ -109,10 +112,13 @@ export function ArtifactView({ artifact: artifactProp }: { artifact?: Artifact }
 export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => void }) {
   const context = useArtifact();
   const loadArtifact = context?.loadArtifact;
+
   useEffect(() => {
     if (id) void loadArtifact?.(id);
   }, [id, loadArtifact]);
+
   if (!context?.artifact) return null;
+
   return (
     <aside data-artifact-viewer className="fb-artifact__viewer">
       <header className="fb-artifact__header">

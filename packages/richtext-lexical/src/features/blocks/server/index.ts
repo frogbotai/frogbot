@@ -15,6 +15,7 @@ import { wrapFieldRequestFunctions } from 'frogbot/internal';
 import type { Block, BlockSlug } from 'payload';
 
 type BlockInput = Omit<Block, 'fields'> & { fields: Field[] };
+
 type RuntimeFields = Block['fields'] & Field[];
 
 export type BlocksFeatureProps = Omit<UpstreamBlocksFeatureProps, 'blocks' | 'inlineBlocks'> & {
@@ -41,20 +42,27 @@ export const BlocksFeature = (props?: BlocksFeatureProps) =>
   });
 
 export type LexicalBlockClientProps = PayloadLexicalBlockClientProps;
+
 export type LexicalBlockLabelClientProps = PayloadLexicalBlockLabelClientProps;
+
 export type LexicalInlineBlockClientProps = PayloadLexicalInlineBlockClientProps;
+
 export type LexicalInlineBlockLabelClientProps = PayloadLexicalInlineBlockLabelClientProps;
+
 export type LexicalBlockServerProps = Omit<PayloadLexicalBlockServerProps, 'payload' | 'req'> & {
   req: FrogBotRequest;
 };
+
 export type LexicalBlockLabelServerProps = Omit<
   PayloadLexicalBlockLabelServerProps,
   'payload' | 'req'
 > & { req: FrogBotRequest };
+
 export type LexicalInlineBlockServerProps = Omit<
   PayloadLexicalInlineBlockServerProps,
   'payload' | 'req'
 > & { req: FrogBotRequest };
+
 export type LexicalInlineBlockLabelServerProps = Omit<
   PayloadLexicalInlineBlockLabelServerProps,
   'payload' | 'req'

@@ -75,6 +75,7 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = resolved.instance.embeddingModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
@@ -87,6 +88,7 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       const { values, providerOptions } = toEmbedParams(body);
@@ -107,14 +109,17 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
         abortSignal: createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs).signal,
         headers: Object.fromEntries(headers),
       };
+
       phase = 'upstream';
       const result =
         values.length === 1
           ? await embed({ ...baseOptions, value: values[0] as string })
           : await embedMany({ ...baseOptions, values: values as string[] });
+
       const embeddings = 'embedding' in result ? [result.embedding] : result.embeddings;
       const upstreamResponses = 'embedding' in result ? [result.response] : result.responses;
       const inputTokens = Number.isFinite(result.usage.tokens) ? result.usage.tokens : 0;
+
       usage = {
         inputTokens,
         outputTokens: 0,
@@ -122,6 +127,7 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
       };
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         { ...base, phase, finishReason, usage, response: upstreamResponses },
@@ -145,6 +151,7 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       if (base) {
@@ -168,12 +175,15 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

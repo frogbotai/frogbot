@@ -11,8 +11,10 @@ import { validateKVTTL } from './validateTTL.js';
 export function createKV({ adapter }: { adapter: KVAdapter }): KV {
   const atomic = (): KVAtomicAdapter => {
     if (!(kvAtomic in adapter) || adapter[kvAtomic] !== true) throw new KVUnsupportedError();
+
     return adapter as KVAtomicAdapter;
   };
+
   const kv: KV = {
     clear: () => adapter.clear(),
     delete: (key) => adapter.delete(key),
@@ -26,15 +28,18 @@ export function createKV({ adapter }: { adapter: KVAdapter }): KV {
     },
     async setIfAbsent(key, value, options) {
       if (options?.ttl !== undefined) validateKVTTL(options.ttl);
+
       return atomic().setIfAbsent(key, value, options);
     },
     async acquireLock(key, ttl) {
       validateKVTTL(ttl);
       const token = randomUUID();
+
       return (await atomic().setIfAbsent(key, token, { ttl })) ? { key, token } : null;
     },
     async extendLock(lock, ttl) {
       validateKVTTL(ttl);
+
       return atomic().extendLock(lock, ttl);
     },
     async releaseLock(lock) {
@@ -42,5 +47,6 @@ export function createKV({ adapter }: { adapter: KVAdapter }): KV {
     },
     lock: (key, ttl, fn) => runKVLock({ kv, key, ttl, fn }),
   };
+
   return kv;
 }

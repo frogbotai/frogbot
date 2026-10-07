@@ -13,7 +13,9 @@ describe('loadChats', () => {
       hasNextPage: true,
       hasPrevPage: true,
     };
+
     const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(Response.json(result)));
+
     await expect(
       loadChats({
         sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
@@ -23,7 +25,9 @@ describe('loadChats', () => {
         limit: 10,
       }),
     ).resolves.toEqual(result);
+
     const url = decodeURIComponent(String(fetch.mock.calls[0]?.[0]));
+
     expect(url).toContain('/api/conversations?');
     expect(url).toContain('sort=-lastMessageAt');
     expect(url).toContain('page=2');

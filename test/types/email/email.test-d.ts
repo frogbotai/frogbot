@@ -18,9 +18,11 @@ const quickbooks = definePiece({ slug: 'quickbooks', label: 'QuickBooks', action
 
 expectTypeOf<EmailPiece>().toEqualTypeOf<EmailPieceInstance>();
 expectTypeOf<PiecesEmailPiece>().toEqualTypeOf<EmailPiece>();
+
 expectTypeOf<FrogBotConfig['email']>().toEqualTypeOf<
   EmailPiece | Promise<EmailPiece> | undefined
 >();
+
 expectTypeOf(email).toMatchTypeOf<EmailPiece>();
 expectTypeOf(email).toMatchTypeOf<NonNullable<FrogBotConfig['email']>>();
 expectTypeOf<Promise<typeof email>>().toMatchTypeOf<NonNullable<FrogBotConfig['email']>>();

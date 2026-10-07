@@ -65,6 +65,7 @@ describe('evaluateRoute', () => {
         rounding: { probabilityDecimals: 2, scoreDecimals: 2 },
       }),
     );
+
     const model = new Experimental_EvaluationMockModelV4({ doEvaluate });
 
     const phases: string[] = [];
@@ -86,12 +87,14 @@ describe('evaluateRoute', () => {
       afterUpstream: [
         ({ phase, usage }) => {
           phases.push(phase);
+
           expect(usage).toEqual({ inputTokens: 12, outputTokens: 3, totalTokens: 15 });
         },
       ],
       afterOperation: [
         ({ phase, usage, error }) => {
           phases.push(phase);
+
           expect(usage).toEqual({ inputTokens: 12, outputTokens: 3, totalTokens: 15 });
           expect(error).toBeUndefined();
         },
@@ -167,6 +170,7 @@ describe('evaluateRoute', () => {
           warnings: [],
         }),
     });
+
     const afterUpstream = vi.fn();
     const afterOperation = vi.fn();
     const app = makeApp(model, {
@@ -195,6 +199,7 @@ describe('evaluateRoute', () => {
           warnings: [],
         }),
     });
+
     const afterUpstream = vi.fn();
     const afterOperation = vi.fn();
     const app = makeApp(model, {
@@ -260,11 +265,13 @@ describe('evaluateRoute', () => {
       state: 'x',
       questions: {},
     });
+
     const oversized = await post(app, {
       model: 'typesafe-ai/jev',
       state: 'x'.repeat(200),
       questions,
     });
+
     const missingState = await post(app, { model: 'typesafe-ai/jev', questions });
     const malformedJson = await app.request('/v1/evaluate', {
       method: 'POST',
@@ -287,6 +294,7 @@ describe('evaluateRoute', () => {
       supportedQuestionTypes: ['boolean'],
       doEvaluate: vi.fn(),
     });
+
     const afterError = vi.fn();
     const afterOperation = vi.fn();
     const app = makeApp(model, {
@@ -334,6 +342,7 @@ describe('evaluateRoute', () => {
           warnings: [],
         }),
     });
+
     const afterUpstream = vi.fn();
     const afterError = vi.fn();
     const afterOperation = vi.fn();
@@ -390,6 +399,7 @@ describe('evaluateRoute', () => {
         afterOperation: [afterOperation],
       },
     });
+
     const controller = new AbortController();
     const request = new Request('http://localhost/v1/evaluate', {
       method: 'POST',
@@ -417,6 +427,7 @@ describe('evaluateRoute', () => {
           });
         }),
     });
+
     const afterError = vi.fn();
     const afterOperation = vi.fn();
     const app = makeApp(model, {

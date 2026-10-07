@@ -27,6 +27,7 @@ const auth = {
   password: 'trello-token',
   applicationSecret: 'trello-application-secret',
 };
+
 const req = () =>
   ({
     frogbot: {
@@ -102,6 +103,7 @@ describe('trello', () => {
         : slug.startsWith('delete')
           ? {}
           : { id: 'card', name: 'Card' };
+
     const fetch = vi.fn().mockResolvedValue(json(response));
 
     vi.stubGlobal('fetch', fetch);
@@ -135,6 +137,7 @@ describe('trello', () => {
       },
       req: req(),
     });
+
     await trello.updateCard({
       input: { cardId: 'card', listId: 'next', archived: false, due: '2026-09-14T00:00:00.000Z' },
       req: req(),
@@ -167,6 +170,7 @@ describe('trello', () => {
     const options = createCard.options!;
 
     expect(pieceActionDefinition(trello.createCard)).toBe(createCard);
+
     const args = { client, options: {}, req: req() };
 
     await expect(options.boardId!({ ...args, input: {} })).resolves.toEqual([
@@ -190,6 +194,7 @@ describe('trello', () => {
             : json({ id: 'attachment', name: 'Report', url: 'https://trello.com/report' }),
         ),
       );
+
     const request = {
       frogbot: {
         config: {
@@ -219,6 +224,7 @@ describe('trello', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(fetch.mock.calls[0][1]).toMatchObject({ redirect: 'error' });
     expect((fetch.mock.calls[0][1].headers as Headers).get('cookie')).toBe('session=test');
+
     const trelloUrl = new URL(String(fetch.mock.calls[1][0]));
 
     expect(trelloUrl.pathname).toBe('/1/cards/card/attachments');
@@ -301,6 +307,7 @@ describe('trello', () => {
         getCard: vi.fn().mockResolvedValue({ id: 'card', name: 'Card' }),
         verifyWebhook: vi.fn().mockReturnValue(true),
       };
+
       const state = await definition.onEnable({
         client,
         input,
@@ -382,6 +389,7 @@ describe('trello', () => {
         },
       },
     };
+
     const trello = createTrello({ auth });
     const client = await trello.client({ req: req() });
     client.getCard = vi.fn().mockResolvedValue({ id: 'card', name: 'Card' });
@@ -432,6 +440,7 @@ describe('trello', () => {
       getCard: vi.fn().mockResolvedValue({ id: 'card' }),
       verifyWebhook: vi.fn().mockReturnValue(true),
     };
+
     const delivery = {
       action: {
         display: {

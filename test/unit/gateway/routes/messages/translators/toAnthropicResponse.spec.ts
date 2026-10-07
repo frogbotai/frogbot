@@ -19,6 +19,7 @@ const baseArgs = {
 describe('toAnthropicResponse', () => {
   test('builds a text content block from result text', () => {
     const result = toAnthropicResponse({ ...baseArgs, text: 'hello' });
+
     expect(result.content).toEqual([{ type: 'text', text: 'hello' }]);
     expect(result.type).toBe('message');
     expect(result.role).toBe('assistant');
@@ -26,18 +27,21 @@ describe('toAnthropicResponse', () => {
 
   test('uses response id and modelId when present', () => {
     const result = toAnthropicResponse({ ...baseArgs, text: 'hi' });
+
     expect(result.id).toBe('msg_123');
     expect(result.model).toBe('claude-opus');
   });
 
   test('generates a msg_ id when response id is missing', () => {
     const result = toAnthropicResponse({ ...baseArgs, text: 'hi', response: {} });
+
     expect(result.id).toMatch(/^msg_[a-f0-9]{24}$/);
     expect(result.model).toBe('claude-opus');
   });
 
   test('emits non-empty content when there is no text or tools', () => {
     const result = toAnthropicResponse({ ...baseArgs });
+
     expect(result.content).toEqual([{ type: 'text', text: '' }]);
   });
 
@@ -48,6 +52,7 @@ describe('toAnthropicResponse', () => {
       reasoning: [{ text: 'ponder', signature: 'sig' }],
       toolCalls: [{ toolCallId: 'call_1', toolName: 'search', args: { q: 'x' } }],
     });
+
     expect(result.content).toEqual([
       { type: 'thinking', thinking: 'ponder', signature: 'sig' },
       { type: 'text', text: 'answer' },
@@ -60,11 +65,13 @@ describe('toAnthropicResponse', () => {
       ...baseArgs,
       reasoning: [{ text: '', redactedData: 'REDACTED' }],
     });
+
     expect(result.content).toEqual([{ type: 'redacted_thinking', data: 'REDACTED' }]);
   });
 
   test('defaults thinking signature to empty string', () => {
     const result = toAnthropicResponse({ ...baseArgs, reasoning: [{ text: 'x' }] });
+
     expect(result.content).toEqual([{ type: 'thinking', thinking: 'x', signature: '' }]);
   });
 
@@ -73,6 +80,7 @@ describe('toAnthropicResponse', () => {
       ...baseArgs,
       toolCalls: [{ toolCallId: 'c', toolName: 't', args: '{"n":5}' }],
     });
+
     expect(result.content).toEqual([{ type: 'tool_use', id: 'c', name: 't', input: { n: 5 } }]);
   });
 
@@ -81,6 +89,7 @@ describe('toAnthropicResponse', () => {
       ...baseArgs,
       toolCalls: [{ toolCallId: 'c', toolName: 't', args: 'not json' }],
     });
+
     expect(result.content).toEqual([{ type: 'tool_use', id: 'c', name: 't', input: 'not json' }]);
   });
 
@@ -91,12 +100,14 @@ describe('toAnthropicResponse', () => {
       finishReason: 'tool-calls',
       stopSequence: 'STOP',
     });
+
     expect(result.stop_reason).toBe('tool_use');
     expect(result.stop_sequence).toBe('STOP');
   });
 
   test('defaults stop_sequence to null', () => {
     const result = toAnthropicResponse({ ...baseArgs, text: 'x' });
+
     expect(result.stop_sequence).toBeNull();
   });
 
@@ -106,6 +117,7 @@ describe('toAnthropicResponse', () => {
       text: 'x',
       usage: { inputTokens: 8, outputTokens: 15 },
     });
+
     expect(result.usage.input_tokens).toBe(8);
     expect(result.usage.output_tokens).toBe(15);
   });
@@ -122,6 +134,7 @@ describe('toAnthropicResponse', () => {
         serviceTier: 'standard',
       },
     });
+
     expect(result.usage).toMatchObject({
       cache_creation_input_tokens: 100,
       cache_read_input_tokens: 50,
@@ -131,6 +144,7 @@ describe('toAnthropicResponse', () => {
 
   test('omits cache usage fields when absent', () => {
     const result = toAnthropicResponse({ ...baseArgs, text: 'x' });
+
     expect(result.usage).not.toHaveProperty('cache_creation_input_tokens');
     expect(result.usage).not.toHaveProperty('cache_read_input_tokens');
     expect(result.usage).not.toHaveProperty('service_tier');
@@ -147,6 +161,7 @@ describe('toAnthropicResponse', () => {
         cacheCreation: { ephemeral5mInputTokens: 148, ephemeral1hInputTokens: 100 },
       },
     });
+
     expect(result.usage.output_tokens_details).toEqual({ thinking_tokens: 5 });
     expect(result.usage.cache_creation).toEqual({
       ephemeral_5m_input_tokens: 148,

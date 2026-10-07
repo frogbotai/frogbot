@@ -19,6 +19,7 @@ const updateTypes = z.enum([
   'chat_member',
   'chat_join_request',
 ]);
+
 const input = z.object({ updateTypes: z.array(updateTypes).default([]) });
 const jsonValue: z.ZodType<PieceJSON> = z.lazy(() =>
   z.union([
@@ -30,6 +31,7 @@ const jsonValue: z.ZodType<PieceJSON> = z.lazy(() =>
     z.record(z.string(), jsonValue),
   ]),
 );
+
 const update = z.object({ update_id: z.number().optional() }).catchall(jsonValue);
 
 export const newUpdate = defineAppTrigger({

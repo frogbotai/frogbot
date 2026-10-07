@@ -25,6 +25,7 @@ import type { ConnectionRow } from '../../packages/frogbot/src/connections/store
 import { startPieceProviders, startPieceServer } from './nativePieceServers.js';
 
 type PieceUser = { id: string | number; token: string; connectionId?: string | number };
+
 type PiecePart = {
   type: string;
   state?: string;
@@ -33,6 +34,7 @@ type PiecePart = {
   errorText?: string;
   text?: string;
 };
+
 type PieceMessage = { role: string; parts: PiecePart[] };
 
 const mail = createResend({ slug: 'mail', auth: { apiKey: 'factory-key' } });
@@ -74,8 +76,10 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     const doc = await frogbot.create({ collection: 'users' as never, data: credentials as never });
     const login = await request({ path: '/users/login', body: credentials });
     const body = await login.json();
+
     expect(login.status, JSON.stringify(body)).toBe(200);
     expect(body.token).toEqual(expect.any(String));
+
     return { id: doc.id, token: body.token };
   }
 
@@ -97,6 +101,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       status: data.status,
       expiresAt: data.expiresAt,
     });
+
     user.connectionId = doc.id;
     if (data.credential !== undefined) {
       await frogbot.update({
@@ -106,6 +111,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
         overrideAccess: true,
       });
     }
+
     return doc;
   }
 
@@ -119,6 +125,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     instance?: 'mail' | 'required';
   }) {
     const response = await request({ path: `/piece-test/${instance}`, user, body: input });
+
     return { status: response.status, body: await response.json() };
   }
 
@@ -136,28 +143,40 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       user,
       body: { title: 'Native piece E2E', agent: instance },
     });
+
     const chatBody = await chat.json();
+
     expect(chat.status, JSON.stringify(chatBody)).toBe(201);
+
     const chatId = chatBody.doc.id as string | number;
     const response = await request({
       path: `/agents/${instance}`,
       user,
       body: { prompt: JSON.stringify(input), chatId },
     });
+
     const body = await response.json();
+
     expect(response.status, JSON.stringify(body)).toBe(200);
     expect(body.chatId).toBe(chatId);
+
     const transcript = await request({
       path: `/messages?where[chat][equals]=${chatId}&sort=createdAt`,
       user,
     });
+
     expect(transcript.status).toBe(200);
+
     const messages = (await transcript.json()).docs as PieceMessage[];
+
     expect(messages.map(({ role }) => role)).toEqual(['user', 'assistant']);
+
     const assistant = messages.find(({ role }) => role === 'assistant')!;
     const parts = assistant.parts.filter(({ type }) => type === `tool-${instance}_send`);
+
     expect(parts).toHaveLength(1);
     expect(assistant.parts).toContainEqual({ type: 'text', state: 'done', text: body.text });
+
     return { body, chatId, part: parts[0] };
   }
 
@@ -169,34 +188,42 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     input: ReturnType<typeof emailInput>;
   }) {
     const result = await direct({ user, input });
+
     expect(result).toMatchObject({
       status: 200,
       body: { status: 200, body: { id: `email-${input.subject}` } },
     });
+
     const generated = await agent({ user, input });
+
     expect(generated.part).toMatchObject({
       state: 'output-available',
       output: { status: 200, body: result.body.body },
     });
+
     return generated;
   }
 
   beforeAll(async () => {
     providers = await startPieceProviders();
     const nativeFetch = globalThis.fetch;
+
     vi.stubGlobal('fetch', ((input, init) => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.origin === 'https://api.resend.com') {
         const redirected = new URL(`${url.pathname}${url.search}`, providers.url);
+
         return nativeFetch(
           input instanceof Request ? new Request(redirected, input) : redirected,
           init,
         );
       }
+
       if (url.origin !== providers.url && url.origin !== server?.url) {
         blockedRequests.push(url.origin);
         throw new Error(`External network is disabled in native piece E2E: ${url.origin}`);
       }
+
       return nativeFetch(input, init);
     }) satisfies typeof fetch);
 
@@ -239,11 +266,13 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
             if (!req.user) {
               return Response.json({ error: 'Authentication required' }, { status: 401 });
             }
+
             const send = req.routeParams?.instance === 'required' ? required.send : detachedSend;
             try {
               return Response.json(await send({ input: await req.json!(), req }));
             } catch (error) {
               if (!(error instanceof Error)) throw error;
+
               return Response.json(
                 {
                   error: error.message,
@@ -257,6 +286,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
         },
       ],
     });
+
     frogbot = await new FrogBot().init({ config });
     const app = new Hono();
     app.all('/api/*', (context) => frogbot.handleRequest(context.req.raw.clone()));
@@ -279,6 +309,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     if (blockedRequests.length) {
       throw new Error(`Unexpected outbound requests: ${JSON.stringify(blockedRequests)}`);
     }
+
     if (providers.requests.unexpected.length) {
       throw new Error(
         `Unexpected provider requests: ${JSON.stringify(providers.requests.unexpected)}`,
@@ -293,6 +324,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
         frogbot?.destroy(),
         providers?.close(),
       ]);
+
       for (const result of results) {
         if (result.status === 'rejected') throw result.reason;
       }
@@ -305,9 +337,12 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
   it('round-trips a detached action and an agent tool through the same native contract', async () => {
     const input = emailInput('parity');
     const result = await direct({ user: alice, input });
+
     expect(result.status).toBe(200);
     expect(result.body).toMatchObject({ status: 200, body: { id: 'email-parity' } });
+
     const generated = await agent({ user: alice, input });
+
     expect(generated.part).toMatchObject({
       state: 'output-available',
       input,
@@ -352,25 +387,37 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       sendBoth({ user: alice, input: emailInput('alice-concurrent') }),
       sendBoth({ user: bob, input: emailInput('bob-concurrent') }),
     ]);
+
     expect(providers.requests.resend).toHaveLength(4);
+
     for (const { authorization, body } of providers.requests.resend) {
       expect(authorization).toBe(`Bearer ${String(body.subject).split('-')[0]}-key`);
     }
+
     const chats = await request({ path: '/chats?limit=100', user: alice });
+
     expect(chats.status).toBe(200);
+
     const docs = (await chats.json()).docs as Array<{ user: { id: string | number } }>;
+
     expect(docs.length).toBeGreaterThan(0);
     expect(docs.every(({ user }) => user.id === alice.id)).toBe(true);
+
     const foreignChat = await request({ path: `/chats/${bobResult.chatId}`, user: alice });
+
     expect([403, 404]).toContain(foreignChat.status);
+
     const foreignMessages = await request({
       path: `/messages?where[chat][equals]=${bobResult.chatId}`,
       user: alice,
     });
+
     expect(foreignMessages.status).toBe(200);
     expect((await foreignMessages.json()).docs).toEqual([]);
+
     const connections = await request({ path: '/connections', user: alice });
     const body = await connections.json();
+
     expect(connections.status).toBe(200);
     expect(body.docs).toHaveLength(1);
     expect(body.docs[0]).toMatchObject({
@@ -389,10 +436,14 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     const bobReq = await frogbot.createRequest({ user: { id: bob.id, collection: 'users' } });
     const aliceClient = await mail.client({ req: aliceReq });
     const bobClient = await mail.client({ req: bobReq });
+
     expect(aliceClient).not.toBe(bobClient);
+
     await sendBoth({ user: alice, input: emailInput('warm') });
     await saveConnection({ user: alice, credentials: { apiKey: 'alice-key' } });
+
     expect(await mail.client({ req: aliceReq })).toBe(aliceClient);
+
     const saved = await saveConnection({ user: alice, credentials: { apiKey: 'rotated-key' } });
     const raw = await frogbot.findByID({
       collection: 'connections' as never,
@@ -401,12 +452,15 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       overrideAccess: true,
       depth: 0,
     });
+
     expect(raw.credential).toMatch(/^v1\./);
     expect(raw.credential).not.toContain('rotated-key');
     expect(await mail.client({ req: aliceReq })).not.toBe(aliceClient);
     expect(await mail.client({ req: bobReq })).toBe(bobClient);
+
     await sendBoth({ user: alice, input: emailInput('rotated') });
     await sendBoth({ user: bob, input: emailInput('unchanged-bob') });
+
     expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
       'Bearer alice-key',
       'Bearer alice-key',
@@ -419,18 +473,23 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
   it('uses factory auth only for an owner without a connection', async () => {
     const input = emailInput('factory');
+
     expect((await direct({ user: unconnected, input })).status).toBe(200);
     expect((await agent({ user: unconnected, input })).part.state).toBe('output-available');
     expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
       'Bearer factory-key',
       'Bearer factory-key',
     ]);
+
     const missing = await direct({ user: unconnected, input, instance: 'required' });
+
     expect(missing).toMatchObject({
       status: 422,
       body: { name: 'ConnectionError', code: 'missing' },
     });
+
     const generated = await agent({ user: unconnected, input, instance: 'required' });
+
     expect(generated.part).toMatchObject({
       state: 'output-error',
       errorText: 'An error occurred.',
@@ -441,13 +500,16 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
   it('keeps an in-flight request on its original credential while new calls use the rotated key', async () => {
     let release!: () => void;
+
     providers.pauses.set(
       'in-flight',
       new Promise<void>((resolve) => {
         release = resolve;
       }),
     );
+
     const pending = direct({ user: alice, input: emailInput('in-flight') });
+
     onTestFinished(async () => {
       release();
       await pending;
@@ -455,8 +517,10 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
     await expect.poll(() => providers.requests.resend.length).toBe(1);
     expect(providers.requests.resend[0]?.authorization).toBe('Bearer alice-key');
+
     await saveConnection({ user: alice, credentials: { apiKey: 'rotated-key' } });
     await sendBoth({ user: alice, input: emailInput('after-rotation') });
+
     expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
       'Bearer alice-key',
       'Bearer rotated-key',
@@ -464,6 +528,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     ]);
 
     release();
+
     expect(await pending).toMatchObject({
       status: 200,
       body: { body: { id: 'email-in-flight' } },
@@ -476,11 +541,14 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       input: emailInput('whole-instance'),
       instance: 'required',
     });
+
     expect(result.part).toMatchObject({
       state: 'output-available',
       output: { body: { id: 'email-whole-instance' } },
     });
+
     const tools = providers.requests.model[0]?.tools ?? [];
+
     expect(tools).toHaveLength(22);
     expect(new Set(tools.map(({ function: tool }) => tool.name)).size).toBe(22);
     expect(tools.every(({ function: tool }) => tool.name.startsWith('required_'))).toBe(true);
@@ -511,8 +579,11 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       await sendBoth({ user: alice, input });
       await saveConnection({ user: alice, credentials, data });
       const result = await direct({ user: alice, input });
+
       expect(result).toMatchObject({ status: 422, body: { name: 'ConnectionError', code } });
+
       const generated = await agent({ user: alice, input });
+
       expect(generated.part).toMatchObject({
         state: 'output-error',
         errorText: 'An error occurred.',
@@ -525,8 +596,11 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
   it('rejects invalid action input before any vendor request on either path', async () => {
     const input = { ...emailInput('invalid-input'), content_type: 'unsupported' };
     const result = await direct({ user: alice, input });
+
     expect(result).toMatchObject({ status: 422, body: { name: 'ZodError' } });
+
     const generated = await agent({ user: alice, input });
+
     expect(generated.part.state).toBe('output-error');
     expect(generated.part.errorText).toBe('An error occurred.');
     expect(generated.body.text).toContain('content_type');
@@ -540,15 +614,20 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       providers.failures.set(input.subject, { status, message: 'Fixture provider failure' });
       const result = await direct({ user: alice, input });
       const error = `Resend request failed (${status}): Fixture provider failure`;
+
       expect(result).toMatchObject({ status: 422, body: { error } });
+
       const generated = await agent({ user: alice, input });
+
       expect(generated.part).toMatchObject({
         state: 'output-error',
         errorText: 'An error occurred.',
       });
       expect(generated.body.text).toContain(error);
       expect(providers.requests.resend).toHaveLength(2);
+
       providers.failures.delete(input.subject);
+
       expect((await direct({ user: alice, input })).status).toBe(200);
       expect((await agent({ user: alice, input })).part.state).toBe('output-available');
       expect(providers.requests.resend).toHaveLength(4);
@@ -557,11 +636,14 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
   it('rejects anonymous execution before contacting either external service', async () => {
     const input = emailInput('anonymous');
+
     expect((await direct({ input })).status).toBe(401);
+
     const response = await request({
       path: '/agents/mail',
       body: { prompt: JSON.stringify(input) },
     });
+
     expect(response.status).toBe(403);
     expect(providers.requests.model).toEqual([]);
     expect(providers.requests.resend).toEqual([]);

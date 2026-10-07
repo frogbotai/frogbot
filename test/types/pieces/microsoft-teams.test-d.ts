@@ -10,6 +10,7 @@ expectTypeOf<Parameters<typeof teams.findTeamMember>[0]['input']>().toEqualTypeO
   searchBy?: 'email' | 'name' | undefined;
   searchValue: string;
 }>();
+
 expectTypeOf<Awaited<typeof _found>['found']>().toEqualTypeOf<boolean>();
 
 const _findTeamMemberRejectsSendChatMessageInput = () =>
@@ -29,5 +30,6 @@ expectTypeOf<keyof typeof teams.triggers>().toEqualTypeOf<
   | 'dialogOpened'
   | 'dialogSubmitted'
 >();
+
 expectTypeOf(teams.triggers.channelCreated.type).toEqualTypeOf<'polling'>();
 expectTypeOf(teams.triggers.messageReceived.type).toEqualTypeOf<'app'>();

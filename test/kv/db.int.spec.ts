@@ -18,20 +18,26 @@ function expectSeparateNativeConnections(
   if (first.frogbot.db.name === 'mongoose') {
     const a = first.frogbot.db as unknown as MongooseAdapter;
     const b = second.frogbot.db as unknown as MongooseAdapter;
+
     expect(a.connection).not.toBe(b.connection);
     expect(a.connection.name).toBe(b.connection.name);
+
     if (custom) expect(a.collections[collection].collection.name).toBe('mapped_kv_records');
   } else if (first.frogbot.db.name === 'postgres') {
     const a = first.frogbot.db as unknown as PostgresAdapter;
     const b = second.frogbot.db as unknown as PostgresAdapter;
+
     expect(a.pool).not.toBe(b.pool);
     expect(a.schemaName).toBe(b.schemaName);
+
     if (custom) expect(a.tableNameMap.get('custom_kv_store')).toBe('mapped_kv_records');
   } else {
     const a = first.frogbot.db as unknown as SQLiteAdapter;
     const b = second.frogbot.db as unknown as SQLiteAdapter;
+
     expect(a.client).not.toBe(b.client);
     expect(a.clientConfig.url).toBe(b.clientConfig.url);
+
     if (custom) expect(a.tableNameMap.get('custom_kv_store')).toBe('mapped_kv_records');
   }
 }
@@ -53,6 +59,7 @@ for (const custom of [false, true]) {
           }
         : {},
     );
+
     let first: KVRuntime;
     let second: KVRuntime;
 
@@ -84,6 +91,7 @@ for (const custom of [false, true]) {
         limit: 1,
         where: { id: { equals: job.id } },
       });
+
       expect(result.jobStatus?.[job.id]).toEqual({ status: 'success' });
     }
 
@@ -91,17 +99,21 @@ for (const custom of [false, true]) {
       expect(first.frogbot).not.toBe(second.frogbot);
       expect(first.payload).not.toBe(second.payload);
       expect(first.frogbot.db).not.toBe(second.frogbot.db);
+
       expectSeparateNativeConnections(first, second, collection, custom);
     });
 
     it('registers nullable expiration and one hourly cleanup task', () => {
       const config = first.payload.config;
       const tasks = config.jobs.tasks!.filter(({ slug }) => slug === 'frogbot-cleanup-kv');
+
       expect(tasks).toHaveLength(1);
       expect(tasks[0].schedule).toMatchObject([{ cron: '0 * * * *', queue: 'default' }]);
+
       const field = config.collections
         .find(({ slug }) => slug === collection)!
         .fields.find((field) => 'name' in field && field.name === 'expiresAt');
+
       expect(field).toMatchObject({ type: 'date', index: true });
       expect(field).not.toMatchObject({ required: true });
     });
@@ -111,12 +123,15 @@ for (const custom of [false, true]) {
         collection,
         data: { key: 'legacy-missing', data: 'missing' },
       });
+
       await first.frogbot.db.create({
         collection,
         data: { key: 'legacy-null', data: { expiry: 'null' }, expiresAt: null },
       });
+
       await first.frogbot.kv.set('modern-persistent', 'modern');
       await cleanup();
+
       expect(await second.frogbot.kv.get('legacy-missing')).toBe('missing');
       expect(await second.frogbot.kv.get('legacy-null')).toEqual({ expiry: 'null' });
       expect(await second.frogbot.kv.setIfAbsent('legacy-missing', 'intruder')).toBe(false);
@@ -129,35 +144,48 @@ for (const custom of [false, true]) {
       await first.frogbot.kv.set('live-row', 'live', { ttl: 60_000 });
       await first.frogbot.kv.set('persistent-row', 'keep');
       await waitForExpiry();
+
       expect((await rows()).docs.map(({ key }) => key)).toContain('expired-row');
       expect(await second.frogbot.kv.get('expired-row')).toBeNull();
       expect(await second.frogbot.kv.has('expired-row')).toBe(false);
       expect(await second.frogbot.kv.keys()).not.toContain('expired-row');
+
       await cleanup();
+
       expect((await rows()).docs.map(({ key }) => key).sort()).toEqual([
         'live-row',
         'persistent-row',
       ]);
+
       await cleanup();
+
       expect(await first.frogbot.kv.get('live-row')).toBe('live');
     });
 
     it('does not delete successor leases racing with queued cleanup', async () => {
       const keys = Array.from({ length: 16 }, (_, index) => `cleanup-race-${index}`);
+
       await Promise.all(
         keys.map((key) => first.frogbot.kv.set(key, 'expired', { ttl: expiryTTL })),
       );
+
       await waitForExpiry();
+
       expect((await rows()).docs).toHaveLength(keys.length);
+
       const [successors] = await Promise.all([
         Promise.all(keys.map((key) => first.frogbot.kv.acquireLock(key, 60_000))),
         cleanup(),
       ]);
+
       expect(successors.every((lock) => lock !== null)).toBe(true);
+
       await cleanup();
+
       for (const successor of successors) {
         expect(await second.frogbot.kv.get(successor!.key)).toBe(successor!.token);
       }
+
       expect((await rows()).docs).toHaveLength(keys.length);
     });
 

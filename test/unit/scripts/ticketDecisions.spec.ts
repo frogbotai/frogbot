@@ -91,9 +91,11 @@ describe('pnpm ticket decisions', () => {
 
   it('writes answers back verbatim, adds a ruling for a topic, and drops the cards', () => {
     run();
+
     editOpen((open) =>
       answer(answer(open, 'D1', 'A, but keep "old" in the docs'), 'D2', 'B\nnavy, not sky'),
     );
+
     run();
 
     const spec = read(ALPHA);

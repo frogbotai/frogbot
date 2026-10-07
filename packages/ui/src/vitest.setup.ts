@@ -24,22 +24,26 @@ Object.defineProperty(Blob.prototype, 'arrayBuffer', {
     return readBlob(this, 'arrayBuffer');
   },
 });
+
 Object.defineProperty(Blob.prototype, 'text', {
   value(this: Blob) {
     return readBlob(this, 'text');
   },
 });
+
 globalThis.ResizeObserver = class {
   disconnect() {}
   observe() {}
   unobserve() {}
 };
+
 globalThis.IntersectionObserver = class {
   disconnect() {}
   observe() {}
   takeRecords() {
     return [];
   }
+
   unobserve() {}
 } as unknown as typeof IntersectionObserver;
 

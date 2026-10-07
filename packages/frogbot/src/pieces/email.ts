@@ -27,12 +27,14 @@ export function pieceEmailAdapter(piece: unknown): PayloadEmailAdapter {
 
   const from =
     options && typeof options === 'object' && 'from' in options ? options.from : undefined;
+
   const address =
     typeof from === 'string'
       ? from
       : from && typeof from === 'object' && 'address' in from
         ? from.address
         : undefined;
+
   const name = from && typeof from === 'object' && 'name' in from ? from.name : undefined;
 
   if (

@@ -6,11 +6,13 @@ import type { TrainingDataRecord } from '../../../../packages/frogbot/src/traini
 async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
   const chunks: Uint8Array[] = [];
   const reader = stream.getReader();
+
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     chunks.push(value);
   }
+
   return new TextDecoder().decode(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))));
 }
 
@@ -78,6 +80,7 @@ describe('encodeTrainingData', () => {
         next: () => Promise.resolve({ done: false, value: { chat: {}, messages: [] } }),
         return: () => {
           onReturn();
+
           return Promise.resolve({ done: true, value: undefined });
         },
       }),

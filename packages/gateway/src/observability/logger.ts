@@ -53,11 +53,13 @@ const LEVEL: Record<LogLevel, number> = {
 };
 
 const noop: LogFn = () => {};
+
 const responseBodyLimit = 2048;
 const textEncoder = new TextEncoder();
 
 const defaultLevel = (): LogLevel => {
   const env = readEnv('LOG_LEVEL') as LogLevel | undefined;
+
   return env && env in LEVEL ? env : 'info';
 };
 
@@ -67,6 +69,7 @@ function makeLogFn(level: Exclude<LogLevel, 'silent'>): LogFn {
       typeof first === 'string'
         ? { level, time: Date.now(), msg: first }
         : { level, time: Date.now(), msg, ...first };
+
     // The default sink for a standalone gateway with no host logger. Every other
     // gateway log goes through a GatewayLogger, so this is its only console write.
     // eslint-disable-next-line no-console
@@ -82,6 +85,7 @@ export function createLogger(options: LoggerOptions = {}): GatewayLogger {
   const threshold = LEVEL[options.level ?? defaultLevel()];
   const at = (level: Exclude<LogLevel, 'silent'>): LogFn =>
     LEVEL[level] >= threshold ? makeLogFn(level) : noop;
+
   return {
     trace: at('trace'),
     debug: at('debug'),
@@ -159,6 +163,7 @@ export function logGatewayError(
     errorType: isError ? (args.error as Error).name : undefined,
     message: redactKeyFragments(rawMessage),
   };
+
   logger[args.status >= 500 ? 'error' : 'warn'](entry, 'request-error');
 }
 
@@ -182,6 +187,7 @@ function errorLog(args: AfterErrorHookArgs) {
     ...baseLog(args),
     phase: args.failedPhase,
   };
+
   return {
     ...base,
     error: serializeError(unwrapRetryError(args.error)),
@@ -197,11 +203,13 @@ export function serializeError(error: unknown, seen = new WeakSet<object>()): un
     message: redactKeyFragments(error.message),
     stack: error.stack === undefined ? undefined : redactKeyFragments(error.stack),
   };
+
   for (const key of Object.keys(error)) {
     if (key === 'requestBodyValues') continue;
 
     try {
       const value: unknown = Reflect.get(error, key);
+
       serialized[key] =
         key === 'responseBody' && typeof value === 'string'
           ? truncateResponseBody(redactKeyFragments(value))
@@ -210,9 +218,11 @@ export function serializeError(error: unknown, seen = new WeakSet<object>()): un
       serialized[key] = '[Unserializable]';
     }
   }
+
   if (error.cause && !('cause' in serialized)) {
     serialized.cause = serializeValue(error.cause, seen);
   }
+
   return serialized;
 }
 
@@ -224,6 +234,7 @@ function serializeValue(value: unknown, seen: WeakSet<object>): unknown {
   if (typeof value === 'bigint' || typeof value === 'symbol' || typeof value === 'function') {
     return String(value);
   }
+
   if (value instanceof Error) return serializeError(value, seen);
   if (seen.has(value)) return '[Circular]';
   seen.add(value);
@@ -242,6 +253,7 @@ function serializeValue(value: unknown, seen: WeakSet<object>): unknown {
   } catch {
     return '[Unserializable]';
   }
+
   return serialized;
 }
 
@@ -249,12 +261,14 @@ function truncateResponseBody(value: string): string {
   if (textEncoder.encode(value).byteLength <= responseBodyLimit) return value;
   let length = 0;
   let truncated = '';
+
   for (const character of value) {
     const characterLength = textEncoder.encode(character).byteLength;
     if (length + characterLength > responseBodyLimit) break;
     truncated += character;
     length += characterLength;
   }
+
   return truncated;
 }
 

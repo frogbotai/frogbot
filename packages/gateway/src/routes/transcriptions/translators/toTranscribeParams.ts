@@ -23,20 +23,25 @@ export async function toTranscribeParams(args: ToTranscribeParamsArgs): Promise<
   if (body.prompt != null) {
     options[providerName === 'gladia' ? 'contextPrompt' : 'prompt'] = body.prompt;
   }
+
   if (body.temperature != null && providerName === 'openai') {
     options.temperature = body.temperature;
   }
+
   if (body.timestamp_granularities != null) {
     const timestampGranularities = Array.isArray(body.timestamp_granularities)
       ? body.timestamp_granularities
       : [body.timestamp_granularities];
+
     if (providerName === 'openai') options.timestampGranularities = timestampGranularities;
     if (providerName === 'deepgram') {
       options.utterances = timestampGranularities.includes('segment');
     }
+
     if (providerName === 'assemblyai') {
       options.speakerLabels = timestampGranularities.includes('segment');
     }
+
     if (providerName === 'gladia') options.sentences = timestampGranularities.includes('segment');
   }
 

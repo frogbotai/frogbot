@@ -14,6 +14,7 @@ const inputSchema = z.object({
   assigneeId: z.string().optional(),
   priority: z.number().int().min(0).max(4).optional(),
 });
+
 const output = z.object({ success: z.boolean(), lastSyncId: z.number().optional() }).passthrough();
 
 export const updateIssue = defineAction({
@@ -33,6 +34,7 @@ export const updateIssue = defineAction({
   async run({ client, input }) {
     const { teamId: _, issueId, ...fields } = input;
     const response = await client.updateIssue(issueId, fields);
+
     return {
       success: response.success,
       lastSyncId: response.lastSyncId,

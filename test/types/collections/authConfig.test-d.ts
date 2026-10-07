@@ -3,16 +3,21 @@ import type { IncomingAuthType } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 type ForgotPassword = NonNullable<AuthConfig['forgotPassword']>;
+
 type Verify = Exclude<NonNullable<AuthConfig['verify']>, boolean>;
+
 type PayloadForgotPassword = NonNullable<IncomingAuthType['forgotPassword']>;
 
 expectTypeOf<AuthConfig['removeTokenFromResponses']>().toEqualTypeOf<
   IncomingAuthType['removeTokenFromResponses']
 >();
+
 expectTypeOf<ForgotPassword['expiration']>().toEqualTypeOf<PayloadForgotPassword['expiration']>();
+
 expectTypeOf<ForgotPassword['minRequestInterval']>().toEqualTypeOf<
   PayloadForgotPassword['minRequestInterval']
 >();
+
 expectTypeOf<ForgotPassword['generateEmailHTML']>().toEqualTypeOf<Verify['generateEmailHTML']>();
 expectTypeOf<ForgotPassword['generateEmailSubject']>().toEqualTypeOf<Verify['generateEmailHTML']>();
 expectTypeOf<Verify['generateEmailSubject']>().toEqualTypeOf<Verify['generateEmailHTML']>();

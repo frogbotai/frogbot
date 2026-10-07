@@ -8,9 +8,11 @@ type DefaultBoolean = ReturnType<typeof env.boolean>['default'] extends (
 ) => infer TBuilder
   ? TBuilder
   : never;
+
 type RequiredNumber = ReturnType<typeof env.number>['required'] extends () => infer TBuilder
   ? TBuilder
   : never;
+
 type Service = DefinedEnv<{
   enabled: DefaultBoolean;
   level: ReturnType<typeof env.enum<readonly ['info', 'error']>>;

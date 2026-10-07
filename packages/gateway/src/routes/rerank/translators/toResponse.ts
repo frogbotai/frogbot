@@ -38,6 +38,7 @@ function getResponseMeta(result: RerankResult<RerankDocument>): Record<string, u
   if (isRecord(providerMeta)) return providerMeta;
 
   const responseMeta = (result.response.body as { meta?: unknown } | undefined)?.meta;
+
   return isRecord(responseMeta) ? responseMeta : {};
 }
 

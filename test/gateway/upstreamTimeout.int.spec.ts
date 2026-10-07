@@ -27,8 +27,10 @@ function createHangingModel(): LanguageModelV4 {
     new Promise<never>((_, reject) => {
       if (abortSignal?.aborted) {
         reject(new DOMException('aborted', 'AbortError'));
+
         return;
       }
+
       abortSignal?.addEventListener(
         'abort',
         () => reject(new DOMException('aborted', 'AbortError')),
@@ -58,6 +60,7 @@ function createHangingModel(): LanguageModelV4 {
 function makeAppWithHangingProvider(providerName: string) {
   const fakeProvider = { languageModel: () => createHangingModel() };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry, upstreamTimeoutMs: 100 });
 }
 

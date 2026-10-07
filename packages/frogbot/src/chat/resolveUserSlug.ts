@@ -13,6 +13,7 @@ export function resolveUserSlug(config: Pick<FrogBotConfig, 'collections' | 'adm
   if (authSlugs.length === 0) {
     return 'users';
   }
+
   if (authSlugs.length === 1) {
     return authSlugs[0];
   }
@@ -24,11 +25,13 @@ export function resolveUserSlug(config: Pick<FrogBotConfig, 'collections' | 'adm
         'Set `admin.user` to the slug of your user collection.',
     );
   }
+
   if (!authSlugs.includes(adminUser)) {
     throw new Error(
       `[frogbot] \`admin.user\` is '${adminUser}' but no auth collection has that slug ` +
         `(found: ${authSlugs.join(', ')}).`,
     );
   }
+
   return adminUser;
 }

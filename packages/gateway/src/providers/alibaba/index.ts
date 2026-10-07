@@ -14,6 +14,7 @@ export const alibabaProvider = {
   envVars: ['ALIBABA_API_KEY', 'ALIBABA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.ALIBABA_API_KEY) return undefined;
+
     return {
       apiKey: env.ALIBABA_API_KEY,
       ...(env.ALIBABA_BASE_URL && { baseURL: env.ALIBABA_BASE_URL }),

@@ -84,18 +84,21 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
           param: 'content-length',
         });
       }
+
       if (contentLength != null && contentLength > maxBodyBytes) {
         throw new BodyTooLargeError({
           message: `Request body exceeds ${maxBodyBytes} bytes`,
           param: 'content-length',
         });
       }
+
       const request =
         contentLength == null ? withStreamBodyLimit(c.req.raw, maxBodyBytes) : c.req.raw;
 
       const body = parseTranscriptionRequest(
         normalizeMultipartBody(await parseMultipartBody(request)),
       );
+
       if (body.file.size > maxBodyBytes) {
         throw new BodyTooLargeError({
           message: `File exceeds ${maxBodyBytes} bytes`,
@@ -110,11 +113,13 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = requireTranscriptionModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
       base = {
@@ -126,12 +131,14 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       const { providerOptions, audio } = await toTranscribeParams({
         body,
         providerName: resolved.providerName,
       });
+
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
@@ -153,6 +160,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
       });
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         { ...base, phase, finishReason, usage, response: result.responses },
@@ -163,6 +171,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
         result,
         responseFormat: body.response_format,
       });
+
       if (typeof response === 'string') {
         return new Response(response, {
           status: 200,
@@ -172,6 +181,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
           },
         });
       }
+
       return c.json(response);
     } catch (err) {
       operationError = err;
@@ -182,6 +192,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       if (base) {
@@ -207,12 +218,15 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 
@@ -222,6 +236,7 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
 function normalizeMultipartBody(body: Record<string, unknown>) {
   const bracketedGranularities = body['timestamp_granularities[]'];
   if (bracketedGranularities == null || body.timestamp_granularities != null) return body;
+
   return { ...body, timestamp_granularities: bracketedGranularities };
 }
 
@@ -231,10 +246,12 @@ async function parseMultipartBody(request: Request) {
     form = await request.formData();
   } catch (err) {
     if (isGatewayError(err)) throw err;
+
     return {};
   }
 
   const body: Record<string, unknown> = {};
+
   for (const [key, value] of form.entries()) {
     const current = body[key];
     if (current == null) {
@@ -245,5 +262,6 @@ async function parseMultipartBody(request: Request) {
       body[key] = [current, value];
     }
   }
+
   return body;
 }

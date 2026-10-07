@@ -258,6 +258,7 @@ describe('job lease ownership', () => {
 
     payload.jobs.run = nativeRun(async () => {
       recordJobClaims([1]);
+
       await new Promise<void>((resolve) => {
         completeRun = resolve;
       });

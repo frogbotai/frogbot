@@ -5,6 +5,7 @@
  */
 export function normalizeToolName(name: string): string {
   let out = '';
+
   for (let i = 0; i < name.length; i++) {
     if (out.length === 128) break;
 
@@ -23,5 +24,6 @@ export function normalizeToolName(name: string): string {
       out += '_';
     }
   }
+
   return out;
 }

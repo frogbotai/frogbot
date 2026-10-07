@@ -16,6 +16,7 @@ export const elevenlabsProvider = {
   envVars: ['ELEVENLABS_API_KEY'],
   fromEnv: (env) => {
     if (!env.ELEVENLABS_API_KEY) return undefined;
+
     return { apiKey: env.ELEVENLABS_API_KEY };
   },
   build: (cfg) => createElevenLabs(cfg),

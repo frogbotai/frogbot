@@ -31,8 +31,10 @@ export function memoryKV() {
   const expirations = new Map<string, number>();
   const has = (key: string) => {
     if ((expirations.get(key) ?? Infinity) <= Date.now()) values.delete(key);
+
     return values.has(key);
   };
+
   const adapter = {
     [kvAtomic]: true,
     get: (key: string) => Promise.resolve(has(key) ? values.get(key) : undefined),
@@ -40,18 +42,22 @@ export function memoryKV() {
       if (has(key)) return Promise.resolve(false);
       values.set(key, value);
       expirations.set(key, Date.now() + ttl);
+
       return Promise.resolve(true);
     }),
     extendLock: vi.fn(({ key, token }: KVLock, ttl: number) => {
       if (!has(key) || values.get(key) !== token) return Promise.resolve(false);
       expirations.set(key, Date.now() + ttl);
+
       return Promise.resolve(true);
     }),
     releaseLock: vi.fn(({ key, token }: KVLock) => {
       if (!has(key) || values.get(key) !== token) return Promise.resolve(false);
+
       return Promise.resolve(values.delete(key));
     }),
   };
+
   return { kv: createKV({ adapter: adapter as never }), adapter, values, expirations };
 }
 
@@ -69,6 +75,7 @@ export function setup(
     oauth,
     auth: { token: 'developer' },
   });
+
   const encryption = createCredentialEncryption({ secret: 'state-secret' });
   const memory = memoryKV();
   const user: FrogBotRequest['user'] = { id: 'owner', collection: 'users' };
@@ -79,6 +86,7 @@ export function setup(
     piece,
     callbackUrl: 'https://app.test/api/connections/example/callback',
   };
+
   return { ...memory, encryption, req, piece, binding };
 }
 
@@ -105,6 +113,7 @@ export async function connectionSetup(pieceDefinition: OAuthPieceDefinition = de
     createdAt: '',
     updatedAt: '',
   };
+
   const frogbot = {
     kv,
     config: {
@@ -115,26 +124,32 @@ export async function connectionSetup(pieceDefinition: OAuthPieceDefinition = de
     find: vi.fn(() => Promise.resolve({ docs: row ? [row] : [] })),
     update: vi.fn(({ data }: { data: Partial<ConnectionRow> }) => {
       row = { ...row!, ...data };
+
       return Promise.resolve(row);
     }),
     create: vi.fn(({ data }: { data: Omit<ConnectionRow, 'id'> }) => {
       row = { ...data, id: 'created' };
+
       return Promise.resolve(row);
     }),
     delete: vi.fn(() => {
       row = undefined;
+
       return Promise.resolve();
     }),
   };
+
   const config = {
     enabled: true,
     slug: 'connections',
     encryption,
     entries: { example: { piece, oauth: true, secret: true } },
   };
+
   const api = new Connections(frogbot as never, config);
   Object.assign(frogbot, { connections: api });
   Object.assign(req, { frogbot });
+
   return {
     ...fixture,
     api,

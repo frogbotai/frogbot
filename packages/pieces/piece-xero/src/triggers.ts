@@ -10,6 +10,7 @@ const date = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .optional();
+
 const pageSize = z.number().int().min(1).max(1000).default(200);
 const pollInput = z.object({
   tenantId: z.string().min(1),
@@ -21,6 +22,7 @@ const pollInput = z.object({
   dateTo: date,
   pageSize,
 });
+
 const pollCursor = z.object({
   modifiedAfter: z.string().datetime().optional(),
   windowStarted: z.string().datetime().optional(),
@@ -30,6 +32,7 @@ const pollCursor = z.object({
 });
 
 type PollInput = z.output<typeof pollInput>;
+
 type PollCursor = z.output<typeof pollCursor>;
 
 function escapeFilter(value: string) {
@@ -131,6 +134,7 @@ function pollingTrigger<const TSlug extends string>({
           },
           z.object({ [responseKey]: z.array(xeroRecord).default([]) }),
         );
+
         const pageRecords = response[responseKey];
 
         nextPage += 1;
@@ -176,6 +180,7 @@ const webhookEvent = z.object({
   resourceUrl: z.string().url(),
   eventDateUtc: z.string().optional(),
 });
+
 const webhookDelivery = z.object({ events: z.array(webhookEvent) });
 const webhookInput = z.object({
   tenantId: z.string().min(1).meta({
@@ -213,6 +218,7 @@ function webhookTrigger<const TSlug extends string>({
           eventTypes.includes(event.eventType) &&
           event.tenantId === input.tenantId,
       );
+
       const output = [];
 
       for (const event of events) {
@@ -234,6 +240,7 @@ function webhookTrigger<const TSlug extends string>({
             },
             z.object({ [responseKey]: z.array(xeroRecord).min(1) }),
           );
+
           const record = response[responseKey][0];
 
           if (category === 'INVOICE' && record.Type !== 'ACCREC') continue;
@@ -310,6 +317,7 @@ export const xeroTriggers = [
       const reconciled = record.IsReconciled === true;
       const previous = cursor.values[id] === true;
       cursor.values[id] = reconciled;
+
       return reconciled && !previous;
     },
   }),
@@ -325,8 +333,10 @@ export const xeroTriggers = [
       const updated = Date.parse(
         typeof record.UpdatedDateUTC === 'string' ? record.UpdatedDateUTC : '',
       );
+
       const previous = cursor.values[id];
       cursor.values[id] = Number.isNaN(updated) ? Date.now() : updated;
+
       return typeof previous !== 'number' || updated > previous;
     },
   }),

@@ -41,6 +41,7 @@ export function getFrogBot(options: InitOptions): Promise<FrogBot> {
 
   if (cached.promise) {
     if (cached.promiseConfig === config) return cached.promise;
+
     return cached.promise.then(() => getFrogBot(options));
   }
 
@@ -48,10 +49,13 @@ export function getFrogBot(options: InitOptions): Promise<FrogBot> {
     const promise = new FrogBot().init(options).then((instance) => {
       cached.frogbot = instance;
       cached.config = config;
+
       return instance;
     });
+
     cached.promise = promise;
     cached.promiseConfig = config;
+
     void promise.then(
       () => {
         if (cached.promise === promise) {
@@ -85,6 +89,7 @@ export async function createDefaultRequest(): Promise<FrogBotRequest> {
       '[frogbot] Request-less piece calls require the default FrogBot instance to finish initialization. Pass `req` during `onInit` or when using another runtime.',
     );
   }
+
   return frogbot.createRequest();
 }
 

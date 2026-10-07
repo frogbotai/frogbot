@@ -21,6 +21,7 @@ expectTypeOf<Parameters<typeof stripe.createCustomer>[0]['input']>().toEqualType
   state?: string | undefined;
   country?: string | undefined;
 }>();
+
 expectTypeOf(customer).toEqualTypeOf<Promise<Record<string, JSONValue>>>();
 
 const _createCustomerRejectsGetInvoiceInput = () =>
@@ -46,4 +47,5 @@ expectTypeOf<keyof typeof stripe.triggers>().toEqualTypeOf<
   | 'subscriptionUpdated'
   | 'checkoutCompleted'
 >();
+
 expectTypeOf(stripe.triggers.invoiceCreated.type).toEqualTypeOf<'webhook'>();

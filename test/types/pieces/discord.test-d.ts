@@ -15,6 +15,7 @@ expectTypeOf<Parameters<typeof discord.sendWebhookMessage>[0]['input']>().toEqua
   embeds?: Record<string, unknown>[] | undefined;
   tts?: boolean | undefined;
 }>();
+
 expectTypeOf(sent).toEqualTypeOf<Promise<{ success: boolean }>>();
 
 const _sendWebhookMessageRejectsRenameChannelInput = () =>
@@ -24,4 +25,5 @@ const _sendWebhookMessageRejectsRenameChannelInput = () =>
 expectTypeOf<keyof typeof discord.triggers>().toEqualTypeOf<
   'commandReceived' | 'componentReceived' | 'messageCreated' | 'reactionAdded' | 'reactionRemoved'
 >();
+
 expectTypeOf(discord.triggers.reactionAdded.type).toEqualTypeOf<'app'>();

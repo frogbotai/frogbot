@@ -2,6 +2,7 @@ import type { Access, CollectionConfig } from 'frogbot';
 
 export function createCapturesCollection(slug: string, access?: Access): CollectionConfig {
   const immutable = () => false;
+
   return {
     slug,
     labels: { singular: 'AI Capture', plural: 'AI Captures' },

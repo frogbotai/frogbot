@@ -15,6 +15,7 @@ describe('extractReasoningMetadata', () => {
     const result = extractReasoningMetadata({
       anthropic: { signature: 'sig_abc123' },
     });
+
     expect(result).toEqual({ signature: 'sig_abc123' });
   });
 
@@ -22,6 +23,7 @@ describe('extractReasoningMetadata', () => {
     const result = extractReasoningMetadata({
       anthropic: { redactedData: 'encrypted_blob_xyz' },
     });
+
     expect(result).toEqual({ redactedData: 'encrypted_blob_xyz' });
   });
 
@@ -29,6 +31,7 @@ describe('extractReasoningMetadata', () => {
     const result = extractReasoningMetadata({
       unknown: { signature: 'sig_bedrock', redactedData: 'blob' },
     });
+
     expect(result).toEqual({ signature: 'sig_bedrock', redactedData: 'blob' });
   });
 
@@ -37,6 +40,7 @@ describe('extractReasoningMetadata', () => {
       openai: { logprobs: null },
       anthropic: { signature: 'sig_first' },
     });
+
     expect(result).toEqual({ signature: 'sig_first' });
   });
 
@@ -44,6 +48,7 @@ describe('extractReasoningMetadata', () => {
     const result = extractReasoningMetadata({
       anthropic: { signature: 123, redactedData: null },
     });
+
     expect(result).toEqual({});
   });
 });

@@ -33,6 +33,7 @@ const provider = createServer((request, response) => {
     response.end(JSON.stringify({ access_token: 'local-access-token', token_type: 'Bearer' }));
   } else if (url.pathname === '/userinfo') {
     response.writeHead(200, { 'content-type': 'application/json' });
+
     response.end(
       JSON.stringify({
         sub: 'local-user',
@@ -47,12 +48,15 @@ const provider = createServer((request, response) => {
 
 function run(args, env) {
   const child = spawn(process.execPath, args, { cwd: app, env, stdio: ['ignore', 'pipe', 'pipe'] });
+
   child.stdout.on('data', (chunk) => {
     output += chunk;
   });
+
   child.stderr.on('data', (chunk) => {
     output += chunk;
   });
+
   return child;
 }
 
@@ -62,6 +66,7 @@ try {
   const port = Number(
     process.env.SMOKE_PORT ?? Number(process.env.FROGBOT_TEST_PORT_OFFSET ?? 0) + 3116,
   );
+
   const baseURL = `http://localhost:${port}`;
   const env = {
     ...process.env,
@@ -83,6 +88,7 @@ try {
         }
       : {}),
   };
+
   await cp(join(example, 'src'), join(app, 'src'), { recursive: true });
   await cp(join(example, 'package.json'), join(app, 'package.json'));
   await cp(join(example, 'tsconfig.json'), join(app, 'tsconfig.json'));
@@ -93,6 +99,7 @@ try {
       join(app, 'src/frogbot.config.ts'),
     );
   }
+
   await writeFile(
     join(app, 'next.config.mjs'),
     `import { withFrogBot } from '@frogbotai/next/config';
@@ -123,13 +130,17 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     ],
     { ...env, NODE_ENV: 'development' },
   );
+
   assert.equal((await once(seed, 'exit'))[0], 0, output);
   const build = run([require.resolve('next/dist/bin/next'), 'build', '--no-lint'], env);
   assert.equal((await once(build, 'exit'))[0], 0, output);
+
   process.stdout.write(
     `PASS production ${businessQA ? 'business-qa' : 'simple'} app using built workspace packages\n`,
   );
+
   runtime = run([require.resolve('next/dist/bin/next'), 'start', '--port', String(port)], env);
+
   for (let attempt = 0; attempt < 120; attempt++) {
     if (runtime.exitCode !== null) throw new Error(output);
     try {
@@ -137,8 +148,10 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     } catch (error) {
       if (attempt === 119) throw error;
     }
+
     await delay(500);
   }
+
   browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on('pageerror', (error) => errors.push(error.message));
@@ -148,6 +161,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
       assert.equal(response.status(), 302);
       const url = new URL(response.headers().location);
       assert.equal(url.origin, 'https://accounts.google.com');
+
       return route.fulfill({
         response,
         headers: {
@@ -157,6 +171,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
       });
     });
   }
+
   await page.goto(`${baseURL}/login`);
   const google = page.getByRole('link', { name: 'Continue with Google' });
   await google.waitFor({ state: 'visible' });
@@ -166,15 +181,19 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   const callback = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith('/google/callback'),
   );
+
   await google.click();
   const callbackResponse = await callback;
+
   assert.equal(
     callbackResponse.status(),
     302,
     callbackResponse.status() === 302 ? undefined : await callbackResponse.text(),
   );
+
   await page.waitForURL(baseURL + '/', { timeout: 30000 });
   const identity = await page.evaluate(async () => (await fetch('/api/users/me')).json());
+
   assert.equal(
     identity.user?.email,
     'connections-ui@example.test',
@@ -190,6 +209,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
       errors,
     }),
   );
+
   const before = await page.evaluate(async () => (await fetch('/api/connections?limit=0')).json());
   assert.equal(before.docs.length, 0);
   process.stdout.write('PASS local OAuth sign-in: authenticated session, zero linked accounts\n');
@@ -199,6 +219,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   await page.getByText('No connections yet', { exact: true }).waitFor();
   if (businessQA) {
     assert.deepEqual(errors, []);
+
     process.stdout.write(
       'PASS business-qa normal sign-in callback → session → Linked accounts empty; local provider only\n',
     );
@@ -212,10 +233,12 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     assert.equal(await dialog.getByRole('button', { name: /Google/ }).count(), 0);
     await dialog.getByRole('button', { name: /Local Fixture/ }).click();
     await dialog.getByRole('heading', { name: 'Connect to Local Fixture' }).waitFor();
+
     assert.equal(
       await dialog.getByLabel('apiKey', { exact: true }).getAttribute('type'),
       'password',
     );
+
     await dialog.getByLabel('apiKey', { exact: true }).fill('local-fixture-key');
     await dialog.getByRole('combobox', { name: 'region', exact: true }).click();
     await page.getByRole('option', { name: 'west', exact: true }).click();
@@ -226,20 +249,25 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
         response.url().endsWith('/api/connections/local-fixture') &&
         response.request().method() === 'POST',
     );
+
     await dialog.getByRole('button', { name: 'Connect', exact: true }).click();
     const response = await created;
     assert.equal(response.status(), 200);
+
     assert.deepEqual(response.request().postDataJSON(), {
       apiKey: 'local-fixture-key',
       region: 'west',
       retries: 3,
       enabled: true,
     });
+
     await dialog.waitFor({ state: 'hidden' });
     await page.getByRole('button', { name: 'Options for Local Fixture' }).waitFor();
+
     process.stdout.write(
       'PASS Settings → Linked accounts → searchable modal → masked static fields → POST 200\n',
     );
+
     await page.reload();
     await page.getByRole('button', { name: 'Options for Local Fixture' }).waitFor();
     const data = await page.evaluate(async () => (await fetch('/api/connections?limit=0')).json());
@@ -260,6 +288,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     const after = await page.evaluate(async () => (await fetch('/api/connections?limit=0')).json());
     assert.equal(after.docs.length, 0);
     assert.deepEqual(errors, []);
+
     process.stdout.write(
       'PASS persisted row + search + Disconnect DELETE 204 + reload empty; zero browser exceptions\n',
     );
@@ -273,6 +302,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
     runtime.kill('SIGTERM');
     await once(runtime, 'exit');
   }
+
   provider.close();
   await rm(app, { recursive: true, force: true });
 }

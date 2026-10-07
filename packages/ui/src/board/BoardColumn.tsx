@@ -49,14 +49,17 @@ export function BoardColumn<T>({
     getScrollElement: () => parent.current,
     overscan: 3,
   });
+
   const indexAt = (clientY: number) => {
     const element = parent.current;
     if (!element) return rows.length;
     const offset = clientY - element.getBoundingClientRect().top + element.scrollTop;
     const item = virtualizer.getVirtualItemForOffset(offset);
     if (!item) return offset <= 0 ? 0 : rows.length;
+
     return offset < item.start + item.size / 2 ? item.index : item.index + 1;
   };
+
   const drop = useDroppable({ data: { indexAt } satisfies BoardDropData, id: columnKey });
   const items = virtualizer.getVirtualItems();
   const shift = placement ? placement.height + ROW_GAP : 0;
@@ -66,9 +69,11 @@ export function BoardColumn<T>({
     ? (virtualizer.measurementsCache[placement.index]?.start ?? virtualizer.getTotalSize()) -
       (placement.index > sourceIndex ? sourceShift : 0)
     : 0;
+
   useEffect(() => {
     if (hasMore && (items.at(-1)?.index ?? -1) >= rows.length - 1) onReachEnd?.();
   }, [hasMore, items, onReachEnd, rows.length]);
+
   return (
     <section
       className={`frog-board__column${placement ? ' frog-board__column--placing' : ''}`}

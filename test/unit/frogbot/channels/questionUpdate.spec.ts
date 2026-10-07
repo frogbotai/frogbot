@@ -99,6 +99,7 @@ function click(actionId: string, messageId: string) {
 describe('channel question update job', () => {
   beforeEach(() => {
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},

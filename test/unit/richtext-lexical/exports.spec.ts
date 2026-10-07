@@ -14,9 +14,11 @@ describe('@frogbotai/richtext-lexical exports', () => {
       exports: Record<string, unknown>;
       publishConfig: { exports: Record<string, unknown> };
     };
+
     const upstreamManifest = JSON.parse(await readFile(upstreamManifestURL, 'utf8')) as {
       exports: Record<string, unknown>;
     };
+
     const expected = Object.keys(upstreamManifest.exports).filter(
       (key) => key !== './migrate' && key !== './internal-client',
     );

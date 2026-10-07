@@ -36,6 +36,7 @@ function telegramFixture() {
             id: Number(body.chat_id),
             type: Number(body.chat_id) > 0 ? 'private' : 'supergroup',
           };
+
           break;
         case 'sendChatAction':
           result = true;
@@ -49,6 +50,7 @@ function telegramFixture() {
             from: { id: 123, is_bot: true, first_name: 'FrogBot', username: 'frogbot' },
             text: body.text,
           };
+
           break;
         default:
           return Promise.reject(new Error(`Unexpected Telegram API request: ${method}`));
@@ -120,6 +122,7 @@ function telegramFixture() {
 
 function messageInput(input: ChannelTaskInput) {
   if (!('message' in input)) throw new Error(`Expected a message task, got '${input.kind}'.`);
+
   return input.message;
 }
 
@@ -208,6 +211,7 @@ describe('Telegram commands through the installed adapter and channel host', () 
     onTestFinished(() => fixture.host.shutdown());
 
     expect((await fixture.deliver({ secret: 'wrong' }))?.status).toBe(401);
+
     await fixture.deliver({ id: 2, userId: 99 });
 
     expect(fixture.inputs).toHaveLength(0);

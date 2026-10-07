@@ -135,6 +135,7 @@ export function createFixture(): InstallationFixture {
   fs.cpSync(path.join(repoRoot, '.claude-plugin'), path.join(repository, '.claude-plugin'), {
     recursive: true,
   });
+
   fs.cpSync(canonicalSkill, path.join(repository, 'skills/frogbot'), { recursive: true });
 
   return { root, project, repository, env };
@@ -153,6 +154,7 @@ export function run(
     timeout: 60000,
     maxBuffer: 8 * 1024 * 1024,
   });
+
   const output = stripVTControlCharacters(`${result.stdout ?? ''}\n${result.stderr ?? ''}`);
   const diagnostic = `${executable} ${args.join(' ')}\ncwd: ${cwd}\n${output}`;
 
@@ -179,6 +181,7 @@ export function clientVersion(fixture: InstallationFixture, executable: string):
   expect(path.isAbsolute(executable), 'Provide an absolute prepared client executable path').toBe(
     true,
   );
+
   fs.accessSync(executable, fs.constants.X_OK);
 
   const result = successful(fixture, executable, ['--version']);
@@ -199,6 +202,7 @@ export function expectInstalledAgents(fixture: InstallationFixture): void {
 
   expect(installed, result.diagnostic).toHaveLength(1);
   expect(installed[0]).toMatchObject({ name: 'frogbot', scope: 'project' });
+
   expect(installed[0].agents.sort()).toEqual(
     ['Claude Code', 'Codex', 'Cursor', 'OpenCode', 'GitHub Copilot', 'Gemini CLI'].sort(),
   );
@@ -221,6 +225,7 @@ export function expectFullSkill(directory: string): void {
     const installed = path.join(directory, file);
 
     expect(fs.lstatSync(installed).isFile(), installed).toBe(true);
+
     expect(fs.readFileSync(installed), installed).toEqual(
       fs.readFileSync(path.join(canonicalSkill, file)),
     );
@@ -267,6 +272,7 @@ export function expectScaffold(project: string): void {
   const pkg = readJSON<{ name: string; dependencies: Record<string, string> }>(
     path.join(project, 'package.json'),
   );
+
   const dependencies = Object.entries(pkg.dependencies).filter(
     ([name]) => name === 'frogbot' || name.startsWith('@frogbotai/'),
   );

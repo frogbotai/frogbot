@@ -44,6 +44,7 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>({
         (part) => part.type === 'file' && (part.url.startsWith('data:') || part.providerReference),
       ),
     );
+
     if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference');
 
     const resolvedChatId = resolveRequestValue(chatId);
@@ -69,6 +70,7 @@ export class FrogBotChatTransport<
   constructor({ agentSlug, sdk, onChatId, ...options }: FrogBotChatTransportOptions<UI_MESSAGE>) {
     const capture = { chatId: (_chatId: string) => undefined };
     const configuredHeaders = options.headers;
+
     super({
       ...options,
       api: `${sdk.baseURL}/agents/${encodeURIComponent(agentSlug)}`,
@@ -76,9 +78,11 @@ export class FrogBotChatTransport<
         const headers = await (typeof configuredHeaders === 'function'
           ? configuredHeaders()
           : configuredHeaders);
+
         const merged = new Headers(sdk.headers);
         merged.set('Accept', 'text/event-stream');
         new Headers(headers).forEach((value, key) => merged.set(key, value));
+
         return merged;
       },
       fetch: async (input, init) => {
@@ -88,14 +92,17 @@ export class FrogBotChatTransport<
           capture.chatId(chatId);
           emitChatMutation();
         }
+
         if (response.status === 499) {
           return new Response(new ReadableStream({ start: (controller) => controller.close() }), {
             status: 200,
           });
         }
+
         return response;
       },
     });
+
     capture.chatId = (chatId) => {
       this.chatId = chatId;
       onChatId?.(chatId);

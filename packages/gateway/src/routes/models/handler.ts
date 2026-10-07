@@ -49,11 +49,14 @@ export function modelsRoute(ctx: ModelsRouteContext) {
       entry.providers.some((provider) => {
         if (!isConfigured(provider)) return false;
         const allowlist = ctx.allowlists?.get(provider);
+
         return !allowlist || allowlist.has(canonicalizeModelId(entry.id));
       });
+
     const data = Array.from(ctx.catalog?.values() ?? [])
       .filter(isAvailable)
       .map(toOpenAIModelObject);
+
     return c.json({ object: 'list' as const, data });
   });
 
@@ -61,12 +64,15 @@ export function modelsRoute(ctx: ModelsRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

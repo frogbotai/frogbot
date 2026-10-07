@@ -57,6 +57,7 @@ describe('policy errors', () => {
 describe('toOpenAIErrorResponse — GatewayError taxonomy', () => {
   it('maps ModelIdError to 400 invalid_request_error with param=model', () => {
     const { body, status } = toOpenAIErrorResponse(new ModelIdError('gpt-4o-mini'));
+
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.code).toBe('invalid_model_id');
@@ -66,6 +67,7 @@ describe('toOpenAIErrorResponse — GatewayError taxonomy', () => {
 
   it('maps ProviderNotConfiguredError to 404 not_found_error with param=model', () => {
     const { body, status } = toOpenAIErrorResponse(new ProviderNotConfiguredError('anthropic'));
+
     expect(status).toBe(404);
     expect(body.error.type).toBe('not_found_error');
     expect(body.error.code).toBe('provider_not_configured');
@@ -76,6 +78,7 @@ describe('toOpenAIErrorResponse — GatewayError taxonomy', () => {
     const { body, status } = toOpenAIErrorResponse(
       new UnsupportedModalityError({ provider: 'openai', modality: 'video' }),
     );
+
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.code).toBe('unsupported_modality');
@@ -83,6 +86,7 @@ describe('toOpenAIErrorResponse — GatewayError taxonomy', () => {
 
   it('maps ConfigError to 500 server_error', () => {
     const { body, status } = toOpenAIErrorResponse(new ConfigError(['missing OPENAI_API_KEY']));
+
     expect(status).toBe(500);
     expect(body.error.type).toBe('server_error');
     expect(body.error.code).toBe('config_invalid');
@@ -109,6 +113,7 @@ describe('toOpenAIErrorResponse — APICallError status coverage', () => {
     [504, 'server_error', 'gateway_timeout'],
   ])('status %d → type=%s code=%s', (statusCode, expectedType, expectedCode) => {
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode }));
+
     expect(status).toBe(statusCode);
     expect(body.error.type).toBe(expectedType);
     expect(body.error.code).toBe(expectedCode);
@@ -116,6 +121,7 @@ describe('toOpenAIErrorResponse — APICallError status coverage', () => {
 
   it('defaults to 500 server_error when statusCode is missing', () => {
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: undefined }));
+
     expect(status).toBe(500);
     expect(body.error.type).toBe('server_error');
   });
@@ -181,8 +187,10 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
         param: null,
       },
     };
+
     const err = apiCallError({ statusCode: 401, data, responseBody: JSON.stringify(data) });
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(401);
     expect(body).toEqual({
       error: {
@@ -203,13 +211,16 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
         param: 'messages',
       },
     };
+
     const { body } = toOpenAIErrorResponse(apiCallError({ statusCode: 400, data }));
+
     expect(body.error.param).toBe('messages');
   });
 
   it('normalizes numeric upstream code to a string (OpenRouter)', () => {
     const data = { error: { message: 'Resource exhausted', code: 429 } };
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 429, data }));
+
     expect(status).toBe(429);
     expect(body.error.code).toBe('429');
     expect(body.error.type).toBe('rate_limit_error');
@@ -218,6 +229,7 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
   it('falls back to status-derived type when upstream type is unrecognized', () => {
     const data = { error: { message: 'oops', type: 'completely_unknown_type' } };
     const { body } = toOpenAIErrorResponse(apiCallError({ statusCode: 500, data }));
+
     expect(body.error.type).toBe('server_error');
   });
 
@@ -225,7 +237,9 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
     const responseBody = JSON.stringify({
       error: { message: 'rate limited', type: 'rate_limit_error', code: 'rate_limit_exceeded' },
     });
+
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 429, responseBody }));
+
     expect(status).toBe(429);
     expect(body.error.message).toBe('rate limited');
     expect(body.error.code).toBe('rate_limit_exceeded');
@@ -239,8 +253,10 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
         status: 'RESOURCE_EXHAUSTED',
       },
     });
+
     const data = { error: { message: inner, code: 429 } };
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 429, data }));
+
     expect(status).toBe(429);
     expect(body.error.message).toBe('Resource has been exhausted (e.g. check quota).');
     expect(body.error.code).toBe('429');
@@ -250,7 +266,9 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
     const data = {
       error: { message: 'Request blocked by the safety policy.', code: 'safety_blocked' },
     };
+
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 400, data }));
+
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.code).toBe('content_policy_violation');
@@ -267,6 +285,7 @@ describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () =
     const { body, status } = toOpenAIErrorResponse(
       apiCallError({ statusCode: 401, responseBody: html }),
     );
+
     expect(status).toBe(401);
     expect(body.error.type).toBe('authentication_error');
     expect(body.error.message).toMatch(/blocked by a gateway or proxy/);
@@ -278,6 +297,7 @@ describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () =
     const { body, status } = toOpenAIErrorResponse(
       apiCallError({ statusCode: 403, responseBody: html }),
     );
+
     expect(status).toBe(403);
     expect(body.error.message).toMatch(/blocked by a gateway or proxy/);
   });
@@ -286,6 +306,7 @@ describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () =
     const { body, status } = toOpenAIErrorResponse(
       apiCallError({ statusCode: 502, responseBody: '<html>bad gateway page</html>' }),
     );
+
     expect(status).toBe(502);
     expect(body.error.message).toMatch(/HTML response/);
   });
@@ -300,12 +321,14 @@ describe('toOpenAIErrorResponse — empty / malformed bodies', () => {
     const { body } = toOpenAIErrorResponse(
       apiCallError({ message: 'upstream timed out', statusCode: 504 }),
     );
+
     expect(body.error.message).toBe('upstream timed out');
   });
 
   it('falls back to the HTTP reason phrase when message AND body are empty', () => {
     const err = apiCallError({ message: '', statusCode: 502, responseBody: '' });
     const { body } = toOpenAIErrorResponse(err);
+
     expect(body.error.message).toBe('Bad Gateway');
   });
 
@@ -313,6 +336,7 @@ describe('toOpenAIErrorResponse — empty / malformed bodies', () => {
     const { body } = toOpenAIErrorResponse(
       apiCallError({ message: '', statusCode: 500, responseBody: 'something exploded' }),
     );
+
     expect(body.error.message).toBe('something exploded');
   });
 
@@ -320,6 +344,7 @@ describe('toOpenAIErrorResponse — empty / malformed bodies', () => {
     const { body, status } = toOpenAIErrorResponse(
       apiCallError({ statusCode: 502, responseBody: 'not json at all' }),
     );
+
     expect(status).toBe(502);
     expect(body.error.type).toBe('server_error');
   });
@@ -339,7 +364,9 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
         param: null,
       },
     };
+
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 400, data }));
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('context_length_exceeded');
     expect(body.error.type).toBe('invalid_request_error');
@@ -353,6 +380,7 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
         message: 'prompt is too long: 250000 tokens > 200000 maximum',
       }),
     );
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('context_length_exceeded');
     expect(body.error.message).toMatch(/prompt is too long/);
@@ -362,6 +390,7 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
     const { body, status } = toOpenAIErrorResponse(
       apiCallError({ statusCode: 413, message: 'Payload Too Large' }),
     );
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('context_length_exceeded');
   });
@@ -373,6 +402,7 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
         message: 'input token count of 50000 exceeds the maximum of 32000',
       }),
     );
+
     expect(body.error.code).toBe('context_length_exceeded');
   });
 
@@ -380,6 +410,7 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
     const { body, status } = toOpenAIErrorResponse(
       apiCallError({ statusCode: 413, message: '413 (no body)' }),
     );
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('context_length_exceeded');
   });
@@ -393,6 +424,7 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   it('maps NoSuchModelError to 404 model_not_found', () => {
     const err = new NoSuchModelError({ modelId: 'gpt-99', modelType: 'languageModel' });
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(404);
     expect(body.error.code).toBe('model_not_found');
     expect(body.error.param).toBe('model');
@@ -401,6 +433,7 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   it('maps InvalidPromptError to 400 invalid_prompt', () => {
     const err = new InvalidPromptError({ prompt: {}, message: 'no messages' });
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(400);
     expect(body.error.code).toBe('invalid_prompt');
     expect(body.error.type).toBe('invalid_request_error');
@@ -413,7 +446,9 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
       maxEmbeddingsPerCall: 2,
       values: ['a', 'b', 'c'],
     });
+
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.code).toBe('too_many_embedding_values');
@@ -423,6 +458,7 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   it('maps LoadAPIKeyError to 500 missing_api_key', () => {
     const err = new LoadAPIKeyError({ message: 'OPENAI_API_KEY is not set' });
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(500);
     expect(body.error.code).toBe('missing_api_key');
     expect(body.error.type).toBe('server_error');
@@ -431,6 +467,7 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   it('maps JSONParseError to 502 upstream_invalid_response', () => {
     const err = new JSONParseError({ text: '{not json', cause: new Error('parse fail') });
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(502);
     expect(body.error.code).toBe('upstream_invalid_response');
     expect(body.error.message).toMatch(/could not parse/);
@@ -439,6 +476,7 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   it('maps TypeValidationError to 502 upstream_invalid_response', () => {
     const err = new TypeValidationError({ value: { wrong: true }, cause: new Error('bad shape') });
     const { body, status } = toOpenAIErrorResponse(err);
+
     expect(status).toBe(502);
     expect(body.error.code).toBe('upstream_invalid_response');
   });
@@ -451,6 +489,7 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
 describe('toOpenAIErrorResponse — unknown throws', () => {
   it('handles plain Error', () => {
     const { body, status } = toOpenAIErrorResponse(new Error('boom'));
+
     expect(status).toBe(500);
     expect(body.error.message).toBe('boom');
     expect(body.error.type).toBe('server_error');
@@ -458,12 +497,14 @@ describe('toOpenAIErrorResponse — unknown throws', () => {
 
   it('handles string throws', () => {
     const { body, status } = toOpenAIErrorResponse('oops');
+
     expect(status).toBe(500);
     expect(body.error.message).toBe('Internal server error');
   });
 
   it('handles number throws', () => {
     const { body, status } = toOpenAIErrorResponse(42);
+
     expect(status).toBe(500);
     expect(body.error.message).toBe('Internal server error');
   });
@@ -475,6 +516,7 @@ describe('toOpenAIErrorResponse — unknown throws', () => {
 
   it('handles Error with empty message', () => {
     const { body } = toOpenAIErrorResponse(new Error(''));
+
     expect(body.error.message).toBe('Internal server error');
   });
 });
@@ -496,12 +538,15 @@ describe('toOpenAIErrorResponse — RetryError unwrapping', () => {
       responseHeaders: { 'retry-after': '30' },
       responseBody: JSON.stringify({ error: { message: 'Rate limit exceeded' } }),
     });
+
     const retryError = new RetryError({
       message: 'Failed after 3 attempts. Last error: Rate limit exceeded',
       reason: 'maxRetriesExceeded',
       errors: [wrapped, wrapped, wrapped],
     });
+
     const { body, status } = toOpenAIErrorResponse(retryError);
+
     expect(status).toBe(429);
     expect(body.error.type).toBe('rate_limit_error');
     expect(body.error.message).toBe('Rate limit exceeded');
@@ -514,7 +559,9 @@ describe('toOpenAIErrorResponse — RetryError unwrapping', () => {
       reason: 'maxRetriesExceeded',
       errors: [wrapped, wrapped, wrapped],
     });
+
     const { body, status } = toOpenAIErrorResponse(retryError);
+
     expect(status).toBe(500);
     expect(body.error.type).toBe('server_error');
   });
@@ -525,7 +572,9 @@ describe('toOpenAIErrorResponse — RetryError unwrapping', () => {
       reason: 'errorNotRetryable',
       errors: [new Error('boom'), new Error('boom')],
     });
+
     const { body, status } = toOpenAIErrorResponse(retryError);
+
     expect(status).toBe(502);
     expect(body.error.type).toBe('server_error');
     expect(body.error.message).toBe(retryError.message);
@@ -540,12 +589,15 @@ describe('toAnthropicErrorResponse — RetryError unwrapping', () => {
       responseHeaders: { 'retry-after': '30' },
       responseBody: JSON.stringify({ error: { message: 'Rate limit exceeded' } }),
     });
+
     const retryError = new RetryError({
       message: 'Failed after 3 attempts. Last error: Rate limit exceeded',
       reason: 'maxRetriesExceeded',
       errors: [wrapped, wrapped, wrapped],
     });
+
     const { body, status } = toAnthropicErrorResponse(retryError);
+
     expect(status).toBe(429);
     expect(body.error.type).toBe('rate_limit_error');
     expect(body.error.message).toBe('Rate limit exceeded');
@@ -558,7 +610,9 @@ describe('toAnthropicErrorResponse — RetryError unwrapping', () => {
       reason: 'maxRetriesExceeded',
       errors: [wrapped, wrapped, wrapped],
     });
+
     const { body, status } = toAnthropicErrorResponse(retryError);
+
     expect(status).toBe(500);
     expect(body.error.type).toBe('api_error');
   });
@@ -569,7 +623,9 @@ describe('toAnthropicErrorResponse — RetryError unwrapping', () => {
       reason: 'errorNotRetryable',
       errors: [new Error('boom'), new Error('boom')],
     });
+
     const { body, status } = toAnthropicErrorResponse(retryError);
+
     expect(status).toBe(502);
     expect(body.error.type).toBe('api_error');
     expect(body.error.message).toBe(retryError.message);

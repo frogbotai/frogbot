@@ -26,10 +26,12 @@ const repoRoot = resolve(import.meta.dirname, '..', '..');
 function isListening(port: number): Promise<boolean> {
   return new Promise((resolveListening) => {
     const socket = connect({ host: '127.0.0.1', port });
+
     socket.once('connect', () => {
       socket.destroy();
       resolveListening(true);
     });
+
     socket.once('error', () => resolveListening(false));
   });
 }
@@ -71,6 +73,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
       },
     });
+
     server.stdout?.resume();
     server.stderr?.pipe(process.stderr);
 
@@ -89,10 +92,12 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
         name: 'Scaffold Test',
       }),
     });
+
     const body = (await registration.json()) as { token: string };
     if (registration.status !== 200) {
       throw new Error(`first-register returned ${registration.status}: ${JSON.stringify(body)}`);
     }
+
     token = body.token;
   }, 240000);
 
@@ -103,9 +108,11 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
 
   it('serves a FrogBot-branded admin login page', async () => {
     const res = await fetch(`${baseURL}/login`);
+
     expect(res.status).toBe(200);
 
     const html = await res.text();
+
     expect(html).toMatch(/<title>[^<]*- FrogBot<\/title>/);
     expect(html).toContain('frogbot-graphic-logo');
     expect(html).not.toMatch(/<title>[^<]*Payload[^<]*<\/title>/);
@@ -115,6 +122,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const res = await fetch(`${baseURL}/api/agents`, {
       headers: { authorization: `Bearer ${token}` },
     });
+
     expect(res.status).toBe(200);
     // `reasoning` levels vary by model; assert the agent/model wiring only.
     // `general()` offers the whole configured catalog, so only its default is fixed.
@@ -152,6 +160,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const reader = res.body!.getReader();
     const { value } = await reader.read();
     await reader.cancel();
+
     expect(new TextDecoder().decode(value)).toContain('data:');
   });
 
@@ -171,12 +180,16 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       });
 
       expect(res.status).toBe(200);
+
       const stream = await res.text();
+
       expect(stream).not.toContain('"type":"error"');
       expect(stream).toContain('"type":"text-delta"');
+
       const text = [...stream.matchAll(/"type":"text-delta"[^\n]*?"delta":"((?:[^"\\]|\\.)*)"/g)]
         .map((match) => JSON.parse(`"${match[1]}"`) as string)
         .join('');
+
       expect(text.toLowerCase()).toContain('ribbit');
     },
     120000,
@@ -187,10 +200,13 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const chat = db.prepare('SELECT count(*) AS count FROM chats WHERE id = ?').get(chatId) as {
       count: number;
     };
+
     const messages = db
       .prepare('SELECT role FROM messages WHERE chat_id = ? ORDER BY role')
       .all(chatId) as Array<{ role: string }>;
+
     db.close();
+
     expect(chat.count).toBe(1);
     expect(messages.map(({ role }) => role)).toEqual(['assistant', 'user']);
   }
@@ -204,14 +220,17 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       },
       body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
     });
+
     const body = (await response.json()) as {
       text: string;
       finishReason: string;
       chatId: string | number;
     };
+
     expect(response.status, JSON.stringify(body)).toBe(200);
     expect(body.text).toBe('hello');
     expect(body.finishReason).toBe('stop');
+
     expectPersisted(body.chatId);
   });
 
@@ -225,18 +244,25 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       },
       body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
     });
+
     expect(response.status).toBe(200);
+
     const reader = response.body!.getReader();
+
     for (;;) {
       if ((await reader.read()).done) break;
     }
+
     const chatId = response.headers.get('X-FrogBot-Chat-Id');
+
     expect(chatId).not.toBeNull();
+
     expectPersisted(chatId!);
   });
 
   it('sends homepage chat messages through the FrogBot transport', async () => {
     const page = await fetch(baseURL);
+
     expect(page.status).toBe(200);
 
     let responseStatus: number | undefined;
@@ -248,11 +274,13 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
         fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
           const response = await fetch(input, init);
           responseStatus = response.status;
+
           return response;
         },
       }),
       prepareSendMessagesRequest: prepareChatRequest(),
     });
+
     const stream = await transport.sendMessages({
       chatId: 'new:assistant',
       messageId: 'user-1',
@@ -260,13 +288,16 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       trigger: 'submit-message',
       abortSignal: undefined,
     });
+
     const chunks = [];
     const reader = stream.getReader();
+
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
       chunks.push(value);
     }
+
     expect(responseStatus).toBe(200);
     expect(chunks.length).toBeGreaterThan(0);
     expect(
@@ -274,18 +305,23 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       JSON.stringify(chunks),
     ).toBe(true);
     expect(transport.chatId).toBeDefined();
+
     expectPersisted(transport.chatId!);
   });
 
   it('serves the REST API under /api', async () => {
     const res = await fetch(`${baseURL}/api/users/me`);
+
     expect(res.status).toBe(200);
+
     const body = (await res.json()) as { user: unknown };
+
     expect(body.user).toBeNull();
   });
 
   it('rejects unauthenticated gateway requests with 401', async () => {
     const res = await fetch(`${baseURL}/api/v1/models`);
+
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({
       error: { message: 'Unauthorized', type: 'authentication_error' },

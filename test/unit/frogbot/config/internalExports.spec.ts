@@ -30,14 +30,17 @@ describe('frogbot internal exports', { timeout: 30_000 }, () => {
       '--pack-destination',
       packDirectory,
     ]);
+
     const archive = join(packDirectory, stdout.trim().split('\n').at(-1)!);
 
     await execFileAsync('tar', ['-xzf', archive], { cwd: packDirectory });
+
     await symlink(
       join(packageDirectory, 'node_modules'),
       join(packDirectory, 'package', 'node_modules'),
       'dir',
     );
+
     await mkdir(nodeModulesDirectory);
     await symlink(join(packDirectory, 'package'), join(nodeModulesDirectory, 'frogbot'), 'dir');
   }, 60_000);

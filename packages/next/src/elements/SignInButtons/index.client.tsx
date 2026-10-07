@@ -41,6 +41,7 @@ export function SignInButtonsClient({
   showDivider = true,
 }: SignInButtonsClientProps) {
   if (!methods.length) return null;
+
   return (
     <div className={baseClass}>
       {showDivider && (
@@ -52,6 +53,7 @@ export function SignInButtonsClient({
       )}
       {methods.map((method) => {
         const Icon = providerIcons[method.piece];
+
         return (
           <Button
             buttonStyle="secondary"

@@ -46,6 +46,7 @@ describe('chat acceptance', () => {
     const reloaded = documents.map((message) =>
       messageDocumentToUIMessage(JSON.parse(JSON.stringify(message))),
     );
+
     const persisted = render(<MessageList messages={reloaded} />).container.innerHTML;
 
     expect(persisted).toBe(live);

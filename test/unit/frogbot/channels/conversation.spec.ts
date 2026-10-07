@@ -85,6 +85,7 @@ describe('channel conversations', () => {
       .fn()
       .mockResolvedValueOnce({ docs: [] })
       .mockResolvedValueOnce({ docs: [{ id: 'winner' }] });
+
     const create = vi.fn(() => Promise.reject(new Error('unique violation')));
     const { req } = request({ create, find });
 

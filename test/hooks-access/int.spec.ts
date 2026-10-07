@@ -78,6 +78,7 @@ describe('hooks-access', () => {
       data: { email: testUserEmail, password: testUserPassword, name: 'Test User' } as any,
       overrideAccess: true,
     });
+
     const user = await booted.payload.findByID({ collection: usersSlug, id: created.id });
     const req = await createLocalReq({ user: { ...user, collection: usersSlug } }, booted.payload);
 
@@ -98,16 +99,19 @@ describe('hooks-access', () => {
         collection: hookOrderSlug,
         data: { title: 'original' },
       });
+
       const redirected = await booted.frogbot.create({
         collection: hookOrderSlug,
         data: { title: 'redirected' },
       });
+
       const endpoint = `/api/${hookOrderSlug}?where[title][equals]=original`;
 
       const baseline = await booted.restClient.get<HookFindResponse>(endpoint);
       const scoped = await booted.restClient.get<HookFindResponse>(endpoint, {
         headers: { [beforeOperationTitleHeader]: 'redirected' },
       });
+
       const unscoped = await booted.restClient.get<HookFindResponse>(endpoint);
 
       expect(baseline.status).toBe(200);
@@ -129,6 +133,7 @@ describe('hooks-access', () => {
       });
 
       const log = getHookLog();
+
       expect(log).toContain('beforeValidate');
       expect(log).toContain('beforeChange');
       expect(log).toContain('afterChange');
@@ -142,6 +147,7 @@ describe('hooks-access', () => {
         data: { title: 'test' },
         overrideAccess: true,
       });
+
       clearHookLog();
 
       await booted.frogbot.find({
@@ -150,6 +156,7 @@ describe('hooks-access', () => {
       });
 
       const log = getHookLog();
+
       expect(log).toContain('beforeRead');
       expect(log).toContain('afterRead');
       expect(log.indexOf('beforeRead')).toBeLessThan(log.indexOf('afterRead'));
@@ -161,6 +168,7 @@ describe('hooks-access', () => {
         data: { title: 'test' },
         overrideAccess: true,
       });
+
       clearHookLog();
 
       await booted.frogbot.findByID({
@@ -170,6 +178,7 @@ describe('hooks-access', () => {
       });
 
       const log = getHookLog();
+
       expect(log).toContain('beforeRead');
       expect(log).toContain('afterRead');
     });
@@ -180,6 +189,7 @@ describe('hooks-access', () => {
         data: { title: 'test' },
         overrideAccess: true,
       });
+
       clearHookLog();
 
       await booted.frogbot.update({
@@ -190,6 +200,7 @@ describe('hooks-access', () => {
       });
 
       const log = getHookLog();
+
       expect(log).toContain('beforeValidate');
       expect(log).toContain('beforeChange');
       expect(log).toContain('afterChange');
@@ -203,6 +214,7 @@ describe('hooks-access', () => {
         data: { title: 'test' },
         overrideAccess: true,
       });
+
       clearHookLog();
 
       await booted.frogbot.delete({
@@ -212,6 +224,7 @@ describe('hooks-access', () => {
       });
 
       const log = getHookLog();
+
       expect(log).toContain('beforeDelete');
       expect(log).toContain('afterDelete');
       expect(log.indexOf('beforeDelete')).toBeLessThan(log.indexOf('afterDelete'));
@@ -226,9 +239,11 @@ describe('hooks-access', () => {
 
       // Check create log - no beforeRead
       let log = getHookLog();
+
       expect(log).not.toContain('beforeRead');
 
       clearHookLog();
+
       await booted.frogbot.update({
         collection: hookOrderSlug,
         id: doc.id,
@@ -237,9 +252,11 @@ describe('hooks-access', () => {
       });
 
       log = getHookLog();
+
       expect(log).not.toContain('beforeRead');
 
       clearHookLog();
+
       await booted.frogbot.delete({
         collection: hookOrderSlug,
         id: doc.id,
@@ -247,6 +264,7 @@ describe('hooks-access', () => {
       });
 
       log = getHookLog();
+
       expect(log).not.toContain('beforeRead');
     });
   });
@@ -328,11 +346,13 @@ describe('hooks-access', () => {
         data: { title: 'A' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: reqAccessSlug,
         data: { title: 'B' },
         overrideAccess: true,
       });
+
       const docC = await booted.frogbot.create({
         collection: reqAccessSlug,
         data: { title: 'C' },
@@ -361,6 +381,7 @@ describe('hooks-access', () => {
         data: { title: 'allowed' },
         overrideAccess: false,
       });
+
       expect(doc.id).toBeDefined();
       expect(doc.title).toBe('allowed');
     });
@@ -377,6 +398,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: false,
       });
+
       expect(found.title).toBe('readable');
     });
 
@@ -431,6 +453,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: false,
       });
+
       expect(found.title).toBe('visible');
     });
 
@@ -456,11 +479,13 @@ describe('hooks-access', () => {
         data: { title: 'visible1', hidden: false },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: accessWhereSlug,
         data: { title: 'visible2', hidden: false },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: accessWhereSlug,
         data: { title: 'hidden1', hidden: true },
@@ -471,6 +496,7 @@ describe('hooks-access', () => {
         collection: accessWhereSlug,
         overrideAccess: false,
       });
+
       expect(result.docs).toHaveLength(2);
       expect(result.docs.every((d: any) => d.hidden !== true)).toBe(true);
     });
@@ -481,6 +507,7 @@ describe('hooks-access', () => {
         data: { title: 'v', hidden: false },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: accessWhereSlug,
         data: { title: 'h', hidden: true },
@@ -491,6 +518,7 @@ describe('hooks-access', () => {
         collection: accessWhereSlug,
         overrideAccess: false,
       });
+
       expect(result.totalDocs).toBe(1);
     });
   });
@@ -530,6 +558,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: false,
       });
+
       expect(found.public).toBe('open');
     });
 
@@ -553,6 +582,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: true,
       });
+
       expect(found.secret).toBe('original');
     });
 
@@ -575,6 +605,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: true,
       });
+
       expect(found.public).toBe('new-value');
     });
   });
@@ -590,6 +621,7 @@ describe('hooks-access', () => {
         data: { title: 'hello', mustMatch: 'hello' },
         overrideAccess: true,
       });
+
       expect(doc.id).toBeDefined();
       expect(doc.mustMatch).toBe('hello');
     });
@@ -623,6 +655,7 @@ describe('hooks-access', () => {
         data: { title: 'check', mustMatch: 'check' },
         overrideAccess: true,
       });
+
       expect(doc.id).toBeDefined();
     });
   });
@@ -644,6 +677,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: true,
       });
+
       expect(found.title).toBe('restricted');
     });
 
@@ -784,12 +818,14 @@ describe('hooks-access', () => {
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
       });
+
       expect(result.token).toBeDefined();
       expect(result.user).toBeDefined();
     });
 
     it('login with wrong password fails', async () => {
       await createVerifiedUser();
+
       await expect(
         booted.frogbot.login({
           collection: usersSlug,
@@ -801,6 +837,7 @@ describe('hooks-access', () => {
     it('after login, lastLogin field is updated to a recent timestamp', async () => {
       await createVerifiedUser();
       const before = Date.now();
+
       await booted.frogbot.login({
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
@@ -813,14 +850,18 @@ describe('hooks-access', () => {
       });
 
       const lastLogin = user.docs[0]?.lastLogin;
+
       expect(lastLogin).toBeDefined();
+
       const loginTime = new Date(lastLogin!).getTime();
+
       expect(loginTime).toBeGreaterThanOrEqual(before - 1000);
       expect(loginTime).toBeLessThanOrEqual(Date.now() + 1000);
     });
 
     it('req.frogbot is available in afterLogin hook (field update proves it)', async () => {
       await createVerifiedUser();
+
       await booted.frogbot.login({
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
@@ -841,11 +882,13 @@ describe('hooks-access', () => {
         email: testUserEmail,
         password: testUserPassword,
       });
+
       const token = (loginRes.body as any).token;
 
       const res = await booted.restClient.post(`/api/${usersSlug}/refresh-token`, undefined, {
         headers: { Authorization: `JWT ${token}` },
       });
+
       expect(res.status).toBe(200);
       expect((res.body as any).refreshedToken).toBeDefined();
     });
@@ -880,6 +923,7 @@ describe('hooks-access', () => {
           data: { email: testUserEmail },
           disableEmail: true,
         });
+
         expect(token).toBeDefined();
         expect(typeof token).toBe('string');
         expect(token.length).toBeGreaterThan(0);
@@ -898,6 +942,7 @@ describe('hooks-access', () => {
           data: { token, password: 'new-password-456' },
           overrideAccess: true,
         });
+
         expect(result.user).toBeDefined();
 
         // Can login with new password
@@ -905,11 +950,13 @@ describe('hooks-access', () => {
           collection: usersSlug,
           data: { email: testUserEmail, password: 'new-password-456' },
         });
+
         expect(loginResult.token).toBeDefined();
       });
 
       it('resetPassword with invalid token throws', async () => {
         await createVerifiedUser();
+
         await expect(
           booted.frogbot.resetPassword({
             collection: usersSlug,
@@ -931,18 +978,22 @@ describe('hooks-access', () => {
           overrideAccess: true,
           showHiddenFields: true,
         });
+
         const verificationToken = (users.docs[0] as any)?._verificationToken;
+
         expect(verificationToken).toBeDefined();
 
         const result = await booted.frogbot.verifyEmail({
           collection: usersSlug,
           token: verificationToken,
         });
+
         expect(result).toBe(true);
       });
 
       it('verifyEmail with invalid token throws', async () => {
         await createUnverifiedUser();
+
         await expect(
           booted.frogbot.verifyEmail({
             collection: usersSlug,
@@ -980,6 +1031,7 @@ describe('hooks-access', () => {
           data: { email: testUserEmail },
           overrideAccess: true,
         });
+
         expect(result).toBe(true);
 
         // Can login again
@@ -987,6 +1039,7 @@ describe('hooks-access', () => {
           collection: usersSlug,
           data: { email: testUserEmail, password: testUserPassword },
         });
+
         expect(loginResult.token).toBeDefined();
       });
     });
@@ -1003,6 +1056,7 @@ describe('hooks-access', () => {
         data: { title: 'hello' },
         overrideAccess: true,
       });
+
       expect(doc.title).toBe('hello [processed]');
     });
 
@@ -1022,6 +1076,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: true,
       });
+
       expect(raw.title).toBe('hello');
     });
 
@@ -1038,6 +1093,7 @@ describe('hooks-access', () => {
         data: { title: 'revised' },
         overrideAccess: true,
       });
+
       expect(updated.title).toBe('revised [processed]');
     });
   });
@@ -1055,6 +1111,7 @@ describe('hooks-access', () => {
         data: { title: 'test' },
         overrideAccess: true,
       });
+
       expect(doc.id).toBeDefined();
     });
 
@@ -1070,6 +1127,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: true,
       });
+
       expect(fetched.contextResult).toBe('seeded');
     });
 
@@ -1085,6 +1143,7 @@ describe('hooks-access', () => {
         id: doc.id,
         overrideAccess: true,
       });
+
       expect(fetched.contextResult).toBe('seeded');
     });
 
@@ -1107,6 +1166,7 @@ describe('hooks-access', () => {
         id: doc1.id,
         overrideAccess: true,
       });
+
       const fetched2 = await booted.frogbot.findByID({
         collection: contextFlowSlug,
         id: doc2.id,

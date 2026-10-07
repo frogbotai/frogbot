@@ -22,6 +22,7 @@ export async function resolveCollectionViews(props: AdminViewServerProps) {
         (await view.access({ req: attachRegisteredFrogBot(props.initPageResult.req) })),
     ),
   );
+
   const metadata = (
     props.collectionConfig?.admin.custom?.frogbot as
       | {
@@ -35,6 +36,7 @@ export async function resolveCollectionViews(props: AdminViewServerProps) {
         }
       | undefined
   )?.views;
+
   return {
     runtime,
     views: (metadata ?? []).filter((_, index) => allowed[index]),
@@ -48,5 +50,6 @@ export function getActiveViewSlug(
   if (props.viewType === 'list') return undefined;
   if (props.viewType) return props.viewType;
   const last = segments.at(-1);
+
   return getRuntimeViews(props).some(({ slug }) => slug === last) ? last : undefined;
 }

@@ -15,6 +15,7 @@ export async function findUserByEmail(
     overrideAccess: true,
     req,
   });
+
   const match = result.docs[0];
 
   return match ? { ...match, collection } : null;

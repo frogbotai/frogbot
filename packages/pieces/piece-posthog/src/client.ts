@@ -40,6 +40,7 @@ export function createPosthogClient({ personalApiKey }: { personalApiKey: string
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
+
       const text = await response.text();
       let result: unknown = null;
 

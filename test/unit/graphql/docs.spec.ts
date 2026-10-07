@@ -43,6 +43,7 @@ describe('GraphQL documentation and opt-in boundaries', () => {
     const paths = ['docs', 'templates/blank'].flatMap((directory) =>
       sourceFiles(join(repoRoot, directory)),
     );
+
     const obsoleteReferences = paths.filter((file) =>
       readFileSync(file, 'utf8').includes('PAYLOAD_CONFIG_PATH'),
     );

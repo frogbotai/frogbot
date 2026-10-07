@@ -86,6 +86,7 @@ describe('assertPublicHttpsUrl', () => {
     const error = await assertPublicHttpsUrl(new URL('http://127.0.0.1/')).catch(
       (err: unknown) => err,
     );
+
     expect(error).toMatchObject({ status: 400, code: 'invalid_request_body' });
   });
 });
@@ -96,6 +97,7 @@ describe('guardedDownload', () => {
     const result = await guardedDownload([
       { url: new URL('http://169.254.169.254/'), isUrlSupportedByModel: true },
     ]);
+
     expect(result).toEqual([null]);
   });
 

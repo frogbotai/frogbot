@@ -25,17 +25,21 @@ export const customApiCall = defineAction({
       input.timeout !== undefined
         ? AbortSignal.timeout(Math.max(0, input.timeout * 1000))
         : undefined;
+
     let bodyValue: unknown =
       input.body && typeof input.body === 'object' && 'data' in input.body
         ? (input.body as { data: PieceJSON }).data
         : input.body;
+
     let rawBody = input.body_type === 'raw';
     if (input.body_type === 'form_data' && Array.isArray(bodyValue)) {
       const form = new FormData();
+
       for (const field of bodyValue as Array<Record<string, unknown>>) {
         if (field.fieldType === 'file') {
           const file = field.fileFieldValue as
             { data?: ArrayBuffer | Blob | Uint8Array; filename?: string } | undefined;
+
           if (file?.data) {
             const value = file.data instanceof Blob ? file.data : new Blob([file.data]);
             form.append(String(field.fieldName), value, file.filename);
@@ -44,9 +48,11 @@ export const customApiCall = defineAction({
           form.append(String(field.fieldName), String(field.textFieldValue));
         }
       }
+
       bodyValue = form;
       rawBody = true;
     }
+
     const result = await client.request({
       allowFailure: input.failsafe === true,
       binary: input.response_is_binary,
@@ -60,6 +66,7 @@ export const customApiCall = defineAction({
       response: true,
       signal: timeout,
     });
+
     if (!input.response_is_binary) return result;
     const response = result as {
       body: Uint8Array;
@@ -80,10 +87,12 @@ export const customApiCall = defineAction({
       },
       overrideAccess: true,
     });
+
     const url = doc.url;
     if (typeof url !== 'string' || !url) {
       throw new Error(`[frogbot] Upload collection '${collection}' did not return a file URL.`);
     }
+
     return { ...response, body: url };
   },
 });

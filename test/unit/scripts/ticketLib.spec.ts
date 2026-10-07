@@ -25,8 +25,10 @@ const summary = (entries: string[], failed = entries.length) =>
 
 const richText =
   '[rich-text] › test/browser/richText.browser.spec.ts:21:1 › edits, saves and reloads';
+
 const viewSelection =
   '[rich-text] › test/browser/richText.browser.spec.ts:391:1 › view selection preserves saved content';
+
 const chat = '[chat-assets] › test/browser/chat.browser.spec.ts:10:1 › uploads a file';
 
 describe('flakyRetry', () => {

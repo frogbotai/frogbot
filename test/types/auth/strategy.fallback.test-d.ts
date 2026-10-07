@@ -13,9 +13,11 @@ import { expectTypeOf } from 'vitest';
 expectTypeOf<AuthStrategyFunctionArgs['frogbot']>().toEqualTypeOf<FrogBotInstance>();
 expectTypeOf<AuthStrategyFunctionArgs['req']>().toEqualTypeOf<FrogBotRequest | undefined>();
 expectTypeOf<Extract<'payload', keyof AuthStrategyFunctionArgs>>().toEqualTypeOf<never>();
+
 expectTypeOf<AuthStrategyResult['user']>().toEqualTypeOf<
   (TypedUser & { _strategy?: string; collection?: string }) | null
 >();
+
 expectTypeOf<FrogBotRequest['user']>().toMatchTypeOf<AuthStrategyResult['user']>();
 expectTypeOf<AuthStrategy['authenticate']>().toEqualTypeOf<AuthStrategyFunction>();
 expectTypeOf<NonNullable<AuthConfig['strategies']>>().toEqualTypeOf<AuthStrategy[]>();

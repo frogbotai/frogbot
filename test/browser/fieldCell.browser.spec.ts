@@ -44,6 +44,7 @@ test('a Board card grouped by a field in a row shows the channel badge', async (
   const card = backlog.locator('.frog-board__card', { hasText: marked.title });
 
   await expectBadge(card);
+
   await expect(card.locator('.collection-board__field', { hasText: /^Status/ })).toContainText(
     'Backlog',
   );
@@ -67,6 +68,7 @@ test('a Calendar event shows the channel badge', async ({ page }) => {
   const event = page.locator('.frog-calendar__event', { hasText: marked.title });
 
   await expectBadge(event);
+
   await expect(event.locator('.collection-calendar__field', { hasText: /^Status/ })).toContainText(
     'Backlog',
   );

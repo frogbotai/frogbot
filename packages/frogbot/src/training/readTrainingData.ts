@@ -22,6 +22,7 @@ export async function* readTrainingData(
     overrideAccess: options.overrideAccess ?? false,
     req: options.req,
   };
+
   let chatPage = 1;
 
   while (true) {
@@ -45,6 +46,7 @@ export async function* readTrainingData(
           sort: ['createdAt', 'id'],
           where: { chat: { equals: chat.id } },
         });
+
         messages.push(...result.docs);
         if (!result.hasNextPage) break;
         messagePage += 1;

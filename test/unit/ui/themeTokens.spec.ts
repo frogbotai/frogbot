@@ -44,6 +44,7 @@ const adminOwnedNames = [
 const paletteSelector = ':where(html:not([data-fb-ui-page]))';
 const lightPortalSelector =
   'html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"]';
+
 const darkPortalSelector =
   'html[data-fb-ui-page][data-theme="dark"] [data-fb-ui][data-theme="system"]';
 

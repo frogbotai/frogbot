@@ -44,6 +44,7 @@ export type DefaultMessagesCollectionProps = {
 
 const chatOwner: Access = ({ req }) => {
   const id = req.user?.id;
+
   return id !== undefined ? { 'chat.user': { equals: id } } : false;
 };
 
@@ -116,6 +117,7 @@ export function defaultMessagesCollection({
         ({ context, data, originalDoc }) => {
           const usage = context[MESSAGE_USAGE_CONTEXT_KEY] as StoredMessageUsage | undefined;
           if (usage) data.usage = mergeUsage(originalDoc?.usage as StoredMessageUsage, usage);
+
           return data;
         },
       ],

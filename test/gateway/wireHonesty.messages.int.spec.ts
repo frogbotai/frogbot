@@ -64,10 +64,12 @@ function createRecordingModel(opts?: {
     streamParts,
     onCall,
   } = opts ?? {};
+
   const usage = mockUsage({
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
   });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -80,6 +82,7 @@ function createRecordingModel(opts?: {
     doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       if (error) return Promise.reject(error);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason,
@@ -103,12 +106,14 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage },
       ];
+
       return Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             for (const part of parts) {
               controller.enqueue(part);
             }
+
             controller.close();
           },
         }),
@@ -120,6 +125,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -163,6 +169,7 @@ describe('messages content-filter → stop_reason refusal', () => {
       inputTokens: { total: 5, noCache: 5 },
       outputTokens: { total: 4, text: 4 },
     });
+
     const app = makeAppWithModel(
       'anthropic',
       createRecordingModel({
@@ -192,10 +199,14 @@ describe('messages content-filter → stop_reason refusal', () => {
     });
 
     expect(res.status).toBe(200);
+
     const sse = await res.text();
     const deltaMatch = sse.match(/^event: message_delta\ndata: (.+)$/m);
+
     expect(deltaMatch).not.toBeNull();
+
     const delta = JSON.parse(deltaMatch![1]) as { delta: { stop_reason: string } };
+
     expect(delta.delta.stop_reason).toBe('refusal');
   });
 });
@@ -230,6 +241,7 @@ describe('messages server tools not mis-translated', () => {
     // the upstream must never see a plain function tool for a server tool.
     const tools = (callOptions?.tools ?? []) as Array<{ type: string; name: string }>;
     const fakeClientTool = tools.find((t) => t.type === 'function' && t.name === 'web_search');
+
     expect(fakeClientTool).toBeUndefined();
   });
 });
@@ -268,10 +280,12 @@ describe('messages URL document defaults to application/pdf', () => {
     });
 
     expect(status).toBe(200);
+
     const userMessage = callOptions?.prompt.find((m) => m.role === 'user');
     const fileParts = (Array.isArray(userMessage?.content) ? userMessage.content : []).filter(
       (p): p is LanguageModelV4FilePart => p.type === 'file',
     );
+
     expect(fileParts).toHaveLength(1);
     expect(fileParts[0].mediaType).toBe('application/pdf');
   });
@@ -359,6 +373,7 @@ describe('messages Anthropic error envelope fidelity', () => {
       appWithUpstreamStatus(413, 'Request exceeds the maximum allowed number of bytes'),
       {},
     );
+
     expect(status).toBe(413);
     expect(body).toHaveProperty('error.type', 'request_too_large');
   });
@@ -366,6 +381,7 @@ describe('messages Anthropic error envelope fidelity', () => {
   // G16 — 402 maps to billing_error. See 056_full_gateway_review.
   it('upstream 402 → billing_error', async () => {
     const { status, body } = await postMessages(appWithUpstreamStatus(402, 'Payment required'), {});
+
     expect(status).toBe(402);
     expect(body).toHaveProperty('error.type', 'billing_error');
   });
@@ -376,6 +392,7 @@ describe('messages Anthropic error envelope fidelity', () => {
       appWithUpstreamStatus(504, 'Upstream timed out'),
       {},
     );
+
     expect(status).toBe(504);
     expect(body).toHaveProperty('error.type', 'timeout_error');
   });
@@ -383,6 +400,7 @@ describe('messages Anthropic error envelope fidelity', () => {
   // G16 — 502 maps to api_error; overloaded_error is reserved for 529. See 056_full_gateway_review.
   it('upstream 502 → api_error, not overloaded_error', async () => {
     const { status, body } = await postMessages(appWithUpstreamStatus(502, 'Bad gateway'), {});
+
     expect(status).toBe(502);
     expect(body).toHaveProperty('error.type', 'api_error');
   });
@@ -390,6 +408,7 @@ describe('messages Anthropic error envelope fidelity', () => {
   // G16 — 529 passthrough is runtime-correct today (via the unchecked GatewayHttpStatus cast, envelope.ts:508); the HE14 type-level lie is not runtime-observable. Kept as passing evidence.
   it('upstream 529 passes through as 529 overloaded_error (runtime works despite GatewayHttpStatus excluding 529)', async () => {
     const { status, body } = await postMessages(appWithUpstreamStatus(529, 'Overloaded'), {});
+
     expect(status).toBe(529);
     expect(body).toHaveProperty('error.type', 'overloaded_error');
   });
@@ -398,6 +417,7 @@ describe('messages Anthropic error envelope fidelity', () => {
   it('error body carries a top-level request_id matching x-request-id', async () => {
     const { headers, body } = await postMessages(appWithUpstreamStatus(429, 'Rate limited'), {});
     const requestId = headers.get('x-request-id');
+
     expect(requestId).not.toBeNull();
     expect(body).toHaveProperty('request_id', requestId);
   });
@@ -428,6 +448,7 @@ describe('messages Anthropic error envelope fidelity', () => {
     });
 
     const body = (await res.json()) as { error?: { type?: string } };
+
     expect(body).toHaveProperty('error.type', 'overloaded_error');
     expect(res.status).toBe(529);
   });

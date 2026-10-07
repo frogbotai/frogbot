@@ -57,6 +57,7 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
         text: await fs.readFile(abs, 'utf8'),
         source: abs,
       });
+
       mod = { default: JSON.parse(raw) };
     } else {
       mod = (await import(
@@ -74,17 +75,20 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
         `use Bun, or pre-register a TS loader (e.g. \`node --import tsx <entry>\`), or compile to .js`,
       ]);
     }
+
     throw new ConfigError([`failed to load config "${abs}": ${cause}`]);
   }
 
   const raw = pickExport(mod, abs);
   const resolved =
     typeof raw === 'function' ? await (raw as () => unknown | Promise<unknown>)() : raw;
+
   if (!isRecord(resolved)) {
     throw new ConfigError([
       `config file "${abs}" must export a GatewayConfig object (default or named "config")`,
     ]);
   }
+
   return resolved as GatewayConfig;
 }
 
@@ -165,6 +169,7 @@ function isProviderConfig(value: unknown): value is Record<string, unknown> {
 function shallowMerge<T>(base: T | undefined, overlay: T | undefined): T | undefined {
   if (overlay == null) return base;
   if (!isPlainObject(base) || !isPlainObject(overlay)) return overlay;
+
   return { ...base, ...overlay };
 }
 
@@ -190,6 +195,7 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   const disabled = new Set(config.disabled_providers ?? []);
 
   const validNames = new Set<string>(PROVIDER_NAMES);
+
   for (const name of Object.keys(config.providers ?? {})) {
     validNames.add(name);
   }
@@ -199,12 +205,14 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   if (enabledUnknown.length > 0) {
     issues.push(`enabled_providers contains unknown provider names: ${enabledUnknown.join(', ')}`);
   }
+
   const disabledUnknown = [...disabled].filter((name) => !validNames.has(name));
   if (disabledUnknown.length > 0) {
     issues.push(
       `disabled_providers contains unknown provider names: ${disabledUnknown.join(', ')}`,
     );
   }
+
   if (issues.length > 0) {
     throw new ConfigError(issues);
   }
@@ -212,10 +220,12 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   const keep = (name: string): boolean => {
     if (enabled && !enabled.has(name)) return false;
     if (disabled.has(name)) return false;
+
     return true;
   };
 
   const providers: ProviderConfigMap = {};
+
   for (const [name, cfg] of Object.entries(config.providers)) {
     if (cfg != null && keep(name)) {
       (providers as Record<string, unknown>)[name] = cfg;
@@ -225,6 +235,7 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   const rest = { ...config };
   delete rest.enabled_providers;
   delete rest.disabled_providers;
+
   return {
     ...rest,
     providers,
@@ -245,5 +256,6 @@ export function finalizeConfig(config: GatewayConfig): GatewayConfig {
   const filtered = applyAllowDeny(config);
   const validated = parseGatewayConfig(filtered) as ParsedMarked;
   Object.defineProperty(validated, kParsed, { value: true, enumerable: false });
+
   return validated;
 }

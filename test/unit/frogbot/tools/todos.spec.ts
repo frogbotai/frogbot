@@ -14,11 +14,13 @@ function makeCtx(...args: [] | [number | string | undefined]) {
   const findByID = vi
     .fn()
     .mockResolvedValue({ todos: [{ content: 'Ship it', status: 'completed' }] });
+
   const frogbot = {
     config: { chat: { enabled: true, chatsSlug: 'conversations' } },
     update,
     findByID,
   };
+
   return {
     ctx: {
       req: { frogbot },
@@ -81,6 +83,7 @@ describe('todo tools', () => {
 
   it('rejects invalid todo statuses', async () => {
     const { write_todos } = await loadTools();
+
     expect(
       write_todos.inputSchema.safeParse({ todos: [{ content: 'Ship it', status: 'cancelled' }] })
         .success,
@@ -89,7 +92,9 @@ describe('todo tools', () => {
 
   it('exports the write and read tools as a toolkit', async () => {
     const { todoTools, write_todos, read_todos } = await loadTools();
+
     expect(todoTools).toEqual([write_todos, read_todos]);
+
     for (const tool of todoTools) {
       expect(tool).toEqual(
         expect.objectContaining({

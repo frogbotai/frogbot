@@ -95,6 +95,7 @@ describe('channel question store', () => {
     await store.settle({
       question: (await store.find({ chatId: 'chat-1', toolCallId: 'call-1' }))!,
     });
+
     await store.save({ questions: [storedQuestion({ toolCallId: 'call-3' })] });
 
     expect(
@@ -145,6 +146,7 @@ describe('channel question store', () => {
     const next = { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' };
 
     await store.save({ questions: [storedQuestion()] });
+
     await store.change({
       expected: 0,
       question: storedQuestion({ messages: [card, next], revision: 1 }),
@@ -164,6 +166,7 @@ describe('channel question store', () => {
     const { store, ttls } = storeFixture();
 
     await store.save({ questions: [storedQuestion({ pending: 'update' })] });
+
     await store.settle({
       question: (await store.find({ chatId: 'chat-1', toolCallId: 'call-1' }))!,
     });
@@ -183,6 +186,7 @@ describe('channel question store', () => {
     const closed = { id: 'closed-1', postedAt: '' };
 
     await store.save({ questions: [storedQuestion()] });
+
     await store.settle({
       question: storedQuestion({ messages: [card, closed], state: { view: 'Answered' } }),
     });

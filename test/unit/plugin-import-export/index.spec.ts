@@ -5,6 +5,7 @@ import type { ImportExportPluginOptions } from '../../../packages/plugins/plugin
 import { importExportPlugin } from '../../../packages/plugins/plugin-import-export/src/index.js';
 
 type Hook = (args: Record<string, unknown>) => unknown;
+
 type CollectionOverride = NonNullable<ImportExportPluginOptions['overrideImportCollection']>;
 
 function rename(slug: string): CollectionOverride {

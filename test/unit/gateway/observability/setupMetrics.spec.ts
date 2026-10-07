@@ -9,6 +9,7 @@ import { setupTracing } from '../../../../packages/gateway/src/observability/set
 const isNoopMeterProvider = (): boolean => {
   const meter = metrics.getMeter('probe');
   const histogram = meter.createHistogram('probe.metric');
+
   // The no-op instrument's constructor name is the SDK's NoopMetric marker;
   // a real SDK Histogram is a distinct class. We assert structurally: after a
   // real MeterProvider is registered, recording flows to an exporter (below).
@@ -33,6 +34,7 @@ describe('gateway setup registers a metrics export path (G29)', () => {
   // setup should get a working meter provider without hand-registering one.
   it('leaves a working (non-no-op) global MeterProvider after setup runs', () => {
     metrics.disable();
+
     expect(isNoopMeterProvider()).toBe(true);
 
     setupTracing();
@@ -48,6 +50,7 @@ describe('gateway setup registers a metrics export path (G29)', () => {
   it('exports a metrics setup entrypoint from the setup module', () => {
     const exportNames = Object.keys(setupModule);
     const metricsSetup = exportNames.find((name) => /setupMetrics|MeterProvider/i.test(name));
+
     expect(metricsSetup).toBeDefined();
   });
 });

@@ -94,7 +94,9 @@ expectTypeOf<ReturnType<CollectionAfterOperationHook>>().toEqualTypeOf<
 
 expectTypeOf<keyof AccessArgs>().toEqualTypeOf<keyof PayloadAccessArgs>();
 expectTypeOf<Omit<AccessArgs, 'req'>>().toEqualTypeOf<Omit<PayloadAccessArgs, 'req'>>();
+
 expectTypeOf<keyof CollectionAccess>().toEqualTypeOf<
   keyof NonNullable<PayloadCollectionConfig['access']>
 >();
+
 expectTypeOf<Omit<Endpoint, 'handler'>>().toEqualTypeOf<Omit<PayloadEndpoint, 'handler'>>();

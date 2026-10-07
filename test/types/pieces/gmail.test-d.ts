@@ -8,9 +8,11 @@ const _sent = gmail.send({
 });
 
 expectTypeOf<Parameters<typeof gmail.send>[0]['input']['to']>().toEqualTypeOf<string[]>();
+
 expectTypeOf<Parameters<typeof gmail.send>[0]['input']['draft']>().toEqualTypeOf<
   boolean | undefined
 >();
+
 expectTypeOf<Awaited<typeof _sent>['threadId']>().toEqualTypeOf<string | undefined>();
 
 const _sendRejectsGetEmailInput = () =>

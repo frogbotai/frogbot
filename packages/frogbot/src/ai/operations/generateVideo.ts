@@ -44,6 +44,7 @@ export async function generateVideoOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
@@ -53,7 +54,9 @@ export async function generateVideoOperation(
       providerOptions: toProviderOptions(providerOptions),
       abortSignal,
     });
+
     await op.finish();
+
     return result;
   } catch (error) {
     await op.finish({ error });

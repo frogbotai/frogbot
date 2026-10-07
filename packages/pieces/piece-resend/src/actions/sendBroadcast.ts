@@ -15,6 +15,7 @@ export const sendBroadcast = defineAction({
   async run({ input, client }) {
     const { broadcast_id } = input;
     const body = compact({ scheduled_at: input.scheduled_at || undefined });
+
     return client.request({ method: 'POST', path: `/broadcasts/${broadcast_id}/send`, body });
   },
 });

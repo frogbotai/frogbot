@@ -14,6 +14,7 @@ const invoiceFilter = z.object({
   customerId: optionalId,
   subscriptionId: optionalId,
 });
+
 const subscriptionFilter = z.object({
   status: z
     .enum([

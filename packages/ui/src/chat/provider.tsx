@@ -44,18 +44,22 @@ export function ChatProvider({
           const headers = new Headers(
             await (typeof adapter.headers === 'function' ? adapter.headers() : adapter.headers),
           );
+
           new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
+
           return adapter.fetch(input, { ...init, headers });
         },
       }),
     [adapter],
   );
+
   const [state, setState] = useState<Omit<ChatProviderValue, 'adapter' | 'sdk' | 'toolRenderers'>>({
     loading: true,
   });
 
   useEffect(() => {
     const controller = new AbortController();
+
     void Promise.all([
       sdk
         .request('/frogbot', { signal: controller.signal })
@@ -73,6 +77,7 @@ export function ChatProvider({
           });
         }
       });
+
     return () => controller.abort();
   }, [sdk]);
 

@@ -14,6 +14,7 @@ expectTypeOf<Parameters<typeof telegram.answerCallbackQuery>[0]['input']>().toEq
   url?: string | undefined;
   cacheTime?: number | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _answered>['ok']>().toEqualTypeOf<true>();
 
 const _answerCallbackQueryRejectsSendTextMessageInput = () =>

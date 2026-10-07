@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
@@ -36,6 +37,7 @@ describe('Google identity', () => {
   it('supports identity-only sign-in and shares its app without sharing product scopes', () => {
     const google = createGoogle({ oauth: { clientId: 'client', clientSecret: 'secret' } });
     const gmail = createGmail({ oauth: google.oauth });
+
     expect(pieceInstanceTools(google)).toEqual([]);
     expect(google[pieceCapabilities]).toMatchObject({ signIn: true });
     expect(pieceFactoryDefinition(createGoogle).oauth).toBe(googleOAuth);
@@ -78,6 +80,7 @@ describe('Google identity', () => {
               'https://www.googleapis.com/auth/gmail.compose',
             ]),
       ].filter((scope) => scenario !== 'gmail-missing-permission' || scope !== gmailScopes[0]);
+
       vi.stubGlobal(
         'fetch',
         vi.fn(() =>
@@ -86,15 +89,18 @@ describe('Google identity', () => {
           ),
         ),
       );
+
       const tokens = await exchangeOAuthCode({
         piece,
         code: 'google-code',
         callbackUrl: 'https://app.test/callback',
       });
+
       const metadata = oauthTokenMetadata({
         tokens,
         scopes: [...googleOAuth.scopes, ...gmailScopes],
       });
+
       const encryption = createCredentialEncryption({ secret: 'test' });
       const row = {
         id: 'connection',
@@ -105,20 +111,24 @@ describe('Google identity', () => {
         credential: await encryption.encrypt(JSON.stringify(tokens)),
         ...metadata,
       };
+
       const frogbot = {
         config: { _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) } },
         find: vi.fn(() => Promise.resolve({ docs: [row] })),
       };
+
       const api = new Connections(frogbot as never, {
         enabled: true,
         slug: 'connections',
         encryption,
         entries: { [piece.piece]: { piece, oauth: true, secret: false } },
       });
+
       const req = {
         user: { id: 'owner', collection: 'users' },
         frogbot,
       } as unknown as FrogBotRequest;
+
       expect(metadata.scopes).toEqual(granted);
       await expect(
         api.resolve({ piece, req }).then(
@@ -138,7 +148,9 @@ describe('Google identity', () => {
         email_verified: true,
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
+
     await expect(account()).resolves.toEqual({
       id: 'google-user',
       label: 'Google User',
@@ -161,6 +173,7 @@ describe('Google identity', () => {
         }),
       ),
     );
+
     await expect(
       lookupOAuthAccount({
         piece: createGoogle({ oauth: { clientId: 'client', clientSecret: 'secret' } }),
@@ -183,6 +196,7 @@ describe('Google identity', () => {
           }),
         ),
       );
+
       await expect(account()).rejects.toThrow('Google did not return a verified email address.');
     },
   );
@@ -195,6 +209,7 @@ describe('Google identity', () => {
     { sub: 'google-user', email_verified: true },
   ])('rejects malformed identity %j', async (identity) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(identity)));
+
     await expect(account()).rejects.toThrow('Google did not return a verified email address.');
   });
 
@@ -203,6 +218,7 @@ describe('Google identity', () => {
       'fetch',
       vi.fn().mockResolvedValue(new Response('private provider details', { status: 401 })),
     );
+
     await expect(account()).rejects.toThrow('Google account lookup failed.');
   });
 });

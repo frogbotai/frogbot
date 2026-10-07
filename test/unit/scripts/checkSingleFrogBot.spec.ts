@@ -14,6 +14,7 @@ function manifest(name: string, fields: Record<string, unknown> = {}) {
   const target = join(dir, name);
 
   mkdirSync(target, { recursive: true });
+
   writeFileSync(
     join(target, 'package.json'),
     JSON.stringify({ name, version: '1.0.0', ...fields }),

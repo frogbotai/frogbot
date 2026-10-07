@@ -30,6 +30,7 @@ const page = {
   archived: false,
   properties: { Name: { type: 'title', title: [{ plain_text: 'Task Alpha' }] } },
 };
+
 const comment = { object: 'comment', id: 'comment1', created_time: '2026-09-13T10:00:00.000Z' };
 
 function response(value: unknown, status = 200) {
@@ -43,10 +44,12 @@ function notionResponse(url: URL, init: RequestInit): Response {
   if (url.pathname === '/v1/users/me') {
     return response({ object: 'user', id: 'user1', name: 'Ada' });
   }
+
   if (url.pathname === '/v1/comments' && init.method === 'POST') return response(comment);
   if (url.pathname === '/v1/comments') {
     return response({ object: 'list', results: [comment], has_more: false, next_cursor: null });
   }
+
   if (url.pathname.endsWith('/children')) {
     return response({
       object: 'list',
@@ -55,12 +58,15 @@ function notionResponse(url: URL, init: RequestInit): Response {
       next_cursor: null,
     });
   }
+
   if (url.pathname.endsWith('/query')) {
     return response({ object: 'list', results: [page], has_more: false, next_cursor: null });
   }
+
   if (url.pathname === '/v1/search') {
     return response({ object: 'list', results: [page], has_more: false, next_cursor: null });
   }
+
   if (url.pathname.startsWith('/v1/databases/')) {
     return response({
       object: 'database',
@@ -68,9 +74,11 @@ function notionResponse(url: URL, init: RequestInit): Response {
       properties: { Name: { type: 'title' } },
     });
   }
+
   if (url.pathname === '/v1/pages' || url.pathname.startsWith('/v1/pages/')) {
     return response(page);
   }
+
   if (url.pathname === '/v1/custom') return response({ ok: true });
 
   return response({ message: 'not found' }, 404);
@@ -85,6 +93,7 @@ function blockChildrenResponse(url: URL): Response {
       next_cursor: 'next',
     });
   }
+
   if (url.pathname.endsWith('/root/children')) {
     return response({
       object: 'list',
@@ -291,6 +300,7 @@ describe('native Notion', () => {
       options: {},
       req,
     };
+
     const runs = [
       () => newDatabaseItem.run({ ...context, input: { databaseId: 'database1' } }),
       () => updatedDatabaseItem.run({ ...context, input: { databaseId: 'database1' } }),
@@ -321,6 +331,7 @@ describe('native Notion', () => {
       input: { databaseId: 'database1', fields: { Name: 'Task', Missing: '', Unknown: 'no' } },
       req,
     });
+
     await piece.listDatabasePages({
       input: { databaseId: 'database1', fields: { Name: 'Task', Missing: null } },
       req,
@@ -342,6 +353,7 @@ describe('native Notion', () => {
       id: 'exact',
       properties: { Name: { type: 'title', title: [{ plain_text: 'Task' }] } },
     };
+
     const fuzzy = { ...page, id: 'fuzzy' };
 
     vi.stubGlobal(

@@ -52,6 +52,7 @@ function ConnectionForm({
   const [value, setValue] = useState<unknown>(() =>
     piece.secretSchema ? initialConnectionValue(piece.secretSchema) : undefined,
   );
+
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
@@ -64,14 +65,17 @@ function ConnectionForm({
       submitting.current = true;
       setBusy(true);
       onBusyChange(true);
+
       window.location.assign(
         `${apiPath}/${encodeURIComponent(piece.slug)}/authorize?${new URLSearchParams({ returnTo })}`,
       );
+
       return;
     }
 
     if (!piece.secretSchema) {
       setError('Static credentials are not available for this integration.');
+
       return;
     }
 
@@ -80,6 +84,7 @@ function ConnectionForm({
       body = JSON.stringify(connectionInput({ field: piece.secretSchema, value }));
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Check your credential values.');
+
       return;
     }
 
@@ -94,6 +99,7 @@ function ConnectionForm({
         headers: { 'Content-Type': 'application/json' },
         body,
       });
+
       if (!response.ok) {
         setError(
           response.status === 401
@@ -102,6 +108,7 @@ function ConnectionForm({
               ? 'These credentials were not accepted. Check the values and try again.'
               : 'Could not create the connection. Please try again.',
         );
+
         return;
       }
 
@@ -217,12 +224,14 @@ function NewConnectionDialog({
   const filtered = pieces.filter((piece) =>
     `${piece.label} ${piece.slug}`.toLowerCase().includes(query),
   );
+
   const changeOpen = (next: boolean) => {
     if (busy) return;
     if (!next) {
       setSelected(undefined);
       setSearch('');
     }
+
     onOpenChange(next);
   };
 
@@ -311,7 +320,9 @@ function ConnectionRow({
     connection.status === 'active' &&
     connection.expiresAt &&
     Date.parse(connection.expiresAt) <= Date.now();
+
   const status = expired ? 'expired' : connection.status;
+
   return (
     <div className="frogbot-connections__row">
       <div className="frogbot-connections__identity">
@@ -395,11 +406,13 @@ export function ConnectionsViewClient({
         credentials: 'same-origin',
         cache: 'no-store',
       });
+
       if (!response.ok) throw new Error('Could not load your linked accounts. Please try again.');
       const data = (await response.json()) as { docs?: ConnectionItem[] };
       if (!Array.isArray(data.docs)) {
         throw new Error('Could not load your linked accounts. Please try again.');
       }
+
       if (request === requestID.current) setConnections(data.docs);
     } catch {
       if (request === requestID.current) {
@@ -420,6 +433,7 @@ export function ConnectionsViewClient({
         method: 'DELETE',
         credentials: 'same-origin',
       });
+
       if (!response.ok) throw new Error('Could not disconnect this account. Please try again.');
       setConnections((current) => current.filter((connection) => connection.id !== id));
       await refresh();

@@ -15,10 +15,12 @@ const repoRoot = resolve(import.meta.dirname, '..', '..');
 function isListening(port: number): Promise<boolean> {
   return new Promise((resolveListening) => {
     const socket = connect({ host: '127.0.0.1', port });
+
     socket.once('connect', () => {
       socket.destroy();
       resolveListening(true);
     });
+
     socket.once('error', () => resolveListening(false));
   });
 }
@@ -47,6 +49,7 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
       },
     });
+
     server.stdout?.resume();
     server.stderr?.resume();
 
@@ -65,10 +68,12 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
         name: 'Cold REST Test',
       }),
     });
+
     const body = (await registration.json()) as { token: string };
     if (registration.status !== 200) {
       throw new Error(`first-register returned ${registration.status}: ${JSON.stringify(body)}`);
     }
+
     token = body.token;
   }, 240000);
 
@@ -94,6 +99,7 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     const reader = res.body!.getReader();
     const { value } = await reader.read();
     await reader.cancel();
+
     expect(new TextDecoder().decode(value)).toContain('data:');
   });
 
@@ -101,7 +107,9 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     const listResponse = await fetch(`${baseURL}/api/agents`, {
       headers: { authorization: `Bearer ${token}` },
     });
+
     expect(listResponse.status).toBe(200);
+
     const model = 'openai/gpt-5.4-mini';
     const reasoning = {
       [model]: [
@@ -112,6 +120,7 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
         { key: 'xhigh', label: 'Extra High' },
       ],
     };
+
     const names = { [model]: 'GPT-5.4 mini' };
     const inputs = { [model]: ['text', 'image'] };
     const agent = (slug: string) => ({

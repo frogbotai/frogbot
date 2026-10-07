@@ -229,9 +229,11 @@ export const listMembers = defineAction({
       const response = await client.request({
         path: `/guilds/${encodeURIComponent(input.guildId)}/members?${query}`,
       });
+
       const page = Array.isArray(response.body) ? response.body : [];
 
       members.push(...page);
+
       after =
         page.length === input.limit
           ? String((page.at(-1) as { user?: { id?: unknown } } | undefined)?.user?.id ?? '') ||
@@ -292,6 +294,7 @@ export const createChannel = defineAction({
       path: `/guilds/${encodeURIComponent(input.guildId)}/channels`,
       body: { name: input.name, topic: input.topic },
     });
+
     const channel = z.object({ id: z.string(), name: z.string() }).parse(response.body);
 
     return { success: true, channel };
@@ -331,10 +334,12 @@ export const findChannel = defineAction({
     const response = await client.request({
       path: `/guilds/${encodeURIComponent(input.guildId)}/channels`,
     });
+
     const channels = Array.isArray(response.body) ? response.body : [];
     const channel = channels.find(
       (value) => value && typeof value === 'object' && value.name === input.name,
     );
+
     const id =
       channel && typeof channel === 'object' && typeof channel.id === 'string'
         ? channel.id
@@ -401,6 +406,7 @@ export const createRole = defineAction({
         mentionable: input.mentionable,
       },
     });
+
     const role = z.object({ id: z.string(), name: z.string() }).parse(response.body);
 
     return { success: true, role };

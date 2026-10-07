@@ -124,6 +124,7 @@ describe('chat assets HTTP e2e', () => {
       body,
       signal: AbortSignal.timeout(20000),
     });
+
     const { doc } = await json<{ doc: Asset }>(response, 201);
 
     return doc;

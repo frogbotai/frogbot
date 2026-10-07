@@ -204,6 +204,7 @@ describe('autonumber', () => {
           }),
         }),
       );
+
       const body = (await response.json()) as {
         data?: { createTicket?: { id: ID } | null } | null;
         errors?: { message: string }[];
@@ -222,6 +223,7 @@ describe('autonumber', () => {
         collection: usersSlug,
         data: { email: 'ana@system-fields.test', password: 'frogbot-system-fields-password' },
       });
+
       const csv = ['title,number', 'Imported one,500', 'Imported two,500'].join('\n');
       const data = Buffer.from(csv);
 
@@ -243,7 +245,9 @@ describe('autonumber', () => {
       const importedNumbers = await numbers({ title: { like: 'Imported' } });
 
       expect(result).toMatchObject({ status: 'completed', summary: { imported: 2 } });
+
       expectDistinctNumbers(importedNumbers);
+
       expect(importedNumbers).not.toContain(500);
     });
   });
@@ -293,7 +297,9 @@ describe('autonumber', () => {
       const next = await create({});
 
       expect(saved.slice(0, seeds.length).map(({ number }) => number)).toEqual(seeds);
+
       expectDistinctNumbers(saved.map(({ number }) => number));
+
       expect(next.number).toBeGreaterThan(500);
     });
   });
@@ -494,6 +500,7 @@ describe('autonumber', () => {
         createdAt: at,
         updatedAt: at,
       });
+
       await booted.frogbot.db.deleteMany({ collection: countersSlug, where: {} });
       await ensureAutonumbers(booted.frogbot);
 

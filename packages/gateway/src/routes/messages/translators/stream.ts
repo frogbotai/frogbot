@@ -118,6 +118,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
   // Emit message_start + ping lazily on the first part.
   if (!state.messageStarted) {
     state.messageStarted = true;
+
     events.push(
       formatEvent('message_start', {
         type: 'message_start',
@@ -133,6 +134,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
         },
       }),
     );
+
     events.push(formatEvent('ping', { type: 'ping' }));
   }
 
@@ -145,6 +147,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           content_block: { type: 'thinking', thinking: '' },
         }),
       );
+
       state.openBlockIndex = state.blockIndex;
       break;
     }
@@ -161,8 +164,10 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
             delta: { type: 'signature_delta', signature },
           }),
         );
+
         state.signatureEmittedForBlockIndex = state.blockIndex;
       }
+
       if (part.text) {
         events.push(
           formatEvent('content_block_delta', {
@@ -172,6 +177,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           }),
         );
       }
+
       break;
     }
 
@@ -187,12 +193,14 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           }),
         );
       }
+
       events.push(
         formatEvent('content_block_stop', {
           type: 'content_block_stop',
           index: state.blockIndex,
         }),
       );
+
       state.openBlockIndex = undefined;
       state.blockIndex++;
       break;
@@ -206,6 +214,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           content_block: { type: 'text', text: '' },
         }),
       );
+
       state.openBlockIndex = state.blockIndex;
       break;
     }
@@ -218,6 +227,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           delta: { type: 'text_delta', text: part.text },
         }),
       );
+
       break;
     }
 
@@ -228,6 +238,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           index: state.blockIndex,
         }),
       );
+
       state.openBlockIndex = undefined;
       state.blockIndex++;
       break;
@@ -235,6 +246,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
 
     case 'tool-input-start': {
       state.currentToolCallId = part.id;
+
       events.push(
         formatEvent('content_block_start', {
           type: 'content_block_start',
@@ -247,6 +259,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           },
         }),
       );
+
       state.openBlockIndex = state.blockIndex;
       break;
     }
@@ -259,6 +272,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           delta: { type: 'input_json_delta', partial_json: part.delta },
         }),
       );
+
       break;
     }
 
@@ -271,6 +285,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
             index: state.blockIndex,
           }),
         );
+
         state.openBlockIndex = undefined;
         state.blockIndex++;
         state.currentToolCallId = undefined;
@@ -288,6 +303,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
             },
           }),
         );
+
         state.openBlockIndex = state.blockIndex;
         const inputStr = typeof part.input === 'string' ? part.input : JSON.stringify(part.input);
         if (inputStr && inputStr !== '{}') {
@@ -299,15 +315,18 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
             }),
           );
         }
+
         events.push(
           formatEvent('content_block_stop', {
             type: 'content_block_stop',
             index: state.blockIndex,
           }),
         );
+
         state.openBlockIndex = undefined;
         state.blockIndex++;
       }
+
       break;
     }
 
@@ -315,16 +334,20 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
       if (part.response.id) {
         state.responseId = part.response.id;
       }
+
       if (part.response.modelId) {
         state.model = part.response.modelId;
       }
+
       const stopSequence = part.providerMetadata?.anthropic?.stopSequence;
       if (typeof stopSequence === 'string') {
         state.stopSequence = stopSequence;
       }
+
       if (part.usage?.raw) {
         state.rawUsage = part.usage.raw;
       }
+
       break;
     }
 
@@ -337,6 +360,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
             index: state.blockIndex,
           }),
         );
+
         state.openBlockIndex = undefined;
         state.blockIndex++;
         state.refusalBlockOpen = false;
@@ -351,8 +375,10 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
       const rawUsage = state.rawUsage ?? part.totalUsage?.raw;
       const serviceTier =
         typeof rawUsage?.service_tier === 'string' ? rawUsage.service_tier : undefined;
+
       const thinkingTokens =
         extractThinkingTokens(rawUsage) ?? part.totalUsage?.outputTokenDetails?.reasoningTokens;
+
       const cacheCreation = extractCacheCreation(rawUsage);
 
       events.push(
@@ -399,7 +425,9 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
               content_block: { type: 'text', text: '' },
             }),
           );
+
           state.openBlockIndex = state.blockIndex;
+
           // Emit the prefix
           events.push(
             formatEvent('content_block_delta', {
@@ -408,8 +436,10 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
               delta: { type: 'text_delta', text: '[refusal] ' },
             }),
           );
+
           state.refusalBlockOpen = true;
         }
+
         events.push(
           formatEvent('content_block_delta', {
             type: 'content_block_delta',
@@ -418,6 +448,7 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
           }),
         );
       }
+
       break;
     }
 
@@ -430,18 +461,22 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
             index: state.openBlockIndex,
           }),
         );
+
         state.openBlockIndex = undefined;
         state.blockIndex++;
       }
+
       events.push(
         formatEvent('error', {
           type: 'error',
           error: { type: errorInfo.type, message: errorInfo.message },
         }),
       );
+
       if (state.messageStarted) {
         events.push(formatEvent('message_stop', { type: 'message_stop' }));
       }
+
       state.errored = true;
       break;
     }

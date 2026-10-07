@@ -11,6 +11,7 @@ export function SignInButtons({
   const collection = config.collections.find(({ slug }) => slug === config.admin.user);
   const methods = collection?.custom?.frogbot?.signIn;
   if (!collection?.auth || !Array.isArray(methods) || !methods.length) return null;
+
   return (
     <SignInButtonsClient
       methods={methods.map(({ slug, piece, label }) => ({ slug, piece, label }))}

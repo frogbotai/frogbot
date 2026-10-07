@@ -132,6 +132,7 @@ export function createStreamLifecycle(args: {
   }) {
     if (finished) return;
     finished = true;
+
     await runHooks(
       hooks.afterOperation,
       {
@@ -149,6 +150,7 @@ export function createStreamLifecycle(args: {
   async function finalizeAbort() {
     if (finished) return;
     base.otel['frogbot.status_code_effective'] = 499;
+
     await fireAfterOperation({
       finishReason: capturedFinishReason ?? 'abort',
       usage: capturedUsage,
@@ -158,6 +160,7 @@ export function createStreamLifecycle(args: {
   async function finalizeError(error: unknown) {
     if (finished) return;
     await fireAfterError(error);
+
     await fireAfterOperation({
       finishReason: capturedFinishReason ?? 'error',
       usage: capturedUsage,
@@ -171,14 +174,17 @@ export function createStreamLifecycle(args: {
       capturedFinishReason = event.finishReason;
       if (event.finishReason === 'error') {
         await finalizeError(capturedError ?? new Error('Stream finished with an error.'));
+
         return;
       }
+
       await fireAfterUpstream({
         finishReason: capturedFinishReason,
         response: event.response,
         usage: capturedUsage,
         warnings: event.warnings,
       });
+
       await fireAfterOperation({ finishReason: capturedFinishReason, usage: capturedUsage });
     },
 
@@ -198,12 +204,16 @@ export function createStreamLifecycle(args: {
       if (finished) return;
       if (outcome.kind === 'cancel') {
         await finalizeAbort();
+
         return;
       }
+
       if (outcome.kind === 'error') {
         await finalizeError(capturedError ?? outcome.error);
+
         return;
       }
+
       // Normal wire-level close with nothing captured by `streamText`'s
       // own callbacks — defensive fallback, should be rare in practice.
       await fireAfterOperation({
@@ -218,8 +228,10 @@ export function createStreamLifecycle(args: {
       const error = capturedError ?? overrides?.error;
       if (error) {
         await finalizeError(error);
+
         return;
       }
+
       await fireAfterOperation({
         finishReason: overrides?.finishReason ?? capturedFinishReason,
         usage: capturedUsage,

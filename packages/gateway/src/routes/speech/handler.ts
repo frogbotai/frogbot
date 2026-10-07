@@ -94,11 +94,13 @@ export function speechRoute(ctx: SpeechRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = requireSpeechModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
       base = {
@@ -110,6 +112,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       // Translate OpenAI wire format → AI SDK format.
@@ -138,6 +141,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
       });
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         {
@@ -173,6 +177,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       if (base) {
@@ -198,12 +203,15 @@ export function speechRoute(ctx: SpeechRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

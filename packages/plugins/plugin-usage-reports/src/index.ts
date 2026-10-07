@@ -33,13 +33,16 @@ const loggedIn: Access = ({ req }) => Boolean(req.user);
 function idAndLabel(value: unknown): { key: string; label: string } | undefined {
   if (typeof value === 'string' || typeof value === 'number') {
     const key = String(value);
+
     return { key, label: key };
   }
+
   if (!value || typeof value !== 'object') return;
   const record = value as Record<string, unknown>;
   if (record.id === undefined) return;
   const key = String(record.id);
   const labelValue = record.name ?? record.email ?? record.title ?? record.id;
+
   return { key, label: String(labelValue) };
 }
 
@@ -48,17 +51,22 @@ function groupValue(doc: Record<string, unknown>, groupBy: UsageReportGroup) {
     const date = new Date(String(doc.requestedAt));
     if (Number.isNaN(date.getTime())) return;
     const key = date.toISOString().slice(0, 10);
+
     return { key, label: key };
   }
+
   if (groupBy === 'model') {
     const key = typeof doc.model === 'string' && doc.model ? doc.model : 'unknown';
+
     return { key, label: key };
   }
+
   return idAndLabel(doc[groupBy]);
 }
 
 function number(doc: Record<string, unknown>, field: string): number {
   const value = Number(doc[field] ?? 0);
+
   return Number.isFinite(value) ? value : 0;
 }
 
@@ -102,6 +110,7 @@ function parseRequest(req: FrogBotRequest, groups: ReadonlySet<UsageReportGroup>
   ) {
     return;
   }
+
   return { groupBy, from: fromDate.toISOString(), to: toDate.toISOString() };
 }
 
@@ -125,6 +134,7 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
       if (!query) return Response.json({ error: 'Invalid groupBy or date range' }, { status: 400 });
       const rows = new Map<string, UsageReportRow>();
       let page = 1;
+
       while (true) {
         const result = await req.frogbot.find({
           collection: slug,
@@ -142,6 +152,7 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
           overrideAccess: true,
           req,
         });
+
         for (const value of result.docs) {
           const doc = value as Record<string, unknown>;
           const group = groupValue(doc, query.groupBy);
@@ -151,14 +162,18 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
           addDoc(row, doc);
           rows.set(group.key, row);
         }
+
         if (!result.hasNextPage) break;
         page = result.nextPage ?? page + 1;
       }
+
       const reportRows = [...rows.values()].sort(
         (a, b) =>
           b.costUSD - a.costUSD || b.totalTokens - a.totalTokens || a.label.localeCompare(b.label),
       );
+
       const totals = emptyRow('', '');
+
       for (const row of reportRows) {
         totals.requestCount += row.requestCount;
         totals.inputTokens += row.inputTokens;
@@ -169,7 +184,9 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
         totals.totalTokens += row.totalTokens;
         totals.costUSD += row.costUSD;
       }
+
       const { key: _key, label: _label, ...reportTotals } = totals;
+
       return Response.json({
         ...query,
         rows: reportRows,
@@ -184,6 +201,7 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
   if (!Number.isInteger(pageSize) || pageSize < 1) {
     throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
   }
+
   return (config) => {
     if (!config.ai) throw new Error('[plugin-usage-reports] AI configuration is required.');
     const existing = config.collections.find((collection) => collection.usageLog === true);
@@ -195,10 +213,12 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
             : collection,
         )
       : [...config.collections, { ...usage, admin: { groupBy: true } }];
+
     const groups = new Set<UsageReportGroup>(['day', 'model', 'user']);
     if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey')) {
       groups.add('apiKey');
     }
+
     return {
       ...config,
       collections,

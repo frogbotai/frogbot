@@ -14,6 +14,7 @@ export const cohereProvider = {
   envVars: ['COHERE_API_KEY', 'COHERE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.COHERE_API_KEY) return undefined;
+
     return {
       apiKey: env.COHERE_API_KEY,
       ...(env.COHERE_BASE_URL && { baseURL: env.COHERE_BASE_URL }),

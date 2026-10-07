@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
+
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import {
@@ -95,6 +96,7 @@ describe('crypto', () => {
       curve: 'curve25519Legacy',
       userIDs: [{ name: 'FrogBot' }],
     });
+
     const create = vi.fn(async ({ file }: { file: { data: Buffer } }) => {
       const message = await readMessage({ armoredMessage: file.data.toString() });
       const decrypted = await decrypt({
@@ -107,15 +109,18 @@ describe('crypto', () => {
 
       return { id: 'encrypted-file' };
     });
+
     const findByID = vi.fn(() =>
       Promise.resolve({
         url: '/api/files/source-file',
         filename: 'input.txt',
       }),
     );
+
     const fetch = vi.fn((_input: string | URL | Request, _init?: RequestInit) =>
       Promise.resolve(new Response('controlled input')),
     );
+
     const request = {
       url: 'https://app.test/action',
       headers: new Headers({ authorization: 'Bearer token', cookie: 'session=private' }),
@@ -169,6 +174,7 @@ describe('crypto', () => {
       curve: 'curve25519Legacy',
       userIDs: [{ name: 'FrogBot' }],
     });
+
     const fetch = vi.fn((_input: string | URL | Request, _init?: RequestInit) =>
       Promise.resolve(new Response('controlled input')),
     );

@@ -38,11 +38,13 @@ describe('brave-search', () => {
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       ),
     );
+
     vi.stubGlobal('fetch', fetch);
     const result = await createBraveSearch({ auth: { apiKey: 'brave-test-key' } }).searchWeb({
       input: { query: 'frog bot', count: 3 },
       req: req(),
     });
+
     const [url, options] = fetch.mock.calls[0] as [URL, RequestInit];
 
     expect(url.toString()).toBe(
@@ -63,6 +65,7 @@ describe('brave-search', () => {
         headers: { 'Content-Type': 'application/json', 'X-Fixture': 'brave' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
     const result = await createBraveSearch({ auth: { apiKey: 'brave-test-key' } }).customApiCall({
       input: {
@@ -75,6 +78,7 @@ describe('brave-search', () => {
       },
       req: req(),
     });
+
     const [url, options] = fetch.mock.calls[0] as [URL, RequestInit];
 
     expect(url.toString()).toBe(
@@ -120,6 +124,7 @@ describe('brave-search', () => {
           headers: { 'Content-Type': 'application/json' },
         }),
       );
+
     vi.stubGlobal('fetch', fetch);
     const brave = createBraveSearch({ auth: { apiKey: 'brave-test-key' } });
 

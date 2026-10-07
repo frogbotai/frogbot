@@ -42,30 +42,39 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../packages/frogbot/src/bin/dev.js', () => ({ dev: mocks.dev }));
+
 vi.mock('../../../../packages/frogbot/src/bin/channelsRun.js', () => ({
   channelsRun: mocks.channelsRun,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/exportTrainingData.js', () => ({
   exportTrainingData: mocks.exportTrainingData,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/exportCaptures.js', () => ({
   exportCaptures: mocks.exportCaptures,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/generateImportMap.js', () => ({
   generateImportMap: mocks.generateImportMap,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/generatePieceTypes.js', () => ({
   generatePieceTypesCommand: mocks.generatePieceTypes,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/generateTypes.js', () => ({
   generateTypes: mocks.generateTypes,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/loadEnv.js', () => ({ loadEnv: mocks.loadEnv }));
 vi.mock('../../../../packages/frogbot/src/bin/jobsRun.js', () => ({ jobsRun: mocks.jobsRun }));
 vi.mock('../../../../packages/frogbot/src/bin/migrate.js', () => ({ migrate: mocks.migrate }));
+
 vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
   piecesPort: mocks.piecesPort,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
 vi.mock('../../../../packages/frogbot/src/bin/run.js', () => ({ runScript: mocks.runScript }));
 

@@ -24,6 +24,7 @@ function readExports(file: string): ExportNames {
     ts.ScriptTarget.Latest,
     true,
   );
+
   const exports: ExportNames = { types: [], values: [] };
 
   source.statements.forEach((statement) => {
@@ -103,11 +104,13 @@ describe('Payload UI export classification', () => {
       },
       '@payloadcms/ui',
     );
+
     expectEntry(
       path.join(packageRoot, 'src/exports/shared/index.ts'),
       shared.included,
       '@payloadcms/ui/shared',
     );
+
     expectEntry(
       path.join(packageRoot, 'src/exports/rsc/index.ts'),
       rsc.included,
@@ -123,6 +126,7 @@ describe('Payload UI export classification', () => {
       ts.ScriptTarget.Latest,
       true,
     );
+
     const localNames = new Set<string>();
 
     source.statements.forEach((statement) => {

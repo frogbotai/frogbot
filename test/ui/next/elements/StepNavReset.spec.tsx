@@ -98,6 +98,7 @@ describe('StepNavReset', () => {
     );
 
     navigate('/admin/reports');
+
     rerender(
       <Admin>
         <UnlabelledPage />
@@ -115,6 +116,7 @@ describe('StepNavReset', () => {
     );
 
     navigate('/admin/collections/tasks/board');
+
     rerender(
       <Admin>
         <LabelledPage key="tasks" label="Tasks" />

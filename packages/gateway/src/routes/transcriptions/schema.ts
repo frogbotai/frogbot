@@ -30,6 +30,7 @@ const transcriptionRequestSchema = z
   .loose();
 
 export type TranscriptionRequest = z.infer<typeof transcriptionRequestSchema>;
+
 export type TranscriptionResponseFormat = (typeof transcriptionResponseFormats)[number];
 
 export function parseTranscriptionRequest(input: unknown): TranscriptionRequest {

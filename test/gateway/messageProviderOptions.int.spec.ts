@@ -19,6 +19,7 @@ function createRecordingModel(
     },
     doGenerate: (options) => {
       onCall(options);
+
       return Promise.resolve({
         content: [{ type: 'text', text: 'ok' }],
         finishReason: finish('stop'),
@@ -46,6 +47,7 @@ function makeApp(
   const registry = {
     [providerName]: { languageModel: () => createRecordingModel(onCall) },
   } as unknown as ProviderRegistry;
+
   return createApp({ registry, hooks });
 }
 
@@ -53,6 +55,7 @@ function cacheControlFrom(messages: unknown[] | undefined, namespace: string) {
   const message = messages?.[0] as {
     content?: Array<{ providerOptions?: Record<string, Record<string, unknown>> }>;
   };
+
   return message.content?.[0]?.providerOptions?.[namespace]?.cache_control;
 }
 

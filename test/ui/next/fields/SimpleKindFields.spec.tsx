@@ -62,8 +62,10 @@ vi.mock('@payloadcms/ui', () => ({
 
 const { DurationField } =
   await import('../../../../packages/next/src/fields/Duration/index.client.js');
+
 const { PercentField } =
   await import('../../../../packages/next/src/fields/Percent/index.client.js');
+
 const { PhoneField } = await import('../../../../packages/next/src/fields/Phone/index.client.js');
 const { RatingField } = await import('../../../../packages/next/src/fields/Rating/index.client.js');
 

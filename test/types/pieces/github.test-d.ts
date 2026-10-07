@@ -11,6 +11,7 @@ expectTypeOf<Parameters<typeof github.createGist>[0]['input']>().toEqualTypeOf<{
   filename: string;
   content: string;
 }>();
+
 expectTypeOf<Awaited<typeof _gist>['html_url']>().toEqualTypeOf<string>();
 
 const _createGistRejectsGetIssueInput = () =>
@@ -33,4 +34,5 @@ expectTypeOf<keyof typeof github.triggers>().toEqualTypeOf<
   | 'reviewRequested'
   | 'mentioned'
 >();
+
 expectTypeOf(github.triggers.mentioned.type).toEqualTypeOf<'webhook'>();

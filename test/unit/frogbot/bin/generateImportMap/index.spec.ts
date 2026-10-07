@@ -17,6 +17,7 @@ const dirs: string[] = [];
 async function makeDir(prefix: string): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), prefix));
   dirs.push(dir);
+
   return dir;
 }
 
@@ -88,6 +89,7 @@ describe('frogbot importMap generator', () => {
       includeNavIcons: false,
       includeSettings: false,
     });
+
     payloadConfig.admin.importMap.baseDir = dir;
     (payloadConfig.admin.components as never as { navSections: string[] }).navSections = [];
 
@@ -160,6 +162,7 @@ describe('frogbot importMap generator', () => {
       },
       collections: [{ slug: 'users', auth: true, fields: [] }],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -201,6 +204,7 @@ describe('frogbot importMap generator', () => {
         },
       ],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -244,6 +248,7 @@ describe('frogbot importMap generator', () => {
         { icon: '', label: 'Empty', path: 'empty', Component: './settings/Empty.tsx#Empty' },
       ],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -266,6 +271,7 @@ describe('frogbot importMap generator', () => {
       includeNavIcons: false,
       includeSettings: false,
     });
+
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users');
 
     users?.fields.push({
@@ -281,6 +287,7 @@ describe('frogbot importMap generator', () => {
         },
       },
     } as never);
+
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
 
@@ -300,11 +307,13 @@ describe('frogbot importMap generator', () => {
       includeNavIcons: false,
       includeSettings: false,
     });
+
     const makeEditor = (component: string) => ({
       generateImportMap({ addToImportMap }: { addToImportMap: (value: string) => void }) {
         addToImportMap(component);
       },
     });
+
     const block = {
       fields: [
         {
@@ -315,13 +324,16 @@ describe('frogbot importMap generator', () => {
       ],
       slug: 'copy',
     };
+
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users');
+
     users?.fields.push({
       name: 'layout',
       type: 'blocks',
       blockReferences: [block],
       blocks: [],
     } as never);
+
     payloadConfig.admin.dashboard = {
       widgets: [
         {
@@ -337,6 +349,7 @@ describe('frogbot importMap generator', () => {
         },
       ],
     } as never;
+
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
 
@@ -360,6 +373,7 @@ describe('frogbot importMap generator', () => {
         { slug: 'conversations', chat: true, fields: [] },
       ],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -378,6 +392,7 @@ describe('frogbot importMap generator', () => {
       db: { defaultIDType: 'number' } as never,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
 
     payloadConfig.admin.importMap.baseDir = dir;
@@ -415,6 +430,7 @@ describe('frogbot importMap generator', () => {
       },
       collections: [{ slug: 'users', auth: true, fields: [] }],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -450,6 +466,7 @@ describe('frogbot importMap generator', () => {
         },
       ],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -489,6 +506,7 @@ describe('frogbot importMap generator', () => {
         },
       ],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -526,6 +544,7 @@ describe('frogbot importMap generator', () => {
         },
       ],
     } as never);
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -555,6 +574,7 @@ describe('frogbot importMap generator', () => {
       },
       { mode: 'codegen' },
     );
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -586,6 +606,7 @@ describe('frogbot importMap generator', () => {
       } as never,
       { mode: 'codegen' },
     );
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -645,6 +666,7 @@ describe('frogbot importMap generator', () => {
     payloadConfig.admin.importMap.importMapFile = '';
 
     vi.stubEnv('ROOT_DIR', dir);
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });

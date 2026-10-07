@@ -19,7 +19,9 @@ import {
 import { folderOptions } from './list.js';
 
 const createFolderInput = z.object({ name: id, ...destination });
+
 export type CreateFolderInput = z.input<typeof createFolderInput>;
+
 export const createFolder = defineAction({
   slug: 'createFolder',
   description: 'Create a folder in Google Drive.',
@@ -53,7 +55,9 @@ const createFileInput = z.object({
   mimeType: z.enum(['text/plain', 'text/csv', 'text/xml']).default('text/plain'),
   ...destination,
 });
+
 export type CreateFileInput = z.input<typeof createFileInput>;
+
 export const createFile = defineAction({
   slug: 'createFile',
   description: 'Create a text, CSV, or XML file in Google Drive.',
@@ -83,7 +87,9 @@ export const createFile = defineAction({
 });
 
 const uploadFileInput = z.object({ file: fileReference, ...destination });
+
 export type UploadFileInput = z.input<typeof uploadFileInput>;
+
 export const uploadFile = defineAction({
   slug: 'uploadFile',
   description: 'Upload an accessible FrogBot file to Google Drive.',
@@ -93,6 +99,7 @@ export const uploadFile = defineAction({
   options: { parentFolderId: folderOptions },
   async run({ client, input, req }): Promise<DriveFile> {
     const file = await loadFile({ req, file: input.file });
+
     return fileOutput.parse(
       (
         await client.files.create(
@@ -113,7 +120,9 @@ export const uploadFile = defineAction({
 });
 
 const downloadFileInput = fileInput.extend({ name: id.optional() });
+
 export type DownloadFileInput = z.input<typeof downloadFileInput>;
+
 export const downloadFile = defineAction({
   slug: 'downloadFile',
   description:
@@ -127,6 +136,7 @@ export const downloadFile = defineAction({
 });
 
 export type GetFileInput = z.input<typeof fileInput>;
+
 export const getFile = defineAction({
   slug: 'getFile',
   description: 'Get metadata for a Google Drive file or folder.',
@@ -156,7 +166,9 @@ const copyFileInput = fileInput.extend({
     .enum(['application/vnd.google-apps.spreadsheet', 'application/vnd.google-apps.document'])
     .optional(),
 });
+
 export type CopyFileInput = z.input<typeof copyFileInput>;
+
 export const copyFile = defineAction({
   slug: 'copyFile',
   description:
@@ -182,7 +194,9 @@ export const copyFile = defineAction({
 });
 
 const exportPdfInput = z.object({ fileId: id, folderId: id, name: id, ...sharedDrive });
+
 export type ExportPdfInput = z.input<typeof exportPdfInput>;
+
 export const exportPdf = defineAction({
   slug: 'exportPdf',
   description: 'Export a Google document to PDF and save it in a Drive folder.',
@@ -197,6 +211,7 @@ export const exportPdf = defineAction({
       },
       { ...requestOptions(req), responseType: 'arraybuffer' },
     );
+
     return fileOutput.parse(
       (
         await client.files.create(
@@ -221,7 +236,9 @@ export const exportPdf = defineAction({
 });
 
 const moveFileInput = fileInput.extend({ folderId: id });
+
 export type MoveFileInput = z.input<typeof moveFileInput>;
+
 export const moveFile = defineAction({
   slug: 'moveFile',
   description: 'Move a Drive file to a folder, removing its other parents.',
@@ -240,8 +257,10 @@ export const moveFile = defineAction({
         requestOptions(req),
       )
     ).data;
+
     const parents = file.parents ?? [];
     if (parents.length === 1 && parents[0] === input.folderId) return fileOutput.parse(file);
+
     return fileOutput.parse(
       (
         await client.files.update(
@@ -261,6 +280,7 @@ export const moveFile = defineAction({
 });
 
 export type DeleteFileInput = z.input<typeof fileInput>;
+
 export const deleteFile = defineAction({
   slug: 'deleteFile',
   description: 'Permanently delete a Google Drive file or folder.',
@@ -275,11 +295,13 @@ export const deleteFile = defineAction({
       },
       requestOptions(req),
     );
+
     return { deleted: true };
   },
 });
 
 export type TrashFileInput = z.input<typeof fileInput>;
+
 export const trashFile = defineAction({
   slug: 'trashFile',
   description: 'Move a Google Drive file or folder to the trash.',

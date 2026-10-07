@@ -124,17 +124,20 @@ const invalidPreviewCollection = {
 } satisfies CollectionConfig;
 
 type PreviewOptions = Parameters<NonNullable<NonNullable<CollectionConfig['admin']>['preview']>>[1];
+
 type PayloadPreviewOptions = Parameters<GeneratePreviewURL>[1];
 
 expectTypeOf(previewCollection).toMatchTypeOf<CollectionConfig>();
 expectTypeOf(invalidPreviewCollection).toBeObject();
 expectTypeOf<keyof PreviewOptions>().toEqualTypeOf<keyof PayloadPreviewOptions>();
 expectTypeOf<PreviewOptions['req']>().toEqualTypeOf<FrogBotRequest>();
+
 expectTypeOf<
   ReturnType<NonNullable<NonNullable<CollectionConfig['admin']>['preview']>>
 >().toEqualTypeOf<ReturnType<GeneratePreviewURL>>();
 
 type FormatDocURL = NonNullable<NonNullable<CollectionConfig['admin']>['formatDocURL']>;
+
 type PayloadFormatDocURL = NonNullable<CollectionAdminOptions['formatDocURL']>;
 
 const formatDocURLCollection = {
@@ -154,14 +157,18 @@ const formatDocURLCollection = {
 } satisfies CollectionConfig;
 
 expectTypeOf(formatDocURLCollection).toMatchTypeOf<CollectionConfig>();
+
 expectTypeOf<keyof Parameters<FormatDocURL>[0]>().toEqualTypeOf<
   keyof Parameters<PayloadFormatDocURL>[0]
 >();
+
 expectTypeOf<Parameters<FormatDocURL>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<ReturnType<FormatDocURL>>().toEqualTypeOf<ReturnType<PayloadFormatDocURL>>();
 
 type Localization = Exclude<NonNullable<FrogBotConfig['localization']>, false>;
+
 type FilterAvailableLocales = NonNullable<Localization['filterAvailableLocales']>;
+
 type PayloadLocalization = Exclude<NonNullable<PayloadConfig['localization']>, false>;
 
 export const filteredLocalization: FrogBotConfig['localization'] = {
@@ -189,12 +196,15 @@ expectTypeOf<keyof Localization>().toEqualTypeOf<keyof PayloadLocalization>();
 expectTypeOf<Parameters<FilterAvailableLocales>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 
 type AdminComponents = NonNullable<NonNullable<CollectionConfig['admin']>['components']>;
+
 type EditViews = NonNullable<NonNullable<AdminComponents['edit']>['views']>;
+
 type EmptyView = Record<string, never>;
 
 expectTypeOf<{ root: { tab: DocumentTabConfig } }>().toExtend<EditViews>();
 expectTypeOf<{ audit: { path: '/audit' } }>().not.toExtend<EditViews>();
 expectTypeOf<{ root: EmptyView; default: EmptyView }>().not.toExtend<EditViews>();
+
 expectTypeOf<{
   default: EmptyView;
   api: EmptyView;
@@ -202,6 +212,7 @@ expectTypeOf<{
   versions: EmptyView;
   livePreview: EmptyView;
 }>().toExtend<EditViews>();
+
 expectTypeOf(dashboard).toMatchTypeOf<DashboardConfig>();
 expectTypeOf(collection).toMatchTypeOf<CollectionConfig>();
 expectTypeOf<'home'>().toExtend<AdminIcon>();
@@ -212,6 +223,7 @@ expectTypeOf<Extract<AdminIcon, IconName>>().toEqualTypeOf<IconName>();
 expectTypeOf<'message-square-text'>().toExtend<IconName>();
 expectTypeOf<NavItem['icon']>().toEqualTypeOf<AdminIcon | undefined>();
 expectTypeOf<SettingsEntry['icon']>().toEqualTypeOf<AdminIcon | undefined>();
+
 expectTypeOf<NonNullable<CollectionConfig['admin']>['icon']>().toEqualTypeOf<
   AdminIcon | undefined
 >();
@@ -235,6 +247,7 @@ export const misspelledAccountMenuAdmin: RootAdminConfig = {
 };
 
 expectTypeOf<RootAdminConfig['autoRefresh']>().toEqualTypeOf<boolean | undefined>();
+
 expectTypeOf<RootAdminConfig['autoLogin']>().toEqualTypeOf<
   | false
   | { email?: string; password?: string; prefillOnly?: boolean; username?: string }

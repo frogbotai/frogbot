@@ -20,6 +20,7 @@ describe('isRetryableStatus', () => {
 describe('buildRetryHeaders', () => {
   it('sets x-should-retry=true and default retry-after for retryable statuses', () => {
     const h = buildRetryHeaders({ status: 429 });
+
     expect(h['x-should-retry']).toBe('true');
     expect(h['retry-after']).toBe('30');
     expect(h['retry-after-ms']).toBe('30000');
@@ -27,6 +28,7 @@ describe('buildRetryHeaders', () => {
 
   it('sets x-should-retry=false for non-retryable statuses without retry-after', () => {
     const h = buildRetryHeaders({ status: 400 });
+
     expect(h['x-should-retry']).toBe('false');
     expect(h['retry-after']).toBeUndefined();
   });
@@ -36,6 +38,7 @@ describe('buildRetryHeaders', () => {
       status: 429,
       upstreamHeaders: { 'retry-after': '7' },
     });
+
     expect(h['retry-after']).toBe('7');
     expect(h['retry-after-ms']).toBe('7000');
   });
@@ -46,6 +49,7 @@ describe('buildRetryHeaders', () => {
       status: 503,
       upstreamHeaders: { 'retry-after': httpDate },
     });
+
     expect(h['retry-after']).toBe(httpDate);
     // Non-numeric — no derived ms.
     expect(h['retry-after-ms']).toBeUndefined();
@@ -56,6 +60,7 @@ describe('buildRetryHeaders', () => {
       status: 429,
       upstreamHeaders: { 'retry-after-ms': '1500' },
     });
+
     expect(h['retry-after-ms']).toBe('1500');
     expect(h['retry-after']).toBe('2');
   });
@@ -63,6 +68,7 @@ describe('buildRetryHeaders', () => {
   it('accepts Headers instance', () => {
     const upstream = new Headers({ 'Retry-After': '3' });
     const h = buildRetryHeaders({ status: 500, upstreamHeaders: upstream });
+
     expect(h['retry-after']).toBe('3');
     expect(h['retry-after-ms']).toBe('3000');
   });

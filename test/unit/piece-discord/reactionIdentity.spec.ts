@@ -8,9 +8,11 @@ import { channelFixture } from '../frogbot/channels/helpers.js';
 const pieceRequire = createRequire(
   new URL('../../../packages/pieces/piece-discord/package.json', import.meta.url),
 );
+
 const adapterRequire = createRequire(
   pieceRequire.resolve('./node_modules/@chat-adapter/discord/dist/index.js'),
 );
+
 const { Client } = adapterRequire('discord.js') as {
   Client: {
     prototype: {
@@ -39,6 +41,7 @@ describe('Installed Discord Gateway reaction identity constraints', () => {
       burst: false,
       type: 0,
     };
+
     const receivedAt = 1_789_000_000_000;
     const now = vi.spyOn(Date, 'now').mockReturnValue(receivedAt);
     const forwarded: Array<{ body: string; headers: Headers }> = [];
@@ -72,6 +75,7 @@ describe('Installed Discord Gateway reaction identity constraints', () => {
       applicationId: 'application-1',
       publicKey: 'ab'.repeat(32),
     });
+
     const fixture = channelFixture({ slug: 'discord', adapter });
     const controller = new AbortController();
     const pending: Promise<unknown>[] = [];

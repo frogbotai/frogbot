@@ -27,6 +27,7 @@ export const searchEmails = defineAction({
       maxResults: input.maxResults,
       includeSpamTrash: input.includeSpamTrash,
     });
+
     return Promise.all(
       (list.data.messages ?? []).map(async ({ id }) =>
         id ? saveAttachments(client, req, await getOriginal(client, id)) : {},

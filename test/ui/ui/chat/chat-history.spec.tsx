@@ -10,6 +10,7 @@ import { ChatStatus } from '../../../../packages/ui/src/chat/chat-status';
 describe('provider-free chat shell', () => {
   it('selects history and exposes active state', () => {
     const onChatChange = vi.fn();
+
     render(
       <ChatHistory
         chats={[
@@ -22,8 +23,11 @@ describe('provider-free chat shell', () => {
         renderActions={() => <button>Actions</button>}
       />,
     );
+
     expect(screen.getByText('First').getAttribute('aria-current')).toBe('page');
+
     fireEvent.click(screen.getByText('Untitled'));
+
     expect(onChatChange).toHaveBeenCalledWith(2);
   });
 
@@ -36,6 +40,7 @@ describe('provider-free chat shell', () => {
         parts: [{ type: 'text' as const, text: 'A title that is too long' }],
       },
     ];
+
     expect(deriveChatTitle(messages, 'Fallback')).toBe('A title that is too long');
     expect(deriveChatTitle(messages, 'Fallback', 12)).toBe('A title tha…');
     expect(deriveChatTitle([], 'Fallback')).toBe('Fallback');
@@ -59,6 +64,7 @@ describe('provider-free chat shell', () => {
         ),
       )
       .mockResolvedValue(new Response(null, { status: 204 }));
+
     render(
       <ChatHistory
         activeChatId="chat-1"
@@ -77,6 +83,7 @@ describe('provider-free chat shell', () => {
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     await vi.waitFor(() => expect(onNewChat).toHaveBeenCalledOnce());
+
     expect(request).toHaveBeenLastCalledWith('/chats/chat-1', { method: 'DELETE' });
   });
 
@@ -90,6 +97,7 @@ describe('provider-free chat shell', () => {
         />
       </ChatShell>,
     );
+
     expect(screen.getByText('History')).toBeTruthy();
     expect(screen.getByText('Panel')).toBeTruthy();
     expect(screen.getByText('failure')).toBeTruthy();

@@ -143,6 +143,7 @@ describe('frogbot sanitize', () => {
   it('omits the subscription ledger without agent triggers or channels', async () => {
     const config = sanitize(makeConfig());
     const payloadConfig = await config._internal.payloadConfig;
+
     expect(
       payloadConfig.collections?.find(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
     ).toBeUndefined();
@@ -177,6 +178,7 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const posts = payloadConfig.collections?.find(({ slug }) => slug === 'posts');
 
@@ -202,6 +204,7 @@ describe('frogbot sanitize', () => {
     );
     expect(users?.hooks?.beforeChange).toBeUndefined();
   });
+
   it('leaves calendar-only collections non-orderable', async () => {
     const result = sanitize(
       makeConfig({
@@ -214,6 +217,7 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const events = payloadConfig.collections?.find(({ slug }) => slug === 'events');
 
@@ -226,6 +230,7 @@ describe('frogbot sanitize', () => {
     });
     expect(events?.admin.custom?.frogbot.views[0]).not.toHaveProperty('orderField');
   });
+
   it('compiles collection views into runtime routes and metadata', () => {
     const admin = compileCollectionViews({
       collection: {
@@ -274,6 +279,7 @@ describe('frogbot sanitize', () => {
       { label: 'Usage', path: 'usage', Component: './settings/Usage#Page' },
       { label: 'Invoices', path: 'billing/invoices', Component: './settings/Invoices#Page' },
     ];
+
     const result = sanitize(makeConfig({ settings }));
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -293,6 +299,7 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.views.settings).toEqual({
@@ -664,6 +671,7 @@ describe('frogbot sanitize', () => {
   it('throws `[frogbot] `globals` is not a FrogBot concept` when `globals` is present', () => {
     const config = makeConfig() as unknown as Record<string, unknown>;
     config.globals = [{ slug: 'site', fields: [] }];
+
     expect(() => sanitize(config as unknown as FrogBotConfig)).toThrowError(
       '[frogbot] `globals` is not a FrogBot concept',
     );
@@ -685,6 +693,7 @@ describe('frogbot sanitize', () => {
       openByDefault: true,
       url: '/pages',
     };
+
     const result = sanitize(makeConfig({ admin: { livePreview } }));
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -698,6 +707,7 @@ describe('frogbot sanitize', () => {
         collections: [{ slug: 'pages', fields: [], admin: { livePreview } }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages');
 
@@ -721,6 +731,7 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
@@ -728,6 +739,7 @@ describe('frogbot sanitize', () => {
     const [field] = payloadConfig.admin.dashboard.widgets[0].fields;
     const fieldRead = ('access' in field ? field.access?.read : undefined) as
       ((args: Record<string, unknown>) => Promise<unknown>) | undefined;
+
     const allowed = await fieldRead?.({ req: { payload } });
 
     expect(allowed).toBe(true);
@@ -765,6 +777,7 @@ describe('frogbot sanitize', () => {
         collections: [{ slug: 'pages', fields: [], admin: { livePreview: { url } } }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
@@ -804,6 +817,7 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
     registerFrogBotInstance(payload, { agents: {} } as unknown as FrogBot);
@@ -929,6 +943,7 @@ describe('frogbot sanitize', () => {
       const formatDocURL = vi.fn((args: RecordedArgs & { defaultURL: string }) =>
         args.req.frogbot ? args.defaultURL : null,
       );
+
       const sanitized = await sanitizeRequestFunctions({ admin: { formatDocURL } });
 
       expect(sanitized.req).not.toHaveProperty('frogbot');
@@ -958,6 +973,7 @@ describe('frogbot sanitize', () => {
       const sanitized = await sanitizeRequestFunctions({
         upload: { handlers: [first, second] as never },
       });
+
       const args = { doc: { id: 1 }, params: { collection: 'pages', filename: 'a.png' } };
 
       expect(sanitized.req).not.toHaveProperty('frogbot');
@@ -986,6 +1002,7 @@ describe('frogbot sanitize', () => {
         vi.fn((args: RecordedArgs & { token: string }) =>
           args.req.frogbot ? `token ${args.token}` : 'missing',
         );
+
       const verifyHTML = template();
       const verifySubject = template();
       const resetHTML = template();
@@ -1000,6 +1017,7 @@ describe('frogbot sanitize', () => {
           },
         },
       });
+
       const { forgotPassword, verify } = sanitized.pages.auth;
 
       expect(sanitized.req).not.toHaveProperty('frogbot');
@@ -1036,6 +1054,7 @@ describe('frogbot sanitize', () => {
       const filterAvailableLocales = vi.fn((args: RecordedArgs & { locales: typeof locales }) =>
         args.req.frogbot ? args.locales : [],
       );
+
       const sanitized = await sanitizeRequestFunctions(
         {},
         { localization: { defaultLocale: 'en', locales: ['en'], filterAvailableLocales } },
@@ -1132,6 +1151,7 @@ describe('frogbot sanitize', () => {
       const select = vi.fn((args: RecordedArgs & { options: string[] }) =>
         args.req.frogbot ? args.options : [],
       );
+
       const blocks = vi.fn((args: RecordedArgs) => (args.req.frogbot ? ['hero'] : []));
 
       const sanitized = await sanitizeFields([
@@ -1164,6 +1184,7 @@ describe('frogbot sanitize', () => {
       const validate = vi.fn((_value: unknown, options: RecordedArgs) =>
         options.req.frogbot ? true : 'missing',
       );
+
       const sanitized = await sanitizeFields([
         { name: 'title', type: 'text', validate: validate as never },
       ]);
@@ -1317,6 +1338,7 @@ describe('frogbot sanitize', () => {
       const sanitized = await sanitizeFields([
         { name: 'status', type: 'text', defaultValue: defaultValue as never },
       ]);
+
       const req = {};
 
       const value = await findField(sanitized.fields, 'status').defaultValue({ req });
@@ -1329,6 +1351,7 @@ describe('frogbot sanitize', () => {
       const sanitized = await sanitizeFields([
         { name: 'status', type: 'text', defaultValue: (() => 'draft') as never },
       ]);
+
       const status = findField(sanitized.fields, 'status');
 
       expect(() => status.defaultValue({ req: { payload: {} } })).toThrow('[frogbot]');
@@ -1339,6 +1362,7 @@ describe('frogbot sanitize', () => {
       const sanitized = await sanitizeFields([
         { name: 'status', type: 'text', defaultValue: defaultValue as never },
       ]);
+
       const attached = { agents: {} };
       const req = { frogbot: attached, payload: {} };
 
@@ -1353,6 +1377,7 @@ describe('frogbot sanitize', () => {
       const first = await sanitizeFields([
         { name: 'status', type: 'text', defaultValue: defaultValue as never },
       ]);
+
       const wrapped = findField(first.fields, 'status').defaultValue;
 
       const second = await sanitizeFields(first.fields as CollectionConfig['fields']);
@@ -1365,6 +1390,7 @@ describe('frogbot sanitize', () => {
       const fields: CollectionConfig['fields'] = [
         { name: 'status', type: 'text', defaultValue: defaultValue as never },
       ];
+
       const first = await sanitizeFields(fields);
       const staleReq = { payload: first.payload } as Record<string, unknown>;
 
@@ -1378,9 +1404,11 @@ describe('frogbot sanitize', () => {
           ],
         }),
       );
+
       const refreshedPages = (await refreshed._internal.payloadConfig).collections.find(
         ({ slug }) => slug === 'pages',
       )!;
+
       const current = { agents: {} } as unknown as FrogBot;
 
       registerFrogBotInstance(first.payload, current, refreshed);
@@ -1402,7 +1430,9 @@ describe('frogbot sanitize', () => {
         { slug: 'projects', fields: [] },
       ],
     });
+
     const result = sanitize(config);
+
     expect(result.collections).toEqual([
       { slug: 'users', auth: true },
       { slug: 'projects', auth: false },
@@ -1417,8 +1447,10 @@ describe('frogbot sanitize', () => {
         ai: { providers: { openai: { apiKey: 'test' } } },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+
     expect(users?.fields).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'modelAccess', defaultValue: 'all' }),
@@ -1495,6 +1527,7 @@ describe('frogbot sanitize', () => {
     const task = payloadConfig.jobs?.tasks?.find(({ slug }) => slug === 'frogbot-reset-ai-budgets');
     const update = vi.fn();
     await runTask(task, { update });
+
     expect(task?.schedule).toEqual([{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }]);
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1508,11 +1541,13 @@ describe('frogbot sanitize', () => {
   it('preserves the secret in the sanitized config', () => {
     const config = makeConfig();
     const result = sanitize(config);
+
     expect(result.secret).toBe('test-secret');
   });
 
   it('omits the files collection when nothing is marked file: true', () => {
     const result = sanitize(makeConfig());
+
     expect(result.collections.map((collection) => collection.slug)).not.toContain('files');
     expect(result.files).toBeUndefined();
   });
@@ -1526,6 +1561,7 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     expect(result.files).toEqual({ slug: 'documents' });
     expect(result.collections.map((collection) => collection.slug)).not.toContain('files');
   });
@@ -1533,6 +1569,7 @@ describe('frogbot sanitize', () => {
   it('stores a payloadConfig promise in _internal', () => {
     const config = makeConfig();
     const result = sanitize(config);
+
     expect(result._internal.payloadConfig).toBeInstanceOf(Promise);
   });
 
@@ -1551,6 +1588,7 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.serverURL).toBe('https://example.com');
@@ -1618,6 +1656,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(
       makeConfig({ email: Promise.resolve(email) as FrogBotConfig['email'] }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     await expect(payloadConfig.email).rejects.toThrow(error);
@@ -1649,10 +1688,12 @@ describe('frogbot sanitize', () => {
         { slug: 'posts', fields: [] },
       ],
     });
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
     const posts = (payloadConfig as any).collections.find((c: any) => c.slug === 'posts');
+
     expect(users.custom.frogbot.auth).toBe(true);
     expect(posts.custom.frogbot.auth).toBe(false);
   });
@@ -1667,15 +1708,18 @@ describe('frogbot sanitize', () => {
         },
       ],
     });
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const projects = (payloadConfig as any).collections.find((c: any) => c.slug === 'projects');
+
     expect(projects.custom.myKey).toBe('hello');
     expect(projects.custom.frogbot).toBeDefined();
   });
 
   it('prepends the bootstrap beforeOperation hook in the payload config', async () => {
     const existingHook = () => {};
+
     const config = makeConfig({
       collections: [
         {
@@ -1686,10 +1730,12 @@ describe('frogbot sanitize', () => {
         },
       ],
     });
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
     const hooks = users.hooks?.beforeOperation ?? [];
+
     expect(hooks.length).toBe(2);
     expect(hooks[1]).toBe(existingHook);
   });
@@ -1754,6 +1800,7 @@ describe('frogbot sanitize', () => {
 
       return response;
     });
+
     const result = await buildConfig(
       makeConfig({
         plugins: [
@@ -1770,6 +1817,7 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
     const payload = makePayload(payloadConfig);
@@ -1804,6 +1852,7 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
     const payload = makePayload(payloadConfig);
@@ -1820,6 +1869,7 @@ describe('frogbot sanitize', () => {
       collection: { config: withoutSetup },
       req: { payload, user: null, context: {} },
     } as never);
+
     const after = await meOperation({
       collection: { config: users },
       req: { payload, user: null, context: {} },
@@ -1864,11 +1914,13 @@ describe('frogbot sanitize', () => {
 
       return accessResult;
     });
+
     const result = sanitize(
       makeConfig({
         collections: [{ slug: 'users', auth: true, access: { read }, fields: [] }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
     const payload = makePayload(payloadConfig);
@@ -1905,11 +1957,13 @@ describe('frogbot sanitize', () => {
     const read = vi.fn(() => {
       throw error;
     });
+
     const result = sanitize(
       makeConfig({
         collections: [{ slug: 'users', auth: true, access: { read }, fields: [] }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
     const args = { req: {} };
@@ -1930,10 +1984,12 @@ describe('frogbot sanitize', () => {
         },
       ],
     });
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
     const endpoints = users.endpoints as any[];
+
     expect(endpoints).toHaveLength(1);
     expect(endpoints[0].handler).not.toBe(handler);
   });
@@ -1943,6 +1999,7 @@ describe('frogbot sanitize', () => {
     const config = makeConfig({
       endpoints: [{ path: '/health', method: 'get', handler }],
     } as any);
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[];
@@ -1958,6 +2015,7 @@ describe('frogbot sanitize', () => {
         endpoints: [{ path: '/health', method: 'get', handler }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const endpoint = (
       payloadConfig as unknown as {
@@ -1985,6 +2043,7 @@ describe('frogbot sanitize', () => {
     await payloadConfig.onInit?.(payload as never);
 
     const frogbot = getFrogBotInstance(payload);
+
     expect(frogbot).toBeDefined();
     expect(getCachedFrogBot()).toBe(frogbot);
     expect(onInit).toHaveBeenCalledOnce();
@@ -2037,6 +2096,7 @@ describe('frogbot sanitize', () => {
     resetFrogBotCache();
     const previousPhase = process.env.NEXT_PHASE;
     process.env.NEXT_PHASE = 'phase-production-build';
+
     onTestFinished(() => {
       process.env.NEXT_PHASE = previousPhase;
     });
@@ -2056,6 +2116,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(
       makeConfig({ endpoints: [{ path: '/health', method: 'get', handler }] }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const endpoint = (payloadConfig.endpoints || []).find(({ path }) => path === '/health')!;
 
@@ -2086,6 +2147,7 @@ describe('frogbot sanitize', () => {
     const pending = new Promise<void>((resolve) => {
       release = resolve;
     });
+
     const onInit = vi.fn(() => pending);
     const handler = vi.fn(() => new Response('ok'));
     const result = sanitize(
@@ -2094,6 +2156,7 @@ describe('frogbot sanitize', () => {
         endpoints: [{ path: '/health', method: 'get', handler }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const endpoint = (payloadConfig.endpoints || []).find(({ path }) => path === '/health')!;
 
@@ -2120,6 +2183,7 @@ describe('frogbot sanitize', () => {
         endpoints: [{ path: '/health', method: 'get', handler }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const endpoint = (payloadConfig.endpoints || []).find(({ path }) => path === '/health')!;
 
@@ -2145,6 +2209,7 @@ describe('frogbot sanitize', () => {
       error: new Error('test'),
       result: { errors: [] },
     };
+
     const hookResponse = await payloadConfig.hooks.afterError[0](args);
 
     expect(afterError).toHaveBeenCalledWith({
@@ -2160,6 +2225,7 @@ describe('frogbot sanitize', () => {
     const config = makeConfig({ plugins: [plugin] });
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
+
     expect((payloadConfig as any).plugins).toBeUndefined();
   });
 
@@ -2177,8 +2243,10 @@ describe('frogbot sanitize', () => {
         },
       },
     } as unknown as Partial<FrogBotConfig>);
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
+
     expect((payloadConfig as any).admin.dashboard.widgets[0].Component).toBe(
       '@frogbotai/next/rsc#CollectionCards',
     );
@@ -2189,8 +2257,10 @@ describe('frogbot sanitize', () => {
       admin: { theme: 'dark', importMap: { baseDir: '/tmp/base' } },
       routes: { api: '/internal' },
     } as unknown as Partial<FrogBotConfig>);
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
+
     expect((payloadConfig as any).admin.importMap).toEqual({
       baseDir: '/tmp/base',
       autoGenerate: false,
@@ -2199,6 +2269,7 @@ describe('frogbot sanitize', () => {
     expect(payloadConfig.routes).toMatchObject({ admin: '/', api: '/internal' });
 
     const custom = sanitize(makeConfig({ routes: { admin: '/control' } }));
+
     expect((await custom._internal.payloadConfig).routes.admin).toBe('/control');
   });
 
@@ -2214,6 +2285,7 @@ describe('frogbot sanitize', () => {
         admin: { importMap: { autoGenerate: false } },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(result.admin?.importMap?.autoGenerate).toBe(false);
@@ -2289,6 +2361,7 @@ describe('frogbot sanitize', () => {
         agents: [{ slug: 'support', model: 'openai/gpt-5.4-mini', instructions: 'Help' }],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     assert(result.chat.enabled, 'Expected chat to be enabled');
     const { chatsSlug } = result.chat;
@@ -2321,6 +2394,7 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
@@ -2332,6 +2406,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(
       makeConfig({ admin: { components: { views: { dashboard: dashboardView } } } }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
@@ -2347,6 +2422,7 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.views.dashboard).toBeUndefined();
@@ -2361,6 +2437,7 @@ describe('frogbot sanitize', () => {
         width: 'small',
       },
     ]);
+
     const result = sanitize(
       makeConfig({
         admin: {
@@ -2371,6 +2448,7 @@ describe('frogbot sanitize', () => {
         },
       } as never),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const req = { payload: makePayload(payloadConfig), context: {} } as never;
 
@@ -2395,6 +2473,7 @@ describe('frogbot sanitize', () => {
 
       throw error;
     });
+
     const result = sanitize(
       makeConfig({
         admin: {
@@ -2405,11 +2484,13 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const req = { payload: makePayload(payloadConfig), context: {} } as never;
 
     const { defaultLayout: runLayout } = payloadConfig.admin.dashboard;
     assert(typeof runLayout === 'function', 'Expected a default layout function');
+
     await expect(runLayout({ req })).rejects.toBe(error);
     expect(defaultLayout).toHaveBeenCalledWith({ req });
   });
@@ -2423,10 +2504,12 @@ describe('frogbot sanitize', () => {
         ],
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
 
     assert(result.chat.enabled, 'Expected chat to be enabled');
+
     expect(result.chat.chatsSlug).toBe('conversations');
     expect(chats?.admin.components?.views).toMatchObject({
       edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
@@ -2457,6 +2540,7 @@ describe('frogbot sanitize', () => {
         ],
       } as never),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
 
@@ -2481,6 +2565,7 @@ describe('frogbot sanitize', () => {
         },
       }),
     );
+
     const payloadConfig = await result._internal.payloadConfig;
     const components = payloadConfig.admin.components as never as {
       navItems: { label: string; path: string }[];
@@ -2499,6 +2584,7 @@ describe('frogbot sanitize', () => {
   it('injects FrogBot branding defaults into the payload config', async () => {
     const result = sanitize(makeConfig());
     const payloadConfig = (await result._internal.payloadConfig) as any;
+
     expect(payloadConfig.admin.components.graphics).toEqual({
       Icon: '@frogbotai/next/rsc#FrogBotIcon',
       Logo: '@frogbotai/next/rsc#FrogBotLogo',
@@ -2537,8 +2623,10 @@ describe('frogbot sanitize', () => {
         translations: { en: { general: { payloadSettings: 'Acme Settings' } } },
       },
     } as unknown as Partial<FrogBotConfig>);
+
     const result = sanitize(config);
     const payloadConfig = (await result._internal.payloadConfig) as any;
+
     expect(payloadConfig.admin.components.graphics).toEqual({
       Icon: '@frogbotai/next/rsc#FrogBotIcon',
       Logo: '/components/Logo#MyLogo',
@@ -2563,8 +2651,10 @@ describe('frogbot sanitize', () => {
         },
       },
     } as unknown as Partial<FrogBotConfig>);
+
     const result = sanitize(config);
     const payloadConfig = (await result._internal.payloadConfig) as any;
+
     expect(payloadConfig.i18n.fallbackLanguage).toBe('en');
     expect(payloadConfig.i18n.translations.en.general).toEqual({
       dashboard: 'Home',
@@ -2582,9 +2672,11 @@ describe('frogbot sanitize', () => {
         fields: [{ name: 'title', type: 'text' }],
       },
     ];
+
     const config = makeConfig({ collections });
     const originalStr = JSON.stringify(config);
     sanitize(config);
+
     expect(JSON.stringify(config)).toBe(originalStr);
   });
 
@@ -2592,9 +2684,11 @@ describe('frogbot sanitize', () => {
     const config = makeConfig({
       collections: [{ slug: 'bare', fields: [] }],
     });
+
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const bare = (payloadConfig as any).collections.find((c: any) => c.slug === 'bare');
+
     expect(bare.hooks?.beforeOperation).toHaveLength(1);
   });
 
@@ -2609,6 +2703,7 @@ describe('frogbot sanitize', () => {
         } as unknown as CollectionConfig,
       ],
     });
+
     expect(() => sanitize(config)).not.toThrow();
   });
 
@@ -2620,8 +2715,10 @@ describe('frogbot sanitize', () => {
         { slug: 'gamma', fields: [] },
       ],
     });
+
     const result = sanitize(config);
     const slugs = result.collections.map((c) => c.slug);
+
     expect(slugs).toEqual(['alpha', 'beta', 'gamma', 'frogbot-waitpoints']);
   });
 
@@ -2659,6 +2756,7 @@ describe('frogbot sanitize', () => {
 
     it('throws when ai is configured with no providers', () => {
       const config = makeConfig({ ai: { providers: {} } });
+
       expect(() => sanitize(config)).toThrow(
         '[frogbot] At least one AI provider must be configured under `ai.providers`.',
       );
@@ -2666,6 +2764,7 @@ describe('frogbot sanitize', () => {
 
     it('throws when every provider entry is undefined', () => {
       const config = makeConfig({ ai: { providers: { openai: undefined } } });
+
       expect(() => sanitize(config)).toThrow(
         '[frogbot] At least one AI provider must be configured under `ai.providers`.',
       );
@@ -2675,6 +2774,7 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai: { providers: { openai: { apiKey: undefined } } },
       });
+
       expect(() => sanitize(config)).toThrow(
         "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
       );
@@ -2682,6 +2782,7 @@ describe('frogbot sanitize', () => {
 
     it('accepts true for SDK environment fallback', () => {
       const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
+
       expect(result.ai?.providers.openai).toBe(true);
     });
 
@@ -2689,6 +2790,7 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai: { providers: { openai: false } },
       } as never);
+
       expect(() => sanitize(config)).toThrow("Provider 'openai' must be true or an object");
     });
 
@@ -2696,6 +2798,7 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai: { providers: { internal: true } },
       } as never);
+
       expect(() => sanitize(config)).toThrow(
         "Custom provider 'internal' must have type: 'openai-compatible'",
       );
@@ -2705,6 +2808,7 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai: { providers: { openai: { apiKey: '' } } },
       });
+
       expect(() => sanitize(config)).toThrow("Provider 'openai' requires a non-empty apiKey");
     });
 
@@ -2712,11 +2816,13 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai: { providers: { anthropic: { apiKey: '   ' } } },
       });
+
       expect(() => sanitize(config)).toThrow("Provider 'anthropic' requires a non-empty apiKey");
     });
 
     it('accepts Bedrock ambient credentials without static keys', () => {
       const config = makeConfig({ ai: { providers: { bedrock: true } } });
+
       expect(() => sanitize(config)).not.toThrow();
     });
 
@@ -2734,6 +2840,7 @@ describe('frogbot sanitize', () => {
           },
         },
       });
+
       expect(() => sanitize(config)).not.toThrow();
     });
 
@@ -2748,6 +2855,7 @@ describe('frogbot sanitize', () => {
           },
         },
       });
+
       expect(() => sanitize(config)).not.toThrow();
     });
 
@@ -2762,6 +2870,7 @@ describe('frogbot sanitize', () => {
           },
         },
       } as never);
+
       expect(() => sanitize(config)).toThrow(
         "Provider 'bedrock' models contains unknown model: not-a-real-model",
       );
@@ -2771,6 +2880,7 @@ describe('frogbot sanitize', () => {
       const config = makeConfig({
         ai: { providers: { bedrock: { accessKeyId: 'ak' } } },
       } as never);
+
       expect(() => sanitize(config)).toThrow(
         "Provider 'bedrock' requires both accessKeyId and secretAccessKey",
       );
@@ -2789,6 +2899,7 @@ describe('frogbot sanitize', () => {
           },
         },
       } as never);
+
       expect(() => sanitize(config)).toThrow(
         "Provider 'bedrock' accepts either accessKeyId and secretAccessKey or a credentialProvider, not both",
       );
@@ -2806,6 +2917,7 @@ describe('frogbot sanitize', () => {
           },
         },
       });
+
       expect(() => sanitize(config)).toThrow(
         "[frogbot] Custom provider 'internal' requires a non-empty models array.",
       );
@@ -3252,6 +3364,7 @@ describe('frogbot sanitize', () => {
       model: 'openai/gpt-5.4-mini',
       instructions: 'Help the user',
     } satisfies AgentConfig;
+
     const makeTool = (slug: string, overrides: Record<string, unknown> = {}) => ({
       slug,
       description: `Run ${slug}`,
@@ -3259,6 +3372,7 @@ describe('frogbot sanitize', () => {
       execute: vi.fn(),
       ...overrides,
     });
+
     const createChannel = definePiece({
       slug: 'channel',
       label: 'Channel',
@@ -3836,11 +3950,13 @@ describe('frogbot sanitize', () => {
     it('accepts an agent profile', () => {
       const profile = { name: 'Ada', avatar: '/ada.png', description: 'Support' };
       const result = sanitize(makeConfig({ ai, agents: [{ ...agent, profile }] }));
+
       expect(result.agents?.[0].profile).toEqual(profile);
     });
 
     it('accepts an omitted agent profile', () => {
       const result = sanitize(makeConfig({ ai, agents: [agent] }));
+
       expect(result.agents?.[0]?.profile).toBeUndefined();
     });
 
@@ -3915,10 +4031,14 @@ describe('frogbot sanitize', () => {
           { slug: 'second', description: 'Second', input: z.object({}), async run() {} },
         ],
       });
+
       const example = createExample({});
       const action = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example.first] }] }));
+
       expect(action.agents?.[0].tools?.map(({ slug }) => slug)).toEqual(['example_first']);
+
       const whole = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example] }] }));
+
       expect(whole.agents?.[0].tools?.map(({ slug }) => slug)).toEqual([
         'example_first',
         'example_second',
@@ -3945,12 +4065,15 @@ describe('frogbot sanitize', () => {
           },
         ],
       });
+
       const example = createExample({});
       const trigger = {
         trigger: example.triggers.created,
         handler: vi.fn(),
       };
+
       const result = sanitize(makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] }));
+
       expect(result.agents?.[0].triggers).toEqual([trigger]);
       expect(result._internal.triggers[example.slug].instance).toBe(example);
       expect(result.pieces.instances).toContain(example);
@@ -3965,7 +4088,9 @@ describe('frogbot sanitize', () => {
           expect.objectContaining({ path: '/webhooks/:instance' }),
         ]),
       });
+
       const removed = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example] }] }));
+
       expect(Object.keys(removed._internal.triggers)).toEqual([]);
       expect(removed.pieces.instances).toContain(example);
     });
@@ -3990,11 +4115,13 @@ describe('frogbot sanitize', () => {
           },
         ],
       });
+
       const example = createExample({});
       const trigger = {
         trigger: example.triggers.created,
         handler: vi.fn(),
       };
+
       const result = sanitize(makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] }));
       const payloadConfig = await result._internal.payloadConfig;
 
@@ -4031,6 +4158,7 @@ describe('frogbot sanitize', () => {
       expect(warn).toHaveBeenCalledWith(
         "[frogbot] Agent 'support' tool 'shared' shadows root tool 'shared'.",
       );
+
       warn.mockRestore();
     });
 
@@ -4045,6 +4173,7 @@ describe('frogbot sanitize', () => {
           tools: [makeTool('shared', { component: '/SharedTool' }), makeTool('plain')],
         }),
       );
+
       const payloadConfig = await result._internal.payloadConfig;
 
       expect((payloadConfig.admin?.components as any).chat.toolComponents).toEqual({
@@ -4465,6 +4594,7 @@ describe('frogbot sanitize', () => {
           },
         ],
       };
+
       const handler = vi.fn();
       const result = sanitize(
         makeConfig({
@@ -4473,7 +4603,9 @@ describe('frogbot sanitize', () => {
           jobs: { tasks: [{ slug: 'user-task', handler }], autoRun: [{ queue: 'user' }] },
         }),
       );
+
       const payloadConfig = await result._internal.payloadConfig;
+
       expect(payloadConfig.jobs.tasks?.map(({ slug }) => slug)).toEqual([
         'user-task',
         'frogbot-reset-ai-budgets',
@@ -4678,11 +4810,13 @@ describe('frogbot sanitize', () => {
 
     it('is disabled when neither markers nor agents are configured', () => {
       const result = sanitize(makeConfig());
+
       expect(result.chat).toEqual({ enabled: false });
     });
 
     it('is enabled with default slugs when agents are configured', () => {
       const result = sanitize(makeConfig({ ai, agents }));
+
       expect(result.chat).toEqual({
         enabled: true,
         chatsSlug: 'chats',
@@ -4701,6 +4835,7 @@ describe('frogbot sanitize', () => {
           ],
         }),
       );
+
       expect(result.chat).toEqual({
         enabled: true,
         chatsSlug: 'conversations',
@@ -4718,10 +4853,12 @@ describe('frogbot sanitize', () => {
           ],
         }),
       );
+
       const payloadConfig = await result._internal.payloadConfig;
       const conversations = (payloadConfig as any).collections.find(
         (collection: any) => collection.slug === 'conversations',
       );
+
       expect(conversations.fields).toEqual(
         expect.arrayContaining([expect.objectContaining({ name: 'todos', type: 'json' })]),
       );
@@ -4736,15 +4873,18 @@ describe('frogbot sanitize', () => {
           ],
         }),
       );
+
       const payloadConfig = await result._internal.payloadConfig;
       const conversations = (payloadConfig as any).collections.find(
         (c: any) => c.slug === 'conversations',
       );
+
       expect(conversations.chat).toBeUndefined();
     });
 
     it('injects chat collections into the payload config and collections metadata', async () => {
       const result = sanitize(makeConfig({ ai, agents }));
+
       expect(result.collections.map((c) => c.slug)).toEqual([
         'users',
         'chats',
@@ -4754,8 +4894,10 @@ describe('frogbot sanitize', () => {
         'usage-logs',
         'frogbot-waitpoints',
       ]);
+
       const payloadConfig = await result._internal.payloadConfig;
       const payloadSlugs = (payloadConfig as any).collections.map((c: any) => c.slug);
+
       expect(payloadSlugs).toEqual([
         'users',
         'chats',
@@ -4771,6 +4913,7 @@ describe('frogbot sanitize', () => {
       const result = sanitize(makeConfig({ ai, agents }));
       const payloadConfig = await result._internal.payloadConfig;
       const chats = (payloadConfig as any).collections.find((c: any) => c.slug === 'chats');
+
       expect(chats.hooks?.beforeOperation?.length).toBeGreaterThan(0);
     });
 
@@ -4805,18 +4948,21 @@ describe('frogbot sanitize', () => {
 
     it('defaults telemetry.enabled to true when not configured', () => {
       const result = sanitize(aiConfig());
+
       expect(result.ai?.telemetry.enabled).toBe(true);
       expect(result.ai?.telemetry.enrichSpan).toBeUndefined();
     });
 
     it('respects telemetry.enabled: false', () => {
       const result = sanitize(aiConfig({ telemetry: { enabled: false } }));
+
       expect(result.ai?.telemetry.enabled).toBe(false);
     });
 
     it('preserves a user-provided enrichSpan callback', () => {
       const enrichSpan = vi.fn(() => ({ 'app.tenant': 'acme' }));
       const result = sanitize(aiConfig({ telemetry: { enrichSpan } }));
+
       expect(result.ai?.telemetry.enrichSpan).toBe(enrichSpan);
       expect(result.ai?.telemetry.enabled).toBe(true);
     });
@@ -5047,6 +5193,7 @@ describe('frogbot sanitize', () => {
           ],
         }),
       );
+
       const find = await payloadCollection(result);
       const fields = find('tickets')!.fields;
 
@@ -5067,6 +5214,7 @@ describe('frogbot sanitize', () => {
           ],
         }),
       );
+
       const withAutonumber = sanitize(
         makeConfig({
           collections: [

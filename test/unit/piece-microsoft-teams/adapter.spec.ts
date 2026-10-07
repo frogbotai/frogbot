@@ -173,6 +173,7 @@ describe('FrogBot Teams adapter', () => {
       'teams:userInfo:aad-grace',
       JSON.stringify({ email: 'grace@cache.example', fullName: 'Grace H', userName: 'grace' }),
     );
+
     state.values.set('teams:aadObjectId:29:grace', 'aad-grace');
     server.fail('GET', 500);
 

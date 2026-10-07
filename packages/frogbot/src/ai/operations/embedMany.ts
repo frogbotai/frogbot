@@ -44,11 +44,13 @@ export async function embedManyOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
     const result = await aiEmbedMany({ ...aiSdkOpts, model: op.embedModel() });
     await op.finish({ usage: toHookUsage(result.usage) });
+
     return result;
   } catch (error) {
     await op.finish({ error });

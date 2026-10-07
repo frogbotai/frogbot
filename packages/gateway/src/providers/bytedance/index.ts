@@ -18,6 +18,7 @@ export const bytedanceProvider = {
   envVars: ['ARK_API_KEY', 'ARK_BASE_URL'],
   fromEnv: (env) => {
     if (!env.ARK_API_KEY) return undefined;
+
     return {
       apiKey: env.ARK_API_KEY,
       ...(env.ARK_BASE_URL && { baseURL: env.ARK_BASE_URL }),

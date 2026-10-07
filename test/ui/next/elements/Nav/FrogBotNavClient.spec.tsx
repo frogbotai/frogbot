@@ -42,6 +42,7 @@ function Harness({
 }) {
   const [navOpen, setNavOpen] = useState(initialNavOpen);
   nav = { navOpen, setNavOpen };
+
   return (
     <FrogBotNavClient
       accountPath="/admin/account"
@@ -66,14 +67,17 @@ describe('FrogBotNavClient', () => {
 
   it('does not reuse Payload nav classes on the shell', () => {
     render(<Harness initialNavOpen />);
+
     expect(shell().className).toBe('frogbot-nav-shell');
   });
 
   it('exposes desktop-nav-open and desktop-nav-closed on desktop', () => {
     render(<Harness initialNavOpen />);
+
     expect(shell().dataset.navState).toBe('desktop-nav-open');
 
     fireEvent.click(screen.getByRole('button', { name: 'Close sidebar' }));
+
     expect(shell().dataset.navState).toBe('desktop-nav-closed');
     expect(setPreference).toHaveBeenCalledWith('nav', { open: false }, true);
     expect(backdrop()).toBeNull();
@@ -82,10 +86,12 @@ describe('FrogBotNavClient', () => {
   it('starts closed on mobile and opens as a drawer with a backdrop', () => {
     isMobile = true;
     render(<Harness initialNavOpen />);
+
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
     expect(backdrop()).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+
     expect(shell().dataset.navState).toBe('mobile-nav-open');
     expect(backdrop()).not.toBeNull();
   });
@@ -96,21 +102,27 @@ describe('FrogBotNavClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
     fireEvent.click(backdrop()!);
+
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
     fireEvent.keyDown(document, { key: 'Escape' });
+
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+
     expect(shell().dataset.navState).toBe('mobile-nav-open');
+
     pathname = '/admin/collections/users';
     act(() => rerender(<Harness initialNavOpen={false} />));
+
     expect(shell().dataset.navState).toBe('mobile-nav-closed');
   });
 
   it('marks the shell hydrated only when Payload reports hydration', () => {
     render(<Harness initialNavOpen />);
+
     expect(shell().dataset.navHydrated).toBe('true');
   });
 

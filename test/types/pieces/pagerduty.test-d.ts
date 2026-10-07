@@ -10,9 +10,11 @@ const _incident = pagerduty.createIncident({
 expectTypeOf<
   Parameters<typeof pagerduty.createIncident>[0]['input']['serviceId']
 >().toEqualTypeOf<string>();
+
 expectTypeOf<Parameters<typeof pagerduty.createIncident>[0]['input']['urgency']>().toEqualTypeOf<
   'high' | 'low' | undefined
 >();
+
 expectTypeOf<Awaited<typeof _incident>['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _incident>['status']>().toEqualTypeOf<string | undefined>();
 
@@ -29,4 +31,5 @@ expectTypeOf<Awaited<typeof _resolved>['id']>().toEqualTypeOf<string>();
 expectTypeOf<keyof typeof pagerduty.triggers>().toEqualTypeOf<
   'newIncident' | 'incidentResolved' | 'incidentAcknowledged'
 >();
+
 expectTypeOf(pagerduty.triggers.incidentResolved.type).toEqualTypeOf<'webhook'>();

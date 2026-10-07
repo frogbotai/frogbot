@@ -26,6 +26,7 @@ import {
 // ── Side-effect log for hook ordering tests ───────────────────────────
 
 export let hookLog: string[] = [];
+
 export function clearHookLog() {
   hookLog = [];
 }
@@ -72,12 +73,14 @@ const HookOrder: CollectionConfig = {
     beforeChange: [
       ({ data }) => {
         hookLog.push('beforeChange');
+
         return data;
       },
     ],
     afterChange: [
       ({ doc }) => {
         hookLog.push('afterChange');
+
         return doc;
       },
     ],
@@ -89,6 +92,7 @@ const HookOrder: CollectionConfig = {
     afterRead: [
       ({ doc }) => {
         hookLog.push('afterRead');
+
         return doc;
       },
     ],
@@ -100,6 +104,7 @@ const HookOrder: CollectionConfig = {
     afterDelete: [
       ({ doc }) => {
         hookLog.push('afterDelete');
+
         return doc;
       },
     ],
@@ -120,6 +125,7 @@ const ReqAccess: CollectionConfig = {
       async ({ req, data }) => {
         const result = await req.frogbot.find({ collection: reqAccessSlug, limit: 0, req });
         req.context.countAtHookTime = result.totalDocs;
+
         return data;
       },
     ],
@@ -129,6 +135,7 @@ const ReqAccess: CollectionConfig = {
         const count = req.context.countAtHookTime as number;
         if (typeof count === 'number') {
           req.context._reqAccessUpdating = true;
+
           await req.frogbot.update({
             collection: reqAccessSlug,
             id: doc.id,
@@ -138,6 +145,7 @@ const ReqAccess: CollectionConfig = {
             context: { _reqAccessUpdating: true },
           });
         }
+
         return doc;
       },
     ],
@@ -212,9 +220,11 @@ const ValidateCtx: CollectionConfig = {
         if (!options.req?.frogbot) {
           return 'req.frogbot is not available';
         }
+
         if (value !== options.data?.title) {
           return 'mustMatch must equal title';
         }
+
         return true;
       },
     },
@@ -247,6 +257,7 @@ const ContextFlow: CollectionConfig = {
         if (!context.seedValue) {
           context.seedValue = 'seeded';
         }
+
         return data;
       },
     ],
@@ -264,6 +275,7 @@ const ContextFlow: CollectionConfig = {
             context: { _contextFlowUpdating: true },
           });
         }
+
         return doc;
       },
     ],
@@ -324,6 +336,7 @@ const Users: CollectionConfig = {
           overrideAccess: true,
           req,
         });
+
         return user;
       },
     ],

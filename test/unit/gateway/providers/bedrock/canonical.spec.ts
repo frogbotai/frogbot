@@ -31,6 +31,7 @@ describe('resolveBedrockModelId', () => {
 
   it('passes through full IDs unchanged', () => {
     const fullId = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+
     expect(resolveBedrockModelId(fullId)).toBe(fullId);
   });
 

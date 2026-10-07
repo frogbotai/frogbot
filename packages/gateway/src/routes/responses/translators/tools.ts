@@ -40,13 +40,16 @@ export function toResponsesTools(
 ): ToolSet | undefined {
   if (!tools || tools.length === 0) return undefined;
   const result: ToolSet = {};
+
   for (const t of tools) {
     if (t.type === 'function') {
       const fn = t as ResponsesFunctionTool;
+
       result[fn.name] = tool({
         description: fn.description ?? undefined,
         inputSchema: jsonSchema(fn.parameters ?? { type: 'object', properties: {} }),
       });
+
       continue;
     }
 
@@ -58,11 +61,14 @@ export function toResponsesTools(
           param: 'tools',
         });
       }
+
       const { type, ...args } = t as { type: string } & Record<string, unknown>;
       const hosted = { type: 'provider', id: `openai.${type}`, args, inputSchema } as const;
+
       result[type] = CLIENT_EXECUTED_TOOL_TYPES.has(type)
         ? { ...hosted, isProviderExecuted: false }
         : { ...hosted, isProviderExecuted: true };
+
       continue;
     }
 
@@ -72,6 +78,7 @@ export function toResponsesTools(
       param: 'tools',
     });
   }
+
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
@@ -90,6 +97,7 @@ export function toResponsesToolChoice(
     if (tc.type === 'function' && name) {
       return { type: 'tool', toolName: name };
     }
+
     // Hosted tool_choice (`{ type: 'web_search' }`, etc.) → the AI SDK
     // `{ type: 'tool', toolName }` shape, which openai-responses maps back to
     // `{ type: '<tool>' }` on the wire.
@@ -97,5 +105,6 @@ export function toResponsesToolChoice(
       return { type: 'tool', toolName: tc.type };
     }
   }
+
   return undefined;
 }

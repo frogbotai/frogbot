@@ -46,11 +46,13 @@ function makeGateway(model: Experimental_EvaluationMockModelV4) {
 
     return Promise.resolve();
   });
+
   const finish = vi.fn(() => {
     events.push('finish');
 
     return Promise.resolve();
   });
+
   const evaluationModel = vi.fn(() => model);
   const operation = vi.fn(() => ({ start, finish, evaluationModel }));
   const gateway = { operation } as unknown as Gateway;
@@ -82,6 +84,7 @@ describe('evaluateOperation', () => {
         response: { modelId: 'jev-1.13.0', id: 'eval-1' },
       }),
     );
+
     const model = new Experimental_EvaluationMockModelV4({ doEvaluate });
     const { gateway, operation, start, finish, evaluationModel, events } = makeGateway(model);
 
@@ -118,6 +121,7 @@ describe('evaluateOperation', () => {
           warnings: [],
         }),
     });
+
     const { gateway, finish } = makeGateway(model);
 
     await expect(
@@ -181,6 +185,7 @@ describe('evaluateOperation', () => {
           warnings: [],
         }),
     });
+
     const { gateway, finish } = makeGateway(model);
     const config = makeConfig(() => false);
 

@@ -3,12 +3,15 @@
 import type { generateText, JSONValue } from 'ai';
 
 type ProviderOptions = NonNullable<Parameters<typeof generateText>[0]['providerOptions']>;
+
 type JSONObject = ProviderOptions[string];
+
 type ImageSize = `${number}x${number}`;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null) return false;
   const proto: unknown = Object.getPrototypeOf(value);
+
   return proto === Object.prototype || proto === null;
 }
 
@@ -17,13 +20,16 @@ function isJSONValue(value: unknown, ancestors: Set<object>): value is JSONValue
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return true;
   }
+
   if (Array.isArray(value)) {
     if (ancestors.has(value)) return false;
     ancestors.add(value);
     const valid = value.every((item) => isJSONValue(item, ancestors));
     ancestors.delete(value);
+
     return valid;
   }
+
   return isJSONObject(value, ancestors);
 }
 
@@ -33,7 +39,9 @@ function isJSONObject(value: unknown, ancestors = new Set<object>()): value is J
   const valid = Object.values(value).every(
     (item) => item === undefined || isJSONValue(item, ancestors),
   );
+
   ancestors.delete(value);
+
   return valid;
 }
 
@@ -51,6 +59,7 @@ export function toProviderOptions(
         Object.entries(options).filter(([, entry]) => entry !== undefined && entry !== null),
       )
     : options;
+
   if (isProviderOptions(present)) return present;
   const key = Object.keys(present).find((name) => !isJSONObject(present[name]));
   throw new TypeError(`[frogbot] providerOptions.${key} must be a plain object of JSON values.`);

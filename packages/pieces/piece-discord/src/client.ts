@@ -62,6 +62,7 @@ export function createDiscordClient({
       headers: requestHeaders,
       body: requestBody,
     });
+
     const result = await parseResponse(response);
 
     if (!response.ok) {

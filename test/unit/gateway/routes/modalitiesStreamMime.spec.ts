@@ -48,6 +48,7 @@ describe('G76 — transcriptions: stream=true silently ignored', () => {
         },
       }),
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry });
 
     const form = new FormData();
@@ -58,7 +59,9 @@ describe('G76 — transcriptions: stream=true silently ignored', () => {
     const res = await app.request('/v1/audio/transcriptions', { method: 'POST', body: form });
 
     expect(res.status).toBe(400);
+
     const body = (await res.json()) as { error?: { message?: string } };
+
     expect(body.error?.message).toContain('streaming transcription is not supported');
   });
 });
@@ -86,6 +89,7 @@ describe('G78 — speech Content-Type matches requested outputFormat', () => {
         },
       }),
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry });
 
     const res = await app.request('/v1/audio/speech', {
@@ -121,6 +125,7 @@ describe('G78 — speech Content-Type matches requested outputFormat', () => {
         },
       }),
     } as unknown as ProviderRegistry;
+
     const app = createApp({ registry });
 
     const res = await app.request('/v1/audio/speech', {

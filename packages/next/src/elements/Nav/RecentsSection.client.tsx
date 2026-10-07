@@ -32,6 +32,7 @@ type RecentBucketLabel = (typeof recentBucketLabels)[number];
 export function bucketRecents(recents: ChatDocument[], now = new Date()) {
   const boundary = (days: number) =>
     new Date(now.getFullYear(), now.getMonth(), now.getDate() - days).getTime();
+
   const today = boundary(0);
   const yesterday = boundary(1);
   const previous7Days = boundary(7);
@@ -50,11 +51,13 @@ export function bucketRecents(recents: ChatDocument[], now = new Date()) {
             : timestamp < today
               ? 'Yesterday'
               : 'Today';
+
     buckets.set(label, [...(buckets.get(label) ?? []), recent]);
   }
 
   return recentBucketLabels.flatMap((label) => {
     const docs = buckets.get(label);
+
     return docs ? [{ label, docs }] : [];
   });
 }
@@ -83,6 +86,7 @@ export function RecentsSectionClient({
     },
     revalidate: true,
   });
+
   const docs = chats.docs ?? recents;
   const buckets = bucketRecents(docs);
 
@@ -95,6 +99,7 @@ export function RecentsSectionClient({
           <div className="frogbot-recents-section__items">
             {bucket.docs.map((recent) => {
               const path = `${collectionPath}/${encodeURIComponent(String(recent.id))}`;
+
               return (
                 <ChatHistoryActions
                   chat={recent}

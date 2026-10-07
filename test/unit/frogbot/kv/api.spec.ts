@@ -14,11 +14,13 @@ class LegacyAdapter implements KVAdapter {
 
   clear(): Promise<void> {
     this.values.clear();
+
     return Promise.resolve();
   }
 
   delete(key: string): Promise<void> {
     this.values.delete(key);
+
     return Promise.resolve();
   }
 
@@ -36,6 +38,7 @@ class LegacyAdapter implements KVAdapter {
 
   set(key: string, value: KVStoreValue): Promise<void> {
     this.values.set(key, value);
+
     return Promise.resolve();
   }
 }
@@ -46,6 +49,7 @@ class AtomicAdapter extends LegacyAdapter implements KVAtomicAdapter {
   setIfAbsent(key: string, value: KVStoreValue): Promise<boolean> {
     if (this.values.has(key)) return Promise.resolve(false);
     this.values.set(key, value);
+
     return Promise.resolve(true);
   }
 
@@ -56,6 +60,7 @@ class AtomicAdapter extends LegacyAdapter implements KVAtomicAdapter {
   releaseLock(lock: KVLock): Promise<boolean> {
     if (this.values.get(lock.key) !== lock.token) return Promise.resolve(false);
     this.values.delete(lock.key);
+
     return Promise.resolve(true);
   }
 }
@@ -78,6 +83,7 @@ describe('createKV', () => {
     await set('first', { nested: [0, false, ''] });
     await set('second', false, {});
     await set('third', 0, { ttl: undefined });
+
     await expect(get('first')).resolves.toEqual({ nested: [0, false, ''] });
     await expect(get('second')).resolves.toBe(false);
     await expect(get('third')).resolves.toBe(0);
@@ -89,9 +95,13 @@ describe('createKV', () => {
       ['second', false],
       ['third', 0],
     ]);
+
     await deleteKey('first');
+
     await expect(has('first')).resolves.toBe(false);
+
     await clear();
+
     await expect(keys()).resolves.toEqual([]);
     expect(adapter.values.size).toBe(0);
   });
@@ -109,6 +119,7 @@ describe('createKV', () => {
 
     await expect(run(createKV({ adapter }))).rejects.toBeInstanceOf(KVUnsupportedError);
     expect([...adapter.values]).toEqual([[lock.key, lock.token]]);
+
     for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 
@@ -152,6 +163,7 @@ describe('createKV', () => {
 
       await expect(run(createKV({ adapter }), ttl as number)).rejects.toBeInstanceOf(RangeError);
       expect([...adapter.values]).toEqual([[lock.key, lock.token]]);
+
       for (const spy of spies) expect(spy).not.toHaveBeenCalled();
     });
   });
@@ -168,6 +180,7 @@ describe('createKV', () => {
       const options = { ttl };
 
       await kv.set('value', { count: 1 }, options);
+
       expect(set).toHaveBeenCalledExactlyOnceWith('value', { count: 1 }, options);
       await expect(kv.setIfAbsent(lock.key, lock.token, options)).resolves.toBe(true);
       await expect(kv.setIfAbsent(lock.key, 'replacement')).resolves.toBe(false);
@@ -179,6 +192,7 @@ describe('createKV', () => {
       expect(extendLock).toHaveBeenCalledExactlyOnceWith(lock, ttl);
       await expect(kv.releaseLock(lock)).resolves.toBe(true);
       expect(releaseLock).toHaveBeenCalledExactlyOnceWith(lock);
+
       for (const spy of [set, setIfAbsent, extendLock, releaseLock]) {
         expect(spy.mock.contexts.every((receiver) => receiver === adapter)).toBe(true);
       }
@@ -206,15 +220,21 @@ describe('createKV', () => {
     for (let index = 0; index < 32; index++) {
       const kv = clients[index % clients.length];
       const acquired = await kv.acquireLock(lock.key, 1000);
+
       expect(acquired).toEqual({ key: lock.key, token: expect.any(String) });
+
       if (!acquired) throw new Error('Expected an acquired lock');
+
       expect(acquired.token.length).toBeGreaterThan(0);
       expect(acquired.token).not.toBe(lock.key);
       expect(tokens.has(acquired.token)).toBe(false);
       expect(setIfAbsent).toHaveBeenLastCalledWith(lock.key, acquired.token, { ttl: 1000 });
+
       tokens.add(acquired.token);
+
       await expect(kv.releaseLock(acquired)).resolves.toBe(true);
     }
+
     expect(tokens.size).toBe(32);
   });
 
@@ -228,6 +248,7 @@ describe('createKV', () => {
         expect(signal).toBeInstanceOf(AbortSignal);
         expect(signal.aborted).toBe(false);
         expect(adapter.values.has('job')).toBe(true);
+
         return { completed: true };
       }),
     ).resolves.toEqual({ completed: true });

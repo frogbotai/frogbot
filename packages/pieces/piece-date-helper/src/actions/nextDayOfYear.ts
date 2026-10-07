@@ -35,6 +35,7 @@ export const nextDayOfYear = defineAction({
         `${year}-${String(value.month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
         value.timeZone,
       );
+
     let result = createOccurrence(now.year(), value.day);
 
     if (!result.isValid() || result.format('M/D') !== `${value.month}/${value.day}`) {

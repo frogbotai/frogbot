@@ -31,6 +31,7 @@ const req = (): FrogBotRequest =>
     },
     user: null,
   }) as unknown as FrogBotRequest;
+
 const webhookTriggers = { newIncident, incidentResolved, incidentAcknowledged };
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -50,6 +51,7 @@ describe('pagerduty', () => {
     const fetch = vi
       .fn()
       .mockResolvedValue(response({ incident: { id: 'P1', status: 'triggered' } }));
+
     vi.stubGlobal('fetch', fetch);
 
     const result = await createPagerduty({ auth }).createIncident({
@@ -103,6 +105,7 @@ describe('pagerduty', () => {
       .mockResolvedValueOnce(response({ incident: { id: 'P/1' } }))
       .mockResolvedValueOnce(response({ incident: { id: 'P1', status: 'acknowledged' } }))
       .mockResolvedValueOnce(response({ incident: { id: 'P1', status: 'resolved' } }));
+
     vi.stubGlobal('fetch', fetch);
     const piece = createPagerduty({ auth });
 
@@ -110,11 +113,14 @@ describe('pagerduty', () => {
       req: req(),
       input: { statuses: ['triggered', 'resolved'], urgency: 'high', limit: 500, offset: -2 },
     });
+
     await piece.getIncident({ req: req(), input: { incidentId: 'P/1' } });
+
     await piece.acknowledgeIncident({
       req: req(),
       input: { incidentId: 'P1', fromEmail: 'frog@example.com' },
     });
+
     await piece.resolveIncident({
       req: req(),
       input: { incidentId: 'P1', fromEmail: 'frog@example.com', resolution: 'Fixed' },
@@ -155,6 +161,7 @@ describe('pagerduty', () => {
       .fn()
       .mockResolvedValueOnce(response({ services: [{ id: 'S1', name: 'API' }], more: true }))
       .mockResolvedValueOnce(response({ services: [{ id: 'S2', name: 'Web' }], more: false }));
+
     vi.stubGlobal('fetch', fetch);
     const piece = createPagerduty({ auth });
     const client = await piece.client({ req: req() });
@@ -174,6 +181,7 @@ describe('pagerduty', () => {
       .fn()
       .mockResolvedValueOnce(response({ ok: true }))
       .mockResolvedValueOnce(response({ error: { message: 'Denied' } }, 403));
+
     vi.stubGlobal('fetch', fetch);
     const piece = createPagerduty({ auth });
 
@@ -220,9 +228,11 @@ describe('pagerduty', () => {
       req: req(),
       webhookUrl: 'https://example.com/pagerduty',
     });
+
     const delivery = {
       event: { id: 'event-1', event_type: eventType, data: { id: 'incident-1' } },
     };
+
     const events = await definition.run({
       client: {},
       input: {},

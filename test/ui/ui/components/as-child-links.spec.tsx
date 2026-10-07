@@ -91,6 +91,7 @@ it('ContextMenuItem asChild puts its class on the anchor', async () => {
   fireEvent.contextMenu(screen.getByText('Target'));
 
   expect(await screen.findByRole('menu')).toBeTruthy();
+
   expectAnchor({ className: 'fb-context-menu__item', name: 'Item', role: 'menuitem' });
 });
 
@@ -108,6 +109,7 @@ it('AccordionTrigger asChild puts its class, state, and chevron on the anchor', 
   const link = screen.getByRole('link', { name: 'Section' });
 
   expectAnchor({ className: 'fb-accordion__trigger', name: 'Section' });
+
   expect(link.getAttribute('data-state')).toBe('closed');
   expect(link.getAttribute('aria-expanded')).toBe('false');
   expect(link.querySelector('.fb-accordion__icon')).not.toBeNull();
@@ -136,6 +138,7 @@ it('ContextMenuSubTrigger asChild puts its class, state, and chevron on the anch
     name: 'More',
     role: 'menuitem',
   });
+
   expect(link.getAttribute('data-state')).toBe('closed');
   expect(link.getAttribute('aria-haspopup')).toBe('menu');
   expect(link.querySelector('.fb-context-menu__icon')).not.toBeNull();
@@ -168,11 +171,13 @@ it('ContextMenuCheckboxItem and ContextMenuRadioItem asChild put their class, st
     name: 'Pinned',
     role: 'menuitemcheckbox',
   });
+
   expectAnchor({
     className: 'fb-context-menu__item fb-context-menu__item--indicator',
     name: 'Recent',
     role: 'menuitemradio',
   });
+
   expect(checkbox.getAttribute('aria-checked')).toBe('true');
   expect(checkbox.querySelector('.fb-context-menu__indicator svg')).not.toBeNull();
   expect(radio.getAttribute('aria-checked')).toBe('true');

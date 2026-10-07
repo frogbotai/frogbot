@@ -139,6 +139,7 @@ describe('UI component destinations', () => {
       clientProps,
       serverProps,
     };
+
     const rewritten = rewritePayloadComponent(component);
 
     expect(parsePayloadComponent(rewritten)).toEqual({

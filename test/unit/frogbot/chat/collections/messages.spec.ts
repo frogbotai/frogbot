@@ -44,8 +44,11 @@ describe('defaultMessagesCollection', () => {
 
   it('binds the provided slug and chat relation', () => {
     const renamed = defaultMessagesCollection({ slug: 'turns', chatsSlug: 'conversations' });
+
     expect(renamed.slug).toBe('turns');
+
     const chat = renamed.fields.find((f) => 'name' in f && f.name === 'chat');
+
     expect(chat).toMatchObject({
       type: 'relationship',
       relationTo: 'conversations',
@@ -117,6 +120,7 @@ describe('defaultMessagesCollection', () => {
     const parts = collection.fields.find((f) => 'name' in f && f.name === 'parts') as {
       typescriptSchema?: Array<(args: { jsonSchema: object }) => object>;
     };
+
     expect(parts.typescriptSchema?.[0]({ jsonSchema: {} })).toEqual({
       tsType: "import('frogbot').UIMessage['parts']",
     });
@@ -142,6 +146,7 @@ describe('defaultMessagesCollection', () => {
     const usage = collection.fields.find((f) => 'name' in f && f.name === 'usage') as {
       access?: { create?: FieldAccess; update?: FieldAccess };
     };
+
     expect(await usage.access?.create?.({ req: reqWithUser('u1') } as never)).toBe(false);
     expect(await usage.access?.update?.({ req: reqWithUser('u1') } as never)).toBe(false);
   });
@@ -211,6 +216,7 @@ describe('defaultMessagesCollection', () => {
         chatsSlug: 'chats',
         access: { read },
       });
+
       expect(configured.access?.read).toBe(read);
       expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
         'chat.user': { equals: 'u1' },

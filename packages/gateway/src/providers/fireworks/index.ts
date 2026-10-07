@@ -18,6 +18,7 @@ export const fireworksProvider = {
   envVars: ['FIREWORKS_API_KEY', 'FIREWORKS_BASE_URL'],
   fromEnv: (env) => {
     if (!env.FIREWORKS_API_KEY) return undefined;
+
     return {
       apiKey: env.FIREWORKS_API_KEY,
       ...(env.FIREWORKS_BASE_URL && { baseURL: env.FIREWORKS_BASE_URL }),

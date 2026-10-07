@@ -44,6 +44,7 @@ function scriptedModel(replies: Reply[]) {
   const calls: LanguageModelV4CallOptions[] = [];
   const next = (options: LanguageModelV4CallOptions) => {
     calls.push(options);
+
     return replies[Math.min(calls.length, replies.length) - 1];
   };
 
@@ -96,6 +97,7 @@ function scriptedModel(replies: Reply[]) {
         stream: new ReadableStream({
           start(controller) {
             for (const part of parts) controller.enqueue(part);
+
             controller.close();
           },
         }),

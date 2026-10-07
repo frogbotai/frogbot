@@ -362,6 +362,7 @@ export async function runGroups({ root, log, groups, build = buildStale }) {
     console.log(
       `${label(entry.group)}  ok · ${groupSize(entry)} · ${duration(performance.now() - started)}`,
     );
+
     passed.push(entry);
   }
 

@@ -92,11 +92,13 @@ export function videosRoute(ctx: VideosRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = requireVideoModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
       base = {
@@ -108,12 +110,14 @@ export function videosRoute(ctx: VideosRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       const { providerOptions, ...videoParams } = toGenerateVideoParams({
         body,
         providerName: resolved.providerName,
       });
+
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
@@ -136,11 +140,13 @@ export function videosRoute(ctx: VideosRouteContext) {
         abortSignal: createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs).signal,
         headers: Object.fromEntries(headers),
       });
+
       if (result.warnings.length > 0) {
         c.header('x-gateway-warnings', JSON.stringify(result.warnings));
       }
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         {
@@ -171,6 +177,7 @@ export function videosRoute(ctx: VideosRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       if (base) {
@@ -194,12 +201,15 @@ export function videosRoute(ctx: VideosRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

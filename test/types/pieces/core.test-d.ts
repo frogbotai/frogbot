@@ -161,17 +161,21 @@ expectTypeOf<Parameters<typeof mailer.send>[0]['input']>().toEqualTypeOf<{
   to: string[];
   subject: string;
 }>();
+
 expectTypeOf<Parameters<typeof mailer.listLabels>[0]['input']>().toEqualTypeOf<{
   prefix?: string | undefined;
 }>();
+
 expectTypeOf(
   mailer.send({ input: { to: ['user@example.com'], subject: 'Hello' }, req }),
 ).toEqualTypeOf<Promise<{ id: string }>>();
+
 expectTypeOf(mailer.listLabels({ input: {}, req })).toEqualTypeOf<Promise<{ labels: string[] }>>();
 
 const _sendRejectsListLabelsInput = () =>
   // @ts-expect-error send does not accept listLabels input
   mailer.send({ input: { prefix: 'inbox' }, req });
+
 const _listLabelsRejectsSendInput = () =>
   // @ts-expect-error listLabels does not accept send input
   mailer.listLabels({ input: { to: ['user@example.com'], subject: 'Hello' }, req });
@@ -299,6 +303,7 @@ definePiece({
     widenedAction('lookup'),
   ],
 });
+
 definePiece({
   slug: 'satisfied',
   label: 'Satisfied',
@@ -307,6 +312,7 @@ definePiece({
     satisfiedAction,
   ],
 });
+
 definePiece({
   slug: 'annotated',
   label: 'Annotated',
@@ -315,6 +321,7 @@ definePiece({
     annotatedAction,
   ],
 });
+
 definePiece({
   slug: 'annotated-trigger',
   label: 'Annotated trigger',
@@ -324,6 +331,7 @@ definePiece({
     annotatedTrigger,
   ],
 });
+
 definePiece({
   slug: 'mixed',
   label: 'Mixed',
@@ -344,6 +352,7 @@ const asConst = definePiece({
 expectTypeOf(asConst.lookup({ input: { query: 'q' }, req })).toEqualTypeOf<Promise<null>>();
 
 definePiece({ slug: 'empty', label: 'Empty', actions: [] });
+
 definePiece({
   slug: 'inline',
   label: 'Inline',
@@ -370,6 +379,7 @@ const createEmptyOptions = definePiece({
 expectTypeOf(
   createEmptyOptions({ auth: { token: 'token' } }).echo({ input: { text: 'hi' } }),
 ).toEqualTypeOf<Promise<string>>();
+
 createEmptyOptions();
 
 expectTypeOf<FrogBotConfig>().not.toHaveProperty('pieces');

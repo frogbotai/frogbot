@@ -25,10 +25,12 @@ function makeSpan() {
     recordException: vi.fn(),
     setAttribute(key: string, value: unknown) {
       this.attributes[key] = value;
+
       return this as unknown as Span;
     },
     setAttributes(attrs: Record<string, unknown>) {
       Object.assign(this.attributes, attrs);
+
       return this as unknown as Span;
     },
     setStatus: vi.fn(),
@@ -73,12 +75,15 @@ function makeApp(signalLevel: 'full' | 'required', spanNames: string[]) {
   const tracer = {
     startSpan: vi.fn((name: string) => {
       spanNames.push(name);
+
       return makeSpan();
     }),
   } as unknown as Tracer;
+
   const registry = {
     openai: { languageModel: () => createNonStreamingMock() },
   } as unknown as ProviderRegistry;
+
   return createApp({ registry, tracer, signalLevel });
 }
 

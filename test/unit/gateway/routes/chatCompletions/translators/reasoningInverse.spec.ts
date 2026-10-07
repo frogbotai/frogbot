@@ -21,8 +21,11 @@ describe('reasoning_details inverse (wire → AI SDK)', () => {
     };
 
     const result = parseAssistantMessage(msg, 0);
+
     expect(Array.isArray(result.content)).toBe(true);
+
     const content = result.content as Array<Record<string, unknown>>;
+
     expect(content).toHaveLength(2);
     expect(content[0]).toEqual({
       type: 'reasoning',
@@ -52,6 +55,7 @@ describe('reasoning_details inverse (wire → AI SDK)', () => {
 
     const result = parseAssistantMessage(msg, 0);
     const content = result.content as Array<Record<string, unknown>>;
+
     expect(content[0]).toEqual({
       type: 'reasoning',
       text: '',
@@ -75,6 +79,7 @@ describe('reasoning_details inverse (wire → AI SDK)', () => {
 
     const result = parseAssistantMessage(msg, 0);
     const content = result.content as Array<Record<string, unknown>>;
+
     expect(content[0]).toEqual({
       type: 'reasoning',
       text: 'Simple thought',
@@ -95,6 +100,7 @@ describe('reasoning_details inverse (wire → AI SDK)', () => {
 
     const result = parseAssistantMessage(msg, 0);
     const content = result.content as Array<Record<string, unknown>>;
+
     expect(content).toHaveLength(4); // 3 reasoning + 1 text
     expect(content[0]).toMatchObject({ type: 'reasoning', text: 'Step 1' });
     expect(content[1]).toMatchObject({

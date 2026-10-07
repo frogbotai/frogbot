@@ -35,6 +35,7 @@ describe('frogbot buildConfig', () => {
   describe('validation', () => {
     it('rejects a missing `secret`', async () => {
       const config = makeConfig({ secret: '' });
+
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] `secret` is required and must be a string.',
       );
@@ -42,6 +43,7 @@ describe('frogbot buildConfig', () => {
 
     it('rejects a non-string `secret`', async () => {
       const config = makeConfig({ secret: 123 as unknown as string });
+
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] `secret` is required and must be a string.',
       );
@@ -51,6 +53,7 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({
         db: undefined as unknown as FrogBotConfig['db'],
       });
+
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] `db` is required. Pass a database adapter.',
       );
@@ -60,6 +63,7 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({
         collections: 'nope' as unknown as CollectionConfig[],
       });
+
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] `collections` is required and must be an array.',
       );
@@ -68,6 +72,7 @@ describe('frogbot buildConfig', () => {
     it('rejects a `globals` key with a `[frogbot]` error', async () => {
       const config = makeConfig() as unknown as Record<string, unknown>;
       config.globals = [{ slug: 'site', fields: [] }];
+
       await expect(buildConfig(config as unknown as FrogBotConfig)).rejects.toThrowError(
         '[frogbot] `globals` is not a FrogBot concept',
       );
@@ -109,34 +114,44 @@ describe('frogbot buildConfig', () => {
       const order: number[] = [];
       const plugin1: Plugin = (c) => {
         order.push(1);
+
         return { ...c, secret: c.secret + '-1' };
       };
+
       const plugin2: Plugin = (c) => {
         order.push(2);
+
         expect(c.secret).toBe('test-secret-1');
+
         return { ...c, secret: c.secret + '-2' };
       };
+
       const config = makeConfig({ plugins: [plugin1, plugin2] });
       await buildConfig(config);
+
       expect(order).toEqual([1, 2]);
     });
 
     it('supports async plugins', async () => {
       const asyncPlugin: Plugin = async (c) => {
         await Promise.resolve();
+
         return {
           ...c,
           collections: [...c.collections, { slug: 'added', fields: [] }],
         };
       };
+
       const config = makeConfig({ plugins: [asyncPlugin] });
       const result = await buildConfig(config);
       const slugs = result.collections.map((c) => c.slug);
+
       expect(slugs).toContain('added');
     });
 
     it('builds without a roles plugin', async () => {
       const unrelated: Plugin = (config) => config;
+
       await expect(buildConfig(makeConfig({ plugins: [unrelated] }))).resolves.toBeDefined();
     });
 
@@ -145,6 +160,7 @@ describe('frogbot buildConfig', () => {
         ...config,
         _roles: { ...config._roles, present: true, configured: false },
       });
+
       await expect(buildConfig(makeConfig({ plugins: [roles] }))).resolves.toBeDefined();
     });
 
@@ -156,6 +172,7 @@ describe('frogbot buildConfig', () => {
           },
         ],
       });
+
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] plugin at index 0 failed: plugin boom',
       );
@@ -171,6 +188,7 @@ describe('frogbot buildConfig', () => {
           },
         ],
       });
+
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] plugin at index 2 failed: third died',
       );
@@ -188,12 +206,14 @@ describe('frogbot buildConfig', () => {
             : col,
         ),
       });
+
       const config = makeConfig({ plugins: [addField] });
       const result = await buildConfig(config);
       // Result is now FrogBotSanitizedConfig — check via _internal.payloadConfig
       const payloadConfig = await result._internal.payloadConfig;
       const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
       const fieldNames = users.fields.map((f: any) => f.name);
+
       expect(fieldNames).toContain('createdBy');
     });
 
@@ -208,9 +228,11 @@ describe('frogbot buildConfig', () => {
           },
         ],
       });
+
       const config = makeConfig({ plugins: [addCollection] });
       const result = await buildConfig(config);
       const slugs = result.collections.map((c) => c.slug);
+
       expect(slugs).toContain('audits');
     });
 
@@ -224,6 +246,7 @@ describe('frogbot buildConfig', () => {
             { label: path, path, Component: `./settings/${path}#Page` },
           ],
         });
+
       const result = await buildConfig(
         makeConfig({
           settings: [{ label: 'Account', path: 'account', Component: './settings/Account#Page' }],
@@ -264,12 +287,15 @@ describe('frogbot buildConfig', () => {
           },
           (frogbot) => {
             expect((frogbot as FrogBotWithState).state).toBe('ready');
+
             order.push(2);
           },
         ],
       });
+
       const result = await buildConfig(config);
       await result.onInit?.({} as never);
+
       expect(order).toEqual([1, 2]);
     });
 
@@ -285,18 +311,21 @@ describe('frogbot buildConfig', () => {
           ],
         }),
       );
+
       await expect(result.onInit?.({} as never)).rejects.toThrow('init failed');
       expect(later).not.toHaveBeenCalled();
     });
 
     it('accepts an empty onInit array as a no-op', async () => {
       const result = await buildConfig(makeConfig({ onInit: [] }));
+
       expect(result.onInit).toBeUndefined();
     });
 
     it('builds a minimal valid config and returns a FrogBotSanitizedConfig', async () => {
       const config = makeConfig();
       const result = await buildConfig(config);
+
       expect(result).toBeDefined();
       expect(result.collections).toBeDefined();
       expect(result._internal.payloadConfig).toBeInstanceOf(Promise);
@@ -306,6 +335,7 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({ plugins: [(c) => c] });
       const result = await buildConfig(config);
       const payloadConfig = await result._internal.payloadConfig;
+
       expect((payloadConfig as any).plugins).toBeUndefined();
     });
 
@@ -317,8 +347,10 @@ describe('frogbot buildConfig', () => {
           { slug: 'assets', fields: [] },
         ],
       });
+
       const result = await buildConfig(config);
       const payloadConfig = await result._internal.payloadConfig;
+
       for (const col of (payloadConfig as any).collections) {
         expect(col.hooks?.beforeOperation?.length).toBeGreaterThan(0);
       }
@@ -329,6 +361,7 @@ describe('frogbot buildConfig', () => {
       const result = await buildConfig(config);
       const payloadConfig = await result._internal.payloadConfig;
       const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
+
       expect(users.auth).toBeTruthy();
     });
 
@@ -364,9 +397,11 @@ describe('frogbot buildConfig', () => {
         },
         { slug: 'users', auth: true, fields: [] },
       ];
+
       const config = makeConfig({ collections });
       const snapshot = JSON.stringify(config);
       await buildConfig(config);
+
       expect(JSON.stringify(config)).toBe(snapshot);
     });
   });
@@ -386,7 +421,9 @@ describe('frogbot buildConfig', () => {
           onInit: appOnInit,
         }),
       );
+
       await result.onInit?.({ logger: { warn: () => calls.push('warning') } } as never);
+
       expect(calls).toEqual(['app', 'warning']);
     });
   });
@@ -395,6 +432,7 @@ describe('frogbot buildConfig', () => {
     it('works with zero plugins', async () => {
       const config = makeConfig({ plugins: [] });
       const result = await buildConfig(config);
+
       expect(result).toBeDefined();
     });
 
@@ -402,15 +440,19 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig();
       delete (config as any).plugins;
       const result = await buildConfig(config);
+
       expect(result).toBeDefined();
     });
 
     it('injects default collections for empty input', async () => {
       const config = makeConfig({ collections: [] });
       const result = await buildConfig(config);
+
       expect(result.collections.map((c) => c.slug)).toEqual(['frogbot-waitpoints']);
+
       const payloadConfig = await result._internal.payloadConfig;
       const users = payloadConfig.collections.find((collection) => collection.slug === 'users');
+
       expect(users?.admin?.useAsTitle).toBe('name');
       expect(users?.fields).toContainEqual(expect.objectContaining({ name: 'name', type: 'text' }));
     });

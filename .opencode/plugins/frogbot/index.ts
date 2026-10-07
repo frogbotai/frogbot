@@ -148,10 +148,12 @@ export default {
           .get({ sessionID })
           .then((info) => {
             remember(sessionID, info.parentID, info.title);
+
             return info.parentID ?? null;
           })
           .catch((error: unknown) => {
             log('session.get', error);
+
             return null;
           })
           .finally(() => lookups.delete(sessionID));

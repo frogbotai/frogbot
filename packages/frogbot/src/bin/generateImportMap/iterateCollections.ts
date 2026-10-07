@@ -32,10 +32,12 @@ export function iterateCollections({
           }
         | undefined
     )?.collectionViews;
+
     for (const view of collectionViews ?? []) {
       addToImportMap(view.component);
       const components = view.components;
       if (!components) continue;
+
       for (const component of Object.values(components)) addToImportMap(component);
     }
 
@@ -54,6 +56,7 @@ export function iterateCollections({
     addToImportMap(collection.admin?.components?.beforeList);
     addToImportMap(collection.admin?.components?.beforeListTable);
     addToImportMap(collection.admin?.components?.Description);
+
     addToImportMap(
       (collection.admin?.custom?.frogbot as { descriptionComponent?: PayloadComponent } | undefined)
         ?.descriptionComponent,
@@ -98,6 +101,7 @@ export function iterateCollections({
         if (key === 'edit' || key === 'list') {
           continue;
         }
+
         if (view && typeof view === 'object' && 'Component' in view && 'path' in view) {
           addToImportMap((view as { Component: PayloadComponent }).Component);
         }

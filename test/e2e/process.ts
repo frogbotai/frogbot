@@ -44,8 +44,10 @@ export function spawnServer(
     // stdin stays a pipe: when this process dies, the guardian sees EOF.
     stdio: ['pipe', stdout, stderr],
   });
+
   live.add(child);
   child.once('exit', () => live.delete(child));
+
   return child;
 }
 
@@ -60,6 +62,7 @@ export async function terminateProcess(child?: ChildProcess): Promise<void> {
     child.exitCode === null && child.signalCode === null
       ? new Promise<void>((resolve) => child.once('close', () => resolve()))
       : Promise.resolve();
+
   killGroup(child);
   if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
   await closed;
@@ -100,12 +103,15 @@ export function getFreePort(): Promise<number> {
     const server = createServer();
     server.unref();
     server.once('error', reject);
+
     server.listen(0, '127.0.0.1', () => {
       const address = server.address();
       if (typeof address !== 'object' || !address) {
         reject(new Error('could not resolve a free port'));
+
         return;
       }
+
       server.close(() => resolvePort(address.port));
     });
   });

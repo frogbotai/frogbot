@@ -42,12 +42,15 @@ export function storageContractSuite(
               `${service.name} is required in CI but is not reachable at ${service.host}:${service.port}`,
             );
           }
+
           skipReason =
             `${service.name} not reachable at ${service.host}:${service.port}. ` +
             `Start with: docker compose -f test/docker-compose.yml --profile storage up -d`;
+
           return;
         }
       }
+
       if (options?.beforeSetup) await options.beforeSetup();
       booted = await bootFrogBot(dirname);
     });
@@ -69,6 +72,7 @@ export function storageContractSuite(
           filePath: testImagePath,
           overrideAccess: true,
         });
+
         expect(doc.id).toBeDefined();
         expect(doc.filename).toBeDefined();
         expect(doc.mimeType).toBe('image/png');
@@ -81,11 +85,13 @@ export function storageContractSuite(
           filePath: testImagePath,
           overrideAccess: true,
         });
+
         const found = await booted.frogbot.findByID({
           collection: mediaSlug,
           id: created.id,
           overrideAccess: true,
         });
+
         expect(found.filename).toBe(created.filename);
         expect(found.mimeType).toBe('image/png');
         expect(found.filesize).toBeGreaterThan(0);
@@ -100,6 +106,7 @@ export function storageContractSuite(
           filePath: testImagePath,
           overrideAccess: true,
         });
+
         const url = doc.url as string;
         expect(url).toBeDefined();
 
@@ -118,6 +125,7 @@ export function storageContractSuite(
           filePath: testImagePath,
           overrideAccess: true,
         });
+
         await booted.frogbot.delete({
           collection: mediaSlug,
           id: doc.id,
@@ -140,7 +148,9 @@ export function storageContractSuite(
           filePath: testImagePath,
           overrideAccess: true,
         });
+
         const url = doc.url as string;
+
         await booted.frogbot.delete({
           collection: mediaSlug,
           id: doc.id,
@@ -160,6 +170,7 @@ export function storageContractSuite(
           filePath: testImagePath,
           overrideAccess: true,
         });
+
         const doc2 = await booted.frogbot.create({
           collection: mediaSlug,
           data: { alt: 'second' },
@@ -174,11 +185,13 @@ export function storageContractSuite(
           id: doc1.id,
           overrideAccess: true,
         });
+
         const found2 = await booted.frogbot.findByID({
           collection: mediaSlug,
           id: doc2.id,
           overrideAccess: true,
         });
+
         expect(found1.alt).toBe('first');
         expect(found2.alt).toBe('second');
       });

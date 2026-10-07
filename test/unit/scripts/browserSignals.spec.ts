@@ -12,6 +12,7 @@ const cli = path.join(repoRoot, 'node_modules', '@playwright', 'test', 'cli.js')
 const playwright = pathToFileURL(
   path.join(repoRoot, 'node_modules', '@playwright', 'test', 'index.mjs'),
 );
+
 const helper = path.join(repoRoot, 'test', 'browser', '__helpers', 'stopServersOnSignal.ts');
 
 const dirs: string[] = [];
@@ -52,6 +53,7 @@ function fixture(port: number, stop: boolean) {
   const server = `require('node:http').createServer((q, s) => s.end('ok')).listen(${port})`;
 
   dirs.push(dir);
+
   writeFileSync(
     path.join(dir, 'playwright.config.ts'),
     [
@@ -63,6 +65,7 @@ function fixture(port: number, stop: boolean) {
       '};',
     ].join('\n'),
   );
+
   writeFileSync(
     path.join(dir, 'wait.spec.mjs'),
     `import { test } from ${JSON.stringify(playwright.href)};\ntest('waits', async () => { await new Promise(() => {}); });\n`,
@@ -83,10 +86,13 @@ async function runAndTerminate(stop: boolean) {
       stdio: 'ignore',
     },
   );
+
   const exited = new Promise((resolve) => child.once('exit', resolve));
 
   groups.push(child.pid!);
+
   await expect.poll(() => portOpen(port), { timeout: 15_000 }).toBe(true);
+
   process.kill(-child.pid!, 'SIGTERM');
   await exited;
 

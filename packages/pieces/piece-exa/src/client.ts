@@ -27,6 +27,7 @@ export function createExaClient({ auth }: { auth: unknown }) {
       body: JSON.stringify(body),
       signal,
     });
+
     const data: unknown = await response.json();
 
     if (!response.ok) throw new ExaRequestError(response.status, data);

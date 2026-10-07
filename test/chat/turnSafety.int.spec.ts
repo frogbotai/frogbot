@@ -486,6 +486,7 @@ describe('chat turns: recovery, access, and forged input', () => {
       { chatId: body.chatId, prompt: 'Mine.' },
       owner,
     );
+
     const url = `${booted.baseUrl}/api/agents/${questionAgentSlug}/chats/${body.chatId}/messages/${queued.body.messageId}`;
 
     const edited = await fetch(url, {
@@ -493,6 +494,7 @@ describe('chat turns: recovery, access, and forged input', () => {
       headers: { 'content-type': 'application/json', ...intruder },
       body: JSON.stringify({ parts: [{ type: 'text', text: 'Hijacked.' }] }),
     });
+
     const removed = await fetch(url, { method: 'DELETE', headers: intruder });
 
     expect([edited.status, removed.status]).toEqual([404, 404]);

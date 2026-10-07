@@ -306,6 +306,7 @@ describe('Telegram question messages', () => {
     const question = call(
       ...Array.from({ length: 30 }, (_, q) => ({ header: `Q${q}`, question: 'x'.repeat(400) })),
     );
+
     const body = settledMessage({
       actor: 'Frog',
       answers: question.input.questions.map(({ header }) => ({

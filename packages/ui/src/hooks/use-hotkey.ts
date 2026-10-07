@@ -9,6 +9,7 @@ export function useHotkey(
 ) {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
+
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (
@@ -20,7 +21,9 @@ export function useHotkey(
         callbackRef.current();
       }
     };
+
     document.addEventListener('keydown', listener);
+
     return () => document.removeEventListener('keydown', listener);
   }, [key, options.meta, options.shift]);
 }

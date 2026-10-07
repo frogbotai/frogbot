@@ -21,24 +21,31 @@ export function toGenerateImageParams(args: ToGenerateImageParamsArgs): Generate
   if (body.quality != null) {
     options.quality = body.quality;
   }
+
   if (body.style != null) {
     options.style = body.style;
   }
+
   if (body.user != null) {
     options.user = body.user;
   }
+
   if (body.background != null) {
     options.background = body.background;
   }
+
   if (body.moderation != null) {
     options.moderation = body.moderation;
   }
+
   if (body.output_format != null) {
     options.outputFormat = body.output_format;
   }
+
   if (body.output_compression != null) {
     options.outputCompression = body.output_compression;
   }
+
   if (body.size === 'auto') {
     options.size = 'auto';
   }

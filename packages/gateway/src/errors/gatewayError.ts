@@ -80,6 +80,7 @@ export class RateLimitExceededError extends GatewayError {
       status: 429,
       code: 'rate_limit_exceeded',
     });
+
     this.retryAfterSeconds = args.retryAfterSeconds;
   }
 }
@@ -110,6 +111,7 @@ export class ConfigError extends GatewayError {
       status: 500,
       code: 'config_invalid',
     });
+
     this.issues = issues;
   }
 }

@@ -12,6 +12,7 @@ import {
   StaggeredShimmers,
   Textarea,
 } from '../../../../packages/ui/src/index';
+
 it('renders display primitives with variants and BEM classes', () => {
   render(
     <>
@@ -27,15 +28,19 @@ it('renders display primitives with variants and BEM classes', () => {
       <ShimmerEffect />
     </>,
   );
+
   expect(screen.getByText('Ready').className).toContain('fb-badge--success');
   expect(screen.getByRole('alert').className).toContain('fb-alert--warning');
   expect(screen.getByRole('textbox').className).toContain('fb-textarea');
   expect(document.querySelector('.fb-shimmer__shine')).toBeTruthy();
 });
+
 it('renders staggered shimmers immediately when requested', () => {
   render(<StaggeredShimmers count={3} renderDelay={0} />);
+
   expect(document.querySelectorAll('.fb-shimmer')).toHaveLength(3);
 });
+
 it('renders an option pill as a span with its colour modifier and className', () => {
   render(
     <OptionPill className="x" color="teal">

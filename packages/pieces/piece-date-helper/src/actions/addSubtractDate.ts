@@ -35,6 +35,7 @@ export const addSubtractDate = defineAction({
     if (!result.isValid()) {
       throw new Error(`Failed to parse the date: ${value.inputDate}`);
     }
+
     let matched = '';
 
     for (const match of value.expression.matchAll(expressionPattern)) {

@@ -9,6 +9,7 @@ describe('generateMessage', () => {
     const originalMessages: UIMessage[] = [
       { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
     ];
+
     const result = {
       finishReason: 'stop',
       rawFinishReason: 'stop',

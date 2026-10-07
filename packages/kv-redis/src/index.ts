@@ -50,6 +50,7 @@ export class RedisKVAdapter extends PayloadRedisKVAdapter implements KVAtomicAda
     if (options?.ttl === undefined) {
       return super.set(key, value);
     }
+
     await this.evalTTL({ script: setScript, key, value, ttl: options.ttl });
   }
 
@@ -60,6 +61,7 @@ export class RedisKVAdapter extends PayloadRedisKVAdapter implements KVAtomicAda
         'OK'
       );
     }
+
     return this.evalTTL({ script: setIfAbsentScript, key, value, ttl: options.ttl });
   }
 
@@ -97,9 +99,11 @@ export class RedisKVAdapter extends PayloadRedisKVAdapter implements KVAtomicAda
       JSON.stringify(value),
       ttl,
     );
+
     if (result === -1) {
       throw new RangeError('KV ttl expiration exceeds the supported date range');
     }
+
     return result === 1;
   }
 }

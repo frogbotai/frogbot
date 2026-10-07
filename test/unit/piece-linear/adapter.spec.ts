@@ -24,6 +24,7 @@ async function deliver(payload: object, secret = webhookSecret) {
     apiUrl: api.graphqlUrl,
     logger: silentLinearLogger,
   });
+
   const processMessage = vi.fn();
 
   await adapter.initialize({ processMessage } as never);

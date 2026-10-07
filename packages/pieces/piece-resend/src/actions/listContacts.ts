@@ -12,6 +12,7 @@ export const listContacts = defineAction({
   input,
   async run({ input, client }) {
     const result = await client.request({ path: `/audiences/${input.audience_id}/contacts` });
+
     return (result as { data?: PieceJSON[] })?.data ?? [];
   },
 });

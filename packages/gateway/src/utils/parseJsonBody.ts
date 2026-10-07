@@ -43,10 +43,12 @@ export async function parseJsonBody(c: Context, maxBodyBytes?: number): Promise<
     if (isGatewayError(e)) {
       throw e;
     }
+
     const message =
       e instanceof SyntaxError
         ? `Request body is not valid JSON: ${e.message}`
         : 'Request body is not valid JSON';
+
     throw new RequestValidationError({ message, param: '(body)' });
   }
 }

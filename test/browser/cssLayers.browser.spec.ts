@@ -119,6 +119,7 @@ async function expectUnlayeredRulesWin(page: Page) {
     'text-decoration-line',
     'underline',
   );
+
   await expectBackground(page.getByTestId('layer-default').first(), probeColor);
 }
 
@@ -153,6 +154,7 @@ test.describe('FrogBot CSS layer in the admin', () => {
     await page.addStyleTag({
       content: `@layer payload-default { .fb-button { color: ${probeColor}; } }`,
     });
+
     await expect(button).toHaveCSS('color', designed);
 
     await page.addStyleTag({ content: `@layer payload { .fb-button { color: ${probeColor}; } }` });

@@ -4,6 +4,7 @@ import { createFrogBotSDK, type UntypedFrogBotSDKTypes } from '../../../packages
 import { baseURL, createClients } from './clients';
 
 type Client = ReturnType<typeof createClients>['frogbot'];
+
 type Call = (client: Client, init?: RequestInit) => Promise<unknown>;
 
 const calls: { name: string; call: Call }[] = [
@@ -64,6 +65,7 @@ describe('FrogBotSDK auth methods', () => {
       token: 'token',
       user: { email: 'frog@example.com', id: 1 },
     };
+
     const { frogbot } = createClients(() => Response.json(body));
 
     const result = await call(frogbot);

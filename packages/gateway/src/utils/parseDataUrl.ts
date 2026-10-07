@@ -15,5 +15,6 @@ export function parseDataUrl(url: string): { mediaType: string; data: string } |
   if (!isBase64) return null;
 
   const mediaType = segments[0] || 'application/octet-stream';
+
   return { mediaType, data: payload };
 }

@@ -23,6 +23,7 @@ describe('anthropicAwsProvider.fromEnv', () => {
         ANTHROPIC_AWS_API_KEY: 'key-123',
       }),
     );
+
     expect(result).toBeDefined();
     expect(result).toEqual({ apiKey: 'key-123' });
   });
@@ -35,6 +36,7 @@ describe('anthropicAwsProvider.fromEnv', () => {
         AWS_REGION: 'us-west-2',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'key-123',
       region: 'us-west-2',
@@ -63,6 +65,7 @@ describe('anthropicAwsProvider.fromEnv', () => {
         ANTHROPIC_AWS_WORKSPACE_ID: 'wrkspc_abc',
       }),
     );
+
     expect(result).toEqual({
       accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
       secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
@@ -91,6 +94,7 @@ describe('anthropicAwsProvider.fromEnv', () => {
       AWS_SECRET_ACCESS_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
       AWS_REGION: 'us-west-2',
     });
+
     expect(bedrockProvider.fromEnv(sigv4)).toBeDefined();
     expect(anthropicAwsProvider.fromEnv(sigv4)).toBeDefined();
 

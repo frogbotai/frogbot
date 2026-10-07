@@ -200,6 +200,7 @@ describe('check test-types', () => {
       'test/c.spec.ts': { TS2345: 1 },
       'test/gone.spec.ts': { TS2339: 2 },
     };
+
     const result = compareBaseline({ counts, baseline });
 
     expect(result.over).toEqual([]);

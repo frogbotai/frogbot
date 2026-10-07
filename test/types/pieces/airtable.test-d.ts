@@ -14,6 +14,7 @@ expectTypeOf<Parameters<typeof airtable.findRecords>[0]['input']>().toEqualTypeO
   searchValue: string;
   viewId?: string | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _records>[number]['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _records>[number]['fields']>().toEqualTypeOf<Record<string, unknown>>();
 

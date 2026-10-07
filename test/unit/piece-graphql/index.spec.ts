@@ -63,8 +63,10 @@ describe('graphql', () => {
       const chunks: Buffer[] = [];
 
       req.on('data', (chunk) => chunks.push(chunk));
+
       req.on('end', () => {
         res.writeHead(200, { 'content-type': 'application/json', 'x-fixture': 'graphql' });
+
         res.end(
           JSON.stringify({
             method: req.method,
@@ -75,6 +77,7 @@ describe('graphql', () => {
         );
       });
     });
+
     const port = await listen(server);
 
     const result = await graphql.sendRequest({
@@ -108,8 +111,10 @@ describe('graphql', () => {
       const chunks: Buffer[] = [];
 
       req.on('data', (chunk) => chunks.push(chunk));
+
       req.on('end', () => {
         res.writeHead(200, { 'content-type': 'application/json' });
+
         res.end(
           JSON.stringify({
             url: req.url,
@@ -119,6 +124,7 @@ describe('graphql', () => {
         );
       });
     });
+
     const port = await listen(proxy);
 
     const result = await graphql.sendRequest({
@@ -143,11 +149,13 @@ describe('graphql', () => {
       const chunks: Buffer[] = [];
 
       req.on('data', (chunk) => chunks.push(chunk));
+
       req.on('end', () => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ data: { url: req.url, bytes: Buffer.concat(chunks).length } }));
       });
     });
+
     const port = await listen(server);
 
     const result = await graphql.sendRequest({
@@ -159,6 +167,7 @@ describe('graphql', () => {
       },
       req: {} as never,
     });
+
     const responseUrl = new URL(
       (result.body as { data: { url: string } }).data.url,
       `http://127.0.0.1:${port}`,
@@ -176,6 +185,7 @@ describe('graphql', () => {
       res.writeHead(401, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ errors: [{ message: 'Invalid token' }] }));
     });
+
     const port = await listen(server);
 
     await expect(
@@ -193,6 +203,7 @@ describe('graphql', () => {
       res.writeHead(500, { 'content-type': 'text/plain', 'x-fixture': 'failure' });
       res.end('Unavailable');
     });
+
     const port = await listen(server);
 
     await expect(

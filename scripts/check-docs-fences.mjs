@@ -36,6 +36,7 @@ const commandPrefixes = [
   'zsh ',
   'fish ',
 ];
+
 let files = 0;
 let fences = 0;
 
@@ -57,6 +58,7 @@ for (const file of walk(root)) {
           failures.push(`${path.relative(process.cwd(), file)}:${index + 1}`);
         }
       }
+
       return;
     }
 
@@ -65,16 +67,19 @@ for (const file of walk(root)) {
       if (marker[0] === open.char && marker.length >= open.length && match[2].trim() === '') {
         open = undefined;
       }
+
       return;
     }
 
     const info = match[2].trim();
+
     open = {
       char: marker[0],
       length: marker.length,
       language: info.split(/\s+/, 1)[0],
       hasContent: false,
     };
+
     fences++;
     if (info === '') failures.push(`${path.relative(process.cwd(), file)}:${index + 1}`);
   });
@@ -82,6 +87,7 @@ for (const file of walk(root)) {
 
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
+
   console.error(`\n[check-docs-fences] FAIL - ${failures.length} fence issue(s) found.`);
   process.exit(1);
 }

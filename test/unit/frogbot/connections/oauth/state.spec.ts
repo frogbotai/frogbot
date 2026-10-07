@@ -15,8 +15,10 @@ async function begin(fixture = setup()) {
     ...fixture.binding,
     returnTo: '/settings?tab=accounts#linked',
   });
+
   fixture.req.headers.set('cookie', started.setCookie.split(';')[0]);
   const args = { ...fixture, ...fixture.binding, state: started.state };
+
   return { ...fixture, ...started, args };
 }
 
@@ -29,13 +31,16 @@ describe('OAuth browser state', () => {
   it('encrypts intent, binds the browser, and uses random S256 PKCE', async () => {
     const flow = await begin();
     const second = await begin();
+
     expect(flow.state).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(second.state).not.toBe(flow.state);
     expect(flow.setCookie).toContain('__Host-frogbot-oauth-');
     expect(flow.setCookie).toContain('Path=/; HttpOnly; SameSite=Lax; Max-Age=600; Secure');
     expect(flow.values.get(`oauth:state:${flow.state}`)).not.toContain('owner');
+
     const { intent, clearCookie } = await consumeOAuthState(flow.args);
     const params = new URL(flow.authorizationUrl).searchParams;
+
     expect(params.get('code_challenge')).toBe(
       createHash('sha256').update(intent.verifier!).digest('base64url'),
     );
@@ -55,6 +60,7 @@ describe('OAuth browser state', () => {
     const outcomes = await Promise.allSettled(
       Array.from({ length: 12 }, () => consumeOAuthState(flow.args)),
     );
+
     expect(outcomes.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
     expect(outcomes.filter(({ status }) => status === 'rejected')).toHaveLength(11);
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
@@ -74,10 +80,12 @@ describe('OAuth browser state', () => {
   it('fails closed when acknowledgement of an atomic claim is lost', async () => {
     const flow = await begin();
     const claim = flow.adapter.setIfAbsent.getMockImplementation()!;
+
     flow.adapter.setIfAbsent.mockImplementationOnce(async (...args) => {
       await claim(...args);
       throw new Error('connection lost after commit');
     });
+
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
     expect(flow.values.get(`oauth:consumed:${flow.state}`)).toBe(true);
@@ -88,6 +96,7 @@ describe('OAuth browser state', () => {
     const key = `oauth:state:${flow.state}`;
     const encrypted = flow.values.get(key) as string;
     flow.values.set(key, `${encrypted.slice(0, -2)}XX`);
+
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
     expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
   });
@@ -97,6 +106,7 @@ describe('OAuth browser state', () => {
     async (kind) => {
       const flow = await begin();
       const original = flow.req.headers.get('cookie')!;
+
       flow.req.headers.set(
         'cookie',
         kind === 'missing'
@@ -105,9 +115,12 @@ describe('OAuth browser state', () => {
             ? `${original}; ${original}`
             : `${original.split('=')[0]}=${'a'.repeat(43)}`,
       );
+
       await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
+
       flow.req.headers.set('cookie', original);
+
       await expect(consumeOAuthState(flow.args)).resolves.toHaveProperty('intent');
     },
   );
@@ -117,12 +130,14 @@ describe('OAuth browser state', () => {
     flow.req.user = null;
     flow.req.headers.set('sec-fetch-site', 'cross-site');
     const { intent } = await consumeOAuthState(flow.args);
+
     expect(intent.owner).toEqual({ id: 'owner', collection: 'users' });
   });
 
   it('rejects conflicting authenticated owners without consuming', async () => {
     const flow = await begin();
     flow.req.user = { id: 'attacker', collection: 'users' };
+
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
     expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
   });
@@ -130,9 +145,11 @@ describe('OAuth browser state', () => {
   it('requires an authenticated owner at link start and keeps login ownerless', async () => {
     const fixture = setup();
     fixture.req.user = null;
+
     await expect(
       createOAuthState({ ...fixture, ...fixture.binding, returnTo: '/' }),
     ).rejects.toMatchObject({ code: 'state' });
+
     const started = await createOAuthState({
       ...fixture,
       ...fixture.binding,
@@ -140,6 +157,7 @@ describe('OAuth browser state', () => {
       collection: 'customers',
       returnTo: '/',
     });
+
     fixture.req.headers.set('cookie', started.setCookie.split(';')[0]);
     const { intent } = await consumeOAuthState({
       ...fixture,
@@ -148,6 +166,7 @@ describe('OAuth browser state', () => {
       collection: 'customers',
       state: started.state,
     });
+
     expect(intent.owner).toBeUndefined();
     expect([...fixture.values.keys()]).toEqual([
       `oauth:state:${started.state}`,
@@ -162,6 +181,7 @@ describe('OAuth browser state', () => {
     { callbackUrl: 'https://other.test/api/connections/example/callback' },
   ])('rejects callback binding mismatch %j', async (change) => {
     const flow = await begin();
+
     await expect(consumeOAuthState({ ...flow.args, ...change } as never)).rejects.toMatchObject({
       code: 'state',
     });
@@ -174,6 +194,7 @@ describe('OAuth browser state', () => {
       const flow = await begin();
       const key = `oauth:state:${flow.state}`;
       const data = JSON.parse(await flow.encryption.decrypt(flow.values.get(key) as string));
+
       data[field] =
         field === 'expiresAt'
           ? 'Infinity'
@@ -184,7 +205,9 @@ describe('OAuth browser state', () => {
               : field === 'owner'
                 ? undefined
                 : 'wrong';
+
       flow.values.set(key, await flow.encryption.encrypt(JSON.stringify(data)));
+
       await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
     },
@@ -198,6 +221,7 @@ describe('OAuth browser state', () => {
       const data = JSON.parse(await flow.encryption.decrypt(flow.values.get(key) as string));
       data.expiresAt = data.issuedAt + duration;
       flow.values.set(key, await flow.encryption.encrypt(JSON.stringify(data)));
+
       await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
       expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
     },
@@ -208,8 +232,10 @@ describe('OAuth browser state', () => {
     const data = JSON.parse(
       await flow.encryption.decrypt(flow.values.get(`oauth:state:${flow.state}`) as string),
     );
+
     flow.expirations.clear();
     vi.spyOn(Date, 'now').mockReturnValue(data.expiresAt);
+
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
   });
 
@@ -225,6 +251,7 @@ describe('OAuth browser state', () => {
     '/\n/evil.test',
   ])('rejects unsafe returnTo %s', async (returnTo) => {
     const fixture = setup();
+
     await expect(
       createOAuthState({ ...fixture, ...fixture.binding, returnTo }),
     ).rejects.toBeInstanceOf(Error);
@@ -243,6 +270,7 @@ describe('OAuth browser state', () => {
       scope: 'admin',
       access_type: 'offline',
     };
+
     const fixture = setup({
       ...definition,
       oauth: {
@@ -251,12 +279,15 @@ describe('OAuth browser state', () => {
         params,
       },
     });
+
     const started = await createOAuthState({
       ...fixture,
       ...fixture.binding,
       returnTo: 'https://app.test/settings',
     });
+
     const url = new URL(started.authorizationUrl);
+
     expect(url.searchParams.get('redirect_uri')).toBe(fixture.binding.callbackUrl);
     expect(url.searchParams.get('client_id')).toBe('client');
     expect(url.searchParams.get('state')).toBe(started.state);
@@ -270,10 +301,12 @@ describe('OAuth browser state', () => {
   it('does not restore the replay claim after token exchange failure', async () => {
     const flow = await begin();
     const { intent } = await consumeOAuthState(flow.args);
+
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(Response.json({ error: 'invalid_grant' }, { status: 400 }))),
     );
+
     await expect(
       exchangeOAuthCode({
         piece: flow.piece,
@@ -296,8 +329,10 @@ describe('OAuth browser state', () => {
         params: { code_challenge: 'evil', code_verifier: 'evil' },
       },
     });
+
     const flow = await begin(fixture);
     const params = new URL(flow.authorizationUrl).searchParams;
+
     expect(params.has('code_challenge')).toBe(false);
     expect(params.has('code_challenge_method')).toBe(false);
     expect(params.has('code_verifier')).toBe(false);

@@ -49,6 +49,7 @@ export function applyDatabase(dest: string, database: Database): void {
     configPath,
     'dbImport',
   );
+
   config = replaceOnce(config, CONFIG_ANCHORS.db, DATABASES[database].block, configPath, 'db');
 
   fs.writeFileSync(configPath, config);

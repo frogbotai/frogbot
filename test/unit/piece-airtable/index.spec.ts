@@ -2,6 +2,7 @@ import type { FrogBotRequest } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   'frogbot/pieces/test',
   () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
@@ -28,6 +29,7 @@ const table = {
   ],
   views: [{ id: 'viw1', name: 'All', type: 'grid' }],
 };
+
 const record = {
   id: 'rec1',
   createdTime: '2026-09-13T10:00:00.000Z',
@@ -52,12 +54,15 @@ function installTransport() {
     if (url.pathname === '/v0/meta/bases' && init.method === 'POST') {
       return response({ id: 'appNew', tables: [table] });
     }
+
     if (url.pathname === '/v0/meta/bases') {
       return response({ bases: [{ id: 'app1', name: 'Operations', workspaceId: 'wsp1' }] });
     }
+
     if (url.pathname === '/v0/meta/bases/app1/tables' && init.method === 'POST') {
       return response(table);
     }
+
     if (url.pathname === '/v0/meta/bases/app1/tables') return response({ tables: [table] });
     if (url.hostname === 'content.airtable.com') return response(record);
     if (url.pathname === '/v0/app1/tbl1/rec1/comments') {
@@ -67,9 +72,11 @@ function installTransport() {
         createdTime: '2026-09-13T10:00:00.000Z',
       });
     }
+
     if (url.pathname === '/v0/app1/tbl1/rec1' && init.method === 'DELETE') {
       return response({ id: 'rec1', deleted: true });
     }
+
     if (url.pathname === '/v0/app1/tbl1/rec1') return response(record);
     if (url.pathname === '/v0/app1/tbl1' && init.method === 'POST') return response(record);
     if (url.pathname === '/v0/app1/tbl1') return response({ records: [record] });
@@ -77,6 +84,7 @@ function installTransport() {
 
     return response({ error: 'not found' }, 404);
   };
+
   const transport = vi.fn((input: string | URL | Request, init?: RequestInit) =>
     Promise.resolve(route(input, init)),
   );
@@ -93,6 +101,7 @@ function request() {
     url: '/files/report.txt',
     filename: 'report.txt',
   });
+
   const req = {
     url: 'https://app.test/api',
     headers: new Headers({ authorization: 'Bearer caller', cookie: 'session=caller' }),

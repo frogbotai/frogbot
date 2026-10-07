@@ -173,6 +173,7 @@ expectTypeOf<Record<never, never>>().not.toMatchTypeOf<NodeRegistration>();
 expectTypeOf<typeof DividerNode>().not.toMatchTypeOf<NodeRegistration>();
 expectTypeOf<{ node: Record<never, never> }>().not.toMatchTypeOf<NodeRegistration>();
 expectTypeOf<{ node: () => undefined }>().not.toMatchTypeOf<NodeRegistration>();
+
 expectTypeOf<{
   node: typeof DividerNode;
   hooks: { afterRead: Array<() => number> };

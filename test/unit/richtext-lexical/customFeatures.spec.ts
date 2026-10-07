@@ -27,15 +27,18 @@ describe('custom server features', () => {
       },
       node: ParagraphNode,
     });
+
     const text = createNode({ node: TextNode });
     const Feature = createServerFeature({
       feature: { nodes: [paragraph, text] },
       key: 'heterogeneous',
     });
+
     const config = await editorConfigFactory.fromFeatures({
       config: {} as SanitizedConfig,
       features: [Feature()],
     });
+
     const editor = createHeadlessEditor({
       nodes: config.features.nodes.map(({ node }) => node),
     });

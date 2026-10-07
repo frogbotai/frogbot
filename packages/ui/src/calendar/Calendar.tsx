@@ -12,6 +12,7 @@ export type CalendarProps<T extends CalendarEvent> = TimeGridProps<T> & {
 
 export function Calendar<T extends CalendarEvent>(props: CalendarProps<T>) {
   const navigation = useCalendar(props);
+
   return (
     <section className="frog-calendar">
       <CalendarHeader

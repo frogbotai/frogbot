@@ -103,6 +103,7 @@ describe('auth strategies', () => {
         body: JSON.stringify({ query: '{ meUser { user { id email } } }' }),
       }),
     );
+
     const body = (await response.json()) as {
       data: { meUser: { user: unknown } };
       errors?: unknown;

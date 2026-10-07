@@ -117,6 +117,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = resolved.instance.languageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
@@ -129,6 +130,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       // Translate OpenAI Responses wire format → AI SDK format.
@@ -141,6 +143,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         resolved.providerName,
         resolved.modelName,
       );
+
       const { params, providerOptions } = forwardResponseParams(body, resolved.providerName);
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
@@ -202,6 +205,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
           phase,
           logger,
         });
+
         lifecycle = streamLifecycle;
         const result = otelContext.with(activeContext, () =>
           streamText({
@@ -228,14 +232,17 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
             production: isProduction(),
           }),
         );
+
         const peeked = await peekStream(sseStream);
         if (!peeked && upstream.timedOut()) {
           throw upstreamTimeoutError();
         }
+
         const firstError = peeked ? firstResponsesStreamErrorEnvelope(peeked.first) : undefined;
         if (firstError) {
           finishReason = 'error';
           await lifecycle.finalizeNow();
+
           return Response.json(
             {
               error: {
@@ -258,6 +265,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         }
 
         finishReason = 'streaming';
+
         return createSseResponse(
           toSseStream(peeked?.stream ?? new ReadableStream<string>(), {
             appendDone: false,
@@ -284,6 +292,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       // --- Non-streaming path ---
       const result = await otelContext.with(activeContext, () => generateText(aiOptions));
       finishReason = result.finishReason;
+
       usage = {
         inputTokens: result.usage.inputTokens ?? 0,
         outputTokens: result.usage.outputTokens ?? 0,
@@ -294,6 +303,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       };
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         {
@@ -339,6 +349,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       // `afterOperation` is the guaranteed-fire billing/audit slot. For
@@ -354,6 +365,7 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       // the `afterError` the `catch` already fired).
       const streamThrewBeforeFinalize =
         lifecycle !== undefined && operationError !== undefined && !lifecycle.hasFinalized();
+
       if (base && (!lifecycle || streamThrewBeforeFinalize)) {
         await runHooks(
           hooks.afterOperation,
@@ -377,12 +389,15 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 
@@ -394,51 +409,67 @@ function buildOpenAIResponseOptions(body: ResponsesRequest): Record<string, JSON
   if (body.previous_response_id != null) {
     options.previousResponseId = body.previous_response_id;
   }
+
   if (body.user != null) {
     options.user = body.user;
   }
+
   if (body.metadata != null) {
     options.metadata = body.metadata as JSONValue;
   }
+
   if (body.store != null) {
     options.store = body.store;
   }
+
   if (body.parallel_tool_calls != null) {
     options.parallelToolCalls = body.parallel_tool_calls;
   }
+
   if (body.truncation != null) {
     options.truncation = body.truncation;
   }
+
   if (body.service_tier != null) {
     options.serviceTier = body.service_tier;
   }
+
   if (body.include != null) {
     options.include = body.include;
   }
+
   if (body.prompt_cache_key != null) {
     options.promptCacheKey = body.prompt_cache_key;
   }
+
   if (body.prompt_cache_retention != null) {
     options.promptCacheRetention = body.prompt_cache_retention;
   }
+
   if (body.safety_identifier != null) {
     options.safetyIdentifier = body.safety_identifier;
   }
+
   if (body.max_tool_calls != null) {
     options.maxToolCalls = body.max_tool_calls;
   }
+
   if (body.reasoning?.effort != null) {
     options.reasoningEffort = body.reasoning.effort;
   }
+
   if (body.reasoning?.summary != null) {
     options.reasoningSummary = body.reasoning.summary;
   }
+
   if (body.text?.verbosity != null) {
     options.textVerbosity = body.text.verbosity;
   }
+
   if (body.text?.format?.strict != null) {
     options.strictJsonSchema = body.text.format.strict;
   }
+
   return options;
 }
 
@@ -486,6 +517,7 @@ function firstResponsesStreamErrorEnvelope(chunk: string) {
     if (!data) {
       continue;
     }
+
     try {
       const envelope = streamErrorFrameToEnvelope(JSON.parse(data));
       if (envelope) return envelope;
@@ -493,5 +525,6 @@ function firstResponsesStreamErrorEnvelope(chunk: string) {
       continue;
     }
   }
+
   return undefined;
 }

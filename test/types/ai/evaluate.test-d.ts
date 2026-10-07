@@ -56,11 +56,13 @@ expectTypeOf<Result['answers']['team']>().not.toHaveProperty('probability');
 expectTypeOf<Result['usage']['inputTokens']>().toEqualTypeOf<number | undefined>();
 expectTypeOf<Result['response']['timestamp']>().toEqualTypeOf<Date>();
 expectTypeOf<Result['response']['modelId']>().toEqualTypeOf<string>();
+
 expectTypeOf<Result['rounding']>().toEqualTypeOf<
   EvaluateResult<{
     refunded: { type: 'boolean'; instructions: string };
   }>['rounding']
 >();
+
 expectTypeOf<Result['providerMetadata']>().toEqualTypeOf<
   EvaluateResult<{
     refunded: { type: 'boolean'; instructions: string };
@@ -86,6 +88,7 @@ expectTypeOf(
 
 expectTypeOf<'typesafe-ai/jev'>().toMatchTypeOf<CatalogModelId>();
 expectTypeOf<'typesafe-ai/jev-latest'>().toMatchTypeOf<CatalogModelId>();
+
 expectTypeOf<{
   model: 'typesafe-ai/jev';
   state: 'Transcript';
@@ -99,19 +102,23 @@ expectTypeOf<{
 expectTypeOf<'invalid/model'>().not.toMatchTypeOf<
   EvaluateOpts<Record<string, EvaluationQuestion>>['model']
 >();
+
 expectTypeOf<{ type: 'choice'; instructions: string }>().not.toMatchTypeOf<EvaluationQuestion>();
 expectTypeOf<{ type: 'score'; instructions: string }>().not.toMatchTypeOf<EvaluationQuestion>();
 expectTypeOf<{ type: 'unknown'; instructions: string }>().not.toMatchTypeOf<EvaluationQuestion>();
+
 expectTypeOf<{
   type: 'boolean';
   instructions: string;
   criteria: { maybe: string };
 }>().not.toMatchTypeOf<EvaluationQuestion>();
+
 expectTypeOf<{
   model: 'typesafe-ai/jev';
   state: 'Transcript';
   questions: Record<string, never>;
 }>().not.toMatchTypeOf<EvaluateOpts<{ refunded: { type: 'boolean'; instructions: string } }>>();
+
 expectTypeOf<{
   model: 'typesafe-ai/jev';
   state: true;

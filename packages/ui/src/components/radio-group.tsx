@@ -1,11 +1,13 @@
 'use client';
 import * as Primitive from '@radix-ui/react-radio-group';
 import type { ComponentProps } from 'react';
+
 export function RadioGroup({ className, ...props }: ComponentProps<typeof Primitive.Root>) {
   return (
     <Primitive.Root className={`fb-radio-group${className ? ` ${className}` : ''}`} {...props} />
   );
 }
+
 export function RadioGroupItem(input: Omit<ComponentProps<typeof Primitive.Item>, 'asChild'>) {
   const { asChild: _asChild, className, ...props } = input as ComponentProps<typeof Primitive.Item>;
 

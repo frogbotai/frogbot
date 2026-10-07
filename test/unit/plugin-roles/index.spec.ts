@@ -36,6 +36,7 @@ function req(roles: string[] = ['member'], id = 'user-1'): FrogBotRequest {
 describe('rolesPlugin', () => {
   it('is inert without configured roles', async () => {
     const input = config();
+
     expect((await rolesPlugin()(input))._roles).toEqual({
       present: true,
       configured: false,
@@ -51,6 +52,7 @@ describe('rolesPlugin', () => {
   it('writes marker-only role metadata', async () => {
     const input = config();
     const configured = await rolesPlugin({ roles: ['admin', 'member'] })(input);
+
     expect(configured._roles).toEqual({
       present: true,
       configured: true,
@@ -58,6 +60,7 @@ describe('rolesPlugin', () => {
     });
 
     const result = await rolesPlugin()(input);
+
     expect(result._roles).toEqual({ present: true, configured: false, roles: [] });
   });
 
@@ -65,7 +68,9 @@ describe('rolesPlugin', () => {
     const result = await rolesPlugin({
       roles: ['admin', 'prompt-engineer', { slug: 'finance', label: 'Money' }],
     })(config());
+
     const users = result.collections.find(({ slug }) => slug === 'users')!;
+
     expect(users.fields).toContainEqual(
       expect.objectContaining({
         name: 'roles',
@@ -88,8 +93,10 @@ describe('rolesPlugin', () => {
     expect(rolesPlugin({ roles: ['Admin'] })(config())).toMatchObject({
       _roles: { roles: ['Admin'] },
     });
+
     const input = config();
     input.collections[0].fields.push({ name: 'roles', type: 'text' });
+
     expect(() => rolesPlugin({ roles: ['member'] })(input)).toThrow(/roles/);
   });
 
@@ -103,7 +110,9 @@ describe('rolesPlugin', () => {
     const result = await rolesPlugin({ roles: ['admin', 'member'], defaultRole: 'member' })(
       config(),
     );
+
     const users = result.collections.find(({ slug }) => slug === 'users')!;
+
     expect(users.hooks?.beforeChange).toBeUndefined();
     expect(users.fields).toContainEqual(
       expect.objectContaining({ name: 'roles', defaultValue: ['member'] }),
@@ -115,6 +124,7 @@ describe('rolesPlugin', () => {
     const field = result.collections[0].fields.find(
       (item) => 'name' in item && item.name === 'roles',
     )!;
+
     expect('defaultValue' in field).toBe(false);
   });
 
@@ -123,6 +133,7 @@ describe('rolesPlugin', () => {
     const field = result.collections[0].fields.find(
       (item) => 'name' in item && item.name === 'roles',
     )!;
+
     expect('access' in field).toBe(false);
   });
 
@@ -133,6 +144,7 @@ describe('rolesPlugin', () => {
     const field = result.collections[0].fields.find(
       (item) => 'name' in item && item.name === 'roles',
     )!;
+
     expect('access' in field && field.access?.update).toBe(update);
   });
 });
@@ -141,6 +153,7 @@ describe('predicates and resolution', () => {
   it('exposes literal synchronous predicates', async () => {
     const request = req(['admin', 'member']);
     await rolesPlugin({ roles: ['admin', 'member'] })(config());
+
     expect(isLoggedIn(request)).toBe(true);
     expect(rolesOf(request)).toEqual(['admin', 'member']);
     expect(hasRole(request, 'member')).toBe(true);
@@ -159,10 +172,13 @@ describe('predicates and resolution', () => {
       find: vi.fn().mockResolvedValue({ docs: [], hasNextPage: false }),
       logger: { warn: vi.fn() },
     };
+
     for (const onInit of Array.isArray(result.onInit) ? result.onInit : [result.onInit!]) {
       await onInit(frogbot as never);
     }
+
     const request = { ...req([]), frogbot } as unknown as FrogBotRequest;
+
     expect(hasRole(request, 'finance')).toBe(true);
     expect(rolesOf(request)).toEqual(['finance']);
     expect(resolveRoles).toHaveBeenCalledTimes(1);
@@ -177,6 +193,7 @@ describe('allow', () => {
       () => false,
       () => ({ reviewer: { equals: 'user-1' } }),
     );
+
     const input = config();
     input.collections[1].access = { read: access };
     const result = await rolesPlugin({ roles: ['member', 'finance'] })(input);
@@ -193,6 +210,7 @@ describe('allow', () => {
     const input = config();
     input.collections[1].access = { read: allow('finance') };
     const result = await rolesPlugin({ roles: ['admin', 'finance'] })(input);
+
     await expect(result.collections[1].access!.read!({ req: req(['admin']) })).resolves.toBe(false);
     await expect(result.collections[1].access!.read!({ req: req(['finance']) })).resolves.toBe(
       true,
@@ -206,6 +224,7 @@ describe('allow', () => {
     const result = await rolesPlugin({ roles: ['member'] })(input);
     const posts = result.collections.find(({ slug }) => slug === 'posts')!;
     const hook = posts.hooks!.beforeChange!.at(-1)!;
+
     expect(
       await hook({ operation: 'create', data: { owner: 'spoofed' }, req: req() } as never),
     ).toEqual({ owner: 'user-1' });
@@ -214,17 +233,21 @@ describe('allow', () => {
 
     const invalid = config();
     invalid.collections[1].access = { read: allow({ role: 'member', own: 'oner' }) };
+
     expect(() => rolesPlugin({ roles: ['member'] })(invalid)).toThrow(/owner/);
   });
 
   it('does not stamp ownership for function-only create grants', async () => {
     const input = config();
+
     input.collections[1].access = {
       create: allow({ role: 'member', own: 'owner' }, ({ req }) => hasRole(req, 'finance')),
     };
+
     const result = await rolesPlugin({ roles: ['member', 'finance'] })(input);
     const posts = result.collections[1];
     const hook = posts.hooks!.beforeChange!.at(-1)!;
+
     expect(await posts.access!.create!({ req: req(['finance']) })).toBe(true);
     expect(await hook({ operation: 'create', data: {}, req: req(['finance']) } as never)).toEqual(
       {},
@@ -233,16 +256,19 @@ describe('allow', () => {
 
   it('uses polymorphic values only for polymorphic ownership fields', async () => {
     const input = config();
+
     input.collections[1].fields.push({
       name: 'subject',
       type: 'relationship',
       relationTo: ['users', 'teams'],
     });
+
     input.collections[1].access = { read: allow({ role: 'member', own: 'subject' }) };
     const result = await rolesPlugin({ roles: ['member'] })(input);
     const request = {
       user: { id: 'user-1', roles: ['member'], collection: 'users' },
     } as unknown as FrogBotRequest;
+
     expect(await result.collections[1].access!.read!({ req: request })).toEqual({
       subject: { equals: { relationTo: 'users', value: 'user-1' } },
     });
@@ -251,18 +277,21 @@ describe('allow', () => {
   it('rejects app-authored unlisted role slugs at boot', () => {
     const input = config();
     input.collections[1].access = { read: allow('finance') };
+
     expect(() => rolesPlugin({ roles: ['member'] })(input)).toThrow(/finance/);
   });
 
   it("allows own 'id' only on the auth collection", () => {
     const invalid = config();
     invalid.collections[1].access = { read: allow({ role: 'member', own: 'id' }) };
+
     expect(() => rolesPlugin({ roles: ['member'] })(invalid)).toThrow(
       /only valid on the 'users' auth collection/,
     );
 
     const valid = config();
     valid.collections[0].access = { read: allow({ role: 'member', own: 'id' }) };
+
     expect(() => rolesPlugin({ roles: ['member'] })(valid)).not.toThrow();
   });
 
@@ -275,7 +304,9 @@ describe('allow', () => {
     const firstResult = await rolesPlugin({ roles: ['finance'], resolveRoles: () => ['finance'] })(
       first,
     );
+
     const secondResult = await rolesPlugin({ roles: ['finance'], resolveRoles: () => [] })(second);
+
     expect(await firstResult.collections[1].access!.read!({ req: req([]) })).toBe(true);
     expect(await secondResult.collections[1].access!.read!({ req: req([]) })).toBe(false);
   });

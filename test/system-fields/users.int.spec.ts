@@ -283,6 +283,7 @@ describe('created by and last modified by', () => {
           depth: 0,
           overrideAccess: true,
         });
+
         const usage = await booted.frogbot.count({
           collection: usageLogsSlug,
           where: { user: { equals: ben.id } },
@@ -316,6 +317,7 @@ describe('created by and last modified by', () => {
         task: touchTicketTaskSlug,
         input: { ticket: String(id), title: 'Printer, checked' },
       } as never);
+
       await booted.frogbot.jobs.run();
 
       const ticket = await readTicket(id);
@@ -387,6 +389,7 @@ describe('created by and last modified by', () => {
         `Imported one,${ben.id},${ben.id}`,
         `Imported two,${ben.id},${ben.id}`,
       ].join('\n');
+
       const data = Buffer.from(csv);
 
       const imported = await booted.frogbot.create({
@@ -742,6 +745,7 @@ describe.skipIf(!isSQLite)('a chat turn on SQLite with transactions on', () => {
       data: { email: 'cy@system-fields.test', password },
       overrideAccess: true,
     });
+
     const chat = await frogbot.create({
       collection: chatsSlug,
       data: { user: user.id, agent: agentSlug },
@@ -780,6 +784,7 @@ describe.skipIf(!isSQLite)('a chat turn on SQLite with transactions on', () => {
         depth: 0,
         overrideAccess: true,
       });
+
       const usage = await frogbot.count({
         collection: usageLogsSlug,
         where: { user: { equals: user.id } },
@@ -795,6 +800,7 @@ describe.skipIf(!isSQLite)('a chat turn on SQLite with transactions on', () => {
       where: { chat: { equals: chat.id }, role: { equals: 'assistant' } },
       overrideAccess: true,
     });
+
     const logged = errors.mock.calls
       .flat()
       .map((argument) =>

@@ -14,6 +14,7 @@ export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIP
       </a>
     );
   }
+
   return (
     <span data-part="source-document" className="fb-source-part fb-source-part--document">
       {part.title}

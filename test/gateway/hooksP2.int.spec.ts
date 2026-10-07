@@ -57,6 +57,7 @@ function makeLanguageModel(opts?: { error?: Error }): LanguageModelV4 {
     },
     doGenerate: () => {
       if (opts?.error) return Promise.reject(opts.error);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text: 'hi' }],
         finishReason: finish('stop'),
@@ -76,12 +77,15 @@ function makeLanguageModel(opts?: { error?: Error }): LanguageModelV4 {
               controller.enqueue({ type: 'error', error: opts.error });
             } else {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
               });
+
               controller.enqueue({ type: 'text-end', id: 'text-0' });
+
               controller.enqueue({
                 type: 'finish',
                 finishReason: finish('stop'),
@@ -91,6 +95,7 @@ function makeLanguageModel(opts?: { error?: Error }): LanguageModelV4 {
                 }),
               });
             }
+
             controller.close();
           },
         }),
@@ -100,6 +105,7 @@ function makeLanguageModel(opts?: { error?: Error }): LanguageModelV4 {
 
 function makeAppWithModel(model: LanguageModelV4, hooks?: Hooks) {
   const registry = { groq: { languageModel: () => model } } as unknown as ProviderRegistry;
+
   return createApp({ registry, hooks });
 }
 
@@ -110,6 +116,7 @@ function makeAppWithModel(model: LanguageModelV4, hooks?: Hooks) {
 describe('G85 — gateway.hooks freeze is deep (HE8)', () => {
   it('Object.freeze on gateway.hooks deep-freezes the inner arrays', () => {
     const afterOpHook = () => {};
+
     const gw = createGateway({
       providers: { openai: { apiKey: 'sk-test' } },
       hooks: { afterOperation: [afterOpHook] },
@@ -120,8 +127,11 @@ describe('G85 — gateway.hooks freeze is deep (HE8)', () => {
 
     // G85: the inner ARRAY is now also frozen — push throws in strict mode.
     const arr = gw.hooks.afterOperation!;
+
     expect(Object.isFrozen(arr)).toBe(true);
+
     const before = arr.length;
+
     expect(() => arr.push(() => {})).toThrow();
     expect(arr.length).toBe(before);
   });
@@ -174,6 +184,7 @@ function makeEmbeddingModel(
     supportsParallelCalls: true,
     doEmbed: (options) => {
       capture(options.providerOptions);
+
       return Promise.resolve({
         embeddings: options.values.map(() => [0.1, 0.2, 0.3]),
         usage: { tokens: 4 },
@@ -196,6 +207,7 @@ describe('G87 — beforeUpstream contract on modality routes (HE12)', () => {
           }),
       },
     } as unknown as ProviderRegistry;
+
     const app = createApp({
       registry,
       hooks: {

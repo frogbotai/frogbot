@@ -2,6 +2,7 @@
 import * as Primitive from '@radix-ui/react-collapsible';
 import type { ComponentProps } from 'react';
 export const Collapsible = Primitive.Root;
+
 export function CollapsibleTrigger({
   className,
   ...props
@@ -13,6 +14,7 @@ export function CollapsibleTrigger({
     />
   );
 }
+
 export function CollapsibleContent({
   className,
   ...props

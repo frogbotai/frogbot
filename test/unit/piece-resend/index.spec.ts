@@ -14,6 +14,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('resend', () => {
   it('exposes all 22 native actions', () => {
     const resend = createResend({ auth: { apiKey: 'key' } });
+
     expect(pieceInstanceTools(resend)?.map(({ slug }) => slug)).toEqual(
       resendActions.map((action) => `resend_${action}`),
     );
@@ -25,6 +26,7 @@ describe('resend', () => {
     const classifications = Object.fromEntries(
       resendActions.map((slug) => [slug, pieceActionDefinition(resend[slug])?.idempotent]),
     );
+
     expect(classifications).toEqual({
       send: false,
       sendBatchEmails: false,
@@ -58,6 +60,7 @@ describe('resend', () => {
         headers: { 'Content-Type': 'application/json' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
     const req = {
       frogbot: {
@@ -69,6 +72,7 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     const resend = createResend({ auth: { apiKey: 'sk-test' } });
     const input = {
       to: ['to@example.com'],
@@ -78,11 +82,15 @@ describe('resend', () => {
       content_type: 'text' as const,
       content: 'Body',
     };
+
     await resend.send({ input, req });
     await pieceInstanceTools(resend)?.[0]?.execute?.(input, { req } as never);
+
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(fetch.mock.calls[0]?.[1]?.headers).toMatchObject({ Authorization: 'Bearer sk-test' });
+
     const body = JSON.parse(fetch.mock.calls[0]?.[1]?.body as string);
+
     expect(body).toMatchObject({
       from: 'FrogBot <from@example.com>',
       reply_to: 'from@example.com',
@@ -94,6 +102,7 @@ describe('resend', () => {
     const fetch = vi
       .fn()
       .mockResolvedValue(new Response(JSON.stringify({ id: 'email-id' }), { status: 200 }));
+
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'sk-test' };
     const req = {
@@ -102,17 +111,21 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     const resend = createResend({
       auth,
       from: { address: 'from@example.com', name: 'FrogBot' },
     });
+
     const client = await resend.client({ req });
+
     await resend[pieceCapabilities].email.send({
       message: { to: 'to@example.com', subject: 'Subject', text: 'Body' },
       client,
       options: { from: { address: 'from@example.com', name: 'FrogBot' } },
       req,
     });
+
     expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toEqual({
       from: 'FrogBot <from@example.com>',
       to: 'to@example.com',
@@ -127,6 +140,7 @@ describe('resend', () => {
       .mockResolvedValue(
         new Response(JSON.stringify({ data: [{ id: 'email-id' }] }), { status: 200 }),
       );
+
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'sk-test' };
     const req = {
@@ -137,6 +151,7 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     await expect(
       createResend({ auth }).sendBatchEmails({
         input: {
@@ -172,6 +187,7 @@ describe('resend', () => {
     const fetch = vi
       .fn()
       .mockResolvedValue(new Response(JSON.stringify({ id: 'id' }), { status: 200 }));
+
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'sk-test' };
     const req = {
@@ -182,7 +198,9 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     const resend = createResend({ auth });
+
     await resend.createBroadcast({
       input: {
         audience_id: 'audience',
@@ -193,16 +211,19 @@ describe('resend', () => {
       },
       req,
     });
+
     expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toEqual({
       audience_id: 'audience',
       from: 'from@example.com',
       subject: 'Subject',
       text: 'Body',
     });
+
     await resend.rescheduleEmail({
       input: { email_id: 'email', scheduled_at: '2030-01-01T00:00:00Z' },
       req,
     });
+
     expect(JSON.parse(fetch.mock.calls[1]?.[1]?.body as string)).toEqual({
       scheduled_at: '2030-01-01T00:00:00Z',
     });
@@ -215,6 +236,7 @@ describe('resend', () => {
         headers: { 'Content-Type': 'application/json', 'X-Result': 'created' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'sk-test' };
     const req = {
@@ -223,6 +245,7 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     await expect(
       createResend({ auth }).customApiCall({
         input: {
@@ -245,6 +268,7 @@ describe('resend', () => {
     const fetch = vi
       .fn()
       .mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'sk-test' };
     const req = {
@@ -253,7 +277,9 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     const resend = createResend({ auth });
+
     await resend.customApiCall({
       input: {
         method: 'POST',
@@ -272,13 +298,17 @@ describe('resend', () => {
       },
       req,
     });
+
     const form = fetch.mock.calls[0]?.[1]?.body as FormData;
+
     expect(form.get('name')).toBe('FrogBot');
     expect((form.get('file') as File).name).toBe('file.bin');
+
     await resend.customApiCall({
       input: { method: 'POST', url: '/raw', body_type: 'raw', body: { data: 'raw body' } },
       req,
     });
+
     expect(fetch.mock.calls[1]?.[1]?.body).toBe('raw body');
   });
 
@@ -292,6 +322,7 @@ describe('resend', () => {
         }),
       ),
     );
+
     const auth = { apiKey: 'sk-test' };
     const create = vi.fn().mockResolvedValue({ url: '/api/files/output.pdf' });
     const req = {
@@ -302,6 +333,7 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     await expect(
       createResend({ auth }).customApiCall({
         input: { method: 'GET', url: '/binary', response_is_binary: true },
@@ -325,6 +357,7 @@ describe('resend', () => {
           new Response(JSON.stringify({ message: 'invalid recipient' }), { status: 422 }),
         ),
     );
+
     const req = {
       frogbot: {
         connections: {
@@ -335,6 +368,7 @@ describe('resend', () => {
       },
       user: null,
     } as never;
+
     await expect(
       createResend({ auth: { apiKey: 'sk-test' } }).send({
         input: {

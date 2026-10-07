@@ -11,6 +11,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('Google Drive files through the SDK', () => {
   it('creates folders with shared-drive support and no media', async () => {
     const { drive, req, requests } = await fixture();
+
     await expect(
       drive.createFolder({
         req,
@@ -37,6 +38,7 @@ describe('Google Drive files through the SDK', () => {
     async (mimeType) => {
       const { drive, req, requests } = await fixture();
       await drive.createFile({ req, input: { name: '新しい', text: 'héllo,世界', mimeType } });
+
       expect(requests[0]?.url.pathname).toBe('/upload/drive/v3/files');
       expect(requests[0]?.url.searchParams.get('uploadType')).toBe('multipart');
       expect(requests[0]?.body.toString()).toContain('héllo,世界');
@@ -50,6 +52,7 @@ describe('Google Drive files through the SDK', () => {
     const fetchFile = vi.fn().mockResolvedValue(new Response(data));
     vi.stubGlobal('fetch', fetchFile);
     const { drive, req, requests, findByID } = await fixture();
+
     await drive.uploadFile({
       req,
       input: {
@@ -58,6 +61,7 @@ describe('Google Drive files through the SDK', () => {
         includeSharedDrives: true,
       },
     });
+
     expect(findByID).toHaveBeenCalledWith({
       collection: 'files',
       id: 'source',
@@ -65,7 +69,9 @@ describe('Google Drive files through the SDK', () => {
       req,
       overrideAccess: false,
     });
+
     const fetchOptions = fetchFile.mock.calls[0][1];
+
     expect(fetchOptions.headers.get('authorization')).toBe('Bearer app-token');
     expect(fetchOptions.headers.get('cookie')).toBe('session=private');
     expect(fetchOptions.redirect).toBe('error');
@@ -80,6 +86,7 @@ describe('Google Drive files through the SDK', () => {
     const { drive, req, findByID } = await fixture();
     findByID.mockResolvedValue({ url: 'https://storage.test/signed', filename: 'file' });
     await drive.uploadFile({ req, input: { file: { fileId: 'source' } } });
+
     expect([...fetchFile.mock.calls[0][1].headers]).toEqual([]);
   });
 
@@ -100,6 +107,7 @@ describe('Google Drive files through the SDK', () => {
     vi.stubGlobal('fetch', fetchFile);
     const { drive, req, findByID, requests } = await fixture();
     arrange(findByID);
+
     await expect(
       drive.uploadFile({ req, input: { file: { fileId: 'source' } } }),
     ).rejects.toThrow();
@@ -112,6 +120,7 @@ describe('Google Drive files through the SDK', () => {
     const { drive, req, requests, create } = await fixture(({ url }) =>
       url.searchParams.get('alt') === 'media' ? new Response(bytes) : json(metadata),
     );
+
     await expect(
       drive.downloadFile({ req, input: { fileId: 'file', includeSharedDrives: true } }),
     ).resolves.toEqual({
@@ -145,7 +154,9 @@ describe('Google Drive files through the SDK', () => {
           ? new Response('office bytes')
           : json({ id: 'file', name: 'Report', mimeType: `application/vnd.google-apps.${kind}` }),
       );
+
       await drive.downloadFile({ req, input: { fileId: 'file' } });
+
       expect(requests[1]?.url.searchParams.get('mimeType')).toBe(
         `application/vnd.openxmlformats-officedocument.${mime}`,
       );
@@ -158,15 +169,18 @@ describe('Google Drive files through the SDK', () => {
     const { drive, req, create } = await fixture(() =>
       json({ ...metadata, mimeType: folderMimeType }),
     );
+
     await expect(drive.downloadFile({ req, input: { fileId: 'file' } })).rejects.toThrow(
       'Folders cannot',
     );
     expect(create).not.toHaveBeenCalled();
+
     const failing = await fixture(({ url }) =>
       url.pathname.endsWith('/export')
         ? json({ error: { message: 'Cannot export' } }, 403)
         : json({ ...metadata, mimeType: 'application/vnd.google-apps.document' }),
     );
+
     await expect(
       failing.drive.downloadFile({ req: failing.req, input: { fileId: 'file' } }),
     ).rejects.toThrow('403');
@@ -176,7 +190,9 @@ describe('Google Drive files through the SDK', () => {
   it('gets full metadata and copies with Google-format conversion', async () => {
     const { drive, req, requests } = await fixture();
     await drive.getFile({ req, input: { fileId: 'file', includeSharedDrives: true } });
+
     expect(requests[0]?.url.searchParams.get('fields')).toBe('*');
+
     await drive.copyFile({
       req,
       input: {
@@ -187,6 +203,7 @@ describe('Google Drive files through the SDK', () => {
         includeSharedDrives: true,
       },
     });
+
     expect(requests[1]?.url.pathname).toBe('/drive/v3/files/file/copy');
     expect(JSON.parse(requests[1].body.toString())).toEqual({
       name: 'Copy',
@@ -201,6 +218,7 @@ describe('Google Drive files through the SDK', () => {
     const { drive, req, requests } = await fixture(({ url }) =>
       url.pathname.endsWith('/export') ? new Response(bytes) : json(metadata),
     );
+
     await drive.exportPdf({
       req,
       input: {
@@ -210,6 +228,7 @@ describe('Google Drive files through the SDK', () => {
         includeSharedDrives: true,
       },
     });
+
     expect(requests[0]?.url.searchParams.get('mimeType')).toBe('application/pdf');
     expect(requests[1]?.body.includes(bytes)).toBe(true);
     expect(requests[1]?.body.toString()).toContain('"name":"report.pdf"');
@@ -221,6 +240,7 @@ describe('Google Drive files through the SDK', () => {
     const { drive, req, requests } = await fixture(() =>
       json({ error: { message: 'Export denied' } }, 403),
     );
+
     await expect(
       drive.exportPdf({ req, input: { fileId: 'file', folderId: 'folder', name: 'pdf' } }),
     ).rejects.toThrow('403');
@@ -234,10 +254,12 @@ describe('Google Drive files through the SDK', () => {
     [[], 'destination', [{ removeParents: null, addParents: 'destination' }]],
   ])('moves from %j without detaching the destination', async (parents, folderId, patches) => {
     const { drive, req, requests } = await fixture(() => json({ ...metadata, parents }));
+
     await drive.moveFile({
       req,
       input: { fileId: 'file', folderId, includeSharedDrives: true },
     });
+
     expect(requests).toHaveLength(1 + patches.length);
     expect(
       requests.slice(1).map(({ method, url }) => ({
@@ -255,6 +277,7 @@ describe('Google Drive files through the SDK', () => {
         ? new Response(null, { status: 204 })
         : json({ ...metadata, trashed: true }),
     );
+
     await expect(
       drive.trashFile({ req, input: { fileId: 'file', includeSharedDrives: true } }),
     ).resolves.toMatchObject({ trashed: true });
@@ -272,6 +295,7 @@ describe('Google Drive files through the SDK', () => {
       const { drive, req, requests, oauth } = await fixture(() =>
         json({ error: { message: 'Provider failure' } }, status),
       );
+
       await expect(drive.getFile({ req, input: { fileId: 'file' } })).rejects.toThrow(
         'Provider failure',
       );
@@ -284,12 +308,14 @@ describe('Google Drive files through the SDK', () => {
   it('honors cancellation before sending any SDK request', async () => {
     const { drive, req, controller, requests } = await fixture();
     controller.abort(new Error('Cancelled'));
+
     await expect(drive.getFile({ req, input: { fileId: 'file' } })).rejects.toThrow('Cancelled');
     expect(requests).toEqual([]);
   });
 
   it('handles typed-array offsets and rejects text masquerading as bytes', () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
+
     expect(contentBytes(new DataView(bytes.buffer, 1, 2))).toEqual(Buffer.from([2, 3]));
     expect(() => contentBytes('not bytes')).toThrow('did not return file bytes');
   });

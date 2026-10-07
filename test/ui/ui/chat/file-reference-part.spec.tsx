@@ -12,6 +12,7 @@ const filePath = `/${assetsSlug}/file/chart%20one.png`;
 const docxType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const largeHint =
   'Large file (11.2 MB). In long chats, older files may be left out to keep requests small.';
+
 const reference = {
   type: 'file-reference',
   id: 'asset-1',

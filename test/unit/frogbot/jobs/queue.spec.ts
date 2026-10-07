@@ -107,6 +107,7 @@ describe('jobs.queue', () => {
     const create = vi.mocked(database.create);
 
     create.mockRejectedValue(new Error('unique constraint'));
+
     vi.mocked(database.find)
       .mockResolvedValueOnce({ docs: [] } as never)
       .mockResolvedValueOnce({ docs: [holder] } as never);

@@ -41,6 +41,7 @@ describe('resolveProvider', () => {
       operation: 'chat.completions',
       providers: registry,
     });
+
     expect(result.providerName).toBe('openai');
     expect(result.modelName).toBe('gpt-4o');
     expect(result.instance).toBe(mockProvider);
@@ -52,6 +53,7 @@ describe('resolveProvider', () => {
       operation: 'chat.completions',
       providers: registry,
     });
+
     expect(result.providerName).toBe('openai');
     expect(result.modelName).toBe('ft:gpt-4o-mini:org::abc');
   });
@@ -183,6 +185,7 @@ describe('resolveProvider', () => {
       context: { input: 8192, output: 0 },
       providers: ['openai'],
     });
+
     const catalog = defineModelCatalog(entry);
 
     expect(() =>
@@ -238,6 +241,7 @@ describe('resolveProvider', () => {
 
   it('rejects models not in the catalog when no allowlist is configured', () => {
     const catalog = defineModelCatalog();
+
     expect(() =>
       resolveProvider({
         modelId: 'openai/gpt-4o',
@@ -253,6 +257,7 @@ describe('resolveProvider', () => {
     const bedrockRegistry = {
       bedrock: bedrockProvider,
     } as unknown as ProviderRegistry;
+
     const profileId = 'bedrock/us.meta.llama3-3-70b-instruct-v1:0';
 
     expect(
@@ -289,6 +294,7 @@ describe('resolveProvider', () => {
     const allowlists = new Map([
       ['bedrock', new Set(['bedrock/anthropic.claude-sonnet-4-20250514-v1:0'])],
     ]);
+
     const bedrockRegistry = {
       bedrock: new MockProviderV4(),
     } as unknown as ProviderRegistry;
@@ -323,6 +329,7 @@ describe('buildProviderRegistry', () => {
         openai: { apiKey: 'sk-test' },
       }),
     );
+
     expect(registry.openai).toBeDefined();
   });
 
@@ -333,6 +340,7 @@ describe('buildProviderRegistry', () => {
         ollama: { baseURL: 'http://localhost:11434/v1' },
       }),
     );
+
     expect(registry.openai).toBeDefined();
     expect((registry as Record<string, unknown>)['ollama']).toBeDefined();
   });
@@ -341,6 +349,7 @@ describe('buildProviderRegistry', () => {
     const config = providerMap({ openai: { apiKey: 'sk-test' } });
     config.groq = undefined;
     const registry = buildProviderRegistry(config);
+
     expect(registry.openai).toBeDefined();
     expect(registry.groq).toBeUndefined();
   });
@@ -352,7 +361,9 @@ describe('buildProviderRegistry', () => {
     const hostile = JSON.parse(
       '{"__proto__": {"baseURL": "http://localhost:11434/v1"}}',
     ) as ProviderConfigMap;
+
     const registry = buildProviderRegistry(hostile);
+
     // Object.prototype's native __proto__ accessor is untouched (still an accessor,
     // not a data property holding the provider instance).
     expect(Object.getOwnPropertyDescriptor(Object.prototype, '__proto__')).toEqual(before);
@@ -364,6 +375,7 @@ describe('buildProviderRegistry', () => {
   // G36.5
   it('builds a null-prototype registry so prototype keys resolve to undefined', () => {
     const registry = buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } }));
+
     expect(Object.getPrototypeOf(registry)).toBe(null);
     expect((registry as Record<string, unknown>)['constructor']).toBeUndefined();
     expect((registry as Record<string, unknown>)['toString']).toBeUndefined();
@@ -373,6 +385,7 @@ describe('buildProviderRegistry', () => {
   it('passes a pre-built provider instance through as-is (no rebuild)', () => {
     const prebuilt = createOpenAI({ apiKey: 'sk-test' });
     const registry = buildProviderRegistry(providerMap({ openai: prebuilt }));
+
     expect(registry.openai).toBe(prebuilt);
   });
 
@@ -385,6 +398,7 @@ describe('buildProviderRegistry', () => {
         groq: { apiKey: 'gsk-test' },
       }),
     );
+
     expect(registry.openai).toBe(prebuilt);
     expect(registry.groq).toBeDefined();
     expect(registry.groq).not.toBe(prebuilt);

@@ -403,6 +403,7 @@ export default buildConfig({
           overrideAccess: true,
           req,
         });
+
         await req.frogbot.delete({
           collection: apiKeysSlug,
           where: { name: { equals: costKeyName } },
@@ -472,6 +473,7 @@ export default buildConfig({
           overrideAccess: true,
           req,
         });
+
         await req.frogbot.delete({
           collection: apiKeysSlug,
           where: { name: { equals: costKeyName } },

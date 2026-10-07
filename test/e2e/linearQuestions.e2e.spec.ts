@@ -250,6 +250,7 @@ describe.skipIf(!RUN_E2E)(
       if (blockedRequests.length) {
         throw new Error(`Unexpected outbound requests: ${JSON.stringify(blockedRequests)}`);
       }
+
       if (api.unexpected.length) {
         throw new Error(`Unexpected Linear API requests: ${JSON.stringify(api.unexpected)}`);
       }
@@ -446,6 +447,7 @@ describe.skipIf(!RUN_E2E)(
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: frog.email, password: 'linear-e2e-password' }),
       });
+
       const { token, user } = (await login.json()) as { token: string; user: { id: string } };
       const chat = await chatOf(session);
 

@@ -45,10 +45,13 @@ export function PageContextButton({
       const outsideButton = buttonRef.current
         ? !buttonRef.current.contains(event.target as Node)
         : true;
+
       if (outsideMenu && outsideButton) closeMenu();
     };
+
     if (showMenu) {
       document.addEventListener('mousedown', handleClickOutside);
+
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [closeMenu, showMenu]);
@@ -58,8 +61,10 @@ export function PageContextButton({
       event.preventDefault();
       if (showMenu) {
         closeMenu();
+
         return;
       }
+
       const result = await getOpenTabs();
       if (result.success && result.tabs) {
         setTabs(result.tabs);
@@ -109,6 +114,7 @@ export function PageContextButton({
                 const buttonRect = buttonRef.current.getBoundingClientRect();
                 const actualWidth = Math.min(400, window.innerWidth - 16);
                 const calculatedLeft = buttonRect.left + buttonRect.width / 2 - actualWidth / 2;
+
                 return Math.max(8, Math.min(calculatedLeft, window.innerWidth - actualWidth - 8));
               })(),
               bottom: window.innerHeight - buttonRef.current.getBoundingClientRect().top + 10,
@@ -130,6 +136,7 @@ export function PageContextButton({
                 const faviconUrl = tab.url
                   ? `https://www.google.com/s2/favicons?domain=${new URL(tab.url).hostname}&sz=32`
                   : null;
+
                 return (
                   <div
                     key={tab.id}

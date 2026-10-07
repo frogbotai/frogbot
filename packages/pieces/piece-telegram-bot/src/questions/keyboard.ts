@@ -16,6 +16,7 @@ const BUTTON_LIMIT = 48;
 const PAIRED_BUTTON_LIMIT = 20;
 
 type QuestionItem = QuestionInput['questions'][number];
+
 type QuestionOption = QuestionItem['options'][number];
 
 type Line = { plain: string; html: string };

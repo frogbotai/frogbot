@@ -14,12 +14,14 @@ const forbidden = [
   'firmware.ai',
   'frogbot.ai/assets',
 ];
+
 const files = fs
   .readdirSync(root, { recursive: true })
   .filter((file) => /\.(?:ts|tsx|css)$/.test(file));
 
 for (const file of files) {
   const source = fs.readFileSync(path.join(root, file), 'utf8');
+
   for (const value of forbidden) assert.ok(!source.includes(value), `${file} contains ${value}`);
 
   if (file.endsWith('.css')) {

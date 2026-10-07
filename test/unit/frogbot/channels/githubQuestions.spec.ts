@@ -210,11 +210,13 @@ describe('GitHub native questions through the channel host', () => {
   beforeEach(() => {
     api.reset();
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},
       allSettled: true,
     });
+
     continueTurn.mockReset();
   });
 

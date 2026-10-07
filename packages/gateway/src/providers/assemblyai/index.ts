@@ -16,6 +16,7 @@ export const assemblyaiProvider = {
   envVars: ['ASSEMBLYAI_API_KEY'],
   fromEnv: (env) => {
     if (!env.ASSEMBLYAI_API_KEY) return undefined;
+
     return { apiKey: env.ASSEMBLYAI_API_KEY };
   },
   build: (cfg) => createAssemblyAI(cfg),

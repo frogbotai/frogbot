@@ -25,12 +25,14 @@ export async function dispatchTriggerEvents({
           ]),
         )
         .digest('hex');
+
       const key = `trigger:dedupe:${identity}`;
 
       await frogbot.kv.lock(`${key}:lock`, 60_000, async ({ signal }) => {
         if (await frogbot.kv.has(key)) return;
 
         signal.throwIfAborted();
+
         await frogbot.queue({
           task: AGENT_TRIGGER_TASK_SLUG,
           queue: `frogbot-trigger:${subscriber.agentSlug}:${subscriber.trigger.trigger.slug}`,

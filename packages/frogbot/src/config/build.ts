@@ -17,12 +17,15 @@ function validate(config: FrogBotConfig): void {
   if (!config.secret || typeof config.secret !== 'string') {
     throw new Error('[frogbot] `secret` is required and must be a string.');
   }
+
   if (!config.db) {
     throw new Error('[frogbot] `db` is required. Pass a database adapter.');
   }
+
   if (!Array.isArray(config.collections)) {
     throw new Error('[frogbot] `collections` is required and must be an array.');
   }
+
   if ('globals' in config && config.globals !== undefined) {
     throw new Error(GLOBALS_ERROR);
   }
@@ -43,6 +46,7 @@ function stripPluginGlobals(config: FrogBotConfig): FrogBotConfig {
 async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
   const plugins = config.plugins ?? [];
   let current = config;
+
   for (let i = 0; i < plugins.length; i++) {
     const plugin = plugins[i];
     try {
@@ -52,6 +56,7 @@ async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
       throw new Error(`[frogbot] plugin at index ${i} failed: ${message}`);
     }
   }
+
   return current;
 }
 
@@ -64,12 +69,14 @@ function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
   ) {
     return config;
   }
+
   const onInit =
     config.onInit === undefined
       ? []
       : Array.isArray(config.onInit)
         ? config.onInit
         : [config.onInit];
+
   return {
     ...config,
     onInit: [
@@ -97,5 +104,6 @@ function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
 export async function buildConfig(config: FrogBotConfig): Promise<FrogBotSanitizedConfig> {
   validate(config);
   const transformed = validatePluginMarkers(stripPluginGlobals(await runPlugins(config)));
+
   return sanitize(transformed);
 }

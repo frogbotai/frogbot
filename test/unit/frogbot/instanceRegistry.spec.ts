@@ -25,6 +25,7 @@ describe('ensureFrogBotInstance', () => {
     const pending = new Promise<FrogBot>((done) => {
       resolve = done;
     });
+
     const init = vi.fn(() => pending);
 
     const first = ensureFrogBotInstance(payload, init);
@@ -58,11 +59,13 @@ describe('ensureFrogBotInstance', () => {
     const pending = new Promise<void>((done) => {
       resolve = done;
     });
+
     const frogbot = {} as FrogBot;
     const refresh = vi.fn(() => Promise.resolve());
     const init = vi.fn(async () => {
       await pending;
       registerFrogBotInstance(payload, frogbot, firstConfig, refresh);
+
       return frogbot;
     });
 

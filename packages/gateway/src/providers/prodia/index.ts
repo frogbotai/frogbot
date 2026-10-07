@@ -12,6 +12,7 @@ export const prodiaProvider = {
   envVars: ['PRODIA_TOKEN', 'PRODIA_BASE_URL'],
   fromEnv: (env) => {
     if (!env.PRODIA_TOKEN) return undefined;
+
     return {
       apiKey: env.PRODIA_TOKEN,
       ...(env.PRODIA_BASE_URL && { baseURL: env.PRODIA_BASE_URL }),

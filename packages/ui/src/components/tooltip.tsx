@@ -8,6 +8,7 @@ import { PortalTheme } from '../theme/provider.js';
 export const TooltipProvider = TooltipPrimitive.Provider;
 export const Tooltip = TooltipPrimitive.Root;
 export const TooltipTrigger = TooltipPrimitive.Trigger;
+
 export function TooltipContent({
   className,
   sideOffset = 4,

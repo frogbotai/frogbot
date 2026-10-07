@@ -27,9 +27,11 @@ export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
     signal,
   }: ResendRequestOptions) {
     const url = new URL(`https://api.resend.com${path}`);
+
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
+
     const response = await fetch(url, {
       method,
       redirect,
@@ -41,16 +43,20 @@ export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
       },
       ...(body === undefined ? {} : { body: rawBody ? (body as BodyInit) : JSON.stringify(body) }),
     });
+
     const result: unknown = binary
       ? new Uint8Array(await response.arrayBuffer())
       : await response.json().catch(() => null);
+
     if (!response.ok && !allowFailure) {
       const message =
         result && typeof result === 'object' && 'message' in result
           ? result.message
           : response.statusText;
+
       throw new Error(`Resend request failed (${response.status}): ${String(message)}`);
     }
+
     return includeResponse
       ? {
           status: response.status,

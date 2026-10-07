@@ -27,6 +27,7 @@ export type ChatRowMenuItemsProps = {
 
 export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuItemsProps) {
   const Item = context ? ContextMenuItem : DropdownMenuItem;
+
   return (
     <>
       <Item className="fb-slide-right-1" onSelect={onRename}>
@@ -59,6 +60,7 @@ export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsP
   ]
     .filter(Boolean)
     .join(' ');
+
   const row = cloneElement(
     children,
     { className: rowClassName },
@@ -79,6 +81,7 @@ export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsP
       </DropdownMenuContent>
     </DropdownMenu>,
   );
+
   return (
     <ContextMenu onOpenChange={setContextOpen}>
       <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>

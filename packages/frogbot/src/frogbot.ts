@@ -225,6 +225,7 @@ export class FrogBot {
       { req: (req ?? {}) as LocalRequest },
       state(this).payload,
     );
+
     return Object.assign(localReq, { frogbot: this });
   }
 
@@ -232,6 +233,7 @@ export class FrogBot {
     if (!isRecord(input)) {
       throw new TypeError(`[frogbot] Task '${args.task}' input must be an object.`);
     }
+
     await state(this).payload.jobs.queue({ ...args, input });
   }
 
@@ -257,6 +259,7 @@ export class FrogBot {
   ): Promise<BulkResult<TypedCollection<T>>>;
   async update<T extends CollectionSlug>(args: UpdateArgs<T>) {
     if ('id' in args) return state(this).local.update(args);
+
     return state(this).local.update(args);
   }
 
@@ -266,6 +269,7 @@ export class FrogBot {
   ): Promise<BulkResult<TypedCollection<T>>>;
   async delete<T extends CollectionSlug>(args: DeleteByIDArgs<T> | DeleteManyArgs<T>) {
     if ('id' in args) return state(this).local.delete(args);
+
     return state(this).local.delete(args);
   }
 
@@ -319,7 +323,9 @@ export class FrogBot {
     if (!coordinatesSessions(state(this).payload.collections[args.collection]?.config)) {
       return state(this).local.login(args);
     }
+
     const req = await this.createRequest(args.req);
+
     return withAuthOperation({
       req,
       collectionSlug: args.collection,
@@ -338,7 +344,9 @@ export class FrogBot {
     if (!coordinatesSessions(state(this).payload.collections[args.collection]?.config)) {
       return state(this).local.resetPassword(args);
     }
+
     const req = await this.createRequest(args.req);
+
     return withAuthOperation({
       req,
       collectionSlug: args.collection,
@@ -352,7 +360,9 @@ export class FrogBot {
           overrideAccess: args.overrideAccess,
           req: await createLocalReq({ context: args.context, req: payloadReq }, payloadReq.payload),
         });
+
         if (collection.config.auth.removeTokenFromResponses) delete result.token;
+
         return result;
       },
     });
@@ -371,12 +381,15 @@ export class FrogBot {
   encrypt(text: string): string {
     return state(this).payload.encrypt(text);
   }
+
   decrypt(text: string): string {
     return state(this).payload.decrypt(text);
   }
+
   getAdminURL(): string {
     return state(this).payload.getAdminURL();
   }
+
   getAPIURL(): string {
     return state(this).payload.getAPIURL();
   }
@@ -428,11 +441,13 @@ async function initialize(
   options: PayloadInitOptions,
 ): Promise<FrogBot> {
   frogbot.config = config;
+
   states.set(frogbot, {
     kv: createKV({ adapter: payload.kv }),
     local: createFrogBotLocalAPI(payload),
     payload,
   });
+
   registerFrogBotInstance(
     payload,
     frogbot,

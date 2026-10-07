@@ -58,6 +58,7 @@ function createRecordingModel(opts?: {
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
   const { text = 'Hello from mock!', streamParts, onCall } = opts ?? {};
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -91,12 +92,14 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
       ];
+
       return Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             for (const part of parts) {
               controller.enqueue(part);
             }
+
             controller.close();
           },
         }),
@@ -108,6 +111,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -118,6 +122,7 @@ async function postRaw(app: Hono, path: string, body: unknown) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+
   return { status: res.status, headers: res.headers, text: await res.text() };
 }
 
@@ -146,7 +151,9 @@ describe('single [DONE] sentinel on chat streams', () => {
     });
 
     expect(status).toBe(200);
+
     const doneCount = (text.match(/^data: \[DONE\]$/gm) ?? []).length;
+
     expect(doneCount, `SSE body ends: ${JSON.stringify(text.slice(-64))}`).toBe(1);
   });
 });
@@ -171,8 +178,10 @@ describe('messages streaming message_delta reports input_tokens', () => {
     });
 
     expect(status).toBe(200);
+
     const frames = parseSse(text).map((f) => JSON.parse(f.data) as Record<string, any>);
     const messageDelta = frames.find((f) => f.type === 'message_delta');
+
     expect(messageDelta, 'stream must contain a message_delta event').toBeDefined();
     // Mock upstream reported 5 input tokens on finish; sanity: output made it.
     expect(messageDelta!.usage.output_tokens).toBe(4);
@@ -199,10 +208,14 @@ describe('stream id/model stability', () => {
     });
 
     expect(status).toBe(200);
+
     const chunks = parseChatChunks(text);
+
     expect(chunks.length).toBeGreaterThanOrEqual(2);
+
     const ids = new Set(chunks.map((c) => c.id));
     const models = new Set(chunks.map((c) => c.model));
+
     expect([...ids], 'chunk id must not mutate mid-stream').toHaveLength(1);
     expect([...models], 'chunk model must not mutate mid-stream').toHaveLength(1);
   });
@@ -218,9 +231,11 @@ describe('stream id/model stability', () => {
     });
 
     expect(status).toBe(200);
+
     const frames = parseSse(text).map((f) => JSON.parse(f.data) as Record<string, any>);
     const created = frames.find((f) => f.type === 'response.created');
     const completed = frames.find((f) => f.type === 'response.completed');
+
     expect(created).toBeDefined();
     expect(completed).toBeDefined();
     expect(completed!.response.id, 'envelope id must be stable created → completed').toBe(
@@ -347,7 +362,9 @@ describe('chat schema accepts spec-valid message shapes', () => {
 /** Passes on explicit 400; otherwise requires 200 and runs `check`. */
 function expectOkOr400(status: number, check: () => void) {
   if (status === 400) return; // typed rejection — policy-compliant
+
   expect(status).toBe(200);
+
   check();
 }
 
@@ -359,12 +376,15 @@ function expectForwardedOr400(args: {
   evidence: string | RegExp;
 }) {
   if (args.status === 400) return; // typed rejection — policy-compliant
+
   expect(args.status).toBe(200);
+
   const serialized = JSON.stringify(args.callOptions ?? {});
   const found =
     typeof args.evidence === 'string'
       ? serialized.includes(args.evidence)
       : args.evidence.test(serialized);
+
   expect(
     found,
     `\`${args.field}\` was accepted (HTTP ${args.status}) but never reached upstream callOptions — silently dropped`,
@@ -383,11 +403,13 @@ describe('documented chat fields: forward or 400, never drop', () => {
         },
       }),
     );
+
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
       ...body,
     });
+
     return { status, callOptions: () => callOptions };
   }
 
@@ -402,6 +424,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
       ],
       function_call: 'auto',
     });
+
     expectOkOr400(status, () => {
       // The model must actually receive tools — old integrations otherwise get
       // plausible prose instead of tool calls, silently.
@@ -420,6 +443,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
         user_location: { type: 'approximate', approximate: { city: 'g9-web-search-city' } },
       },
     });
+
     expectForwardedOr400({
       field: 'web_search_options',
       status,
@@ -433,6 +457,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
     const { status, callOptions } = await post({
       prediction: { type: 'content', content: 'g9-prediction-sentinel' },
     });
+
     expectForwardedOr400({
       field: 'prediction',
       status,
@@ -444,6 +469,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
   // G9 — store silently dropped despite direct AI SDK provider-option mapping; flip to it() when fixed. See 056_full_gateway_review.
   it('store forwarded (or 400)', async () => {
     const { status, callOptions } = await post({ store: true });
+
     expectForwardedOr400({
       field: 'store',
       status,
@@ -457,6 +483,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
     const { status, callOptions } = await post({
       metadata: { batch_ref: 'g9-metadata-sentinel' },
     });
+
     expectForwardedOr400({
       field: 'metadata',
       status,
@@ -468,6 +495,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
   // G9 — service_tier silently dropped despite direct AI SDK provider-option mapping; flip to it() when fixed. See 056_full_gateway_review.
   it('service_tier forwarded (or 400)', async () => {
     const { status, callOptions } = await post({ service_tier: 'flex' });
+
     expectForwardedOr400({
       field: 'service_tier',
       status,
@@ -479,6 +507,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
   // G9 — safety_identifier silently dropped despite direct AI SDK provider-option mapping; flip to it() when fixed. See 056_full_gateway_review.
   it('safety_identifier forwarded (or 400)', async () => {
     const { status, callOptions } = await post({ safety_identifier: 'g9-safety-sentinel' });
+
     expectForwardedOr400({
       field: 'safety_identifier',
       status,
@@ -490,6 +519,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
   // G9 — top_logprobs silently dropped while sibling logprobs is a 400 (incoherent policy surface); flip to it() when fixed. See 056_full_gateway_review.
   it('top_logprobs forwarded (or 400)', async () => {
     const { status, callOptions } = await post({ top_logprobs: 7 });
+
     expectForwardedOr400({
       field: 'top_logprobs',
       status,
@@ -504,6 +534,7 @@ describe('documented chat fields: forward or 400, never drop', () => {
       modalities: ['text', 'audio'],
       audio: { voice: 'alloy', format: 'mp3' },
     });
+
     expectForwardedOr400({
       field: 'audio/modalities',
       status,

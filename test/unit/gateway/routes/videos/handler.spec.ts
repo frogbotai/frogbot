@@ -14,6 +14,7 @@ describe('videosRoute', () => {
         response: { timestamp: new Date(), modelId: 'wan-2.5', headers: {} },
       }),
     );
+
     const model = {
       specificationVersion: 'v4',
       provider: 'replicate.video',
@@ -21,6 +22,7 @@ describe('videosRoute', () => {
       maxVideosPerCall: 1,
       doGenerate,
     } satisfies Experimental_VideoModelV4;
+
     const app = createApp({
       registry: {
         replicate: { videoModel: () => model },
@@ -59,6 +61,7 @@ describe('videosRoute', () => {
       maxVideosPerCall: 1,
       doGenerate: vi.fn(),
     } satisfies Experimental_VideoModelV4;
+
     const app = createApp({
       registry: {
         replicate: { videoModel: () => model },
@@ -103,6 +106,7 @@ describe('videosRoute', () => {
         }),
       ),
     } satisfies Experimental_VideoModelV4;
+
     const app = createApp({
       registry: {
         replicate: { videoModel: () => model },

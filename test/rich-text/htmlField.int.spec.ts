@@ -233,14 +233,17 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       data: { email: 'reader@example.com', password: 'reader-password' },
       overrideAccess: true,
     });
+
     const note = await booted.frogbot.create({
       collection: restrictedNotesSlug,
       data: { title: 'Request-scoped note' },
       overrideAccess: true,
     });
+
     const authenticatedReq = await booted.frogbot.createRequest({
       user: { ...user, collection: usersSlug },
     });
+
     const anonymousReq = await booted.frogbot.createRequest();
 
     const visible = await renderRelationship({ id: note.id, req: authenticatedReq });
@@ -257,23 +260,27 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       draft: false,
       overrideAccess: true,
     });
+
     const child = await booted.frogbot.create({
       collection: restrictedNotesSlug,
       data: { child: grandchild.id, title: 'Depth child' },
       draft: false,
       overrideAccess: true,
     });
+
     const parent = await booted.frogbot.create({
       collection: restrictedNotesSlug,
       data: { child: child.id, title: 'Depth parent' },
       draft: false,
       overrideAccess: true,
     });
+
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'depth@example.com', password: 'depth-password' },
       overrideAccess: true,
     });
+
     const req = await booted.frogbot.createRequest({ user: { ...user, collection: usersSlug } });
 
     const depthZero = await renderRelationship({ depth: 0, id: parent.id, req });
@@ -308,6 +315,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       data: { email: 'locale@example.com', password: 'locale-password' },
       overrideAccess: true,
     });
+
     const req = await booted.frogbot.createRequest({
       locale: 'es',
       user: { ...user, collection: usersSlug },
@@ -340,6 +348,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       data: { email: 'draft@example.com', password: 'draft-password' },
       overrideAccess: true,
     });
+
     const req = await booted.frogbot.createRequest({ user: { ...user, collection: usersSlug } });
 
     const published = await renderRelationship({ draft: false, id: note.id, req });
@@ -356,11 +365,13 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       draft: false,
       overrideAccess: true,
     });
+
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'hidden@example.com', password: 'hidden-password' },
       overrideAccess: true,
     });
+
     const req = await booted.frogbot.createRequest({ user: { ...user, collection: usersSlug } });
 
     const hidden = await renderRelationship({ id: note.id, req, showHiddenFields: false });
@@ -376,6 +387,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       data: { email: 'transaction@example.com', password: 'transaction-password' },
       overrideAccess: true,
     });
+
     const transactionID = await booted.frogbot.db.beginTransaction();
 
     expect(transactionID).toBeTruthy();
@@ -393,6 +405,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
       overrideAccess: true,
       req,
     });
+
     const html = await renderRelationship({ id: note.id, req });
 
     expect(html).toContain('Uncommitted title</a>');

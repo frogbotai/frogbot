@@ -13,6 +13,7 @@ expectTypeOf<Parameters<typeof imageHelper.rotate>[0]['input']>().toEqualTypeOf<
   degrees: 90 | 180 | 270;
   resultFileName?: string | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _rotated>['id']>().toEqualTypeOf<string | number>();
 
 const _rotateRejectsImageToBase64Input = () =>

@@ -16,6 +16,7 @@ const gitEnvironmentNames = [
   'GIT_CONFIG_GLOBAL',
   'GIT_CONFIG_NOSYSTEM',
 ];
+
 const gitEnvironment = Object.fromEntries(
   gitEnvironmentNames.map((name) => [name, process.env[name]]),
 );

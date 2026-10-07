@@ -102,6 +102,7 @@ export const createSlack = definePiece({
       const user = response.user;
       const profile =
         user && typeof user === 'object' && 'profile' in user ? user.profile : undefined;
+
       const email =
         profile && typeof profile === 'object' && 'email' in profile ? profile.email : undefined;
 

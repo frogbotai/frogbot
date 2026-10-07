@@ -38,6 +38,7 @@ function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
   });
+
   return createApp({ registry });
 }
 
@@ -130,6 +131,7 @@ async function expectLoopFinish({
   // terminal turn — either is protocol-valid.
   if (c2.finish_reason === 'tool_calls' && c2.message?.tool_calls?.length) {
     const callB = c2.message.tool_calls[0];
+
     expect(typeof callB.id).toBe('string');
     expect(callB.id!.length).toBeGreaterThan(0);
     // Distinct id from callA — the round-trip must not reuse ids.
@@ -156,8 +158,11 @@ async function expectLoopFinish({
       tools,
       max_tokens: 1024,
     });
+
     expect(turn3.status).toBe(200);
+
     const c3 = turn3.body.choices?.[0];
+
     expect(c3?.finish_reason).toBe('stop');
     expect((c3?.message?.content ?? '').length).toBeGreaterThan(0);
   } else {
@@ -187,6 +192,7 @@ async function streamChat(
     body: JSON.stringify({ ...body, stream: true }),
     ...init,
   });
+
   return res;
 }
 
@@ -265,7 +271,9 @@ describeLive(
 
         expect(status).toBe(200);
         expect(body.object).toBe('chat.completion');
+
         const content = body.choices?.[0]?.message?.content;
+
         expect(typeof content).toBe('string');
         expect(content!.length).toBeGreaterThan(0);
         // The model must actually use the conversation history.
@@ -289,6 +297,7 @@ describeLive(
             content: 'What is the weather in Paris? You MUST use the get_weather tool.',
           },
         ];
+
         const turn1 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: turn1Messages,
@@ -298,15 +307,20 @@ describeLive(
         });
 
         expect(turn1.status).toBe(200);
+
         const choice = turn1.body.choices?.[0];
+
         expect(choice).toBeDefined();
 
         expectToolCallChoice(choice, '[zen.chat.e2e] model did not call the tool');
 
         const call = choice.message.tool_calls[0];
+
         expect(typeof call.id).toBe('string');
         expect(call.function?.name).toBe('get_weather');
+
         const args = JSON.parse(call.function!.arguments!) as Record<string, unknown>;
+
         expect(typeof args).toBe('object');
 
         // Turn 2 — echo the assistant turn + tool result, ask for the final answer.
@@ -336,9 +350,13 @@ describeLive(
         });
 
         expect(turn2.status).toBe(200);
+
         const final = turn2.body.choices?.[0];
+
         expect(final?.finish_reason).toBe('stop');
+
         const finalText = final?.message?.content ?? '';
+
         expect(finalText.length).toBeGreaterThan(0);
         // The final answer must reference the tool result we injected.
         expect(finalText).toMatch(/18|sunny/i);
@@ -360,11 +378,13 @@ describeLive(
         });
 
         expect(res.status).toBe(200);
+
         const raw = await res.text();
         const frames = parseSse(raw);
         const chunks = chunksOf(raw);
 
         const usageChunk = chunks.find((c) => c.usage && typeof c.usage.prompt_tokens === 'number');
+
         expect(usageChunk).toBeDefined();
         expect(usageChunk!.usage!.prompt_tokens).toBeGreaterThan(0);
         expect(usageChunk!.usage!.completion_tokens).toBeGreaterThan(0);
@@ -390,8 +410,10 @@ describeLive(
         });
 
         expect(res.status).toBe(200);
+
         const chunks = chunksOf(await res.text());
         const usageChunk = chunks.find((c) => c.usage && typeof c.usage.prompt_tokens === 'number');
+
         expect(usageChunk).toBeDefined();
         // Spec: the usage chunk is an extra terminal chunk with no choices.
         expect(usageChunk!.choices ?? []).toEqual([]);
@@ -419,11 +441,14 @@ describeLive(
         });
 
         expect(res.status).toBe(200);
+
         const chunks = chunksOf(await res.text());
+
         expect(chunks.length).toBeGreaterThan(0);
 
         // Accumulate tool_calls deltas keyed by index, OpenAI-client style.
         const acc = new Map<number, { id: string; name: string; args: string }>();
+
         for (const chunk of chunks) {
           for (const delta of chunk.choices?.[0]?.delta?.tool_calls ?? []) {
             const index = delta.index ?? 0;
@@ -438,14 +463,18 @@ describeLive(
         expect(acc.size, '[zen.chat.e2e] model did not stream a tool call').toBeGreaterThan(0);
 
         const call = acc.get(0)!;
+
         expect(call.id.length).toBeGreaterThan(0);
         expect(call.name).toBe('get_weather');
+
         const args = JSON.parse(call.args) as Record<string, unknown>;
+
         expect(typeof args).toBe('object');
 
         const finishReasons = chunks
           .map((c) => c.choices?.[0]?.finish_reason)
           .filter((r): r is string => typeof r === 'string');
+
         expect(finishReasons).toContain('tool_calls');
       },
       TEST_TIMEOUT,
@@ -471,10 +500,14 @@ describeLive(
         });
 
         expect(status).toBe(200);
+
         const choice = body.choices?.[0];
+
         expect(choice?.finish_reason).toBeTruthy();
+
         const content = choice?.message?.content ?? '';
         warnOnEmptyContent(content);
+
         // The text after the stop sequence must never reach the client.
         expect(content).not.toContain('omega');
         expect(content).not.toContain('BANANA');
@@ -537,6 +570,7 @@ describeLive(
         );
 
         expect(res.status).toBe(200);
+
         const reader = res.body!.getReader();
 
         // Read a couple of chunks, then abort mid-stream.
@@ -553,6 +587,7 @@ describeLive(
           messages: [{ role: 'user', content: 'ping' }],
           max_tokens: 16,
         });
+
         expect(after.status).toBeGreaterThanOrEqual(400);
         expect(after.body.error).toBeDefined();
       },
@@ -609,18 +644,24 @@ describeLive(
               messages: [{ role: 'user', content }],
               max_tokens: 1024,
             });
+
             const raw = await res.text();
+
             return { status: res.status, chunks: chunksOf(raw), raw };
           }),
         );
 
         for (const result of results) {
           expect(result.status).toBe(200);
+
           const text = result.chunks.map((c) => c.choices?.[0]?.delta?.content ?? '').join('');
+
           expect(text.length).toBeGreaterThan(0);
+
           const finishReasons = result.chunks
             .map((c) => c.choices?.[0]?.finish_reason)
             .filter((r): r is string => typeof r === 'string');
+
           expect(finishReasons.length).toBeGreaterThan(0);
           expect(parseSse(result.raw).some((f) => f.data === '[DONE]')).toBe(true);
         }
@@ -656,13 +697,17 @@ describeLive(
           tool_choice: 'auto',
           max_tokens: 1024,
         });
+
         expect(turn1.status).toBe(200);
+
         const c1 = turn1.body.choices?.[0];
+
         expect(c1).toBeDefined();
 
         expectToolCallChoice(c1, '[zen.chat.e2e] seq-loop: model skipped tool A');
 
         const callA = c1.message.tool_calls[0];
+
         expect(typeof callA.id).toBe('string');
         expect(callA.id!.length).toBeGreaterThan(0);
         expect(typeof callA.function?.name).toBe('string');
@@ -689,6 +734,7 @@ describeLive(
             content: '{"temperature":"18C","condition":"sunny"}',
           },
         ];
+
         const turn2 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: turn2Messages,
@@ -696,8 +742,11 @@ describeLive(
           tool_choice: 'auto',
           max_tokens: 1024,
         });
+
         expect(turn2.status).toBe(200);
+
         const c2 = turn2.body.choices?.[0];
+
         expect(c2).toBeDefined();
         expect(c2!.finish_reason).toBeTruthy();
 
@@ -725,6 +774,7 @@ describeLive(
               'You MUST call both get_weather and get_time.',
           },
         ];
+
         const turn1 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: baseMessages,
@@ -732,8 +782,11 @@ describeLive(
           tool_choice: 'auto',
           max_tokens: 1024,
         });
+
         expect(turn1.status).toBe(200);
+
         const c1 = turn1.body.choices?.[0];
+
         expect(c1).toBeDefined();
 
         expectToolCallChoice(c1, '[zen.chat.e2e] parallel: model called no tools');
@@ -741,11 +794,14 @@ describeLive(
         const calls = c1.message.tool_calls;
         // Every emitted call is individually well-formed with a unique id.
         const ids = new Set<string>();
+
         for (const call of calls) {
           expect(typeof call.id).toBe('string');
           expect(call.id!.length).toBeGreaterThan(0);
           expect(ids.has(call.id!)).toBe(false);
+
           ids.add(call.id!);
+
           expect(typeof call.function?.name).toBe('string');
           expect(typeof JSON.parse(call.function!.arguments!)).toBe('object');
         }
@@ -781,8 +837,11 @@ describeLive(
           tools,
           max_tokens: 1024,
         });
+
         expect(turn2.status).toBe(200);
+
         const final = turn2.body.choices?.[0];
+
         expect(final?.finish_reason).toBe('stop');
         expect((final?.message?.content ?? '').length).toBeGreaterThan(0);
       },
@@ -803,6 +862,7 @@ describeLive(
             content: 'What is the weather in Paris? You MUST use the get_weather tool.',
           },
         ];
+
         const res = await streamChat(app, {
           model: MODEL,
           messages: baseMessages,
@@ -810,11 +870,15 @@ describeLive(
           tool_choice: 'auto',
           max_tokens: 1024,
         });
+
         expect(res.status).toBe(200);
+
         const chunks = chunksOf(await res.text());
+
         expect(chunks.length).toBeGreaterThan(0);
 
         const acc = new Map<number, { id: string; name: string; args: string }>();
+
         for (const chunk of chunks) {
           for (const delta of chunk.choices?.[0]?.delta?.tool_calls ?? []) {
             const index = delta.index ?? 0;
@@ -832,9 +896,12 @@ describeLive(
         ).toBeGreaterThan(0);
 
         const call = acc.get(0)!;
+
         expect(call.id.length).toBeGreaterThan(0);
         expect(call.name).toBe('get_weather');
+
         const args = JSON.parse(call.args) as Record<string, unknown>;
+
         expect(typeof args).toBe('object');
 
         // Follow-up turn (non-streamed): return the accumulated call's result.
@@ -862,10 +929,15 @@ describeLive(
           tools: [WEATHER_TOOL],
           max_tokens: 1024,
         });
+
         expect(turn2.status).toBe(200);
+
         const final = turn2.body.choices?.[0];
+
         expect(final?.finish_reason).toBe('stop');
+
         const finalText = final?.message?.content ?? '';
+
         expect(finalText.length).toBeGreaterThan(0);
         expect(finalText).toMatch(/18|sunny/i);
       },
@@ -909,6 +981,7 @@ describeLive(
           { role: 'assistant', content: 'No.' },
           { role: 'user', content: 'What is my favorite city? Reply with just the city name.' },
         ];
+
         const { status, body } = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages,
@@ -918,7 +991,9 @@ describeLive(
 
         expect(status).toBe(200);
         expect(body.object).toBe('chat.completion');
+
         const content = body.choices?.[0]?.message?.content ?? '';
+
         expect(content.length).toBeGreaterThan(0);
         expect(body.choices?.[0]?.finish_reason).toBe('stop');
         // Must recall the fact from the very first user turn through a long,
@@ -944,12 +1019,18 @@ describeLive(
         });
 
         expect(status).toBe(200);
+
         const choice = body.choices?.[0];
+
         expect(choice?.finish_reason).toBe('tool_calls');
+
         const calls = choice?.message?.tool_calls;
+
         expect(Array.isArray(calls)).toBe(true);
         expect(calls!.length).toBeGreaterThan(0);
+
         const call = calls![0];
+
         expect(typeof call.id).toBe('string');
         expect(call.id!.length).toBeGreaterThan(0);
         expect(call.function?.name).toBe('get_weather');
@@ -974,12 +1055,18 @@ describeLive(
         });
 
         expect(status).toBe(200);
+
         const choice = body.choices?.[0];
+
         expect(choice?.finish_reason).toBe('tool_calls');
+
         const calls = choice?.message?.tool_calls;
+
         expect(Array.isArray(calls)).toBe(true);
         expect(calls!.length).toBeGreaterThan(0);
+
         const call = calls![0];
+
         expect(typeof call.function?.name).toBe('string');
         expect(typeof JSON.parse(call.function!.arguments!)).toBe('object');
       },
@@ -1011,16 +1098,21 @@ describeLive(
           messages: history,
           max_tokens: 1024,
         });
+
         expect(turn.status).toBe(200);
+
         let u = turn.body.usage!;
+
         expect(u.prompt_tokens).toBeGreaterThan(0);
         expect(u.completion_tokens).toBeGreaterThan(0);
         expect(u.total_tokens).toBe(u.prompt_tokens! + u.completion_tokens!);
+
         usages.push({
           prompt: u.prompt_tokens!,
           completion: u.completion_tokens!,
           total: u.total_tokens!,
         });
+
         history.push({
           role: 'assistant',
           content: turn.body.choices?.[0]?.message?.content ?? '7',
@@ -1029,21 +1121,27 @@ describeLive(
         // Turns 2 and 3 — each appends the prior answer, growing the prompt.
         for (const content of prompts) {
           history.push({ role: 'user', content });
+
           turn = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
             model: MODEL,
             messages: history,
             max_tokens: 1024,
           });
+
           expect(turn.status).toBe(200);
+
           u = turn.body.usage!;
+
           expect(u.prompt_tokens).toBeGreaterThan(0);
           expect(u.completion_tokens).toBeGreaterThan(0);
           expect(u.total_tokens).toBe(u.prompt_tokens! + u.completion_tokens!);
+
           usages.push({
             prompt: u.prompt_tokens!,
             completion: u.completion_tokens!,
             total: u.total_tokens!,
           });
+
           history.push({
             role: 'assistant',
             content: turn.body.choices?.[0]?.message?.content ?? '',
@@ -1087,6 +1185,7 @@ describeLive(
         );
 
         expect(res.status).toBe(200);
+
         const reader = res.body!.getReader();
         await reader.read();
         controller.abort();
@@ -1099,6 +1198,7 @@ describeLive(
           messages: [{ role: 'user', content: 'ping' }],
           max_tokens: 16,
         });
+
         expect(after.status).toBeGreaterThanOrEqual(400);
         expect(after.body.error).toBeDefined();
       },
@@ -1116,6 +1216,7 @@ describeLive(
         const registry = buildProviderRegistry({
           zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
         });
+
         const app = createApp({ registry, maxBodyBytes: 4096 });
 
         const huge = 'x'.repeat(2 * 1024 * 1024);

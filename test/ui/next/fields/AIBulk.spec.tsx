@@ -13,6 +13,7 @@ const { fetchMock, locale, router, selection, toast } = vi.hoisted(() => ({
   },
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
 }));
+
 const collections = vi.hoisted((): Record<string, unknown> => ({}));
 const listQuery = vi.hoisted((): { query: Record<string, unknown> } => ({ query: {} }));
 
@@ -40,6 +41,7 @@ vi.mock('next/navigation.js', () => ({ useRouter: () => router }));
 
 const { AIFieldListMenuItem } =
   await import('../../../../packages/next/src/fields/AI/ListMenuItem.client.js');
+
 const { aiBulkLoadURL, aiBulkRequests, aiBulkScope } =
   await import('../../../../packages/next/src/fields/AI/bulk.js');
 
@@ -142,6 +144,7 @@ beforeEach(() => {
 
   Object.values(toast).forEach((mock) => mock.mockClear());
   Object.keys(collections).forEach((slug) => delete collections[slug]);
+
   Object.assign(collections, {
     articles: { admin: {}, fields: [], slug: 'articles', versions: { drafts: {} } },
     tasks: { admin: {}, fields: [], slug: 'tasks' },
@@ -284,6 +287,7 @@ describe('AIBulkDialog confirm', () => {
       { body: patched(docs.slice(1)) },
       { body: patched(docs.slice(0, 1)) },
     );
+
     renderItem({ collectionSlug: 'articles', field: articleSummary });
 
     await regenerate({ choice: 'All in view' });
@@ -393,6 +397,7 @@ describe('AIBulkDialog responses', () => {
       },
       { body: patched([docs[2]]) },
     );
+
     renderItem({ collectionSlug: 'articles', field: articleSummary });
 
     await regenerate();
@@ -408,6 +413,7 @@ describe('AIBulkDialog responses', () => {
       { body: { docs: [...tasks(1), { id: 2, notes: null, title: '' }] } },
       { body: patched(tasks(1)) },
     );
+
     renderItem();
 
     await regenerate();

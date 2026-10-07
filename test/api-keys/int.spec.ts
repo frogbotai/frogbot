@@ -41,6 +41,7 @@ describe('API keys plugin integration', () => {
 
         if (stream) {
           response.writeHead(200, { 'content-type': 'text/event-stream' });
+
           response.end(
             [
               {
@@ -69,6 +70,7 @@ describe('API keys plugin integration', () => {
         }
 
         response.writeHead(200, { 'content-type': 'application/json' });
+
         response.end(
           JSON.stringify({
             ...completion,
@@ -81,12 +83,14 @@ describe('API keys plugin integration', () => {
         );
       });
     });
+
     await new Promise<void>((resolve) => upstream.listen(upstreamPort, '127.0.0.1', resolve));
     booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {
     await booted.shutdown();
+
     await new Promise<void>((resolve, reject) =>
       upstream.close((error) => (error ? reject(error) : resolve())),
     );
@@ -112,11 +116,13 @@ describe('API keys plugin integration', () => {
     );
 
     expect(response.status).toBe(201);
+
     const account = await booted.frogbot.findByID({
       collection: 'accounts',
       id: response.body.doc.id,
       overrideAccess: true,
     });
+
     expect(account).toMatchObject({ email: 'api-key-owner@frogbot.local' });
   });
 
@@ -126,19 +132,23 @@ describe('API keys plugin integration', () => {
       '/api/accounts/login',
       credentials,
     );
+
     expect(login.status).toBe(200);
+
     const authorization = { Authorization: `JWT ${login.body.token}` };
     const mint = await booted.restClient.post<{
       id: number | string;
       prefix: string;
       token: string;
     }>('/api/credentials/mint', { name: 'Integration' }, { headers: authorization });
+
     expect(mint.status).toBe(201);
     expect(mint.body.token).toMatch(/^test_[A-Za-z0-9_-]{43}$/);
 
     const authenticated = await booted.restClient.get<{ docs: unknown[] }>('/api/credentials', {
       headers: { 'x-service-key': mint.body.token },
     });
+
     expect(authenticated.status).toBe(200);
     expect(authenticated.body.docs).toHaveLength(1);
 
@@ -147,6 +157,7 @@ describe('API keys plugin integration', () => {
       id: mint.body.id,
       overrideAccess: true,
     });
+
     expect(stored).not.toHaveProperty('token');
     expect(stored.tokenHash).toEqual(expect.any(String));
     expect(stored.prefix).toBe(mint.body.prefix);
@@ -156,15 +167,19 @@ describe('API keys plugin integration', () => {
       undefined,
       { headers: authorization },
     );
+
     expect(revoked.status).toBe(200);
+
     const rejected = await booted.restClient.get('/api/credentials', {
       headers: { 'x-service-key': mint.body.token },
     });
+
     expect(rejected.status).toBe(403);
   });
 
   it('enforces user model and budget policy and records spend', async () => {
     const owner = await createOwner();
+
     await booted.frogbot.update({
       collection: 'accounts',
       id: owner.id,
@@ -176,15 +191,18 @@ describe('API keys plugin integration', () => {
       },
       overrideAccess: true,
     });
+
     const login = await booted.restClient.post<{ token: string }>(
       '/api/accounts/login',
       credentials,
     );
+
     const mint = await booted.restClient.post<{ id: number | string; token: string }>(
       '/api/credentials/mint',
       { name: 'Policy' },
       { headers: { Authorization: `JWT ${login.body.token}` } },
     );
+
     const request = (model: string) =>
       booted.restClient.post(
         '/api/v1/chat/completions',
@@ -237,6 +255,7 @@ describe('API keys plugin integration', () => {
       data: { spendThisPeriodUSD: 10 },
       overrideAccess: true,
     });
+
     expect((await request('test/allowed')).status).toBe(403);
   });
 
@@ -245,6 +264,7 @@ describe('API keys plugin integration', () => {
       email: 'api-key-me-owner@frogbot.local',
       password: 'frogbot-test-password',
     };
+
     let ownerId: Account['id'];
     let token: string;
 
@@ -314,6 +334,7 @@ describe('API keys plugin integration', () => {
           body: JSON.stringify({ query: '{ meAccount { user { id email } token } }' }),
         }),
       );
+
       const body = (await response.json()) as {
         data: { meAccount: { user: unknown; token: string | null } };
         errors?: unknown;
@@ -333,6 +354,7 @@ describe('API keys plugin integration', () => {
       email: 'api-key-agent-owner@frogbot.local',
       password: 'frogbot-test-password',
     };
+
     let ownerId: Account['id'];
     let headers: { 'x-service-key': string };
 

@@ -45,6 +45,7 @@ export function createAttioClient({ auth }: { auth: unknown }) {
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal,
       });
+
       const result = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -70,4 +71,5 @@ export function createAttioClient({ auth }: { auth: unknown }) {
 }
 
 export type AttioClient = ReturnType<typeof createAttioClient>;
+
 import { attioAuth } from './config.js';

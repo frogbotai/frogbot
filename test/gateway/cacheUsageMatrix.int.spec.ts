@@ -35,10 +35,12 @@ function buildUsageApp() {
         ]),
       }),
   });
+
   const registry = {
     openai: new MockProviderV4({ languageModels: { model } }),
     anthropic: new MockProviderV4({ languageModels: { model } }),
   } as unknown as ProviderRegistry;
+
   return { app: createApp({ registry, hooks: { afterUpstream: [afterUpstream] } }), afterUpstream };
 }
 
@@ -84,10 +86,13 @@ describe('cache usage matrix', () => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(testCase.body),
       });
+
       const body = await response.json();
 
       expect(response.status).toBe(200);
+
       testCase.assertUsage(body);
+
       expect(afterUpstream).toHaveBeenCalledWith(
         expect.objectContaining({
           usage: expect.objectContaining({ cachedInputTokens: 60, cacheWriteTokens: 10 }),
@@ -108,6 +113,7 @@ describe('cache usage matrix', () => {
           stream_options: { include_usage: true },
         }),
       });
+
       const body = await response.text();
 
       expect(response.status).toBe(200);

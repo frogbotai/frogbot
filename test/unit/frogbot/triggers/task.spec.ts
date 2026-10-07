@@ -18,12 +18,17 @@ describe('agent trigger task', () => {
     const task = { slug: 'custom', handler: vi.fn() };
     const runner = { queue: 'custom', cron: '*/5 * * * *' };
     const jobs = resolveTriggerTasks({ tasks: [task], autoRun: [runner] });
+
     expect(jobs.tasks).toContain(task);
     expect(jobs.autoRun).toEqual([runner, { allQueues: true, cron: '* * * * *' }]);
+
     const autoRun = vi.fn().mockResolvedValue([runner]);
     const dynamic = resolveTriggerTasks({ autoRun }).autoRun;
+
     expect(typeof dynamic).toBe('function');
+
     const payload = {};
+
     expect(await (dynamic as typeof autoRun)(payload)).toEqual([
       runner,
       { allQueues: true, cron: '* * * * *' },
@@ -42,12 +47,16 @@ describe('agent trigger task', () => {
       ] as never,
       jobs: { autoRun: dynamic ? () => Promise.resolve([runner]) : [runner] },
     });
+
     const resolved = resolveTriggerTasks(jobs);
+
     expect(resolved.autoRun).toBe(jobs!.autoRun);
+
     const runners =
       typeof resolved.autoRun === 'function'
         ? await resolved.autoRun({} as never)
         : resolved.autoRun;
+
     expect(runners).toEqual([runner, { allQueues: true, cron: '* * * * *' }]);
   });
 
@@ -69,6 +78,7 @@ describe('agent trigger task', () => {
         },
       },
     };
+
     createRequest.mockImplementation(({ context }) => Promise.resolve({ context, frogbot }));
     registerFrogBotInstance(payload, frogbot as never);
     const task = resolveTriggerTasks().tasks!.find(({ slug }) => slug === AGENT_TRIGGER_TASK_SLUG)!;
@@ -95,6 +105,7 @@ describe('agent trigger task', () => {
       inlineTask: vi.fn(),
       tasks: {},
     });
+
     expect(handler).toHaveBeenCalledWith({
       event: { message: 'hello' },
       agent,

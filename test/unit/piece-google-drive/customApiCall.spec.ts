@@ -17,11 +17,14 @@ describe('Google Drive custom API transport', () => {
       size: 3,
       extra: { retained: true },
     };
+
     const { drive, req } = await fixture(() => json(body));
+
     await expect(
       drive.customApiCall({ req, input: { method: 'GET', path: '/files/file' } }),
     ).resolves.toMatchObject({ body });
   });
+
   it('sends JSON, headers, and query parameters and preserves the response envelope', async () => {
     const { drive, req, requests } = await fixture(
       () =>
@@ -30,6 +33,7 @@ describe('Google Drive custom API transport', () => {
           headers: { 'content-type': 'application/json', 'x-provider': 'drive' },
         }),
     );
+
     await expect(
       drive.customApiCall({
         req,
@@ -57,10 +61,12 @@ describe('Google Drive custom API transport', () => {
 
   it.each([null, false, 0, 'text'])('preserves primitive JSON body %j', async (value) => {
     const { drive, req, requests } = await fixture(() => json({ ok: true }));
+
     await drive.customApiCall({
       req,
       input: { method: 'POST', path: '/files', body: { type: 'json', value } },
     });
+
     expect(requests[0]?.body.toString()).toBe(JSON.stringify(value));
   });
 
@@ -76,6 +82,7 @@ describe('Google Drive custom API transport', () => {
         responseType: 'text',
       },
     });
+
     expect(result.body).toBe('raw response');
     expect(requests[0]?.body.toString()).toBe('héllo');
   });
@@ -84,6 +91,7 @@ describe('Google Drive custom API transport', () => {
     const bytes = new Uint8Array([0, 255, 128]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(bytes)));
     const { drive, req, requests, findByID } = await fixture(() => json({ ok: true }));
+
     await drive.customApiCall({
       req,
       input: {
@@ -100,6 +108,7 @@ describe('Google Drive custom API transport', () => {
         },
       },
     });
+
     expect(findByID).toHaveBeenCalledWith(expect.objectContaining({ overrideAccess: false, req }));
     expect(requests[0]?.body.includes(Buffer.from(bytes))).toBe(true);
     expect(requests[0]?.body.toString()).toContain('name="empty"');
@@ -112,6 +121,7 @@ describe('Google Drive custom API transport', () => {
     const { drive, req, create } = await fixture(
       () => new Response(bytes, { headers: { 'content-type': 'application/pdf' } }),
     );
+
     const result = await drive.customApiCall({
       req,
       input: {
@@ -121,6 +131,7 @@ describe('Google Drive custom API transport', () => {
         fileName: 'export.pdf',
       },
     });
+
     expect(result.body).toMatchObject({
       id: 'saved',
       name: 'export.pdf',
@@ -138,6 +149,7 @@ describe('Google Drive custom API transport', () => {
     '/upload/drive/v3/files',
   ])('accepts provider-bound URL %s', async (path) => {
     const { drive, req } = await fixture(() => json({}));
+
     await expect(
       drive.customApiCall({ req, input: { method: 'GET', path } }),
     ).resolves.toMatchObject({ status: 200 });
@@ -161,6 +173,7 @@ describe('Google Drive custom API transport', () => {
     '/files#fragment',
   ])('rejects unsafe URL %s before credentials leave the process', async (path) => {
     const { drive, req, requests } = await fixture();
+
     await expect(drive.customApiCall({ req, input: { method: 'GET', path } })).rejects.toThrow(
       'Google Drive API URL',
     );
@@ -171,6 +184,7 @@ describe('Google Drive custom API transport', () => {
     'rejects reserved header %s',
     async (name) => {
       const { drive, req, requests } = await fixture();
+
       await expect(
         drive.customApiCall({
           req,
@@ -192,6 +206,7 @@ describe('Google Drive custom API transport', () => {
         () =>
           new Response(null, { status, headers: { location: 'https://attacker.test/capture' } }),
       );
+
       await expect(
         drive.customApiCall({ req, input: { method: 'GET', path: '/files', failsafe: true } }),
       ).rejects.toThrow();
@@ -204,6 +219,7 @@ describe('Google Drive custom API transport', () => {
     const { drive, req, requests } = await fixture(() =>
       json({ error: { message: 'Denied' } }, 403),
     );
+
     await expect(
       drive.customApiCall({ req, input: { method: 'GET', path: '/files' } }),
     ).rejects.toThrow('Denied');
@@ -211,9 +227,11 @@ describe('Google Drive custom API transport', () => {
       drive.customApiCall({ req, input: { method: 'GET', path: '/files', failsafe: true } }),
     ).resolves.toMatchObject({ status: 403, body: { error: { message: 'Denied' } } });
     expect(requests).toHaveLength(2);
+
     const failing = await fixture(() => {
       throw new Error('Connection refused');
     });
+
     await expect(
       failing.drive.customApiCall({
         req: failing.req,
@@ -229,13 +247,16 @@ describe('Google Drive custom API transport', () => {
           signal?.addEventListener('abort', () => reject(abortReason(signal)), { once: true });
         }),
     );
+
     const result = drive.customApiCall({
       req,
       input: { method: 'GET', path: '/files', failsafe: true },
     });
+
     const rejected = result.catch((error: unknown) => error);
     await vi.waitFor(() => expect(requests).toHaveLength(1));
     controller.abort(new Error('User cancelled'));
+
     expect(await rejected).toEqual(expect.objectContaining({ message: 'User cancelled' }));
     expect(requests[0]?.signal?.aborted).toBe(true);
   });
@@ -247,6 +268,7 @@ describe('Google Drive custom API transport', () => {
           signal?.addEventListener('abort', () => reject(abortReason(signal)), { once: true });
         }),
     );
+
     await expect(
       drive.customApiCall({
         req,
@@ -267,7 +289,9 @@ describe('Google Drive custom API transport', () => {
           }),
       ),
     );
+
     const { drive, req, requests } = await fixture();
+
     await expect(
       drive.customApiCall({
         req,
@@ -287,6 +311,7 @@ describe('Google Drive custom API transport', () => {
 
   it.each(['HEAD', 'OPTIONS', 'PUT', 'DELETE'] as const)('supports %s', async (method) => {
     const { drive, req, requests } = await fixture(() => new Response(null, { status: 204 }));
+
     await expect(
       drive.customApiCall({ req, input: { method, path: '/files' } }),
     ).resolves.toMatchObject({ status: 204 });

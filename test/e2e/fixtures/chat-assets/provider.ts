@@ -53,6 +53,7 @@ export async function startModelProvider() {
       title ||
       lastMessage?.role === 'tool' ||
       (lastMessage?.role === 'user' && lastMessage.content === followUp);
+
     const content = title ? chatTitle : answer;
 
     const toolCall = {
@@ -60,9 +61,11 @@ export async function startModelProvider() {
       type: 'function',
       function: { name: toolSlug, arguments: JSON.stringify({ content: report }) },
     };
+
     const message = finished
       ? { role: 'assistant', content }
       : { role: 'assistant', content: null, tool_calls: [toolCall] };
+
     const finishReason = finished ? 'stop' : 'tool_calls';
     const usage = { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 };
     const completion = {
@@ -83,10 +86,12 @@ export async function startModelProvider() {
     const delta = finished
       ? { role: 'assistant', content }
       : { role: 'assistant', tool_calls: [{ index: 0, ...toolCall }] };
+
     const chunks = [
       { choices: [{ index: 0, delta, finish_reason: null }] },
       { choices: [{ index: 0, delta: {}, finish_reason: finishReason }], usage },
     ];
+
     const stream = chunks
       .map((chunk) => JSON.stringify({ ...completion, object: 'chat.completion.chunk', ...chunk }))
       .map((chunk) => `data: ${chunk}\n\n`)

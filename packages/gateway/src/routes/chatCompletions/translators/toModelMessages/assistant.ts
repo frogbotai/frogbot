@@ -11,6 +11,7 @@ export function parseAssistantMessage(
   const text = Array.isArray(msg.content)
     ? msg.content.map((p) => p.text).join('')
     : (msg.content ?? '');
+
   const hasReasoningDetails = !!msg.reasoning_details && msg.reasoning_details.length > 0;
   const hasReasoning = hasReasoningDetails || !!msg.reasoning_content;
   const hasToolCalls = !!msg.tool_calls && msg.tool_calls.length > 0;
@@ -26,6 +27,7 @@ export function parseAssistantMessage(
     if (providerOptions) {
       result.providerOptions = providerOptions;
     }
+
     return result;
   }
 
@@ -67,6 +69,7 @@ export function parseAssistantMessage(
     for (let j = 0; j < msg.tool_calls!.length; j++) {
       const tc = msg.tool_calls![j];
       const path = `messages[${messageIndex}].tool_calls[${j}].function.arguments`;
+
       parts.push({
         type: 'tool-call',
         toolCallId: tc.id,
@@ -80,6 +83,7 @@ export function parseAssistantMessage(
   if (providerOptions) {
     result.providerOptions = providerOptions;
   }
+
   return result;
 }
 
@@ -100,9 +104,11 @@ function assistantProviderOptions(msg: OpenAIAssistantMessage): ProviderMetadata
       options[namespace] = { ...values };
     }
   }
+
   if (msg.cache_control) {
     options['unknown'] = { ...options['unknown'], cache_control: msg.cache_control };
   }
+
   return options;
 }
 

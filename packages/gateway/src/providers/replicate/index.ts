@@ -16,6 +16,7 @@ export const replicateProvider = {
   envVars: ['REPLICATE_API_TOKEN', 'REPLICATE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.REPLICATE_API_TOKEN) return undefined;
+
     return {
       apiToken: env.REPLICATE_API_TOKEN,
       ...(env.REPLICATE_BASE_URL && { baseURL: env.REPLICATE_BASE_URL }),

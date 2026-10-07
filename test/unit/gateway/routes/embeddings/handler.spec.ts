@@ -16,6 +16,7 @@ describe('embeddingsRoute', () => {
           warnings: [],
         }),
     });
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({ embeddingModels: { 'text-embedding-3-small': model } }),
@@ -52,6 +53,7 @@ describe('embeddingsRoute', () => {
           warnings: [],
         }),
     });
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({ embeddingModels: { 'text-embedding-3-small': model } }),
@@ -92,6 +94,7 @@ describe('embeddingsRoute', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ model: 'openai/text-embedding-3-small', input: '' }),
     });
+
     expect(emptyStringRes.status).toBe(400);
     expect(await emptyStringRes.json()).toHaveProperty('error.param', 'input');
 
@@ -103,6 +106,7 @@ describe('embeddingsRoute', () => {
         input: Array.from({ length: 2049 }, () => 'frog'),
       }),
     });
+
     expect(oversizedRes.status).toBe(400);
     expect(await oversizedRes.json()).toHaveProperty('error.param', 'input');
   });
@@ -120,6 +124,7 @@ describe('embeddingsRoute', () => {
           }),
         ),
     });
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({ embeddingModels: { 'text-embedding-3-small': model } }),

@@ -19,6 +19,7 @@ describe('toChatOutput', () => {
 
   test('{type: json_object} maps to responseFormat {type: json}', async () => {
     const output = toChatOutput({ type: 'json_object' });
+
     expect(output).toBeDefined();
     await expect(output?.responseFormat).resolves.toEqual({ type: 'json' });
   });
@@ -30,10 +31,12 @@ describe('toChatOutput', () => {
       required: ['city'],
       additionalProperties: false,
     };
+
     const output = toChatOutput({
       type: 'json_schema',
       json_schema: { name: 'weather', description: 'A weather report', schema },
     });
+
     expect(output).toBeDefined();
     await expect(output?.responseFormat).resolves.toEqual({
       type: 'json',

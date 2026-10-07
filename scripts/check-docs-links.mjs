@@ -39,6 +39,7 @@ const generalRoots = new Set([
   'upload',
   'versions',
 ]);
+
 const generalPages = new Set(['index', 'agents/overview']);
 const failures = [];
 
@@ -156,6 +157,7 @@ function normalizeTarget(target, sourceId) {
   const resolved = pathname.startsWith('/')
     ? path.resolve(root, `.${pathname}`)
     : path.resolve(sourceDirectory, pathname);
+
   const relative = path.relative(root, resolved);
 
   if (relative.startsWith('..') || path.isAbsolute(relative)) return { escaped: true };
@@ -193,6 +195,7 @@ const navPages = flattenPages(generalTab?.groups);
 const otherNavPages = new Set(
   tabs.filter((tab) => tab !== generalTab).flatMap((tab) => flattenPages(tab.groups)),
 );
+
 const navCounts = new Map();
 
 for (const id of navPages) navCounts.set(id, (navCounts.get(id) ?? 0) + 1);
@@ -202,6 +205,7 @@ for (const [id, count] of navCounts) {
   if (!isOwnedPage(id) || otherNavPages.has(id)) {
     failures.push(`docs.json: non-General page: ${id}`);
   }
+
   if (!fs.existsSync(path.join(root, `${id}.mdx`))) {
     failures.push(`docs.json: missing General page: ${id}`);
   }
@@ -212,6 +216,7 @@ const ownedFiles = [...walk(root)].filter((file) => {
 
   return isOwnedPage(id) && !otherNavPages.has(id);
 });
+
 const ownedIds = new Set(ownedFiles.map(pageId));
 
 for (const id of ownedIds) {

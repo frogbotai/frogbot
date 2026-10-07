@@ -12,6 +12,7 @@ export const ContextMenuGroup = Primitive.Group;
 export const ContextMenuPortal = Primitive.Portal;
 export const ContextMenuSub = Primitive.Sub;
 export const ContextMenuRadioGroup = Primitive.RadioGroup;
+
 export function ContextMenuContent({
   className,
   ...props
@@ -27,6 +28,7 @@ export function ContextMenuContent({
     </Primitive.Portal>
   );
 }
+
 export function ContextMenuSubContent({
   className,
   ...props
@@ -38,6 +40,7 @@ export function ContextMenuSubContent({
     />
   );
 }
+
 export function ContextMenuItem({
   className,
   inset,
@@ -50,6 +53,7 @@ export function ContextMenuItem({
     />
   );
 }
+
 export function ContextMenuSubTrigger({
   className,
   inset,
@@ -66,6 +70,7 @@ export function ContextMenuSubTrigger({
     </Primitive.SubTrigger>
   );
 }
+
 export function ContextMenuCheckboxItem({
   className,
   children,
@@ -85,6 +90,7 @@ export function ContextMenuCheckboxItem({
     </Primitive.CheckboxItem>
   );
 }
+
 export function ContextMenuRadioItem({
   className,
   children,
@@ -104,6 +110,7 @@ export function ContextMenuRadioItem({
     </Primitive.RadioItem>
   );
 }
+
 export function ContextMenuLabel({
   className,
   inset,
@@ -116,6 +123,7 @@ export function ContextMenuLabel({
     />
   );
 }
+
 export function ContextMenuSeparator({
   className,
   ...props
@@ -127,6 +135,7 @@ export function ContextMenuSeparator({
     />
   );
 }
+
 export function ContextMenuShortcut({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span className={`fb-context-menu__shortcut${className ? ` ${className}` : ''}`} {...props} />

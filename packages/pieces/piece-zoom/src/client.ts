@@ -63,6 +63,7 @@ export function createZoomClient({ auth }: { auth: unknown }) {
       redirect: 'error',
       signal,
     });
+
     const data: unknown = response.status === 204 ? {} : await response.json();
 
     if (!response.ok) throw new ZoomRequestError(response.status, data);

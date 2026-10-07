@@ -32,16 +32,21 @@ describe('agent endpoint composition', () => {
     openai = createServer((request, response) => {
       let body = '';
       request.on('data', (chunk) => (body += chunk));
+
       request.on('end', () => {
         const stream = (JSON.parse(body) as { stream?: boolean }).stream;
         if (stream) {
           response.writeHead(200, { 'content-type': 'text/event-stream' });
+
           response.end(
             'data: {"id":"chatcmpl-test","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{"role":"assistant","content":"hello"},"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-test","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\ndata: [DONE]\n\n',
           );
+
           return;
         }
+
         response.writeHead(200, { 'content-type': 'application/json' });
+
         response.end(
           JSON.stringify({
             id: 'chatcmpl-test',
@@ -56,6 +61,7 @@ describe('agent endpoint composition', () => {
         );
       });
     });
+
     await listen(openai);
     booted = await bootFrogBot(dirname, 'endpoint-composition');
   });
@@ -83,6 +89,7 @@ describe('agent endpoint composition', () => {
         overrideAccess: true,
       }),
     ]);
+
     expect(chats.totalDocs).toBe(1);
     expect(messages.docs).toHaveLength(2);
     expect(messages.docs.map((message) => message.role).sort()).toEqual(['assistant', 'user']);
@@ -94,6 +101,7 @@ describe('agent endpoint composition', () => {
       data: { email: `owner-${Date.now()}@frogbot.local`, password: 'frogbot-int-password' },
       overrideAccess: true,
     });
+
     return booted.frogbot.create({
       collection: chatsSlug,
       data: { agent: agentSlug, user: owner.id },
@@ -108,12 +116,15 @@ describe('agent endpoint composition', () => {
       headers: { ...(accept ? { accept } : {}), 'content-type': 'application/json' },
       body: JSON.stringify({ prompt: 'Read private history', chatId: chat.id }),
     });
+
     expect(response.status).toBe(404);
+
     const messages = await booted.frogbot.count({
       collection: messagesSlug,
       where: { chat: { equals: chat.id } },
       overrideAccess: true,
     });
+
     expect(messages.totalDocs).toBe(0);
   }
 
@@ -122,9 +133,11 @@ describe('agent endpoint composition', () => {
       `/api/agents/${agentSlug}`,
       { prompt: 'Reply with exactly: hello' },
     );
+
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body.text).toBe('hello');
     expect(response.body.chatId).toBeDefined();
+
     await expectPersisted(response.body.chatId);
   });
 
@@ -134,10 +147,14 @@ describe('agent endpoint composition', () => {
       headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
       body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
     });
+
     expect(response.status).toBe(200);
+
     await response.text();
     const chatId = response.headers.get('X-FrogBot-Chat-Id');
+
     expect(chatId).not.toBeNull();
+
     await expectPersisted(chatId!);
   });
 
@@ -147,8 +164,11 @@ describe('agent endpoint composition', () => {
       headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
+
     expect(response.status).toBe(200);
+
     await response.text();
+
     return response.headers.get('X-FrogBot-Chat-Id');
   }
 
@@ -161,6 +181,7 @@ describe('agent endpoint composition', () => {
       depth: 0,
       overrideAccess: true,
     });
+
     return messages.docs.map((message) => (message as { role: string }).role);
   }
 
@@ -168,6 +189,7 @@ describe('agent endpoint composition', () => {
     const chatId = await streamTurn({
       messages: [{ id: 'turn-1-user', role: 'user', parts: [{ type: 'text', text: 'first' }] }],
     });
+
     expect(chatId).not.toBeNull();
     expect(await storedRoles(chatId!)).toEqual(['user', 'assistant']);
 
@@ -178,12 +200,14 @@ describe('agent endpoint composition', () => {
         { id: 'turn-2-user', role: 'user', parts: [{ type: 'text', text: 'second' }] },
       ],
     });
+
     expect(await storedRoles(chatId!)).toEqual(['user', 'assistant', 'user', 'assistant']);
 
     await streamTurn({
       chatId: chatId!,
       messages: [{ id: 'turn-2-user', role: 'user', parts: [{ type: 'text', text: 'edited' }] }],
     });
+
     expect(await storedRoles(chatId!)).toEqual(['user', 'assistant', 'user', 'assistant']);
   });
 

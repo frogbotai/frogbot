@@ -33,6 +33,7 @@ function createRecordingModel(opts?: {
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
   });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -42,6 +43,7 @@ function createRecordingModel(opts?: {
     },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       opts?.onCall?.(options);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text: 'hi' }],
         finishReason: finish('stop'),
@@ -63,6 +65,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 

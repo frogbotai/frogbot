@@ -81,7 +81,9 @@ expectTypeOf(vector.validate).toMatchTypeOf<VectorField['validate']>();
 expectTypeOf<{ name: string; type: 'vector' }>().not.toMatchTypeOf<VectorField>();
 
 type RichValue = { root: { children: unknown[] } };
+
 type RichProps = { feature: string };
+
 type RichExtra = { lexical: true };
 
 const richText: RichTextField<RichValue, RichProps, RichExtra> = {
@@ -91,6 +93,7 @@ const richText: RichTextField<RichValue, RichProps, RichExtra> = {
 };
 
 expectTypeOf(richText.lexical).toEqualTypeOf<true>();
+
 expectTypeOf<{
   hasMany: false;
   maxRows: number;

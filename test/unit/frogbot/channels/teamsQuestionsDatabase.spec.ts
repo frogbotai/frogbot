@@ -633,6 +633,7 @@ describe('Teams questions with SQLite persistence', () => {
         }),
       ),
     );
+
     await host().run(JSON.parse(JSON.stringify((await jobs(root)).at(-1))));
 
     expect(model.requests).toHaveLength(1);

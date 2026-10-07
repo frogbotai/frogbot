@@ -20,6 +20,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
   if (!/^[A-Za-z_$][\w$]*$/.test(name)) {
     throw new Error(`[frogbot] Piece slug '${definition.slug}' cannot form a type name.`);
   }
+
   const schema = (
     value: z.ZodType | undefined,
     path: string,
@@ -29,6 +30,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
     const rebase = (node: unknown, dictionary = false): unknown => {
       if (Array.isArray(node)) return node.map((entry) => rebase(entry));
       if (!node || typeof node !== 'object') return node;
+
       return Object.fromEntries(
         Object.entries(node).flatMap(([key, entry]): [string, unknown][] => {
           if (dictionary) return [[key, rebase(entry)]];
@@ -36,6 +38,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
           if (key === '$ref' && typeof entry === 'string' && entry.startsWith('#')) {
             return [[key, `#${path}${entry.slice(1)}`]];
           }
+
           if (['const', 'default', 'enum', 'examples'].includes(key)) return [[key, entry]];
           const entries = [
             'properties',
@@ -45,6 +48,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
             'dependentSchemas',
             'dependencies',
           ].includes(key);
+
           return [[key, rebase(entry, entries)]];
         }),
       );
@@ -60,6 +64,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
         if (def.type !== 'tuple' || jsonSchema.minItems !== undefined) return;
 
         let required = def.items.length;
+
         while (required > 0 && def.items[required - 1]._zod[optional] === 'optional') required--;
 
         if (required > 0) jsonSchema.minItems = required;
@@ -68,6 +73,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
 
     return rebase(json) as JSONSchema;
   };
+
   const actions = (
     entries: readonly { slug: string; input: z.ZodType; output?: z.ZodType }[],
     category: 'actions' | 'triggers',
@@ -91,6 +97,7 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
         ]),
       ),
     );
+
   return compile(
     objectSchema({
       auth: schema(definition.auth, '/properties/auth', 'output'),

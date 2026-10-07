@@ -24,6 +24,7 @@ export type AIOperationContext = {
 /** Lifts FrogBot's seeded context onto top-level hook fields. */
 function lift(context: Record<string, unknown>): AIHookContext {
   const seed = context as AIOperationContext;
+
   return { req: seed.req, user: seed.req?.user, agent: seed.agent };
 }
 
@@ -61,6 +62,7 @@ export function toHookUsage(usage: unknown): HookUsage | undefined {
     inputTokenDetails?: { cacheReadTokens?: number; cacheWriteTokens?: number };
     outputTokenDetails?: { reasoningTokens?: number };
   };
+
   if (typeof value.tokens === 'number') {
     return {
       inputTokens: value.tokens,
@@ -68,12 +70,14 @@ export function toHookUsage(usage: unknown): HookUsage | undefined {
       totalTokens: value.tokens,
     };
   }
+
   if (value.inputTokens == null && value.outputTokens == null && value.totalTokens == null) {
     return undefined;
   }
 
   const inputTokens = value.inputTokens ?? 0;
   const outputTokens = value.outputTokens ?? 0;
+
   return {
     inputTokens,
     outputTokens,

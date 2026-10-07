@@ -15,6 +15,7 @@ export const googleOAuth = {
       headers: { authorization: `Bearer ${tokens.access_token}` },
       signal: req.signal,
     });
+
     if (!response.ok) throw new Error('Google account lookup failed.');
     const account: unknown = await response.json();
     if (
@@ -31,6 +32,7 @@ export const googleOAuth = {
     ) {
       throw new Error('Google did not return a verified email address.');
     }
+
     return {
       id: account.sub,
       label:

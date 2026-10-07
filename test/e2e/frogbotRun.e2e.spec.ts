@@ -47,6 +47,7 @@ describe.skipIf(!RUN_E2E)('frogbot run', () => {
 
     mkdirSync(join(project, 'src'));
     writeFileSync(join(project, 'package.json'), JSON.stringify({ type: 'module' }));
+
     writeFileSync(
       join(project, 'tsconfig.json'),
       JSON.stringify({
@@ -55,10 +56,12 @@ describe.skipIf(!RUN_E2E)('frogbot run', () => {
         },
       }),
     );
+
     writeFileSync(
       join(project, 'src', 'frogbot.config.ts'),
       'const databaseURL = process.env.DATABASE_URL;\nexport default databaseURL;\n',
     );
+
     writeFileSync(join(project, '.env'), 'DATABASE_URL=from-env\n');
     writeFileSync(join(project, '.env.local'), 'DATABASE_URL=from-env-local\n');
   });
@@ -147,10 +150,12 @@ describe.skipIf(!RUN_E2E)('frogbot run', () => {
 
   it('loads production env without loading development env', async () => {
     writeFileSync(join(project, '.env.production'), 'RUN_ENV=production\n');
+
     writeFileSync(
       join(project, '.env.development'),
       'RUN_ENV=development\nRUN_DEVELOPMENT_ONLY=development\n',
     );
+
     writeFileSync(
       join(project, 'src', 'env.ts'),
       'console.log(JSON.stringify({ mode: process.env.RUN_ENV, development: process.env.RUN_DEVELOPMENT_ONLY ?? null }));\n',

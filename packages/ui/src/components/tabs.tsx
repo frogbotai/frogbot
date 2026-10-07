@@ -2,6 +2,7 @@
 import * as Primitive from '@radix-ui/react-tabs';
 import type { ComponentProps } from 'react';
 export const Tabs = Primitive.Root;
+
 export function TabsList({
   className,
   variant = 'default',
@@ -14,6 +15,7 @@ export function TabsList({
     />
   );
 }
+
 export function TabsTrigger({
   className,
   variant = 'default',
@@ -26,6 +28,7 @@ export function TabsTrigger({
     />
   );
 }
+
 export function TabsContent({ className, ...props }: ComponentProps<typeof Primitive.Content>) {
   return (
     <Primitive.Content

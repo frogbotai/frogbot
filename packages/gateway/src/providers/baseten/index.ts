@@ -14,6 +14,7 @@ export const basetenProvider = {
   envVars: ['BASETEN_API_KEY', 'BASETEN_BASE_URL'],
   fromEnv: (env) => {
     if (!env.BASETEN_API_KEY) return undefined;
+
     return {
       apiKey: env.BASETEN_API_KEY,
       ...(env.BASETEN_BASE_URL && { baseURL: env.BASETEN_BASE_URL }),

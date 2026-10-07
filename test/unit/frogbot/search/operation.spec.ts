@@ -110,6 +110,7 @@ describe('search operation boundaries', () => {
     const read = vi.fn(({ req }: { req: FrogBotRequest }) => ({
       tenant: { equals: req.user?.id },
     }));
+
     const { collection, req } = searchFixture({ read });
 
     const where = await resolveSearchPredicate({

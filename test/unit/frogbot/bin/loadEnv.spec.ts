@@ -12,11 +12,13 @@ const execFileAsync = promisify(execFile);
 const loadEnvURL = pathToFileURL(
   new URL('../../../../packages/frogbot/src/bin/loadEnv.ts', import.meta.url).pathname,
 ).href;
+
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 async function tempDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'frogbot-env-'));
   onTestFinished(() => rm(dir, { recursive: true, force: true }));
+
   return dir;
 }
 
@@ -27,6 +29,7 @@ async function loadEnvInFreshProcess(dir: string, env: NodeJS.ProcessEnv): Promi
     ['--import', tsxLoader, '--input-type=module', '--eval', script],
     { cwd: dir, env },
   );
+
   return stdout;
 }
 
@@ -36,12 +39,14 @@ describe('loadEnv', () => {
 
     await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=from-file\n');
     vi.stubEnv('FROGBOT_TEST_KEY', 'from-process');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
 
     const { loadEnv } = await import('../../../../packages/frogbot/src/bin/loadEnv.js');
     loadEnv(dir);
+
     expect(process.env.FROGBOT_TEST_KEY).toBe('from-process');
   });
 

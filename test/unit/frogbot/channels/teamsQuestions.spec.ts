@@ -79,10 +79,12 @@ async function teamsFixture() {
 
   Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
   Object.assign(fixture.frogbot.logger, { warn: vi.fn() });
+
   fixture.identity.mockImplementation((({ author }: { author: { email?: string } }) =>
     Promise.resolve(
       author.email ? { id: `user:${author.email}`, collection: 'users' } : null,
     )) as never);
+
   fixture.access.mockImplementation((({ req }: { req: { user: unknown } }) =>
     Boolean(req.user)) as never);
 
@@ -129,11 +131,13 @@ describe('Teams native questions through the channel host', () => {
     server.reset();
     server.interceptLogin();
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},
       allSettled: true,
     });
+
     continueTurn.mockReset();
   });
 
@@ -461,6 +465,7 @@ describe('Teams native questions through the channel host', () => {
         'teams',
         server.signed(mentionActivity({ id: '1000', scope, serviceUrl: server.serviceUrl })),
       );
+
       await fixture.host.run(JSON.parse(JSON.stringify(fixture.inputs[0])));
 
       expect(fixture.streamMessage.mock.calls[0][0].clientTools).toEqual({ kinds: ['question'] });

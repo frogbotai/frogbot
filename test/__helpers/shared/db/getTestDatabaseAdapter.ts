@@ -9,6 +9,8 @@ export async function getTestDatabaseAdapter({ sqlite }: { sqlite: FrogBotConfig
   if (!uri || !new URL(uri).pathname.startsWith('/frogbot-test-')) {
     throw new Error('Adapter verification requires an explicit frogbot-test-* database URL');
   }
+
   const { databaseAdapter } = await import('../../../databaseAdapter.js');
+
   return databaseAdapter;
 }

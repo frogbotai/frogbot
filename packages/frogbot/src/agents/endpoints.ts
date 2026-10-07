@@ -129,6 +129,7 @@ export function buildAgentEndpoints() {
         } catch (error) {
           if (req.signal?.aborted) return new Response(null, { status: 499 });
           req.frogbot.logger.error({ err: error, agent: slug }, '[frogbot] Agent request failed');
+
           return errorResponse(error);
         }
       },
@@ -147,6 +148,7 @@ export function buildAgentEndpoints() {
         } catch (error) {
           return errorResponse(error);
         }
+
         return Response.json({ authorizations: await getAgentAuthorizations({ req, agent }) });
       },
     },

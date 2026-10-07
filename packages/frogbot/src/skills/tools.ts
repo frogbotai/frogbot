@@ -6,6 +6,7 @@ import type { SkillConfig, SkillContent, SkillCtx } from './types.js';
 function resolveContent(content: SkillContent, ctx: ToolCtx) {
   if (typeof content === 'string') return content;
   const skillCtx: SkillCtx = { req: ctx.req, frogbot: ctx.frogbot };
+
   return content(skillCtx);
 }
 
@@ -29,6 +30,7 @@ export function buildSkillTools(skills: readonly SkillConfig[]): AnyTool[] {
               (resource) =>
                 `  - ${resource.path}${resource.description ? `: ${resource.description}` : ''}`,
             );
+
             return [`- ${skill.slug}${description}`, ...resources].join('\n');
           })
           .join('\n'),
@@ -42,6 +44,7 @@ export function buildSkillTools(skills: readonly SkillConfig[]): AnyTool[] {
         if (!match) {
           return `Skill '${skill}' not found. Available skills: ${available(skills.map(({ slug }) => slug))}.`;
         }
+
         return resolveContent(match.instructions, ctx);
       },
     },
@@ -54,10 +57,12 @@ export function buildSkillTools(skills: readonly SkillConfig[]): AnyTool[] {
         if (!match) {
           return `Skill '${skill}' not found. Available skills: ${available(skills.map(({ slug }) => slug))}.`;
         }
+
         const resource = match.resources?.find((entry) => entry.path === path);
         if (!resource) {
           return `Resource '${path}' not found in skill '${skill}'. Available resources: ${available((match.resources ?? []).map(({ path: value }) => value))}.`;
         }
+
         return resolveContent(resource.content, ctx);
       },
     },

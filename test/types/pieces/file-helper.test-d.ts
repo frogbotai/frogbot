@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof fileHelper.checkFileType>[0]['input']>().toEqualT
   file: string | number;
   mimeType: string;
 }>();
+
 expectTypeOf(check).toEqualTypeOf<Promise<{ mimeType: string; isMatch: boolean }>>();
 
 const _checkFileTypeRejectsCreateFileInput = () =>

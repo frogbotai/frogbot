@@ -40,6 +40,7 @@ const create = vi.fn(({ file }: { file: { data: Buffer; name: string; mimetype: 
 
   return Promise.resolve({ id, url: `/files/${id}` });
 });
+
 const req = {
   headers: new Headers({ authorization: 'Bearer test' }),
   signal: undefined,
@@ -71,16 +72,19 @@ async function pdf(pageCount = 1, text?: string) {
 beforeEach(async () => {
   vi.clearAllMocks();
   files.clear();
+
   files.set('one', {
     data: await pdf(1, 'hello'),
     filename: 'one.pdf',
     mimeType: 'application/pdf',
   });
+
   files.set('two', {
     data: await pdf(2),
     filename: 'two.pdf',
     mimeType: 'application/pdf',
   });
+
   files.set('image', {
     data: Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -135,6 +139,7 @@ describe('pdf', () => {
       input: { files: ['one', 'two'], outputFileName: 'joined' },
       req,
     });
+
     const extracted = await piece.extractPdfPages({
       input: { file: 'two', pageRanges: [{ startPage: -1, endPage: -1 }] },
       req,
@@ -162,6 +167,7 @@ describe('pdf', () => {
       },
       req,
     });
+
     const image = await piece.stampPdfImages({
       input: {
         file: text.id,

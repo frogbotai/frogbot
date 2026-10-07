@@ -355,6 +355,7 @@ describe('chat assets', () => {
         body: JSON.stringify({ chat: null }),
       }),
     );
+
     const remove = await booted.frogbot.handleRequest(
       new Request(`http://localhost/api/${CHAT_ASSETS_SLUG}/${doc.id}`, {
         method: 'DELETE',

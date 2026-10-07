@@ -21,11 +21,13 @@ export const parseUrl = defineAction({
     try {
       const url = new URL(input.url);
       const queryParameters: Record<string, string | string[] | null> = {};
+
       for (const key of new Set(url.searchParams.keys())) {
         queryParameters[key] = input.returnArrays
           ? url.searchParams.getAll(key)
           : url.searchParams.get(key);
       }
+
       return Promise.resolve({
         baseUrl: `${url.protocol}//${url.host}`,
         domain: url.hostname,

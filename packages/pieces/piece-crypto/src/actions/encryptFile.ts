@@ -10,6 +10,7 @@ const inputSchema = z.object({
   file: fileId.meta({ label: 'File' }),
   publicKey: z.string().meta({ label: 'Public Key' }),
 });
+
 const output = z.discriminatedUnion('success', [
   z.object({ success: z.literal(true), filename: z.string().min(1), file: fileId }),
   z.object({ success: z.literal(false), error: z.string().min(1) }),
@@ -67,6 +68,7 @@ export const encryptFile = defineAction({
         encryptionKeys: publicKey,
         format: 'armored',
       });
+
       const filename = `${source.name}.pgp`;
       const data = Buffer.from(encrypted);
       filesCollectionSlug(req, 'Crypto');

@@ -4,10 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   'frogbot/pieces/test',
   () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
 );
+
 vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
@@ -51,6 +53,7 @@ const existing = {
   reminders: { useDefault: false, overrides: [{ method: 'email', minutes: 15 }] },
   conferenceData: { conferenceId: 'existing-meet' },
 };
+
 const busy = {
   timeMin: start,
   timeMax: end,
@@ -101,24 +104,31 @@ function route(config: TransportConfig) {
       config,
     );
   }
+
   if (url.endsWith('/colors')) {
     return response({ event: { '3': { background: '#123456', foreground: '#ffffff' } } }, config);
   }
+
   if (url.endsWith('/freeBusy')) return response(busy, config);
   if (url.endsWith('/quickAdd')) {
     return response({ id: 'quick123', summary: config.params?.text }, config);
   }
+
   if (url.endsWith('/events') && config.method === 'GET') {
     return response({ items: [existing], nextPageToken: 'next-events' }, config);
   }
+
   if (url.endsWith('/events') && config.method === 'POST') {
     return response({ id: 'created123', ...config.data }, config);
   }
+
   if (url.endsWith('/event123')) {
     if (config.method === 'DELETE') return response('', config, 204);
     if (config.method === 'PATCH') return response({ ...existing, ...config.data }, config);
+
     return response(existing, config);
   }
+
   return response({ ok: true }, config);
 }
 
@@ -129,6 +139,7 @@ const transport = vi.fn(
 
 function request(signal?: AbortSignal) {
   const key = {};
+
   return {
     signal,
     frogbot: { connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key }) } },
@@ -140,12 +151,14 @@ async function fixture(signal?: AbortSignal) {
   const req = request(signal);
   const calendar = createGoogleCalendar({ auth });
   const client = await calendar.client({ req });
+
   return { req, calendar, client };
 }
 
 function lastCall() {
   const call = transport.mock.calls.at(-1)?.[0];
   if (!call) throw new Error('Missing Calendar transport request.');
+
   return call;
 }
 
@@ -154,6 +167,7 @@ beforeEach(() => {
   const oauth = new google.auth.OAuth2();
   const transporter: { request: (config: TransportConfig) => Promise<unknown> } =
     Object.getPrototypeOf(oauth.transporter);
+
   vi.spyOn(transporter, 'request').mockImplementation(transport);
 });
 
@@ -162,11 +176,14 @@ afterEach(() => vi.restoreAllMocks());
 describe('native Google Calendar', () => {
   it('declares nine semantic actions, meaningful schemas, shared identity, and secret credentials', () => {
     const piece = createGoogleCalendar({ oauth: { clientId: 'client', clientSecret: 'secret' } });
+
     expect(pieceInstanceTools(piece)?.map((action) => action.slug)).toEqual(
       googleCalendarActions.map((slug) => `google-calendar_${slug}`),
     );
     expect(Object.keys(piece.triggers)).toEqual([]);
+
     const definition = pieceFactoryDefinition(createGoogleCalendar);
+
     expect(definition.oauth?.account).toBe(googleOAuth.account);
     expect(definition.oauth?.scopes).toEqual([...googleOAuth.scopes, ...googleCalendarScopes]);
     expect(
@@ -184,10 +201,13 @@ describe('native Google Calendar', () => {
       },
     });
     expect(() => createGoogleCalendarClient({ auth: {} })).toThrow();
+
     const client = createGoogleCalendarClient({ auth: { ...auth, refreshToken: 'refresh-test' } });
+
     expect(client.context._options.auth).toMatchObject({
       credentials: { access_token: auth.accessToken, refresh_token: 'refresh-test' },
     });
+
     for (const action of definition.actions) {
       expect(z.toJSONSchema(action.input).type).toBe('object');
       expect(z.toJSONSchema(action.output!).type).toBe('object');
@@ -199,6 +219,7 @@ describe('native Google Calendar', () => {
       { label: 'Calendar', value: reference.calendarId },
       { label: 'Secondary', value: 'secondary' },
     ];
+
     await pieceConformance(createGoogleCalendar, {
       factoryOptions: { auth },
       oauth: true,
@@ -285,6 +306,7 @@ describe('native Google Calendar', () => {
         })),
       ],
     });
+
     for (const [config] of transport.mock.calls) {
       expect(config.headers?.get('authorization')).toBe(`Bearer ${auth.accessToken}`);
     }
@@ -292,10 +314,12 @@ describe('native Google Calendar', () => {
 
   it('merges attendee records without dropping RSVP state and protects concurrent changes', async () => {
     const { calendar, req } = await fixture();
+
     await calendar.addAttendees({
       input: { ...reference, attendees: ['new@example.com'], sendUpdates: 'all' },
       req,
     });
+
     expect(lastCall()).toMatchObject({
       method: 'PATCH',
       data: { attendees: [...existing.attendees, { email: 'new@example.com' }] },
@@ -323,8 +347,10 @@ describe('native Google Calendar', () => {
       sendUpdates: 'externalOnly' as const,
       createMeetLink: true,
     };
+
     await calendar.createEvent({ input, req });
     const first = lastCall();
+
     expect(first).toMatchObject({
       method: 'POST',
       params: { sendUpdates: 'externalOnly', conferenceDataVersion: 1 },
@@ -347,7 +373,9 @@ describe('native Google Calendar', () => {
         },
       },
     });
+
     await calendar.createEvent({ input, req });
+
     expect(lastCall().data.conferenceData.createRequest.requestId).not.toBe(
       first.data.conferenceData.createRequest.requestId,
     );
@@ -355,10 +383,12 @@ describe('native Google Calendar', () => {
 
   it('keeps omitted update fields and allows explicit clearing and false values', async () => {
     const { calendar, req } = await fixture();
+
     await expect(
       calendar.updateEvent({ input: { ...reference, title: 'Only title' }, req }),
     ).resolves.toEqual({ ...existing, summary: 'Only title' });
     expect(lastCall().data).toEqual({ summary: 'Only title' });
+
     await calendar.updateEvent({
       input: {
         ...reference,
@@ -372,6 +402,7 @@ describe('native Google Calendar', () => {
       },
       req,
     });
+
     expect(lastCall().data).toEqual({
       description: '',
       location: '',
@@ -381,6 +412,7 @@ describe('native Google Calendar', () => {
       guestsCanSeeOtherGuests: false,
       colorId: '0',
     });
+
     await calendar.updateEvent({
       input: {
         ...reference,
@@ -390,6 +422,7 @@ describe('native Google Calendar', () => {
       },
       req,
     });
+
     expect(lastCall()).toMatchObject({
       params: { conferenceDataVersion: 1, sendUpdates: 'none' },
       data: {
@@ -405,14 +438,17 @@ describe('native Google Calendar', () => {
 
   it('maps quick-add notifications and encoded event identifiers', async () => {
     const { calendar, req } = await fixture();
+
     await calendar.createQuickEvent({
       input: { calendarId: reference.calendarId, text: 'Lunch Friday' },
       req,
     });
+
     expect(lastCall()).toMatchObject({
       method: 'POST',
       params: { text: 'Lunch Friday', sendUpdates: 'none' },
     });
+
     await calendar.getEvent({
       input: {
         calendarId: 'user+calendar@example.com',
@@ -422,16 +458,20 @@ describe('native Google Calendar', () => {
       },
       req,
     });
+
     expect(String(lastCall().url)).toContain(
       '/calendars/user%2Bcalendar%40example.com/events/event%2Fid',
     );
     expect(lastCall().params).toMatchObject({ maxAttendees: 4, timeZone: 'Europe/London' });
+
     await calendar.deleteEvent({ input: { ...reference, sendUpdates: 'externalOnly' }, req });
+
     expect(lastCall()).toMatchObject({ method: 'DELETE', params: { sendUpdates: 'externalOnly' } });
   });
 
   it('maps search, all event types, recurrence expansion, upper-only bounds, and page controls', async () => {
     const { calendar, req } = await fixture();
+
     await calendar.listEvents({
       input: {
         calendarId: reference.calendarId,
@@ -445,6 +485,7 @@ describe('native Google Calendar', () => {
       },
       req,
     });
+
     expect(lastCall().params).toMatchObject({
       eventTypes: ['workingLocation', 'focusTime'],
       q: '"planning"',
@@ -455,16 +496,19 @@ describe('native Google Calendar', () => {
       maxResults: 10,
       pageToken: 'next',
     });
+
     await calendar.listEvents({
       input: { calendarId: reference.calendarId, endDate: end, eventTypes: [] },
       req,
     });
+
     expect(lastCall().params).toMatchObject({ timeMax: end, singleEvents: false });
     expect(lastCall().params?.eventTypes).toBeUndefined();
   });
 
   it('requests multiple free/busy calendars and preserves per-calendar errors', async () => {
     const { calendar, req } = await fixture();
+
     await expect(
       calendar.findFreeBusyPeriods({
         input: {
@@ -487,14 +531,19 @@ describe('native Google Calendar', () => {
 
   it('paginates writable calendar choices and tolerates empty calendar/color responses', async () => {
     const { client, req } = await fixture();
+
     expect(await calendars('writer')({ client, req })).toHaveLength(2);
     expect(transport.mock.calls.map(([config]) => config.params)).toEqual([
       expect.objectContaining({ maxResults: 250, minAccessRole: 'writer' }),
       expect.objectContaining({ pageToken: 'page-two', minAccessRole: 'writer' }),
     ]);
+
     transport.mockImplementationOnce((config) => Promise.resolve(response({}, config)));
+
     expect(await calendars()({ client, req })).toEqual([]);
+
     transport.mockImplementationOnce((config) => Promise.resolve(response({}, config)));
+
     expect(await colors({ client, req })).toEqual([]);
   });
 
@@ -518,6 +567,7 @@ describe('native Google Calendar', () => {
     ['findFreeBusyPeriods', { calendarIds: ['primary'], startDate: end, endDate: start }],
   ])('rejects invalid %s input before transport', async (slug, input) => {
     const { calendar, req } = await fixture();
+
     await expect(
       (
         calendar[slug as keyof typeof calendar] as (args: {
@@ -542,7 +592,9 @@ describe('native Google Calendar', () => {
         },
         code: status,
       });
+
       transport.mockRejectedValueOnce(error);
+
       await expect(calendar.getEvent({ input: reference, req })).rejects.toBe(error);
     },
   );
@@ -551,20 +603,27 @@ describe('native Google Calendar', () => {
     const controller = new AbortController();
     const { calendar, client, req } = await fixture(controller.signal);
     await calendar.getEvent({ input: reference, req });
+
     expect(lastCall().signal).toBe(controller.signal);
+
     controller.abort(new Error('Cancelled by caller'));
     transport.mockClear();
+
     await expect(calendar.getEvent({ input: reference, req })).rejects.toThrow(
       'Cancelled by caller',
     );
     await expect(colors({ client, req })).rejects.toThrow('Cancelled by caller');
     expect(transport).not.toHaveBeenCalled();
+
     const next = new AbortController();
     const second = await fixture(next.signal);
+
     transport.mockImplementationOnce((config) => {
       next.abort(new Error('Cancelled after read'));
+
       return Promise.resolve(response(existing, config));
     });
+
     await expect(
       second.calendar.addAttendees({
         input: { ...reference, attendees: ['new@example.com'] },
@@ -592,14 +651,18 @@ describe('native Google Calendar', () => {
         getEvent: reference,
         customApiCall: { method: 'GET', path: '/custom' },
       };
+
       const controller = new AbortController();
       const { calendar, req } = await fixture(controller.signal);
       const error = new Error('Provider unavailable');
       transport.mockRejectedValueOnce(error);
+
       await expect(calendar[slug]({ input: inputs[slug] as never, req })).rejects.toBe(error);
       expect(lastCall().signal).toBe(controller.signal);
+
       controller.abort(new Error('Caller cancelled'));
       transport.mockClear();
+
       await expect(calendar[slug]({ input: inputs[slug] as never, req })).rejects.toThrow(
         'Caller cancelled',
       );
@@ -610,8 +673,10 @@ describe('native Google Calendar', () => {
   it('propagates calendar and color option lookup failures', async () => {
     const { client, req } = await fixture();
     const error = new Error('Options unavailable');
+
     for (const load of [calendars(), colors]) {
       transport.mockRejectedValueOnce(error);
+
       await expect(load({ client, req })).rejects.toBe(error);
     }
   });
@@ -625,15 +690,19 @@ describe('Google Calendar custom API', () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockImplementation(() => Promise.resolve(Response.json({ ok: true })));
+
     oauth.transporter.defaults.fetchImplementation = fetchMock;
+
     await calendar.customApiCall({
       input: { method: 'POST', path: '/custom', body: { summary: 'Meeting' } },
       req,
     });
+
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
       body: '{"summary":"Meeting"}',
       redirect: 'manual',
     });
+
     await calendar.customApiCall({
       input: {
         method: 'POST',
@@ -643,13 +712,17 @@ describe('Google Calendar custom API', () => {
       },
       req,
     });
+
     const form = fetchMock.mock.calls[1]?.[1]?.body as FormData;
+
     expect(form).toBeInstanceOf(FormData);
     expect(new Uint8Array(await (form.get('file') as File).arrayBuffer())).toEqual(
       new Uint8Array([0, 255, 128]),
     );
+
     for (const body of ['text', false, 0, null]) {
       await calendar.customApiCall({ input: { method: 'POST', path: '/custom', body }, req });
+
       expect(fetchMock.mock.calls.at(-1)?.[1]?.body).toBe(JSON.stringify(body));
     }
   });
@@ -666,12 +739,16 @@ describe('Google Calendar custom API', () => {
         }),
       ),
     );
+
     oauth.transporter.defaults.fetchImplementation = fetchMock;
+
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).rejects.toThrow('redirects are not allowed');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+
     const [url, init] = fetchMock.mock.calls[0];
+
     expect(String(url)).toBe('https://www.googleapis.com/calendar/v3/custom');
     expect(init?.redirect).toBe('manual');
     expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${auth.accessToken}`);
@@ -681,6 +758,7 @@ describe('Google Calendar custom API', () => {
     'supports %s with provider authentication',
     async (method) => {
       const { calendar, req } = await fixture();
+
       await calendar.customApiCall({
         input: {
           method,
@@ -690,6 +768,7 @@ describe('Google Calendar custom API', () => {
         },
         req,
       });
+
       expect(lastCall()).toMatchObject({
         url: 'https://www.googleapis.com/calendar/v3/custom',
         method,
@@ -705,6 +784,7 @@ describe('Google Calendar custom API', () => {
 
   it('supports full provider URLs, JSON, raw, no body, timeout, and multipart binary files', async () => {
     const { calendar, req } = await fixture();
+
     await calendar.customApiCall({
       input: {
         method: 'POST',
@@ -714,19 +794,25 @@ describe('Google Calendar custom API', () => {
       },
       req,
     });
+
     expect(lastCall()).toMatchObject({ data: '{"title":"JSON"}', timeout: 5000 });
     expect(lastCall().headers?.get('content-type')).toBe('application/json');
+
     await calendar.customApiCall({
       input: { method: 'POST', path: '/custom', bodyType: 'raw', body: 'hello' },
       req,
     });
+
     expect(lastCall().data).toBe('hello');
     expect(lastCall().headers?.get('content-type')).toBe('text/plain');
+
     await calendar.customApiCall({
       input: { method: 'POST', path: '/custom', bodyType: 'none', body: 'ignored' },
       req,
     });
+
     expect(lastCall().data).toBeUndefined();
+
     await calendar.customApiCall({
       input: {
         method: 'POST',
@@ -746,9 +832,13 @@ describe('Google Calendar custom API', () => {
       },
       req,
     });
+
     const form = lastCall().data as FormData;
+
     expect(form.get('title')).toBe('');
+
     const file = form.get('file') as File;
+
     expect(file.name).toBe('event.ics');
     expect(file.type).toBe('text/calendar');
     expect(await file.text()).toBe('calendar content');
@@ -757,12 +847,14 @@ describe('Google Calendar custom API', () => {
 
   it('returns binary bytes as base64 and supports failsafe HTTP responses', async () => {
     const { calendar, req } = await fixture();
+
     transport.mockImplementationOnce((config) =>
       Promise.resolve({
         ...response(Buffer.from([0, 255, 128]), config),
         headers: new Headers({ 'content-type': 'application/octet-stream' }),
       }),
     );
+
     await expect(
       calendar.customApiCall({
         input: { method: 'GET', path: '/custom', responseIsBinary: true },
@@ -770,14 +862,18 @@ describe('Google Calendar custom API', () => {
       }),
     ).resolves.toMatchObject({ body: { base64: 'AP+A', contentType: 'application/octet-stream' } });
     expect(lastCall().responseType).toBe('arraybuffer');
+
     transport.mockImplementationOnce((config) =>
       Promise.resolve(response({ error: { message: 'Denied' } }, config, 403)),
     );
+
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).resolves.toMatchObject({ status: 403, body: { error: { message: 'Denied' } } });
     expect(lastCall().validateStatus?.(403)).toBe(true);
+
     await calendar.customApiCall({ input: { method: 'GET', path: '/custom' }, req });
+
     expect(lastCall().validateStatus?.(403)).toBe(false);
   });
 
@@ -797,6 +893,7 @@ describe('Google Calendar custom API', () => {
     '/events#fragment',
   ])('rejects unsafe URL %s before transport', async (path) => {
     const { calendar, req } = await fixture();
+
     await expect(calendar.customApiCall({ input: { method: 'GET', path }, req })).rejects.toThrow(
       'Google Calendar v3 API',
     );
@@ -818,6 +915,7 @@ describe('Google Calendar custom API', () => {
     },
   ])('rejects invalid custom request %j', async (invalid) => {
     const { calendar, req } = await fixture();
+
     await expect(
       calendar.customApiCall({
         input: { method: 'GET', path: '/custom', ...invalid } as never,
@@ -829,12 +927,14 @@ describe('Google Calendar custom API', () => {
 
   it('rejects redirect responses even in failsafe mode without forwarding credentials', async () => {
     const { calendar, req } = await fixture();
+
     transport.mockImplementationOnce((config) =>
       Promise.resolve({
         ...response('', config, 302),
         headers: new Headers({ location: 'https://attacker.test/steal' }),
       }),
     );
+
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).rejects.toThrow('redirects are not allowed');
@@ -846,12 +946,15 @@ describe('Google Calendar custom API', () => {
     const controller = new AbortController();
     const { calendar, req } = await fixture(controller.signal);
     transport.mockRejectedValueOnce(new Error('Network unavailable'));
+
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).rejects.toThrow('Network unavailable');
     expect(lastCall().signal).toBe(controller.signal);
+
     controller.abort(new Error('Cancelled'));
     transport.mockClear();
+
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom' }, req }),
     ).rejects.toThrow('Cancelled');

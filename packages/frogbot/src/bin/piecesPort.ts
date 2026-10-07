@@ -120,6 +120,7 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
       },
     },
   };
+
   const tsconfig = {
     extends: '../../../tsconfig.base.json',
     compilerOptions: {
@@ -150,18 +151,22 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
 
     await writeFile(join(piece, 'package.json'), `${JSON.stringify(packageJson, null, 2)}\n`);
     await writeFile(join(piece, 'tsconfig.json'), `${JSON.stringify(tsconfig, null, 2)}\n`);
+
     await writeFile(
       join(piece, 'src', 'define.ts'),
       `import { createPieceHelpers } from 'frogbot/pieces';\n\nexport const { defineAction } = createPieceHelpers();\n`,
     );
+
     await writeFile(
       join(piece, 'src', 'index.ts'),
       `import { definePiece } from 'frogbot/pieces';\nimport { z } from 'zod';\n\nimport { defineAction } from './define.js';\n\nconst example = defineAction({\n  slug: 'example',\n  description: 'Replace with the first ported action.',\n  input: z.object({}),\n  output: z.object({}),\n  async run() {\n    return {};\n  },\n});\n\nexport const ${create} = definePiece({\n  slug: '${slug}',\n  label: '${label}',\n  actions: [example],\n});\n`,
     );
+
     await writeFile(
       join(piece, 'README.md'),
       `# \`@frogbotai/piece-${slug}\`\n\nPort ${slug} capabilities from the preserved upstream implementation.\n\n## Usage\n\n\`\`\`ts\nimport { ${create} } from '@frogbotai/piece-${slug}';\n\nexport const ${slug.replaceAll('-', '')} = ${create}();\n\`\`\`\n\n## Actions\n\n| Upstream action slug | Previous wrapper export | Native action | Notes |\n| --- | --- | --- | --- |\n\n## Triggers\n\n| Upstream trigger slug | Native trigger | Type | Notes |\n| --- | --- | --- | --- |\n`,
     );
+
     await writeFile(
       join(test, 'index.spec.ts'),
       `import { describe, it } from 'vitest';\n\ndescribe('${slug}', () => {\n  it.todo('ports the upstream behavior');\n});\n`,

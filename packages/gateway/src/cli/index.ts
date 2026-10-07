@@ -70,6 +70,7 @@ export function installGracefulShutdown(deps: GracefulShutdownDeps): (signal: st
       errorLog('drain timeout, forcing exit');
       exit(1);
     }, drainTimeoutMs);
+
     timer.unref?.();
 
     deps.server.close((err) => {
@@ -77,12 +78,15 @@ export function installGracefulShutdown(deps: GracefulShutdownDeps): (signal: st
       if (err) {
         errorLog(err.message);
         exit(1);
+
         return;
       }
+
       void (async () => {
         if (deps.flush) {
           await deps.flush();
         }
+
         exit(0);
       })();
     });
@@ -90,11 +94,13 @@ export function installGracefulShutdown(deps: GracefulShutdownDeps): (signal: st
 
   process.once('SIGTERM', () => handler('SIGTERM'));
   process.once('SIGINT', () => handler('SIGINT'));
+
   return handler;
 }
 
 export function buildProvidersFromEnv(env: NodeJS.ProcessEnv = process.env): ProviderConfigMap {
   const out: ProviderConfigMap = {};
+
   for (const name of PROVIDER_NAMES) {
     try {
       const cfg = providers[name].fromEnv(env);
@@ -113,11 +119,13 @@ export function buildProvidersFromEnv(env: NodeJS.ProcessEnv = process.env): Pro
       );
     }
   }
+
   return out;
 }
 
 function missingProvidersMessage(): string {
   const vars = PROVIDER_NAMES.map((name) => providers[name].envVars[0]).join(', ');
+
   return `no providers configured; set OPENAI_API_KEY or add openai to gateway.config.ts -> providers (known env vars: ${vars})`;
 }
 
@@ -125,12 +133,14 @@ async function main() {
   const args = parseCliArgs(process.argv.slice(2));
   if (args.help) {
     console.log(helpText());
+
     return;
   }
 
   if (args.command === 'init') {
     const { runInit } = await import('./init.js');
     runInit({ dir: args.dir });
+
     return;
   }
 
@@ -143,6 +153,7 @@ async function main() {
   const configured = Object.keys(merged.providers).filter(
     (k) => merged.providers[k as keyof ProviderConfigMap] != null,
   );
+
   if (configured.length === 0) {
     console.error(missingProvidersMessage());
     process.exit(1);
@@ -165,6 +176,7 @@ async function main() {
         `tracing endpoint configured but the OpenTelemetry setup module failed to load — install the optional @opentelemetry/* peer dependencies of @frogbotai/gateway (${cause})`,
       );
     });
+
     flushTracing = setupTracing({ endpoint: finalized.tracing?.endpoint });
   }
 
@@ -183,6 +195,7 @@ async function main() {
     (info) => {
       const displayHost =
         info.address === '0.0.0.0' || info.address === '::' ? 'localhost' : info.address;
+
       console.log(`listening on http://${displayHost}:${info.port}`);
     },
   );
@@ -202,6 +215,7 @@ export function isCliEntry(
   } catch {
     resolved = argvPath;
   }
+
   return moduleUrl === pathToFileURL(resolved).href;
 }
 

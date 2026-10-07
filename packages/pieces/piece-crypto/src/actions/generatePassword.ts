@@ -23,6 +23,7 @@ export const generatePassword = defineAction({
   run({ input }) {
     const characters =
       input.characterSet === 'alphanumeric' ? alphanumeric : alphanumeric + symbols;
+
     let password = '';
 
     for (let index = 0; index < input.length; index++) {

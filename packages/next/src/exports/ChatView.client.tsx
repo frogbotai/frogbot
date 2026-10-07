@@ -290,6 +290,7 @@ function ChatViewInner({
       const preferredAgent = manifest.agents.find(({ slug }) => slug === preference.agent);
       const nextAgent =
         chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : initialAgent;
+
       const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
       const offers = (model: string | undefined) =>
         nextEntry?.models.some((option) => option === model) ?? false;
@@ -298,14 +299,17 @@ function ChatViewInner({
         chatId !== undefined && offers(initialSelection?.model) ? initialSelection : undefined;
 
       setSelectedAgent(nextAgent);
+
       setSelectedModel(
         chatSelection?.model ?? (offers(preference.model) ? preference.model : undefined),
       );
+
       setReasoningByModel(
         chatSelection
           ? rememberReasoning(preference.reasoning, chatSelection.model, chatSelection.reasoning)
           : preference.reasoning,
       );
+
       setPreferencesLoaded(true);
     });
 
@@ -336,6 +340,7 @@ function ChatViewInner({
       const chatsSlug = provider?.manifest?.chat.enabled
         ? provider.manifest.chat.chatsSlug
         : undefined;
+
       if (!provider || !chatsSlug) return;
       try {
         await updateChatAgent({ sdk: provider.sdk, chatsSlug, chatId }, nextAgent);
@@ -403,14 +408,17 @@ function ChatViewInner({
         <UserMessageActions {...userMessageActionsProps} {...props} />
       )
     : undefined;
+
   const AssistantActions = AssistantMessageActions
     ? (props: MessageActionsSlotProps) => (
         <AssistantMessageActions {...assistantMessageActionsProps} {...props} />
       )
     : undefined;
+
   const ChatGreeting = GreetingComponent
     ? (props: GreetingProps) => <GreetingComponent {...greetingProps} {...props} />
     : undefined;
+
   return (
     <ChatComponent
       {...chatComponentProps}

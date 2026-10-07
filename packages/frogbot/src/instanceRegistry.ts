@@ -13,6 +13,7 @@ const globalRef = globalThis as {
   _frogbotInstances?: WeakMap<object, FrogBotInstanceEntry>;
   _frogbotInstancePromises?: WeakMap<object, Promise<FrogBot>>;
 };
+
 const instances = (globalRef._frogbotInstances ??= new WeakMap());
 const promises = (globalRef._frogbotInstancePromises ??= new WeakMap());
 
@@ -56,13 +57,17 @@ export function ensureFrogBotInstance(
     registered && refresh
       ? refresh(config!).then(() => {
           registered.config = config;
+
           return registered.frogbot;
         })
       : init();
+
   promises.set(payload, promise);
   const clear = () => {
     if (promises.get(payload) === promise) promises.delete(payload);
   };
+
   void promise.then(clear, clear);
+
   return promise;
 }

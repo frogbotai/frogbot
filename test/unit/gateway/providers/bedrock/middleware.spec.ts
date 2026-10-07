@@ -36,10 +36,13 @@ describe('bedrockCachePoint', () => {
       content: 'Hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const args = makeArgs('anthropic.claude-3-5-sonnet-20241022-v2:0', {
       messages: [message],
     });
+
     void bedrockCachePoint(args);
+
     expect(message.providerOptions).toHaveProperty('bedrock', {
       cachePoint: { type: 'default' },
     });
@@ -52,9 +55,11 @@ describe('bedrockCachePoint', () => {
       text: 'Hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const message = { role: 'user', content: [part] };
     const args = makeArgs('claude-4-sonnet', { messages: [message] });
     void bedrockCachePoint(args);
+
     expect(part.providerOptions).toHaveProperty('bedrock', {
       cachePoint: { type: 'default' },
     });
@@ -67,7 +72,9 @@ describe('bedrockCachePoint', () => {
       content: 'Hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl } } },
     };
+
     void bedrockCachePoint(makeArgs('claude-4-sonnet', { messages: [message] }));
+
     expect(message.providerOptions).toHaveProperty('bedrock', {
       cachePoint: { type: 'default', ttl },
     });
@@ -79,7 +86,9 @@ describe('bedrockCachePoint', () => {
       content: 'Hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '24h' } } },
     };
+
     void bedrockCachePoint(makeArgs('claude-4-sonnet', { messages: [message] }));
+
     expect(message.providerOptions).toHaveProperty('bedrock', { cachePoint: { type: 'default' } });
   });
 
@@ -90,7 +99,9 @@ describe('bedrockCachePoint', () => {
       messages: [first, last],
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '1h' } } },
     });
+
     void bedrockCachePoint(args);
+
     expect(first).not.toHaveProperty('providerOptions');
     expect(last).toHaveProperty('providerOptions.bedrock.cachePoint', {
       type: 'default',
@@ -106,13 +117,16 @@ describe('bedrockCachePoint', () => {
       content: 'Hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const args = makeArgs('amazon.nova-pro-v1:0', {
       messages: [message],
       providerOptions: {
         unknown: { cache_control: { type: 'ephemeral' } },
       },
     });
+
     void bedrockCachePoint(args);
+
     expect(args.providerOptions['bedrock']).toBeUndefined();
     expect(message.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
   });
@@ -121,13 +135,16 @@ describe('bedrockCachePoint', () => {
     const args = makeArgs('anthropic.claude-3-5-sonnet-20241022-v2:0', {
       providerOptions: { unknown: { some_other: 'value' } },
     });
+
     void bedrockCachePoint(args);
+
     expect(args.providerOptions['bedrock']).toBeUndefined();
   });
 
   it('skips when no providerOptions', () => {
     const args = makeArgs('anthropic.claude-3-5-sonnet-20241022-v2:0', { providerOptions: {} });
     void bedrockCachePoint(args);
+
     expect(args.providerOptions['bedrock']).toBeUndefined();
   });
 });
@@ -138,7 +155,9 @@ describe('bedrockThinkingEffort', () => {
       operation: 'messages',
       providerOptions: { anthropic: { thinking: { type: 'enabled', budgetTokens: 2048 } } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toEqual({
       reasoningConfig: { type: 'enabled', budgetTokens: 2048 },
     });
@@ -162,7 +181,9 @@ describe('bedrockThinkingEffort', () => {
       params: { maxOutputTokens: 10000 },
       providerOptions: { unknown: { reasoning_effort: 'high' } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toEqual({
       reasoningConfig: { type: 'enabled', budgetTokens: 8000 },
     });
@@ -173,7 +194,9 @@ describe('bedrockThinkingEffort', () => {
       params: { maxOutputTokens: 10000 },
       providerOptions: { unknown: { reasoning_effort: 'low' } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toEqual({
       reasoningConfig: { type: 'enabled', budgetTokens: 1500 },
     });
@@ -184,7 +207,9 @@ describe('bedrockThinkingEffort', () => {
       params: { maxOutputTokens: 1000 },
       providerOptions: { unknown: { reasoning_effort: 'minimal' } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toEqual({
       reasoningConfig: { type: 'enabled', budgetTokens: 1024 },
     });
@@ -194,7 +219,9 @@ describe('bedrockThinkingEffort', () => {
     const args = makeArgs('claude-4-sonnet', {
       providerOptions: { unknown: { reasoning_effort: 'none' } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toBeUndefined();
   });
 
@@ -202,7 +229,9 @@ describe('bedrockThinkingEffort', () => {
     const args = makeArgs('amazon.nova-pro-v1:0', {
       providerOptions: { unknown: { reasoning_effort: 'high' } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toBeUndefined();
   });
 
@@ -214,7 +243,9 @@ describe('bedrockThinkingEffort', () => {
         bedrock: { reasoningConfig: { type: 'enabled', budgetTokens: 2048 } },
       },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toEqual({
       reasoningConfig: { type: 'enabled', budgetTokens: 2048 },
     });
@@ -224,7 +255,9 @@ describe('bedrockThinkingEffort', () => {
     const args = makeArgs('claude-4-sonnet', {
       providerOptions: { unknown: { some_other: 'value' } },
     });
+
     void bedrockThinkingEffort(args);
+
     expect(args.providerOptions['bedrock']).toBeUndefined();
   });
 });

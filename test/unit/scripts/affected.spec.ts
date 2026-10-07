@@ -146,6 +146,7 @@ describe('affectedSet on past commits', () => {
         sources: ['packages/db-sqlite/src/recoverFromBusy.ts'],
       },
     ];
+
     const set = map(files, related);
 
     expect(set.typecheck).toEqual([{ name: '@frogbotai/db-sqlite', areas: [] }]);
@@ -185,6 +186,7 @@ describe('affectedSet', () => {
     const related = [
       { project: 'int', spec: 'test/fields/int.spec.ts', sources: ['scripts/lib/workspace.mjs'] },
     ];
+
     const set = map(['scripts/lib/workspace.mjs'], related);
 
     expect(set.specs.int).toEqual([]);

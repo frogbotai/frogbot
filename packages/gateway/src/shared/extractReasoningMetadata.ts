@@ -30,6 +30,7 @@ export function extractReasoningMetadata(
         redactedData = metadata.redactedData;
         found = true;
       }
+
       if ('signature' in metadata && typeof metadata.signature === 'string') {
         signature = metadata.signature;
         found = true;

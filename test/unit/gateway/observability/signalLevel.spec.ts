@@ -21,6 +21,7 @@ describe('signalLevel', () => {
 
   it('clamps client overrides to the operator baseline, never escalating', () => {
     const base = { gen_ai: 'off', frogbot: 'off' } as const;
+
     expect(resolveSignalLevels({ gen_ai: 'full' }, base)).toEqual({
       gen_ai: 'off',
       frogbot: 'off',
@@ -38,6 +39,7 @@ describe('signalLevel', () => {
 
   it('lets client overrides downgrade individual namespaces below the baseline', () => {
     const base = { gen_ai: 'full', frogbot: 'full' } as const;
+
     expect(resolveSignalLevels('off', base)).toEqual({
       gen_ai: 'off',
       frogbot: 'off',

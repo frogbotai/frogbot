@@ -31,6 +31,7 @@ function makeSpan() {
     ended: false,
     addEvent(name: string, attributes?: Record<string, unknown>) {
       this.events.push({ name, attributes });
+
       return this as unknown as Span;
     },
     end() {
@@ -39,10 +40,12 @@ function makeSpan() {
     recordException: vi.fn(),
     setAttribute(key: string, value: unknown) {
       this.attributes[key] = value;
+
       return this as unknown as Span;
     },
     setAttributes(attributes: Record<string, unknown>) {
       Object.assign(this.attributes, attributes);
+
       return this as unknown as Span;
     },
     setStatus: vi.fn(),
@@ -69,7 +72,9 @@ describe('tracing', () => {
             body: JSON.stringify({ trace: 'full' }),
           }),
         });
+
         await hooks.beforeUpstream?.[0]?.(args);
+
         await hooks.afterError?.[0]?.({
           phase: 'afterError',
           operation: args.operation,
@@ -82,6 +87,7 @@ describe('tracing', () => {
           failedPhase: 'beforeUpstream',
           error: new Error('boom'),
         });
+
         await hooks.afterOperation?.[0]?.({
           phase: 'afterOperation',
           operation: args.operation,
@@ -104,7 +110,9 @@ describe('tracing', () => {
     const tracer = createGatewayTracer({
       tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
     });
+
     tracer.startSpan('test', undefined, { getValue: () => makeArgs() } as never);
+
     expect(span.attributes).toMatchObject({ 'tenant.id': 'tenant_1', 'api_key.id': 'key_1' });
   });
 
@@ -115,6 +123,7 @@ describe('tracing', () => {
         startSpan: vi.fn((_name: string, _options?: SpanOptions) => span),
       } as unknown as Tracer,
     });
+
     const args = makeArgs();
 
     await hooks.beforeOperation?.[0]?.({
@@ -130,7 +139,9 @@ describe('tracing', () => {
         body: JSON.stringify({ trace: 'full' }),
       }),
     });
+
     await hooks.beforeUpstream?.[0]?.(args);
+
     await hooks.afterUpstream?.[0]?.({
       phase: 'afterUpstream',
       operation: args.operation,
@@ -142,6 +153,7 @@ describe('tracing', () => {
       provider: args.provider,
       warnings: [{ type: 'other', message: 'careful' }],
     });
+
     await hooks.afterOperation?.[0]?.({
       phase: 'afterOperation',
       operation: args.operation,
@@ -184,6 +196,7 @@ describe('tracing', () => {
         body: JSON.stringify({ trace: false }),
       }),
     });
+
     await hooks.beforeUpstream?.[0]?.(args);
 
     expect(startSpan).not.toHaveBeenCalled();
@@ -207,6 +220,7 @@ describe('tracing', () => {
         body: JSON.stringify({ trace: false }),
       }),
     });
+
     expect(abandoned.context['frogbot.gateway.traceOverride']).toBe('off');
 
     const reused = makeArgs();
@@ -217,17 +231,21 @@ describe('tracing', () => {
 
   it('records the full error on the span in non-production', async () => {
     vi.stubEnv('NODE_ENV', 'development');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const span = makeSpan();
     const hooks = createTracingHooks({
       tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
     });
+
     const args = makeArgs();
 
     await hooks.beforeUpstream?.[0]?.(args);
     const error = new Error('leaked sk-secret-123');
+
     await hooks.afterError?.[0]?.({
       phase: 'afterError',
       operation: args.operation,
@@ -246,17 +264,21 @@ describe('tracing', () => {
 
   it('records only the error name/type in production, stripping message and stack', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const span = makeSpan();
     const hooks = createTracingHooks({
       tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
     });
+
     const args = makeArgs();
 
     await hooks.beforeUpstream?.[0]?.(args);
     const error = Object.assign(new Error('leaked sk-secret-123'), { name: 'ProviderError' });
+
     await hooks.afterError?.[0]?.({
       phase: 'afterError',
       operation: args.operation,
@@ -271,8 +293,10 @@ describe('tracing', () => {
     });
 
     expect(span.recordException).toHaveBeenCalledWith({ name: 'ProviderError' });
+
     const recorded = (span.recordException as unknown as { mock: { calls: unknown[][] } }).mock
       .calls[0]?.[0];
+
     expect(JSON.stringify(recorded)).not.toContain('sk-secret-123');
   });
 
@@ -284,6 +308,7 @@ describe('tracing', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ trace: 'full' }),
     });
+
     const clone = vi.spyOn(request, 'clone');
 
     await hooks.beforeOperation?.[0]?.({
@@ -305,12 +330,14 @@ describe('tracing', () => {
     const hooks = createTracingHooks({
       signalLevel: { gen_ai: 'off', frogbot: 'required' },
     });
+
     const args = makeArgs();
     const request = new Request('https://gateway.test/v1/responses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ trace: 'full' }),
     });
+
     const clone = vi.spyOn(request, 'clone');
 
     await hooks.beforeOperation?.[0]?.({
@@ -331,6 +358,7 @@ describe('tracing', () => {
     const hooks = createTracingHooks({
       signalLevel: { gen_ai: 'off', frogbot: 'required' },
     });
+
     const args = makeArgs();
     const form = new FormData();
     form.append('file', new Blob(['x'.repeat(1024)], { type: 'audio/wav' }), 'audio.wav');
@@ -338,6 +366,7 @@ describe('tracing', () => {
       method: 'POST',
       body: form,
     });
+
     const clone = vi.spyOn(request, 'clone');
 
     await hooks.beforeOperation?.[0]?.({

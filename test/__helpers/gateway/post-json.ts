@@ -20,6 +20,8 @@ export async function postJson<T = unknown>(
     headers: { 'content-type': 'application/json', ...headers },
     body: JSON.stringify(body),
   });
+
   const data = (await res.json()) as T;
+
   return { status: res.status, headers: res.headers, body: data };
 }

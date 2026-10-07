@@ -56,6 +56,7 @@ describe('resume endpoint registration', () => {
     const resumeIndex = endpoints.findIndex(
       ({ method, path }) => method === 'post' && path === '/jobs/:token/resume',
     );
+
     const customIndex = endpoints.findIndex(({ path }) => path === '/:prefix/:token/resume');
 
     expect(resumeIndex).toBeGreaterThanOrEqual(0);
@@ -92,6 +93,7 @@ describe('resume endpoint registration', () => {
       context: {},
       routeParams: { token: 'secret' },
     });
+
     const endpoint = (payloadConfig.endpoints || []).find(
       ({ path, method }) => path === '/jobs/:token/resume' && method === 'get',
     )!;

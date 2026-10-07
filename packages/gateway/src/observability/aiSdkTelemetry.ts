@@ -44,12 +44,14 @@ export function createAiSdkTelemetry(options: AiSdkTelemetryOptions = {}): AiSdk
   const integration = new OpenTelemetry({
     tracer: createGatewayTracer({ tracer: options.tracer }),
   });
+
   return {
     forRequest(context) {
       const levels = resolveSignalLevels(context[traceOverrideKey] as SignalLevelInput, baseLevels);
       if (levels.gen_ai === 'off' || !includesSignalLevel(levels.frogbot, 'recommended')) {
         return { isEnabled: false };
       }
+
       return {
         isEnabled: true,
         recordInputs: levels.gen_ai === 'full',

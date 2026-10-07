@@ -12,6 +12,7 @@ const CONFIG = 'export default { collections: [], _internal: {} };\n';
 async function makeDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'frogbot-load-config-'));
   dirs.push(dir);
+
   return dir;
 }
 
@@ -31,10 +32,12 @@ describe('frogbot loadConfig', () => {
   it('prefers src/ over the project root when both exist', async () => {
     const dir = await makeDir();
     await mkdir(join(dir, 'src'));
+
     await writeFile(
       join(dir, 'src', 'frogbot.config.mjs'),
       'export default { collections: [1], _internal: {} };\n',
     );
+
     await writeFile(
       join(dir, 'frogbot.config.mjs'),
       'export default { collections: [2], _internal: {} };\n',
@@ -54,9 +57,11 @@ describe('frogbot loadConfig', () => {
   it.todo('accepts frogbot.config.ts, frogbot.config.mjs, and frogbot.config.js');
   it.todo('respects an absolute FROGBOT_CONFIG_PATH override');
   it.todo('respects a relative FROGBOT_CONFIG_PATH (resolved against cwd)');
+
   it.todo(
     'throws `[frogbot] FROGBOT_CONFIG_PATH points to a missing file:` when the override does not exist',
   );
+
   it('throws [frogbot] failed to load <path> wrapping the underlying cause on import failure', async () => {
     const dir = await makeDir();
     const path = join(dir, 'src', 'frogbot.config.mjs');
@@ -69,11 +74,14 @@ describe('frogbot loadConfig', () => {
       cause: { message: 'config-runtime-error' },
     });
   });
+
   it.todo('throws `[frogbot] <path> has no default export` when the file has no default export');
   it.todo('awaits a Promise default export');
+
   it.todo(
     'rejects a default export missing `collections` with `[frogbot] … is not a SanitizedConfig`',
   );
+
   it.todo('returns the sanitized config object on success');
 });
 

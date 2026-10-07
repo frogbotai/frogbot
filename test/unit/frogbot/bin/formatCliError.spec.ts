@@ -367,6 +367,7 @@ describe('formatCliError unusual causes', () => {
     const fail = (): never => {
       throw new Error('trap failed');
     };
+
     const cause = new Proxy({}, { get: fail, getPrototypeOf: fail, ownKeys: fail });
 
     const result = formatCliError(new Error('outer', { cause }));

@@ -48,6 +48,7 @@ export async function generateImportMap(
     if (options?.ignoreResolveError) {
       return null;
     }
+
     throw importMapFilePath;
   }
 
@@ -119,11 +120,13 @@ export async function writeImportMap({
   importMapFilePath: string;
 }): Promise<boolean> {
   const imports: string[] = [];
+
   for (const [identifier, { path, specifier }] of Object.entries(importMap)) {
     imports.push(`import { ${specifier} as ${identifier} } from '${path}'`);
   }
 
   const mapKeys: string[] = [];
+
   for (const [userPath, identifier] of Object.entries(componentMap)) {
     mapKeys.push(`  "${userPath}": ${identifier}`);
   }
@@ -150,5 +153,6 @@ ${mapKeys.join(',\n')}
   if (dryRun) return true;
 
   await fs.writeFile(importMapFilePath, importMapOutputFile);
+
   return true;
 }

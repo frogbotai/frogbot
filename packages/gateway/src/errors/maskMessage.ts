@@ -24,6 +24,7 @@ export type MaskMessageOptions = {
 export function maybeMaskMessage(message: string, opts: MaskMessageOptions): string {
   if (!opts.production) return message;
   if (opts.status < 500) return message;
+
   return opts.requestId
     ? `Internal server error (request_id: ${opts.requestId}).`
     : 'Internal server error.';

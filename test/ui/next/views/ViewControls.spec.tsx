@@ -17,6 +17,7 @@ vi.mock('@payloadcms/ui', async () => {
     'general:groupByLabel': 'Group by {{label}}',
     'general:sort': 'Sort',
   };
+
   const t = (key: string, vars?: Record<string, string>) =>
     Object.entries(vars ?? {}).reduce(
       (value, [name, replacement]) => value.replaceAll(`{{${name}}}`, replacement),
@@ -37,6 +38,7 @@ vi.mock('@payloadcms/ui', async () => {
           key: id,
           onClick: () => setDrawer(drawer === value ? undefined : value),
         });
+
       return createElement('div', { className: 'list-controls' }, [
         createElement(
           'div',
@@ -103,6 +105,7 @@ const renderControls = (
 
 const control = (placement: string, key: string) =>
   document.getElementById(`view-controls-${placement}-${key}`)!;
+
 const clear = (placement: string, key: string) =>
   document.getElementById(`view-controls-${placement}-clear-${key}`)!;
 
@@ -152,6 +155,7 @@ describe('ViewControls', () => {
       sort: '-title,title',
       where: { or: [{ and: [{ title: { equals: 'a' } }, { title: { equals: 'b' } }] }] },
     };
+
     renderControls();
 
     expect(control('desktop', 'columns').textContent).toBe('Columns');
@@ -184,7 +188,9 @@ describe('ViewControls', () => {
     await waitFor(() =>
       expect(screen.getByTestId('sort-height').getAttribute('data-height')).toBe('auto'),
     );
+
     fireEvent.click(control('desktop', 'columns'));
+
     await waitFor(() =>
       expect(screen.getByTestId('sort-height').getAttribute('data-height')).toBe('0'),
     );
@@ -195,11 +201,14 @@ describe('ViewControls', () => {
     renderControls();
 
     fireEvent.click(clear('desktop', 'filters'));
+
     expect(mocks.refineListData).toHaveBeenLastCalledWith({ where: {} });
     expect(document.getElementById('toggle-list-filters')?.getAttribute('aria-expanded')).toBe(
       'false',
     );
+
     fireEvent.keyDown(clear('desktop', 'sort'), { key: ' ' });
+
     expect(mocks.refineListData).toHaveBeenLastCalledWith({ page: 1, sort: '' });
   });
 });

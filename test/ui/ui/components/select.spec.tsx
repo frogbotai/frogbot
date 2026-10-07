@@ -13,6 +13,7 @@ import {
 it('preserves Select classes and keyboard behavior', async () => {
   const user = userEvent.setup();
   const onValueChange = vi.fn();
+
   render(
     <Select onValueChange={onValueChange}>
       <SelectTrigger aria-label="Choice" className="custom-trigger">
@@ -28,6 +29,7 @@ it('preserves Select classes and keyboard behavior', async () => {
   );
 
   const trigger = screen.getByRole('combobox');
+
   expect(trigger.className).toBe('fb-select__trigger custom-trigger');
   expect(trigger.querySelector('svg')?.classList.contains('fb-select__trigger-icon')).toBe(true);
 
@@ -35,11 +37,13 @@ it('preserves Select classes and keyboard behavior', async () => {
   fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 
   const content = await screen.findByRole('listbox');
+
   expect(content.className).toContain('fb-select__content custom-content');
   expect(screen.getByRole('option', { name: 'One' }).className).toContain(
     'fb-select__item custom-item',
   );
 
   await user.keyboard('{ArrowDown}{Enter}');
+
   expect(onValueChange).toHaveBeenCalled();
 });

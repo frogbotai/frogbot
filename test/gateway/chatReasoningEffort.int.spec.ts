@@ -21,6 +21,7 @@ function createRecordingModel(
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
   });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -30,6 +31,7 @@ function createRecordingModel(
     },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall(options);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text: 'ok' }],
         finishReason: finish('stop'),
@@ -40,6 +42,7 @@ function createRecordingModel(
     },
     doStream: (options: LanguageModelV4CallOptions) => {
       onCall(options);
+
       return Promise.resolve({ stream: new ReadableStream() });
     },
   };
@@ -48,6 +51,7 @@ function createRecordingModel(
 function makeApp(providerName: string, onCall: (o: LanguageModelV4CallOptions) => void) {
   const fakeProvider = { languageModel: () => createRecordingModel(onCall) };
   const registry = { [providerName]: fakeProvider } as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -70,9 +74,11 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     });
 
     expect(status).toBe(200);
+
     const openai = (
       callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
     )?.['openai'];
+
     expect(openai?.['reasoningEffort']).toBe('high');
   });
 
@@ -90,9 +96,11 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     });
 
     expect(status).toBe(200);
+
     const anthropic = (
       callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
     )?.['anthropic'];
+
     expect(anthropic?.['thinking']).toEqual({ type: 'enabled', budgetTokens: 8000 });
   });
 
@@ -110,9 +118,11 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     });
 
     expect(status).toBe(200);
+
     const google = (
       callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
     )?.['google'];
+
     expect(google?.['thinkingConfig']).toEqual({ thinkingBudget: 8000 });
   });
 
@@ -130,9 +140,11 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     });
 
     expect(status).toBe(200);
+
     const anthropic = (
       callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
     )?.['anthropic'];
+
     expect(anthropic?.['thinking']).toEqual({ type: 'enabled', budgetTokens: 8000 });
   });
 });

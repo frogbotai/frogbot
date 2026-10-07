@@ -18,6 +18,7 @@ function packageTestResolver() {
       ) {
         return;
       }
+
       const parts = relative(process.cwd(), importer).split(sep);
       let root =
         parts[0] === 'test' && ['ui', 'unit'].includes(parts[1]) && parts[2]
@@ -25,11 +26,14 @@ function packageTestResolver() {
               .map((path) => join(path, parts[2]))
               .find((path) => existsSync(join(path, 'package.json')))
           : undefined;
+
       let current = dirname(importer);
+
       while (!root && current.startsWith(process.cwd())) {
         if (existsSync(join(current, 'package.json'))) root = current;
         current = dirname(current);
       }
+
       if (!root) return;
       try {
         return createRequire(resolve(root, 'package.json')).resolve(source);

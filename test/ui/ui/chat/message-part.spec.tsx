@@ -6,8 +6,11 @@ import { MessagePart } from '../../../../packages/ui/src/chat/message-part';
 describe('MessagePart', () => {
   it('renders known and unknown parts without throwing', () => {
     const { rerender } = render(<MessagePart part={{ type: 'text', text: 'Hello' }} />);
+
     expect(screen.getByText('Hello')).toBeTruthy();
+
     rerender(<MessagePart part={{ type: 'future-part', payload: true }} />);
+
     expect(screen.getByText('Unsupported message part: future-part')).toBeTruthy();
   });
 
@@ -18,6 +21,7 @@ describe('MessagePart', () => {
         fallback={(part) => <span>{part.type}</span>}
       />,
     );
+
     expect(screen.getByText('custom')).toBeTruthy();
   });
 });

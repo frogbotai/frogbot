@@ -249,6 +249,7 @@ async function main() {
     exists: (file) => existsSync(path.join(ROOT, file)),
     read: (file) => readFileSync(path.join(ROOT, file), 'utf8'),
   });
+
   const tmp = mkdtempSync(path.join(tmpdir(), 'frogbot-check-generated-'));
   const limit = Math.max(1, Math.floor(availableParallelism() / 2));
 

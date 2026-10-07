@@ -20,6 +20,7 @@ function runInFixture(fixtureDir: string, args: string[]) {
         DATABASE_URL: 'file:./next-client-build.db',
       },
     });
+
     let output = '';
     child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()));
@@ -42,6 +43,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/next client build', () => {
         join(repoRoot, 'packages', 'frogbot', 'bin.js'),
         'generate:importmap',
       ]);
+
       const result = await runInFixture(fixtureDir, [nextBin, 'build']);
       rmSync(buildDir, { recursive: true, force: true });
 

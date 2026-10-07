@@ -241,10 +241,12 @@ test('opening a chat from a collection list replaces the collection label with t
   await expect(page.locator('.fb-composer textarea')).toBeVisible();
   await expect(stepNav(page)).not.toContainText('Users');
   await expectLabel(page, 'Chats', threadTitle);
+
   await expect(stepNav(page).getByRole('link', { name: 'Chats', exact: true })).toHaveAttribute(
     'href',
     `/collections/${chatsSlug}`,
   );
+
   await expectNoReload(page);
 
   await expectTabTitle(page, threadTitle);
@@ -407,10 +409,12 @@ test('saving a new task labels its edit page with the task title', async ({ page
   await expectNoReload(page);
 
   await expectTabTitle(page, taskTitle);
+
   await expect(page.locator('head title:not([data-frogbot-tab-title])').first()).toHaveJSProperty(
     'textContent',
     'Editing - Task - FrogBot',
   );
+
   await expectTabTitle(page, taskTitle);
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Create New - FrogBot');
 });
@@ -530,6 +534,7 @@ test('New Chat after a new thread clears the screen and sends the next message t
   const secondTitle = held();
 
   model.respond({ text: 'Here is the summary.' }, { text: 'Here is the forecast.' });
+
   model.respondTitle(
     { text: generatedTitle, hold: firstTitle.hold },
     { text: secondGeneratedTitle, hold: secondTitle.hold },
@@ -564,10 +569,12 @@ test('New Chat after a new thread clears the screen and sends the next message t
 
   await expect(async () => {
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+
     await expect(
       recents(page).getByRole('link', { name: generatedTitle, exact: true }),
     ).toBeVisible({ timeout: 1_000 });
   }).toPass();
+
   await expectLabel(page);
 
   await expectTabTitle(page, 'Creating - Chat');
@@ -582,12 +589,14 @@ test('New Chat after a new thread clears the screen and sends the next message t
   await expect(page.getByText(firstMessage, { exact: true })).toHaveCount(0);
   await expect(page.getByText('Here is the summary.', { exact: true })).toHaveCount(0);
   await expectLabel(page, 'Chats', secondMessage);
+
   await expect(
     recents(page).getByRole('link', { name: generatedTitle, exact: true }),
   ).toHaveAttribute('href', firstPath);
   await expect(
     recents(page).getByRole('link', { name: secondMessage, exact: true }),
   ).toHaveAttribute('href', new URL(page.url()).pathname);
+
   await expectNoReload(page);
 
   await expectTabTitle(page, secondMessage);
@@ -650,6 +659,7 @@ test('Back after New Chat from a new thread shows the first conversation again',
     'textContent',
     'Editing - Chat - FrogBot',
   );
+
   await expectTabTitle(page, placeholderTitle);
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Creating - Chat - FrogBot');
 });
@@ -711,6 +721,7 @@ test('the first conversation stays on screen after a new chat moves to its threa
   await expect(chatView(page).getByText(firstMessage, { exact: true })).toBeVisible();
   await expect(chatView(page).getByText('Here is the summary.', { exact: true })).toBeVisible();
   await expectLabel(page, 'Chats', generatedTitle);
+
   await expect(
     recents(page).getByRole('link', { name: generatedTitle, exact: true }),
   ).toBeVisible();
@@ -796,6 +807,7 @@ test('stopping the first reply keeps the new chat and continues it with the next
     { text: 'Here is the summary.', hold: summary.hold },
     { text: 'Here is the forecast.' },
   );
+
   model.respondTitle({ text: generatedTitle, hold: title.hold });
 
   await openFirstPage(page, `/collections/${usersSlug}`);
@@ -882,6 +894,7 @@ test('Back from a new thread returns to the page before the new chat and Forward
     'textContent',
     'Editing - Chat - FrogBot',
   );
+
   await expectTabTitle(page, placeholderTitle);
   expect.soft((await recordedTitles(page)).slice(1)).not.toContain('FrogBot');
 });

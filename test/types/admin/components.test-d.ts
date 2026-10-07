@@ -59,6 +59,7 @@ type WelcomeWidgetProps = WidgetServerProps<WelcomeWidget>;
 
 expectTypeOf<WelcomeWidgetProps['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<WelcomeWidgetProps['widgetSlug']>().toEqualTypeOf<'welcome'>();
+
 expectTypeOf<WelcomeWidgetProps['widgetData']>().toEqualTypeOf<
   | {
       heading: string;

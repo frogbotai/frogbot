@@ -24,6 +24,7 @@ export const cohereEmbedDimensions: BeforeUpstreamHook = (args) => {
     ...(args.providerOptions.cohere ?? {}),
     outputDimension: dimensions,
   };
+
   delete unknown.dimensions;
 };
 

@@ -29,6 +29,7 @@ describe('toOpenAIEmbeddingsResponse', () => {
 
   it('encodes base64 as little-endian Float32 bytes', () => {
     const encoded = encodeEmbedding([1, -2.5]);
+
     expect(encoded).toBe(
       Buffer.from(new Uint8Array([0, 0, 128, 63, 0, 0, 32, 192])).toString('base64'),
     );
@@ -38,7 +39,9 @@ describe('toOpenAIEmbeddingsResponse', () => {
     onTestFinished(() => {
       vi.unstubAllGlobals();
     });
+
     vi.stubGlobal('Buffer', undefined);
+
     expect(encodeEmbedding([1, -2.5])).toBe('AACAPwAAIMA=');
   });
 });

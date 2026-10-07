@@ -28,8 +28,10 @@ vi.mock('../../../../packages/frogbot/src/frogbot.js', async (importOriginal) =>
 const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
 const { FrogBot, initFrogBotFromPayload } =
   await import('../../../../packages/frogbot/src/frogbot.js');
+
 const { getFrogBot, getCachedFrogBot, resetFrogBotCache } =
   await import('../../../../packages/frogbot/src/getFrogBot.js');
+
 const { getFrogBotInstance, registerFrogBotInstance } =
   await import('../../../../packages/frogbot/src/instanceRegistry.js');
 
@@ -135,7 +137,9 @@ describe('custom authentication strategy adapters', () => {
     const second = run(payload);
 
     await vi.waitFor(() => expect(init).toHaveBeenCalledOnce());
+
     expect(authenticate).not.toHaveBeenCalled();
+
     finish();
 
     const results = await Promise.all([first, second]);
@@ -268,6 +272,7 @@ describe('custom authentication strategy adapters', () => {
         },
       ]),
     );
+
     const payload = await makePayload(config);
     const frogbot = makeFrogBot(config);
 
@@ -294,6 +299,7 @@ describe('custom authentication strategy adapters', () => {
         { name: 'unused', authenticate: unused },
       ]),
     );
+
     const payload = await makePayload(config);
     const frogbot = makeFrogBot(config);
 
@@ -321,6 +327,7 @@ describe('custom authentication strategy adapters', () => {
     const authenticate = vi.fn<AuthStrategy['authenticate']>(() => {
       throw error;
     });
+
     const strategy = Object.freeze({ name: 'shared', authenticate });
     const strategies = [strategy];
     const input = makeConfig(strategies);
@@ -354,6 +361,7 @@ describe('custom authentication strategy adapters', () => {
     const authenticate = vi.fn<AuthStrategy['authenticate']>(() => {
       throw error;
     });
+
     const strategy = { name: 'shared', authenticate };
     const config = await buildConfig({
       ...makeConfig([strategy]),
@@ -363,6 +371,7 @@ describe('custom authentication strategy adapters', () => {
         fields: [],
       })),
     });
+
     const payload = await makePayload(config, ['users', 'members']);
     const frogbot = makeFrogBot(config);
 
@@ -396,6 +405,7 @@ describe('custom authentication strategy adapters', () => {
           { name: 'fallback', authenticate: fallback },
         ]),
       );
+
       const payload = await makePayload(config);
       const frogbot = makeFrogBot(config);
 

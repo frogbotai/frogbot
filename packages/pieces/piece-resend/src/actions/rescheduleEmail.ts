@@ -11,6 +11,7 @@ export const rescheduleEmail = defineAction({
   input,
   async run({ input, client }) {
     const { email_id, ...body } = input;
+
     return client.request({ method: 'PATCH', path: `/emails/${email_id}`, body });
   },
 });

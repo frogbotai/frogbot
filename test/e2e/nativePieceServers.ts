@@ -28,12 +28,15 @@ export type PieceVendorRequest = {
 
 export async function startPieceServer(app: Hono) {
   const server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port: 0 });
+
   await new Promise<void>((resolve, reject) => {
     server.once('listening', resolve);
     server.once('error', reject);
   });
+
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('Missing local server address');
+
   return {
     url: `http://127.0.0.1:${address.port}`,
     close: () =>
@@ -49,20 +52,24 @@ export async function startPieceProviders() {
     resend: [] as PieceVendorRequest[],
     unexpected: [] as string[],
   };
+
   const failures = new Map<string, { status: 401 | 429 | 500; message: string }>();
   const pauses = new Map<string, Promise<void>>();
   const app = new Hono();
 
   app.post('/emails', async (context) => {
     const body = await context.req.json<Record<string, unknown>>();
+
     requests.resend.push({
       authorization: context.req.header('authorization'),
       contentType: context.req.header('content-type'),
       body,
     });
+
     await pauses.get(String(body.subject));
     const failure = failures.get(String(body.subject));
     if (failure) return context.json({ message: failure.message }, failure.status);
+
     return context.json({ id: `email-${body.subject}` });
   });
 
@@ -73,11 +80,13 @@ export async function startPieceProviders() {
     const result = body.messages.at(-1);
     const toolName = body.tools?.find(({ function: tool }) => tool.name.endsWith('_send'))?.function
       .name;
+
     if (!toolName) throw new Error('The model request is missing the native send tool');
     const user = [...body.messages].reverse().find(({ role }) => role === 'user');
     const prompt = Array.isArray(user?.content)
       ? user.content.map(({ text }) => text ?? '').join('')
       : user?.content;
+
     if (!prompt) throw new Error('The model request is missing the action input');
     const input: unknown = JSON.parse(prompt);
     const finished = result?.role === 'tool';
@@ -130,6 +139,7 @@ export async function startPieceProviders() {
 
   app.notFound((context) => {
     requests.unexpected.push(`${context.req.method} ${context.req.path}`);
+
     return context.json({ error: 'Unexpected provider request' }, 500);
   });
 

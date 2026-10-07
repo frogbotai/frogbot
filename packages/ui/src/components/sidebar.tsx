@@ -20,6 +20,7 @@ const SidebarContext = createContext<SidebarValue | null>(null);
 export function useSidebar() {
   const value = useContext(SidebarContext);
   if (!value) throw new Error('useSidebar must be used within SidebarProvider');
+
   return value;
 }
 
@@ -43,8 +44,10 @@ export function SidebarProvider({
     if (controlledOpen === undefined) setInternalOpen(next);
     onOpenChange?.(next);
   };
+
   const toggleSidebar = () => (isMobile ? setOpenMobile(!openMobile) : setOpen(!open));
   useHotkey('b', toggleSidebar, { meta: true });
+
   return (
     <SidebarContext.Provider
       value={{ isMobile, open, openMobile, setOpen, setOpenMobile, toggleSidebar }}
@@ -73,6 +76,7 @@ export function Sidebar({
       </Sheet>
     );
   }
+
   return (
     <aside
       className={`fb-sidebar fb-sidebar--desktop${className ? ` ${className}` : ''}`}
@@ -90,6 +94,7 @@ export function SidebarInset({ className, ...props }: ComponentProps<'main'>) {
 
 export function SidebarTrigger({ className, ...props }: ComponentProps<'button'>) {
   const { toggleSidebar } = useSidebar();
+
   return (
     <button
       {...props}

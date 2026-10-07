@@ -33,6 +33,7 @@ async function routeURLs({
   ) {
     throw new OAuthError('configuration');
   }
+
   const prefix = config.routes.api.replace(/\/+$/, '');
   if (
     (prefix && !prefix.startsWith('/')) ||
@@ -41,6 +42,7 @@ async function routeURLs({
   ) {
     throw new OAuthError('configuration');
   }
+
   return {
     callbackUrl: new URL(
       `${prefix}/${encodeURIComponent(collectionSlug)}/sign-in/${encodeURIComponent(method.slug)}/callback`,
@@ -60,11 +62,13 @@ export function buildSignInEndpoints({
   if (!methods.length) return [];
   const methodFor = (req: FrogBotRequest) =>
     methods.find(({ slug }) => slug === req.routeParams?.piece);
+
   const failure = (status: number, headers: Headers) =>
     Response.json(
       { error: status === 404 ? 'Sign-in method not found' : 'Sign-in failed' },
       { status, headers },
     );
+
   return [
     {
       method: 'get',
@@ -87,8 +91,10 @@ export function buildSignInEndpoints({
             returnTo: params.get('returnTo') ?? urls.returnTo,
             req,
           });
+
           headers.set('set-cookie', started.setCookie);
           headers.set('location', started.authorizationUrl);
+
           return new Response(null, { status: 302, headers });
         } catch (error) {
           return failure(
@@ -121,6 +127,7 @@ export function buildSignInEndpoints({
             callbackUrl,
             req,
           });
+
           headers.set('set-cookie', clearCookie);
 
           if (params.has('error') || params.getAll('code').length !== 1) {
@@ -162,6 +169,7 @@ export function buildSignInEndpoints({
           );
 
           headers.set('location', intent.returnTo);
+
           return new Response(null, { status: 302, headers });
         } catch (error) {
           return failure(error instanceof OAuthError ? 400 : 500, headers);

@@ -605,6 +605,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       jobId,
       input: { key, replacement: true },
     });
+
     const response = await post(url(), { approved: true });
 
     expect(response.status).toBe(409);
@@ -961,6 +962,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       collection: 'payload-jobs',
       where: { completedAt: { exists: true } },
     });
+
     await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
 
     expect(links).toHaveLength(1);

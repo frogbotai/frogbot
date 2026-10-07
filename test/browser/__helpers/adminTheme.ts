@@ -22,6 +22,7 @@ export async function readAdminColor(page: Page, token: string) {
     sample.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue(
       name,
     );
+
     document.body.append(sample);
 
     const color = getComputedStyle(sample).backgroundColor;

@@ -53,6 +53,7 @@ describe('posthog', () => {
         headers: { 'Content-Type': 'application/json' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
 
     const result = await createPosthog({ auth }).createEvent({
@@ -88,6 +89,7 @@ describe('posthog', () => {
         headers: { 'Content-Type': 'application/json' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
 
     await expect(
@@ -110,6 +112,7 @@ describe('posthog', () => {
         headers: { 'Content-Type': 'application/json', 'X-Request-ID': 'request-1' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
 
     const result = await createPosthog({ auth }).customApiCall({

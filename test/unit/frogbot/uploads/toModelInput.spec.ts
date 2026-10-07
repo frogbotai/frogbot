@@ -416,6 +416,7 @@ describe('toModelInput: marker wording', () => {
       .filter((value): value is string => value?.startsWith('[') ?? false);
 
     expect(markers).toHaveLength(5);
+
     markers.forEach((marker) => {
       expect(marker).not.toMatch(/inform the user|ask the user|tell the user/i);
     });

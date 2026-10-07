@@ -18,6 +18,7 @@ describe('useBoard', () => {
       groupBy: (row: { stage?: string }) => row.stage,
       rows: [{ id: '1', stage: 'done' }, { id: '2' }],
     });
+
     expect(result.map(({ key, rows }) => [key, rows.length])).toEqual([
       ['review', 0],
       ['done', 1],
@@ -36,6 +37,7 @@ describe('useBoard', () => {
       groupOverrides: { '1': 'done' },
       rows: [{ id: '1', stage: 'review' }],
     });
+
     expect(result.map(({ rows }) => rows.length)).toEqual([0, 1, 0]);
   });
 
@@ -50,6 +52,7 @@ describe('useBoard', () => {
         { id: '2', stage: 'review' },
       ],
     });
+
     expect(result[0].rows.map(({ id }) => id)).toEqual(['2', '1']);
   });
 
@@ -57,14 +60,19 @@ describe('useBoard', () => {
     const rows = [{ id: '1' }, { id: '2' }, { id: '3' }];
     const getId = ({ id }: { id: string }) => id;
     const toEnd = resolveBoardDrop({ activeId: '1', getId, index: 3, rows });
+
     expect(toEnd.order).toEqual(['2', '3', '1']);
     expect(toEnd.before).toEqual({ id: '3' });
     expect(toEnd.after).toBeUndefined();
+
     const toTop = resolveBoardDrop({ activeId: '3', getId, index: 0, rows });
+
     expect(toTop.order).toEqual(['3', '1', '2']);
     expect(toTop.before).toBeUndefined();
     expect(toTop.after).toEqual({ id: '1' });
+
     const between = resolveBoardDrop({ activeId: '1', getId, index: 2, rows });
+
     expect(between.order).toEqual(['2', '1', '3']);
     expect(between.before).toEqual({ id: '2' });
     expect(between.after).toEqual({ id: '3' });
@@ -77,6 +85,7 @@ describe('useBoard', () => {
       index: 1,
       rows: [{ id: '2' }, { id: '3' }],
     });
+
     expect(result.order).toEqual(['2', '1', '3']);
     expect(result.before).toEqual({ id: '2' });
     expect(result.after).toEqual({ id: '3' });
@@ -97,6 +106,7 @@ describe('useBoard', () => {
       groupBy: (row: { stage?: string }) => row.stage,
       rows,
     };
+
     expect(resolveBoardTarget({ ...args, overId: '1' })).toBe('review');
     expect(resolveBoardTarget({ ...args, overId: '2' })).toBe('');
     expect(resolveBoardTarget({ ...args, overId: 'done' })).toBe('done');

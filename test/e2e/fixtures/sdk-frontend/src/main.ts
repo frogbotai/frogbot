@@ -2,8 +2,10 @@ import type { Config, Message, SdkPage } from '@acme/types';
 import { createFrogBotSDK } from '@frogbotai/sdk';
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
+
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+
 type Expect<T extends true> = T;
 
 export async function findPublishedPage(baseURL: string, title: string) {

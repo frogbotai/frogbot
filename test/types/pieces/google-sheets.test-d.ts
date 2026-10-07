@@ -13,6 +13,7 @@ expectTypeOf<Parameters<typeof sheets.exportWorksheet>[0]['input']>().toEqualTyp
   format?: 'csv' | 'tsv' | undefined;
   returnAsText?: boolean | undefined;
 }>();
+
 expectTypeOf(exported).toEqualTypeOf<
   Promise<
     | { text: string; format: 'csv' | 'tsv' }

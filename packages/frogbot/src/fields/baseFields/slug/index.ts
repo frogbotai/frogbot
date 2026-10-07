@@ -29,6 +29,7 @@ export const slugField: SlugField = (args = {}) => {
     useAsSlug: useAsSlugFromArgs = 'title',
     ...options
   } = args;
+
   const useAsSlug = fieldToUse || useAsSlugFromArgs;
 
   return upstreamSlugField({

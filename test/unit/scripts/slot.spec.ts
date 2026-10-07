@@ -53,7 +53,9 @@ describe('acquireSlot', () => {
     expect(existsSync(slot(1))).toBe(false);
 
     again();
+
     expect(existsSync(slot(0))).toBe(true);
+
     release();
   });
 
@@ -64,6 +66,7 @@ describe('acquireSlot', () => {
     const acquired = acquireSlot('int', { dir, interval: 10, log: (line) => logged.push(line) });
 
     await vi.waitFor(() => expect(logged).toHaveLength(1));
+
     expect(logged).toEqual([
       'waiting for a heavy-test slot (held by: int · worktree-0, int · worktree-1, int · worktree-2)',
     ]);
@@ -72,6 +75,7 @@ describe('acquireSlot', () => {
     const release = await acquired;
 
     expect(readFileSync(slot(1), 'utf8')).toMatch(new RegExp(`^${process.pid} `));
+
     release();
   });
 
@@ -83,6 +87,7 @@ describe('acquireSlot', () => {
     const release = await acquireSlot('int', { dir, interval: 10, log: () => {} });
 
     expect(readFileSync(slot(2), 'utf8')).toMatch(new RegExp(`^${process.pid} `));
+
     release();
   });
 
@@ -90,6 +95,7 @@ describe('acquireSlot', () => {
     const script = `const { acquireSlot } = await import(${JSON.stringify(slotScript)});
       await acquireSlot('int', { dir: ${JSON.stringify(dir)} });
       console.log((await import('node:fs')).existsSync(${JSON.stringify(slot(0))}));`;
+
     const child = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
       encoding: 'utf8',
     });
@@ -118,12 +124,15 @@ describe('LAND_LOCK', () => {
     }).then((release) => (second = release));
 
     await vi.waitFor(() => expect(logged).toHaveLength(1));
+
     expect(logged[0]).toMatch(/^waiting for the land lock \(held by: land 256p · /);
     expect(second).toBeUndefined();
 
     first();
     await waiting;
+
     expect(readFileSync(slot(0), 'utf8')).toMatch(new RegExp(`^${process.pid} land 256q`));
+
     second!();
   });
 });

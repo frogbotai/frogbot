@@ -34,9 +34,11 @@ export function createQuestionStore({
   const key = (value: string) => `channels:${namespace}:questions:${value}`;
   const callKey = ({ chatId, toolCallId }: QuestionReference) =>
     key(`call:${chatId}:${toolCallId}`);
+
   const chatKey = (chatId: DocID) => key(`chat:${chatId}`);
   const lockKey = ({ chatId, toolCallId }: QuestionReference) =>
     key(`lock:${chatId}:${toolCallId}`);
+
   const messageKey = ({ threadId, messageId }: QuestionMessageReference) =>
     key(`message:${adapter.channelIdFromThreadId(threadId)}:${messageId}`);
 

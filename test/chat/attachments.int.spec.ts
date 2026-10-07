@@ -841,6 +841,7 @@ describe('chat attachments reach the agent model', () => {
       ['Start.'],
       ['And this?', attached(report, reportText)],
     ]);
+
     await vi.waitFor(async () => expect((await storedAsset(report)).text).toBe(reportText));
   });
 

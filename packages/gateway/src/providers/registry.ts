@@ -126,6 +126,7 @@ export const providers = {
 } as const;
 
 export type ProviderName = keyof typeof providers;
+
 export const PROVIDER_NAMES = Object.keys(providers) as ProviderName[];
 
 export function providerKeyEnvVar(provider: string): string | undefined {
@@ -138,9 +139,13 @@ export function providerKeyEnvVar(provider: string): string | undefined {
 }
 
 export type GatewayLanguageModel = LanguageModelV4 | LanguageModelV3;
+
 export type GatewayEmbeddingModel = EmbeddingModelV4 | EmbeddingModelV3;
+
 export type GatewaySpeechModel = SpeechModelV4 | SpeechModelV3;
+
 export type GatewayTranscriptionModel = TranscriptionModelV4 | TranscriptionModelV3;
+
 export type GatewayRerankingModel = RerankingModelV4 | RerankingModelV3;
 
 // ---------------------------------------------------------------------------
@@ -221,6 +226,7 @@ const builders: ProviderBuilders = providers;
 
 function buildOne<K extends ProviderName>(name: K, cfg: ConfigOf<K>): InstanceOf<K> {
   const { models: _, ...providerConfig } = cfg;
+
   return builders[name].build(providerConfig);
 }
 
@@ -245,10 +251,12 @@ export function buildProviderRegistry(configProviders: ProviderConfigMap): Provi
   // hostile provider `name` from mutating Object.prototype.
   const registry: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
   const knownNames = new Set<string>(PROVIDER_NAMES);
+
   for (const [name, cfg] of Object.entries(configProviders)) {
     if (cfg === undefined) {
       continue;
     }
+
     // A pre-built instance is used as-is (config shape #2); `fromEnv` and
     // shorthand `build` are intentionally bypassed — the user already
     // constructed and configured it.
@@ -262,6 +270,7 @@ export function buildProviderRegistry(configProviders: ProviderConfigMap): Provi
       registry[name] = buildOpenAICompatibleProvider(name, cfg as OpenAICompatibleConfig);
     }
   }
+
   return registry as ProviderRegistry;
 }
 
@@ -284,6 +293,7 @@ export function canonicalizeModelId(modelId: string): string {
   if (slashIndex <= 0 || slashIndex === modelId.length - 1) return modelId;
   const providerName = modelId.slice(0, slashIndex);
   const modelName = modelId.slice(slashIndex + 1);
+
   return `${providerName}/${canonicalIdResolvers.get(providerName)?.(modelName) ?? modelName}`;
 }
 
@@ -296,6 +306,7 @@ export type ProviderModelPolicy = {
 
 export function buildProviderModelAllowlists(config: ProviderConfigMap): ProviderModelAllowlists {
   const allowlists = new Map<string, ReadonlySet<string>>();
+
   for (const [providerName, entry] of Object.entries(config)) {
     if (!Object.hasOwn(providers, providerName) || !entry || isProviderInstance(entry)) continue;
     const models = (entry as { models?: string[] }).models;
@@ -306,6 +317,7 @@ export function buildProviderModelAllowlists(config: ProviderConfigMap): Provide
       );
     }
   }
+
   return allowlists;
 }
 
@@ -356,6 +368,7 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   const configuredProviders = Object.keys(registry).filter(
     (k) => registry[k as keyof ProviderRegistry] != null,
   );
+
   if (configuredProviders.length === 0) {
     throw new NoProvidersError();
   }
@@ -364,6 +377,7 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   if (typeof modelId !== 'string' || modelId.length === 0) {
     throw new ModelIdError(String(modelId));
   }
+
   const slashIndex = modelId.indexOf('/');
   if (slashIndex <= 0 || slashIndex === modelId.length - 1) {
     throw new ModelIdError(modelId);
@@ -377,10 +391,12 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   const instance = Object.hasOwn(registry, providerName)
     ? registry[providerName as keyof ProviderRegistry]
     : undefined;
+
   if (!instance) {
     if (Object.hasOwn(providers, providerName)) {
       throw new ProviderNotConfiguredError(providerName);
     }
+
     throw new ModelNotFoundError(modelId);
   }
 
@@ -418,6 +434,7 @@ export function requireVideoModel(args: {
       param: 'model',
     });
   }
+
   return args.provider.videoModel(args.modelName);
 }
 
@@ -433,6 +450,7 @@ export function requireSpeechModel(args: {
       param: 'model',
     });
   }
+
   return args.provider.speechModel(args.modelName);
 }
 
@@ -448,6 +466,7 @@ export function requireTranscriptionModel(args: {
       param: 'model',
     });
   }
+
   return args.provider.transcriptionModel(args.modelName);
 }
 
@@ -463,6 +482,7 @@ export function requireRerankingModel(args: {
       param: 'model',
     });
   }
+
   return args.provider.rerankingModel(args.modelName);
 }
 

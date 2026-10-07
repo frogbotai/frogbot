@@ -35,6 +35,7 @@ function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
   });
+
   return createApp({ registry });
 }
 
@@ -84,8 +85,11 @@ function eventsOf(frames: SseFrame[]): AnthropicEvent[] {
 /** Fails with `failure` unless the reply stopped to use a tool; returns that block. */
 function expectToolUse(body: MessagesBody, failure: string): ContentBlock {
   const toolUse = (body.content ?? []).find((b) => b.type === 'tool_use');
+
   expect(body.stop_reason, `${failure} (stop_reason=${String(body.stop_reason)})`).toBe('tool_use');
+
   if (!toolUse) throw new Error(failure);
+
   return toolUse;
 }
 
@@ -117,6 +121,7 @@ async function expectLoopFinish({
     const assistantB = (turn2.content ?? []).filter(
       (b) => b.type === 'text' || b.type === 'tool_use',
     );
+
     const turn3 = await postJson<MessagesBody>(app, '/v1/messages', {
       model: MODEL,
       messages: [
@@ -130,6 +135,7 @@ async function expectLoopFinish({
       tools,
       max_tokens: 1024,
     });
+
     expect(turn3.status).toBe(200);
     expect(turn3.body.stop_reason).toBe('end_turn');
     expect(textOf(turn3.body.content).length).toBeGreaterThan(0);
@@ -155,6 +161,7 @@ async function streamMessages(app: ReturnType<typeof makeZenApp>, body: Record<s
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ ...body, stream: true }),
   });
+
   return res;
 }
 
@@ -214,6 +221,7 @@ describeLive(
         expect(Array.isArray(body.content)).toBe(true);
 
         const text = textOf(body.content);
+
         expect(text.length).toBeGreaterThan(0);
 
         expect(body.stop_reason).toBeTruthy();
@@ -243,7 +251,9 @@ describeLive(
 
         expect(status).toBe(200);
         expect(body.stop_reason).toBe('end_turn');
+
         const text = textOf(body.content);
+
         expect(text.length).toBeGreaterThan(0);
         expect(text.toLowerCase()).toContain('waldo');
       },
@@ -263,6 +273,7 @@ describeLive(
             content: 'What is the weather in Paris? You MUST use the get_weather tool.',
           },
         ];
+
         const turn1 = await postJson<MessagesBody>(app, '/v1/messages', {
           model: MODEL,
           messages: turn1Messages,
@@ -272,6 +283,7 @@ describeLive(
         });
 
         expect(turn1.status).toBe(200);
+
         const toolUse = expectToolUse(turn1.body, '[zen.messages.e2e] model did not use the tool');
 
         expect(typeof toolUse.id).toBe('string');
@@ -282,6 +294,7 @@ describeLive(
         const assistantBlocks = (turn1.body.content ?? []).filter(
           (b) => b.type === 'text' || b.type === 'tool_use',
         );
+
         const turn2 = await postJson<MessagesBody>(app, '/v1/messages', {
           model: MODEL,
           messages: [
@@ -304,7 +317,9 @@ describeLive(
 
         expect(turn2.status).toBe(200);
         expect(turn2.body.stop_reason).toBe('end_turn');
+
         const finalText = textOf(turn2.body.content);
+
         expect(finalText.length).toBeGreaterThan(0);
         expect(finalText).toMatch(/18|sunny/i);
       },
@@ -335,36 +350,45 @@ describeLive(
         // message_start first, message_stop last.
         expect(names[0]).toBe('message_start');
         expect(names[names.length - 1]).toBe('message_stop');
+
         const startData = events[0].data;
+
         expect(typeof startData.message?.id).toBe('string');
 
         // Exactly one message_delta, carrying a stop_reason, before message_stop.
         const deltaIndices = names
           .map((n, i) => (n === 'message_delta' ? i : -1))
           .filter((i) => i >= 0);
+
         expect(deltaIndices).toHaveLength(1);
         expect(deltaIndices[0]).toBe(names.length - 2);
+
         const messageDelta = events[deltaIndices[0]].data;
+
         expect(messageDelta.delta?.stop_reason).toBeTruthy();
         expect(messageDelta.usage?.output_tokens).toBeGreaterThan(0);
 
         // Content blocks properly bracketed: start → deltas → stop, per index.
         const open = new Set<number>();
         let blockCount = 0;
+
         for (const e of events) {
           const index = e.data.index;
           if (e.event === 'content_block_start') {
             expect(typeof index).toBe('number');
             expect(open.has(index!)).toBe(false);
+
             open.add(index!);
             blockCount += 1;
           } else if (e.event === 'content_block_delta') {
             expect(open.has(index!)).toBe(true);
           } else if (e.event === 'content_block_stop') {
             expect(open.has(index!)).toBe(true);
+
             open.delete(index!);
           }
         }
+
         expect(open.size).toBe(0);
         expect(blockCount).toBeGreaterThan(0);
 
@@ -373,6 +397,7 @@ describeLive(
           .filter((e) => e.event === 'content_block_delta' && e.data.delta?.type === 'text_delta')
           .map((e) => e.data.delta?.text ?? '')
           .join('');
+
         expect(text.length).toBeGreaterThan(0);
       },
       TEST_TIMEOUT,
@@ -391,8 +416,10 @@ describeLive(
         });
 
         expect(res.status).toBe(200);
+
         const events = eventsOf(parseSse(await res.text()));
         const messageDelta = events.find((e) => e.event === 'message_delta');
+
         expect(messageDelta).toBeDefined();
         expect(messageDelta!.data.usage?.input_tokens).toBeGreaterThan(0);
       },
@@ -439,8 +466,10 @@ describeLive(
 
         expect(status).toBe(200);
         expect(body.stop_reason).toBeTruthy();
+
         const text = textOf(body.content);
         warnOnEmptyText(text);
+
         expect(text).not.toContain('omega');
         expect(text).not.toContain('BANANA');
       },
@@ -496,8 +525,11 @@ describeLive(
           tool_choice: { type: 'auto' },
           max_tokens: 1024,
         });
+
         expect(turn1.status).toBe(200);
+
         const useA = expectToolUse(turn1.body, '[zen.messages.e2e] seq-loop: model skipped tool A');
+
         expect(typeof useA.id).toBe('string');
         expect(useA.id!.length).toBeGreaterThan(0);
         expect(typeof useA.input).toBe('object');
@@ -505,6 +537,7 @@ describeLive(
         const assistantA = (turn1.body.content ?? []).filter(
           (b) => b.type === 'text' || b.type === 'tool_use',
         );
+
         const turn2Messages: Array<Record<string, unknown>> = [
           ...baseMessages,
           { role: 'assistant', content: assistantA },
@@ -513,6 +546,7 @@ describeLive(
             content: [{ type: 'tool_result', tool_use_id: useA.id, content: '18C and sunny' }],
           },
         ];
+
         const turn2 = await postJson<MessagesBody>(app, '/v1/messages', {
           model: MODEL,
           messages: turn2Messages,
@@ -520,6 +554,7 @@ describeLive(
           tool_choice: { type: 'auto' },
           max_tokens: 1024,
         });
+
         expect(turn2.status).toBe(200);
         expect(turn2.body.stop_reason).toBeTruthy();
 
@@ -555,7 +590,9 @@ describeLive(
         expect(status).toBe(200);
         expect(body.type).toBe('message');
         expect(body.role).toBe('assistant');
+
         const text = textOf(body.content);
+
         expect(text.length).toBeGreaterThan(0);
         // The system guidance (both blocks) must reach the model.
         expect(text.toLowerCase()).toContain('falcon');

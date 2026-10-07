@@ -4,8 +4,11 @@ import { isSelectQuestion, replyHint } from './elicitation.js';
 import { stopRequested } from './linearThread.js';
 
 type QuestionItem = QuestionInput['questions'][number];
+
 type Answer = QuestionOutput['answers'][number];
+
 type LineResult = { answer: Answer } | { reason: string };
+
 type OptionMatch = { item: QuestionItem; numbered: boolean };
 
 type ReplyResult =

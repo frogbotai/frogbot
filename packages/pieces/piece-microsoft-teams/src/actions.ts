@@ -23,6 +23,7 @@ const bodyInput = {
   contentType: contentType.meta({ label: 'Content type' }),
   content: z.string().min(1).meta({ label: 'Message' }),
 };
+
 const channelOptions = { teamId: teams, channelId: channels };
 const chatOptions = { chatId: chats };
 
@@ -130,6 +131,7 @@ const createChatInput = z.object({
   members: z.array(identifier).min(1).meta({ label: 'Members' }),
   ...bodyInput,
 });
+
 const createChatOutput = z.object({ chat, message });
 
 export const createChatAndSendMessage = defineAction({
@@ -146,11 +148,13 @@ export const createChatAndSendMessage = defineAction({
       roles: ['owner'],
       'user@odata.bind': `${client.baseUrl}/v1.0/users('${encodeURIComponent(id)}')`,
     }));
+
     const created = await client.request('/v1.0/chats', chat, {
       method: 'POST',
       body: { chatType: input.members.length === 1 ? 'oneOnOne' : 'group', members: bindings },
       signal: signal(req),
     });
+
     const sent = await client.request(
       `/v1.0/chats/${encodeURIComponent(created.id)}/messages`,
       message,
@@ -281,6 +285,7 @@ const meetingInput = {
   meetingIdentifierType,
   meetingIdentifierValue: identifier,
 };
+
 const transcriptInput = z.object({ ...meetingInput, transcriptId: identifier.optional() });
 const transcriptOutput = z.union([z.object({ content: z.string() }), page(transcript)]);
 
@@ -296,6 +301,7 @@ export const getMeetingTranscript = defineAction({
       input.meetingIdentifierValue,
       signal(req),
     );
+
     const root = `/v1.0/me/onlineMeetings/${encodeURIComponent(meetingId)}/transcripts`;
 
     if (!input.transcriptId) return client.request(root, page(transcript), { signal: signal(req) });
@@ -324,6 +330,7 @@ export const getMeetingRecording = defineAction({
       input.meetingIdentifierValue,
       signal(req),
     );
+
     const root = `/v1.0/me/onlineMeetings/${encodeURIComponent(meetingId)}/recordings`;
 
     return input.recordingId
@@ -340,6 +347,7 @@ const customInput = z.object({
   query: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
   body: z.json().optional(),
 });
+
 const customOutput = z.object({ status: z.number().int(), body: z.json() });
 
 export const customApiCall = defineAction({

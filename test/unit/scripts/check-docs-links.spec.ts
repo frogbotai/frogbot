@@ -21,6 +21,7 @@ function createDocs({
 
   roots.push(root);
   mkdirSync(root, { recursive: true });
+
   writeFileSync(
     join(root, 'docs.json'),
     JSON.stringify({
@@ -75,6 +76,7 @@ describe('check-docs-links', () => {
         '````',
       ].join('\n'),
     );
+
     writePage(root, 'configuration/overview');
     mkdirSync(join(root, 'images'));
     writeFileSync(join(root, 'images/card.png'), 'asset');

@@ -13,6 +13,7 @@ expectTypeOf<Parameters<typeof zoom.getMeeting>[0]['input']>().toEqualTypeOf<{
   occurrence_id?: string | undefined;
   show_previous_occurrences?: boolean | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _meeting>['join_url']>().toEqualTypeOf<string | undefined>();
 
 const _getMeetingRejectsCreateMeetingRegistrantInput = () =>

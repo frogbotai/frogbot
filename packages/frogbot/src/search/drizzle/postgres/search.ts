@@ -66,6 +66,7 @@ function lexicalQuery(parts: SearchQueryParts, index: SearchIndexDescriptor, tex
     columns: parts.columns.slice(0, index.lexical?.fields.length),
     language,
   });
+
   const query = sql`websearch_to_tsquery(${getTextSearchConfig(language)}, ${text})`;
   const score = sql<number>`ts_rank_cd(${document}, ${query})`;
 

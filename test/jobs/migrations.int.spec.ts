@@ -56,6 +56,7 @@ describe.skipIf(!['sqlite', 'postgres'].includes(adapterName))(
         };
 
         adapterImport = pathToFileURL(upstream).href;
+
         descriptor = postgresAdapter({
           pool: { connectionString: database.url.toString() },
           push: false,

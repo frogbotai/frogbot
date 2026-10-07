@@ -114,6 +114,7 @@ export async function resolvePlan({
     template.supportedDatabases,
     'database',
   );
+
   let ai = args.ai;
 
   if (!ai && interactive) {

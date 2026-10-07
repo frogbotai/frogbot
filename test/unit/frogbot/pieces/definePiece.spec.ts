@@ -23,6 +23,7 @@ function request(auth = { token: 'resolved' }) {
     frogbot: { connections: { resolvePieceCredential } },
     user: { id: 'user' },
   } as never;
+
   return { req, resolvePieceCredential };
 }
 
@@ -79,7 +80,9 @@ describe('definePiece', () => {
         },
       ],
     });
+
     const types = await generatePieceTypes({ piece });
+
     expect(types).toContain('export interface GeneratedExampleTypes');
     expect(types).toContain('token: string');
     expect(types).toContain('region: string');
@@ -106,7 +109,9 @@ describe('definePiece', () => {
         },
       ],
     });
+
     const instance = createPrototype();
+
     expect(Object.getPrototypeOf(instance)).toBe(Object.prototype);
     expect(Object.hasOwn(instance, '__proto__')).toBe(true);
     await expect(instance.__proto__({ input: {}, req: request().req })).resolves.toBe('ok');
@@ -128,6 +133,7 @@ describe('definePiece', () => {
         },
       ],
     });
+
     expect(await generatePieceTypes({ piece })).toContain('output: string');
     await expect(piece().read({ input: {}, req: request().req })).resolves.toBe(42);
   });
@@ -142,12 +148,15 @@ describe('definePiece', () => {
         }),
       )
       .meta({ id: 'Tree' });
+
     const piece = definePiece({
       slug: 'recursive',
       label: 'Recursive',
       actions: [{ slug: 'read', description: 'Read', input: tree, async run() {} }],
     });
+
     const types = await generatePieceTypes({ piece });
+
     expect(types).toContain('$id: string');
     expect(types).toContain('children?: Input[]');
   });
@@ -179,6 +188,7 @@ describe('definePiece', () => {
     const example = createExample({ auth: { token: 'factory' }, prefix: 'value' });
     const { req, resolvePieceCredential } = request();
     const run = example.run;
+
     await expect(run({ input: { value: 'input' }, req })).resolves.toMatchObject({
       input: { value: 'input' },
       client: { auth: { token: 'resolved' } },
@@ -203,12 +213,14 @@ describe('definePiece', () => {
       client,
       actions: [],
     });
+
     const cached = createCached({ auth: { token: 'factory' } });
     const first = request({ token: 'one' });
     await cached.client({ req: first.req });
     await cached.client({ req: first.req });
     const second = request({ token: 'two' });
     await cached.client({ req: second.req });
+
     expect(client).toHaveBeenCalledTimes(2);
   });
 
@@ -248,6 +260,7 @@ describe('definePiece', () => {
       },
       actions: [],
     });
+
     expect(() => oauth({ oauth: { clientId: '', clientSecret: 'secret' } })).toThrow(
       'OAuth app requires clientId and clientSecret',
     );
@@ -319,7 +332,9 @@ describe('definePiece', () => {
         },
       },
     });
+
     const capable = createCapable({ oauth: { clientId: 'id', clientSecret: 'secret' } });
+
     expect(capable[pieceCapabilities]).toMatchObject({
       email: expect.any(Object),
       factoryOAuth: true,
@@ -330,6 +345,7 @@ describe('definePiece', () => {
   it('allows auth pieces without factory auth', async () => {
     const example = createExample({ prefix: 'value' });
     const { req } = request();
+
     await expect(example.run({ input: { value: 'input' }, req })).resolves.toMatchObject({
       client: { auth: { token: 'resolved' } },
     });
@@ -337,13 +353,16 @@ describe('definePiece', () => {
 
   it('allows zero-argument factories unless options are required', () => {
     const createPlain = definePiece({ slug: 'plain', label: 'Plain', actions: [] });
+
     expect(createPlain()).toMatchObject({ slug: 'plain', piece: 'plain' });
+
     const createRequired = definePiece({
       slug: 'required',
       label: 'Required',
       options: z.object({ region: z.string() }),
       actions: [],
     });
+
     expect(() => (createRequired as (config?: object) => object)()).toThrow();
     expect(createRequired({ region: 'us-east-1' })).toMatchObject({
       slug: 'required',
@@ -365,6 +384,7 @@ describe('createPieceHelpers', () => {
         return Promise.resolve(input.text);
       },
     };
+
     const appTrigger = {
       slug: 'received',
       description: 'Received',
@@ -375,6 +395,7 @@ describe('createPieceHelpers', () => {
         return Promise.resolve([]);
       },
     };
+
     const pollingTrigger = {
       slug: 'polled',
       description: 'Polled',
@@ -384,6 +405,7 @@ describe('createPieceHelpers', () => {
         return Promise.resolve({ events: [] });
       },
     };
+
     const webhookTrigger = {
       slug: 'hooked',
       description: 'Hooked',

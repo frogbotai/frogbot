@@ -19,13 +19,17 @@ describe('defaultChatsCollection', () => {
 
   it('binds the provided slug and user relation', () => {
     const renamed = defaultChatsCollection({ slug: 'conversations', userSlug: 'members' });
+
     expect(renamed.slug).toBe('conversations');
+
     const user = renamed.fields.find((f) => 'name' in f && f.name === 'user');
+
     expect(user).toMatchObject({ type: 'relationship', relationTo: 'members', index: true });
   });
 
   it('defines chat and external conversation fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
+
     expect(names).toEqual([
       'title',
       'user',
@@ -149,6 +153,7 @@ describe('defaultChatsCollection', () => {
         userSlug: 'users',
         access: { read },
       });
+
       expect(configured.access?.read).toBe(read);
       expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
         user: { equals: 'u1' },

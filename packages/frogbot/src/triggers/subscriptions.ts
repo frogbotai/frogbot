@@ -106,6 +106,7 @@ export class TriggerSubscriptions {
       const input = encodeSubscriptionInput(
         Object.hasOwn(args, 'input') ? args.input : subscriber.trigger.input,
       );
+
       const baseURL = await callbackBase(triggers);
       const prior = (await listSubscriptions(triggers)).find((entry) => matches(entry, subscriber));
 
@@ -467,6 +468,7 @@ async function cleanup(
     ...Object.values(triggers.frogbot.config._internal.triggers).map(({ instance }) => instance),
     ...(triggers.frogbot.config.pieces?.instances ?? []),
   ];
+
   const instance = instances.find(
     (candidate) =>
       candidate.slug === subscription.instance && candidate.piece === subscription.piece,

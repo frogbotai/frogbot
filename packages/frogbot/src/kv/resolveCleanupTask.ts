@@ -17,6 +17,7 @@ export function resolveKVCleanupTask({
       `Job task slug '${KV_CLEANUP_TASK_SLUG}' is reserved for KV expiration cleanup`,
     );
   }
+
   return {
     ...jobs,
     tasks: [
@@ -29,7 +30,9 @@ export function resolveKVCleanupTask({
           if (!(req.payload.kv instanceof DatabaseKVAdapter)) {
             throw new Error('KV cleanup requires the database KV adapter');
           }
+
           await req.payload.kv.cleanup();
+
           return { output: {} };
         },
       },

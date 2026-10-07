@@ -199,10 +199,12 @@ export function iterateConfig({
       UserMessageActions?: string;
     };
   };
+
   addToImportMap(chatComponents.chat?.Chat);
   addToImportMap(chatComponents.chat?.Greeting);
   addToImportMap(chatComponents.chat?.UserMessageActions);
   addToImportMap(chatComponents.chat?.AssistantMessageActions);
+
   for (const components of Object.values(chatComponents.chat?.toolComponents ?? {})) {
     for (const component of Object.values(components)) addToImportMap(component);
   }
@@ -212,6 +214,7 @@ export function iterateConfig({
       settings?: SettingsEntry[];
     }
   ).settings;
+
   for (const entry of settings ?? []) {
     addToImportMap(entry.Component);
 

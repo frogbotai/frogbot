@@ -3,6 +3,7 @@ import type { FieldAccessArgs as PayloadFieldAccessArgs } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 type Post = { id: string; title: string };
+
 type Siblings = { title: string };
 
 declare const args: FieldAccessArgs<Post, Siblings>;

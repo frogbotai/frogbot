@@ -344,6 +344,7 @@ describe('AI field task', () => {
     const jobs = await jobsOf(
       makeConfig({ jobs: { autoRun: () => Promise.resolve([everyMinute]) } }),
     );
+
     const autoRun = jobs.autoRun as (payload: never) => Promise<unknown[]>;
 
     expect(await autoRun({} as never)).toEqual([everyMinute]);

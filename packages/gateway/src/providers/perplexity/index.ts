@@ -18,6 +18,7 @@ export const perplexityProvider = {
   envVars: ['PERPLEXITY_API_KEY', 'PERPLEXITY_BASE_URL'],
   fromEnv: (env) => {
     if (!env.PERPLEXITY_API_KEY) return undefined;
+
     return {
       apiKey: env.PERPLEXITY_API_KEY,
       ...(env.PERPLEXITY_BASE_URL && { baseURL: env.PERPLEXITY_BASE_URL }),

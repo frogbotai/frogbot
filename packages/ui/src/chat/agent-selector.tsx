@@ -39,6 +39,7 @@ export const AgentSelector = memo(function AgentSelector({
       <DropdownMenuContent align="start" className="fb-agent-selector__content">
         {agents.map((agent) => {
           const name = agent.label;
+
           return (
             <DropdownMenuItem
               key={agent.slug}

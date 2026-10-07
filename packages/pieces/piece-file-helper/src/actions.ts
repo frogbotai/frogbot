@@ -200,6 +200,7 @@ export const unzipFile = defineAction({
         const blob = await entry.getData(new BlobWriter(getMimeType(entry.filename)), {
           password: input.usePassword ? input.passwordOptions?.password : undefined,
         });
+
         const data = Buffer.from(await blob.arrayBuffer());
         const filename = entry.filename.split('/').pop() || entry.filename;
         const saved = await saveFile({

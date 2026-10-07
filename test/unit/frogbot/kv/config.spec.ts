@@ -63,13 +63,16 @@ function cleanupHandler(kv = databaseKVAdapter()) {
   const task = resolveKVCleanupTask({ kv })?.tasks?.find(
     ({ slug }) => slug === KV_CLEANUP_TASK_SLUG,
   );
+
   if (!task || typeof task.handler !== 'function') throw new Error('Expected a cleanup handler');
+
   return task.handler;
 }
 
 describe('databaseKVAdapter', () => {
   it('is exported from the root and initializes the atomic database adapter', () => {
     expect(rootDatabaseKVAdapter).toBe(databaseKVAdapter);
+
     const factory = databaseKVAdapter({ kvCollectionOverrides: { slug: 'app-kv' } });
     const payload = { db: { name: 'custom' } } as unknown as Payload;
     const adapter = factory.init({ payload });
@@ -101,6 +104,7 @@ describe('databaseKVAdapter', () => {
       admin,
       timestamps: true,
     };
+
     const collection = databaseKVAdapter({ kvCollectionOverrides: overrides }).kvCollection!;
 
     expect(collection).toMatchObject({
@@ -126,6 +130,7 @@ describe('databaseKVAdapter', () => {
       { name: 'key', type: 'text', required: true, unique: true, label: 'Cache key' },
       { name: 'data', type: 'json', required: true, label: 'Cached data' },
     ];
+
     const collection = databaseKVAdapter({ kvCollectionOverrides: { fields } }).kvCollection!;
 
     expect(collection.fields).toEqual([
@@ -164,6 +169,7 @@ describe('databaseKVAdapter', () => {
       admin: { readOnly: true },
       hooks: { beforeValidate: [vi.fn()] },
     };
+
     const collection = databaseKVAdapter({
       kvCollectionOverrides: { fields: [expiry] },
     }).kvCollection!;
@@ -275,18 +281,23 @@ describe('resolveKVCleanupTask', () => {
           complete = resolve;
         }),
     );
+
     const handler = cleanupHandler();
     const args = { req: { payload: { kv: adapter } } } as unknown as Parameters<typeof handler>[0];
     let settled = false;
     const result = Promise.resolve(handler(args)).then((value) => {
       settled = true;
+
       return value;
     });
 
     await Promise.resolve();
+
     expect(cleanup).toHaveBeenCalledExactlyOnceWith();
     expect(settled).toBe(false);
+
     complete();
+
     await expect(result).resolves.toEqual({ output: {} });
   });
 
@@ -374,6 +385,7 @@ describe('buildConfig KV wiring', () => {
         plugins: [(config) => ({ ...config, kv, jobs })],
       }),
     );
+
     const built = await result._internal.payloadConfig;
 
     expect(built.kv).toBe(kv);

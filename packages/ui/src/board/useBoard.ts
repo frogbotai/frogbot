@@ -35,8 +35,10 @@ export function resolveBoardDrop<T>({
     sourceIndex >= 0 && index > sourceIndex ? index - 1 : index,
     targetRows.length,
   );
+
   const order = targetRows.map(getId);
   order.splice(at, 0, activeId);
+
   return { after: targetRows[at], before: targetRows[at - 1], order };
 }
 
@@ -79,8 +81,10 @@ export function groupBoardRows<T>({
       const group = Object.prototype.hasOwnProperty.call(groupOverrides, id)
         ? groupOverrides[id]
         : groupBy(row);
+
       return (group ?? '') === column.key;
     });
+
     return {
       ...column,
       rows: order
@@ -107,12 +111,14 @@ export function resolveBoardTarget<T>({
   const group = Object.prototype.hasOwnProperty.call(groupOverrides, id)
     ? groupOverrides[id]
     : groupBy(overRow);
+
   return group ?? '';
 }
 
 function pointerY({ activatorEvent, delta }: Pick<DragMoveEvent, 'activatorEvent' | 'delta'>) {
   const event = activatorEvent as { clientY?: number; touches?: { clientY: number }[] } | null;
   const start = event?.clientY ?? event?.touches?.[0]?.clientY;
+
   return start === undefined ? undefined : start + delta.y;
 }
 
@@ -132,6 +138,7 @@ export function useBoard<T>({
   const [activeHeight, setActiveHeight] = useState(0);
   const [placement, setPlacement] = useState<BoardPlacement | null>(null);
   const placementRef = useRef<BoardPlacement | null>(null);
+
   useEffect(() => {
     setCurrentRows(rows);
     setGroupOverrides({});
@@ -167,6 +174,7 @@ export function useBoard<T>({
     setActiveId(String(active.id));
     setActiveHeight(rect?.height ?? 140);
   };
+
   const onDragMove = ({ activatorEvent, active, delta, over }: DragMoveEvent) => {
     const key = over ? resolveTarget(String(over.id)) : null;
     if (key === null) return place(null);
@@ -183,6 +191,7 @@ export function useBoard<T>({
     const rect = active.rect.current.initial ?? active.rect.current.translated;
     place({ height: rect?.height ?? 140, index, key });
   };
+
   const onDragCancel = reset;
   const onDragEnd = async ({ active, over }: DragEndEvent) => {
     const dropped = placementRef.current;
@@ -202,6 +211,7 @@ export function useBoard<T>({
       index: dropped?.key === (to ?? '') ? dropped.index : targetRows.length,
       rows: targetRows,
     });
+
     setGroupOverrides((value) => ({ ...value, [id]: to }));
     setOrderOverrides((value) => ({ ...value, [to ?? '']: order }));
     try {
@@ -210,13 +220,17 @@ export function useBoard<T>({
       setGroupOverrides((value) => {
         const next = { ...value };
         delete next[id];
+
         return next;
       });
+
       setOrderOverrides((value) => {
         const next = { ...value };
         delete next[to ?? ''];
+
         return next;
       });
+
       throw error;
     }
   };

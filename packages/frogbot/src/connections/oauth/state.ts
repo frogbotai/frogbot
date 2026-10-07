@@ -35,12 +35,14 @@ const stateSchema = z.object({
 });
 
 export type OAuthState = z.infer<typeof stateSchema>;
+
 export type OAuthStateBinding = {
   flow: OAuthState['flow'];
   piece: PieceInstance;
   collection: string;
   callbackUrl: string;
 };
+
 export type OAuthStateStorage = {
   kv: Pick<KV, 'get' | 'setIfAbsent'>;
   encryption: CredentialEncryption;
@@ -51,6 +53,7 @@ function callbackURL(value: string): URL {
   if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.hash) {
     throw new OAuthError('configuration');
   }
+
   return url;
 }
 
@@ -68,6 +71,7 @@ function safeReturnTo(value: string, callbackUrl: string): string {
   ) {
     throw new OAuthError('state');
   }
+
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
@@ -125,6 +129,7 @@ export async function createOAuthState({
   if (flow === 'link' && (!data.owner || data.owner.collection !== collection)) {
     throw new OAuthError('state');
   }
+
   const url = callbackURL(recipe.authorizationUrl);
   const reserved = new Set([
     'state',
@@ -139,6 +144,7 @@ export async function createOAuthState({
   ]);
 
   for (const key of reserved) url.searchParams.delete(key);
+
   for (const [key, value] of Object.entries(recipe.params ?? {})) {
     if (!reserved.has(key)) url.searchParams.set(key, value);
   }
@@ -153,6 +159,7 @@ export async function createOAuthState({
       'code_challenge',
       createHash('sha256').update(verifier).digest('base64url'),
     );
+
     url.searchParams.set('code_challenge_method', 'S256');
   }
 
@@ -223,6 +230,7 @@ export async function consumeOAuthState({
       .split(';')
       .map((part) => part.trim())
       .filter((part) => part.startsWith(`${name}=`));
+
     if (values.length !== 1) throw new OAuthError('state');
 
     const browser = randomSchema.parse(values[0].slice(name.length + 1));
@@ -235,6 +243,7 @@ export async function consumeOAuthState({
     }
 
     if (intent.expiresAt <= Date.now()) throw new OAuthError('state');
+
     return { intent, clearCookie: cookie(state, intent.callbackUrl, '', 0) };
   } catch {
     throw new OAuthError('state');

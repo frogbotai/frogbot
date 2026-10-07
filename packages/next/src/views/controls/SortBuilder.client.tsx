@@ -75,6 +75,7 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({
 
   const update = (nextRows: SortRow[]) => {
     setRows(nextRows);
+
     void refineListData({
       page: 1,
       sort: serializeSort(nextRows.filter(({ field }) => field)) || manualField || '',
@@ -126,6 +127,7 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({
                 isMulti={false}
                 onChange={(option) => {
                   const next = Array.isArray(option) ? option[0] : option;
+
                   update(
                     visibleRows.map((item, i) =>
                       i === index ? { ...item, field: next ? String(next.value) : '' } : item,
@@ -145,6 +147,7 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({
                 onChange={(option) => {
                   const next = Array.isArray(option) ? option[0] : option;
                   if (next?.value !== 'asc' && next?.value !== 'desc') return;
+
                   update(
                     visibleRows.map((item, i) =>
                       i === index

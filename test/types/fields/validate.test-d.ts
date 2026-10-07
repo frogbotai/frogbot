@@ -3,7 +3,9 @@ import type { BaseValidateOptions, Operation } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 type Data = { title: string };
+
 type SiblingData = { slug: string };
+
 type Value = number;
 
 declare const options: ValidateOptions;
@@ -12,9 +14,11 @@ declare const typedOptions: ValidateOptions<Data, SiblingData, object, Value>;
 expectTypeOf(typedOptions.blockData).toEqualTypeOf<
   BaseValidateOptions<Data, SiblingData, Value>['blockData']
 >();
+
 expectTypeOf(options.preferences).toEqualTypeOf<
   BaseValidateOptions<Data, SiblingData, Value>['preferences']
 >();
+
 expectTypeOf(options.collectionSlug).toEqualTypeOf<string | undefined>();
 expectTypeOf(options.overrideAccess).toEqualTypeOf<boolean | undefined>();
 expectTypeOf(options.operation).toEqualTypeOf<Operation | undefined>();

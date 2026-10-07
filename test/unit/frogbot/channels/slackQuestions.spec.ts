@@ -39,6 +39,7 @@ const server = createServer(async (req, res) => {
 
   calls.push({ method, body });
   res.writeHead(200, { 'content-type': 'application/json' });
+
   res.end(
     JSON.stringify(
       error ? { ok: false, error } : { ok: true, ts: cardTs, channel: 'C1', message: {} },
@@ -163,6 +164,7 @@ async function askedFixture(call = pendingCall()) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
+
     const result = (await response.json()) as { ok: boolean; error?: string };
 
     if (!result.ok) throw new Error(`Slack API request failed: ${result.error}`);
@@ -211,11 +213,13 @@ describe('Slack native questions', () => {
     calls.length = 0;
     failures.clear();
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},
       allSettled: true,
     });
+
     continueTurn.mockReset();
   });
 

@@ -24,6 +24,7 @@ describe('AI user policy', () => {
 
   it('authorizes exact selected targets', () => {
     const policy = resolvePolicy({ modelAccess: 'selected', models: ['router'] });
+
     expect(isTargetAllowed(policy, 'router')).toBe(true);
     expect(isTargetAllowed(policy, 'openai/gpt-4o')).toBe(false);
   });
@@ -44,8 +45,10 @@ describe('AI user policy', () => {
       ],
       createPolicyFields(['openai/gpt-4o']),
     );
+
     const budget = fields.find((field) => 'name' in field && field.name === 'monthlyBudget');
     const models = fields.find((field) => 'name' in field && field.name === 'models');
+
     expect(budget).toMatchObject({
       type: 'number',
       min: 0,
@@ -63,11 +66,13 @@ describe('AI user policy', () => {
 
   it('keeps only the spend integrity lock and allows overriding it', () => {
     const base = createPolicyFields([]);
+
     for (const field of base.filter(
       (item) => 'name' in item && item.name !== 'spendThisPeriodUSD',
     )) {
       expect('access' in field ? field.access : undefined).toBeUndefined();
     }
+
     const open = () => true;
     const spend = mergePolicyFields(
       [
@@ -80,6 +85,7 @@ describe('AI user policy', () => {
       ],
       base,
     ).find((field) => 'name' in field && field.name === 'spendThisPeriodUSD');
+
     expect(spend).toMatchObject({ access: { update: open }, admin: { readOnly: false } });
   });
 
@@ -87,6 +93,7 @@ describe('AI user policy', () => {
     'enforces the same exact target for %s users',
     (auth) => {
       const req = { user: { id: auth, modelAccess: 'selected', models: ['router'] } } as never;
+
       expect(enforcePolicy({ req, target: 'router' })).toMatchObject({
         models: { mode: 'selected', targets: ['router'] },
       });
@@ -105,6 +112,7 @@ describe('AI user policy', () => {
         update,
       },
     } as never;
+
     const hooks = createPolicyHooks({
       authCollection: 'users',
       providers: {
@@ -115,26 +123,34 @@ describe('AI user policy', () => {
         },
       },
     });
+
     expect(() => hooks.beforeOperation({ req, context: {} })).not.toThrow();
+
     await hooks.afterOperation({
       req,
       model: 'custom/priced',
       usage: { inputTokens: 1_000_000, outputTokens: 1_000_000, totalTokens: 2_000_000 },
     });
+
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { spendThisPeriodUSD: 7 }, overrideAccess: true }),
     );
+
     (req as { user: { spendThisPeriodUSD: number } }).user.spendThisPeriodUSD = 10;
+
     expect(() => hooks.beforeOperation({ req, context: {} })).toThrowError(
       expect.objectContaining({ code: 'budget_exceeded' }),
     );
+
     update.mockClear();
+
     await hooks.afterOperation({
       req,
       model: 'custom/priced',
       usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
       error: new Error('failed'),
     });
+
     expect(update).not.toHaveBeenCalled();
   });
 
@@ -150,6 +166,7 @@ describe('AI user policy', () => {
         }),
       },
     } as never;
+
     const hooks = createPolicyHooks({
       authCollection: 'users',
       providers: {
@@ -160,11 +177,14 @@ describe('AI user policy', () => {
         },
       },
     });
+
     const usage = { inputTokens: 1_000_000, outputTokens: 0, totalTokens: 1_000_000 };
+
     await Promise.all([
       hooks.afterOperation({ req, model: 'custom/priced', usage }),
       hooks.afterOperation({ req, model: 'custom/priced', usage }),
     ]);
+
     expect(spend).toBe(4);
   });
 
@@ -183,13 +203,17 @@ describe('AI user policy', () => {
         .mockResolvedValueOnce({ docs: [], hasNextPage: false }),
       update,
     };
+
     await backfillAIUserPolicy({ api, authCollection: 'users' });
+
     expect(update.mock.calls).toEqual([
       [expect.objectContaining({ id: 'selected', data: { modelAccess: 'selected' } })],
       [expect.objectContaining({ id: 'all', data: { modelAccess: 'all' } })],
     ]);
+
     update.mockClear();
     await backfillAIUserPolicy({ api, authCollection: 'users' });
+
     expect(update).not.toHaveBeenCalled();
   });
 });

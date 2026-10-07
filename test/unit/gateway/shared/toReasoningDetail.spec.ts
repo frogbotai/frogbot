@@ -10,6 +10,7 @@ describe('toReasoningDetail', () => {
       id: 'reason-0',
       index: 0,
     });
+
     expect(result).toEqual({
       type: 'reasoning.text',
       id: 'reason-0',
@@ -27,6 +28,7 @@ describe('toReasoningDetail', () => {
       id: 'reason-1',
       index: 1,
     });
+
     expect(result).toEqual({
       type: 'reasoning.encrypted',
       id: 'reason-1',
@@ -43,6 +45,7 @@ describe('toReasoningDetail', () => {
       id: 'reason-2',
       index: 2,
     });
+
     expect(result).toEqual({
       type: 'reasoning.text',
       id: 'reason-2',
@@ -60,6 +63,7 @@ describe('toReasoningDetail', () => {
       id: 'reason-3',
       index: 3,
     });
+
     expect(result).toEqual({
       type: 'reasoning.encrypted',
       id: 'reason-3',

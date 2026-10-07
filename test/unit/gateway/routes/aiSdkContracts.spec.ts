@@ -48,6 +48,7 @@ function firstStringValue(values: readonly unknown[]): string {
   if (typeof value !== 'string') {
     throw new Error('contract fixture must use string input');
   }
+
   return value;
 }
 
@@ -58,6 +59,7 @@ describe('AI SDK modality signature contracts', () => {
       input: 'hello',
       dimensions: 256,
     } satisfies EmbeddingsRequest);
+
     const value = firstStringValue(values);
 
     const params = {

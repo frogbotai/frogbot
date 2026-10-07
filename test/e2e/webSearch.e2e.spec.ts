@@ -16,10 +16,12 @@ const repoRoot = resolve(import.meta.dirname, '..', '..');
 function isListening(port: number): Promise<boolean> {
   return new Promise((resolveListening) => {
     const socket = connect({ host: '127.0.0.1', port });
+
     socket.once('connect', () => {
       socket.destroy();
       resolveListening(true);
     });
+
     socket.once('error', () => resolveListening(false));
   });
 }
@@ -40,6 +42,7 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
     const nextBin = require.resolve('next/dist/bin/next');
     port = await getFreePort();
     client = new FrogBotRESTClient(`http://localhost:${port}`);
+
     server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
       cwd: fixtureDir,
       env: {
@@ -48,23 +51,28 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
         FROGBOT_SECRET: 'e2e-secret',
       },
     });
+
     server.stdout?.resume();
     server.stderr?.pipe(process.stderr);
+
     await waitForServer(server, () => isListening(port), {
       name: 'web search agent dev server',
       timeout: 210000,
       interval: 2000,
     });
+
     const registration = await client.post<{ token: string }>('/api/users/first-register', {
       email: 'web-search@frogbot.test',
       password: 'frogbot-e2e-password',
       name: 'Web Search Test',
     });
+
     if (registration.status !== 200) {
       throw new Error(
         `first-register returned ${registration.status}: ${JSON.stringify(registration.body)}`,
       );
     }
+
     token = registration.body.token;
   }, 240000);
 
@@ -88,16 +96,21 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
       { prompt: 'Search the web for the official FrogBot GitHub repository.' },
       auth,
     );
+
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body.text).toMatch(/https?:\/\//);
+
     const messages = await client.get<{ docs: Array<{ parts: Array<Record<string, unknown>> }> }>(
       `/api/messages?where[chat][equals]=${response.body.chatId}&sort=createdAt`,
       auth,
     );
+
     expect(messages.status, JSON.stringify(messages.body)).toBe(200);
+
     const output = messages.body.docs
       .flatMap(({ parts }) => parts)
       .find(({ type }) => type === `tool-${toolType}`)?.output;
+
     expect(output).toBeDefined();
     expect(JSON.stringify(output)).toMatch(/title|url/);
   }

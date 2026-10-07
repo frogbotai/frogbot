@@ -33,6 +33,7 @@ export async function generateMessage({
 
   await consumeStream({ stream });
   if (!responseMessage) throw new Error('Agent generation produced no assistant message');
+
   return responseMessage;
 }
 
@@ -41,9 +42,11 @@ function streamResult(result: AgentGenerateResult): ReadableStream<TextStreamPar
 
   for (const step of result.steps) {
     parts.push({ type: 'start-step', request: step.request, warnings: step.warnings ?? [] });
+
     for (const part of step.content) {
       parts.push(...toStreamParts(part));
     }
+
     parts.push({
       type: 'finish-step',
       response: step.response,
@@ -67,6 +70,7 @@ function streamResult(result: AgentGenerateResult): ReadableStream<TextStreamPar
       for (const part of parts) {
         controller.enqueue(part);
       }
+
       controller.close();
     },
   });
@@ -77,6 +81,7 @@ function toStreamParts(
 ): TextStreamPart<ToolSet>[] {
   if (part.type === 'text') {
     const id = generateId();
+
     return [
       { type: 'text-start', id, providerMetadata: part.providerMetadata },
       { type: 'text-delta', id, text: part.text, providerMetadata: part.providerMetadata },
@@ -86,6 +91,7 @@ function toStreamParts(
 
   if (part.type === 'reasoning') {
     const id = generateId();
+
     return [
       { type: 'reasoning-start', id, providerMetadata: part.providerMetadata },
       { type: 'reasoning-delta', id, text: part.text, providerMetadata: part.providerMetadata },

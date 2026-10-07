@@ -49,6 +49,7 @@ function createRecordingModel(opts?: {
     providerMetadata,
     responseBody,
   } = opts ?? {};
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -58,6 +59,7 @@ function createRecordingModel(opts?: {
     },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason,
@@ -81,6 +83,7 @@ function createRecordingModel(opts?: {
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage: DEFAULT_USAGE },
       ];
+
       return Promise.resolve({ stream: partStream(parts) });
     },
   };
@@ -89,6 +92,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -98,6 +102,7 @@ async function postRaw(app: Hono, path: string, body: unknown) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+
   return { status: res.status, headers: res.headers, text: await res.text() };
 }
 
@@ -149,6 +154,7 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
         const choices = d.choices as Array<Record<string, unknown>>;
         const delta = choices?.[0]?.delta as Record<string, unknown>;
         const calls = delta?.tool_calls as Array<Record<string, unknown>>;
+
         return calls?.some(
           (tc) =>
             typeof tc.function === 'object' &&
@@ -162,11 +168,13 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
         const calls = (
           (d.choices as Array<Record<string, unknown>>)[0]?.delta as Record<string, unknown>
         )?.tool_calls as Array<Record<string, unknown>>;
+
         return calls?.some(
           (tc) =>
             tc.index === 0 && (tc.function as Record<string, unknown>)?.arguments === '"corrupted"',
         );
       });
+
       expect(corruptedOnZero).toBe(false);
     },
   );
@@ -211,10 +219,13 @@ describe('G48 — service_tier missing from streaming SSE output', () => {
     });
 
     expect(status).toBe(200);
+
     const chunks = parseSse(text)
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
+
     const hasServiceTier = chunks.some((c) => c.service_tier !== undefined);
+
     expect(hasServiceTier, 'no chunk contained service_tier').toBe(true);
   });
 });
@@ -231,6 +242,7 @@ describe('G48 — service_tier on non-streaming chat response', () => {
     const model = createRecordingModel({
       providerMetadata: { openai: { service_tier: 'flex' } },
     });
+
     const app = makeAppWithModel('openai', model);
     const { status, text } = await postRaw(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -238,7 +250,9 @@ describe('G48 — service_tier on non-streaming chat response', () => {
     });
 
     expect(status).toBe(200);
+
     const body = JSON.parse(text) as Record<string, unknown>;
+
     expect(body.service_tier).toBe('flex');
   });
 });
@@ -269,6 +283,7 @@ describe('G49 — x-request-id absent on streaming SSE response', () => {
       res.headers.get('x-request-id'),
       'streaming SSE response missing x-request-id',
     ).not.toBeNull();
+
     await res.text();
   });
 });
@@ -328,6 +343,7 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     });
 
     expect(status).toBe(200);
+
     const chunks = parseSse(text)
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
@@ -340,6 +356,7 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
         Array.isArray(c.choices) &&
         (c.choices as unknown[]).length === 0,
     );
+
     expect(usageChunk, 'no usage-only chunk found before [DONE]').toBeDefined();
   });
 
@@ -353,6 +370,7 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     });
 
     expect(status).toBe(200);
+
     const chunks = parseSse(text)
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
@@ -361,8 +379,11 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     const usageChunks = chunks.filter(
       (c) => Array.isArray(c.choices) && (c.choices as unknown[]).length === 0 && c.usage != null,
     );
+
     expect(usageChunks).toHaveLength(1);
+
     const usageChunk = usageChunks[0];
+
     expect(usageChunk.usage as Record<string, unknown>).toHaveProperty('total_tokens');
     // It is the LAST chunk before [DONE].
     expect(chunks[chunks.length - 1]).toBe(usageChunk);
@@ -371,7 +392,9 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     const deltaChunks = chunks.filter(
       (c) => Array.isArray(c.choices) && (c.choices as unknown[]).length > 0,
     );
+
     expect(deltaChunks.length).toBeGreaterThan(0);
+
     for (const c of deltaChunks) {
       expect(c.usage, 'non-final chunk must carry usage: null').toBeNull();
     }
@@ -390,6 +413,7 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     });
 
     expect(status).toBe(200);
+
     const chunks = parseSse(text)
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
@@ -398,12 +422,16 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     const dedicated = chunks.filter(
       (c) => Array.isArray(c.choices) && (c.choices as unknown[]).length === 0,
     );
+
     expect(dedicated).toHaveLength(0);
 
     // Exactly one chunk carries a usage key, and it is the finish chunk.
     const withUsage = chunks.filter((c) => c.usage !== undefined);
+
     expect(withUsage).toHaveLength(1);
+
     const finishChunk = withUsage[0];
+
     expect((finishChunk.choices as Array<Record<string, unknown>>)[0].finish_reason).toBe('stop');
 
     // No usage: null stubs anywhere on the legacy path.
@@ -442,6 +470,7 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
     });
 
     expect(status).toBe(200);
+
     const chunks = parseSse(text)
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
@@ -451,8 +480,11 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
         Array.isArray(c.choices) &&
         (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
     );
+
     expect(finishChunk).toBeDefined();
+
     const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
+
     // OpenAI spec: refusal → 'stop', not 'content_filter'
     expect(finishReason, 'refusal should map to stop not content_filter').toBe('stop');
   });
@@ -487,10 +519,14 @@ describe('G55 — assistant refusal preserved on re-ingestion', () => {
     });
 
     expect(status).toBe(200);
+
     const assistantMsg = capturedOptions?.prompt.find((m) => m.role === 'assistant');
+
     expect(assistantMsg).toBeDefined();
+
     // refusal is preserved as a text part in the translated assistant turn
     const opts = JSON.stringify(capturedOptions?.prompt ?? {});
+
     expect(opts).toContain('I cannot do that.');
   });
 });
@@ -509,6 +545,7 @@ describe('G56 — over-broad 400s on benign values', () => {
       messages: [{ role: 'user', content: 'hi' }],
       parallel_tool_calls: true,
     });
+
     expect(status, 'parallel_tool_calls:true should not 400').toBe(200);
   });
 
@@ -519,6 +556,7 @@ describe('G56 — over-broad 400s on benign values', () => {
       messages: [{ role: 'user', content: 'hi' }],
       user: 'user-alice',
     });
+
     expect(status, 'user field should not 400').toBe(200);
   });
 
@@ -529,6 +567,7 @@ describe('G56 — over-broad 400s on benign values', () => {
       messages: [{ role: 'user', content: 'hi' }],
       logprobs: false,
     });
+
     expect(status, 'logprobs:false should not 400').toBe(200);
   });
 });
@@ -558,6 +597,7 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
     });
 
     expect(status).toBe(200);
+
     const chunks = parseSse(text)
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
@@ -567,8 +607,11 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
         Array.isArray(c.choices) &&
         (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
     );
+
     expect(finishChunk).toBeDefined();
+
     const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
+
     expect(finishReason, 'error finishReason masked as stop').not.toBe('stop');
     expect(finishReason).toBe('error');
   });
@@ -607,7 +650,9 @@ describe('G58 — tools strict field forwarded', () => {
     });
 
     expect(status).toBe(200);
+
     const toolDef = JSON.stringify(capturedOptions?.tools ?? {});
+
     expect(toolDef).toContain('strict');
   });
 
@@ -620,7 +665,9 @@ describe('G58 — tools strict field forwarded', () => {
     });
 
     expect(status).toBe(400);
+
     const error = (body as Record<string, unknown>).error as Record<string, unknown>;
+
     expect(error.param).toBe('tools[0].type');
   });
 });
@@ -659,10 +706,14 @@ describe('G59 — non-streaming refusal surfaced', () => {
     });
 
     expect(status).toBe(200);
+
     const choice = (body as Record<string, unknown>).choices as Array<Record<string, unknown>>;
+
     // OpenAI spec: refusal response should have message.refusal set
     expect(choice[0]).toBeDefined();
+
     const message = choice[0].message as Record<string, unknown>;
+
     // When a model returns a refusal, message.refusal should be a string, not missing
     expect(message).toHaveProperty('refusal');
     expect(message.refusal).toBe('I cannot help with that.');
@@ -694,8 +745,10 @@ describe('G59 — non-streaming refusal surfaced', () => {
     });
 
     expect(status).toBe(200);
+
     const choice = (body as Record<string, unknown>).choices as Array<Record<string, unknown>>;
     const message = choice[0].message as Record<string, unknown>;
+
     expect(message).not.toHaveProperty('refusal');
     expect(message.content).toBe('Hello');
   });

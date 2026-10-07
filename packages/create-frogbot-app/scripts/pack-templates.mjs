@@ -7,6 +7,7 @@ const packageRoot = path.resolve(dirname, '..');
 const repoRoot = path.resolve(packageRoot, '..', '..');
 const { CONFIG_ANCHORS, ENV_ANCHORS, PACKAGE_DEPENDENCY_ANCHORS } =
   await import('../dist/lib/anchors.js');
+
 const { TEMPLATES } = await import('../dist/templates.js');
 
 const skip = new Set(['node_modules', 'dist', '.next', '.env', '.env.local', 'frogbot-types.ts']);
@@ -16,6 +17,7 @@ const resolveVersion = (name) => {
   const depPkg = JSON.parse(
     fs.readFileSync(path.join(repoRoot, 'packages', dir, 'package.json'), 'utf8'),
   );
+
   return `^${depPkg.version}`;
 };
 
@@ -24,10 +26,12 @@ for (const template of TEMPLATES) {
   const dest = path.join(packageRoot, 'dist', 'templates', template.dir);
 
   fs.rmSync(dest, { recursive: true, force: true });
+
   fs.cpSync(src, dest, {
     recursive: true,
     filter: (entry) => {
       const base = path.basename(entry);
+
       return (
         !skip.has(base) &&
         !/\.db(-journal|-shm|-wal)?$/.test(base) &&
@@ -106,6 +110,7 @@ fs.writeFileSync(
   path.join(packageRoot, 'dist', 'database-dependencies.json'),
   `${JSON.stringify(databaseDependencies, null, 2)}\n`,
 );
+
 console.log('[create-frogbot-app] wrote dist/database-dependencies.json');
 
 const skillSource = path.join(repoRoot, 'skills', 'frogbot');

@@ -16,6 +16,7 @@ import {
 
 it('opens, focuses, and closes the dialog from the keyboard', async () => {
   const user = userEvent.setup();
+
   render(
     <Dialog>
       <DialogTrigger>Open dialog</DialogTrigger>
@@ -29,9 +30,12 @@ it('opens, focuses, and closes the dialog from the keyboard', async () => {
 
   await user.tab();
   await user.keyboard('{Enter}');
+
   expect(screen.getByRole('dialog').className).toContain('fb-dialog__content');
   expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true);
+
   await user.keyboard('{Escape}');
+
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Open dialog' }));
 });
@@ -42,6 +46,7 @@ it('supports content without an overlay or close button', () => {
       <DialogContent showOverlay={false} withCloseButton={false} aria-label="Plain dialog" />
     </Dialog>,
   );
+
   expect(screen.getByRole('dialog')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   expect(document.querySelector('.fb-dialog__overlay')).toBeNull();

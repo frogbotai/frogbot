@@ -2,6 +2,7 @@ import { AttachmentCard } from './attachment-card.js';
 import type { DataPartValue } from './data-part.js';
 
 export type PastePartData = { filename?: string; text: string };
+
 export type PageContextPartData = {
   content: string;
   favicon?: string;
@@ -9,6 +10,7 @@ export type PageContextPartData = {
   title: string;
   url: string;
 };
+
 export type PromptPartData = { id: string; title: string };
 
 export function isFlagPart(part: { type: string }) {
@@ -23,8 +25,10 @@ export function renderFlagPart(part: DataPartValue) {
 
     return <AttachmentCard name="Pasted text" state="text" typeLabel="PASTED" text={data.text} />;
   }
+
   if (part.type === 'data-page-context') {
     const data = part.data as PageContextPartData;
+
     return (
       <article data-testid="data-page-context" className="fb-flag-part fb-flag-part--page-context">
         <div className="fb-flag-part__header">
@@ -38,7 +42,9 @@ export function renderFlagPart(part: DataPartValue) {
       </article>
     );
   }
+
   const data = part.data as PromptPartData;
+
   return (
     <div data-testid="data-prompt" className="fb-flag-part fb-flag-part--prompt">
       <div className="fb-flag-part__preview fb-flag-part__preview--prompt">{data.title}</div>

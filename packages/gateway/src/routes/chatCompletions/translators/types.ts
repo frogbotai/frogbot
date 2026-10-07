@@ -58,16 +58,19 @@ export type OpenAIContentPart =
   | OpenAIContentPartFile;
 
 export type OpenAIContentPartText = { type: 'text'; text: string; cache_control?: CacheControl };
+
 export type OpenAIContentPartImage = {
   type: 'image_url';
   image_url: { url: string; detail?: string | null };
   cache_control?: CacheControl;
 };
+
 export type OpenAIContentPartInputAudio = {
   type: 'input_audio';
   input_audio: { data: string; format: string };
   cache_control?: CacheControl;
 };
+
 export type OpenAIContentPartFile = {
   type: 'file';
   file: { filename?: string; file_data?: string; file_id?: string };

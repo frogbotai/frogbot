@@ -104,6 +104,7 @@ export function seoPlugin<const S extends CollectionSlug>(options: SEOPluginOpti
 
     const slugs =
       options.collections ?? (config.collections ?? []).map((collection) => collection.slug);
+
     const result = fromPayloadConfig(
       payloadSeoPlugin(toPayloadSEOConfig(options, slugs))(toPayloadConfig(config)),
     );

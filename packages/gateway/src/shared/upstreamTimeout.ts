@@ -23,7 +23,9 @@ export function createUpstreamSignal(
   if (!timeoutMs) {
     return { signal: clientSignal, timedOut: () => false };
   }
+
   const timeoutSignal = AbortSignal.timeout(timeoutMs);
+
   return {
     signal: AbortSignal.any([clientSignal, timeoutSignal]),
     timedOut: () => timeoutSignal.aborted && !clientSignal.aborted,

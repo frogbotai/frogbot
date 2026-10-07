@@ -90,6 +90,7 @@ export function imagesRoute(ctx: ImagesRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = resolved.instance.imageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
@@ -102,12 +103,14 @@ export function imagesRoute(ctx: ImagesRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       const { providerOptions, ...imageParams } = toGenerateImageParams({
         body,
         providerName: resolved.providerName,
       });
+
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
@@ -130,16 +133,19 @@ export function imagesRoute(ctx: ImagesRouteContext) {
         abortSignal: createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs).signal,
         headers: Object.fromEntries(headers),
       });
+
       usage = {
         inputTokens: result.usage.inputTokens ?? 0,
         outputTokens: result.usage.outputTokens ?? 0,
         totalTokens: result.usage.totalTokens ?? 0,
       };
+
       if (result.warnings.length > 0) {
         c.header('x-gateway-warnings', JSON.stringify(result.warnings));
       }
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         {
@@ -165,6 +171,7 @@ export function imagesRoute(ctx: ImagesRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       if (base) {
@@ -189,12 +196,15 @@ export function imagesRoute(ctx: ImagesRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

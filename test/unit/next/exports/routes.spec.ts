@@ -23,6 +23,7 @@ function makeConfig() {
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
   } as unknown as FrogBotSanitizedConfig;
+
   return { config, payloadConfig };
 }
 

@@ -18,6 +18,7 @@ describe('iconRegistry', () => {
 
   it('renders registered icons', () => {
     const { container } = render(createElement(iconRegistry.robot, { size: 24 }));
+
     expect(container.querySelector('svg')).not.toBeNull();
   });
 

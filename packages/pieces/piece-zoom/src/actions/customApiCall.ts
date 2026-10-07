@@ -12,6 +12,7 @@ const json: z.ZodType<unknown> = z.lazy(() =>
     z.record(z.string(), json),
   ]),
 );
+
 const customApiCallInput = z.object({
   method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).default('GET'),
   path: z.string().min(1),

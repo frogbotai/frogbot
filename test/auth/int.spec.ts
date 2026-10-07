@@ -20,9 +20,11 @@ describe('auth', () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
   });
+
   afterAll(async () => {
     await booted.shutdown();
   });
+
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
   });
@@ -34,6 +36,7 @@ describe('auth', () => {
   describe('registration + login', () => {
     it('POST /api/users creates a user and returns a token', async () => {
       const res = await createUser();
+
       expect(res.status).toBe(201);
       expect((res.body as any).doc.email).toBe(testUserEmail);
     });
@@ -44,6 +47,7 @@ describe('auth', () => {
         email: testUserEmail,
         password: testUserPassword,
       });
+
       expect(res.status).toBe(200);
       expect((res.body as any).token).toBeDefined();
     });
@@ -54,6 +58,7 @@ describe('auth', () => {
         email: testUserEmail,
         password: testUserPassword,
       });
+
       const cookie = res.headers.get('set-cookie');
 
       expect(cookie).toMatch(/^frogbot-token=/);
@@ -66,6 +71,7 @@ describe('auth', () => {
         email: testUserEmail,
         password: 'wrong-password',
       });
+
       expect(res.status).toBe(401);
     });
   });
@@ -77,11 +83,13 @@ describe('auth', () => {
         email: testUserEmail,
         password: testUserPassword,
       });
+
       const token = (login.body as any).token;
 
       const res = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, {
         headers: { Authorization: `JWT ${token}` },
       });
+
       expect(res.status).toBe(200);
       expect(res.body.user?.email).toBe(testUserEmail);
     });
@@ -92,18 +100,22 @@ describe('auth', () => {
         email: testUserEmail,
         password: testUserPassword,
       });
+
       const cookie = login.headers.get('set-cookie')?.match(/^(frogbot-token=[^;]+)/)?.[1];
 
       expect(cookie).toBeDefined();
+
       const res = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, {
         headers: { Cookie: cookie! },
       });
+
       expect(res.status).toBe(200);
       expect(res.body.user?.email).toBe(testUserEmail);
     });
 
     it('unauthenticated request to /me returns null user', async () => {
       const res = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`);
+
       expect(res.status).toBe(200);
       expect(res.body.user).toBeNull();
     });

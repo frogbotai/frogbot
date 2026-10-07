@@ -8,13 +8,17 @@ type Connection = {
 async function loadOptions(load: (after?: string) => Promise<Connection>) {
   const options: Array<{ label: string; value: string }> = [];
   let after: string | undefined;
+
   do {
     const page = await load(after);
+
     for (const node of page.nodes) {
       options.push({ label: node.name ?? node.title ?? node.id, value: node.id });
     }
+
     after = page.pageInfo.hasNextPage ? (page.pageInfo.endCursor ?? undefined) : undefined;
   } while (after);
+
   return options;
 }
 

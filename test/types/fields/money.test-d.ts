@@ -8,11 +8,13 @@ expectTypeOf(moneyField).returns.toEqualTypeOf<NumberField>();
 expectTypeOf<MoneyFieldArgs['currency']>().toEqualTypeOf<string | undefined>();
 expectTypeOf<MoneyFieldArgs['precision']>().toEqualTypeOf<'auto' | number | undefined>();
 expectTypeOf<MoneyPrecision>().toEqualTypeOf<'auto' | number>();
+
 expectTypeOf<MoneyKind>().toEqualTypeOf<{
   type: 'money';
   currency: string;
   precision: MoneyPrecision;
 }>();
+
 expectTypeOf(formatMoney).parameter(0).toEqualTypeOf<FormatMoneyArgs>();
 expectTypeOf(formatMoney).returns.toEqualTypeOf<string>();
 

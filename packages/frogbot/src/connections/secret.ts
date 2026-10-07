@@ -19,6 +19,7 @@ export function buildSecretEndpoints({
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
   };
+
   const failure = (error: unknown) =>
     Response.json(
       {
@@ -29,6 +30,7 @@ export function buildSecretEndpoints({
       },
       { status: error instanceof KVLockContentionError ? 409 : 500 },
     );
+
   return [
     {
       method: 'post',
@@ -41,9 +43,11 @@ export function buildSecretEndpoints({
           typeof slug === 'string' && Object.hasOwn(connections.entries, slug)
             ? connections.entries[slug]
             : undefined;
+
         if (!entry?.secret) {
           return Response.json({ error: 'Connection not found' }, { status: 404 });
         }
+
         let credential: PieceJSON;
         try {
           const input: unknown = await req.json!();
@@ -54,6 +58,7 @@ export function buildSecretEndpoints({
         } catch {
           return Response.json({ error: 'Invalid credentials' }, { status: 400 });
         }
+
         try {
           const metadata = await (
             await req.frogbot.connections.store
@@ -63,6 +68,7 @@ export function buildSecretEndpoints({
             method: 'secret',
             credential,
           });
+
           return Response.json(metadata);
         } catch (error) {
           return failure(error);
@@ -79,10 +85,12 @@ export function buildSecretEndpoints({
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'Connection not found' }, { status: 404 });
         }
+
         try {
           if (!(await req.frogbot.connections.delete({ req, id }))) {
             return Response.json({ error: 'Connection not found' }, { status: 404 });
           }
+
           return new Response(null, { status: 204 });
         } catch (error) {
           return failure(error);

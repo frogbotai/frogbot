@@ -79,6 +79,7 @@ export async function loadLayeredConfig(
       dir: cwd,
       env,
     });
+
     let parsed: GatewayConfig;
     try {
       parsed = JSON.parse(text) as GatewayConfig;
@@ -86,11 +87,13 @@ export async function loadLayeredConfig(
       const msg = err instanceof Error ? err.message : String(err);
       throw new ConfigError([`GATEWAY_CONFIG_JSON: invalid JSON — ${msg}`]);
     }
+
     if (!isRecord(parsed)) {
       throw new ConfigError([
         `GATEWAY_CONFIG_JSON: expected a JSON object, got ${Array.isArray(parsed) ? 'array' : typeof parsed}`,
       ]);
     }
+
     config = mergeConfigs(config, parsed);
     sources.push({ kind: 'inline' });
   }
@@ -102,6 +105,7 @@ async function existingGlobalConfigPaths(env: NodeJS.ProcessEnv): Promise<string
   const base = env.XDG_CONFIG_HOME ? env.XDG_CONFIG_HOME : resolve(homedir(), '.config');
   const dir = resolve(base, 'frogbotai');
   const paths = GLOBAL_CONFIG_NAMES.map((name) => resolve(dir, name));
+
   return existing(paths);
 }
 
@@ -109,20 +113,25 @@ async function projectConfigPaths(cwd: string, env: NodeJS.ProcessEnv): Promise<
   const out: string[] = [];
   let dir = resolve(cwd);
   const boundary = findProjectRoot(dir, env);
+
   for (let i = 0; i < 64; i++) {
     const [first] = await existing(CONFIG_NAMES.map((name) => resolve(dir, name)));
     if (first) {
       out.push(first);
     }
+
     if (dir === boundary) {
       break;
     }
+
     const parent = dirname(dir);
     if (parent === dir || dir === parse(dir).root) {
       break;
     }
+
     dir = parent;
   }
+
   return out.reverse();
 }
 
@@ -136,22 +145,28 @@ function findProjectRoot(start: string, env: NodeJS.ProcessEnv): string {
   if (override) {
     return resolve(override);
   }
+
   let dir = start;
+
   for (let i = 0; i < 64; i++) {
     if (existsSync(resolve(dir, '.git')) || existsSync(resolve(dir, 'package.json'))) {
       return dir;
     }
+
     const parent = dirname(dir);
     if (parent === dir || dir === parse(dir).root) {
       break;
     }
+
     dir = parent;
   }
+
   return start;
 }
 
 async function existing(paths: string[]): Promise<string[]> {
   const out: string[] = [];
+
   for (const path of paths) {
     try {
       await access(path);
@@ -160,5 +175,6 @@ async function existing(paths: string[]): Promise<string[]> {
       // Not readable / doesn't exist — skip it.
     }
   }
+
   return out;
 }

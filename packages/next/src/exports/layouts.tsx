@@ -35,5 +35,6 @@ export function handleServerFunctions(
   args: HandleServerFunctionsArgs,
 ): ReturnType<typeof payloadHandleServerFunctions> {
   const { config, ...rest } = args;
+
   return payloadHandleServerFunctions({ ...rest, config: getPayloadConfig(config) });
 }

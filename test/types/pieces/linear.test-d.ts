@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof linear.createComment>[0]['input']>().toEqualTypeO
   issueId: string;
   body: string;
 }>();
+
 expectTypeOf<Awaited<typeof _comment>['success']>().toEqualTypeOf<boolean>();
 
 const _createCommentRejectsRawGraphqlQueryInput = () =>
@@ -27,4 +28,5 @@ expectTypeOf<keyof typeof linear.triggers>().toEqualTypeOf<
   | 'projectUpdated'
   | 'projectRemoved'
 >();
+
 expectTypeOf(linear.triggers.commentCreated.type).toEqualTypeOf<'webhook'>();
