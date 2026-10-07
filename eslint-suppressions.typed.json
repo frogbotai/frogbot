@@ -1,7 +1,0 @@
-{
-  "test/browser/fixtures/question/src/frogbot.config.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
-    }
-  }
-}

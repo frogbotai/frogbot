@@ -67,23 +67,24 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 
 `pnpm check` runs these; each also runs alone as `pnpm check <name>`.
 
-| Name              | Fails when                                                                                                                                   |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `branding`        | templates, examples, docs, skills or READMEs mention Payload                                                                                 |
-| `docs-fences`     | a docs code block has no language, or marks a shell command as plain text                                                                    |
-| `docs-links`      | a General docs link, anchor or local asset is broken                                                                                         |
-| `docs-references` | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)       |
-| `option-tables`   | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`         |
-| `tests`           | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/` |
-| `packages`        | a workspace folder has no tracked `package.json`                                                                                             |
-| `scripts`         | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                              |
-| `ui-architecture` | `packages/ui` uses forbidden imports, globals or strings                                                                                     |
-| `generated`       | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                           |
-| `test-types`      | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                  |
-| `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                    |
-| `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                          |
-| `peer-variants`   | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                   |
-| `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/decisions.md` or the plan (main checkout only)                                          |
+| Name              | Fails when                                                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `branding`        | templates, examples, docs, skills or READMEs mention Payload                                                                                                             |
+| `docs-fences`     | a docs code block has no language, or marks a shell command as plain text                                                                                                |
+| `docs-links`      | a General docs link, anchor or local asset is broken                                                                                                                     |
+| `docs-references` | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)                                   |
+| `option-tables`   | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`                                     |
+| `tests`           | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/`                             |
+| `packages`        | a workspace folder has no tracked `package.json`                                                                                                                         |
+| `scripts`         | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                                                          |
+| `ui-architecture` | `packages/ui` uses forbidden imports, globals or strings                                                                                                                 |
+| `generated`       | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                                                       |
+| `test-types`      | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                                              |
+| `typed-lint`      | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file) |
+| `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                                                |
+| `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                      |
+| `peer-variants`   | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                               |
+| `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/decisions.md` or the plan (main checkout only)                                                                      |
 
 ## Code style
 
@@ -167,7 +168,7 @@ Don't weaken tests or mark failures expected to get a green suite. When the owne
 
 - [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): message`, with type `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `build`, `ci` or `style` and the package or area as scope (`feat(gateway): add retry-after header support`). Breaking changes add `!` and a `BREAKING CHANGE:` footer.
 - One verified ticket is one commit, focused on its change.
-- The hooks enforce the rest. [`.husky/pre-commit`](.husky/pre-commit) runs lint-staged (`eslint --fix` and `prettier --write`; any lint error, warning or unused `eslint-disable` fails), then [`scripts/precommit-guard.mjs`](scripts/precommit-guard.mjs) refuses `.idea/`, `CHANGELOG*`, `.changeset/`, `patches/` and new `patchedDependencies`. Older lint violations are baselined in `eslint-suppressions.json`, which only shrinks. [`.husky/commit-msg`](.husky/commit-msg) runs [`scripts/commit-msg.mjs`](scripts/commit-msg.mjs), which checks the subject and refuses `Co-authored-by:` and "Generated with" lines.
+- The hooks enforce the rest. [`.husky/pre-commit`](.husky/pre-commit) runs lint-staged (`eslint --fix`, oxlint's type-aware rules and `prettier --write`; any lint error, ESLint warning or unused `eslint-disable` fails), then [`scripts/precommit-guard.mjs`](scripts/precommit-guard.mjs) refuses `.idea/`, `CHANGELOG*`, `.changeset/`, `patches/` and new `patchedDependencies`. Older lint violations are baselined in `eslint-suppressions.json`, and older type-aware ones as `"warn"` overrides in `.oxlintrc.json`; both only shrink. [`.husky/commit-msg`](.husky/commit-msg) runs [`scripts/commit-msg.mjs`](scripts/commit-msg.mjs), which checks the subject and refuses `Co-authored-by:` and "Generated with" lines.
 
 ## Project structure
 

@@ -12,7 +12,7 @@ function readBlob<T extends 'arrayBuffer' | 'text'>(blob: Blob, as: T) {
     const reader = new FileReader();
 
     reader.onload = () => resolve(reader.result as T extends 'text' ? string : ArrayBuffer);
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => reject(reader.error ?? new Error(`Could not read the blob as ${as}`));
 
     if (as === 'text') reader.readAsText(blob);
     else reader.readAsArrayBuffer(blob);

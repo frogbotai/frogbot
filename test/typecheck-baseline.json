@@ -115,9 +115,6 @@
   "test/unit/frogbot/jobs/nativeRunner.ts": {
     "TS2352": 1
   },
-  "test/unit/gateway/routes/chatCompletions/translators/chatCompletions.spec.ts": {
-    "TS2352": 1
-  },
   "test/unit/scripts/checkTests.spec.ts": {
     "TS2740": 1,
     "TS7006": 1

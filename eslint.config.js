@@ -10,8 +10,6 @@ import tseslint from 'typescript-eslint';
 import frogbot from './scripts/eslint-plugin/index.mjs';
 import { reactA11yRules } from './scripts/lib/eslint-react-a11y.mjs';
 
-const TYPED = process.env.FROGBOT_LINT === 'typed';
-
 const IGNORES = [
   '**/node_modules/*',
   '**/dist/*',
@@ -25,18 +23,6 @@ const IGNORES = [
   'packages/frogbot/bin.js',
   '**/migrations/**',
   'test/.tmp/',
-];
-
-const DEFAULT_PROJECT = [
-  '.opencode/plugins/frogbot/index.ts',
-  '.opencode/plugins/frogbot/supervision.ts',
-  'packages/ui/src/vitest.setup.ts',
-  'test/e2e/fixtures/plugin-wrappers/next.config.ts',
-  'test/e2e/fixtures/rich-text/next.config.ts',
-  'test/e2e/fixtures/sdk-frontend/types/index.ts',
-  'test/e2e/fixtures/sdk-frontend/vite.config.ts',
-  'test/types/duplicate/augment.ts',
-  'vitest.config.ts',
 ];
 
 const SPECS = ['**/*.spec.ts', '**/*.spec.tsx'];
@@ -103,7 +89,7 @@ function uiImports(...patterns) {
   return ['error', { patterns: [...UI_LIBRARIES, ...patterns] }];
 }
 
-const untypedConfig = tseslint.config(
+export default tseslint.config(
   { ignores: IGNORES },
   { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   eslint.configs.recommended,
@@ -239,50 +225,3 @@ const untypedConfig = tseslint.config(
     },
   },
 );
-
-const requiresTypes = (name) =>
-  name.startsWith('@typescript-eslint/') &&
-  tseslint.plugin.rules[name.slice('@typescript-eslint/'.length)].meta.docs?.requiresTypeChecking;
-
-const typedRules = {
-  ...Object.fromEntries(
-    tseslint.configs.recommendedTypeChecked
-      .flatMap(({ rules = {} }) => Object.entries(rules))
-      .filter(([name]) => requiresTypes(name)),
-  ),
-  '@typescript-eslint/no-misused-promises': [
-    'error',
-    { checksVoidReturn: { attributes: false, arguments: false } },
-  ],
-  '@typescript-eslint/no-unsafe-assignment': 'off',
-  '@typescript-eslint/no-unsafe-member-access': 'off',
-  '@typescript-eslint/no-unsafe-call': 'off',
-  '@typescript-eslint/no-unsafe-argument': 'off',
-  '@typescript-eslint/no-unsafe-return': 'off',
-  '@typescript-eslint/unbound-method': 'off',
-  '@typescript-eslint/no-base-to-string': 'off',
-  '@typescript-eslint/restrict-template-expressions': 'off',
-  '@typescript-eslint/no-redundant-type-constituents': 'off',
-};
-
-const typedConfig = tseslint.config(
-  { ignores: [...IGNORES, '**/*.{js,mjs,cjs}'] },
-  { linterOptions: { reportUnusedDisableDirectives: 'off' } },
-  { plugins: Object.assign({}, ...untypedConfig.map(({ plugins }) => plugins)) },
-  {
-    files: ['**/*.{ts,tsx,mts,cts}'],
-    extends: [tseslint.configs.base],
-    languageOptions: {
-      parserOptions: {
-        projectService: {
-          allowDefaultProject: DEFAULT_PROJECT,
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: DEFAULT_PROJECT.length,
-        },
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    rules: typedRules,
-  },
-);
-
-export default TYPED ? typedConfig : untypedConfig;

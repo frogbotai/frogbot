@@ -7,10 +7,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { eslintResult, fullOnlyChecks } from '../../../scripts/check.mjs';
 import {
-  PRUNE_LINE,
-  typedLintArgs,
+  exceptions,
   typedLintCommand,
-  typedLintEnv,
   typedLintLines,
 } from '../../../scripts/check-typed-lint.mjs';
 import { BASE_GATES } from '../../../scripts/ticket.mjs';
@@ -20,6 +18,8 @@ const root = path.resolve(import.meta.dirname, '../../..');
 const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
 
 const eslintBin = path.join(root, 'node_modules', '.bin', 'eslint');
+
+const oxlintBin = path.join(root, 'node_modules', '.bin', 'oxlint');
 
 const temporary: string[] = [];
 
@@ -36,19 +36,18 @@ function lintScriptArgs(script: string) {
   );
 }
 
-function lint(args: string[], input?: string, env = process.env) {
+function lint(args: string[], input?: string) {
   const result = spawnSync(eslintBin, [...lintScriptArgs(pkg.scripts.lint), ...args], {
     cwd: root,
     encoding: 'utf8',
     input,
-    env,
   });
 
   return { code: result.status, stdout: result.stdout, output: result.stdout + result.stderr };
 }
 
-function lintText(filename: string, code: string, args: string[] = [], env = process.env) {
-  return lint([...args, '--stdin', '--stdin-filename', filename], code, env);
+function lintText(filename: string, code: string, args: string[] = []) {
+  return lint([...args, '--stdin', '--stdin-filename', filename], code);
 }
 
 function messages(stdout: string): Message[] {
@@ -449,15 +448,34 @@ describe('typed and React lint', () => {
     return suppressions;
   }
 
-  function reported(filename: string, code: string, env = process.env) {
+  function reported(filename: string, code: string) {
     const args = ['--format', 'json', '--suppressions-location', emptySuppressions()];
 
-    return messages(lintText(filename, code, args, env).stdout).map(
+    return messages(lintText(filename, code, args).stdout).map(
       ({ ruleId, severity }) => `${ruleId} ${severity}`,
     );
   }
 
-  const typed = (filename: string, code: string) => reported(filename, code, typedLintEnv());
+  // oxlint reads no stdin, so the code goes to a temporary file outside every tsconfig, which
+  // tsgolint lints in an inferred program, under the repo's `.oxlintrc.json`.
+  function typed(filename: string, code: string) {
+    const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-typed-lint-'));
+    const file = path.join(dir, path.basename(filename));
+
+    temporary.push(dir);
+    writeFileSync(file, code);
+
+    const result = spawnSync(
+      oxlintBin,
+      ['-c', path.join(root, '.oxlintrc.json'), '--format', 'json', file],
+      { cwd: root, encoding: 'utf8' },
+    );
+
+    return JSON.parse(result.stdout).diagnostics.map(
+      ({ code, severity }: { code: string; severity: string }) =>
+        `${code.replace(/^(\w+)\((.+)\)$/, '$1/$2')} ${severity}`,
+    );
+  }
 
   it.each([
     [
@@ -516,13 +534,13 @@ describe('typed and React lint', () => {
 
   it.each([
     [
-      '@typescript-eslint/no-floating-promises',
+      'typescript/no-floating-promises',
       'the unawaited Teams processAction from c608750b',
       'packages/pieces/piece-microsoft-teams/src/adapter.ts',
       floatingPromise,
     ],
     [
-      '@typescript-eslint/await-thenable',
+      'typescript/await-thenable',
       'the awaited Slack config from 328088a6',
       'packages/pieces/piece-slack/src/index.ts',
       'declare const req: { frogbot: { config: { _internal: { payloadConfig: Promise<object> } } } };\n\n' +
@@ -532,7 +550,7 @@ describe('typed and React lint', () => {
         '}\n',
     ],
     [
-      '@typescript-eslint/no-misused-promises',
+      'typescript/no-misused-promises',
       'the promise tested as a condition in resolveConfig from d45e2c40',
       'packages/richtext-lexical/src/utilities/resolveConfig.ts',
       'declare const resolved: { _internal: { payloadConfig: Promise<object> } };\n\n' +
@@ -543,7 +561,7 @@ describe('typed and React lint', () => {
   ])(
     'pnpm check typed-lint reports %s as an error: %s',
     (rule, _source, filename, code) => {
-      expect(typed(filename, code)).toContain(`${rule} 2`);
+      expect(typed(filename, code)).toContain(`${rule} error`);
     },
     TYPED_TIMEOUT,
   );
@@ -554,7 +572,14 @@ describe('typed and React lint', () => {
       expect(
         typed(
           'packages/next/src/elements/ViewSwitcher/index.client.tsx',
-          'declare function setPreference(key: string, value: object): Promise<void>;\n\n' +
+          'declare global {\n' +
+            '  namespace JSX {\n' +
+            '    interface IntrinsicElements {\n' +
+            '      a: { children?: unknown; href?: string; onClick?: (event: Event) => void };\n' +
+            '    }\n' +
+            '  }\n' +
+            '}\n\n' +
+            'declare function setPreference(key: string, value: object): Promise<void>;\n\n' +
             'export function ViewLink({ slug }: { slug: string }) {\n' +
             '  return (\n' +
             '    <a\n' +
@@ -580,54 +605,124 @@ describe('typed and React lint', () => {
     ).toEqual([]);
   });
 
-  it('runs the typed rules in pnpm check --full and so in the pnpm ticket land gate', () => {
-    expect(fullOnlyChecks()).toContain('typed-lint');
+  it('runs the typed rules in plain pnpm check, pnpm check --full and the pnpm ticket land gate', () => {
+    expect(fullOnlyChecks()).not.toContain('typed-lint');
     expect(BASE_GATES).toContain('check --full');
-    expect(typedLintArgs()).toEqual(
-      expect.arrayContaining(['--suppressions-location', 'eslint-suppressions.typed.json']),
-    );
   });
 
-  it('prints the typed prune command when typed suppressions are left over', () => {
+  it('passes a known violation, which .oxlintrc.json warns on, and prints new ones', () => {
+    const stdout = JSON.stringify({
+      diagnostics: [
+        {
+          code: 'typescript(no-unnecessary-type-assertion)',
+          severity: 'warning',
+          message: 'This assertion is unnecessary.',
+          filename: 'test/a.spec.ts',
+          labels: [{ span: { line: 3 } }],
+        },
+        {
+          code: 'typescript(no-floating-promises)',
+          severity: 'error',
+          message: 'Promises must be awaited, add void operator to ignore.\nmore',
+          filename: 'test/a.spec.ts',
+          labels: [{ span: { line: 9 } }],
+        },
+      ],
+    });
+
+    expect(
+      typedLintLines(
+        { code: 1, stdout, stderr: '' },
+        { known: [{ file: 'test/a.spec.ts', rule: 'typescript/no-unnecessary-type-assertion' }] },
+      ),
+    ).toEqual([
+      'test/a.spec.ts:9 typescript/no-floating-promises Promises must be awaited, add void operator to ignore.',
+    ]);
+  });
+
+  it('fails a known violation that no longer fails', () => {
+    expect(
+      typedLintLines(
+        { code: 0, stdout: '{ "diagnostics": [] }', stderr: '' },
+        { known: [{ file: 'test/a.spec.ts', rule: 'typescript/require-await' }] },
+      ),
+    ).toEqual([
+      'test/a.spec.ts:0 typescript/require-await no longer fails; remove it from .oxlintrc.json',
+    ]);
+  });
+
+  it('prints what oxlint said when it printed no JSON', () => {
     expect(
       typedLintLines({
-        code: 2,
-        stdout: '[]',
-        stderr: 'There are suppressions left that do not occur anymore. Consider re-running',
+        code: 1,
+        stdout: '',
+        stderr: 'Failed to parse oxlint configuration file.\n',
       }),
-    ).toEqual([PRUNE_LINE]);
+    ).toEqual(['Failed to parse oxlint configuration file.']);
+  });
+
+  it('reads the known violations in the linted files from the warn overrides in .oxlintrc.json', () => {
+    const config = {
+      overrides: [
+        {
+          files: ['test/a.spec.ts', 'test/b.spec.ts'],
+          rules: { 'typescript/require-await': 'warn' },
+        },
+        { files: ['test/c.spec.ts'], rules: { 'typescript/require-await': 'off' } },
+      ],
+    };
+
+    expect(exceptions(config, null)).toEqual([
+      { file: 'test/a.spec.ts', rule: 'typescript/require-await' },
+      { file: 'test/b.spec.ts', rule: 'typescript/require-await' },
+    ]);
+    expect(exceptions(config, ['test/b.spec.ts', 'test/c.spec.ts'])).toEqual([
+      { file: 'test/b.spec.ts', rule: 'typescript/require-await' },
+    ]);
   });
 
   it('pnpm check typed-lint lints only the lintable changed files, as Payload lint-staged does', () => {
-    const args = typedLintCommand([], () => [
+    const command = typedLintCommand([], () => [
       'docs/guides/lint.md',
-      'eslint-suppressions.typed.json',
       'packages/frogbot/src/config/sanitize.ts',
       'packages/ui/src/chat/markdown.tsx',
       'scripts/check-typed-lint.mjs',
       'test/unit/scripts/lint.spec.ts',
     ]);
 
-    expect(args?.slice(0, args.indexOf('--max-warnings=0'))).toEqual([
+    expect(command?.targets).toEqual([
       'packages/frogbot/src/config/sanitize.ts',
       'packages/ui/src/chat/markdown.tsx',
-      'scripts/check-typed-lint.mjs',
       'test/unit/scripts/lint.spec.ts',
-      '--no-warn-ignored',
     ]);
-    expect(args).not.toContain('.');
+    expect(command?.args.slice(0, 4)).toEqual([
+      ...(command?.targets ?? []),
+      '--no-error-on-unmatched-pattern',
+    ]);
+    expect(command?.args).not.toContain('.');
   });
 
-  it('pnpm check typed-lint --all lints the whole repo and passes the other args to ESLint', () => {
-    const args = typedLintCommand(['--all', '--prune-suppressions'], () => [
+  it('pnpm check typed-lint --all lints the whole repo and passes the other args to oxlint', () => {
+    const command = typedLintCommand(['--all', '--fix'], () => [
       'packages/frogbot/src/config/sanitize.ts',
     ]);
 
-    expect(args?.[0]).toBe('.');
-    expect(args).toContain('--prune-suppressions');
-    expect(args).not.toContain('--all');
-    expect(args).not.toContain('packages/frogbot/src/config/sanitize.ts');
+    expect(command?.targets).toBeNull();
+    expect(command?.args[0]).toBe('.');
+    expect(command?.args).toContain('--fix');
+    expect(command?.args).not.toContain('--all');
+    expect(command?.args).not.toContain('packages/frogbot/src/config/sanitize.ts');
   });
+
+  it.each(['.oxlintrc.json', 'test/ui/tsconfig.json', 'tsconfig.base.json'])(
+    'pnpm check typed-lint lints the whole repo when %s changed, since it changes types in unchanged files',
+    (config) => {
+      const command = typedLintCommand([], () => ['packages/ui/src/vitest.setup.ts', config]);
+
+      expect(command?.targets).toBeNull();
+      expect(command?.args[0]).toBe('.');
+    },
+  );
 
   it('pnpm check typed-lint skips when no changed file is lintable', () => {
     expect(typedLintCommand([], () => [])).toBeNull();

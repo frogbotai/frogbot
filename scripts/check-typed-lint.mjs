@@ -1,47 +1,32 @@
 #!/usr/bin/env node
-// check: full-only
-// `pnpm check typed-lint [--all] [eslint args]` runs the type-aware ESLint rules
-// (`FROGBOT_LINT=typed` in `eslint.config.js`) with a larger heap and no cache, against
-// `eslint-suppressions.typed.json`, and prints one `file:line rule message` line per problem. It
-// lints the files changed against local `main`, uncommitted and untracked ones included, as
-// Payload's lint-staged does; `--all` lints the whole repo. Other args go to ESLint, for example
-// `--prune-suppressions`. Needs built packages.
+// `pnpm check typed-lint [--all] [oxlint args]` runs the type-aware rules in `.oxlintrc.json` on
+// oxlint (tsgolint) and prints one `file:line rule message` line per problem. It lints the files
+// changed against local `main`, uncommitted and untracked ones included, as Payload's lint-staged
+// does; `--all`, or a changed `.oxlintrc.json` or tsconfig, lints the whole repo. Other args go to
+// oxlint. Needs built packages.
+//
+// Known violations are `.oxlintrc.json` overrides that set one rule to "warn" for exact files. A
+// warning there passes; an override whose file no longer warns fails, so the list only shrinks.
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { eslintLines } from './check.mjs';
 import { changedFiles } from './lib/verify.mjs';
 import { ROOT } from './lib/workspace.mjs';
 
-export const SUPPRESSIONS = 'eslint-suppressions.typed.json';
-
-export const HEAP_MB = 32_768;
-
-const UNPRUNED_SUPPRESSIONS = 'There are suppressions left that do not occur anymore';
-
-export const PRUNE_LINE = `${SUPPRESSIONS} typed suppressed problems were fixed; run \`pnpm check typed-lint --prune-suppressions\``;
+export const CONFIG = '.oxlintrc.json';
 
 const MAX_BUFFER = 256 * 1024 * 1024;
 
-const LINTABLE = /\.(?:tsx?|m?js)$/;
+const LINTABLE = /\.(?:[cm]?ts|tsx)$/;
 
-export const SKIP_LINE = 'typed-lint: skipped, no changed .ts, .tsx, .js or .mjs files';
+export const SKIP_LINE = 'typed-lint: skipped, no changed .ts or .tsx files';
 
-// ESLint's ignores apply to these too: `--no-warn-ignored` keeps a changed ignored file, such as
-// any .js file in the typed run, from failing `--max-warnings=0`.
+// A changed file that `.oxlintrc.json` ignores, such as a generated `frogbot-types.ts`, leaves
+// nothing to lint; `--no-error-on-unmatched-pattern` keeps that from failing.
 export function typedLintArgs(args = [], targets = ['.']) {
-  return [
-    ...targets,
-    '--no-warn-ignored',
-    '--max-warnings=0',
-    '--format',
-    'json',
-    '--suppressions-location',
-    SUPPRESSIONS,
-    ...args,
-  ];
+  return [...targets, '--no-error-on-unmatched-pattern', '--format', 'json', ...args];
 }
 
 // Deleted files are in the diff but have nothing to lint.
@@ -49,61 +34,91 @@ export function typedLintTargets(files, exists = (file) => existsSync(path.join(
   return files.filter((file) => LINTABLE.test(file) && exists(file));
 }
 
-// The ESLint args for `pnpm check typed-lint [args]`, or null when no changed file is lintable.
+// A changed lint or TypeScript config changes the types of files the diff doesn't touch.
+const CONFIGS = /(?:^|\/)(?:\.oxlintrc|tsconfig[^/]*)\.json$/;
+
+// The oxlint args and targets for `pnpm check typed-lint [args]`, or null when no changed file is
+// lintable. `targets` is null for the whole repo.
 export function typedLintCommand(args, changed = () => changedFiles(ROOT)) {
   const rest = args.filter((arg) => arg !== '--all');
+  const files = rest.length < args.length ? null : changed();
 
-  if (rest.length < args.length) return typedLintArgs(rest);
+  if (!files || files.some((file) => CONFIGS.test(file))) {
+    return { args: typedLintArgs(rest), targets: null };
+  }
 
-  const targets = typedLintTargets(changed());
+  const targets = typedLintTargets(files);
 
-  return targets.length > 0 ? typedLintArgs(rest, targets) : null;
+  return targets.length > 0 ? { args: typedLintArgs(rest, targets), targets } : null;
 }
 
-export function typedLintEnv(env = process.env) {
-  const heap = `--max-old-space-size=${HEAP_MB}`;
-
-  return {
-    ...env,
-    FROGBOT_LINT: 'typed',
-    NODE_OPTIONS: env.NODE_OPTIONS ? `${env.NODE_OPTIONS} ${heap}` : heap,
-  };
+// The known violations in the linted files: every one for the whole repo, when `targets` is null.
+export function exceptions(config, targets) {
+  return (config.overrides ?? []).flatMap(({ files, rules }) =>
+    Object.entries(rules)
+      .filter(([, level]) => level === 'warn')
+      .flatMap(([rule]) => files.map((file) => ({ file, rule })))
+      .filter(({ file }) => !targets || targets.includes(file)),
+  );
 }
 
-export function typedLintLines({ code, stdout, stderr }) {
-  const unpruned = stderr.includes(UNPRUNED_SUPPRESSIONS) ? [PRUNE_LINE] : [];
+const ruleName = (code) => code?.replace(/^(\w[\w-]*)\((.+)\)$/, '$1/$2') ?? 'oxlint';
+
+export function typedLintLines({ code, stdout, stderr }, { known = [], root = ROOT } = {}) {
+  let diagnostics;
 
   try {
-    return [...eslintLines(stdout), ...unpruned];
+    ({ diagnostics } = JSON.parse(stdout));
   } catch {
-    return [...unpruned, stderr.trim() || `eslint exited with code ${code}`];
+    return [stderr.trim() || stdout.trim() || `oxlint exited with code ${code}`];
   }
+
+  const warned = new Set();
+  const found = [];
+
+  for (const { filename, code: id, severity, message, labels } of diagnostics) {
+    const file = path.isAbsolute(filename) ? path.relative(root, filename) : filename;
+    const rule = ruleName(id);
+
+    if (severity === 'warning') warned.add(`${file} ${rule}`);
+    else found.push(`${file}:${labels?.[0]?.span.line ?? 0} ${rule} ${message.split('\n')[0]}`);
+  }
+
+  const stale = known
+    .filter(({ file, rule }) => !warned.has(`${file} ${rule}`))
+    .map(({ file, rule }) => `${file}:0 ${rule} no longer fails; remove it from ${CONFIG}`);
+
+  return [...found, ...stale];
 }
 
 function main() {
-  const args = typedLintCommand(process.argv.slice(2));
+  const command = typedLintCommand(process.argv.slice(2));
 
-  if (!args) {
+  if (!command) {
     console.log(SKIP_LINE);
     return;
   }
 
-  const result = spawnSync(path.join(ROOT, 'node_modules', '.bin', 'eslint'), args, {
+  const result = spawnSync(path.join(ROOT, 'node_modules', '.bin', 'oxlint'), command.args, {
     cwd: ROOT,
     encoding: 'utf8',
-    env: typedLintEnv(),
     maxBuffer: MAX_BUFFER,
   });
 
-  if (result.status === 0) return;
-
-  console.log(
-    typedLintLines({
+  const lines = typedLintLines(
+    {
       code: result.status,
       stdout: result.stdout ?? '',
       stderr: result.error ? result.error.message : result.stderr,
-    }).join('\n'),
+    },
+    {
+      known: exceptions(JSON.parse(readFileSync(path.join(ROOT, CONFIG), 'utf8')), command.targets),
+    },
   );
+
+  if (lines.length === 0 && result.status === 0) return;
+
+  console.log(lines.join('\n') || `oxlint exited with code ${result.status}`);
 
   process.exitCode = 1;
 }

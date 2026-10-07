@@ -23,7 +23,7 @@ function withReference(extra: Record<string, unknown>) {
 
 describe('validateChatMessages', () => {
   it('keeps the paste origin on file references', async () => {
-    const [message] = await validateChatMessages(withReference({ origin: 'paste' }), {} as never);
+    const [message] = await validateChatMessages(withReference({ origin: 'paste' }));
 
     expect(message?.parts[0]).toEqual({
       type: 'file-reference',
@@ -42,17 +42,12 @@ describe('validateChatMessages', () => {
       mediaType: 'image/png',
     };
 
-    const [message] = await validateChatMessages(
-      [{ id: 'm2', role: 'user', parts: [reference] }],
-      {} as never,
-    );
+    const [message] = await validateChatMessages([{ id: 'm2', role: 'user', parts: [reference] }]);
 
     expect(message?.parts).toEqual([reference]);
   });
 
   it('rejects any other file reference origin', async () => {
-    await expect(
-      validateChatMessages(withReference({ origin: 'upload' }), {} as never),
-    ).rejects.toThrow();
+    await expect(validateChatMessages(withReference({ origin: 'upload' }))).rejects.toThrow();
   });
 });

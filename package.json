@@ -36,6 +36,7 @@
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
       "eslint --fix --max-warnings=0 --no-warn-ignored --cache --cache-location .idea/tmp/.eslintcache",
+      "oxlint --no-error-on-unmatched-pattern",
       "prettier --write"
     ],
     "*.{md,mdx,json,yml,css}": "prettier --write"
@@ -68,6 +69,8 @@
     "libsql": "^0.4.7",
     "lint-staged": "15.2.7",
     "miniflare": "^4.20260730.0",
+    "oxlint": "1.87.0",
+    "oxlint-tsgolint": "7.0.2003",
     "pino": "^9.14.0",
     "prettier": "^3.2.5",
     "typescript": "5.6.2",

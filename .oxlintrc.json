@@ -1,0 +1,109 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true
+  },
+  "plugins": ["typescript"],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "pedantic": "off",
+    "perf": "off",
+    "style": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "ignorePatterns": [
+    "**/node_modules/*",
+    "**/dist/*",
+    "**/build/*",
+    "**/.next/*",
+    "**/*.tsbuildinfo",
+    "**/frogbot-types.ts",
+    "**/piece-types.ts",
+    "**/importMap.js",
+    "**/next-env.d.ts",
+    "packages/frogbot/bin.js",
+    "**/migrations/**",
+    "test/.tmp/",
+    "**/*.{js,mjs,cjs}"
+  ],
+  "rules": {
+    "typescript/await-thenable": "error",
+    "typescript/no-array-delete": "error",
+    "typescript/no-duplicate-type-constituents": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-for-in-array": "error",
+    "typescript/no-implied-eval": "error",
+    "typescript/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": {
+          "attributes": false,
+          "arguments": false
+        }
+      }
+    ],
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unsafe-enum-comparison": "error",
+    "typescript/no-unsafe-unary-minus": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/require-await": "error",
+    "typescript/restrict-plus-operands": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "test/__helpers/shared/clearAndSeed/index.ts",
+        "test/ai-field/int.spec.ts",
+        "test/browser/fixtures/question/src/frogbot.config.ts",
+        "test/chat/attachments.int.spec.ts",
+        "test/chat/chatWrites.int.spec.ts",
+        "test/chat/turns.int.spec.ts",
+        "test/e2e/channelQuestions.e2e.spec.ts",
+        "test/e2e/githubQuestions.e2e.spec.ts",
+        "test/e2e/linearQuestions.e2e.spec.ts",
+        "test/e2e/nativePiece.e2e.spec.ts",
+        "test/e2e/sdkPackaging.e2e.spec.ts",
+        "test/e2e/teamsQuestions.e2e.spec.ts",
+        "test/e2e/telegramQuestions.e2e.spec.ts",
+        "test/search/d1/lexical.int.spec.ts",
+        "test/search/d1/migrations.int.spec.ts",
+        "test/search/d1/schema.int.spec.ts",
+        "test/search/d1/setup.int.spec.ts",
+        "test/search/d1/vector.int.spec.ts",
+        "test/search/sqlite/hybrid.int.spec.ts",
+        "test/search/sqlite/lexical.int.spec.ts",
+        "test/search/sqlite/migrations.int.spec.ts",
+        "test/search/sqlite/schema.int.spec.ts",
+        "test/search/sqlite/sdk.int.spec.ts",
+        "test/search/sqlite/searchMany.int.spec.ts",
+        "test/search/sqlite/vector.int.spec.ts",
+        "test/search/sqlite/vectorIndex.int.spec.ts",
+        "test/system-fields/autonumber.int.spec.ts",
+        "test/ui/ui/chat/channel-conversation.spec.tsx",
+        "test/ui/ui/chat/composer.spec.tsx",
+        "test/ui/ui/chat/page-context-button.spec.tsx",
+        "test/ui/ui/chat/question-tool-render.spec.tsx",
+        "test/ui/ui/chat/rename-chat-dialog.spec.tsx",
+        "test/unit/db-d1-sqlite/index.spec.ts",
+        "test/unit/db-d1-sqlite/jobs.spec.ts",
+        "test/unit/frogbot/channels/discordQuestions.spec.ts",
+        "test/unit/frogbot/channels/githubQuestions.spec.ts",
+        "test/unit/frogbot/channels/linearQuestions.spec.ts",
+        "test/unit/frogbot/channels/teamsQuestions.spec.ts",
+        "test/unit/frogbot/channels/telegramQuestions.spec.ts",
+        "test/unit/plugin-api-keys/importMap.spec.ts",
+        "test/unit/plugin-mcp/index.spec.ts",
+        "test/unit/plugin-usage-reports/importMap.spec.ts",
+        "test/unit/scripts/checkScripts.spec.ts",
+        "test/unit/scripts/checkSingleFrogBot.spec.ts",
+        "test/unit/sdk/query-params.spec.ts"
+      ],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "warn"
+      }
+    }
+  ]
+}

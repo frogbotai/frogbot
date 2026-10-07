@@ -65,7 +65,6 @@ import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { type ChatCompletionRequest, parseChatCompletionRequest } from './schema.js';
 import {
   isStrictChatOutput,
-  type OpenAIMessage,
   type OpenAITool,
   toChatOutput,
   toModelMessages,
@@ -150,7 +149,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       // Translate OpenAI wire format → AI SDK format.
       rejectUnsupportedChatParams(body);
-      const messages = toModelMessages(body.messages as OpenAIMessage[], logger);
+      const messages = toModelMessages(body.messages, logger);
       const tools = toAISDKTools(body.tools as OpenAITool[] | null | undefined);
       const { toolChoice, activeTools } = toAISDKToolChoice(body.tool_choice);
       const output = toChatOutput(body.response_format);
