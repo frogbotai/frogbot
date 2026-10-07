@@ -20,7 +20,7 @@ pnpm check [name] [--full]           static only: format, lint, typecheck, scrip
 pnpm ticket next | new <n> [--type fix] | status [--batch <n>] | decisions
 pnpm ticket verify [--list]          run the checks and tests the diff needs; list changed files nothing covers
 pnpm ticket verify --ui <path>       production fixture, sign-in, screenshots, console errors, failed requests
-pnpm ticket land <n> [-m "..."]      rebase, full gate, one commit, fast-forward local main; never pushes
+pnpm ticket land <n>                 one land at a time: rebase, full gate, squash to one commit, fast-forward local main; never pushes
 pnpm test:unit|ui|int:sqlite|e2e <file>   pnpm test:browser --project <p>
 ```
 

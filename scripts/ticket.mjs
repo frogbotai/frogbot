@@ -8,9 +8,12 @@ import {
   openSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
+  writeFileSync,
 } from 'node:fs';
 import { createConnection } from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,6 +31,7 @@ import {
 import { recordDecisions } from './lib/decisions.mjs';
 import { flakyRetry } from './lib/flaky.mjs';
 import { appendFinding, findingProblem } from './lib/found.mjs';
+import { acquireSlot, LAND_LOCK } from './lib/slot.mjs';
 import { readSessions, statsRows, summarize } from './lib/stats.mjs';
 import { runGroups, verifyInputs, worktreePatchId } from './lib/verify.mjs';
 
@@ -68,7 +72,7 @@ const DEFAULT_TYPE = 'feat';
 const FOUND_USAGE = `pnpm ticket found [--source <path>] <<'EOF' … EOF`;
 
 const USAGE =
-  'usage: pnpm ticket new <n> [--type <type>] | land <n> [-m "<message>"] | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions | verify [--list]';
+  'usage: pnpm ticket new <n> [--type <type>] | land <n> | status [--batch <n>] | stats [--batch <n>] | found [--source <path>] (row on stdin) | next | decisions | verify [--list]';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
@@ -88,6 +92,12 @@ const WORKTREE_TICKET = /frogbot-ticket(\d+)([a-z])?$/i;
 
 const REFLOG_MERGE = /^([0-9a-f]+) merge (\S+):/;
 
+const BANG = /^(\w+(?:\([^)]*\))?)(!?):/;
+
+const BREAKING = /^BREAKING[ -]CHANGE: /;
+
+const FOOTER = /^(?:[\w-]+: |[\w-]+ #)/;
+
 function number(text) {
   return /^\d+$/.test(text ?? '') ? Number(text) : null;
 }
@@ -105,9 +115,7 @@ export function parseArgs(argv) {
       continue;
     }
 
-    const flag = { '--type': 'type', '-m': 'message', '--batch': 'batch', '--source': 'source' }[
-      arg
-    ];
+    const flag = { '--type': 'type', '--batch': 'batch', '--source': 'source' }[arg];
 
     if (!flag) {
       if (arg.startsWith('-')) return { error: `unknown argument "${arg}"` };
@@ -125,7 +133,7 @@ export function parseArgs(argv) {
 
   const allowed = {
     new: { ticket: true, flags: ['type'] },
-    land: { ticket: true, flags: ['message'] },
+    land: { ticket: true, flags: [] },
     status: { ticket: false, flags: ['batch'] },
     stats: { ticket: false, flags: ['batch'] },
     found: { ticket: false, stdin: true, flags: ['source'] },
@@ -512,6 +520,40 @@ export function landLevel(gates) {
   return gates.includes('test:unit') ? 'unit' : 'typecheck';
 }
 
+function splitMessage(text) {
+  const [subject, ...rest] = text.trim().split('\n');
+  const body = [];
+  const breaking = [];
+  let footer = false;
+
+  for (const line of rest) {
+    if (BREAKING.test(line)) {
+      breaking.push(line);
+      footer = true;
+    } else if (footer && line.trim() && !FOOTER.test(line)) {
+      breaking[breaking.length - 1] += `\n${line}`;
+    } else {
+      footer = false;
+      body.push(line);
+    }
+  }
+
+  return { subject, body: body.join('\n').trim(), breaking };
+}
+
+// The one commit land makes of a branch's commits, oldest first: the first subject (with `!` when
+// any commit breaks), every body in order, then each distinct BREAKING CHANGE footer.
+export function squashMessage(messages) {
+  const commits = messages.map(splitMessage);
+  const breaking = [...new Set(commits.flatMap((commit) => commit.breaking))];
+  const broken = breaking.length > 0 || commits.some(({ subject }) => BANG.exec(subject)?.[2]);
+  const subject = broken
+    ? commits[0].subject.replace(BANG, (_, type) => `${type}!:`)
+    : commits[0].subject;
+
+  return `${[subject, ...commits.map(({ body }) => body), breaking.join('\n')].filter(Boolean).join('\n\n')}\n`;
+}
+
 // Runs a land round (rebase, gates, squash) until main stays where the round started, so a land
 // that main moved under rebases and reruns its gates by itself.
 export async function untilMainSettles({ head, round, log = console.log }) {
@@ -887,12 +929,20 @@ function commandNew(main, { ticket, part, type }) {
   console.log(`worktree ${dir} on ${branch}`);
 
   const log = openLog(main, key);
+  const writeAdapter = `import('../../test/__helpers/shared/db/dbAdapters.ts').then(({ generateDatabaseAdapter }) => generateDatabaseAdapter('sqlite'))`;
 
-  for (const [label, args] of [
-    ['pnpm install', ['install']],
-    ['pnpm check', ['check']],
+  // `pnpm check` builds every package; check-generated (--full) loads configs that import the
+  // gitignored test/databaseAdapter.js, which otherwise only the int-test setup writes.
+  for (const [label, args, cwd] of [
+    ['pnpm install', ['install'], dir],
+    [
+      'test/databaseAdapter.js',
+      ['exec', 'tsx', '-e', writeAdapter],
+      path.join(dir, 'packages', 'frogbot'),
+    ],
+    ['pnpm check', ['check'], dir],
   ]) {
-    const result = step(log, label, 'pnpm', args, dir);
+    const result = step(log, label, 'pnpm', args, cwd);
 
     if (!result.ok) {
       console.log(tail(result.output).join('\n'));
@@ -908,7 +958,7 @@ function markdownReaders(dir) {
   }));
 }
 
-async function landRound({ main, found, key, dir, branch, message }) {
+async function landRound({ main, found, key, dir, branch }) {
   const rebased = git(dir, ['rebase', MAIN]);
 
   if (!rebased.ok) {
@@ -926,13 +976,16 @@ async function landRound({ main, found, key, dir, branch, message }) {
 
   if (ahead === 0) refuse(`${branch} has no commits ahead of ${MAIN}`);
 
-  if (ahead > 1 && !message) {
-    refuse(`${branch} is ${ahead} commits ahead of ${MAIN}; pass -m "<message>" to squash them`);
-  }
-
+  const message =
+    ahead > 1 &&
+    squashMessage(
+      gitOut(dir, ['log', '--reverse', '-z', '--format=%B', `${MAIN}..HEAD`])
+        .split('\0')
+        .filter((text) => text.trim()),
+    );
   const problem = message && checkCommitMessage(message);
 
-  if (problem) refuse(`-m: ${problem}`);
+  if (problem) refuse(`the squash message: ${problem}`);
 
   const files = lines(gitOut(dir, ['diff', '--name-only', `${MAIN}...HEAD`]));
   const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
@@ -994,12 +1047,22 @@ async function landRound({ main, found, key, dir, branch, message }) {
     }
   }
 
-  if (message && !(ahead === 1 && gitOut(dir, ['log', '-1', '--format=%B']).trim() === message)) {
+  if (message) {
     const tip = gitOut(dir, ['rev-parse', 'HEAD']);
+    const file = path.join(os.tmpdir(), `frogbot-land-${key}.msg`);
 
+    writeFileSync(file, message);
     gitOut(dir, ['reset', '--soft', MAIN]);
 
-    const committed = step(log, 'git commit', 'git', ['commit', '--quiet', '-m', message], dir);
+    const committed = step(
+      log,
+      'git commit',
+      'git',
+      ['commit', '--quiet', '--cleanup=whitespace', '-F', file],
+      dir,
+    );
+
+    rmSync(file, { force: true });
 
     if (!committed.ok) {
       git(dir, ['reset', '--soft', tip]);
@@ -1011,7 +1074,7 @@ async function landRound({ main, found, key, dir, branch, message }) {
   return { gates, landed: patchId(dir) };
 }
 
-async function commandLand(main, { ticket, part, message }) {
+async function commandLand(main, { ticket, part }) {
   const found = findTicket(main, ticket);
   const key = ticketKeyOf({ ticket, part });
   const tree = worktrees(main).find((candidate) => keyOfWorktree(candidate) === key);
@@ -1032,9 +1095,19 @@ async function commandLand(main, { ticket, part, message }) {
 
   if (dirty) refuse(`${dir} has uncommitted changes:\n${dirty}`);
 
+  const release = await acquireSlot(`land ${key}`, LAND_LOCK);
+
+  try {
+    await landSerialized({ main, found, key, dir, branch });
+  } finally {
+    release();
+  }
+}
+
+async function landSerialized({ main, found, key, dir, branch }) {
   const { gates, landed } = await untilMainSettles({
     head: () => gitOut(main, ['rev-parse', MAIN]),
-    round: () => landRound({ main, found, key, dir, branch, message }),
+    round: () => landRound({ main, found, key, dir, branch }),
   });
 
   const merged = git(main, ['merge', '--ff-only', '--quiet', branch]);
