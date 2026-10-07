@@ -14,6 +14,7 @@ const repoRoot = path.resolve(dirname, '..', '..');
 const frogbotBin = path.join(repoRoot, 'packages', 'frogbot', 'bin.js');
 const resetDatabaseScript = path.join(dirname, 'resetDatabase.mjs');
 const buildFixturesScript = path.join(dirname, 'buildFixtures.mjs');
+const slotScript = path.join(repoRoot, 'scripts', 'lib', 'slot.mjs');
 
 // FROGBOT_BROWSER_DEV=1 runs every project in series against `next dev`, with each browser
 // variant reusing its Chromium server, for debugging. The default builds each fixture once and
@@ -362,6 +363,18 @@ const buildServer = {
   env: { FROGBOT_BROWSER_FIXTURES: JSON.stringify(selectedFixtures), NEXT_TELEMETRY_DISABLED: '1' },
 };
 
+// Playwright starts web servers before globalSetup, so the run's heavy-test slot is the first web
+// server: it waits for a free slot, says "ready", and holds the slot until Playwright stops it.
+const slotServer = {
+  name: 'slot',
+  command: `node ${quoted(slotScript, 'browser')}`,
+  cwd: repoRoot,
+  wait: { stdout: /^ready$/m },
+  timeout: 4 * 60 * 60_000,
+  stdout: 'pipe' as const,
+  stderr: 'pipe' as const,
+};
+
 export default defineConfig<{ signInOptions: SignInOptions; authFile: string }, QuestionOptions>({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
@@ -385,6 +398,7 @@ export default defineConfig<{ signInOptions: SignInOptions; authFile: string }, 
     ...testProjects,
   ],
   webServer: [
+    slotServer,
     ...(dev || selectedFixtures.length === 0 ? [] : [buildServer]),
     ...selectedServers.flatMap((name) =>
       name === 'chat-assets' ? [chatProvider, webServer(name)] : [webServer(name)],

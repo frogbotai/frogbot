@@ -25,7 +25,7 @@ Never, for any agent: `git push`, `git merge`, `--no-verify`, sleep loops, whole
 4. Worker: `step3_plan.md`, at most 3 stages. **Owner says Go** for the batch.
 5. Coordinator: `pnpm ticket new <n>`. Worker: builds, commits, logs.
 6. Full tier: a tester tries to break it, with at most 2 fix rounds. Light tier: `pnpm ticket verify`.
-7. Coordinator: `pnpm ticket land <n>`. It rebases, runs `check --full`, unit, UI and the int and browser specs the diff touches, squashes, and fast-forwards local `main`. Then `git worktree remove`.
+7. Coordinator: `pnpm ticket land <n>`. It rebases, runs `check --full`, unit, UI and the int and browser specs the diff touches, squashes, and fast-forwards local `main`; if `main` moves meanwhile it rebases and reruns the gates, and it refuses up front when a Docker service the int specs need is down. Then `git worktree remove`.
 8. Owner: skims `main`, pushes.
 
 A process ticket from an approved PLAN skips steps 3 and 4: the PLAN section is its spec (DR-036). "Just do it" skips everything for that scope.

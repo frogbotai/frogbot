@@ -10,6 +10,7 @@ import {
   readFileSync,
   statSync,
 } from 'node:fs';
+import { createConnection } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -507,6 +508,63 @@ export function landLevel(gates) {
   return gates.includes('test:unit') ? 'unit' : 'typecheck';
 }
 
+// Runs a land round (rebase, gates, squash) until main stays where the round started, so a land
+// that main moved under rebases and reruns its gates by itself.
+export async function untilMainSettles({ head, round, log = console.log }) {
+  for (let start = head(); ;) {
+    const result = await round();
+    const now = head();
+
+    if (now === start) return result;
+
+    log(`${MAIN} moved to ${now.slice(0, 8)}; rebasing and rerunning gates`);
+    start = now;
+  }
+}
+
+// The test/docker-compose.yml services a gate's specs reach. Those specs skip when their service
+// is down outside CI, so land checks them first rather than pass on skipped suites.
+export const GATE_SERVICES = {
+  'test:int:sqlite': [
+    { name: 'PostgreSQL', profile: 'postgres', port: 5433 },
+    { name: 'Redis', profile: 'redis', port: 6379 },
+    { name: 'LocalStack (S3)', profile: 'storage', port: 4566 },
+    { name: 'fake-gcs-server', profile: 'storage', port: 4443 },
+    { name: 'Azurite', profile: 'storage', port: 10000 },
+    { name: 'Vercel Blob emulator', profile: 'storage', port: 3100 },
+  ],
+};
+
+export function gateServices(gates) {
+  return gates.flatMap((gate) => GATE_SERVICES[gate] ?? []);
+}
+
+export function dockerUp(services) {
+  const profiles = [...new Set(services.map(({ profile }) => profile))];
+
+  return `docker compose -f test/docker-compose.yml ${profiles.map((profile) => `--profile ${profile}`).join(' ')} up -d`;
+}
+
+const reachable = ({ port }) =>
+  new Promise((resolve) => {
+    const socket = createConnection({ host: 'localhost', port, timeout: 1000 });
+    const done = (ok) => {
+      socket.destroy();
+      resolve(ok);
+    };
+
+    socket.once('connect', () => done(true));
+    socket.once('timeout', () => done(false));
+    socket.once('error', () => done(false));
+  });
+
+export async function downServices(gates, isReachable = reachable) {
+  const services = gateServices(gates);
+  const up = await Promise.all(services.map(isReachable));
+
+  return services.filter((_, index) => !up[index]);
+}
+
 export function tail(output, count = TAIL_LINES) {
   return output
     .split(/\r?\n/)
@@ -846,28 +904,7 @@ function markdownReaders(dir) {
   }));
 }
 
-function commandLand(main, { ticket, part, message }) {
-  const found = findTicket(main, ticket);
-  const key = ticketKeyOf({ ticket, part });
-  const tree = worktrees(main).find((candidate) => keyOfWorktree(candidate) === key);
-
-  if (!tree) refuse(`no worktree for ticket ${key}; run pnpm ticket new ${key}`);
-
-  const { path: dir, branch } = tree;
-
-  if (!branch) refuse(`${dir} has no branch checked out`);
-
-  const current = git(main, ['symbolic-ref', '--short', 'HEAD']).out;
-
-  if (current !== MAIN) {
-    refuse(`the main checkout ${main} is on "${current || 'a detached HEAD'}", not ${MAIN}`);
-  }
-
-  const dirty = gitOut(dir, ['status', '--porcelain', '--untracked-files=all']);
-
-  if (dirty) refuse(`${dir} has uncommitted changes:\n${dirty}`);
-
-  const start = gitOut(main, ['rev-parse', MAIN]);
+async function landRound({ main, found, key, dir, branch, message }) {
   const rebased = git(dir, ['rebase', MAIN]);
 
   if (!rebased.ok) {
@@ -911,6 +948,14 @@ function commandLand(main, { ticket, part, message }) {
   const log = openLog(main, key);
 
   if (docsOnly(files)) console.log('docs only: test:unit and test:ui skipped');
+
+  const down = await downServices(gates);
+
+  if (down.length > 0) {
+    const names = down.map(({ name }) => name).join(', ');
+
+    refuse(`${names} not reachable; ${MAIN} untouched; start with: ${dockerUp(down)}`);
+  }
 
   for (const gate of gates) {
     let result = step(log, `pnpm ${gate}`, 'pnpm', gate.split(' '), dir);
@@ -959,9 +1004,34 @@ function commandLand(main, { ticket, part, message }) {
     }
   }
 
-  const landed = patchId(dir);
+  return { gates, landed: patchId(dir) };
+}
 
-  if (gitOut(main, ['rev-parse', MAIN]) !== start) refuse(`${MAIN} moved; run land again`);
+async function commandLand(main, { ticket, part, message }) {
+  const found = findTicket(main, ticket);
+  const key = ticketKeyOf({ ticket, part });
+  const tree = worktrees(main).find((candidate) => keyOfWorktree(candidate) === key);
+
+  if (!tree) refuse(`no worktree for ticket ${key}; run pnpm ticket new ${key}`);
+
+  const { path: dir, branch } = tree;
+
+  if (!branch) refuse(`${dir} has no branch checked out`);
+
+  const current = git(main, ['symbolic-ref', '--short', 'HEAD']).out;
+
+  if (current !== MAIN) {
+    refuse(`the main checkout ${main} is on "${current || 'a detached HEAD'}", not ${MAIN}`);
+  }
+
+  const dirty = gitOut(dir, ['status', '--porcelain', '--untracked-files=all']);
+
+  if (dirty) refuse(`${dir} has uncommitted changes:\n${dirty}`);
+
+  const { gates, landed } = await untilMainSettles({
+    head: () => gitOut(main, ['rev-parse', MAIN]),
+    round: () => landRound({ main, found, key, dir, branch, message }),
+  });
 
   const merged = git(main, ['merge', '--ff-only', '--quiet', branch]);
 

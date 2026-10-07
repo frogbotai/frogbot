@@ -19,6 +19,9 @@ import {
 } from 'vitest';
 
 import { createSQLKV } from '../../packages/frogbot/src/kv/adapters/sql.js';
+import { isServiceReachable } from '../__helpers/shared/storage/storageServices';
+
+const postgresService = { name: 'PostgreSQL', host: 'localhost', port: 5433 };
 
 const schemaName = `kv_sql_${randomUUID().replaceAll('-', '')}`;
 const collectionSlug = 'customKVStore';
@@ -92,6 +95,7 @@ describe('SQL KV with PostgreSQL', () => {
   let adapters: Awaited<ReturnType<typeof connect>>[] = [];
   let kv: ReturnType<typeof createSQLKV>;
   let other: ReturnType<typeof createSQLKV>;
+  let skipSuite = false;
 
   async function waitForBlockedQuery() {
     await expect
@@ -129,6 +133,17 @@ describe('SQL KV with PostgreSQL', () => {
   }
 
   beforeAll(async () => {
+    if (!(await isServiceReachable(postgresService))) {
+      if (process.env.CI === 'true') {
+        throw new Error('PostgreSQL is required in CI but is not reachable at localhost:5433');
+      }
+      skipSuite = true;
+      console.warn(
+        '\x1b[33m⚠ Skipping SQL KV PostgreSQL tests — PostgreSQL not reachable at localhost:5433. ' +
+          'Start with: docker compose -f test/docker-compose.yml --profile postgres up -d\x1b[0m',
+      );
+      return;
+    }
     adapters = await Promise.all([connect(), connect()]);
     const db = adapters[0].drizzle;
     const table = adapters[0].tables[tableName];
@@ -147,7 +162,11 @@ describe('SQL KV with PostgreSQL', () => {
     other = createSQLKV({ adapter: adapters[1], collectionSlug });
   });
 
-  beforeEach(async () => {
+  beforeEach(async (ctx) => {
+    if (skipSuite) {
+      ctx.skip();
+      return;
+    }
     await kv.clear();
   });
 

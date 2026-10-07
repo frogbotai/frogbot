@@ -11,6 +11,7 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { reportDocx, reportText } from '../__helpers/shared/office.js';
+import { isServiceReachable, storageServices } from '../__helpers/shared/storage/storageServices';
 import type { StubChatModel, StubChatRequest } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
 import {
@@ -65,16 +66,39 @@ describe('chat attachments stored in S3', () => {
   const client = new S3Client(s3ClientConfig);
   let booted: BootedFrogBot;
   let model: StubChatModel;
+  let skipSuite = false;
   let user: { id: number | string };
   let token: string;
   let sequence = 0;
 
   beforeAll(async () => {
-    model = await startStubChatModel(modelPort);
-    booted = await bootFrogBot(dirname, 'storage-s3-chat');
+    const service = storageServices.s3;
+
+    if (await isServiceReachable(service)) {
+      model = await startStubChatModel(modelPort);
+      booted = await bootFrogBot(dirname, 'storage-s3-chat');
+
+      return;
+    }
+
+    if (process.env.CI === 'true') {
+      throw new Error(`${service.name} is required in CI but is not reachable.`);
+    }
+
+    skipSuite = true;
+    console.warn(
+      `\x1b[33m⚠ Skipping s3 chat attachment tests — ${service.name} not reachable. ` +
+        `Start with: docker compose -f test/docker-compose.yml --profile storage up -d\x1b[0m`,
+    );
   });
 
-  beforeEach(async () => {
+  beforeEach(async (ctx) => {
+    if (skipSuite) {
+      ctx.skip();
+
+      return;
+    }
+
     model.reset();
 
     await clearAndSeed(booted.frogbot, 'empty');
@@ -97,6 +121,8 @@ describe('chat attachments stored in S3', () => {
   });
 
   afterEach(async () => {
+    if (skipSuite) return;
+
     await vi.waitFor(async () => {
       const chats = await booted.frogbot.find({
         collection: chatsSlug,
@@ -128,6 +154,7 @@ describe('chat attachments stored in S3', () => {
 
   afterAll(async () => {
     client.destroy();
+    if (skipSuite) return;
     await booted.shutdown();
     await model.close();
     await fs.rm(path.resolve(chatAssetsSlug), { recursive: true, force: true });

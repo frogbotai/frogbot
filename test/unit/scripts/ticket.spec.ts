@@ -8,6 +8,8 @@ import {
 } from '../../../scripts/lib/affected.mjs';
 import {
   branchName,
+  dockerUp,
+  downServices,
   expandBraces,
   formatTable,
   hasTesterRow,
@@ -30,6 +32,7 @@ import {
   ticketKeyOf,
   ticketOfBranch,
   tierOf,
+  untilMainSettles,
   worktreePath,
 } from '../../../scripts/ticket.mjs';
 
@@ -520,6 +523,59 @@ describe('landGates', () => {
       'test:int:sqlite',
       'test:browser',
     ]);
+  });
+});
+
+describe('untilMainSettles', () => {
+  it('reruns the round, logging each move, until main stays put', async () => {
+    const heads = ['a1111111111', 'b2222222222', 'b2222222222'];
+    const logged: string[] = [];
+    let rounds = 0;
+
+    const result = await untilMainSettles({
+      head: () => heads.shift()!,
+      round: () => ++rounds,
+      log: (line: string) => logged.push(line),
+    });
+
+    expect(result).toBe(2);
+    expect(logged).toEqual(['main moved to b2222222; rebasing and rerunning gates']);
+  });
+
+  it('stops at the first refusal', async () => {
+    await expect(
+      untilMainSettles({
+        head: () => 'a1111111111',
+        round: () => {
+          throw new Error('pnpm test:unit is red');
+        },
+      }),
+    ).rejects.toThrow('pnpm test:unit is red');
+  });
+});
+
+describe('downServices', () => {
+  it('checks the Docker services of the int gate only', async () => {
+    const checked: number[] = [];
+    const down = await downServices(
+      ['check --full', 'test:unit', 'test:int:sqlite', 'test:browser'],
+      ({ port }: { port: number }) => {
+        checked.push(port);
+        return Promise.resolve(port !== 6379 && port !== 4566);
+      },
+    );
+
+    expect(checked.sort()).toEqual([10000, 3100, 4443, 4566, 5433, 6379].sort());
+    expect(down.map(({ name }: { name: string }) => name)).toEqual(['Redis', 'LocalStack (S3)']);
+    expect(dockerUp(down)).toBe(
+      'docker compose -f test/docker-compose.yml --profile redis --profile storage up -d',
+    );
+  });
+
+  it('checks nothing without an int gate', async () => {
+    expect(await downServices(['check --full', 'test:unit'], () => Promise.resolve(false))).toEqual(
+      [],
+    );
   });
 });
 
