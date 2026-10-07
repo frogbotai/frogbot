@@ -283,6 +283,7 @@ function run(log, command, args, { cwd = ROOT, env = ENV } = {}) {
   return new Promise((resolve) => {
     const child = spawn(command, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
+    let stderr = '';
     let output = '';
     let done = false;
 
@@ -294,7 +295,7 @@ function run(log, command, args, { cwd = ROOT, env = ENV } = {}) {
 
       record(log, { command, args, output, code, ms: performance.now() - started });
 
-      resolve({ code, stdout, output });
+      resolve({ code, stdout, stderr, output });
     };
 
     child.stdout.on('data', (chunk) => {
@@ -302,7 +303,11 @@ function run(log, command, args, { cwd = ROOT, env = ENV } = {}) {
       output += chunk;
     });
 
-    child.stderr.on('data', (chunk) => (output += chunk));
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+      output += chunk;
+    });
+
     child.on('error', (error) => finish(null, error.message));
     child.on('close', (code) => finish(code));
   });
@@ -362,7 +367,7 @@ async function eslint(log) {
 }
 
 export function eslintResult(result) {
-  const unpruned = result.output.includes(UNPRUNED_SUPPRESSIONS) ? [PRUNE_LINE] : [];
+  const unpruned = result.stderr.includes(UNPRUNED_SUPPRESSIONS) ? [PRUNE_LINE] : [];
   let found;
 
   try {

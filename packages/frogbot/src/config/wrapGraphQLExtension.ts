@@ -4,6 +4,7 @@ import type { FrogBotRequest } from '../types/request.js';
 
 type AttachFrogBot = (req: PayloadRequest) => Promise<FrogBotRequest>;
 
+// eslint-disable-next-line @typescript-eslint/max-params -- GraphQL resolver signature
 type GraphQLResolver = (
   source: unknown,
   args: unknown,
@@ -12,6 +13,7 @@ type GraphQLResolver = (
 ) => unknown;
 
 function wrapResolver(resolve: GraphQLResolver, attachFrogBot: AttachFrogBot): GraphQLResolver {
+  // eslint-disable-next-line @typescript-eslint/max-params -- GraphQL resolver signature
   return async (source, args, context, info) => {
     if (context?.req?.payload) await attachFrogBot(context.req);
 

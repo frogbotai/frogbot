@@ -38,6 +38,7 @@ const utf8 = new TextDecoder();
 function decode(value: string): string {
   return value.replace(
     ENTITY,
+    // eslint-disable-next-line @typescript-eslint/max-params -- String.prototype.replace callback signature
     (entity: string, decimal: string | undefined, hex: string, name: string | undefined) => {
       if (name) return ENTITIES.get(name) ?? entity;
 

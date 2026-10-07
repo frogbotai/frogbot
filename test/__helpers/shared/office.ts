@@ -2,6 +2,8 @@ import { crc32 } from 'node:zlib';
 
 import { strFromU8, strToU8, Zip, ZipDeflate, type Zippable, zipSync } from 'fflate';
 
+const ZIP_OPTIONS = { mtime: new Date(2026, 0, 1) };
+
 export type DocxFileProps = {
   body: string;
   numbering?: string;
@@ -136,7 +138,7 @@ export function docxFile({
 
   files['word/_rels/document.xml.rels'] = strToU8(relationships(links));
 
-  return zipSync(files);
+  return zipSync(files, ZIP_OPTIONS);
 }
 
 export function xlsxFile({ sheets, sharedStrings, styles }: XlsxFileProps): Uint8Array {
@@ -189,7 +191,7 @@ export function xlsxFile({ sheets, sharedStrings, styles }: XlsxFileProps): Uint
 
   files['xl/_rels/workbook.xml.rels'] = strToU8(relationships(links));
 
-  return zipSync(files);
+  return zipSync(files, ZIP_OPTIONS);
 }
 
 const wordParagraph = (text: string, properties = '') =>
@@ -355,10 +357,13 @@ export function zipBomb({
   path?: string;
   declaredBytes?: number;
 } = {}): Uint8Array {
-  const zip = zipSync({
-    '[Content_Types].xml': strToU8(CONTENT_TYPES),
-    [path]: [new Uint8Array(60_000_000).fill(0x20), { level: 9 }],
-  });
+  const zip = zipSync(
+    {
+      '[Content_Types].xml': strToU8(CONTENT_TYPES),
+      [path]: [new Uint8Array(60_000_000).fill(0x20), { level: 9 }],
+    },
+    ZIP_OPTIONS,
+  );
 
   if (declaredBytes === undefined) return zip;
 
@@ -370,7 +375,7 @@ export function manyEntries(count: number): Uint8Array {
 
   for (let index = 0; index < count; index++) files[`part${index}.xml`] = strToU8('<a/>');
 
-  return zipSync(files);
+  return zipSync(files, ZIP_OPTIONS);
 }
 
 const OLE_SECTOR_BYTES = 512;
@@ -444,6 +449,8 @@ export function streamedZip(files: Record<string, Uint8Array>): Uint8Array {
   Object.entries(files).forEach(([name, data]) => {
     const file = new ZipDeflate(name);
 
+    file.mtime = ZIP_OPTIONS.mtime;
+
     zip.add(file);
     file.push(data, true);
   });
@@ -462,7 +469,7 @@ export function withHiddenEntry({
   name: string;
   data: Uint8Array;
 }): Uint8Array {
-  const hidden = zipSync({ [name]: data });
+  const hidden = zipSync({ [name]: data }, ZIP_OPTIONS);
   const hiddenView = new DataView(hidden.buffer, hidden.byteOffset, hidden.byteLength);
   const hiddenBytes = hiddenView.getUint32(hidden.byteLength - 22 + 16, true);
 

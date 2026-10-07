@@ -20,6 +20,7 @@ const IGNORES = [
   '**/frogbot-types.ts',
   '**/piece-types.ts',
   '**/importMap.js',
+  'test/databaseAdapter.js',
   '**/next-env.d.ts',
   'packages/frogbot/bin.js',
   '**/migrations/**',
@@ -27,6 +28,11 @@ const IGNORES = [
 ];
 
 const SPECS = ['**/*.spec.ts', '**/*.spec.tsx'];
+
+const GENERATED_CATALOG = [
+  'packages/gateway/src/providers/catalog.data.ts',
+  'packages/frogbot/src/ai/generated.ts',
+];
 
 const MISSPELLED_BRAND = 'Frog[b]ot|frog[B]ot';
 
@@ -215,6 +221,7 @@ export default tseslint.config(
         { selector: 'default', format: null, custom: { regex: MISSPELLED_BRAND, match: false } },
       ],
       'no-restricted-syntax': ['error', ...brandBans],
+      '@typescript-eslint/max-params': ['error', { max: 3 }],
       'no-console': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
@@ -302,6 +309,11 @@ export default tseslint.config(
     files: ['packages/**/src/**/*.{ts,tsx}'],
     ignores: [...SPECS, '**/vitest.setup.ts', ...CAST_CONVERTERS],
     rules: { 'no-restricted-syntax': ['error', ...brandBans, ...castBans] },
+  },
+  {
+    files: ['packages/**/src/**'],
+    ignores: [...SPECS, ...GENERATED_CATALOG],
+    rules: { 'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }] },
   },
   {
     files: [UI_SOURCE],
