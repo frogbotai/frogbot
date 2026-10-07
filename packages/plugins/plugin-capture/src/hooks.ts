@@ -76,7 +76,7 @@ async function persist(
   const blobKey = captureBlobKey(capture.captureId, new Date(args.startedAt));
   await options.storage.put(blobKey, bytes);
   await args.req.frogbot.create({
-    collection: options.collectionSlug as never,
+    collection: options.collectionSlug,
     data: {
       captureId: capture.captureId,
       requestId: capture.requestId,
@@ -89,7 +89,7 @@ async function persist(
       status: capture.error ? 'error' : 'success',
       requestedAt,
       completedAt,
-    } as never,
+    },
     overrideAccess: true,
     req: args.req,
   });

@@ -587,5 +587,5 @@ async function toPersistentMessages(
     });
   }
 
-  return validateChatMessages(messages, tools as never);
+  return validateChatMessages(messages, tools);
 }

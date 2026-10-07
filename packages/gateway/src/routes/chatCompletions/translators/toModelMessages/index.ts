@@ -9,13 +9,19 @@
 import type { ModelMessage, ToolModelMessage, ToolResultPart } from '@ai-sdk/provider-utils';
 
 import { createLogger, type GatewayLogger } from '../../../../observability/logger.js';
-import type { OpenAIMessage, OpenAIToolMessage } from '../types.js';
+import type { OpenAIMessage, OpenAIToolMessage, OpenAIUnknownMessage } from '../types.js';
 import { parseAssistantMessage } from './assistant.js';
 import { parseSystemMessages, parseUnknownMessage } from './system.js';
 import { parseUserMessage } from './user.js';
 
+const KNOWN_ROLES = new Set(['system', 'developer', 'user', 'assistant', 'tool']);
+
+function isKnownMessage(msg: OpenAIMessage | OpenAIUnknownMessage): msg is OpenAIMessage {
+  return KNOWN_ROLES.has(msg.role);
+}
+
 function parseToolRun(
-  messages: OpenAIMessage[],
+  messages: (OpenAIMessage | OpenAIUnknownMessage)[],
   startIndex: number,
   toolNames: Map<string, string>,
 ): { message: ToolModelMessage; nextIndex: number } {
@@ -24,7 +30,7 @@ function parseToolRun(
 
   while (nextIndex < messages.length) {
     const msg = messages[nextIndex];
-    if (msg?.role !== 'tool') {
+    if (!msg || !isKnownMessage(msg) || msg.role !== 'tool') {
       break;
     }
 
@@ -59,7 +65,7 @@ function rememberToolNames(msg: OpenAIMessage, toolNames: Map<string, string>): 
 }
 
 export function toModelMessages(
-  messages: OpenAIMessage[],
+  messages: (OpenAIMessage | OpenAIUnknownMessage)[],
   logger: GatewayLogger = createLogger(),
 ): ModelMessage[] {
   const out: ModelMessage[] = [];
@@ -67,6 +73,12 @@ export function toModelMessages(
 
   for (let i = 0; i < messages.length;) {
     const msg = messages[i];
+
+    if (!isKnownMessage(msg)) {
+      out.push(parseUnknownMessage(msg, logger));
+      i++;
+      continue;
+    }
 
     if (msg.role === 'tool') {
       const toolRun = parseToolRun(messages, i, toolNames);
@@ -91,11 +103,6 @@ export function toModelMessages(
 
       case 'assistant': {
         out.push(parseAssistantMessage(msg, i));
-        break;
-      }
-
-      default: {
-        out.push(parseUnknownMessage(msg, logger));
         break;
       }
     }

@@ -24,12 +24,6 @@
   "test/__helpers/shared/bootFrogBot.ts": {
     "TS2352": 1
   },
-  "test/ai/environment/evaluate.int.spec.ts": {
-    "TS2322": 1
-  },
-  "test/ai/evaluate.int.spec.ts": {
-    "TS2322": 6
-  },
   "test/browser/fixtures/chat-assets/src/frogbot.config.ts": {
     "TS2352": 1
   },
@@ -83,9 +77,6 @@
     "TS2322": 3,
     "TS2353": 2
   },
-  "test/ui/ui/chat/flag-parts.spec.tsx": {
-    "TS2554": 1
-  },
   "test/unit/db-d1-sqlite/jobs.spec.ts": {
     "TS2740": 1
   },
@@ -109,15 +100,12 @@
   "test/unit/frogbot/collections/config/merge.spec.ts": {
     "TS2322": 1
   },
-  "test/unit/frogbot/config/collectionViews.spec.ts": {
-    "TS2339": 11
-  },
   "test/unit/frogbot/config/connections.spec.ts": {
     "TS2322": 1
   },
   "test/unit/frogbot/config/sanitize.spec.ts": {
     "TS2322": 1,
-    "TS2339": 3,
+    "TS2339": 1,
     "TS2345": 1,
     "TS2740": 1
   },
@@ -126,9 +114,6 @@
   },
   "test/unit/frogbot/jobs/nativeRunner.ts": {
     "TS2352": 1
-  },
-  "test/unit/frogbot/typegen/typegen.spec.ts": {
-    "TS2345": 2
   },
   "test/unit/gateway/routes/chatCompletions/translators/chatCompletions.spec.ts": {
     "TS2352": 1

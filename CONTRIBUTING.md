@@ -52,7 +52,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 | One check                           | `pnpm check <name>`, where name is a `scripts/check-<name>.mjs` file (see [Checks](#checks))                                                                                        |
 | Format and lint                     | `pnpm prettier`, `pnpm lint` (report only); `pnpm prettier:write`, `pnpm lint:fix`; after fixing a baselined violation, `pnpm lint --prune-suppressions`                            |
 | Typecheck                           | `pnpm --filter <workspace> typecheck` (`frogbot` also takes area names: `pnpm --filter frogbot typecheck jobs`); `pnpm typecheck` builds and checks every workspace                 |
-| Tests                               | `pnpm test` (every project), `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser --project <name>`; pass files to narrow                         |
+| Tests                               | `pnpm test` (every project), `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:gateway`, `pnpm test:e2e`, `pnpm test:browser --project <name>`; pass files to narrow    |
 | Integration tests on one database   | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (`pnpm test:int:pg test/database`)                                                                                |
 | Docker services                     | `pnpm docker:start` (Postgres, Redis, MongoDB, MongoDB search, storage emulators), `pnpm docker:clean` (removes containers and volumes)                                             |
 | Live tests with real credentials    | `pnpm test:live` (see [Live tests](test/README.md#live-tests-real-credentials))                                                                                                     |
@@ -82,6 +82,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 | `test-types`      | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                  |
 | `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                    |
 | `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                          |
+| `peer-variants`   | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                   |
 | `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/decisions.md` or the plan (main checkout only)                                          |
 
 ## Code style

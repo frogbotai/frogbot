@@ -14,7 +14,7 @@ const fileReferenceSchema = z
 
 export async function validateChatMessages(
   messages: unknown[],
-  tools: never,
+  tools?: Parameters<typeof validateUIMessages<UIMessage>>[0]['tools'],
 ): Promise<UIMessage[]> {
   const references = messages.map((message) => {
     if (

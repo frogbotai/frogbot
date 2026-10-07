@@ -58,7 +58,7 @@ export function buildAgentEndpoints() {
 
           try {
             body = messages
-              ? { messages: await validateChatMessages(messages, agent.aiAgent.tools as never) }
+              ? { messages: await validateChatMessages(messages, agent.aiAgent.tools) }
               : { prompt: prompt! };
           } catch (error) {
             req.frogbot.logger.error(

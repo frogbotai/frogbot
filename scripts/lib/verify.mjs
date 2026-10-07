@@ -27,7 +27,7 @@ const MAIN = 'main';
 
 const ENV = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
 
-const VITEST_PROJECTS = ['unit', 'gateway-unit', 'ui', 'int'];
+const VITEST_PROJECTS = ['unit', 'gateway-unit', 'ui', 'int', 'gateway-integration'];
 
 const PLAYWRIGHT_CONFIG = 'test/browser/playwright.config.ts';
 

@@ -22,6 +22,7 @@
     "test:int:mongo": "FROGBOT_DATABASE=mongodb vitest run --project int",
     "test:int:pg": "FROGBOT_DATABASE=postgres vitest run --project int",
     "test:int:sqlite": "FROGBOT_DATABASE=sqlite vitest run --project int",
+    "test:gateway": "vitest run --project gateway-integration",
     "test:e2e": "RUN_E2E=1 vitest run --project e2e",
     "test:live": "RUN_E2E=1 vitest run --project gateway-e2e --project gateway-zen --project live",
     "generate:types": "node test/generateTypes.ts",

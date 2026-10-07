@@ -70,8 +70,20 @@ export type NodeWithHooks<
   validations?: NodeValidation<TSerializedNode>[];
 };
 
-type ServerNodeRegistration = Omit<NodeWithHooks<any, any>, 'node'> & {
+type AnyNodeCallback = (args: never) => unknown;
+
+type ServerNodeRegistration = {
+  converters?: {
+    html?: Omit<PayloadHTMLConverter, 'converter'> & { converter: AnyNodeCallback };
+  };
+  getSubFields?: AnyNodeCallback;
+  getSubFieldsData?: AnyNodeCallback;
+  graphQLPopulationPromises?: AnyNodeCallback[];
+  hooks?: Partial<
+    Record<'afterChange' | 'afterRead' | 'beforeChange' | 'beforeValidate', AnyNodeCallback[]>
+  >;
   node: LexicalNodeReplacement | (new (...args: never[]) => unknown);
+  validations?: AnyNodeCallback[];
 };
 
 export type ServerFeature<ServerProps, ClientFeatureProps> = Omit<

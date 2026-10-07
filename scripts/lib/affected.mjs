@@ -4,11 +4,13 @@ const INT_TEST = /^test\/(?!unit\/|ui\/|browser\/|types\/|e2e\/|live\/|gateway\/
 
 const RUNS = [
   { script: 'test:int:sqlite', prefixes: ['packages/'], pattern: INT_TEST },
+  { script: 'test:gateway', prefixes: ['packages/gateway/', 'test/gateway/'] },
   {
     script: 'test:browser',
     prefixes: [
       'packages/ui/',
       'packages/next/',
+      'packages/db-',
       'test/browser/',
       'templates/blank/',
       'test/e2e/fixtures/',
@@ -38,6 +40,7 @@ export const CHECK_INPUTS = {
   generated: ['**/importMap.js', '**/frogbot-types.ts', '**/piece-types.ts'],
   'option-tables': ['docs/**'],
   packages: ['pnpm-workspace.yaml', ...MANIFESTS],
+  'peer-variants': ['pnpm-lock.yaml'],
   scripts: ['CONTRIBUTING.md', ...MANIFESTS],
   'single-frogbot': MANIFESTS,
   'test-types': ['test/**', 'packages/**/src/**', '.opencode/**'],
@@ -64,7 +67,15 @@ export const GROUPS = [
 
 const LEVELS = ['typecheck', 'unit', 'int'];
 
-const PROJECT_GROUPS = { unit: 'unit', 'gateway-unit': 'unit', ui: 'ui', int: 'int' };
+const PROJECT_GROUPS = {
+  unit: 'unit',
+  'gateway-unit': 'unit',
+  ui: 'ui',
+  int: 'int',
+  'gateway-integration': 'int',
+};
+
+const PROJECT_RUNS = { 'gateway-integration': 'test:gateway' };
 
 export function affectedRuns(files) {
   return RUNS.filter(({ prefixes, pattern }) =>
@@ -211,7 +222,9 @@ function specSet({ files, packages, vitest, related, runs, cover }) {
   const selected = Object.fromEntries(vitest.map(({ name }) => [name, new Set()]));
 
   const add = (project, spec, sources) => {
-    const gated = PROJECT_GROUPS[project] === 'int' && !runs.includes('test:int:sqlite');
+    const gated =
+      PROJECT_GROUPS[project] === 'int' &&
+      !runs.includes(PROJECT_RUNS[project] ?? 'test:int:sqlite');
 
     if (!selected[project] || gated) return;
 
@@ -301,7 +314,12 @@ export function affectedSet({ files, packages, vitest = [], related = [], browse
 }
 
 function projectCommand(project, specs) {
-  const script = { unit: 'test:unit', ui: 'test:ui', int: 'test:int:sqlite' }[project];
+  const script = {
+    unit: 'test:unit',
+    ui: 'test:ui',
+    int: 'test:int:sqlite',
+    'gateway-integration': 'test:gateway',
+  }[project];
 
   return script
     ? ['pnpm', script, ...specs]

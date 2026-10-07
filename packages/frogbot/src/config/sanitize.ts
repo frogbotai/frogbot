@@ -400,7 +400,7 @@ function sanitizeCollection(
     onRuntimeViews: (views) => {
       collectionViews = views;
     },
-  }) as PayloadCollectionConfig['admin'];
+  });
 
   if (admin?.livePreview) {
     admin.livePreview = wrapLivePreview(c.admin?.livePreview, attachFrogBot);

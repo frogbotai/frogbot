@@ -1,41 +1,6 @@
 {
-  "packages/next/src/fields/AI/index.client.tsx": {
-    "jsx-a11y/no-noninteractive-tabindex": {
-      "count": 1
-    }
-  },
-  "packages/richtext-lexical/src/features/typesServer.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "packages/ui/src/chat/attachment-viewer.tsx": {
-    "jsx-a11y/no-noninteractive-tabindex": {
-      "count": 1
-    }
-  },
-  "test/browser/fixtures/custom-field/src/app/(site)/theme-check/system/page.tsx": {
-    "jsx-a11y/aria-role": {
-      "count": 1
-    }
-  },
-  "test/browser/fixtures/custom-field/src/components/ThemeProbe.tsx": {
-    "jsx-a11y/aria-role": {
-      "count": 1
-    }
-  },
   "test/search/mongodb/hybrid.int.spec.ts": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "test/ui/next/exports/ChatView.client.spec.tsx": {
-    "jsx-a11y/aria-role": {
-      "count": 1
-    }
-  },
-  "test/ui/ui/chat/message.spec.tsx": {
-    "jsx-a11y/aria-role": {
       "count": 1
     }
   },

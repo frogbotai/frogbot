@@ -44,7 +44,7 @@ export function AttachmentViewer({ children, name, text }: AttachmentViewerProps
         <DialogHeader>
           <DialogTitle className="fb-attachment-viewer__title">{name}</DialogTitle>
         </DialogHeader>
-        <pre className="fb-attachment-viewer__text" tabIndex={0}>
+        <pre aria-label={name} className="fb-attachment-viewer__text" role="region" tabIndex={0}>
           {text}
         </pre>
         <DialogFooter>

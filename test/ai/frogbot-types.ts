@@ -126,7 +126,7 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   modelAccess?: ('all' | 'selected') | null;
-  models?: ('judge' | 'typesafe-ai/jev-latest')[] | null;
+  models?: ('judge' | 'typesafe-ai/jev' | 'typesafe-ai/jev-latest')[] | null;
   /**
    * Decimal amount in USD, in whole units, not minor units such as cents
    */
@@ -336,7 +336,7 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
-    models: 'judge' | 'typesafe-ai/jev-latest';
+    models: 'judge' | 'typesafe-ai/jev' | 'typesafe-ai/jev-latest';
     roles: never;
   }
 }
