@@ -16,14 +16,17 @@ async function status(pkg) {
   } catch (err) {
     return { ...pkg, state: 'error', detail: err.message };
   }
+
   if (res.status === 404) return { ...pkg, state: 'missing', detail: 'never published' };
   if (!res.ok) return { ...pkg, state: 'error', detail: `registry ${res.status}` };
   const json = await res.json();
   if (json.versions?.[pkg.version]) return { ...pkg, state: 'published' };
+
   return { ...pkg, state: 'missing', detail: `latest ${json['dist-tags']?.latest ?? 'none'}` };
 }
 
 const results = [];
+
 for (let i = 0; i < packages.length; i += CONCURRENCY) {
   results.push(...(await Promise.all(packages.slice(i, i + CONCURRENCY).map(status))));
 }
@@ -33,9 +36,11 @@ const missing = results.filter((r) => r.state === 'missing');
 const errored = results.filter((r) => r.state === 'error');
 
 console.log(`\nRelease status for ${target} (${REGISTRY})\n`);
+
 for (const r of results) {
   if (r.state === 'published' && r.version === target) continue;
   const mark = r.state === 'published' ? 'ok' : r.state;
+
   console.log(
     `  ${mark.padEnd(10)} ${r.name.padEnd(36)} ${r.version}${r.detail ? `  (${r.detail})` : ''}`,
   );
@@ -51,9 +56,11 @@ console.log(
 if (stale.length) {
   console.log(`  Version drift — run \`pnpm bump <major|minor|patch>\` to realign.\n`);
 }
+
 if (missing.length) {
   console.log(
     `  Resume with \`pnpm release --resume\` — already-published versions are skipped.\n`,
   );
 }
+
 if (missing.length || errored.length || stale.length) process.exit(1);

@@ -215,6 +215,7 @@ describe('AttachmentViewer', () => {
     await user.keyboard('{Escape}');
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
     expect(document.activeElement).toBe(open);
   });
 
@@ -245,6 +246,7 @@ describe('AttachmentViewer', () => {
     await user.click(await screen.findByRole('button', { name: 'Close' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
     expect(document.activeElement).toBe(open);
   });
 

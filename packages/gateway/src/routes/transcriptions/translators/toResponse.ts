@@ -35,6 +35,7 @@ export function toOpenAITranscriptionResponse(args: {
   if (format === 'vtt') return `WEBVTT\n\n${toVtt(args.result.segments)}`;
   if (format === 'verbose_json') {
     const raw = getRawVerboseJson(args.result);
+
     return {
       task: 'transcribe',
       text: args.result.text,
@@ -57,6 +58,7 @@ export function toOpenAITranscriptionResponse(args: {
         })),
     };
   }
+
   return { text: args.result.text };
 }
 
@@ -80,6 +82,7 @@ type RawVerboseJson = {
 
 function getRawVerboseJson(result: TranscriptionResult): RawVerboseJson | undefined {
   const body = getResponseBody(result.responses[0]);
+
   return isRawVerboseJson(body) ? body : undefined;
 }
 
@@ -125,5 +128,6 @@ function formatTimestamp(seconds: number, decimal: ',' | '.') {
   const totalMinutes = Math.floor(totalSeconds / 60);
   const m = String(totalMinutes % 60).padStart(2, '0');
   const h = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+
   return `${h}:${m}:${s}${decimal}${ms}`;
 }

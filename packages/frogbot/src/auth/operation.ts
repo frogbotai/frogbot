@@ -19,6 +19,7 @@ import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 type SessionCleanup = (signal: AbortSignal) => Promise<void>;
+
 type SessionOperation = {
   active: boolean;
   marker: symbol;
@@ -47,16 +48,20 @@ export function attachSessionPayload(req: PayloadRequest): void {
   if (!operation.payload) {
     const payload = unwrapSessionPayload(req.payload);
     const scoped = Object.create(payload) as Payload;
+
     scoped.db = new Proxy(payload.db, {
       get(target, property) {
         if (property === 'beginTransaction') {
           const begin: Payload['db']['beginTransaction'] = async (...args) => {
             const id = await target.beginTransaction(...args);
             if (id) req.transactionID = id;
+
             return id;
           };
+
           return begin;
         }
+
         if (property === 'updateOne') {
           const update: Payload['db']['updateOne'] = async (args) => {
             if (
@@ -65,10 +70,12 @@ export function attachSessionPayload(req: PayloadRequest): void {
             ) {
               return target.updateOne(args);
             }
+
             operation.signal.throwIfAborted();
             if (payload.collections[operation.collectionSlug].config.auth.useSessions) {
               await requireSessionTransaction(args.req as PayloadRequest);
             }
+
             if (
               (operation.kind === 'login' ||
                 (operation.kind === 'resetPassword' && args.data.updatedAt === null)) &&
@@ -82,6 +89,7 @@ export function attachSessionPayload(req: PayloadRequest): void {
                 (typeof userId === 'string' || typeof userId === 'number')
               ) {
                 operation.sessionTracked = true;
+
                 operation.cleanups.add((signal) =>
                   revokeIssuedSession({
                     req,
@@ -93,27 +101,36 @@ export function attachSessionPayload(req: PayloadRequest): void {
                 );
               }
             }
+
             const result = await target.updateOne(args);
             operation.signal.throwIfAborted();
+
             return result;
           };
+
           return update;
         }
+
         if (property === 'commitTransaction') {
           const commit: Payload['db']['commitTransaction'] = async (id) => {
             operation.signal.throwIfAborted();
             await target.commitTransaction(id);
             operation.signal.throwIfAborted();
           };
+
           return commit;
         }
+
         const value: unknown = Reflect.get(target, property, target);
+
         return typeof value === 'function' ? value.bind(target) : value;
       },
     });
+
     payloads.set(scoped, payload);
     operation.payload = scoped;
   }
+
   req.payload = operation.payload;
 }
 
@@ -125,6 +142,7 @@ export function hasSessionTransaction({
   collectionSlug: string;
 }): boolean {
   const operation = operations.getStore();
+
   return Boolean(
     operation &&
     operation.active &&
@@ -144,6 +162,7 @@ async function withSessionLock<T>({
   fn: KVLockCallback<T>;
 }): Promise<T> {
   const deadline = Date.now() + 30_000;
+
   for (;;) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) throw new KVLockContentionError(key);
@@ -159,10 +178,12 @@ async function withSessionLock<T>({
     } finally {
       wait.abort();
     }
+
     if (occupied) {
       await setTimeout(50);
       continue;
     }
+
     let pending: Promise<T> | undefined;
     let releasing: Promise<boolean> | undefined;
     try {
@@ -175,30 +196,38 @@ async function withSessionLock<T>({
           releaseLock: (lock) => {
             releasing = (async () => {
               await pending?.catch(() => undefined);
+
               return kv.releaseLock(lock);
             })();
+
             return releasing;
           },
         },
         fn: (args) => {
           pending = Promise.resolve().then(() => fn(args));
+
           return pending;
         },
       });
     } catch (error) {
       const errors = new Set([error]);
+
       await pending?.catch((failure: unknown) => {
         errors.add(failure);
       });
+
       await releasing?.catch((failure: unknown) => {
         errors.add(failure);
       });
+
       if (errors.size > 1) {
         throw new AggregateError(errors, 'Session operation failed.');
       }
+
       if (pending || !(error instanceof KVLockContentionError) || Date.now() >= deadline) {
         throw error;
       }
+
       await setTimeout(50);
     }
   }
@@ -241,6 +270,7 @@ export async function revokeIssuedSession({
     payload: unwrapSessionPayload(req.payload),
     transactionID: hasSessionTransaction({ req, collectionSlug }) ? req.transactionID : undefined,
   };
+
   signal.throwIfAborted();
   const shouldCommit = await initTransaction(dbReq);
   try {
@@ -251,6 +281,7 @@ export async function revokeIssuedSession({
       select: { sessions: true },
       where: { id: { equals: userId } },
     });
+
     signal.throwIfAborted();
     if (user?.sessions?.some((session) => session.id === sid)) {
       await dbReq.payload.db.updateOne({
@@ -261,6 +292,7 @@ export async function revokeIssuedSession({
         returning: false,
       });
     }
+
     signal.throwIfAborted();
     if (shouldCommit) await commitTransaction(dbReq);
   } catch (error) {
@@ -269,6 +301,7 @@ export async function revokeIssuedSession({
     } catch (cleanupError) {
       throw new AggregateError([error, cleanupError], 'Session revocation rollback failed.');
     }
+
     throw error;
   }
 }
@@ -316,6 +349,7 @@ export async function withSessionOperation<T>({
       transaction: inherited?.transaction,
       kind: inherited?.kind,
     };
+
     const previousMarker = req.context?.[contextKey];
     req.context = { ...req.context, [contextKey]: operation.marker };
 
@@ -324,6 +358,7 @@ export async function withSessionOperation<T>({
         signal.throwIfAborted();
         const result = await fn(operation);
         signal.throwIfAborted();
+
         return result;
       } catch (error) {
         if (!signal.aborted) {
@@ -333,6 +368,7 @@ export async function withSessionOperation<T>({
             throw new AggregateError([error, cleanupError], 'Session operation cleanup failed.');
           }
         }
+
         throw error;
       } finally {
         operation.active = false;
@@ -368,6 +404,7 @@ export const checkSessionLease: CollectionAfterOperationHook = ({ req, result })
   if (operation?.active && req.context[contextKey] === operation.marker) {
     operation.signal.throwIfAborted();
   }
+
   return result;
 };
 
@@ -417,11 +454,13 @@ export async function withAuthOperation<T>({
               req: payloadReq,
               where: { id: { equals: payloadReq.user.id } },
             });
+
             if (!user?.sessions?.some(({ id }) => id === payloadReq.user?._sid)) {
               throw new Forbidden(payloadReq.t);
             }
           }
         }
+
         signal.throwIfAborted();
 
         const shouldCommit = kind !== 'login' && (await initTransaction(payloadReq));

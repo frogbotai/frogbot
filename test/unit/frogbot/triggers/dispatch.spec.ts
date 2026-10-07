@@ -22,38 +22,46 @@ function runtime() {
   const values = new Map<string, { value: unknown; expires: number }>();
   const get = (key: string) => {
     const entry = values.get(key);
+
     return entry && entry.expires > Date.now() ? entry.value : undefined;
   };
+
   const adapter = {
     [kvAtomic]: true as const,
     get: vi.fn((key: string) => Promise.resolve(get(key))),
     has: vi.fn((key: string) => Promise.resolve(get(key) !== undefined)),
     set: vi.fn((key: string, value: unknown, { ttl = Infinity } = {}) => {
       values.set(key, { value, expires: Date.now() + ttl });
+
       return Promise.resolve();
     }),
     setIfAbsent: vi.fn((key: string, value: unknown, { ttl = Infinity } = {}) => {
       if (get(key) !== undefined) return Promise.resolve(false);
       values.set(key, { value, expires: Date.now() + ttl });
+
       return Promise.resolve(true);
     }),
     extendLock: vi.fn(({ key, token }, ttl: number) => {
       if (get(key) !== token) return Promise.resolve(false);
       values.set(key, { value: token, expires: Date.now() + ttl });
+
       return Promise.resolve(true);
     }),
     releaseLock: vi.fn(({ key, token }) => {
       if (get(key) !== token) return Promise.resolve(false);
       values.delete(key);
+
       return Promise.resolve(true);
     }),
     delete: vi.fn((key: string) => {
       values.delete(key);
+
       return Promise.resolve();
     }),
     clear: vi.fn(),
     keys: vi.fn(),
   };
+
   return {
     adapter,
     kv: createKV({ adapter: adapter as never }),
@@ -76,8 +84,11 @@ describe('dispatchTriggerEvents', () => {
       recipient({ instance: 'other' }),
       recipient({ trigger: 'updated' }),
     ];
+
     for (const subscriber of subscribers) await dispatch(frogbot, [subscriber]);
+
     await dispatch(frogbot, subscribers);
+
     expect(frogbot.queue).toHaveBeenCalledTimes(4);
     expect(frogbot.adapter.setIfAbsent).toHaveBeenCalledWith(
       expect.stringContaining('trigger:dedupe:'),
@@ -92,9 +103,12 @@ describe('dispatchTriggerEvents', () => {
     await dispatch(frogbot);
     await vi.advanceTimersByTimeAsync(86_399_999);
     await dispatch(frogbot);
+
     expect(frogbot.queue).toHaveBeenCalledTimes(1);
+
     await vi.advanceTimersByTimeAsync(1);
     await dispatch(frogbot);
+
     expect(frogbot.queue).toHaveBeenCalledTimes(2);
   });
 
@@ -102,8 +116,11 @@ describe('dispatchTriggerEvents', () => {
     const frogbot = runtime();
     frogbot.queue.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('queue down'));
     const subscribers = [recipient(), recipient({ agent: 'audit' })];
+
     await expect(dispatch(frogbot, subscribers)).rejects.toThrow('queue down');
+
     await dispatch(frogbot, subscribers);
+
     expect(frogbot.queue.mock.calls.map(([job]) => job.input.agentSlug)).toEqual([
       'ops',
       'audit',
@@ -131,18 +148,26 @@ describe('dispatchTriggerEvents', () => {
       const frogbot = runtime();
       const started = Promise.withResolvers<void>();
       const queued = Promise.withResolvers<void>();
+
       frogbot.queue.mockImplementationOnce(() => {
         started.resolve();
+
         return queued.promise;
       });
+
       const first = dispatch(frogbot);
       const firstResult = first.catch((error: unknown) => error);
       await started.promise;
+
       await expect(dispatch(frogbot)).rejects.toBeInstanceOf(KVLockContentionError);
       expect(frogbot.queue).toHaveBeenCalledTimes(1);
+
       settle(queued);
+
       expect(await firstResult).toEqual(outcome);
+
       await dispatch(frogbot);
+
       expect(frogbot.queue).toHaveBeenCalledTimes(enqueues);
       expect(frogbot.adapter.delete).not.toHaveBeenCalled();
     },
@@ -153,20 +178,27 @@ describe('dispatchTriggerEvents', () => {
     const frogbot = runtime();
     const started = Promise.withResolvers<void>();
     const queued = Promise.withResolvers<void>();
+
     frogbot.queue.mockImplementationOnce(() => {
       started.resolve();
+
       return queued.promise;
     });
+
     const first = dispatch(frogbot);
     await started.promise;
     const ttl = frogbot.adapter.setIfAbsent.mock.calls.find(
       ([, value]) => typeof value === 'string',
     )![2]!.ttl;
+
     await vi.advanceTimersByTimeAsync(ttl + 1);
+
     expect(frogbot.adapter.extendLock).toHaveBeenCalled();
     await expect(dispatch(frogbot)).rejects.toBeInstanceOf(KVLockContentionError);
+
     queued.resolve();
     await first;
+
     expect(frogbot.queue).toHaveBeenCalledTimes(1);
   });
 
@@ -175,21 +207,28 @@ describe('dispatchTriggerEvents', () => {
     const frogbot = runtime();
     const started = Promise.withResolvers<void>();
     const queued = Promise.withResolvers<void>();
+
     frogbot.queue.mockImplementationOnce(() => {
       started.resolve();
+
       return queued.promise;
     });
+
     const first = dispatch(frogbot);
     const rejected = first.catch((error: unknown) => error);
     await started.promise;
     const [key, , options] = frogbot.adapter.setIfAbsent.mock.calls.find(
       ([, value]) => typeof value === 'string',
     )!;
+
     await frogbot.adapter.set(key, 'successor', { ttl: options!.ttl });
     await vi.advanceTimersByTimeAsync(options!.ttl / 3 + 1);
+
     expect(await rejected).toBeInstanceOf(KVLeaseLostError);
+
     queued.resolve();
     await vi.advanceTimersByTimeAsync(0);
+
     expect(await frogbot.kv.get(key)).toBe('successor');
     expect(frogbot.adapter.setIfAbsent.mock.calls.filter(([, value]) => value === true)).toEqual(
       [],
@@ -200,11 +239,13 @@ describe('dispatchTriggerEvents', () => {
   it('does not acknowledge delivery when dedupe persistence fails', async () => {
     const frogbot = runtime();
     const setIfAbsent = frogbot.kv.setIfAbsent;
+
     vi.spyOn(frogbot.kv, 'setIfAbsent')
       .mockImplementationOnce(() => {
         return Promise.reject(new Error('database down'));
       })
       .mockImplementation(setIfAbsent);
+
     await expect(dispatch(frogbot)).rejects.toThrow('database down');
     expect(frogbot.adapter.setIfAbsent.mock.calls.filter(([, value]) => value === true)).toEqual(
       [],

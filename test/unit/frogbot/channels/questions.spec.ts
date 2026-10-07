@@ -148,11 +148,13 @@ describe('channel question availability', () => {
 describe('channel question delivery', () => {
   beforeEach(() => {
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},
       allSettled: true,
     });
+
     continueTurn.mockReset().mockImplementation(() =>
       Promise.resolve({
         stream: asyncChunks('Continued'),
@@ -172,6 +174,7 @@ describe('channel question delivery', () => {
       messageId: 'message-2',
       delivery: 'queue',
     } as never);
+
     listPendingCalls.mockResolvedValueOnce([pendingCall()]);
 
     await fixture.host.run(fixture.inputs[1]);
@@ -857,6 +860,7 @@ describe('channel question delivery', () => {
     const { fixture } = await askedFixture(hooks);
 
     await fixture.interact(click('partial'));
+
     await fixture.interact({
       type: 'modal',
       privateMetadata: encodeQuestionModalMetadata({ threadId: thread, messageId: 'card-1' }),

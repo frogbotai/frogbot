@@ -46,6 +46,7 @@ function trimBlank(lines) {
   let end = lines.length;
 
   while (start < end && lines[start].trim() === '') start++;
+
   while (end > start && lines[end - 1].trim() === '') end--;
 
   return lines.slice(start, end);
@@ -376,6 +377,7 @@ export function recordDecisions(processDir, tickets, date) {
         messages.push(`${number}: Approved (${date})`);
       } else {
         pendingApprove.set(number, entry.approve);
+
         messages.push(
           `${number}: Approve waits for ${unanswered.map((card) => card.id).join(', ')}`,
         );

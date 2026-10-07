@@ -20,6 +20,7 @@ export const customApiCall = defineAction({
     if (!request || typeof request === 'string' || !('request' in request)) {
       throw new Error('[frogbot] Gmail client is missing authenticated transport.');
     }
+
     return (
       await request.request({
         method: input.method,

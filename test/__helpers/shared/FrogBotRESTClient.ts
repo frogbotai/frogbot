@@ -46,12 +46,14 @@ export class FrogBotRESTClient {
     if (body !== undefined && !headers.has('content-type')) {
       headers.set('content-type', 'application/json');
     }
+
     const res = await fetch(url, {
       ...init,
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
+
     const text = await res.text();
     let parsed: unknown;
     try {
@@ -59,6 +61,7 @@ export class FrogBotRESTClient {
     } catch {
       parsed = text;
     }
+
     return { status: res.status, body: parsed as T, headers: res.headers };
   }
 }

@@ -31,14 +31,18 @@ async function routeURLs({
   ) {
     throw new OAuthError('configuration');
   }
+
   const path = (prefix: string, suffix: string) => {
     if (prefix && (!prefix.startsWith('/') || /[\\\p{Cc}?#]/u.test(prefix))) {
       throw new OAuthError('configuration');
     }
+
     const value = `${prefix.replace(/\/+$/, '')}/${suffix}`;
     if (value.startsWith('//')) throw new OAuthError('configuration');
+
     return value;
   };
+
   return {
     callbackUrl: new URL(
       path(config.routes.api, `${encodeURIComponent(slug)}/${encodeURIComponent(piece)}/callback`),
@@ -62,10 +66,13 @@ export function buildConnectionOAuthEndpoints({
       connections.enabled && typeof slug === 'string' && Object.hasOwn(connections.entries, slug)
         ? connections.entries[slug]
         : undefined;
+
     return entry?.oauth && entry.piece.piece === slug ? entry : undefined;
   };
+
   const failure = (status: number, headers: Headers, error = 'Connection operation failed') =>
     Response.json({ error }, { status, headers });
+
   return [
     {
       method: 'get',
@@ -90,8 +97,10 @@ export function buildConnectionOAuthEndpoints({
             returnTo: params.get('returnTo') ?? urls.returnTo,
             req,
           });
+
           headers.set('set-cookie', started.setCookie);
           headers.set('location', started.authorizationUrl);
+
           return new Response(null, { status: 302, headers });
         } catch (error) {
           return failure(
@@ -115,6 +124,7 @@ export function buildConnectionOAuthEndpoints({
             slug: connections.slug!,
             piece: entry.piece.piece,
           });
+
           const params = new URL(req.url!).searchParams;
           if (params.getAll('state').length !== 1) throw new OAuthError('state');
 
@@ -128,6 +138,7 @@ export function buildConnectionOAuthEndpoints({
             callbackUrl,
             req,
           });
+
           headers.set('set-cookie', clearCookie);
 
           if (params.has('error') || params.getAll('code').length !== 1) {
@@ -142,6 +153,7 @@ export function buildConnectionOAuthEndpoints({
             overrideAccess: true,
             disableErrors: true,
           });
+
           if (!user) throw new OAuthError('state');
 
           const tokens = await exchangeOAuthCode({
@@ -176,6 +188,7 @@ export function buildConnectionOAuthEndpoints({
           });
 
           headers.set('location', intent.returnTo);
+
           return new Response(null, { status: 302, headers });
         } catch (error) {
           return failure(error instanceof OAuthError ? 400 : 500, headers);

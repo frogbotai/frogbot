@@ -31,6 +31,7 @@ describe('toGatewayHooks', () => {
     const record = (args: AIHookContext) => {
       seen.push(args);
     };
+
     const gatewayHooks = toGatewayHooks(
       makeHooks({
         beforeOperation: [record],
@@ -53,6 +54,7 @@ describe('toGatewayHooks', () => {
     };
 
     await gatewayHooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+
     await gatewayHooks.beforeUpstream?.[0]?.({
       ...base,
       phase: 'beforeUpstream',
@@ -61,6 +63,7 @@ describe('toGatewayHooks', () => {
       headers: new Headers(),
       providerOptions: {},
     });
+
     await gatewayHooks.afterUpstream?.[0]?.({
       ...base,
       phase: 'afterUpstream',
@@ -68,6 +71,7 @@ describe('toGatewayHooks', () => {
       provider: 'openai',
       finishReason: 'stop',
     });
+
     await gatewayHooks.afterError?.[0]?.({
       ...base,
       phase: 'afterError',
@@ -76,6 +80,7 @@ describe('toGatewayHooks', () => {
       failedPhase: 'upstream',
       error: new Error('boom'),
     });
+
     await gatewayHooks.afterOperation?.[0]?.({
       ...base,
       phase: 'afterOperation',
@@ -85,6 +90,7 @@ describe('toGatewayHooks', () => {
     });
 
     expect(seen).toHaveLength(5);
+
     for (const args of seen) {
       expect(args.req).toBe(req);
       expect(args.user).toEqual({ id: 'user-1' });

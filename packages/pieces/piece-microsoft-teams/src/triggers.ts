@@ -56,6 +56,7 @@ export const channelCreated = definePollingTrigger({
         signal: signal(req),
       },
     );
+
     const events = after(values, cursor?.since);
     const since = newest(values, cursor?.since ?? new Date(0).toISOString());
 
@@ -87,6 +88,7 @@ export const channelMessageCreated = definePollingTrigger({
             signal: signal(req),
           },
     );
+
     const values = [...result.value];
     let next = result['@odata.nextLink'];
     let deltaLink = result['@odata.deltaLink'];
@@ -156,6 +158,7 @@ export const chatMessageCreated = definePollingTrigger({
             signal: signal(req),
           },
     );
+
     const values = [...result.value];
     let next = result['@odata.nextLink'];
     let deltaLink = result['@odata.deltaLink'];

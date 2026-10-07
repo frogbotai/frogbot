@@ -32,7 +32,9 @@ describe('claudeThinkingEffort', () => {
       providerOptions: { unknown: { reasoning_effort: 'high' } },
       params: { maxOutputTokens: 16384 },
     });
+
     await claudeThinkingEffort(args);
+
     expect(args.providerOptions['anthropic']).toEqual({
       thinking: { type: 'enabled', budgetTokens: 13107 },
     });
@@ -43,7 +45,9 @@ describe('claudeThinkingEffort', () => {
       providerOptions: { unknown: { reasoning_effort: 'medium' } },
       params: { maxOutputTokens: 10000 },
     });
+
     await claudeThinkingEffort(args);
+
     expect(args.providerOptions['anthropic']).toEqual({
       thinking: { type: 'enabled', budgetTokens: 5000 },
     });
@@ -54,7 +58,9 @@ describe('claudeThinkingEffort', () => {
       providerOptions: { unknown: { reasoning_effort: 'low' } },
       params: { maxOutputTokens: 2048 },
     });
+
     await claudeThinkingEffort(args);
+
     // 15% of 2048 = 307, clamped to 1024
     expect(args.providerOptions['anthropic']).toEqual({
       thinking: { type: 'enabled', budgetTokens: 1024 },
@@ -66,7 +72,9 @@ describe('claudeThinkingEffort', () => {
       providerOptions: { unknown: { reasoning_effort: 'high' } },
       params: {},
     });
+
     await claudeThinkingEffort(args);
+
     // 80% of default 16384 = 13107
     expect(args.providerOptions['anthropic']).toEqual({
       thinking: { type: 'enabled', budgetTokens: 13107 },
@@ -77,7 +85,9 @@ describe('claudeThinkingEffort', () => {
     const args = makeArgs('openai/gpt-4o', {
       providerOptions: { unknown: { reasoning_effort: 'high' } },
     });
+
     await claudeThinkingEffort(args);
+
     expect(args.providerOptions['anthropic']).toBeUndefined();
   });
 
@@ -88,7 +98,9 @@ describe('claudeThinkingEffort', () => {
         anthropic: { thinking: { type: 'enabled', budget_tokens: 999 } },
       },
     });
+
     await claudeThinkingEffort(args);
+
     // Should NOT overwrite
     expect((args.providerOptions['anthropic'] as any).thinking.budget_tokens).toBe(999);
   });
@@ -97,7 +109,9 @@ describe('claudeThinkingEffort', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
       providerOptions: { openai: {} },
     });
+
     await claudeThinkingEffort(args);
+
     expect(args.providerOptions['anthropic']).toBeUndefined();
   });
 
@@ -105,7 +119,9 @@ describe('claudeThinkingEffort', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
       providerOptions: { unknown: { reasoning_effort: 'none' } },
     });
+
     await claudeThinkingEffort(args);
+
     // budget = 0, so hook returns early
     expect(args.providerOptions['anthropic']).toBeUndefined();
   });

@@ -15,16 +15,19 @@ describe('parsePromptCachingOptions', () => {
 
   it('parses prompt_cache_key', () => {
     const result = parsePromptCachingOptions({ prompt_cache_key: 'my-key' });
+
     expect(result).toEqual({ prompt_cache_key: 'my-key' });
   });
 
   it('parses prompt_cache_retention', () => {
     const result = parsePromptCachingOptions({ prompt_cache_retention: 'in_memory' });
+
     expect(result).toEqual({ prompt_cache_retention: 'in_memory' });
   });
 
   it('parses cache_control object', () => {
     const result = parsePromptCachingOptions({ cache_control: { type: 'ephemeral' } });
+
     expect(result).toEqual({ cache_control: { type: 'ephemeral' } });
   });
 
@@ -60,6 +63,7 @@ describe('parsePromptCachingOptions', () => {
       prompt_cache_retention: '24h',
       cache_control: { type: 'ephemeral', ttl: '5m' },
     });
+
     expect(result).toEqual({
       prompt_cache_key: 'key-1',
       prompt_cache_retention: '24h',
@@ -90,7 +94,9 @@ describe('forwardLanguageParams', () => {
     const opts: Record<string, Record<string, unknown>> = {
       unknown: { cache_control: { type: 'ephemeral' }, prompt_cache_key: 'k1' },
     };
+
     forwardLanguageParams(opts, 'anthropic');
+
     expect(opts['anthropic']).toEqual({
       cacheControl: { type: 'ephemeral' },
       promptCacheKey: 'k1',
@@ -103,7 +109,9 @@ describe('forwardLanguageParams', () => {
       anthropic: { cacheControl: { type: 'persistent' } },
       unknown: { cache_control: { type: 'ephemeral' } },
     };
+
     forwardLanguageParams(opts, 'anthropic');
+
     expect(opts['anthropic']['cacheControl']).toEqual({ type: 'persistent' });
   });
 
@@ -116,7 +124,9 @@ describe('forwardLanguageParams', () => {
         service_tier: 'reserved',
       },
     };
+
     forwardLanguageParams(opts, 'bedrock');
+
     expect(opts['bedrock']).toEqual({ serviceTier: 'reserved' });
     expect(opts['unknown']).toBeUndefined();
   });
@@ -125,7 +135,9 @@ describe('forwardLanguageParams', () => {
     const opts: Record<string, Record<string, unknown>> = {
       unknown: { cache_control: { type: 'ephemeral' } },
     };
+
     forwardLanguageParams(opts, 'anthropic-aws');
+
     expect(opts['anthropic']).toEqual({ cacheControl: { type: 'ephemeral' } });
     expect(opts['unknown']).toBeUndefined();
   });
@@ -136,7 +148,9 @@ describe('forwardLanguageParams', () => {
       const opts: Record<string, Record<string, unknown>> = {
         unknown: { cached_content: 'cachedContents/abc123' },
       };
+
       forwardLanguageParams(opts, providerName);
+
       expect(opts[providerName]).toEqual({ cachedContent: 'cachedContents/abc123' });
       expect(opts['unknown']).toBeUndefined();
     },
@@ -146,7 +160,9 @@ describe('forwardLanguageParams', () => {
     const opts: Record<string, Record<string, unknown>> = {
       anthropic: { thinking: { type: 'enabled' } },
     };
+
     forwardLanguageParams(opts, 'anthropic');
+
     expect(opts['anthropic']).toEqual({ thinking: { type: 'enabled' } });
   });
 });

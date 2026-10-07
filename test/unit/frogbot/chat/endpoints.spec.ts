@@ -8,6 +8,7 @@ describe('chat endpoints', () => {
     const endpoint = buildChatEndpoints().find(
       (item) => item.path === '/frogbot/chat/suggest-title',
     );
+
     const response = await endpoint!.handler({} as FrogBotRequest);
 
     expect(response.status).toBe(401);

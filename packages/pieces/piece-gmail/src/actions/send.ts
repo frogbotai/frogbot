@@ -25,10 +25,12 @@ export const send = defineAction({
     const extraHeaders: string[] = [];
     if (input.inReplyTo) {
       extraHeaders.push(`References: ${input.inReplyTo}`, `In-Reply-To: ${input.inReplyTo}`);
+
       threadId =
         (await client.users.messages.list({ userId: 'me', q: `Rfc822msgid:${input.inReplyTo}` }))
           .data.messages?.[0]?.threadId ?? undefined;
     }
+
     const message = { threadId, raw: await createRawMessage({ input, req, extraHeaders }) };
     const sent = input.draft
       ? ((await client.users.drafts.create({ userId: 'me', requestBody: { message } })).data

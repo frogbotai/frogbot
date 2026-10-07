@@ -11,6 +11,7 @@ export class FrogBotEnvError extends Error {
     super(
       `Invalid environment:\n${issues.map((issue) => `  - ${issue.name} (${issue.envName}): ${issue.message}`).join('\n')}`,
     );
+
     this.name = 'FrogBotEnvError';
     this.issues = issues;
   }

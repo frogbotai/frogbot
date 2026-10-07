@@ -3,6 +3,7 @@ export function toCellData(value: unknown): unknown {
   const relationship = value as { id?: unknown; relationTo?: unknown; value?: unknown };
   if (relationship.relationTo && relationship.value !== undefined) {
     const relatedValue = relationship.value;
+
     return {
       relationTo: relationship.relationTo,
       value:
@@ -11,6 +12,7 @@ export function toCellData(value: unknown): unknown {
           : relatedValue,
     };
   }
+
   return relationship.id ?? value;
 }
 
@@ -28,6 +30,7 @@ export function getPath(value: Record<string, unknown>, path: string): unknown {
 
 export function setPath(path: string, value: unknown): Record<string, unknown> {
   const [first, ...rest] = path.split('.');
+
   return { [first]: rest.reduceRight<unknown>((result, key) => ({ [key]: result }), value) };
 }
 
@@ -35,13 +38,17 @@ export function appendQuery(params: URLSearchParams, key: string, value: unknown
   if (value === undefined || value === null || value === '') return;
   if (Array.isArray(value)) {
     value.forEach((item, index) => appendQuery(params, `${key}[${index}]`, item));
+
     return;
   }
+
   if (typeof value === 'object') {
     Object.entries(value as Record<string, unknown>).forEach(([child, item]) =>
       appendQuery(params, `${key}[${child}]`, item),
     );
+
     return;
   }
+
   params.set(key, String(value));
 }

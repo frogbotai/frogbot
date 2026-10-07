@@ -21,11 +21,13 @@ function harness() {
     entries: { example: { piece: {} as never, oauth: false, secret: true } },
     encryption: createCredentialEncryption({ secret: 'test-secret' }),
   };
+
   const atomic = {
     acquireLock: vi.fn((key: string) => Promise.resolve({ key, token: 'token' })),
     extendLock: vi.fn(() => Promise.resolve(true)),
     releaseLock: vi.fn(() => Promise.resolve(true)),
   };
+
   const frogbot = {
     find: vi.fn(() => Promise.resolve({ docs: [] })),
     create: vi.fn(({ data }) => Promise.resolve({ ...data, id: 1 })),
@@ -36,7 +38,9 @@ function harness() {
         runKVLock({ kv: atomic, key, ttl, fn }),
     },
   };
+
   const store = new ConnectionStore({ frogbot: frogbot as never, config, userSlug: 'users' });
+
   return { config, atomic, frogbot, store };
 }
 
@@ -53,6 +57,7 @@ describe('connection store guards and leases', () => {
   ])('rejects invalid owner %j before storage or lock access', async (invalid) => {
     const { store, frogbot, atomic } = harness();
     const args = { owner: invalid as typeof owner, piece };
+
     await expect(store.list(args)).rejects.toThrow('admin user collection');
     await expect(store.get(args)).rejects.toThrow('admin user collection');
     await expect(store.upsert({ ...args, ...write })).rejects.toThrow('admin user collection');
@@ -65,6 +70,7 @@ describe('connection store guards and leases', () => {
     'rejects noncanonical piece %s',
     async (slug) => {
       const { store, atomic } = harness();
+
       await expect(store.upsert({ owner, piece: slug, ...write })).rejects.toThrow(
         'not configured',
       );
@@ -74,10 +80,13 @@ describe('connection store guards and leases', () => {
 
   it('rejects disabled methods and encryption failure without writing', async () => {
     const { store, frogbot, config } = harness();
+
     await expect(store.upsert({ owner, piece, ...write, method: 'oauth' })).rejects.toThrow(
       'not enabled',
     );
+
     vi.spyOn(config.encryption, 'encrypt').mockRejectedValue(new Error('encryption failed'));
+
     await expect(store.upsert({ owner, piece, ...write })).rejects.toThrow('encryption failed');
     expect(frogbot.create).not.toHaveBeenCalled();
     expect(frogbot.update).not.toHaveBeenCalled();
@@ -91,6 +100,7 @@ describe('connection store guards and leases', () => {
     const pending = new Promise<void>((resolve) => {
       finish = resolve;
     });
+
     const result = store.withLock({
       owner,
       piece,
@@ -98,13 +108,18 @@ describe('connection store guards and leases', () => {
         locked = operations;
         await operations.get();
         await pending;
+
         return operations.upsert(write);
       },
     });
+
     await vi.advanceTimersByTimeAsync(40_000);
+
     expect(atomic.extendLock).toHaveBeenCalledTimes(4);
     expect(locked.signal.aborted).toBe(false);
+
     finish();
+
     await expect(result).resolves.toMatchObject({ id: 1 });
     expect(atomic.releaseLock).toHaveBeenCalledOnce();
     await expect(locked.upsert(write)).rejects.toThrow('closed');
@@ -122,21 +137,27 @@ describe('connection store guards and leases', () => {
     const pending = new Promise<void>((resolve) => {
       finish = resolve;
     });
+
     const result = store.withLock({
       owner,
       piece,
       fn: async (operations) => {
         locked = operations;
         await pending;
+
         return operations.upsert(write);
       },
     });
+
     const rejected = result.catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(10_000);
+
     expect(await rejected).toBeInstanceOf(KVLeaseLostError);
     expect(locked.signal.aborted).toBe(true);
+
     finish();
     await vi.advanceTimersByTimeAsync(0);
+
     expect(frogbot.create).not.toHaveBeenCalled();
     expect(frogbot.update).not.toHaveBeenCalled();
     await expect(locked.delete()).rejects.toBeInstanceOf(KVLeaseLostError);

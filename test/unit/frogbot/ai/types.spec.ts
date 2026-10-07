@@ -30,9 +30,11 @@ describe('AI config types', () => {
       secretAccessKey: string;
       sessionToken?: string;
     }>().toMatchTypeOf<BedrockProviderEntry>();
+
     const credentialProviderEntry: BedrockProviderEntry = {
       credentialProvider: () => Promise.resolve({ accessKeyId: 'ak', secretAccessKey: 'sk' }),
     };
+
     expectTypeOf(credentialProviderEntry).toMatchTypeOf<BedrockProviderEntry>();
     expectTypeOf<{
       credentialProvider: () => Promise<{ accessKeyId: string; secretAccessKey: string }>;

@@ -43,6 +43,7 @@ function ownWhere(req: FrogBotRequest, field: string, polymorphic: boolean): Whe
         value: user.id,
       }
     : user.id;
+
   return { [field]: { equals: value } };
 }
 
@@ -56,29 +57,38 @@ function compile<TArgs extends RoleAccessArgs, TResult extends boolean | Where>(
     const configured = binding?.roles ?? new Set<string>();
     const assigned: readonly string[] = resolveRequestRoles(req, binding?.resolver);
     const wheres: Where[] = [];
+
     for (const clause of clauses) {
       if (typeof clause === 'string') {
         if (configured.has(clause) && assigned.includes(clause)) return true;
         continue;
       }
+
       if (isOwnClause(clause)) {
         if (!configured.has(clause.role) || !assigned.includes(clause.role)) continue;
         if (binding?.operation === 'create') return true;
+
         wheres.push(
           ownWhere(req, clause.own, binding?.polymorphicOwnFields.has(clause.own) ?? false),
         );
+
         continue;
       }
+
       const result = await (clause as ClauseFunction<TArgs>)(args);
       if (result === true) return true;
       if (result !== false) wheres.push(result);
     }
+
     if (wheres.length === 0) return false;
     if (wheres.length === 1) return wheres[0];
+
     return { or: wheres };
   };
+
   const compiled = access as CompiledAccess<TArgs, TResult>;
   compiled[compiledAccess] = { binding, clauses };
+
   return compiled;
 }
 

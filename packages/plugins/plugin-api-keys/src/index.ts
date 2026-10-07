@@ -37,6 +37,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
         `[plugin-api-keys] Auth collection '${authCollection}' must exist and have auth enabled.`,
       );
     }
+
     const existing = config.collections.find((collection) => collection.slug === collectionSlug);
     const usageLog = config.ai
       ? (config.collections.find((item) => item.usageLog === true) ?? {
@@ -45,6 +46,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
           fields: [],
         })
       : undefined;
+
     const collection = createApiKeysCollection({
       authCollection,
       collectionSlug,
@@ -54,32 +56,39 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
       collection: options.collection,
       existing,
     });
+
     const strategy = createApiKeyStrategy({
       authCollection,
       collectionSlug,
       headerNames: options.headerNames,
       tokenPrefix: options.tokenPrefix ?? 'fb',
     });
+
     const usageField = {
       name: 'apiKey',
       type: 'relationship' as const,
       relationTo: collectionSlug,
       index: true,
     };
+
     const collections = config.collections.map((item) => {
       let next = item;
       if (item.slug === collectionSlug) next = collection;
       if (item.slug === authCollection) {
         const authConfig = typeof next.auth === 'object' ? next.auth : {};
+
         next = {
           ...next,
           auth: { ...authConfig, strategies: [...(authConfig.strategies ?? []), strategy] },
           hooks: { ...next.hooks, me: [...(next.hooks?.me ?? []), apiKeyMeHook] },
         };
       }
+
       if (item === usageLog) next = { ...next, fields: [...next.fields, usageField] };
+
       return next;
     });
+
     return {
       ...config,
       collections: [

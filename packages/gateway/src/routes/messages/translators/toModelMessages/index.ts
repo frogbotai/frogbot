@@ -59,9 +59,11 @@ export function toModelMessages(args: {
 
     if (msg.role === 'user') {
       const parsed = parseUserMessage(msg, i, toolNameMap);
+
       for (const m of parsed) {
         out.push(m);
       }
+
       continue;
     }
 
@@ -73,6 +75,7 @@ export function toModelMessages(args: {
         }
       }
     }
+
     out.push(parseAssistantMessage(msg, i, logger));
   }
 

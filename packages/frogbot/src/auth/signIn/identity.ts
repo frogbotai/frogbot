@@ -30,6 +30,7 @@ export async function resolveSignInIdentity({
   const config = await req.frogbot.config._internal.payloadConfig;
   const collection = config.collections.find(({ slug }) => slug === collectionSlug);
   if (!collection?.auth) throw new OAuthError('configuration');
+
   return withSessionOperation({
     req,
     collectionSlug,
@@ -48,6 +49,7 @@ export async function resolveSignInIdentity({
             ],
           },
         });
+
         signal.throwIfAborted();
         if (result.docs.length > 1) throw new OAuthError('account');
         const user = result.docs[0];
@@ -59,8 +61,10 @@ export async function resolveSignInIdentity({
         ) {
           throw new OAuthError('account');
         }
+
         return user;
       };
+
       const existing = await find();
       if (existing) return existing.id;
       let createdId: string | number | undefined;
@@ -78,6 +82,7 @@ export async function resolveSignInIdentity({
           depth: 0,
           req,
         });
+
         createdId = created.id;
       } catch (error) {
         if (
@@ -95,10 +100,12 @@ export async function resolveSignInIdentity({
           throw error;
         }
       }
+
       const user = await find();
       if (!user || (createdId !== undefined && user.id !== createdId)) {
         throw new OAuthError('account');
       }
+
       return user.id;
     },
   });

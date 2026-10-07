@@ -19,8 +19,10 @@ export function useControlledState<T>({
   const setValue = (nextValue: T | ((value: T) => T)) => {
     const next =
       typeof nextValue === 'function' ? (nextValue as (value: T) => T)(resolvedValue) : nextValue;
+
     if (!isControlled) setInternalValue(next);
     onChange?.(next);
   };
+
   return [resolvedValue, setValue] as const;
 }

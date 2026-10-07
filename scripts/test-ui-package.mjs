@@ -35,6 +35,7 @@ try {
   run('tar', ['-xzf', path.join(temporaryRoot, tarball), '-C', temporaryRoot]);
 
   const packageJSON = JSON.parse(fs.readFileSync(path.join(extractedRoot, 'package.json'), 'utf8'));
+
   assert.deepEqual(
     Object.keys(packageJSON.exports).sort(),
     [...subpaths, './styles.css', './utilities.css'].sort(),
@@ -51,6 +52,7 @@ try {
   const cssFiles = fs
     .readdirSync(extractedRoot, { recursive: true })
     .filter((file) => file.endsWith('.css'));
+
   assert.ok(cssFiles.includes('src/layers.css'));
   assert.ok(cssFiles.includes('src/styles.css'));
   assert.ok(cssFiles.includes('src/utilities.css'));
@@ -66,6 +68,7 @@ try {
 
   fs.mkdirSync(path.join(appRoot, 'src'), { recursive: true });
   fs.copyFileSync(path.join(temporaryRoot, tarball), path.join(appRoot, tarball));
+
   fs.writeFileSync(
     path.join(appRoot, 'package.json'),
     `${JSON.stringify(
@@ -90,10 +93,12 @@ try {
       2,
     )}\n`,
   );
+
   fs.writeFileSync(
     path.join(appRoot, 'index.html'),
     '<div id="root"></div><script type="module" src="/src/main.tsx"></script>\n',
   );
+
   fs.writeFileSync(
     path.join(appRoot, 'tsconfig.json'),
     `${JSON.stringify(
@@ -114,6 +119,7 @@ try {
       2,
     )}\n`,
   );
+
   fs.writeFileSync(
     path.join(appRoot, 'src/main.tsx'),
     `import { Button, Card, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Sidebar, SidebarInset, SidebarProvider } from '@frogbotai/ui'
@@ -157,6 +163,7 @@ createRoot(document.getElementById('root')!).render(
     .filter((file) => file.endsWith('.js'))
     .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
     .join('\n');
+
   assert.match(bundle, /Navigation/);
   assert.match(bundle, /Bundled chat/);
 
@@ -165,7 +172,9 @@ createRoot(document.getElementById('root')!).render(
     .filter((file) => file.endsWith('.css'))
     .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
     .join('\n');
+
   assert.match(bundledCss, /^@layer theme,\s*base,\s*components,\s*frogbot,\s*utilities;/);
+
   for (const forbidden of [
     'process.env',
     '@payloadcms/',
@@ -184,16 +193,19 @@ createRoot(document.getElementById('root')!).render(
     path.join(appRoot, 'src/icon.ts'),
     `export { MenuIcon } from '@frogbotai/ui/icons/menu'\n`,
   );
+
   fs.writeFileSync(
     path.join(appRoot, 'vite.icon.config.js'),
     `import { defineConfig } from 'vite'
 export default defineConfig({ build: { lib: { entry: 'src/icon.ts', formats: ['es'] }, rollupOptions: { external: ['react', 'react/jsx-runtime'] } } })
 `,
   );
+
   run('pnpm', ['vite', 'build', '--config', 'vite.icon.config.js'], appRoot);
   const iconBundle = fs
     .readdirSync(path.join(appRoot, 'dist'))
     .find((file) => file.endsWith('.js'));
+
   assert.ok(iconBundle);
   assert.ok(fs.statSync(path.join(appRoot, 'dist', iconBundle)).size < 4000);
 

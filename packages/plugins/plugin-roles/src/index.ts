@@ -41,11 +41,13 @@ function bindFields(
                   : typeof clause === 'object'
                     ? clause.role
                     : undefined;
+
               if (role && !roles.has(role)) {
                 throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
               }
             }
           }
+
           return [
             operation,
             bindCompiledAccess(value, {
@@ -57,11 +59,14 @@ function bindFields(
           ];
         }),
       );
+
       next = { ...next, access };
     }
+
     if ('fields' in next && Array.isArray(next.fields)) {
       next = { ...next, fields: bindFields(next.fields, roles, resolver, false) };
     }
+
     if ('tabs' in next && Array.isArray(next.tabs)) {
       next = {
         ...next,
@@ -71,6 +76,7 @@ function bindFields(
         })),
       };
     }
+
     return next;
   });
 }
@@ -87,6 +93,7 @@ function bindAccess(
       ? Object.fromEntries(
           Object.entries(collection.access).map(([operation, value]) => {
             if (!isCompiledAccess(value)) return [operation, value];
+
             for (const clause of value[compiledAccess].clauses) {
               const role =
                 typeof clause === 'string'
@@ -94,19 +101,23 @@ function bindAccess(
                   : typeof clause === 'object'
                     ? clause.role
                     : undefined;
+
               if (role && !listed.has(role)) {
                 throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
               }
             }
+
             const polymorphicOwnFields = new Set(
               value[compiledAccess].clauses.flatMap((clause) => {
                 if (typeof clause !== 'object') return [];
                 const field = fields.find(({ name }) => name === clause.own);
+
                 return field?.type === 'relationship' && Array.isArray(field.relationTo)
                   ? [clause.own]
                   : [];
               }),
             );
+
             return [
               operation,
               bindCompiledAccess(value, {
@@ -119,16 +130,19 @@ function bindAccess(
           }),
         )
       : undefined;
+
     const create = collection.access?.create;
     const own = isCompiledAccess(create)
       ? create[compiledAccess].clauses.filter((clause) => typeof clause === 'object')
       : [];
+
     const boundFields = bindFields(
       collection.fields,
       listed,
       resolver,
       collection.slug === 'users',
     );
+
     if (own.length === 0) return { ...collection, access, fields: boundFields };
     const stamp: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = ({
       data,
@@ -137,6 +151,7 @@ function bindAccess(
     }) => {
       if (operation !== 'create' || !req.user) return data;
       const assigned = resolveRequestRoles(req, resolver);
+
       return own.reduce(
         (next, clause) =>
           listed.has(clause.role) && assigned.includes(clause.role)
@@ -145,6 +160,7 @@ function bindAccess(
         data,
       );
     };
+
     return {
       ...collection,
       access,
@@ -155,29 +171,36 @@ function bindAccess(
       },
     };
   });
+
   return { ...config, collections };
 }
 
 function distance(left: string, right: string): number {
   const row = Array.from({ length: right.length + 1 }, (_, index) => index);
+
   for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
     let previous = row[0];
     row[0] = leftIndex;
+
     for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
       const current = row[rightIndex];
+
       row[rightIndex] = Math.min(
         row[rightIndex] + 1,
         row[rightIndex - 1] + 1,
         previous + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
       );
+
       previous = current;
     }
   }
+
   return row[right.length];
 }
 
 function namedFields(fields: Field[]): Array<Field & { name: string }> {
   const result: Array<Field & { name: string }> = [];
+
   for (const field of fields) {
     if ('name' in field) result.push(field);
     if ('fields' in field && Array.isArray(field.fields)) result.push(...namedFields(field.fields));
@@ -185,15 +208,19 @@ function namedFields(fields: Field[]): Array<Field & { name: string }> {
       for (const tab of field.tabs) result.push(...namedFields(tab.fields));
     }
   }
+
   return result;
 }
 
 function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly string[]): void {
   const authSlug = 'users';
+
   for (const collection of config.collections) {
     const fields = namedFields(collection.fields);
+
     for (const value of Object.values(collection.access ?? {})) {
       if (!isCompiledAccess(value)) continue;
+
       for (const clause of value[compiledAccess].clauses) {
         if (typeof clause !== 'object') continue;
         if (clause.own === 'id') {
@@ -202,17 +229,21 @@ function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly strin
               `[plugin-roles] own field 'id' is only valid on the '${authSlug}' auth collection.`,
             );
           }
+
           continue;
         }
+
         const field = fields.find(({ name }) => name === clause.own);
         if (!field || field.type !== 'relationship') {
           const nearest = fields
             .map(({ name }) => name)
             .sort((a, b) => distance(a, clause.own) - distance(b, clause.own))[0];
+
           throw new Error(
             `[plugin-roles] own field '${clause.own}' on '${collection.slug}' must be a relationship to '${authSlug}'${nearest ? `; did you mean '${nearest}'?` : '.'}`,
           );
         }
+
         const targets = Array.isArray(field.relationTo) ? field.relationTo : [field.relationTo];
         if (!targets.includes(authSlug)) {
           throw new Error(
@@ -221,11 +252,14 @@ function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly strin
         }
       }
     }
+
     for (const field of fields) {
       if (collection.slug === authSlug && field.name === 'roles') continue;
       if (!('access' in field) || !field.access) continue;
+
       for (const value of Object.values(field.access)) {
         if (!isCompiledAccess(value)) continue;
+
         for (const clause of value[compiledAccess].clauses) {
           const role =
             typeof clause === 'string'
@@ -233,10 +267,12 @@ function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly strin
               : typeof clause === 'object'
                 ? clause.role
                 : undefined;
+
           if (role && !roleSlugs.includes(role)) {
             throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
           }
         }
+
         if (value[compiledAccess].clauses.some((clause) => typeof clause === 'object')) {
           throw new Error(
             `[plugin-roles] own clauses cannot be used in field access for '${field.name}'.`,
@@ -270,12 +306,14 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
         },
       };
     }
+
     const prewiring: FrogBotConfig['_roles'] = {
       ...config._roles,
       present: true,
       configured: true,
       roles: roleSlugs,
     };
+
     const authSlug = 'users';
     const fieldName = 'roles';
     const authCollection = config.collections.find(({ slug }) => slug === authSlug);
@@ -285,6 +323,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
         _roles: prewiring,
       };
     }
+
     if (authCollection.fields.some((field) => 'name' in field && field.name === fieldName)) {
       throw new Error(`[plugin-roles] Auth field '${fieldName}' is already in use.`);
     }
@@ -301,6 +340,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       ...(options.defaultRole === undefined ? {} : { defaultValue: [options.defaultRole] }),
       ...(options.rolesFieldAccess === undefined ? {} : { access: options.rolesFieldAccess }),
     };
+
     const collections = config.collections.map((collection) =>
       collection.slug !== authSlug
         ? collection
@@ -316,13 +356,16 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
         : Array.isArray(config.onInit)
           ? config.onInit
           : [config.onInit];
+
     const result = {
       ...config,
       collections,
       onInit: [...onInit, (frogbot) => attachRoleResolver(frogbot, resolver)],
       _roles: prewiring,
     } as FrogBotConfig;
+
     validateCompiledAccess(result, roleSlugs);
+
     return bindAccess(result, roleSlugs, resolver);
   };
 }

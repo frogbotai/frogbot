@@ -29,6 +29,7 @@ export function resolveFilesCollection({ collections }: ResolveFilesCollectionPr
     }
 
     const resolved = [...collections];
+
     resolved[collections.indexOf(existing)] = mergeCollection({
       user: existing,
       base: defaultFilesCollection({ slug }),

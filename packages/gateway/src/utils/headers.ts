@@ -86,6 +86,7 @@ export const FORWARD_HEADER_ALLOWLIST: readonly string[] = [
  */
 function matchesAllowlist(headerName: string): boolean {
   const lower = headerName.toLowerCase();
+
   for (const pattern of FORWARD_HEADER_ALLOWLIST) {
     if (pattern.endsWith('*')) {
       const prefix = pattern.slice(0, -1);
@@ -94,6 +95,7 @@ function matchesAllowlist(headerName: string): boolean {
       if (lower === pattern) return true;
     }
   }
+
   return false;
 }
 

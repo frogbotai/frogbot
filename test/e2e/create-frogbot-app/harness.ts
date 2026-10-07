@@ -198,6 +198,7 @@ export function packLocalClosure({
       workspace.has(name),
     );
   });
+
   const selected = new Map<string, string>();
 
   while (pending.length > 0) {
@@ -267,6 +268,7 @@ export function applyLocalOverrides(appDirectory: string, packages: LocalPackage
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8')) as PackageJson & {
     pnpm?: { overrides?: Record<string, string> };
   };
+
   const overrides = Object.fromEntries(
     packages.map(({ name, tarball }) => [name, `file:${tarball}`]),
   );
@@ -281,11 +283,14 @@ export function serviceAvailable(port: number): Promise<boolean> {
     const socket = net.createConnection({ host: '127.0.0.1', port });
 
     socket.setTimeout(500);
+
     socket.once('connect', () => {
       socket.destroy();
       resolve(true);
     });
+
     socket.once('error', () => resolve(false));
+
     socket.once('timeout', () => {
       socket.destroy();
       resolve(false);

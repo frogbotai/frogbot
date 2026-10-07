@@ -10,12 +10,15 @@ function captureProvider(successBody: unknown) {
   let body: Record<string, any> | undefined;
   const fetch = (_input: RequestInfo | URL, init?: RequestInit) => {
     body = JSON.parse(String(init?.body)) as Record<string, any>;
+
     return Promise.resolve(Response.json(successBody));
   };
+
   return {
     fetch,
     getBody: () => {
       if (!body) throw new Error('No request captured');
+
       return body;
     },
   };
@@ -35,9 +38,11 @@ describe('SDK cache contracts', () => {
       stop_sequence: null,
       usage: { input_tokens: 1, output_tokens: 1 },
     });
+
     const model = createAnthropic({ apiKey: 'test', fetch: capture.fetch }).languageModel(
       'claude-sonnet-4-20250514',
     );
+
     await model.doGenerate({
       prompt: [
         {
@@ -62,11 +67,13 @@ describe('SDK cache contracts', () => {
       usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
       metrics: { latencyMs: 1 },
     });
+
     const model = createAmazonBedrock({
       apiKey: 'test',
       region: 'us-east-1',
       fetch: capture.fetch,
     }).languageModel('anthropic.claude-sonnet-4-20250514-v1:0');
+
     await model.doGenerate({
       prompt: [
         {
@@ -97,7 +104,9 @@ describe('SDK cache contracts', () => {
       choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
     });
+
     const model = createOpenAI({ apiKey: 'test', fetch: capture.fetch }).chat('gpt-4o-mini');
+
     await model.doGenerate({
       prompt: [
         {
@@ -124,9 +133,11 @@ describe('SDK cache contracts', () => {
       ],
       usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
     });
+
     const model = createGoogleGenerativeAI({ apiKey: 'test', fetch: capture.fetch }).languageModel(
       'gemini-2.5-flash',
     );
+
     await model.doGenerate({
       prompt,
       providerOptions: { google: { cachedContent: 'cachedContents/example' } },

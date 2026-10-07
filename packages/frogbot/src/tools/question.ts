@@ -41,6 +41,7 @@ export const QuestionOutput = z.object({
 });
 
 export type QuestionInput = z.output<typeof QuestionInput>;
+
 export type QuestionOutput = z.output<typeof QuestionOutput>;
 
 export const question: ClientTool<typeof QuestionInput, typeof QuestionOutput> = {

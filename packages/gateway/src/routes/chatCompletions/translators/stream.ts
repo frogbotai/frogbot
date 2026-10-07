@@ -146,6 +146,7 @@ export function createOpenAIStreamTransform(
   return new TransformStream({
     transform(part, controller) {
       const chunks = partToChunks(part, state);
+
       for (const chunk of chunks) {
         controller.enqueue(`data: ${JSON.stringify(chunk)}\n\n`);
       }
@@ -165,6 +166,7 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
         delta.role = 'assistant';
         state.roleEmitted = true;
       }
+
       return [makeChunk(state, { delta, finish_reason: null })];
     }
 
@@ -174,20 +176,24 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
         index = state.nextReasoningIndex++;
         state.reasoningIdToIndex.set(part.id, index);
       }
+
       const detail = toReasoningDetail({
         text: part.text,
         providerMetadata: part.providerMetadata,
         id: part.id,
         index,
       });
+
       const delta: OpenAIStreamDelta = {
         reasoning_content: part.text,
         reasoning_details: [detail],
       };
+
       if (!state.roleEmitted) {
         delta.role = 'assistant';
         state.roleEmitted = true;
       }
+
       return [makeChunk(state, { delta, finish_reason: null })];
     }
 
@@ -197,6 +203,7 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
         index = state.nextToolCallIndex++;
         state.toolCallIndices.set(part.id, index);
       }
+
       const delta: OpenAIStreamDelta = {
         tool_calls: [
           {
@@ -207,10 +214,12 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
           },
         ],
       };
+
       if (!state.roleEmitted) {
         delta.role = 'assistant';
         state.roleEmitted = true;
       }
+
       return [makeChunk(state, { delta, finish_reason: null })];
     }
 
@@ -224,6 +233,7 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
           },
         ],
       };
+
       return [makeChunk(state, { delta, finish_reason: null })];
     }
 
@@ -241,12 +251,14 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
         delta: {},
         finish_reason: finishReason,
       });
+
       // Build the usage totals for the request.
       const usage: OpenAIStreamUsage = {
         prompt_tokens: part.usage.inputTokens ?? 0,
         completion_tokens: part.usage.outputTokens ?? 0,
         total_tokens: part.usage.totalTokens ?? 0,
       };
+
       if (
         part.usage.inputTokenDetails?.cacheReadTokens !== undefined ||
         part.usage.inputTokenDetails?.cacheWriteTokens !== undefined
@@ -262,19 +274,23 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
             : {}),
         };
       }
+
       if (part.usage.outputTokenDetails?.reasoningTokens !== undefined) {
         usage.completion_tokens_details = {
           reasoning_tokens: part.usage.outputTokenDetails.reasoningTokens,
         };
       }
+
       if (state.includeUsage) {
         // include_usage: the finish chunk carries usage: null (set by
         // makeChunk); the populated totals arrive on a dedicated empty-choices
         // chunk emitted after it and before the terminal [DONE].
         return [chunk, makeUsageChunk(state, usage)];
       }
+
       // Default (backward-compatible) path: usage populated on the finish chunk.
       chunk.usage = usage;
+
       return [chunk];
     }
 
@@ -285,9 +301,11 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
         if (extras.systemFingerprint) {
           state.systemFingerprint = extras.systemFingerprint;
         }
+
         if (extras.serviceTier) {
           state.serviceTier = extras.serviceTier;
         }
+
         if (extras.refusal) {
           // Emit refusal delta inline — OpenAI surfaces refusal as a delta field
           state.refusal = (state.refusal ?? '') + extras.refusal;
@@ -296,9 +314,11 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
             delta.role = 'assistant';
             state.roleEmitted = true;
           }
+
           return [makeChunk(state, { delta, finish_reason: null })];
         }
       }
+
       return [];
     }
 
@@ -308,11 +328,13 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
       // error info but the HTTP status remains 200 (already sent).
       const errorInfo = extractOpenAIStreamErrorInfo(part.error, state.maskOpts);
       const chunk = makeChunk(state, { delta: {}, finish_reason: null });
+
       chunk.error = {
         message: errorInfo.message,
         type: errorInfo.type,
         code: errorInfo.code,
       };
+
       return [chunk];
     }
 
@@ -339,11 +361,13 @@ function makeChunk(
     ...(state.serviceTier ? { service_tier: state.serviceTier } : {}),
     choices: [{ index: 0, ...choice }],
   };
+
   // include_usage contract: every non-final chunk carries an explicit
   // `usage: null`; the populated totals arrive on a dedicated final chunk.
   if (state.includeUsage) {
     chunk.usage = null;
   }
+
   return chunk;
 }
 

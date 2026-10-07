@@ -16,11 +16,16 @@ export type OAuthTokens = Record<string, PieceJSON> & {
 };
 
 export type OAuthApp = { clientId: string; clientSecret: string; scopes?: string[] };
+
 export type PieceOption = { label: string; value: string };
+
 export type PieceAdmin = { description?: string; icon?: object | string; group?: string };
+
 export type PieceJSON =
   boolean | null | number | string | PieceJSON[] | { [key: string]: PieceJSON };
+
 export type PieceResult = unknown;
+
 export type PieceCallArgs<TInput, TRequireRequest extends boolean> = {
   input: TInput;
   overrideAccess?: boolean;
@@ -200,6 +205,7 @@ export type PieceTriggerReference = Readonly<
 >;
 
 export type PieceOAuthAccount = { id: string; label: string; email?: string };
+
 export type PieceOAuthRecipe<
   TAuth,
   TClient,
@@ -255,6 +261,7 @@ export type PieceCapabilities = {
 export const pieceCapabilities = '~capabilities';
 
 export type PieceActionTypes = { input: unknown; output: unknown };
+
 export type PieceTypes = {
   auth: unknown;
   options: object;
@@ -375,17 +382,23 @@ export type PieceFactory<T extends PieceDefinition> = <
 ) => DefinedPiece<T, TConfig>;
 
 export type { ConnectionEntry } from '../connections/types.js';
+
 export type EmailPieceInstance = PieceInstance & {
   readonly [pieceCapabilities]: PieceCapabilities & { email: object };
 };
+
 export type ChannelPieceInstance = PieceInstance & {
   readonly [pieceCapabilities]: PieceCapabilities & { channel: object };
 };
+
 export type SignInMethod = PieceInstance & {
   readonly [pieceCapabilities]: PieceCapabilities & { factoryOAuth: true; signIn: true };
 };
+
 export type SecondFactor = never;
+
 export type Piece = PieceInstance;
+
 export type PieceConfig = PieceInstance;
 
 export type SanitizedPiecesConfig = {

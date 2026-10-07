@@ -8,15 +8,18 @@ const nextRoot = path.resolve('templates/blank/.next');
 const standaloneCopy = fs.realpathSync(
   fs.mkdtempSync(path.join(os.tmpdir(), 'frogbot-standalone-')),
 );
+
 const registryRouteRoot = path.resolve(
   'templates/blank/src/app/(frogbot)/icon-registry-resolution',
 );
+
 const registryRoute = path.join(registryRouteRoot, 'page.tsx');
 const importMap = path.resolve('templates/blank/src/app/(frogbot)/importMap.js');
 const originalImportMap = fs.readFileSync(importMap);
 
 fs.rmSync(nextRoot, { recursive: true, force: true });
 fs.mkdirSync(registryRouteRoot);
+
 fs.writeFileSync(
   registryRoute,
   `import { iconNames } from '@frogbotai/ui/icons/registry';
@@ -44,43 +47,52 @@ try {
     .filter((file) => file.endsWith('.css'))
     .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
     .join('\n');
+
   assert.ok(css.length > 0);
 
   const manifest = fs.readFileSync(
     path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page_client-reference-manifest.js'),
     'utf8',
   );
+
   const layoutCss = manifest.match(/"[^"]*\/app\/\(frogbot\)\/layout":(\[[^\]]*\])/);
   assert.ok(layoutCss, 'No CSS entry for the admin layout');
 
   const layoutStyles = JSON.parse(layoutCss[1])
     .map((entry) => fs.readFileSync(path.join(nextRoot, entry.path), 'utf8'))
     .join('\n');
+
   const layerStatements = Array.from(layoutStyles.matchAll(/@layer ([^{;]+);/g), (match) =>
     match[1].replace(/\s+/g, ''),
   );
+
   assert.equal(layerStatements[0], 'payload-default,frogbot,payload');
   assert.ok(layerStatements.includes('payload-default,payload'));
   assert.match(css, /\.fb-button/);
   assert.match(css, /var\(--theme-base-/);
   assert.match(css, /data-fb-theme/);
   assert.match(css, /data-fb-ui-page/);
+
   assert.doesNotMatch(
     css,
     /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))\b/,
   );
+
   assert.match(css, /body:has\(\.frogbot-nav-shell\) \.app-header__mobile-nav-toggler/);
   assert.match(css, /\.frogbot-mobile-nav-toggle/);
   assert.match(css, /\.frogbot-nav-backdrop/);
+
   for (const state of ['desktop-nav-closed', 'mobile-nav-open', 'mobile-nav-closed']) {
     assert.match(css, new RegExp(`\\.frogbot-nav-shell\\[data-nav-state=${state}\\]`));
   }
+
   assert.doesNotMatch(css, /\.template-default[^{]*\{[^}]*!important/);
 
   const bundles = staticFiles
     .filter((file) => file.endsWith('.js'))
     .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
     .join('\n');
+
   for (const forbidden of [
     '@payloadcms/',
     '@tauri-apps/',

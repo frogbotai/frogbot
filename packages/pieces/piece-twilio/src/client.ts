@@ -44,6 +44,7 @@ export function createTwilioClient({ auth, options }: { auth: unknown; options: 
         },
         body: form,
       });
+
       const result = binary
         ? new Uint8Array(await response.arrayBuffer())
         : await response.json().catch(() => null);

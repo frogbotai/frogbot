@@ -121,6 +121,7 @@ async function asked({
     api.calls
       .filter(({ method, result }) => method === 'editMessageText' && result?.message_id === cardId)
       .map(({ body }) => body);
+
   const card = () => edits().at(-1) ?? api.cards().at(-1);
 
   const tap = (
@@ -137,9 +138,11 @@ async function asked({
 beforeEach(() => {
   vi.useFakeTimers();
   listPendingCalls.mockReset().mockResolvedValue([]);
+
   settleClientToolCall
     .mockReset()
     .mockResolvedValue({ status: 'settled', part: {}, allSettled: true });
+
   continueTurn.mockReset();
 });
 
@@ -399,6 +402,7 @@ describe('Telegram native questions through the installed adapter and channel ho
         text: 'Teal',
       }),
     );
+
     await fixture.run();
 
     expect(settleClientToolCall.mock.calls[0][0]).toMatchObject({
@@ -414,6 +418,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     const fixture = await asked({ chatId: group });
 
     await fixture.tap('Type your answer');
+
     await fixture.webhook(
       messageUpdate({
         anchor: fixture.cardId,
@@ -423,6 +428,7 @@ describe('Telegram native questions through the installed adapter and channel ho
         text: '/teal',
       }),
     );
+
     await fixture.run();
 
     expect(fixture.inputs.at(-1)!.thread.id).toBe(`telegram:${group}`);
@@ -435,6 +441,7 @@ describe('Telegram native questions through the installed adapter and channel ho
     const fixture = await asked({ chatId: group });
 
     await fixture.tap('Type your answer');
+
     await fixture.webhook(
       messageUpdate({
         anchor: fixture.cardId,
@@ -444,6 +451,7 @@ describe('Telegram native questions through the installed adapter and channel ho
         text: 'Teal',
       }),
     );
+
     await fixture.run();
 
     expect(settleClientToolCall.mock.calls[0][0].outcome.output.answers[0].custom).toBe('Teal');
@@ -455,9 +463,11 @@ describe('Telegram native questions through the installed adapter and channel ho
     const fixture = await asked({ chatId: group, topic: 7 });
 
     await fixture.tap('Type your answer');
+
     await fixture.webhook(
       messageUpdate({ chatId: group, replyTo: fixture.cardId, text: '@frogbot Teal', topic: 8 }),
     );
+
     await fixture.run();
 
     expect(settleClientToolCall).not.toHaveBeenCalled();
@@ -473,9 +483,11 @@ describe('Telegram native questions through the installed adapter and channel ho
     await fixture.tap('Type your answer');
     await fixture.webhook(messageUpdate({ chatId: group, text: 'Actually, what about paint?' }));
     await fixture.run();
+
     await fixture.webhook(
       messageUpdate({ chatId: group, replyTo: fixture.cardId - 1, text: 'About your last reply' }),
     );
+
     await fixture.run();
 
     expect(settleClientToolCall).not.toHaveBeenCalled();

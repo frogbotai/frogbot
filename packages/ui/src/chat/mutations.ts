@@ -20,7 +20,9 @@ export async function branchChat(
     body: JSON.stringify({ chatId, messageId }),
     headers: { 'Content-Type': 'application/json' },
   });
+
   emitChatMutation();
+
   return result.chatId;
 }
 
@@ -37,6 +39,7 @@ export async function suggestChatTitle({
       headers: { 'Content-Type': 'application/json' },
     },
   );
+
   return result.suggestion ?? undefined;
 }
 
@@ -53,7 +56,9 @@ export async function renameChat(
       headers: { 'Content-Type': 'application/json' },
     },
   );
+
   emitChatMutation();
+
   return chat;
 }
 
@@ -70,7 +75,9 @@ export async function updateChatAgent(
       headers: { 'Content-Type': 'application/json' },
     },
   );
+
   emitChatMutation();
+
   return chat;
 }
 
@@ -85,10 +92,12 @@ export async function deleteChat({
     limit: '0',
     'where[chat][equals]': String(chatId),
   });
+
   const messages = await chatRequest<PayloadPage<MessageDocument>>(
     sdk,
     `/${encodeURIComponent(messagesSlug)}?${params}`,
   );
+
   await Promise.all(
     messages.docs.map((message) =>
       chatRequest(
@@ -98,11 +107,13 @@ export async function deleteChat({
       ),
     ),
   );
+
   await chatRequest(
     sdk,
     `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`,
     { method: 'DELETE' },
   );
+
   emitChatMutation();
 }
 

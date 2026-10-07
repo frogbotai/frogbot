@@ -40,6 +40,7 @@ it('matches the canonical Firmware composer shell', () => {
   const gradientContainer = container.querySelector(
     `.${firmwareComposerBaseline.gradientContainer}`,
   );
+
   const panel = gradientContainer?.firstElementChild;
   const textarea = screen.getByLabelText('Message');
   fireEvent.change(textarea, { target: { value: 'Hello' } });

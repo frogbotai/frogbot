@@ -39,12 +39,14 @@ async function mintForOwner({
     overrideAccess: true,
     req,
   })) as Record<string, unknown>;
+
   return { id: doc.id, name, prefix, token, createdAt: doc.createdAt };
 }
 
 export async function mintApiKey(options: MintApiKeyOptions) {
   const owner = options.req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
+
   return mintForOwner({
     req: options.req,
     collectionSlug: options.collectionSlug,
@@ -64,6 +66,7 @@ export async function rotateApiKey({
   anyOwner,
 }: RotateApiKeyOptions) {
   const revoked = await revokeApiKey({ req, collectionSlug, id, anyOwner });
+
   return mintForOwner({
     req,
     collectionSlug,
@@ -86,6 +89,7 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
       ? { id: { equals: id } }
       : { and: [{ id: { equals: id } }, { owner: { equals: owner } }] },
   });
+
   const key = result.docs[0] as Record<string, unknown> | undefined;
   if (
     !key ||
@@ -95,7 +99,9 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
   ) {
     throw new ApiKeyServiceError('not_found');
   }
+
   const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
+
   await req.frogbot.update({
     collection: collectionSlug,
     id: key.id,
@@ -103,5 +109,6 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
     overrideAccess: true,
     req,
   });
+
   return { id: key.id, name: key.name, owner: key.owner, revokedAt };
 }

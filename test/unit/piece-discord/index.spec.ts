@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   'frogbot/pieces/test',
   () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
@@ -70,6 +71,7 @@ describe('discord', () => {
       .export({ format: 'der', type: 'spki' })
       .subarray(-32)
       .toString('hex');
+
     const body = await readFile(new URL('./fixtures/ping.json', import.meta.url), 'utf8');
     const timestamp = String(Math.floor(Date.now() / 1000));
     const signature = sign(null, Buffer.from(timestamp + body), privateKey).toString('hex');
@@ -177,6 +179,7 @@ describe('discord', () => {
       .export({ format: 'der', type: 'spki' })
       .subarray(-32)
       .toString('hex');
+
     const body = await readFile(new URL('./fixtures/ping.json', import.meta.url), 'utf8');
     const timestamp = '1789344000';
     const signature = sign(null, Buffer.from(timestamp + body), privateKey).toString('hex');
@@ -191,6 +194,7 @@ describe('discord', () => {
         respondToGlobalMentions: false,
       },
     });
+
     const request = new Request('https://example.com/api/webhooks/discord', {
       method: 'POST',
       headers: {
@@ -350,6 +354,7 @@ describe('discord', () => {
       `https://discord.com/api/v10${path}`,
       expect.objectContaining({ method, headers: expect.any(Headers) }),
     );
+
     const headers = fetch.mock.calls[0]?.[1]?.headers as Headers;
 
     expect(headers.get('authorization')).toBe('Bot discord_test_token');
@@ -363,15 +368,18 @@ describe('discord', () => {
       if (path.endsWith('/channels') && init.method === 'GET') {
         return json([{ id: 'c', name: 'general' }]);
       }
+
       if (path.endsWith('/channels')) return json({ id: 'c', name: 'general' }, 201);
       if (path.endsWith('/roles')) return json({ id: 'r', name: 'moderator' }, 201);
       if (path.endsWith('/webhooks/1')) return empty();
 
       return json({ id: 'c', name: 'renamed', content: 'sent' });
     };
+
     const fetch = vi
       .fn()
       .mockImplementation((url: string, init: RequestInit) => Promise.resolve(respond(url, init)));
+
     vi.stubGlobal('fetch', fetch);
 
     const discord = createDiscord({ auth: { botToken: 'discord_test_token' } });
@@ -403,6 +411,7 @@ describe('discord', () => {
         req: req(),
       }),
     ).resolves.toMatchObject({ content: 'sent' });
+
     const approvalCall = fetch.mock.calls.at(-1);
 
     await expect(
@@ -472,6 +481,7 @@ describe('discord', () => {
       .mockResolvedValueOnce(json([{ id: 'g', name: 'Guild' }]))
       .mockResolvedValueOnce(json([{ id: 'c', name: 'Channel' }]))
       .mockResolvedValueOnce(json([{ id: 'r', name: 'Role' }]));
+
     vi.stubGlobal('fetch', fetch);
 
     const client = await discordPiece().client({ req: req() });

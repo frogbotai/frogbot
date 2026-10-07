@@ -20,6 +20,7 @@ describe('artifact registry', () => {
       { kind: 'text', render: First },
       { kind: 'text', render: Second },
     ];
+
     expect(resolveArtifact(registry, 'text')?.render).toBe(First);
     expect(resolveArtifact(registry, 'Text')).toBeUndefined();
   });
@@ -30,6 +31,7 @@ describe('artifact registry', () => {
         <ArtifactView artifact={{ kind: 'external', title: 'External', content: { value: 1 } }} />
       </ArtifactProvider>,
     );
+
     expect(screen.getByText('External')).toBeTruthy();
     expect(screen.getByText(/value/)).toBeTruthy();
   });
@@ -38,13 +40,16 @@ describe('artifact registry', () => {
     const onStreamPart = vi.fn(({ setArtifact, streamPart }) =>
       setArtifact({ kind: 'external', content: streamPart.data }),
     );
+
     render(
       <ArtifactProvider registry={[{ kind: 'external', render: First, onStreamPart }]}>
         <ArtifactStreamPart part={{ type: 'data-external', data: 'updated' }} />
         <ArtifactView />
       </ArtifactProvider>,
     );
+
     await waitFor(() => expect(onStreamPart).toHaveBeenCalledOnce());
+
     expect(screen.getByText('first artifact')).toBeTruthy();
   });
 });

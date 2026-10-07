@@ -44,6 +44,7 @@ describe('custom usage logs', () => {
           overrideAccess: true,
           where: { requestId: { equals: 'custom-write' } },
         });
+
         return result.totalDocs;
       })
       .toBe(1);

@@ -21,6 +21,7 @@ const { DefaultCell, ReactSelect, auth, fetchMock, setValue, toast } = vi.hoiste
   setValue: vi.fn(),
   toast: { error: vi.fn() },
 }));
+
 const collections = vi.hoisted((): Record<string, unknown> => ({}));
 const documentInfo = vi.hoisted((): Record<string, unknown> => ({}));
 const form = vi.hoisted((): { value: unknown } => ({ value: undefined }));
@@ -217,6 +218,7 @@ beforeEach(() => {
   form.value = undefined;
 
   Object.keys(collections).forEach((slug) => delete collections[slug]);
+
   Object.assign(collections, {
     articles: { slug: 'articles', versions: { drafts: {} } },
     tasks: { slug: 'tasks' },

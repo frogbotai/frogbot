@@ -92,6 +92,7 @@ describe('chat assets content hash', () => {
       data: { sha256: forged },
       file: { data: Buffer.from('hello') },
     });
+
     const withoutFile = await run({ data: { sha256: forged } });
 
     expect(withFile).toEqual({ sha256: sha256('hello'), text: null });

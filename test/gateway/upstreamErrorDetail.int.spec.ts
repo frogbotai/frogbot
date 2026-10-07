@@ -17,6 +17,7 @@ function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<strin
       callback();
     },
   });
+
   const logger = pino({ level: 'trace' }, stream) as unknown as GatewayLogger;
   const lines = () =>
     chunks
@@ -24,15 +25,18 @@ function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<strin
       .split('\n')
       .filter(Boolean)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
+
   return { logger, lines };
 }
 
 describe('upstream error detail', () => {
   it('logs APICallError detail in production without changing the client envelope bytes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const { logger, lines } = capturePino();
     const responseBody = JSON.stringify({
       error: {
@@ -42,6 +46,7 @@ describe('upstream error detail', () => {
         param: null,
       },
     });
+
     const error = new APICallError({
       message: 'Forbidden',
       url: 'https://api.example.test/v1/chat/completions',
@@ -52,6 +57,7 @@ describe('upstream error detail', () => {
       isRetryable: false,
       data: JSON.parse(responseBody),
     });
+
     const app = createApp({
       logger,
       registry: {

@@ -115,10 +115,12 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
       type === 'joinWebUrl'
         ? `JoinWebUrl eq '${escaped}'`
         : `joinMeetingIdSettings/joinMeetingId eq '${escaped}'`;
+
     const meetings = await request('/v1.0/me/onlineMeetings', page(z.object({ id: z.string() })), {
       query: { $filter: filter },
       signal: abortSignal,
     });
+
     const meeting = meetings.value[0];
 
     if (!meeting) throw new Error('No meeting found with the provided identifier.');

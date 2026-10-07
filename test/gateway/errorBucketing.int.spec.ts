@@ -60,12 +60,14 @@ function createThrowingLanguageModel(error: Error): LanguageModelV4 {
 function makeImagesApp(error: Error) {
   const fakeProvider = { imageModel: () => createThrowingImageModel(error) };
   const registry = { openai: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
 function makeChatApp(error: Error) {
   const fakeProvider = { languageModel: () => createThrowingLanguageModel(error) };
   const registry = { openai: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -97,6 +99,7 @@ describe('gateway integration — AI SDK error bucketing (G25)', () => {
       'AI_InvalidToolInputError',
       'Invalid input for tool get_weather.',
     );
+
     const app = makeChatApp(error);
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {

@@ -24,12 +24,14 @@ export function resolveMarkedCollection({
 }: ResolveMarkedCollectionProps): CollectionConfig[] {
   if (existing) {
     const resolved = [...collections];
+
     resolved[collections.indexOf(existing)] = mergeCollection({
       user: existing,
       base: defaultCollection,
       reservedFields,
       feature,
     });
+
     return resolved;
   }
 

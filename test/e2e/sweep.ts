@@ -14,8 +14,10 @@ type Row = { pid: number; ppid: number; rss: number; command: string };
 
 function processTable(): Row[] {
   const output = execFileSync('ps', ['-axo', 'pid=,ppid=,rss=,command='], { encoding: 'utf8' });
+
   return output.split('\n').flatMap((line) => {
     const match = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/.exec(line);
+
     return match
       ? [
           {
@@ -31,6 +33,7 @@ function processTable(): Row[] {
 
 export function findOrphans(rows: Row[], root = repoRoot): Row[] {
   const byParent = new Map<number, Row[]>();
+
   for (const row of rows) byParent.set(row.ppid, [...(byParent.get(row.ppid) ?? []), row]);
 
   const roots = rows.filter(
@@ -40,13 +43,16 @@ export function findOrphans(rows: Row[], root = repoRoot): Row[] {
       (/[/\\]next[/\\]dist[/\\]bin[/\\]next\b/.test(row.command) ||
         row.command.includes('test/e2e/guardian.mjs')),
   );
+
   const found = new Map<number, Row>();
   const visit = (row: Row) => {
     if (found.has(row.pid)) return;
     found.set(row.pid, row);
     byParent.get(row.pid)?.forEach(visit);
   };
+
   roots.forEach(visit);
+
   return [...found.values()];
 }
 
@@ -62,7 +68,9 @@ export default function setup(): void {
       // Already gone.
     }
   }
+
   const mb = Math.round(orphans.reduce((sum, row) => sum + row.rss, 0) / 1024);
+
   process.stderr.write(
     `[e2e] killed ${orphans.length} orphaned test server process(es) from an earlier run (~${mb} MB)\n`,
   );

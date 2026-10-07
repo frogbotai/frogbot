@@ -8,5 +8,6 @@ export function resolveSourceDir(cwd: string): string {
   } catch {
     return resolve(cwd);
   }
+
   return resolve(cwd);
 }

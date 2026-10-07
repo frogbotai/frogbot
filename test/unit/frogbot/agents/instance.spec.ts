@@ -35,6 +35,7 @@ vi.mock('ai', async (importOriginal) => {
     prepareCall: (call: Record<string, unknown>) => Promise<Record<string, unknown>>;
     tools: unknown;
   };
+
   return {
     ...original,
     ToolLoopAgent: class {
@@ -67,6 +68,7 @@ vi.mock('ai', async (importOriginal) => {
       async stream(call: Record<string, unknown>) {
         agentState.prepared = await this.settings.prepareCall({ ...this.settings, ...call });
         agentState.streamCall = call;
+
         return {};
       }
     },
@@ -86,6 +88,7 @@ vi.mock('@frogbotai/gateway', async (importOriginal) => ({
         await hook(args);
         continue;
       }
+
       try {
         await hook(args);
       } catch {
@@ -163,8 +166,10 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
   // req/user/agent lifted from the seeded context (as toGatewayHooks does in prod).
   const lift = (context: Record<string, unknown>) => {
     const seed = context as { req?: FrogBotRequest; agent?: unknown };
+
     return { req: seed.req, user: seed.req?.user, agent: seed.agent };
   };
+
   const runHooks = async (
     hooks: Array<(args: unknown) => void | Promise<void>> | undefined,
     args: Record<string, unknown>,
@@ -174,11 +179,13 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
       await hook({ ...args, ...lift(context) });
     }
   };
+
   const operation = vi.fn(
     (opts: { operation: string; model: string; context?: Record<string, unknown> }) => {
       const requestId = `req_${Math.random().toString(36).slice(2)}`;
       const context = opts.context ?? {};
       let finished = false;
+
       return {
         requestId,
         context,
@@ -192,6 +199,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
         finish: async (result?: { finishReason?: string; usage?: unknown; error?: unknown }) => {
           if (finished) return;
           finished = true;
+
           await runHooks(
             config.hooks?.afterOperation as never,
             {
@@ -209,6 +217,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
       };
     },
   );
+
   const frogbot = {
     config: {
       ai: { routers: {} },
@@ -235,9 +244,11 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
     update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     createRequest: vi.fn(() => {
       Object.assign(req, { frogbot });
+
       return Promise.resolve(req);
     }),
   };
+
   return {
     gateway: { chatModel: vi.fn(() => ({})), operation },
     config,
@@ -260,9 +271,11 @@ beforeEach(() => {
   lookup.execute.mockClear();
 
   turn.stop.mockReset();
+
   turn.holdTurn
     .mockReset()
     .mockReturnValue({ signal: new AbortController().signal, stop: turn.stop });
+
   turn.persistAssistantMessage.mockReset().mockResolvedValue(undefined);
   turn.promoteQueuedMessage.mockReset();
   turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
@@ -292,6 +305,7 @@ describe('agent hook lifecycle', () => {
       inputSchema: z.object({ query: z.string() }),
       execute: vi.fn(),
     };
+
     const agent = createAgentInstance(
       {
         slug: 'support',
@@ -307,6 +321,7 @@ describe('agent hook lifecycle', () => {
     const runtimeContext = agentState.prepared?.runtimeContext as {
       agent: { slug: string; runId: string };
     };
+
     expect(beforeOperation).toHaveBeenCalledWith(
       expect.objectContaining({
         req,
@@ -315,10 +330,12 @@ describe('agent hook lifecycle', () => {
       }),
     );
     expect(runtimeContext.agent.slug).toBe('support');
+
     const toolsContext = agentState.prepared?.toolsContext as Record<
       string,
       { agent: { slug: string; runId: string } }
     >;
+
     expect(toolsContext.lookup.agent).toEqual(runtimeContext.agent);
     expect(afterOperation).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
@@ -348,13 +365,16 @@ describe('agent hook lifecycle', () => {
       prompt: 'Hello',
       options: { req, overrideAccess: false },
     });
+
     expect(afterOperation).not.toHaveBeenCalled();
 
     const onEnd = agentState.streamCall?.onEnd as (event: unknown) => Promise<void>;
+
     await onEnd({
       finishReason: 'stop',
       usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
     });
+
     await onEnd({
       finishReason: 'stop',
       usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
@@ -377,6 +397,7 @@ describe('agent hook lifecycle', () => {
       },
       makeDeps(config, req),
     );
+
     const controller = new AbortController();
 
     await agent.aiAgent.stream({
@@ -384,11 +405,13 @@ describe('agent hook lifecycle', () => {
       options: { req, overrideAccess: false },
       abortSignal: controller.signal,
     });
+
     controller.abort(new Error('cancelled'));
 
     await vi.waitFor(() => {
       expect(afterOperation).toHaveBeenCalledOnce();
     });
+
     expect(afterOperation).toHaveBeenCalledWith(
       expect.objectContaining({ finishReason: 'abort', error: expect.any(Error) }),
     );
@@ -403,6 +426,7 @@ describe('agent generate turns', () => {
     const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
       gateway: { chatModel: ReturnType<typeof vi.fn> };
     };
+
     const agent = createAgentInstance(
       {
         slug: 'support',
@@ -496,6 +520,7 @@ describe('agent generate turns', () => {
     const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
       gateway: { chatModel: ReturnType<typeof vi.fn> };
     };
+
     const agent = createAgentInstance(
       {
         slug: 'support',
@@ -527,6 +552,7 @@ describe('agent generate turns', () => {
     const deps = makeDeps(config, req) as unknown as {
       frogbot: { create: ReturnType<typeof vi.fn> };
     };
+
     const agent = createAgentInstance(
       {
         slug: 'support',
@@ -759,6 +785,7 @@ describe('agent client tool gate', () => {
       toolCall: { toolName: string };
       messages: ModelMessage[];
     }) => string;
+
     const execute = agent.aiAgent.tools.lookup.execute!;
     const clientStep: ModelMessage[] = [];
     const serverStep: ModelMessage[] = [];
@@ -812,6 +839,7 @@ describe('agent steer messages', () => {
     const prepareStep = agentState.prepared?.prepareStep as (args: {
       messages: ModelMessage[];
     }) => Promise<{ messages: ModelMessage[] } | undefined>;
+
     const messages: ModelMessage[] = [{ role: 'user', content: 'Hello' }];
 
     await expect(prepareStep({ messages })).resolves.toEqual({
@@ -841,6 +869,7 @@ describe('agent steer messages', () => {
     const prepareStep = agentState.prepared?.prepareStep as (args: {
       messages: ModelMessage[];
     }) => Promise<{ messages: ModelMessage[] }>;
+
     const messages: ModelMessage[] = [{ role: 'user', content: 'Hello' }];
 
     const step = await prepareStep({ messages });
@@ -1010,6 +1039,7 @@ describe('agent model input pass', () => {
       toolCall: { toolName: string };
       messages: ModelMessage[];
     }) => string;
+
     const execute = agent.aiAgent.tools.lookup.execute!;
 
     const { messages } = await prepareStep({ messages: [photo], stepNumber: 0 });

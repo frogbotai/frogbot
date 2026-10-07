@@ -8,13 +8,17 @@ import type {
 import { expectTypeOf } from 'vitest';
 
 type Data = { title: string };
+
 type SiblingData = { slug: string };
+
 type Value = number;
 
 expectTypeOf<keyof FieldHookArgs>().toEqualTypeOf<keyof PayloadFieldHookArgs>();
+
 expectTypeOf<keyof ValidateOptions>().toEqualTypeOf<
   keyof BaseValidateOptions<Data, SiblingData, Value>
 >();
+
 expectTypeOf<keyof FieldAccessArgs>().toEqualTypeOf<keyof PayloadFieldAccessArgs>();
 
 expectTypeOf<Omit<FieldHookArgs, 'req' | 'field' | 'siblingFields'>>().toEqualTypeOf<

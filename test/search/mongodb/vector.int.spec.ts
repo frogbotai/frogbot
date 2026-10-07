@@ -200,6 +200,7 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
       limit: 1,
       where: { rank: { greater_than: 1 } },
     });
+
     const overridden = await search({
       vector: [1, 0, 0],
       limit: 1,
@@ -273,6 +274,7 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
       vector: [0, 0, 1],
       overrideAccess: true,
     });
+
     const drafts = await search({
       collection: postsSlug,
       vector: [0, 0, 1],

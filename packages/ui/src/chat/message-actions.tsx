@@ -70,6 +70,7 @@ export function CopyMessageAction({ onCopy, text }: CopyMessageActionProps) {
     if (text) await copyMarkdown(text);
     onCopy?.();
   };
+
   return (
     <Action label="Copy" onClick={copy}>
       <CopyIcon className="fb-message-actions__icon" />
@@ -96,6 +97,7 @@ export function BranchMessageAction({ onBranch }: BranchMessageActionProps) {
 export function MessageTimestamp({ value }: MessageTimestampProps) {
   const label = formatMessageTimestamp(value);
   if (!label) return null;
+
   return (
     <time className="fb-message-actions__timestamp" dateTime={new Date(value).toISOString()}>
       {label}
@@ -113,6 +115,7 @@ export function MessageActions({
   timestampPlacement = 'start',
 }: MessageActionsProps) {
   const time = timestamp === undefined ? null : <MessageTimestamp value={timestamp} />;
+
   return (
     <TooltipProvider>
       <div className="fb-message-actions" aria-label="Message actions">

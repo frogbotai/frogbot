@@ -16,6 +16,7 @@ export const createComment = defineAction({
   options: { teamId: teams, issueId: teamOptions('issues') },
   async run({ client, input }) {
     const response = await client.createComment({ issueId: input.issueId, body: input.body });
+
     return {
       success: response.success,
       lastSyncId: response.lastSyncId,

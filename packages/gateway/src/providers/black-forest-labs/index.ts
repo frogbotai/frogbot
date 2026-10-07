@@ -16,6 +16,7 @@ export const blackForestLabsProvider = {
   envVars: ['BFL_API_KEY', 'BFL_BASE_URL'],
   fromEnv: (env) => {
     if (!env.BFL_API_KEY) return undefined;
+
     return {
       apiKey: env.BFL_API_KEY,
       ...(env.BFL_BASE_URL && { baseURL: env.BFL_BASE_URL }),

@@ -244,6 +244,7 @@ export async function expectChatImageFollowUp(app: LiveApp, model: string): Prom
   const first = await chatText(app, { model, messages: history });
 
   history.push({ role: 'assistant', content: first });
+
   history.push({
     role: 'user',
     content: 'What colour is the square in the picture I sent? Reply with one word.',
@@ -332,6 +333,7 @@ function expectExpense(raw: string | null | undefined): void {
 
   expect(expense.merchant).toMatch(FIXTURE_FACTS.cafeName);
   expect(expense.total).toBeCloseTo(42.17, 2);
+
   expect(expense.items.map((item) => item.name.toLowerCase())).toEqual(
     expect.arrayContaining(['latte', 'avocado toast', 'pond salad']),
   );

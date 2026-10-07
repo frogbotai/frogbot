@@ -144,19 +144,24 @@ describe('firmware icons', () => {
     for (const name of [...iconNames, 'CheckIcon', 'MenuIcon', 'SquareIcon', 'StarIcon'] as const) {
       const component = icons[name];
       const { container, unmount } = render(createElement(component));
+
       expect(container.querySelector('svg')).not.toBeNull();
+
       unmount();
     }
   });
 
   it('renders both structural outliers', () => {
     const gemini = render(createElement(icons.GoogleGeminiIcon));
+
     expect(gemini.container.querySelector('defs')).not.toBeNull();
     expect(gemini.container.querySelector('radialGradient')).not.toBeNull();
     expect(gemini.container.querySelector('clipPath')).not.toBeNull();
+
     gemini.unmount();
 
     const invalid = render(createElement(icons.InvalidStepIcon));
+
     expect(invalid.container.querySelector('svg')).not.toBeNull();
   });
 
@@ -183,9 +188,11 @@ describe('firmware icons', () => {
       strokeWidth?: number,
       viewBox?: string,
     ) => React.ComponentType<{ absoluteStrokeWidth?: boolean; color?: string; size?: number }>;
+
     const TestIcon = createLucideIcon('T', [['path', { d: 'M0 0' }]], 0, '0 0 20 20');
     const { container } = render(<TestIcon absoluteStrokeWidth color="red" size={10} />);
     const svg = container.querySelector('svg');
+
     expect(svg?.getAttribute('viewBox')).toBe('0 0 20 20');
     expect(svg?.getAttribute('stroke-width')).toBe('0');
     expect(svg?.getAttribute('width')).toBe('10');
@@ -264,6 +271,7 @@ describe('icon line weight', () => {
       2,
       '0 0 32 32',
     );
+
     const ShapeStroke = icons.createLucideIcon(
       'ShapeStroke',
       [['path', { d: 'M4 12h16', strokeWidth: '1' }]],
@@ -361,6 +369,7 @@ describe('icon stroke defaults', () => {
         absoluteStrokeWidth: true,
         ...props,
       });
+
       const px = (Number(svg.getAttribute('stroke-width')) * 32) / gridOf(svg);
 
       unmount();

@@ -9,6 +9,7 @@ const servicesResponse = z.object({
   services: z.array(z.object({ id: z.string(), name: z.string() })),
   more: z.boolean(),
 });
+
 const fromEmail = z.email().meta({ label: 'From email' });
 const incidentId = z.string().min(1).meta({ label: 'Incident ID' });
 
@@ -69,6 +70,7 @@ export const createIncident = defineAction({
         assignee: { id, type: 'user_reference' },
       }));
     }
+
     if (input.priorityId) payload.priority = { id: input.priorityId, type: 'priority_reference' };
     if (input.conferenceNumber || input.conferenceUrl) {
       payload.conference_bridge = {
@@ -98,6 +100,7 @@ const listIncidentsInput = z.object({
   limit: z.number().int().default(25),
   offset: z.number().int().default(0),
 });
+
 const listIncidentsOutput = z
   .object({
     incidents: z.array(incident),
@@ -198,6 +201,7 @@ const customApiCallInput = z.object({
   queryParams: z.record(z.string(), z.union([z.string(), z.array(z.string())])).default({}),
   body: z.json().optional(),
 });
+
 const customApiCallOutput = z.json();
 
 export const customApiCall = defineAction({

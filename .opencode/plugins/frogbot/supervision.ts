@@ -111,6 +111,7 @@ export function simpleCommands(command: string): string[][] {
 
     if (char === '#' && !word && !quoted) {
       while (i + 1 < command.length && command[i + 1] !== '\n') i++;
+
       continue;
     }
 
@@ -705,6 +706,7 @@ export function createWatchdog(stallMs = STALL_MS) {
         if (!session.running || session.notified || now - session.last < stallMs) continue;
 
         session.notified = true;
+
         notices.push({
           parentID: session.parentID,
           text: `Subagent "${session.title}" (${sessionID}) has made no progress for ${Math.round(stallMs / 60_000)} min; last activity: ${session.activity} at ${clock(session.last)}.`,

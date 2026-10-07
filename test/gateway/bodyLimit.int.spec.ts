@@ -34,6 +34,7 @@ function createMockLanguageModel(): LanguageModelV4 {
 function makeAppWithMockProvider(providerName: string, maxBodyBytes: number) {
   const fakeProvider = { languageModel: () => createMockLanguageModel() };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry, maxBodyBytes });
 }
 
@@ -55,7 +56,9 @@ describe('gateway integration — request body size cap (G31)', () => {
     });
 
     expect(res.status).toBe(413);
+
     const body = (await res.json()) as { error?: { code?: string } };
+
     expect(body.error?.code).toBe('request_entity_too_large');
   });
 
@@ -68,6 +71,7 @@ describe('gateway integration — request body size cap (G31)', () => {
       model: 'groq/test-model',
       messages: [{ role: 'user', content: huge }],
     });
+
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',
       headers: {

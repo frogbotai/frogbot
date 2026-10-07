@@ -55,6 +55,8 @@ export function normalizeRoles(entries: readonly RoleEntry[]): NormalizedRole[] 
   const duplicate = roles.find(
     (role, index) => roles.findIndex(({ slug }) => slug === role.slug) !== index,
   );
+
   if (duplicate) throw new Error(`[plugin-roles] Duplicate role slug '${duplicate.slug}'.`);
+
   return roles;
 }

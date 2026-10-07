@@ -165,6 +165,7 @@ describe('rewriteComponentPaths', () => {
 
   it('handles configs without admin blocks', () => {
     const config = {} as SanitizedConfig;
+
     expect(() => rewriteComponentPaths(config)).not.toThrow();
   });
 
@@ -301,6 +302,7 @@ describe('rewriteComponentPaths', () => {
       CellComponent: '@payloadcms/richtext-lexical/rsc#NestedCell',
       editorConfig: { resolvedFeatureMap: new Map() },
     };
+
     const feature = {
       ClientFeature: '@payloadcms/richtext-lexical/client#Feature',
       componentImports: { toolbar: '@payloadcms/richtext-lexical/client#Toolbar' },
@@ -308,6 +310,7 @@ describe('rewriteComponentPaths', () => {
         { getSubFields: () => [{ name: 'caption', type: 'richText', editor: nestedEditor }] },
       ],
     };
+
     const editor = {
       CellComponent: '@payloadcms/richtext-lexical/rsc#Cell',
       DiffComponent: '@payloadcms/richtext-lexical/rsc#Diff',
@@ -317,6 +320,7 @@ describe('rewriteComponentPaths', () => {
       },
       editorConfig: { resolvedFeatureMap: new Map([['feature', feature]]) },
     };
+
     const config = {
       collections: [{ fields: [{ name: 'content', type: 'richText', editor }] }],
     } as unknown as SanitizedConfig;
@@ -360,6 +364,7 @@ describe('rewriteComponentPaths', () => {
       fields: [{ name: 'copy', type: 'richText', editor: blockEditor }],
       slug: 'copy',
     };
+
     const config = {
       admin: {
         dashboard: {
@@ -401,6 +406,7 @@ describe('rewriteComponentPaths', () => {
       ],
       slug: 'code',
     };
+
     const config = {
       blocks: [block],
       collections: [{ fields: [{ blocks: [block], name: 'layout', type: 'blocks' }] }],

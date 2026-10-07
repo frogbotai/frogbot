@@ -82,6 +82,7 @@ describe('collection search configuration', () => {
         frogbot: { feature: 'keep', search: { forged: true }, signIn: ['forged'] },
       },
     });
+
     const config: FrogBotConfig = {
       secret: 'test-secret',
       db: { defaultIDType: 'number' } as FrogBotConfig['db'],
@@ -299,6 +300,7 @@ describe('collection search configuration', () => {
         },
       },
     });
+
     const descriptors = sanitizeSearchIndexes(configured);
 
     expect(Object.keys(descriptors?.narrow.filterFields ?? {})).toEqual([

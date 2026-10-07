@@ -15,6 +15,7 @@ export function findNextConfig(cwd: string): string | null {
     const candidate = path.join(cwd, file);
     if (existsSync(candidate)) return candidate;
   }
+
   return null;
 }
 
@@ -22,6 +23,7 @@ export function canResolveFromProject(cwd: string, specifier: string): boolean {
   try {
     const require = createRequire(path.join(cwd, 'package.json'));
     require.resolve(specifier);
+
     return true;
   } catch {
     return false;
@@ -30,6 +32,7 @@ export function canResolveFromProject(cwd: string, specifier: string): boolean {
 
 export function resolveNextBin(cwd: string): string {
   const require = createRequire(path.join(cwd, 'package.json'));
+
   return require.resolve('next/dist/bin/next');
 }
 
@@ -42,6 +45,7 @@ export function runNext(command: 'dev' | 'start', args: string[] = []): void {
       `[frogbot] no next.config.{ts,mjs,js,cjs} found in ${cwd}. ` +
         `\`frogbot ${command}\` runs your Next.js app — create one with \`npm create frogbot-app\` or add a next.config.mjs.`,
     );
+
     process.exit(1);
   }
 
@@ -53,6 +57,7 @@ export function runNext(command: 'dev' | 'start', args: string[] = []): void {
       `[frogbot] ${configFile} requires TypeScript at runtime, but \`typescript\` is not installed. ` +
         `Rename it to next.config.mjs, or add \`typescript\` to your dependencies.`,
     );
+
     process.exit(1);
   }
 
@@ -63,6 +68,7 @@ export function runNext(command: 'dev' | 'start', args: string[] = []): void {
     console.error(
       '[frogbot] could not resolve `next` from this project. Install it: pnpm add next',
     );
+
     process.exit(1);
   }
 

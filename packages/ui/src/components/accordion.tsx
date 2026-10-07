@@ -5,6 +5,7 @@ import type { ComponentProps } from 'react';
 
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
 export const Accordion = Primitive.Root;
+
 export function AccordionItem({ className, ...props }: ComponentProps<typeof Primitive.Item>) {
   return (
     <Primitive.Item
@@ -13,6 +14,7 @@ export function AccordionItem({ className, ...props }: ComponentProps<typeof Pri
     />
   );
 }
+
 export function AccordionTrigger({
   className,
   children,
@@ -30,6 +32,7 @@ export function AccordionTrigger({
     </Primitive.Header>
   );
 }
+
 export function AccordionContent({
   className,
   children,

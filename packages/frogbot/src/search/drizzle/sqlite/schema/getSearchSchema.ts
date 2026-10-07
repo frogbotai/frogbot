@@ -45,6 +45,7 @@ export function getSearchSchema({
             `[frogbot] Search index '${index.name}' in collection '${slug}' conflicts with another search index on database object '${target.name}'.`,
           );
         }
+
         const names = [
           target.name,
           ...group.objects.flatMap(({ name }) => [

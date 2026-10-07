@@ -6,6 +6,7 @@ describe('stripEmptyKeys', () => {
   test('strips top-level empty-string key', () => {
     const obj = { '': {}, city: 'San Francisco' };
     const result = stripEmptyKeys(obj) as Record<string, unknown>;
+
     expect(result['']).toBeUndefined();
     expect(result.city).toBe('San Francisco');
   });
@@ -13,6 +14,7 @@ describe('stripEmptyKeys', () => {
   test('does not strip nested empty-string keys', () => {
     const obj = { nested: { '': {}, country: 'US' } };
     const result = stripEmptyKeys(obj) as Record<string, unknown>;
+
     expect((result.nested as Record<string, unknown>)['']).toEqual({});
   });
 
@@ -25,6 +27,7 @@ describe('stripEmptyKeys', () => {
 
   test('returns arrays unchanged', () => {
     const arr = [1, 2, 3];
+
     expect(stripEmptyKeys(arr)).toBe(arr);
   });
 });

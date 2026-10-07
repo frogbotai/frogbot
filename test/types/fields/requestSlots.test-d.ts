@@ -17,9 +17,11 @@ import type {
 import { expectTypeOf } from 'vitest';
 
 type FunctionOf<T> = Extract<NonNullable<T>, (...args: never[]) => unknown>;
+
 type ArgsOf<T> = Parameters<FunctionOf<T>>[0];
 
 type PayloadDefaultValueArgs = Parameters<FunctionOf<PayloadDefaultValue>>[0];
+
 type PayloadSelectFilterArgs = Parameters<FunctionOf<PayloadSelectField['filterOptions']>>[0];
 
 const text: TextField = {
@@ -205,22 +207,31 @@ expectTypeOf(statics).toMatchTypeOf<Field[]>();
 expectTypeOf<keyof ArgsOf<TextField['defaultValue']>>().toEqualTypeOf<
   keyof PayloadDefaultValueArgs
 >();
+
 expectTypeOf<ArgsOf<TextField['defaultValue']>['req']>().toEqualTypeOf<FrogBotRequest>();
+
 expectTypeOf<keyof ArgsOf<RelationshipField['filterOptions']>>().toEqualTypeOf<
   keyof FilterOptionsProps
 >();
+
 expectTypeOf<ArgsOf<RelationshipField['filterOptions']>['req']>().toEqualTypeOf<FrogBotRequest>();
+
 expectTypeOf<keyof ArgsOf<UploadField['filterOptions']>>().toEqualTypeOf<
   keyof FilterOptionsProps
 >();
+
 expectTypeOf<ArgsOf<UploadField['filterOptions']>['req']>().toEqualTypeOf<FrogBotRequest>();
+
 expectTypeOf<keyof ArgsOf<SelectField['filterOptions']>>().toEqualTypeOf<
   keyof PayloadSelectFilterArgs
 >();
+
 expectTypeOf<ArgsOf<SelectField['filterOptions']>['req']>().toEqualTypeOf<FrogBotRequest>();
+
 expectTypeOf<keyof ArgsOf<BlocksField['filterOptions']>>().toEqualTypeOf<
   keyof ArgsOf<PayloadBlocksField['filterOptions']>
 >();
+
 expectTypeOf<ArgsOf<BlocksField['filterOptions']>['req']>().toEqualTypeOf<FrogBotRequest>();
 
 const validatedRelationship: RelationshipField = {

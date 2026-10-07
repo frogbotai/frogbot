@@ -47,6 +47,7 @@ function config({
 describe('resolveConnectionsCollections', () => {
   it('injects the default collection for explicit connection entries', () => {
     const result = resolveConnectionsCollections(config());
+
     expect(result.connections).toMatchObject({ enabled: true, slug: DEFAULT_CONNECTIONS_SLUG });
     expect(result.collections.map((collection) => collection.slug)).toEqual([
       'users',
@@ -57,6 +58,7 @@ describe('resolveConnectionsCollections', () => {
   it('does not inject a collection for an empty list', () => {
     const input = config({ connections: [] });
     const result = resolveConnectionsCollections(input);
+
     expect(result.connections).toMatchObject({ enabled: false, entries: {} });
     expect(result.connections.slug).toBeUndefined();
     expect(result.collections).toBe(input.collections);
@@ -90,6 +92,7 @@ describe('resolveConnectionsCollections', () => {
       const { connections } = resolveConnectionsCollections(
         config({ connections: [{ piece, ...methods }] }),
       );
+
       expect(Object.keys(connections.entries)).toEqual(['linear']);
       expect(connections.entries.linear).toMatchObject({
         piece,
@@ -142,7 +145,9 @@ describe('resolveConnectionsCollections', () => {
       client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
     })();
+
     piece.oauth = oauth;
+
     expect(() =>
       resolveConnectionsCollections(
         config({
@@ -167,6 +172,7 @@ describe('resolveConnectionsCollections', () => {
       client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
     })();
+
     expect(() =>
       resolveConnectionsCollections(
         config({
@@ -178,6 +184,7 @@ describe('resolveConnectionsCollections', () => {
 
   it('rejects secret linking on an authless piece', () => {
     const piece = definePiece({ slug: 'public', label: 'Public', actions: [] })();
+
     expect(() =>
       resolveConnectionsCollections(
         config({
@@ -198,6 +205,7 @@ describe('resolveConnectionsCollections', () => {
       scopes: z.array(z.string()),
       label: z.string().nullable(),
     });
+
     const piece = definePiece({
       slug: 'static',
       label: 'Static',
@@ -205,9 +213,11 @@ describe('resolveConnectionsCollections', () => {
       client: ({ auth }: { auth: unknown }) => auth,
       actions: [],
     })();
+
     const { connections } = resolveConnectionsCollections(
       config({ connections: [{ piece, secret: true }] }),
     );
+
     expect(connections.entries.static?.secretSchema).toMatchObject({
       type: 'object',
       properties: { key: { type: 'string', minLength: 1 }, region: { enum: ['us', 'eu'] } },
@@ -232,6 +242,7 @@ describe('resolveConnectionsCollections', () => {
     const first = resolveConnectionsCollections(config()).connections.encryption;
     const second = resolveConnectionsCollections(config()).connections.encryption;
     const ciphertext = await first.encrypt('private');
+
     expect(ciphertext).not.toContain('private');
     expect(await second.decrypt(ciphertext)).toBe('private');
   });
@@ -240,6 +251,7 @@ describe('resolveConnectionsCollections', () => {
     const result = resolveConnectionsCollections(config());
     const collection = result.collections.find((item) => item.slug === 'connections')!;
     const read = collection.access!.read!;
+
     expect(await read({ req: { user: { id: 'owner', collection: 'users' } } as never })).toEqual({
       owner: { equals: 'owner' },
     });
@@ -247,12 +259,16 @@ describe('resolveConnectionsCollections', () => {
     expect(await read({ req: { user: { id: 'owner', collection: 'customers' } } as never })).toBe(
       false,
     );
+
     const encrypted = collection.fields.find(
       (field) => 'name' in field && field.name === 'credential',
     );
+
     expect(encrypted).toMatchObject({ hidden: true, access: { read: expect.any(Function) } });
+
     assert(encrypted && 'access' in encrypted && encrypted.access?.read);
     const req = { user: null } as FrogBotRequest;
+
     expect(await encrypted.access.read({ req })).toBe(false);
   });
 
@@ -260,6 +276,7 @@ describe('resolveConnectionsCollections', () => {
     const result = resolveConnectionsCollections(config());
     const collection = result.collections.find((item) => item.slug === 'connections')!;
     const field = collection.fields.find((item) => 'name' in item && item.name === 'credential');
+
     expect(field).toMatchObject({ type: 'text', required: true });
     expect(collection.indexes).toEqual([{ fields: ['owner', 'piece'], unique: true }]);
   });

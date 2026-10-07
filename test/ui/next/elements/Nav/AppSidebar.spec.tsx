@@ -18,6 +18,7 @@ const props = {
 describe('AppSidebar', () => {
   it('marks the active nav item', () => {
     render(<AppSidebar {...props} open />);
+
     expect(screen.getByRole('button', { name: 'Users' }).className).toContain(
       'frogbot-admin-sidebar__item--active',
     );
@@ -34,6 +35,7 @@ describe('AppSidebar', () => {
         open
       />,
     );
+
     expect(container.querySelectorAll('.frogbot-admin-sidebar__icon')).toHaveLength(2);
   });
 
@@ -56,6 +58,7 @@ describe('AppSidebar', () => {
     const onToggle = vi.fn();
     render(<AppSidebar {...props} onToggle={onToggle} open={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Open sidebar' }));
+
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
@@ -63,6 +66,7 @@ describe('AppSidebar', () => {
     const onNavigate = vi.fn();
     render(<AppSidebar {...props} onNavigate={onNavigate} open />);
     fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+
     expect(onNavigate).toHaveBeenCalledWith('/admin');
   });
 
@@ -70,8 +74,11 @@ describe('AppSidebar', () => {
     render(<AppSidebar {...props} open={false} />);
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
     const tooltip = document.querySelector('.frogbot-admin-sidebar__tooltip');
+
     expect(tooltip?.querySelector('.tooltip-content')?.textContent).toBe('Users');
+
     fireEvent.mouseLeave(screen.getByRole('button', { name: 'Users' }));
+
     expect(document.querySelector('.frogbot-admin-sidebar__tooltip')).toBeNull();
   });
 
@@ -79,6 +86,7 @@ describe('AppSidebar', () => {
     render(<AppSidebar {...props} open />);
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Home' }));
+
     expect(document.querySelector('.frogbot-admin-sidebar__tooltip')).toBeNull();
   });
 
@@ -87,6 +95,7 @@ describe('AppSidebar', () => {
     const classNames = [...container.querySelectorAll('[class]')].flatMap((element) =>
       element.getAttribute('class')!.split(/\s+/),
     );
+
     expect(
       classNames.filter(
         (name) =>
@@ -100,6 +109,7 @@ describe('AppSidebar', () => {
 
   it('renders only the account control in the bottom rail', () => {
     render(<AppSidebar {...props} open />);
+
     expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
   });
@@ -109,16 +119,22 @@ describe('AppSidebar', () => {
     const onNavigate = vi.fn();
     render(<AppSidebar {...props} logoutPath="/admin/logout" onNavigate={onNavigate} open />);
     await user.click(screen.getByRole('button', { name: 'Account' }));
+
     expect(screen.getByRole('menu')).toBeTruthy();
+
     await user.click(screen.getByRole('menuitem', { name: 'Settings' }));
+
     expect(onNavigate).toHaveBeenCalledWith('/admin/settings');
+
     await user.click(screen.getByRole('button', { name: 'Account' }));
     await user.click(screen.getByRole('menuitem', { name: 'Log out' }));
+
     expect(onNavigate).toHaveBeenCalledWith('/admin/logout');
   });
 
   it('shows identity and account menu slots in order', async () => {
     const user = userEvent.setup();
+
     render(
       <AppSidebar
         {...props}
@@ -129,13 +145,17 @@ describe('AppSidebar', () => {
         open
       />,
     );
+
     await user.click(screen.getByRole('button', { name: 'Account' }));
     const menu = screen.getByRole('menu');
+
     expect(menu.textContent).toContain('Colby Gilbert');
     expect(menu.textContent).toContain('colby@frogbot.ai');
+
     const order = [...menu.children]
       .map((node) => node.textContent)
       .filter((text) => ['After menu', 'Before menu', 'Settings'].includes(text ?? ''));
+
     expect(order).toEqual(['Before menu', 'Settings', 'After menu']);
   });
 
@@ -144,9 +164,12 @@ describe('AppSidebar', () => {
     const onToggle = vi.fn();
     render(<AppSidebar {...props} onToggle={onToggle} open={false} />);
     await user.click(screen.getByRole('button', { name: 'Account' }));
+
     expect(screen.getByRole('menu')).toBeTruthy();
     expect(onToggle).not.toHaveBeenCalled();
+
     await user.keyboard('{Escape}');
+
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
@@ -161,6 +184,7 @@ describe('AppSidebar', () => {
         sections={<span>Sections</span>}
       />,
     );
+
     expect(screen.getByText('Sections')).toBeTruthy();
     expect(screen.getByText('Header action')).toBeTruthy();
     expect(screen.getByText('Before bottom')).toBeTruthy();
@@ -169,6 +193,7 @@ describe('AppSidebar', () => {
 
     const headerAction = screen.getByText('Header action');
     const close = screen.getByRole('button', { name: 'Close sidebar' });
+
     expect(headerAction.nextElementSibling).toBe(close);
 
     rerender(
@@ -179,6 +204,7 @@ describe('AppSidebar', () => {
         sections={<span>Sections</span>}
       />,
     );
+
     expect(screen.queryByText('Header action')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Close sidebar' })).toBeNull();
     expect(screen.queryByText('Sections')).toBeNull();

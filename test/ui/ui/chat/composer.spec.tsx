@@ -144,6 +144,7 @@ describe('Composer', () => {
 
   it('submits with Enter, preserves Shift+Enter, and renders slots', () => {
     const onSubmit = vi.fn();
+
     render(
       <Composer
         aria-label="Message"
@@ -154,11 +155,15 @@ describe('Composer', () => {
         stopContent="Stop"
       />,
     );
+
     const input = screen.getByLabelText('Message');
     fireEvent.change(input, { target: { value: 'Hello' } });
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
+
     expect(onSubmit).not.toHaveBeenCalled();
+
     fireEvent.keyDown(input, { key: 'Enter' });
+
     expect(onSubmit).toHaveBeenCalledWith('Hello', []);
     expect(screen.getByText('start')).toBeTruthy();
     expect(screen.getByText('end')).toBeTruthy();
@@ -168,11 +173,13 @@ describe('Composer', () => {
     render(
       <Composer endSlot={undefined} onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
     );
+
     expect(screen.queryByRole('button', { name: 'Add tab context' })).toBeNull();
   });
 
   it('stops while pending', () => {
     const onStop = vi.fn();
+
     render(
       <Composer
         pending
@@ -182,12 +189,15 @@ describe('Composer', () => {
         stopContent="Stop"
       />,
     );
+
     fireEvent.click(screen.getByText('Stop'));
+
     expect(onStop).toHaveBeenCalledOnce();
   });
 
   it('supports a controlled value', () => {
     const onValueChange = vi.fn();
+
     render(
       <Composer
         aria-label="Message"
@@ -198,7 +208,9 @@ describe('Composer', () => {
         stopContent="Stop"
       />,
     );
+
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Next' } });
+
     expect(onValueChange).toHaveBeenCalledWith('Next');
     expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Controlled');
   });
@@ -207,12 +219,16 @@ describe('Composer', () => {
     const { container, rerender } = render(
       <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
     );
+
     const form = container.querySelector('form') as HTMLFormElement;
     fireEvent.dragEnter(form);
+
     expect(container.querySelector('.fb-composer__gradient')?.classList).toContain(
       'fb-composer__gradient--dragging',
     );
+
     fireEvent.drop(form, { dataTransfer: { files: [new File(['x'], 'x.txt')] } });
+
     expect(container.querySelector('.fb-composer__gradient')?.classList).not.toContain(
       'fb-composer__gradient--dragging',
     );
@@ -228,6 +244,7 @@ describe('Composer', () => {
         stopContent="Stop"
       />,
     );
+
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect((screen.getByLabelText('Message') as HTMLTextAreaElement).disabled).toBe(true);
   });
@@ -478,6 +495,7 @@ describe('Composer', () => {
     const { drop, server } = renderComposer();
 
     server.texts.set('report.docx', '# Report');
+
     server.fetch.mockImplementationOnce(() =>
       Promise.resolve(
         Response.json({ errors: [{ message: 'Storage is unavailable.' }] }, { status: 500 }),
@@ -586,7 +604,9 @@ describe('Composer', () => {
     expect(onSubmit).toHaveBeenCalledWith('Here', [
       { id: 'asset-1', filename: 'notes.md', mediaType: 'text/markdown' },
     ]);
+
     await waitFor(() => expect(screen.queryByTestId('attachment-card')).toBeNull());
+
     expect(server.fetch).toHaveBeenCalledOnce();
   });
 

@@ -11,6 +11,7 @@ function deferred<T>() {
     resolve = yes;
     reject = no;
   });
+
   return { promise, resolve, reject };
 }
 
@@ -42,12 +43,15 @@ describe('lazy connection refresh', () => {
     const entered = deferred<void>();
     const refresh = vi.fn(() => {
       entered.resolve();
+
       return gate.promise;
     });
+
     const fixture = await connectionSetup({
       ...definition,
       oauth: { ...definition.oauth, refresh },
     });
+
     const { api, piece, req, frogbot, config } = fixture;
     const other = new Connections(frogbot as never, config);
     const first = api.resolvePieceCredential({ piece, req });
@@ -55,8 +59,10 @@ describe('lazy connection refresh', () => {
     const followers = Array.from({ length: 8 }, (_, i) =>
       (i % 2 ? other : api).resolvePieceCredential({ piece, req }),
     );
+
     gate.resolve({ access_token: 'fresh', expires_in: 3600 });
     const results = await Promise.all([first, ...followers]);
+
     expect(results.map(({ auth }) => auth)).toEqual(
       Array.from({ length: 9 }, () => ({ token: 'fresh' })),
     );
@@ -64,9 +70,11 @@ describe('lazy connection refresh', () => {
     expect((await api.resolvePieceCredential({ piece, req })).key).toBe(results[0].key);
     expect(refresh).toHaveBeenCalledOnce();
     expect(frogbot.update).toHaveBeenCalledOnce();
+
     const row = await (
       await api.store
     ).get({ owner: { id: 'owner', collection: 'users' }, piece: 'example' });
+
     expect(row?.credential).toMatchObject({
       access_token: 'fresh',
       refresh_token: 'refresh',
@@ -85,10 +93,12 @@ describe('lazy connection refresh', () => {
         refresh: () => Promise.resolve({ access_token: 'fresh', expires_in: 3600 }),
       },
     });
+
     fixture.row()!.expiresAt = '2099-01-01T00:00:00Z';
     const old = await fixture.piece.client({ req: fixture.req });
     fixture.row()!.expiresAt = '2000-01-01T00:00:00Z';
     const fresh = await fixture.piece.client({ req: fixture.req });
+
     expect(fresh).not.toBe(old);
     expect(fresh).toEqual({ auth: { token: 'fresh' } });
     expect(await fixture.piece.client({ req: fixture.req })).toBe(fresh);
@@ -100,7 +110,9 @@ describe('lazy connection refresh', () => {
     const fetch = vi.fn(() =>
       Promise.resolve(Response.json({ access_token: 'fresh', expires_in: 3600 })),
     );
+
     vi.stubGlobal('fetch', fetch);
+
     await expect(fixture.api.resolve(fixture)).resolves.toEqual({ token: 'fresh' });
     expect(fetch).toHaveBeenCalledOnce();
   });
@@ -110,11 +122,13 @@ describe('lazy connection refresh', () => {
     async (failure) => {
       const refresh = vi.fn(() => {
         if (failure === 'provider') return Promise.reject(new Error('secret-error'));
+
         return Promise.resolve({
           access_token: failure === 'invalid' ? '' : 'fresh',
           expires_in: failure === 'expired' ? 0 : 3600,
         });
       });
+
       const fixture = await connectionSetup({
         ...definition,
         oauth: {
@@ -123,8 +137,10 @@ describe('lazy connection refresh', () => {
           ...(failure === 'auth' ? { toAuth: () => ({ token: '' }) } : {}),
         },
       });
+
       await storeTokens(fixture, storedTokens[failure]);
       const encrypted = fixture.row()!.credential;
+
       await expect(fixture.api.resolve(fixture)).rejects.toMatchObject({
         name: 'ConnectionError',
         code: 'error',
@@ -146,6 +162,7 @@ describe('lazy connection refresh', () => {
         refresh: () => Promise.resolve({ access_token: 'fresh', expires_in: 3600, scope: '' }),
       },
     });
+
     await expect(
       fixture.api.resolve({ ...fixture, scopes: ['read', 'write', 'write'] }),
     ).rejects.toMatchObject({ code: 'scopes', missingScopes: ['read', 'write'] });
@@ -159,16 +176,20 @@ describe('lazy connection refresh', () => {
       ...definition,
       oauth: { ...definition.oauth, refresh },
     });
+
     const store = await fixture.api.store;
     const withLock = store.withLock.bind(store);
+
     vi.spyOn(store, 'withLock').mockImplementationOnce(async (args) => {
       await withLock({
         owner: args.owner,
         piece: args.piece,
         fn: (locked) => locked.upsert({ method: 'secret', credential: { token: 'relinked' } }),
       });
+
       return withLock(args);
     });
+
     await expect(fixture.api.resolve(fixture)).resolves.toEqual({ token: 'relinked' });
     expect(refresh).not.toHaveBeenCalled();
   });
@@ -184,13 +205,16 @@ describe('lazy connection refresh', () => {
           ...definition.oauth,
           refresh: () => {
             entered.resolve();
+
             return gate.promise;
           },
         },
       });
+
       const pending = fixture.api.resolve(fixture);
       const outcome = pending.catch((error: unknown) => error);
       await entered.promise;
+
       fixture.replace(
         scenario.startsWith('delete')
           ? undefined
@@ -201,7 +225,9 @@ describe('lazy connection refresh', () => {
               expiresAt: null,
             },
       );
+
       settleRefresh(gate, scenario);
+
       expect(await outcome).toMatchObject(
         scenario.startsWith('delete') ? { code: 'missing' } : { token: 'relinked' },
       );
@@ -220,18 +246,23 @@ describe('lazy connection refresh', () => {
         ...definition.oauth,
         refresh: () => {
           entered.resolve();
+
           return gate.promise;
         },
       },
     });
+
     fixture.adapter.extendLock.mockResolvedValue(false);
     const pending = fixture.api.resolve(fixture);
     const outcome = pending.catch((error: unknown) => error);
     await entered.promise;
     await vi.advanceTimersByTimeAsync(10_000);
+
     expect(await outcome).toMatchObject({ code: 'error' });
+
     gate.resolve({ access_token: 'late', expires_in: 3600 });
     await vi.advanceTimersByTimeAsync(1);
+
     expect(fixture.adapter.extendLock).toHaveBeenCalledOnce();
     expect(fixture.frogbot.update).not.toHaveBeenCalled();
     expect(fixture.row()?.status).toBe('active');
@@ -247,19 +278,24 @@ describe('lazy connection refresh', () => {
         ...definition.oauth,
         refresh: () => {
           entered.resolve();
+
           return gate.promise;
         },
       },
     });
+
     const pending = fixture.api.resolve(fixture);
     const outcome = pending.catch((error: unknown) => error);
     await entered.promise;
     await vi.advanceTimersByTimeAsync(15_000);
+
     expect(await outcome).toMatchObject({ code: 'error' });
     expect(fixture.adapter.extendLock).toHaveBeenCalledOnce();
     expect(fixture.row()?.status).toBe('error');
+
     gate.resolve({ access_token: 'late', expires_in: 3600 });
     await vi.advanceTimersByTimeAsync(1);
+
     expect(fixture.frogbot.update).toHaveBeenCalledOnce();
   });
 });

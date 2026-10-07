@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import type { UsageReport, UsageReportGroup, UsageReportRow } from '../index.js';
 
 type DateRange = { from: string; to: string; label: string };
+
 type SortField = keyof Pick<
   UsageReportRow,
   | 'label'
@@ -31,6 +32,7 @@ function rangeForDays(days: number, label: string): DateRange {
   const to = new Date();
   const from = new Date(to);
   from.setUTCDate(from.getUTCDate() - days);
+
   return { from: from.toISOString(), to: to.toISOString(), label };
 }
 
@@ -50,6 +52,7 @@ function formatTokens(value: number): string {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+
   return value.toLocaleString();
 }
 
@@ -67,6 +70,7 @@ export function UsageReports() {
   const [sortField, setSortField] = useState<SortField>(
     groupBy === 'model' ? 'totalTokens' : 'costUSD',
   );
+
   const [ascending, setAscending] = useState(false);
 
   useEffect(() => {
@@ -74,6 +78,7 @@ export function UsageReports() {
     const params = new URLSearchParams({ groupBy, from: range.from, to: range.to });
     setLoading(true);
     setError(undefined);
+
     fetch(`${config.routes.api}/usage/report?${params}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -87,6 +92,7 @@ export function UsageReports() {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+
     return () => controller.abort();
   }, [config.routes.api, groupBy, range]);
 
@@ -95,8 +101,10 @@ export function UsageReports() {
     const right = b[sortField];
     const result =
       typeof left === 'string' ? left.localeCompare(String(right)) : left - Number(right);
+
     return ascending ? result : -result;
   });
+
   const columns: Array<{
     field: SortField;
     label: string;

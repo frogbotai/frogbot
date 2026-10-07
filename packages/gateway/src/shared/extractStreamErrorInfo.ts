@@ -92,6 +92,7 @@ export function extractOpenAIStreamErrorInfo(
 
   if (typeof cause === 'object' && cause !== null) {
     const obj = cause as Record<string, unknown>;
+
     return {
       message: maskStreamErrorMessage(
         typeof obj.message === 'string' ? obj.message : 'An error occurred during streaming',
@@ -136,6 +137,7 @@ export function extractAnthropicStreamErrorInfo(
 
   if (typeof cause === 'object' && cause !== null) {
     const obj = cause as Record<string, unknown>;
+
     return {
       message: maskStreamErrorMessage(
         typeof obj.message === 'string' ? obj.message : 'An error occurred during streaming',

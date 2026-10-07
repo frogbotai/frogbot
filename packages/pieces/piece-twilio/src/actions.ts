@@ -15,11 +15,13 @@ const makeCallInput = z.object({
   sendDigits: z.string().optional(),
   timeout: z.number().int().positive().optional(),
 });
+
 const downloadRecordingInput = z.object({
   recordingSid: z.string().min(1),
   format: z.enum(['mp3', 'wav']).default('mp3'),
   channels: z.union([z.literal(1), z.literal(2)]).optional(),
 });
+
 const customApiCallInput = z.object({
   method: z.string().default('GET'),
   path: z.string().regex(/^\/(?!\/)/),
@@ -92,6 +94,7 @@ export const makeCall = defineAction({
       input.voice ? ` voice="${input.voice}"` : '',
       input.language ? ` language="${input.language}"` : '',
     ].join('');
+
     const message = input.message
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')

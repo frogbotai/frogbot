@@ -3,6 +3,7 @@ import { createHash, createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   'frogbot/pieces/test',
   () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
@@ -89,6 +90,7 @@ describe('github', () => {
       repository: { name: 'frogbot', owner: { login: 'frogbotai' } },
       sender: { id: 42, login: 'octocat' },
     });
+
     const webhookSecret = 'github-webhook-secret';
     const signature = `sha256=${createHmac('sha256', webhookSecret).update(body).digest('hex')}`;
 
@@ -294,6 +296,7 @@ describe('github', () => {
       labels: ['bug'],
       assignees: ['octocat'],
     });
+
     const result = await createIssue.run({ client, input, options: {}, req: request() });
 
     expect(result).toMatchObject({ id: 10, number: 7, title: 'Bug' });
@@ -317,6 +320,7 @@ describe('github', () => {
       name: `branch-${index}`,
       commit: { sha: `sha-${index}` },
     }));
+
     const fetch = vi
       .fn()
       .mockResolvedValueOnce(json(branches))
@@ -448,6 +452,7 @@ describe('github', () => {
       options: {},
       req: request(),
     });
+
     const body = JSON.parse(fetch.mock.calls[0][1].body);
 
     expect(state).toMatchObject({ hookId: 123, owner: 'org', repo: 'repo', events: ['label'] });
@@ -591,6 +596,7 @@ describe('github', () => {
       repo: 'repo',
       secret: 'commit-secret',
     };
+
     const push = {
       ref: 'refs/heads/main',
       commits: [

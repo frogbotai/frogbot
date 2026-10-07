@@ -12,6 +12,7 @@ import { PortalTheme } from '../theme/provider.js';
 export const Select = Primitive.Root;
 export const SelectGroup = Primitive.Group;
 export const SelectValue = Primitive.Value;
+
 export function SelectTrigger({
   className,
   children,
@@ -29,6 +30,7 @@ export function SelectTrigger({
     </Primitive.Trigger>
   );
 }
+
 export function SelectContent(input: Omit<ComponentProps<typeof Primitive.Content>, 'asChild'>) {
   const {
     asChild: _asChild,
@@ -58,11 +60,13 @@ export function SelectContent(input: Omit<ComponentProps<typeof Primitive.Conten
     </Primitive.Portal>
   );
 }
+
 export function SelectLabel({ className, ...props }: ComponentProps<typeof Primitive.Label>) {
   return (
     <Primitive.Label className={`fb-select__label${className ? ` ${className}` : ''}`} {...props} />
   );
 }
+
 export function SelectItem(input: Omit<ComponentProps<typeof Primitive.Item>, 'asChild'>) {
   const {
     asChild: _asChild,
@@ -80,6 +84,7 @@ export function SelectItem(input: Omit<ComponentProps<typeof Primitive.Item>, 'a
     </Primitive.Item>
   );
 }
+
 export function SelectSeparator({
   className,
   ...props

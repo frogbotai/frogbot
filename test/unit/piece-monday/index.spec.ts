@@ -81,15 +81,19 @@ function remainingActionResponse(init: RequestInit | undefined): Response {
       },
     });
   }
+
   if (payload.query.includes('create_group')) {
     return response({ data: { create_group: { id: 'group-1' } } });
   }
+
   if (payload.query.includes('create_item')) {
     return response({ data: { create_item: { id: 'item-1' } } });
   }
+
   if (payload.query.includes('create_update')) {
     return response({ data: { create_update: { id: 'update-1' } } });
   }
+
   if (payload.query.includes('items_page(query_params')) {
     return response({
       data: {
@@ -186,6 +190,7 @@ describe('native Monday', () => {
           },
         }),
       );
+
     const { monday, req } = await fixture();
 
     await expect(
@@ -216,6 +221,7 @@ describe('native Monday', () => {
       },
       req,
     });
+
     expect(JSON.parse(body().variables.columnValues as string)).toEqual({
       status: { label: 'Done' },
     });
@@ -290,6 +296,7 @@ describe('native Monday', () => {
         ],
       },
     };
+
     fetchMock.mockImplementation(() => Promise.resolve(response(details)));
     const { client, req } = await fixture();
     const definition = pieceFactoryDefinition(createMonday);
@@ -300,12 +307,15 @@ describe('native Monday', () => {
     fetchMock.mockResolvedValueOnce(
       response({ data: { workspaces: [{ id: 'workspace-1', name: 'Workspace' }] } }),
     );
+
     await expect(
       createItem.options?.workspaceId?.({ input: {}, client, req, options: {} }),
     ).resolves.toEqual([{ label: 'Workspace', value: 'workspace-1' }]);
+
     fetchMock.mockResolvedValueOnce(
       response({ data: { boards: [{ id: 'board-1', name: 'Board', type: 'board' }] } }),
     );
+
     await expect(
       createItem.options?.boardId?.({
         input: { workspaceId: 'workspace-1' },
@@ -329,6 +339,7 @@ describe('native Monday', () => {
     fetchMock.mockResolvedValueOnce(
       response({ data: { add_file_to_column: { id: 'asset-1', name: 'note.txt' } } }),
     );
+
     const { monday, req } = await fixture();
 
     await expect(
@@ -344,6 +355,7 @@ describe('native Monday', () => {
         req,
       }),
     ).resolves.toEqual({ id: 'asset-1', name: 'note.txt' });
+
     const [url, init] = fetchMock.mock.calls[0];
     const form = init?.body as FormData;
 
@@ -361,6 +373,7 @@ describe('native Monday', () => {
       .mockResolvedValueOnce(response({ data: { create_webhook: { id: 'hook-1' } } }))
       .mockResolvedValueOnce(response({ data: { delete_webhook: { id: 'hook-1' } } }))
       .mockResolvedValueOnce(response({ data: { create_webhook: { id: 'hook-2' } } }));
+
     const definition = pieceFactoryDefinition(createMonday);
     const client = createMondayClient({ auth });
     const req = request();
@@ -388,11 +401,13 @@ describe('native Monday', () => {
       options: {},
       req,
     });
+
     expect(state).toEqual({ webhookId: 'hook-1' });
     expect(body().variables).toMatchObject({
       event: 'create_item',
       url: 'https://example.test/hook',
     });
+
     await itemCreated.onDisable({
       input: { boardId: 'board-1' },
       state,
@@ -400,7 +415,9 @@ describe('native Monday', () => {
       options: {},
       req,
     });
+
     expect(body().variables).toEqual({ webhookId: 'hook-1' });
+
     await columnUpdated.onEnable({
       input: { boardId: 'board-1', columnId: 'status' },
       webhookUrl: 'https://example.test/column',
@@ -408,6 +425,7 @@ describe('native Monday', () => {
       options: {},
       req,
     });
+
     expect(body().variables).toMatchObject({
       event: 'change_specific_column_value',
       config: '{"columnId":"status"}',
@@ -421,10 +439,12 @@ describe('native Monday', () => {
         state: { webhookId: 'hook-2' },
       }),
     ).resolves.toEqual([{ dedupeKey: expect.any(String), data: { event: { pulseId: 1 } } }]);
+
     const handshake = await definition.webhook?.handshake?.({
       req: coreRequest({ challenge: 'challenge-token' }),
       options: {},
     });
+
     expect(await handshake?.json()).toEqual({ challenge: 'challenge-token' });
     await expect(
       definition.webhook?.handshake?.({ req: coreRequest({ event: {} }), options: {} }),
@@ -450,6 +470,7 @@ describe('native Monday', () => {
     fetchMock.mockResolvedValueOnce(
       response({ errors: [{ message: 'Invalid board identifier' }] }),
     );
+
     const { monday, req } = await fixture();
 
     await expect(
@@ -461,6 +482,7 @@ describe('native Monday', () => {
 
     const controller = new AbortController();
     controller.abort(new Error('Caller cancelled'));
+
     await expect(
       monday.createUpdate({
         input: { itemId: 'item-1', body: 'Update' },

@@ -72,6 +72,7 @@ export async function whereFields() {
   await automatic.find({ collection: 'sdk-pages', where: { title: { equals: 'x' } } });
   await automatic.find({ collection: 'sdk-pages', where: { 'group.field': { equals: 'x' } } });
   await automatic.find({ collection: 'sdk-pages', where: { unknown: { exists: true } } });
+
   await automatic.find({
     collection: 'sdk-pages',
     where: { or: [{ title: { equals: 'x' } }, { slug: { like: 'y' } }] },
@@ -87,6 +88,7 @@ export async function authAndVersions() {
     collection: 'sdk-users',
     data: { email: 'a', password: 'b' },
   });
+
   const versions = await automatic.findVersions({ collection: 'sdk-pages' });
   const restored = await automatic.restoreVersion({ collection: 'sdk-pages', id: 'v1' });
 
@@ -102,6 +104,7 @@ export async function updateAndDelete() {
     data: { group: { field: 'x' } },
     where: { title: { equals: 'x' } },
   });
+
   const removed = await automatic.delete({ collection: 'sdk-pages', id: 1 });
 
   expectTypeOf(one).toEqualTypeOf<SdkPage>();
@@ -118,6 +121,7 @@ export async function optionsTheServerReads() {
     fallbackLocale: false,
     joins: { children: false },
   });
+
   await automatic.update({
     autosave: true,
     collection: 'sdk-pages',
@@ -248,6 +252,7 @@ type SearchManyPagesAndMedia = SearchManyOptions<
 expectTypeOf<SearchManyPagesAndMedia[0]['where']>().toEqualTypeOf<
   WhereFromCollectionSlug<GeneratedTypes, 'sdk-pages'> | undefined
 >();
+
 expectTypeOf<SearchManyPagesAndMedia[1]['where']>().toEqualTypeOf<
   WhereFromCollectionSlug<GeneratedTypes, 'sdk-media'> | undefined
 >();

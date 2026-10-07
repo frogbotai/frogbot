@@ -12,6 +12,7 @@ export function bearerFetch(
     const headers = new Headers(init?.headers);
     const token = await getToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);
+
     return fetch(input, { ...init, headers });
   };
 }
@@ -19,4 +20,5 @@ export function bearerFetch(
 export function createCookieSDK(baseURL = '/api') {
   return createFrogBotSDK({ baseURL, fetch: cookieFetch() });
 }
+
 import { createFrogBotSDK } from '@frogbotai/sdk';

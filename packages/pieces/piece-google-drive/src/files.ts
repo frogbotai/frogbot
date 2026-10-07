@@ -28,6 +28,7 @@ export async function loadFile({
     req,
     overrideAccess: false,
   });
+
   if (typeof doc.url !== 'string') throw new Error('[frogbot] File is unavailable.');
   const config = await req.frogbot.config._internal.payloadConfig;
   const originURL = config.serverURL || req.url;
@@ -37,6 +38,7 @@ export async function loadFile({
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
     throw new Error('[frogbot] File URL is invalid.');
   }
+
   const headers = new Headers();
   if (url.origin === origin.origin) {
     for (const name of ['authorization', 'cookie']) {
@@ -44,13 +46,16 @@ export async function loadFile({
       if (value) headers.set(name, value);
     }
   }
+
   const timeout = AbortSignal.timeout(30_000);
   const response = await fetch(url, {
     headers,
     redirect: 'error',
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
+
   if (!response.ok) throw new Error(`[frogbot] File is unavailable (${response.status}).`);
+
   return {
     data: Buffer.from(await response.arrayBuffer()),
     name:
@@ -76,6 +81,7 @@ export async function saveFile({
     req,
     overrideAccess: false,
   });
+
   return {
     id: doc.id,
     name,
@@ -91,6 +97,7 @@ export function contentBytes(data: unknown): Buffer {
   if (ArrayBuffer.isView(data)) {
     return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   }
+
   throw new Error('[frogbot] Google Drive did not return file bytes.');
 }
 
@@ -140,6 +147,7 @@ export async function downloadDriveFile({
         )
       ).data,
     );
+
   if (file.mimeType === folderMimeType) throw new Error('[frogbot] Folders cannot be downloaded.');
   const format = file.mimeType ? exportFormats[file.mimeType] : undefined;
   const response = format
@@ -157,8 +165,10 @@ export async function downloadDriveFile({
           responseType: 'arraybuffer',
         },
       );
+
   let filename = name ?? file.name ?? fileId;
   if (format && !filename.toLowerCase().endsWith(format.extension)) filename += format.extension;
+
   return saveFile({
     req,
     data: contentBytes(response.data),

@@ -45,6 +45,7 @@ describe('training data export: custom chat collections', () => {
   it('exports from the marked chat and message collections', async () => {
     const chunks: Buffer[] = [];
     const reader = booted.frogbot.exportTrainingData({ overrideAccess: true }).getReader();
+
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;

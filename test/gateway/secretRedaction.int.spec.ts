@@ -38,6 +38,7 @@ function createKeyLeakModel(): LanguageModelV4 {
       error: { message, type: 'invalid_request_error', code: 'invalid_api_key' },
     }),
   });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -53,6 +54,7 @@ function createKeyLeakModel(): LanguageModelV4 {
 function makeAppWithMockProvider(providerName: string) {
   const fakeProvider = { languageModel: () => createKeyLeakModel() };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -63,9 +65,11 @@ describe('gateway integration — 4xx credential-fragment redaction (G34)', () =
   // text passes through.
   it('does not echo the operator key fragment in a chat 401 (OpenAI envelope)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const app = makeAppWithMockProvider('openai');
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -79,9 +83,11 @@ describe('gateway integration — 4xx credential-fragment redaction (G34)', () =
   // Same leak on the Anthropic envelope path (/v1/messages).
   it('does not echo the operator key fragment in a messages 401 (Anthropic envelope)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const app = makeAppWithMockProvider('anthropic');
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/test-model',

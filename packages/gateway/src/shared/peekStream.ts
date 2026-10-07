@@ -11,6 +11,7 @@ export async function peekStream<T>(
 
   if (done) {
     reader.releaseLock();
+
     return undefined;
   }
 
@@ -25,8 +26,10 @@ export async function peekStream<T>(
         if (next.done) {
           reader.releaseLock();
           controller.close();
+
           return;
         }
+
         controller.enqueue(next.value);
       },
       async cancel(reason) {

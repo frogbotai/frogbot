@@ -62,18 +62,22 @@ describe('UsageReports', () => {
         { status: 200 },
       ),
     );
+
     vi.stubGlobal('fetch', fetch);
     render(<UsageReports />);
 
     expect(screen.getByRole('heading', { name: 'Usage Analytics' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Last 7 days' })).toBeTruthy();
+
     await waitFor(() => expect(screen.getByText('Large')).toBeTruthy());
+
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/usage/report?groupBy=model'),
       expect.any(Object),
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Users' }));
+
     await waitFor(() =>
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining('groupBy=user'),
@@ -82,6 +86,7 @@ describe('UsageReports', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
+
     expect(screen.getByLabelText('From')).toBeTruthy();
     expect(screen.getByLabelText('To')).toBeTruthy();
   });

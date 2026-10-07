@@ -86,6 +86,7 @@ describe('chat attachments stored in S3', () => {
     }
 
     skipSuite = true;
+
     console.warn(
       `\x1b[33m⚠ Skipping s3 chat attachment tests — ${service.name} not reachable. ` +
         `Start with: docker compose -f test/docker-compose.yml --profile storage up -d\x1b[0m`,
@@ -341,6 +342,7 @@ describe('chat attachments stored in S3', () => {
       ['Start.'],
       ['Summarize.', `Attached file "${report.filename}":\n${reportText}`],
     ]);
+
     await vi.waitFor(async () => expect(await storedText(report)).toBe(reportText));
   });
 });

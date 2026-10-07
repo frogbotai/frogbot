@@ -17,6 +17,7 @@ function chat(ctx: ToolCtx): { id: number | string; slug: string } {
   if (!chat.enabled || ctx.agent.chatId === undefined) {
     throw new Error('[frogbot] Todo tools require chat persistence and a current chat.');
   }
+
   return { id: ctx.agent.chatId, slug: chat.chatsSlug };
 }
 
@@ -28,6 +29,7 @@ export const write_todos: Tool<typeof writeTodosInput, void> = {
   inputSchema: writeTodosInput,
   async execute({ todos }, ctx) {
     const current = chat(ctx);
+
     await ctx.req.frogbot.update({
       collection: current.slug,
       id: current.id,
@@ -52,6 +54,7 @@ export const read_todos: Tool<typeof readTodosInput, TodoItem[]> = {
       req: ctx.req,
       overrideAccess: true,
     })) as { todos?: TodoItem[] | null };
+
     return document.todos ?? [];
   },
 };

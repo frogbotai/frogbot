@@ -20,6 +20,7 @@ function providerUrl(path: string) {
   if (/[\s\\\p{Cc}]/u.test(path) || path.startsWith('//')) {
     throw new Error('URL must target the Google Calendar v3 API.');
   }
+
   const url = new URL(path.startsWith('/') ? `${baseUrl}${path}` : path);
   if (
     url.origin !== 'https://www.googleapis.com' ||
@@ -30,7 +31,9 @@ function providerUrl(path: string) {
   ) {
     throw new Error('URL must target the Google Calendar v3 API.');
   }
+
   let decoded = url.pathname;
+
   for (let index = 0; index < 3; index++) {
     decoded = decodeURIComponent(decoded);
     if (
@@ -39,8 +42,10 @@ function providerUrl(path: string) {
     ) {
       throw new Error('URL must target the Google Calendar v3 API.');
     }
+
     if (!/%[\da-f]{2}/i.test(decoded)) break;
   }
+
   return url.toString();
 }
 
@@ -53,6 +58,7 @@ const inputSchema = z
       .refine((path) => {
         try {
           providerUrl(path);
+
           return true;
         } catch {
           return false;
@@ -89,6 +95,7 @@ const inputSchema = z
     if (input.bodyType === 'raw' && typeof input.body !== 'string') {
       context.addIssue({ code: 'custom', path: ['body'], message: 'Raw body must be a string.' });
     }
+
     if (input.bodyType === 'formData' && !input.formData) {
       context.addIssue({
         code: 'custom',
@@ -96,6 +103,7 @@ const inputSchema = z
         message: 'Form data fields are required.',
       });
     }
+
     if (
       ['GET', 'HEAD'].includes(input.method) &&
       (input.body !== undefined || input.formData !== undefined)
@@ -126,17 +134,21 @@ export const customApiCall = defineAction({
     if (!transport || typeof transport === 'string' || !('request' in transport)) {
       throw new Error('Google Calendar client is missing authenticated transport.');
     }
+
     const headers = new Headers(input.headers);
     let data: unknown = input.bodyType === 'none' ? undefined : input.body;
     if (input.bodyType === 'json' && data !== undefined) {
       data = JSON.stringify(data);
       if (!headers.has('content-type')) headers.set('content-type', 'application/json');
     }
+
     if (input.bodyType === 'raw' && !headers.has('content-type')) {
       headers.set('content-type', 'text/plain');
     }
+
     if (input.bodyType === 'formData') {
       const form = new FormData();
+
       for (const field of input.formData ?? []) {
         if (field.type === 'text') form.append(field.name, field.value);
         else {
@@ -147,9 +159,11 @@ export const customApiCall = defineAction({
           );
         }
       }
+
       headers.delete('content-type');
       data = form;
     }
+
     const response = await transport.request({
       ...requestOptions(req),
       url: providerUrl(input.path),
@@ -163,9 +177,11 @@ export const customApiCall = defineAction({
       maxRedirects: 0,
       validateStatus: (status) => (status >= 200 && status < 300) || input.failsafe,
     });
+
     if (response.status >= 300 && response.status < 400) {
       throw new Error('Google Calendar API redirects are not allowed.');
     }
+
     return {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),

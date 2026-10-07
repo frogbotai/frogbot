@@ -118,6 +118,7 @@ describe('GitHub App channel conversation', () => {
     onTestFinished(() => fixture.host.shutdown());
 
     expect((await deliver(1, '@frogbot help', 'wrong-secret'))?.status).toBe(401);
+
     await deliver(2, 'An ordinary comment');
 
     expect(fixture.inputs).toHaveLength(0);

@@ -15,6 +15,7 @@ const jsonValue: z.ZodType<unknown> = z.lazy(() =>
     z.record(z.string(), jsonValue),
   ]),
 );
+
 const chatId = z.union([z.string(), z.number()]).meta({ label: 'Chat ID' });
 const messageId = z.number().int().meta({ label: 'Message ID' });
 const parseMode = z.enum(['MarkdownV2', 'HTML', 'None']).default('MarkdownV2');
@@ -82,6 +83,7 @@ async function callWithFile(
   const values = z
     .record(z.string(), jsonValue)
     .parse(telegramValue({ ...body, [field]: undefined }));
+
   const form = new FormData();
 
   Object.entries(values).forEach(([key, value]) => {
@@ -100,6 +102,7 @@ const messageOptions = {
   disableNotification: z.boolean().default(false),
   protectContent: z.boolean().default(false),
 };
+
 const replyOptions = {
   ...messageOptions,
   replyToMessageId: z.number().int().optional(),
@@ -147,6 +150,7 @@ export const sendMedia = defineAction({
       sticker: 'sendSticker',
       animation: 'sendAnimation',
     }[mediaType];
+
     const body = { ...options, [mediaType]: media, caption: message };
 
     return callWithFile(client, req, method, body, mediaType);

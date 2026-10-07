@@ -18,11 +18,14 @@ vi.mock('@payloadcms/ui', () => ({
 
 const { BarcodeCell } =
   await import('../../../../packages/next/src/fields/Barcode/index.client.js');
+
 const { DurationCell } =
   await import('../../../../packages/next/src/fields/Duration/index.client.js');
+
 const { KindLink } = await import('../../../../packages/next/src/fields/KindLink/index.client.js');
 const { PercentCell } =
   await import('../../../../packages/next/src/fields/Percent/index.client.js');
+
 const { PhoneCell } = await import('../../../../packages/next/src/fields/Phone/index.client.js');
 const { RatingCell } = await import('../../../../packages/next/src/fields/Rating/index.client.js');
 const { UrlCell } = await import('../../../../packages/next/src/fields/Url/index.client.js');

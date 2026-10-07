@@ -12,8 +12,11 @@ import type { FieldHookArgs as PayloadFieldHookArgs } from 'payload';
 import { expectTypeOf } from 'vitest';
 
 type Hooks = NonNullable<TextField['hooks']>;
+
 type HookArgs<TPhase extends keyof Hooks> = Parameters<NonNullable<Hooks[TPhase]>[number]>[0];
+
 type RuntimeKeys = 'path' | 'schemaPath' | 'indexPath' | 'blockData' | 'global';
+
 type FieldAffectingData =
   Exclude<Extract<Field, { name: string }>, UIField> | (TabAsField & { name: string });
 
@@ -85,6 +88,7 @@ const text: TextField = {
 };
 
 type Post = { id: string; title: string };
+
 type Siblings = { title: string };
 
 const genericHook: FieldHook<Post, string, Siblings> = (hookArgs) => {

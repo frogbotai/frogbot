@@ -76,10 +76,12 @@ const handlePreview = await importFromUI<HandlePreview>(
   '@payloadcms/ui/utilities/handlePreview',
   'handlePreview',
 );
+
 const fieldSchemasToFormState = await importFromUI<FieldSchemasToFormState>(
   '@payloadcms/ui/forms/fieldSchemasToFormState',
   'fieldSchemasToFormState',
 );
+
 const buildFieldSchemaMap = await importFromUI<BuildFieldSchemaMap>(
   '@payloadcms/ui/utilities/buildFieldSchemaMap/index',
   'buildFieldSchemaMap',
@@ -113,6 +115,7 @@ describe('admin request', () => {
       { user: { ...user, collection: usersSlug } as never },
       booted.payload,
     );
+
     requestCalls.length = 0;
   });
 
@@ -193,9 +196,11 @@ describe('admin request', () => {
       config: booted.payload.config,
       i18n: req.i18n,
     });
+
     const schemaPath = [...fieldSchemaMap.keys()].find((key) =>
       key.endsWith(`.lexical_blocks.${bodyBlockSlug}.fields`),
     )!;
+
     const { fields } = fieldSchemaMap.get(schemaPath)!;
 
     expect(req).not.toHaveProperty('frogbot');
@@ -223,6 +228,7 @@ describe('admin request', () => {
       config: booted.payload.config,
       i18n: req.i18n,
     });
+
     const schemaPath = [...fieldSchemaMap.keys()].find((key) => key.endsWith(schemaPathSuffix))!;
     const { fields } = fieldSchemaMap.get(schemaPath)!;
 

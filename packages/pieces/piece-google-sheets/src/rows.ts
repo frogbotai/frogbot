@@ -40,6 +40,7 @@ async function appendValues(args: SheetsArgs<z.output<typeof writeInput>>) {
     },
     requestOptions(args.req),
   );
+
   return {
     row: updatedRow(data.updates?.updatedRange),
     updates: updateOutput.parse(data.updates ?? {}),
@@ -58,6 +59,7 @@ export const appendRow = defineAction({
 const insertInput = writeInput.extend({
   afterRow: z.number().int().nonnegative().max(9_999_999).default(1),
 });
+
 export const insertRow = defineAction({
   slug: 'insertRow',
   description: 'Insert a row after a specified row, defaulting to just below the header.',
@@ -67,6 +69,7 @@ export const insertRow = defineAction({
   async run(args) {
     const sheet = await worksheet(args);
     const row = args.input.afterRow + 1;
+
     await batch(args, [
       {
         insertDimension: {
@@ -80,6 +83,7 @@ export const insertRow = defineAction({
         },
       },
     ]);
+
     const { data } = await args.client.sheets.spreadsheets.values.update(
       {
         spreadsheetId: args.input.spreadsheetId,
@@ -89,6 +93,7 @@ export const insertRow = defineAction({
       },
       requestOptions(args.req),
     );
+
     return { row, updates: updateOutput.parse(data) };
   },
 });
@@ -111,6 +116,7 @@ export const updateRow = defineAction({
       },
       requestOptions(args.req),
     );
+
     return { row: args.input.row, updates: updateOutput.parse(data) };
   },
 });
@@ -119,6 +125,7 @@ const updatesInput = sheetInput.extend({
   rows: z.array(z.object({ row: rowNumber.optional(), values: rowValues })),
   valueInputOption,
 });
+
 const updatesOutput = z
   .object({
     spreadsheetId: z.string().nullish(),
@@ -127,6 +134,7 @@ const updatesOutput = z
     responses: z.array(updateOutput).nullish(),
   })
   .passthrough();
+
 export const updateRows = defineAction({
   slug: 'updateRows',
   description:
@@ -171,6 +179,7 @@ const appendRowsInput = sheetInput.extend({
     .optional(),
   valueInputOption,
 });
+
 export const appendRows = defineAction({
   slug: 'appendRows',
   description:
@@ -200,10 +209,12 @@ export const appendRows = defineAction({
         bom: true,
         skip_empty_lines: true,
       }) as Record<string, string>[];
+
       rows = records.map((record) => {
         const normalized = Object.fromEntries(
           Object.entries(record).map(([key, value]) => [key.trim().toLowerCase(), value]),
         );
+
         return headers.map((header) => normalized[header.trim().toLowerCase()] ?? '');
       });
     } else {
@@ -211,6 +222,7 @@ export const appendRows = defineAction({
       const additions = [...new Set(records.flatMap(Object.keys))].filter(
         (key) => !headers.includes(key),
       );
+
       headers.push(...additions);
       if (additions.length) {
         await client.sheets.spreadsheets.values.update(
@@ -223,6 +235,7 @@ export const appendRows = defineAction({
           requestOptions(req),
         );
       }
+
       rows = records.map((record) => cells(headers.map((header) => record[header] ?? '')));
     }
 
@@ -250,6 +263,7 @@ export const appendRows = defineAction({
             ).data,
           )
         : { totalUpdatedRows: 0 };
+
       const end = sheet.gridProperties?.rowCount ?? start + rows.length;
       const clearedRanges =
         start + rows.length <= end
@@ -265,6 +279,7 @@ export const appendRows = defineAction({
               )
             ).data.clearedRanges ?? [])
           : [];
+
       return { insertedRows: rows.length, updates, clearedRanges };
     }
 
@@ -275,6 +290,7 @@ export const appendRows = defineAction({
         spreadsheetId: input.spreadsheetId,
         range: sheetRange(sheet.title!),
       });
+
       const keys = new Set(
         existing
           .filter((row) => index < Math.max(headers.length, row.length))
@@ -284,6 +300,7 @@ export const appendRows = defineAction({
               .toLowerCase(),
           ),
       );
+
       rows = rows.filter((row, rowIndex) => {
         const original = input.data.format === 'columns' ? input.data.rows[rowIndex] : undefined;
         const value = original
@@ -291,6 +308,7 @@ export const appendRows = defineAction({
             ? original[index]
             : original[input.duplicateColumn!]
           : row[index];
+
         return value == null || !keys.has(String(value).trim().toLowerCase());
       });
     }
@@ -342,6 +360,7 @@ const rowSelection = z.discriminatedUnion('mode', [
     ),
   z.object({ mode: z.literal('list'), rows: z.array(rowNumber).min(1) }),
 ]);
+
 const deleteRowsInput = sheetInput.extend({ selection: rowSelection });
 export const deleteRows = defineAction({
   slug: 'deleteRows',
@@ -360,6 +379,7 @@ export const deleteRows = defineAction({
         : [...new Set(selection.rows)]
             .sort((a, b) => b - a)
             .map((row) => ({ startRow: row, endRow: row }));
+
     return {
       deletedRanges: ranges,
       result: batchOutput.parse(
@@ -391,11 +411,13 @@ const searchInput = readInput.extend({
   startRow: rowNumber.default(1),
   limit: rowNumber.default(1),
 });
+
 async function searchRows(args: SheetsArgs<z.output<typeof searchInput>>) {
   const rows = await readRows(
     { ...args, input: { ...args.input, useHeaderNames: false } },
     args.input.startRow,
   );
+
   const { input } = args;
   const matches = rows
     .filter(
@@ -406,6 +428,7 @@ async function searchRows(args: SheetsArgs<z.output<typeof searchInput>>) {
           : values[input.column]?.toLowerCase().includes(input.searchValue.toLowerCase())),
     )
     .slice(0, input.limit);
+
   if (!input.useHeaderNames || !matches.length) return matches;
   const sheet = await worksheet(args);
   const headers =
@@ -416,6 +439,7 @@ async function searchRows(args: SheetsArgs<z.output<typeof searchInput>>) {
         range: sheetRange(sheet.title!, `${input.headerRow}:${input.headerRow}`),
       })
     )[0] ?? [];
+
   return matches.map(
     (row) =>
       mapRows({
@@ -426,6 +450,7 @@ async function searchRows(args: SheetsArgs<z.output<typeof searchInput>>) {
       })[0],
   );
 }
+
 export const findRows = defineAction({
   slug: 'findRows',
   description:
@@ -450,6 +475,7 @@ export const findOrCreateRow = defineAction({
     let headers: unknown[] = [];
     if (args.input.useHeaderNames) {
       const sheet = await worksheet(args);
+
       headers =
         (
           await readValues({
@@ -459,6 +485,7 @@ export const findOrCreateRow = defineAction({
           })
         )[0] ?? [];
     }
+
     return {
       ...mapRows({
         values: [cells(args.input.values)],
@@ -485,6 +512,7 @@ export const getRow = defineAction({
   idempotent: true,
   async run(args) {
     const [row] = await readRows(args, args.input.row, args.input.row);
+
     return row ? { found: true as const, ...row } : { found: false as const, row: null };
   },
 });
@@ -503,6 +531,7 @@ const nextInput = readInput.extend({
   batchSize: rowNumber.default(1),
   memoryKey: z.string().min(1).default('row_number'),
 });
+
 export const getNextRows = defineAction({
   slug: 'getNextRows',
   description:
@@ -517,7 +546,9 @@ export const getNextRows = defineAction({
     if (req.user && (!req.user.collection || req.user.id == null)) {
       throw new Error('A persistent Sheets cursor requires an identifiable owner.');
     }
+
     let instanceSlug: string | undefined;
+
     for (const instance of req.frogbot.config.pieces.instances) {
       if (instance.piece !== 'google-sheets') continue;
       const client = await instance.client({ req }).catch(() => undefined);
@@ -526,22 +557,26 @@ export const getNextRows = defineAction({
         break;
       }
     }
+
     if (!instanceSlug) {
       throw new Error(
         "Use this Google Sheets instance in an agent's tools or triggers, or in `connections`, before using a persistent cursor.",
       );
     }
+
     const key = `pieces:google-sheets:cursor:${createHash('sha256')
       .update(
         JSON.stringify([owner, instanceSlug, input.spreadsheetId, input.sheetId, input.memoryKey]),
       )
       .digest('hex')}`;
+
     return req.frogbot.kv.lock(`${key}:lock`, 30_000, async ({ signal: lease }) => {
       const signal = req.signal ? AbortSignal.any([req.signal, lease]) : lease;
       signal.throwIfAborted();
       const stored = await req.frogbot.kv.get(key);
       const start =
         stored == null ? input.startRow : z.number().int().positive().max(10_000_001).parse(stored);
+
       const lockedArgs = {
         ...args,
         req: new Proxy(req, {
@@ -549,13 +584,16 @@ export const getNextRows = defineAction({
             property === 'signal' ? signal : Reflect.get(target, property),
         }),
       };
+
       let rows = await readRows(lockedArgs, start, start + input.batchSize - 1);
       if (rows.length < input.batchSize) {
         rows = (await readRows(lockedArgs, start)).slice(0, input.batchSize);
       }
+
       signal.throwIfAborted();
       if (rows.length) await req.frogbot.kv.set(key, start + rows.length);
       signal.throwIfAborted();
+
       return rows;
     });
   },

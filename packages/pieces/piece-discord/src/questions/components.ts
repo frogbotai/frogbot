@@ -28,6 +28,7 @@ const styles = { primary: 1, secondary: 2, danger: 4 };
 const types = { actionRow: 1, button: 2, stringSelect: 3, textDisplay: 10, container: 17 };
 
 type QuestionItem = QuestionInput['questions'][number];
+
 type QuestionAnswer = QuestionOutput['answers'][number];
 
 export type DiscordComponent = Record<string, unknown>;

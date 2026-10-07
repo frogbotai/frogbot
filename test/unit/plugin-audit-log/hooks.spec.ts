@@ -19,6 +19,7 @@ async function hook(options: Parameters<typeof auditLogPlugin>[0] = {}) {
 function request(user: Record<string, unknown> | null = null) {
   const create = vi.fn().mockResolvedValue({});
   const error = vi.fn();
+
   return {
     req: {
       user,
@@ -37,12 +38,14 @@ describe('audit hooks', () => {
   it('records session attribution and update changes', async () => {
     const write = request({ id: 'user-1' });
     const afterChange = await hook();
+
     await afterChange({
       doc: { id: 'post-1', title: 'After' },
       previousDoc: { id: 'post-1', title: 'Before' },
       operation: 'update',
       req: write.req,
     } as never);
+
     expect(write.create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'audit-logs',
@@ -61,12 +64,14 @@ describe('audit hooks', () => {
   it('records API key, metadata, and snapshot options', async () => {
     const write = request({ id: 'user-1', apiKeyId: 42, _strategy: 'api-key' });
     const afterChange = await hook({ ipAddress: true, snapshot: 'always', trustProxy: true });
+
     await afterChange({
       doc: { id: 7, title: 'Created' },
       previousDoc: undefined,
       operation: 'create',
       req: write.req,
     } as never);
+
     expect(write.create.mock.calls[0][0].data).toEqual(
       expect.objectContaining({
         apiKeyId: '42',
@@ -80,12 +85,14 @@ describe('audit hooks', () => {
   it('ignores forwarded IP headers unless proxy trust is enabled', async () => {
     const write = request();
     const afterChange = await hook({ ipAddress: true });
+
     await afterChange({
       doc: { id: 7 },
       previousDoc: undefined,
       operation: 'create',
       req: write.req,
     } as never);
+
     expect(write.create.mock.calls[0][0].data).toEqual(
       expect.objectContaining({ ip: undefined, userAgent: 'audit-test' }),
     );
@@ -94,12 +101,14 @@ describe('audit hooks', () => {
   it('only records API key IDs from the API-key auth strategy', async () => {
     const write = request({ id: 'user-1', apiKeyId: 'spoofed', _strategy: 'local-jwt' });
     const afterChange = await hook();
+
     await afterChange({
       doc: { id: 7 },
       previousDoc: undefined,
       operation: 'create',
       req: write.req,
     } as never);
+
     expect(write.create.mock.calls[0][0].data.apiKeyId).toBeUndefined();
   });
 
@@ -108,10 +117,13 @@ describe('audit hooks', () => {
       secret: 'test',
       collections: [{ slug: 'posts', fields: [] }],
     } as never);
+
     const afterDelete = result.collections.find((item) => item.slug === 'posts')?.hooks
       ?.afterDelete?.[0];
+
     const write = request();
     await afterDelete?.({ doc: { id: 'post-1', title: 'Deleted' }, req: write.req } as never);
+
     expect(write.create.mock.calls[0][0].data).toEqual(
       expect.objectContaining({
         operation: 'delete',
@@ -125,12 +137,14 @@ describe('audit hooks', () => {
   it('does not record disabled change operations', async () => {
     const write = request();
     const afterChange = await hook({ operations: ['create'] });
+
     await afterChange({
       doc: { id: 'post-1', title: 'After' },
       previousDoc: { id: 'post-1', title: 'Before' },
       operation: 'update',
       req: write.req,
     } as never);
+
     expect(write.create).not.toHaveBeenCalled();
   });
 
@@ -138,6 +152,7 @@ describe('audit hooks', () => {
     const write = request();
     write.create.mockRejectedValue(new Error('database unavailable'));
     const afterChange = await hook();
+
     expect(
       afterChange({
         doc: { id: 'post-1' },
@@ -146,6 +161,7 @@ describe('audit hooks', () => {
         req: write.req,
       } as never),
     ).toEqual({ id: 'post-1' });
+
     await vi.waitFor(() => expect(write.error).toHaveBeenCalledOnce());
   });
 });

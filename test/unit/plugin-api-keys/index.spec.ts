@@ -10,13 +10,17 @@ const db = {} as FrogBotConfig['db'];
 describe('apiKeysPlugin', () => {
   it('provides a FrogBot plugin with zero configuration', async () => {
     const plugin = apiKeysPlugin();
+
     expectTypeOf(plugin).toMatchTypeOf<Plugin>();
+
     const config = {
       secret: 'test',
       db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig;
+
     const result = await plugin(config);
+
     expect(result.collections.map((collection) => collection.slug)).toEqual(['users', 'api-keys']);
     expect(result.collections[0]?.auth).toMatchObject({ strategies: [{ name: 'api-key' }] });
     expect(result.settings).toBeUndefined();
@@ -51,8 +55,10 @@ describe('apiKeysPlugin', () => {
       db,
       collections: [{ slug: 'users', auth: { strategies: [existing] }, fields: [] }],
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
     const users = result.collections[0];
+
     expect(
       typeof users?.auth === 'object' && users.auth.strategies?.map((strategy) => strategy.name),
     ).toEqual(['existing', 'api-key']);
@@ -90,6 +96,7 @@ describe('apiKeysPlugin', () => {
         hooks: { beforeOperation: [existingHook] },
       },
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin({ collectionSlug: 'credentials' })(config);
     const marked = result.collections.filter((collection) => collection.usageLog === true);
     const field = marked[0]?.fields.find((item) => 'name' in item && item.name === 'apiKey');
@@ -118,6 +125,7 @@ describe('apiKeysPlugin', () => {
       db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
 
     expect(result.collections.some((collection) => collection.usageLog === true)).toBe(false);
@@ -130,9 +138,11 @@ describe('apiKeysPlugin', () => {
       db,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
     const users = result.collections.find(({ slug }) => slug === 'users');
     const keys = result.collections.find(({ slug }) => slug === 'api-keys');
+
     expect(users?.fields).toEqual([]);
     expect(keys?.fields.some((field) => 'name' in field && field.name === 'monthlyBudget')).toBe(
       false,
@@ -146,10 +156,12 @@ describe('apiKeysPlugin', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
     const req = { user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' } };
     const context = {};
     await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
+
     expect(context).toEqual({ usageFields: { apiKey: 'key-1' } });
     expect(result.ai?.hooks?.beforeUpstream).toBeUndefined();
   });
@@ -161,6 +173,7 @@ describe('apiKeysPlugin', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
     const req = { user: { id: 1, _strategy: 'api-key', apiKeyId: 3 } };
     const context: Record<string, unknown> = {};
@@ -177,6 +190,7 @@ describe('apiKeysPlugin', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
     const req = { user: { id: 1, _strategy: 'local-jwt', apiKeyId: 3 } };
     const context = {};
@@ -193,6 +207,7 @@ describe('apiKeysPlugin', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
+
     const result = await apiKeysPlugin()(config);
     const req = { user: { id: 1, _strategy: 'api-key', apiKeyId } };
     const context = {};

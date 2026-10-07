@@ -22,6 +22,7 @@ function databaseTrigger<const TSlug extends string>(
       const filter = since
         ? { timestamp, [timestamp]: { on_or_after: new Date(since).toISOString() } }
         : undefined;
+
       const pages = z.array(notionPage).parse(
         await client.listAll({
           path: `/databases/${input.databaseId}/query`,
@@ -29,6 +30,7 @@ function databaseTrigger<const TSlug extends string>(
           signal: req.signal ?? undefined,
         }),
       );
+
       const seen = new Set<string>();
       const events = pages.filter((page) => {
         const time = page[timestamp];
@@ -105,6 +107,7 @@ export const updatedPage = definePollingTrigger({
         signal: req.signal ?? undefined,
       }),
     );
+
     const seen = new Set<string>();
     const events = pages.filter((page) => {
       if (

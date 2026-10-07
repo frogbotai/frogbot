@@ -100,6 +100,7 @@ describe('resume confirmation', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+
     expectPrivate(response);
 
     expect(html).toContain('<title>Resume workflow · FrogBot</title>');
@@ -169,7 +170,9 @@ describe('resume confirmation', () => {
     expect(html).toContain(`<h1>${title}</h1>`);
     expect(html).not.toContain('<form');
     expect(html).not.toContain(token);
+
     expectPrivate(response);
+
     expect(operations.resumeWaitpoint).not.toHaveBeenCalled();
   });
 
@@ -187,7 +190,9 @@ describe('resume confirmation', () => {
     expect(response.body).toBeNull();
     expect(await response.text()).toBe('');
     expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+
     expectPrivate(response);
+
     expect(operations.resumeWaitpoint).not.toHaveBeenCalled();
   });
 
@@ -202,7 +207,9 @@ describe('resume confirmation', () => {
       expect(response.status).toBe(500);
       expect(body).not.toContain(token);
       expect(body).not.toContain('Database failure');
+
       expectPrivate(response);
+
       expect(operations.resumeWaitpoint).not.toHaveBeenCalled();
     },
   );
@@ -221,7 +228,9 @@ describe('resume submission', () => {
       );
 
       expect(response.status).toBe(404);
+
       expectPrivate(response);
+
       expect(operations.findWaitpoint).not.toHaveBeenCalled();
       expect(operations.resumeWaitpoint).not.toHaveBeenCalled();
     },
@@ -240,7 +249,9 @@ describe('resume submission', () => {
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ ok: true });
+
       expectPrivate(response);
+
       expect(operations.resumeWaitpoint).toHaveBeenCalledExactlyOnceWith({ req, token, data });
       expect(operations.findWaitpoint).not.toHaveBeenCalled();
     },
@@ -261,7 +272,9 @@ describe('resume submission', () => {
     expect(html).not.toContain('<form');
     expect(html).not.toContain(token);
     expect(html).not.toContain('private-');
+
     expectPrivate(response);
+
     expect(operations.resumeWaitpoint).toHaveBeenCalledExactlyOnceWith({ req, token, data: {} });
   });
 
@@ -288,7 +301,9 @@ describe('resume submission', () => {
 
     expect(response.status).toBe(status);
     expect(await response.json()).toMatchObject({ error: { code } });
+
     expectPrivate(response);
+
     expect(operations.resumeWaitpoint).not.toHaveBeenCalled();
   });
 
@@ -328,15 +343,19 @@ describe('resume submission', () => {
       const json = await handle(
         request({ method: 'POST', contentType: 'application/json', body: '{}' }),
       );
+
       const html = await handle(
         request({ method: 'POST', contentType: 'application/x-www-form-urlencoded', body: '' }),
       );
 
       expect(json.status).toBe(status);
       expect(await json.json()).toEqual({ error: { code, message } });
+
       expectPrivate(json);
+
       expect(html.status).toBe(status);
       expect(await html.text()).toContain(message);
+
       expectPrivate(html);
     },
   );
@@ -359,6 +378,7 @@ describe('resume submission', () => {
         message: 'FrogBot could not process this request. Please try again later.',
       },
     });
+
     expectPrivate(response);
   });
 
@@ -371,7 +391,9 @@ describe('resume submission', () => {
 
     expect(response.status).toBe(500);
     expect(await response.json()).toMatchObject({ error: { code: 'INTERNAL_ERROR' } });
+
     expectPrivate(response);
+
     expect(operations.resumeWaitpoint).not.toHaveBeenCalled();
   });
 });

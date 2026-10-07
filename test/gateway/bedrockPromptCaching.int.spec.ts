@@ -12,6 +12,7 @@ const upstreamBodies: unknown[] = [];
 function makeApp() {
   const fetch = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
     upstreamBodies.push(JSON.parse(String(init?.body)));
+
     return Promise.resolve(
       new Response(
         JSON.stringify({
@@ -24,11 +25,13 @@ function makeApp() {
       ),
     );
   });
+
   const bedrock = bedrockProvider.build({
     apiKey: 'test',
     region: 'us-east-1',
     fetch,
   } as BedrockConfig);
+
   return createApp({
     registry: { bedrock },
   });

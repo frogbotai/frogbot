@@ -18,6 +18,7 @@ export const togetheraiProvider = {
   envVars: ['TOGETHER_API_KEY', 'TOGETHER_BASE_URL'],
   fromEnv: (env) => {
     if (!env.TOGETHER_API_KEY) return undefined;
+
     return {
       apiKey: env.TOGETHER_API_KEY,
       ...(env.TOGETHER_BASE_URL && { baseURL: env.TOGETHER_BASE_URL }),

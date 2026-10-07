@@ -31,6 +31,7 @@ describe('collection board', () => {
     expect(isBoardOrderField('_order_by_stage')).toBe(true);
     expect(isBoardOrderField('priority')).toBe(false);
   });
+
   it('builds Payload reorder requests from positional neighbours', () => {
     expect(
       buildBoardReorderBody({
@@ -48,6 +49,7 @@ describe('collection board', () => {
       target: { id: '2', key: 'a0' },
     });
   });
+
   it('resolves repeated board instances by slug and route path', () => {
     const views = [
       { path: '/planning', slug: 'planning' },
@@ -69,6 +71,7 @@ describe('collection board', () => {
         { label: 'Done', value: 'done' },
       ],
     } as never;
+
     await expect(
       resolveColumns({ collectionSlug: 'posts', field, path: 'stage', req: {} as never }),
     ).resolves.toEqual([
@@ -117,6 +120,7 @@ describe('collection board', () => {
         findDistinct,
       },
     } as never;
+
     await expect(
       resolveColumns({
         collectionSlug: 'posts',
@@ -134,6 +138,7 @@ describe('collection board', () => {
     const findDistinct = vi.fn().mockResolvedValue({
       values: [{ priority: 2 }, { priority: false }],
     });
+
     const req = {
       collectionConfig: { slug: 'posts' },
       i18n: { t: (key: string) => key },
@@ -142,6 +147,7 @@ describe('collection board', () => {
         findDistinct,
       },
     } as never;
+
     await expect(
       resolveColumns({
         collectionSlug: 'posts',
@@ -159,6 +165,7 @@ describe('collection board', () => {
     const fields = [
       { name: 'workflow', type: 'group', fields: [{ name: 'stage', type: 'select' }] },
     ] as never;
+
     expect(resolveBoardField(fields, 'workflow.stage')).toMatchObject({ name: 'stage' });
     expect(setPath('workflow.stage', 'done')).toEqual({ workflow: { stage: 'done' } });
     expect(getPath({ workflow: { stage: 'done' } }, 'workflow.stage')).toBe('done');
@@ -465,6 +472,7 @@ describe('collection board', () => {
 
   it('merges shared filters with categorized and uncategorized columns', () => {
     const where = { owner: { equals: '1' } };
+
     expect(buildColumnWhere(where, 'workflow.stage', 2)).toEqual({
       and: [where, { 'workflow.stage': { equals: 2 } }],
     });

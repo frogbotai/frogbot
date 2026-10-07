@@ -22,6 +22,7 @@ describe('mergeConfigs', () => {
     const base = { providers: providerMap({ openai: { apiKey: 'env' } }) };
     const overlay = { providers: { openai: { baseURL: 'https://x' } } } as const;
     const merged = mergeConfigs(base, overlay);
+
     expect(merged.providers.openai).toEqual({ apiKey: 'env', baseURL: 'https://x' });
   });
 
@@ -30,6 +31,7 @@ describe('mergeConfigs', () => {
       { providers: { ollama: { baseURL: 'http://a', apiKey: 'k' } } },
       { providers: { ollama: { baseURL: 'http://b' } } },
     );
+
     expect(merged.providers.ollama).toEqual({ baseURL: 'http://b', apiKey: 'k' });
   });
 
@@ -38,6 +40,7 @@ describe('mergeConfigs', () => {
       { providers: {}, enabled_providers: ['a'] },
       { providers: {}, enabled_providers: ['b'] },
     );
+
     expect(merged.enabled_providers).toEqual(['b']);
   });
 
@@ -47,7 +50,9 @@ describe('mergeConfigs', () => {
         '{"__proto__": {"polluted": true}, "constructor": {"x": 1}, "openai": {"apiKey": "k"}}',
       ),
     };
+
     const merged = mergeConfigs({ providers: {} }, overlay);
+
     expect(Object.keys(merged.providers)).toEqual(['openai']);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     expect(Object.getPrototypeOf(merged.providers)).toBe(Object.prototype);
@@ -58,6 +63,7 @@ describe('mergeConfigs', () => {
       { providers: {}, logger: { level: 'info' }, tracing: { endpoint: 'http://base' } },
       { providers: {}, logger: { level: 'debug' } },
     );
+
     expect(merged.logger).toEqual({ level: 'debug' });
     expect(merged.tracing).toEqual({ endpoint: 'http://base' });
   });
@@ -70,6 +76,7 @@ describe('mergeConfigs', () => {
       { providers: {} },
       { providers: {}, basePath: '/api', catalog, tracer },
     );
+
     const fromBase = mergeConfigs(
       { providers: {}, basePath: '/api', catalog, tracer },
       { providers: {} },
@@ -106,6 +113,7 @@ describe('finalizeConfig', () => {
       providers: providerMap({ openai: { apiKey: 'x' }, groq: { apiKey: 'y' } }),
       enabled_providers: ['openai'],
     });
+
     expect(Object.keys(out.providers)).toEqual(['openai']);
   });
 
@@ -114,6 +122,7 @@ describe('finalizeConfig', () => {
       providers: providerMap({ openai: { apiKey: 'x' }, groq: { apiKey: 'y' } }),
       disabled_providers: ['groq'],
     });
+
     expect(Object.keys(out.providers)).toEqual(['openai']);
   });
 
@@ -125,6 +134,7 @@ describe('finalizeConfig', () => {
       },
       disabled_providers: ['lmstudio'],
     });
+
     expect(Object.keys(out.providers)).toEqual(['ollama']);
   });
 
@@ -139,6 +149,7 @@ describe('finalizeConfig', () => {
       tracing: { endpoint: 'http://otel.local' },
       signalLevel: 'full',
     });
+
     expect(Object.keys(out.providers)).toEqual(['openai']);
     expect(out.maxBodyBytes).toBe(1024);
     expect(out.hooks).toBe(hooks);
@@ -151,8 +162,11 @@ describe('finalizeConfig', () => {
 
   it('is idempotent — kParsed marker short-circuits', () => {
     const first = finalizeConfig({ providers: providerMap({ openai: { apiKey: 'x' } }) });
+
     expect((first as unknown as Record<symbol, unknown>)[kParsed]).toBe(true);
+
     const second = finalizeConfig(first);
+
     expect(second).toBe(first);
   });
 
@@ -172,6 +186,7 @@ describe('loadConfigFile', () => {
     const p = join(dir, 'gateway.config.json');
     writeFileSync(p, JSON.stringify({ providers: { openai: { apiKey: 'json' } } }));
     const cfg = await loadConfigFile(p);
+
     expect(cfg.providers.openai).toEqual({ apiKey: 'json' });
   });
 
@@ -181,6 +196,7 @@ describe('loadConfigFile', () => {
     const p = join(dir, 'gateway.config.json');
     process.env.FROGBOTAI_TEST_BASE_URL = 'https://api.example.test/v1';
     writeFileSync(secret, 'from-file\n');
+
     writeFileSync(
       p,
       JSON.stringify({
@@ -189,7 +205,9 @@ describe('loadConfigFile', () => {
         },
       }),
     );
+
     const cfg = await loadConfigFile(p);
+
     expect(cfg.providers.openai).toEqual({
       apiKey: 'from-file',
       baseURL: 'https://api.example.test/v1',
@@ -201,6 +219,7 @@ describe('loadConfigFile', () => {
     const p = join(dir, 'gateway.config.mjs');
     writeFileSync(p, `export default { providers: { openai: { apiKey: 'mjs' } } }`);
     const cfg = await loadConfigFile(p);
+
     expect(cfg.providers.openai).toEqual({ apiKey: 'mjs' });
   });
 
@@ -209,6 +228,7 @@ describe('loadConfigFile', () => {
     const p = join(dir, 'gateway.config.mjs');
     writeFileSync(p, `export default () => ({ providers: { openai: { apiKey: 'fn' } } })`);
     const cfg = await loadConfigFile(p);
+
     expect(cfg.providers.openai).toEqual({ apiKey: 'fn' });
   });
 
@@ -220,6 +240,7 @@ describe('loadConfigFile', () => {
     const dir = scratch();
     const p = join(dir, 'gateway.config.mjs');
     writeFileSync(p, `export const foo = { providers: { openai: { apiKey: 'x' } } };`);
+
     await expect(loadConfigFile(p)).rejects.toThrow(
       /neither a "default" nor a named "config" export/,
     );
@@ -229,6 +250,7 @@ describe('loadConfigFile', () => {
     const dir = scratch();
     const p = join(dir, 'gateway.config.json');
     writeFileSync(p, JSON.stringify([{ providers: {} }]));
+
     await expect(loadConfigFile(p)).rejects.toThrow(/must export a GatewayConfig object/);
   });
 });

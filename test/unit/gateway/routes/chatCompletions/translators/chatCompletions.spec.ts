@@ -412,6 +412,7 @@ describe('tool calls and results', () => {
     // assistant turn produced. We tolerate it (empty toolName) rather than
     // reject, matching the spirit of opencode's lenient correlation pass.
     const result = toModelMessages([{ role: 'tool', tool_call_id: 'orphan-id', content: 'oops' }]);
+
     expect(result).toEqual([
       {
         role: 'tool',
@@ -618,6 +619,7 @@ describe('audio format coverage', () => {
         ],
       },
     ]);
+
     expect(result).toEqual([
       {
         role: 'user',
@@ -658,6 +660,7 @@ describe('tool-call argument parsing', () => {
         ],
       },
     ]);
+
     expect(result[0]).toEqual({
       role: 'assistant',
       content: [{ type: 'tool-call', toolCallId: 'c1', toolName: 'add', input: { a: 1, b: 2 } }],
@@ -678,7 +681,9 @@ describe('tool-call argument parsing', () => {
         ],
       },
     ]);
+
     const content = (result[0] as { content: Array<{ input: unknown }> }).content;
+
     expect(content[0]?.input).toEqual({});
   });
 
@@ -723,6 +728,7 @@ describe('file part handling', () => {
         ],
       },
     ]);
+
     expect(result[0]).toEqual({
       role: 'user',
       content: [
@@ -768,6 +774,7 @@ describe('file part handling', () => {
     );
   });
 });
+
 describe('skipped fields (M1+) — tracked gaps', () => {
   // These describe placeholders pin the milestones for fields we type but
   // intentionally drop. When the milestone lands, replace `test.todo` with a
@@ -997,6 +1004,7 @@ describe('compatibility tolerance', () => {
   test('unknown role is forwarded as system message with [role=X] prefix', () => {
     const logger = makeLogger();
     const result = toModelMessages([{ role: 'function', content: '{"result":42}' }], logger);
+
     expect(result).toEqual([{ role: 'system', content: '[role=function] {"result":42}' }]);
     expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
       { role: 'function' },
@@ -1006,6 +1014,7 @@ describe('compatibility tolerance', () => {
 
   test('vendor-specific role with non-string content is JSON-serialised', () => {
     const result = toModelMessages([{ role: 'thought', content: null }], makeLogger());
+
     expect(result[0]).toEqual({
       role: 'system',
       content: '[role=thought] ""',
@@ -1021,6 +1030,7 @@ describe('compatibility tolerance', () => {
         vendor_field: 123,
       },
     ]);
+
     expect(result).toEqual([{ role: 'user', content: 'hi' }]);
   });
 
@@ -1033,6 +1043,7 @@ describe('compatibility tolerance', () => {
         provider_metadata: { model_version: '2.0' },
       },
     ]);
+
     expect(result).toEqual([{ role: 'assistant', content: 'hello' }]);
   });
 

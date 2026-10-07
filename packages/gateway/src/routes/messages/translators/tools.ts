@@ -17,10 +17,12 @@ export function toAISDKTools(
 ): Record<string, ReturnType<typeof tool>> | undefined {
   if (!tools || tools.length === 0) return undefined;
   const result: Record<string, ReturnType<typeof tool>> = {};
+
   for (const t of tools) {
     if (t.type !== undefined && t.type !== null && t.type !== 'custom') {
       continue;
     }
+
     // Per-tool cache_control rides providerOptions.anthropic.cacheControl —
     // the key the AI SDK anthropic provider reads (anthropic-prepare-tools.ts
     // via get-cache-control.ts). Tool providerOptions are NOT walked by
@@ -30,11 +32,14 @@ export function toAISDKTools(
       const cacheControl: Record<string, JSONValue> = {
         type: t.cache_control.type,
       };
+
       if (t.cache_control.ttl) {
         cacheControl.ttl = t.cache_control.ttl;
       }
+
       providerOptions = { anthropic: { cacheControl } };
     }
+
     result[t.name] = tool({
       description: t.description ?? undefined,
       inputSchema: jsonSchema(t.input_schema ?? { type: 'object', properties: {} }),
@@ -42,6 +47,7 @@ export function toAISDKTools(
       providerOptions,
     });
   }
+
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
@@ -69,8 +75,10 @@ export function toAISDKToolChoice(
       return 'none';
     case 'tool': {
       if (tc.name) return { type: 'tool', toolName: tc.name };
+
       return 'auto';
     }
+
     default:
       return undefined;
   }

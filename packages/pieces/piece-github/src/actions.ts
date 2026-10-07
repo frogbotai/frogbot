@@ -214,6 +214,7 @@ export const createDiscussionComment = defineAction({
         },
       },
     );
+
     const discussion = lookup.data.repository.discussion;
 
     if (!discussion) {

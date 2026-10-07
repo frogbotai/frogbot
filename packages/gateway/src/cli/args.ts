@@ -9,6 +9,7 @@ export type CliArgs = {
 
 export function parseCliArgs(argv: string[]): CliArgs {
   const out: CliArgs = { help: false, quiet: false };
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') {
@@ -36,6 +37,7 @@ export function parseCliArgs(argv: string[]): CliArgs {
       throw new Error(`unknown ${arg?.startsWith('-') ? 'flag' : 'command'}: ${arg}`);
     }
   }
+
   return out;
 }
 
@@ -45,6 +47,7 @@ export function parsePort(raw: string | undefined, name = 'PORT'): number | unde
   if (!/^\d+$/.test(raw) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(`invalid ${name}: ${raw}`);
   }
+
   return port;
 }
 
@@ -68,6 +71,7 @@ function requiredValue(name: string, value: string | undefined): string {
   if (!value || value.startsWith('-')) {
     throw new Error(`${name} requires a value`);
   }
+
   return value;
 }
 
@@ -75,5 +79,6 @@ function equalsValue(name: string, value: string): string {
   if (!value) {
     throw new Error(`${name} requires a value`);
   }
+
   return value;
 }

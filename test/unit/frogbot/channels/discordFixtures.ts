@@ -166,6 +166,7 @@ export async function startDiscordApi() {
     ['T1', 'C1'],
     ['P1', 'F1'],
   ]);
+
   const failures = new Map<string, { status: number; message: string }>();
 
   const server = createServer(async (req, res) => {

@@ -10,6 +10,7 @@ import type { OpenRouterProviderOptions } from '@openrouter/ai-sdk-provider';
 import type { BeforeUpstreamHook } from '../../hooks.js';
 
 type OpenRouterReasoning = NonNullable<OpenRouterProviderOptions['reasoning']>;
+
 type OpenRouterEffort = Extract<OpenRouterReasoning, { effort: unknown }>['effort'];
 
 const EFFORTS = new Set<string>(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']);

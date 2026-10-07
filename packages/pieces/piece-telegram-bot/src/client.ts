@@ -83,6 +83,7 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
     /\/+$/,
     '',
   );
+
   const baseUrl = `${apiUrl}/bot${auth.botToken}`;
 
   return {
@@ -96,6 +97,7 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
         headers: multipart ? undefined : { 'Content-Type': 'application/json' },
         body: multipart ? body : JSON.stringify(body ?? {}),
       });
+
       const result = telegramResponse.parse(await response.json());
 
       if (!response.ok || !result.ok) throw apiError({ method, response, result });
@@ -112,6 +114,7 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
             : { 'Content-Type': 'application/json', ...request.headers },
         body: request.body === undefined ? undefined : JSON.stringify(request.body),
       });
+
       const result = telegramResponse.parse(await response.json());
 
       if (!response.ok || (typeof result.ok === 'boolean' && !result.ok)) {

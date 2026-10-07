@@ -25,6 +25,7 @@ export class MondayClient {
       signal,
       redirect: 'error',
     });
+
     const result = (await response.json()) as GraphQLResponse<T>;
 
     if (!response.ok || result.errors?.length || !result.data) {
@@ -46,10 +47,12 @@ export class MondayClient {
     signal?.throwIfAborted();
 
     const form = new FormData();
+
     form.append(
       'query',
       'mutation($itemId: ID!, $columnId: String!, $file: File!) { add_file_to_column(item_id: $itemId, column_id: $columnId, file: $file) { id url name file_size file_extension created_at } }',
     );
+
     form.append('variables', JSON.stringify({ itemId: input.itemId, columnId: input.columnId }));
     form.append('map', JSON.stringify({ file: 'variables.file' }));
     form.append('file', new Blob([Buffer.from(input.base64, 'base64')]), input.fileName);
@@ -61,6 +64,7 @@ export class MondayClient {
       signal,
       redirect: 'error',
     });
+
     const result = (await response.json()) as GraphQLResponse<{
       add_file_to_column: Record<string, unknown>;
     }>;

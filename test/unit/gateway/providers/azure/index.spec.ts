@@ -8,6 +8,7 @@ import { testEnv } from '../../config/fixtures.js';
 describe('azureProvider.fromEnv', () => {
   it('returns undefined when no Azure credentials are present', () => {
     const result = azureProvider.fromEnv(testEnv());
+
     expect(result).toBeUndefined();
   });
 
@@ -17,6 +18,7 @@ describe('azureProvider.fromEnv', () => {
         AZURE_RESOURCE_NAME: 'my-resource',
       }),
     );
+
     // No API key means skip
     expect(result).toBeUndefined();
   });
@@ -28,6 +30,7 @@ describe('azureProvider.fromEnv', () => {
         AZURE_RESOURCE_NAME: 'my-resource',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'key-123',
       resourceName: 'my-resource',
@@ -41,6 +44,7 @@ describe('azureProvider.fromEnv', () => {
         AZURE_OPENAI_BASE_URL: 'https://my-resource.openai.azure.com',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'key-123',
       baseURL: 'https://my-resource.openai.azure.com',
@@ -55,6 +59,7 @@ describe('azureProvider.fromEnv', () => {
         AZURE_API_VERSION: '2024-06-01',
       }),
     );
+
     expect(result).toEqual({
       apiKey: 'key-123',
       resourceName: 'my-resource',

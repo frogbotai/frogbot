@@ -30,6 +30,7 @@ export default async function Page({ params }: Args) {
     req,
     overrideAccess: false,
   });
+
   const page = result.docs[0];
 
   if (!page) {

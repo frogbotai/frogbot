@@ -25,6 +25,7 @@ async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences |
       ],
     },
   });
+
   return result.docs[0]?.value as NavPreferences | null;
 }
 
@@ -57,6 +58,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     permissions,
     visibleEntities,
   });
+
   const navPreferences = await getNavPreferences(req);
   const serverProps = {
     i18n,
@@ -69,6 +71,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     user,
     visibleEntities,
   };
+
   const clientProps = { documentSubViewType, viewType };
   const render = (
     Component: Parameters<typeof RenderServerComponent>[0]['Component'],
@@ -81,6 +84,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       key,
       serverProps,
     });
+
   const configuredItems = navModel.items.map((item) => ({
     ...item,
     icon: renderNavIcon({
@@ -91,17 +95,21 @@ export async function FrogBotNav(props: FrogBotNavProps) {
       size: 24,
     }),
   }));
+
   const beforeNavLinks = admin.components.beforeNavLinks?.map((component, index) =>
     render(component, `before-nav-${index}`),
   );
+
   const afterNavLinks = admin.components.afterNavLinks?.map((component, index) =>
     render(component, `after-nav-${index}`),
   );
+
   const settings = Array.isArray(admin.components.settingsMenu)
     ? admin.components.settingsMenu.map((component, index) =>
         render(component, `settings-${index}`),
       )
     : [];
+
   const logout = admin.components.logout?.Button
     ? RenderServerComponent({
         Component: admin.components.logout.Button,
@@ -110,6 +118,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
         serverProps,
       })
     : undefined;
+
   const accountUser = user as { email?: unknown; name?: unknown } | undefined;
   const accountEmail = typeof accountUser?.email === 'string' ? accountUser.email : undefined;
   const accountName = typeof accountUser?.name === 'string' ? accountUser.name : undefined;

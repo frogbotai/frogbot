@@ -41,5 +41,7 @@ export const savedFileOutput = z.object({
 });
 
 export type DriveFile = z.output<typeof fileOutput>;
+
 export type DrivePermission = z.output<typeof permissionOutput>;
+
 export type SavedFile = z.output<typeof savedFileOutput>;

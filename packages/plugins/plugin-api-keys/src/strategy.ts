@@ -34,6 +34,7 @@ export function createApiKeyStrategy(options: StrategyOptions): AuthStrategy {
           ],
         },
       });
+
       const key = keys.docs[0];
 
       if (

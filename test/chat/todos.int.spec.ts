@@ -51,6 +51,7 @@ describe('chat persistence: todos', () => {
       incoming: [userMessage('Create a plan', `${id}-1`)],
       tools: {},
     });
+
     const todos = [{ content: 'Complete the plan', status: 'in_progress' as const }];
 
     const ctx = {
@@ -88,6 +89,7 @@ describe('chat persistence: todos', () => {
     const req = await booted.frogbot.createRequest({
       user: { ...owner, collection: usersSlug },
     } as never);
+
     await expect(exerciseTodos(req, 'authenticated')).resolves.toBeDefined();
   });
 

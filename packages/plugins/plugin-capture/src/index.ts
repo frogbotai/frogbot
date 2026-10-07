@@ -31,13 +31,16 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
   if (!Number.isInteger(maxBodyBytes) || maxBodyBytes < 1) {
     throw new Error('[plugin-capture] maxBodyBytes must be a positive integer.');
   }
+
   if (
     options.retentionDays !== undefined &&
     (!Number.isInteger(options.retentionDays) || options.retentionDays < 1)
   ) {
     throw new Error('[plugin-capture] retentionDays must be a positive integer.');
   }
+
   const storage = options.storage ?? filesystemCaptureStorage(options.storageRoot);
+
   return (config) => {
     if (!config.ai) throw new Error('[plugin-capture] AI configuration is required.');
     const hooks = createCaptureHooks({
@@ -47,6 +50,7 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
       collectionSlug,
       storage,
     });
+
     const captureFields: Field[] = [
       {
         name: 'capture',
@@ -56,15 +60,19 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
       },
       { name: 'captureSampleRate', type: 'number', min: 0, max: 1 },
     ];
+
     const collections = config.collections.map((collection) => {
       const names = new Set(
         collection.fields.flatMap((field) => ('name' in field ? [field.name] : [])),
       );
+
       const apiKeys = names.has('tokenHash') && names.has('prefix');
+
       return apiKeys
         ? { ...collection, fields: [...collection.fields, ...captureFields] }
         : collection;
     });
+
     const task: NonNullable<JobsConfig['tasks']>[number] | undefined = options.retentionDays
       ? {
           slug: 'frogbot-prune-ai-captures',
@@ -72,6 +80,7 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
           schedule: [{ cron: '0 3 * * *', queue: 'frogbot-prune-ai-captures' }],
           handler: async ({ req }) => {
             const cutoff = new Date(Date.now() - options.retentionDays! * 86_400_000).toISOString();
+
             while (true) {
               const result = await req.payload.find({
                 collection: collectionSlug,
@@ -81,9 +90,12 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
                 overrideAccess: true,
                 req,
               });
+
               if (!result.docs.length) break;
+
               for (const doc of result.docs as { id: string | number; blobKey: string }[]) {
                 await storage.delete(doc.blobKey);
+
                 await req.payload.delete({
                   collection: collectionSlug,
                   id: doc.id,
@@ -92,10 +104,12 @@ export function capturePlugin(options: CapturePluginOptions = {}): Plugin {
                 });
               }
             }
+
             return { output: {} };
           },
         }
       : undefined;
+
     return {
       ...config,
       custom: {

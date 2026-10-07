@@ -12,6 +12,7 @@ export const voyageProvider = {
   envVars: ['VOYAGE_API_KEY', 'VOYAGE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.VOYAGE_API_KEY) return undefined;
+
     return {
       apiKey: env.VOYAGE_API_KEY,
       ...(env.VOYAGE_BASE_URL && { baseURL: env.VOYAGE_BASE_URL }),

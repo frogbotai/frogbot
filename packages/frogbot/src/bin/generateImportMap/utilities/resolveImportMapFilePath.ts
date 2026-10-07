@@ -4,6 +4,7 @@ import path from 'node:path';
 async function pathOrFileExists(path: string): Promise<boolean> {
   try {
     await fs.access(path);
+
     return true;
   } catch {
     return false;
@@ -33,6 +34,7 @@ export async function resolveImportMapFilePath({
         );
       }
     }
+
     importMapFilePath = importMapFile;
   } else {
     const appLocation = path.resolve(rootDir, `app/(frogbot)${adminRoute}/`);
@@ -54,5 +56,6 @@ export async function resolveImportMapFilePath({
       );
     }
   }
+
   return importMapFilePath;
 }

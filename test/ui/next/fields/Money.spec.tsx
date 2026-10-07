@@ -10,6 +10,7 @@ const { DefaultCell, setValue, translation } = vi.hoisted(() => ({
   setValue: vi.fn(),
   translation: { language: 'en' },
 }));
+
 const field = vi.hoisted((): { value: unknown } => ({ value: undefined }));
 
 vi.mock('@payloadcms/ui', () => ({

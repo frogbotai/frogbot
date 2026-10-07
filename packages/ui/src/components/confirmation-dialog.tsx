@@ -1,6 +1,7 @@
 'use client';
 import { Button } from './button.js';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from './dialog.js';
+
 export type ConfirmationDialogProps = {
   description?: string;
   loadingText?: string;
@@ -13,6 +14,7 @@ export type ConfirmationDialogProps = {
   showLoadingOverlay?: boolean;
   title: string;
 };
+
 export function ConfirmationDialog({
   description,
   loadingText = 'Loading...',
@@ -29,6 +31,7 @@ export function ConfirmationDialog({
     callback?.();
     onOpenChange?.(false);
   };
+
   return (
     <Dialog
       open={open}

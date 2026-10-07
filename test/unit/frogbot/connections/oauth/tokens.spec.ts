@@ -35,6 +35,7 @@ describe('OAuth token and account transport', () => {
         }),
       ),
     );
+
     vi.stubGlobal('fetch', fetch);
     const tokens = await exchangeOAuthCode({
       piece,
@@ -42,13 +43,16 @@ describe('OAuth token and account transport', () => {
       callbackUrl: 'https://app.test/callback',
       verifier: 'v'.repeat(43),
     });
+
     expect(tokens).toEqual({
       access_token: 'fresh',
       expires_in: 3600,
       refresh_token: 'refresh',
       vendor: { tenant: ['one'] },
     });
+
     const [url, request] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+
     expect(url).toBe('https://provider.test/token');
     expect(Object.fromEntries(request.body as URLSearchParams)).toEqual({
       grant_type: 'authorization_code',
@@ -75,6 +79,7 @@ describe('OAuth token and account transport', () => {
       },
       { clientId: 'client:id %é', clientSecret: 'secret:% snow☃' },
     );
+
     const fetch = vi.fn(() => Promise.resolve(Response.json({ access_token: 'fresh' })));
     vi.stubGlobal('fetch', fetch);
 
@@ -104,6 +109,7 @@ describe('OAuth token and account transport', () => {
       const { piece } = setup();
       const fetch = vi.fn();
       vi.stubGlobal('fetch', fetch);
+
       await expect(
         exchangeOAuthCode({
           piece,
@@ -141,11 +147,13 @@ describe('OAuth token and account transport', () => {
 
   it.each(['http', 'json', 'oauth', 'network'])('redacts %s exchange errors', async (kind) => {
     const { piece } = setup();
+
     vi.stubGlobal(
       'fetch',
       vi.fn(() => {
         if (kind === 'network') return Promise.reject(new Error('secret-error'));
         if (kind === 'json') return Promise.resolve(new Response('secret-error'));
+
         return Promise.resolve(
           Response.json(
             { error: 'invalid_grant', error_description: 'secret-error' },
@@ -154,6 +162,7 @@ describe('OAuth token and account transport', () => {
         );
       }),
     );
+
     await expect(
       exchangeOAuthCode({
         piece,
@@ -168,21 +177,26 @@ describe('OAuth token and account transport', () => {
     vi.useFakeTimers();
     const { piece } = setup();
     let signal!: AbortSignal;
+
     vi.stubGlobal(
       'fetch',
       vi.fn((_url, request) => {
         signal = request.signal;
+
         return new Promise(() => {});
       }),
     );
+
     const pending = exchangeOAuthCode({
       piece,
       code: 'code',
       callbackUrl: 'https://app.test/callback',
       verifier: 'v'.repeat(43),
     });
+
     const outcome = pending.catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(15_000);
+
     expect(await outcome).toMatchObject({ code: 'tokens' });
     expect(signal.aborted).toBe(true);
   });
@@ -207,25 +221,31 @@ describe('OAuth token and account transport', () => {
       let transport!: Promise<Response>;
       const run = async ({ req }: { req: FrogBotRequest }) => {
         received = req;
+
         transport = fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}`, {
           signal: req.signal,
         });
+
         await transport;
       };
+
       const fixture = setup({
         ...definition,
         oauth: {
           ...definition.oauth,
           account: async (args) => {
             await run(args);
+
             return { id: 'id', label: 'label' };
           },
           refresh: async (args) => {
             await run(args);
+
             return { access_token: 'fresh' };
           },
         },
       });
+
       const context: RequestContext = { tenant: 'one' };
       const req = Object.assign(
         new Request('https://app.test/callback', {
@@ -241,6 +261,7 @@ describe('OAuth token and account transport', () => {
           transactionID: 'transaction',
         },
       ) as FrogBotRequest;
+
       const metadata = Symbol('metadata');
       Object.defineProperty(req, metadata, { value: { hidden: true } });
       const accepted = once(server, 'request');
@@ -250,9 +271,11 @@ describe('OAuth token and account transport', () => {
         req,
         signal: leaseAbort.signal,
       }).catch((error: unknown) => error);
+
       onTestFinished(async () => {
         requestAbort.abort();
         server.closeAllConnections();
+
         await new Promise<void>((resolve, reject) => {
           server.close((error) => (error ? reject(error) : resolve()));
         });
@@ -260,6 +283,7 @@ describe('OAuth token and account transport', () => {
 
       await accepted;
       assert(received instanceof Request);
+
       expect(received).not.toBe(req);
       expect(received.context).toBe(req.context);
       expect(received.frogbot).toBe(req.frogbot);
@@ -272,13 +296,16 @@ describe('OAuth token and account transport', () => {
       expect(await received.json()).toEqual({ value: 'body' });
       expect(req.bodyUsed).toBe(true);
       expect(received.signal).not.toBe(req.signal);
+
       const fetchOutcome = transport.catch((error: unknown) => error);
       const cancel = {
         deadline: () => vi.advanceTimersByTimeAsync(15_000),
         request: () => requestAbort.abort(),
         lease: () => leaseAbort.abort(),
       };
+
       await cancel[cancellation]();
+
       expect(await outcome).toMatchObject({
         code: operation === 'account' ? 'account' : 'tokens',
       });
@@ -297,15 +324,19 @@ describe('OAuth token and account transport', () => {
         email: 'user@example.test',
       }),
     );
+
     const { piece, req } = setup({
       ...definition,
       client,
       oauth: { ...definition.oauth, account },
     });
+
     const existingClient = vi
       .spyOn(piece, 'client')
       .mockRejectedValue(new Error('must not resolve existing credentials'));
+
     const tokens = { access_token: 'freshly-exchanged' };
+
     await expect(lookupOAuthAccount({ piece, tokens, req })).resolves.toEqual({
       id: 'freshly-exchanged',
       label: 'west',
@@ -325,9 +356,11 @@ describe('OAuth token and account transport', () => {
 
   it('validates auth even without account lookup and rejects malformed accounts', async () => {
     const { piece, req } = setup();
+
     await expect(
       lookupOAuthAccount({ piece, req, tokens: { access_token: 'fresh' } }),
     ).resolves.toBeUndefined();
+
     const invalid = setup({
       ...definition,
       oauth: {
@@ -335,13 +368,16 @@ describe('OAuth token and account transport', () => {
         account: () => Promise.resolve({ id: '', label: 'secret-error' }),
       },
     });
+
     await expect(
       lookupOAuthAccount({ ...invalid, tokens: { access_token: 'fresh' } }),
     ).rejects.toThrow('OAuth account validation failed.');
+
     const auth = setup({
       ...definition,
       oauth: { ...definition.oauth, toAuth: () => ({ token: '' }) },
     });
+
     await expect(
       lookupOAuthAccount({ ...auth, tokens: { access_token: 'fresh' } }),
     ).rejects.toMatchObject({ code: 'tokens' });
@@ -352,6 +388,7 @@ describe('OAuth token and account transport', () => {
     const fetch = vi.fn(() =>
       Promise.resolve(Response.json({ access_token: 'fresh', expires_in: 3600, new_vendor: true })),
     );
+
     vi.stubGlobal('fetch', fetch);
     const tokens = await refreshOAuthTokens({
       ...fixture,
@@ -362,6 +399,7 @@ describe('OAuth token and account transport', () => {
         vendor: { tenant: 'one' },
       },
     });
+
     expect(tokens).toEqual({
       access_token: 'fresh',
       refresh_token: 'refresh',
@@ -370,7 +408,9 @@ describe('OAuth token and account transport', () => {
       new_vendor: true,
       expires_in: 3600,
     });
+
     const [, request] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+
     expect(Object.fromEntries(request.body as URLSearchParams)).toEqual({
       grant_type: 'refresh_token',
       refresh_token: 'refresh',
@@ -393,7 +433,9 @@ describe('OAuth token and account transport', () => {
       expires_in: 300,
       vendor: true,
     };
+
     const tokens = await refreshOAuthTokens({ ...fixture, tokens: current });
+
     expect(refresh).toHaveBeenCalledWith({ tokens: current, req: fixture.req });
     expect(tokens).toEqual({ access_token: 'custom', refresh_token: 'refresh', vendor: true });
     expect(oauthTokenMetadata({ tokens, scopes: ['read'] })).toEqual({
@@ -411,6 +453,7 @@ describe('OAuth token and account transport', () => {
       },
       { clientId: 'client:id %é', clientSecret: 'secret:% snow☃' },
     );
+
     const fetch = vi.fn(() => Promise.resolve(Response.json({ access_token: 'fresh' })));
     vi.stubGlobal('fetch', fetch);
 

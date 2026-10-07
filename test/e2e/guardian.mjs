@@ -48,6 +48,7 @@ child.once('exit', (code, signal) => {
   } catch {
     // Group already empty.
   }
+
   process.exit(code ?? (signal ? 1 : 0));
 });
 

@@ -31,6 +31,7 @@ describe('NavSection', () => {
 
   it('restores and persists its collapsed state', async () => {
     getPreference.mockResolvedValue({ collapsed: true });
+
     render(
       <NavSection id="collections" title="Collections">
         <span>Users</span>
@@ -39,9 +40,11 @@ describe('NavSection', () => {
 
     const toggle = screen.getByRole('button', { name: 'Collections' });
     await waitFor(() => expect(toggle.getAttribute('aria-expanded')).toBe('false'));
+
     expect(getPreference).toHaveBeenCalledWith('frogbot-nav-section:collections');
 
     fireEvent.click(toggle);
+
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(setPreference).toHaveBeenCalledWith('frogbot-nav-section:collections', {
       collapsed: false,
@@ -61,6 +64,7 @@ describe('NavSection', () => {
         false,
       ),
     );
+
     expect(container.querySelector('.frogbot-nav-section__scroll')?.textContent).toBe(
       'Latest thread',
     );

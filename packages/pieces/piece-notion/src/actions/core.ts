@@ -22,6 +22,7 @@ async function properties(
   const database = schemaResponse.parse(
     await client.request({ path: `/databases/${databaseId}`, signal }),
   );
+
   const result: Record<string, unknown> = {};
 
   Object.entries(fields).forEach(([name, value]) => {
@@ -49,6 +50,7 @@ export const createDatabaseItem = defineAction({
       input.fields,
       req.signal ?? undefined,
     );
+
     const children = input.content
       ? [
           {
@@ -232,6 +234,7 @@ export const listDatabasePages = defineAction({
       match: 'contains',
       signal: req.signal ?? undefined,
     });
+
     const result = notionList.parse(
       await client.request({
         method: 'POST',

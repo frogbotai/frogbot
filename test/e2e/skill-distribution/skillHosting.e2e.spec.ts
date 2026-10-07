@@ -143,6 +143,7 @@ describe('hosted skill protocol with prepared real clients', () => {
         });
 
         console.info(`Prepared skills ${result.stdout.trim()}: ${skills.executable}`);
+
         expect(result.stdout.trim()).toBe('1.5.23');
       });
 
@@ -155,10 +156,12 @@ describe('hosted skill protocol with prepared real clients', () => {
 
           expect(result.stdout).toContain('Found 1 skill');
           expect(result.signal).toBeNull();
+
           expectEntryOnly(profile.installed);
           expectRequest(modernIndex, protocol === 'v0.2' ? 200 : 404);
           expectRequest(legacyIndex, protocol === 'legacy' ? 200 : 404);
           expectRequest(protocol === 'v0.2' ? modernEntry : legacyEntry, 200);
+
           expect(host.requests.every(({ path }) => !path.includes('/reference/'))).toBe(true);
         },
       );
@@ -207,9 +210,12 @@ describe('hosted skill protocol with prepared real clients', () => {
           );
           expect(result.stdout + result.stderr).toContain('Download failed with HTTP 404');
           expect(result.stdout + result.stderr).toContain('Installation failed');
+
           expectRequest(path, status);
           expectRequest('/', 404);
+
           expect(host.requests.filter((request) => request.path.endsWith('/skill.md'))).toEqual([]);
+
           expectRequest(
             path.startsWith('/.well-known/agent-skills') ? legacyIndex : modernIndex,
             404,
@@ -230,6 +236,7 @@ describe('hosted skill protocol with prepared real clients', () => {
         });
 
         console.info(`Prepared opencode ${result.stdout.trim()}: ${opencode.executable}`);
+
         expect(result.stdout.trim()).toBe('1.18.31');
       });
 
@@ -276,7 +283,9 @@ describe('hosted skill protocol with prepared real clients', () => {
         expect(found).toHaveLength(1);
         expect(found[0].location).toBe(join(profile.cached, 'SKILL.md'));
         expect(fallbackURLs(found[0].content)).toHaveLength(23);
+
         expectEntryOnly(profile.cached);
+
         expect(host.requests).toEqual([
           { method: 'GET', path: legacyIndex, status: 200 },
           { method: 'GET', path: legacyEntry, status: 200 },
@@ -315,7 +324,9 @@ describe('hosted skill protocol with prepared real clients', () => {
         expect(result.skills.filter((skill) => skill.name === 'frogbot')).toEqual([]);
         expect(existsSync(join(profile.cached, 'SKILL.md'))).toBe(false);
         expect(result.stderr).toContain(diagnostic);
+
         expectRequest(path, 404);
+
         expect(host.requests.filter((request) => request.path.endsWith('/skill.md'))).toEqual([]);
       });
 
@@ -330,6 +341,7 @@ describe('hosted skill protocol with prepared real clients', () => {
           .replace(/( {2}version: ')[^']+(')/, (_, prefix, suffix) => `${prefix}0.0.0${suffix}`);
 
         expect(stale).not.toBe(entry.toString());
+
         writeFileSync(join(profile.cached, 'SKILL.md'), stale);
         host.requests.length = 0;
 

@@ -95,6 +95,7 @@ export default await buildTestConfig({
           input: { channel: 'failures' },
           handler: ({ event }) => {
             failedHandlerCalls.push(event);
+
             return Promise.reject(new Error('Intentional trigger handler failure'));
           },
         },

@@ -509,6 +509,7 @@ describe('GitHub questions with SQLite persistence', () => {
         overrideAccess: true,
       })
     ).docs;
+
     const req = await frogbot.createRequest({});
 
     Object.assign(req, { user: { ...user, collection: 'users' } });

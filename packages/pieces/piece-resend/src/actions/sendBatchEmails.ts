@@ -32,6 +32,7 @@ export const sendBatchEmails = defineAction({
       body: input.emails.map((message) => emailBody(message)),
       headers: input.idempotency_key ? { 'Idempotency-Key': input.idempotency_key } : undefined,
     });
+
     return (result as { data?: PieceJSON[] })?.data ?? [];
   },
 });

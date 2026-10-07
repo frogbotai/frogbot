@@ -37,7 +37,9 @@ function MonthCell<T extends CalendarEvent>({
     },
     id: `month-${key}`,
   });
+
   const visible = cells.slice(0, 3);
+
   return (
     <div
       className={`frog-calendar__month-cell${placement?.key === key ? ' frog-calendar__month-cell--placing' : ''}`}
@@ -70,6 +72,7 @@ export function MonthGrid<T extends CalendarEvent>(props: MonthGridProps<T>) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const days = getRangeDays(calendar.range, 42);
   const active = calendar.events.find((event) => event.id === calendar.activeId);
+
   return (
     <DndContext
       collisionDetection={(args) =>
@@ -86,6 +89,7 @@ export function MonthGrid<T extends CalendarEvent>(props: MonthGridProps<T>) {
       <div className="frog-calendar__month-grid">
         {days.map((day) => {
           const key = format(day, 'yyyy-MM-dd');
+
           return (
             <div
               className={isSameMonth(day, props.date) ? '' : 'frog-calendar__month-outside'}

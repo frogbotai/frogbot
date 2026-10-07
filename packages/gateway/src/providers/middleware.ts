@@ -19,6 +19,7 @@ export function getProviderHooks(providerName: string): Hooks {
   if (providerName === 'openrouter') return { beforeUpstream: openrouterBeforeUpstream };
   if (providerName === 'vertex') return { beforeUpstream: vertexBeforeUpstream };
   if (providerName === 'voyage') return { beforeUpstream: voyageBeforeUpstream };
+
   return {};
 }
 

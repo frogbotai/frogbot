@@ -11,12 +11,15 @@ describe('attachment parts', () => {
         part={{ type: 'file', mediaType: 'image/png', filename: 'chart.png', url: '/chart.png' }}
       />,
     );
+
     expect(screen.getByRole('img', { name: 'chart.png' })).toBeTruthy();
+
     rerender(
       <FilePart
         part={{ type: 'reasoning-file', mediaType: 'application/pdf', url: '/reasoning.pdf' }}
       />,
     );
+
     expect(screen.getByRole('link', { name: 'Reasoning attachment' })).toBeTruthy();
   });
 
@@ -26,7 +29,9 @@ describe('attachment parts', () => {
         part={{ type: 'source-url', sourceId: '1', url: 'https://example.com', title: 'Example' }}
       />,
     );
+
     expect(screen.getByRole('link', { name: 'Example' })).toBeTruthy();
+
     rerender(
       <SourcePart
         part={{
@@ -38,6 +43,7 @@ describe('attachment parts', () => {
         }}
       />,
     );
+
     expect(screen.getByText('Guide (guide.txt)')).toBeTruthy();
   });
 });

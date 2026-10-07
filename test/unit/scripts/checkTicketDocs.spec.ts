@@ -381,6 +381,7 @@ describe('check ticket-docs', () => {
       const words = (count: number) => Array.from({ length: count }, () => 'word').join(' ');
       const length = (text: string) =>
         text.split(/\s+/).filter(Boolean).length.toLocaleString('en-US');
+
       const files = {
         ...edit(SPEC, '## Requirements', `${words(1500)}\n\n## Requirements`),
         ...edit(PLAN, '## Alternatives', `${words(2000)}\n\n## Alternatives`),

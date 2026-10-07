@@ -110,6 +110,7 @@ describe('resolveChatContext', () => {
     claimTurn
       .mockReset()
       .mockImplementation(({ chatId }) => Promise.resolve({ chatId, attempt: 'attempt-1' }));
+
     releaseTurn.mockReset().mockResolvedValue(true);
     settleCall.mockReset().mockResolvedValue({ status: 'settled', allSettled: true });
   });
@@ -170,6 +171,7 @@ describe('resolveChatContext', () => {
         mediaType: 'image/png',
         url: 'https://files.test/frog.png',
       };
+
       const { req, create } = makeReq();
 
       await resolveChatContext({
@@ -209,6 +211,7 @@ describe('resolveChatContext', () => {
       const findByID = vi.fn(() =>
         Promise.resolve({ id: 'chat-1', user: 'user-1', title: 'Deploy thread' }),
       );
+
       const { req, update } = makeReq({ findByID });
 
       await resolveChatContext({
@@ -247,6 +250,7 @@ describe('resolveChatContext', () => {
         commitTransaction: vi.fn(() => Promise.resolve()),
         rollbackTransaction: vi.fn(() => Promise.resolve()),
       };
+
       const { req, update } = makeReq({ db });
 
       await resolveChatContext({
@@ -565,6 +569,7 @@ describe('resolveChatContext', () => {
         commitTransaction: vi.fn(() => Promise.resolve()),
         rollbackTransaction: vi.fn(() => Promise.resolve()),
       };
+
       const { req, create } = makeReq({ db });
 
       await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
@@ -584,10 +589,12 @@ describe('resolveChatContext', () => {
         commitTransaction: vi.fn(() => Promise.resolve()),
         rollbackTransaction: vi.fn(() => Promise.resolve()),
       };
+
       const create = vi
         .fn()
         .mockResolvedValueOnce({ id: 'chat-1' })
         .mockRejectedValueOnce(new Error('write failed'));
+
       const { req } = makeReq({ create, db });
 
       await expect(
@@ -679,6 +686,7 @@ describe('resolveChatContext', () => {
           channelThread: { account: 'slack-support', thread: { id: 'thread-1' } },
         }),
       );
+
       const { req, create } = makeReq({ findByID });
 
       Object.assign(req.frogbot.config, { pieces: { instances: [] } });
@@ -714,6 +722,7 @@ describe('resolveChatContext', () => {
       state: 'input-available',
       input: questionPart.input,
     };
+
     const turnMessage = {
       id: 'a1',
       role: 'assistant',
@@ -902,6 +911,7 @@ describe('resolveChatContext', () => {
           ? Promise.resolve({ docs: [turnMessage] })
           : Promise.reject(new Error('history failed')),
       );
+
       const { req } = makeReq({ find });
 
       await expect(

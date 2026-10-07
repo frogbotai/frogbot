@@ -65,6 +65,7 @@ export async function startWorker({
     },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
+
   const messages: WorkerMessage[] = [];
   const events = new EventEmitter();
   let output = '';
@@ -110,6 +111,7 @@ export async function startWorker({
         if (error) reject(error);
         else resolve(value as T);
       };
+
       const check = () => {
         const value = read();
 
@@ -122,6 +124,7 @@ export async function startWorker({
           );
         }
       };
+
       const timer = setTimeout(() => {
         finish(new Error(`Timed out waiting for ${description}\n${output}`));
       }, 30_000);

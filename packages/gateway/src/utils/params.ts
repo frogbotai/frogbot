@@ -166,6 +166,7 @@ export function forwardProviderOptions(value: unknown, providerName: string) {
   if (!value || typeof value !== 'object') return;
   const providerOptions = (value as { providerOptions?: Record<string, Record<string, unknown>> })
     .providerOptions;
+
   if (providerOptions) forwardLanguageParams(providerOptions, providerName);
 }
 
@@ -194,6 +195,7 @@ export function effortFromBudget(
   if (fraction >= 0.65) return 'high' as ReasoningEffort;
   if (fraction >= 0.3) return 'medium' as ReasoningEffort;
   if (fraction >= 0.1) return 'low' as ReasoningEffort;
+
   return 'minimal' as ReasoningEffort;
 }
 
@@ -252,6 +254,7 @@ export function parsePromptCachingOptions(opts: {
         param: 'prompt_cache_retention',
       });
     }
+
     result.prompt_cache_retention = retention.data;
     hasValue = true;
   }

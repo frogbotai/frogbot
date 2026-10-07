@@ -18,6 +18,7 @@ export const moonshotaiProvider = {
   envVars: ['MOONSHOT_API_KEY', 'MOONSHOT_BASE_URL'],
   fromEnv: (env) => {
     if (!env.MOONSHOT_API_KEY) return undefined;
+
     return {
       apiKey: env.MOONSHOT_API_KEY,
       ...(env.MOONSHOT_BASE_URL && { baseURL: env.MOONSHOT_BASE_URL }),

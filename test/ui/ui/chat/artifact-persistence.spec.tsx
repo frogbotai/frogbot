@@ -11,13 +11,17 @@ describe('artifact persistence', () => {
       load: vi.fn(() => Promise.resolve(artifact)),
       save: vi.fn((value) => Promise.resolve(value)),
     };
+
     render(
       <ArtifactProvider persistence={persistence}>
         <ArtifactViewer id="a1" />
       </ArtifactProvider>,
     );
+
     await screen.findAllByText('Loaded artifact');
+
     expect(persistence.load).toHaveBeenCalledWith('a1');
+
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(persistence.save).toHaveBeenCalledWith(artifact));
   });

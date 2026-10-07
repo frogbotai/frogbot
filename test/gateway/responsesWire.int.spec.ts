@@ -32,6 +32,7 @@ function createCapturingModel(
     },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       capture(options);
+
       // Return valid JSON text so a json_schema structured-output request
       // parses cleanly — this keeps the request a 200 so the assertion lands
       // on the forwarded provider options, not an incidental parse error.
@@ -80,6 +81,7 @@ function createErrorFinishModel(): LanguageModelV4 {
 function makeApp(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -117,7 +119,9 @@ describe('gateway integration — /v1/responses wire fidelity (mock tier)', () =
     });
 
     expect(status).toBe(200);
+
     const openai = captured?.providerOptions?.openai;
+
     expect(openai?.reasoningEffort).toBe('high');
     expect(openai?.reasoningSummary).toBe('auto');
     expect(openai?.textVerbosity).toBe('low');

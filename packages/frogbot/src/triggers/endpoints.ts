@@ -125,9 +125,11 @@ async function dispatchWebhookTriggers({
       depth: 0,
       overrideAccess: true,
     });
+
     row = (result.docs as Subscription[])[0];
     if (!row) return new Response(null, { status: 404 });
   }
+
   const parsedReq = requestClone(webhookReq);
   await addDataAndFileToRequest(toPayloadRequest(parsedReq));
   webhookReq.data = parsedReq.data;
@@ -137,6 +139,7 @@ async function dispatchWebhookTriggers({
         options: runtime.options,
       })
     : null;
+
   if (handshake) return handshake;
 
   let subscribers: TriggerSubscriber[];
@@ -144,18 +147,22 @@ async function dispatchWebhookTriggers({
     if (row.status !== 'active' || row.enablePending || row.cleanupPending) {
       return new Response(null, { status: 404 });
     }
+
     const { agent, trigger } = row;
+
     subscribers = entry.subscribers.filter(
       (candidate) =>
         candidate.trigger.trigger.type === 'webhook' &&
         candidate.agentSlug === agent &&
         candidate.trigger.trigger.slug === trigger,
     );
+
     if (!subscribers.length) return new Response(null, { status: 404 });
   } else {
     if (!definition.webhook) return new Response(null, { status: 404 });
 
     const event = definition.webhook.parse?.({ req: requestClone(webhookReq) }).event;
+
     subscribers = entry.subscribers.filter(
       (candidate) =>
         candidate.trigger.trigger.type === 'app' && candidate.trigger.trigger.event === event,
@@ -174,6 +181,7 @@ async function dispatchWebhookTriggers({
       const input = row
         ? parseSubscriptionInput({ schema: trigger.input, input: row.input })
         : candidate.input;
+
       const context = {
         input: input,
         client: await runtime.client({ req: triggerReq }),

@@ -17,6 +17,7 @@ vi.mock('@payloadcms/ui', () => ({
   }),
   usePreferences: () => ({ setPreference: mocks.setPreference }),
 }));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => mocks.pathname,
   useRouter: () => ({ push: mocks.push }),
@@ -59,10 +60,12 @@ describe('ViewSwitcher', () => {
       { label: 'List', path: '', slug: 'list', type: 'list' },
       { label: 'Stub', path: '/stub', slug: 'stub', type: 'custom' },
     ];
+
     const element = ViewSwitcher({ collectionSlug: 'posts', views: mocks.views });
     const links = element?.props.children as Array<{
       props: { onClick: (event: { preventDefault: () => void }) => Promise<void> };
     }>;
+
     const preventDefault = vi.fn();
 
     await links[0].props.onClick({ preventDefault });

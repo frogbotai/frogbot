@@ -50,6 +50,7 @@ describe('checkDistImports', () => {
     manifest({ exports: { '.': { import: './dist/index.js', types: './dist/index.d.ts' } } });
     write('dist/getFrogBot.js', 'export const getFrogBot = () => {};\n');
     write('dist/getFrogBot.d.ts', 'export declare const getFrogBot: () => void;\n');
+
     write(
       'dist/index.js',
       [
@@ -62,6 +63,7 @@ describe('checkDistImports', () => {
         '',
       ].join('\n'),
     );
+
     write('dist/index.d.ts', "export { getFrogBot } from './getFrogBot.js';\n");
     write('dist/styles.css', '');
 
@@ -82,6 +84,7 @@ describe('checkDistImports', () => {
 
   it('reports dynamic imports and requires of missing files', () => {
     manifest();
+
     write(
       'dist/index.js',
       "await import('../dist/Missing.js');\nconst x = require('./gone.cjs');\n",
@@ -101,6 +104,7 @@ describe('checkDistImports', () => {
       exports: { './config': './dist/exports/Config.js', './icons/*': './dist/icons/*.js' },
       publishConfig: { main: './dist/Index.js' },
     });
+
     write('bin.js', '');
     write('dist/index.js', '');
     write('dist/exports/config.js', '');

@@ -7,10 +7,12 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
+
 vi.mock('node:fs', () => ({
   existsSync: mocks.existsSync,
   default: { existsSync: mocks.existsSync },
 }));
+
 vi.mock('node:module', () => ({
   createRequire: () => ({ resolve: mocks.resolve }),
   default: { createRequire: () => ({ resolve: mocks.resolve }) },
@@ -34,16 +36,19 @@ function mockChild(): SpawnedChild {
 describe('findNextConfig', () => {
   it('returns the first matching next.config file', () => {
     mocks.existsSync.mockImplementation((p: string) => p.endsWith('next.config.ts'));
+
     expect(findNextConfig('/proj')).toBe('/proj/next.config.ts');
   });
 
   it('checks all supported extensions', () => {
     mocks.existsSync.mockImplementation((p: string) => p.endsWith('next.config.cjs'));
+
     expect(findNextConfig('/proj')).toBe('/proj/next.config.cjs');
   });
 
   it('returns null when no next.config exists', () => {
     mocks.existsSync.mockReturnValue(false);
+
     expect(findNextConfig('/proj')).toBeNull();
   });
 });
@@ -57,6 +62,7 @@ describe('canResolveFromProject', () => {
     mocks.resolve.mockImplementationOnce(() => {
       throw new Error('not found');
     });
+
     expect(canResolveFromProject('/proj', 'typescript')).toBe(false);
   });
 });
@@ -69,6 +75,7 @@ describe('runNext', () => {
     exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit');
     });
+
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mocks.resolve.mockImplementation(() => '/proj/node_modules/next/dist/bin/next');
   });
@@ -91,8 +98,10 @@ describe('runNext', () => {
 
   it('errors and exits 1 when `next` cannot be resolved', () => {
     mocks.existsSync.mockReturnValue(true);
+
     mocks.resolve.mockImplementation((spec: string) => {
       if (spec === 'next/dist/bin/next') throw new Error('not found');
+
       return '/proj/node_modules/next/dist/bin/next';
     });
 
@@ -109,11 +118,13 @@ describe('runNext', () => {
     runNext('dev', ['-p', '4000']);
 
     expect(mocks.spawn).toHaveBeenCalledTimes(1);
+
     const [execPath, spawnArgs, options] = mocks.spawn.mock.calls[0] as [
       string,
       string[],
       Record<string, unknown>,
     ];
+
     expect(execPath).toBe(process.execPath);
     expect(spawnArgs[0]).toContain('next');
     expect(spawnArgs.slice(1)).toEqual(['dev', '-p', '4000']);
@@ -130,6 +141,7 @@ describe('runNext', () => {
     const exitHandler = child.on.mock.calls.find(([event]) => event === 'exit')?.[1] as (
       code: number | null,
     ) => void;
+
     expect(() => exitHandler(3)).toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(3);
   });
@@ -144,14 +156,17 @@ describe('runNext', () => {
     const exitHandler = child.on.mock.calls.find(([event]) => event === 'exit')?.[1] as (
       code: number | null,
     ) => void;
+
     expect(() => exitHandler(null)).toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(0);
   });
 
   it('fails fast when next.config.ts exists but typescript is not installed', () => {
     mocks.existsSync.mockImplementation((p: string) => p.endsWith('next.config.ts'));
+
     mocks.resolve.mockImplementation((spec: string) => {
       if (spec === 'typescript') throw new Error('not found');
+
       return '/proj/node_modules/next/dist/bin/next';
     });
 

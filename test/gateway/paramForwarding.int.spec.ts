@@ -55,6 +55,7 @@ function createRecordingModel(opts?: {
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
   });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -65,6 +66,7 @@ function createRecordingModel(opts?: {
     doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       if (error) return Promise.reject(error);
+
       return Promise.resolve({
         content: [{ type: 'text' as const, text }],
         finishReason: finish('stop'),
@@ -80,6 +82,7 @@ function createRecordingModel(opts?: {
     doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       if (error) return Promise.reject(error);
+
       return Promise.resolve({
         stream: new ReadableStream({
           start(controller) {
@@ -99,6 +102,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -153,6 +157,7 @@ describe('chat response_format forwarded upstream', () => {
       required: ['city'],
       additionalProperties: false,
     };
+
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'return JSON' }],
@@ -199,7 +204,9 @@ describe('messages thinking forwarded upstream', () => {
     });
 
     expect(status).toBe(200);
+
     const thinking = (callOptions?.providerOptions as any)?.anthropic?.thinking;
+
     expect(thinking).toEqual({ type: 'enabled', budgetTokens: 2048 });
   });
 
@@ -276,8 +283,10 @@ describe('responses tool-call round trip', () => {
     });
 
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);
+
     // The tool result must reach the model as a tool-role message.
     const toolMessage = callOptions?.prompt.find((m) => m.role === 'tool');
+
     expect(toolMessage).toBeDefined();
     expect(JSON.stringify(toolMessage)).toContain('call_1');
   });
@@ -303,6 +312,7 @@ describe('RetryError unwraps to upstream 429 envelope', () => {
       responseHeaders: { 'retry-after-ms': '0', 'retry-after': '30' },
       responseBody: '{"error":{"message":"Rate limit exceeded"}}',
     });
+
     const app = makeAppWithModel('openai', createRecordingModel({ error: upstreamError }));
 
     const { status, headers, body } = await postJson(app, '/v1/chat/completions', {

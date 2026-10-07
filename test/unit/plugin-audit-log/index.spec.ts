@@ -51,12 +51,14 @@ describe('auditLogPlugin', () => {
 
   it('supports include and exclude selection', async () => {
     const included = await apply({ collections: ['posts'] });
+
     expect(
       included.collections.find((item) => item.slug === 'posts')?.hooks?.afterDelete,
     ).toHaveLength(1);
     expect(included.collections.find((item) => item.slug === 'notes')?.hooks).toBeUndefined();
 
     const excluded = await apply({ collections: { exclude: ['posts'] } });
+
     expect(
       excluded.collections.find((item) => item.slug === 'posts')?.hooks?.afterChange,
     ).toHaveLength(1);
@@ -68,6 +70,7 @@ describe('auditLogPlugin', () => {
   it('supports operation and metadata options', async () => {
     const result = await apply({ operations: ['delete'], ipAddress: true });
     const posts = result.collections.find((collection) => collection.slug === 'posts');
+
     expect(posts?.hooks?.afterChange).toHaveLength(1);
     expect(posts?.hooks?.afterDelete).toHaveLength(1);
     expect(fieldNames(result)).toEqual(expect.arrayContaining(['ip', 'userAgent']));
@@ -83,8 +86,11 @@ describe('auditLogPlugin', () => {
     const result = await apply({ retention: { days: 30, cron: '0 1 * * *' } });
     const task = result.jobs?.tasks?.at(-1);
     const remove = vi.fn().mockResolvedValue({});
+
     expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'frogbot-prune-audit-logs' }]);
+
     await runTask(task, { payload: { delete: remove } });
+
     expect(remove).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'audit-logs',

@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
   loadConfig: mocks.loadConfig,
 }));
+
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
   createLocalReq: vi.fn(({ req }, payload) => Promise.resolve({ ...req, payload })),
@@ -251,6 +252,7 @@ describe('jobs:run lifecycle', () => {
     await vi.advanceTimersByTimeAsync(2000);
 
     expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
+
     const scheduleArgs = [expect.objectContaining({ allQueues: true, queue: undefined })];
 
     expect(mocks.payload.jobs.handleSchedules.mock.calls).toEqual(
@@ -294,6 +296,7 @@ describe('jobs:run lifecycle', () => {
       const renewal = deferred();
 
       mocks.payload.db[jobLeaseOperations].update.mockImplementation(() => renewal.promise);
+
       mocks.payload.jobs.run.mockImplementation(async (args) =>
         withJobLease({
           payload: mocks.payload as unknown as Payload,

@@ -27,22 +27,26 @@ describe('generated AI model types', () => {
       new URL('../../../../packages/frogbot/src/ai/generated.ts', import.meta.url),
       'utf8',
     );
+
     const profiles = [
       'global.amazon.nova-2-lite-v1:0',
       'us.meta.llama3-1-8b-instruct-v1:0',
       'us.meta.llama3-3-70b-instruct-v1:0',
     ];
+
     const bareIds = [
       'amazon.nova-2-lite-v1:0',
       'meta.llama3-1-8b-instruct-v1:0',
       'meta.llama3-3-70b-instruct-v1:0',
     ];
+
     const ids = catalog.map(({ id }) => id);
 
     for (const model of profiles) {
       expect(ids).toContain(`bedrock/${model}`);
       expect(generated).toContain(`'bedrock/${model}'`);
     }
+
     for (const model of bareIds) {
       expect(ids).not.toContain(`bedrock/${model}`);
       expect(generated).not.toContain(`'bedrock/${model}'`);

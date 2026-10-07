@@ -28,6 +28,7 @@ function makeFrogBot({
   const handler = vi.fn(() =>
     Promise.resolve(Response.json({ answers: { refunded: { probability: 0.9 } } })),
   );
+
   const auth = vi.fn(() => Promise.resolve({ user }));
   const createRequest = vi.fn(() => Promise.resolve(req));
   const frogbot = {

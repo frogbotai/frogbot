@@ -195,10 +195,13 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
         : input.timestamp_granularities == null
           ? []
           : [input.timestamp_granularities];
+
       for (const granularity of granularities) {
         body.append('timestamp_granularities[]', granularity);
       }
+
       const response = await this.request('/v1/audio/transcriptions', { method: 'POST', body });
+
       return response.json() as Promise<AITranscriptionResult>;
     },
   };
@@ -226,14 +229,17 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
     if (!response.ok) {
       let data: { error?: { message?: string }; errors?: FrogBotErrorDetail[]; message?: string } =
         {};
+
       try {
         data = await response.clone().json();
       } catch {
         data = {};
       }
+
       const errors = data.errors ?? [
         { message: data.error?.message ?? data.message ?? response.statusText },
       ];
+
       throw new FrogBotSDKError({
         errors,
         message: errors[0]?.message ?? response.statusText,
@@ -250,6 +256,7 @@ export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
     body.append('_payload', '{}');
     const response = await this.request(`/${collection}`, { method: 'POST', body });
     const result = (await response.json()) as FrogBotUploadResponse;
+
     return result.doc;
   }
 

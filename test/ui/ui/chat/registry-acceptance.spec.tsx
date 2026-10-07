@@ -13,6 +13,7 @@ const CustomTool = ({ part }: ToolRendererProps) => <div>Custom tool: {String(pa
 const CustomArtifact = ({ artifact }: ArtifactRendererProps) => (
   <div>Custom artifact: {String(artifact.content)}</div>
 );
+
 describe('external registry acceptance', () => {
   it('uses public tool and artifact registrations without ChatProvider and preserves unknown fallbacks', () => {
     render(

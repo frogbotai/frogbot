@@ -65,21 +65,25 @@ describe.concurrent('live scenarios', () => {
           expectScenario(expectChatToolRoundTrip),
           TEST_TIMEOUT,
         );
+
         it(
           'messages: tool use, result, final answer',
           expectScenario(expectMessagesToolRoundTrip),
           TEST_TIMEOUT,
         );
+
         it(
           'responses: function call, output, final answer',
           expectScenario(expectResponsesToolRoundTrip),
           TEST_TIMEOUT,
         );
+
         it(
           'chat: streamed tool-call deltas coalesce',
           expectScenario(expectChatStreamingToolCall),
           TEST_TIMEOUT,
         );
+
         it(
           'chat: parallel tool calls have unique ids',
           expectScenario(expectChatParallelToolCalls),
@@ -93,26 +97,31 @@ describe.concurrent('live scenarios', () => {
           expectScenario(expectChatVision),
           TEST_TIMEOUT,
         );
+
         it(
           'chat: streams an answer about a receipt photo',
           expectScenario(expectChatVisionStream),
           TEST_TIMEOUT,
         );
+
         it(
           'messages: reads the total from a receipt photo',
           expectScenario(expectMessagesVision),
           TEST_TIMEOUT,
         );
+
         it(
           'responses: reads the total from a receipt photo',
           expectScenario(expectResponsesVision),
           TEST_TIMEOUT,
         );
+
         it(
           'chat: answers about two images in one message',
           expectScenario(expectChatMultiImage),
           TEST_TIMEOUT,
         );
+
         it(
           'chat: answers a follow-up about an earlier image',
           expectScenario(expectChatImageFollowUp),
@@ -144,6 +153,7 @@ describe.concurrent('live scenarios', () => {
           expectScenario(expectChatStructuredOutput),
           TEST_TIMEOUT,
         );
+
         it(
           'responses: extracts a receipt into a strict schema',
           expectScenario(expectResponsesStructuredOutput),
@@ -157,6 +167,7 @@ describe.concurrent('live scenarios', () => {
           expectScenario(expectChatReasoning),
           TEST_TIMEOUT,
         );
+
         it(
           'responses: solves a puzzle with low effort',
           expectScenario(expectResponsesReasoning),
@@ -170,6 +181,7 @@ describe.concurrent('live scenarios', () => {
           expectScenario(expectMessagesThinking),
           TEST_TIMEOUT,
         );
+
         it(
           'messages: keeps thinking through a tool loop',
           expectScenario(expectMessagesThinkingToolLoop),
@@ -185,11 +197,13 @@ describe.concurrent('live scenarios', () => {
 
       describe('truncation', () => {
         it('chat: finish_reason is length', expectScenario(expectChatTruncation), TEST_TIMEOUT);
+
         it(
           'messages: stop_reason is max_tokens',
           expectScenario(expectMessagesTruncation),
           TEST_TIMEOUT,
         );
+
         it(
           'responses: output budget binds',
           expectScenario(expectResponsesTruncation),
@@ -203,11 +217,13 @@ describe.concurrent('live scenarios', () => {
           () => expectChatErrorEnvelope(getApp(), entry.label),
           TEST_TIMEOUT,
         );
+
         it(
           'messages: Anthropic error shape',
           () => expectMessagesErrorEnvelope(getApp(), entry.label),
           TEST_TIMEOUT,
         );
+
         it(
           'responses: error object',
           () => expectResponsesErrorEnvelope(getApp(), entry.label),
@@ -221,6 +237,7 @@ describe.concurrent('live scenarios', () => {
           () => expectChatStreamAbort(getApp(), model, entry.label),
           TEST_TIMEOUT,
         );
+
         it(
           'an oversized prompt returns context_length_exceeded',
           expectScenario(expectChatContextOverflow),

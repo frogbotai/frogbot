@@ -27,6 +27,7 @@ const nullURL = { url: null } satisfies LivePreviewConfig;
 expectTypeOf(rootConfig).toMatchTypeOf<Pick<FrogBotConfig, 'admin'>>();
 expectTypeOf(collectionConfig).toMatchTypeOf<CollectionConfig>();
 expectTypeOf(nullURL).toMatchTypeOf<LivePreviewConfig>();
+
 expectTypeOf<
   Parameters<Extract<LivePreviewConfig['url'], (...args: never[]) => unknown>>[0]['req']
 >().toEqualTypeOf<FrogBotRequest>();

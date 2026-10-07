@@ -32,6 +32,7 @@ export function ViewSwitcher({ collectionSlug, viewSlug, views }: ViewSwitcherPr
     views.find(({ path }) =>
       path === '' ? pathname.endsWith(`/collections/${collectionSlug}`) : pathname.endsWith(path),
     )?.slug;
+
   const search = searchParams.toString();
 
   return (
@@ -41,6 +42,7 @@ export function ViewSwitcher({ collectionSlug, viewSlug, views }: ViewSwitcherPr
           adminRoute: config.routes.admin,
           path: `/collections/${collectionSlug}${view.path}`,
         });
+
         const isActive = active === view.slug;
         const url = search ? `${href}?${search}` : href;
 
@@ -52,9 +54,11 @@ export function ViewSwitcher({ collectionSlug, viewSlug, views }: ViewSwitcherPr
             key={view.slug}
             onClick={async (event) => {
               event.preventDefault();
+
               await setPreference(`frogbot:collection-view:${collectionSlug}`, {
                 view: view.slug,
               });
+
               router.push(url);
             }}
           >

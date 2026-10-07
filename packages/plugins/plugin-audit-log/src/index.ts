@@ -16,6 +16,7 @@ function userSlug(config: FrogBotConfig): string {
   const authSlugs = config.collections
     .filter((collection) => collection.auth !== undefined && collection.auth !== false)
     .map((collection) => collection.slug);
+
   if (authSlugs.length === 0) return 'users';
   if (authSlugs.length === 1) return authSlugs[0];
   if (config.admin?.user && authSlugs.includes(config.admin.user)) return config.admin.user;
@@ -26,6 +27,7 @@ function selected(slug: string, selection: AuditCollectionSelection | undefined)
   if (!selection) return true;
   if (Array.isArray(selection)) return selection.includes(slug);
   if (selection.include && !selection.include.includes(slug)) return false;
+
   return !selection.exclude?.includes(slug);
 }
 
@@ -40,14 +42,17 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
   ) {
     throw new Error('[plugin-audit-log] retention.days must be a positive integer.');
   }
+
   return (config) => {
     if (config.collections.some((collection) => collection.slug === auditSlug)) {
       throw new Error(`[plugin-audit-log] Collection slug '${auditSlug}' already exists.`);
     }
+
     const collections = config.collections.map((collection) => {
       if (collection.slug === auditSlug || !selected(collection.slug, options.collections)) {
         return collection;
       }
+
       const hookOptions = {
         auditSlug,
         collectionSlug: collection.slug,
@@ -56,6 +61,7 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
         snapshot: options.snapshot ?? 'never',
         trustProxy: options.trustProxy ?? false,
       };
+
       return {
         ...collection,
         hooks: {
@@ -73,12 +79,14 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
         },
       };
     });
+
     const auditCollection = createAuditLogCollection({
       slug: auditSlug,
       userSlug: userSlug(config),
       access: options.access,
       ipAddress: options.ipAddress,
     });
+
     if (!options.retention) return { ...config, collections: [...collections, auditCollection] };
     const retention = options.retention;
     const task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number] = {
@@ -100,9 +108,11 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
           },
           overrideAccess: true,
         });
+
         return { output: {} };
       },
     };
+
     return {
       ...config,
       collections: [...collections, auditCollection],

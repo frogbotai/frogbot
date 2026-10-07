@@ -29,11 +29,13 @@ describe('audit log plugin integration', () => {
       '/api/accounts',
       credentials,
     );
+
     accountId = account.body.doc.id;
     const login = await booted.restClient.post<{ token: string }>(
       '/api/accounts/login',
       credentials,
     );
+
     authorization = { Authorization: `JWT ${login.body.token}` };
   });
 
@@ -46,8 +48,10 @@ describe('audit log plugin integration', () => {
         depth: 0,
         limit: 20,
       });
+
       expect(result.docs.length).toBeGreaterThan(0);
     });
+
     const result = await booted.frogbot.find({
       collection: 'audit-logs',
       where: { documentId: { equals: String(documentId) } },
@@ -56,6 +60,7 @@ describe('audit log plugin integration', () => {
       limit: 20,
       sort: '-timestamp',
     });
+
     return result.docs;
   }
 
@@ -65,8 +70,11 @@ describe('audit log plugin integration', () => {
       { title: 'Created', optional: 'remove-me' },
       { headers: authorization },
     );
+
     expect(created.status).toBe(201);
+
     const id = created.body.doc.id;
+
     expect(
       (
         await booted.restClient.patch(
@@ -82,6 +90,7 @@ describe('audit log plugin integration', () => {
 
     await vi.waitFor(async () => expect(await entries(id)).toHaveLength(3));
     const audit = await entries(id);
+
     expect(audit.filter((entry) => entry.operation === 'create')).toHaveLength(1);
     expect(audit.filter((entry) => entry.operation === 'update')).toHaveLength(1);
     expect(audit.filter((entry) => entry.operation === 'delete')).toHaveLength(1);
@@ -98,12 +107,15 @@ describe('audit log plugin integration', () => {
       { name: 'Audit integration' },
       { headers: authorization },
     );
+
     const keyed = await booted.restClient.post<{ doc: { id: number | string } }>(
       '/api/posts',
       { title: 'API key' },
       { headers: { 'x-service-key': mint.body.token } },
     );
+
     const keyedAudit = (await entries(keyed.body.doc.id))[0];
+
     expect(String(keyedAudit?.user)).toBe(String(accountId));
     expect(String(keyedAudit?.apiKeyId)).toBe(String(mint.body.id));
 
@@ -112,7 +124,9 @@ describe('audit log plugin integration', () => {
       data: { title: 'Userless' },
       overrideAccess: true,
     });
+
     const localAudit = (await entries(local.id))[0];
+
     expect(localAudit?.user ?? null).toBeNull();
     expect(localAudit?.apiKeyId ?? null).toBeNull();
   });
@@ -129,6 +143,7 @@ describe('audit log plugin integration', () => {
       },
       overrideAccess: true,
     });
+
     expect(
       (await booted.restClient.post('/api/audit-logs', {}, { headers: authorization })).status,
     ).toBe(403);
@@ -159,8 +174,10 @@ describe('audit log plugin integration', () => {
       },
       overrideAccess: true,
     });
+
     const job = await booted.frogbot.jobs.queue({ task: 'frogbot-prune-audit-logs', input: {} });
     await booted.frogbot.jobs.runByID({ id: job.id });
+
     await expect(
       booted.frogbot.findByID({
         collection: 'audit-logs',

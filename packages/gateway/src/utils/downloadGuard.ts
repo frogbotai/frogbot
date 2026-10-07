@@ -70,6 +70,7 @@ export async function assertPublicHttpsUrl(url: URL): Promise<void> {
     if (isPrivateAddress(hostname)) {
       throw downloadRejected(url, 'address is private, loopback, or link-local');
     }
+
     return;
   }
 
@@ -79,9 +80,11 @@ export async function assertPublicHttpsUrl(url: URL): Promise<void> {
   } catch {
     throw downloadRejected(url, 'hostname could not be resolved');
   }
+
   if (addresses.length === 0) {
     throw downloadRejected(url, 'hostname could not be resolved');
   }
+
   for (const { address } of addresses) {
     if (isPrivateAddress(address)) {
       throw downloadRejected(
@@ -97,6 +100,7 @@ export function isPrivateAddress(address: string): boolean {
   const version = isIP(address);
   if (version === 4) return isPrivateIPv4(address);
   if (version === 6) return isPrivateIPv6(address);
+
   // Not an IP literal at all — treat as unsafe.
   return true;
 }
@@ -114,6 +118,7 @@ function isPrivateIPv4(address: string): boolean {
   if (a === 192 && b === 168) return true; // 192.168.0.0/16
   if (a === 198 && (b === 18 || b === 19)) return true; // 198.18.0.0/15 benchmarking
   if (a >= 224) return true; // multicast, reserved, broadcast
+
   return false;
 }
 
@@ -127,6 +132,7 @@ function isPrivateIPv6(address: string): boolean {
   if (lower === '::' || lower === '::1') return true; // unspecified / loopback
   if (/^fe[89ab]/.test(lower)) return true; // fe80::/10 link-local
   if (/^f[cd]/.test(lower)) return true; // fc00::/7 unique local
+
   return false;
 }
 
@@ -154,6 +160,7 @@ async function fetchPublicUrl(
       if (!location) {
         throw downloadRejected(url, 'redirect without a location header');
       }
+
       current = new URL(location, current);
       continue;
     }
@@ -184,6 +191,7 @@ async function readCapped(response: Response, url: URL): Promise<Uint8Array> {
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -193,14 +201,17 @@ async function readCapped(response: Response, url: URL): Promise<Uint8Array> {
       await reader.cancel().catch(() => undefined);
       throw downloadRejected(url, `content exceeds the ${MAX_DOWNLOAD_BYTES}-byte download limit`);
     }
+
     chunks.push(value);
   }
 
   const data = new Uint8Array(total);
   let offset = 0;
+
   for (const chunk of chunks) {
     data.set(chunk, offset);
     offset += chunk.byteLength;
   }
+
   return data;
 }

@@ -17,7 +17,9 @@ expectTypeOf<Parameters<typeof twilio.sendSms>[0]['input']>().toEqualTypeOf<{
   to: string;
   body: string;
 }>();
+
 expectTypeOf<Awaited<typeof _sms>['sid']>().toEqualTypeOf<string>();
+
 expectTypeOf(developerTwilio.getMessage({ input: { messageSid: 'SM1' } })).toEqualTypeOf<
   ReturnType<typeof twilio.getMessage>
 >();
@@ -37,4 +39,5 @@ expectTypeOf<keyof typeof twilio.triggers>().toEqualTypeOf<
   | 'transcriptionCompleted'
   | 'callCompleted'
 >();
+
 expectTypeOf(twilio.triggers.incomingSms.type).toEqualTypeOf<'polling'>();

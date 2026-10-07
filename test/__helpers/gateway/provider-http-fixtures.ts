@@ -25,6 +25,7 @@ export function createProviderFixtureFetch(args: {
     update = false,
     fetch: realFetch = globalThis.fetch.bind(globalThis),
   } = args;
+
   let replayIndex = 0;
   const recorded: ProviderHttpExchange[] = [];
   const fixtures =
@@ -40,6 +41,7 @@ export function createProviderFixtureFetch(args: {
       if (!exchange) {
         throw new Error(`No provider HTTP fixture for ${request.method} ${request.url}`);
       }
+
       return new Response(Buffer.from(exchange.bodyBase64, 'base64'), {
         status: exchange.status,
         headers: exchange.headers,
@@ -48,6 +50,7 @@ export function createProviderFixtureFetch(args: {
 
     const response = await realFetch(request);
     const body = await response.clone().arrayBuffer();
+
     recorded.push({
       url: request.url,
       method: request.method,
@@ -55,8 +58,10 @@ export function createProviderFixtureFetch(args: {
       headers: Object.fromEntries(response.headers.entries()),
       bodyBase64: Buffer.from(body).toString('base64'),
     });
+
     mkdirSync(dirname(fixturePath), { recursive: true });
     writeFileSync(fixturePath, `${JSON.stringify(recorded, null, 2)}\n`);
+
     return response;
   };
 }

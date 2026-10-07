@@ -21,6 +21,7 @@ expectTypeOf<AutonumberFieldArgs['access']>().toEqualTypeOf<{ read?: FieldAccess
 
 createdByField({ name: 'createdBy' });
 createdByField({ name: 'createdBy', relationTo: 'admins', label: 'Created by' });
+
 lastModifiedByField({
   name: 'lastModifiedBy',
   access: {
@@ -40,6 +41,7 @@ lastModifiedByField({
     ],
   },
 });
+
 autonumberField({ name: 'number', label: 'Ticket #', index: true, access: { read: () => true } });
 
 // @ts-expect-error a creator is one user

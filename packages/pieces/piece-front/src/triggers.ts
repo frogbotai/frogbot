@@ -11,6 +11,7 @@ const eventRecord = z.object({
   type: z.unknown(),
   conversation: z.object({ id: z.unknown() }).optional(),
 });
+
 const conversationRecord = z.object({
   status: z.unknown(),
   updated_at: z.union([z.string(), z.number()]),
@@ -26,6 +27,7 @@ async function eventPages(client: FrontClient, path: string) {
     if (Array.isArray(response._results)) events.push(...response._results);
 
     const pagination = response._pagination;
+
     next =
       pagination &&
       typeof pagination === 'object' &&
@@ -129,6 +131,7 @@ export const conversationStatusChanged = definePollingTrigger({
     const updatedAt = parsed.success
       ? Math.floor(Number(parsed.data.updated_at) * 1000)
       : Number.NaN;
+
     const nextCursor = Number.isFinite(updatedAt) ? Math.max(since, updatedAt) : since;
     const events =
       parsed.success && parsed.data.status === input.status && updatedAt > since

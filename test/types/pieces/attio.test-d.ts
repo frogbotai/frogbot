@@ -14,6 +14,7 @@ expectTypeOf<Parameters<typeof attio.createNote>[0]['input']>().toEqualTypeOf<{
   format?: 'plaintext' | 'markdown' | undefined;
   content: string;
 }>();
+
 expectTypeOf(note).toEqualTypeOf<Promise<Record<string, unknown>>>();
 
 const _createNoteRejectsGetTaskInput = () =>
@@ -31,4 +32,5 @@ expectTypeOf<keyof typeof attio.triggers>().toEqualTypeOf<
   | 'listEntryUpdated'
   | 'callRecordingCreated'
 >();
+
 expectTypeOf(attio.triggers.recordUpdated.type).toEqualTypeOf<'webhook'>();

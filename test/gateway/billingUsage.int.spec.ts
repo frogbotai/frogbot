@@ -51,17 +51,21 @@ function createUsageMock(): LanguageModelV4 {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 't0' });
+
             controller.enqueue({
               type: 'text-delta',
               id: 't0',
               delta: 'hi',
             });
+
             controller.enqueue({ type: 'text-end', id: 't0' });
+
             controller.enqueue({
               type: 'finish',
               finishReason: finish('stop', 'stop'),
               usage: USAGE,
             });
+
             controller.close();
           },
         }),
@@ -73,6 +77,7 @@ function makeApp(providerName: string, hooks: Hooks) {
   const registry = {
     [providerName]: { languageModel: () => createUsageMock() },
   } as unknown as ProviderRegistry;
+
   return createApp({ registry, hooks });
 }
 
@@ -133,6 +138,7 @@ describe('gateway billing usage — cache-write token attribution (G96)', () => 
         stream: true,
       }),
     });
+
     await res.text();
 
     expect(res.status).toBe(200);

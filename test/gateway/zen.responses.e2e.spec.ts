@@ -36,6 +36,7 @@ function makeZenApp() {
   const registry = buildProviderRegistry({
     zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
   });
+
   return createApp({ registry });
 }
 
@@ -78,6 +79,7 @@ async function streamResponses(app: ReturnType<typeof makeZenApp>, body: Record<
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ ...body, stream: true }),
   });
+
   return res;
 }
 
@@ -128,9 +130,12 @@ describeLive(
         expect(body.status).toBe('completed');
 
         const message = findMessageItem(body.output);
+
         expect(message).toBeDefined();
         expect(message!.role).toBe('assistant');
+
         const textPart = (message!.content ?? []).find((p) => p.type === 'output_text');
+
         expect(textPart).toBeDefined();
         expect(textPart!.text!.length).toBeGreaterThan(0);
 
@@ -204,6 +209,7 @@ describeLive(
         // The message item lifecycle appears, in order.
         const added = names.indexOf('response.output_item.added');
         const done = names.lastIndexOf('response.output_item.done');
+
         expect(added).toBeGreaterThan(1);
         expect(done).toBeGreaterThan(added);
 
@@ -212,14 +218,17 @@ describeLive(
           .filter((e) => e.event === 'response.output_text.delta')
           .map((e) => e.data.delta ?? '')
           .join('');
+
         expect(text.length).toBeGreaterThan(0);
 
         // sequence_number is 0..n monotonic across every event.
         const sequences = events.map((e) => e.data.sequence_number);
+
         expect(sequences).toEqual(sequences.map((_, i) => i));
 
         // Terminal usage on response.completed is real.
         const completed = events[events.length - 1].data.response;
+
         expect(completed?.status).toBe('completed');
         expect(completed?.usage?.input_tokens).toBeGreaterThan(0);
         expect(completed?.usage?.output_tokens).toBeGreaterThan(0);
@@ -239,11 +248,13 @@ describeLive(
         });
 
         expect(res.status).toBe(200);
+
         const events = eventsOf(await res.text());
         const created = events.find((e) => e.event === 'response.created')?.data.response;
         const terminal = events.find(
           (e) => e.event === 'response.completed' || e.event === 'response.incomplete',
         )?.data.response;
+
         expect(created?.id).toBeTruthy();
         expect(terminal?.id).toBeTruthy();
         expect(terminal!.id).toBe(created!.id);
@@ -266,13 +277,17 @@ describeLive(
         });
 
         expect(status).toBe(200);
+
         const call = (body.output ?? []).find((item) => item.type === 'function_call');
+
         expect(call, '[zen.responses.e2e] model did not call the tool').toBeDefined();
 
         expect(call!.name).toBe('get_weather');
         expect(typeof call!.call_id).toBe('string');
         expect(call!.call_id!.length).toBeGreaterThan(0);
+
         const args = JSON.parse(call!.arguments ?? '') as Record<string, unknown>;
+
         expect(typeof args).toBe('object');
       },
       TEST_TIMEOUT,
@@ -377,8 +392,11 @@ describeLive(
           input: 'Remember: the secret word is BANANA. Reply with just OK.',
           max_output_tokens: 1024,
         });
+
         expect(first.status).toBe(200);
+
         const priorId = first.body.id;
+
         expect(typeof priorId).toBe('string');
 
         // Turn 2 — reference the prior turn ONLY via previous_response_id, with

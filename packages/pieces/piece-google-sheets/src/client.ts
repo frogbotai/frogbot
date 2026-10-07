@@ -12,6 +12,7 @@ export function createGoogleSheetsClient({ auth }: { auth: unknown }): GoogleShe
   const credential = googleSheetsAuth.parse(auth);
   const oauth = new google.auth.OAuth2();
   oauth.setCredentials({ access_token: credential.accessToken });
+
   return {
     auth: oauth,
     sheets: google.sheets({ version: 'v4', auth: oauth, universeDomain: 'googleapis.com' }),

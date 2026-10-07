@@ -1,6 +1,7 @@
 'use client';
 import * as Primitive from '@radix-ui/react-switch';
 import type { ComponentProps, ReactNode } from 'react';
+
 export type SwitchProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'> & {
   checkedIcon?: ReactNode;
   uncheckedIcon?: ReactNode;
@@ -8,6 +9,7 @@ export type SwitchProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'>
   size?: 'default' | 'sm' | 'lg' | 'xl';
   color?: 'default' | 'secondary';
 };
+
 export function Switch(input: SwitchProps) {
   const {
     asChild: _asChild,

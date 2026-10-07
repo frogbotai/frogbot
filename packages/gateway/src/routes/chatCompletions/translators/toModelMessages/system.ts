@@ -33,8 +33,10 @@ export function parseSystemMessages(msg: OpenAISystemMessage): SystemModelMessag
   return parts.map((part, index) => {
     const cacheControl =
       part.cache_control ?? (index === parts.length - 1 ? msg.cache_control : undefined);
+
     const result: SystemModelMessage = { role: 'system', content: part.text };
     if (cacheControl) result.providerOptions = { unknown: { cache_control: cacheControl } };
+
     return result;
   });
 }
@@ -48,5 +50,6 @@ export function parseUnknownMessage(
 ): SystemModelMessage {
   const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? '');
   logger.warn({ role: msg.role }, `unknown message role "${msg.role}" — forwarding as system`);
+
   return { role: 'system', content: `[role=${msg.role}] ${content}` };
 }

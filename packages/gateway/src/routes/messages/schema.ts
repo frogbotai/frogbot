@@ -353,5 +353,6 @@ export function parseMessagesRequest(body: unknown): MessagesRequest {
     const path = formatZodPath(first.path);
     throw new RequestValidationError({ message: first.message, param: path });
   }
+
   return result.data;
 }

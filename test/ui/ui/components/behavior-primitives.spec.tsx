@@ -50,6 +50,7 @@ it('renders the behavior primitive BEM surfaces', () => {
       <ScrollArea style={{ height: 20 }}>Content</ScrollArea>
     </>,
   );
+
   expect(screen.getByText('Check').className).toContain('fb-label');
   expect(screen.getByRole('checkbox').className).toContain('fb-checkbox');
   expect(screen.getByRole('switch').className).toContain('fb-switch');
@@ -58,6 +59,7 @@ it('renders the behavior primitive BEM surfaces', () => {
 
 it('supports keyboard-driven disclosure primitives', async () => {
   const user = userEvent.setup();
+
   render(
     <>
       <Accordion type="single" collapsible>
@@ -72,14 +74,19 @@ it('supports keyboard-driven disclosure primitives', async () => {
       </Collapsible>
     </>,
   );
+
   await user.click(screen.getByText('Accordion'));
+
   expect(screen.getByText('Details')).toBeTruthy();
+
   await user.click(screen.getByText('Collapsible'));
+
   expect(screen.getByText('More')).toBeTruthy();
 });
 
 it('opens popover and context menu surfaces', async () => {
   const user = userEvent.setup();
+
   render(
     <>
       <Popover>
@@ -94,14 +101,19 @@ it('opens popover and context menu surfaces', async () => {
       </ContextMenu>
     </>,
   );
+
   await user.click(screen.getByText('Popover'));
+
   expect(screen.getByText('Popover content').className).toContain('fb-popover__content');
+
   fireEvent.contextMenu(screen.getByText('Target'));
+
   expect(await screen.findByRole('menu')).toBeTruthy();
 });
 
 it('switches tabs with the keyboard', async () => {
   const user = userEvent.setup();
+
   render(
     <Tabs defaultValue="one">
       <TabsList>
@@ -112,7 +124,9 @@ it('switches tabs with the keyboard', async () => {
       <TabsContent value="two">Second</TabsContent>
     </Tabs>,
   );
+
   screen.getByRole('tab', { name: 'One' }).focus();
   await user.keyboard('{ArrowRight}');
+
   expect(screen.getByRole('tab', { name: 'Two' }).getAttribute('data-state')).toBe('active');
 });

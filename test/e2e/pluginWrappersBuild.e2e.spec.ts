@@ -54,6 +54,7 @@ describe.skipIf(!RUN_E2E)('plugin wrapper client build', () => {
       join(fixtureDir, 'src', 'app', '(frogbot)', 'admin', 'importMap.js'),
       'utf8',
     );
+
     const specifiers = [...importMap.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g)].map(
       (match) => match[1],
     );

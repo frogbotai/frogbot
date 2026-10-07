@@ -16,6 +16,7 @@ export const deepgramProvider = {
   envVars: ['DEEPGRAM_API_KEY'],
   fromEnv: (env) => {
     if (!env.DEEPGRAM_API_KEY) return undefined;
+
     return { apiKey: env.DEEPGRAM_API_KEY };
   },
   build: (cfg) => createDeepgram(cfg),

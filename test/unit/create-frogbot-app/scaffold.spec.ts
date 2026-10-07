@@ -259,6 +259,7 @@ describe('template reconciliation', () => {
       expect(config).toContain('editor: lexicalEditor()');
       expect(pkg.dependencies[dependency]).toBeDefined();
       expect(pkg.dependencies['@frogbotai/richtext-lexical']).toBeDefined();
+
       for (const name of absent) {
         expect(pkg.dependencies[name]).toBeUndefined();
       }

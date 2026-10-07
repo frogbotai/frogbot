@@ -35,6 +35,7 @@ describe('navigation section acceptance', () => {
       req,
       user: req.user,
     } as unknown as { req: PayloadRequest } & ServerProps;
+
     render(await RecentsSection(props));
 
     expect(admin.components.navSections).toEqual(['./RecentsSection#RecentsSection']);

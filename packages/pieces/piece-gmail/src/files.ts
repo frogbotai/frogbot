@@ -14,22 +14,28 @@ export async function loadFileAttachment(req: FrogBotRequest, value: z.output<ty
     req,
     overrideAccess: false,
   });
+
   if (typeof doc.url !== 'string') {
     throw new Error(`[frogbot] File '${value.fileId}' is unavailable.`);
   }
+
   const config = await req.frogbot.config._internal.payloadConfig;
   const headers = new Headers();
+
   for (const name of ['authorization', 'cookie']) {
     const value = req.headers.get(name);
     if (value) headers.set(name, value);
   }
+
   const response = await fetch(new URL(doc.url, config.serverURL || req.url), {
     headers,
     signal: req.signal ?? undefined,
   });
+
   if (!response.ok) {
     throw new Error(`[frogbot] File '${value.fileId}' is unavailable (${response.status}).`);
   }
+
   return {
     name: value.name ?? doc.filename ?? doc.name ?? 'attachment',
     type: doc.mimeType ?? 'application/octet-stream',

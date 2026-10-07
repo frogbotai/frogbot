@@ -22,6 +22,7 @@ const _allocateCreditNoteRejectsSendInvoiceEmailInput = () =>
 const emailed = xero.sendInvoiceEmail({ input: { tenantId: 'tenant', invoiceId: 'invoice' } });
 
 expectTypeOf(emailed).toEqualTypeOf<Promise<{ success: true }>>();
+
 expectTypeOf<Parameters<typeof xero.findContact>[0]['input']>().toEqualTypeOf<{
   tenantId: string;
   searchBy: string;
@@ -44,5 +45,6 @@ expectTypeOf<keyof typeof xero.triggers>().toEqualTypeOf<
   | 'projectCreated'
   | 'quoteCreated'
 >();
+
 expectTypeOf(xero.triggers.contactCreated.type).toEqualTypeOf<'app'>();
 expectTypeOf(xero.triggers.paymentReconciled.type).toEqualTypeOf<'polling'>();

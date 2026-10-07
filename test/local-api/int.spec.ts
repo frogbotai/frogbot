@@ -49,6 +49,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
 
     return filePath;
   };
+
   const createAttachment = (filePath: string, overwriteExistingFiles?: boolean) =>
     frogbot.create({
       collection: 'attachments',
@@ -62,8 +63,10 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       id: number | string;
       title: string;
     }>;
+
   const count = async (title: string) =>
     (await frogbot.count({ collection: 'notes', where: { title: { equals: title } } })).totalDocs;
+
   const lock = (id: number | string) =>
     payload.create({
       collection: 'payload-locked-documents',
@@ -104,8 +107,10 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         },
       ],
     });
+
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
     payload = getFrogBotPayload(frogbot);
+
     editorID = (
       await frogbot.create({
         collection: 'editors',
@@ -139,6 +144,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         data: { title: 'blocked' },
         overrideLock: false,
       });
+
       expect(many.docs).toEqual([]);
       expect(many.errors).toEqual([
         expect.objectContaining({ id: note.id, message: expect.stringContaining('locked') }),
@@ -163,12 +169,14 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         where: { id: { equals: note.id } },
         overrideLock: false,
       });
+
       expect(many.errors).toEqual([
         expect.objectContaining({ id: note.id, message: expect.stringContaining('locked') }),
       ]);
       expect(await count('locked-delete')).toBe(1);
 
       await frogbot.delete({ collection: 'notes', id: note.id });
+
       expect(await count('locked-delete')).toBe(0);
     });
   });
@@ -316,6 +324,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         data: { title: 'Hello' },
         draft: true,
       })) as { id: number | string };
+
       const status = async () =>
         (
           (await frogbot.findByID({ collection: 'articles', id: article.id, locale: 'all' })) as {
@@ -329,6 +338,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         id: article.id,
         publishAllLocales: true,
       });
+
       const published = await status();
 
       await frogbot.update({
@@ -337,6 +347,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         id: article.id,
         unpublishAllLocales: true,
       });
+
       const unpublished = await status();
 
       expect(published).toEqual({ en: 'published', fr: 'published' });

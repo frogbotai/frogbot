@@ -24,6 +24,7 @@ import {
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 type Item = ChannelQuestionCall['input']['questions'][number];
+
 type Component = { type: number; components?: Component[]; content?: string } & Record<
   string,
   unknown
@@ -251,6 +252,7 @@ describe('Discord question components', () => {
         ],
       }),
     );
+
     const [select] = inspect(body).selects;
 
     expect(select).toMatchObject({ min_values: 1, max_values: 1, custom_id: id('select', 0) });
@@ -285,6 +287,7 @@ describe('Discord question components', () => {
       { header: 'Sizes', multiple: true },
       { header: 'Finish' },
     );
+
     const { buttons, texts } = inspect(
       payload(input, { q: 1, answers: [{ header: 'Color', selected: ['Red'] }] }),
     );
@@ -363,6 +366,7 @@ describe('Discord question components', () => {
       header: 'Region',
       options: Array.from({ length: 25 }, (_, index) => ({ label: `${prefix}#${index}` })),
     });
+
     const { selects, texts } = inspect(payload(input));
     const labels = selects[0].options.map(({ label }) => label);
 
@@ -383,6 +387,7 @@ describe('Discord question components', () => {
         }),
       ),
     );
+
     const settled = inspect(
       settledPayload({
         call: call({ header: 'Mood' }),
@@ -415,6 +420,7 @@ describe('Discord question components', () => {
         })),
       },
     );
+
     const armed = Object.fromEntries(
       Array.from({ length: 200 }, (_, index) => [
         String(100000000000000000n + BigInt(index)),
@@ -439,6 +445,7 @@ describe('Discord question components', () => {
       expect(result.buttons.length).toBeLessThanOrEqual(5);
 
       result.buttons.forEach(({ label }) => expect(String(label).length).toBeLessThanOrEqual(80));
+
       result.selects.forEach((select) => {
         expect(select.options.length).toBeLessThanOrEqual(25);
         expect(String(select.custom_id).length).toBeLessThanOrEqual(100);
@@ -458,6 +465,7 @@ describe('Discord question components', () => {
         question: 'q'.repeat(500),
       })),
     );
+
     const { text, texts } = inspect(
       settledPayload({
         call: input,
@@ -540,6 +548,7 @@ describe('Discord question components', () => {
         },
       },
     });
+
     const result = inspect(body);
 
     expect(body.flags).toBe(32768);
@@ -558,6 +567,7 @@ describe('Discord question components', () => {
         responder: { id: 'U3' },
       }),
     );
+
     const elsewhere = inspect(
       settledPayload({
         call: call({ header: 'Color' }),
@@ -703,6 +713,7 @@ describe('Discord question parsing', () => {
     const one = partialState(
       parse({ input, interaction: click({ actionId: id('select', 0), values: ['2', '0'] }) }),
     );
+
     const two = partialState(
       parse({
         input,
@@ -797,6 +808,7 @@ describe('Discord question parsing', () => {
     const armed = partialState(
       parse({ input, interaction: click({ actionId: id('custom') }), state }),
     );
+
     const disarmed = partialState(
       parse({
         input,
@@ -820,6 +832,7 @@ describe('Discord question parsing', () => {
     const two = partialState(
       parse({ input, interaction: click({ actionId: id('custom'), user: 'U2' }), state: one }),
     );
+
     const three = partialState(
       parse({
         input,
@@ -984,6 +997,7 @@ describe('Discord question parsing', () => {
         { label: 'Pro', description: 'Yearly' },
       ],
     });
+
     const many = call({ header: 'Pick', options: options(30) });
 
     expect(parse({ input: plans, interaction: click({ actionId: id('option', 0) }) })).toEqual({

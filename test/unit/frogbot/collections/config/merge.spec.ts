@@ -33,6 +33,7 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
+
     expect(merged.fields.map((f) => ('name' in f ? f.name : undefined))).toEqual([
       'department',
       'title',
@@ -53,6 +54,7 @@ describe('mergeCollection', () => {
       }),
       reservedFields: [],
     });
+
     expect(merged.fields[0]).toMatchObject({
       name: 'title',
       type: 'text',
@@ -73,7 +75,9 @@ describe('mergeCollection', () => {
       }),
       reservedFields: [],
     });
+
     const title = merged.fields[0] as { hooks?: { beforeChange?: unknown[] } };
+
     expect(title.hooks?.beforeChange).toEqual([baseHook, userHook]);
   });
 
@@ -83,6 +87,7 @@ describe('mergeCollection', () => {
       base: makeBase({ hooks: { afterChange: [baseHook as never] } }),
       reservedFields: [],
     });
+
     expect(merged.hooks?.afterChange).toEqual([baseHook, userHook]);
   });
 
@@ -106,7 +111,9 @@ describe('mergeCollection', () => {
       }),
       reservedFields: [],
     });
+
     const usage = merged.fields[0] as { fields: Array<{ name?: string }> };
+
     expect(usage.fields.map((f) => f.name)).toEqual(['costUsd', 'inputTokens', 'outputTokens']);
   });
 
@@ -117,6 +124,7 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
+
     expect(merged.access?.read).toBe(userRead);
     expect(await merged.access?.create?.({ req: {} as never })).toBe(true);
   });
@@ -127,6 +135,7 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
+
     expect(merged.admin).toMatchObject({ icon: 'bubble-chat', useAsTitle: 'department' });
   });
 
@@ -136,12 +145,15 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
+
     expect(merged.trash).toBe(false);
+
     const defaulted = mergeChatCollection({
       user: { slug: 'chats', fields: [] },
       base: makeBase(),
       reservedFields: [],
     });
+
     expect(defaulted.trash).toBe(true);
   });
 
@@ -195,6 +207,7 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
+
     expect(merged.fields.find((f) => 'name' in f && f.name === 'agent')).toMatchObject({
       name: 'agent',
       type: 'text',
@@ -226,6 +239,7 @@ describe('mergeCollection', () => {
       }),
       reservedFields: [],
     });
+
     expect(merged.fields.find((f) => 'name' in f && f.name === 'user')).toMatchObject({
       name: 'user',
       type: 'relationship',

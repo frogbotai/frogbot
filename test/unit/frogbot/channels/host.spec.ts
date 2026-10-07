@@ -48,6 +48,7 @@ const lifecycles = {
       await expect(
         fixture.host.webhook('first', new Request('http://localhost/webhook')),
       ).resolves.toBeUndefined();
+
       await fixture.host.shutdown();
     },
   },
@@ -82,6 +83,7 @@ describe('ChannelHost initialization cleanup', () => {
         }),
         startGatewayListener,
       }));
+
       const first = channelFixture({ slug: 'first', adapter: adapters[0] as unknown as Adapter });
       const second = channelFixture({ slug: 'second', adapter: adapters[1] as unknown as Adapter });
 
@@ -366,6 +368,7 @@ describe('ChannelHost conversation loop', () => {
     const persisted = deferred();
 
     fixture.adapter.stream.mockRejectedValue(new Error('post failed'));
+
     fixture.streamMessage.mockResolvedValueOnce({
       stream: asyncChunks('First'),
       persistence: persisted.promise,

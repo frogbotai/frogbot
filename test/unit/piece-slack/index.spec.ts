@@ -113,6 +113,7 @@ describe('Slack native piece', () => {
         signingSecret,
       }),
     ).definition;
+
     const adapter = definition.channel?.adapter({
       auth: { botToken: 'xoxb-test' },
       options: { signingSecret },
@@ -123,6 +124,7 @@ describe('Slack native piece', () => {
 
   it('requires the signing secret used by shared ingress even when an environment fallback exists', () => {
     vi.stubEnv('SLACK_SIGNING_SECRET', 'environment-secret');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
@@ -235,6 +237,7 @@ describe('Slack native piece', () => {
       .fn()
       .mockResolvedValueOnce(Response.json({ ok: true, channel: 'C1' }))
       .mockResolvedValueOnce(Response.json({ ok: false, error: 'not_in_channel' }));
+
     vi.stubGlobal('fetch', fetch);
     const client = createSlackClient({ auth: { botToken: 'xoxb-test' } });
 
@@ -251,6 +254,7 @@ describe('Slack native piece', () => {
     const fetch = vi.fn((value: URL | RequestInfo) =>
       Promise.resolve(uploadResponse(String(value))),
     );
+
     vi.stubGlobal('fetch', fetch);
     const signal = new AbortController().signal;
     const req = {
@@ -307,6 +311,7 @@ describe('Slack native piece', () => {
           headers: { 'content-type': 'application/pdf; charset=binary' },
         }),
       );
+
     vi.stubGlobal('fetch', fetch);
     const req = {
       headers: new Headers(),
@@ -384,6 +389,7 @@ describe('Slack native piece', () => {
 
   it('parses and filters Events API deliveries', async () => {
     const req = signedRequest('{}');
+
     req.data = {
       team_id: 'T1',
       event: { type: 'message', channel_type: 'channel', channel: 'C1', text: 'hello' },
@@ -403,6 +409,7 @@ describe('Slack native piece', () => {
 
   it('rejects a trigger delivery from another Slack workspace', async () => {
     const req = signedRequest('{}');
+
     req.data = {
       team_id: 'T2',
       event: { type: 'message', channel_type: 'channel', channel: 'C1', text: 'hello' },
@@ -420,6 +427,7 @@ describe('Slack native piece', () => {
 
   it('parses modal interactions and strips their token', async () => {
     const req = signedRequest('payload=encoded');
+
     req.data = {
       payload: JSON.stringify({
         type: 'view_submission',

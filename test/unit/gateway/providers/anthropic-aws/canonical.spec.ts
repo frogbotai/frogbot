@@ -15,6 +15,7 @@ describe('resolveAnthropicAwsModelId', () => {
 
   it('passes through full IDs unchanged', () => {
     const fullId = 'claude-3-opus-20240229';
+
     expect(resolveAnthropicAwsModelId(fullId)).toBe(fullId);
   });
 

@@ -68,6 +68,7 @@ export function parseStreamErrorFrame(frame: unknown): ParsedStreamErrorFrame | 
       return undefined;
     }
   }
+
   if (!value) return undefined;
 
   // Responses API: `{ type: "response.failed", response: { error: {...} } }`
@@ -75,6 +76,7 @@ export function parseStreamErrorFrame(frame: unknown): ParsedStreamErrorFrame | 
     const response = asRecord(value.response);
     const responseError = asRecord(response?.error);
     if (typeof responseError?.message !== 'string') return undefined;
+
     return {
       message: responseError.message,
       code: asStringOrNumber(responseError.code) ?? null,
@@ -97,6 +99,7 @@ export function parseStreamErrorFrame(frame: unknown): ParsedStreamErrorFrame | 
     typeof errorObj.type === 'string' ||
     'code' in errorObj ||
     'param' in errorObj;
+
   if (!looksLikeError) return undefined;
 
   return {
@@ -135,6 +138,7 @@ export function inferStatusFromStreamError(parsed: ParsedStreamErrorFrame): numb
   if (['insufficient_quota', 'rate_limit', 'too_many_requests'].some((t) => haystack.includes(t))) {
     return 429;
   }
+
   if (haystack.includes('authentication') || haystack.includes('invalid_api_key')) return 401;
   if (haystack.includes('permission')) return 403;
   if (haystack.includes('not_found')) return 404;

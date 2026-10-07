@@ -23,12 +23,14 @@ export function DataPart({
       </>
     );
   }
+
   let content: string;
   try {
     content = JSON.stringify(part.data, null, 2);
   } catch {
     content = String(part.data);
   }
+
   return (
     <>
       <ArtifactStreamPart part={part} />

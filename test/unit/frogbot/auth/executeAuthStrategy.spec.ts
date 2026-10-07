@@ -71,6 +71,7 @@ describe('executeAuthStrategy', () => {
       user: { id: 'user-1', collection: 'users' },
       responseHeaders: new Headers({ 'x-strategy': 'custom' }),
     };
+
     const authenticate = vi.fn(() => result);
     const args = makeArgs({ name: 'custom', authenticate });
 

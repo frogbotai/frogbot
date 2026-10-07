@@ -165,6 +165,7 @@ describe('attio', () => {
     const fetch = vi
       .fn()
       .mockImplementation(() => Promise.resolve(response({ data: { id: 'result' } })));
+
     vi.stubGlobal('fetch', fetch);
     const attio = createAttio({ auth });
 
@@ -177,6 +178,7 @@ describe('attio', () => {
       },
       req,
     });
+
     await attio.createNote({
       input: {
         parentObject: 'companies',
@@ -187,10 +189,12 @@ describe('attio', () => {
       },
       req,
     });
+
     await attio.getCallTranscript({
       input: { meetingId: 'meeting', callRecordingId: 'recording' },
       req,
     });
+
     await attio.createTask({
       input: { content: 'Follow up', linkedObject: 'companies', linkedRecordId: 'company' },
       req,
@@ -217,6 +221,7 @@ describe('attio', () => {
       .mockResolvedValue(
         response({ data: [{ id: { object_id: 'people' }, singular_noun: 'Person' }] }),
       );
+
     vi.stubGlobal('fetch', fetch);
     const client = await createAttio({ auth }).client({ req });
 
@@ -231,6 +236,7 @@ describe('attio', () => {
       .fn()
       .mockResolvedValueOnce(response({ data: firstPage }))
       .mockResolvedValueOnce(response({ data: [{ id: 500 }] }));
+
     vi.stubGlobal('fetch', fetch);
 
     const result = await createAttio({ auth }).findRecords({
@@ -252,6 +258,7 @@ describe('attio', () => {
       )
       .mockResolvedValueOnce(response({ data: { id: { record_id: 'record' } } }))
       .mockResolvedValueOnce(response(null));
+
     vi.stubGlobal('fetch', fetch);
     const attio = createAttio({ auth }) as any;
     const definition = attio.triggers.recordCreated;
@@ -263,6 +270,7 @@ describe('attio', () => {
       options: {},
       req,
     });
+
     const webhookReq = webhookRequest(body);
     const events = await definition.run({
       client,
@@ -271,6 +279,7 @@ describe('attio', () => {
       options: {},
       state,
     });
+
     await definition.onDisable({ client, input: { objectId: 'people' }, state, options: {}, req });
 
     expect(state).toEqual({ webhookId: 'webhook', webhookSecret: 'secret' });

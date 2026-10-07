@@ -49,6 +49,7 @@ export function buildRetryHeaders(args: {
       out['retry-after-ms'] = String(Math.round(asSeconds * 1000));
     }
   }
+
   if (upstreamRetryAfterMs) {
     out['retry-after-ms'] = upstreamRetryAfterMs;
     if (!out['retry-after']) {
@@ -76,9 +77,12 @@ function normalizeHeaders(h: Headers | Record<string, string> | undefined): {
   if (h instanceof Headers) {
     return { get: (name) => h.get(name) ?? undefined };
   }
+
   const lower: Record<string, string> = {};
+
   for (const [k, v] of Object.entries(h)) {
     lower[k.toLowerCase()] = v;
   }
+
   return { get: (name) => lower[name.toLowerCase()] };
 }

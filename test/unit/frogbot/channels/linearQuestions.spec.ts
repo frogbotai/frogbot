@@ -163,11 +163,13 @@ describe('Linear questions through the channel host', () => {
   beforeEach(() => {
     api.reset();
     listPendingCalls.mockReset().mockResolvedValue([]);
+
     settleClientToolCall.mockReset().mockResolvedValue({
       status: 'settled',
       part: {},
       allSettled: true,
     });
+
     continueTurn.mockReset();
   });
 
@@ -484,6 +486,7 @@ describe('Linear questions through the channel host', () => {
         },
       ],
     };
+
     const first = pendingCall({ toolCallId: 'call-a' });
     const second = pendingCall({ input: size, toolCallId: 'call-b' });
     const fixture = await asked({ calls: [first, second] });

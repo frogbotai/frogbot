@@ -57,6 +57,7 @@ describe('useTranscription', () => {
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
     const transcribe = vi.fn().mockResolvedValue(text);
     const onText = vi.fn();
+
     return {
       ...renderHook(() => useTranscription({ transcribe, onText })),
       getUserMedia,
@@ -68,9 +69,12 @@ describe('useTranscription', () => {
   it('records, transcribes, and appends text', async () => {
     const result = setup();
     await act(() => result.result.current.start());
+
     expect(result.result.current.status).toBe('recording');
+
     act(() => result.result.current.stop());
     await waitFor(() => expect(result.result.current.status).toBe('idle'));
+
     expect(result.transcribe).toHaveBeenCalledWith(expect.any(File));
     expect(result.onText).toHaveBeenCalledWith('spoken words');
     expect(track.stop).toHaveBeenCalledOnce();
@@ -84,13 +88,18 @@ describe('useTranscription', () => {
     vi.stubGlobal('cancelAnimationFrame', cancel);
     const result = setup();
     await act(() => result.result.current.start());
+
     expect(analyser.fftSize).toBe(256);
     expect(analyser.smoothingTimeConstant).toBe(0.8);
     expect(connect).toHaveBeenCalledWith(analyser);
+
     act(() => frame.mock.calls[0]?.[0](0));
+
     expect(result.result.current.audioData?.[0]).toBe(0.5);
+
     act(() => result.result.current.stop());
     await waitFor(() => expect(result.result.current.status).toBe('idle'));
+
     expect(cancel).toHaveBeenCalled();
     expect(close).toHaveBeenCalledOnce();
     expect(result.result.current.audioData).toBeNull();
@@ -98,14 +107,17 @@ describe('useTranscription', () => {
 
   it('closes the analyser when unmounted', async () => {
     vi.stubGlobal('AudioContext', Context);
+
     vi.stubGlobal(
       'requestAnimationFrame',
       vi.fn(() => 1),
     );
+
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
     const result = setup();
     await act(() => result.result.current.start());
     result.unmount();
+
     expect(close).toHaveBeenCalledOnce();
   });
 
@@ -118,10 +130,13 @@ describe('useTranscription', () => {
         }
       },
     );
+
     const result = setup();
     await act(() => result.result.current.start());
+
     expect(result.result.current.status).toBe('recording');
     expect(result.result.current.audioData).toBeNull();
+
     act(() => result.result.current.stop());
     await waitFor(() => expect(result.onText).toHaveBeenCalledWith('spoken words'));
   });
@@ -130,7 +145,9 @@ describe('useTranscription', () => {
     const result = setup(
       vi.fn().mockRejectedValue(new DOMException('Permission denied', 'NotAllowedError')),
     );
+
     await act(() => result.result.current.start());
+
     expect(result.result.current.status).toBe('idle');
     expect(result.result.current.error).toBe('Permission denied');
   });
@@ -139,6 +156,7 @@ describe('useTranscription', () => {
     const result = setup();
     await act(() => result.result.current.start());
     result.unmount();
+
     expect(track.stop).toHaveBeenCalledOnce();
   });
 
@@ -146,6 +164,7 @@ describe('useTranscription', () => {
     Recorder.isTypeSupported.mockImplementation((type) => type === 'audio/mp4');
     const result = setup();
     await act(() => result.result.current.start());
+
     expect(Recorder.instances[0]?.mimeType).toBe('audio/mp4');
   });
 
@@ -154,6 +173,7 @@ describe('useTranscription', () => {
     await act(() => result.result.current.start());
     act(() => result.result.current.stop());
     await waitFor(() => expect(result.result.current.error).toBe('No speech detected'));
+
     expect(result.onText).not.toHaveBeenCalled();
   });
 });

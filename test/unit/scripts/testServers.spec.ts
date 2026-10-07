@@ -38,9 +38,11 @@ describe.skipIf(process.platform === 'win32')('test server process groups', () =
       ],
       { stdio: ['ignore', 'pipe', 'ignore'] },
     );
+
     const pgid = await new Promise<number>((resolve) =>
       worker.stdout.once('data', (chunk: Buffer) => resolve(Number(String(chunk).trim()))),
     );
+
     await expect.poll(() => groupMembers(pgid).length, { timeout: 5000 }).toBeGreaterThanOrEqual(3);
 
     worker.kill('SIGKILL');
@@ -53,6 +55,7 @@ describe.skipIf(process.platform === 'win32')('test server process groups', () =
     const [code] = await new Promise<[number | null]>((resolve) =>
       child.once('exit', (exitCode) => resolve([exitCode])),
     );
+
     expect(code).toBe(7);
   });
 
@@ -61,12 +64,15 @@ describe.skipIf(process.platform === 'win32')('test server process groups', () =
       '-e',
       "require('child_process').spawn('sleep', ['300'], { stdio: 'ignore' }); setTimeout(() => process.exit(0), 200);",
     ]);
+
     await new Promise((resolve) => child.once('exit', resolve));
+
     await expect.poll(() => groupMembers(child.pid!), { timeout: 5000 }).toEqual([]);
   });
 
   it('terminateProcess kills the group and waits for it', async () => {
     const child = spawnServer(process.execPath, forkingServer);
+
     await expect
       .poll(() => groupMembers(child.pid!).length, { timeout: 5000 })
       .toBeGreaterThanOrEqual(3);

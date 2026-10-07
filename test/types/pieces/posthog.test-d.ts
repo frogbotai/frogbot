@@ -14,6 +14,7 @@ expectTypeOf<Parameters<typeof posthog.createProject>[0]['input']>().toEqualType
   anonymizeIps?: boolean | undefined;
   isDemo?: boolean | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _project>['api_token']>().toEqualTypeOf<string>();
 
 const _createProjectRejectsCreateEventInput = () =>

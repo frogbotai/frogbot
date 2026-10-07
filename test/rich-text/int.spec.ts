@@ -137,6 +137,7 @@ describe('rich text integration [sqlite]', () => {
       editorConfig,
       markdown: '# FrogBot\n\n**Rich** content.',
     });
+
     const markdown = convertLexicalToMarkdown({ data: state, editorConfig });
 
     expect(markdown).toContain('# FrogBot');
@@ -151,8 +152,10 @@ describe('rich text integration [sqlite]', () => {
         BlocksFeature({ blocks: [CalloutBlock], inlineBlocks: [InlineCodeBlock] }),
       ],
     });
+
     const source =
       '<Callout tone="warning">Nested **copy** with <InlineCode>pnpm test</InlineCode>.</Callout>';
+
     const state = convertMarkdownToLexical({ editorConfig, markdown: source });
     const markdown = convertLexicalToMarkdown({ data: state, editorConfig });
 

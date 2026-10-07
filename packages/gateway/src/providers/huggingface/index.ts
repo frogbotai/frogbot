@@ -22,6 +22,7 @@ export const huggingfaceProvider = {
   envVars: ['HUGGINGFACE_API_KEY', 'HUGGINGFACE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.HUGGINGFACE_API_KEY) return undefined;
+
     return {
       apiKey: env.HUGGINGFACE_API_KEY,
       ...(env.HUGGINGFACE_BASE_URL && { baseURL: env.HUGGINGFACE_BASE_URL }),

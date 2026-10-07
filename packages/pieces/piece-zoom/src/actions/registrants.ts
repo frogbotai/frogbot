@@ -37,6 +37,7 @@ const createRegistrantInput = z.object({
     .enum(['Decision Maker', 'Evaluator/Recommender', 'Influencer', 'Not involved'])
     .optional(),
 });
+
 const registrant = z.object({
   id: z.number(),
   join_url: z.string(),

@@ -63,6 +63,7 @@ export function createStripeClient({ auth }: { auth: StripeAuth }) {
       },
       ...(method !== 'GET' ? { body: params } : {}),
     });
+
     const data = (await response.json()) as StripeResponse;
 
     if (!response.ok) {

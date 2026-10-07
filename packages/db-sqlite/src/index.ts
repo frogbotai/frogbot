@@ -27,6 +27,7 @@ export function sqliteAdapter({ writeLockTimeout = 5000, ...args }: SQLiteAdapte
     busyTimeout: args.busyTimeout ?? 1000,
     wal: args.wal ?? isFileDatabase(args.client?.url),
   };
+
   const adapter = createSQLiteAdapter(adapterArgs);
 
   return {
@@ -108,6 +109,7 @@ async function useRollbackJournal(adapter: SQLiteAdapter): Promise<void> {
       err: error,
       msg: `Error: cannot connect to SQLite: ${message}`,
     });
+
     adapter.rejectInitializing?.();
 
     throw new Error(`Error: cannot connect to SQLite: ${message}`);

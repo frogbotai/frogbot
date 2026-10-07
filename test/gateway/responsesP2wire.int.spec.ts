@@ -21,6 +21,7 @@ import { finish, mockUsage } from './mockModel.js';
 function makeApp(mockModel: LanguageModelV4) {
   const fakeProvider = { languageModel: () => mockModel };
   const registry = { openai: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -63,9 +64,12 @@ describe('G70 — responses sub-routes and global notFound return JSON error env
     const res = await app.request('http://localhost/v1/responses/resp_123', {
       method: 'GET',
     });
+
     expect(res.headers.get('content-type')).toContain('application/json');
     expect(res.status).toBe(404);
+
     const body = (await res.json()) as Record<string, unknown>;
+
     expect(body).toHaveProperty('error');
   });
 
@@ -75,6 +79,7 @@ describe('G70 — responses sub-routes and global notFound return JSON error env
     const res = await app.request('http://localhost/v1/responses/resp_123', {
       method: 'DELETE',
     });
+
     expect(res.headers.get('content-type')).toContain('application/json');
     expect(res.status).toBe(404);
   });
@@ -85,9 +90,12 @@ describe('G70 — responses sub-routes and global notFound return JSON error env
     const res = await app.request('http://localhost/v1/nonexistent', {
       method: 'GET',
     });
+
     expect(res.headers.get('content-type')).toContain('application/json');
     expect(res.status).toBe(404);
+
     const body = (await res.json()) as Record<string, unknown>;
+
     expect(body).toHaveProperty('error');
   });
 });
@@ -113,11 +121,13 @@ describe('G71 — responses streaming error event has correct nested shape (REJE
             start(controller) {
               // Emit text first so we commit to HTTP 200
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hello',
               });
+
               controller.enqueue({ type: 'error', error });
               controller.close();
             },
@@ -133,14 +143,18 @@ describe('G71 — responses streaming error event has correct nested shape (REJE
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
 
     // Find the error event block
     const errorBlock = text.split('\n\n').find((block) => block.includes('event: error'));
+
     expect(errorBlock).toBeDefined();
 
     const dataLine = errorBlock!.match(/^data: (.+)$/m)?.[1];
+
     expect(dataLine).toBeDefined();
+
     const data = JSON.parse(dataLine!) as Record<string, unknown>;
 
     // Nested shape: data.error.message, data.error.type, data.error.code
@@ -177,11 +191,13 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
             start(controller) {
               // Emit enough to pass the preamble (peek sees text)
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hello',
               });
+
               // Then close normally — the catastrophic throw comes from the
               // transform phase itself via a TransformStream that errors.
               // Simulate via stream that throws on pull:
@@ -208,6 +224,7 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
     const blocks = text.split('\n\n').filter(Boolean);
 
@@ -220,6 +237,7 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
         Boolean(block.match(/^data: \{/m)) &&
         !block.match(/^event: /m),
     );
+
     expect(dataOnlyBlocks).toHaveLength(0);
   });
 });
@@ -246,13 +264,17 @@ describe('G73 — response.completed usage includes token details', () => {
                 type: 'stream-start',
                 warnings: [],
               });
+
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
               });
+
               controller.enqueue({ type: 'text-end', id: 'text-0' });
+
               controller.enqueue({
                 type: 'finish',
                 finishReason: finish('stop', 'stop'),
@@ -270,6 +292,7 @@ describe('G73 — response.completed usage includes token details', () => {
                   },
                 }),
               });
+
               controller.close();
             },
           }),
@@ -284,16 +307,19 @@ describe('G73 — response.completed usage includes token details', () => {
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
 
     const completedBlock = text
       .split('\n\n')
       .find((block) => block.includes('event: response.completed'));
+
     expect(completedBlock).toBeDefined();
 
     const dataLine = completedBlock!.match(/^data: (.+)$/m)?.[1];
     const data = JSON.parse(dataLine!) as { response?: { usage?: Record<string, unknown> } };
     const usage = data.response?.usage;
+
     expect(usage).toBeDefined();
 
     expect(usage).toHaveProperty('input_tokens_details.cached_tokens', 8);
@@ -325,13 +351,17 @@ describe('G74 — reasoning delta duplication', () => {
                 type: 'stream-start',
                 warnings: [],
               });
+
               controller.enqueue({ type: 'reasoning-start', id: 'reasoning-0' });
+
               controller.enqueue({
                 type: 'reasoning-delta',
                 id: 'reasoning-0',
                 delta: 'thinking...',
               });
+
               controller.enqueue({ type: 'reasoning-end', id: 'reasoning-0' });
+
               controller.enqueue({
                 type: 'finish',
                 finishReason: finish('stop'),
@@ -340,6 +370,7 @@ describe('G74 — reasoning delta duplication', () => {
                   outputTokens: { total: 3, text: 0, reasoning: 3 },
                 }),
               });
+
               controller.close();
             },
           }),
@@ -354,6 +385,7 @@ describe('G74 — reasoning delta duplication', () => {
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
     const events = [...text.matchAll(/^event: (.+)$/gm)].map((m) => m[1]);
 
@@ -362,6 +394,7 @@ describe('G74 — reasoning delta duplication', () => {
 
     // G74: only the summary track is emitted per reasoning-delta.
     const totalDeltaEvents = summaryDeltas.length + contentDeltas.length;
+
     expect(totalDeltaEvents).toBe(1);
   });
 });
@@ -382,11 +415,13 @@ describe('G49 — x-request-id present on streaming responses SSE response', () 
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
               });
+
               controller.close();
             },
           }),
@@ -405,6 +440,7 @@ describe('G49 — x-request-id present on streaming responses SSE response', () 
       res.headers.get('x-request-id'),
       'streaming responses SSE response missing x-request-id',
     ).not.toBeNull();
+
     await res.text();
   });
 });
@@ -430,12 +466,15 @@ describe('G51 — responses stream terminal-frame count', () => {
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' });
+
               controller.enqueue({
                 type: 'text-delta',
                 id: 'text-0',
                 delta: 'hi',
               });
+
               controller.enqueue({ type: 'text-end', id: 'text-0' });
+
               controller.enqueue({
                 type: 'finish',
                 finishReason: finish('stop', 'stop'),
@@ -444,6 +483,7 @@ describe('G51 — responses stream terminal-frame count', () => {
                   outputTokens: { total: 4, text: 4 },
                 }),
               });
+
               controller.close();
             },
           }),
@@ -458,15 +498,19 @@ describe('G51 — responses stream terminal-frame count', () => {
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
     const completedEvents = [...text.matchAll(/^event: (.+)$/gm)]
       .map((m) => m[1])
       .filter((e) => e === 'response.completed');
+
     expect(
       completedEvents,
       'responses stream must terminate with exactly one response.completed',
     ).toHaveLength(1);
+
     const doneCount = (text.match(/^data: \[DONE\]$/gm) ?? []).length;
+
     expect(doneCount, 'responses wire must not carry the OpenAI-chat-only [DONE] sentinel').toBe(0);
   });
 });
@@ -524,8 +568,10 @@ describe('G75 — reasoning items surface encrypted_content', () => {
     });
 
     expect(res.status).toBe(200);
+
     const body = (await res.json()) as { output: Array<Record<string, unknown>> };
     const reasoning = body.output.find((item) => item.type === 'reasoning');
+
     expect(reasoning).toBeDefined();
     expect(reasoning).toHaveProperty('encrypted_content', 'enc_abc');
   });
@@ -541,16 +587,19 @@ describe('G75 — reasoning items surface encrypted_content', () => {
                 type: 'stream-start',
                 warnings: [],
               });
+
               controller.enqueue({
                 type: 'reasoning-start',
                 id: 'rs_1:0',
                 providerMetadata: { openai: { itemId: 'rs_1', reasoningEncryptedContent: null } },
               });
+
               controller.enqueue({
                 type: 'reasoning-delta',
                 id: 'rs_1:0',
                 delta: 'thinking...',
               });
+
               controller.enqueue({
                 type: 'reasoning-end',
                 id: 'rs_1:0',
@@ -558,6 +607,7 @@ describe('G75 — reasoning items surface encrypted_content', () => {
                   openai: { itemId: 'rs_1', reasoningEncryptedContent: 'enc_xyz' },
                 },
               });
+
               controller.enqueue({
                 type: 'finish',
                 finishReason: finish('stop', 'stop'),
@@ -566,6 +616,7 @@ describe('G75 — reasoning items surface encrypted_content', () => {
                   outputTokens: { total: 3, text: 0, reasoning: 3 },
                 }),
               });
+
               controller.close();
             },
           }),
@@ -585,14 +636,18 @@ describe('G75 — reasoning items surface encrypted_content', () => {
     });
 
     expect(res.status).toBe(200);
+
     const text = await res.text();
     const completedBlock = text
       .split('\n\n')
       .find((block) => block.includes('event: response.completed'));
+
     expect(completedBlock).toBeDefined();
+
     const dataLine = completedBlock!.match(/^data: (.+)$/m)?.[1];
     const data = JSON.parse(dataLine!) as { response: { output: Array<Record<string, unknown>> } };
     const reasoning = data.response.output.find((item) => item.type === 'reasoning');
+
     expect(reasoning).toBeDefined();
     expect(reasoning).toHaveProperty('encrypted_content', 'enc_xyz');
   });

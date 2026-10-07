@@ -10,6 +10,7 @@ describe('loadChat', () => {
         Response.json({ docs: [{ id: 7, role: 'user', parts: [{ type: 'text', text: 'hi' }] }] }),
       ),
     );
+
     await expect(
       loadChat({
         sdk: createFrogBotSDK({ baseURL: '/api', fetch }),

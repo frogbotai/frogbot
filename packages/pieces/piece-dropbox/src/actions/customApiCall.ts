@@ -128,6 +128,7 @@ export const customApiCall = defineAction({
       timeout: Math.ceil(input.timeoutSeconds * 1000),
       failsafe: input.failsafe,
     });
+
     const responseBody =
       input.responseType === 'binary'
         ? await saveFile({

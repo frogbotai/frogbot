@@ -21,6 +21,7 @@ const jwk = {
   alg: 'RS256',
   use: 'sig',
 };
+
 const serviceUrl = 'https://smba.trafficmanager.net/amer/';
 const activity = {
   type: 'message',

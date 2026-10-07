@@ -40,6 +40,7 @@ const holder = (file) => {
 const attempt = (fn) => {
   try {
     fn();
+
     return true;
   } catch (error) {
     if (error.code === 'EEXIST' || error.code === 'ENOENT') return false;
@@ -104,6 +105,7 @@ export async function acquireSlot(
       };
 
       process.on('exit', release);
+
       return release;
     }
 

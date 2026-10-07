@@ -25,12 +25,14 @@ export async function validateChatMessages(
     ) {
       return [];
     }
+
     return message.parts.map((part) =>
       part && typeof part === 'object' && 'type' in part && part.type === 'file-reference'
         ? fileReferenceSchema.parse(part)
         : undefined,
     );
   });
+
   const filtered = messages.map((message, index) => {
     if (
       !message ||
@@ -40,6 +42,7 @@ export async function validateChatMessages(
     ) {
       return message;
     }
+
     return {
       ...message,
       parts: message.parts.map((part, partIndex) =>
@@ -47,7 +50,9 @@ export async function validateChatMessages(
       ),
     };
   });
+
   const validated = await validateUIMessages({ messages: filtered, tools });
+
   return validated.map(
     (message, index) =>
       ({

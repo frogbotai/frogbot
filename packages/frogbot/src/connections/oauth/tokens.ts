@@ -30,7 +30,9 @@ export function parseOAuthTokens(value: unknown): OAuthTokens {
     if (Object.hasOwn(tokens, 'error') || Object.hasOwn(tokens, 'error_description')) {
       throw new OAuthError('tokens');
     }
+
     oauthTokenMetadata({ tokens });
+
     return tokens;
   } catch {
     throw new OAuthError('tokens');
@@ -46,12 +48,14 @@ export function oauthTokenMetadata({
 }): { scopes: string[]; expiresAt: string | null } {
   const expiry =
     tokens.expires_in === undefined ? undefined : Date.now() + tokens.expires_in * 1000;
+
   if (
     expiry !== undefined &&
     (!Number.isFinite(expiry) || !Number.isFinite(new Date(expiry).getTime()))
   ) {
     throw new OAuthError('tokens');
   }
+
   return {
     scopes: [
       ...new Set(tokens.scope === undefined ? scopes : tokens.scope.split(/\s+/).filter(Boolean)),
@@ -71,6 +75,7 @@ function callbackRequest({
     get(target, property) {
       if (property === 'signal') return signal;
       const value = Reflect.get(target, property, target);
+
       return typeof value === 'function' ? value.bind(target) : value;
     },
   });
@@ -85,10 +90,12 @@ async function timed<T>(
     controller.signal,
     ...signals.filter((signal): signal is AbortSignal => signal !== undefined),
   ]);
+
   let abort!: () => void;
   const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
     combined.throwIfAborted();
+
     return await Promise.race([
       new Promise<never>((_, reject) => {
         abort = () => reject(new OAuthError('tokens'));
@@ -119,6 +126,7 @@ async function requestTokens({
     'content-type': 'application/x-www-form-urlencoded',
     accept: 'application/json',
   });
+
   const body = new URLSearchParams(params);
 
   if (recipe.tokenEndpointAuthMethod === 'client_secret_basic') {
@@ -145,7 +153,9 @@ async function requestTokens({
         redirect: 'error',
         signal,
       });
+
       if (!response.ok) throw new OAuthError('tokens');
+
       return parseOAuthTokens(await response.json());
     }, signal);
   } catch {
@@ -173,6 +183,7 @@ export async function exchangeOAuthCode({
   ) {
     throw new OAuthError('tokens');
   }
+
   return requestTokens({
     piece,
     signal,
@@ -275,6 +286,7 @@ export async function refreshOAuthTokens({
     );
   } else {
     if (!tokens.refresh_token) throw new OAuthError('refresh');
+
     next = await requestTokens({
       piece,
       signal: signal && req.signal ? AbortSignal.any([signal, req.signal]) : (signal ?? req.signal),
@@ -289,6 +301,7 @@ export async function refreshOAuthTokens({
     ...tokens,
     ...Object.fromEntries(Object.entries(next).filter(([, value]) => value !== undefined)),
   };
+
   if (next.expires_in === undefined) delete merged.expires_in;
 
   return parseOAuthTokens(merged);

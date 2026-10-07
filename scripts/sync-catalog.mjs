@@ -29,6 +29,7 @@ const PROVIDERS = {
   vercel: 'vercel',
   xai: 'xai',
 };
+
 const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
 const OVERLAY_PROVIDERS = new Set(['replicate', 'typesafe-ai', 'voyage']);
 const AGGREGATOR_PROVIDERS = new Set(['openrouter', 'vercel']);
@@ -76,11 +77,14 @@ function operationsFor(modalities) {
   if (modalities.output.includes('image')) {
     operations.push('images.generations');
   }
+
   if (modalities.output.includes('audio')) operations.push('audio.speech');
   if (modalities.input.includes('audio') && modalities.output.includes('text')) {
     operations.push('audio.transcriptions');
   }
+
   if (modalities.output.includes('video')) operations.push('video.generations');
+
   return operations;
 }
 
@@ -133,6 +137,7 @@ function mapModel({ model, provider }) {
     input: model.modalities.input.filter((modality) => MODALITIES.has(modality)),
     output: model.modalities.output.filter((modality) => MODALITIES.has(modality)),
   };
+
   const capabilities = compact({
     toolCalling: model.tool_call || undefined,
     structuredOutput: model.structured_output || undefined,
@@ -142,6 +147,7 @@ function mapModel({ model, provider }) {
     promptCaching: model.cost?.cache_read !== undefined || undefined,
     streaming: modalities.output.includes('text') || undefined,
   });
+
   return compact({
     id: `${provider}/${model.id}`,
     name: model.name,
@@ -289,6 +295,7 @@ export function renderGatewayCatalog(gateway) {
         `  model(${JSON.stringify(id)}, ${JSON.stringify(entry, null, 2).replaceAll('\n', '\n  ')}),`,
     )
     .join('\n');
+
   return `import { defineModelCatalog, presetFor, type ModelCatalog } from './catalog.js';\n\nconst model = presetFor<string>();\n\nexport const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(\n${entries}\n);\n`;
 }
 
@@ -299,6 +306,7 @@ function typeName(provider) {
       if (part === 'openai') return 'OpenAI';
       if (part === 'xai') return 'XAI';
       if (part === 'togetherai') return 'TogetherAI';
+
       return `${part[0].toUpperCase()}${part.slice(1)}`;
     })
     .join('');
@@ -319,8 +327,10 @@ export async function renderAIModelTypes(catalog) {
       .filter((entry) => entry.provider === provider)
       .map((entry) => entry.id)
       .sort();
+
     return `export type ${typeName(provider)}ModelId =\n${union(ids)};`;
   });
+
   const combined = providers.map((provider) => `${typeName(provider)}ModelId`);
   const source = `export type ProviderSlug =\n${union(providers)};\n\n${sections.join('\n\n')}\n\nexport type CatalogModelId =\n${typeUnion(combined)};\n`;
   const options = (await resolveConfig(typesPath)) ?? {};
@@ -367,6 +377,7 @@ export function logoNodes(svg) {
     'clip-rule': 'clipRule',
     opacity: 'opacity',
   };
+
   const nodes = [];
   let remaining = root[2].trim();
 
@@ -397,6 +408,7 @@ export function logoNodes(svg) {
           .map(([attribute, prop]) => [prop, attributes[attribute]]),
       ),
     ]);
+
     remaining = remaining.slice(element[0].length).trim();
 
     if (!selfClosing) {

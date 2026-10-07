@@ -387,6 +387,7 @@ describe('GraphQL routes', () => {
     const graphQL = await restOptions(request(graphQLURL), {
       params: Promise.resolve({ slug: ['graphql'] }),
     });
+
     const rest = await restOptions(request(`http://localhost/api/${usersSlug}`), {
       params: Promise.resolve({ slug: [usersSlug] }),
     });

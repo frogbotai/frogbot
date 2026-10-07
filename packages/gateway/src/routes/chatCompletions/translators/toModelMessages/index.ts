@@ -40,6 +40,7 @@ function parseToolRun(
       toolName: toolNames.get(msg.tool_call_id) ?? '',
       output: parseToolOutput(msg),
     });
+
     nextIndex++;
   }
 
@@ -53,6 +54,7 @@ function parseToolOutput(msg: OpenAIToolMessage): ToolResultPart['output'] {
       value: msg.content.map((p) => ({ type: 'text', text: p.text })),
     };
   }
+
   return { type: 'text', value: msg.content };
 }
 

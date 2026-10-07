@@ -45,6 +45,7 @@ function createMockLanguageModel(): LanguageModelV4 {
 function makeAppWithMockProvider(providerName: string) {
   const fakeProvider = { languageModel: () => createMockLanguageModel() };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -127,7 +128,9 @@ describe('gateway config — provider allow/deny lists (G45)', () => {
     );
 
     expect(res.status).toBe(404);
+
     const body = (await res.json()) as { error?: { type?: string } };
+
     expect(body.error?.type).toBe('not_found_error');
   });
 
@@ -155,7 +158,9 @@ describe('gateway config — provider allow/deny lists (G45)', () => {
     );
 
     expect(res.status).toBe(404);
+
     const body = (await res.json()) as { error?: { type?: string } };
+
     expect(body.error?.type).toBe('not_found_error');
   });
 });
@@ -174,7 +179,9 @@ describe('gateway discovery — GET /v1/models (G37)', () => {
     const res = await app.request('http://localhost/v1/models', { method: 'GET' });
 
     expect(res.status).toBe(200);
+
     const body = (await res.json()) as { object?: string; data?: unknown[] };
+
     expect(body.object).toBe('list');
     expect(Array.isArray(body.data)).toBe(true);
   });

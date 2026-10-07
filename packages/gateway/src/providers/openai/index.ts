@@ -31,6 +31,7 @@ export const openaiProvider = {
    */
   fromEnv: (env) => {
     if (!env.OPENAI_API_KEY) return undefined;
+
     return {
       apiKey: env.OPENAI_API_KEY,
       ...(env.OPENAI_BASE_URL && { baseURL: env.OPENAI_BASE_URL }),

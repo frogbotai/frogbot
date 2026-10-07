@@ -1,4 +1,5 @@
 import type { ComponentType, SVGProps } from 'react';
+
 export type StatusIconWithTextProps = {
   color?: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -6,6 +7,7 @@ export type StatusIconWithTextProps = {
   textColor?: string;
   variant?: 'success' | 'error' | 'default' | 'secondary';
 };
+
 export function StatusIconWithText({
   color,
   icon: Icon,

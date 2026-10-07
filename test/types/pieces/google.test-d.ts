@@ -6,4 +6,5 @@ const google = createGoogle({ auth: { accessToken: 'token' } });
 expectTypeOf<Extract<keyof typeof google, string>>().toEqualTypeOf<
   'slug' | 'piece' | 'oauth' | 'client' | 'triggers' | '~capabilities'
 >();
+
 expectTypeOf(google.triggers).toEqualTypeOf<Record<string, never>>();

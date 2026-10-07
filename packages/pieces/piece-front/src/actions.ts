@@ -24,12 +24,14 @@ const handleSource = z.enum([
   'front_chat',
   'custom',
 ]);
+
 const fileReference = z.object({
   fileId: z.union([z.string().min(1), z.number()]),
   name: z.string().min(1).optional(),
 });
 
 type ActionInput = Record<string, unknown>;
+
 type MessageInput = ActionInput & {
   attachments?: z.output<typeof fileReference>[];
 };
@@ -73,6 +75,7 @@ async function loadAttachments(req: FrogBotRequest, attachments: z.output<typeof
         req,
         overrideAccess: false,
       });
+
       if (typeof doc.url !== 'string') {
         throw new Error('[frogbot] Front attachment is unavailable.');
       }
@@ -148,16 +151,22 @@ async function sendMessageBody({
 
 const conversations = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/conversations'), 'subject');
+
 const contacts = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/contacts?limit=50'), 'name');
+
 const tags = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/tags?limit=50'), 'name');
+
 const teammates = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/teammates?limit=50'), 'username');
+
 const channels = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/channels'), 'name');
+
 const accounts = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/accounts'), 'name');
+
 const links = async ({ client }: { client: FrontClient }) =>
   choices(await client.request('GET', '/links'), 'name');
 
@@ -211,6 +220,7 @@ export const addContactHandle = defineAction({
       source: input.source,
       handle: input.handle,
     });
+
     return success(`Handle added to contact ${input.contactId}.`);
   },
 });
@@ -226,6 +236,7 @@ function conversationCollectionAction<const TSlug extends string>(
       : resource === 'links'
         ? 'linkIds'
         : 'tagIds';
+
   const input = z.object({ conversationId: id('Conversation'), [key]: z.array(z.string()).min(1) });
 
   return defineAction({
@@ -242,11 +253,13 @@ function conversationCollectionAction<const TSlug extends string>(
       const body = {
         [key === 'linkIds' ? 'link_ids' : key === 'tagIds' ? 'tag_ids' : key]: input[key],
       };
+
       const response = await client.request(
         method,
         `/conversations/${input.conversationId}/${resource}`,
         body,
       );
+
       return method === 'POST'
         ? success(`${resource} added to conversation ${input.conversationId}.`)
         : response;
@@ -288,6 +301,7 @@ export const assignConversation = defineAction({
       `/conversations/${input.conversationId}/assignee`,
       input.assigneeId ? { assignee_id: input.assigneeId } : {},
     );
+
     return success(`Conversation ${input.conversationId} assignee changed.`);
   },
 });
@@ -429,7 +443,9 @@ export const listAccounts = defineAction({
       'GET',
       `/accounts${query({ limit: input.limit, page_token: input.pageToken, sort_by: input.sortBy, sort_order: input.sortOrder })}`,
     );
+
     const results = Array.isArray(response._results) ? response._results : [];
+
     return results.filter((account) => {
       if (!isRecord(account)) return false;
 
@@ -495,6 +511,7 @@ export const removeContactHandle = defineAction({
       source: input.source,
       force: input.force,
     });
+
     return success(`Handle ${input.handle} removed from contact ${input.contactId}.`);
   },
 });
@@ -562,10 +579,13 @@ function updateAction<const TSlug extends string, TInput extends z.ZodObject>(
         inboxId: 'inbox_id',
         tagIds: 'tag_ids',
       };
+
       const body = Object.fromEntries(
         Object.entries(compact(input, [idKey])).map(([key, value]) => [mapping[key] ?? key, value]),
       );
+
       const response = await client.request('PATCH', `/${resource}/${input[idKey]}`, body);
+
       return resource === 'accounts'
         ? response
         : success(`${resource.slice(0, -1)} ${input[idKey]} updated.`);

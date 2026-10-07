@@ -17,6 +17,7 @@ const result = z
     description: z.string().optional(),
   })
   .passthrough();
+
 const output = z
   .object({
     type: z.string().optional(),

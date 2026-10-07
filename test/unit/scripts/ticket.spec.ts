@@ -585,6 +585,7 @@ describe('downServices', () => {
       ['check --full', 'test:unit', 'test:int:sqlite', 'test:browser'],
       ({ port }: { port: number }) => {
         checked.push(port);
+
         return Promise.resolve(port !== 6379 && port !== 4566);
       },
     );

@@ -161,6 +161,7 @@ const run = (args, { cwd, env }) =>
     child.stdout.on('data', (chunk) => (output += chunk));
     child.stderr.on('data', (chunk) => (output += chunk));
     child.on('error', (error) => (output += `${error.stack}\n`));
+
     child.on('close', (code) => {
       children.delete(child);
       resolve({ code, output });
@@ -184,6 +185,7 @@ const build = async (fixture) => {
 
   await step('next build', [nextBin, 'build', '--no-lint']);
   await mkdir(buildDir(dir), { recursive: true });
+
   await step('schema push', [frogbotBin, 'run', pushSchemaScript], {
     ...env,
     NODE_ENV: 'development',
@@ -218,6 +220,7 @@ const ensureBuilt = async (fixture) => {
 
 const stop = (code) => {
   for (const child of children) child.kill('SIGKILL');
+
   for (const file of locks) rmSync(file, { force: true });
 
   process.exit(code);

@@ -161,6 +161,7 @@ const PROBES: Probe[] = [
         {},
         bearer(env.SLACK_BOT_TOKEN),
       );
+
       const body = (await response.json()) as { ok?: boolean; error?: string; team?: string };
 
       return body.ok ? `team ${body.team}` : `error ${body.error}`;

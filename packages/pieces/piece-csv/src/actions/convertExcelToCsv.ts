@@ -18,6 +18,7 @@ const inputSchema = z.object({
     description: 'Character used to separate values in the output CSV.',
   }),
 });
+
 const output = z.object({
   csv: z.string(),
   sheetName: z.string(),

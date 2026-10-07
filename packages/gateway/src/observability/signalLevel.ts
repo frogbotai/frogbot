@@ -33,19 +33,24 @@ export function resolveSignalLevels(
     if (!input) {
       return defaultSignalLevels;
     }
+
     if (typeof input === 'string') {
       return { gen_ai: input, frogbot: input };
     }
+
     return {
       gen_ai: input.gen_ai ?? defaultSignalLevels.gen_ai,
       frogbot: input.frogbot ?? defaultSignalLevels.frogbot,
     };
   }
+
   if (!input) {
     return base;
   }
+
   const override: SignalLevels =
     typeof input === 'string' ? { gen_ai: input, frogbot: input } : input;
+
   return Object.fromEntries(
     (Object.keys(base) as SignalNamespace[]).map((ns) => {
       const overrideLevel = override[ns];
@@ -53,6 +58,7 @@ export function resolveSignalLevels(
         overrideLevel !== undefined && order[overrideLevel] < order[base[ns]]
           ? overrideLevel
           : base[ns];
+
       return [ns, level];
     }),
   ) as Required<SignalLevels>;
@@ -68,6 +74,7 @@ export function signalLevelFromBody(body: unknown): SignalLevelInput {
   if (trace === false) return 'off';
   if (typeof trace === 'string' && trace in order) return trace as SignalLevel;
   if (!trace || typeof trace !== 'object') return undefined;
+
   return Object.fromEntries(
     Object.entries(trace).filter(
       ([key, value]) => key in defaultSignalLevels && typeof value === 'string' && value in order,

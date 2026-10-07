@@ -445,6 +445,7 @@ test.describe('bulk regenerate', () => {
         { exact: true },
       ),
     ).toBeVisible();
+
     await expectStoredStatus(page, withNotes, 'pending');
     await expectStoredStatus(page, withoutNotes, null);
   });

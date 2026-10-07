@@ -16,6 +16,7 @@ function makeConfig() {
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
   } as unknown as FrogBotSanitizedConfig;
+
   return { config, payloadConfig };
 }
 
@@ -60,6 +61,7 @@ describe('@frogbotai/next layouts', () => {
       config: Promise<unknown>;
       name: string;
     };
+
     expect(forwarded.name).toBe('form-state');
     await expect(forwarded.config).resolves.toBe(payloadConfig);
   });

@@ -8,17 +8,20 @@ export const googleDriveAuth = z.object({
 });
 
 export type GoogleDriveAuth = z.output<typeof googleDriveAuth>;
+
 export type GoogleDriveClient = drive_v3.Drive;
 
 export function createGoogleDriveClient({ auth }: { auth: unknown }): GoogleDriveClient {
   const credential = googleDriveAuth.parse(auth);
   const oauth = new google.auth.OAuth2();
   oauth.setCredentials({ access_token: credential.accessToken });
+
   return google.drive({ version: 'v3', auth: oauth });
 }
 
 export function requestOptions(req: FrogBotRequest) {
   req.signal?.throwIfAborted();
+
   return {
     signal: req.signal ?? undefined,
     timeout: 30_000,

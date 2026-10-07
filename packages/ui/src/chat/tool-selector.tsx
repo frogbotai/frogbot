@@ -45,6 +45,7 @@ export const ToolSelector = memo(function ToolSelector({
       <DropdownMenuContent align="start" side="top" className="fb-tool-selector__content">
         {tools.map((tool) => {
           const checked = selected.includes(tool.id);
+
           return (
             <DropdownMenuCheckboxItem
               key={tool.id}

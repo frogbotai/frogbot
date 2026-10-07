@@ -31,6 +31,7 @@ export async function interpolateConfigText(
           `failed to resolve ${token} in ${options.source}: environment variable ${name} is not set`,
         ]);
       }
+
       return prefix + JSON.stringify(value).slice(1, -1);
     },
   );
@@ -40,6 +41,7 @@ export async function interpolateConfigText(
 
   let out = '';
   let cursor = 0;
+
   for (const match of matches) {
     const full = match[0];
     const slashes = match[1] ?? '';
@@ -65,6 +67,7 @@ export async function interpolateConfigText(
   }
 
   out += withEnv.slice(cursor);
+
   return out;
 }
 
@@ -105,6 +108,7 @@ async function resolveConfigFilePath(options: ResolveConfigFilePathOptions): Pro
 /** True when `target` is `base` itself or nested under it, avoiding the `startsWith` prefix bug. */
 function isInside(base: string, target: string): boolean {
   const rel = relative(base, target);
+
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 }
 
@@ -122,6 +126,7 @@ async function realpathOrSelf(p: string): Promise<string> {
     const parent = dirname(p);
     if (parent === p) return p;
     const canonicalParent = await realpathOrSelf(parent);
+
     return join(canonicalParent, p.slice(parent.length + 1));
   }
 }

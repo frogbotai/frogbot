@@ -45,6 +45,7 @@ export async function generateImageOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
@@ -54,7 +55,9 @@ export async function generateImageOperation(
       providerOptions: toProviderOptions(providerOptions),
       model: op.imageModel(),
     });
+
     await op.finish({ usage: toHookUsage(result.usage) });
+
     return result;
   } catch (error) {
     await op.finish({ error });

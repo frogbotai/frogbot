@@ -24,10 +24,12 @@ const backdrop = (page: Page) => page.locator('.frogbot-nav-backdrop');
 
 const shellWidth = (page: Page) =>
   shell(page).evaluate((el) => Math.round(el.getBoundingClientRect().width));
+
 const contentWidth = (page: Page) =>
   page
     .locator('.template-default__wrap')
     .evaluate((el) => Math.round(el.getBoundingClientRect().width));
+
 const expandedWidth = (page: Page) =>
   page.evaluate(
     (rem) => Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * rem),
@@ -39,6 +41,7 @@ const noHorizontalOverflow = async (page: Page) => {
     scrollWidth: document.documentElement.scrollWidth,
     innerWidth: window.innerWidth,
   }));
+
   expect(scrollWidth).toBe(innerWidth);
 };
 
@@ -339,6 +342,7 @@ test.describe('nav shell keeps the saved desktop state', () => {
       .locator('#frogbot-nav-section-collections')
       .getByRole('link', { name: 'Users' })
       .click();
+
     await page.waitForURL((url) => url.pathname === '/collections/users');
     await waitForNavSettled(page);
 
@@ -456,6 +460,7 @@ test.describe('nav shell across breakpoints and fast toggles', () => {
       .locator('#frogbot-nav-section-collections')
       .getByRole('link', { name: 'Users' })
       .click();
+
     await page.waitForURL((url) => url.pathname === '/collections/users');
     await waitForNavSettled(page);
 

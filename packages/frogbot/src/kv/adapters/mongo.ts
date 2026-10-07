@@ -6,7 +6,9 @@ import { kvAtomic } from '../types.js';
 import { validateKVTTL } from '../validateTTL.js';
 
 type MongoExpression = Record<string, unknown>;
+
 type MongoCursor<T> = { toArray(): Promise<T[]> };
+
 type MongoOptions = {
   collation?: { locale: 'simple' };
   includeResultMetadata?: false;
@@ -16,6 +18,7 @@ type MongoOptions = {
   session?: MongoSession;
   writeConcern?: { w: 'majority' };
 };
+
 type MongoSession = {
   abortTransaction(): Promise<void>;
   endSession(): Promise<void>;
@@ -28,7 +31,9 @@ type MongoSession = {
     },
   ): Promise<T>;
 };
+
 type MongoKVDocument = { _id: unknown; data: KVStoreValue; expiresAt?: Date | null; key: string };
+
 type MongoKVCollection = {
   deleteMany(filter: MongoExpression, options: MongoOptions): Promise<{ deletedCount: number }>;
   deleteOne(filter: MongoExpression, options: MongoOptions): Promise<{ deletedCount: number }>;
@@ -55,6 +60,7 @@ type MongoKVCollection = {
     options: MongoOptions,
   ): Promise<{ matchedCount: number }>;
 };
+
 type MongoTimestamps =
   | boolean
   | {
@@ -62,6 +68,7 @@ type MongoTimestamps =
       currentTime?: unknown;
       updatedAt?: boolean | string;
     };
+
 type MongoKVModel = {
   new (data: MongoExpression): {
     toObject(options: MongoExpression): MongoExpression;
@@ -80,7 +87,9 @@ type MongoKVModel = {
     path(name: string): { instance: string; options: { auto?: boolean } } | undefined;
   };
 };
+
 type MongoKVCreateArgs = { adapter: Omit<BaseDatabaseAdapter, 'sessions'>; collectionSlug: string };
+
 type MongoMutation = {
   data?: KVStoreValue;
   key: string;
@@ -103,6 +112,7 @@ const unexpired = {
     { $lte: ['$expiresAt', new Date(maxDate)] },
   ],
 };
+
 const live = {
   $or: [{ $eq: [{ $ifNull: ['$expiresAt', null] }, null] }, unexpired],
 };
@@ -110,6 +120,7 @@ const live = {
 function expiry(ttl?: number): MongoExpression | string {
   if (ttl === undefined) return '$$REMOVE';
   validateKVTTL(ttl);
+
   return {
     $convert: {
       input: {
@@ -144,6 +155,7 @@ function isKeyConflict(error: unknown, key: string): boolean {
     keyPattern?: Record<string, unknown>;
     keyValue?: Record<string, unknown>;
   };
+
   return (
     code === 11000 &&
     !!keyPattern &&
@@ -158,12 +170,14 @@ function isKeyConflict(error: unknown, key: string): boolean {
 function timestampField(timestamps: MongoTimestamps | undefined, field: 'createdAt' | 'updatedAt') {
   if (!timestamps) return undefined;
   const option = typeof timestamps === 'object' ? timestamps[field] : true;
+
   return option === false ? undefined : typeof option === 'string' ? option : field;
 }
 
 function unsupported(reason: string): KVUnsupportedError {
   const error = new KVUnsupportedError();
   error.message = reason;
+
   return error;
 }
 
@@ -181,6 +195,7 @@ function findModel(adapter: object, collectionSlug: string): MongoKVModel | unde
   const { collections } = adapter;
   if (typeof collections !== 'object' || collections === null) return undefined;
   const model: unknown = Reflect.get(collections, collectionSlug);
+
   return isMongoKVModel(model) ? model : undefined;
 }
 
@@ -193,11 +208,13 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
       const model = findModel(adapter, collectionSlug);
       if (!model) throw new Error(`Mongo KV collection "${collectionSlug}" is not initialized`);
       await model.init();
+
       return model;
     })().catch((error) => {
       ready = undefined;
       throw error;
     });
+
     return ready;
   };
 
@@ -248,11 +265,13 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
           'Mongo KV requires a unique, non-partial key index with simple collation',
         );
       }
+
       return model;
     })().catch((error) => {
       atomicReady = undefined;
       throw error;
     });
+
     return atomicReady;
   };
 
@@ -289,6 +308,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
                   projection: { _id: 1, expiresAt: 1 },
                 },
               );
+
               if (previous) {
                 if (
                   previous.expiresAt instanceof Date &&
@@ -298,6 +318,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
                     'Mongo KV contains an expiration outside the supported date range',
                   );
                 }
+
                 await model.collection.updateOne(
                   { _id: previous._id },
                   [
@@ -323,10 +344,12 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
                   virtuals: false,
                   transform: false,
                 });
+
                 const id = initial._id as { _bsontype?: string } | undefined;
                 if (id?._bsontype !== 'ObjectId') {
                   throw unsupported('Mongo KV model did not generate a valid ObjectId ID');
                 }
+
                 const versionKey = model.schema.options.versionKey;
                 if (versionKey && initial[versionKey] === undefined) initial[versionKey] = 0;
                 inserting = true;
@@ -334,6 +357,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
                 inserting = false;
               } else {
                 await session.abortTransaction();
+
                 return false;
               }
 
@@ -360,10 +384,12 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
                   [{ $set: fields }],
                   options,
                 );
+
                 changed = result.matchedCount === 1;
               }
 
               if (!changed) await session.abortTransaction();
+
               return changed;
             },
             {
@@ -408,6 +434,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
       const doc = await (
         await collection()
       ).findOne({ key, $expr: live }, { ...readOptions, projection: { _id: 0, data: 1 } });
+
       return doc ? (doc.data as T) : null;
     },
     async has(key) {
@@ -423,6 +450,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
       )
         .find({ $expr: live }, { ...readOptions, projection: { _id: 0, key: 1 } })
         .toArray();
+
       return docs.map(({ key }) => key);
     },
     async set(key, data, options) {
@@ -435,8 +463,10 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
           select: {},
           where: { key: { equals: key } },
         });
+
         return;
       }
+
       await mutate({ key, data, ttl: options?.ttl, operation: 'set' });
     },
     async setIfAbsent(key, data, options) {
@@ -444,6 +474,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
     },
     async extendLock(lock, ttl) {
       validateKVTTL(ttl);
+
       return mutate({ ...lock, ttl, operation: 'extend' });
     },
     async releaseLock(lock) {

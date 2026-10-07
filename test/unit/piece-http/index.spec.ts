@@ -20,6 +20,7 @@ async function listen(server: ReturnType<typeof createServer>): Promise<number> 
   await once(server, 'listening');
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('Missing fixture address.');
+
   return address.port;
 }
 
@@ -28,8 +29,10 @@ describe('http execution', () => {
     const server = createServer((req, res) => {
       const chunks: Buffer[] = [];
       req.on('data', (chunk) => chunks.push(chunk));
+
       req.on('end', () => {
         res.writeHead(200, { 'content-type': 'application/json', 'x-fixture': 'http' });
+
         res.end(
           JSON.stringify({
             method: req.method,
@@ -40,6 +43,7 @@ describe('http execution', () => {
         );
       });
     });
+
     const port = await listen(server);
 
     const result = await http.sendRequest({
@@ -54,6 +58,7 @@ describe('http execution', () => {
       },
       req: {} as never,
     });
+
     expect(result).toMatchObject({
       status: 200,
       headers: { 'x-fixture': 'http' },

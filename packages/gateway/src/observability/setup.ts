@@ -86,8 +86,10 @@ export function setupTracing(options: SetupTracingOptions = {}): () => Promise<v
     resolveLogger(options.logger).warn(
       'setupTracing() called more than once; the second invocation is ignored. One tracing configuration per process — the host application owns tracer lifecycle.',
     );
+
     return () => Promise.resolve();
   }
+
   context.setGlobalContextManager(new AsyncLocalStorageContextManager());
   const resource = buildResource();
   const exporter = new OTLPTraceExporter(options.endpoint ? { url: options.endpoint } : {});
@@ -95,13 +97,16 @@ export function setupTracing(options: SetupTracingOptions = {}): () => Promise<v
     resource,
     spanProcessors: [new BatchSpanProcessor(exporter)],
   });
+
   provider.register();
   registered = true;
   const providers: ShutdownProvider[] = [provider];
   if (options.metrics !== false) {
     providers.push(setupMetrics({ ...options.metrics, resource }));
   }
+
   const timeoutMs = options.shutdownTimeoutMs ?? 10_000;
+
   return () =>
     Promise.all(providers.map((provider) => gracefulShutdown(provider, timeoutMs))).then(
       () => undefined,
@@ -120,6 +125,7 @@ export function setupMetrics(
 ): MeterProvider {
   if (meterProvider) return meterProvider;
   const exporter = new OTLPMetricExporter(options.endpoint ? { url: options.endpoint } : {});
+
   meterProvider = new MeterProvider({
     resource: options.resource ?? buildResource(),
     readers: [
@@ -131,7 +137,9 @@ export function setupMetrics(
       }),
     ],
   });
+
   metrics.setGlobalMeterProvider(meterProvider);
+
   return meterProvider;
 }
 
@@ -163,6 +171,7 @@ export async function gracefulShutdown(
       clearTimeout(timer);
     }
   }
+
   try {
     await provider.shutdown();
   } catch {

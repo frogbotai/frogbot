@@ -65,6 +65,7 @@ describe('SQLite vector search', () => {
     for (const [index, embedding] of vectors.entries()) {
       docs.push(await create({ title: `v${index}`, embedding }));
     }
+
     const query = [0.8, 0.2, 0.1];
 
     const expected = docs

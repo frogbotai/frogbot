@@ -53,11 +53,13 @@ export function ApiKeysManager() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name }),
     });
+
     const result = (await response.json()) as { error?: string; token?: string };
 
     setLoading(false);
     if (!response.ok || !result.token) {
       setError(result.error ?? 'Unable to create API key');
+
       return;
     }
 
@@ -177,12 +179,15 @@ export function RevokeApiKey({
     const response = await fetch(`${config.routes.api}/${collectionSlug}/${rowData.id}/revoke`, {
       method: 'POST',
     });
+
     setLoading(false);
     if (!response.ok) {
       const result = (await response.json()) as { error?: string };
       setError(result.error ?? 'Unable to revoke API key');
+
       return;
     }
+
     closeModal(confirmSlug);
     setRevoked(true);
     clearRouteCache();

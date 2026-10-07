@@ -25,6 +25,7 @@ describe('chatCompletionsRoute', () => {
       const doGenerate = mockDoGenerate(
         generateResult({ content: [{ type: 'text', text: 'hello' }] }),
       );
+
       const app = createApp({
         registry: {
           [providerName]: new MockProviderV4({
@@ -54,6 +55,7 @@ describe('chatCompletionsRoute', () => {
     const doGenerate = mockDoGenerate(
       generateResult({ content: [{ type: 'text', text: 'hello' }] }),
     );
+
     const app = createApp({
       registry: {
         google: new MockProviderV4({
@@ -83,6 +85,7 @@ describe('chatCompletionsRoute', () => {
     const doGenerate = mockDoGenerate(
       generateResult({ content: [{ type: 'text', text: 'hello' }] }),
     );
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({
@@ -109,6 +112,7 @@ describe('chatCompletionsRoute', () => {
     const doGenerate = mockDoGenerate(
       generateResult({ content: [{ type: 'text', text: 'hello' }] }),
     );
+
     const app = createApp({
       registry: {
         google: new MockProviderV4({
@@ -135,6 +139,7 @@ describe('chatCompletionsRoute', () => {
     const doGenerate = mockDoGenerate(
       generateResult({ content: [{ type: 'text', text: 'hello' }] }),
     );
+
     const app = createApp({
       registry: {
         'anthropic-aws': new MockProviderV4({
@@ -160,7 +165,9 @@ describe('chatCompletionsRoute', () => {
     });
 
     expect(res.status).toBe(200);
+
     const call = firstCallOptions(doGenerate) as Record<string, any>;
+
     expect(call.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({
@@ -197,6 +204,7 @@ describe('buildLanguageParams', () => {
 
   it('falls back to max_completion_tokens when max_tokens is absent', () => {
     const params = buildLanguageParams(baseRequest({ max_completion_tokens: 512 }));
+
     expect(params.maxOutputTokens).toBe(512);
   });
 
@@ -204,21 +212,25 @@ describe('buildLanguageParams', () => {
     const params = buildLanguageParams(
       baseRequest({ max_tokens: 100, max_completion_tokens: 512 }),
     );
+
     expect(params.maxOutputTokens).toBe(512);
   });
 
   it('normalizes a single stop string into an array', () => {
     const params = buildLanguageParams(baseRequest({ stop: 'STOP' }));
+
     expect(params.stopSequences).toEqual(['STOP']);
   });
 
   it('passes through a stop array unchanged', () => {
     const params = buildLanguageParams(baseRequest({ stop: ['STOP', 'END'] }));
+
     expect(params.stopSequences).toEqual(['STOP', 'END']);
   });
 
   it('leaves every field undefined when the request has no params', () => {
     const params = buildLanguageParams(baseRequest());
+
     expect(params).toEqual({
       temperature: undefined,
       topP: undefined,

@@ -9,6 +9,7 @@ expectTypeOf<Parameters<typeof notion.addComment>[0]['input']>().toEqualTypeOf<{
   pageId: string;
   commentText: string;
 }>();
+
 expectTypeOf<Awaited<typeof _comment>['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _comment>['created_time']>().toEqualTypeOf<string>();
 
@@ -19,4 +20,5 @@ const _addCommentRejectsRetrieveDatabaseInput = () =>
 expectTypeOf<keyof typeof notion.triggers>().toEqualTypeOf<
   'newDatabaseItem' | 'updatedDatabaseItem' | 'newComment' | 'updatedPage'
 >();
+
 expectTypeOf(notion.triggers.updatedDatabaseItem.type).toEqualTypeOf<'polling'>();

@@ -14,9 +14,11 @@ function setup(auth = z.object({ token: z.string().min(1) })) {
     client: () => ({}),
     actions: [],
   })({ slug: 'alias' });
+
   const upsert = vi
     .fn()
     .mockResolvedValue({ id: 'row', piece: 'example', method: 'secret', status: 'active' });
+
   const remove = vi.fn().mockResolvedValue(true);
   const connections = {
     enabled: true,
@@ -24,6 +26,7 @@ function setup(auth = z.object({ token: z.string().min(1) })) {
     encryption: createCredentialEncryption({ secret: 'test' }),
     entries: { example: { piece, secret: true, oauth: false } },
   };
+
   const endpoints = buildSecretEndpoints({ connections, userSlug: 'users' });
   const request = ({
     body = { token: 'secret-value' },
@@ -36,6 +39,7 @@ function setup(auth = z.object({ token: z.string().min(1) })) {
       json: () => Promise.resolve(body),
       frogbot: { connections: { store: Promise.resolve({ upsert }), delete: remove } },
     }) as never;
+
   return { upsert, remove, request, endpoints, connections };
 }
 
@@ -43,6 +47,7 @@ describe('static connection endpoints', () => {
   it('accepts raw schema input and returns metadata without secrets', async () => {
     const { endpoints, request, upsert } = setup();
     const response = await endpoints[0].handler(request());
+
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledWith({
       owner: { id: 'owner', collection: 'users' },
@@ -63,6 +68,7 @@ describe('static connection endpoints', () => {
     async (body) => {
       const { endpoints, request, upsert } = setup();
       const response = await endpoints[0].handler(request({ body }));
+
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'Invalid credentials' });
       expect(upsert).not.toHaveBeenCalled();
@@ -77,7 +83,9 @@ describe('static connection endpoints', () => {
         }),
       }),
     );
+
     const response = await endpoints[0].handler(request());
+
     expect(response.status).toBe(400);
     expect(await response.text()).not.toContain('secret-value');
   });
@@ -88,6 +96,7 @@ describe('static connection endpoints', () => {
       ...(request() as object),
       json: () => Promise.reject(new Error('secret-value')),
     };
+
     expect((await endpoints[0].handler(req as never)).status).toBe(400);
   });
 
@@ -95,9 +104,11 @@ describe('static connection endpoints', () => {
     'protects both endpoints from %j',
     async (user) => {
       const { endpoints, request, upsert, remove } = setup();
+
       for (const endpoint of endpoints) {
         expect((await endpoint.handler(request({ user }))).status).toBe(user ? 403 : 401);
       }
+
       expect(upsert).not.toHaveBeenCalled();
       expect(remove).not.toHaveBeenCalled();
     },
@@ -107,6 +118,7 @@ describe('static connection endpoints', () => {
     'rejects a noncanonical or unknown piece %s',
     async (piece) => {
       const { endpoints, request, upsert } = setup();
+
       expect((await endpoints[0].handler(request({ routeParams: { piece } }))).status).toBe(404);
       expect(upsert).not.toHaveBeenCalled();
     },
@@ -115,6 +127,7 @@ describe('static connection endpoints', () => {
   it('rejects a disabled secret method and omits routes when connections are disabled', async () => {
     const { endpoints, request, connections } = setup();
     connections.entries.example.secret = false;
+
     expect((await endpoints[0].handler(request())).status).toBe(404);
     expect(
       buildSecretEndpoints({ connections: { ...connections, enabled: false }, userSlug: 'users' }),
@@ -124,9 +137,12 @@ describe('static connection endpoints', () => {
   it('deletes by ID through the owner-scoped API', async () => {
     const { endpoints, request, remove } = setup();
     const req = request({ routeParams: { id: 'row' } });
+
     expect((await endpoints[1].handler(req)).status).toBe(204);
     expect(remove).toHaveBeenCalledWith({ req, id: 'row' });
+
     remove.mockResolvedValue(false);
+
     expect((await endpoints[1].handler(req)).status).toBe(404);
   });
 
@@ -134,6 +150,7 @@ describe('static connection endpoints', () => {
     const { endpoints, request, upsert } = setup();
     upsert.mockRejectedValue(new Error('secret-value'));
     const response = await endpoints[0].handler(request());
+
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Connection operation failed' });
   });
@@ -142,6 +159,7 @@ describe('static connection endpoints', () => {
     const { endpoints, request, upsert } = setup();
     upsert.mockRejectedValue(new KVLockContentionError('private-owner-key'));
     const response = await endpoints[0].handler(request());
+
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'Connection is busy' });
   });

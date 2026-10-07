@@ -23,6 +23,7 @@ function fixture(content: string) {
   const dir = mkdtempSync(join(tempRoot, 'docs-fences-'));
   tempDirs.push(dir);
   writeFileSync(join(dir, 'fixture.mdx'), content);
+
   return dir;
 }
 
@@ -35,6 +36,7 @@ describe('docs fences gate', () => {
 
   it('finds no untagged fences in docs', async () => {
     const result = await run(join(repoRoot, 'docs'));
+
     expect(result.output).toContain('[check-docs-fences] OK');
     expect(result.code).toBe(0);
   });
@@ -62,10 +64,13 @@ describe('docs fences gate', () => {
     const dir = fixture(
       '# Example\n\n```text\nnpm run frogbot migrate\n```\n\n```txt\ngit status\n```\n\n```plaintext\ncurl https://example.com\n```\n',
     );
+
     const result = await run(dir);
 
     expect(result.code).toBe(1);
+
     const file = join('test', '.tmp', dir.split('/').at(-1)!, 'fixture.mdx');
+
     expect(result.output).toContain(`${file}:4`);
     expect(result.output).toContain(`${file}:8`);
     expect(result.output).toContain(`${file}:12`);
@@ -75,6 +80,7 @@ describe('docs fences gate', () => {
     const dir = fixture(
       '# Example\n\n```text\nhttps://example.com\n```\n\n```txt\nsrc/\n  index.ts\n```\n\n```txt\n/connect\n```\n\n```plaintext\nKEY=value\n```\n',
     );
+
     const result = await run(dir);
 
     expect(result.code).toBe(0);

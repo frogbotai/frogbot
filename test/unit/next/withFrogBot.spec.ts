@@ -146,6 +146,7 @@ describe('withFrogBot', () => {
         resolveAlias: { consumer: '/consumer' },
       },
     });
+
     const result = config.webpack?.({ resolve: { alias: { consumer: '/consumer' } } }, {
       webpack: { IgnorePlugin: class {} },
     } as never);
@@ -170,9 +171,11 @@ describe('withFrogBot', () => {
         resolveAlias: { consumer: './consumer' },
       },
     });
+
     const result = config.webpack?.({ resolve: { alias: {} } }, {
       webpack: { IgnorePlugin: class {} },
     } as never);
+
     const turbopackAlias = config.turbopack?.resolveAlias?.['@payloadcms/ui'];
     const webpackAlias = result?.resolve?.alias?.['@payloadcms/ui$'];
 
@@ -194,6 +197,7 @@ describe('withFrogBot', () => {
         extensionAlias: { '.custom': ['.custom.ts'] },
       },
     }));
+
     const config = withFrogBot({ webpack });
     const webpackContext = { webpack: { IgnorePlugin: class {} } };
 
@@ -232,6 +236,7 @@ describe('withFrogBot', () => {
     const libsql = installPnpmLibsql(app, ['darwin-arm64']);
 
     linkDir(libsql, join(app, 'node_modules/libsql'));
+
     writePackage(join(app, 'node_modules/.pnpm/node_modules/@libsql/darwin-arm64'), {
       name: '@libsql/darwin-arm64',
     });
@@ -346,6 +351,7 @@ describe('withFrogBot', () => {
     const app = createApp(createFixtureRoot());
 
     installHoistedLibsql(app, ['linux-x64-gnu']);
+
     writePackage(join(app, 'node_modules/libsql/node_modules/@libsql/linux-x64-gnu'), {
       name: '@libsql/linux-x64-gnu',
     });

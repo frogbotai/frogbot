@@ -348,6 +348,7 @@ describe('QuestionToolRender in Chat', () => {
     server.documents = [userMessage, pendingMessage];
     server.routes = [];
     server.fetch.mockReset();
+
     server.fetch.mockImplementation(async (input, init) => {
       const url = new URL(String(input));
 
@@ -474,6 +475,7 @@ describe('QuestionToolRender in Chat', () => {
 
     expect(await screen.findByText('Production')).toBeTruthy();
     expect(screen.queryByText('Staging')).toBeNull();
+
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 
@@ -577,6 +579,7 @@ describe('QuestionToolRender in Chat', () => {
         ],
       },
     ];
+
     server.routes.push((url, init) => {
       if (url.pathname !== `/api/agents/${agent}`) return undefined;
 

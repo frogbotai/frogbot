@@ -21,6 +21,7 @@ const req = () =>
     },
     user: null,
   }) as never;
+
 const json = (body: unknown = { id: 'result' }, status = 200) =>
   new Response(status === 204 ? null : JSON.stringify(body), {
     status,
@@ -195,6 +196,7 @@ describe('front', () => {
     await createFront({ auth })[slug]({ input, req: req() } as never);
 
     const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
+
     expect(url.toString()).toBe(`https://api2.frontapp.com${path}`);
     expect(init.method).toBe(method);
     expect(init.headers).toMatchObject({ Authorization: 'Bearer front_test_token' });
@@ -218,6 +220,7 @@ describe('front', () => {
       slug === 'listAccounts'
         ? { _results: [{ id: 'acc', email_domain: 'example.com' }] }
         : { _results: [] };
+
     const fetch = vi.fn().mockResolvedValue(json(body));
     vi.stubGlobal('fetch', fetch);
 
@@ -234,6 +237,7 @@ describe('front', () => {
           json({ _results: [{ id: 'one', name: 'One', subject: 'Subject', username: 'user' }] }),
         ),
       );
+
     vi.stubGlobal('fetch', fetch);
     const front = createFront({ auth });
     const client = await front.client({ req: req() });

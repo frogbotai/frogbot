@@ -8,6 +8,7 @@ import {
 
 function streamFrom(chunks: string[]): ReadableStream<string> {
   let i = 0;
+
   return new ReadableStream<string>({
     pull(c) {
       if (i < chunks.length) {
@@ -22,13 +23,16 @@ function streamFrom(chunks: string[]): ReadableStream<string> {
 async function collect(stream: ReadableStream<string>): Promise<string> {
   const reader = stream.getReader();
   let out = '';
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
       break;
     }
+
     out += value;
   }
+
   return out;
 }
 
@@ -36,6 +40,7 @@ describe('sseFrame.serializeSseFrame', () => {
   it('serializes data frames', () => {
     expect(serializeSseFrame({ kind: 'data', data: { hello: 1 } })).toBe('data: {"hello":1}\n\n');
   });
+
   it('serializes named event frames', () => {
     expect(
       serializeSseFrame({
@@ -45,9 +50,11 @@ describe('sseFrame.serializeSseFrame', () => {
       }),
     ).toBe('event: message_start\ndata: {"x":1}\n\n');
   });
+
   it('serializes comment frames', () => {
     expect(serializeSseFrame({ kind: 'comment', text: 'heartbeat' })).toBe(': heartbeat\n\n');
   });
+
   it('serializes the [DONE] sentinel', () => {
     expect(serializeSseFrame({ kind: 'done' })).toBe('data: [DONE]\n\n');
   });
@@ -63,6 +70,7 @@ describe('toSseStream', () => {
       appendDone: true,
       keepAliveMs: 0,
     });
+
     expect(await collect(wrapped)).toBe('data: a\n\ndata: b\n\ndata: [DONE]\n\n');
   });
 
@@ -71,6 +79,7 @@ describe('toSseStream', () => {
       appendDone: false,
       keepAliveMs: 0,
     });
+
     expect(await collect(wrapped)).toBe('event: message_stop\ndata: {}\n\n');
   });
 
@@ -80,6 +89,7 @@ describe('toSseStream', () => {
         c.error(new Error('boom'));
       },
     });
+
     const wrapped = toSseStream(errStream, {
       appendDone: true,
       keepAliveMs: 0,
@@ -90,7 +100,9 @@ describe('toSseStream', () => {
         },
       ],
     });
+
     const out = await collect(wrapped);
+
     expect(out).toContain('"boom"');
     expect(out.endsWith('data: [DONE]\n\n')).toBe(true);
   });
@@ -101,10 +113,12 @@ describe('toSseStream', () => {
         c.error(new Error('boom'));
       },
     });
+
     const wrapped = toSseStream(errStream, {
       appendDone: true,
       keepAliveMs: 0,
     });
+
     await expect(collect(wrapped)).rejects.toThrow('boom');
   });
 
@@ -114,8 +128,11 @@ describe('toSseStream', () => {
       appendDone: false,
       keepAliveMs: 10,
     });
+
     expect(await collect(wrapped)).toBe('data: x\n\n');
+
     await vi.advanceTimersByTimeAsync(10);
+
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -128,7 +145,9 @@ describe('toSseStream', () => {
         called = true;
       },
     });
+
     await collect(wrapped);
+
     expect(called).toBe(true);
   });
 
@@ -142,15 +161,18 @@ describe('toSseStream', () => {
         cancelled = true;
       },
     });
+
     const wrapped = toSseStream(inner, { appendDone: true, keepAliveMs: 0 });
     const reader = wrapped.getReader();
     await reader.read();
     await reader.cancel();
+
     expect(cancelled).toBe(true);
   });
 
   it('creates an encoded SSE response', async () => {
     const response = createSseResponse(streamFrom(['data: x\n\n']));
+
     expect(response.headers.get('content-type')).toBe('text/event-stream; charset=utf-8');
     expect(await response.text()).toBe('data: x\n\n');
   });
@@ -159,13 +181,17 @@ describe('toSseStream', () => {
     const response = createSseResponse(streamFrom(['data: x\n\n']), {
       requestId: 'req_abc123',
     });
+
     expect(response.headers.get('x-request-id')).toBe('req_abc123');
+
     await response.text();
   });
 
   it('omits x-request-id when no requestId is provided', async () => {
     const response = createSseResponse(streamFrom(['data: x\n\n']));
+
     expect(response.headers.get('x-request-id')).toBeNull();
+
     await response.text();
   });
 });

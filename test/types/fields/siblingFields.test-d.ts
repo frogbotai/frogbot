@@ -26,6 +26,7 @@ args.siblingFields?.forEach((field) => {
 });
 
 type Hooks = NonNullable<TextField['hooks']>;
+
 type HookArgs<TPhase extends keyof Hooks> = Parameters<NonNullable<Hooks[TPhase]>[number]>[0];
 
 expectTypeOf<HookArgs<'afterChange'>['siblingFields']>().toEqualTypeOf<
@@ -34,7 +35,9 @@ expectTypeOf<HookArgs<'afterChange'>['siblingFields']>().toEqualTypeOf<
 
 expectTypeOf<HookArgs<'afterRead'>['siblingFields']>().toEqualTypeOf<(Field | TabAsField)[]>();
 expectTypeOf<HookArgs<'beforeChange'>['siblingFields']>().toEqualTypeOf<(Field | TabAsField)[]>();
+
 expectTypeOf<HookArgs<'beforeDuplicate'>['siblingFields']>().toEqualTypeOf<
   (Field | TabAsField)[]
 >();
+
 expectTypeOf<HookArgs<'beforeValidate'>['siblingFields']>().toEqualTypeOf<(Field | TabAsField)[]>();

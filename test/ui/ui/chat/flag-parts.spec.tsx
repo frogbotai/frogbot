@@ -18,6 +18,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByText('Pasted content')).toBeTruthy();
     expect(screen.getByText('PASTED')).toBeTruthy();
     expect(container.querySelector('pre')).toBeNull();
@@ -50,7 +51,9 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByTestId('attachment-card').dataset.state).toBe('text');
+
     rerender(
       <MessagePart
         part={{
@@ -60,13 +63,16 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByTestId('data-page-context')).toBeTruthy();
+
     rerender(
       <MessagePart
         part={{ type: 'data-prompt', data: { id: 'prompt-1', title: 'Reusable prompt' } }}
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByTestId('data-prompt')).toBeTruthy();
   });
 
@@ -78,6 +84,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByTestId('attachment-card').className).toBe(
       'fb-attachment-card fb-attachment-card--text',
     );
@@ -99,6 +106,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByTestId('data-page-context').className).toBe(
       'fb-flag-part fb-flag-part--page-context',
     );
@@ -113,6 +121,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
+
     expect(screen.getByTestId('data-prompt').className).toBe('fb-flag-part fb-flag-part--prompt');
     expect(screen.getByText('Reusable prompt').className).toBe(
       'fb-flag-part__preview fb-flag-part__preview--prompt',
@@ -122,16 +131,20 @@ describe('flag parts', () => {
 
   it('preserves data-paste while stripping unknown standard-part fields', async () => {
     const { renderFlagPart } = await loadFlagParts();
+
     expect(renderFlagPart).toBeTypeOf('function');
+
     const paste = {
       type: 'data-paste' as const,
       data: { text: 'Pasted content', filename: 'pasted.txt' },
     };
+
     const flaggedText = { type: 'text' as const, text: 'x', flag: 'paste' };
     const messages = await validateChatMessages([
       { id: 'paste', role: 'user', parts: [paste] },
       { id: 'text', role: 'user', parts: [flaggedText] },
     ]);
+
     expect(messages[0]?.parts[0]).toEqual(paste);
     expect(messages[1]?.parts[0]).toEqual({ type: 'text', text: 'x' });
   });

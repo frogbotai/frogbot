@@ -30,20 +30,24 @@ describe('usage logs', () => {
       email: 'usage-first@frogbot.local',
       password: 'frogbot-test-password',
     };
+
     const secondCredentials = {
       email: 'usage-second@frogbot.local',
       password: 'frogbot-test-password',
     };
+
     const first = await defaultBooted.frogbot.create({
       collection: 'users',
       data: firstCredentials,
       overrideAccess: true,
     });
+
     const second = await defaultBooted.frogbot.create({
       collection: 'users',
       data: secondCredentials,
       overrideAccess: true,
     });
+
     const usage = (requestId: string, user: number | string) => ({
       requestId,
       user,
@@ -55,11 +59,13 @@ describe('usage logs', () => {
       costUSD: 0,
       requestedAt: new Date().toISOString(),
     });
+
     await defaultBooted.frogbot.create({
       collection: 'usage-logs' as never,
       data: usage('first-log', first.id) as never,
       overrideAccess: true,
     });
+
     await defaultBooted.frogbot.create({
       collection: 'usage-logs' as never,
       data: usage('second-log', second.id) as never,
@@ -70,6 +76,7 @@ describe('usage logs', () => {
       '/api/users/login',
       firstCredentials,
     );
+
     const response = await defaultBooted.restClient.get<{ docs: Array<{ requestId: string }> }>(
       '/api/usage-logs',
       {
@@ -86,6 +93,7 @@ describe('usage logs', () => {
 
   it('denies anonymous reads of the default collection', async () => {
     const response = await defaultBooted.restClient.get('/api/usage-logs');
+
     expect(response.status).toBe(403);
   });
 
@@ -110,6 +118,7 @@ describe('usage logs', () => {
       overrideAccess: true,
       where: { requestId: { equals: 'internal-write' } },
     });
+
     expect(result.totalDocs).toBe(1);
   });
 

@@ -1,4 +1,5 @@
 import eslint from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
 import vitest from '@vitest/eslint-plugin';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import playwright from 'eslint-plugin-playwright';
@@ -119,6 +120,64 @@ function uiImports(...patterns) {
   return ['error', { patterns: [...UI_LIBRARIES, ...patterns] }];
 }
 
+function topLevel(...types) {
+  const exported = types.map((type) => `[declaration.type="${type}"]`).join(', ');
+
+  return {
+    selector: `Program > :matches(${types.join(', ')}, ExportNamedDeclaration:matches(${exported}))`,
+  };
+}
+
+const DECLARATION = topLevel(
+  'ClassDeclaration',
+  'FunctionDeclaration',
+  'TSDeclareFunction',
+  'TSEnumDeclaration',
+  'TSInterfaceDeclaration',
+  'TSModuleDeclaration',
+  'TSTypeAliasDeclaration',
+);
+
+const OVERLOAD = topLevel('TSDeclareFunction');
+
+const FUNCTION = topLevel('FunctionDeclaration', 'TSDeclareFunction');
+
+const PARAGRAPH = ['for', 'while', 'do', 'multiline-expression'];
+
+const blankLines = [
+  'error',
+  { blankLine: 'always', prev: '*', next: 'return' },
+  { blankLine: 'always', prev: ['multiline-const', 'multiline-let'], next: '*' },
+  { blankLine: 'always', prev: '*', next: PARAGRAPH },
+  { blankLine: 'always', prev: PARAGRAPH, next: '*' },
+  { blankLine: 'always', prev: 'block-like', next: '*' },
+  { blankLine: 'always', prev: '*', next: DECLARATION },
+  { blankLine: 'always', prev: DECLARATION, next: '*' },
+  { blankLine: 'any', prev: OVERLOAD, next: FUNCTION },
+];
+
+// A statement that starts with `expect`, as vitest/padding-around-expect-groups groups them, so a
+// multiline assertion stays in its group.
+function startsWith(name, depth = 6) {
+  let paths = [''];
+  const starts = [];
+
+  for (let step = 0; step < depth; step++) {
+    paths = paths.flatMap((chain) => [`${chain}.callee`, `${chain}.object`]);
+    starts.push(...paths);
+  }
+
+  return starts.flatMap((chain) =>
+    ['expression', 'expression.argument'].map((base) => `[${base}${chain}.name=${name}]`),
+  );
+}
+
+const EXPECT = {
+  selector: `ExpressionStatement:matches(${startsWith('/^expect(TypeOf)?$/').join(', ')})`,
+};
+
+const specBlankLines = [...blankLines, { blankLine: 'any', prev: EXPECT, next: EXPECT }];
+
 export default tseslint.config(
   { ignores: IGNORES },
   { linterOptions: { reportUnusedDisableDirectives: 'error' } },
@@ -128,8 +187,14 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },
-    plugins: { 'simple-import-sort': simpleImportSort },
+    plugins: { '@stylistic': stylistic, 'simple-import-sort': simpleImportSort },
     rules: {
+      '@stylistic/padding-line-between-statements': blankLines,
+      '@stylistic/lines-between-class-members': [
+        'error',
+        'always',
+        { exceptAfterSingleLine: true },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
@@ -162,6 +227,7 @@ export default tseslint.config(
   {
     files: SPECS,
     rules: {
+      '@stylistic/padding-line-between-statements': specBlankLines,
       'no-restricted-syntax': ['error', ...brandBans, ...testSyntaxBans],
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
@@ -191,6 +257,7 @@ export default tseslint.config(
       'vitest/no-disabled-tests': 'error',
       'vitest/no-conditional-in-test': 'error',
       'vitest/no-conditional-expect': 'off',
+      'vitest/padding-around-expect-groups': 'error',
     },
   },
   {

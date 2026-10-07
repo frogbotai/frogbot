@@ -46,6 +46,7 @@ const server = createServer(async (req, res) => {
 
   if (!body.stream) {
     res.setHeader('content-type', 'application/json');
+
     res.end(
       JSON.stringify({
         ...completion,

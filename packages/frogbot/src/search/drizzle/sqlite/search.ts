@@ -56,6 +56,7 @@ export const search: AdapterSearch = async ({
   const { localization } = adapter.payload.config;
   const versions =
     draft && Boolean(adapter.payload.collections[collection].config.versions?.drafts);
+
   const target = getSearchTarget({ adapter, collection, index, versions });
   const approximate = mode !== 'lexical' && Boolean(target.vector?.index);
 

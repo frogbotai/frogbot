@@ -95,6 +95,7 @@ const freeBusyInput = z
     message: 'End date must be after start date.',
     path: ['endDate'],
   });
+
 const freeBusyError = z.object({ domain: z.string().nullish(), reason: z.string().nullish() });
 const freeBusyOutput = z
   .object({

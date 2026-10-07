@@ -39,17 +39,23 @@ describe('frogbot export:captures', () => {
     const output = {
       write: (_value: string, done: (error?: Error | null) => void) => {
         callback = done;
+
         return false;
       },
     };
+
     let complete = false;
     const writing = writeCaptureLine(output, '{"captureId":"capture-1"}').then(() => {
       complete = true;
     });
+
     await Promise.resolve();
+
     expect(complete).toBe(false);
+
     callback?.();
     await writing;
+
     expect(complete).toBe(true);
   });
 
@@ -58,9 +64,11 @@ describe('frogbot export:captures', () => {
     const output = {
       write: (_value: string, done: (error?: Error | null) => void) => {
         done(failure);
+
         return false;
       },
     };
+
     await expect(writeCaptureLine(output, '{}')).rejects.toBe(failure);
   });
 });

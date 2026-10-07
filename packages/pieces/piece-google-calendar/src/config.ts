@@ -36,6 +36,7 @@ const eventDateTime = z
     timeZone: z.string().nullish(),
   })
   .passthrough();
+
 export const eventOutput = z
   .object({
     id: z.string().nullish(),

@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof http.parseUrl>[0]['input']>().toEqualTypeOf<{
   url: string;
   returnArrays?: boolean | undefined;
 }>();
+
 expectTypeOf(parsed).toEqualTypeOf<
   Promise<{
     baseUrl: string;

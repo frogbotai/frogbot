@@ -18,6 +18,7 @@ const speechRequestSchema = z
   .loose();
 
 export type SpeechRequest = z.infer<typeof speechRequestSchema>;
+
 export type SpeechResponseFormat = (typeof speechResponseFormats)[number];
 
 export function parseSpeechRequest(input: unknown): SpeechRequest {

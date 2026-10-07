@@ -441,6 +441,7 @@ describe('per-user agent model allowlists', () => {
       toolCallId: 'call-question',
       output: { answers: [{ header: 'Color', selected: ['Blue'] }] },
     });
+
     const messages = await storedMessages(first.body.chatId);
 
     expect(first.body.status).toBe('awaiting-input');

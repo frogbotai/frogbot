@@ -22,6 +22,7 @@ function createRecordingModel(opts?: {
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
   });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -48,6 +49,7 @@ function createRecordingModel(opts?: {
     },
     doStream: (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
+
       return Promise.resolve({
         stream: new ReadableStream({
           start(controller) {
@@ -67,6 +69,7 @@ function createRecordingModel(opts?: {
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   const fakeProvider = { languageModel: () => model };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -136,9 +139,11 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
     expect(callOptions?.tools).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: 'provider', id: 'openai.mcp' })]),
     );
+
     // The server connection config must survive translation (openai-responses
     // mcpArgsSchema: serverLabel/serverUrl/requireApproval).
     const serialized = JSON.stringify(callOptions?.tools ?? []);
+
     expect(serialized).toContain('deepwiki');
     expect(serialized).toContain('https://mcp.deepwiki.com/mcp');
   });

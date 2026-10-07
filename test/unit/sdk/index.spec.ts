@@ -38,6 +38,7 @@ describe('FrogBotSDK', () => {
 
     const init = fetch.mock.calls[0]?.[1];
     const headers = new Headers(init?.headers);
+
     expect(init?.body).toBe('{"name":"Support"}');
     expect(headers.get('content-type')).toBe('application/json');
     expect(headers.get('x-base')).toBe('base');
@@ -54,6 +55,7 @@ describe('FrogBotSDK', () => {
     await sdk.request('/media', { body, method: 'POST' });
 
     const init = fetch.mock.calls[0]?.[1];
+
     expect(init?.body).toBe(body);
     expect(new Headers(init?.headers).has('content-type')).toBe(false);
   });
@@ -67,6 +69,7 @@ describe('FrogBotSDK', () => {
         }),
       ),
     );
+
     const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
 
     await expect(
@@ -74,7 +77,9 @@ describe('FrogBotSDK', () => {
     ).resolves.toEqual({ id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' });
 
     expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/documents');
+
     const body = fetch.mock.calls[0]?.[1]?.body as FormData;
+
     expect(body.get('file')).toBeInstanceOf(File);
     expect(body.get('_payload')).toBe('{}');
   });
@@ -88,6 +93,7 @@ describe('FrogBotSDK', () => {
         statusText: 'Bad Request',
       },
     );
+
     const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch: vi.fn(() => Promise.resolve(response)),
@@ -150,11 +156,13 @@ describe('FrogBotSDK', () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(Response.json({ text: 'ribbit' })),
     );
+
     const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch,
       headers: { Authorization: 'Bearer token' },
     });
+
     const file = new File(['audio'], 'frog.webm', { type: 'audio/webm' });
 
     await expect(
@@ -167,8 +175,10 @@ describe('FrogBotSDK', () => {
     ).resolves.toEqual({ text: 'ribbit' });
 
     expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/v1/audio/transcriptions');
+
     const init = fetch.mock.calls[0]?.[1];
     const body = init?.body as FormData;
+
     expect(init?.method).toBe('POST');
     expect(new Headers(init?.headers).get('authorization')).toBe('Bearer token');
     expect(new Headers(init?.headers).has('content-type')).toBe(false);
@@ -182,6 +192,7 @@ describe('FrogBotSDK', () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(Response.json({ id: 'chat-1' })),
     );
+
     const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
 
     const response = await sdk.ai.chat({

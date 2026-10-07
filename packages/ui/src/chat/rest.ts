@@ -15,5 +15,6 @@ export async function chatRequest<T>(
   init?: RequestInit,
 ): Promise<T> {
   const response = await sdk.request(path, init);
+
   return response.status === 204 ? (undefined as T) : (response.json() as Promise<T>);
 }

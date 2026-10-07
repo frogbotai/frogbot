@@ -133,6 +133,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = resolved.instance.languageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
@@ -145,6 +146,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       // Translate OpenAI wire format → AI SDK format.
@@ -164,20 +166,24 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       ) {
         cachingOpts.cached_content = cachingOpts.prompt_cache_key;
       }
+
       const unknownOpts: Record<string, JSONValue> = {
         ...collectPassthroughChatParams(body),
         ...(cachingOpts ?? {}),
       };
+
       // Producer for the vendor reasoning-translation chain: stash the raw
       // cross-provider `reasoning_effort` under `unknown` so the provider
       // middleware / forwardLanguageParams can route it to the SDK namespace.
       if (typeof body.reasoning_effort === 'string') {
         unknownOpts.reasoning_effort = body.reasoning_effort;
       }
+
       const providerOptions: Record<string, Record<string, JSONValue>> = Object.keys(unknownOpts)
         .length > 0
         ? { unknown: unknownOpts }
         : {};
+
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
@@ -236,6 +242,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
           phase,
           logger,
         });
+
         lifecycle = streamLifecycle;
         const result = otelContext.with(activeContext, () =>
           streamText({
@@ -252,6 +259,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
             },
           }),
         );
+
         const sseStream = result.fullStream.pipeThrough(
           createOpenAIStreamTransform({
             model: body.model,
@@ -266,6 +274,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
           if (upstream.timedOut()) {
             throw upstreamTimeoutError();
           }
+
           return createSseResponse(
             toSseStream(new ReadableStream<string>(), {
               appendDone: true,
@@ -278,6 +287,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         const firstError = firstOpenAIStreamErrorEnvelope(peeked.first);
         if (firstError) {
           await lifecycle.finalizeNow();
+
           return Response.json(
             {
               error: {
@@ -300,6 +310,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         }
 
         finishReason = 'streaming';
+
         return createSseResponse(
           toSseStream(peeked.stream, {
             appendDone: true,
@@ -325,7 +336,9 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
           include: { responseBody: true },
         }),
       );
+
       finishReason = result.finishReason;
+
       usage = {
         inputTokens: result.usage.inputTokens ?? 0,
         outputTokens: result.usage.outputTokens ?? 0,
@@ -336,6 +349,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       };
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         {
@@ -387,6 +401,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       // `afterOperation` is the guaranteed-fire billing/audit slot. For
@@ -402,6 +417,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       // the `afterError` the `catch` already fired).
       const streamThrewBeforeFinalize =
         lifecycle !== undefined && operationError !== undefined && !lifecycle.hasFinalized();
+
       if (base && (!lifecycle || streamThrewBeforeFinalize)) {
         await runHooks(
           hooks.afterOperation,
@@ -425,12 +441,15 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 
@@ -455,10 +474,12 @@ export function extractReasoningDetails(
   reasoning: Array<{ type: string; text?: string }> | undefined,
 ): ReasoningDetail[] {
   const details: ReasoningDetail[] = [];
+
   for (const part of reasoning ?? []) {
     if (part.type !== 'reasoning' || typeof part.text !== 'string') {
       continue;
     }
+
     details.push(
       toReasoningDetail({
         text: part.text,
@@ -469,6 +490,7 @@ export function extractReasoningDetails(
       }),
     );
   }
+
   return details;
 }
 
@@ -476,9 +498,11 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
   if (typeof body.n === 'number' && body.n > 1) {
     rejectParam('n', '`n > 1` is not supported by this gateway.');
   }
+
   if (body.logit_bias !== undefined && body.logit_bias !== null) {
     rejectParam('logit_bias', '`logit_bias` is not supported by this gateway.');
   }
+
   // `logprobs: false`/null is a spec-valid no-op — accept and drop. Reject only
   // `logprobs: true` until response logprobs plumbing exists (056 review, OC11).
   if (body.logprobs === true) {
@@ -487,6 +511,7 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
       '`logprobs: true` is not yet supported by this gateway; response logprobs are not implemented. Use `logprobs: false` or omit the field.',
     );
   }
+
   // Legacy tool-calling API: forwarding these into a provider namespace would
   // not translate to actual tools, so reject-400 and point clients at `tools`.
   if (body.functions !== undefined && body.functions !== null) {
@@ -495,6 +520,7 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
       'The legacy `functions` parameter is not supported. Use `tools` instead.',
     );
   }
+
   if (body.function_call !== undefined && body.function_call !== null) {
     rejectParam(
       'function_call',
@@ -542,12 +568,15 @@ const HANDLED_CHAT_PARAMS = new Set<string>([
 /** Scoop every unmapped, non-null body field into a `providerOptions.unknown` bag. */
 function collectPassthroughChatParams(body: Record<string, unknown>): Record<string, JSONValue> {
   const rest: Record<string, JSONValue> = {};
+
   for (const [key, value] of Object.entries(body)) {
     if (HANDLED_CHAT_PARAMS.has(key) || value === undefined || value === null) {
       continue;
     }
+
     rest[key] = value as JSONValue;
   }
+
   return rest;
 }
 
@@ -561,8 +590,10 @@ function firstOpenAIStreamErrorEnvelope(chunk: string) {
     if (!data || data === '[DONE]') {
       continue;
     }
+
     const envelope = streamErrorFrameToEnvelope(data);
     if (envelope) return envelope;
   }
+
   return undefined;
 }

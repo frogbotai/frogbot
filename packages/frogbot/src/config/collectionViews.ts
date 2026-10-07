@@ -32,11 +32,13 @@ function resolveField(fields: Field[], path: string): Field | TabAsField | undef
 
   if (!field) return undefined;
   if (rest.length === 0) return field;
+
   return 'fields' in field ? resolveField(field.fields, rest.join('.')) : undefined;
 }
 
 function resolveGroupByField(fields: Field[], path: string): Field | undefined {
   const field = resolveField(fields, path);
+
   return field && field.type !== 'tab' && GROUP_BY_FIELD_TYPES.includes(field.type)
     ? field
     : undefined;
@@ -88,8 +90,10 @@ export function buildBoardOrderHook(names: string[]): CollectionBeforeChangeHook
         sort: `-${name}`,
         where: { [name]: { exists: true } },
       });
+
       data[name] = generateKeyBetween((result.docs[0]?.[name] as string | undefined) ?? null, null);
     }
+
     return data;
   };
 }
@@ -123,12 +127,15 @@ export function compileCollectionViews({
     if (!slug) {
       throw new Error(`[frogbot] Collection "${collection.slug}" has a view with an invalid slug.`);
     }
+
     if (slugs.has(slug)) {
       throw new Error(
         `[frogbot] Collection "${collection.slug}" has duplicate normalized view slug "${slug}".`,
       );
     }
+
     slugs.add(slug);
+
     return { ...view, slug };
   });
 
@@ -138,6 +145,7 @@ export function compileCollectionViews({
       `[frogbot] Collection "${collection.slug}" custom views with shell: false must be the sole view.`,
     );
   }
+
   for (const view of views) {
     if (
       view.type === 'board' &&
@@ -148,6 +156,7 @@ export function compileCollectionViews({
         `[frogbot] Collection "${collection.slug}" board view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
       );
     }
+
     if (view.type === 'calendar') {
       for (const path of [view.start, view.end].filter((value): value is string =>
         Boolean(value),
@@ -158,6 +167,7 @@ export function compileCollectionViews({
           );
         }
       }
+
       if (view.color) {
         const colorField = resolveField(collection.fields, view.color);
         if (colorField?.type !== 'select' && colorField?.type !== 'radio') {
@@ -168,12 +178,14 @@ export function compileCollectionViews({
       }
     }
   }
+
   const listViews = views.filter((view) => view.type === 'list');
   if (listViews.length > 1 || (listViews.length === 1 && views[0]?.type !== 'list')) {
     throw new Error(
       `[frogbot] Collection "${collection.slug}" supports only one list view and it must be first.`,
     );
   }
+
   onRuntimeViews?.(views);
 
   const { components: authoredComponents, views: _views, ...adminSource } = source ?? {};
@@ -189,6 +201,7 @@ export function compileCollectionViews({
     const { component: _component, ...safeView } = clientView as typeof clientView & {
       component?: PayloadComponent;
     };
+
     metadata.push({
       ...safeView,
       label: view.label ?? labelFor(view.type),

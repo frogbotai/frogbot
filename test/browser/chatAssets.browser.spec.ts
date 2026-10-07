@@ -783,6 +783,7 @@ test('a model that reads only text refuses an image and leaves images out of the
 test('a file over 10 MB shows the large-file tag with its explanation', async ({ page }) => {
   const hint =
     'Large file (11.0 MB). In long chats, older files may be left out to keep requests small.';
+
   const buffer = Buffer.alloc(11_000_000);
   const uploadResponse = waitForUpload(page);
 
@@ -896,6 +897,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page
       .context()
       .addCookies([{ name: 'frogbot-theme', value: theme, domain: 'localhost', path: '/' }]);
+
     await page.goto(createChatPath);
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);

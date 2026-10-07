@@ -32,9 +32,11 @@ async function connect(url: string) {
   const adapter = sqliteAdapter({ client: { url }, push: false, busyTimeout: 1000 }).init({
     payload: { logger: { error: vi.fn(), info: vi.fn() } } as unknown as Payload,
   });
+
   await adapter.connect!();
   adapter.tableNameMap.set('custom_k_v_store', 'custom_store');
   adapter.tables.custom_store = table;
+
   return adapter;
 }
 
@@ -46,10 +48,12 @@ describe('SQL KV with local SQLite', () => {
 
   beforeEach(async () => {
     directory = await mkdtemp(join(tmpdir(), 'frogbot-kv-sql-'));
+
     adapters = await Promise.all([
       connect(`file:${directory}/kv.db`),
       connect(`file:${directory}/kv.db`),
     ]);
+
     await adapters[0].client.execute(`create table custom_store (
       custom_id text primary key,
       storage_key text not null unique,
@@ -59,6 +63,7 @@ describe('SQL KV with local SQLite', () => {
       updated_on text not null,
       extra text not null default 'retained'
     )`);
+
     await adapters[0].client.execute('create index custom_expiry on custom_store(expires_on)');
     kv = createSQLKV({ adapter: adapters[0], collectionSlug });
     other = createSQLKV({ adapter: adapters[1], collectionSlug });
@@ -66,25 +71,35 @@ describe('SQL KV with local SQLite', () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
+
     for (const adapter of adapters ?? []) adapter.client.close();
+
     if (directory) await rm(directory, { recursive: true, force: true });
   });
 
   it('preserves JSON, custom mappings, defaults, and IDs on replacement', async () => {
     expect(kv[kvAtomic]).toBe(true);
+
     const value = { nested: [true, 0, '"quoted"'], date: new Date('2026-01-01T00:00:00Z') };
     await kv.set('key', value, { ttl: 10000 });
+
     expect(await other.get('key')).toEqual(JSON.parse(JSON.stringify(value)));
+
     const [before] = await adapters[0].drizzle.select().from(table);
+
     expect(before.id).toMatch(/^[\da-f-]{36}$/);
     expect(before.extra).toBe('retained');
+
     await kv.set('key', 'replacement');
     const [after] = await adapters[0].drizzle.select().from(table);
+
     expect(after.id).toBe(before.id);
     expect(after.createdAt).toBe(before.createdAt);
     expect(after.expiresAt).toBeNull();
     expect(await other.get('key')).toBe('replacement');
+
     await kv.delete('key');
+
     expect(await kv.get('key')).toBeNull();
   });
 
@@ -96,6 +111,7 @@ describe('SQL KV with local SQLite', () => {
         remaining: sql<number>`(julianday(${table.expiresAt}) - julianday('now')) * 86400000`,
       })
       .from(table);
+
     expect(remaining).toBeGreaterThan(1000);
     expect(remaining).toBeLessThanOrEqual(1235);
     expect(await other.get('key')).toBe('value');
@@ -105,15 +121,19 @@ describe('SQL KV with local SQLite', () => {
   it('hides expiry before cleanup while retaining legacy null expiry', async () => {
     await kv.set('expired', 'old', { ttl: 1000 });
     await kv.set('legacy', 'permanent');
+
     await adapters[0].drizzle
       .update(table)
       .set({ expiresAt: '2000-01-01T00:00:00.000Z' })
       .where(sql`${table.key} = ${'expired'}`);
+
     expect(await kv.get('expired')).toBeNull();
     expect(await kv.has('expired')).toBe(false);
     expect(await kv.keys()).toEqual(['legacy']);
     expect(await adapters[0].drizzle.select().from(table)).toHaveLength(2);
+
     await kv.cleanup();
+
     expect(await adapters[0].drizzle.select().from(table)).toHaveLength(1);
     expect(await kv.get('legacy')).toBe('permanent');
   });
@@ -125,11 +145,16 @@ describe('SQL KV with local SQLite', () => {
           (index % 2 ? kv : other).setIfAbsent('key', `owner-${index}`, { ttl: 10000 }),
         ),
       );
+
     expect((await claim()).filter(Boolean)).toHaveLength(1);
+
     await adapters[0].drizzle.update(table).set({ expiresAt: '2000-01-01T00:00:00.000Z' });
+
     expect((await claim()).filter(Boolean)).toHaveLength(1);
     expect(await kv.setIfAbsent('key', 'loser')).toBe(false);
+
     await kv.set('permanent', 'retained');
+
     expect(await other.setIfAbsent('permanent', 'loser', { ttl: 10 })).toBe(false);
     expect(await kv.get('permanent')).toBe('retained');
   });
@@ -138,10 +163,13 @@ describe('SQL KV with local SQLite', () => {
     const old = { key: 'lock', token: 'old' };
     const successor = { key: 'lock', token: 'successor' };
     await kv.setIfAbsent(old.key, old.token, { ttl: 10000 });
+
     expect(await other.extendLock(successor, 10000)).toBe(false);
     expect(await other.releaseLock(successor)).toBe(false);
     expect(await kv.extendLock(old, 20000)).toBe(true);
+
     await adapters[0].drizzle.update(table).set({ expiresAt: '2000-01-01T00:00:00.000Z' });
+
     expect(await kv.extendLock(old, 20000)).toBe(false);
     expect(await kv.releaseLock(old)).toBe(false);
     expect(await other.setIfAbsent(successor.key, successor.token, { ttl: 10000 })).toBe(true);
@@ -150,10 +178,14 @@ describe('SQL KV with local SQLite', () => {
     expect(await other.get('lock')).toBe(successor.token);
     expect(await other.releaseLock(successor)).toBe(true);
     expect(await other.releaseLock(successor)).toBe(false);
+
     await kv.set(old.key, old.token);
+
     expect(await kv.extendLock(old, 10000)).toBe(false);
     expect(await kv.releaseLock(old)).toBe(false);
+
     await adapters[0].drizzle.update(table).set({ expiresAt: 'infinity' });
+
     expect(await kv.extendLock(old, 10000)).toBe(false);
     expect(await kv.releaseLock(old)).toBe(false);
   });
@@ -162,6 +194,7 @@ describe('SQL KV with local SQLite', () => {
     'rejects invalid or overflowing TTL %s without changing state',
     async (ttl) => {
       await kv.set('key', 'original');
+
       await expect(kv.set('key', 'changed', { ttl })).rejects.toBeInstanceOf(RangeError);
       await expect(kv.setIfAbsent('key', 'changed', { ttl })).rejects.toBeInstanceOf(RangeError);
       await expect(kv.setIfAbsent('missing', 'changed', { ttl })).rejects.toBeInstanceOf(
@@ -178,30 +211,39 @@ describe('SQL KV with local SQLite', () => {
   it('routes every operation to primaryDrizzle when a replica wrapper exists', async () => {
     const adapter = adapters[0] as unknown as DrizzleAdapter;
     adapter.primaryDrizzle = adapter.drizzle as DrizzleAdapter['primaryDrizzle'];
+
     adapter.drizzle = new Proxy(adapter.drizzle, {
       get() {
         throw new Error('replica accessed');
       },
     });
+
     await kv.set('key', 'value');
+
     expect(await kv.get('key')).toBe('value');
     expect(await kv.has('key')).toBe(true);
     expect(await kv.keys()).toEqual(['key']);
     expect(await kv.setIfAbsent('lock', 'token', { ttl: 10000 })).toBe(true);
     expect(await kv.extendLock({ key: 'lock', token: 'token' }, 10000)).toBe(true);
+
     await kv.cleanup();
+
     expect(await kv.releaseLock({ key: 'lock', token: 'token' })).toBe(true);
+
     await kv.delete('key');
     await kv.clear();
+
     expect(await kv.keys()).toEqual([]);
   });
 
   it('rejects overflow inside the mutation if validation has become stale', async () => {
     await kv.set('key', 'original');
     const select = vi.spyOn(adapters[0].drizzle, 'select');
+
     select.mockReturnValueOnce({
       from: () => Promise.resolve([{ remaining: Number.MAX_SAFE_INTEGER }]),
     } as unknown as ReturnType<(typeof adapters)[0]['drizzle']['select']>);
+
     await expect(kv.set('key', 'changed', { ttl: 253402300799999 })).rejects.toBeInstanceOf(
       RangeError,
     );
@@ -210,6 +252,7 @@ describe('SQL KV with local SQLite', () => {
 
   it('rejects unqualified transports clearly', () => {
     const adapter = adapters[0];
+
     for (const packageName of [
       '@frogbotai/db-d1-sqlite',
       '@payloadcms/db-d1-sqlite',
@@ -219,15 +262,20 @@ describe('SQL KV with local SQLite', () => {
         KVUnsupportedError,
       );
     }
+
     adapter.clientConfig.url = 'libsql://remote.example';
+
     expect(() => createSQLKV({ adapter, collectionSlug })).toThrow(/remote or replicated libSQL/);
+
     adapter.clientConfig.url = 'file:local.db';
     adapter.clientConfig.syncUrl = 'libsql://remote.example';
+
     expect(() => createSQLKV({ adapter, collectionSlug })).toThrow(KVUnsupportedError);
   });
 
   it('propagates backend errors without interpreting them as contention or TTL overflow', async () => {
     await adapters[0].client.execute('drop table custom_store');
+
     await expect(kv.setIfAbsent('key', 'value', { ttl: 1000 })).rejects.not.toBeInstanceOf(
       RangeError,
     );
@@ -260,6 +308,7 @@ describe('SQL KV with local SQLite', () => {
           },
         },
       );
+
       onTestFinished(async () => {
         await worker.terminate();
       });
@@ -267,15 +316,18 @@ describe('SQL KV with local SQLite', () => {
       await once(worker, 'message');
       const released = once(worker, 'message');
       worker.postMessage('release');
+
       expect(await kv[operation]('key', 'winner', { ttl: 200 })).toBe(
         operation === 'set' ? undefined : true,
       );
+
       await released;
       const [{ remaining }] = await adapters[0].drizzle
         .select({
           remaining: sql<number>`(julianday(${table.expiresAt}) - julianday('now')) * 86400000`,
         })
         .from(table);
+
       expect(remaining).toBeGreaterThan(100);
       expect(remaining).toBeLessThanOrEqual(201);
       expect(await kv.get('key')).toBe('winner');

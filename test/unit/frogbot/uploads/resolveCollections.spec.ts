@@ -24,7 +24,9 @@ describe('resolveFilesCollection', () => {
         fields: [{ name: 'category', type: 'text' }],
       },
     ];
+
     const result = resolveFilesCollection({ collections });
+
     expect(result.files).toEqual({ slug: 'documents' });
     expect(result.collections).toHaveLength(1);
     expect(result.collections[0]).toMatchObject({

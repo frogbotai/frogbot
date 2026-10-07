@@ -104,8 +104,10 @@ async function choices(client: AttioClient, path: string, label: string) {
 
 const objectOptions = async ({ client }: { client: AttioClient }) =>
   choices(client, '/objects', 'singular_noun');
+
 const listOptions = async ({ client }: { client: AttioClient }) =>
   choices(client, '/lists', 'name');
+
 const taskOptions = async ({ client }: { client: AttioClient }) =>
   choices(client, '/tasks?limit=500', 'content');
 
@@ -377,6 +379,7 @@ export const attioActions = [
       if (input.content !== undefined) {
         Object.assign(values, { content: input.content, format: 'plaintext' });
       }
+
       if (input.deadlineAt !== undefined) values.deadline_at = input.deadlineAt;
       if (input.isCompleted !== undefined) values.is_completed = input.isCompleted;
       if (input.linkedObject && input.linkedRecordId) {
@@ -384,6 +387,7 @@ export const attioActions = [
           { target_object: input.linkedObject, target_record_id: input.linkedRecordId },
         ];
       }
+
       if (input.assigneeEmail) {
         values.assignees = [{ workspace_member_email_address: input.assigneeEmail }];
       }

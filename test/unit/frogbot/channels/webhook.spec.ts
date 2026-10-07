@@ -39,6 +39,7 @@ function request() {
   const triggers = buildIngressRegistry({
     agents: [{ slug: 'support', instructions: 'Help', channels: [instance] }],
   });
+
   const frogbot = {
     config: { _internal: { triggers } },
     logger: { error: vi.fn() },
@@ -82,6 +83,7 @@ describe('channel webhook ingress', () => {
       const held = new Promise<void>((resolve) => {
         release = resolve;
       });
+
       const run = vi.fn(async ({ input }) => {
         if (input.fail) throw new Error('subscriber failed');
 
@@ -89,6 +91,7 @@ describe('channel webhook ingress', () => {
 
         return [{ dedupeKey: 'delivery-1', data: { text: 'Hello' } }];
       });
+
       const sharedPiece = definePiece({
         slug: 'shared',
         label: 'Shared',
@@ -114,11 +117,13 @@ describe('channel webhook ingress', () => {
           identity: () => Promise.resolve(null),
         },
       });
+
       const instance = sharedPiece({ auth: { token: 'secret' } });
       const trigger = {
         trigger: instance.triggers.received,
         handler: vi.fn(),
       };
+
       const triggers = buildIngressRegistry({
         agents: [
           {
@@ -129,6 +134,7 @@ describe('channel webhook ingress', () => {
           },
         ],
       });
+
       const queue = vi.fn(() => Promise.resolve(undefined));
       const frogbot = {
         config: { _internal: { triggers } },
@@ -151,10 +157,12 @@ describe('channel webhook ingress', () => {
           setIfAbsent: vi.fn(() => Promise.resolve(true)),
         },
       };
+
       const req = Object.assign(
         new Request('http://localhost/api/webhooks/shared', { method: 'POST', body: '{}' }),
         { routeParams: { instance: 'shared' }, frogbot, user: null },
       );
+
       const endpoint = buildTriggerEndpoints().find(
         ({ path, method }) => path === '/webhooks/:instance' && method === 'post',
       )!;

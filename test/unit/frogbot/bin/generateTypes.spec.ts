@@ -12,6 +12,7 @@ const execFileAsync = promisify(execFile);
 const binURL = pathToFileURL(
   new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname,
 ).href;
+
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 async function makeDir(): Promise<string> {
@@ -40,6 +41,7 @@ describe('frogbot generate:types', () => {
       join(dir, 'frogbot.config.ts'),
       "import './service.ts';\n\nexport default {};\n",
     );
+
     await writeFile(join(dir, 'service.ts'), "throw new Error('boom-from-config');\n");
 
     const result = runGenerateTypes(dir);

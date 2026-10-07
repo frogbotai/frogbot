@@ -17,6 +17,7 @@ export const voyageEmbedDimensions: BeforeUpstreamHook = (args) => {
     ...(args.providerOptions.voyage ?? {}),
     outputDimension: dimensions,
   };
+
   delete unknown.dimensions;
 };
 

@@ -9,6 +9,7 @@ const inputSchema = z.object({
     .refine((value) => value !== 0, 'Second number cannot be zero')
     .meta({ label: 'Second Number' }),
 });
+
 const output = z.number();
 
 export const divideNumbers = defineAction({

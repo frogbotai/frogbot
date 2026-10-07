@@ -13,6 +13,7 @@ function capturePino(): { logger: Logger; lines: () => Array<Record<string, unkn
       callback();
     },
   });
+
   const logger: Logger = pino({ level: 'trace' }, stream);
   const lines = () =>
     chunks
@@ -20,6 +21,7 @@ function capturePino(): { logger: Logger; lines: () => Array<Record<string, unkn
       .split('\n')
       .filter(Boolean)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
+
   return { logger, lines };
 }
 

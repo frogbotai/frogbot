@@ -8,6 +8,7 @@ export function toAISDKTools(
 ): Record<string, ReturnType<typeof tool>> | undefined {
   if (!tools || tools.length === 0) return undefined;
   const result: Record<string, ReturnType<typeof tool>> = {};
+
   for (let i = 0; i < tools.length; i++) {
     const t = tools[i];
     if (t.type !== 'function') {
@@ -16,18 +17,21 @@ export function toAISDKTools(
         param: `tools[${i}].type`,
       });
     }
+
     if (!t.function) {
       throw new RequestValidationError({
         message: 'Function tools must include a `function` object.',
         param: `tools[${i}].function`,
       });
     }
+
     result[t.function.name] = tool({
       description: t.function.description ?? undefined,
       inputSchema: jsonSchema(t.function.parameters ?? { type: 'object', properties: {} }),
       strict: t.function.strict ?? undefined,
     });
   }
+
   return result;
 }
 
@@ -52,9 +56,11 @@ export function toAISDKToolChoice(toolChoice: unknown): AISDKToolChoiceResult {
         tools?: Array<{ function?: { name?: string } }>;
       };
     };
+
     if (tc.type === 'function' && tc.function?.name) {
       return { toolChoice: { type: 'tool', toolName: tc.function.name }, activeTools: undefined };
     }
+
     // OpenAI `allowed_tools` → AI SDK `toolChoice` (the mode) + `activeTools`
     // (the list of tool names the model is allowed to call).
     if (tc.type === 'allowed_tools' && tc.allowed_tools) {
@@ -65,12 +71,15 @@ export function toAISDKToolChoice(toolChoice: unknown): AISDKToolChoiceResult {
           param: 'tool_choice',
         });
       }
+
       const activeTools = (tc.allowed_tools.tools ?? [])
         .map((toolRef) => toolRef.function?.name)
         .filter((name): name is string => typeof name === 'string');
+
       return { toolChoice: mode, activeTools };
     }
   }
+
   throw new RequestValidationError({
     message: `Unsupported \`tool_choice\` shape: ${JSON.stringify(toolChoice)}.`,
     param: 'tool_choice',

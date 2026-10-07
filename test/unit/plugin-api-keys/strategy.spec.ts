@@ -46,6 +46,7 @@ describe('API key authentication strategy', () => {
 
   it('merges optional capture policy onto the request actor', async () => {
     const frogbot = makeFrogBot();
+
     frogbot.find.mockResolvedValue({
       docs: [{ id: 'key-1', owner: 'user-1', capture: 'enabled', captureSampleRate: 0.25 }],
     });

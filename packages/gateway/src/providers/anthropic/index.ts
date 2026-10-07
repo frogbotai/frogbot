@@ -22,6 +22,7 @@ export const anthropicProvider = {
   envVars: ['ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL'],
   fromEnv: (env) => {
     if (!env.ANTHROPIC_API_KEY) return undefined;
+
     return {
       apiKey: env.ANTHROPIC_API_KEY,
       ...(env.ANTHROPIC_BASE_URL && { baseURL: env.ANTHROPIC_BASE_URL }),

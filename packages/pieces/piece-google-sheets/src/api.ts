@@ -8,6 +8,7 @@ const exportInput = sheetInput.extend({
   format: z.enum(['csv', 'tsv']).default('csv'),
   returnAsText: z.boolean().default(false),
 });
+
 export const exportWorksheet = defineAction({
   slug: 'exportWorksheet',
   description: 'Export the selected worksheet as formatted CSV or TSV text or a saved file.',
@@ -21,11 +22,13 @@ export const exportWorksheet = defineAction({
     let url = new URL(
       `https://docs.google.com/spreadsheets/d/${encodeURIComponent(input.spreadsheetId)}/export`,
     );
+
     url.search = new URLSearchParams({
       format: input.format,
       id: input.spreadsheetId,
       gid: String(input.sheetId),
     }).toString();
+
     for (let redirects = 0; redirects <= 5; redirects++) {
       const options = {
         ...requestOptions(req),
@@ -35,10 +38,12 @@ export const exportWorksheet = defineAction({
         redirect: 'manual' as const,
         validateStatus: (status: number) => status >= 200 && status < 400,
       };
+
       const response =
         url.origin === 'https://docs.google.com'
           ? await client.auth.request<ArrayBuffer>(options)
           : await client.auth.transporter.request<ArrayBuffer>(options);
+
       if (response.status >= 300) {
         const location = response.headers.get('location');
         if (!location) throw new Error('Worksheet export redirect is missing its destination.');
@@ -52,11 +57,14 @@ export const exportWorksheet = defineAction({
         ) {
           throw new Error('Worksheet export redirected outside Google.');
         }
+
         continue;
       }
+
       const data = Buffer.from(response.data);
       if (input.returnAsText) return { text: data.toString('utf8'), format: input.format };
       const name = `exported_sheet.${input.format}`;
+
       return {
         file: await saveFile({
           req,
@@ -67,6 +75,7 @@ export const exportWorksheet = defineAction({
         format: input.format,
       };
     }
+
     throw new Error('Worksheet export exceeded the redirect limit.');
   },
 });
@@ -96,6 +105,7 @@ const customInput = z.object({
   failOnError: z.boolean().default(true),
   timeoutMs: z.number().int().positive().max(300_000).default(30_000),
 });
+
 export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Call a Sheets v4 endpoint under /spreadsheets with redirects disabled.',
@@ -121,6 +131,7 @@ export const customApiCall = defineAction({
     }
 
     const headers = new Headers(input.headers);
+
     for (const name of headers.keys()) {
       if (
         ['authorization', 'cookie', 'host', 'proxy-authorization', 'x-goog-api-key'].includes(name)
@@ -132,6 +143,7 @@ export const customApiCall = defineAction({
     let data: string | number | boolean | object | undefined;
     if (input.body?.type === 'form') {
       const form = new FormData();
+
       for (const field of input.body.fields) {
         if ('value' in field) form.append(field.name, field.value);
         else {
@@ -139,6 +151,7 @@ export const customApiCall = defineAction({
           form.append(field.name, file.blob, file.name);
         }
       }
+
       data = form;
     } else if (input.body) {
       data = input.body.value === null ? 'null' : input.body.value;

@@ -333,6 +333,7 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
     model.respond({ text: 'Holding the deploy.' });
 
     await submit({ card, root, toolCallId: 'call-guarded', values: { 'question-0': '1' } });
+
     await submit({
       card,
       from: members.ada,

@@ -443,6 +443,7 @@ describe('chat writes: a chat is written only from its home', () => {
         user: { collection: usersSlug, id: owner.id },
         channel: { piece: 'slack', id: 'U-owner' },
       });
+
       await runQueuedTurn({ frogbot: booted.frogbot, chatId: chat.id });
 
       await expect
@@ -692,6 +693,7 @@ describe('chat writes: a chat is written only from its home', () => {
       const channel = await createChannelChat(nextThreadId());
 
       await request('PATCH', `/${chatsSlug}/${web.id}`, { channelLabel: 'Forged' }, owner.headers);
+
       await request(
         'PATCH',
         `/${chatsSlug}/${channel.id}`,

@@ -75,6 +75,7 @@ export function createNotionClient({ auth }: { auth: unknown }) {
       const value = body
         ? await request({ method: 'POST', path, body: { ...body, start_cursor: cursor }, signal })
         : await request({ path, query: { ...query, start_cursor: cursor }, signal });
+
       const page = notionList.parse(value);
 
       results.push(...page.results);

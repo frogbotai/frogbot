@@ -26,12 +26,14 @@ const ownKeys: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id 
 
 function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
   const fields = new Map<string, Field>();
+
   for (const group of groups) {
     for (const field of group ?? []) {
       const key = 'name' in field && field.name ? field.name : JSON.stringify(field);
       fields.set(key, field);
     }
   }
+
   return [...fields.values()];
 }
 
@@ -55,7 +57,9 @@ function createViews({
       },
     ];
   }
+
   const index = views.findIndex((view) => view.type === 'list');
+
   return views.map((view, position) =>
     position === index && view.type === 'list'
       ? {
@@ -91,6 +95,7 @@ function createEndpoints({
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
           }
+
           throw error;
         }
       },
@@ -104,6 +109,7 @@ function createEndpoints({
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
         }
+
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
           const {
@@ -111,14 +117,17 @@ function createEndpoints({
             owner: _owner,
             ...result
           } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
+
           return Response.json(result);
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
           }
+
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
           }
+
           throw error;
         }
       },
@@ -132,8 +141,10 @@ function createEndpoints({
         if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
         }
+
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+
           return Response.json(
             await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }),
             { status: 201 },
@@ -142,9 +153,11 @@ function createEndpoints({
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
           }
+
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
           }
+
           throw error;
         }
       },
@@ -213,8 +226,10 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
                     req,
                     where: { apiKey: { equals: data.id } },
                   });
+
                   return result.docs.reduce((total, doc) => {
                     const cost = (doc as Record<string, unknown>).costUSD;
+
                     return total + (typeof cost === 'number' ? cost : 0);
                   }, 0);
                 },
@@ -229,6 +244,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
     },
   ];
+
   const endpoints = createEndpoints(options);
 
   return {

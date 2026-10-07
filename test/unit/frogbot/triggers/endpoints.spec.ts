@@ -20,18 +20,21 @@ const appSubscriber = {
   trigger: { trigger: instance.triggers.received, handler: vi.fn() },
   input: {},
 };
+
 const webhookSubscriber = {
   agentSlug: 'ops',
   piece: instance,
   trigger: { trigger: instance.triggers.subscribed, handler: vi.fn() },
   input: { channel: 'alerts' },
 };
+
 const otherSubscriber = {
   agentSlug: 'audit',
   piece: instance,
   trigger: { trigger: instance.triggers.other, handler: vi.fn() },
   input: { channel: 'audit' },
 };
+
 const subscriptionRow = {
   id: 42,
   agent: 'ops',
@@ -44,6 +47,7 @@ const subscriptionRow = {
 
 function request(body: Record<string, unknown>, subscription?: string) {
   const raw = JSON.stringify(body);
+
   return Object.assign(
     new Request('http://localhost/api/webhooks/echo', {
       method: 'POST',
@@ -62,11 +66,13 @@ function request(body: Record<string, unknown>, subscription?: string) {
 
 function kv() {
   const values = new Set<string>();
+
   return {
     has: vi.fn((key: string) => Promise.resolve(values.has(key))),
     setIfAbsent: vi.fn((key: string) => {
       if (values.has(key)) return Promise.resolve(false);
       values.add(key);
+
       return Promise.resolve(true);
     }),
     lock: vi.fn((_key, _ttl, fn) => Promise.resolve(fn({ signal: new AbortController().signal }))),
@@ -76,6 +82,7 @@ function kv() {
 const post = buildTriggerEndpoints().find(
   ({ path, method }) => path === '/webhooks/:instance' && method === 'post',
 )!;
+
 const subscribedPost = buildTriggerEndpoints().find(({ path }) => path.endsWith('/:subscription'))!;
 
 describe('trigger endpoints', () => {
@@ -91,9 +98,11 @@ describe('trigger endpoints', () => {
       kv: kv(),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ id: 'one', event: 'received', message: 'hello' }), {
       frogbot,
     });
+
     await expect(post.handler(req as never)).resolves.toMatchObject({ status: 200 });
     expect(echoCalls).toEqual([
       expect.objectContaining({
@@ -127,8 +136,10 @@ describe('trigger endpoints', () => {
       kv: kv(),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ id: 'two', message: 'hello' }, '42'), { frogbot });
     await subscribedPost.handler(req as never);
+
     expect(echoCalls).toEqual([
       expect.objectContaining({
         type: 'webhook',
@@ -156,6 +167,7 @@ describe('trigger endpoints', () => {
 
       return Promise.resolve(data.token === state.token ? [{ dedupeKey: data.id, data }] : []);
     });
+
     const instance = definePiece({
       slug: 'stateful',
       label: 'Stateful',
@@ -175,12 +187,14 @@ describe('trigger endpoints', () => {
         },
       ],
     })();
+
     const subscriber = {
       agentSlug: 'ops',
       piece: instance,
       trigger: { trigger: instance.triggers.received, handler: vi.fn() },
       input: {},
     };
+
     const state = { token: 'persisted-secret' };
     const frogbot = {
       config: { _internal: { triggers: { stateful: { instance, subscribers: [subscriber] } } } },
@@ -198,6 +212,7 @@ describe('trigger endpoints', () => {
       kv: kv(),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ id: 'stateful', token: 'persisted-secret' }, '42'), {
       frogbot,
       routeParams: { instance: 'stateful', subscription: '42' },
@@ -220,10 +235,12 @@ describe('trigger endpoints', () => {
         label: 'Unsafe',
         actions: [],
       })();
+
       const frogbot = {
         config: { _internal: { triggers: { unsafe: { instance, subscribers: [] } } } },
         queue: vi.fn(),
       };
+
       const req = Object.assign(new Request('http://localhost/api/webhooks/unsafe', { method }), {
         frogbot,
         context: {},
@@ -251,7 +268,9 @@ describe('trigger endpoints', () => {
       kv: kv(),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ id: 'missing', message: 'hello' }, '42'), { frogbot });
+
     await expect(subscribedPost.handler(req as never)).resolves.toMatchObject({ status: 404 });
     expect(frogbot.queue).not.toHaveBeenCalled();
     expect(echoCalls).toEqual([]);
@@ -267,8 +286,10 @@ describe('trigger endpoints', () => {
       }),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ challenge: 'register' }, '42'), { frogbot });
     const response = await subscribedPost.handler(req as never);
+
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ challenge: 'register' });
     expect(frogbot.queue).not.toHaveBeenCalled();
@@ -285,8 +306,10 @@ describe('trigger endpoints', () => {
       }),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ challenge: 'register' }, '42'), { frogbot });
     req.headers.set('x-echo-signature', 'invalid');
+
     await expect(subscribedPost.handler(req as never)).resolves.toMatchObject({ status: 401 });
     expect(frogbot.find).not.toHaveBeenCalled();
     expect(frogbot.queue).not.toHaveBeenCalled();
@@ -300,7 +323,9 @@ describe('trigger endpoints', () => {
       find: vi.fn().mockResolvedValue({ docs: [] }),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ challenge: 'register' }, '42'), { frogbot });
+
     await expect(subscribedPost.handler(req as never)).resolves.toMatchObject({ status: 404 });
     expect(frogbot.queue).not.toHaveBeenCalled();
   });
@@ -316,15 +341,19 @@ describe('trigger endpoints', () => {
       const verify = vi.fn(async ({ req }) => {
         const body = await req.text();
         verificationBodies.push(body);
+
         return (
           req.headers.get('x-echo-signature') ===
           createHmac('sha256', echoSecret).update(body).digest('hex')
         );
       });
+
       const run = vi.fn(async ({ req, client }) => {
         callbackBodies.push(await req.text());
+
         return [{ dedupeKey: req.data.id, data: { token: client.token } }];
       });
+
       const trigger = {
         slug: 'received' as const,
         description: 'Receive',
@@ -332,6 +361,7 @@ describe('trigger endpoints', () => {
         output: z.object({ token: z.string() }),
         run,
       };
+
       const instance = definePiece({
         slug: 'owned',
         label: 'Owned',
@@ -350,6 +380,7 @@ describe('trigger endpoints', () => {
               },
         ],
       })({ auth: { token: 'developer' } });
+
       const client = vi.spyOn(instance, 'client');
       const resolvePieceCredential = vi.fn(({ req, piece }) =>
         Promise.resolve({
@@ -357,12 +388,14 @@ describe('trigger endpoints', () => {
           key: piece,
         }),
       );
+
       const subscriber = {
         agentSlug: 'ops',
         piece: instance,
         trigger: { trigger: instance.triggers.received, handler: vi.fn() },
         input: {},
       };
+
       const frogbot = {
         config: { _internal: { triggers: { owned: { instance, subscribers: [subscriber] } } } },
         connections: { resolvePieceCredential },
@@ -374,6 +407,7 @@ describe('trigger endpoints', () => {
         kv: kv(),
         queue: vi.fn(),
       };
+
       const req = Object.assign(
         new Request('http://localhost/api/webhooks/owned', {
           method: 'POST',
@@ -390,7 +424,9 @@ describe('trigger endpoints', () => {
           routeParams: { instance: 'owned', ...(type === 'webhook' ? { subscription: '42' } : {}) },
         },
       );
+
       const endpoint = type === 'app' ? post : subscribedPost;
+
       await expect(endpoint.handler(req as never)).resolves.toMatchObject({ status: 200 });
       expect(verificationBodies).toEqual([raw]);
       expect(verify.mock.calls[0][0].req.user).toBe(user);
@@ -423,6 +459,7 @@ describe('trigger endpoints', () => {
     const run = vi.fn(({ input }) =>
       Promise.resolve([{ dedupeKey: 'date', data: { since: input.since.toISOString() } }]),
     );
+
     const trigger = defineWebhookTrigger({
       slug: 'dated',
       type: 'webhook',
@@ -433,6 +470,7 @@ describe('trigger endpoints', () => {
       onDisable: async () => {},
       run,
     });
+
     const instance = definePiece({
       slug: 'dates',
       label: 'Dates',
@@ -440,12 +478,14 @@ describe('trigger endpoints', () => {
       webhook: { verify: () => Promise.resolve(true) },
       triggers: [trigger],
     })();
+
     const subscriber = {
       agentSlug: 'ops',
       piece: instance,
       trigger: { trigger: instance.triggers.dated, handler: vi.fn() },
       input: { since: new Date('2020-01-01T00:00:00.000Z') },
     };
+
     const frogbot = {
       config: { _internal: { triggers: { dates: { instance, subscribers: [subscriber] } } } },
       find: vi.fn().mockResolvedValue({
@@ -456,10 +496,12 @@ describe('trigger endpoints', () => {
       kv: kv(),
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ id: 'date' }, '42'), {
       frogbot,
       routeParams: { instance: 'dates', subscription: '42' },
     });
+
     await expect(subscribedPost.handler(req as never)).resolves.toMatchObject({ status: 200 });
     expect(run).toHaveBeenCalledTimes(1);
     expect(run.mock.calls[0][0].input).toEqual({ since: new Date(since) });
@@ -476,8 +518,10 @@ describe('trigger endpoints', () => {
       config: { _internal: { triggers: { echo: { instance, subscribers: [appSubscriber] } } } },
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ challenge: 'challenge' }), { frogbot });
     const response = await post.handler(req as never);
+
     expect(await response.json()).toEqual({ challenge: 'challenge' });
     expect(frogbot.queue).not.toHaveBeenCalled();
     expect(await req.text()).toBe(JSON.stringify({ challenge: 'challenge' }));
@@ -488,8 +532,10 @@ describe('trigger endpoints', () => {
       config: { _internal: { triggers: { echo: { instance, subscribers: [appSubscriber] } } } },
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ challenge: 'challenge' }), { frogbot });
     req.headers.set('x-echo-signature', 'invalid');
+
     await expect(post.handler(req as never)).resolves.toMatchObject({ status: 401 });
     expect(frogbot.queue).not.toHaveBeenCalled();
   });
@@ -514,6 +560,7 @@ describe('trigger endpoints', () => {
         },
       ],
     })();
+
     const frogbot = {
       config: {
         _internal: {
@@ -524,6 +571,7 @@ describe('trigger endpoints', () => {
       },
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ event: 'received' }), {
       frogbot,
       routeParams: { instance: 'unverified' },
@@ -537,16 +585,19 @@ describe('trigger endpoints', () => {
     const handshake = vi.fn(({ req }) =>
       Promise.resolve(Response.json({ challenge: req.query.challenge })),
     );
+
     const instance = definePiece({
       slug: 'challenge',
       label: 'Challenge',
       actions: [],
       webhook: { verify, handshake },
     })();
+
     const frogbot = {
       config: { _internal: { triggers: { challenge: { instance, subscribers: [] } } } },
       queue: vi.fn(),
     };
+
     const req = Object.assign(
       new Request('http://localhost/api/webhooks/challenge?challenge=hello'),
       {
@@ -556,15 +607,19 @@ describe('trigger endpoints', () => {
         routeParams: { instance: 'challenge' },
       },
     );
+
     const endpoint = buildTriggerEndpoints().find(({ method }) => method === 'get')!;
     const response = await endpoint.handler(req as never);
+
     expect(await response.json()).toEqual({ challenge: 'hello' });
     expect(verify).not.toHaveBeenCalled();
     expect(handshake).toHaveBeenCalledWith(
       expect.objectContaining({ req: expect.objectContaining({ frogbot, context: req.context }) }),
     );
     expect(frogbot.queue).not.toHaveBeenCalled();
+
     handshake.mockResolvedValueOnce(null as never);
+
     await expect(endpoint.handler(req as never)).resolves.toMatchObject({ status: 404 });
   });
 
@@ -578,9 +633,11 @@ describe('trigger endpoints', () => {
       output: z.object({ label: z.string() }),
       async run({ input, req }) {
         expect(await req.json!()).toEqual(req.data);
+
         return input.accept ? [{ dedupeKey: req.data!.id, data: { label: input.label } }] : [];
       },
     });
+
     const instance = definePiece({
       slug: 'filtered',
       label: 'Filtered',
@@ -591,24 +648,29 @@ describe('trigger endpoints', () => {
       },
       triggers: [trigger],
     })();
+
     const subscribers = ['ops', 'audit', 'ignored'].map((agentSlug) => ({
       agentSlug,
       piece: instance,
       trigger: { trigger: instance.triggers.received, handler: vi.fn() },
       input: { accept: agentSlug !== 'ignored', label: agentSlug },
     }));
+
     const frogbot = {
       config: { _internal: { triggers: { filtered: { instance, subscribers } } } },
       kv: kv(),
       queue: vi.fn(),
     };
+
     for (let i = 0; i < 2; i++) {
       const req = Object.assign(request({ id: 'same', event: 'received' }), {
         frogbot,
         routeParams: { instance: 'filtered' },
       });
+
       await post.handler(req as never);
     }
+
     expect(
       frogbot.queue.mock.calls.map(([job]) => [job.input.agentSlug, job.input.event.data]),
     ).toEqual([
@@ -622,7 +684,9 @@ describe('trigger endpoints', () => {
       config: { _internal: { triggers: { echo: { instance, subscribers: [appSubscriber] } } } },
       queue: vi.fn(),
     };
+
     const req = Object.assign(request({ event: 'unknown' }), { frogbot });
+
     await expect(post.handler(req as never)).resolves.toMatchObject({ status: 200 });
     expect(frogbot.queue).not.toHaveBeenCalled();
   });
@@ -631,6 +695,7 @@ describe('trigger endpoints', () => {
     const req = Object.assign(request({}), {
       frogbot: { config: { _internal: { triggers: {} } } },
     });
+
     await expect(post.handler(req as never)).resolves.toMatchObject({ status: 404 });
   });
 });

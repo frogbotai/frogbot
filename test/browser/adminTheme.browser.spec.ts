@@ -46,6 +46,7 @@ test.describe('FrogBot UI in the admin', () => {
       page.getByTestId('theme-probe-default').first(),
       await readAdminColor(page, '--color-base-1000'),
     );
+
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
       await readAdminColor(page, '--color-base-250'),
@@ -59,6 +60,7 @@ test.describe('FrogBot UI in the admin', () => {
       page.getByTestId('theme-probe-default').first(),
       await readAdminColor(page, '--color-base-0'),
     );
+
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
       await readAdminColor(page, '--color-base-750'),
@@ -68,6 +70,7 @@ test.describe('FrogBot UI in the admin', () => {
   test('follows an admin theme switch without a reload', async ({ page }) => {
     await openPostCreate(page, 'light');
     await expect(page.getByTestId('theme-probe-default').first()).toBeVisible();
+
     await page.evaluate(() => {
       (window as { themeProbeMarker?: boolean }).themeProbeMarker = true;
     });
@@ -78,10 +81,12 @@ test.describe('FrogBot UI in the admin', () => {
       page.getByTestId('theme-probe-default').first(),
       await readAdminColor(page, '--color-base-0'),
     );
+
     await expectBackground(
       page.getByTestId('theme-probe-secondary').first(),
       await readAdminColor(page, '--color-base-750'),
     );
+
     expect(
       await page.evaluate(() => (window as { themeProbeMarker?: boolean }).themeProbeMarker),
     ).toBe(true);
@@ -135,6 +140,7 @@ test.describe('FrogBot UI in the admin', () => {
     const menu = await openMenu(page, 'theme-probe-menu');
 
     await expectBackground(menu, await readAdminColor(page, '--color-base-950'));
+
     expect(
       await menu.evaluate(
         (element) => getComputedStyle(element.closest('.fb-portal')!).colorScheme,

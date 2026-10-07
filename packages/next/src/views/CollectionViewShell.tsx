@@ -26,6 +26,7 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
     initPageResult,
     viewComponents,
   } = props;
+
   if (!collectionConfig || !collectionSlug) return null;
 
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
@@ -38,10 +39,12 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       path: `/collections/${collectionSlug}/create`,
     }),
   };
+
   const render = (Component?: PayloadComponent | PayloadComponent[]) =>
     Component
       ? RenderServerComponent({ Component, clientProps, importMap, serverProps: props })
       : undefined;
+
   const components = collectionConfig.admin.components;
   const listMenuItems = viewComponents?.menuItems ? [render(viewComponents.menuItems)] : undefined;
 

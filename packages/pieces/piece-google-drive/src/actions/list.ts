@@ -33,6 +33,7 @@ async function listPages({
   const tokens = new Set<string>();
   let pageToken: string | undefined;
   let incompleteSearch = false;
+
   do {
     const response = await client.files.list(
       {
@@ -46,6 +47,7 @@ async function listPages({
       },
       requestOptions(req),
     );
+
     files.push(...z.array(fileOutput).parse(response.data.files ?? []));
     incompleteSearch ||= response.data.incompleteSearch ?? false;
     pageToken = response.data.nextPageToken ?? undefined;
@@ -54,6 +56,7 @@ async function listPages({
       tokens.add(pageToken);
     }
   } while (pageToken);
+
   return { files, incompleteSearch };
 }
 
@@ -72,6 +75,7 @@ export async function folderOptions({
     query: `mimeType = '${folderMimeType}' and trashed = false`,
     includeSharedDrives: input.includeSharedDrives ?? false,
   });
+
   return result.files.flatMap((file) =>
     file.id ? [{ value: file.id, label: file.name ?? file.id }] : [],
   );
@@ -84,14 +88,18 @@ const listFilesInput = z.object({
   downloadFiles: z.boolean().default(false),
   ...sharedDrive,
 });
+
 const listFilesOutput = z.object({
   files: z.array(fileOutput),
   incompleteSearch: z.boolean(),
   downloadedFiles: z.array(savedFileOutput).optional(),
   downloadErrors: z.array(z.object({ fileId: z.string(), message: z.string() })).optional(),
 });
+
 export type ListFilesInput = z.input<typeof listFilesInput>;
+
 export type ListFilesOutput = z.output<typeof listFilesOutput>;
+
 export const listFiles = defineAction({
   slug: 'listFiles',
   description:
@@ -103,6 +111,7 @@ export const listFiles = defineAction({
     const result: ListFilesOutput = { files: [], incompleteSearch: false };
     const pending = [{ folderId: input.folderId, level: 1 }];
     const visited = new Set<string>();
+
     for (let index = 0; index < pending.length; index++) {
       const folder = pending[index];
       if (visited.has(folder.folderId)) continue;
@@ -114,6 +123,7 @@ export const listFiles = defineAction({
         query,
         includeSharedDrives: input.includeSharedDrives,
       });
+
       result.files.push(...page.files);
       result.incompleteSearch ||= page.incompleteSearch;
       if (folder.level < input.depth) {
@@ -124,13 +134,16 @@ export const listFiles = defineAction({
         }
       }
     }
+
     if (input.downloadFiles) {
       result.downloadedFiles = [];
       result.downloadErrors = [];
+
       for (const file of result.files) {
         if (file.mimeType === folderMimeType) continue;
         try {
           if (!file.id) throw new Error('[frogbot] Google Drive file is missing its ID.');
+
           result.downloadedFiles.push(
             await downloadDriveFile({
               client,
@@ -142,6 +155,7 @@ export const listFiles = defineAction({
           );
         } catch (error) {
           req.signal?.throwIfAborted();
+
           result.downloadErrors.push({
             fileId: file.id ?? '',
             message: error instanceof Error ? error.message : 'Download failed.',
@@ -149,6 +163,7 @@ export const listFiles = defineAction({
         }
       }
     }
+
     return result;
   },
 });
@@ -161,7 +176,9 @@ const searchFilesInput = z.object({
   parentFolderId: id.optional(),
   ...sharedDrive,
 });
+
 export type SearchFilesInput = z.input<typeof searchFilesInput>;
+
 export const searchFiles = defineAction({
   slug: 'searchFiles',
   description:
@@ -176,6 +193,7 @@ export const searchFiles = defineAction({
     if (input.type !== 'all') {
       query.push(`mimeType ${input.type === 'file' ? '!=' : '='} '${folderMimeType}'`);
     }
+
     return (
       await listPages({
         client,

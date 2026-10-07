@@ -100,6 +100,7 @@ export function calculateCostUSD(usage: CostUsage, cost?: ModelCost): number {
   if (!cost) return 0;
   const cached = usage.cachedInputTokens ?? 0;
   const cacheWrite = usage.cacheWriteTokens ?? 0;
+
   return (
     (Math.max(0, usage.inputTokens - cached - cacheWrite) * cost.input +
       cached * (cost.cache_read ?? cost.input) +
@@ -153,12 +154,15 @@ export function presetFor<
  */
 export function defineModelCatalog(...entries: ModelCatalogEntry[]): ModelCatalog {
   const catalog: ModelCatalog = new Map();
+
   for (const entry of entries) {
     if (catalog.has(entry.id)) {
       throw new Error(`Duplicate model catalog entry: "${entry.id}"`);
     }
+
     catalog.set(entry.id, entry);
   }
+
   return catalog;
 }
 

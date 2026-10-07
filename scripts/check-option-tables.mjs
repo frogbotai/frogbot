@@ -159,6 +159,7 @@ export function optionTypes(entries, { paths }) {
 
   host.fileExists = (name) => name === file || fileExists(name);
   host.readFile = (name) => (name === file ? source : readFile(name));
+
   host.getSourceFile = (name, version, ...rest) =>
     name === file
       ? ts.createSourceFile(name, source, version, true)
@@ -220,6 +221,7 @@ export function checkOptionTables({ files, registry, resolve }) {
   const present = registry.flatMap((entry, index) =>
     matched[index] ? [{ entry, table: matched[index] }] : [],
   );
+
   const types = present.length > 0 ? resolve(present.map(({ entry }) => entry)) : [];
 
   present.forEach(({ table }, index) => {

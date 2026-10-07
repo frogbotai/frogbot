@@ -17,10 +17,12 @@ const recordInput = z.object({
   ...selectionSchema,
   fields: fieldsSchema.meta({ label: 'Fields' }),
 });
+
 const identifiedRecordInput = z.object({
   ...selectionSchema,
   recordId: z.string().min(1).meta({ label: 'Record ID' }),
 });
+
 const recordsOptions = { baseId: baseOptions, tableId: tableOptions };
 
 function removeEmpty(fields: Record<string, unknown>) {

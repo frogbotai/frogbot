@@ -20,6 +20,7 @@ describe('imagesRoute', () => {
     const doGenerate = vi.fn<ImageModelV4['doGenerate']>(() =>
       Promise.resolve(imageResult({ warnings: [] })),
     );
+
     const model = new MockImageModelV4({ maxImagesPerCall: 2, doGenerate });
     const app = createApp({
       registry: {
@@ -92,6 +93,7 @@ describe('imagesRoute', () => {
           }),
         ),
     });
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({ imageModels: { 'dall-e-3': model } }),
@@ -123,6 +125,7 @@ describe('imagesRoute', () => {
     const model = new MockImageModelV4({
       doGenerate: () => Promise.resolve(imageResult({ warnings: [warning] })),
     });
+
     const app = createApp({
       registry: {
         openai: new MockProviderV4({ imageModels: { 'dall-e-3': model } }),

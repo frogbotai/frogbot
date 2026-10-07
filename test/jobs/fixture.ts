@@ -80,6 +80,7 @@ async function createDatabase({ transactions }: { transactions: boolean }) {
       client: { url: `file:${join(directory, 'jobs.db')}` },
       transactionOptions: transactions ? {} : undefined,
     });
+
     cleanups.push(() => rm(directory, { recursive: true, force: true }));
   } else if (adapterName === 'mongodb') {
     const { mongooseAdapter } = sourceAdapters

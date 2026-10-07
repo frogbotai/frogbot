@@ -28,6 +28,7 @@ export function previousMonthBoundary(
     boundary === 'startOf'
       ? 1
       : new Date(Date.UTC(previousMonth.year(), previousMonth.month() + 1, 0)).getUTCDate();
+
   const wallTime = `${previousMonth.year()}-${String(previousMonth.month() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
   const result = dayjs.tz(wallTime, value.timeZone);
 

@@ -11,13 +11,16 @@ export async function CustomCollectionView(props: AdminViewServerProps) {
   const view = runtime.find(
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
+
   if (!view || view.type !== 'custom' || !view.component) notFound();
   const content = RenderServerComponent({
     Component: view.component,
     importMap: props.importMap,
     serverProps: props,
   });
+
   if (view.shell === false) return content;
+
   return (
     <CollectionViewShell
       {...props}

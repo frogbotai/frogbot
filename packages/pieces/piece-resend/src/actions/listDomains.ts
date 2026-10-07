@@ -10,6 +10,7 @@ export const listDomains = defineAction({
   async run({ client }) {
     const result = await client.request({ path: '/domains' });
     const domains = (result as { data?: Array<Record<string, unknown>> })?.data ?? [];
+
     return domains.map((domain) => ({
       id: domain.id,
       name: domain.name,

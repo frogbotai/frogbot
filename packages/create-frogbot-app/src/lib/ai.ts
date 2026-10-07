@@ -97,6 +97,7 @@ export function applyAI(dest: string, provider: AIProvider): void {
 export function providerEnv(provider: AIProvider): string[] {
   if (provider === 'none') return [];
   const { env, keyEnv } = AI_PROVIDERS[provider];
+
   return [`${keyEnv}=`, ...env];
 }
 

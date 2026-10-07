@@ -10,6 +10,7 @@ const cli = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../packages/create-frogbot-app/bin.js',
 );
+
 const lockfiles = { npm: 'package-lock.json', pnpm: 'pnpm-lock.yaml' } as const;
 
 let root: string;

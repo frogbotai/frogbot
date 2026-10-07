@@ -261,6 +261,7 @@ export const extractPdfPages = defineAction({
       const indexes = input.pageRanges.flatMap(({ startPage, endPage }) =>
         pageIndexes(startPage, endPage, source.getPageCount()),
       );
+
       const extracted = await PDFDocument.create();
       const pages = await extracted.copyPages(source, indexes);
 

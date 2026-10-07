@@ -41,6 +41,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     const url = new URL(
       process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0',
     );
+
     url.pathname = `/kv_native_${randomUUID().replaceAll('-', '')}`;
     first = await mongoose.createConnection(url.toString(), { monitorCommands: true }).asPromise();
     const schema = () =>
@@ -53,11 +54,14 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         },
         { timestamps: true },
       );
+
     model = first.model('logical', schema(), 'mapped_native_kv') as typeof model;
     await model.init();
+
     second = await mongoose
       .createConnection(url.toString(), { readPreference: 'secondary' })
       .asPromise();
+
     other = second.model('logical', schema(), 'mapped_native_kv') as typeof other;
     kv = store(model);
     peer = store(other);
@@ -78,6 +82,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
 
   async function serverNow() {
     const { localTime } = await first.db!.admin().command({ hello: 1 });
+
     return new Date(localTime).getTime();
   }
 
@@ -103,6 +108,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         { ...primary, session },
       );
     }
+
     const client = first.getClient();
     let started = false;
     const listener = (event: { command: Record<string, any> }) => {
@@ -119,9 +125,11 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         started = true;
       }
     };
+
     client.on('commandStarted', listener);
     const pending = run();
     let settled = false;
+
     void pending.then(
       () => {
         settled = true;
@@ -130,13 +138,18 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         settled = true;
       },
     );
+
     try {
       await expect.poll(() => started, { timeout: 3000 }).toBe(true);
+
       const contended = await serverNow();
+
       await expect.poll(serverNow, { timeout: 3000 }).toBeGreaterThanOrEqual(contended + 500);
       expect(settled).toBe(false);
+
       if (commit) await session.commitTransaction();
       else await session.abortTransaction();
+
       return await pending;
     } finally {
       client.off('commandStarted', listener);
@@ -158,6 +171,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
             ? kv.extendLock({ key: 'held', token: 'owner' }, 60_000)
             : kv.releaseLock({ key: 'held', token: 'owner' }),
       });
+
       expect(result).toBe(false);
       expect(await model.collection.findOne({ key: 'held' }, primary)).toEqual(before);
       expect(await peer.get('held')).toBeNull();
@@ -166,6 +180,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
 
   async function expireHeld() {
     await kv.set('held', 'old');
+
     await model.collection.updateOne({ key: 'held' }, [
       { $set: { expiresAt: { $subtract: ['$$NOW', 1] } } },
     ]);
@@ -187,6 +202,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
       prepare: expireHeld,
       run: async () => {
         await kv.set('held', 'new', { ttl: 200 });
+
         return true;
       },
     },
@@ -195,7 +211,9 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     async ({ operation, prepare, run }) => {
       await prepare();
       const result = await block({ key: 'held', missing: operation === 'missing', run });
+
       expect(result).toBe(true);
+
       const [row] = await model.collection
         .aggregate(
           [
@@ -205,6 +223,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
           primary,
         )
         .toArray();
+
       expect(row.data).toBe('new');
       expect(row.remaining).toBeGreaterThan(0);
       expect(row.remaining).toBeLessThanOrEqual(200);
@@ -213,26 +232,34 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
 
   it('keeps renewed rows when a conditional cleanup delete waits for a writer', async () => {
     await kv.set('held', 'expired');
+
     await model.collection.updateOne({ key: 'held' }, [
       { $set: { expiresAt: { $subtract: ['$$NOW', 1] } } },
     ]);
+
     await block({ key: 'held', run: () => kv.cleanup(), commit: true });
+
     expect(await peer.get('held')).toBe('uncommitted');
   });
 
   it('preserves defaults, ObjectId IDs, and backend timestamps across replacements and renewal', async () => {
     await kv.set('record', 'owner', { ttl: 60_000 });
     const original = await model.collection.findOne({ key: 'record' }, primary);
+
     expect(original!._id).toBeInstanceOf(mongoose.Types.ObjectId);
     expect(original!.source).toBe('configured-default');
     expect(original!.createdAt).toBeInstanceOf(Date);
     expect(original!.updatedAt).toEqual(original!.createdAt);
     expect(original!.expiresAt.getTime() - original!.createdAt.getTime()).toBe(60_000);
+
     await model.collection.updateOne({ key: 'record' }, { $set: { source: 'preserved' } });
+
     await expect.poll(serverNow).toBeGreaterThan(original!.updatedAt.getTime());
     expect(await peer.extendLock({ key: 'record', token: 'owner' }, 60_000)).toBe(true);
+
     await kv.set('record', { value: '$$NOW' });
     const replaced = await model.collection.findOne({ key: 'record' }, primary);
+
     expect(replaced!._id).toEqual(original!._id);
     expect(replaced!.createdAt).toEqual(original!.createdAt);
     expect(replaced!.updatedAt.getTime()).toBeGreaterThan(original!.updatedAt.getTime());
@@ -253,9 +280,11 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         { timestamps: { createdAt: 'born', updatedAt: false } },
       ),
     );
+
     const storage = store(named);
     await storage.set('key', 'value');
     const row = await named.collection.findOne({ key: 'key' }, primary);
+
     expect(row!.born).toBeInstanceOf(Date);
     expect(row).not.toHaveProperty('updatedAt');
     expect(row).not.toHaveProperty('createdAt');
@@ -275,9 +304,11 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
           source: { type: String, default: 'custom-default' },
         }),
       );
+
       const storage = store(custom);
       await storage.set('key', 'value');
       const original = await custom.collection.findOne({ key: 'key' }, primary);
+
       expect(original!._id).toBe(expectedID);
       expect(original!.source).toBe('custom-default');
       expect(original!.expiresAt).toBeNull();
@@ -297,19 +328,29 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         KVUnsupportedError,
       );
       expect(await custom.collection.findOne({ key: 'key' }, primary)).toEqual(original);
+
       await storage.cleanup();
+
       expect(await storage.get('key')).toBe('value');
+
       await custom.collection.updateOne({ key: 'key' }, [
         { $set: { expiresAt: { $subtract: ['$$NOW', 1] } } },
       ]);
+
       expect(await storage.get('key')).toBeNull();
+
       await storage.cleanup();
+
       expect(await custom.collection.countDocuments({}, primary)).toBe(0);
+
       await storage.set('key', 'replacement');
       await storage.delete('key');
+
       expect(await storage.has('key')).toBe(false);
+
       await storage.set('key', 'replacement');
       await storage.clear();
+
       expect(await storage.keys()).toEqual([]);
     },
   );
@@ -321,11 +362,13 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
           { $set: { expiresAt: { $subtract: ['$$NOW', 1] } } },
         ]);
       }
+
       const results = await Promise.all(
         Array.from({ length: 32 }, (_, index) =>
           (index % 2 ? kv : peer).setIfAbsent('race', `token-${index}`, { ttl: 60_000 }),
         ),
       );
+
       expect(results.filter(Boolean)).toHaveLength(1);
       expect(await peer.has('race')).toBe(true);
       expect(await peer.keys()).toEqual(['race']);
@@ -335,6 +378,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
   it('rolls back serialization and inserts on overflow or unrelated unique failures', async () => {
     await kv.set('existing', 'owner', { ttl: 60_000 });
     const original = await model.collection.findOne({ key: 'existing' }, primary);
+
     await expect(
       kv.set('existing', 'replacement', { ttl: Number.MAX_SAFE_INTEGER }),
     ).rejects.toThrow(RangeError);
@@ -346,10 +390,13 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
     ).rejects.toThrow(RangeError);
     expect(await model.collection.findOne({ key: 'existing' }, primary)).toEqual(original);
     expect(await model.collection.findOne({ key: 'missing' }, primary)).toBeNull();
+
     await model.collection.createIndex({ source: 1 }, { unique: true });
+
     onTestFinished(async () => {
       await model.collection.dropIndex('source_1');
     });
+
     await expect(kv.setIfAbsent('other', 'value')).rejects.toMatchObject({
       code: 11000,
       keyPattern: { source: 1 },
@@ -363,6 +410,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
       prepare: () => kv.set('held', 'original'),
       run: async (ttl: number) => {
         await kv.set('held', 'replacement', { ttl });
+
         return true;
       },
     },
@@ -383,7 +431,9 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
           primary,
         )
         .toArray();
+
       const ttl = 8_640_000_000_000_000 - Number(clock.now) - 200;
+
       await expect(block({ key: 'held', missing, run: () => run(ttl) })).rejects.toThrow(
         RangeError,
       );
@@ -401,6 +451,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
         expiresAt: Date,
       }),
     );
+
     await expect(store(custom).set('key', 'value', { ttl: 1000 })).rejects.toThrow(
       'did not generate a valid ObjectId',
     );
@@ -412,17 +463,21 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('native Mongo KV tra
       { key: 'missing', data: 'owner' },
       { key: 'null', data: 'owner', expiresAt: null },
     ]);
+
     for (const key of ['missing', 'null']) {
       const original = await model.collection.findOne({ key }, primary);
+
       expect(await kv.extendLock({ key, token: 'owner' }, 1000)).toBe(false);
       expect(await kv.releaseLock({ key, token: 'owner' })).toBe(false);
       expect(await kv.setIfAbsent(key, 'new')).toBe(false);
       expect(await peer.get(key)).toBe('owner');
       expect(await model.collection.findOne({ key }, primary)).toEqual(original);
     }
+
     for (const value of ['Owner', ['owner'], { token: 'owner' }]) {
       await kv.set('typed', value, { ttl: 60_000 });
       const original = await model.collection.findOne({ key: 'typed' }, primary);
+
       expect(await kv.extendLock({ key: 'typed', token: 'owner' }, 1000)).toBe(false);
       expect(await kv.releaseLock({ key: 'typed', token: 'owner' })).toBe(false);
       expect(await model.collection.findOne({ key: 'typed' }, primary)).toEqual(original);

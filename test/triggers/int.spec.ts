@@ -42,6 +42,7 @@ describe('triggers', () => {
     booted = await bootFrogBot(dirname);
     bootSubscriptions = await declaredSubscriptions(false);
   });
+
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
     await declaredSubscriptions(true);
@@ -70,6 +71,7 @@ describe('triggers', () => {
       ]),
     );
   });
+
   afterAll(async () => {
     await booted?.shutdown();
   });
@@ -122,6 +124,7 @@ describe('triggers', () => {
     trigger: string;
   }) => {
     const jobs = await findJobs(eventID);
+
     expect(jobs).toHaveLength(recipients.length);
     expect(jobs).toEqual(
       expect.arrayContaining(
@@ -138,14 +141,17 @@ describe('triggers', () => {
         ),
       ),
     );
+
     for (const job of jobs) {
       expect(job.completedAt).toBeFalsy();
     }
+
     const messages = recipients.map(({ message }) => message);
     const deliveriesForEvent = async () =>
       (await findDeliveries()).docs.filter((doc) =>
         messages.some((message) => deliveryMessage(doc) === message),
       );
+
     expect(await deliveriesForEvent()).toEqual([]);
 
     await booted.payload.jobs.run({
@@ -154,6 +160,7 @@ describe('triggers', () => {
     });
 
     const deliveries = await deliveriesForEvent();
+
     expect(deliveries).toHaveLength(recipients.length);
     expect(deliveries).toEqual(
       expect.arrayContaining(
@@ -168,8 +175,11 @@ describe('triggers', () => {
         ),
       ),
     );
+
     const completed = await findJobs(eventID);
+
     expect(completed).toHaveLength(recipients.length);
+
     for (const job of completed) {
       expect(job.completedAt).toEqual(expect.any(String));
       expect(job.hasError).toBe(false);
@@ -212,6 +222,7 @@ describe('triggers', () => {
       },
       overrideAccess: true,
     });
+
     const subscription = await booted.frogbot.findByID({
       collection: subscriptionsSlug,
       id: created.id,
@@ -230,11 +241,14 @@ describe('triggers', () => {
 
   it('delivers a signed app event once per recipient from root trigger mounts', async () => {
     const body = '{ "event": "received", "id": "app-event", "message": "hello 🌍" }';
+
     for (let attempt = 0; attempt < 2; attempt++) {
       const response = await deliver({ body });
+
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ ok: true });
     }
+
     await runDeliveryJobs({
       eventID: 'app-event',
       recipients: ['app-primary', 'app-secondary'].map((agent) => ({
@@ -243,9 +257,12 @@ describe('triggers', () => {
       })),
       trigger: 'received',
     });
+
     expect((await deliver({ body })).status).toBe(200);
     expect(await findJobs('app-event')).toHaveLength(2);
+
     await booted.payload.jobs.run({ allQueues: true });
+
     expect(
       (await findDeliveries()).docs.filter((doc) => deliveryMessage(doc) === 'echo: hello 🌍'),
     ).toHaveLength(2);
@@ -254,9 +271,11 @@ describe('triggers', () => {
   it('delivers a signed subscription event through a persisted job to its handler', async () => {
     const subscription = (await booted.frogbot.triggers.list()).find((row) => row.agent === 'ops')!;
     const body = JSON.stringify({ id: 'subscription-event', message: 'subscribed delivery' });
+
     for (let attempt = 0; attempt < 2; attempt++) {
       expect((await deliver({ body, subscription: subscription.id })).status).toBe(200);
     }
+
     await runDeliveryJobs({
       eventID: 'subscription-event',
       recipients: [{ agent: 'ops', message: 'echo: subscribed delivery' }],
@@ -279,6 +298,7 @@ describe('triggers', () => {
     expect(await findJobs(eventID)).toHaveLength(1);
     expect((await findJobs(eventID))[0].input?.instanceSlug).toBe('echo-east');
     expect((await deliver({ body, instance: 'echo-west' })).status).toBe(200);
+
     for (const { instance, handler } of recipients) {
       expect((await deliver({ body, instance })).status).toBe(200);
       expect(echoCalls).toContainEqual(
@@ -293,16 +313,20 @@ describe('triggers', () => {
 
     await runDeliveryJobs({ eventID, recipients, trigger: 'received' });
     const completed = await findJobs(eventID);
+
     for (const { instance } of recipients) {
       expect((await deliver({ body, instance })).status).toBe(200);
     }
+
     expect((await findJobs(eventID)).map(({ id }) => id).sort()).toEqual(
       completed.map(({ id }) => id).sort(),
     );
+
     await booted.payload.jobs.run({
       allQueues: true,
       where: { id: { in: completed.map(({ id }) => id) } },
     });
+
     expect(
       (await findDeliveries()).docs.filter((doc) =>
         recipients.some(({ message }) => deliveryMessage(doc) === message),
@@ -320,32 +344,41 @@ describe('triggers', () => {
         route === 'subscription'
           ? (await booted.frogbot.triggers.list()).find((row) => row.agent === 'ops')!.id
           : undefined;
+
       const queue = booted.frogbot.queue.bind(booted.frogbot);
       let release!: () => void;
       const held = new Promise<void>((resolve) => {
         release = resolve;
       });
+
       let holding = false;
       const enqueue = vi.spyOn(booted.frogbot, 'queue').mockImplementationOnce(async (args) => {
         holding = true;
         await held;
         await queue(args);
       });
+
       const first = deliver({ body, subscription });
+
       onTestFinished(async () => {
         release();
         await first.catch(() => undefined);
         enqueue.mockRestore();
       });
+
       await vi.waitFor(() => expect(holding).toBe(true));
       const second = await deliver({ body, subscription });
+
       expect(second.status === 429 || second.status >= 500).toBe(true);
       expect(
         (await findDeliveries()).docs.filter((doc) => deliveryMessage(doc) === message),
       ).toEqual([]);
+
       release();
+
       expect((await first).status).toBe(200);
       expect((await deliver({ body, subscription })).status).toBe(200);
+
       await runDeliveryJobs({
         eventID,
         trigger: route === 'app' ? 'received' : 'subscribed',
@@ -364,15 +397,20 @@ describe('triggers', () => {
     const enqueue = vi
       .spyOn(booted.frogbot, 'queue')
       .mockRejectedValueOnce(new Error('Intentional enqueue failure'));
+
     onTestFinished(() => enqueue.mockRestore());
     const response = await deliver({ body, subscription: subscription.id });
+
     expect(response.status === 429 || response.status >= 500).toBe(true);
     expect(enqueue).toHaveBeenCalledTimes(1);
     expect(await findJobs(eventID)).toEqual([]);
+
     enqueue.mockRestore();
+
     for (let attempt = 0; attempt < 2; attempt++) {
       expect((await deliver({ body, subscription: subscription.id })).status).toBe(200);
     }
+
     await runDeliveryJobs({
       eventID,
       trigger: 'subscribed',
@@ -389,47 +427,61 @@ describe('triggers', () => {
     const queued = new Promise<void>((resolve) => {
       primaryQueued = resolve;
     });
+
     const enqueue = vi.spyOn(booted.frogbot, 'queue').mockImplementation(async (args) => {
       if ((args.input as { agentSlug: string }).agentSlug === 'app-secondary') {
         await queued;
         throw new Error('Intentional secondary enqueue failure');
       }
+
       await queue(args);
       primaryQueued();
     });
+
     onTestFinished(() => enqueue.mockRestore());
     const response = await deliver({ body });
+
     expect(response.status === 429 || response.status >= 500).toBe(true);
     expect(enqueue).toHaveBeenCalledTimes(2);
+
     enqueue.mockRestore();
+
     await runDeliveryJobs({
       eventID,
       trigger: 'received',
       recipients: [{ agent: 'app-primary', message }],
     });
+
     const [primary] = await findJobs(eventID);
+
     for (let attempt = 0; attempt < 2; attempt++) {
       expect((await deliver({ body })).status).toBe(200);
     }
+
     const jobs = await findJobs(eventID);
+
     expect(jobs).toHaveLength(2);
     expect(jobs.map((job) => job.input?.agentSlug).sort()).toEqual([
       'app-primary',
       'app-secondary',
     ]);
     expect(jobs.find(({ id }) => id === primary.id)?.completedAt).toBe(primary.completedAt);
+
     await booted.payload.jobs.run({
       allQueues: true,
       where: { id: { in: jobs.map(({ id }) => id) } },
     });
+
     const deliveries = (await findDeliveries()).docs.filter(
       (doc) => deliveryMessage(doc) === message,
     );
+
     expect(deliveries).toHaveLength(2);
     expect(deliveries.map(({ handler }) => handler).sort()).toEqual([
       'app-primary',
       'app-secondary',
     ]);
+
     for (const job of await findJobs(eventID)) {
       expect(job.completedAt).toEqual(expect.any(String));
       expect(job.hasError).toBe(false);
@@ -441,15 +493,21 @@ describe('triggers', () => {
     const subscription = (await booted.frogbot.triggers.list()).find(
       (row) => row.agent === 'failing-handler',
     )!;
+
     const eventID = 'handler-failure';
     const body = JSON.stringify({ id: eventID, message: 'handler failure' });
+
     expect((await deliver({ body, subscription: subscription.id })).status).toBe(200);
+
     const jobs = await findJobs(eventID);
+
     expect(jobs).toHaveLength(1);
     expect(failedHandlerCalls).toEqual([]);
+
     await booted.payload.jobs.run({ allQueues: true, where: { id: { equals: jobs[0].id } } });
 
     const failed = await findJobs(eventID);
+
     expect(failed).toHaveLength(1);
     expect(failed[0]).toMatchObject({
       id: jobs[0].id,
@@ -473,14 +531,17 @@ describe('triggers', () => {
     const body = JSON.stringify({ event: 'received', id: 'invalid-event', message: 'original' });
     const signature = createHmac('sha256', 'echo-secret').update(body).digest('hex');
     const before = (await findDeliveries()).totalDocs;
+
     for (const id of [undefined, subscription.id]) {
       const response = await deliver({
         body: body.replace('original', 'tampered'),
         signature,
         subscription: id,
       });
+
       expect(response.status).toBe(401);
     }
+
     expect(await findJobs('invalid-event')).toEqual([]);
     expect((await findDeliveries()).totalDocs).toBe(before);
   });
@@ -490,6 +551,7 @@ describe('triggers', () => {
       body: JSON.stringify({ id: 'unknown-event', message: 'unknown' }),
       subscription: '000000000000000000000000',
     });
+
     expect(response.status).toBe(404);
     expect(await findJobs('unknown-event')).toEqual([]);
   });
@@ -516,6 +578,7 @@ describe('triggers', () => {
         });
       }
     };
+
     await createUnrelatedRows('before');
     const subscription = await booted.frogbot.triggers.enable({
       agent: 'ops',
@@ -523,6 +586,7 @@ describe('triggers', () => {
       trigger: 'subscribed',
       input: { channel: 'runtime' },
     });
+
     expect(subscription).toMatchObject({
       status: 'active',
       input: { value: { channel: 'runtime' } },
@@ -535,11 +599,13 @@ describe('triggers', () => {
         webhookUrl: `http://127.0.0.1:3988/api/webhooks/echo/${subscription.id}`,
       }),
     );
+
     await createUnrelatedRows('after');
     const firstPage = await booted.frogbot.find({
       collection: subscriptionsSlug,
       overrideAccess: true,
     });
+
     expect(firstPage.docs).toHaveLength(10);
     expect(firstPage.docs.map((row) => row.id)).not.toContain(subscription.id);
     expect(await booted.frogbot.triggers.list()).toContainEqual(
@@ -547,17 +613,21 @@ describe('triggers', () => {
     );
 
     const body = JSON.stringify({ id: 'late-event', message: 'late delivery' });
+
     expect((await deliver({ body, subscription: subscription.id })).status).toBe(200);
+
     await runDeliveryJobs({
       eventID: 'late-event',
       recipients: [{ agent: 'ops', message: 'echo: late delivery' }],
       trigger: 'subscribed',
     });
+
     expect(echoCalls).toContainEqual(
       expect.objectContaining({ type: 'webhook', input: { channel: 'runtime' } }),
     );
 
     await booted.frogbot.triggers.disable(subscription.id);
+
     expect(echoCalls).toContainEqual(
       expect.objectContaining({
         type: 'disable',

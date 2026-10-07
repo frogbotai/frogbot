@@ -62,6 +62,7 @@ describe('manifest endpoint', () => {
     const response = await buildManifestEndpoint().handler(
       makeRequest({ agents: [makeAgent('support', undefined, profile)] }),
     );
+
     const body = await response.json();
 
     expect(body.agents).toEqual([{ slug: 'support', profile }]);
@@ -70,6 +71,7 @@ describe('manifest endpoint', () => {
 
   it('omits the profile key when no profile is configured', async () => {
     const response = await buildManifestEndpoint().handler(makeRequest());
+
     expect(await response.json()).toEqual(
       expect.objectContaining({ agents: [{ slug: 'support' }] }),
     );
@@ -84,7 +86,9 @@ describe('manifest endpoint', () => {
         ],
       }),
     );
+
     const body = JSON.stringify(await response.json());
+
     expect(body).toContain('Public');
     expect(body).not.toContain('Secret');
   });
@@ -384,6 +388,7 @@ describe('manifest endpoint', () => {
     const allowed = await buildManifestEndpoint().handler(
       makeRequest({ ai, user: { id: 'allowed' } }),
     );
+
     const denied = await buildManifestEndpoint().handler(
       makeRequest({ ai, user: { id: 'denied' } }),
     );

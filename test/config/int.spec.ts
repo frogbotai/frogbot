@@ -13,16 +13,19 @@ describe('config — buildConfig validation', () => {
   describe('required fields', () => {
     it('missing `secret` is rejected with [frogbot] error', async () => {
       const bad = { ...validBase, secret: '' } as unknown as FrogBotConfig;
+
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\]/);
     });
 
     it('missing `db` is rejected', async () => {
       const bad = { ...validBase, db: undefined } as unknown as FrogBotConfig;
+
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\]/);
     });
 
     it('non-array `collections` is rejected', async () => {
       const bad = { ...validBase, collections: 'oops' } as unknown as FrogBotConfig;
+
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\]/);
     });
   });
@@ -33,6 +36,7 @@ describe('config — buildConfig validation', () => {
         ...validBase,
         globals: [{ slug: 'site', fields: [] }],
       } as unknown as FrogBotConfig;
+
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\].*globals/i);
     });
   });
@@ -40,6 +44,7 @@ describe('config — buildConfig validation', () => {
   describe('valid configs', () => {
     it('minimal valid config sanitizes without error', async () => {
       const sanitized = await buildConfig(validBase);
+
       expect(sanitized.collections).toBeDefined();
       expect(sanitized.collections.length).toBeGreaterThan(0);
     });
@@ -47,6 +52,7 @@ describe('config — buildConfig validation', () => {
     it('missing optional fields (admin) do not fail validation', async () => {
       const config: FrogBotConfig = { ...validBase };
       const sanitized = await buildConfig(config);
+
       expect(sanitized).toBeDefined();
     });
   });

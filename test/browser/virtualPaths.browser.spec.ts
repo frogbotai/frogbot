@@ -31,6 +31,7 @@ test.beforeEach(async ({ page }) => {
     budget: 12.5,
     status: 'active',
   });
+
   const zephyr = await create(page, projectsSlug, { name: 'Zephyr', budget: 0, status: 'paused' });
   const urgent = await create(page, tagsSlug, { name: 'urgent' });
   const backend = await create(page, tagsSlug, { name: 'backend' });
@@ -41,11 +42,13 @@ test.beforeEach(async ({ page }) => {
     tags: [urgent, backend],
     dueAt: `${day}T12:00:00.000Z`,
   });
+
   await create(page, tasksSlug, {
     title: titles.zephyr,
     project: zephyr,
     dueAt: `${day}T15:00:00.000Z`,
   });
+
   await create(page, tasksSlug, { title: titles.loose });
 });
 
@@ -74,6 +77,7 @@ test('a Board card shows virtual path fields like their source', async ({ page }
   const card = page.locator('.frog-board__card', { hasText: titles.apollo });
 
   await expectApollo(card, '.collection-board__field');
+
   await expect(card.locator('.collection-board__field', { hasText: 'Tag Names' })).toContainText(
     'urgent, backend',
   );

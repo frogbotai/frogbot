@@ -76,6 +76,7 @@ export async function loadIcons(): Promise<LoadedIcon[]> {
       if (!isIcon(value) || seen.has(value)) continue;
 
       seen.add(value);
+
       loaded.push({
         name: exportName === 'default' ? basename(file, '.ts') : exportName,
         Component: value,

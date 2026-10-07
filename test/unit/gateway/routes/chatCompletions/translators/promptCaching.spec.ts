@@ -20,13 +20,16 @@ describe('cache_control on messages', () => {
         content: 'You are helpful.',
         cache_control: { type: 'ephemeral' },
       };
+
       const result = parseSystemMessage(msg);
+
       expect(result.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
     });
 
     it('omits providerOptions when no cache_control', () => {
       const msg: OpenAISystemMessage = { role: 'system', content: 'Hello' };
       const result = parseSystemMessage(msg);
+
       expect(result.providerOptions).toBeUndefined();
     });
 
@@ -38,6 +41,7 @@ describe('cache_control on messages', () => {
           { type: 'text', text: 'Today is Monday.' },
         ],
       };
+
       expect(parseSystemMessages(msg)).toEqual([
         {
           role: 'system',
@@ -56,6 +60,7 @@ describe('cache_control on messages', () => {
           { type: 'text', text: 'B' },
         ],
       };
+
       expect(parseSystemMessages(msg)).toEqual([{ role: 'system', content: 'AB' }]);
     });
   });
@@ -67,7 +72,9 @@ describe('cache_control on messages', () => {
         content: 'Hi',
         cache_control: { type: 'ephemeral' },
       };
+
       const result = parseUserMessage(msg, 0);
+
       expect(result.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
     });
 
@@ -76,8 +83,10 @@ describe('cache_control on messages', () => {
         role: 'user',
         content: [{ type: 'text', text: 'Hello', cache_control: { type: 'ephemeral' } }],
       };
+
       const result = parseUserMessage(msg, 0);
       const parts = result.content as Array<{ type: string; providerOptions?: unknown }>;
+
       expect(parts[0].providerOptions).toEqual({
         unknown: { cache_control: { type: 'ephemeral' } },
       });
@@ -88,8 +97,10 @@ describe('cache_control on messages', () => {
         role: 'user',
         content: [{ type: 'text', text: 'Hello' }],
       };
+
       const result = parseUserMessage(msg, 0);
       const parts = result.content as Array<{ type: string; providerOptions?: unknown }>;
+
       expect(parts[0].providerOptions).toBeUndefined();
     });
   });
@@ -101,7 +112,9 @@ describe('cache_control on messages', () => {
         content: 'Hello',
         cache_control: { type: 'ephemeral' },
       };
+
       const result = parseAssistantMessage(msg, 0);
+
       expect(result.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
     });
 
@@ -112,7 +125,9 @@ describe('cache_control on messages', () => {
         cache_control: { type: 'ephemeral' },
         tool_calls: [{ id: 'tc1', type: 'function', function: { name: 'foo', arguments: '{}' } }],
       };
+
       const result = parseAssistantMessage(msg, 0);
+
       expect(result.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
     });
   });

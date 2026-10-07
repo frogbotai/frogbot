@@ -12,10 +12,12 @@ const featureDocs = readFileSync(
   new URL('../../../docs/rich-text/custom-features.mdx', import.meta.url),
   'utf8',
 );
+
 const viewDocs = readFileSync(
   new URL('../../../docs/rich-text/views.mdx', import.meta.url),
   'utf8',
 );
+
 const dependencyExample = [...featureDocs.matchAll(/```ts\n([\s\S]*?)```/g)]
   .map((match) => match[1])
   .find((code) => code.includes('DividerFeature requires the paragraph feature'));
@@ -27,6 +29,7 @@ if (!dependencyExample) {
 const packageEntry = fileURLToPath(
   new URL('../../../packages/richtext-lexical/src/index.ts', import.meta.url),
 );
+
 const exampleDir = mkdtempSync(path.join(os.tmpdir(), 'frogbot-richtext-docs-'));
 const examplePath = path.join(exampleDir, 'divider-feature.mjs');
 

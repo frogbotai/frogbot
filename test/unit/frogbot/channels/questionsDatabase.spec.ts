@@ -48,6 +48,7 @@ const slack = createServer(async (req, res) => {
     body: raw.startsWith('{') ? JSON.parse(raw) : Object.fromEntries(new URLSearchParams(raw)),
     ts,
   });
+
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end(JSON.stringify({ ok: true, ts, channel: 'C1', message: {} }));
 });
@@ -374,6 +375,7 @@ describe('Slack questions with SQLite persistence', () => {
       data: { email: 'toad@example.com', password: 'secret-password', slackId: 'U2' },
       overrideAccess: true,
     });
+
     await frogbot.create({
       collection: 'users',
       data: { email: 'frog@example.com', password: 'secret-password', slackId: 'U1' },
@@ -740,6 +742,7 @@ describe('Slack questions with SQLite persistence', () => {
       'slack',
       click({ actionId: 'frogbot:question:choose:call-queued:0:0', card, thread, value: '0' }),
     );
+
     await runContinuation(thread);
 
     const promotion = (await jobs(thread)).find((input) => input.kind === 'promote');

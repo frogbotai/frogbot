@@ -29,6 +29,7 @@ describe('FrogBot SDK with an API key', () => {
     sdk = createFrogBotSDK({ baseURL: `${booted.baseUrl}/api` });
 
     await clearAndSeed(booted.frogbot, 'empty');
+
     await booted.frogbot.create({
       collection: 'accounts',
       data: credentials,

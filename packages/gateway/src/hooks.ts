@@ -195,9 +195,13 @@ export interface AfterOperationHookArgs extends HookBase {
 }
 
 export type BeforeOperationHook = (args: BeforeOperationHookArgs) => void | Promise<void>;
+
 export type BeforeUpstreamHook = (args: BeforeUpstreamHookArgs) => void | Promise<void>;
+
 export type AfterUpstreamHook = (args: AfterUpstreamHookArgs) => void | Promise<void>;
+
 export type AfterErrorHook = (args: AfterErrorHookArgs) => void | Promise<void>;
+
 export type AfterOperationHook = (args: AfterOperationHookArgs) => void | Promise<void>;
 
 export interface Hooks {
@@ -220,6 +224,7 @@ export async function runHooks<
   opts?: { isolate: true; logger: GatewayLogger },
 ): Promise<void> {
   if (!hooks || hooks.length === 0) return;
+
   for (const hook of hooks) {
     if (opts?.isolate) {
       try {
@@ -230,6 +235,7 @@ export async function runHooks<
           'hook-error',
         );
       }
+
       continue;
     }
 

@@ -102,6 +102,7 @@ export const DefaultListView: React.FC<ListViewClientProps> = (props) => {
     },
     getEntityConfig,
   } = useConfig();
+
   const router = useRouter();
 
   const { data, isGroupingBy } = useListQuery();

@@ -13,6 +13,7 @@ export const modernIndex = '/.well-known/agent-skills/index.json';
 export const modernEntry = '/.well-known/agent-skills/frogbot/SKILL.md';
 
 export type HostingRequest = { method: string; path: string; status: number };
+
 export type HostingResult = {
   code: number | null;
   signal: NodeJS.Signals | null;
@@ -142,6 +143,7 @@ export function runClient({
       env: profile.env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+
     let stdout = '';
     let stderr = '';
     let timedOut = false;
@@ -152,10 +154,12 @@ export function runClient({
 
     child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()));
     child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
+
     child.on('error', (error) => {
       clearTimeout(timer);
       reject(error);
     });
+
     child.on('close', (code, signal) => {
       clearTimeout(timer);
 
@@ -186,10 +190,12 @@ export async function createHost(entry: Buffer) {
     const status = request.method === 'GET' && body !== undefined ? 200 : 404;
 
     requests.push({ method: request.method ?? '', path, status });
+
     response.writeHead(status, {
       'content-type': path.endsWith('.json') ? 'application/json' : 'text/plain; charset=utf-8',
       'cache-control': 'no-store',
     });
+
     response.end(status === 200 ? body : 'Not found');
   });
 
@@ -210,6 +216,7 @@ export async function createHost(entry: Buffer) {
     requests,
     modern({ mismatch = false, missing = false } = {}) {
       routes.clear();
+
       routes.set(
         modernIndex,
         JSON.stringify({
@@ -230,6 +237,7 @@ export async function createHost(entry: Buffer) {
     },
     legacy({ lowercase = false, missing = false } = {}) {
       routes.clear();
+
       routes.set(
         legacyIndex,
         JSON.stringify({

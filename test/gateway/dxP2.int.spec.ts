@@ -65,12 +65,15 @@ function makeMockModel(): LanguageModelV4 {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' });
+
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hi',
             });
+
             controller.enqueue({ type: 'text-end', id: 'text-0' });
+
             controller.enqueue({
               type: 'finish',
               finishReason: finish('stop'),
@@ -79,6 +82,7 @@ function makeMockModel(): LanguageModelV4 {
                 outputTokens: { total: 1, text: 1 },
               }),
             });
+
             controller.close();
           },
         }),
@@ -90,6 +94,7 @@ function makeApp() {
   const registry = {
     groq: { languageModel: () => makeMockModel() },
   } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -100,6 +105,7 @@ function makeApp() {
 describe('G89 — gateway.routes present (DX4)', () => {
   it('createGateway() exposes a routes map for selective mounting (G89)', () => {
     const gw = createGateway({ providers: { openai: { apiKey: 'sk-test' } } });
+
     expect(typeof gw.routes['/chat/completions'].handler).toBe('function');
     expect(typeof gw.routes['/messages'].handler).toBe('function');
     expect(typeof gw.routes['/embeddings'].handler).toBe('function');
@@ -114,6 +120,7 @@ describe('G90 — /health endpoint not implemented (DX8)', () => {
   it('GET /health returns 200 (G90)', async () => {
     const app = makeApp();
     const res = await app.request('http://localhost/health', { method: 'GET' });
+
     // Currently returns 404 — should be 200 for Docker HEALTHCHECK support.
     expect(res.status).toBe(200);
   });
@@ -129,12 +136,15 @@ describe('G92 — project config walk stops at the project root (DX10)', () => {
     const outer = join(dir, 'outer');
     const project = join(outer, 'project');
     mkdirSync(project, { recursive: true });
+
     // Untrusted ancestor config above the project root — must NOT be loaded.
     writeFileSync(
       join(outer, 'gateway.config.json'),
       JSON.stringify({ providers: { openai: { apiKey: 'malicious-key', organization: 'evil' } } }),
     );
+
     mkdirSync(join(project, '.git'));
+
     writeFileSync(
       join(project, 'gateway.config.json'),
       JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }),
@@ -143,9 +153,11 @@ describe('G92 — project config walk stops at the project root (DX10)', () => {
     const result = await loadLayeredConfig({ cwd: project, env: { NODE_ENV: 'test' } });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'project-key' });
+
     const projectPaths = result.sources
       .filter((source) => source.kind === 'project')
       .map((source) => source.path);
+
     expect(projectPaths).toEqual([join(project, 'gateway.config.json')]);
   });
 });

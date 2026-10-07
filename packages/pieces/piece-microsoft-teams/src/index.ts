@@ -60,6 +60,7 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
     cloud: z.literal(cloud.loginHost).default(cloud.loginHost),
     tenantId: z.literal(settings.tenantId).default(settings.tenantId),
   });
+
   const oauth = {
     authorizationUrl: `https://${cloud.loginHost}/${tenant}/oauth2/v2.0/authorize`,
     tokenUrl: `https://${cloud.loginHost}/${tenant}/oauth2/v2.0/token`,
@@ -82,6 +83,7 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
     z.output<typeof environmentAuth>,
     ReturnType<typeof createMicrosoftTeamsClient>
   >;
+
   const channel = {
     adapter({ auth, options }) {
       if (!auth.appId || !auth.appPassword) {

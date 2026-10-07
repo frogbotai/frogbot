@@ -45,6 +45,7 @@ describe('calendar core', () => {
 
   it('keeps range days in the calendar timezone', () => {
     const range = getVisibleRange({ date: '2026-09-09T12:00:00Z', mode: 'month' });
+
     expect(getRangeDays(range, 2).map((day) => format(day, 'yyyy-MM-dd'))).toEqual([
       '2026-08-30',
       '2026-08-31',

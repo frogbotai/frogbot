@@ -16,6 +16,7 @@ describe('lexicalHTMLField', () => {
         lexicalFieldName: 'content',
       }),
     );
+
     const afterRead = field.hooks?.afterRead?.[0];
 
     expect(afterRead).toBeTypeOf('function');

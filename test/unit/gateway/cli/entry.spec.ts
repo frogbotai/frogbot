@@ -16,6 +16,7 @@ describe('isCliEntry', () => {
   it('matches when argv[1] is a symlink to the module path (pnpm layout)', () => {
     const symlink = '/app/node_modules/@frogbotai/gateway/dist/cli/index.js';
     const realpath = (p: string) => (p === symlink ? realFile : p);
+
     expect(isCliEntry(moduleUrl, symlink, realpath)).toBe(true);
   });
 
@@ -28,6 +29,7 @@ describe('isCliEntry', () => {
     const realpath = () => {
       throw new Error('ENOENT');
     };
+
     expect(isCliEntry(moduleUrl, realFile, realpath)).toBe(true);
     expect(isCliEntry(moduleUrl, '/elsewhere/index.js', realpath)).toBe(false);
   });

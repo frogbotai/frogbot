@@ -63,6 +63,7 @@ describe('toResponsesTools', () => {
       server_url: 'https://mcp.deepwiki.com/mcp',
       require_approval: 'never',
     };
+
     const tools = toResponsesTools([mcpTool], 'openai');
 
     expect(tools!.mcp).toMatchObject({

@@ -14,12 +14,14 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
     serverURL: 'https://app.test',
     routes: { api: '/rest/v1', admin: '/control' },
   };
+
   const connections: SanitizedConnectionsConfig = {
     enabled: true,
     slug: 'connections',
     encryption: base.encryption,
     entries: { example: { piece: base.piece, oauth: true, secret: true } },
   };
+
   const endpoints = buildConnectionOAuthEndpoints({ connections, userSlug: 'users' });
   const request = ({
     url = 'https://untrusted.test/rest/v1/connections/example/authorize',
@@ -39,24 +41,32 @@ function fixture(pieceDefinition: Parameters<typeof setup>[0] = definition) {
         findByID,
       },
     }) as unknown as FrogBotRequest;
+
   const start = async (query = '') => {
     const response = await endpoints[0].handler(
       request({ url: `https://app.test/authorize${query}` }),
     );
+
     expect(response.status).toBe(302);
+
     const provider = new URL(response.headers.get('location')!);
     const cookie = response.headers.get('set-cookie')!.split(';')[0];
     const url = `${provider.searchParams.get('redirect_uri')}?state=${provider.searchParams.get('state')}&code=private-code`;
+
     return { response, provider, cookie, url };
   };
+
   const fetch = vi
     .fn()
     .mockImplementation(() => Promise.resolve(Response.json({ access_token: 'fresh-token' })));
+
   vi.stubGlobal('fetch', fetch);
+
   return { ...base, upsert, findByID, config, connections, endpoints, request, start, fetch };
 }
 
 type Fixture = ReturnType<typeof fixture>;
+
 type FixtureRequest = FrogBotRequest;
 
 describe('OAuth linking endpoints', () => {
@@ -67,6 +77,7 @@ describe('OAuth linking endpoints', () => {
 
   it('mounts only two-segment collection GET routes', () => {
     const { endpoints, connections } = fixture();
+
     expect(endpoints.map(({ method, path }) => ({ method, path }))).toEqual([
       { method: 'get', path: '/:piece/authorize' },
       { method: 'get', path: '/:piece/callback' },
@@ -84,6 +95,7 @@ describe('OAuth linking endpoints', () => {
     async (user) => {
       const f = fixture();
       const response = await f.endpoints[0].handler(f.request({ user }));
+
       expect(response.status).toBe(user ? 403 : 401);
       expect(f.values.size).toBe(0);
     },
@@ -93,6 +105,7 @@ describe('OAuth linking endpoints', () => {
     'returns 404 for unknown or noncanonical route %s',
     async (piece) => {
       const f = fixture();
+
       for (const endpoint of f.endpoints) {
         expect((await endpoint.handler(f.request({ piece }))).status).toBe(404);
       }
@@ -103,9 +116,11 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     const flow = await f.start();
     f.connections.entries.example.oauth = false;
+
     for (const endpoint of f.endpoints) {
       expect((await endpoint.handler(f.request(flow))).status).toBe(404);
     }
+
     expect(f.fetch).not.toHaveBeenCalled();
   });
 
@@ -135,6 +150,7 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     const flow = await f.start();
     change(f);
+
     expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
     expect(f.fetch).not.toHaveBeenCalled();
     expect(f.upsert).not.toHaveBeenCalled();
@@ -143,18 +159,23 @@ describe('OAuth linking endpoints', () => {
   it('uses configured origin, API prefix and default settings return route with PKCE', async () => {
     const f = fixture();
     const flow = await f.start();
+
     expect(flow.provider.searchParams.get('redirect_uri')).toBe(
       'https://app.test/rest/v1/connections/example/callback',
     );
     expect(flow.provider.searchParams.get('code_challenge_method')).toBe('S256');
     expect(flow.response.headers.get('cache-control')).toBe('no-store');
     expect(f.upsert).not.toHaveBeenCalled();
+
     const response = await f.endpoints[1].handler(f.request(flow));
+
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe('/control/settings/connections');
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(response.headers.get('cache-control')).toBe('no-store');
+
     const body = f.fetch.mock.calls[0][1].body as URLSearchParams;
+
     expect(body.get('redirect_uri')).toBe(flow.provider.searchParams.get('redirect_uri'));
     expect(body.get('code_verifier')).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(f.upsert).toHaveBeenCalledWith(
@@ -173,6 +194,7 @@ describe('OAuth linking endpoints', () => {
   ])('preserves safe returnTo %s', async (returnTo) => {
     const f = fixture();
     const flow = await f.start(`?returnTo=${encodeURIComponent(returnTo)}`);
+
     expect((await f.endpoints[1].handler(f.request(flow))).headers.get('location')).toBe(
       '/elsewhere?tab=connections#linked',
     );
@@ -185,6 +207,7 @@ describe('OAuth linking endpoints', () => {
       const response = await f.endpoints[0].handler(
         f.request({ url: `https://app.test/authorize?returnTo=${encodeURIComponent(returnTo)}` }),
       );
+
       expect(response.status).toBe(400);
       expect(f.values.size).toBe(0);
     },
@@ -198,6 +221,7 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     f.config.serverURL = serverURL;
     const response = await f.endpoints[0].handler(f.request());
+
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Connection operation failed' });
     expect(f.values.size).toBe(0);
@@ -207,16 +231,20 @@ describe('OAuth linking endpoints', () => {
     const f = fixture();
     Object.assign(f.config, { serverURL: '', routes: { api: '/', admin: '/' } });
     const flow = await f.start();
+
     expect(flow.provider.searchParams.get('redirect_uri')).toBe(
       'https://app.test/connections/example/callback',
     );
+
     const response = await f.endpoints[1].handler(f.request(flow));
+
     expect(response.headers.get('location')).toBe('/settings/connections');
   });
 
   it('allows a browser-bound cross-site callback without req.user and rejects replay', async () => {
     const f = fixture();
     const flow = await f.start();
+
     expect((await f.endpoints[1].handler(f.request({ ...flow, user: null }))).status).toBe(302);
     expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
     expect(f.fetch).toHaveBeenCalledTimes(1);
@@ -235,9 +263,11 @@ describe('OAuth linking endpoints', () => {
     const pending = new Promise<void>((resolve) => {
       finish = resolve;
     });
+
     const started = new Promise<void>((resolve) => {
       accountStarted = resolve;
     });
+
     const f = fixture({
       ...definition,
       oauth: {
@@ -245,20 +275,28 @@ describe('OAuth linking endpoints', () => {
         account: async () => {
           accountStarted();
           await pending;
+
           return { id: 'account', label: 'Account' };
         },
       },
     });
+
     const flow = await f.start();
+
     f.fetch.mockImplementationOnce(async () => {
       expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
       expect(f.upsert).not.toHaveBeenCalled();
+
       return Response.json({ access_token: 'fresh-token' });
     });
+
     const response = f.endpoints[1].handler(f.request(flow));
     await started;
+
     expect(f.upsert).not.toHaveBeenCalled();
+
     finish();
+
     expect((await response).status).toBe(302);
     expect(f.upsert).toHaveBeenCalledTimes(1);
     expect(f.fetch).toHaveBeenCalledTimes(1);
@@ -285,6 +323,7 @@ describe('OAuth linking endpoints', () => {
       const flow = await f.start();
       const req = f.request(flow);
       change(req);
+
       expect((await f.endpoints[1].handler(req)).status).toBe(400);
       expect(f.fetch).not.toHaveBeenCalled();
       expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(302);
@@ -336,12 +375,15 @@ describe('OAuth linking endpoints', () => {
       const url = new URL(flow.url);
       fail(f, url);
       const response = await f.endpoints[1].handler(f.request({ ...flow, url: url.href }));
+
       expect(response.status).toBe(status);
       expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(await response.json()).toEqual({ error: 'Connection operation failed' });
       expect(f.upsert).toHaveBeenCalledTimes(upserts);
+
       const calls = f.fetch.mock.calls.length;
+
       expect((await f.endpoints[1].handler(f.request(flow))).status).toBe(400);
       expect(f.fetch).toHaveBeenCalledTimes(calls);
     },
@@ -357,8 +399,10 @@ describe('OAuth linking endpoints', () => {
           : { account: () => Promise.resolve({ id: '', label: 'private-token' }) }),
       },
     });
+
     const flow = await f.start();
     const response = await f.endpoints[1].handler(f.request(flow));
+
     expect(response.status).toBe(400);
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(f.upsert).not.toHaveBeenCalled();

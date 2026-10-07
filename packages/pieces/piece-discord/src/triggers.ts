@@ -33,6 +33,7 @@ function deliveryKey(slug: string, delivery: Record<string, unknown>): string | 
     data.emoji && typeof data.emoji === 'object'
       ? (data.emoji as Record<string, unknown>)
       : undefined;
+
   const emojiId = nonempty(emoji?.id);
   const emojiName = nonempty(emoji?.name);
   const emojiKey = emojiId ?? emojiName;

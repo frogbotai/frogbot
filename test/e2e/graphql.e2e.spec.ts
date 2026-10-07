@@ -160,6 +160,7 @@ describe.skipIf(!RUN_E2E)('GraphQL in a scaffolded application', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'graphql@frogbot.test', password: 'frogbot-e2e-password' }),
     });
+
     const registered = (await registration.json()) as { token: string };
 
     token = registered.token;

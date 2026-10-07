@@ -11,6 +11,7 @@ export const updateDiscordQuestion: NonNullable<
 > = async ({ call, client, interaction, question, thread }) => {
   const control =
     interaction?.type === 'action' ? decodeQuestionId(interaction.event.actionId) : null;
+
   const pick = control?.verb === 'select' && call.input.questions[control.q]?.multiple;
 
   if (pick) return;

@@ -17,6 +17,7 @@ export function toResponsesOutput(
 ): ReturnType<typeof Output.object> | undefined {
   const format = text?.format;
   if (!format || format.type !== 'json_schema' || !format.schema) return undefined;
+
   return Output.object({
     schema: jsonSchema(format.schema),
     name: format.name ?? undefined,

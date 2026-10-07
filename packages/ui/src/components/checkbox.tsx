@@ -4,9 +4,11 @@ import type { ComponentProps } from 'react';
 
 import CheckIcon from '../icons/icons/CheckIcon.js';
 import MinusIcon from '../icons/icons/MinusIcon.js';
+
 export type CheckboxProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'> & {
   variant?: 'primary' | 'secondary';
 };
+
 export function Checkbox(input: CheckboxProps) {
   const {
     asChild: _asChild,

@@ -74,12 +74,14 @@ export function createBraveSearchClient({ auth }: { auth: unknown }) {
           redirect: 'manual',
           signal: controller.signal,
         });
+
         const contentType = response.headers.get('content-type') ?? '';
         const body = request.responseIsBinary
           ? new Uint8Array(await response.arrayBuffer())
           : contentType.includes('application/json')
             ? await response.json()
             : await response.text();
+
         const result = {
           status: response.status,
           headers: Object.fromEntries(response.headers.entries()),

@@ -20,6 +20,7 @@ describe('Message', () => {
     );
 
     const message = container.querySelector<HTMLDivElement>('[data-message]');
+
     expect(message?.dataset.role).toBe('user');
     expect(message?.className).toBe('fb-message fb-message--user external-class');
     expect(screen.getByText('You').className).toBe('fb-message__avatar');

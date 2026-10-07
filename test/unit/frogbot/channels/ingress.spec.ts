@@ -160,6 +160,7 @@ describe('ChannelHost ingress-only lifecycle', () => {
         await new Promise<void>((resolve) =>
           signal.addEventListener('abort', () => resolve(), { once: true }),
         );
+
         await drain.promise;
       },
     );

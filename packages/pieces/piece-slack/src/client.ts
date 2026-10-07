@@ -15,6 +15,7 @@ export const slackApiResult = z.object({
 });
 
 export type SlackClient = ReturnType<typeof createSlackClient>;
+
 export type SlackToken = 'bot' | 'user';
 
 function safeMethod(method: string) {
@@ -98,6 +99,7 @@ export function createSlackClient({ auth }: { auth: unknown }) {
       body: requestBody,
       redirect: 'error',
     });
+
     const result = await parseResponse(response);
 
     if (!response.ok) {
@@ -152,6 +154,7 @@ export function createSlackClient({ auth }: { auth: unknown }) {
       }
 
       const metadata = response.response_metadata;
+
       cursor =
         metadata && typeof metadata === 'object' && 'next_cursor' in metadata
           ? String(metadata.next_cursor || '') || undefined

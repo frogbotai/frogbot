@@ -108,6 +108,7 @@ test('edits, saves, reloads, and renders rich text through the generated import 
   const response = await saveResponse;
 
   expect(response.ok(), await response.text()).toBe(true);
+
   await page.waitForURL(
     (url) =>
       /^\/admin\/collections\/posts\/[^/]+$/.test(url.pathname) &&
@@ -171,11 +172,13 @@ test('creates and persists an external link through the link drawer', async ({ p
 
   await page.getByRole('button', { name: /save/i }).first().click();
   expect((await saveResponse).ok()).toBe(true);
+
   await page.waitForURL(
     (url) =>
       /^\/admin\/collections\/posts\/[^/]+$/.test(url.pathname) &&
       !url.pathname.endsWith('/create'),
   );
+
   await page.reload();
   await expect(editor.locator('a[href="https://frogbot.ai/docs"]')).toHaveText('docs');
 });
@@ -249,11 +252,13 @@ test('documented block components render and server blocks use req.frogbot', asy
   const response = await saveResponse;
 
   expect(response.ok(), await response.text()).toBe(true);
+
   await page.waitForURL(
     (url) =>
       /^\/admin\/collections\/posts\/[^/]+$/.test(url.pathname) &&
       !url.pathname.endsWith('/create'),
   );
+
   await page.reload();
   await expect(editor.locator('.LexicalEditorTheme__block')).toHaveCount(2);
   await expect(editor.locator('.LexicalEditorTheme__inlineBlock')).toHaveCount(1);
@@ -418,6 +423,7 @@ test('view selection preserves saved content and safely renders editor nodes', a
     type: 'paragraph',
     version: 1,
   };
+
   const root = {
     children: [paragraph],
     direction: 'ltr',
@@ -426,6 +432,7 @@ test('view selection preserves saved content and safely renders editor nodes', a
     type: 'root',
     version: 1,
   };
+
   const createResponse = await page.request.post('/api/posts', {
     data: {
       title: 'Documented views',
@@ -451,6 +458,7 @@ test('view selection preserves saved content and safely renders editor nodes', a
       },
     },
   });
+
   const created: unknown = await createResponse.json();
   const documentID = getDocumentID(created);
 

@@ -3,6 +3,7 @@ import { createGatewayHandler, getFrogBot } from 'frogbot';
 
 const handler = async (request: Request): Promise<Response> => {
   const frogbot = await getFrogBot({ config });
+
   return createGatewayHandler(frogbot)(request);
 };
 

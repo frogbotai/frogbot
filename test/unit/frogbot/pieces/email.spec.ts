@@ -26,6 +26,7 @@ function runtime(payload = {} as Payload) {
   vi.spyOn(frogbot, 'createRequest').mockImplementation(() =>
     Promise.resolve(Object.assign({ payload, user: null } as never, { frogbot })),
   );
+
   vi.spyOn(frogbot, 'email', 'get').mockImplementation(() => payload.email);
   registerFrogBotInstance(payload, frogbot);
 
@@ -184,6 +185,7 @@ describe('piece email adapter', () => {
     const sends = [adapter.sendEmail(message), adapter.sendEmail(message)];
 
     await vi.waitFor(() => expect(client).toHaveBeenCalledOnce());
+
     expect(send).not.toHaveBeenCalled();
 
     const sharedClient = { auth: 'resolved' };

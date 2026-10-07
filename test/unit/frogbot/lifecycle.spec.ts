@@ -34,6 +34,7 @@ vi.mock('payload', async (importOriginal) => ({
       if (payloadState.promise) return payloadState.promise;
       const disableOnInit = payloadState.entryExists;
       payloadState.entryExists = true;
+
       payloadState.promise = Promise.resolve(config)
         .then(async (resolved) => {
           payloadState.payload.config = resolved as typeof payloadState.payload.config;
@@ -41,13 +42,16 @@ vi.mock('payload', async (importOriginal) => ({
             payloadState.failNext = false;
             throw new Error('transient payload init failure');
           }
+
           if (!disableOnInit) await resolved.onInit?.(payloadState.payload);
+
           return payloadState.payload;
         })
         .catch((error) => {
           payloadState.promise = null;
           throw error;
         });
+
       return payloadState.promise;
     },
   ),
@@ -57,6 +61,7 @@ vi.mock('payload', async (importOriginal) => ({
 vi.mock('../../../packages/frogbot/src/typegen/index.js', () => ({
   writeGeneratedTypes: vi.fn(() => Promise.resolve()),
 }));
+
 vi.mock('../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({
   generateImportMap: vi.fn(() => Promise.resolve()),
 }));
@@ -66,6 +71,7 @@ const { resolveConfigDir } = await import('../../../packages/frogbot/src/config/
 const { sanitize } = await import('../../../packages/frogbot/src/config/sanitize.js');
 const { getCachedFrogBot, getFrogBot, resetFrogBotCache } =
   await import('../../../packages/frogbot/src/getFrogBot.js');
+
 const { getFrogBotInstance } = await import('../../../packages/frogbot/src/instanceRegistry.js');
 
 describe('FrogBot lifecycle', () => {
@@ -92,23 +98,30 @@ describe('FrogBot lifecycle', () => {
     });
 
     const payloadConfig = await config._internal.payloadConfig;
+
     expect(payloadConfig.onInit).toBeTypeOf('function');
+
     const payloadFirst = getPayload({ config: payloadConfig });
+
     await Promise.race([
       onInitStarted,
       payloadFirst.then(() =>
         Promise.reject(new Error('Payload initialized before FrogBot onInit')),
       ),
     ]);
+
     expect(getFrogBotInstance(payloadState.payload)).toBe(lifecycleFrogBot);
     expect(getCachedFrogBot()).toBeNull();
 
     let accessorResolved = false;
     const accessorFirst = getFrogBot({ config }).then((frogbot) => {
       accessorResolved = true;
+
       return frogbot;
     });
+
     await vi.waitFor(() => expect(vi.mocked(getPayload)).toHaveBeenCalledTimes(2));
+
     expect(accessorResolved).toBe(false);
 
     releaseOnInit();
@@ -122,10 +135,12 @@ describe('FrogBot lifecycle', () => {
 
   it('recovers a Payload retry that skipped onInit', async () => {
     resetFrogBotCache();
+
     payloadState.payload = {
       ...payloadState.payload,
       config: { collections: [] },
     };
+
     payloadState.entryExists = false;
     payloadState.failNext = true;
     payloadState.promise = null;
@@ -142,12 +157,15 @@ describe('FrogBot lifecycle', () => {
       ],
       typescript: { autoGenerate: false },
     });
+
     const payloadConfig = await config._internal.payloadConfig;
 
     await expect(getPayload({ config: payloadConfig })).rejects.toThrow(
       'transient payload init failure',
     );
+
     const payload = await getPayload({ config: payloadConfig });
+
     expect(getFrogBotInstance(payload)).toBeUndefined();
 
     const endpoint = payloadConfig.endpoints?.find((item) => item.path === '/recovery');

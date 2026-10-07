@@ -19,11 +19,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function deepMergeUserWins(base: unknown, user: unknown): unknown {
   if (isPlainObject(base) && isPlainObject(user)) {
     const out: Record<string, unknown> = { ...base };
+
     for (const [key, value] of Object.entries(user)) {
       out[key] = key in base ? deepMergeUserWins(base[key], value) : value;
     }
+
     return out;
   }
+
   return user;
 }
 
@@ -32,9 +35,11 @@ function concatHooks(
   user: Record<string, unknown[]> | undefined,
 ): Record<string, unknown[]> {
   const out: Record<string, unknown[]> = {};
+
   for (const key of new Set([...Object.keys(base ?? {}), ...Object.keys(user ?? {})])) {
     out[key] = [...(base?.[key] ?? []), ...(user?.[key] ?? [])];
   }
+
   return out;
 }
 
@@ -58,6 +63,7 @@ function mergeField(base: Field, user: Field, slug: string, feature: string): Fi
       `[frogbot] Field '${fieldName(base)}' on collection '${slug}' must set type '${baseType}' required by ${feature}.`,
     );
   }
+
   if (baseType !== userType) {
     throw new Error(
       `[frogbot] Field '${fieldName(base)}' on collection '${slug}' has type '${baseType}' required by ` +
@@ -72,9 +78,11 @@ function mergeField(base: Field, user: Field, slug: string, feature: string): Fi
       (user as { hooks?: Record<string, unknown[]> }).hooks,
     );
   }
+
   if (hasSubFields(base) && hasSubFields(user)) {
     (merged as { fields: Field[] }).fields = mergeFields(user.fields, base.fields, slug, feature);
   }
+
   return merged;
 }
 
@@ -85,6 +93,7 @@ function mergeFields(
   feature: string,
 ): Field[] {
   const out = [...userFields];
+
   for (const baseField of baseFields) {
     const name = fieldName(baseField);
     const idx = out.findIndex((f) => name !== undefined && fieldName(f) === name);
@@ -94,6 +103,7 @@ function mergeFields(
       out[idx] = mergeField(baseField, out[idx], slug, feature);
     }
   }
+
   return out;
 }
 

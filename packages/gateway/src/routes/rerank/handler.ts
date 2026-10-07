@@ -78,11 +78,13 @@ export function rerankRoute(ctx: RerankRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = requireRerankingModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
       base = {
@@ -94,6 +96,7 @@ export function rerankRoute(ctx: RerankRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       const { providerOptions, ...rerankParams } = toRerankParams(body);
@@ -122,6 +125,7 @@ export function rerankRoute(ctx: RerankRouteContext) {
       });
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         { ...base, phase, response: result.response },
@@ -146,6 +150,7 @@ export function rerankRoute(ctx: RerankRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       if (base) {
@@ -169,12 +174,15 @@ export function rerankRoute(ctx: RerankRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toOpenAIErrorResponse(err, { requestId });
+
     for (const [k, v] of Object.entries(headersForError(err, status))) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 

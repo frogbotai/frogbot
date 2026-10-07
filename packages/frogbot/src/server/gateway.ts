@@ -22,6 +22,7 @@ function methodForPath(pathname: string): AIMethod | undefined {
   ) {
     return 'generateText';
   }
+
   if (/\/embeddings$/.test(pathname)) return 'embed';
   if (/\/audio\/transcriptions$/.test(pathname)) return 'transcribe';
   if (/\/rerank$/.test(pathname)) return 'rerank';
@@ -32,9 +33,12 @@ async function readRequestedModel(request: Request): Promise<string | undefined>
   const contentType = request.headers.get('content-type') ?? '';
   if (contentType.startsWith('multipart/form-data')) {
     const model = (await request.clone().formData()).get('model');
+
     return typeof model === 'string' ? model : undefined;
   }
+
   const body = (await request.clone().json()) as { model?: unknown };
+
   return typeof body?.model === 'string' ? body.model : undefined;
 }
 
@@ -73,6 +77,7 @@ export async function handleGatewayRequest({
           { status: error.status },
         );
       }
+
       if (
         error instanceof Error &&
         'status' in error &&
@@ -84,9 +89,11 @@ export async function handleGatewayRequest({
           { status: error.status },
         );
       }
+
       throw error;
     }
   }
+
   const forwarded = new Request(url, request);
 
   // The gateway's route handlers own the full 5-phase hook lifecycle. We only

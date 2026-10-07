@@ -15,6 +15,7 @@ const server = createServer(async (req, res) => {
 
   apiCalls.push(req.url!);
   res.writeHead(200, { 'content-type': 'application/json' });
+
   res.end(
     JSON.stringify({ ok: true, ts: '2.000001', channel: 'C1', message: { text: 'Hello back' } }),
   );

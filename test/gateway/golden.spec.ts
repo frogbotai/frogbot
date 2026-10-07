@@ -65,6 +65,7 @@ function makeOpenAIHttpFixtureApp(scenario: string) {
       update: shouldUpdateFixtures(),
     }),
   } as never);
+
   return createApp({ registry: { openai } });
 }
 
@@ -76,11 +77,13 @@ function makeCohereHttpFixtureApp(scenario: string) {
       update: shouldUpdateFixtures(),
     }),
   } as never);
+
   return createApp({ registry: { cohere } });
 }
 
 function getScenarios(): string[] {
   if (!existsSync(FIXTURES_DIR)) return [];
+
   return readdirSync(FIXTURES_DIR, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => d.name);
@@ -95,17 +98,20 @@ async function runThroughTransform(
       for (const part of parts) {
         controller.enqueue(part);
       }
+
       controller.close();
     },
   });
 
   const reader = readable.pipeThrough(transform).getReader();
   let output = '';
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     output += value;
   }
+
   return output;
 }
 
@@ -122,6 +128,7 @@ const m4FixtureProviders = {
 describe('gateway golden tests', () => {
   if (scenarios.length === 0) {
     it.todo('no fixtures found — add fixtures to test/gateway/__fixtures__/');
+
     return;
   }
 
@@ -130,6 +137,7 @@ describe('gateway golden tests', () => {
       const fixture = loadFixture(scenario);
       if (!fixture || fixture.chunks.length === 0) {
         it.todo('fixture missing chunks.txt');
+
         return;
       }
 
@@ -137,6 +145,7 @@ describe('gateway golden tests', () => {
         it('OpenAI SSE output matches fixture', async () => {
           const transform = createOpenAIStreamTransform({ model: 'test-model' });
           const output = await runThroughTransform(fixture.chunks, transform);
+
           expect(output).toBe(fixture.expectedOpenAI);
         });
       } else {
@@ -147,6 +156,7 @@ describe('gateway golden tests', () => {
         it('Anthropic SSE output matches fixture', async () => {
           const transform = createAnthropicStreamTransform({ model: 'test-model' });
           const output = await runThroughTransform(fixture.chunks, transform);
+
           expect(output).toBe(fixture.expectedAnthropic);
         });
       } else {
@@ -225,6 +235,7 @@ describe('gateway provider HTTP golden replay', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(loadJsonFixture(scenario, 'request.json')),
     });
+
     const expected = loadJsonFixture<{ contentType: string; bytes: number[] }>(
       scenario,
       'expected-response.json',
@@ -242,9 +253,11 @@ describe('gateway provider HTTP golden replay', () => {
       scenario,
       'request.json',
     );
+
     const form = new FormData();
     form.set('model', request.model);
     form.set('response_format', request.response_format);
+
     form.set(
       'file',
       new File([readFileSync(join(FIXTURES_DIR, 'audio', 'public-domain-tiny.wav'))], 'tiny.wav', {

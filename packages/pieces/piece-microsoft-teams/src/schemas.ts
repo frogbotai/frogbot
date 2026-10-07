@@ -56,6 +56,7 @@ export const transcript = z
 export const recording = z
   .object({ id: z.string(), createdDateTime: z.string().nullish() })
   .passthrough();
+
 export type GraphPage<T> = {
   value: T[];
   '@odata.nextLink'?: string | undefined;

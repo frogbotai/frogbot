@@ -56,6 +56,7 @@ describe('defineEnv', () => {
     );
 
     delete process.env.PORT;
+
     expect(defineEnv({ secret: env.string().required() })).toEqual({ secret: undefined });
   });
 
@@ -113,9 +114,11 @@ describe('defineEnv', () => {
 
   it('takes a new environment snapshot on every call', () => {
     replaceEnv({ VALUE: 'first' });
+
     expect(defineEnv({ value: env.string() }).value).toBe('first');
 
     process.env.VALUE = 'second';
+
     expect(defineEnv({ value: env.string() }).value).toBe('second');
   });
 

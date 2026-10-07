@@ -30,6 +30,7 @@ type HookOptions = Required<
 
 function errorValue(error: unknown): CaptureRecord['error'] {
   if (error instanceof Error) return { name: error.name, message: error.message };
+
   return { message: String(error) };
 }
 
@@ -69,12 +70,15 @@ async function persist(
     request: state.request,
     ...('error' in args ? { error: errorValue(args.error) } : { response: args.response }),
   };
+
   if (Buffer.byteLength(JSON.stringify(capture)) > options.maxBodyBytes) {
     throw new Error(`capture exceeds maxBodyBytes (${options.maxBodyBytes})`);
   }
+
   const bytes = await encodeCapture(capture);
   const blobKey = captureBlobKey(capture.captureId, new Date(args.startedAt));
   await options.storage.put(blobKey, bytes);
+
   await args.req.frogbot.create({
     collection: options.collectionSlug,
     data: {
@@ -107,6 +111,7 @@ export function createCaptureHooks(options: HookOptions): AIHooks {
         if (actor?.capture === 'enabled') enabled = true;
         if (actor?.capture === 'disabled') enabled = false;
         if (typeof actor?.captureSampleRate === 'number') sampleRate = actor.captureSampleRate;
+
         args.context[stateKey] = {
           enabled: enabled && Math.random() < sampleRate,
         } satisfies CaptureState;
@@ -122,11 +127,14 @@ export function createCaptureHooks(options: HookOptions): AIHooks {
           tools: args.tools,
           params: args.params ? { ...args.params } : undefined,
         };
+
         if (Buffer.byteLength(JSON.stringify(request)) > options.maxBodyBytes) {
           state.enabled = false;
           logFailure(args.req, new Error(`capture exceeds maxBodyBytes (${options.maxBodyBytes})`));
+
           return;
         }
+
         state.captureId = randomUUID();
         state.request = structuredClone(request);
       },

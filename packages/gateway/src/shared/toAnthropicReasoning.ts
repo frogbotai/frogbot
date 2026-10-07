@@ -9,6 +9,7 @@ export function toAnthropicReasoning(
   }>,
 ) {
   if (reasoning.length === 0) return undefined;
+
   return reasoning
     .filter((r) => r.type === 'reasoning' && typeof r.text === 'string')
     .map((r) => ({

@@ -10,6 +10,7 @@ export function validateSignIn(collection: CollectionConfig): SignInMethod[] {
   const fail = (message: string): never => {
     throw new Error(`[frogbot] Collection '${collection.slug}' signIn ${message}`);
   };
+
   if (!Array.isArray(auth.signIn)) fail('must be an array.');
   if (!auth.signIn.length) return [];
   if (
@@ -18,12 +19,14 @@ export function validateSignIn(collection: CollectionConfig): SignInMethod[] {
   ) {
     fail('requires disableLocalStrategy.enableFields to retain identity and session fields.');
   }
+
   if (
     typeof auth.loginWithUsername === 'object' &&
     auth.loginWithUsername.allowEmailLogin === false
   ) {
     fail('requires unique email identity; allowEmailLogin cannot be false.');
   }
+
   const email = collection.fields.find((field) => 'name' in field && field.name === 'email');
   if (
     email &&
@@ -31,7 +34,9 @@ export function validateSignIn(collection: CollectionConfig): SignInMethod[] {
   ) {
     fail('requires a unique, stored, non-localized email field.');
   }
+
   const slugs = new Set<string>();
+
   for (const method of auth.signIn) {
     if (!isPieceInstance(method)) fail('requires OAuth piece instances.');
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(method.slug)) fail('method slugs must be URL-safe.');
@@ -43,6 +48,7 @@ export function validateSignIn(collection: CollectionConfig): SignInMethod[] {
         `method '${method.slug}' requires an OAuth recipe with an account function returning email.`,
       );
     }
+
     if (
       typeof method.oauth?.clientId !== 'string' ||
       !method.oauth.clientId.trim() ||
@@ -52,6 +58,7 @@ export function validateSignIn(collection: CollectionConfig): SignInMethod[] {
       fail(`method '${method.slug}' requires factory OAuth clientId and clientSecret.`);
     }
   }
+
   return auth.signIn;
 }
 

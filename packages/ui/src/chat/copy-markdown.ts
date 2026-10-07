@@ -24,6 +24,7 @@ function copyWithTextarea(text: string) {
   textarea.select();
   const copied = document.execCommand('copy');
   textarea.remove();
+
   return copied;
 }
 
@@ -35,6 +36,7 @@ export async function copyMarkdown(text: string): Promise<boolean> {
       typeof ClipboardItem === 'undefined'
     ) {
       await navigator.clipboard.writeText(text);
+
       return true;
     }
 
@@ -44,10 +46,12 @@ export async function copyMarkdown(text: string): Promise<boolean> {
         'text/plain': new Blob([text], { type: 'text/plain' }),
       }),
     ]);
+
     return true;
   } catch {
     try {
       await navigator.clipboard.writeText(text);
+
       return true;
     } catch {
       return copyWithTextarea(text);

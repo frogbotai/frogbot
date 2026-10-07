@@ -76,6 +76,7 @@ async function connect() {
       ({ adapter, schema }) => {
         adapter.tableNameMap.set('custom_k_v_store', tableName);
         adapter.rawTables[tableName] = rawTable;
+
         return schema;
       },
     ],
@@ -85,9 +86,11 @@ async function connect() {
       logger: { warn: vi.fn(), error: vi.fn() },
     } as unknown as Payload,
   });
+
   await adapter.init?.();
   adapter.pool = new adapter.pg.Pool(adapter.poolOptions);
   adapter.drizzle = drizzle({ client: adapter.pool, schema: adapter.schema });
+
   return adapter;
 }
 
@@ -104,6 +107,7 @@ describe('SQL KV with PostgreSQL', () => {
           count: string;
         }>(sql`select count(*)::text as count from pg_stat_activity
         where application_name = ${schemaName} and wait_event_type = 'Lock'`);
+
         return Number(result.rows[0].count);
       })
       .toBeGreaterThan(0);
@@ -118,15 +122,18 @@ describe('SQL KV with PostgreSQL', () => {
   async function blockingClient() {
     const blocker = await adapters[1].pool.connect();
     const pending: Promise<unknown>[] = [];
+
     onTestFinished(async () => {
       await blocker.query('rollback');
       blocker.release();
       await Promise.allSettled(pending);
     });
+
     return {
       blocker,
       track: <T extends Promise<unknown>>(promise: T) => {
         pending.push(promise);
+
         return promise;
       },
     };
@@ -137,17 +144,22 @@ describe('SQL KV with PostgreSQL', () => {
       if (process.env.CI === 'true') {
         throw new Error('PostgreSQL is required in CI but is not reachable at localhost:5433');
       }
+
       skipSuite = true;
+
       console.warn(
         '\x1b[33m⚠ Skipping SQL KV PostgreSQL tests — PostgreSQL not reachable at localhost:5433. ' +
           'Start with: docker compose -f test/docker-compose.yml --profile postgres up -d\x1b[0m',
       );
+
       return;
     }
+
     adapters = await Promise.all([connect(), connect()]);
     const db = adapters[0].drizzle;
     const table = adapters[0].tables[tableName];
     await db.execute(sql`create schema ${sql.identifier(schemaName)}`);
+
     await db.execute(sql`create table ${table} (
       custom_id uuid primary key,
       storage_key text not null unique,
@@ -157,6 +169,7 @@ describe('SQL KV with PostgreSQL', () => {
       updated_on timestamptz(3) not null,
       extra text not null default 'retained'
     )`);
+
     await db.execute(sql`create index custom_expiry on ${table} (expires_on)`);
     kv = createSQLKV({ adapter: adapters[0], collectionSlug });
     other = createSQLKV({ adapter: adapters[1], collectionSlug });
@@ -165,8 +178,10 @@ describe('SQL KV with PostgreSQL', () => {
   beforeEach(async (ctx) => {
     if (skipSuite) {
       ctx.skip();
+
       return;
     }
+
     await kv.clear();
   });
 
@@ -193,14 +208,20 @@ describe('SQL KV with PostgreSQL', () => {
       nested: [true, 0, null],
       date: new Date('2026-01-01T00:00:00Z'),
     };
+
     await kv.set('key', value, { ttl: 10000 });
+
     expect(await other.get('key')).toEqual(JSON.parse(JSON.stringify(value)));
+
     const [before] = await adapters[0].drizzle.select().from(table);
+
     expect(before.id).toMatch(/^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[\da-f]{4}-[\da-f]{12}$/);
     expect(before.extra).toBe('retained');
     expect(Number.isFinite(Date.parse(before.expiresAt))).toBe(true);
+
     await kv.set('key', 'replacement');
     const [after] = await adapters[0].drizzle.select().from(table);
+
     expect(after.id).toBe(before.id);
     expect(after.createdAt).toBe(before.createdAt);
     expect(after.expiresAt).toBeNull();
@@ -214,11 +235,15 @@ describe('SQL KV with PostgreSQL', () => {
           (index % 2 ? kv : other).setIfAbsent('key', `owner-${index}`, { ttl: 10000 }),
         ),
       );
+
     expect((await claim()).filter(Boolean)).toHaveLength(1);
+
     const table = adapters[0].tables[tableName];
+
     await adapters[0].drizzle
       .update(table)
       .set({ expiresAt: sql`clock_timestamp() - interval '1 second'` });
+
     expect(await kv.get('key')).toBeNull();
     expect(await kv.has('key')).toBe(false);
     expect(await kv.keys()).toEqual([]);
@@ -231,21 +256,26 @@ describe('SQL KV with PostgreSQL', () => {
     const successor = { key: 'lock', token: 'successor' };
     const table = adapters[0].tables[tableName];
     await kv.set(owner.key, owner.token, { ttl: 10000 });
+
     expect(await other.extendLock(successor, 10000)).toBe(false);
     expect(await other.releaseLock(successor)).toBe(false);
     expect(await kv.extendLock(owner, 20000)).toBe(true);
+
     await adapters[0].drizzle
       .update(table)
       .set({ expiresAt: sql`clock_timestamp() - interval '1 second'` });
+
     expect(await kv.extendLock(owner, 10000)).toBe(false);
     expect(await kv.releaseLock(owner)).toBe(false);
     expect(await other.setIfAbsent(successor.key, successor.token, { ttl: 10000 })).toBe(true);
     expect(await kv.extendLock(owner, 10000)).toBe(false);
     expect(await kv.releaseLock(owner)).toBe(false);
     expect(await other.releaseLock(successor)).toBe(true);
+
     for (const expiresAt of [null, sql`'infinity'::timestamptz`, sql`'-infinity'::timestamptz`]) {
       await kv.set(owner.key, owner.token);
       await adapters[0].drizzle.update(table).set({ expiresAt });
+
       expect(await kv.extendLock(owner, 10000)).toBe(false);
       expect(await kv.releaseLock(owner)).toBe(false);
     }
@@ -254,21 +284,26 @@ describe('SQL KV with PostgreSQL', () => {
   it('uses advancing backend time inside a long transaction despite worker clock skew', async () => {
     const client = await adapters[0].pool.connect();
     const primary = adapters[0].primaryDrizzle;
+
     onTestFinished(async () => {
       adapters[0].primaryDrizzle = primary;
       await client.query('rollback');
       client.release();
     });
+
     vi.spyOn(Date, 'now').mockReturnValue(Number.MAX_SAFE_INTEGER);
     await kv.set('short', 'value', { ttl: 100 });
     await client.query('begin');
     adapters[0].primaryDrizzle = drizzle(client);
     await client.query('select pg_sleep(0.15)');
+
     expect(await kv.get('short')).toBeNull();
     expect(await kv.has('short')).toBe(false);
     expect(await kv.keys()).toEqual([]);
+
     await kv.cleanup();
     const table = adapters[0].tables[tableName];
+
     expect(await adapters[0].primaryDrizzle.select().from(table)).toHaveLength(0);
   });
 
@@ -277,8 +312,10 @@ describe('SQL KV with PostgreSQL', () => {
     const result = await adapters[0].drizzle.execute<{ now: string }>(
       sql`select floor(extract(epoch from clock_timestamp()) * 1000)::text as now`,
     );
+
     const remaining = max - Number(result.rows[0].now);
     await kv.set('key', 'original');
+
     for (const ttl of [Number.MAX_SAFE_INTEGER, remaining + 60000]) {
       await expect(kv.set('key', 'changed', { ttl })).rejects.toBeInstanceOf(RangeError);
       await expect(kv.setIfAbsent('absent', 'changed', { ttl })).rejects.toBeInstanceOf(RangeError);
@@ -288,6 +325,7 @@ describe('SQL KV with PostgreSQL', () => {
       expect(await kv.get('key')).toBe('original');
       expect(await kv.has('absent')).toBe(false);
     }
+
     await kv.set('near-max', 'valid', { ttl: remaining - 10000 });
     const table = adapters[0].tables[tableName];
     const [{ expiry }] = await adapters[0].drizzle
@@ -296,6 +334,7 @@ describe('SQL KV with PostgreSQL', () => {
       })
       .from(table)
       .where(sql`${table.key} = ${'near-max'}`);
+
     expect(Number(expiry)).toBeGreaterThanOrEqual(max - 10000);
     expect(Number(expiry)).toBeLessThanOrEqual(max);
     expect(await other.get('near-max')).toBe('valid');
@@ -306,23 +345,31 @@ describe('SQL KV with PostgreSQL', () => {
     const original = adapter.drizzle;
     adapter.primaryDrizzle = original;
     adapter.drizzle = withReplicas(original, [adapters[1].drizzle]);
+
     vi.spyOn(adapters[1].drizzle, 'select').mockImplementation(() => {
       throw new Error('replica accessed');
     });
+
     onTestFinished(() => {
       adapter.drizzle = original;
       adapter.primaryDrizzle = undefined;
     });
+
     await kv.set('key', 'value');
+
     expect(await kv.get('key')).toBe('value');
     expect(await kv.has('key')).toBe(true);
     expect(await kv.keys()).toEqual(['key']);
     expect(await kv.setIfAbsent('lock', 'token', { ttl: 10000 })).toBe(true);
     expect(await kv.extendLock({ key: 'lock', token: 'token' }, 10000)).toBe(true);
+
     await kv.cleanup();
+
     expect(await kv.releaseLock({ key: 'lock', token: 'token' })).toBe(true);
+
     await kv.delete('key');
     await kv.clear();
+
     expect(await kv.keys()).toEqual([]);
   });
 
@@ -335,19 +382,25 @@ describe('SQL KV with PostgreSQL', () => {
       const db = drizzle(blocker);
       const table = adapters[1].tables[tableName];
       await blocker.query('begin');
+
       await db
         .select()
         .from(table)
         .where(sql`${table.key} = ${owner.key}`)
         .for('update');
+
       const pending = track(
         operation === 'extendLock' ? kv.extendLock(owner, 10000) : kv.releaseLock(owner),
       );
+
       await waitForBlockedQuery();
       await blocker.query('select pg_sleep(1.1)');
       await blocker.query('commit');
+
       expect(await pending).toBe(false);
+
       const [row] = await adapters[1].drizzle.select().from(table);
+
       expect(row.data).toBe(owner.token);
       expect(await other.get(owner.key)).toBeNull();
       expect(await other.setIfAbsent(owner.key, 'successor', { ttl: 10000 })).toBe(true);
@@ -371,11 +424,14 @@ describe('SQL KV with PostgreSQL', () => {
         ? kv.extendLock(owner, 400)
         : kv[operation](owner.key, owner.token, { ttl: 400 }),
     );
+
     await waitForBlockedQuery();
     await blocker.query('select pg_sleep(0.6)');
     await blocker.query('commit');
+
     expect(await pending).toBe(operation === 'set' ? undefined : true);
     expect(await other.has(owner.key)).toBe(true);
+
     const [{ remaining }] = await adapters[0].drizzle
       .select({
         remaining:
@@ -384,6 +440,7 @@ describe('SQL KV with PostgreSQL', () => {
           ),
       })
       .from(table);
+
     expect(remaining).toBeGreaterThan(200);
     expect(remaining).toBeLessThanOrEqual(400);
   });
@@ -394,6 +451,7 @@ describe('SQL KV with PostgreSQL', () => {
       const table = adapters[0].tables[tableName];
       const { blocker, track } = await blockingClient();
       await blocker.query('begin');
+
       await drizzle(blocker)
         .insert(table)
         .values({
@@ -402,12 +460,17 @@ describe('SQL KV with PostgreSQL', () => {
           createdAt: sql`clock_timestamp()`,
           updatedAt: sql`clock_timestamp()`,
         });
+
       const pending = track(kv[operation]('key', 'winner', { ttl: 200 }));
       await waitForBlockedQuery();
+
       expect(await other.get('key')).toBeNull();
+
       await blocker.query('select pg_sleep(0.5)');
       await blocker.query('rollback');
+
       expect(await pending).toBe(operation === 'set' ? undefined : true);
+
       const [{ remaining }] = await adapters[0].drizzle
         .select({
           remaining:
@@ -416,6 +479,7 @@ describe('SQL KV with PostgreSQL', () => {
             ),
         })
         .from(table);
+
       expect(remaining).toBeGreaterThan(100);
       expect(remaining).toBeLessThanOrEqual(200);
       expect(await other.get('key')).toBe('winner');
@@ -444,6 +508,7 @@ describe('SQL KV with PostgreSQL', () => {
           ),
         })
         .from(sql`(select 1) as kv_clock`);
+
       const pending = track(
         (operation === 'extendLock'
           ? kv.extendLock(owner, ttl)
@@ -453,11 +518,15 @@ describe('SQL KV with PostgreSQL', () => {
           (error: unknown) => error,
         ),
       );
+
       await waitForBlockedQuery();
       await blocker.query('select pg_sleep(0.8)');
       await blocker.query('commit');
+
       expect(await pending).toBeInstanceOf(RangeError);
+
       const [after] = await adapters[0].drizzle.select().from(table);
+
       expect(after).toEqual(before);
     },
   );
@@ -468,6 +537,7 @@ describe('SQL KV with PostgreSQL', () => {
       const table = adapters[0].tables[tableName];
       const { blocker, track } = await blockingClient();
       await blocker.query('begin');
+
       await drizzle(blocker)
         .insert(table)
         .values({
@@ -476,6 +546,7 @@ describe('SQL KV with PostgreSQL', () => {
           createdAt: sql`clock_timestamp()`,
           updatedAt: sql`clock_timestamp()`,
         });
+
       const [{ ttl }] = await adapters[0].drizzle
         .select({
           ttl: sql<number>`8640000000000000 - floor(extract(epoch from clock_timestamp()) * 1000) - 300`.mapWith(
@@ -483,15 +554,18 @@ describe('SQL KV with PostgreSQL', () => {
           ),
         })
         .from(sql`(select 1) as kv_clock`);
+
       const pending = track(
         kv[operation]('key', 'winner', { ttl }).then(
           () => null,
           (error: unknown) => error,
         ),
       );
+
       await waitForBlockedQuery();
       await blocker.query('select pg_sleep(0.5)');
       await blocker.query('rollback');
+
       expect(await pending).toBeInstanceOf(RangeError);
       expect(await adapters[0].drizzle.select().from(table)).toHaveLength(0);
     },
@@ -503,18 +577,22 @@ describe('SQL KV with PostgreSQL', () => {
     const guard = sql`${sql.identifier(schemaName)}.${sql.identifier('suppress_expiration')}`;
     await kv.set('existing', 'original');
     const [before] = await db.select().from(table);
+
     await db.execute(sql`create function ${guard}() returns trigger language plpgsql as $$
       begin
         if new.expires_on is not null and old.expires_on is null then return null; end if;
         return new;
       end;
     $$`);
+
     onTestFinished(async () => {
       await db.execute(sql`drop trigger if exists suppress_expiration on ${table}`);
       await db.execute(sql`drop function ${guard}()`);
     });
+
     await db.execute(sql`create trigger suppress_expiration before update on ${table}
       for each row execute function ${guard}()`);
+
     await expect(kv.set('existing', 'changed', { ttl: 1000 })).rejects.toThrow(
       'could not finalize expiration',
     );
@@ -533,13 +611,16 @@ describe('SQL KV with PostgreSQL', () => {
     await expireRows();
     const { blocker, track } = await blockingClient();
     await blocker.query('begin');
+
     await drizzle(blocker)
       .update(table)
       .set({ expiresAt: sql`clock_timestamp() + interval '10 seconds'` });
+
     const pending = track(kv.cleanup());
     await waitForBlockedQuery();
     await blocker.query('commit');
     await pending;
+
     expect(await kv.get('key')).toBe('value');
   });
 });

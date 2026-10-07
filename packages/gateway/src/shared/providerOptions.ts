@@ -9,5 +9,6 @@ export function createProviderOptions(args: {
   options: Record<string, JSONValue>;
 }): Record<string, Record<string, JSONValue>> {
   if (Object.keys(args.options).length === 0) return {};
+
   return { [providerOptionKeys[args.providerName] ?? args.providerName]: args.options };
 }

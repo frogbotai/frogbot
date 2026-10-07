@@ -32,10 +32,12 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
   const isAllDay =
     props.isAllDay ??
     ((event) => Date.parse(event.end ?? event.start) - Date.parse(event.start) >= 86_400_000);
+
   const allDay = calendar.events.filter(isAllDay);
   const timed = calendar.events.filter((event) => !isAllDay(event));
   const active = calendar.events.find((event) => event.id === calendar.activeId);
   const hourHeight = props.hourHeight ?? 56;
+
   return (
     <DndContext
       collisionDetection={(args) =>
@@ -75,6 +77,7 @@ export function TimeGrid<T extends CalendarEvent>(props: TimeGridProps<T>) {
             {days.map((day) => {
               const key = format(day, 'yyyy-MM-dd');
               const events = timed.filter((event) => event.start.slice(0, 10) === key);
+
               return (
                 <DayColumn
                   activeId={calendar.activeId}

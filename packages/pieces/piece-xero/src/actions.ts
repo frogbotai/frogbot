@@ -201,6 +201,7 @@ const createQuoteInput = z.object({
   terms: z.string().optional(),
   status: z.literal('DRAFT').default('DRAFT'),
 });
+
 const createQuote = defineAction({
   ...apiDefaults,
   slug: 'createQuote',
@@ -252,6 +253,7 @@ const sendInvoiceEmail = defineAction({
       },
       z.null(),
     );
+
     return { success: true };
   },
 });
@@ -266,6 +268,7 @@ const invoiceBase = {
   invoiceNumber: z.string().optional(),
   status: z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED']).default('DRAFT'),
 };
+
 const createBillInput = z.object(invoiceBase);
 const createBill = defineAction({
   ...apiDefaults,
@@ -307,6 +310,7 @@ const createPaymentInput = z.object({
   reference: z.string().optional(),
   isReconciled: z.boolean().default(false),
 });
+
 const createPayment = defineAction({
   ...apiDefaults,
   slug: 'createPayment',
@@ -353,6 +357,7 @@ const purchaseOrderInput = z.object({
   deliveryInstructions: z.string().optional(),
   expectedArrivalDate: date.optional(),
 });
+
 const createPurchaseOrder = defineAction({
   ...apiDefaults,
   slug: 'createPurchaseOrder',
@@ -401,6 +406,7 @@ const updatePurchaseOrderInput = z.object({
   deliveryInstructions: z.string().optional(),
   expectedArrivalDate: date.optional(),
 });
+
 const updatePurchaseOrder = defineAction({
   ...apiDefaults,
   slug: 'updatePurchaseOrder',
@@ -454,6 +460,7 @@ const uploadAttachmentInput = z.object({
   contentType: z.string().min(1).default('application/octet-stream'),
   includeOnline: z.boolean().default(false),
 });
+
 const uploadAttachment = defineAction({
   ...apiDefaults,
   slug: 'uploadAttachment',
@@ -467,6 +474,7 @@ const uploadAttachment = defineAction({
       req,
       overrideAccess: false,
     });
+
     const urlValue = typeof file.url === 'string' ? file.url : undefined;
     if (!urlValue) throw new Error('The selected file has no URL.');
     const payloadConfig = await req.frogbot.config._internal.payloadConfig;
@@ -488,6 +496,7 @@ const uploadAttachment = defineAction({
     ) {
       throw new Error('The selected file URL is unsafe.');
     }
+
     const response = await fetch(url, {
       headers: {
         cookie: req.headers.get('cookie') ?? '',
@@ -496,6 +505,7 @@ const uploadAttachment = defineAction({
       redirect: 'error',
       signal: req.signal ?? undefined,
     });
+
     if (!response.ok) throw new Error(`Unable to load attachment (${response.status}).`);
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (bytes.byteLength > 10_000_000) throw new Error('Xero attachments cannot exceed 10 MB.');
@@ -503,6 +513,7 @@ const uploadAttachment = defineAction({
       input.includeOnline && ['Invoices', 'CreditNotes'].includes(input.resourceType)
         ? '?IncludeOnline=true'
         : '';
+
     return client.request(
       {
         path: `/${input.resourceType}/${input.resourceId}/Attachments/${encodeURIComponent(input.fileName)}${suffix}`,
@@ -522,6 +533,7 @@ const addInvoiceItemsInput = z.object({
   invoiceId: z.string().min(1),
   newLineItems: z.array(lineItem).min(1),
 });
+
 const addInvoiceItems = defineAction({
   ...apiDefaults,
   slug: 'addInvoiceItems',
@@ -541,6 +553,7 @@ const addInvoiceItems = defineAction({
           .min(1),
       }),
     );
+
     return accountingRequest(
       client,
       input,
@@ -569,6 +582,7 @@ const createCreditNoteInput = z.object({
   brandingThemeId: z.string().optional(),
   lineItems: z.array(lineItem).optional(),
 });
+
 const createCreditNote = defineAction({
   ...apiDefaults,
   slug: 'createCreditNote',
@@ -617,6 +631,7 @@ const createItemInput = z.object({
   cogsAccountId: z.string().optional(),
   inventoryAssetAccountId: z.string().optional(),
 });
+
 const createItem = defineAction({
   ...apiDefaults,
   slug: 'createItem',
@@ -662,6 +677,7 @@ const createProjectInput = z.object({
   deadlineUtc: z.string().datetime().optional(),
   estimateAmount: z.number().optional(),
 });
+
 const createProject = defineAction({
   ...apiDefaults,
   slug: 'createProject',
@@ -702,6 +718,7 @@ const updateInvoiceInput = z.object({
   replaceAllLineItems: z.boolean().default(false),
   lineItems: z.array(lineItem).optional(),
 });
+
 const updateInvoice = defineAction({
   ...apiDefaults,
   slug: 'updateInvoice',
@@ -725,9 +742,11 @@ const updateInvoice = defineAction({
             .min(1),
         }),
       );
+
       const updates = new Map(
         lineItems.filter((item) => item.LineItemID).map((item) => [item.LineItemID, item]),
       );
+
       const existing = current.Invoices[0].LineItems.map((item) => {
         const update = item.LineItemID ? updates.get(item.LineItemID) : undefined;
 
@@ -735,6 +754,7 @@ const updateInvoice = defineAction({
 
         return update ? { ...item, ...update } : item;
       });
+
       const additions = lineItems.filter(
         (item) => !item.LineItemID || updates.has(item.LineItemID),
       );
@@ -794,6 +814,7 @@ const repeatingInput = z.object({
   includePdf: z.boolean().default(false),
   lineItems: z.array(lineItem).min(1),
 });
+
 const createRepeatingInvoice = defineAction({
   ...apiDefaults,
   slug: 'createRepeatingInvoice',
@@ -807,12 +828,14 @@ const createRepeatingInvoice = defineAction({
     ) {
       throw new Error('Weekly schedules require DAYSAFTERBILLDATE or OFFOLLOWINGMONTH.');
     }
+
     if (
       input.scheduleUnit === 'MONTHLY' &&
       !['OFCURRENTMONTH', 'OFFOLLOWINGMONTH'].includes(input.dueDateType)
     ) {
       throw new Error('Monthly schedules require OFCURRENTMONTH or OFFOLLOWINGMONTH.');
     }
+
     return accountingRequest(
       client,
       input,
@@ -872,12 +895,14 @@ function lookupAction<const TSlug extends string>(
     },
   });
 }
+
 const lookupInput = z.object({
   ...tenant,
   searchBy: z.string().min(1),
   value: z.string().min(1),
   page: z.number().int().positive().optional(),
 });
+
 const findContact = lookupAction('findContact', 'Find contact', '/Contacts', (input) =>
   input.searchBy === 'SEARCH_TERM'
     ? { SearchTerm: input.value, page: input.page ?? 1 }
@@ -886,6 +911,7 @@ const findContact = lookupAction('findContact', 'Find contact', '/Contacts', (in
         page: input.page ?? 1,
       },
 );
+
 const findInvoice = lookupAction('findInvoice', 'Find invoice', '/Invoices', (input) =>
   input.searchBy === 'SEARCH_TERM'
     ? { SearchTerm: input.value, page: input.page ?? 1 }
@@ -894,9 +920,11 @@ const findInvoice = lookupAction('findInvoice', 'Find invoice', '/Invoices', (in
         page: input.page ?? 1,
       },
 );
+
 const findItem = lookupAction('findItem', 'Find item', '/Items', (input) => ({
   where: `${input.searchBy === 'NAME' ? 'Name' : 'Code'}=="${input.value.replaceAll('"', '\\"')}"`,
 }));
+
 const findPurchaseOrder = lookupAction(
   'findPurchaseOrder',
   'Find purchase order',
@@ -938,6 +966,7 @@ const createBankTransactionInput = z.object({
   lineAmountTypes: lineAmountType.optional(),
   isReconciled: z.boolean().default(false),
 });
+
 const createBankTransaction = defineAction({
   ...apiDefaults,
   slug: 'createBankTransaction',
@@ -986,7 +1015,9 @@ const findOrCreateContact = defineAction({
       },
       xeroResponse,
     );
+
     if (Array.isArray(existing.Contacts) && existing.Contacts.length) return existing;
+
     return accountingRequest(
       client,
       input,
@@ -1002,6 +1033,7 @@ const customPath = z
   .string()
   .regex(/^\/(?!\/)(?!.*[%?#\\])[A-Za-z0-9._~!$&'()*+,;=:@/-]+$/)
   .refine((value) => value.split('/').every((segment) => segment !== '.' && segment !== '..'));
+
 const customApiInput = z.object({
   ...tenant,
   method: z.enum(['DELETE', 'GET', 'POST', 'PUT']),
@@ -1009,6 +1041,7 @@ const customApiInput = z.object({
   query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
   body: z.json().optional(),
 });
+
 const customApiCall = defineAction({
   ...apiDefaults,
   slug: 'customApiCall',

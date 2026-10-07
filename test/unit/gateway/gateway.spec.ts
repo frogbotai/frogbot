@@ -22,6 +22,7 @@ describe('createGateway', () => {
     const transcription = new MockTranscriptionModelV4();
     const rerank = new MockRerankingModelV4();
     const gw = createGateway({ providers: { internal: { baseURL: 'https://models.test/v1' } } });
+
     gw.registry.internal = {
       languageModel: () => chat,
       embeddingModel: () => embed,
@@ -73,6 +74,7 @@ describe('createGateway', () => {
     const gw = createGateway({
       providers: { openai: { apiKey: 'test-key', models: ['gpt-4o'] } },
     });
+
     const response = await gw.handler(
       new Request('http://localhost/v1/chat/completions', {
         method: 'POST',
@@ -105,10 +107,12 @@ describe('createGateway', () => {
           warnings: [],
         }),
     });
+
     const gw = createGateway({
       providers: { openai: { apiKey: 'test-key' } },
       hooks: { beforeUpstream: [beforeUpstream], afterUpstream: [afterUpstream] },
     });
+
     gw.registry.openai = { languageModel: () => model } as unknown as typeof gw.registry.openai;
 
     await generateText({ model: gw.chatModel('openai/gpt-4o-mini'), prompt: 'hi' });

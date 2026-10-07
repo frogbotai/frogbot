@@ -10,6 +10,7 @@ type Todo = {
 const isTodo = (value: unknown): value is Todo => {
   if (!value || typeof value !== 'object') return false;
   const todo = value as Record<string, unknown>;
+
   return (
     typeof todo.content === 'string' &&
     (todo.status === 'completed' || todo.status === 'in_progress' || todo.status === 'pending')
@@ -23,6 +24,7 @@ export function TodoToolRender({ part }: ToolRendererProps) {
     : Array.isArray(input?.todos)
       ? input.todos
       : [];
+
   const todos = source.filter(isTodo);
   const completed = todos.filter(({ status }) => status === 'completed').length;
 

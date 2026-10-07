@@ -11,21 +11,26 @@ export async function startStubMCPServer(options: StubMCPServerOptions = {}) {
 
     if (req.method === 'GET') {
       res.writeHead(405).end();
+
       return;
     }
 
     if (req.method !== 'POST') {
       res.writeHead(405).end();
+
       return;
     }
 
     if (options.requireBearer && req.headers.authorization !== `Bearer ${options.requireBearer}`) {
       res.writeHead(401).end();
+
       return;
     }
 
     const chunks: Buffer[] = [];
+
     for await (const chunk of req) chunks.push(Buffer.from(chunk));
+
     const message = JSON.parse(Buffer.concat(chunks).toString()) as {
       id?: number;
       method: string;
@@ -34,6 +39,7 @@ export async function startStubMCPServer(options: StubMCPServerOptions = {}) {
 
     if (message.method === 'notifications/initialized') {
       res.writeHead(202).end();
+
       return;
     }
 
@@ -69,6 +75,7 @@ export async function startStubMCPServer(options: StubMCPServerOptions = {}) {
       };
     } else {
       res.writeHead(404).end();
+
       return;
     }
 

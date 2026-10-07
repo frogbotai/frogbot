@@ -106,9 +106,11 @@ describe('transcribeOperation', () => {
 
     expect(result.text).toBe('Hello from FrogBot');
     expect(doGenerate).toHaveBeenCalledOnce();
+
     const { audio } = sentOptions(doGenerate);
 
     assert(audio instanceof Uint8Array, 'Expected audio bytes');
+
     expect(new Uint8Array(audio)).toEqual(bytes);
   });
 

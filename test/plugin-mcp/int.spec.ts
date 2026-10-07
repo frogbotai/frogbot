@@ -429,6 +429,7 @@ describe('MCP plugin integration', () => {
       .mockImplementation((options) =>
         options.collection === apiKeysSlug ? Promise.reject(failure) : find(options),
       );
+
     const errorLog = vi.spyOn(booted.frogbot.logger, 'error');
 
     const response = await listTools(apiKeyToken);

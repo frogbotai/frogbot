@@ -12,6 +12,7 @@ function encryptWithLabel(value: string, secret: string, label: string): string 
   const iv = Buffer.alloc(12, 1);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+
   return [
     'v1',
     iv.toString('base64url'),
@@ -24,6 +25,7 @@ describe('credential encryption', () => {
   it('round-trips and writes a core-label ciphertext', async () => {
     const encryption = createCredentialEncryption({ secret: 'secret' });
     const encrypted = await encryption.encrypt('value');
+
     expect(await encryption.decrypt(encrypted)).toBe('value');
     expect(
       await encryption.decrypt(encryptWithLabel('value', 'secret', 'frogbot:connections:')),
@@ -33,6 +35,7 @@ describe('credential encryption', () => {
   it('rejects tampering', async () => {
     const encryption = createCredentialEncryption({ secret: 'secret' });
     const encrypted = await encryption.encrypt('value');
+
     expect(() => encryption.decrypt(`${encrypted}x`)).toThrow(CredentialCryptoError);
   });
 
@@ -41,6 +44,7 @@ describe('credential encryption', () => {
     const encrypted = await encryption.encrypt('value');
     const [version, iv, tag, value] = encrypted.split('.');
     const truncatedTag = Buffer.from(tag, 'base64url').subarray(0, 4).toString('base64url');
+
     expect(() => encryption.decrypt([version, iv, truncatedTag, value].join('.'))).toThrow(
       CredentialCryptoError,
     );
@@ -50,6 +54,7 @@ describe('credential encryption', () => {
   it('uses fresh nonces and rejects the wrong key', async () => {
     const encryption = createCredentialEncryption({ secret: 'secret' });
     const first = await encryption.encrypt('value');
+
     expect(await encryption.encrypt('value')).not.toBe(first);
     expect(() => createCredentialEncryption({ secret: 'wrong' }).decrypt(first)).toThrow(
       CredentialCryptoError,
@@ -59,6 +64,7 @@ describe('credential encryption', () => {
 
   it('rejects ciphertext from another encryption domain', () => {
     const encryption = createCredentialEncryption({ secret: 'secret' });
+
     expect(() => encryption.decrypt(encryptWithLabel('value', 'secret', 'other-domain:'))).toThrow(
       CredentialCryptoError,
     );

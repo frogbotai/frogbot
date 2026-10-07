@@ -11,6 +11,7 @@ export type MessageDocument = {
 
 function withCreatedAt(message: MessageDocument): unknown {
   if (!message.createdAt) return message.metadata;
+
   return typeof message.metadata === 'object' && message.metadata !== null
     ? { ...message.metadata, createdAt: message.createdAt }
     : { createdAt: message.createdAt };
@@ -18,6 +19,7 @@ function withCreatedAt(message: MessageDocument): unknown {
 
 export function messageDocumentToUIMessage(message: MessageDocument): UIMessage {
   const metadata = withCreatedAt(message);
+
   return {
     id: String(message.id),
     role: message.role,

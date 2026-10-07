@@ -48,25 +48,31 @@ export function DayColumn<T extends CalendarEvent>({
       0,
       Math.min(MINUTES_PER_DAY, ((clientY - rect.top) / rect.height) * MINUTES_PER_DAY),
     );
+
     return addMinutes(dayStart, Math.round(minutes / snap) * snap).toISOString();
   };
+
   const drop = useDroppable({
     data: {
       slotAt: (_clientX: number, clientY: number) => {
         const start = instantAt(clientY);
+
         return { end: addMinutes(start, snap).toISOString(), key, start };
       },
     },
     id: `time-${key}`,
   });
+
   const setRef = (node: HTMLDivElement | null) => {
     ref.current = node;
     drop.setNodeRef(node);
   };
+
   const beginCreate = (pointer: PointerEvent) => {
     if (pointer.button !== 0 || (pointer.target as HTMLElement).closest('.frog-calendar__event')) {
       return;
     }
+
     const target = pointer.currentTarget;
     const pointerId = pointer.pointerId;
     target.setPointerCapture(pointerId);
@@ -76,15 +82,19 @@ export function DayColumn<T extends CalendarEvent>({
       create(start, instantAt(event.clientY));
       window.removeEventListener('pointerup', finish);
     };
+
     window.addEventListener('pointerup', finish);
   };
+
   const beginResize = (event: T, edge: CalendarResizeEdge) => {
     const finish = (released: globalThis.PointerEvent) => {
       resize(event, edge, instantAt(released.clientY));
       window.removeEventListener('pointerup', finish);
     };
+
     window.addEventListener('pointerup', finish);
   };
+
   return (
     <div
       className="frog-calendar__day-column"
@@ -102,7 +112,9 @@ export function DayColumn<T extends CalendarEvent>({
           Date.parse(event.end ?? event.start),
           addMinutes(dayStart, MINUTES_PER_DAY).getTime(),
         );
+
         const lane = lanes.find(({ event: candidate }) => candidate.id === event.id);
+
         return (
           <EventChip
             disabled={!canEdit(event)}

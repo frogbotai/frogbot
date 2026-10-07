@@ -54,6 +54,7 @@ async function runThroughSdk(
   messages: ModelMessage[],
 ): Promise<LanguageModelV4CallOptions['prompt']> {
   const model = recordingModel();
+
   await generateText({
     model,
     messages,
@@ -61,6 +62,7 @@ async function runThroughSdk(
     // real `standardizePrompt` throws InvalidPromptError on the system message.
     allowSystemInMessages: true,
   });
+
   return model.doGenerateCalls[0].prompt;
 }
 
@@ -81,6 +83,7 @@ describe('system prompts survive the real AI SDK pipeline on every text route', 
 
     const prompt = await runThroughSdk(messages);
     const systemEntry = prompt.find((m) => m.role === 'system');
+
     expect(systemEntry, 'system content must survive to the model prompt').toBeDefined();
     expect(JSON.stringify(systemEntry)).toContain(SYSTEM_TEXT);
   });
@@ -97,6 +100,7 @@ describe('system prompts survive the real AI SDK pipeline on every text route', 
 
     const prompt = await runThroughSdk(messages);
     const systemEntry = prompt.find((m) => m.role === 'system');
+
     expect(systemEntry, 'system content must survive to the model prompt').toBeDefined();
     expect(JSON.stringify(systemEntry)).toContain(SYSTEM_TEXT);
   });
@@ -113,6 +117,7 @@ describe('system prompts survive the real AI SDK pipeline on every text route', 
 
     const prompt = await runThroughSdk(messages);
     const systemEntry = prompt.find((m) => m.role === 'system');
+
     expect(systemEntry, 'system content must survive to the model prompt').toBeDefined();
     expect(JSON.stringify(systemEntry)).toContain(SYSTEM_TEXT);
   });

@@ -30,9 +30,11 @@ const toKebabCase = <Name extends IconExportName>(value: Name) =>
 
 const buildIconRegistry = () => {
   const registry: Partial<Record<IconName, IconComponent>> = {};
+
   for (const name of Object.keys(icons)) {
     if (isIconExportName(name)) registry[toKebabCase(name)] = icons[name];
   }
+
   return registry as Record<IconName, IconComponent>;
 };
 

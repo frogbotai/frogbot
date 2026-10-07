@@ -75,18 +75,22 @@ export function useTranscription({
           setAudioData(data.slice());
           animationFrame.current = requestAnimationFrame(sample);
         };
+
         animationFrame.current = requestAnimationFrame(sample);
       } catch {
         void audioContext.current?.close();
         audioContext.current = null;
       }
+
       const mimeType = recordingType();
       const chunks: Blob[] = [];
       const mediaRecorder = new MediaRecorder(stream.current, mimeType ? { mimeType } : undefined);
       recorder.current = mediaRecorder;
+
       mediaRecorder.ondataavailable = ({ data }) => {
         if (data.size) chunks.push(data);
       };
+
       mediaRecorder.onstop = async () => {
         if (!mounted.current) return;
         setStatus('transcribing');
@@ -96,6 +100,7 @@ export function useTranscription({
           const text = (
             await transcribe(new File(chunks, `recording.${extension}`, { type }))
           ).trim();
+
           if (!text) throw new Error('No speech detected');
           onText(text);
         } catch (cause) {
@@ -105,6 +110,7 @@ export function useTranscription({
           if (mounted.current) setStatus('idle');
         }
       };
+
       mediaRecorder.start();
       setStatus('recording');
     } catch (cause) {

@@ -11,6 +11,7 @@ it('does not follow redirects with the Brave credential', async () => {
       headers: { Location: 'https://attacker.example/collect' },
     }),
   );
+
   vi.stubGlobal('fetch', fetch);
 
   const client = createBraveSearchClient({ auth: { apiKey: 'brave-test' } });

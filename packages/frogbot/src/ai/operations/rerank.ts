@@ -44,11 +44,13 @@ export async function rerankOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
     const result = await aiRerank({ ...aiSdkOpts, model: op.rerankModel() });
     await op.finish();
+
     return result;
   } catch (error) {
     await op.finish({ error });

@@ -25,6 +25,7 @@ const read = defineAction({
     return Promise.resolve(client.token);
   },
 });
+
 const createPiece = definePiece({
   slug: 'example',
   label: 'Example',
@@ -56,14 +57,17 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     auth: { token: 'factory' },
     oauth: { clientId: 'id', clientSecret: 'secret' },
   });
+
   const request = (user: ConnectionOwner | null = owner): FrogBotRequest =>
     ({ frogbot, payload, user }) as unknown as FrogBotRequest;
+
   const link = (body: unknown, user = owner) =>
     endpoints[0].handler({
       ...request(user),
       routeParams: { piece: 'example' },
       json: () => Promise.resolve(body),
     } as never);
+
   const remove = (id: number | string, user = owner) =>
     endpoints[1].handler({
       ...request(user),
@@ -84,23 +88,28 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       ],
       connections: [{ piece, oauth: true, secret: true }],
     });
+
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
     store = await frogbot.connections.store;
     payload = await getPayload({ config: await getPayloadConfig(config) });
     const registered = payload.collections.connections.config.endpoints;
     if (!registered) throw new Error('Connection endpoints are missing');
+
     endpoints = [
       registered.find(({ method, path }) => method === 'post' && path === '/:piece')!,
       registered.find(({ method, path }) => method === 'delete' && path === '/:id')!,
     ];
+
     const first = await frogbot.create({
       collection: 'members',
       data: { email: 'first@example.com', password: 'password' },
     });
+
     const second = await frogbot.create({
       collection: 'members',
       data: { email: 'second@example.com', password: 'password' },
     });
+
     owner = { id: first.id, collection: 'members' };
     other = { id: second.id, collection: 'members' };
   });
@@ -108,6 +117,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
   afterAll(async () => {
     await frogbot?.destroy();
   });
+
   beforeEach(async () => {
     await frogbot.delete({ collection: 'connections', where: {}, overrideAccess: true });
     client.mockClear();
@@ -115,6 +125,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
 
   it('wires only canonical static and delete routes', async () => {
     const config = await getPayloadConfig(frogbot.config);
+
     expect(config.collections.find(({ slug }) => slug === 'connections')?.endpoints).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ method: 'post', path: '/:piece' }),
@@ -128,10 +139,15 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
 
   it('links raw input, encrypts every field, and invokes the native action as the user', async () => {
     const req = request();
+
     expect(await piece.read({ input: {}, req })).toBe('factory');
+
     const response = await link({ token: 'user-secret' });
+
     expect(response.status).toBe(200);
+
     const metadata = await response.json();
+
     expect(metadata).toMatchObject({
       owner: owner.id,
       piece: 'example',
@@ -140,10 +156,12 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     });
     expect(JSON.stringify(metadata)).not.toContain('user-secret');
     expect(metadata).not.toHaveProperty('credential');
+
     const raw = await frogbot.db.find<ConnectionRow>({
       collection: 'connections',
       pagination: false,
     });
+
     expect(raw.docs[0].credential).toMatch(/^v1\./);
     expect(raw.docs[0].credential).not.toContain('user-secret');
     expect(await piece.read({ input: {}, req })).toBe('user-secret');
@@ -158,9 +176,12 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     const first = await (await link({ token: 'first' })).json();
     const initialClient = await piece.client({ req: request() });
     const same = await (await link({ token: 'first' })).json();
+
     expect(same.id).toBe(first.id);
     expect(await piece.client({ req: request() })).toBe(initialClient);
+
     const next = await (await link({ token: 'next' })).json();
+
     expect(next.id).toBe(first.id);
     expect(await piece.client({ req: request() })).not.toBe(initialClient);
     expect(await piece.read({ input: {}, req: request() })).toBe('next');
@@ -177,8 +198,11 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       account: { id: 'remote', label: 'Remote' },
       expiresAt: '2100-01-01T00:00:00Z',
     });
+
     expect(await piece.read({ input: {}, req: request() })).toBe('oauth-token');
+
     const response = await link({ token: 'static-token' });
+
     expect(await response.json()).toMatchObject({
       id: row.id,
       method: 'secret',
@@ -191,17 +215,21 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
 
   it('does not replace a row with malformed credentials or leak validation input', async () => {
     await link({ token: 'valid-secret' });
+
     for (const body of [{ token: 42 }, { credential: { token: 'private' } }, {}]) {
       const response = await link(body);
+
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'Invalid credentials' });
     }
+
     expect(await piece.read({ input: {}, req: request() })).toBe('valid-secret');
   });
 
   it('enforces owner collection and ID for resolution, linking, listing, and deletion', async () => {
     const row = await (await link({ token: 'owner-secret' })).json();
     const customer = { ...owner, collection: 'customers' };
+
     expect(await piece.read({ input: {}, req: request(customer) })).toBe('factory');
     expect((await link({ token: 'attacker' }, customer)).status).toBe(403);
     expect((await remove(row.id, customer)).status).toBe(403);
@@ -228,6 +256,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       credential: { token: 'user' },
       ...data,
     });
+
     await expect(piece.read({ input: {}, req: request() })).rejects.toMatchObject({
       name: 'ConnectionError',
       code,

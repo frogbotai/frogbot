@@ -29,11 +29,13 @@ export const newEmail = definePollingTrigger({
       maxResults: input.maxResults,
       includeSpamTrash: input.includeSpamTrash,
     });
+
     const events = await Promise.all(
       (list.data.messages ?? []).map(async ({ id }) =>
         id ? saveAttachments(client, req, await getOriginal(client, id)) : {},
       ),
     );
+
     return { events, cursor: now };
   },
 });

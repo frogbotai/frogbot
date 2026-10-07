@@ -9,6 +9,7 @@ import type {
 import { DISMISS_ACTION_ID, inputIds, SUBMIT_ACTION_ID } from './card.js';
 
 type QuestionItem = QuestionInput['questions'][number];
+
 type Answer = QuestionOutput['answers'][number];
 
 type SubmitActivity = { type?: unknown; value?: unknown };

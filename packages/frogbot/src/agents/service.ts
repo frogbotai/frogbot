@@ -34,6 +34,7 @@ export class AgentServiceError extends Error {
 export function getAgent({ req, slug }: { req: FrogBotRequest; slug?: string }): AgentInstance {
   const agent = slug ? req.frogbot.agents[slug] : undefined;
   if (!agent) throw new AgentServiceError(`Agent '${slug ?? ''}' not found`, 404);
+
   return agent;
 }
 
@@ -46,11 +47,13 @@ export async function assertAgentAccess({
 }): Promise<void> {
   const access =
     agent.config.access ?? (({ req: current }: { req: FrogBotRequest }) => !!current.user);
+
   try {
     if (await access({ req, agent })) return;
   } catch {
     throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
   }
+
   throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
 }
 
@@ -94,9 +97,11 @@ export async function listAgents({
   req: FrogBotRequest;
 }): Promise<ManifestResponse['agents']> {
   const agents: ManifestResponse['agents'] = [];
+
   for (const agent of Object.values(req.frogbot.agents)) {
     try {
       await assertAgentAccess({ req, agent });
+
       agents.push({
         slug: agent.slug,
         ...(agent.config.profile ? { profile: agent.config.profile } : {}),
@@ -105,6 +110,7 @@ export async function listAgents({
       continue;
     }
   }
+
   return agents;
 }
 
@@ -156,6 +162,7 @@ export async function getAgentAuthorizations({
         ...new Set(
           (agent.config.tools ?? []).flatMap((tool) => {
             const piece = pieceToolInstance(tool);
+
             return piece ? [piece] : [];
           }),
         ),

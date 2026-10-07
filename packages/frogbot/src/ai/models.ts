@@ -26,6 +26,7 @@ function configuredModels(
       (entry as CustomProviderEntry).type === 'openai-compatible'
         ? undefined
         : (entry as { models?: string[] }).models;
+
     const allowed =
       allowlist && new Set(allowlist.map((name) => canonicalizeModelId(`${provider}/${name}`)));
 
@@ -93,6 +94,7 @@ export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: s
     .map((model) => {
       const entry = model!;
       const released = entry.created ? Date.parse(entry.created) : now;
+
       return {
         model: entry,
         cost: entry.cost!.input + entry.cost!.output,
@@ -101,9 +103,11 @@ export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: s
       };
     })
     .filter((candidate) => candidate.cost > 0 && candidate.age <= 18);
+
   const pick = (items: typeof candidates) => {
     const maxCost = Math.max(...items.map((item) => item.cost), 0.01);
     const maxAge = Math.max(...items.map((item) => item.age), 0.01);
+
     return [...items].sort(
       (a, b) =>
         (a.cost / maxCost) * 0.8 +
@@ -111,6 +115,7 @@ export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: s
         ((b.cost / maxCost) * 0.8 + (b.age / maxAge) * 0.2),
     )[0]?.model.id;
   };
+
   const small = candidates.filter((candidate) => candidate.small);
 
   return pick(small.length > 0 ? small : candidates) ?? mainModel;

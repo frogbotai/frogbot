@@ -38,6 +38,7 @@ export function countWhereConditions(where?: Where): number {
   if (!where || typeof where !== 'object') return 0;
   const normalized = validateWhereQuery(where) ? where : transformWhereQuery(where);
   if (!validateWhereQuery(normalized)) return 0;
+
   return (normalized.or ?? []).reduce(
     (total, group) => total + (Array.isArray(group?.and) ? group.and.length : 0),
     0,
@@ -74,6 +75,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
 
     readSortExpanded();
     const observer = new MutationObserver(readSortExpanded);
+
     observer.observe(wrapper, {
       attributeFilter: ['aria-expanded'],
       attributes: true,

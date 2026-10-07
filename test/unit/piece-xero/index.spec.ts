@@ -22,6 +22,7 @@ import { xeroTriggers } from '../../../packages/pieces/piece-xero/src/triggers.j
 import { xeroWebhook } from '../../../packages/pieces/piece-xero/src/webhook.js';
 
 type XeroAction = (typeof xeroActions)[number];
+
 type XeroTrigger = (typeof xeroTriggers)[number];
 
 function action<TSlug extends XeroAction['slug']>(slug: TSlug) {
@@ -127,6 +128,7 @@ describe('xero transport and actions', () => {
         headers: { 'content-type': 'application/json' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
     const client = createXeroClient({ auth: { accessToken: 'secret' } });
 
@@ -284,6 +286,7 @@ describe('xero transport and actions', () => {
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({ Attachments: [] }),
     };
+
     const findByID = vi.fn().mockResolvedValue({ url: '/api/files/file-1' });
     const req = request(
       {},
@@ -376,10 +379,12 @@ describe('xero webhook', () => {
         },
       ],
     };
+
     const client = {
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({ Invoices: [{ InvoiceID: 'bill', Type: 'ACCPAY' }] }),
     };
+
     const definition = trigger('salesInvoiceCreated');
 
     await expect(
@@ -432,6 +437,7 @@ describe('xero webhook', () => {
         },
       ],
     };
+
     const definition = trigger('contactCreated');
 
     const client = { listTenants: vi.fn(), request: vi.fn() };
@@ -441,12 +447,14 @@ describe('xero webhook', () => {
       options: {},
       req: request(delivery),
     });
+
     const tenantTwo = await definition.run({
       input: { tenantId: 'tenant-2', fetchFullRecord: false },
       client,
       options: {},
       req: request(delivery),
     });
+
     const mismatch = await definition.run({
       input: { tenantId: 'tenant-3', fetchFullRecord: false },
       client,
@@ -472,6 +480,7 @@ describe('xero polling', () => {
         }),
       ),
     };
+
     const input = { tenantId: 'tenant-1', statuses: [], types: [], pageSize: 1 };
     const first = await definition.run({ input, client, options: {}, req: request() });
 
@@ -504,12 +513,14 @@ describe('xero polling', () => {
         .fn()
         .mockResolvedValue({ Payments: [{ PaymentID: 'payment-1', IsReconciled: true }] }),
     };
+
     const first = await reconciled.run({
       input,
       client: paymentClient,
       options: {},
       req: request(),
     });
+
     const second = await reconciled.run({
       input,
       cursor: first.cursor,
@@ -530,6 +541,7 @@ describe('xero polling', () => {
         ],
       }),
     };
+
     const result = await bills.run({ input, client: billClient, options: {}, req: request() });
 
     expect(result.events).toEqual([{ InvoiceID: 'bill', Type: 'ACCPAY' }]);

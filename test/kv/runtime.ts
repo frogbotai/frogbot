@@ -32,6 +32,7 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogBotConfig['kv'] 
       db = sqliteAdapter({ client: { url: `file:${sqlitePath}` }, push });
     } else if (database === 'postgres') {
       const { postgresAdapter } = await import('@frogbotai/db-postgres');
+
       db = postgresAdapter({
         pool: {
           connectionString:
@@ -45,6 +46,7 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogBotConfig['kv'] 
       const url = new URL(
         process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0',
       );
+
       url.pathname = `/${name}`;
       db = mongooseAdapter({ url: url.toString(), ensureIndexes: true });
     } else {
@@ -57,6 +59,7 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogBotConfig['kv'] 
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ...(kv ? { kv: kv() } : {}),
     });
+
     const cache = (globalThis as { _payload?: Map<string, unknown> })._payload;
     const previous = cache?.get('default');
     cache?.delete('default');
@@ -78,12 +81,14 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogBotConfig['kv'] 
           }
         },
       };
+
       runtimes.add(runtime);
       initialized = true;
       if (database === 'mongodb') {
         const adapter = frogbot.db as unknown as MongooseAdapter;
         await Promise.all(Object.values(adapter.connection.models).map((model) => model.init()));
       }
+
       return runtime;
     } finally {
       if (drop === undefined) delete process.env.PAYLOAD_DROP_DATABASE;

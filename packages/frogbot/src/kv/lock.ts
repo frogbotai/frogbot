@@ -49,6 +49,7 @@ export async function runKVLock<T>({
     if (!controller.signal.aborted && performance.now() >= deadline) {
       failLease(new KVLeaseLostError(key));
     }
+
     return !controller.signal.aborted;
   };
 
@@ -72,6 +73,7 @@ export async function runKVLock<T>({
         checkDeadline();
       }
     })();
+
     return release;
   };
 
@@ -94,8 +96,10 @@ export async function runKVLock<T>({
       if (!checkDeadline()) return;
       if (!extended) {
         failLease(new KVLeaseLostError(key));
+
         return;
       }
+
       deadline = started + ttl;
       watchDeadline();
       schedule();
@@ -114,16 +118,21 @@ export async function runKVLock<T>({
         lock = (await kv.acquireLock(key, ttl)) ?? undefined;
         if (!checkDeadline()) {
           if (lock) void releaseLock(lock);
+
           return false;
         }
+
         if (!lock) {
           recordError(new KVLockContentionError(key));
+
           return false;
         }
+
         return true;
       } catch (error) {
         recordError(error);
         checkDeadline();
+
         return false;
       }
     })();
@@ -161,6 +170,7 @@ export async function runKVLock<T>({
   if (errors.length > 1) {
     throw new AggregateError(errors, `KV lock failed: ${key}`);
   }
+
   if (errors.length === 1) {
     throw errors[0];
   }

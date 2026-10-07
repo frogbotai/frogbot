@@ -58,6 +58,7 @@ export async function generateTextOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
@@ -67,10 +68,12 @@ export async function generateTextOperation(
       providerOptions: toProviderOptions(providerOptions),
       ...(tools?.length && { tools: aiTools, toolsContext }),
     });
+
     await op.finish({
       finishReason: result.finishReason,
       usage: toHookUsage(result.usage),
     });
+
     return result;
   } catch (error) {
     await op.finish({ error });

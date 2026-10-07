@@ -34,6 +34,7 @@ function makeCapturingModel(capture: (opts: LanguageModelV4CallOptions) => void)
     },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       capture(options);
+
       return Promise.resolve({
         content: [{ type: 'text', text: 'ok' }],
         finishReason: finish('stop', 'stop'),
@@ -67,6 +68,7 @@ describe('G80 — pre-built provider instance not accepted (D-class)', () => {
   it('buildProviderRegistry accepts config objects and builds instances from them', () => {
     // Documents the correct path: config objects → build() → instances
     const registry = buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } }));
+
     expect(registry.openai).toBeDefined();
     // The built instance has languageModel method — it is NOT the raw config
     expect(typeof registry.openai?.languageModel).toBe('function');

@@ -24,27 +24,33 @@ export const bedrockCachePoint: BeforeUpstreamHook = (args) => {
     if (!cacheControl || typeof cacheControl !== 'object') return;
 
     const ttl = (cacheControl as Record<string, unknown>).ttl;
+
     (providerOptions.bedrock ??= {}).cachePoint = {
       type: 'default',
       ...(ttl === '5m' || ttl === '1h' ? { ttl } : {}),
     };
+
     delete unknown.cache_control;
     if (Object.keys(unknown).length === 0) delete providerOptions.unknown;
   };
 
   let lastMessage: Record<string, unknown> | undefined;
+
   for (const value of args.messages ?? []) {
     if (!value || typeof value !== 'object') continue;
     const message = value as Record<string, unknown>;
     lastMessage = message;
+
     processProviderOptions(
       message.providerOptions as Record<string, Record<string, unknown>> | undefined,
     );
 
     if (!Array.isArray(message.content)) continue;
+
     for (const value of message.content) {
       if (!value || typeof value !== 'object') continue;
       const part = value as Record<string, unknown>;
+
       processProviderOptions(
         part.providerOptions as Record<string, Record<string, unknown>> | undefined,
       );
@@ -57,10 +63,12 @@ export const bedrockCachePoint: BeforeUpstreamHook = (args) => {
       string,
       Record<string, unknown>
     >;
+
     providerOptions.unknown = {
       ...(providerOptions.unknown ?? {}),
       cache_control: requestCacheControl,
     };
+
     processProviderOptions(providerOptions);
     delete args.providerOptions.unknown.cache_control;
     if (Object.keys(args.providerOptions.unknown).length === 0) delete args.providerOptions.unknown;
@@ -92,6 +100,7 @@ export const bedrockEmbedDimensions: BeforeUpstreamHook = (args) => {
     ...(args.providerOptions.bedrock ?? {}),
     [key]: dimensions,
   };
+
   delete unknown.dimensions;
 };
 
@@ -106,6 +115,7 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
   const bedrockOpts = args.providerOptions['bedrock'] as { reasoningConfig?: unknown } | undefined;
   const amazonBedrockOpts = args.providerOptions['amazonBedrock'] as
     { reasoningConfig?: unknown } | undefined;
+
   if (bedrockOpts?.reasoningConfig || amazonBedrockOpts?.reasoningConfig) return;
 
   // `/v1/messages` maps the Anthropic `thinking` param to
@@ -115,6 +125,7 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
     args.providerOptions['anthropic'] as
       { thinking?: { type?: unknown; budgetTokens?: unknown; display?: unknown } } | undefined
   )?.thinking;
+
   if (
     anthropicThinking?.type === 'enabled' ||
     anthropicThinking?.type === 'disabled' ||
@@ -132,6 +143,7 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
           : {}),
       },
     };
+
     return;
   }
 

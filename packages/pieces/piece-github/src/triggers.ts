@@ -18,6 +18,7 @@ type WebhookState = {
 };
 
 type Delivery = z.output<typeof output>;
+
 type Match = (delivery: Delivery, state: WebhookState) => Delivery[];
 
 function trigger<const TSlug extends string>({
@@ -60,6 +61,7 @@ function trigger<const TSlug extends string>({
           },
         },
       );
+
       const account = username ? await client.request('/user', userOutput) : undefined;
 
       return {

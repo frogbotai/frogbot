@@ -189,6 +189,7 @@ describe('browser project servers', () => {
       'question-webkit',
       'plugin-seo',
     ];
+
     vi.resetModules();
 
     const { default: config } = await import('../../browser/playwright.config.js');

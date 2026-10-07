@@ -33,6 +33,7 @@ export function parseAssistantMessage(
         if (block.cache_control) {
           part.providerOptions = { unknown: { cache_control: block.cache_control } };
         }
+
         parts.push(part);
         break;
       }
@@ -45,6 +46,7 @@ export function parseAssistantMessage(
             ? { unknown: { signature: block.signature } }
             : undefined,
         });
+
         break;
       }
 
@@ -56,6 +58,7 @@ export function parseAssistantMessage(
           text: '',
           providerOptions: { unknown: { redactedData: block.data } },
         });
+
         break;
       }
 
@@ -67,9 +70,11 @@ export function parseAssistantMessage(
           // Anthropic ships tool_use.input as a parsed object.
           input: block.input,
         };
+
         if (block.cache_control) {
           part.providerOptions = { unknown: { cache_control: block.cache_control } };
         }
+
         parts.push(part);
         break;
       }
@@ -78,10 +83,12 @@ export function parseAssistantMessage(
         // Reachable at runtime for forward-compat unknown block types the
         // schema lets through.
         const blockType: unknown = Reflect.get(block, 'type');
+
         logger.warn(
           { blockType, messageIndex },
           `unsupported assistant content block type "${String(blockType)}" in messages[${messageIndex}] — skipped`,
         );
+
         break;
       }
     }

@@ -43,18 +43,21 @@ const outputSchema = z.object({
 });
 
 export type CustomApiCallInput = z.input<typeof inputSchema>;
+
 export type CustomApiCallOutput = z.output<typeof outputSchema>;
 
 function driveUrl(path: string): URL {
   if (path.trim() !== path || path.includes('\\') || path.startsWith('//')) {
     throw new Error('[frogbot] Custom API calls require a Google Drive API URL.');
   }
+
   const url = new URL(
     path.startsWith('/') && !path.startsWith('/drive/v3') && !path.startsWith('/upload/drive/v3')
       ? `https://www.googleapis.com/drive/v3${path}`
       : path,
     'https://www.googleapis.com/drive/v3/',
   );
+
   if (
     url.protocol !== 'https:' ||
     !['www.googleapis.com', 'drive.googleapis.com'].includes(url.hostname) ||
@@ -66,6 +69,7 @@ function driveUrl(path: string): URL {
   ) {
     throw new Error('[frogbot] Custom API calls require a Google Drive API URL.');
   }
+
   return url;
 }
 
@@ -79,9 +83,11 @@ export const customApiCall = defineAction({
   async run({ client, input, req }): Promise<CustomApiCallOutput> {
     const url = driveUrl(input.path);
     const headers = new Headers(input.headers);
+
     for (const name of ['authorization', 'proxy-authorization', 'cookie', 'host']) {
       if (headers.has(name)) throw new Error(`[frogbot] Custom API header '${name}' is reserved.`);
     }
+
     const timeout = AbortSignal.timeout(Math.ceil(input.timeoutSeconds * 1000));
     const signal = req.signal ? AbortSignal.any([req.signal, timeout]) : timeout;
     signal.throwIfAborted();
@@ -93,10 +99,12 @@ export const customApiCall = defineAction({
       data = input.body.value;
     } else if (input.body?.type === 'formData') {
       const form = new FormData();
+
       for (const field of input.body.fields) {
         if (field.type === 'text') form.append(field.name, field.value);
         else {
           const file = await loadFile({ req, file: field.file, signal });
+
           form.append(
             field.name,
             new Blob([new Uint8Array(file.data)], { type: file.mimeType }),
@@ -104,14 +112,17 @@ export const customApiCall = defineAction({
           );
         }
       }
+
       headers.delete('content-type');
       data = form;
     }
+
     signal.throwIfAborted();
     const auth = client.context._options.auth;
     if (!auth || typeof auth === 'string' || !('request' in auth)) {
       throw new Error('[frogbot] Google Drive client has no authenticated transport.');
     }
+
     const response = await auth.request<unknown>({
       ...requestOptions(req),
       url,
@@ -125,6 +136,7 @@ export const customApiCall = defineAction({
       validateStatus: (status) =>
         (status >= 200 && status < 300) || (input.failsafe && status >= 400),
     });
+
     signal.throwIfAborted();
     const body =
       input.responseType === 'binary'
@@ -136,6 +148,7 @@ export const customApiCall = defineAction({
               response.headers.get('content-type')?.split(';')[0] ?? 'application/octet-stream',
           })
         : response.data;
+
     return outputSchema.parse({
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),

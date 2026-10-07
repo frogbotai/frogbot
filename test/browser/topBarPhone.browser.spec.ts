@@ -184,6 +184,7 @@ test('opening the phone menu restores the full trail without moving the page bod
   const ancestors = page.locator('.app-header__step-nav > :not(.step-nav__last)');
 
   await page.locator('.frogbot-mobile-nav-toggle').click();
+
   await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'mobile-nav-open',
@@ -221,6 +222,7 @@ test('resizing to 1280px restores the unchanged desktop trail', async ({ page })
   const trail = await page.locator('.app-header__step-nav > *').allTextContents();
 
   await page.setViewportSize({ width: 1280, height: 800 });
+
   await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
     'data-nav-state',
     /desktop-nav-(open|closed)/,

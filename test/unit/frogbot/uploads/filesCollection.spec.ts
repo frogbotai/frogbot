@@ -35,6 +35,7 @@ describe('files collection opt-in', () => {
         { slug: 'documents', file: true, upload: true, fields: [] },
       ],
     });
+
     const documents = payloadConfig.collections.find(({ slug }) => slug === 'documents');
 
     expect(built.files).toEqual({ slug: 'documents' });
@@ -65,6 +66,7 @@ describe('files collection opt-in', () => {
         },
       ],
     });
+
     const documents = payloadConfig.collections.find(({ slug }) => slug === 'documents');
 
     expect(await documents?.access?.read?.({ req: { user: null } } as never)).toBe(true);

@@ -12,6 +12,7 @@ const execFileAsync = promisify(execFile);
 const binURL = pathToFileURL(
   new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname,
 ).href;
+
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 describe('frogbot generate:importmap', () => {
@@ -49,6 +50,7 @@ describe('frogbot generate:importmap', () => {
     await writeFile(join(dir, '.env.local'), 'FROGBOT_TEST_KEY=local\n');
     await writeFile(join(dir, '.env.production'), 'FROGBOT_TEST_KEY=production\n');
     await writeFile(join(dir, '.env.production.local'), 'FROGBOT_TEST_KEY=production-local\n');
+
     await writeFile(
       join(dir, 'frogbot.config.mjs'),
       "import { writeFileSync } from 'node:fs'; writeFileSync('observed-env', process.env.FROGBOT_TEST_KEY ?? ''); export default {};\n",

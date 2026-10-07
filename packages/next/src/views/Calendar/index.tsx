@@ -23,26 +23,31 @@ import { type CalendarPreferenceValue, resolveCalendarDate, resolveCalendarMode 
 function canUpdateField(fields: SanitizedFieldsPermissions | undefined, path: string): boolean {
   let fieldPermission: SanitizedFieldPermissions | undefined;
   let fieldPermissions = fields;
+
   for (const key of path.split('.')) {
     if (!fieldPermissions || fieldPermissions === true) {
       fieldPermission = fieldPermissions;
       break;
     }
+
     fieldPermission = fieldPermissions[key];
     fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
   }
+
   return fieldPermission === true || Boolean(fieldPermission?.update);
 }
 
 export async function CalendarView(props: AdminViewServerProps) {
   const { clientConfig, collectionConfig, collectionSlug, importMap, initPageResult, payload } =
     props;
+
   if (!collectionConfig || !collectionSlug) return null;
   const { runtime, views } = await resolveCollectionViews(props);
   const activeSlug = getActiveViewSlug(props) ?? runtime[0]?.slug;
   const calendar = runtime.find(
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
+
   if (!calendar || calendar.type !== 'calendar') notFound();
 
   const query = (initPageResult.req.query ?? {}) as {
@@ -50,6 +55,7 @@ export async function CalendarView(props: AdminViewServerProps) {
     date?: unknown;
     mode?: unknown;
   };
+
   const queryMode = typeof query.mode === 'string' ? query.mode : undefined;
   const queryDate = typeof query.date === 'string' ? query.date : undefined;
   const queryColumns: ViewColumnsSource =
@@ -57,6 +63,7 @@ export async function CalendarView(props: AdminViewServerProps) {
     (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
       ? query.columns
       : undefined;
+
   const preferenceKey = getViewPreferenceKey(collectionSlug, calendar.slug);
   const preference = initPageResult.req.user
     ? await payload.find({
@@ -74,17 +81,20 @@ export async function CalendarView(props: AdminViewServerProps) {
         },
       })
     : undefined;
+
   const preferenceValue = preference?.docs[0]?.value as CalendarPreferenceValue | undefined;
   const mode = resolveCalendarMode({
     configuredModes: calendar.modes,
     preferenceMode: preferenceValue?.mode,
     queryMode,
   });
+
   const date = resolveCalendarDate({
     preferenceDate: preferenceValue?.date,
     queryDate,
     today: new Date().toISOString(),
   });
+
   const columnPreferences = resolveViewColumnPreferences({
     defaultFields: calendar.defaultFields,
     preferenceColumns: Array.isArray(preferenceValue?.columns)
@@ -93,10 +103,12 @@ export async function CalendarView(props: AdminViewServerProps) {
     queryColumns,
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
+
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
   const clientCollectionConfig = clientConfig.collections.find(
     ({ slug }) => slug === collectionSlug,
   );
+
   const columns = getColumns({
     clientConfig,
     collectionConfig: clientCollectionConfig,
@@ -105,6 +117,7 @@ export async function CalendarView(props: AdminViewServerProps) {
     i18n: initPageResult.req.i18n,
     permissions: initPageResult.permissions,
   });
+
   const { columnState } = renderTable({
     clientCollectionConfig,
     collectionConfig,
@@ -117,21 +130,25 @@ export async function CalendarView(props: AdminViewServerProps) {
     req: initPageResult.req,
     useAsTitle: collectionConfig.admin.useAsTitle,
   });
+
   const initialQuery = {
     ...initPageResult.req.query,
     columns: transformColumnsToSearchParams(columns),
     date,
     mode,
   };
+
   const filter =
     typeof calendar.filter === 'function'
       ? await calendar.filter({ req: attachRegisteredFrogBot(initPageResult.req) })
       : calendar.filter;
+
   const canUpdate = Boolean(
     permissions?.update &&
     canUpdateField(permissions.fields, calendar.start) &&
     (!calendar.end || canUpdateField(permissions.fields, calendar.end)),
   );
+
   const Event = calendar.components?.Event
     ? getFromImportMap<ComponentType<{ row: { end?: string; id: string; start: string } }>>({
         importMap,

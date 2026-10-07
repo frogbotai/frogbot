@@ -14,6 +14,7 @@ describe('PageContextButton', () => {
     const PageContextButton = await loadPageContextButton();
     const addPageContext = vi.fn();
     const openTabs = Promise.resolve({ success: true, tabs: [tab] });
+
     render(
       <TooltipProvider>
         <PageContextButton
@@ -26,15 +27,20 @@ describe('PageContextButton', () => {
         <button>Outside</button>
       </TooltipProvider>,
     );
+
     // The outside-click listener is added in an effect after the menu renders; opening inside
     // `act` runs that effect before the outside press below.
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
       await openTabs;
     });
+
     fireEvent.click(screen.getByText('Example tab'));
+
     expect(addPageContext).toHaveBeenCalledWith(1);
+
     fireEvent.mouseDown(document.body);
+
     expect(screen.queryByText('Example tab')).toBeNull();
   });
 
@@ -42,6 +48,7 @@ describe('PageContextButton', () => {
     const PageContextButton = await loadPageContextButton();
     const addPageContext = vi.fn();
     const removePageContext = vi.fn();
+
     render(
       <TooltipProvider>
         <PageContextButton
@@ -53,14 +60,17 @@ describe('PageContextButton', () => {
         />
       </TooltipProvider>,
     );
+
     fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
     fireEvent.click(await screen.findByText('Example tab'));
+
     expect(removePageContext).toHaveBeenCalledWith(1);
     expect(addPageContext).not.toHaveBeenCalled();
   });
 
   it('keeps the menu closed when loading tabs fails', async () => {
     const PageContextButton = await loadPageContextButton();
+
     render(
       <TooltipProvider>
         <PageContextButton
@@ -72,12 +82,14 @@ describe('PageContextButton', () => {
         />
       </TooltipProvider>,
     );
+
     fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
     await waitFor(() => expect(screen.queryByText('Add tabs')).toBeNull());
   });
 
   it('disables the trigger while loading', async () => {
     const PageContextButton = await loadPageContextButton();
+
     render(
       <TooltipProvider>
         <PageContextButton
@@ -89,6 +101,7 @@ describe('PageContextButton', () => {
         />
       </TooltipProvider>,
     );
+
     expect(
       (screen.getByRole('button', { name: 'Add tab context' }) as HTMLButtonElement).disabled,
     ).toBe(true);

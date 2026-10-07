@@ -21,6 +21,7 @@ const filePart: Part = {
   mediaType: 'application/pdf',
   url: 'https://cdn.test/a.pdf',
 };
+
 const reasoningPart: Part = { type: 'reasoning', text: 'thinking carefully' };
 const toolCallPart: Part = {
   type: 'tool-lookup',
@@ -29,18 +30,22 @@ const toolCallPart: Part = {
   input: { query: 'weather', nested: { deep: [1, 2, 3] } },
   output: { temperature: 21 },
 };
+
 const unknownPart = { type: 'future-part-v9', payload: { anything: true, list: [null, 'x'] } };
 
 async function readRecords(stream: ReadableStream<Uint8Array>): Promise<TrainingDataRecord[]> {
   const chunks: Buffer[] = [];
   const reader = stream.getReader();
+
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     chunks.push(Buffer.from(value));
   }
+
   const text = Buffer.concat(chunks).toString('utf-8');
   if (text === '') return [];
+
   return text
     .trimEnd()
     .split('\n')
@@ -69,6 +74,7 @@ describe('training data export', () => {
       data: { email: 'owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
     });
+
     otherUser = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'other@frogbot.local', password: 'frogbot-int-password' },
@@ -80,6 +86,7 @@ describe('training data export', () => {
       data: { title: 'exported', agent: 'support', user: owner.id },
       overrideAccess: true,
     });
+
     exportedChatId = exported.id;
 
     const excluded = await booted.frogbot.create({
@@ -95,6 +102,7 @@ describe('training data export', () => {
       // @ts-expect-error a part type the SDK does not know must pass through export at runtime
       { id: 'm4', role: 'assistant', parts: [unknownPart], metadata: { custom: { a: 1 } } },
     ];
+
     for (const message of messages) {
       await booted.frogbot.create({
         collection: messagesSlug,

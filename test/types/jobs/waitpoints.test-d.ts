@@ -2,6 +2,7 @@ import type { JobsConfig, WorkflowConfig, WorkflowHandler } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 type Args = Parameters<WorkflowHandler>[0];
+
 type WaitOptions = Parameters<Args['waitFor']>[1];
 
 expectTypeOf<keyof Args>().toEqualTypeOf<'inlineTask' | 'job' | 'req' | 'tasks' | 'waitFor'>();

@@ -572,6 +572,7 @@ describe('Linear questions with SQLite persistence', () => {
       where: { email: { equals: frog.email } },
       overrideAccess: true,
     });
+
     const req = await frogbot.createRequest({});
 
     Object.assign(req, { user: { ...owner.docs[0], collection: 'users' } });

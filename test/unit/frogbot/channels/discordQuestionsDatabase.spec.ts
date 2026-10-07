@@ -380,6 +380,7 @@ describe('Discord questions with SQLite persistence', () => {
       threadId,
       user: 'U9',
     });
+
     await click({
       customId: control({ toolCallId: 'call-denied', verb: 'custom' }),
       messageId: card,
@@ -479,6 +480,7 @@ describe('Discord questions with SQLite persistence', () => {
       messageId: card,
       threadId,
     });
+
     await run((await continuations(threadId))[0]);
 
     const settled = api.calls.length;
@@ -534,6 +536,7 @@ describe('Discord questions with SQLite persistence', () => {
       threadId,
       values: ['2', '1'],
     });
+
     await click({ customId: control({ toolCallId, verb: 'submit' }), messageId: card, threadId });
 
     expect(JSON.stringify(api.edits(threadId, card).at(-1)!.body)).toContain('**Size** · 2 of 2');

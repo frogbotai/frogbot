@@ -19,6 +19,7 @@ export async function anySlugCompiles() {
   await sdk.create({ collection: 'whatever', data: { title: 'x' } });
   await sdk.login({ collection: 'members', data: { email: 'a', password: 'b' } });
   await sdk.search({ collection: 'articles', index: 'content', query: { text: 'frogs' } });
+
   await sdk.searchMany({
     collections: [
       { collection: 'articles', index: 'content' },

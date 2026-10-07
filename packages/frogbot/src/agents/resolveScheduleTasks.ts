@@ -6,7 +6,9 @@ import type { AgentConfig, AgentScheduleTrigger } from './types.js';
 export const AGENT_SCHEDULE_TASK_SLUG = 'frogbot-run-agent-schedule';
 
 type ScheduledAgentJob = { agentSlug: string; triggerSlug: string };
+
 type ScheduledAgentTask = { input: ScheduledAgentJob; output: Record<string, never> };
+
 type AutorunCronConfig = Extract<NonNullable<JobsConfig['autoRun']>, unknown[]>[number];
 
 function scheduleCron(trigger: AgentScheduleTrigger): string {
@@ -20,6 +22,7 @@ export function everyToCron(every: string): string {
       `[frogbot] Invalid schedule duration '${every}'. Use a positive duration such as '30m' or a raw cron expression.`,
     );
   }
+
   const value = Number(match[1]);
   const unit = match[2];
   const limits = { s: 60, m: 60, h: 24, d: 1 } as const;
@@ -28,9 +31,11 @@ export function everyToCron(every: string): string {
       `[frogbot] Schedule duration '${every}' does not divide evenly into its cron field. Use a raw cron expression instead.`,
     );
   }
+
   if (unit === 's') return value === 60 ? '* * * * *' : `*/${value} * * * * *`;
   if (unit === 'm') return value === 60 ? '0 * * * *' : `*/${value} * * * *`;
   if (unit === 'h') return value === 24 ? '0 0 * * *' : `0 */${value} * * *`;
+
   return '0 0 * * *';
 }
 
@@ -49,6 +54,7 @@ export function resolveScheduleTasks({
       )
       .map((trigger) => ({ agent, trigger })),
   );
+
   if (!scheduled.length) return jobs;
 
   const task: TaskConfig<ScheduledAgentTask> = {
@@ -60,6 +66,7 @@ export function resolveScheduleTasks({
       hooks: {
         beforeSchedule: async ({ defaultBeforeSchedule, ...args }) => {
           const result = await defaultBeforeSchedule({ defaultBeforeSchedule, ...args });
+
           return {
             ...result,
             input: { agentSlug: agent.slug, triggerSlug: trigger.slug },
@@ -76,6 +83,7 @@ export function resolveScheduleTasks({
           candidate.type === 'schedule' &&
           candidate.slug === input.triggerSlug,
       );
+
       if (!frogbot || !agent || !trigger) return { output: {} };
 
       const scheduleReq = await frogbot.createRequest({
@@ -87,6 +95,7 @@ export function resolveScheduleTasks({
           jobId: job.id,
         },
       });
+
       if ('prompt' in trigger && trigger.prompt !== undefined) {
         await agent.generate({ prompt: trigger.prompt, req: scheduleReq, overrideAccess: true });
       } else if (trigger.handler) {
@@ -100,11 +109,14 @@ export function resolveScheduleTasks({
           },
         });
       }
+
       return { output: {} };
     },
   };
+
   const autoRun = jobs?.autoRun;
   const frogAutoRun: AutorunCronConfig = { allQueues: true, cron: '* * * * *' };
+
   return {
     ...jobs,
     tasks: [...(jobs?.tasks ?? []), task],

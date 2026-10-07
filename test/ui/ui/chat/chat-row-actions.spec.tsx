@@ -9,6 +9,7 @@ describe('ChatRowActions', () => {
     const user = userEvent.setup();
     const onRename = vi.fn();
     const onDelete = vi.fn();
+
     render(
       <ChatRowActions onDelete={onDelete} onRename={onRename}>
         <div>Conversation</div>
@@ -26,6 +27,7 @@ describe('ChatRowActions', () => {
 
   it('opens the same actions from the row context menu', async () => {
     const onRename = vi.fn();
+
     render(
       <ChatRowActions onDelete={vi.fn()} onRename={onRename}>
         <div>Conversation</div>
@@ -40,6 +42,7 @@ describe('ChatRowActions', () => {
 
   it('marks the row while either menu is open', async () => {
     const user = userEvent.setup();
+
     render(
       <ChatRowActions onDelete={vi.fn()} onRename={vi.fn()}>
         <div className="row">Conversation</div>
@@ -47,20 +50,24 @@ describe('ChatRowActions', () => {
     );
 
     const rowClasses = () => screen.getByText('Conversation').closest('.row')?.classList;
+
     expect(rowClasses()?.contains('fb-chat-row-actions__row')).toBe(true);
     expect(rowClasses()?.contains('fb-slide-right-1')).toBe(true);
     expect(rowClasses()?.contains('fb-slide-active')).toBe(false);
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(false);
 
     await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(true);
     expect(rowClasses()?.contains('fb-slide-active')).toBe(true);
 
     await user.keyboard('{Escape}');
+
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(false);
 
     fireEvent.contextMenu(screen.getByText('Conversation'));
     await screen.findByRole('menuitem', { name: 'Rename' });
+
     expect(rowClasses()?.contains('fb-chat-row-actions__row--open')).toBe(true);
   });
 });

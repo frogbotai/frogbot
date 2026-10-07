@@ -8,5 +8,6 @@ export function stripEmptyKeys(obj: unknown): unknown {
   if ('' in obj) {
     (obj as Record<string, unknown>)[''] = undefined;
   }
+
   return obj;
 }

@@ -1,6 +1,7 @@
 import type { Access } from 'frogbot';
 
 export type AuditOperation = 'create' | 'update' | 'delete';
+
 export type AuditSnapshot = 'never' | 'delete' | 'always';
 
 export type AuditCollectionSelection =

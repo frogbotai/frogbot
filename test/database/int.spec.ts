@@ -17,9 +17,11 @@ describe(`database contract [${adapterLabel}]`, () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
   });
+
   afterAll(async () => {
     await booted.shutdown();
   });
+
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
   });
@@ -33,6 +35,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Hello World', priority: 10, published: true },
         overrideAccess: true,
       });
+
       expect(doc.id).toBeDefined();
       expect(doc.title).toBe('Hello World');
       expect(doc.priority).toBe(10);
@@ -45,6 +48,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Defaults' },
         overrideAccess: true,
       });
+
       expect(doc.published).toBe(false);
       expect(doc.status).toBe('draft');
     });
@@ -69,11 +73,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Find Me', content: 'body text' },
         overrideAccess: true,
       });
+
       const found = await booted.frogbot.findByID({
         collection: postsSlug,
         id: created.id,
         overrideAccess: true,
       });
+
       expect(found.id).toBe(created.id);
       expect(found.title).toBe('Find Me');
       expect(found.content).toBe('body text');
@@ -99,6 +105,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B' },
@@ -106,6 +113,7 @@ describe(`database contract [${adapterLabel}]`, () => {
       });
 
       const result = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
+
       expect(result.docs).toHaveLength(2);
     });
 
@@ -115,6 +123,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Draft', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'Published', status: 'published' },
@@ -126,6 +135,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { status: { equals: 'published' } },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(1);
       expect(result.docs[0].title).toBe('Published');
     });
@@ -136,11 +146,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', priority: 1 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', priority: 2 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', priority: 3 },
@@ -152,6 +164,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { priority: { not_equals: 2 } },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(2);
       expect(result.docs.map((d: any) => d.title).sort()).toEqual(['A', 'C']);
     });
@@ -162,6 +175,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Hello World' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'Goodbye' },
@@ -173,6 +187,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { title: { contains: 'Hello' } },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(1);
       expect(result.docs[0].title).toBe('Hello World');
     });
@@ -183,11 +198,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Low', priority: 1 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'Mid', priority: 5 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'High', priority: 10 },
@@ -199,6 +216,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { priority: { greater_than: 4 } },
         overrideAccess: true,
       });
+
       expect(gt.docs).toHaveLength(2);
 
       const lt = await booted.frogbot.find({
@@ -206,6 +224,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { priority: { less_than: 5 } },
         overrideAccess: true,
       });
+
       expect(lt.docs).toHaveLength(1);
       expect(lt.docs[0].title).toBe('Low');
     });
@@ -216,11 +235,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', priority: 1 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', priority: 2 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', priority: 3 },
@@ -232,6 +253,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { priority: { in: [1, 3] } },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(2);
       expect(result.docs.map((d: any) => d.title).sort()).toEqual(['A', 'C']);
     });
@@ -242,11 +264,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', priority: 1, status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', priority: 2, status: 'published' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', priority: 3, status: 'published' },
@@ -261,6 +285,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(1);
       expect(result.docs[0].title).toBe('C');
     });
@@ -271,11 +296,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', priority: 1 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', priority: 5 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', priority: 10 },
@@ -289,6 +316,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(2);
       expect(result.docs.map((d: any) => d.title).sort()).toEqual(['A', 'C']);
     });
@@ -303,12 +331,14 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Original', priority: 1 },
         overrideAccess: true,
       });
+
       const updated = await booted.frogbot.update({
         collection: postsSlug,
         id: created.id,
         data: { title: 'Modified' },
         overrideAccess: true,
       });
+
       expect(updated.title).toBe('Modified');
       expect(updated.priority).toBe(1); // unchanged field preserved
     });
@@ -319,17 +349,20 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Before' },
         overrideAccess: true,
       });
+
       await booted.frogbot.update({
         collection: postsSlug,
         id: created.id,
         data: { title: 'After' },
         overrideAccess: true,
       });
+
       const found = await booted.frogbot.findByID({
         collection: postsSlug,
         id: created.id,
         overrideAccess: true,
       });
+
       expect(found.title).toBe('After');
     });
 
@@ -339,12 +372,14 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Has Content', content: 'something' },
         overrideAccess: true,
       });
+
       const updated = await booted.frogbot.update({
         collection: postsSlug,
         id: created.id,
         data: { content: null as any },
         overrideAccess: true,
       });
+
       expect(updated.content).toBeFalsy();
     });
 
@@ -354,11 +389,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', status: 'published' },
@@ -371,10 +408,12 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { status: 'published' },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(2);
 
       const all = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
       const drafts = all.docs.filter((d: any) => d.status === 'draft');
+
       expect(drafts).toHaveLength(0);
     });
   });
@@ -388,6 +427,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'Delete Me' },
         overrideAccess: true,
       });
+
       await booted.frogbot.delete({
         collection: postsSlug,
         id: created.id,
@@ -409,11 +449,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', status: 'published' },
@@ -425,9 +467,11 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { status: { equals: 'draft' } },
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(2);
 
       const remaining = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
+
       expect(remaining.docs).toHaveLength(1);
       expect(remaining.docs[0].title).toBe('C');
     });
@@ -438,6 +482,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B' },
@@ -451,6 +496,7 @@ describe(`database contract [${adapterLabel}]`, () => {
       });
 
       const remaining = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
+
       expect(remaining.docs).toHaveLength(0);
     });
   });
@@ -464,11 +510,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C' },
@@ -476,6 +524,7 @@ describe(`database contract [${adapterLabel}]`, () => {
       });
 
       const result = await booted.frogbot.count({ collection: postsSlug, overrideAccess: true });
+
       expect(result.totalDocs).toBe(3);
     });
 
@@ -485,11 +534,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'A', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', status: 'published' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', status: 'published' },
@@ -501,11 +552,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { status: { equals: 'published' } },
         overrideAccess: true,
       });
+
       expect(result.totalDocs).toBe(2);
     });
 
     it('returns 0 for empty collection', async () => {
       const result = await booted.frogbot.count({ collection: postsSlug, overrideAccess: true });
+
       expect(result.totalDocs).toBe(0);
     });
   });
@@ -530,6 +583,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         page: 1,
         overrideAccess: true,
       });
+
       expect(page1.docs).toHaveLength(5);
       expect(page1.totalDocs).toBe(12);
       expect(page1.totalPages).toBe(3);
@@ -544,6 +598,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         page: 2,
         overrideAccess: true,
       });
+
       expect(page2.docs).toHaveLength(5);
       expect(page2.hasNextPage).toBe(true);
       expect(page2.hasPrevPage).toBe(true);
@@ -556,6 +611,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         page: 3,
         overrideAccess: true,
       });
+
       expect(page3.docs).toHaveLength(2);
       expect(page3.hasNextPage).toBe(false);
       expect(page3.hasPrevPage).toBe(true);
@@ -567,6 +623,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         pagination: false,
         overrideAccess: true,
       });
+
       expect(result.docs).toHaveLength(12);
     });
   });
@@ -580,11 +637,13 @@ describe(`database contract [${adapterLabel}]`, () => {
         data: { title: 'C', priority: 3 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'A', priority: 1 },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', priority: 2 },
@@ -598,6 +657,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         sort: 'title',
         overrideAccess: true,
       });
+
       expect(result.docs.map((d: any) => d.title)).toEqual(['A', 'B', 'C']);
     });
 
@@ -607,6 +667,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         sort: '-title',
         overrideAccess: true,
       });
+
       expect(result.docs.map((d: any) => d.title)).toEqual(['C', 'B', 'A']);
     });
 
@@ -616,6 +677,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         sort: 'priority',
         overrideAccess: true,
       });
+
       expect(result.docs.map((d: any) => d.priority)).toEqual([1, 2, 3]);
     });
 
@@ -625,6 +687,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         sort: '-priority',
         overrideAccess: true,
       });
+
       expect(result.docs.map((d: any) => d.priority)).toEqual([3, 2, 1]);
     });
 
@@ -636,6 +699,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         page: 1,
         overrideAccess: true,
       });
+
       expect(result.docs.map((d: any) => d.priority)).toEqual([1, 2]);
     });
 
@@ -646,6 +710,7 @@ describe(`database contract [${adapterLabel}]`, () => {
         where: { priority: { greater_than: 1 } },
         overrideAccess: true,
       });
+
       expect(result.docs.map((d: any) => d.priority)).toEqual([3, 2]);
     });
   });

@@ -36,6 +36,7 @@ export function parseExportTrainingDataArgs(args: string[]): ParsedArgs {
       if (!Number.isInteger(pageSize) || pageSize < 1) {
         throw new Error('--page-size must be a positive integer');
       }
+
       parsed.pageSize = pageSize;
     } else {
       throw new Error(`unknown option ${flag}`);

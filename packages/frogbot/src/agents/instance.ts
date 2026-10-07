@@ -69,6 +69,7 @@ export function createAgentInstance(
   const tools = toAISDKTools(agentConfig.tools, {
     skip: (messages) => clientSteps.has(messages),
   });
+
   const access = agentConfig.access ?? (({ req }) => !!req.user);
   const runs = new WeakMap<AgentCallOptions, AgentRun>();
   let instance: AgentInstance;
@@ -309,10 +310,12 @@ export function createAgentInstance(
         trackUsage: false,
       },
     });
+
     await op.start();
 
     try {
       const result = await baseAgent.generate(preparedCall);
+
       await finishSteps(result.steps, {
         req,
         runId,
@@ -320,10 +323,12 @@ export function createAgentInstance(
         model,
         models: run.models,
       });
+
       await op.finish({
         finishReason: result.finishReason,
         usage: toHookUsage(result.usage),
       });
+
       return result;
     } catch (error) {
       await op.finish({ error });
@@ -347,15 +352,18 @@ export function createAgentInstance(
         trackUsage: false,
       },
     });
+
     const userEnd = call.onEnd ?? call.onFinish;
     const finishOperation = (() => {
       let promise: Promise<void> | undefined;
+
       return (result?: {
         finishReason?: string;
         usage?: ReturnType<typeof toHookUsage>;
         error?: unknown;
       }) => (promise ??= op.finish(result));
     })();
+
     const abortSignal = preparedCall.abortSignal;
     const finishAbort = () => {
       void finishOperation({
@@ -365,6 +373,7 @@ export function createAgentInstance(
         frogbot.logger.error({ error }, '[frogbot] Failed to finalize aborted agent stream.');
       });
     };
+
     const transforms = call.experimental_transform;
 
     await op.start();
@@ -395,6 +404,7 @@ export function createAgentInstance(
         ],
         onEnd: async (event) => {
           abortSignal?.removeEventListener('abort', finishAbort);
+
           await finishSteps(event.steps ?? [], {
             req,
             runId,
@@ -402,10 +412,12 @@ export function createAgentInstance(
             model,
             models: run.models,
           });
+
           await finishOperation({
             finishReason: event.finishReason,
             usage: toHookUsage(event.usage),
           });
+
           if (userEnd) {
             await userEnd(event);
           }
@@ -563,6 +575,7 @@ export function createAgentInstance(
     stream,
     streamMessage,
   };
+
   return instance;
 }
 

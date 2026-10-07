@@ -15,13 +15,16 @@ describe('Sidebar', () => {
       matches: false,
       removeEventListener: vi.fn(),
     }));
+
     render(
       <SidebarProvider>
         <SidebarTrigger />
         <Sidebar>Navigation</Sidebar>
       </SidebarProvider>,
     );
+
     fireEvent.click(screen.getByRole('button', { name: 'Toggle sidebar' }));
+
     expect(screen.getByText('Navigation').getAttribute('data-closed')).toBe('true');
   });
 
@@ -31,12 +34,14 @@ describe('Sidebar', () => {
       matches: false,
       removeEventListener: vi.fn(),
     }));
+
     render(
       <SidebarProvider className="provider-custom">
         <Sidebar className="sidebar-custom">Navigation</Sidebar>
         <SidebarInset className="inset-custom" data-testid="inset" />
       </SidebarProvider>,
     );
+
     expect(screen.getByText('Navigation').className.split(' ')).toEqual(
       expect.arrayContaining(['fb-sidebar', 'fb-sidebar--desktop', 'sidebar-custom']),
     );
@@ -54,12 +59,15 @@ describe('Sidebar', () => {
       matches: false,
       removeEventListener: vi.fn(),
     }));
+
     render(
       <SidebarProvider>
         <Sidebar>Navigation</Sidebar>
       </SidebarProvider>,
     );
+
     fireEvent.keyDown(document, { key: 'b', ctrlKey: true });
+
     expect(screen.getByText('Navigation').getAttribute('data-closed')).toBe('true');
   });
 });

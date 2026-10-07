@@ -36,6 +36,7 @@ export function CalendarPreference({
         ...(mode === undefined ? {} : { mode }),
       },
     );
+
     void getPreference<CalendarPreferenceValue>(key).then((current) =>
       setPreference(key, { ...(current ?? {}), ...value }),
     );

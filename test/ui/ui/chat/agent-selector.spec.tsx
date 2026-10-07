@@ -11,6 +11,7 @@ const manifest = {
   files: { slug: 'files' },
   agents: [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }, { slug: 'sales' }],
 };
+
 const agentManifest = {
   defaultAgent: 'support',
   agents: [
@@ -40,26 +41,34 @@ describe('AgentSelector', () => {
     const onAgentChange = vi.fn();
     const user = userEvent.setup();
     const adapter = { fetch: fetchManifest };
+
     render(
       <ChatProvider adapter={adapter}>
         <AgentSelector selectedAgent="support" onAgentChange={onAgentChange} />
       </ChatProvider>,
     );
+
     await waitFor(() => expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy());
     await user.click(screen.getByRole('button', { name: /Ada/ }));
+
     expect(screen.getByRole('menuitem', { name: /Ada/ }).querySelector('svg')).toBeTruthy();
+
     fireEvent.click(screen.getByRole('menuitem', { name: /sales/ }));
+
     expect(onAgentChange).toHaveBeenCalledWith('sales');
   });
 
   it('renders the agent fallback without an avatar', async () => {
     const adapter = { fetch: fetchManifest };
+
     render(
       <ChatProvider adapter={adapter}>
         <AgentSelector selectedAgent="sales" onAgentChange={() => undefined} />
       </ChatProvider>,
     );
+
     await waitFor(() => expect(screen.getByRole('button', { name: /sales/ })).toBeTruthy());
+
     expect(screen.getByRole('button', { name: /sales/ }).querySelector('svg')).toBeTruthy();
   });
 });

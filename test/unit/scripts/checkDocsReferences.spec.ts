@@ -23,6 +23,7 @@ const packages = [
   { name: 'create-frogbot-app', bin: { 'create-frogbot-app': './bin.js' } },
   { name: '@frogbotai/gateway', bin: { 'frogbotai-gateway': './bin.js' } },
 ];
+
 const commands = ['dev', 'migrate', 'generate:types'];
 
 const moduleNames: Record<string, string[]> = {

@@ -3,10 +3,12 @@ import { pieceConformance } from 'frogbot/pieces/test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   'frogbot/pieces/test',
   () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
 );
+
 vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
@@ -31,6 +33,7 @@ import {
 const auth = { accessToken: 'access-test', refreshToken: 'refresh-test' };
 const selection = { spreadsheetId: 'book', sheetId: 0 };
 const title = "Owner's sheet";
+
 type SheetsClient = Awaited<ReturnType<ReturnType<typeof createGoogleSheets>['client']>>;
 
 function useTransport(client: SheetsClient, transport: (config: any) => Promise<unknown>) {
@@ -58,11 +61,13 @@ async function fixture({
     get: vi.fn((key: string) => Promise.resolve(state.get(key))),
     set: vi.fn((key: string, value: unknown) => {
       state.set(key, value);
+
       return Promise.resolve();
     }),
     acquireLock: vi.fn((key: string) => {
       if (leases.has(key)) return Promise.resolve(null);
       leases.set(key, 'lease');
+
       return Promise.resolve({ key, token: 'lease' });
     }),
     extendLock: vi.fn(({ key }: { key: string }) => Promise.resolve(leases.has(key))),
@@ -70,6 +75,7 @@ async function fixture({
     lock: async <T>(key: string, ttl: number, fn: (args: { signal: AbortSignal }) => Promise<T>) =>
       runKVLock({ kv, key, ttl, fn }),
   };
+
   const piece = createGoogleSheets({ auth, slug });
   const findByID = vi.fn().mockResolvedValue({
     id: 'file',
@@ -77,6 +83,7 @@ async function fixture({
     filename: 'source.csv',
     mimeType: 'text/csv',
   });
+
   const create = vi.fn().mockResolvedValue({ id: 'saved', url: '/files/export.csv' });
   const key = {};
   const instances: object[] = [piece];
@@ -97,6 +104,7 @@ async function fixture({
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key }) },
     },
   } as unknown as FrogBotRequest;
+
   const client = await piece.client({ req });
   const rows: unknown[][] = [
     ['Name', 'Count', ''],
@@ -105,28 +113,34 @@ async function fixture({
     ['alice smith', 2],
     ['Bob', 3],
   ];
+
   const respond = (
     data: unknown,
     config: unknown,
     status = 200,
     headers: Record<string, string> = {},
   ) => ({ data, config, status, statusText: 'OK', headers: new Headers(headers) });
+
   const route = (config: any) => {
     const url = new URL(String(config.url));
     const path = decodeURIComponent(url.pathname);
     if (url.hostname === 'docs.google.com') {
       return respond(Buffer.from('Name,Count\r\nAlice,"1,234.50"\r\n'), config);
     }
+
     if (path === '/drive/v3/files') {
       return config.method === 'POST'
         ? respond({ id: 'created', name: config.data.name }, config)
         : respond({ files: [{ id: 'book', name: 'Budget' }] }, config);
     }
+
     if (path.endsWith('/sheets/0:copyTo')) {
       return respond({ ...properties, sheetId: 9, title: `Copy of ${title}` }, config);
     }
+
     if (path.endsWith('/book:batchUpdate')) {
       const requests = config.data.requests;
+
       return respond(
         {
           spreadsheetId: 'book',
@@ -147,6 +161,7 @@ async function fixture({
         config,
       );
     }
+
     if (path.endsWith('/values:batchUpdate')) {
       return respond(
         {
@@ -158,9 +173,11 @@ async function fixture({
         config,
       );
     }
+
     if (path.endsWith('/values:batchClear')) {
       return respond({ spreadsheetId: 'book', clearedRanges: config.data.ranges }, config);
     }
+
     if (path.includes('/values/')) {
       const range = path.split('/values/')[1];
       if (path.endsWith(':append')) {
@@ -175,37 +192,44 @@ async function fixture({
           config,
         );
       }
+
       if (path.endsWith(':clear')) {
         return respond({ spreadsheetId: 'book', clearedRange: range.slice(0, -6) }, config);
       }
+
       if (config.method === 'PUT') {
         return respond(
           { spreadsheetId: 'book', updatedRange: range, updatedRows: config.data.values.length },
           config,
         );
       }
+
       const coordinates = range.split('!')[1];
       const numbers = coordinates?.match(/^(?:[A-Z]+)?(\d+):(?:[A-Z]+)?(\d+)?$/);
       const values = numbers
         ? rows.slice(Number(numbers[1]) - 1, numbers[2] ? Number(numbers[2]) : undefined)
         : [...rows];
+
       while (
         values.length &&
         !values[values.length - 1]?.some((value) => value != null && value !== '')
       ) {
         values.pop();
       }
+
       const oriented =
         config.params?.majorDimension === 'COLUMNS'
           ? Array.from({ length: Math.max(0, ...values.map((row) => row.length)) }, (_, index) =>
               values.map((row) => row[index] ?? ''),
             )
           : values;
+
       return respond(
         { range, majorDimension: config.params?.majorDimension ?? 'ROWS', values: oriented },
         config,
       );
     }
+
     if (path === '/v4/spreadsheets/book') {
       return respond(
         {
@@ -215,12 +239,16 @@ async function fixture({
         config,
       );
     }
+
     return respond({ ok: true }, config);
   };
+
   const transport = vi.fn(
     (config: any) => new Promise<ReturnType<typeof respond>>((resolve) => resolve(route(config))),
   );
+
   useTransport(client, transport);
+
   return {
     piece,
     client,
@@ -252,12 +280,15 @@ afterEach(() => {
 describe('native Google Sheets', () => {
   it('exposes all 27 native actions, no triggers, shared Google OAuth, and secret auth', async () => {
     const { piece, client } = await fixture();
+
     expect(pieceInstanceTools(piece)?.map(({ slug }) => slug)).toEqual(
       googleSheetsActions.map((slug) => `google-sheets_${slug}`),
     );
     expect(googleSheetsActions).toHaveLength(27);
     expect(piece.triggers).toEqual({});
+
     const definition = pieceFactoryDefinition(createGoogleSheets);
+
     expect(definition.oauth).toMatchObject({
       scopes: [
         'openid',
@@ -276,17 +307,21 @@ describe('native Google Sheets', () => {
 
   it('passes the native conformance harness with provider responses for every stateless action', async () => {
     const { client, transport } = await fixture();
+
     vi.spyOn(Object.getPrototypeOf(client.auth.transporter), 'request').mockImplementation(
       transport,
     );
+
     const appended = {
       row: 6,
       updates: { updatedRange: "'Owner''s sheet'!A6:C6", updatedRows: 1 },
     };
+
     const updated = {
       row: 2,
       updates: { spreadsheetId: 'book', updatedRange: "'Owner''s sheet'!2:2", updatedRows: 1 },
     };
+
     const batch = { spreadsheetId: 'book', replies: [{}] };
     const row = { row: 2, values: { A: 'Alice', B: '0', C: 'false' } };
     const fixtures = [
@@ -407,6 +442,7 @@ describe('native Google Sheets', () => {
         result: { status: 200, headers: {}, body: { ok: true } },
       },
     ];
+
     expect(
       await pieceConformance(createGoogleSheets, {
         factoryOptions: { auth },
@@ -426,13 +462,16 @@ describe('native Google Sheets', () => {
 
   it('appends sparse column values in column order, preserving RAW and 1-based returned rows', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.appendRow({
         req,
         input: { ...selection, values: { C: false, A: '=SUM(1,2)' }, valueInputOption: 'RAW' },
       }),
     ).toMatchObject({ row: 6, updates: { updatedRows: 1 } });
+
     const [call] = calls(transport, ':append');
+
     expect(call.data).toEqual({ majorDimension: 'ROWS', values: [['=SUM(1,2)', '', false]] });
     expect(call.params.valueInputOption).toBe('RAW');
     expect(decodeURIComponent(String(call.url))).toContain("'Owner''s sheet'!A:A");
@@ -444,6 +483,7 @@ describe('native Google Sheets', () => {
 
   it('inserts beneath headers or at row one without a truthiness bug for sheet ID zero', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(await piece.insertRow({ req, input: { ...selection, values: ['new'] } })).toMatchObject({
       row: 2,
     });
@@ -455,7 +495,9 @@ describe('native Google Sheets', () => {
         },
       },
     ]);
+
     await piece.insertRow({ req, input: { ...selection, values: ['first'], afterRow: 0 } });
+
     expect(
       calls(transport, '/book:batchUpdate')[1].data.requests[0].insertDimension.inheritFromBefore,
     ).toBe(false);
@@ -463,17 +505,21 @@ describe('native Google Sheets', () => {
 
   it('updates single and batch rows with blank/null skip semantics and JSON serialization', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.updateRow({
         req,
         input: { ...selection, row: 4, values: ['', null, 0, false, { x: 1 }] },
       }),
     ).toMatchObject({ row: 4 });
+
     const update = transport.mock.calls
       .map(([call]) => call)
       .find((call) => call.method === 'PUT')!;
+
     expect(update.data.values).toEqual([[null, null, 0, false, '{\n  "x": 1\n}']]);
     expect(update.params.valueInputOption).toBe('USER_ENTERED');
+
     await piece.updateRows({
       req,
       input: {
@@ -486,7 +532,9 @@ describe('native Google Sheets', () => {
         ],
       },
     });
+
     const [batch] = calls(transport, '/values:batchUpdate');
+
     expect(batch.data).toEqual({
       valueInputOption: 'RAW',
       data: [
@@ -509,6 +557,7 @@ describe('native Google Sheets', () => {
         duplicateColumn: 'A',
       },
     });
+
     expect(result.insertedRows).toBe(3);
     expect(calls(transport, ':append')[0].data.values).toEqual([
       ['New, name', '0', ''],
@@ -520,6 +569,7 @@ describe('native Google Sheets', () => {
   it('extends JSON headers at the configured header row and maps records by name', async () => {
     const { piece, req, transport, rows } = await fixture();
     rows.splice(0, rows.length, ['Title'], ['Name', 'Count'], ['Existing', 3]);
+
     await piece.appendRows({
       req,
       input: {
@@ -534,9 +584,11 @@ describe('native Google Sheets', () => {
         },
       },
     });
+
     const update = transport.mock.calls
       .map(([call]) => call)
       .find((call) => call.method === 'PUT')!;
+
     expect(decodeURIComponent(String(update.url))).toContain("'Owner''s sheet'!2:2");
     expect(update.data.values).toEqual([['Name', 'Count', 'Extra']]);
     expect(calls(transport, ':append')[0].data.values).toEqual([
@@ -547,6 +599,7 @@ describe('native Google Sheets', () => {
 
   it('overwrites below the chosen header then clears trailing rows, including empty replacement', async () => {
     const { piece, req, transport } = await fixture();
+
     await piece.appendRows({
       req,
       input: {
@@ -558,6 +611,7 @@ describe('native Google Sheets', () => {
         valueInputOption: 'RAW',
       },
     });
+
     expect(calls(transport, '/values:batchUpdate')[0].data).toMatchObject({
       valueInputOption: 'RAW',
       data: [{ range: "'Owner''s sheet'!A3", values: [['Alice']] }],
@@ -565,10 +619,12 @@ describe('native Google Sheets', () => {
     expect(calls(transport, '/values:batchClear')[0].data.ranges).toEqual([
       "'Owner''s sheet'!4:100",
     ]);
+
     await piece.appendRows({
       req,
       input: { ...selection, overwrite: true, data: { format: 'columns', rows: [] } },
     });
+
     expect(calls(transport, '/values:batchClear')[1].data.ranges).toEqual([
       "'Owner''s sheet'!2:100",
     ]);
@@ -576,6 +632,7 @@ describe('native Google Sheets', () => {
 
   it('avoids writes when every incoming row already exists and rejects malformed CSV', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.appendRows({
         req,
@@ -614,9 +671,12 @@ describe('native Google Sheets', () => {
         },
       },
     });
+
     expect(result.insertedRows).toBe(2);
     expect(calls(transport, ':append')[0].data.values).toEqual([['missing key'], ['null key', '']]);
+
     rows[0] = [];
+
     await expect(
       piece.appendRows({
         req,
@@ -628,10 +688,12 @@ describe('native Google Sheets', () => {
   it('deletes individual, contiguous, and noncontiguous rows without index shifting', async () => {
     const { piece, req, transport } = await fixture();
     await piece.deleteRow({ req, input: { ...selection, row: 1 } });
+
     await piece.deleteRows({
       req,
       input: { ...selection, selection: { mode: 'range', startRow: 3, endRow: 5 } },
     });
+
     expect(
       await piece.deleteRows({
         req,
@@ -644,7 +706,9 @@ describe('native Google Sheets', () => {
         { startRow: 3, endRow: 3 },
       ],
     });
+
     const requests = calls(transport, '/book:batchUpdate').flatMap((call) => call.data.requests);
+
     expect(requests.map((request: any) => request.deleteDimension.range)).toEqual([
       { sheetId: 0, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
       { sheetId: 0, dimension: 'ROWS', startIndex: 2, endIndex: 5 },
@@ -662,6 +726,7 @@ describe('native Google Sheets', () => {
 
   it('finds exact or substring matches and preserves physical rows, zero, false, and missing header fallback', async () => {
     const { piece, req } = await fixture();
+
     expect(
       await piece.findRows({
         req,
@@ -687,6 +752,7 @@ describe('native Google Sheets', () => {
 
   it('returns found rows without appending and creates a missing row with its actual returned position', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.findOrCreateRow({
         req,
@@ -704,6 +770,7 @@ describe('native Google Sheets', () => {
 
   it('gets individual and all rows, tolerates empty headers, and distinguishes missing rows from provider errors', async () => {
     const { piece, req, transport, rows } = await fixture();
+
     expect(
       await piece.getRow({ req, input: { ...selection, row: 2, useHeaderNames: true } }),
     ).toEqual({ found: true, row: 2, values: { Name: 'Alice', Count: '0', C: 'false' } });
@@ -716,11 +783,15 @@ describe('native Google Sheets', () => {
         (row: any) => row.row,
       ),
     ).toEqual([2, 3, 4, 5]);
+
     rows[0] = [];
+
     expect(
       await piece.getRow({ req, input: { ...selection, row: 2, useHeaderNames: true } }),
     ).toMatchObject({ values: { A: 'Alice', B: '0' } });
+
     transport.mockRejectedValueOnce(new Error('permission denied'));
+
     await expect(piece.getRow({ req, input: { ...selection, row: 2 } })).rejects.toThrow(
       'permission denied',
     );
@@ -728,6 +799,7 @@ describe('native Google Sheets', () => {
 
   it('creates spreadsheets in folders and worksheets with literal RAW headers', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.createSpreadsheet({ req, input: { title: 'Budget', folderId: 'folder' } }),
     ).toEqual({ id: 'created', name: 'Budget' });
@@ -742,7 +814,9 @@ describe('native Google Sheets', () => {
         input: { spreadsheetId: 'book', title: "New's tab", headers: ['=literal'] },
       }),
     ).toMatchObject({ sheetId: 9, title: "New's tab" });
+
     const write = transport.mock.calls.map(([call]) => call).find((call) => call.method === 'PUT')!;
+
     expect(decodeURIComponent(String(write.url))).toContain("'New''s tab'!A1");
     expect(write.params.valueInputOption).toBe('RAW');
     expect(write.data.values).toEqual([['=literal']]);
@@ -750,6 +824,7 @@ describe('native Google Sheets', () => {
 
   it('finds existing worksheets, creates only missing ones, and matches titles case-sensitively', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.findOrCreateWorksheet({
         req,
@@ -776,12 +851,15 @@ describe('native Google Sheets', () => {
 
   it('clears values without deletion and supports retaining a later header row', async () => {
     const { piece, req, transport } = await fixture();
+
     await piece.clearWorksheet({
       req,
       input: { ...selection, headerRow: 3, preserveHeaders: true },
     });
+
     await piece.clearWorksheet({ req, input: { ...selection, preserveHeaders: false } });
     await piece.clearRows({ req, input: { ...selection, startRow: 4, endRow: 6 } });
+
     expect(
       calls(transport, ':clear').map(
         (call) => decodeURIComponent(String(call.url)).split('/values/')[1],
@@ -798,6 +876,7 @@ describe('native Google Sheets', () => {
     const { piece, req, transport } = await fixture();
     await piece.renameWorksheet({ req, input: { ...selection, title: 'Renamed' } });
     await piece.deleteWorksheet({ req, input: selection });
+
     expect(
       await piece.copyWorksheet({
         req,
@@ -819,6 +898,7 @@ describe('native Google Sheets', () => {
 
   it('normalizes HEX colors and updates only explicitly selected formatting, including false', async () => {
     const { piece, req, transport } = await fixture();
+
     await piece.formatRows({
       req,
       input: {
@@ -830,6 +910,7 @@ describe('native Google Sheets', () => {
         bold: false,
       },
     });
+
     expect(calls(transport, '/book:batchUpdate')[0].data.requests).toEqual([
       {
         repeatCell: {
@@ -852,6 +933,7 @@ describe('native Google Sheets', () => {
 
   it('reads local ranges using requested orientation and rendering and rejects cross-sheet ranges', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.readRange({
         req,
@@ -863,9 +945,11 @@ describe('native Google Sheets', () => {
         },
       }),
     ).toMatchObject({ majorDimension: 'COLUMNS', values: [['Alice'], [0], [false]] });
+
     const read = transport.mock.calls
       .map(([call]) => call)
       .find((call) => String(call.url).includes('/values/'))!;
+
     expect(read.params).toMatchObject({ majorDimension: 'COLUMNS', valueRenderOption: 'FORMULA' });
     await expect(
       piece.readRange({ req, input: { ...selection, range: 'Other!A1' } }),
@@ -874,6 +958,7 @@ describe('native Google Sheets', () => {
 
   it('escapes Drive search literals, follows every page, and includes shared drives when requested', async () => {
     const { piece, req, transport, respond } = await fixture();
+
     transport.mockImplementation((config) =>
       Promise.resolve(
         respond(
@@ -884,6 +969,7 @@ describe('native Google Sheets', () => {
         ),
       ),
     );
+
     expect(
       await piece.findSpreadsheets({
         req,
@@ -907,10 +993,13 @@ describe('native Google Sheets', () => {
 
   it('inserts columns at explicit indices or after the last header and handles AA/ZZZ boundaries', async () => {
     const { piece, req, transport, rows } = await fixture();
+
     expect(
       await piece.createColumn({ req, input: { ...selection, name: 'Inserted', index: 2 } }),
     ).toMatchObject({ column: 'B', index: 2 });
+
     rows[0] = Array.from({ length: 26 }, (_, index) => String(index));
+
     expect(
       await piece.createColumn({ req, input: { ...selection, name: 'Appended' } }),
     ).toMatchObject({ column: 'AA', index: 27 });
@@ -928,6 +1017,7 @@ describe('native Google Sheets', () => {
 
   it('exports formatted text or persists a file through access-controlled native file APIs', async () => {
     const { piece, req, transport, create } = await fixture();
+
     expect(
       await piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
     ).toEqual({ format: 'csv', text: 'Name,Count\r\nAlice,"1,234.50"\r\n' });
@@ -951,6 +1041,7 @@ describe('native Google Sheets', () => {
 
   it('follows only Google export redirects and never forwards bearer credentials to signed download hosts', async () => {
     const { piece, req, transport, respond } = await fixture();
+
     transport
       .mockImplementationOnce((config) =>
         Promise.resolve(
@@ -960,14 +1051,17 @@ describe('native Google Sheets', () => {
         ),
       )
       .mockImplementationOnce((config) => Promise.resolve(respond(Buffer.from('export'), config)));
+
     expect(
       await piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
     ).toMatchObject({ text: 'export' });
     expect(transport.mock.calls[0][0].headers.get('authorization')).toBe('Bearer access-test');
     expect(transport.mock.calls[1][0].headers).toBeUndefined();
+
     transport.mockImplementationOnce((config) =>
       Promise.resolve(respond('', config, 302, { location: 'https://attacker.test/export' })),
     );
+
     await expect(
       piece.exportWorksheet({ req, input: { ...selection, returnAsText: true } }),
     ).rejects.toThrow('outside Google');
@@ -976,6 +1070,7 @@ describe('native Google Sheets', () => {
 
   it('makes bound custom API calls with query, body, response metadata, and redirects disabled', async () => {
     const { piece, req, transport } = await fixture();
+
     expect(
       await piece.customApiCall({
         req,
@@ -988,7 +1083,9 @@ describe('native Google Sheets', () => {
         },
       }),
     ).toMatchObject({ status: 200, body: { spreadsheetId: 'book', replies: [] } });
+
     const call = transport.mock.calls[0][0];
+
     expect(String(call.url)).toBe('https://sheets.googleapis.com/v4/spreadsheets/book:batchUpdate');
     expect(call).toMatchObject({
       params: { prettyPrint: false },
@@ -1010,6 +1107,7 @@ describe('native Google Sheets', () => {
     '/spreadsheets\\evil',
   ])('rejects custom API escape %s before transport', async (path) => {
     const { piece, req, transport } = await fixture();
+
     await expect(piece.customApiCall({ req, input: { path } })).rejects.toThrow();
     expect(transport).not.toHaveBeenCalled();
   });
@@ -1018,9 +1116,11 @@ describe('native Google Sheets', () => {
     const { piece, req, transport, findByID, create, respond } = await fixture();
     const fetch = vi.fn().mockResolvedValue(new Response('source'));
     vi.stubGlobal('fetch', fetch);
+
     transport.mockImplementation((config) =>
       Promise.resolve(respond(Buffer.from('binary'), config, 200, { 'content-type': 'text/csv' })),
     );
+
     await piece.customApiCall({
       req,
       input: {
@@ -1037,6 +1137,7 @@ describe('native Google Sheets', () => {
         filename: 'download.csv',
       },
     });
+
     expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'file', req, overrideAccess: false }),
     );
@@ -1049,7 +1150,9 @@ describe('native Google Sheets', () => {
         file: expect.objectContaining({ data: Buffer.from('binary'), name: 'download.csv' }),
       }),
     );
+
     transport.mockImplementationOnce((config) => Promise.resolve(respond('plain', config)));
+
     expect(
       await piece.customApiCall({
         req,
@@ -1068,6 +1171,7 @@ describe('native Google Sheets', () => {
     findByID.mockResolvedValue({ url: 'https://storage.test/signed', filename: 'source.csv' });
     const fetch = vi.fn().mockResolvedValue(new Response('source'));
     vi.stubGlobal('fetch', fetch);
+
     await piece.customApiCall({
       req,
       input: {
@@ -1076,8 +1180,11 @@ describe('native Google Sheets', () => {
         body: { type: 'form', fields: [{ name: 'file', file: { fileId: 'file' } }] },
       },
     });
+
     expect([...fetch.mock.calls[0][1].headers]).toEqual([]);
+
     transport.mockClear();
+
     await expect(
       piece.customApiCall({
         req,
@@ -1091,6 +1198,7 @@ describe('native Google Sheets', () => {
     const { piece, req, transport } = await fixture();
     const controller = new AbortController();
     controller.abort(new Error('cancelled'));
+
     await expect(
       piece.appendRow({
         req: { ...req, signal: controller.signal },
@@ -1110,7 +1218,9 @@ describe('native Google Sheets', () => {
       )
       .mockResolvedValueOnce(Response.json({ error: { message: 'expired' } }, { status: 401 }))
       .mockResolvedValueOnce(Response.json({ error: { message: 'limited' } }, { status: 429 }));
+
     client.auth.transporter.defaults.fetchImplementation = fetch;
+
     await expect(
       piece.customApiCall({ req, input: { path: '/spreadsheets/book', failOnError: false } }),
     ).rejects.toThrow();
@@ -1121,6 +1231,7 @@ describe('native Google Sheets', () => {
       await piece.customApiCall({ req, input: { path: '/spreadsheets/book', failOnError: false } }),
     ).toMatchObject({ status: 429, body: { error: { message: 'limited' } } });
     expect(fetch).toHaveBeenCalledTimes(3);
+
     for (const [url, options] of fetch.mock.calls) {
       expect(new URL(String(url)).origin).toBe('https://sheets.googleapis.com');
       expect(options.redirect).toBe('error');
@@ -1133,14 +1244,17 @@ describe('persistent row cursors', () => {
     const { piece, req, rows, state } = await fixture();
     rows.splice(0, rows.length, ['Name'], [], ['after gap']);
     const input = { ...selection, startRow: 2, batchSize: 1 };
+
     expect(await piece.getNextRows({ req, input })).toEqual([{ row: 2, values: { A: '' } }]);
     expect(await piece.getNextRows({ req, input })).toEqual([
       { row: 3, values: { A: 'after gap' } },
     ]);
     expect([...state.values()]).toEqual([4]);
+
     rows.length = 100;
     rows.fill([], 3, 99);
     rows[99] = ['last grid row'];
+
     expect(
       await piece.getNextRows({ req, input: { ...selection, startRow: 100, memoryKey: 'last' } }),
     ).toEqual([{ row: 100, values: { A: 'last grid row' } }]);
@@ -1149,19 +1263,26 @@ describe('persistent row cursors', () => {
   it('advances only after reads, resumes from persistent KV across runtime clients, and retains EOF for future appends', async () => {
     const { piece, req, kv, state, client, transport, rows } = await fixture();
     const input = { ...selection, startRow: 2, batchSize: 2, memoryKey: 'import' };
+
     expect((await piece.getNextRows({ req, input })).map((row: any) => row.row)).toEqual([2, 3]);
     expect([...state.values()]).toEqual([4]);
+
     const restarted = createGoogleSheets({ auth });
     req.frogbot.config.pieces.instances = [restarted];
     const nextClient = await restarted.client({ req });
+
     expect(nextClient).not.toBe(client);
+
     useTransport(nextClient, transport);
+
     expect((await restarted.getNextRows({ req, input })).map((row: any) => row.row)).toEqual([
       4, 5,
     ]);
     expect(await restarted.getNextRows({ req, input })).toEqual([]);
     expect([...state.values()]).toEqual([6]);
+
     rows.push(['New']);
+
     expect((await restarted.getNextRows({ req, input })).map((row: any) => row.row)).toEqual([6]);
     expect(kv.acquireLock).toHaveBeenCalledWith(
       expect.stringMatching(/^pieces:google-sheets:cursor:[a-f0-9]{64}:lock$/),
@@ -1171,6 +1292,7 @@ describe('persistent row cursors', () => {
 
   it('isolates owner collection/id, instance, spreadsheet, worksheet, and memory keys', async () => {
     const keys: string[] = [];
+
     for (const owner of [
       null,
       { collection: 'users', id: 1 },
@@ -1181,6 +1303,7 @@ describe('persistent row cursors', () => {
       await piece.getNextRows({ req, input: selection });
       keys.push(kv.get.mock.calls[0][0]);
     }
+
     const other = await fixture({ slug: 'sheets-other' });
     await other.piece.getNextRows({ req: other.req, input: selection });
     keys.push(other.kv.get.mock.calls[0][0]);
@@ -1188,14 +1311,18 @@ describe('persistent row cursors', () => {
     keys.push(other.kv.get.mock.calls[1][0]);
     await other.piece.getNextRows({ req: other.req, input: { ...selection, sheetId: 7 } });
     keys.push(other.kv.get.mock.calls[2][0]);
+
     other.transport.mockImplementationOnce((config) =>
       Promise.resolve(other.respond({ sheets: [{ properties }] }, config)),
     );
+
     await other.piece.getNextRows({
       req: other.req,
       input: { ...selection, spreadsheetId: 'another-book' },
     });
+
     keys.push(other.kv.get.mock.calls[3][0]);
+
     expect(new Set(keys).size).toBe(keys.length);
   });
 
@@ -1206,20 +1333,27 @@ describe('persistent row cursors', () => {
     const ready = new Promise<void>((resolve) => {
       started = resolve;
     });
+
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
+
     transport.mockImplementationOnce(async (config) => {
       started();
       await gate;
+
       return respond({ sheets: [{ properties }] }, config);
     });
+
     const first = piece.getNextRows({ req, input: { ...selection, startRow: 2 } });
     await ready;
+
     await expect(
       piece.getNextRows({ req, input: { ...selection, startRow: 2 } }),
     ).rejects.toThrow();
+
     release();
+
     expect((await first)[0]?.row).toBe(2);
     expect((await piece.getNextRows({ req, input: selection }))[0]?.row).toBe(3);
     expect([...state.values()]).toEqual([4]);
@@ -1232,21 +1366,26 @@ describe('persistent row cursors', () => {
     const ready = new Promise<void>((resolve) => {
       started = resolve;
     });
+
     transport.mockImplementationOnce(async (config) => {
       started();
+
       return new Promise((_resolve, reject) =>
         config.signal.addEventListener('abort', () => reject(abortReason(config.signal)), {
           once: true,
         }),
       );
     });
+
     const pending = piece.getNextRows({
       req: { ...req, signal: controller.signal },
       input: selection,
     });
+
     const rejected = pending.catch((error: unknown) => error);
     await ready;
     controller.abort(new Error('cancelled'));
+
     expect(await rejected).toEqual(new Error('cancelled'));
     expect(kv.set).not.toHaveBeenCalled();
     expect(kv.releaseLock).toHaveBeenCalled();
@@ -1255,14 +1394,19 @@ describe('persistent row cursors', () => {
   it('does not advance on provider failure, invalid stored data, or lock contention', async () => {
     const { piece, req, kv, transport, state } = await fixture();
     transport.mockRejectedValueOnce(new Error('unavailable'));
+
     await expect(piece.getNextRows({ req, input: selection })).rejects.toThrow('unavailable');
     expect(kv.set).not.toHaveBeenCalled();
+
     const key = kv.get.mock.calls[0][0];
     state.set(key, 'not-a-number');
+
     await expect(piece.getNextRows({ req, input: selection })).rejects.toThrow();
     expect(kv.set).not.toHaveBeenCalled();
+
     state.clear();
     kv.acquireLock.mockResolvedValueOnce(null);
+
     await expect(piece.getNextRows({ req, input: selection })).rejects.toThrow();
     expect(kv.set).not.toHaveBeenCalled();
   });
@@ -1274,21 +1418,27 @@ describe('persistent row cursors', () => {
     const ready = new Promise<void>((resolve) => {
       started = resolve;
     });
+
     transport.mockImplementationOnce(async (config) => {
       started();
+
       return new Promise((_resolve, reject) =>
         config.signal.addEventListener('abort', () => reject(abortReason(config.signal)), {
           once: true,
         }),
       );
     });
+
     kv.extendLock.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     const pending = piece.getNextRows({ req, input: selection });
     const rejection = pending.catch((error: unknown) => error);
     await ready;
     await vi.advanceTimersByTimeAsync(10_001);
+
     expect(kv.extendLock).toHaveBeenCalledTimes(1);
+
     await vi.advanceTimersByTimeAsync(10_001);
+
     expect(await rejection).toBeInstanceOf(Error);
     expect(kv.set).not.toHaveBeenCalled();
     expect(kv.releaseLock).toHaveBeenCalled();
@@ -1311,6 +1461,7 @@ describe('persistent row cursors', () => {
         },
       ],
     });
+
     instances.splice(0, instances.length, ...config.pieces.instances);
     const input = { ...selection, startRow: 2, batchSize: 1 };
 
@@ -1350,6 +1501,7 @@ describe('persistent row cursors', () => {
         },
       ],
     });
+
     instances.splice(0, instances.length, ...config.pieces.instances);
     const input = { ...selection, startRow: 2, batchSize: 1 };
 

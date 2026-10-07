@@ -57,6 +57,7 @@ describe('@frogbotai/kv-redis', () => {
     expect(adapter.redisClient).toBe(client);
     expect(adapter.keyPrefix).toBe('custom:');
     expect(construct).toHaveBeenCalledExactlyOnceWith('custom:', 'redis://example:6379');
+
     for (const method of ['clear', 'delete', 'get', 'has', 'keys'] as const) {
       expect(RedisKVAdapter.prototype[method]).toBe(PayloadRedisKVAdapter.prototype[method]);
     }
@@ -65,6 +66,7 @@ describe('@frogbotai/kv-redis', () => {
   it('preserves lazy factory initialization and defaults from REDIS_URL', () => {
     vi.stubEnv('REDIS_URL', 'redis://environment:6379');
     const factory = redisKVAdapter();
+
     expect(construct).not.toHaveBeenCalled();
     expect(factory.init({ payload: {} as never })).toBeInstanceOf(RedisKVAdapter);
     expect(construct).toHaveBeenCalledExactlyOnceWith('payload-kv:', 'redis://environment:6379');
@@ -73,29 +75,35 @@ describe('@frogbotai/kv-redis', () => {
   it('preserves explicit options including an empty prefix', () => {
     vi.stubEnv('REDIS_URL', 'redis://environment:6379');
     redisKVAdapter({ keyPrefix: '', redisURL: 'redis://explicit:6379' }).init();
+
     expect(construct).toHaveBeenCalledExactlyOnceWith('', 'redis://explicit:6379');
   });
 
   it('preserves the missing URL error', () => {
     vi.stubEnv('REDIS_URL', undefined);
+
     expect(() => redisKVAdapter()).toThrow('redisURL or REDIS_URL env variable is required');
   });
 
   it('does not replace the JSON data format for conditional writes', async () => {
     const adapter = new RedisKVAdapter('custom:', 'redis://example:6379');
+
     await expect(adapter.setIfAbsent('key', { nested: ['value', 42] })).resolves.toBe(true);
     expect(client.set).toHaveBeenCalledExactlyOnceWith(
       'custom:key',
       '{"nested":["value",42]}',
       'NX',
     );
+
     client.set.mockResolvedValueOnce(null);
+
     await expect(adapter.setIfAbsent('key', 'replacement')).resolves.toBe(false);
   });
 
   it('delegates ordinary writes and adds backend-timed expiry only when requested', async () => {
     const adapter = new RedisKVAdapter('custom:', 'redis://example:6379');
     await adapter.set('key', { value: 42 });
+
     expect(plainSet).toHaveBeenCalledExactlyOnceWith('key', { value: 42 });
     expect(client.eval).not.toHaveBeenCalled();
 
@@ -114,6 +122,7 @@ describe('@frogbotai/kv-redis', () => {
     'rejects invalid ttl %s before issuing commands',
     async (ttl) => {
       const adapter = new RedisKVAdapter('custom:', 'redis://example:6379');
+
       await expect(adapter.set('key', 'value', { ttl })).rejects.toBeInstanceOf(RangeError);
       await expect(adapter.setIfAbsent('key', 'value', { ttl })).rejects.toBeInstanceOf(RangeError);
       await expect(adapter.extendLock({ key: 'key', token: 'owner' }, ttl)).rejects.toBeInstanceOf(
@@ -126,6 +135,7 @@ describe('@frogbotai/kv-redis', () => {
 
   it('uses backend time and JSON-encoded ownership in renewal', async () => {
     const adapter = new RedisKVAdapter('custom:', 'redis://example:6379');
+
     await expect(adapter.extendLock({ key: 'key', token: 'owner' }, 300)).resolves.toBe(true);
     expect(client.eval).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining("redis.call('TIME')"),
@@ -139,6 +149,7 @@ describe('@frogbotai/kv-redis', () => {
   it('rejects a backend-reported expiration overflow', async () => {
     const adapter = new RedisKVAdapter('custom:', 'redis://example:6379');
     client.eval.mockResolvedValue(-1);
+
     await expect(
       adapter.set('key', 'value', { ttl: Number.MAX_SAFE_INTEGER }),
     ).rejects.toBeInstanceOf(RangeError);
@@ -152,6 +163,7 @@ describe('@frogbotai/kv-redis', () => {
 
   it('checks expiration and ownership in the same release command', async () => {
     const adapter = new RedisKVAdapter('custom:', 'redis://example:6379');
+
     await expect(adapter.releaseLock({ key: 'key', token: 'owner' })).resolves.toBe(true);
     expect(client.eval).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining("redis.call('PTTL', KEYS[1]) <= 0"),
@@ -159,7 +171,9 @@ describe('@frogbotai/kv-redis', () => {
       'custom:key',
       '"owner"',
     );
+
     client.eval.mockResolvedValue(0);
+
     await expect(adapter.releaseLock({ key: 'key', token: 'owner' })).resolves.toBe(false);
     await expect(adapter.extendLock({ key: 'key', token: 'owner' }, 300)).resolves.toBe(false);
   });

@@ -12,11 +12,13 @@ const transferInput = z.object({
   autorename: z.boolean().default(false),
   allowOwnershipTransfer: z.boolean().default(false),
 });
+
 const uploadOptions = {
   autorename: z.boolean().default(false),
   mute: z.boolean().optional(),
   strictConflict: z.boolean().optional(),
 };
+
 const uploadResult = metadata;
 
 function transfer<const TSlug extends string>(slug: TSlug, operation: string) {
@@ -157,6 +159,7 @@ export const downloadFile = defineAction({
       },
       signal: requestSignal(req),
     });
+
     const name = input.path.match(/[^/]+$/)?.[0] ?? 'download';
     const file = await saveFile({
       req,

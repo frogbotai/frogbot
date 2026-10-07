@@ -32,6 +32,7 @@ export function BoardPreference({
       ...(groupBy === undefined ? {} : { groupBy }),
       ...(sort === undefined ? {} : { sort }),
     });
+
     void getPreference<BoardPreferenceValue>(key).then((current) =>
       setPreference(key, { ...(current ?? {}), ...value }),
     );

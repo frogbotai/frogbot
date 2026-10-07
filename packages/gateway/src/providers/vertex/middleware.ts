@@ -23,6 +23,7 @@ export const vertexThinkingBudget: BeforeUpstreamHook = (args) => {
   // Check if thinking is already explicitly configured
   const googleOpts = args.providerOptions['google'] as
     { thinkingConfig?: { thinkingBudget?: number } } | undefined;
+
   if (googleOpts?.thinkingConfig) return;
 
   const effort = args.providerOptions['unknown']?.['reasoning_effort'];

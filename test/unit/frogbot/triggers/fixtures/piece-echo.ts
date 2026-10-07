@@ -25,6 +25,7 @@ export function defineEchoPiece(define: typeof definePiece) {
     run({ req, options, client }) {
       const data = req.data as { id: string; message: string };
       echoCalls.push({ type: 'app', data, options, client });
+
       return Promise.resolve([
         { dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } },
       ]);
@@ -39,15 +40,18 @@ export function defineEchoPiece(define: typeof definePiece) {
     output: z.object({ message: z.string() }),
     onEnable({ input, webhookUrl, options, client }) {
       echoCalls.push({ type: 'enable', input, webhookUrl, options, client });
+
       return Promise.resolve({ enabled: input.channel });
     },
     onDisable({ input, state, options, client }) {
       echoCalls.push({ type: 'disable', input, state, options, client });
+
       return Promise.resolve();
     },
     run({ req, input, options, client, state }) {
       const data = req.data as { id: string; message: string };
       echoCalls.push({ type: 'webhook', input, data, options, client, state });
+
       return Promise.resolve([
         { dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } },
       ]);
@@ -67,6 +71,7 @@ export function defineEchoPiece(define: typeof definePiece) {
     run({ req, input, options, client }) {
       const data = req.data as { id: string; message: string };
       echoCalls.push({ type: 'other', input, data, options, client });
+
       return Promise.resolve([
         { dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } },
       ]);
@@ -82,6 +87,7 @@ export function defineEchoPiece(define: typeof definePiece) {
     webhook: {
       async verify({ req }) {
         const body = await req.text!();
+
         return (
           req.headers.get('x-echo-signature') ===
           createHmac('sha256', echoSecret).update(body).digest('hex')
@@ -89,6 +95,7 @@ export function defineEchoPiece(define: typeof definePiece) {
       },
       handshake({ req }) {
         const data = req.data as { challenge?: string } | undefined;
+
         return Promise.resolve(
           data?.challenge ? Response.json({ challenge: data.challenge }) : null,
         );

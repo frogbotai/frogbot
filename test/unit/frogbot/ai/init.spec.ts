@@ -37,6 +37,7 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
 describe('buildGatewayConfig', () => {
   it('maps true to SDK environment fallback config', () => {
     const config = buildGatewayConfig(makeAIConfig({ openai: true }));
+
     expect(config.providers).toEqual({ openai: {} });
   });
 
@@ -44,6 +45,7 @@ describe('buildGatewayConfig', () => {
     const config = buildGatewayConfig(
       makeAIConfig({ openai: { apiKey: 'sk-1' }, anthropic: { apiKey: 'sk-2' } }),
     );
+
     expect(config.providers).toEqual({
       openai: { apiKey: 'sk-1' },
       anthropic: { apiKey: 'sk-2' },
@@ -53,6 +55,7 @@ describe('buildGatewayConfig', () => {
   it('configures Bedrock', () => {
     const entry = { region: 'us-east-1', accessKeyId: 'ak', secretAccessKey: 'sk' };
     const config = buildGatewayConfig(makeAIConfig({ bedrock: entry }));
+
     expect(config.providers).toEqual({ bedrock: entry });
   });
 
@@ -60,6 +63,7 @@ describe('buildGatewayConfig', () => {
     const config = buildGatewayConfig(
       makeAIConfig({ openai: { apiKey: 'sk-1', models: ['gpt-4o'] } }),
     );
+
     expect(config.providers.openai).toEqual({ apiKey: 'sk-1', models: ['gpt-4o'] });
   });
 
@@ -89,6 +93,7 @@ describe('buildGatewayConfig', () => {
         bedrock: { region: 'us-east-1', models: ['zai.glm-4.7-flash'] },
       }),
     );
+
     expect(config.providers.bedrock).toEqual({
       region: 'us-east-1',
       models: ['zai.glm-4.7-flash'],
@@ -99,11 +104,13 @@ describe('buildGatewayConfig', () => {
     const config = buildGatewayConfig(
       makeAIConfig({ xai: { apiKey: 'xai-key', models: ['grok-4.3'] } }),
     );
+
     expect(config.providers.xai).toEqual({ apiKey: 'xai-key', models: ['grok-4.3'] });
   });
 
   it('maps true Bedrock to ambient AWS config', () => {
     const config = buildGatewayConfig(makeAIConfig({ bedrock: true }));
+
     expect(config.providers).toEqual({ bedrock: {} });
   });
 
@@ -111,21 +118,25 @@ describe('buildGatewayConfig', () => {
     const credentialProvider = () => Promise.resolve({ accessKeyId: 'ak', secretAccessKey: 'sk' });
     const entry = { region: 'us-east-1', credentialProvider };
     const config = buildGatewayConfig(makeAIConfig({ bedrock: entry }));
+
     expect(config.providers).toEqual({ bedrock: entry });
   });
 
   it('configures Together AI', () => {
     const config = buildGatewayConfig(makeAIConfig({ togetherai: { apiKey: 'sk-t' } }));
+
     expect(config.providers).toEqual({ togetherai: { apiKey: 'sk-t' } });
   });
 
   it('maps replicate apiKey → apiToken', () => {
     const config = buildGatewayConfig(makeAIConfig({ replicate: { apiKey: 'r8-key' } }));
+
     expect(config.providers).toEqual({ replicate: { apiToken: 'r8-key' } });
   });
 
   it('maps true Replicate to its environment fallback', () => {
     const config = buildGatewayConfig(makeAIConfig({ replicate: true }));
+
     expect(Object.hasOwn(config.providers.replicate!, 'apiToken')).toBe(false);
   });
 
@@ -140,6 +151,7 @@ describe('buildGatewayConfig', () => {
         },
       }),
     );
+
     expect(config.providers).toEqual({
       ollama: {
         baseURL: 'http://localhost:11434/v1',
@@ -150,6 +162,7 @@ describe('buildGatewayConfig', () => {
 
   it('skips undefined provider entries', () => {
     const config = buildGatewayConfig(makeAIConfig({ openai: { apiKey: 'sk' }, groq: undefined }));
+
     expect(Object.keys(config.providers)).toEqual(['openai']);
   });
 
@@ -161,6 +174,7 @@ describe('buildGatewayConfig', () => {
 
   it('forwards all five hook phases into the gateway', () => {
     const config = makeAIConfig({ openai: { apiKey: 'sk' } });
+
     config.hooks = {
       beforeOperation: [vi.fn()],
       beforeUpstream: [vi.fn()],
@@ -215,11 +229,13 @@ describe('createAIGateway', () => {
     const logger = makeLogger();
     const consoleError = vi.spyOn(console, 'error');
     const config = makeAIConfig({ openai: { apiKey: 'sk-test' } });
+
     config.hooks.afterOperation = [
       () => {
         throw new Error('hook boom');
       },
     ];
+
     const gw = createAIGateway(config, logger);
     const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o' });
 
@@ -234,17 +250,20 @@ describe('createAIGateway', () => {
       'hook-error',
     );
     expect(consoleError).not.toHaveBeenCalled();
+
     consoleError.mockRestore();
   });
 
   it('constructs with an omitted API key and the SDK environment fallback', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
     const gw = createAIGateway(makeAIConfig({ openai: true }));
+
     expect(gw.chatModel('openai/gpt-4o').modelId).toBe('gpt-4o');
   });
 
   it('boots a gateway exposing per-modality resolvers and a handler', () => {
     const gw = createAIGateway(makeAIConfig({ openai: { apiKey: 'sk-test' } }));
+
     expect(typeof gw.handler).toBe('function');
     expect(typeof gw.chatModel).toBe('function');
     expect(typeof gw.embedModel).toBe('function');
@@ -258,6 +277,7 @@ describe('createAIGateway', () => {
   it('resolves an in-process chat model for a configured provider', () => {
     const gw = createAIGateway(makeAIConfig({ openai: { apiKey: 'sk-test' } }));
     const model = gw.chatModel('openai/gpt-4o');
+
     expect(model.modelId).toBe('gpt-4o');
   });
 
@@ -271,7 +291,9 @@ describe('createAIGateway', () => {
         },
       }),
     );
+
     const model = gw.chatModel('ollama/llama3');
+
     expect(model.modelId).toBe('llama3');
   });
 });

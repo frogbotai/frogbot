@@ -35,6 +35,7 @@ export function resolveViewColumnPreferences({
   const fromPreference = transformColumnsToPreferences(preferenceColumns);
   if (fromPreference?.length) return fromPreference;
   const seed = defaultFields?.length ? defaultFields : [useAsTitle ?? 'id'];
+
   return seed.map((accessor) => ({ accessor, active: true }));
 }
 

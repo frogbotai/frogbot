@@ -12,6 +12,7 @@ export const lmntProvider = {
   envVars: ['LMNT_API_KEY'],
   fromEnv: (env) => {
     if (!env.LMNT_API_KEY) return undefined;
+
     return { apiKey: env.LMNT_API_KEY };
   },
   build: (cfg) => createLMNT(cfg),

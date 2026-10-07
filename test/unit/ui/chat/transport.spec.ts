@@ -11,6 +11,7 @@ const message = {
   role: 'user' as const,
   parts: [{ type: 'text' as const, text: 'Hello' }],
 };
+
 const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) =>
   createFrogBotSDK({ baseURL: '/api', fetch });
 
@@ -33,13 +34,16 @@ async function captureBody(request?: Parameters<typeof prepareChatRequest>[0]) {
       new Response(new ReadableStream({ start: (controller) => controller.close() })),
     ),
   );
+
   const transport = new FrogBotChatTransport({
     agentSlug: 'agent',
     sdk: sdk(fetch),
     prepareSendMessagesRequest: prepareChatRequest(request),
     body: { unsupported: true },
   });
+
   await transport.sendMessages(sendOptions({ messageId: message.id, messages: [message] }));
+
   return JSON.parse(fetch.mock.calls[0][1]?.body as string);
 }
 
@@ -74,6 +78,7 @@ describe('FrogBotChatTransport', () => {
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
     );
+
     const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: sdk(fetch),
@@ -82,11 +87,14 @@ describe('FrogBotChatTransport', () => {
         model: () => 'zen/big-pickle',
       }),
     });
+
     const send = () =>
       transport.sendMessages(sendOptions({ messageId: message.id, messages: [message] }));
+
     await send();
     chatId = 'chat-1';
     await send();
+
     expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
       messages: [message],
       model: 'zen/big-pickle',
@@ -109,12 +117,15 @@ describe('FrogBotChatTransport', () => {
         }),
       ),
     );
+
     const transport = new FrogBotChatTransport({
       agentSlug: 'support agent',
       sdk: sdk(fetch),
       onChatId,
     });
+
     await transport.sendMessages(sendOptions()).then((stream) => stream.cancel());
+
     expect(fetch).toHaveBeenCalledWith(
       '/api/agents/support%20agent',
       expect.objectContaining({ method: 'POST' }),
@@ -124,6 +135,7 @@ describe('FrogBotChatTransport', () => {
     expect(dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'frogbot:chats:mutated' }),
     );
+
     vi.unstubAllGlobals();
   });
 
@@ -135,8 +147,10 @@ describe('FrogBotChatTransport', () => {
         }),
       ),
     );
+
     const transport = new FrogBotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch) });
     await transport.sendMessages(sendOptions()).then((stream) => stream.cancel());
+
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('text/event-stream');
   });
 
@@ -146,12 +160,15 @@ describe('FrogBotChatTransport', () => {
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
     );
+
     const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: sdk(fetch),
       headers: { Accept: 'application/json' },
     });
+
     await transport.sendMessages(sendOptions());
+
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('application/json');
   });
 
@@ -161,6 +178,7 @@ describe('FrogBotChatTransport', () => {
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
     );
+
     const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: createFrogBotSDK({
@@ -169,7 +187,9 @@ describe('FrogBotChatTransport', () => {
         headers: { authorization: 'Bearer token' },
       }),
     });
+
     await transport.sendMessages(sendOptions());
+
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('authorization')).toBe('Bearer token');
   });
 
@@ -178,7 +198,9 @@ describe('FrogBotChatTransport', () => {
       agentSlug: 'agent',
       sdk: sdk(() => Promise.resolve(new Response(null, { status: 499 }))),
     });
+
     const stream = await transport.sendMessages(sendOptions());
+
     expect((await stream.getReader().read()).done).toBe(true);
   });
 

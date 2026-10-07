@@ -108,6 +108,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
         collection: 'payload-jobs',
         data: { taskSlug: 'record-effect', input: { marker: jobId }, jobId },
       });
+
       const stored = await fixture.payload.db.find<FrogBotJob>({
         collection: 'payload-jobs',
         where: { id: { equals: first.id } },

@@ -167,6 +167,7 @@ export async function promoteSteerMessages({
   const createdAt = before
     ? new Date(new Date(before).getTime() - 1).toISOString()
     : new Date().toISOString();
+
   const promoted: TurnMessageDocument[] = [];
 
   for (const message of messages) {

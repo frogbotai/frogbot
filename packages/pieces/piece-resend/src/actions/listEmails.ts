@@ -10,6 +10,7 @@ export const listEmails = defineAction({
   async run({ client }) {
     const result = await client.request({ path: '/emails' });
     const emails = (result as { data?: Array<Record<string, unknown>> })?.data ?? [];
+
     return emails.map((message) => ({
       id: message.id,
       from: message.from,

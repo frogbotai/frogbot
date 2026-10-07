@@ -15,6 +15,7 @@ const input = z.object({
   timeout: z.number().positive().optional(),
   followRedirects: z.boolean().default(false),
 });
+
 const output = z.object({
   status: z.number().int(),
   headers: z.record(z.string(), z.string()),

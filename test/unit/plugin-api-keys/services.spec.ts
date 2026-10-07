@@ -84,6 +84,7 @@ describe('API key services', () => {
     const find = vi
       .fn()
       .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
     const update = vi.fn().mockResolvedValue({});
     const req = request({ frogbot: { find, update } });
 
@@ -107,6 +108,7 @@ describe('API key services', () => {
     const find = vi
       .fn()
       .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
     const req = request({
       user: { id: 'support-1', roles: ['support'] },
       frogbot: { find, update: vi.fn() },
@@ -124,14 +126,19 @@ describe('API key services', () => {
     const find = vi
       .fn()
       .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
+
     const update = vi.fn().mockImplementation(() => {
       operations.push('revoke');
+
       return Promise.resolve();
     });
+
     const create = vi.fn().mockImplementation(() => {
       operations.push('mint');
+
       return Promise.resolve({ id: 'key-2' });
     });
+
     const req = request({ frogbot: { find, update, create } });
 
     const result = await rotateApiKey({

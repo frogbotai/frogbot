@@ -9,9 +9,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
   loadConfig: mocks.loadConfig,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({
   generateImportMap: mocks.generateImportMap,
 }));
+
 vi.mock('../../../../packages/frogbot/src/bin/runNext.js', () => ({ runNext: mocks.runNext }));
 
 import { dev } from '../../../../packages/frogbot/src/bin/dev.js';
@@ -19,6 +21,7 @@ import { dev } from '../../../../packages/frogbot/src/bin/dev.js';
 describe('frogbot dev command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
     mocks.loadConfig.mockResolvedValue({
       admin: { importMap: { autoGenerate: true } },
       _internal: { payloadConfig: Promise.resolve({}) },
@@ -27,11 +30,13 @@ describe('frogbot dev command', () => {
 
   it('delegates to `next dev` with passthrough args', async () => {
     await dev(['-p', '4000']);
+
     expect(mocks.runNext).toHaveBeenCalledWith('dev', ['-p', '4000']);
   });
 
   it('defaults to no extra args', async () => {
     await dev();
+
     expect(mocks.runNext).toHaveBeenCalledWith('dev', []);
   });
 

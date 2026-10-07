@@ -16,7 +16,9 @@ export function deriveChatTitle(
     .find((message) => message.role === 'user')
     ?.parts.find((part) => part.type === 'text')
     ?.text.trim();
+
   if (!text) return fallback;
+
   return maxLength && text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
 }
 
@@ -66,6 +68,7 @@ export function ChatHistory({
             {renderActions?.(chat)}
           </div>
         );
+
         return sdk && chatsSlug && messagesSlug ? (
           <ChatHistoryActions
             chat={chat}

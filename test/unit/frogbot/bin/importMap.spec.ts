@@ -28,6 +28,7 @@ describe('collection import map', () => {
 
   it('collects a collection board Card override', () => {
     const addToImportMap = vi.fn();
+
     iterateCollections({
       addToImportMap,
       baseDir: '/tmp',
@@ -49,11 +50,13 @@ describe('collection import map', () => {
       importMap: {},
       imports: {},
     });
+
     expect(addToImportMap).toHaveBeenCalledWith('./Card#Card');
   });
 
   it('collects collection calendar slots and Event override', () => {
     const addToImportMap = vi.fn();
+
     iterateCollections({
       addToImportMap,
       baseDir: '/tmp',

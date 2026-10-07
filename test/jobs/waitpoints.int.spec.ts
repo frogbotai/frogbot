@@ -242,6 +242,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       queue: 'different',
       jobId: 'resumable-duplicate',
     });
+
     const jobs = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       limit: 0,
@@ -259,6 +260,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     });
     expect(jobs.docs).toHaveLength(1);
     expect(waiting.holder).toBe(source.id);
+
     await expectNoContinuationJobs();
   });
 
@@ -343,6 +345,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     });
     expect(duplicate.id).toBe(source.id);
     expect(notify).toHaveBeenCalledTimes(1);
+
     await expectNoContinuationJobs();
   });
 
@@ -438,6 +441,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     blocked.mockRestore();
 
     expect(await holder(waiting)).toEqual(recovered);
+
     await expectNoContinuationJobs();
   });
 
@@ -451,6 +455,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       input: { key: 'mixed-batch' },
       jobId: 'mixed-batch',
     });
+
     const completed = await fixture.frogbot.jobs.queue({ workflow: 'complete', input: {} });
 
     await fixture.worker.jobs.run({ queue: 'approvals', limit: 2, silent: true });
@@ -459,6 +464,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       collection: 'payload-jobs',
       limit: 0,
     });
+
     const waits = await fixture.payload.db.find({ collection: 'frogbot-waitpoints', limit: 0 });
 
     expect(rows.docs).toHaveLength(1);
@@ -496,11 +502,13 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       input: { key: 'writing' },
       jobId: 'writing',
     });
+
     const blocked = interceptCompletion(fixture.payload, source.id, async () => {
       entered.resolve();
 
       await release.promise;
     });
+
     const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
 
     inFlight.push(run);
@@ -533,6 +541,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'accepted' });
     expect(await holder(accepted)).toBeUndefined();
+
     await expectNoContinuationJobs();
   });
 
@@ -556,6 +565,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect((await holder(waiting)).hasError).toBe(true);
     expect((await findWaitpoint({ req, token }))?.status).toBe('pending');
     expect((await findWaitpoint({ req, token }))?.data).toBeFalsy();
+
     await expectNoContinuationJobs();
   });
 
@@ -575,6 +585,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'yes' });
     expect(replacement).toMatchObject({ jobId: 'resumed-complete', taskSlug: 'fail-for-good' });
     expect((await holder(waiting))?.workflowSlug).not.toBe('wait');
+
     await expectNoContinuationJobs();
   });
 
@@ -639,6 +650,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(failed).toMatchObject({ id: source.id, hasError: true });
     expect(replacement.id).not.toBe(source.id);
     expect(replacement).toMatchObject({ jobId: 'resumed-failure' });
+
     await expectNoContinuationJobs();
   });
 
@@ -657,6 +669,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect((await holder(waiting)).hasError).toBe(true);
     expect(replacement.id).not.toBe(source.id);
     expect(replacement).toMatchObject({ jobId: 'resumed-cancel' });
+
     await expectNoContinuationJobs();
   });
 
@@ -692,6 +705,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       (await fixture.payload.db.find<FrogBotJob>({ collection: 'payload-jobs', limit: 0 })).docs,
     ).toEqual(before.docs);
     expect(before.docs[0].waitUntil).toBe(until);
+
     await expectNoContinuationJobs();
   });
 
@@ -727,6 +741,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
     expect((await holder(waiting)).waitUntil).toBe(until);
+
     await expectNoContinuationJobs();
   });
 
@@ -786,6 +801,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       where: {},
       limit: 0,
     });
+
     const waiting = await fixture.payload.db.find({
       collection: 'frogbot-waitpoints',
       where: {},
@@ -882,6 +898,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       where: {},
       limit: 0,
     });
+
     const after = await fixture.payload.db.find({
       collection: 'frogbot-waitpoints',
       where: {},
@@ -929,6 +946,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       where: {},
       limit: 0,
     });
+
     const waiting = await fixture.payload.db.find({
       collection: 'frogbot-waitpoints',
       where: {},
@@ -1080,6 +1098,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     ]);
 
     await expectNoContinuationJobs();
+
     expect((await findWaitpoint({ req, token }))?.dispatched).toBe(true);
   });
 
@@ -1121,6 +1140,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect((await holder(waiting)).id).toBe(waiting.holder);
     expect(timestamp((await holder(waiting)).waitUntil)).toBeLessThanOrEqual(Date.now());
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
+
     await expectNoContinuationJobs();
   });
 
@@ -1174,6 +1194,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(prepare).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledTimes(1);
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'approved' });
+
     await expectNoContinuationJobs();
   });
 
@@ -1243,6 +1264,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(writes).toHaveBeenCalledTimes(1);
     expect((await holder(waiting)).id).toBe(waiting.holder);
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
+
     await expectNoContinuationJobs();
   });
 
@@ -1270,6 +1292,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(after.id).toBe(before.id);
     expect(timestamp(after.waitUntil)).toBeLessThanOrEqual(Date.now());
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
+
     await expectNoContinuationJobs();
   });
 
@@ -1300,6 +1323,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     const claimed = (await findWaitpoint({ req, token: waiting.token }))!;
 
     await vi.advanceTimersByTimeAsync(12_000);
+
     await vi.waitFor(async () => {
       const renewed = (await findWaitpoint({ req, token: waiting.token }))!;
 
@@ -1319,6 +1343,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     await expect(dispatch).resolves.toEqual({ jobId: waiting.holder });
 
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
+
     await expectNoContinuationJobs();
   });
 
@@ -1351,10 +1376,12 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       id: waiting.holder!,
       data: { processing: false },
     });
+
     await sweepWaitpoints({ req: workerReq });
 
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
     expect(timestamp((await holder(waiting)).waitUntil)).toBeLessThanOrEqual(Date.now());
+
     await expectNoContinuationJobs();
   });
 
@@ -1387,10 +1414,12 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       id: waiting.id,
       data: { dispatchLeaseUntil: new Date(Date.now() - 1).toISOString() },
     });
+
     await sweepWaitpoints({ req: workerReq });
 
     expect((await holder(waiting)).id).toBe(waiting.holder);
     expect((await findWaitpoint({ req, token: waiting.token }))?.dispatched).toBe(true);
+
     await expectNoContinuationJobs();
   });
 
@@ -1418,6 +1447,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       input: { key: 'superseded', value: 'replacement' },
       jobId: 'superseded',
     });
+
     const before = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       limit: 0,
@@ -1446,6 +1476,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect(
       (await fixture.payload.db.find<FrogBotJob>({ collection: 'payload-jobs', limit: 0 })).docs,
     ).toEqual(before.docs);
+
     await expectNoContinuationJobs();
   });
 
@@ -1608,6 +1639,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       where: { dispatched: { equals: false } },
       limit: 0,
     });
+
     const jobs = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       where: {},
@@ -1620,6 +1652,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       new Set(waits.map(({ holder }) => holder)),
     );
     expect(jobs.docs.every(({ waitUntil }) => timestamp(waitUntil) <= Date.now())).toBe(true);
+
     await expectNoContinuationJobs();
   });
 
@@ -1642,6 +1675,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     expect((await holder(second)).id).toBe(second.holder);
     expect((await findWaitpoint({ req, token: first.token }))?.dispatched).toBe(true);
     expect((await findWaitpoint({ req, token: second.token }))?.dispatched).toBe(true);
+
     await expectNoContinuationJobs();
   });
 

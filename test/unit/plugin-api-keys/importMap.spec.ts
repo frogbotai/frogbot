@@ -31,6 +31,7 @@ describe('api keys import map', () => {
       db: { defaultIDType: 'number' } as never,
       collections: [{ slug: 'users', auth: true, fields: [] }],
     });
+
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(
@@ -47,6 +48,7 @@ describe('api keys import map', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       plugins: [apiKeysPlugin()],
     } as FrogBotConfig);
+
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');

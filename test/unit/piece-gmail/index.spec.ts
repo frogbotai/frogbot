@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
@@ -48,6 +49,7 @@ const reqWithoutFiles = {
 function response(data: unknown, config: unknown) {
   return { data, config, headers: new Headers(), status: 200, statusText: 'OK' };
 }
+
 async function fixture(request = req) {
   const gmail = createGmail({ auth });
   const client = await gmail.client({ req: request });
@@ -57,6 +59,7 @@ async function fixture(request = req) {
     if (url.includes('/messages/original/attachments/attachment')) {
       return response({ data: Buffer.from('downloaded').toString('base64') }, config);
     }
+
     if (url.includes('/messages/original')) {
       return response(
         {
@@ -82,48 +85,60 @@ async function fixture(request = req) {
         config,
       );
     }
+
     if (url.endsWith('/messages') && config.method === 'GET') {
       return response({ messages: [{ id: 'found', threadId: 'thread' }] }, config);
     }
+
     if (url.includes('/messages/found')) {
       return response({ id: 'found', threadId: 'thread', snippet: 'Result' }, config);
     }
+
     if (url.endsWith('/messages/send')) {
       return response({ id: 'sent', threadId: config.data?.threadId ?? 'thread' }, config);
     }
+
     if (url.endsWith('/drafts')) {
       return response(
         { message: { id: 'draft', threadId: config.data?.message?.threadId ?? 'thread' } },
         config,
       );
     }
+
     return response({ ok: true }, config);
   };
+
   const transport = vi.fn((config: any) => Promise.resolve(route(config)));
   (client.context._options.auth as any).transporter = { request: transport };
+
   return { gmail, client, transport };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('attachment data')));
+
   findByID.mockResolvedValue({
     id: 'file',
     url: '/api/files/file/document.txt',
     filename: 'document.txt',
     mimeType: 'text/plain',
   });
+
   create.mockResolvedValue({ id: 'uploaded', url: '/api/files/uploaded/download.txt' });
 });
 
 describe('gmail', () => {
   it('declares semantic actions, polling, and Google OAuth', () => {
     const gmail = createGmail({ oauth: { clientId: 'client', clientSecret: 'secret' } });
+
     expect(pieceInstanceTools(gmail)?.map(({ slug }) => slug)).toEqual(
       gmailActions.map((slug) => `gmail_${slug}`),
     );
     expect(Object.keys(gmail.triggers)).toEqual(gmailTriggers);
+
     const definition = pieceFactoryDefinition(createGmail);
+
     expect(definition.oauth).toMatchObject({
       authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenUrl: 'https://oauth2.googleapis.com/token',
@@ -142,6 +157,7 @@ describe('gmail', () => {
 
   it('maps send and file attachments to Gmail MIME transport', async () => {
     const { gmail, transport } = await fixture();
+
     await gmail.send({
       input: {
         to: ['to@example.com'],
@@ -152,18 +168,23 @@ describe('gmail', () => {
       },
       req,
     });
+
     expect(findByID).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'files', id: 'file', overrideAccess: false }),
     );
+
     const call = transport.mock.calls.find(([config]) =>
       String(config.url).endsWith('/messages/send'),
     )?.[0];
+
     expect(call).toBeDefined();
     expect(call.data).toMatchObject({ raw: expect.any(String) });
+
     const raw = Buffer.from(
       call.data.raw.replaceAll('-', '+').replaceAll('_', '/'),
       'base64',
     ).toString();
+
     expect(raw).toContain('To: to@example.com');
     expect(raw).toContain('filename="document.txt"');
     expect(raw).toContain(Buffer.from('attachment data').toString('base64'));
@@ -171,11 +192,14 @@ describe('gmail', () => {
 
   it('maps replies and draft replies to their SDK endpoints', async () => {
     const { gmail, transport } = await fixture();
+
     await gmail.replyToEmail({
       input: { messageId: 'original', replyType: 'replyAll', body: 'Reply' },
       req,
     });
+
     await gmail.createDraftReply({ input: { messageId: 'original', body: 'Draft' }, req });
+
     expect(
       transport.mock.calls.some(([config]) => String(config.url).endsWith('/messages/send')),
     ).toBe(true);
@@ -186,6 +210,7 @@ describe('gmail', () => {
 
   it('maps get, search, and custom API calls', async () => {
     const { gmail, transport } = await fixture();
+
     await expect(gmail.getEmail({ input: { messageId: 'original' }, req })).resolves.toMatchObject({
       id: 'original',
     });
@@ -244,6 +269,7 @@ describe('gmail', () => {
 
   it('resolves verified identity through the shared Google userinfo recipe', async () => {
     const { client } = await fixture();
+
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -254,6 +280,7 @@ describe('gmail', () => {
         }),
       ),
     );
+
     await expect(
       pieceFactoryDefinition(createGmail).oauth?.account?.({
         tokens: { access_token: 'access' },
@@ -277,9 +304,12 @@ describe('gmail', () => {
       options: {},
       req,
     });
+
     expect(result.events).toEqual([expect.objectContaining({ id: 'found' })]);
     expect(typeof result.cursor).toBe('number');
+
     const call = transport.mock.calls.find(([config]) => String(config.url).endsWith('/messages'));
+
     expect(call?.[0].params.q).toBe('from:sender@example.com after:1700000000');
   });
 });

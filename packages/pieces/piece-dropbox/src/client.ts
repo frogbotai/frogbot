@@ -55,6 +55,7 @@ export class DropboxClient {
       redirect: 'error',
       signal,
     });
+
     const contentType = response.headers.get('content-type') ?? '';
     const body = contentType.includes('application/json')
       ? await response.json()

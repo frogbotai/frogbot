@@ -47,6 +47,7 @@ function makeSelect(args: Partial<AISelectFieldArgs> = {}) {
     options: typeOptions,
     ...args,
   });
+
   const [value, status, error] = row.fields as AnyField[];
 
   return { error, row, status, value };

@@ -36,6 +36,7 @@ export function filterResponseHeaders(
         out[lower] = value;
       }
     });
+
     return out;
   }
 
@@ -45,5 +46,6 @@ export function filterResponseHeaders(
       out[lower] = v;
     }
   }
+
   return out;
 }

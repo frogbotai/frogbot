@@ -22,6 +22,7 @@ const file = {
   name: 'report.txt',
   path_display: '/report.txt',
 };
+
 const folder = {
   '.tag': 'folder',
   id: 'id:folder',
@@ -76,6 +77,7 @@ function requestFixtures() {
     filename: 'report.txt',
     mimeType: 'text/plain',
   });
+
   const create = vi.fn().mockResolvedValue({ id: 'saved', url: '/api/files/saved/report.txt' });
   const req = {
     url: 'https://app.test/api',
@@ -123,6 +125,7 @@ describe('native Dropbox contract', () => {
         email: 'ada@example.com',
       }),
     );
+
     const client = await createDropbox({ auth }).client({ req: request() });
 
     expect(definition.oauth).toBe(dropboxOAuth);
@@ -153,6 +156,7 @@ describe('native Dropbox contract', () => {
       if (url.pathname.endsWith('/get_temporary_link')) {
         return json({ metadata: file, link: 'https://dropbox.test/file' });
       }
+
       if (url.pathname.endsWith('/create_folder_v2')) return json({ metadata: folder });
       if (
         url.pathname.endsWith('/copy_v2') ||
@@ -161,17 +165,21 @@ describe('native Dropbox contract', () => {
       ) {
         return json({ metadata: file });
       }
+
       if (url.pathname.endsWith('/list_folder')) {
         return json({ entries: [], cursor: 'list', has_more: false });
       }
+
       if (url.pathname.endsWith('/search_v2')) return json({ matches: [], has_more: false });
       if (url.pathname.endsWith('/download')) {
         return new Response('downloaded', { headers: { 'content-type': 'text/plain' } });
       }
+
       if (url.origin === 'https://app.test') return new Response('uploaded');
 
       return json(file);
     });
+
     const dropbox = createDropbox({ auth });
     const { req, findByID, create } = requestFixtures();
     const results = await Promise.all([
@@ -215,6 +223,7 @@ describe('Dropbox transport details', () => {
     const requests = requestFixture(({ url }) =>
       url.origin === 'https://app.test' ? new Response(new Uint8Array([0, 255])) : json(file),
     );
+
     const dropbox = createDropbox({ auth });
 
     await dropbox.uploadFile({
@@ -236,6 +245,7 @@ describe('Dropbox transport details', () => {
         }),
       ),
     );
+
     const dropbox = createDropbox({ auth });
     const { req, create } = requestFixtures();
 
@@ -274,6 +284,7 @@ describe('Dropbox transport details', () => {
 
       return json({ entries: [file], cursor: 'first', has_more: true });
     });
+
     const dropbox = createDropbox({ auth });
     const req = request();
     const client = await dropbox.client({ req });

@@ -18,6 +18,7 @@ export function CalendarHeader({
   setMode?: (mode: CalendarMode) => void;
 }) {
   const label = mode === 'day' ? format(date, 'EEEE, MMMM d, yyyy') : format(date, 'MMMM yyyy');
+
   return (
     <header className="frog-calendar__header">
       <div className="frog-calendar__navigation">

@@ -13,6 +13,7 @@ expectTypeOf<Parameters<typeof slack.addReaction>[0]['input']>().toEqualTypeOf<{
   reaction: string;
   reactAsUser?: boolean | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _reacted>['ok']>().toEqualTypeOf<true>();
 
 const _addReactionRejectsFindUserByEmailInput = () =>
@@ -35,4 +36,5 @@ expectTypeOf<keyof typeof slack.triggers>().toEqualTypeOf<
   | 'customEmojiAdded'
   | 'modalInteraction'
 >();
+
 expectTypeOf(slack.triggers.reactionAdded.type).toEqualTypeOf<'app'>();

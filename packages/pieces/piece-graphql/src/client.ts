@@ -74,6 +74,7 @@ function createProxySocket(request: GraphqlRequest) {
     connect.once('connect', (response, socket) => {
       if (response.statusCode !== 200) {
         socket.destroy();
+
         reject(
           new Error(`Proxy CONNECT failed with ${response.statusCode ?? 'an unknown status'}.`),
         );
@@ -85,6 +86,7 @@ function createProxySocket(request: GraphqlRequest) {
       secureSocket.once('secureConnect', () => resolve(secureSocket));
       secureSocket.once('error', reject);
     });
+
     connect.once('error', reject);
     connect.end();
   });
@@ -117,6 +119,7 @@ export async function sendGraphqlRequest(request: GraphqlRequest): Promise<Graph
       const chunks: Buffer[] = [];
 
       incoming.on('data', (chunk: Buffer) => chunks.push(chunk));
+
       incoming.once('end', () => {
         const response = {
           status: incoming.statusCode ?? 0,
@@ -138,6 +141,7 @@ export async function sendGraphqlRequest(request: GraphqlRequest): Promise<Graph
         resolve(response);
       });
     });
+
     outgoing.once('error', (error) => {
       reject(new GraphqlRequestError(`GraphQL request failed: ${error.message}`, undefined, error));
     });

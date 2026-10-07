@@ -52,6 +52,7 @@ describe('roles', () => {
   it('allows member-only collection access for members but not admins', async () => {
     const admin = await createUser('admin@frogbot.local', ['admin']);
     const member = await createUser('member@frogbot.local', ['member']);
+
     await booted.frogbot.create({
       collection: 'member-documents',
       data: { title: 'Members only' },
@@ -71,6 +72,7 @@ describe('roles', () => {
       req: await requestFor(member),
       overrideAccess: false,
     });
+
     expect(result.docs).toHaveLength(1);
   });
 
@@ -86,6 +88,7 @@ describe('roles', () => {
       req: await requestFor(owner),
       overrideAccess: false,
     });
+
     await booted.frogbot.update({
       collection: 'users',
       id: target.id,
@@ -99,6 +102,7 @@ describe('roles', () => {
       id: target.id,
       overrideAccess: true,
     });
+
     expect(persisted.roles).toEqual(['owner']);
   });
 
@@ -110,6 +114,7 @@ describe('roles', () => {
       data: { title: 'Private', user: owner.id },
       overrideAccess: true,
     });
+
     await booted.frogbot.create({
       collection: 'messages',
       data: {
@@ -128,16 +133,19 @@ describe('roles', () => {
       req: adminReq,
       overrideAccess: false,
     });
+
     const adminMessages = await booted.frogbot.find({
       collection: 'messages',
       req: adminReq,
       overrideAccess: false,
     });
+
     const ownerChats = await booted.frogbot.find({
       collection: 'chats',
       req: ownerReq,
       overrideAccess: false,
     });
+
     const ownerMessages = await booted.frogbot.find({
       collection: 'messages',
       req: ownerReq,

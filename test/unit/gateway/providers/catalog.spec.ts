@@ -102,6 +102,7 @@ describe('defineModelCatalog', () => {
 
   it('builds a Map from entries', () => {
     const catalog = defineModelCatalog(entry1, entry2);
+
     expect(catalog.size).toBe(2);
     expect(catalog.get('openai/gpt-4o')).toBe(entry1);
     expect(catalog.get('anthropic/claude-4-sonnet')).toBe(entry2);
@@ -109,6 +110,7 @@ describe('defineModelCatalog', () => {
 
   it('returns empty Map when no entries', () => {
     const catalog = defineModelCatalog();
+
     expect(catalog.size).toBe(0);
   });
 
@@ -123,6 +125,7 @@ describe('default catalog Bedrock inference profiles', () => {
     'bedrock/us.meta.llama3-1-8b-instruct-v1:0',
     'bedrock/us.meta.llama3-3-70b-instruct-v1:0',
   ];
+
   const bareIds = [
     'bedrock/amazon.nova-2-lite-v1:0',
     'bedrock/meta.llama3-1-8b-instruct-v1:0',
@@ -131,6 +134,7 @@ describe('default catalog Bedrock inference profiles', () => {
 
   it('includes invocable profile IDs and excludes broken bare IDs', () => {
     for (const id of profiles) expect(DEFAULT_MODEL_CATALOG.has(id)).toBe(true);
+
     for (const id of bareIds) expect(DEFAULT_MODEL_CATALOG.has(id)).toBe(false);
   });
 });

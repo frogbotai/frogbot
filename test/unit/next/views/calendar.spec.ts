@@ -40,6 +40,7 @@ describe('collection calendar', () => {
 
   it('resolves columns from URL, preference, then configuration', () => {
     const preferenceColumns = [{ accessor: 'owner', active: true }];
+
     expect(
       resolveViewColumnPreferences({
         defaultFields: ['title'],

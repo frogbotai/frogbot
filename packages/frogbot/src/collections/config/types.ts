@@ -47,9 +47,13 @@ import type { FrogBotArgs, FrogBotRequest } from '../../types/request.js';
 import type { UploadConfig } from '../../uploads/types.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin' | 'upload';
+
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
+
 type PayloadFormatDocURL = NonNullable<PayloadAdmin['formatDocURL']>;
+
 type PayloadComponents = NonNullable<PayloadAdmin['components']>;
+
 type PayloadEditViews = NonNullable<NonNullable<PayloadComponents['views']>['edit']>;
 
 type CollectionDocumentView<TView> = TView extends object
@@ -138,6 +142,7 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
 
 /** Collection markers. Sanitization strips these before Payload. */
 export const COLLECTION_MARKERS = ['chat', 'message', 'file', 'usageLog'] as const;
+
 export type CollectionMarker = (typeof COLLECTION_MARKERS)[number];
 
 /**

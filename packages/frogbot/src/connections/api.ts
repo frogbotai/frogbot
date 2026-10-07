@@ -44,6 +44,7 @@ function canonicalJSON(value: PieceJSON): string {
       .map((key) => `${JSON.stringify(key)}:${canonicalJSON(value[key])}`)
       .join(',')}}`;
   }
+
   return JSON.stringify(value);
 }
 
@@ -134,6 +135,7 @@ export class Connections {
     if (!row) {
       if (id) credentialKeys.delete(id);
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
+
       return fail('missing', 'is not linked');
     }
 
@@ -154,6 +156,7 @@ export class Connections {
       } catch {
         return fail('error', 'could not be refreshed');
       }
+
       if (!row) return fail('missing', 'is not linked');
     }
 
@@ -168,11 +171,13 @@ export class Connections {
     if ((row.method !== 'secret' && row.method !== 'oauth') || !entry?.[row.method]) {
       return fail('error', 'uses an unavailable method');
     }
+
     const requiredScopes =
       scopes ??
       (row.method === 'oauth'
         ? (piece.oauth?.scopes ?? runtime.definition.oauth?.scopes ?? [])
         : []);
+
     const missingScopes = [...new Set(requiredScopes)].filter(
       (scope) => !row.scopes.includes(scope),
     );
@@ -200,6 +205,7 @@ export class Connections {
       .update(row.method)
       .update(canonicalJSON(row.credential))
       .digest('hex');
+
     let identity = credentialKeys.get(id!);
     if (!identity || identity.rowID !== String(row.id) || identity.fingerprint !== fingerprint) {
       identity = { rowID: String(row.id), fingerprint, key: {} };
@@ -226,11 +232,13 @@ export class Connections {
         String(row.id),
       ]),
     );
+
     for (const [id, identity] of credentialKeys) {
       if (id.startsWith(prefix) && current.get(id) !== identity.rowID) {
         credentialKeys.delete(id);
       }
     }
+
     return rows;
   }
 
@@ -245,6 +253,7 @@ export class Connections {
     if (deleted) {
       credentialKeys.delete(JSON.stringify([owner.collection, String(owner.id), row.piece]));
     }
+
     return deleted;
   }
 
@@ -258,16 +267,19 @@ export class Connections {
     const { config, frogbot } = connectionsState(this);
     const requirements = new Map<string, AuthorizationRequirement>();
     const { routes } = await getPayloadConfig(frogbot.config);
+
     for (const piece of new Set(pieces)) {
       const entry = Object.hasOwn(config.entries, piece.piece)
         ? config.entries[piece.piece]
         : undefined;
+
       if (!entry) continue;
       try {
         await this.resolve({ piece, req });
       } catch (error) {
         if (!(error instanceof ConnectionError)) throw error;
         const recipe = pieceInstanceRuntime(entry.piece).definition.oauth;
+
         requirements.set(piece.piece, {
           piece: piece.piece,
           oauth: entry.oauth,
@@ -281,6 +293,7 @@ export class Connections {
         });
       }
     }
+
     return [...requirements.values()];
   }
 }

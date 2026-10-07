@@ -40,9 +40,11 @@ function base64url(value: Buffer | string) {
     .replaceAll('/', '_')
     .replaceAll('=', '');
 }
+
 function encodedHeader(value: string) {
   return `=?UTF-8?B?${Buffer.from(value).toString('base64')}?=`;
 }
+
 export function splitAddresses(value?: string | null) {
   return (
     value
@@ -51,10 +53,12 @@ export function splitAddresses(value?: string | null) {
       .filter(Boolean) ?? []
   );
 }
+
 export function findHeader(message: gmail_v1.Schema$Message, name: string) {
   return message.payload?.headers?.find((item) => item.name?.toLowerCase() === name.toLowerCase())
     ?.value;
 }
+
 export async function getOriginal(client: Gmail, id: string) {
   return (await client.users.messages.get({ userId: 'me', id, format: 'full' })).data;
 }
@@ -89,10 +93,12 @@ export async function saveAttachments(
         messageId: message.id!,
         id: attachmentId,
       });
+
       const data = Buffer.from(
         (response.data.data ?? '').replaceAll('-', '+').replaceAll('_', '/'),
         'base64',
       );
+
       const name = part.filename || 'attachment';
       const doc = await createPieceFile(req, 'Gmail', {
         file: {
@@ -104,6 +110,7 @@ export async function saveAttachments(
         req,
         overrideAccess: false,
       });
+
       return {
         id: doc.id,
         name,
@@ -112,6 +119,7 @@ export async function saveAttachments(
       };
     }),
   );
+
   return { ...message, attachments };
 }
 
@@ -139,6 +147,7 @@ export async function createRawMessage({
   const files = await Promise.all(
     (input.attachments ?? []).map((value) => loadFileAttachment(req, value)),
   );
+
   const lines = [
     `To: ${input.to.join(', ')}`,
     ...(input.cc?.length ? [`Cc: ${input.cc.join(', ')}`] : []),
@@ -158,6 +167,7 @@ export async function createRawMessage({
     '',
     Buffer.from(input.body).toString('base64'),
   ];
+
   for (const file of files) {
     lines.push(
       `--${boundary}`,
@@ -168,7 +178,9 @@ export async function createRawMessage({
       file.data.toString('base64'),
     );
   }
+
   lines.push(`--${boundary}--`);
+
   return base64url(lines.join('\r\n'));
 }
 

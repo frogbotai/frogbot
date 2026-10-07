@@ -38,6 +38,7 @@ export function addPayloadComponentToImportMap({
   if (!payloadComponent) {
     return null;
   }
+
   const { exportName, path: componentPath } = parsePayloadComponent(payloadComponent);
 
   if (importMap[componentPath + '#' + exportName]) {
@@ -58,6 +59,7 @@ export function addPayloadComponentToImportMap({
       path: adjustedComponentPath,
       specifier: exportName,
     };
+
     return {
       path: adjustedComponentPath,
       specifier: exportName,
@@ -67,6 +69,7 @@ export function addPayloadComponentToImportMap({
       path: componentPath,
       specifier: exportName,
     };
+
     return {
       path: componentPath,
       specifier: exportName,

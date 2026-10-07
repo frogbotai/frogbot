@@ -42,6 +42,7 @@ export function toChatOutput(responseFormat: unknown): Output.Output | undefined
         param: 'response_format.json_schema.schema',
       });
     }
+
     return Output.object({
       schema: jsonSchema(schema),
       name: config?.name ?? undefined,

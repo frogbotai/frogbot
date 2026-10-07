@@ -99,6 +99,7 @@ function extractRefusal(body: unknown): string | undefined {
   const message = (first as Record<string, unknown>).message;
   if (typeof message !== 'object' || message === null) return undefined;
   const refusal = (message as Record<string, unknown>).refusal;
+
   return typeof refusal === 'string' && refusal.length > 0 ? refusal : undefined;
 }
 
@@ -116,6 +117,7 @@ function buildUsage(usage: UsageInput): OpenAIUsage {
     if (cached !== undefined) {
       out.prompt_tokens_details.cached_tokens = cached;
     }
+
     if (cacheWrite !== undefined) {
       out.prompt_tokens_details.cache_write_tokens = cacheWrite;
     }

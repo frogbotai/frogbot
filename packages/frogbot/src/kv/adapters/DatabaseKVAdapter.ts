@@ -32,37 +32,44 @@ export class DatabaseKVAdapter extends BaseDatabaseKVAdapter implements KVDataba
         this.native = null;
       }
     }
+
     return this.native;
   }
 
   private atomic() {
     const backend = this.backend();
     if (!backend) throw new KVUnsupportedError();
+
     return backend;
   }
 
   async clear() {
     const backend = this.backend();
+
     return backend ? backend.clear() : super.clear();
   }
 
   async delete(key: string) {
     const backend = this.backend();
+
     return backend ? backend.delete(key) : super.delete(key);
   }
 
   async get<T extends KVStoreValue>(key: string): Promise<T | null> {
     const backend = this.backend();
+
     return backend ? backend.get<T>(key) : super.get<T>(key);
   }
 
   async has(key: string) {
     const backend = this.backend();
+
     return backend ? backend.has(key) : super.has(key);
   }
 
   async keys() {
     const backend = this.backend();
+
     return backend ? backend.keys() : super.keys();
   }
 
@@ -70,6 +77,7 @@ export class DatabaseKVAdapter extends BaseDatabaseKVAdapter implements KVDataba
     const backend = this.backend();
     if (backend) return backend.set(key, value, options);
     if (options?.ttl !== undefined) throw new KVUnsupportedError();
+
     return super.set(key, value);
   }
 
@@ -103,6 +111,7 @@ export function databaseKVAdapter(options: DatabaseKVAdapterOptions = {}): Datab
     ),
     ...collection.fields,
   ];
+
   for (const [name, type] of [
     ['key', 'text'],
     ['data', 'json'],
@@ -122,6 +131,7 @@ export function databaseKVAdapter(options: DatabaseKVAdapterOptions = {}): Datab
       );
     }
   }
+
   const expiry = fields.find((field) => 'name' in field && field.name === 'expiresAt');
   if (
     expiry &&
@@ -133,7 +143,9 @@ export function databaseKVAdapter(options: DatabaseKVAdapterOptions = {}): Datab
   ) {
     throw new Error('KV expiresAt must be a nullable, non-localized date field without a default');
   }
+
   const expiresAt = { ...expiry, name: 'expiresAt', type: 'date' as const, index: true };
+
   return {
     [kvDatabase]: true,
     kvCollection: {

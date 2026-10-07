@@ -85,6 +85,7 @@ function mongoTarget(name: string, envKey: string, fallback?: string): Target {
           const payloadDb = current?.payload.db as {
             connection?: { dropDatabase(): Promise<unknown> };
           };
+
           await payloadDb.connection?.dropDatabase();
         },
       });
@@ -99,6 +100,7 @@ function postgresTarget(name: string, envKey?: string): Target {
     async setup() {
       if (!envKey) {
         const database = await createPostgresDatabase('frogbot_live_rag');
+
         return {
           db: postgresAdapter({ pool: { connectionString: database.url.toString(), max: 4 } }),
           afterDestroy: () => database.drop(),
@@ -146,7 +148,9 @@ async function embed(texts: string[]): Promise<number[][]> {
     input: texts,
     dimensions: DIMENSIONS,
   });
+
   expect(res.status, JSON.stringify(res.body)).toBe(200);
+
   return res.body.data!.map((d) => d.embedding);
 }
 
@@ -155,7 +159,9 @@ function waitFor<T>(read: () => Promise<T>, done: (v: T) => boolean): Promise<T>
   return vi.waitFor(
     async () => {
       const value = await read();
+
       expect(done(value), 'search never became ready').toBe(true);
+
       return value;
     },
     { timeout: 90_000, interval: 1000 },
@@ -204,24 +210,29 @@ for (const target of TARGETS) {
       // process-wide `getPayload()` cache, which would hand back the previous
       // (destroyed) target's instance.
       payload = new BasePayload();
+
       await payload.init({
         config: config._internal.payloadConfig,
         disableOnInit: true,
         cron: false,
       });
+
       frogbot = await initFrogBotFromPayload(payload, config, {
         disableOnInit: true,
       });
+
       current = { frogbot, payload };
 
       const payloadDb = payload.db as unknown as {
         connection?: { models: Record<string, { init(): Promise<unknown> }> };
       };
+
       if (payloadDb.connection) {
         await Promise.all(Object.values(payloadDb.connection.models).map((m) => m.init()));
       }
 
       const vectors = await embed(DOCS.map((d) => `${d.title}\n${d.body}`));
+
       for (const [i, doc] of DOCS.entries()) {
         await frogbot.create({
           collection: slug,
@@ -258,6 +269,7 @@ for (const target of TARGETS) {
       );
 
       const docs = result.hits.map(({ doc }) => doc as unknown as (typeof DOCS)[number]);
+
       expect(docs[0]?.title).toBe('Refund policy');
       expect(docs.every((d) => d.tenant === 'acme')).toBe(true);
 
@@ -278,9 +290,11 @@ for (const target of TARGETS) {
           ],
         },
       );
+
       expect(res.status, JSON.stringify(res.body)).toBe(200);
 
       const answer = res.body.choices?.[0]?.message?.content ?? '';
+
       expect(answer).toContain('LILYPAD-7731');
       expect(answer).not.toContain('TADPOLE-0042');
     }, 180_000);

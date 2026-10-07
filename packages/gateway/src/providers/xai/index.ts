@@ -27,17 +27,20 @@ export function fixIncompleteFinishReason<
   return new Proxy(model, {
     get(target, prop, receiver) {
       if (prop !== 'doGenerate') return Reflect.get(target, prop, receiver);
+
       return async (options: Parameters<M['doGenerate']>[0]) => {
         const result = await target.doGenerate(options);
         if (result.finishReason.raw !== 'incomplete') return result;
         const reason = (result.response?.body as { incomplete_details?: { reason?: unknown } })
           ?.incomplete_details?.reason;
+
         const unified =
           reason === 'max_output_tokens'
             ? 'length'
             : reason === 'content_filter'
               ? 'content-filter'
               : undefined;
+
         return unified ? { ...result, finishReason: { ...result.finishReason, unified } } : result;
       };
     },
@@ -50,6 +53,7 @@ export const xaiProvider = {
   envVars: ['XAI_API_KEY', 'XAI_BASE_URL'],
   fromEnv: (env) => {
     if (!env.XAI_API_KEY) return undefined;
+
     return {
       apiKey: env.XAI_API_KEY,
       ...(env.XAI_BASE_URL && { baseURL: env.XAI_BASE_URL }),
@@ -59,8 +63,10 @@ export const xaiProvider = {
     const xai = createXai(cfg);
     const languageModel: XaiProvider['languageModel'] = (modelId) =>
       fixIncompleteFinishReason(xai.languageModel(modelId));
+
     const provider = ((modelId: Parameters<XaiProvider['languageModel']>[0]) =>
       languageModel(modelId)) as XaiProvider;
+
     return Object.assign(provider, xai, {
       languageModel,
       responses: languageModel,

@@ -321,6 +321,7 @@ export function parseChatCompletionRequest(body: unknown): ChatCompletionRequest
     const nonMessageIssues = outerResult.error.issues.filter(
       (i) => i.path[0] !== 'messages' || i.path.length === 1,
     );
+
     if (nonMessageIssues.length > 0) {
       const first = nonMessageIssues[0];
       const path = formatZodPath(first.path);
@@ -328,6 +329,7 @@ export function parseChatCompletionRequest(body: unknown): ChatCompletionRequest
         nonMessageIssues.length === 1
           ? first.message
           : `${first.message} (and ${nonMessageIssues.length - 1} more validation issue${nonMessageIssues.length - 1 === 1 ? '' : 's'})`;
+
       throw new RequestValidationError({ message, param: path });
     }
   }
@@ -344,6 +346,7 @@ export function parseChatCompletionRequest(body: unknown): ChatCompletionRequest
         // role is a string), skip strict check.
         continue;
       }
+
       // Known role — validate strictly for precise per-field errors.
       const r = knownMessageSchema.safeParse(msg);
       if (!r.success) {

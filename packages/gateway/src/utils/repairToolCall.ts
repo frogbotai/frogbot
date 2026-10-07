@@ -36,6 +36,7 @@ export function createRepairToolCall<TOOLS extends ToolSet>():
         invalid: false,
       } as Awaited<ReturnType<ToolCallRepairFunction<TOOLS>>>);
     };
+
     return repair;
   } catch {
     return undefined;

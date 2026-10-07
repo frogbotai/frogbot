@@ -23,6 +23,7 @@ export const claudeThinkingEffort: BeforeUpstreamHook = (args) => {
   // Check if thinking is already explicitly configured
   const anthropicOpts = args.providerOptions['anthropic'] as
     { thinking?: { type?: string; budgetTokens?: number } } | undefined;
+
   if (anthropicOpts?.thinking) return;
 
   const effort = args.providerOptions['unknown']?.['reasoning_effort'];

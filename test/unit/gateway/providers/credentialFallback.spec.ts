@@ -18,6 +18,7 @@ describe('provider credential fallback', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-request');
 
     const headers = modelHeaders(model);
+
     expect(headers.authorization).toBe('Bearer sk-request');
   });
 

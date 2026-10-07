@@ -109,6 +109,7 @@ export function boardOptions(
     if (select === 'groups') {
       return board.groups.map((group) => ({ label: group.title, value: group.id }));
     }
+
     if (select === 'items') {
       return board.items_page.items.map((item) => ({ label: item.name, value: item.id }));
     }
@@ -278,6 +279,7 @@ export const getItemColumnValues = defineAction({
       `query($boardId: ID!, $itemId: ID!, $columnIds: [String!]) { boards(ids: [$boardId]) { items_page(query_params: { ids: [$itemId] }) { items { ${fields} } } } }`,
       input,
     );
+
     const item = data.boards[0]?.items_page.items[0];
 
     if (!item) throw new Error(`Monday item '${input.itemId}' was not found.`);

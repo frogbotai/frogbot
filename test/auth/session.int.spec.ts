@@ -44,33 +44,45 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   };
+
   const claims = (token: string) =>
     JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+
   const readUser = () =>
     payload.db.findOne<TypedUser>({ collection: 'members', where: { id: { equals: userId } } });
+
   const writeUser = (data: Record<string, unknown>) =>
     payload.db.updateOne({ id: userId, collection: 'members', data, returning: false });
+
   const issue = (request = req) =>
     issueSession({ req: request, collectionSlug: 'members', userId });
+
   const pauseUserRead = () => {
     let notify!: () => void;
     let resume!: () => void;
     const read = new Promise<void>((resolve) => {
       notify = resolve;
     });
+
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
+
     const find = payload.db.findOne.bind(payload.db);
+
     vi.spyOn(payload.db, 'findOne').mockImplementationOnce(async (args) => {
       const user = await find(args);
       notify();
       await resumed;
+
       return user;
     });
+
     onTestFinished(resume);
+
     return { read, resume };
   };
+
   const authRequest = (path: string, token = priorToken, data?: unknown) =>
     frogbot.handleRequest(
       new Request(`http://localhost/api/${path}`, {
@@ -82,52 +94,68 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         ...(data ? { body: JSON.stringify(data) } : {}),
       }),
     );
+
   const logout = async () => {
     const response = await authRequest('members/logout');
+
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toContain('frogbot-token=');
   };
+
   const refresh = async () => {
     const response = await authRequest('members/refresh-token');
+
     expect(response.status).toBe(200);
+
     return response.json() as Promise<{ exp: number; refreshedToken: string }>;
   };
+
   const login = () =>
     frogbot.login({
       collection: 'members',
       data: { email: `session-${sequence}@example.com`, password: 'test-password' },
     });
+
   const loginHTTP = async () => {
     const response = await authRequest('members/login', '', {
       email: `session-${sequence}@example.com`,
       password: 'test-password',
     });
+
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toContain('frogbot-token=');
+
     return response.json() as ReturnType<typeof login>;
   };
+
   const prepareReset = () =>
     writeUser({
       resetPasswordToken: `reset-${sequence}`,
       resetPasswordExpiration: new Date(Date.now() + 60_000).toISOString(),
     });
+
   const reset = () =>
     frogbot.resetPassword({
       collection: 'members',
       data: { token: `reset-${sequence}`, password: 'replacement-password' },
     });
+
   const resetHTTP = async () => {
     const response = await authRequest('members/reset-password', '', {
       token: `reset-${sequence}`,
       password: 'replacement-password',
     });
+
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toContain('frogbot-token=');
+
     return response.json() as ReturnType<typeof reset>;
   };
+
   const waitUntil = (condition: () => void) => vi.waitFor(condition, { timeout: 5_000 });
   const fulfilled = <T>(results: MockSettledResult<T>[]) =>
     results.flatMap((result) => (result.type === 'fulfilled' ? [result.value] : []));
+
   const sessionLockResults = <T>(spy: {
     mock: { calls: unknown[][]; settledResults: MockSettledResult<T>[] };
   }) =>
@@ -136,60 +164,76 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         String(spy.mock.calls[index][0]).startsWith('auth:session:'),
       ),
     );
+
   const expectWaiting = async (pending: Promise<unknown>) => {
     const settled = vi.fn();
     void pending.then(settled, settled);
     const get = vi.spyOn(frogbot.kv, 'get');
+
     await waitUntil(() => {
       expect(sessionLockResults(get).filter(Boolean).length).toBeGreaterThanOrEqual(2);
     });
+
     expect(settled).not.toHaveBeenCalled();
   };
+
   const waitForRenewals = async (extend: MockInstance<KV['extendLock']>, count: number) => {
     const renewals = () => fulfilled(extend.mock.settledResults).filter(Boolean).length;
     const target = renewals() + count;
     await waitUntil(() => expect(renewals()).toBeGreaterThanOrEqual(target));
   };
+
   const waitForLeaseLoss = (extend: MockInstance<KV['extendLock']>) =>
     waitUntil(() => expect(fulfilled(extend.mock.settledResults)).toContain(false));
+
   const waitForAcquisitions = (acquire: MockInstance<KV['acquireLock']>, count: number) =>
     waitUntil(() =>
       expect(sessionLockResults(acquire).filter(Boolean).length).toBeGreaterThanOrEqual(count),
     );
+
   const logoutPastStaleWrite = async () => {
     const begin = vi.spyOn(payload.db, 'beginTransaction');
     const loggingOut = logout();
     if (payload.db.name === 'sqlite') {
       const settled = vi.fn();
       void loggingOut.then(settled, settled);
+
       await waitUntil(() => {
         expect(begin.mock.settledResults.map(({ type }) => type)).toContain('incomplete');
       });
+
       expect(settled).not.toHaveBeenCalled();
     } else {
       await loggingOut;
+
       expect((await readUser())?.sessions).toEqual([]);
     }
+
     return { loggingOut };
   };
+
   const ensureLoggedOut = async (response: Response) => {
     if (response.status !== 200) await logout();
   };
+
   const expectStaleWriteApplied = (applied: boolean) => {
     if (payload.db.name !== 'mongoose') expect(applied).toBe(true);
   };
+
   type Outcome = { sessions: string[]; tokens: string[]; revoked: boolean };
   const signedIn = async (
     signing: Promise<{ token?: string }>,
     revoked: boolean,
   ): Promise<Outcome> => {
     const { token } = await signing;
+
     return {
       sessions: [...(revoked ? [] : [priorSession.id]), claims(token!).sid],
       tokens: [token!],
       revoked,
     };
   };
+
   const outcomes = {
     login: () => signedIn(login(), false),
     loginHTTP: () => signedIn(loginHTTP(), false),
@@ -197,21 +241,28 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     resetHTTP: () => signedIn(resetHTTP(), true),
     logout: async (): Promise<Outcome> => {
       await logout();
+
       return { sessions: [], tokens: [], revoked: true };
     },
     refresh: async (): Promise<Outcome> => {
       const { refreshedToken } = await refresh();
+
       return { sessions: [priorSession.id], tokens: [refreshedToken], revoked: false };
     },
   };
+
   const expectOutcome = async ({ tokens, revoked }: Outcome) => {
     for (const token of tokens) await expectAuthenticated(token);
+
     await expectAuthenticated(priorToken, revoked ? null : userId);
   };
+
   const expectAuthenticated = async (token: string, id: string | number | null = userId) => {
     const result = await payload.auth({ headers: new Headers({ authorization: `JWT ${token}` }) });
+
     expect(result.user?.id ?? null).toBe(id);
   };
+
   const shortenLease = () => {
     const run = locks.runKVLock;
     vi.spyOn(locks, 'runKVLock').mockImplementation((args) => run({ ...args, ttl: 300 }));
@@ -233,6 +284,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       },
       actions: [],
     });
+
     const identity = createIdentity({ oauth: { clientId: 'client', clientSecret: 'secret' } });
     const config = await buildConfig({
       secret: 'session-issuance-test-secret',
@@ -268,6 +320,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         },
       ],
     });
+
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
     payload = await getPayload({ config: await getPayloadConfig(config) });
     initialHooks = { ...payload.collections.members.config.hooks };
@@ -290,10 +343,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       },
       disableVerificationEmail: true,
     });
+
     userId = user.id;
     priorSession.id = `prior-session-${sequence}`;
     await writeUser({ _verified: true, manager: userId });
     await writeUser({ sessions: [priorSession], updatedAt: null });
+
     priorToken = (
       await jwtSign({
         fieldsToSign: {
@@ -306,6 +361,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         tokenExpiration: 3600,
       })
     ).token;
+
     req = await frogbot.createRequest();
   });
 
@@ -322,14 +378,18 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       id: userId,
       overrideAccess: false,
     });
+
     expect(visible.sessions).toEqual([]);
     expect(visible.lockUntil).toBeUndefined();
+
     await writeUser({ loginAttempts: 2, lockUntil: new Date(Date.now() - 60_000).toISOString() });
     const original = await readUser();
     const write = payload.db.updateOne.bind(payload.db);
     const writes: string[][] = [];
+
     vi.spyOn(payload.db, 'updateOne').mockImplementation((args) => {
       writes.push(Object.keys(args.data).sort());
+
       return write(args);
     });
 
@@ -357,15 +417,18 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect(result.user).not.toHaveProperty('hash');
     expect(result.user).not.toHaveProperty('salt');
     expect(result.user).not.toHaveProperty('sessions');
+
     const authenticated = await payload.auth({
       headers: new Headers({ authorization: `JWT ${result.token}` }),
     });
+
     expect(authenticated.user?.id).toBe(userId);
   });
 
   it('enforces hidden locks even when attempt tracking is disabled', async () => {
     payload.collections.members.config.auth.maxLoginAttempts = 0;
     await writeUser({ lockUntil: new Date(Date.now() + 60_000).toISOString() });
+
     await expect(issue()).rejects.toMatchObject({ name: 'LockedAuth' });
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
     expect(req.user).toBeNull();
@@ -375,6 +438,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     await writeUser({ _verified: false });
     req.user = { id: userId, _verified: true };
     const previousUser = req.user;
+
     await expect(issue()).rejects.toMatchObject({ name: 'UnverifiedEmail' });
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
     expect(req.user).toBe(previousUser);
@@ -395,6 +459,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('excludes trashed and missing subjects', async () => {
     await writeUser({ deletedAt: new Date().toISOString() });
+
     await expect(issue()).rejects.toMatchObject({ name: 'AuthenticationError' });
     await expect(
       issueSession({
@@ -410,10 +475,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const hooks = payload.collections.members.config.hooks;
     const order: string[] = [];
     const original = await readUser();
+
     hooks.beforeLogin = [
       async ({ user }) => {
         await new Promise((resolve) => setImmediate(resolve));
         order.push('before-1');
+
         return {
           ...user,
           id: -1,
@@ -425,20 +492,25 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       },
       ({ user }) => {
         order.push('before-2');
+
         expect(user).toMatchObject({
           id: userId,
           collection: 'members',
           email: original!.email,
           name: 'Before',
         });
+
         user.id = -2;
         user.collection = 'customers';
+
         return undefined;
       },
     ];
+
     hooks.afterLogin = [
       ({ user, req, token }) => {
         order.push('after-1');
+
         expect(req.user).toBe(user);
         expect(user).toMatchObject({ id: userId, collection: 'members', _strategy: 'local-jwt' });
         expect(claims(token)).toMatchObject({
@@ -446,12 +518,15 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
           collection: 'members',
           claim: 'from-hook',
         });
+
         return { id: -3, collection: 'customers', name: 'After' };
       },
       ({ user, req }) => {
         order.push('after-2');
+
         expect(req.user).toBe(user);
         expect(user).toMatchObject({ id: userId, collection: 'members', name: 'After' });
+
         user.id = -4;
       },
     ];
@@ -476,6 +551,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       const otherSession = { ...priorSession, id: `another-session-${sequence}` };
       const previousUser = { id: 'previous-user', collection: 'customers' };
       req.user = previousUser;
+
       payload.collections.members.config.hooks[phase] = [
         async ({ user, req }) => {
           const current = await readUser();
@@ -511,6 +587,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('cleans up a lost write response inside its transaction', async () => {
     const update = payload.db.updateOne.bind(payload.db);
     const failure = new Error('Lost write response');
+
     vi.spyOn(payload.db, 'updateOne').mockImplementationOnce(async (args) => {
       await update(args);
       throw failure;
@@ -527,8 +604,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const afterLogin = vi.fn(({ user, req }) => {
       expect(req.user).toBe(user);
       expect(user).toMatchObject({ id: userId, collection: 'members', _strategy: 'local-jwt' });
+
       return { ...user, name: 'Stateless' };
     });
+
     payload.collections.members.config.hooks.afterLogin = [afterLogin];
     const update = vi.spyOn(payload.db, 'updateOne');
 
@@ -547,12 +626,14 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const extend = vi.spyOn(frogbot.kv, 'extendLock');
     let active = 0;
     let maximum = 0;
+
     payload.collections.members.config.hooks.beforeLogin = [
       async ({ user }) => {
         active++;
         maximum = Math.max(maximum, active);
         await waitForRenewals(extend, 3);
         active--;
+
         return user;
       },
     ];
@@ -585,6 +666,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     await loggingOut;
 
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([claims(result.token).sid]);
+
     await expectAuthenticated(result.token);
     await expectAuthenticated(priorToken, null);
   });
@@ -603,6 +685,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
       [priorSession.id, loginSid, claims(result.token).sid].sort(),
     );
+
     await expectAuthenticated(result.token);
     await expectAuthenticated(loggedIn.token!);
   });
@@ -643,6 +726,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const cleanup = new Promise<void>((resolve) => {
       notify = resolve;
     });
+
     payload.collections.members.config.hooks.afterLogin = [
       () => {
         paused = pauseUserRead();
@@ -650,6 +734,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         throw failure;
       },
     ];
+
     const pending = issue().catch((error: unknown) => error);
     await cleanup;
     await paused.read;
@@ -659,8 +744,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     paused.resume();
 
     expect(await pending).toBe(failure);
+
     const outcome = await overlapping;
     await expectOutcome(outcome);
+
     expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
       outcome.sessions.sort(),
     );
@@ -683,6 +770,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
         [priorSession.id, issuedSid, claims(result.token!).sid].sort(),
       );
+
       await expectAuthenticated(issued.token);
       await expectAuthenticated(result.token!);
     },
@@ -692,11 +780,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     shortenLease();
     const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     let finished = false;
+
     payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
         await waitForLeaseLoss(extend);
         req.user = user;
         finished = true;
+
         return user;
       },
     ];
@@ -711,6 +801,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('revokes a successfully signed session if releasing its lock fails', async () => {
     const release = frogbot.kv.releaseLock.bind(frogbot.kv);
     const failure = new Error('Release response lost');
+
     vi.spyOn(frogbot.kv, 'releaseLock').mockImplementationOnce(async (lock) => {
       await release(lock);
       throw failure;
@@ -726,9 +817,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     shortenLease();
     const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     const update = payload.db.updateOne.bind(payload.db);
+
     vi.spyOn(payload.db, 'updateOne').mockImplementationOnce(async (args) => {
       const result = await update(args);
       await waitForLeaseLoss(extend);
+
       return result;
     });
 
@@ -743,6 +836,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       collection: 'customers',
       data: { email: 'customer@example.com', password: 'test-password' },
     });
+
     const result = await issueSession({ req, collectionSlug: 'customers', userId: customer.id });
 
     expect(result.user).toMatchObject({
@@ -751,9 +845,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       _strategy: 'local-jwt',
     });
     expect(claims(result.token)).toMatchObject({ id: customer.id, collection: 'customers' });
+
     const authenticated = await payload.auth({
       headers: new Headers({ authorization: `JWT ${result.token}` }),
     });
+
     expect(authenticated.user).toMatchObject({ id: customer.id, collection: 'customers' });
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
   });
@@ -764,10 +860,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       email: `session-${sequence}@example.com`,
       password: 'incorrect',
     });
+
     const missing = await authRequest('members/login', '', {
       email: 'absent@example.com',
       password: 'incorrect',
     });
+
     expect(existing.status).toBe(401);
     expect(missing.status).toBe(existing.status);
     expect(await missing.json()).toEqual(await existing.json());
@@ -790,22 +888,29 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const committing = new Promise<void>((resolve) => {
       notify = resolve;
     });
+
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
+
     onTestFinished(resume);
     const commit = payload.db.commitTransaction.bind(payload.db);
+
     vi.spyOn(payload.db, 'commitTransaction').mockImplementationOnce(async (id) => {
       expect(await id).toBeTruthy();
+
       notify();
       await resumed;
       await commit(id);
     });
+
     const pending = run();
     await committing;
     const issuing = issue();
     await expectWaiting(issuing);
+
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
+
     resume();
     const outcome = await pending;
     const issued = await issuing;
@@ -813,6 +918,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
       [claims(issued.token).sid, ...outcome.sessions].sort(),
     );
+
     await expectAuthenticated(issued.token);
     await expectOutcome(outcome);
   });
@@ -821,6 +927,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     shortenLease();
     const extend = vi.spyOn(frogbot.kv, 'extendLock').mockResolvedValueOnce(false);
     let finished = false;
+
     payload.collections.members.config.hooks.afterLogin = [
       async ({ req, user }) => {
         await waitForLeaseLoss(extend);
@@ -828,6 +935,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         finished = true;
       },
     ];
+
     await expect(
       frogbot.login({
         collection: 'members',
@@ -838,21 +946,28 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     expect(finished).toBe(true);
     expect(req.user).toBeNull();
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
+
     await expectAuthenticated(priorToken);
   });
 
   it('renews a slow password login using an independent KV store', async () => {
     shortenLease();
     const extend = vi.spyOn(frogbot.kv, 'extendLock');
+
     payload.collections.members.config.hooks.afterLogin = [
       async () => {
         await waitForRenewals(extend, 3);
       },
     ];
+
     const result = await login();
+
     expect(extend).toHaveBeenCalled();
+
     await expectAuthenticated(result.token!);
+
     expect(Object.keys(payload.db.sessions)).toEqual([]);
+
     await writeUser({ name: 'After renewal' });
   });
 
@@ -865,7 +980,9 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const entered = new Promise<void>((resolve) => {
       notify = resolve;
     });
+
     let finished = false;
+
     payload.collections.members.config.hooks.afterLogin = [
       async () => {
         notify();
@@ -873,27 +990,35 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         finished = true;
       },
     ];
+
     const loggingIn = login().catch((error: unknown) => error);
     await entered;
     const loggingOut = authRequest('members/logout');
+
     expect(await loggingIn).toBeInstanceOf(Error);
     expect(rollback).toHaveBeenCalled();
     expect(Object.keys(payload.db.sessions)).toEqual([]);
+
     await ensureLoggedOut(await loggingOut);
+
     expect(finished).toBe(true);
     expect((await readUser())?.sessions).toEqual([]);
+
     await expectAuthenticated(priorToken, null);
   });
 
   it('compensates a lost password-session write response', async () => {
     const update = payload.db.updateOne.bind(payload.db);
     const failure = new Error('Password session write response lost');
+
     vi.spyOn(payload.db, 'updateOne').mockImplementationOnce(async (args) => {
       await update(args);
       throw failure;
     });
+
     await expect(login()).rejects.toBe(failure);
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
+
     await expectAuthenticated(priorToken);
   });
 
@@ -903,10 +1028,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       await prepareReset();
       vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
       const release = frogbot.kv.releaseLock.bind(frogbot.kv);
+
       vi.spyOn(frogbot.kv, 'releaseLock').mockImplementationOnce(async (lock) => {
         await release(lock);
         throw new Error('Release response lost');
       });
+
       const response = await authRequest(
         `members/${operation}`,
         '',
@@ -917,6 +1044,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
             }
           : { token: `reset-${sequence}`, password: 'replacement-password' },
       );
+
       expect(response.status).toBe(500);
       expect(response.headers.get('set-cookie')).toBeNull();
 
@@ -925,18 +1053,22 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual(
         revoked ? [] : [priorSession.id],
       );
+
       await expectAuthenticated(priorToken, revoked ? null : userId);
     },
   );
 
   it('keeps requests userless and rejects cross-collection refresh and logout', async () => {
     vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
+
     expect((await authRequest('members/refresh-token', '')).status).toBe(403);
     expect((await authRequest('members/logout', '')).status).toBe(400);
     expect((await authRequest('customers/refresh-token')).status).toBe(403);
     expect((await authRequest('customers/logout')).status).toBe(403);
     expect(req.user).toBeNull();
+
     await expectAuthenticated(priorToken);
+
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
   });
 
@@ -947,21 +1079,26 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const entered = new Promise<void>((resolve) => {
       notify = resolve;
     });
+
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
+
     onTestFinished(resume);
+
     payload.collections.members.config.hooks.afterLogout = [
       async () => {
         notify();
         await resumed;
       },
     ];
+
     const pending = authRequest('members/logout');
     await entered;
     const refreshing = authRequest('members/refresh-token');
     await expectWaiting(refreshing);
     resume();
+
     expect((await pending).status).toBe(200);
     expect((await refreshing).status).toBe(403);
     expect((await readUser())?.sessions).toEqual([]);
@@ -969,6 +1106,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
 
   it('reenters session issuance from a password-login hook and keeps hook context changes', async () => {
     let nested: Awaited<ReturnType<typeof issue>> | undefined;
+
     payload.collections.members.config.hooks.beforeLogin = [
       async ({ req: hookReq }) => {
         if (hookReq.context.nested) return;
@@ -976,16 +1114,19 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         nested = await issue(hookReq as unknown as FrogBotRequest);
       },
     ];
+
     const result = await frogbot.login({
       collection: 'members',
       data: { email: `session-${sequence}@example.com`, password: 'test-password' },
       req,
     });
+
     expect(req.context.nested).toBe(true);
     expect(req.context).not.toHaveProperty('_frogbotSessionOperation');
     expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
       [priorSession.id, claims(result.token!).sid, claims(nested!.token).sid].sort(),
     );
+
     await expectAuthenticated(result.token!);
     await expectAuthenticated(nested!.token);
   });
@@ -998,6 +1139,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     await expectWaiting(second);
     paused.resume();
     const results = await Promise.all([first, second]);
+
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([
       priorSession.id,
       ...results.map(({ token }) => claims(token).sid),
@@ -1007,18 +1149,23 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('revokes a failed nested issuance even when the password-login hook catches its error', async () => {
     const failure = new Error('Nested login hook failed');
     const hooks = payload.collections.members.config.hooks;
+
     hooks.beforeLogin = [
       async ({ req: hookReq }) => {
         if (hookReq.context.nested) throw failure;
         hookReq.context.nested = true;
+
         await expect(issue(hookReq as unknown as FrogBotRequest)).rejects.toBe(failure);
       },
     ];
+
     const result = await login();
+
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([
       priorSession.id,
       claims(result.token!).sid,
     ]);
+
     await expectAuthenticated(result.token!);
   });
 
@@ -1027,13 +1174,16 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const resumed = new Promise<void>((resolve) => {
       resumeDetached = resolve;
     });
+
     let detached!: ReturnType<typeof issue>;
+
     payload.collections.members.config.hooks.afterLogin = [
       ({ req: hookReq }) => {
         const copied = { ...hookReq, context: { ...hookReq.context } } as unknown as FrogBotRequest;
         detached = resumed.then(() => issue(copied));
       },
     ];
+
     const first = await issue();
     payload.collections.members.config.hooks.afterLogin = [];
     const paused = pauseUserRead();
@@ -1043,6 +1193,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     await expectWaiting(detached);
     paused.resume();
     const results = [first, ...(await Promise.all([second, detached]))];
+
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([
       priorSession.id,
       ...results.map(({ token }) => claims(token).sid),
@@ -1052,12 +1203,14 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
   it('reports cleanup failures while retrying compensation without leaving an orphan', async () => {
     const failure = new Error('Login hook failed');
     const cleanupFailure = new Error('Revocation read failed');
+
     payload.collections.members.config.hooks.afterLogin = [
       () => {
         vi.spyOn(payload.db, 'findOne').mockRejectedValueOnce(cleanupFailure);
         throw failure;
       },
     ];
+
     await expect(issue()).rejects.toMatchObject({ errors: [failure, cleanupFailure] });
     expect(req.user).toBeNull();
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
@@ -1068,6 +1221,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       collection: 'customers',
       data: { email: 'parallel-customer@example.com', password: 'test-password' },
     });
+
     const paused = pauseUserRead();
     const pending = issue();
     await paused.read;
@@ -1075,8 +1229,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       collection: 'customers',
       data: { email: 'parallel-customer@example.com', password: 'test-password' },
     });
+
     await expectAuthenticated(result.token!, customer.id);
+
     expect(req.user).toBeNull();
+
     paused.resume();
     await expectAuthenticated((await pending).token);
   });
@@ -1086,45 +1243,57 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const collection = payload.collections['cookie-members'].config;
     const credentials = { email: `cookie-${sequence}@example.com`, password: 'test-password' };
     await payload.create({ collection: 'cookie-members', data: credentials });
+
     await expect(
       frogbot.login({ collection: 'cookie-members', data: credentials }),
     ).resolves.not.toHaveProperty('token');
+
     collection.hooks.beforeOperation = [
       ...collection.hooks.beforeOperation,
       ({ operation, args }) => {
         if (operation === 'login') order.push('beforeOperation');
+
         return args;
       },
     ];
+
     collection.hooks.beforeLogin = [
       () => {
         order.push('beforeLogin');
       },
     ];
+
     collection.hooks.afterLogin = [
       () => {
         order.push('afterLogin');
       },
     ];
+
     collection.hooks.afterRead = [
       ({ doc, overrideAccess }) => {
         expect(overrideAccess).toBe(false);
+
         order.push('afterRead');
+
         return doc;
       },
     ];
+
     collection.hooks.afterOperation = [
       ({ operation, result }) => {
         if (operation === 'login') order.push('afterOperation');
+
         return result;
       },
       checkSessionLease,
     ];
+
     const response = await authRequest('cookie-members/login?depth=0', '', {
       email: `COOKIE-${sequence}@EXAMPLE.COM `,
       password: 'test-password',
       _frogbotSessionOperation: { transaction: true },
     });
+
     expect(response.status).toBe(200);
     expect(await response.json()).not.toHaveProperty('token');
     expect(response.headers.get('set-cookie')).toContain('frogbot-token=');
@@ -1153,9 +1322,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
         [claims(result.token!).sid, claims(issued.token).sid].sort(),
       );
+
       await expectAuthenticated(result.token!);
       await expectAuthenticated(issued.token);
       await expectAuthenticated(priorToken, null);
+
       await expect(
         frogbot.login({
           collection: 'members',
@@ -1170,8 +1341,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       'Coordinated sessions require an active SQLite, PostgreSQL, or MongoDB transaction.',
     );
   };
+
   const transactionlessHTTP = async (path: string) => {
     const response = await authRequest(path);
+
     expect(response.status).toBe(500);
     expect(response.headers.get('set-cookie')).toBeNull();
   };
@@ -1188,8 +1361,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     vi.spyOn(payload.db, 'beginTransaction').mockResolvedValue(null);
     const update = vi.spyOn(payload.db, 'updateOne');
     await reject();
+
     expect(update).not.toHaveBeenCalled();
     expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
+
     await expectAuthenticated(priorToken);
   });
 
@@ -1223,37 +1398,54 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       const entered = new Promise<void>((resolve) => {
         notify = resolve;
       });
+
       const resumed = new Promise<void>((resolve) => {
         resume = resolve;
       });
+
       onTestFinished(resume);
       const update = payload.db.updateOne.bind(payload.db);
       let staleTransaction: string | number | undefined;
       let applied = false;
+
       vi.spyOn(payload.db, 'updateOne').mockImplementationOnce(async (args) => {
         staleTransaction = await args.req?.transactionID;
+
         expect(staleTransaction).toBeTruthy();
+
         notify();
         await resumed;
         const result = await update(args);
         applied = true;
+
         return result;
       });
+
       const rollback = vi.spyOn(payload.db, 'rollbackTransaction');
       const commit = vi.spyOn(payload.db, 'commitTransaction');
       const pending = run().catch((error: unknown) => error);
       await entered;
       await waitForLeaseLoss(extend);
+
       expect(applied).toBe(false);
+
       const { loggingOut } = await logoutPastStaleWrite();
+
       expect(applied).toBe(false);
+
       resume();
+
       expect(await pending).toEqual(failure);
+
       await loggingOut;
+
       expect(rollback).toHaveBeenCalledWith(staleTransaction);
       expect(commit.mock.calls.map(([id]) => id)).not.toContain(staleTransaction);
+
       expectStaleWriteApplied(applied);
+
       expect((await readUser())?.sessions).toEqual([]);
+
       await expectAuthenticated(priorToken, null);
     },
   );
@@ -1263,9 +1455,11 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     async (contentType) => {
       vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined);
       const timeout = AbortSignal.timeout.bind(AbortSignal);
+
       vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) =>
         timeout(ms === 10_000 ? 400 : ms),
       );
+
       const acquire = vi.spyOn(frogbot.kv, 'acquireLock');
       const cancel = vi.fn();
       const pull = vi.fn();
@@ -1276,6 +1470,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         pull,
         cancel,
       });
+
       const pending = frogbot.handleRequest(
         new Request('http://localhost/api/members/login', {
           method: 'POST',
@@ -1284,10 +1479,14 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
           duplex: 'half',
         } as RequestInit),
       );
+
       await waitUntil(() => expect(pull).toHaveBeenCalled());
+
       expect(acquire).not.toHaveBeenCalled();
+
       await logout();
       const response = await pending;
+
       expect(response.status).toBe(408);
       expect(response.headers.get('set-cookie')).toBeNull();
       expect(cancel).toHaveBeenCalledOnce();
@@ -1306,25 +1505,33 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const entered = new Promise<void>((resolve) => {
       notify = resolve;
     });
+
     const resumed = new Promise<void>((resolve) => {
       resume = resolve;
     });
+
     onTestFinished(resume);
     const commit = payload.db.commitTransaction.bind(payload.db);
+
     vi.spyOn(payload.db, 'commitTransaction').mockImplementationOnce(async (id) => {
       notify();
       await resumed;
       await commit(id);
     });
+
     const pending = issue().catch((error: unknown) => error);
     await entered;
     await waitForLeaseLoss(extend);
     const loggingOut = authRequest('members/logout');
     await waitForAcquisitions(acquire, 2);
     resume();
+
     expect(await pending).toBeInstanceOf(Error);
+
     await ensureLoggedOut(await loggingOut);
+
     expect((await readUser())?.sessions).toEqual([]);
+
     await expectAuthenticated(priorToken, null);
   });
 
@@ -1334,18 +1541,23 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       expect(hookReq.file).toMatchObject({ name: 'proof.txt', mimetype: 'text/plain' });
       expect(hookReq.file.data.toString()).toBe('proof');
     });
+
     payload.collections.members.config.hooks.beforeLogin = [beforeLogin];
     const body = new FormData();
+
     body.set(
       '_payload',
       JSON.stringify({ email: `session-${sequence}@example.com`, password: 'test-password' }),
     );
+
     body.set('file', new Blob(['proof'], { type: 'text/plain' }), 'proof.txt');
     const response = await frogbot.handleRequest(
       new Request('http://localhost/api/members/login', { method: 'POST', body }),
     );
+
     expect(response.status).toBe(200);
     expect(beforeLogin).toHaveBeenCalledOnce();
+
     await expectAuthenticated((await response.json()).token);
   });
 
@@ -1356,10 +1568,12 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         password: 'test-password',
       }),
     );
+
     const beforeLogin = vi.fn(({ req: hookReq }) => {
       expect(hookReq.headers.get('content-type')).toBe('application/json; charset=utf-8');
       expect(hookReq.data.email).toBe(`session-${sequence}@example.com`);
     });
+
     payload.collections.members.config.hooks.beforeLogin = [beforeLogin];
     const chunks = [bytes.slice(0, 10), bytes.slice(10)];
     const body = new ReadableStream<Uint8Array>(
@@ -1371,6 +1585,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       },
       { highWaterMark: 0 },
     );
+
     const response = await frogbot.handleRequest(
       new Request('http://localhost/api/members/login', {
         method: 'POST',
@@ -1379,8 +1594,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         duplex: 'half',
       } as RequestInit),
     );
+
     expect(response.status).toBe(200);
     expect(beforeLogin).toHaveBeenCalledOnce();
+
     await expectAuthenticated((await response.json()).token);
   });
 
@@ -1399,10 +1616,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         duplex: 'half',
       } as RequestInit),
     );
+
     await waitUntil(() => expect(pull).toHaveBeenCalled());
     controller.abort();
+
     expect((await pending).status).toBe(408);
     expect(cancel).toHaveBeenCalledOnce();
+
     const response = await frogbot.handleRequest(
       new Request('http://localhost/api/members/login', {
         method: 'POST',
@@ -1410,8 +1630,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         body: ' '.repeat(1_048_577),
       }),
     );
+
     expect(response.status).toBe(413);
     expect(acquire).not.toHaveBeenCalled();
+
     await logout();
   });
 });

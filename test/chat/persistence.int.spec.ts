@@ -68,6 +68,7 @@ describe('chat persistence: chat context', () => {
       booted.frogbot.count({ collection: chatsSlug, overrideAccess: true }),
       booted.frogbot.count({ collection: messagesSlug, overrideAccess: true }),
     ]);
+
     return collection === chatsSlug ? chats.totalDocs : messages.totalDocs;
   }
 
@@ -117,6 +118,7 @@ describe('chat persistence: chat context', () => {
       depth: 0,
       overrideAccess: true,
     })) as { agent: string; user: number | string };
+
     expect(chat.agent).toBe(agentSlug);
     expect(chat.user).toBe(owner.id);
 
@@ -132,6 +134,7 @@ describe('chat persistence: chat context', () => {
       incoming: [userMessage('Anonymous first', 'anonymous-1')],
       tools: {},
     });
+
     const continueReq = await booted.frogbot.createRequest({});
     const second = await startTurn({
       req: continueReq,
@@ -147,6 +150,7 @@ describe('chat persistence: chat context', () => {
       depth: 0,
       overrideAccess: true,
     })) as { user: null };
+
     expect(chat.user).toBeNull();
     expect(second.chatId).toBe(first.chatId);
     expect(second.uiMessages).toHaveLength(2);
@@ -193,6 +197,7 @@ describe('chat persistence: chat context', () => {
       data: { email: 'intruder@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
     })) as { id: number | string };
+
     const intruderReq = await booted.frogbot.createRequest({
       user: { ...intruder, collection: usersSlug },
     } as never);
@@ -216,11 +221,13 @@ describe('chat persistence: chat context', () => {
       incoming: [userMessage('Private', 'anonymous-bypass-owner')],
       tools: {},
     });
+
     const before = await booted.frogbot.count({
       collection: messagesSlug,
       where: { chat: { equals: chatId } },
       overrideAccess: true,
     });
+
     const anonymousReq = await booted.frogbot.createRequest({});
 
     await expect(
@@ -238,6 +245,7 @@ describe('chat persistence: chat context', () => {
       where: { chat: { equals: chatId } },
       overrideAccess: true,
     });
+
     expect(after.totalDocs).toBe(before.totalDocs);
   });
 
@@ -251,6 +259,7 @@ describe('chat persistence: chat context', () => {
       incoming: [userMessage('Original question', 'edit-user-1')],
       tools: {},
     });
+
     await persistAssistantMessage({
       req,
       chatId,
@@ -283,6 +292,7 @@ describe('chat persistence: chat context', () => {
       where: { chat: { equals: chatId } },
       overrideAccess: true,
     });
+
     expect(remaining.totalDocs).toBe(1);
   });
 
@@ -307,6 +317,7 @@ describe('chat persistence: chat context', () => {
         },
       },
     });
+
     await persistAssistantMessage({
       req,
       chatId,
@@ -323,6 +334,7 @@ describe('chat persistence: chat context', () => {
       depth: 0,
       overrideAccess: true,
     })) as { id: string; parts: UIMessage['parts']; usage?: { totalTokens?: number } };
+
     expect(stored.id).toBe('assistant-portable-id');
     expect(stored.parts).toEqual([{ type: 'text', text: 'Complete' }]);
     expect(stored.usage?.totalTokens).toBe(3);
@@ -333,6 +345,7 @@ describe('chat persistence: chat context', () => {
       depth: 0,
       overrideAccess: true,
     })) as { lastMessageAt?: string };
+
     expect(chat.lastMessageAt).toBeDefined();
   });
 
@@ -346,6 +359,7 @@ describe('chat persistence: chat context', () => {
       incoming: [userMessage('Why do frogs sing at night?', 'title-user-1')],
       tools: {},
     });
+
     const assistant: UIMessage = {
       id: 'title-assistant-1',
       role: 'assistant',
@@ -357,6 +371,7 @@ describe('chat persistence: chat context', () => {
       chatId: first.chatId,
       message: assistant,
     });
+
     await generateChatTitle({
       req,
       chatId: first.chatId,
@@ -364,12 +379,14 @@ describe('chat persistence: chat context', () => {
       mainModel: 'test/gpt-4.1-mini',
       assistantMessage: assistant,
     });
+
     const titled = (await booted.frogbot.findByID({
       collection: chatsSlug,
       id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { title?: string | null };
+
     expect(titled.title).toBe('Nighttime Frog Songs');
 
     await generateChatTitle({
@@ -379,12 +396,14 @@ describe('chat persistence: chat context', () => {
       mainModel: 'test/gpt-4.1-mini',
       assistantMessage: { ...assistant, id: 'title-assistant-2' },
     });
+
     const named = (await booted.frogbot.findByID({
       collection: chatsSlug,
       id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { title?: string | null };
+
     expect(named.title).toBe('Nighttime Frog Songs');
 
     await booted.frogbot.update({
@@ -393,6 +412,7 @@ describe('chat persistence: chat context', () => {
       data: { title: 'My Frog Notes' },
       overrideAccess: true,
     });
+
     await generateChatTitle({
       req,
       chatId: first.chatId,
@@ -400,13 +420,16 @@ describe('chat persistence: chat context', () => {
       mainModel: 'test/gpt-4.1-mini',
       assistantMessage: { ...assistant, id: 'title-assistant-3' },
     });
+
     const renamed = (await booted.frogbot.findByID({
       collection: chatsSlug,
       id: first.chatId,
       depth: 0,
       overrideAccess: true,
     })) as { title?: string | null };
+
     expect(renamed.title).toBe('My Frog Notes');
+
     req.frogbot.generateText = originalGenerateText;
   });
 
@@ -624,6 +647,7 @@ describe('chat persistence: chat context', () => {
     const messagesBefore = await countDocs(messagesSlug);
 
     const req = await makeOwnerReq();
+
     await expect(
       resolveChatContext({
         req,

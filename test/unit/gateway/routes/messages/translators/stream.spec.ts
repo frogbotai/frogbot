@@ -11,6 +11,7 @@ async function collectEvents(parts: TextStreamPart<ToolSet>[]): Promise<Anthropi
       for (const part of parts) {
         controller.enqueue(part);
       }
+
       controller.close();
     },
   })
@@ -18,11 +19,13 @@ async function collectEvents(parts: TextStreamPart<ToolSet>[]): Promise<Anthropi
     .getReader();
 
   const frames: string[] = [];
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
       break;
     }
+
     frames.push(value);
   }
 
@@ -32,6 +35,7 @@ async function collectEvents(parts: TextStreamPart<ToolSet>[]): Promise<Anthropi
     if (!event || !data) {
       throw new Error(`Malformed frame: ${frame}`);
     }
+
     return { event, data: JSON.parse(data) };
   });
 }
@@ -81,6 +85,7 @@ describe('createAnthropicStreamTransform', () => {
     ]);
 
     const deltas = events.filter((e) => e.event === 'content_block_delta').map((e) => e.data.delta);
+
     expect(deltas).toEqual([
       { type: 'signature_delta', signature: 'sig-123' },
       { type: 'thinking_delta', thinking: 'think' },
@@ -132,6 +137,7 @@ describe('createAnthropicStreamTransform', () => {
           totalUsage: { outputTokens: 1 },
         } as unknown as TextStreamPart<ToolSet>,
       ]);
+
       expect(events.find((e) => e.event === 'message_delta')?.data.delta.stop_reason).toBe(
         stopReason,
       );
@@ -157,6 +163,7 @@ describe('createAnthropicStreamTransform', () => {
     ]);
 
     const delta = events.find((e) => e.event === 'message_delta')?.data.delta;
+
     expect(delta).toEqual({
       stop_reason: 'stop_sequence',
       stop_sequence: 'STOP',
@@ -192,6 +199,7 @@ describe('createAnthropicStreamTransform', () => {
     ]);
 
     const usage = events.find((e) => e.event === 'message_delta')?.data.usage;
+
     expect(usage).toEqual({
       input_tokens: 10,
       output_tokens: 15,
@@ -214,6 +222,7 @@ describe('createAnthropicStreamTransform', () => {
     ]);
 
     const usage = events.find((e) => e.event === 'message_delta')?.data.usage;
+
     expect(usage).not.toHaveProperty('output_tokens_details');
     expect(usage).not.toHaveProperty('cache_creation');
   });

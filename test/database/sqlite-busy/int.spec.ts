@@ -29,6 +29,7 @@ const databasePath = fileURLToPath(new URL('./sqlite-busy.db', import.meta.url))
 const isSQLite = getCurrentDatabaseAdapter() === 'sqlite';
 const lockTimeoutMessage =
   /waited \d+ ms for the write lock.*ran without `req` while a transaction was open.*long transaction held the lock/s;
+
 type Request = Awaited<ReturnType<FrogBotInstance['createRequest']>>;
 
 function isBusy(error: unknown): boolean {
@@ -186,6 +187,7 @@ describe.skipIf(!isSQLite).each([
       { length: 40 },
       (_, index) => `Queued ${String(index).padStart(2, '0')}`,
     );
+
     const writes = titles.map((title) => app.client().execute(insert(title)));
     const committed = app.commit(transactionID);
     const results = await Promise.all(writes);
@@ -259,7 +261,9 @@ describe.skipIf(!isSQLite)('SQLite write lock timeout', () => {
     const { req, transactionID } = await app.begin();
 
     await app.create('In transaction', req);
+
     await expect(app.create('Detached')).rejects.toThrow(lockTimeoutMessage);
+
     await app.commit(transactionID);
     await app.create('After');
 
@@ -313,10 +317,12 @@ describe.skipIf(!isSQLite).each([
     other.exec('COMMIT');
 
     await app.create('After, detached');
+
     await app.frogbot.db.create({
       collection: notesSlug,
       data: { title: 'After, on the adapter' },
     });
+
     await app.frogbot.delete({ collection: notesSlug, id: removed.id });
 
     const { req, transactionID } = await app.begin();
@@ -361,11 +367,13 @@ describe.skipIf(!isSQLite).each([
     other.exec('COMMIT');
 
     await frogbot.update({ collection: notesSlug, id: first.id, data: { title: 'Updated' } });
+
     await frogbot.db.updateOne({
       collection: notesSlug,
       id: second.id,
       data: { title: 'Updated on the adapter' },
     });
+
     await frogbot.delete({ collection: notesSlug, id: third.id });
     await frogbot.db.deleteMany({ collection: notesSlug, where: { id: { equals: fourth.id } } });
 
@@ -589,6 +597,7 @@ const savedAfterFailedCommit = {
   titles: ['After'],
   children: 0,
 };
+
 const savedAfterFailedClientCommit = {
   commitError: expect.stringMatching(/FOREIGN KEY/),
   titles: ['After'],
@@ -612,6 +621,7 @@ describe.skipIf(!isSQLite).each([
     await enableDeferredForeignKeys(app);
 
     await expect(app.create('Orphan')).rejects.toThrow(/FOREIGN KEY/);
+
     await app.create('After');
 
     expect(await app.titlesAfterRestart()).toEqual(['After']);
@@ -646,6 +656,7 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
     'a create whose hook throws (%s) releases the lock',
     async (title) => {
       await expect(app.create(title)).rejects.toThrow('[test]');
+
       await app.create('After');
 
       expect(await app.titlesAfterRestart()).toEqual(['After']);
@@ -664,6 +675,7 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
     const { req, transactionID } = await app.begin();
 
     await expect(app.create('Refused', req)).rejects.toThrow();
+
     await app.commit(transactionID);
     await app.create('After');
 
@@ -807,6 +819,7 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
 
     pending = [slow];
     await entered;
+
     await expect(app.create('Queued')).rejects.toThrow(lockTimeoutMessage);
 
     releaseSlowHook();
@@ -970,6 +983,7 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
     const orphanError = failure(app.commit(orphan)).finally(() => {
       settled = true;
     });
+
     // One call after another, so a call lands between the failed COMMIT and its rethrow
     const ended = (async () => {
       let calls = 0;
@@ -1035,7 +1049,9 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
     await app.create('Orphan', req);
 
     expect(await failure(app.commit(transactionID))).toMatch(/FOREIGN KEY/);
+
     await app.create('After');
+
     expect(await app.titlesAfterRestart()).toEqual(['After']);
   });
 
@@ -1054,15 +1070,18 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
             const request = await app.frogbot.createRequest();
 
             request.transactionID = req.transactionID;
+
             await db.run(
               sql`insert into notes (title, updated_at, created_at) values ('Raw migration', '2026-01-01', '2026-01-01')`,
             );
+
             await app.create('Migration', request);
           },
           down: () => Promise.resolve(),
         },
       ],
     });
+
     const beside = Array.from({ length: 5 }, (_, index) => app.create(`Beside ${index}`));
 
     await Promise.all([migrating, ...beside]);
@@ -1139,7 +1158,9 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     expect(await journalMode({ url: 'file::memory:?cache=shared', defaultWal: true })).toBe(
       'memory',
     );
+
     await frogbot!.create({ collection: notesSlug, data: { title: 'Memory' } });
+
     expect((await frogbot!.count({ collection: notesSlug })).totalDocs).toBe(1);
   });
 
@@ -1157,7 +1178,9 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     previous.close();
 
     expect(await journalMode({ wal: false })).toBe('delete');
+
     await frogbot!.create({ collection: notesSlug, data: { title: 'Rollback journal' } });
+
     expect((await frogbot!.count({ collection: notesSlug })).totalDocs).toBe(1);
   });
 
@@ -1169,9 +1192,12 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     open.prepare('select count(*) from sqlite_master').get();
 
     expect(await journalMode({ wal: false, busyTimeout: 50 })).toBe('wal');
+
     open.exec('rollback');
     await frogbot!.create({ collection: notesSlug, data: { title: 'Still WAL' } });
+
     expect((await frogbot!.count({ collection: notesSlug })).totalDocs).toBe(1);
+
     open.close();
   });
 
@@ -1183,6 +1209,7 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
       (await client().execute('pragma synchronous')).rows[0].synchronous,
       (await client().execute('pragma journal_size_limit')).rows[0].journal_size_limit,
     ];
+
     const before = await settings();
 
     await frogbot.create({ collection: notesSlug, data: { title: 'Transaction' } });
@@ -1199,10 +1226,12 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     crashed.exec('pragma journal_mode = wal');
     crashed.exec('create table stale (id integer primary key, value text)');
     crashed.exec("insert into stale (value) values ('stale')");
+
     // `notes` from the old run, so a replay would show up as an extra row
     crashed.exec(
       'create table notes (id integer primary key, title text, updated_at text, created_at text)',
     );
+
     crashed.exec("insert into notes (title, updated_at, created_at) values ('Stale', 'x', 'x')");
     await rm(databasePath, { force: true });
 
@@ -1222,6 +1251,7 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
       sort: 'title',
       pagination: false,
     });
+
     const integrity = await client.execute('pragma integrity_check');
 
     expect({
@@ -1247,6 +1277,7 @@ describe.skipIf(!isSQLite)(
       const client = app.client() as unknown as {
         execute: (statement: Statement) => Promise<unknown>;
       };
+
       const execute = client.execute;
       const seen = new Map<string, Statement>();
 
@@ -1317,16 +1348,19 @@ describe.skipIf(!isSQLite)(
           data: { title: 'Draft', tags: [{ name: 'z' }] },
           draft: true,
         });
+
         await app.frogbot.update({
           collection: postsSlug,
           where: { title: { like: 'Post' } },
           data: { kind: ['b'] },
         });
+
         await app.frogbot.find({
           collection: postsSlug,
           depth: 2,
           where: { 'tags.name': { equals: 'x' } },
         });
+
         await app.frogbot.findVersions({ collection: postsSlug });
         await app.frogbot.count({ collection: postsSlug });
         await app.frogbot.findByID({ collection: postsSlug, id: post.id, draft: true });
@@ -1421,6 +1455,7 @@ describe.skipIf(!isSQLite)(
       },
       collections: [membersCollection()],
     });
+
     let slow: Promise<unknown> | undefined;
 
     beforeEach(() => {
@@ -1437,6 +1472,7 @@ describe.skipIf(!isSQLite)(
       expect(causes(await app.create('KV in hook').catch((error: unknown) => error))).toMatch(
         lockTimeoutMessage,
       );
+
       await app.frogbot.kv.set('after', 2);
 
       expect(await app.frogbot.kv.get('after')).toBe(2);
@@ -1508,6 +1544,7 @@ describe.skipIf(!isSQLite)(
         second: true,
         loggedOut: 200,
       });
+
       await slow;
     });
 

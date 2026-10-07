@@ -40,6 +40,7 @@ function mergePaths(...values: Record<string, unknown>[]): Record<string, unknow
             )
           : item;
     }
+
     return result;
   }, {});
 }
@@ -68,6 +69,7 @@ function CalendarDocumentEvent({
     dateFormat: config.admin.dateFormat,
     i18n,
   });
+
   return (
     <>
       <div onClick={drawer.openDrawer} role="presentation">
@@ -139,6 +141,7 @@ export function CalendarViewClient({
     () => getViewCardColumns(columns, collectionConfig.admin?.useAsTitle),
     [collectionConfig.admin?.useAsTitle, columns],
   );
+
   const [rows, setRows] = useState<Row[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [createRange, setCreateRange] = useState<{ end: string; start: string }>();
@@ -174,15 +177,18 @@ export function CalendarViewClient({
           : { [start]: { greater_than_equal: range.start } },
       ],
     };
+
     appendQuery(params, 'where', { and: [filter, query.where, rangeWhere].filter(Boolean) });
     appendQuery(params, 'search', query.search);
     const response = await fetch(`${config.routes.api}/${collectionSlug}?${params}`, {
       credentials: 'include',
       signal,
     });
+
     if (!response.ok) throw new Error(response.statusText);
     const result = (await response.json()) as { docs: Row[]; totalDocs?: number };
     setRows(result.docs.map(normalizeRow));
+
     setTruncated(
       (result.totalDocs ?? result.docs.length) > result.docs.length || result.docs.length >= 1000,
     );
@@ -196,10 +202,12 @@ export function CalendarViewClient({
 
   useEffect(() => {
     const controller = new AbortController();
+
     void loadRef.current(controller.signal).catch((error) => {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       toast.error(error instanceof Error ? error.message : 'Failed to load calendar');
     });
+
     return () => controller.abort();
   }, [collectionSlug, date, mode, searchKey, whereKey]);
 
@@ -208,6 +216,7 @@ export function CalendarViewClient({
     params.set(key, value);
     router.replace(`${pathname}?${params}`);
   };
+
   const request = async (row: Row, nextStart: string, nextEnd: string) => {
     const body = mergePaths(setPath(start, nextStart), ...(end ? [setPath(end, nextEnd)] : []));
     const response = await fetch(`${config.routes.api}/${collectionSlug}/${row.id}`, {
@@ -216,15 +225,18 @@ export function CalendarViewClient({
       headers: { 'Content-Type': 'application/json' },
       method: 'PATCH',
     });
+
     if (!response.ok) {
       const result = (await response.json().catch(() => ({}))) as {
         errors?: { message?: string }[];
         message?: string;
       };
+
       const message = result.errors?.[0]?.message ?? result.message ?? response.statusText;
       toast.error(message);
       throw new Error(message);
     }
+
     setRows((current) =>
       current.map((item) =>
         item.id === row.id ? { ...item, end: nextEnd, start: nextStart } : item,

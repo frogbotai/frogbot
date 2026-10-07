@@ -3,6 +3,7 @@ import * as Primitive from '@radix-ui/react-scroll-area';
 import { type ComponentProps, type Ref, useEffect, useRef, useState } from 'react';
 
 import { composeRefs } from '../lib/utils.js';
+
 export type ScrollAreaProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChild'> & {
   viewPortClassName?: string;
   orientation?: 'vertical' | 'horizontal';
@@ -10,6 +11,7 @@ export type ScrollAreaProps = Omit<ComponentProps<typeof Primitive.Root>, 'asChi
   showGradient?: boolean;
   gradientClassName?: string;
 };
+
 export function ScrollArea(input: ScrollAreaProps) {
   const {
     asChild: _asChild,
@@ -35,10 +37,12 @@ export function ScrollArea(input: ScrollAreaProps) {
           viewport.scrollTop + viewport.clientHeight < viewport.scrollHeight - 1,
       );
     };
+
     update();
     viewport.addEventListener('scroll', update);
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(update);
     if (viewport.firstElementChild) observer?.observe(viewport.firstElementChild);
+
     return () => {
       viewport.removeEventListener('scroll', update);
       observer?.disconnect();
@@ -63,6 +67,7 @@ export function ScrollArea(input: ScrollAreaProps) {
     </Primitive.Root>
   );
 }
+
 export function ScrollBar(input: Omit<ComponentProps<typeof Primitive.Scrollbar>, 'asChild'>) {
   const {
     asChild: _asChild,

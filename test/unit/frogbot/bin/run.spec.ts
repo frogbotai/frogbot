@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../../../packages/frogbot/node_modules/tsx/dist/esm/api/index.mjs', () => ({
   tsImport: mocks.tsImport,
 }));
+
 vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
   getCachedFrogBot: mocks.getCachedFrogBot,
 }));
@@ -40,6 +41,7 @@ describe('runScript', () => {
 
     mocks.getCachedFrogBot.mockReturnValue({ destroy: mocks.destroy });
     error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
     exit = vi.spyOn(process, 'exit').mockImplementation((code) => {
       throw new Error(`exit:${code}`);
     });
@@ -83,11 +85,13 @@ describe('runScript', () => {
 
       return Promise.resolve();
     });
+
     mocks.destroy.mockImplementation(async () => {
       await Promise.resolve();
 
       calls.push('destroy');
     });
+
     exit.mockImplementation((code) => {
       calls.push(`exit:${code}`);
 

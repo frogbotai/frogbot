@@ -32,6 +32,7 @@ export function EventChip<T extends CalendarEvent>({
     pointer.stopPropagation();
     onResizeStart?.(edge, pointer);
   };
+
   const onKeyDown = (keyboard: KeyboardEvent) => {
     if (
       keyboard.target !== keyboard.currentTarget ||
@@ -39,9 +40,11 @@ export function EventChip<T extends CalendarEvent>({
     ) {
       return;
     }
+
     keyboard.preventDefault();
     onClick?.();
   };
+
   return (
     <div
       {...drag.attributes}

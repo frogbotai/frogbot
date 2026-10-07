@@ -11,6 +11,7 @@ const created = pdf.createPdfFromText({ input: { text: 'Hello' }, req });
 expectTypeOf<Parameters<typeof pdf.createPdfFromText>[0]['input']>().toEqualTypeOf<{
   text: string;
 }>();
+
 expectTypeOf(created).toEqualTypeOf<
   Promise<{ id: string | number; filename: string; url?: string | undefined }>
 >();

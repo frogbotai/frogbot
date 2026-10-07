@@ -77,6 +77,7 @@ export function scaffold(options: ScaffoldOptions): void {
 
   applyDatabase(options.dest, database);
   applyAI(options.dest, ai);
+
   applyPackageJson(
     options.dest,
     options.projectName,
@@ -118,6 +119,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   if (args.help) {
     process.stdout.write(HELP);
+
     return;
   }
 

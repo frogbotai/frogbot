@@ -16,6 +16,7 @@ function gatewayVersion(): string {
   } catch {
     return 'latest';
   }
+
   return 'latest';
 }
 
@@ -163,11 +164,13 @@ export function runInit(options: InitOptions = {}): void {
   }
 
   mkdirSync(join(target, 'src'), { recursive: true });
+
   for (const [file, contents] of Object.entries(files)) {
     writeFileSync(join(target, file), contents);
   }
 
   const cdHint = target === resolve(cwd) ? '' : `  cd ${options.dir}\n`;
+
   log(
     [
       `created gateway server in ${target}`,

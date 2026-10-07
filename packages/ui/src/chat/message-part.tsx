@@ -53,7 +53,9 @@ export function MessagePart({ fallback, part, renderData, role }: MessagePartPro
   if (known.type === 'source-url' || known.type === 'source-document') {
     return <SourcePart part={known} />;
   }
+
   if (part.type === 'step-start') return null;
+
   return fallback ? (
     fallback(part)
   ) : (

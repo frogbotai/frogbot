@@ -41,6 +41,7 @@ const skill = [
   'https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/REFERENCE.md',
   '',
 ].join('\n');
+
 const packagePaths = [
   'package.json',
   'packages/frogbot/package.json',
@@ -49,18 +50,21 @@ const packagePaths = [
   'examples/app/package.json',
   'templates/blank/package.json',
 ];
+
 const dependencies = {
   dependencies: { frogbot: '^0.20.0', external: '^9.1.0', ignored: '^8.0.0' },
   devDependencies: { '@frogbotai/plugin-test': '~0.20.0', frogbot: 'workspace:*' },
   peerDependencies: { frogbot: '>=0.20.0', '@frogbotai/plugin-test': 'workspace:^' },
   optionalDependencies: { '@frogbotai/piece-test': '0.20.0', frogbot: 'workspace:~' },
 };
+
 const plugin = {
   name: 'frogbot',
   version: '0.24.0',
   description: 'FrogBot development skill',
   author: { name: 'FrogBot' },
 };
+
 const marketplace = {
   name: 'frogbot',
   owner: { name: 'FrogBot' },

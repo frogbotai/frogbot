@@ -71,10 +71,12 @@ describe('build-package', () => {
   it('emits JavaScript, declarations, source maps and listed assets from src', async () => {
     await fixture('app');
     await write('app/src/index.ts', "export { Button } from './Button.js';\n");
+
     await write(
       'app/src/Button.tsx',
       "'use client';\nimport type { ReactNode } from 'react';\n\nexport const Button = ({ children }: { children: ReactNode }) => <button>{children}</button>;\n",
     );
+
     await write('app/src/Button.css', 'button { color: red; }\n');
 
     expect(await build('app', ['--assets', 'css'])).toMatchObject({ code: 0 });
@@ -174,15 +176,19 @@ describe('build-package', () => {
     await fixture('app', { dep: 'workspace:*' });
     await mkdir(path.join(workspace, 'app/node_modules'), { recursive: true });
     await symlink(path.join(workspace, 'dep'), path.join(workspace, 'app/node_modules/dep'));
+
     await write(
       'dep/package.json',
       JSON.stringify({ name: 'dep', version: '1.0.0', type: 'module', types: './dist/index.d.ts' }),
     );
+
     await write('dep/src/index.ts', 'export const value: number = 1;\n');
+
     await write(
       'app/src/index.ts',
       "import { value } from 'dep';\n\nexport const doubled: number = value * 2;\n",
     );
+
     await build('dep');
 
     expect(await build('app')).toMatchObject({ code: 0 });

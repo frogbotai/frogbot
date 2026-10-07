@@ -12,6 +12,7 @@ export const humeProvider = {
   envVars: ['HUME_API_KEY'],
   fromEnv: (env) => {
     if (!env.HUME_API_KEY) return undefined;
+
     return { apiKey: env.HUME_API_KEY };
   },
   build: (cfg) => createHume(cfg),

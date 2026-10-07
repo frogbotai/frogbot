@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+
 export type ShimmerEffectProps = {
   animationDelay?: string;
   className?: string;
@@ -7,6 +8,7 @@ export type ShimmerEffectProps = {
   height?: number | string;
   width?: number | string;
 };
+
 export function ShimmerEffect({
   animationDelay = '0ms',
   className,
@@ -23,6 +25,7 @@ export function ShimmerEffect({
     </div>
   );
 }
+
 export type StaggeredShimmersProps = {
   className?: string;
   count: number;
@@ -32,6 +35,7 @@ export type StaggeredShimmersProps = {
   shimmerItemClassName?: string;
   width?: number | string;
 };
+
 export function StaggeredShimmers({
   className,
   count,
@@ -42,13 +46,17 @@ export function StaggeredShimmers({
   width,
 }: StaggeredShimmersProps) {
   const [visible, setVisible] = useState(renderDelay === 0);
+
   useEffect(() => {
     if (visible) return;
     const timer = window.setTimeout(() => setVisible(true), renderDelay);
+
     return () => window.clearTimeout(timer);
   }, [renderDelay, visible]);
+
   if (!visible) return null;
   const delay = typeof shimmerDelay === 'number' ? `${shimmerDelay}ms` : shimmerDelay;
+
   return (
     <div className={className}>
       {Array.from({ length: count }, (_, index) => (

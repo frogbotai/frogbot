@@ -13,6 +13,7 @@ const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
 const prompt =
   'Call get_secret_code now, then reply with only the exact code returned by the tool.';
+
 const sentinel = 'FROGBOT-E2E-7421';
 
 type RegisterBody = {
@@ -32,10 +33,12 @@ type FindBody<T> = {
 function isListening(port: number): Promise<boolean> {
   return new Promise((resolveListening) => {
     const socket = connect({ host: '127.0.0.1', port });
+
     socket.once('connect', () => {
       socket.destroy();
       resolveListening(true);
     });
+
     socket.once('error', () => resolveListening(false));
   });
 }
@@ -59,6 +62,7 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
 
     port = await getFreePort();
     client = new FrogBotRESTClient(`http://localhost:${port}`);
+
     server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
       cwd: fixtureDir,
       env: {
@@ -68,6 +72,7 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
         FROGBOT_SECRET: 'e2e-secret',
       },
     });
+
     server.stdout?.resume();
     server.stderr?.pipe(process.stderr);
 
@@ -82,11 +87,13 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
       password: 'frogbot-e2e-password',
       name: 'Tool Calling Test',
     });
+
     if (registration.status !== 200) {
       throw new Error(
         `first-register returned ${registration.status}: ${JSON.stringify(registration.body)}`,
       );
     }
+
     token = registration.body.token;
     userId = registration.body.user.id;
   }, 240000);
@@ -111,6 +118,7 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body.text).toContain(sentinel);
     expect(response.body.chatId).toBeDefined();
+
     chatId = response.body.chatId;
   });
 
@@ -127,7 +135,9 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     expect(chats.status, JSON.stringify(chats.body)).toBe(200);
     expect(chats.body.docs).toHaveLength(1);
     expect(chats.body.docs[0]?.agent).toBe('tool-demo');
+
     const owner = chats.body.docs[0]?.user;
+
     expect(typeof owner === 'object' ? owner.id : owner).toBe(userId);
 
     const messages = await client.get<
@@ -137,7 +147,9 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     expect(messages.status, JSON.stringify(messages.body)).toBe(200);
     expect(messages.body.docs).toHaveLength(2);
     expect(messages.body.docs.map(({ role }) => role)).toEqual(['user', 'assistant']);
+
     const assistant = messages.body.docs.find(({ role }) => role === 'assistant');
+
     expect(assistant).toBeDefined();
     expect(
       assistant?.parts.some(

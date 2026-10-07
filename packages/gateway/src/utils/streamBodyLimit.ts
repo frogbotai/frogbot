@@ -31,6 +31,7 @@ export function enforceStreamBodyLimit(
       const { done, value } = await reader.read();
       if (done) {
         controller.close();
+
         return;
       }
 
@@ -42,6 +43,7 @@ export function enforceStreamBodyLimit(
             param: '(body)',
           }),
         );
+
         return;
       }
 

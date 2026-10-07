@@ -27,6 +27,7 @@ const SENSITIVE =
  */
 function createMidStreamErrorModel(): LanguageModelV4 {
   const error = Object.assign(new Error(SENSITIVE), { statusCode: 503 });
+
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -40,11 +41,13 @@ function createMidStreamErrorModel(): LanguageModelV4 {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' });
+
             controller.enqueue({
               type: 'text-delta',
               id: 'text-0',
               delta: 'hello',
             });
+
             controller.enqueue({ type: 'error', error });
             controller.close();
           },
@@ -56,6 +59,7 @@ function createMidStreamErrorModel(): LanguageModelV4 {
 function makeAppWithMockProvider(providerName: string) {
   const fakeProvider = { languageModel: () => createMidStreamErrorModel() };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -65,9 +69,11 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
   // contract exists to redact. Currently the transform emits it verbatim.
   it('masks the mid-stream error frame message in a streaming chat response (OpenAI)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const app = makeAppWithMockProvider('groq');
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',
@@ -81,7 +87,9 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
 
     // Content already flowed, so this is a 200 with an in-band error frame.
     expect(res.status).toBe(200);
+
     const raw = await res.text();
+
     expect(raw).not.toContain(SENSITIVE);
   });
 
@@ -89,9 +97,11 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
   // message must be masked in production.
   it('masks the mid-stream error frame message in a streaming messages response (Anthropic)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const app = makeAppWithMockProvider('anthropic');
     const res = await app.request('http://localhost/v1/messages', {
       method: 'POST',
@@ -105,8 +115,10 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
     });
 
     expect(res.status).toBe(200);
+
     const raw = await res.text();
     const errorFrame = parseSse(raw).find((f) => f.event === 'error');
+
     expect(errorFrame?.data ?? '').not.toContain(SENSITIVE);
   });
 
@@ -115,9 +127,11 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
   // masked in production.
   it('masks the mid-stream error frame message in a streaming responses response (OpenAI Responses)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     onTestFinished(() => {
       vi.unstubAllEnvs();
     });
+
     const app = makeAppWithMockProvider('groq');
     const res = await app.request('http://localhost/v1/responses', {
       method: 'POST',
@@ -130,7 +144,9 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
     });
 
     expect(res.status).toBe(200);
+
     const raw = await res.text();
+
     expect(raw).not.toContain(SENSITIVE);
   });
 });

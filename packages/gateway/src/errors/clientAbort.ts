@@ -23,6 +23,7 @@ export function isClientAbort(err: unknown, requestSignal?: AbortSignal): boolea
   if ((err instanceof Error || err instanceof DOMException) && err.name === 'AbortError') {
     return requestSignal?.aborted === true;
   }
+
   return false;
 }
 

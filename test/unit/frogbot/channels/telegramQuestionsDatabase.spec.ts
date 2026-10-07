@@ -360,6 +360,7 @@ describe('Telegram questions with SQLite persistence', { timeout: 30_000 }, () =
       data: { email: 'frog@example.com', password: 'secret-password' },
       overrideAccess: true,
     });
+
     const chat = await chatDoc(chatId);
 
     await frogbot.update({

@@ -139,75 +139,93 @@ export type RootComponentServerProps = WithoutPayload<Payload.ServerProps> & {
 };
 
 export type ListViewServerPropsOnly = WithoutPayload<Payload.ListViewServerPropsOnly>;
+
 export type ListViewServerProps = Payload.ListViewClientProps & ListViewServerPropsOnly;
 
 export type BeforeListServerPropsOnly = WithoutPayload<Payload.BeforeListServerPropsOnly>;
+
 export type BeforeListServerProps = Payload.BeforeListClientProps & BeforeListServerPropsOnly;
 
 export type BeforeListTableServerPropsOnly = WithoutPayload<Payload.BeforeListTableServerPropsOnly>;
+
 export type BeforeListTableServerProps = Payload.BeforeListTableClientProps &
   BeforeListTableServerPropsOnly;
 
 export type AfterListServerPropsOnly = WithoutPayload<Payload.AfterListServerPropsOnly>;
+
 export type AfterListServerProps = Payload.AfterListClientProps & AfterListServerPropsOnly;
 
 export type AfterListTableServerPropsOnly = WithoutPayload<Payload.AfterListTableServerPropsOnly>;
+
 export type AfterListTableServerProps = Payload.AfterListTableClientProps &
   AfterListTableServerPropsOnly;
 
 export type FolderListViewServerPropsOnly = WithoutPayload<Payload.FolderListViewServerPropsOnly>;
+
 export type FolderListViewServerProps = Payload.FolderListViewClientProps &
   FolderListViewServerPropsOnly;
 
 export type BeforeFolderListServerPropsOnly =
   WithoutPayload<Payload.BeforeFolderListServerPropsOnly>;
+
 export type BeforeFolderListServerProps = Payload.BeforeFolderListClientProps &
   BeforeFolderListServerPropsOnly;
 
 export type BeforeFolderListTableServerPropsOnly =
   WithoutPayload<Payload.BeforeFolderListTableServerPropsOnly>;
+
 export type BeforeFolderListTableServerProps = Payload.BeforeFolderListTableClientProps &
   BeforeFolderListTableServerPropsOnly;
 
 export type AfterFolderListServerPropsOnly = WithoutPayload<Payload.AfterFolderListServerPropsOnly>;
+
 export type AfterFolderListServerProps = Payload.AfterFolderListClientProps &
   AfterFolderListServerPropsOnly;
 
 export type AfterFolderListTableServerPropsOnly =
   WithoutPayload<Payload.AfterFolderListTableServerPropsOnly>;
+
 export type AfterFolderListTableServerProps = Payload.AfterFolderListTableClientProps &
   AfterFolderListTableServerPropsOnly;
 
 export type BeforeDocumentControlsServerPropsOnly =
   WithoutPayloadOrGlobal<Payload.BeforeDocumentControlsServerPropsOnly>;
+
 export type BeforeDocumentControlsServerProps = Payload.BeforeDocumentControlsClientProps &
   BeforeDocumentControlsServerPropsOnly;
 
 export type ViewDescriptionServerPropsOnly =
   WithoutPayloadOrGlobal<Payload.ViewDescriptionServerPropsOnly>;
+
 export type ViewDescriptionServerProps = Payload.ViewDescriptionClientProps &
   ViewDescriptionServerPropsOnly;
 
 export type EditMenuItemsServerPropsOnly = WithoutPayload<Payload.EditMenuItemsServerPropsOnly>;
+
 export type EditMenuItemsServerProps = Payload.EditMenuItemsClientProps &
   EditMenuItemsServerPropsOnly;
 
 export type PreviewButtonServerPropsOnly = WithoutPayload<Payload.PreviewButtonServerPropsOnly>;
+
 export type PreviewButtonServerProps = Payload.PreviewButtonClientProps &
   PreviewButtonServerPropsOnly;
 
 export type PublishButtonServerPropsOnly = WithoutPayload<Payload.PublishButtonServerPropsOnly>;
+
 export type PublishButtonServerProps = Payload.PublishButtonClientProps &
   PublishButtonServerPropsOnly;
 
 export type SaveButtonServerPropsOnly = WithoutPayload<Payload.SaveButtonServerPropsOnly>;
+
 export type SaveButtonServerProps = Payload.SaveButtonClientProps & SaveButtonServerPropsOnly;
 
 export type SaveDraftButtonServerPropsOnly = WithoutPayload<Payload.SaveDraftButtonServerPropsOnly>;
+
 export type SaveDraftButtonServerProps = Payload.SaveDraftButtonClientProps &
   SaveDraftButtonServerPropsOnly;
 
 export type UnpublishButtonServerPropsOnly = WithoutPayload<Payload.UnpublishButtonServerPropsOnly>;
+
 export type UnpublishButtonServerProps = Payload.UnpublishButtonClientProps &
   UnpublishButtonServerPropsOnly;
 
@@ -224,6 +242,7 @@ export type DefaultServerCellComponentProps<
 export type WidgetWidth = Payload.WidgetWidth;
 
 type TypedWidget = FrogBotTypes['widgets'];
+
 type WidgetSlug = Extract<keyof TypedWidget, string>;
 
 type DataFromWidgetSlug<TSlug extends WidgetSlug> = TypedWidget[TSlug] extends {

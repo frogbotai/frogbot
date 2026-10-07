@@ -37,6 +37,7 @@ describe('normal jobs:run executable with a real SQLite app', () => {
     const boot = await assertBoot(worker);
 
     await worker.message('handler-started', 3);
+
     await expect
       .poll(() => worker.jobs().filter((job) => job.completed_at).length, {
         timeout: 10_000,

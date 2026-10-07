@@ -10,6 +10,7 @@ function stubFrogBot(pages: { chats: Page[]; messages: Record<string, Page[]> })
     const page = (args.page as number) - 1;
     if (args.collection === 'chats') return Promise.resolve(pages.chats[page]);
     const chatID = String((args.where as { chat: { equals: unknown } }).chat.equals);
+
     return Promise.resolve(pages.messages[chatID][page]);
   });
 
@@ -31,7 +32,9 @@ function stubFrogBot(pages: { chats: Page[]; messages: Record<string, Page[]> })
 
 async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
   const items: T[] = [];
+
   for await (const item of iterable) items.push(item);
+
   return items;
 }
 
@@ -81,6 +84,7 @@ describe('readTrainingData', () => {
       chats: [{ docs: [], hasNextPage: false }],
       messages: {},
     });
+
     const where = { agent: { equals: 'support' } };
 
     await collect(readTrainingData(frogbot, { where, overrideAccess: true }));

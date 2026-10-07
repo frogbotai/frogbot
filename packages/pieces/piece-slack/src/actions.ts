@@ -52,8 +52,10 @@ async function upload({
     { filename: file.name, length: file.data.size },
     token,
   );
+
   const uploadUrl =
     typeof created.upload_url === 'string' ? new URL(created.upload_url) : undefined;
+
   const fileId = typeof created.file_id === 'string' ? created.file_id : undefined;
 
   if (
@@ -99,6 +101,7 @@ const messageFields = {
   blocks,
   unfurlLinks: z.boolean().default(true),
 };
+
 const sendDirectMessageInput = z.object({ userId: user, ...messageFields });
 
 export const sendDirectMessage = defineAction({
@@ -283,6 +286,7 @@ export const getFile = defineAction({
     const data = Buffer.from(await downloaded.arrayBuffer());
     const name =
       'name' in file && typeof file.name === 'string' ? file.name : `slack-${input.fileId}`;
+
     const mimeType =
       downloaded.headers.get('content-type')?.split(';')[0] || 'application/octet-stream';
 
@@ -327,6 +331,7 @@ export const searchMessages = defineAction({
         { query: input.query, count: 100, cursor },
         'user',
       );
+
       const messages = response.messages;
 
       if (!messages || typeof messages !== 'object') break;
@@ -340,6 +345,7 @@ export const searchMessages = defineAction({
       }
 
       const pagination = 'pagination' in messages ? messages.pagination : undefined;
+
       cursor =
         pagination && typeof pagination === 'object' && 'next_cursor' in pagination
           ? String(pagination.next_cursor || '') || undefined
@@ -378,6 +384,7 @@ export const findUserByHandle = defineAction({
       item: 'members',
       body: { limit: 1000 },
     });
+
     const found = members.find((member) => {
       if (!member || typeof member !== 'object' || !('profile' in member)) return false;
 
@@ -718,6 +725,7 @@ export const updateUserGroupMembers = defineAction({
       input.appendUsers && 'users' in group && Array.isArray(group.users)
         ? group.users.map(String)
         : [];
+
     const users = [...new Set([...existing, ...(input.userIds ?? []).filter(Boolean)])].join(', ');
 
     return client.request('usergroups.users.update', { usergroup: id, users }, 'user');

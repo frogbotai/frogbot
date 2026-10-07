@@ -8,6 +8,7 @@ const emptyInput = z.object({});
 const cursorSchema = z.object({ date: z.number(), sid: z.string() });
 
 type Cursor = z.output<typeof cursorSchema>;
+
 type Resource = z.output<typeof output>;
 
 function compare(item: Record<string, unknown>, cursor: Cursor) {
@@ -72,17 +73,20 @@ function pollingTrigger<const TSlug extends string>({
         key,
         query: { PageSize: 1000 },
       });
+
       const eligible = items.filter((item) => {
         if (completed && item.status !== 'completed') return false;
 
         return true;
       });
+
       const sorted = eligible.sort((left, right) =>
         compare(left, {
           date: new Date(String(right.date_created)).getTime(),
           sid: String(right.sid),
         }),
       );
+
       const newest = sorted.at(-1);
       const nextCursor = newest
         ? { date: new Date(String(newest.date_created)).getTime(), sid: String(newest.sid) }
@@ -112,6 +116,7 @@ export const incomingSms = definePollingTrigger({
       key: 'messages',
       query: { PageSize: 1000, To: input.phoneNumber },
     });
+
     const messages = items
       .filter((message) => {
         if (message.direction !== 'inbound') return false;
@@ -124,6 +129,7 @@ export const incomingSms = definePollingTrigger({
           sid: String(right.sid),
         }),
       );
+
     const newest = messages.at(-1);
 
     return {

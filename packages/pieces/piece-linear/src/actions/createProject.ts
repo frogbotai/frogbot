@@ -14,6 +14,7 @@ const inputSchema = z.object({
   targetDate: z.string().optional(),
   statusId: z.string().optional(),
 });
+
 const output = z.object({ success: z.boolean(), lastSyncId: z.number().optional() }).passthrough();
 
 export const createProject = defineAction({
@@ -26,6 +27,7 @@ export const createProject = defineAction({
   async run({ client, input }) {
     const { teamId, ...fields } = input;
     const response = await client.createProject({ teamIds: [teamId], ...fields });
+
     return {
       success: response.success,
       lastSyncId: response.lastSyncId,

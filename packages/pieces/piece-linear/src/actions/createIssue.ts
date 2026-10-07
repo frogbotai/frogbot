@@ -14,6 +14,7 @@ const inputSchema = z.object({
   priority: z.number().int().min(0).max(4).optional(),
   templateId: z.string().optional(),
 });
+
 const output = z.object({ success: z.boolean(), lastSyncId: z.number().optional() }).passthrough();
 
 export const createIssue = defineAction({
@@ -31,6 +32,7 @@ export const createIssue = defineAction({
   },
   async run({ client, input }) {
     const response = await client.createIssue(input);
+
     return {
       success: response.success,
       lastSyncId: response.lastSyncId,

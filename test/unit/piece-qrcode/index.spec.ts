@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
+
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import {
@@ -16,6 +17,7 @@ function fixture(files: { slug: string } | null = { slug: 'media' }) {
     id: 'saved-qr-code',
     url: '/api/media/saved-qr-code/qr-code.png',
   });
+
   const req = {
     signal: undefined,
     frogbot: {

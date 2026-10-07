@@ -10,6 +10,7 @@ describe('Google Drive permissions', () => {
       const { drive, req, requests } = await fixture(() =>
         json({ id: 'permission', role, type: 'user' }),
       );
+
       await expect(
         drive.createPermission({
           req,
@@ -37,6 +38,7 @@ describe('Google Drive permissions', () => {
   it('looks up permissions across pages matching both email and role', async () => {
     const { drive, req, requests } = await fixture(({ method, url }) => {
       if (method === 'DELETE') return new Response(null, { status: 204 });
+
       return json(
         url.searchParams.has('pageToken')
           ? { permissions: [{ id: 'match', role: 'reader', emailAddress: 'user@example.com' }] }
@@ -49,6 +51,7 @@ describe('Google Drive permissions', () => {
             },
       );
     });
+
     await expect(
       drive.deletePermission({
         req,
@@ -71,6 +74,7 @@ describe('Google Drive permissions', () => {
 
   it('returns an explicit no-op when the permission is absent', async () => {
     const { drive, req, requests } = await fixture(() => json({ permissions: [] }));
+
     await expect(
       drive.deletePermission({
         req,
@@ -84,6 +88,7 @@ describe('Google Drive permissions', () => {
     const missing = await fixture(() =>
       json({ permissions: [{ role: 'reader', emailAddress: 'user@example.com' }] }),
     );
+
     await expect(
       missing.drive.deletePermission({
         req: missing.req,
@@ -91,7 +96,9 @@ describe('Google Drive permissions', () => {
       }),
     ).rejects.toThrow('missing its ID');
     expect(missing.requests).toHaveLength(1);
+
     const repeated = await fixture(() => json({ nextPageToken: 'same' }));
+
     await expect(
       repeated.drive.deletePermission({
         req: repeated.req,
@@ -114,16 +121,19 @@ describe('Google Drive permissions', () => {
       const { drive, req, requests, create } = await fixture(({ url, method }) => {
         if (method === 'POST') return json({ id: 'public', type: 'anyone', role: 'reader' });
         if (url.searchParams.get('alt') === 'media') return new Response('public content');
+
         return json({
           ...metadata,
           mimeType,
           webViewLink: 'https://drive.google.com/view/file',
         });
       });
+
       const result = await drive.setPublicAccess({
         req,
         input: { fileId: 'file', includeSharedDrives: true },
       });
+
       expect(result.permission).toEqual({ id: 'public', type: 'anyone', role: 'reader' });
       expect(result.webViewLink).toBe('https://drive.google.com/view/file');
       expect(JSON.parse(requests[0].body.toString())).toEqual({
@@ -143,6 +153,7 @@ describe('Google Drive permissions', () => {
     const { drive, req, requests, create } = await fixture(() =>
       json({ error: { message: 'Sharing denied' } }, 403),
     );
+
     await expect(drive.setPublicAccess({ req, input: { fileId: 'file' } })).rejects.toThrow(
       'Sharing denied',
     );

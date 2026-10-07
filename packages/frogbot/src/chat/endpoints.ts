@@ -15,6 +15,7 @@ export function buildChatEndpoints(): Endpoint[] {
           chatId?: DocID;
           messageId?: DocID;
         } | null;
+
         if (
           body === null ||
           !['string', 'number'].includes(typeof body.chatId) ||
@@ -22,6 +23,7 @@ export function buildChatEndpoints(): Endpoint[] {
         ) {
           return Response.json({ error: 'chatId and messageId are required' }, { status: 400 });
         }
+
         return Response.json(
           await branchChat({ req, chatId: body.chatId!, messageId: body.messageId! }),
         );
@@ -36,7 +38,9 @@ export function buildChatEndpoints(): Endpoint[] {
         if (body === null || !['string', 'number'].includes(typeof body.chatId)) {
           return Response.json({ error: 'chatId is required' }, { status: 400 });
         }
+
         const suggestion = await suggestChatTitleForChat({ req, chatId: body.chatId! });
+
         return Response.json({ suggestion: suggestion ?? null });
       },
     },

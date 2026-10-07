@@ -49,6 +49,7 @@ export function parseUserMessage(
     out.push({ role: 'user', content: userBuf });
     userBuf = [];
   };
+
   const flushTool = () => {
     if (toolBuf.length === 0) return;
     out.push({ role: 'tool', content: toolBuf });
@@ -96,6 +97,7 @@ function parseUserContentBlock(
           unknown: { cache_control: block.cache_control },
         };
       }
+
       return part;
     }
 
@@ -106,6 +108,7 @@ function parseUserContentBlock(
           unknown: { cache_control: block.cache_control },
         };
       }
+
       return part;
     }
 
@@ -123,10 +126,12 @@ function parseUserContentBlock(
               data: { type: 'text', text: src.data },
             }
           : mediaSourceToFilePart(src, 'application/pdf', path);
+
       const providerOptions = documentProviderOptions(block);
       if (providerOptions) {
         part.providerOptions = providerOptions;
       }
+
       return part;
     }
 
@@ -184,9 +189,11 @@ function documentProviderOptions(block: AnthropicDocumentBlock): ProviderOptions
   if (block.title) {
     anthropic.title = block.title;
   }
+
   if (block.context) {
     anthropic.context = block.context;
   }
+
   if (block.citations?.enabled) {
     anthropic.citations = { enabled: true };
   }
@@ -195,6 +202,7 @@ function documentProviderOptions(block: AnthropicDocumentBlock): ProviderOptions
   if (Object.keys(anthropic).length > 0) {
     providerOptions.anthropic = anthropic;
   }
+
   if (block.cache_control) {
     providerOptions.unknown = { cache_control: block.cache_control };
   }
@@ -237,6 +245,7 @@ function toolResultOutput(block: AnthropicToolResultBlock): ToolResultPart['outp
 
   // Array of sub-blocks: text | image. Convert to AI SDK content list.
   const parts: Extract<ToolResultPart['output'], { type: 'content' }>['value'] = [];
+
   for (const sub of block.content) {
     if (sub.type === 'text') {
       parts.push({ type: 'text', text: sub.text });
@@ -252,5 +261,6 @@ function toolResultOutput(block: AnthropicToolResultBlock): ToolResultPart['outp
       }
     }
   }
+
   return { type: 'content', value: parts };
 }

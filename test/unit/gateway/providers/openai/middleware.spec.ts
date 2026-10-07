@@ -36,7 +36,9 @@ describe('openaiReasoningEffort', () => {
       providerOptions: { anthropic: { thinking: { budget_tokens: 13000 } } },
       params: { maxOutputTokens: 16384 },
     });
+
     await openaiReasoningEffort(args);
+
     // 13000/16384 ≈ 0.79 → 'high'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'high' });
   });
@@ -46,7 +48,9 @@ describe('openaiReasoningEffort', () => {
       providerOptions: { anthropic: { thinking: { budget_tokens: 500 } } },
       params: { maxOutputTokens: 16384 },
     });
+
     await openaiReasoningEffort(args);
+
     // 500/16384 ≈ 0.03 → 'minimal'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'minimal' });
   });
@@ -56,7 +60,9 @@ describe('openaiReasoningEffort', () => {
       providerOptions: { anthropic: { thinking: { budget_tokens: 16000 } } },
       params: { maxOutputTokens: 16384 },
     });
+
     await openaiReasoningEffort(args);
+
     // 16000/16384 ≈ 0.98 → clamped to 'xhigh'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'xhigh' });
   });
@@ -65,7 +71,9 @@ describe('openaiReasoningEffort', () => {
     const args = makeArgs('openai/gpt-4o', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 13000 } } },
     });
+
     await openaiReasoningEffort(args);
+
     expect(args.providerOptions['openai']).toBeUndefined();
   });
 
@@ -76,7 +84,9 @@ describe('openaiReasoningEffort', () => {
         anthropic: { thinking: { budget_tokens: 13000 } },
       },
     });
+
     await openaiReasoningEffort(args);
+
     // Should NOT overwrite
     expect((args.providerOptions['openai'] as any).reasoningEffort).toBe('low');
   });
@@ -85,7 +95,9 @@ describe('openaiReasoningEffort', () => {
     const args = makeArgs('openai/o3', {
       providerOptions: { anthropic: {} },
     });
+
     await openaiReasoningEffort(args);
+
     expect(args.providerOptions['openai']).toBeUndefined();
   });
 
@@ -93,18 +105,23 @@ describe('openaiReasoningEffort', () => {
     const args = makeArgs('openai/o3', {
       providerOptions: { anthropic: { thinking: { budget_tokens: 0 } } },
     });
+
     await openaiReasoningEffort(args);
+
     expect(args.providerOptions['openai']).toBeUndefined();
   });
 
   it('recognizes o1, o3, o4 prefixes as reasoning models', async () => {
     const models = ['openai/o1', 'openai/o1-mini', 'openai/o3', 'openai/o3-mini', 'openai/o4-mini'];
+
     for (const model of models) {
       const args = makeArgs(model, {
         providerOptions: { anthropic: { thinking: { budget_tokens: 8000 } } },
         params: { maxOutputTokens: 16384 },
       });
+
       await openaiReasoningEffort(args);
+
       expect(args.providerOptions['openai']).toBeDefined();
     }
   });
@@ -131,6 +148,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       content: 'Long policy.',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
     await openaiPromptCacheBreakpoint(args);
@@ -148,6 +166,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       content: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
     await openaiPromptCacheBreakpoint(args);
@@ -170,6 +189,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       text: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const args = makeArgs('openai/gpt-5.6', {
       messages: [{ role: 'user', content: [part] }],
     });
@@ -187,6 +207,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       content: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '24h' } } },
     };
+
     const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
     await openaiPromptCacheBreakpoint(args);
@@ -205,6 +226,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       { role: 'user', content: 'first' },
       { role: 'assistant', content: 'last' },
     ];
+
     const args = makeArgs('openai/gpt-5.6', {
       messages,
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
@@ -232,6 +254,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       text: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
+
     const messages = [{ role: 'user', content: [part] }];
     const args = makeArgs('openai/gpt-4o-mini', {
       messages,

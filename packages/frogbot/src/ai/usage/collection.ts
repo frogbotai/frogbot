@@ -88,18 +88,21 @@ export function resolveUsageCollection(
   if (!config.ai) {
     return { collections: config.collections, slug: USAGE_LOGS_SLUG };
   }
+
   const marked = config.collections.filter((collection) => collection.usageLog === true);
   if (marked.length > 1) {
     throw new Error(
       `[frogbot] Multiple collections marked \`usageLog: true\` (${marked.map((collection) => collection.slug).join(', ')}). Mark exactly one.`,
     );
   }
+
   const existing = marked[0];
   const slug = existing?.slug ?? USAGE_LOGS_SLUG;
   const base = defaultUsageCollection({
     userSlug: resolveUserSlug(config),
     chatsSlug,
   });
+
   const collections = resolveMarkedCollection({
     collectionLabel: 'AI usage-log',
     collections: config.collections,
@@ -111,5 +114,6 @@ export function resolveUsageCollection(
       .map((field) => ('name' in field ? field.name : undefined))
       .filter((name): name is string => !!name),
   });
+
   return { collections, slug };
 }

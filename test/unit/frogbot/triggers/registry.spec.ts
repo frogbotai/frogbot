@@ -119,6 +119,7 @@ describe('trigger ingress registry', () => {
       null,
       'received',
     ];
+
     for (const reference of references) {
       expect(() =>
         buildIngressRegistry({
@@ -239,6 +240,7 @@ describe('trigger ingress registry', () => {
         },
       ],
     })();
+
     const input = { count: '3' };
     const registry = buildIngressRegistry({
       agents: [

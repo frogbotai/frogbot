@@ -53,16 +53,20 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       unknown: { reasoning_effort: 'high' },
     };
+
     void claudeThinkingEffort(makeArgs({ model: 'anthropic/claude-sonnet-4', providerOptions }));
 
     const thinking = providerOptions['anthropic']?.['thinking'] as Record<string, unknown>;
+
     expect(thinking).toBeDefined();
+
     // The camelCase key is what the shipped SDK type declares and reads.
     const budgetTokens = thinking['budgetTokens'];
     assert(typeof budgetTokens === 'number', 'thinking.budgetTokens is a number');
     const roundTripped = {
       thinking: { type: 'enabled' as const, budgetTokens },
     } satisfies AnthropicProviderOptions;
+
     expect(roundTripped.thinking.budgetTokens).toBeTypeOf('number');
     expect(thinking['budgetTokens']).toBeTypeOf('number');
   });
@@ -74,6 +78,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       anthropic: { thinking: { budget_tokens: 3600 } },
     };
+
     void openaiReasoningEffort(
       makeArgs({ model: 'openai/o3', providerOptions, maxOutputTokens: 4096 }),
     );
@@ -84,6 +89,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
         'reasoningEffort'
       ] as OpenAIChatLanguageModelOptions['reasoningEffort'],
     } satisfies OpenAIChatLanguageModelOptions;
+
     expect(roundTripped.reasoningEffort).toBeDefined();
     expect(openai['reasoningEffort']).toBeDefined();
   });
@@ -97,6 +103,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
         unknown: { cache_control: { type: 'ephemeral' } },
       } as Record<string, Record<string, unknown>>,
     };
+
     void bedrockCachePoint(
       makeArgs({
         model: 'bedrock/anthropic.claude-sonnet-4',
@@ -116,8 +123,10 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const validEfforts: ReadonlyArray<
       NonNullable<OpenAIChatLanguageModelOptions['reasoningEffort']>
     > = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+
     // maxOutputTokens tiny vs budget → fraction >= 0.95 → 'max'.
     const effort = effortFromBudget(10000, 10000);
+
     expect(effort).toBeDefined();
     expect(validEfforts).toContain(effort as (typeof validEfforts)[number]);
   });
@@ -129,11 +138,13 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       unknown: { reasoning_effort: 'high' },
     };
+
     void vertexThinkingBudget(
       makeArgs({ model: 'vertex/gemini-2.5-pro', providerOptions, maxOutputTokens: 4096 }),
     );
 
     const google = providerOptions['google'] as GoogleGenerativeAIProviderOptions;
+
     expect(google.thinkingConfig?.thinkingBudget).toBeTypeOf('number');
   });
 
@@ -141,6 +152,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const claude: Record<string, Record<string, unknown>> = {
       unknown: { reasoning_effort: 'high', cache_control: { type: 'ephemeral' } },
     };
+
     const gpt: Record<string, Record<string, unknown>> = {
       unknown: { reasoning_effort: 'low' },
     };
@@ -149,6 +161,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
       await hook(
         makeArgs({ model: 'vercel/anthropic/claude-sonnet-4.6', providerOptions: claude }),
       );
+
       await hook(makeArgs({ model: 'vercel/openai/gpt-5.4-mini', providerOptions: gpt }));
     }
 
@@ -175,6 +188,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const fromEffort: Record<string, Record<string, unknown>> = {
       unknown: { reasoning_effort: 'high' },
     };
+
     const fromThinking: Record<string, Record<string, unknown>> = {
       anthropic: { thinking: { type: 'enabled', budgetTokens: 2048 } },
     };
@@ -182,6 +196,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     void openrouterReasoning(
       makeArgs({ model: 'openrouter/anthropic/claude-sonnet-4.6', providerOptions: fromEffort }),
     );
+
     void openrouterReasoning(
       makeArgs({ model: 'openrouter/anthropic/claude-sonnet-4.6', providerOptions: fromThinking }),
     );

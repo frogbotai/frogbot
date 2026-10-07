@@ -57,6 +57,7 @@ describe('twilio', () => {
       input: { from: '+15550001', to: '+15550002', body: 'Hello' },
       req,
     });
+
     const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
 
     expect(url.pathname).toBe('/2010-04-01/Accounts/AC_test/Messages.json');
@@ -90,6 +91,7 @@ describe('twilio', () => {
     const piece = createTwilio({ auth });
 
     await piece.lookupPhoneNumber({ input: { phoneNumber: '+1 555' }, req });
+
     await piece.makeCall({
       input: {
         from: '+15550001',
@@ -100,7 +102,9 @@ describe('twilio', () => {
       },
       req,
     });
+
     await piece.getMessage({ input: { messageSid: 'SM/1' }, req });
+
     await piece.customApiCall({
       input: { method: 'POST', path: '/2010-04-01/test.json', body: { Value: 3 } },
       req,

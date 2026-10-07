@@ -48,6 +48,7 @@ export function headersForError(err: unknown, status: number): Record<string, st
 
   const filtered = filterResponseHeaders(upstreamHeaders);
   const retry = buildRetryHeaders({ status, upstreamHeaders });
+
   return { ...filtered, ...retry };
 }
 

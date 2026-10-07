@@ -92,13 +92,14 @@ describe('pnpm lint', () => {
       'packages/frogbot/src/config/sanitize.spec.ts',
       "import { expect, it } from 'vitest';\n\n" +
         "it('drops the FrogBot plugins key from the payload config', () => {\n" +
-        '  const payloadConfig: unknown = {};\n' +
+        '  const payloadConfig: unknown = {};\n\n' +
         '  expect((payloadConfig as any).plugins).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any\n' +
         '});\n',
       ['--format', 'json'],
     );
 
     expect(result.code).toBe(1);
+
     expect(messages(result.stdout)).toEqual([
       expect.objectContaining({
         ruleId: null,
@@ -173,6 +174,7 @@ describe('pnpm lint', () => {
     ]);
 
     expect(result.code).toBe(2);
+
     expect(eslintResult(result)).toMatchObject({
       ok: false,
       groups: [[expect.stringContaining('pnpm lint --prune-suppressions')]],
@@ -275,6 +277,152 @@ describe('brand spelling (DR-056)', () => {
   });
 });
 
+describe('blank lines', () => {
+  function fixed(filename: string, code: string) {
+    const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));
+    const suppressions = path.join(dir, 'eslint-suppressions.json');
+
+    temporary.push(dir);
+    writeFileSync(suppressions, '{}');
+
+    const [result] = JSON.parse(
+      lintText(filename, code, [
+        '--fix-dry-run',
+        '--format',
+        'json',
+        '--suppressions-location',
+        suppressions,
+      ]).stdout,
+    );
+
+    return result.output ?? code;
+  }
+
+  it('separates returns, multiline declarations, loops, blocks, top-level declarations and methods', () => {
+    const code = [
+      'type Label = string;',
+      'type Count = number;',
+      'export function echo(value: Label): Label;',
+      'export function echo(value: Count): Count;',
+      'export function echo(value: Label | Count) {',
+      '  return value;',
+      '}',
+      'export class Counter {',
+      '  count = 0;',
+      '  step = 1;',
+      '  first() {',
+      '    return this.count;',
+      '  }',
+      '  next() {',
+      '    return this.count + this.step;',
+      '  }',
+      '}',
+      'export function collect(items: Label[]) {',
+      '  const seen = new Set<Label>();',
+      '  const total = items.length;',
+      '  const labels = items.map(',
+      '    (item) => item.toUpperCase(),',
+      '  );',
+      '  items.forEach((item) => {',
+      '    seen.add(item);',
+      '  });',
+      '  if (total > 1) {',
+      '    seen.clear();',
+      '  }',
+      '  for (const label of labels) seen.add(label);',
+      '  return seen;',
+      '}',
+      '',
+    ].join('\n');
+
+    expect(fixed('packages/frogbot/src/chat/example.ts', code)).toBe(
+      [
+        'type Label = string;',
+        '',
+        'type Count = number;',
+        '',
+        'export function echo(value: Label): Label;',
+        'export function echo(value: Count): Count;',
+        'export function echo(value: Label | Count) {',
+        '  return value;',
+        '}',
+        '',
+        'export class Counter {',
+        '  count = 0;',
+        '  step = 1;',
+        '  first() {',
+        '    return this.count;',
+        '  }',
+        '',
+        '  next() {',
+        '    return this.count + this.step;',
+        '  }',
+        '}',
+        '',
+        'export function collect(items: Label[]) {',
+        '  const seen = new Set<Label>();',
+        '  const total = items.length;',
+        '  const labels = items.map(',
+        '    (item) => item.toUpperCase(),',
+        '  );',
+        '',
+        '  items.forEach((item) => {',
+        '    seen.add(item);',
+        '  });',
+        '',
+        '  if (total > 1) {',
+        '    seen.clear();',
+        '  }',
+        '',
+        '  for (const label of labels) seen.add(label);',
+        '',
+        '  return seen;',
+        '}',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('separates setup, execution and assertion groups in a spec, keeping a multiline expect in its group', () => {
+    const code = [
+      "import { expect, it } from 'vitest';",
+      '',
+      "it('doubles', async () => {",
+      '  const sum = 1 + 1;',
+      '  expect(sum).toBe(2);',
+      '  expect({ sum }).toEqual({',
+      '    sum: 2,',
+      '  });',
+      '  await expect(Promise.resolve(sum)).resolves.not.toBe(3);',
+      '  const product = sum * 2;',
+      '  expect(product).toBe(4);',
+      '});',
+      '',
+    ].join('\n');
+
+    expect(fixed('test/unit/example.spec.ts', code)).toBe(
+      [
+        "import { expect, it } from 'vitest';",
+        '',
+        "it('doubles', async () => {",
+        '  const sum = 1 + 1;',
+        '',
+        '  expect(sum).toBe(2);',
+        '  expect({ sum }).toEqual({',
+        '    sum: 2,',
+        '  });',
+        '  await expect(Promise.resolve(sum)).resolves.not.toBe(3);',
+        '',
+        '  const product = sum * 2;',
+        '',
+        '  expect(product).toBe(4);',
+        '});',
+        '',
+      ].join('\n'),
+    );
+  });
+});
+
 describe('test lint', () => {
   function lintSpec(filename: string, code: string) {
     const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));
@@ -333,11 +481,13 @@ describe('test lint', () => {
       `  ${comment}\n` +
       '  expect(() => defineTool({})).toThrow(/slug/);\n' +
       '});\n';
+
     const filename = 'test/mcp-tools/int.spec.ts';
 
     expect(reported(filename, code('// @ts-expect-error'))).toEqual([
       '@typescript-eslint/ban-ts-comment 2',
     ]);
+
     expect(
       reported(
         filename,
@@ -351,9 +501,11 @@ describe('test lint', () => {
     const config = await new ESLint({ cwd: root }).calculateConfigForFile(
       'test/browser/navShell.browser.spec.ts',
     );
+
     const rules = Object.keys(config.rules);
 
     expect(rules.filter((rule) => rule.startsWith('vitest/'))).toEqual([]);
+
     expect(rules).toEqual(
       expect.arrayContaining([
         'playwright/prefer-web-first-assertions',
@@ -792,6 +944,7 @@ describe('typed and React lint', () => {
       { file: 'test/a.spec.ts', rule: 'typescript/require-await' },
       { file: 'test/b.spec.ts', rule: 'typescript/require-await' },
     ]);
+
     expect(exceptions(config, ['test/b.spec.ts', 'test/c.spec.ts'])).toEqual([
       { file: 'test/b.spec.ts', rule: 'typescript/require-await' },
     ]);
@@ -811,10 +964,12 @@ describe('typed and React lint', () => {
       'packages/ui/src/chat/markdown.tsx',
       'test/unit/scripts/lint.spec.ts',
     ]);
+
     expect(command?.args.slice(0, 4)).toEqual([
       ...(command?.targets ?? []),
       '--no-error-on-unmatched-pattern',
     ]);
+
     expect(command?.args).not.toContain('.');
   });
 
@@ -842,6 +997,7 @@ describe('typed and React lint', () => {
 
   it('pnpm check typed-lint skips when no changed file is lintable', () => {
     expect(typedLintCommand([], () => [])).toBeNull();
+
     expect(
       typedLintCommand([], () => ['docs/guides/lint.md', 'deleted-in-this-diff.ts']),
     ).toBeNull();

@@ -94,11 +94,14 @@ export const bedrockProvider: ProviderDefinition<'bedrock', BedrockConfig, Amazo
                     AmazonBedrockProviderSettings['credentialProvider']
                   >;
                 };
+
                 chain = module.fromNodeProviderChain();
               }
+
               return chain();
             },
           };
+
       const standard = createAmazonBedrock(settings);
       const mantleProviders = new Map<string, BedrockMantleProvider>();
       const languageModel: AmazonBedrockProvider['languageModel'] = (modelId) => {
@@ -114,9 +117,12 @@ export const bedrockProvider: ProviderDefinition<'bedrock', BedrockConfig, Amazo
           mantle = createBedrockMantle({ ...settings, baseURL });
           mantleProviders.set(key, mantle);
         }
+
         return sdk.shape === 'chat' ? mantle.chat(modelId) : mantle.responses(modelId);
       };
+
       const provider = ((modelId: string) => languageModel(modelId)) as AmazonBedrockProvider;
+
       return Object.assign(provider, standard, { languageModel });
     },
   };

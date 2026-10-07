@@ -21,6 +21,7 @@ const req = () =>
     },
     user: null,
   }) as never;
+
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -153,6 +154,7 @@ describe('stripe actions', () => {
       .mockImplementation(() =>
         Promise.resolve(response({ data: [{ id: 'resource', name: 'Frog' }] })),
       );
+
     vi.stubGlobal('fetch', fetch);
     const stripe = createStripe({ auth });
     const client = await stripe.client({ req: req() });

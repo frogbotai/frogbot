@@ -12,7 +12,9 @@ export async function CollectionViewSwitcher(props: AdminViewServerProps) {
     props.collectionConfig?.admin.custom?.frogbot as
       { descriptionComponent?: PayloadComponent } | undefined
   )?.descriptionComponent;
+
   const description = props.collectionConfig?.admin.description;
+
   return (
     <>
       {descriptionComponent ? (

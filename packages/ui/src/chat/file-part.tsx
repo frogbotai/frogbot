@@ -4,6 +4,7 @@ export function FilePart({ part }: { part: FileUIPart | ReasoningFileUIPart }) {
   const filename = part.type === 'file' ? part.filename : undefined;
   const label =
     filename || (part.type === 'reasoning-file' ? 'Reasoning attachment' : 'Attachment');
+
   if (part.mediaType.startsWith('image/')) {
     return (
       <figure data-part={part.type} className="fb-file-part fb-file-part--image">
@@ -12,6 +13,7 @@ export function FilePart({ part }: { part: FileUIPart | ReasoningFileUIPart }) {
       </figure>
     );
   }
+
   return (
     <a
       data-part={part.type}

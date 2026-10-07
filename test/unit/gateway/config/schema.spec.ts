@@ -14,6 +14,7 @@ afterEach(() => {
 describe('parseGatewayConfig — provider credentials', () => {
   it('accepts an omitted API key when the provider credential env var is set', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
     expect(parseGatewayConfig(JSON.parse('{"providers":{"openai":{}}}'))).toEqual({
       providers: { openai: {} },
     });
@@ -21,6 +22,7 @@ describe('parseGatewayConfig — provider credentials', () => {
 
   it('accepts an undefined API key when the provider credential env var is set', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
     expect(
       parseGatewayConfig({ providers: providerMap({ openai: { apiKey: undefined } }) }),
     ).toEqual({
@@ -30,6 +32,7 @@ describe('parseGatewayConfig — provider credentials', () => {
 
   it('names the config key and provider-defined env var when credentials are omitted', () => {
     vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', undefined);
+
     expect(() => parseGatewayConfig(JSON.parse('{"providers":{"google":{}}}'))).toThrow(
       /providers\.google\.apiKey.*GOOGLE_GENERATIVE_AI_API_KEY/,
     );
@@ -40,6 +43,7 @@ describe('parseGatewayConfig — provider credentials', () => {
     ['   ', 'whitespace'],
   ])('rejects an %s explicit API key even when the env fallback exists', (apiKey) => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+
     expect(() => parseGatewayConfig({ providers: providerMap({ openai: { apiKey } }) })).toThrow(
       'providers.openai.apiKey must be a non-empty string',
     );
@@ -47,6 +51,7 @@ describe('parseGatewayConfig — provider credentials', () => {
 
   it('rejects an empty credential env var', () => {
     vi.stubEnv('OPENAI_API_KEY', '');
+
     expect(() => parseGatewayConfig(JSON.parse('{"providers":{"openai":{}}}'))).toThrow(
       /providers\.openai\.apiKey.*OPENAI_API_KEY/,
     );
@@ -54,6 +59,7 @@ describe('parseGatewayConfig — provider credentials', () => {
 
   it('uses Replicate apiToken and its provider-defined env var', () => {
     vi.stubEnv('REPLICATE_API_TOKEN', 'r8-env');
+
     expect(parseGatewayConfig(JSON.parse('{"providers":{"replicate":{}}}'))).toEqual({
       providers: { replicate: {} },
     });
@@ -63,6 +69,7 @@ describe('parseGatewayConfig — provider credentials', () => {
     vi.stubEnv('KLINGAI_API_KEY', undefined);
     vi.stubEnv('KLINGAI_ACCESS_KEY', 'access-env');
     vi.stubEnv('KLINGAI_SECRET_KEY', undefined);
+
     expect(() => parseGatewayConfig(JSON.parse('{"providers":{"klingai":{}}}'))).toThrow(
       /providers\.klingai\.secretKey.*KLINGAI_SECRET_KEY/,
     );
@@ -136,6 +143,7 @@ describe('parseGatewayConfig — openai-compatible providers', () => {
     const result = parseGatewayConfig({
       providers: { ollama: { baseURL: 'http://localhost:11434/v1' } },
     });
+
     expect(result.providers.ollama).toEqual({ baseURL: 'http://localhost:11434/v1' });
   });
 
@@ -146,6 +154,7 @@ describe('parseGatewayConfig — openai-compatible providers', () => {
         ollama: { baseURL: 'http://localhost:11434/v1' },
       }),
     });
+
     expect(result.providers.ollama).toBeDefined();
     expect(result.providers.openai).toBeDefined();
   });
@@ -214,6 +223,7 @@ describe('defineConfig — per-key provider typing', () => {
     const config = defineConfig({
       providers: { openai: { apiKey: process.env.OPENAI_API_KEY } },
     });
+
     expect(config.providers.openai).toEqual({ apiKey: process.env.OPENAI_API_KEY });
   });
 
@@ -228,6 +238,7 @@ describe('defineConfig — per-key provider typing', () => {
         ollama: { baseURL: 'http://localhost:11434/v1' },
       },
     });
+
     expect(config.providers.ollama).toEqual({ baseURL: 'http://localhost:11434/v1' });
   });
 });

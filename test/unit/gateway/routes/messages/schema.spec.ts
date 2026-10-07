@@ -58,6 +58,7 @@ describe('parseMessagesRequest — content blocks', () => {
         },
       ],
     });
+
     expect(Array.isArray(result.messages[0].content)).toBe(true);
   });
 
@@ -78,6 +79,7 @@ describe('parseMessagesRequest — content blocks', () => {
       ...valid,
       messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: '' }] }],
     });
+
     expect((result.messages[0].content as Array<{ type: string }>)[0].type).toBe('tool_result');
   });
 
@@ -88,6 +90,7 @@ describe('parseMessagesRequest — content blocks', () => {
         { role: 'assistant', content: [{ type: 'tool_use', id: '', name: 'x', input: {} }] },
       ],
     });
+
     expect((result.messages[0].content as Array<{ type: string }>)[0].type).toBe('tool_use');
   });
 
@@ -96,6 +99,7 @@ describe('parseMessagesRequest — content blocks', () => {
       ...valid,
       messages: [{ role: 'user', content: [{ type: 'future_block', extra: 1 }] }],
     });
+
     expect((result.messages[0].content as Array<{ type: string }>)[0].type).toBe('future_block');
   });
 });
@@ -111,11 +115,13 @@ describe('parseMessagesRequest — cache_control & system', () => {
         },
       ],
     });
+
     expect(result.messages).toHaveLength(1);
   });
 
   test('accepts string-form system', () => {
     const result = parseMessagesRequest({ ...valid, system: 'You are helpful.' });
+
     expect(result.system).toBe('You are helpful.');
   });
 
@@ -124,6 +130,7 @@ describe('parseMessagesRequest — cache_control & system', () => {
       ...valid,
       system: [{ type: 'text', text: 'sys', cache_control: { type: 'ephemeral' } }],
     });
+
     expect(Array.isArray(result.system)).toBe(true);
   });
 
@@ -138,6 +145,7 @@ describe('parseMessagesRequest — tools & optional params', () => {
       ...valid,
       tools: [{ name: 'search', description: 'find', input_schema: { type: 'object' } }],
     });
+
     expect(result.tools).toHaveLength(1);
   });
 
@@ -152,11 +160,13 @@ describe('parseMessagesRequest — tools & optional params', () => {
       string,
       unknown
     >;
+
     expect(result.some_future_field).toBe('kept');
   });
 
   test('reports the dotted path of the failing field', () => {
     const parse = () => parseMessagesRequest({ ...valid, max_tokens: 0 });
+
     expect(parse).toThrow(RequestValidationError);
     expect(parse).toThrow(expect.objectContaining({ param: 'max_tokens' }));
   });

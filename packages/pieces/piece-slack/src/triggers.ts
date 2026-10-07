@@ -11,10 +11,12 @@ const emptyInput = z.object({});
 const messageFilters = {
   ignoreBots: z.boolean().default(false),
 };
+
 const selfFilters = {
   ...messageFilters,
   ignoreSelfMessages: z.boolean().default(false),
 };
+
 const channel = z.string().min(1).meta({ label: 'Channel ID' });
 const user = z.string().min(1).meta({ label: 'User ID' });
 const eventOutput = slackValue;
@@ -155,6 +157,7 @@ export const channelMentionCreated = defineAppTrigger({
     ) {
       return [];
     }
+
     if (args.input.ignoreBots && field(value, 'bot_id')) return [];
 
     const text = String(field(value, 'text') ?? '');
@@ -265,6 +268,7 @@ export const channelCommandCreated = defineAppTrigger({
     ) {
       return [];
     }
+
     if (args.input.ignoreBots && field(value, 'bot_id')) return [];
 
     const parsed = command(field(value, 'text'), args.input.user, args.input.commands);

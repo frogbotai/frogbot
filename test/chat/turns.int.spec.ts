@@ -396,6 +396,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     });
 
     expect(response.status).toBe(200);
+
     await response.text();
 
     const messages = await storedMessages(body.chatId);
@@ -444,6 +445,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     });
 
     expect(response.status).toBe(200);
+
     await response.text();
 
     const [, continued] = await storedMessages(body.chatId);
@@ -477,6 +479,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     await vi.waitFor(() => expect(model.requests).toHaveLength(3), { timeout: 10_000 });
 
     expect(JSON.stringify(model.requests[2].messages)).toContain('Also sand it first.');
+
     await vi.waitFor(async () =>
       expect((await storedMessages(body.chatId)).map(({ role }) => role)).toEqual([
         'user',
@@ -510,6 +513,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     hold.resolve();
 
     await expect(running).resolves.toMatchObject({ status: 200 });
+
     await vi.waitFor(() => expect(model.requests).toHaveLength(3));
   });
 
@@ -520,6 +524,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
       chatId: body.chatId,
       prompt: 'Original.',
     });
+
     const url = `${booted.baseUrl}/api/agents/${questionAgentSlug}/chats/${body.chatId}/messages/${queued.body.messageId}`;
 
     const edited = await fetch(url, {
@@ -733,6 +738,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     });
 
     expect(response.status).toBe(200);
+
     await response.text();
 
     expect(model.requests[1]).toMatchObject({ model: 'thinker', reasoning_effort: 'low' });
@@ -779,6 +785,7 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
     const req = await booted.frogbot.createRequest({});
 
     await claimTurn({ req, chatId: body.chatId, from: 'idle' });
+
     await booted.frogbot.update({
       collection: 'frogbot-chat-turns',
       id: String(body.chatId),

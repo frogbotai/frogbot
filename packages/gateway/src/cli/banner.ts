@@ -25,6 +25,7 @@ const loggerLevel = (logger: GatewayLogger | LoggerOptions | undefined): string 
 export function startupBanner(args: StartupBannerArgs): string {
   const providers = configuredProviders(args.config);
   const hooks = hookSummary(args.config.hooks);
+
   return [
     'FrogBot Gateway',
     `listen: http://${displayHost(args.host)}:${args.port}`,
@@ -47,13 +48,16 @@ function modalities(config: GatewayConfig): string[] {
   const names = new Set(configuredProviders(config));
   const out = ['chat', 'embeddings', 'images', 'audio', 'video', 'rerank'];
   if (names.size === 0) return ['none'];
+
   return out;
 }
 
 function hookSummary(hooks: Hooks | undefined): string[] {
   if (!hooks) return [];
+
   return hookSlots.flatMap((slot) => {
     const count = hooks[slot]?.length ?? 0;
+
     return count > 0 ? [`${slot}:${count}`] : [];
   });
 }

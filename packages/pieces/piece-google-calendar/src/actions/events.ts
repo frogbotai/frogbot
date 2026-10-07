@@ -22,9 +22,11 @@ function eventBody(input: z.output<typeof eventFields>): calendar_v3.Schema$Even
   if (input.startDateTime !== undefined) body.start = { dateTime: input.startDateTime };
   if (input.endDateTime !== undefined) body.end = { dateTime: input.endDateTime };
   if (input.attendees !== undefined) body.attendees = input.attendees.map((email) => ({ email }));
+
   for (const field of ['location', 'description', 'colorId'] as const) {
     if (input[field] !== undefined) body[field] = input[field];
   }
+
   for (const field of [
     'guestsCanModify',
     'guestsCanInviteOthers',
@@ -32,11 +34,13 @@ function eventBody(input: z.output<typeof eventFields>): calendar_v3.Schema$Even
   ] as const) {
     if (input[field] !== undefined) body[field] = input[field];
   }
+
   if (input.createMeetLink) {
     body.conferenceData = {
       createRequest: { requestId: randomUUID(), conferenceSolutionKey: { type: 'hangoutsMeet' } },
     };
   }
+
   return body;
 }
 
@@ -54,6 +58,7 @@ const createInput = eventFields
     message: 'End date must be after start date.',
     path: ['endDateTime'],
   });
+
 export const createEvent = defineAction({
   slug: 'createEvent',
   description:
@@ -64,9 +69,11 @@ export const createEvent = defineAction({
   options: { calendarId: calendars('writer'), colorId: colors },
   async run({ client, input, req }) {
     const body = eventBody(input);
+
     body.end ??= {
       dateTime: new Date(Date.parse(input.startDateTime) + 30 * 60_000).toISOString(),
     };
+
     return (
       await client.events.insert(
         {
@@ -87,6 +94,7 @@ const updateInput = eventReference
     message: 'End date must be after start date.',
     path: ['endDateTime'],
   });
+
 export const updateEvent = defineAction({
   slug: 'updateEvent',
   description:
@@ -109,6 +117,7 @@ export const updateEvent = defineAction({
     ) {
       throw new Error('End date must be after start date.');
     }
+
     return (
       await client.events.patch(
         {
@@ -130,6 +139,7 @@ const attendeesInput = eventReference.extend({
   attendees: z.array(z.email()).min(1),
   sendUpdates: sendUpdates.optional(),
 });
+
 export const addAttendees = defineAction({
   slug: 'addAttendees',
   description:
@@ -141,6 +151,7 @@ export const addAttendees = defineAction({
   async run({ client, input, req }) {
     const reference = { calendarId: input.calendarId, eventId: input.eventId };
     const { data: existing } = await client.events.get(reference, requestOptions(req));
+
     return (
       await client.events.patch(
         {
@@ -167,6 +178,7 @@ const quickInput = z.object({
   text: z.string().trim().min(1),
   sendUpdates: sendUpdates.default('none'),
 });
+
 export const createQuickEvent = defineAction({
   slug: 'createQuickEvent',
   description:
@@ -192,6 +204,7 @@ export const deleteEvent = defineAction({
   options: { calendarId: calendars('writer') },
   async run({ client, input, req }) {
     await client.events.delete(input, requestOptions(req));
+
     return { deleted: true as const };
   },
 });

@@ -25,12 +25,14 @@ export function NavSection({ children, id, title }: NavSectionProps) {
 
   useEffect(() => {
     let current = true;
+
     void getPreference<NavSectionPreference | null>(preferenceKey).then((preference) => {
       if (current) {
         setCollapsed(preference?.collapsed === true);
         setHydrated(true);
       }
     });
+
     return () => {
       current = false;
     };

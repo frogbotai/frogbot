@@ -14,6 +14,7 @@ const userMessage: UIMessage = {
   role: 'user',
   parts: [{ type: 'text', text: 'Explain why frogs sing at night' }],
 };
+
 const assistantMessage: UIMessage = {
   id: 'assistant-1',
   role: 'assistant',
@@ -69,6 +70,7 @@ function makeReq({
   const findByID = vi
     .fn()
     .mockResolvedValue({ id: 'chat-1', title, user: 'user-1', agent: 'helper' });
+
   const find = vi.fn().mockResolvedValue({ docs: [userMessage] });
   const update = vi.fn().mockResolvedValue({ id: 'chat-1' });
   const error = vi.fn();
@@ -109,6 +111,7 @@ function makeReq({
     },
     user: { id: 'user-1' },
   } as unknown as FrogBotRequest;
+
   return { req, generateText, findByID, find, update, error };
 }
 

@@ -22,6 +22,7 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
     if (msg.cache_control) {
       result.providerOptions = { unknown: { cache_control: msg.cache_control } };
     }
+
     return result;
   }
 
@@ -47,10 +48,12 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
             param: `${path}.image_url.url`,
           });
         }
+
         // G55: forward `detail` (low/high/auto) via the `unknown` namespace —
         // forwardLanguageParams remaps it to `<provider>.imageDetail`, the key
         // the AI SDK's OpenAI converter reads for outbound `image_url.detail`.
         const detail = part.image_url.detail;
+
         return {
           type: 'file',
           mediaType: dataUrl.mediaType,
@@ -70,6 +73,7 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
             param: `${path}.input_audio.format`,
           });
         }
+
         return {
           type: 'file',
           mediaType,
@@ -123,5 +127,6 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
   if (msg.cache_control) {
     result.providerOptions = { unknown: { cache_control: msg.cache_control } };
   }
+
   return result;
 }

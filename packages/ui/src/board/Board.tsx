@@ -28,6 +28,7 @@ export type BoardProps<T> = UseBoardProps<T> & {
 
 const collisionDetection: CollisionDetection = (args) => {
   const within = pointerWithin(args);
+
   return within.length ? within : rectIntersection(args);
 };
 
@@ -35,6 +36,7 @@ export function Board<T>(props: BoardProps<T>) {
   const board = useBoard(props);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const active = props.rows.find((row) => props.getId(row) === board.activeId);
+
   return (
     <DndContext collisionDetection={collisionDetection} sensors={sensors} {...board.handlers}>
       <div className="frog-board">

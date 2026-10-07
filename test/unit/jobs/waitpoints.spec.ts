@@ -401,6 +401,7 @@ describe('workflow wait creation', () => {
         return Promise.reject(failure);
       })
       .mockResolvedValueOnce(undefined);
+
     const args = workflowArgs({ jobId: 'root', results: {} });
     const handler: WorkflowHandler = async ({ waitFor }) => {
       await waitFor('approval', { onWait });

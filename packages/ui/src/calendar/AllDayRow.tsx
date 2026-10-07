@@ -25,6 +25,7 @@ function AllDayCell<T extends CalendarEvent>({
     },
     id: `all-day-${key}`,
   });
+
   return (
     <div className="frog-calendar__all-day-cell" ref={drop.setNodeRef}>
       {events

@@ -18,6 +18,7 @@ export const getEmail = defineAction({
     const message = (
       await client.users.messages.get({ userId: 'me', id: input.messageId, format: input.format })
     ).data;
+
     const email = input.format === 'full' ? await saveAttachments(client, req, message) : message;
 
     return email as z.output<typeof emailOutput>;

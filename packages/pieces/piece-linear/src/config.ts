@@ -25,6 +25,7 @@ export const linearOptions = z.object({
     .meta({ label: 'Channel mode' }),
   botUsername: z.string().min(1).optional().meta({ label: 'Bot username' }),
 });
+
 export type LinearOptions = z.output<typeof linearOptions>;
 
 export const teamId = z.string().meta({ label: 'Team' });

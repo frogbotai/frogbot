@@ -285,6 +285,7 @@ export function channelFixture({
       slug,
       new Request('http://localhost/webhook', { method: 'POST', body: JSON.stringify(body) }),
     );
+
   const deliver = (id = 'message-1', threadId = 'channel:thread-1', extra = {}) =>
     host.webhook(
       slug,

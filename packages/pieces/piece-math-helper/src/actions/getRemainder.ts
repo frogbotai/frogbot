@@ -6,6 +6,7 @@ const inputSchema = z.object({
   firstNumber: z.number().meta({ label: 'First Number' }),
   secondNumber: z.number().meta({ label: 'Second Number' }),
 });
+
 const output = z.number();
 
 export const getRemainder = defineAction({

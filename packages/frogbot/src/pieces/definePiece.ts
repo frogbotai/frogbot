@@ -32,18 +32,21 @@ const reserved = new Set([
   'triggers',
   'webhook',
 ]);
+
 const methodSlug = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 type ActionMetadata = {
   definition: PieceActionDefinition;
   tool: AnyTool;
 };
+
 type InstanceMetadata = {
   actions: AnyTool[];
   definition: PieceDefinition;
   options: object;
   auth: unknown;
 };
+
 type LiteralSlugEntries<TEntries, TMessage extends string> = {
   [TKey in keyof TEntries]: TEntries[TKey] extends { slug: infer TSlug }
     ? string extends TSlug
@@ -51,6 +54,7 @@ type LiteralSlugEntries<TEntries, TMessage extends string> = {
       : TEntries[TKey]
     : TEntries[TKey];
 };
+
 type LiteralSlugs<T extends PieceDefinition> = PieceDefinition extends T
   ? unknown
   : {
@@ -78,24 +82,28 @@ export function isPieceInstance(value: unknown): value is PieceInstance {
 export function pieceActionTool(value: unknown): AnyTool | undefined {
   if (!isPieceAction(value)) return undefined;
   const metadata: ActionMetadata = Reflect.get(value, actionMetadata);
+
   return metadata.tool;
 }
 
 export function pieceActionDefinition(value: unknown): ActionMetadata['definition'] | undefined {
   if (!isPieceAction(value)) return undefined;
   const metadata: ActionMetadata = Reflect.get(value, actionMetadata);
+
   return metadata.definition;
 }
 
 export function pieceInstanceTools(value: unknown): AnyTool[] | undefined {
   if (!isPieceInstance(value)) return undefined;
   const metadata: InstanceMetadata = Reflect.get(value, instanceMetadata);
+
   return [...metadata.actions];
 }
 
 export function pieceFactoryDefinition(factory: object): PieceDefinition {
   const definition = definitions.get(factory);
   if (!definition) throw new Error('[frogbot] Expected a factory returned by definePiece.');
+
   return definition;
 }
 
@@ -105,6 +113,7 @@ export function pieceInstanceDefinition(instance: PieceInstance): PieceDefinitio
 
 export function pieceTriggerInstance(reference: unknown): PieceInstance | undefined {
   if (!reference || typeof reference !== 'object') return undefined;
+
   return triggerInstances.get(reference);
 }
 
@@ -121,7 +130,9 @@ export function pieceInstanceRuntime(instance: PieceInstance): {
   if (!isPieceInstance(instance)) {
     throw new Error('[frogbot] Expected a piece instance returned by definePiece.');
   }
+
   const metadata: InstanceMetadata = Reflect.get(instance, instanceMetadata);
+
   return {
     client: instance.client,
     definition: metadata.definition,
@@ -156,48 +167,57 @@ export function definePiece<const T extends PieceDefinition>(
   }
 
   const actionSlugs = new Set<string>();
+
   for (const action of definition.actions) {
     if (!methodSlug.test(action.slug)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' action slug '${action.slug}' is not a valid method name.`,
       );
     }
+
     if (reserved.has(action.slug)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' action slug '${action.slug}' is reserved.`,
       );
     }
+
     if (actionSlugs.has(action.slug)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' declares duplicate action '${action.slug}'.`,
       );
     }
+
     actionSlugs.add(action.slug);
   }
 
   const triggerSlugs = new Set<string>();
+
   for (const trigger of definition.triggers ?? []) {
     if (!methodSlug.test(trigger.slug)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' trigger slug '${trigger.slug}' is not a valid method name.`,
       );
     }
+
     if (reserved.has(trigger.slug) || actionSlugs.has(trigger.slug)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' trigger slug '${trigger.slug}' is reserved.`,
       );
     }
+
     if (triggerSlugs.has(trigger.slug)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' declares duplicate trigger '${trigger.slug}'.`,
       );
     }
+
     triggerSlugs.add(trigger.slug);
     if (trigger.type === 'app' && !trigger.event) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' app trigger '${trigger.slug}' requires an event.`,
       );
     }
+
     if (trigger.type === 'webhook' && (!trigger.onEnable || !trigger.onDisable)) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' webhook trigger '${trigger.slug}' requires onEnable and onDisable.`,
@@ -208,10 +228,12 @@ export function definePiece<const T extends PieceDefinition>(
   if (definition.auth && !definition.client) {
     throw new Error(`[frogbot] Piece '${definition.slug}' declares auth but no client.`);
   }
+
   if (definition.oauth) {
     if (!definition.auth) {
       throw new Error(`[frogbot] Piece '${definition.slug}' declares OAuth but no auth schema.`);
     }
+
     for (const [field, value] of [
       ['authorizationUrl', definition.oauth.authorizationUrl],
       ['tokenUrl', definition.oauth.tokenUrl],
@@ -223,6 +245,7 @@ export function definePiece<const T extends PieceDefinition>(
         throw new Error(`[frogbot] Piece '${definition.slug}' OAuth ${field} must be an HTTP URL.`);
       }
     }
+
     if (
       !Array.isArray(definition.oauth.scopes) ||
       definition.oauth.scopes.some((scope) => typeof scope !== 'string' || !scope.trim())
@@ -231,6 +254,7 @@ export function definePiece<const T extends PieceDefinition>(
         `[frogbot] Piece '${definition.slug}' OAuth scopes must be non-empty strings.`,
       );
     }
+
     if (
       definition.oauth.params &&
       Object.values(definition.oauth.params).some((value) => typeof value !== 'string')
@@ -276,10 +300,12 @@ export function definePiece<const T extends PieceDefinition>(
         `[frogbot] Piece '${definition.slug}' OAuth app requires clientId and clientSecret.`,
       );
     }
+
     const auth =
       definition.auth && configuredAuth !== undefined
         ? definition.auth.parse(configuredAuth)
         : undefined;
+
     const options = definition.options ? definition.options.parse(rawOptions) : {};
     const clients = new WeakMap<object, WeakMap<object, Promise<unknown>>>();
     const factoryKey = {};
@@ -309,6 +335,7 @@ export function definePiece<const T extends PieceDefinition>(
             ? definition.client({ auth: credential.auth, options })
             : definition.client({ auth: undefined, options }),
         );
+
         runtimeClients.set(credential.key, pending);
         void pending.catch(() => runtimeClients?.delete(credential.key));
       }
@@ -321,6 +348,7 @@ export function definePiece<const T extends PieceDefinition>(
         (definition.triggers ?? []).map((trigger) => [trigger.slug, Object.freeze({ ...trigger })]),
       ),
     );
+
     const instance: Record<string | symbol, unknown> = {
       slug,
       piece: definition.slug,
@@ -330,6 +358,7 @@ export function definePiece<const T extends PieceDefinition>(
     };
 
     const tools: AnyTool[] = [];
+
     for (const action of definition.actions) {
       const invoke = async ({ input, req }: { input: unknown; req?: FrogBotRequest }) => {
         const resolvedReq = await request(req);
@@ -340,8 +369,10 @@ export function definePiece<const T extends PieceDefinition>(
           options,
           req: resolvedReq,
         });
+
         return action.output ? action.output.parse(result) : result;
       };
+
       const tool: AnyTool = {
         slug: `${slug}_${action.slug}`,
         description: action.description,
@@ -358,6 +389,7 @@ export function definePiece<const T extends PieceDefinition>(
     Object.defineProperty(instance, instanceMetadata, {
       value: { actions: tools, definition, options, auth },
     });
+
     Object.defineProperty(instance, pieceCapabilities, {
       value: {
         webhook: definition.webhook,
@@ -378,5 +410,6 @@ export function definePiece<const T extends PieceDefinition>(
   }
 
   definitions.set(factory, definition);
+
   return factory;
 }

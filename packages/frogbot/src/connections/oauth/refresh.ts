@@ -19,6 +19,7 @@ export async function refreshOAuthConnection({
   req: FrogBotRequest;
 }): Promise<ConnectionStoredValue | undefined> {
   const deadline = Date.now() + 30_000;
+
   for (;;) {
     try {
       return await store.withLock({
@@ -36,10 +37,13 @@ export async function refreshOAuthConnection({
           ) {
             return row;
           }
+
           const unchanged = async () => {
             const current = await locked.get();
+
             return { current, same: JSON.stringify(current) === JSON.stringify(row) };
           };
+
           let credential;
           let metadata;
           try {
@@ -49,6 +53,7 @@ export async function refreshOAuthConnection({
               req,
               signal: locked.signal,
             });
+
             oauthAuth({ piece, tokens: credential });
             metadata = oauthTokenMetadata({ tokens: credential, scopes: row.scopes });
             if (metadata.expiresAt && Date.parse(metadata.expiresAt) <= Date.now()) {
@@ -60,9 +65,11 @@ export async function refreshOAuthConnection({
             await locked.upsert({ ...row, status: 'error' });
             throw new OAuthError('refresh');
           }
+
           const { current, same } = await unchanged();
           if (!same) return current;
           const saved = await locked.upsert({ ...row, ...metadata, credential, status: 'active' });
+
           return { ...saved, credential };
         },
       });

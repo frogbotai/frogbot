@@ -12,6 +12,7 @@ expectTypeOf<Parameters<typeof dropbox.createTextFile>[0]['input']>().toEqualTyp
   mute?: boolean | undefined;
   strictConflict?: boolean | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _file>['.tag']>().toEqualTypeOf<'file' | 'folder' | 'deleted'>();
 expectTypeOf<Awaited<typeof _file>['name']>().toEqualTypeOf<string>();
 

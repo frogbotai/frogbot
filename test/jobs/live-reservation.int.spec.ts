@@ -90,6 +90,7 @@ describe(`live reservation states: ${adapterName}`, () => {
       input: { marker: 'ignored' },
       jobId,
     });
+
     const after = await readJob(first.id);
     const rows = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
@@ -131,6 +132,7 @@ describe(`live reservation states: ${adapterName}`, () => {
       collection: 'payload-jobs',
       limit: 0,
     });
+
     const effects = await fixture.payload.db.find({ collection: 'effects', limit: 0 });
 
     expect(duplicate).toEqual(first);

@@ -24,6 +24,7 @@ describe('runInit', () => {
       '.gitignore',
       'README.md',
     ];
+
     expect(written.filter((file) => existsSync(join(root, file)))).toEqual(written);
 
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
@@ -31,11 +32,13 @@ describe('runInit', () => {
       scripts: Record<string, string>;
       dependencies: Record<string, string>;
     };
+
     expect(pkg.name).toBe('my-gateway');
     expect(pkg.scripts.dev).toBe('tsx watch src/server.ts');
     expect(pkg.dependencies['@frogbotai/gateway']).toMatch(/^(\^\d|latest)/);
 
     const server = readFileSync(join(root, 'src/server.ts'), 'utf8');
+
     expect(server).toContain('createGateway');
     expect(server).toContain('fetch: gateway.handler');
 

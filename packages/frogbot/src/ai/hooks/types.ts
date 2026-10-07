@@ -19,15 +19,23 @@ export type AIHookContext = {
 };
 
 export type AIBeforeOperationHookArgs = BeforeOperationHookArgs & AIHookContext;
+
 export type AIBeforeUpstreamHookArgs = BeforeUpstreamHookArgs & AIHookContext;
+
 export type AIAfterUpstreamHookArgs = AfterUpstreamHookArgs & AIHookContext;
+
 export type AIAfterErrorHookArgs = AfterErrorHookArgs & AIHookContext;
+
 export type AIAfterOperationHookArgs = AfterOperationHookArgs & AIHookContext;
 
 export type AIBeforeOperationHook = (args: AIBeforeOperationHookArgs) => void | Promise<void>;
+
 export type AIBeforeUpstreamHook = (args: AIBeforeUpstreamHookArgs) => void | Promise<void>;
+
 export type AIAfterUpstreamHook = (args: AIAfterUpstreamHookArgs) => void | Promise<void>;
+
 export type AIAfterErrorHook = (args: AIAfterErrorHookArgs) => void | Promise<void>;
+
 export type AIAfterOperationHook = (args: AIAfterOperationHookArgs) => void | Promise<void>;
 
 export type AIHooks = {

@@ -57,9 +57,11 @@ function fixture(
       }),
     ),
   );
+
   const registry = {
     'typesafe-ai': createTypeSafeAi({ apiKey: 'test-provider-key', fetch }),
   } as unknown as ProviderRegistry;
+
   const app = createApp({
     registry,
     catalog: DEFAULT_MODEL_CATALOG,
@@ -128,6 +130,7 @@ describe('standalone evaluation route', () => {
       basePath: '/gateway',
       response: { ...response, answers: { refunded: response.answers.refunded } },
     });
+
     const body = {
       model: 'typesafe-ai/jev-latest',
       state: 'refund requested',
@@ -151,6 +154,7 @@ describe('standalone evaluation route', () => {
       allowlists: new Map([['typesafe-ai', new Set(['typesafe-ai/jev-latest'])]]),
       response: { ...response, answers: { refunded: response.answers.refunded } },
     });
+
     const body = { state: 'refund', questions: { refunded: questions.refunded } };
 
     const allowed = await app.fetch(post('/evaluate', { ...body, model: 'typesafe-ai/jev' }));
@@ -185,6 +189,7 @@ describe('standalone evaluation route', () => {
         answers: { refunded: { type: 'noul', noul: 3 } },
       },
     });
+
     const malformedAnswer = await invalid.app.fetch(
       post('/evaluate', {
         model: 'typesafe-ai/jev',

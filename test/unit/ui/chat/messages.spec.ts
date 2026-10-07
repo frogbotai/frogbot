@@ -28,6 +28,7 @@ describe('message mapping', () => {
       role: 'user' as const,
       parts: [{ type: 'text' as const, text: 'hello' }],
     };
+
     expect(messageDocumentToUIMessage({ ...message, metadata: null })).toEqual(message);
     expect(uiMessageToDocument(message, 'chat-1')).toEqual({ ...message, chat: 'chat-1' });
   });

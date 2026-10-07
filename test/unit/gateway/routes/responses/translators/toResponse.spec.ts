@@ -110,6 +110,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.status).toBe('completed');
     expect(result.incomplete_details).toBeNull();
   });
@@ -125,6 +126,7 @@ describe('toResponsesResponse', () => {
         usage: baseUsage,
       },
     });
+
     expect(result.status).toBe('completed');
     expect(result.incomplete_details).toBeNull();
   });
@@ -134,6 +136,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'partial', finishReason: 'length', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.status).toBe('incomplete');
     expect(result.incomplete_details).toEqual({ reason: 'max_output_tokens' });
   });
@@ -148,6 +151,7 @@ describe('toResponsesResponse', () => {
         usage: baseUsage,
       },
     });
+
     expect(result.status).toBe('incomplete');
     expect(result.incomplete_details).toEqual({ reason: 'content_filter' });
   });
@@ -157,6 +161,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: '', finishReason: 'error', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.status).toBe('failed');
     expect(result.incomplete_details).toBeNull();
   });
@@ -166,6 +171,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: '', finishReason: 'other', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.status).toBe('failed');
     expect(result.incomplete_details).toBeNull();
   });
@@ -183,6 +189,7 @@ describe('toResponsesResponse', () => {
         },
       },
     });
+
     expect(result.usage.input_tokens_details).toEqual({ cached_tokens: 12 });
   });
 
@@ -203,6 +210,7 @@ describe('toResponsesResponse', () => {
         },
       },
     });
+
     expect(result.usage.input_tokens_details).toEqual({ cached_tokens: 12, cache_write_tokens: 8 });
   });
 
@@ -219,6 +227,7 @@ describe('toResponsesResponse', () => {
         },
       },
     });
+
     expect(result.usage.output_tokens_details).toEqual({ reasoning_tokens: 7 });
   });
 
@@ -227,6 +236,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.usage).not.toHaveProperty('input_tokens_details');
     expect(result.usage).not.toHaveProperty('output_tokens_details');
   });
@@ -236,6 +246,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.completed_at).toBe(result.created_at);
   });
 
@@ -245,6 +256,7 @@ describe('toResponsesResponse', () => {
         model: 'openai/gpt-4o-mini',
         result: { text: '', finishReason, response: baseResponse, usage: baseUsage },
       });
+
       expect(result.completed_at).toBeNull();
     }
   });
@@ -283,6 +295,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: '', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.output).toHaveLength(1);
     expect(result.output[0]).toMatchObject({
       type: 'message',
@@ -296,6 +309,7 @@ describe('toResponsesResponse', () => {
       body: { parallel_tool_calls: false },
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result).toHaveProperty('parallel_tool_calls', false);
   });
 
@@ -304,6 +318,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result).toHaveProperty('parallel_tool_calls', true);
   });
 
@@ -312,6 +327,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result).toMatchObject({
       parallel_tool_calls: true,
       tools: [],
@@ -349,6 +365,7 @@ describe('toResponsesResponse', () => {
       },
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result).toMatchObject({
       tools: [{ type: 'function', name: 'get_weather' }],
       tool_choice: 'required',
@@ -376,6 +393,7 @@ describe('toResponsesResponse', () => {
         providerMetadata: { openai: { service_tier: 'scale' } },
       },
     });
+
     expect(result.service_tier).toBe('scale');
   });
 
@@ -384,6 +402,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: 'ok', finishReason: 'stop', response: baseResponse, usage: baseUsage },
     });
+
     expect(result).not.toHaveProperty('service_tier');
   });
 
@@ -393,6 +412,7 @@ describe('toResponsesResponse', () => {
         model: 'openai/gpt-4o-mini',
         result: { text: 'ok', finishReason, response: baseResponse, usage: baseUsage },
       });
+
       expect(result.error).toBeNull();
     }
   });
@@ -402,6 +422,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: '', finishReason: 'error', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.error).toEqual({ code: 'server_error', message: expect.any(String) });
   });
 
@@ -410,6 +431,7 @@ describe('toResponsesResponse', () => {
       model: 'openai/gpt-4o-mini',
       result: { text: '', finishReason: 'other', response: baseResponse, usage: baseUsage },
     });
+
     expect(result.error).toEqual({ code: 'server_error', message: expect.any(String) });
   });
 });

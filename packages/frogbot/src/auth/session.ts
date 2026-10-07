@@ -71,8 +71,10 @@ export async function issueSession({
         req: dbReq,
         returning: false,
       });
+
       signal.throwIfAborted();
       if (shouldCommit) await commitTransaction(dbReq);
+
       return result;
     } catch (error) {
       try {
@@ -80,9 +82,11 @@ export async function issueSession({
       } catch (cleanupError) {
         throw new AggregateError([error, cleanupError], 'Session write rollback failed.');
       }
+
       throw error;
     }
   };
+
   const revoke = async (signal: AbortSignal) => {
     signal.throwIfAborted();
     if (!sid) return;
@@ -108,6 +112,7 @@ export async function issueSession({
           ],
         },
       });
+
       signal.throwIfAborted();
       if (!authoritative) throw new AuthenticationError(payloadReq.t);
       checkLoginPermission({ req: payloadReq, user: authoritative });
@@ -125,13 +130,16 @@ export async function issueSession({
         collection: collectionSlug,
         _strategy: 'local-jwt',
       });
+
       const sessionUser = {
         id: subjectId,
         sessions: structuredClone(authoritative.sessions ?? []),
       } as TypedUser;
+
       const previousSids = new Set(sessionUser.sessions?.map((session) => session.id));
       const sessionPayload = Object.create(payload) as typeof payload;
       sessionPayload.db = Object.create(payload.db) as typeof payload.db;
+
       sessionPayload.db.updateOne = ({ data }) =>
         writeSessions({ sessions: data.sessions, signal });
 
@@ -157,10 +165,12 @@ export async function issueSession({
           payload,
           req: dbReq,
         });
+
         signal.throwIfAborted();
       }
 
       let user = identify({ ...authoritative, sessions: sessionUser.sessions });
+
       for (const hook of hooks.beforeLogin) {
         user = identify(
           (await hook({
@@ -170,6 +180,7 @@ export async function issueSession({
             user,
           })) || user,
         );
+
         signal.throwIfAborted();
       }
 
@@ -183,6 +194,7 @@ export async function issueSession({
         secret: payload.secret,
         tokenExpiration: auth.tokenExpiration,
       });
+
       signal.throwIfAborted();
       payloadReq.user = user;
 
@@ -196,6 +208,7 @@ export async function issueSession({
             user,
           })) || user,
         );
+
         signal.throwIfAborted();
         payloadReq.user = user;
       }
@@ -216,6 +229,7 @@ export async function issueSession({
       }
 
       payloadReq.user = user;
+
       return { user, token, exp };
     },
   });

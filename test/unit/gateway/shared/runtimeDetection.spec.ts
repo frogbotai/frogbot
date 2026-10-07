@@ -23,6 +23,7 @@ describe('readEnv / isProduction (G46)', () => {
 
   it('reads from process.env on Node', () => {
     vi.stubEnv('FROGBOT_G46_TEST', 'from-process');
+
     expect(readEnv('FROGBOT_G46_TEST')).toBe('from-process');
   });
 
@@ -33,36 +34,44 @@ describe('readEnv / isProduction (G46)', () => {
   it('falls back to globalThis when process is undefined (strict WinterCG)', () => {
     vi.stubGlobal('process', undefined);
     vi.stubGlobal('FROGBOT_G46_TEST', 'from-globalThis');
+
     expect(readEnv('FROGBOT_G46_TEST')).toBe('from-globalThis');
   });
 
   it('ignores non-string globals when process is undefined', () => {
     vi.stubGlobal('process', undefined);
     vi.stubGlobal('FROGBOT_G46_TEST', 42);
+
     expect(readEnv('FROGBOT_G46_TEST')).toBeUndefined();
   });
 
   it('does not throw without process (no ReferenceError on strict runtimes)', () => {
     vi.stubGlobal('process', undefined);
+
     expect(() => readEnv('NODE_ENV')).not.toThrow();
     expect(() => isProduction()).not.toThrow();
   });
 
   it('isProduction reflects process.env.NODE_ENV on Node', () => {
     vi.stubEnv('NODE_ENV', 'production');
+
     expect(isProduction()).toBe(true);
+
     vi.stubEnv('NODE_ENV', 'development');
+
     expect(isProduction()).toBe(false);
   });
 
   it('isProduction reflects globalThis.NODE_ENV when process is undefined', () => {
     vi.stubGlobal('process', undefined);
     vi.stubGlobal('NODE_ENV', 'production');
+
     expect(isProduction()).toBe(true);
   });
 
   it('isProduction is false when neither process nor a global is available', () => {
     vi.stubGlobal('process', undefined);
+
     expect(isProduction()).toBe(false);
   });
 });
@@ -89,6 +98,7 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
       out.push(full);
     }
   }
+
   return out;
 }
 
@@ -104,11 +114,13 @@ describe('WinterCG surface scan (G46)', () => {
 
   it('has no node:* imports in the request path', () => {
     const offenders = files.filter((file) => /from\s+['"]node:/.test(readFileSync(file, 'utf8')));
+
     expect(offenders.map((file) => file.slice(srcDir.length))).toEqual([]);
   });
 
   it('has no bare process.env reads in the request path', () => {
     const offenders = files.filter((file) => /\bprocess\.env\b/.test(readFileSync(file, 'utf8')));
+
     expect(offenders.map((file) => file.slice(srcDir.length))).toEqual([]);
   });
 });

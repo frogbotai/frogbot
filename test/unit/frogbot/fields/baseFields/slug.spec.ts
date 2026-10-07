@@ -62,6 +62,7 @@ describe('slugField', () => {
 
       if ('hooks' in checkbox) {
         expect(checkbox.hooks?.beforeChange).toEqual([]);
+
         checkbox.hooks = { beforeChange: [replacement] };
       }
 
@@ -89,6 +90,7 @@ describe('slugField', () => {
       slugify,
       useAsSlug: 'heading',
     });
+
     const { checkbox, text } = getFields(field);
 
     expect(checkbox).toMatchObject({ name: 'regenerate', localized: true });
@@ -103,6 +105,7 @@ describe('slugField', () => {
 
       return Promise.resolve(String(valueToSlugify).toUpperCase());
     });
+
     const hook = getHook(slugField({ slugify }));
     const generated = { title: 'new post' };
 
@@ -320,6 +323,7 @@ describe('slugField', () => {
     const hook = getHook(
       slugField({ slugify: ({ valueToSlugify }) => Promise.resolve(`x-${valueToSlugify}`) }),
     );
+
     const collection = { slug: 'posts', versions: { drafts: { autosave: true } } };
     const data = { slug: 'old', title: 'changed' };
 

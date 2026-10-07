@@ -109,6 +109,7 @@ export async function expectChatToolRoundTrip(app: LiveApp, model: string): Prom
       `finish_reason=${String(first.body.choices?.[0]?.finish_reason)}`,
     );
   }
+
   expect(toolCall.function.name).toBe('get_weather');
   const args = JSON.parse(toolCall.function.arguments ?? '{}') as { city?: string };
   expect(typeof args.city).toBe('string');
@@ -157,6 +158,7 @@ export async function expectMessagesToolRoundTrip(app: LiveApp, model: string): 
   if (!toolUse?.id || !toolUse.name) {
     throw noToolCall(model, '/v1/messages', `stop_reason=${String(first.body.stop_reason)}`);
   }
+
   expect(toolUse.name).toBe('get_weather');
   expect(typeof (toolUse.input as { city?: unknown } | undefined)?.city).toBe('string');
 
@@ -179,6 +181,7 @@ export async function expectMessagesToolRoundTrip(app: LiveApp, model: string): 
     .filter((b) => b.type === 'text')
     .map((b) => b.text ?? '')
     .join('');
+
   expect(answer).toMatch(FINAL_ANSWER);
 }
 
@@ -219,6 +222,7 @@ export async function expectResponsesToolRoundTrip(app: LiveApp, model: string):
   if (!call?.call_id || !call.name) {
     throw noToolCall(model, '/v1/responses', `status=${String(first.body.status)}`);
   }
+
   expect(call.name).toBe('get_weather');
   const args = JSON.parse(call.arguments ?? '{}') as { city?: string };
   expect(typeof args.city).toBe('string');
@@ -266,10 +270,13 @@ export async function expectChatParallelToolCalls(app: LiveApp, model: string): 
   if (toolCalls.length === 0) {
     throw noToolCall(model, '/v1/chat/completions (parallel)', 'no tool_calls');
   }
+
   const names = toolCalls.map((c) => c.function?.name);
+
   for (const name of names) {
     expect(['get_weather', 'get_population']).toContain(name);
   }
+
   const ids = toolCalls.map((c) => c.id);
   expect(new Set(ids).size).toBe(ids.length); // ids must be unique
 }
@@ -314,6 +321,7 @@ export async function expectMessagesMultiTurn(app: LiveApp, model: string): Prom
     .filter((b) => b.type === 'text')
     .map((b) => b.text ?? '')
     .join('');
+
   expect(text).toMatch(RECALLED);
 }
 
@@ -376,6 +384,7 @@ export async function expectResponsesTruncation(app: LiveApp, model: string): Pr
   // max_output_tokens bound it; the budget contract is on the visible answer.
   const visible =
     (body.usage?.output_tokens ?? 0) - (body.usage?.output_tokens_details?.reasoning_tokens ?? 0);
+
   expect(visible).toBeLessThanOrEqual(TINY_BUDGET * 4);
 }
 
@@ -386,6 +395,7 @@ export async function expectResponsesTruncation(app: LiveApp, model: string): Pr
 const BOGUS_MODEL_SUFFIX = 'does-not-exist-xyz';
 
 type OpenAIErrorBody = { error?: { message?: string; type?: string; code?: string | null } };
+
 type AnthropicErrorBody = { type?: string; error?: { type?: string; message?: string } };
 
 export async function expectChatErrorEnvelope(app: LiveApp, label: string): Promise<void> {
@@ -512,6 +522,7 @@ export async function expectChatStreamingToolCall(app: LiveApp, model: string): 
   let id: string | undefined;
   let name = '';
   let args = '';
+
   for (const chunk of chunks) {
     for (const tc of chunk.choices?.[0]?.delta?.tool_calls ?? []) {
       id ??= tc.id;
@@ -523,6 +534,7 @@ export async function expectChatStreamingToolCall(app: LiveApp, model: string): 
   if (!id || !name) {
     throw noToolCall(model, '/v1/chat/completions (streaming)', 'no tool_call deltas');
   }
+
   expect(name).toBe('get_weather');
   const parsed = JSON.parse(args) as { city?: string };
   expect(typeof parsed.city).toBe('string');

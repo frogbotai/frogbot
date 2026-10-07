@@ -100,6 +100,7 @@ if (fieldIsID(field)) {
 expectTypeOf(fieldIsHiddenOrDisabled(field)).toEqualTypeOf<boolean>();
 expectTypeOf(fieldIsLocalized(fieldOrTab)).toEqualTypeOf<boolean>();
 expectTypeOf(fieldIsVirtual(fieldOrTab)).toEqualTypeOf<boolean>();
+
 expectTypeOf(
   fieldShouldBeLocalized({ field: fieldOrTab, parentIsLocalized: false }),
 ).toEqualTypeOf<boolean>();

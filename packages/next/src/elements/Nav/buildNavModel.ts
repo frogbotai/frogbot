@@ -5,6 +5,7 @@ import type { CustomComponent, SanitizedConfig, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
 export type NavConfigItem = { icon?: CustomComponent; label: string; path: string };
+
 type EntityIcon = CustomComponent | string;
 
 export type BuildNavModelProps = {
@@ -44,15 +45,18 @@ export function buildCollectionGroups({
       .filter(({ slug }) => visibleEntities.globals.includes(slug))
       .map((entity) => ({ entity, type: EntityType.global }) satisfies EntityToGroup),
   ];
+
   const entityByKey = new Map(
     entities.map(({ entity, type }) => [`${type}:${entity.slug}`, entity]),
   );
+
   const mapEntity = (entity: {
     label: Parameters<typeof getTranslation>[0];
     slug: string;
     type: EntityType;
   }) => {
     const label = getTranslation(entity.label, i18n);
+
     return {
       icon: (entityByKey.get(`${entity.type}:${entity.slug}`)?.admin as { icon?: EntityIcon })
         ?.icon,

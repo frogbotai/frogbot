@@ -122,6 +122,7 @@ function parseSubmit({
     const element = values[blockIds.question(call, q)]?.[actionIds.choose(call, q)];
     const chosen =
       element?.selected_options ?? (element?.selected_option ? [element.selected_option] : []);
+
     const custom = item.custom ? typed[q]?.trim() : undefined;
 
     const selected = chosen

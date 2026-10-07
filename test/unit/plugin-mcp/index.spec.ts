@@ -77,9 +77,11 @@ describe('MCP plugin', () => {
     const result = await mcpPlugin({
       experimental: { tools: { auth: { enabled: true } } },
     } as never)(await authenticatedConfig());
+
     const endpoint = result.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',
     );
+
     const payload = { find: vi.fn() };
     const frogbot = { find: vi.fn(), logger: { error: vi.fn() } };
 
@@ -103,9 +105,11 @@ describe('MCP plugin', () => {
     const result = await mcpPlugin({ collections: { posts: { enabled: { find: true } } } })(
       await authenticatedConfig(),
     );
+
     const endpoint = result.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',
     );
+
     const frogbot = {
       find: vi.fn().mockResolvedValue({ docs: [] }),
       logger: { error: vi.fn() },
@@ -123,10 +127,12 @@ describe('MCP plugin', () => {
     const config = await apiKeysPlugin({ authCollection: 'members' })(
       frogbotConfig({ collections: [{ slug: 'members', auth: true, fields: [] }] }),
     );
+
     const result = await mcpPlugin({})(config);
     const endpoint = result.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',
     );
+
     const err = new Error('secret key store failure');
     const frogbot = {
       find: vi.fn().mockRejectedValue(err),
@@ -160,6 +166,7 @@ describe('MCP plugin', () => {
         mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
       ],
     } as BuildConfigInput);
+
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(payloadConfig.endpoints?.filter(({ path }) => path === '/mcp')).toHaveLength(2);
@@ -182,10 +189,12 @@ describe('MCP plugin', () => {
         mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
       ],
     } as BuildConfigInput);
+
     const payloadConfig = await config._internal.payloadConfig;
     const endpoint = payloadConfig.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',
     );
+
     const payload = {
       config: payloadConfig,
       db: { defaultIDType: 'number' },
@@ -200,14 +209,17 @@ describe('MCP plugin', () => {
                 : [],
           });
         }
+
         if (collection === 'posts') {
           return Promise.resolve({ docs: [{ id: 1, title: 'First post' }], totalDocs: 1 });
         }
+
         return Promise.resolve({ docs: [] });
       }),
       findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
       update: vi.fn().mockResolvedValue({}),
     };
+
     const request = async (body: Record<string, unknown>) => {
       const response = await endpoint?.handler({
         body: JSON.stringify(body),
@@ -221,16 +233,19 @@ describe('MCP plugin', () => {
         payload,
         url: 'http://localhost/api/mcp',
       } as never);
+
       const text = (await response?.text()) ?? '';
       const data =
         text
           .split('\n')
           .find((line) => line.startsWith('data: '))
           ?.slice(6) ?? text;
+
       return JSON.parse(data) as Record<string, any>;
     };
 
     const listed = await request({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} });
+
     expect(listed.result.tools.map(({ name }: { name: string }) => name)).toEqual(['findPosts']);
 
     const called = await request({
@@ -239,6 +254,7 @@ describe('MCP plugin', () => {
       method: 'tools/call',
       params: { name: 'findPosts', arguments: {} },
     });
+
     expect(called.result.content[0].text).toContain('First post');
     expect(payload.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'posts' }));
   });

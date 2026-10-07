@@ -56,11 +56,13 @@ describe('message variant matrix', () => {
       role: 'assistant',
       parts: parts.slice(0, -1) as UIMessage['parts'],
     };
+
     const live = renderParts(message.parts);
     const reloaded = renderParts(
       messageDocumentToUIMessage({ ...message, parts: JSON.parse(JSON.stringify(message.parts)) })
         .parts,
     );
+
     expect(reloaded).toBe(live);
   });
 });

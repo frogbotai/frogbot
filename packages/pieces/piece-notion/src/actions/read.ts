@@ -9,6 +9,7 @@ const findDatabaseItemOutput = z.object({
   success: z.boolean(),
   results: z.array(notionObject),
 });
+
 const blockContentOutput = z.array(notionObject);
 const pageCommentsOutput = z.array(notionComment);
 const findPageOutput = z.array(notionObject);
@@ -27,6 +28,7 @@ export const findDatabaseItem = defineAction({
       match: 'equals',
       signal: req.signal ?? undefined,
     });
+
     const result = notionList.parse(
       await client.request({
         method: 'POST',
@@ -130,6 +132,7 @@ export const findPage = defineAction({
       },
       signal: req.signal ?? undefined,
     });
+
     const query = input.title.toLowerCase();
     const matches = pages.filter((page) => {
       const properties = z.record(z.string(), z.unknown()).safeParse(page.properties);
@@ -141,10 +144,12 @@ export const findPage = defineAction({
           z.object({ type: z.string() }).passthrough().safeParse(property).data?.type === 'title'
         );
       });
+
       const title = z
         .object({ title: z.array(z.object({ plain_text: z.string() }).passthrough()) })
         .passthrough()
         .safeParse(titleProperty);
+
       const value = title.success ? title.data.title[0]?.plain_text.toLowerCase() : undefined;
 
       return input.exactMatch ? value === query : value?.includes(query) === true;

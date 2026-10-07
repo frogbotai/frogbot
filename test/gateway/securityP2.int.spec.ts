@@ -43,6 +43,7 @@ function createHeaderCapturingModel(): { model: LanguageModelV4; calls: Recorded
     },
     doGenerate(options: { headers?: unknown }) {
       calls.push({ headers: options.headers as Record<string, string> | undefined });
+
       return Promise.resolve({
         content: [{ type: 'text', text: 'ok' }],
         finishReason: 'stop',
@@ -56,12 +57,14 @@ function createHeaderCapturingModel(): { model: LanguageModelV4; calls: Recorded
     },
     doStream(options: { headers?: unknown }) {
       calls.push({ headers: options.headers as Record<string, string> | undefined });
+
       return Promise.resolve({
         stream: new ReadableStream({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 't0' });
             controller.enqueue({ type: 'text-delta', id: 't0', delta: 'ok' });
             controller.enqueue({ type: 'text-end', id: 't0' });
+
             controller.enqueue({
               type: 'finish',
               finishReason: { unified: 'stop', raw: 'stop' },
@@ -70,6 +73,7 @@ function createHeaderCapturingModel(): { model: LanguageModelV4; calls: Recorded
                 outputTokens: { total: 3, text: 3 },
               },
             });
+
             controller.close();
           },
         }),
@@ -84,6 +88,7 @@ function makeApp(capturer: ReturnType<typeof createHeaderCapturingModel>) {
   const registry = {
     openai: { languageModel: () => capturer.model },
   } as unknown as ProviderRegistry;
+
   return createApp({ registry });
 }
 
@@ -110,7 +115,9 @@ describe('G107 — credential header injection via allowlist', () => {
 
     // G107: the attacker-supplied api-key must NOT reach the upstream model.
     expect(capturer.calls).toHaveLength(1);
+
     const forwarded = capturer.calls[0]?.headers ?? {};
+
     expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain('api-key');
   });
 
@@ -130,7 +137,9 @@ describe('G107 — credential header injection via allowlist', () => {
     });
 
     expect(capturer.calls).toHaveLength(1);
+
     const forwarded = capturer.calls[0]?.headers ?? {};
+
     expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain('openai-organization');
   });
 
@@ -150,7 +159,9 @@ describe('G107 — credential header injection via allowlist', () => {
     });
 
     expect(capturer.calls).toHaveLength(1);
+
     const forwarded = capturer.calls[0]?.headers ?? {};
+
     expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain('openai-project');
   });
 });
@@ -185,7 +196,9 @@ describe('G33 — SSRF via remote URL fetch', () => {
     });
 
     expect(res.status).toBe(400);
+
     const body = (await res.json()) as { type: string; error: { type: string; message: string } };
+
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.message).toContain('scheme "http:" is not allowed');
     // The request must never reach the provider.
@@ -217,7 +230,9 @@ describe('G33 — SSRF via remote URL fetch', () => {
     });
 
     expect(res.status).toBe(400);
+
     const body = (await res.json()) as { error: { type: string; message: string } };
+
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.message).toContain('private, loopback, or link-local');
     expect(capturer.calls).toHaveLength(0);
@@ -244,7 +259,9 @@ describe('G33 — SSRF via remote URL fetch', () => {
     });
 
     expect(res.status).toBe(400);
+
     const body = (await res.json()) as { error: { type: string; message: string } };
+
     expect(body.error.type).toBe('invalid_request_error');
     expect(capturer.calls).toHaveLength(0);
   });
@@ -268,7 +285,9 @@ describe('G33 — SSRF via remote URL fetch', () => {
     });
 
     expect(res.status).toBe(400);
+
     const body = (await res.json()) as { error: { type: string; message: string } };
+
     expect(body.error.type).toBe('invalid_request_error');
     expect(capturer.calls).toHaveLength(0);
   });

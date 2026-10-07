@@ -30,6 +30,7 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
     const registry = buildProviderRegistry({
       [entry.label]: { baseURL: entry.compat.baseURL, apiKey },
     });
+
     return createApp({ registry });
   }
 
@@ -37,15 +38,18 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
   if (!name) {
     throw new Error(`matrix entry "${entry.label}" has neither provider nor compat`);
   }
+
   const cfg = providers[name].fromEnv(process.env);
   if (!cfg) {
     throw new Error(
       `matrix entry "${entry.label}": env not configured (${providers[name].envVars[0]})`,
     );
   }
+
   const cfgMap: ProviderConfigMap = {};
   (cfgMap as Record<string, unknown>)[name] = cfg;
   const registry = buildProviderRegistry(cfgMap);
+
   return createApp({ registry });
 }
 
@@ -60,6 +64,7 @@ async function withRetry<T extends { status: number; headers: Headers }>(
   attempts = 3,
 ): Promise<T> {
   let last: T | undefined;
+
   for (let i = 0; i < attempts; i++) {
     last = await fn();
     const retryAfter = Number(last.headers.get('retry-after'));
@@ -67,10 +72,13 @@ async function withRetry<T extends { status: number; headers: Headers }>(
     if (!rateLimited && ![503, 529].includes(last.status)) {
       return last;
     }
+
     const waitMs =
       Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * (i + 1);
+
     await sleep(Math.min(waitMs, 30_000));
   }
+
   return last!;
 }
 
@@ -145,6 +153,7 @@ export async function expectChatStream(app: LiveApp, model: string): Promise<voi
   const chunks = frames
     .filter((f) => f.data !== '[DONE]')
     .map((f) => JSON.parse(f.data) as ChatChunk);
+
   const text = chunks.map((c) => c.choices?.[0]?.delta?.content ?? '').join('');
   expect(text.length).toBeGreaterThan(0);
   expect(chunks.some((c) => c.choices?.[0]?.finish_reason)).toBe(true);
@@ -172,6 +181,7 @@ export async function expectMessages(app: LiveApp, model: string): Promise<void>
     .filter((b) => b.type === 'text')
     .map((b) => b.text ?? '')
     .join('');
+
   expect(text.length).toBeGreaterThan(0);
   expect(body.stop_reason).toBeTruthy();
   expect(body.usage?.output_tokens).toBeGreaterThan(0);
@@ -202,6 +212,7 @@ export async function expectMessagesStream(app: LiveApp, model: string): Promise
     .filter((e) => e.type === 'content_block_delta' && e.delta?.type === 'text_delta')
     .map((e) => e.delta?.text ?? '')
     .join('');
+
   expect(text.length).toBeGreaterThan(0);
 }
 
@@ -247,6 +258,7 @@ export async function expectResponsesStream(app: LiveApp, model: string): Promis
     .filter((f) => f.event === 'response.output_text.delta')
     .map((f) => (JSON.parse(f.data) as { delta?: string }).delta ?? '')
     .join('');
+
   expect(text.length).toBeGreaterThan(0);
 }
 
@@ -314,10 +326,12 @@ export async function expectRerank(app: LiveApp, model: string): Promise<void> {
   expect(status).toBe(200);
   expect(Array.isArray(body.results)).toBe(true);
   expect(body.results!.length).toBe(2);
+
   for (const result of body.results!) {
     expect(typeof result.index).toBe('number');
     expect(typeof result.relevance_score).toBe('number');
   }
+
   // The frog document must win.
   expect(body.results![0].index).toBe(1);
 }
@@ -333,6 +347,7 @@ export async function expectTranscription(app: LiveApp, model: string): Promise<
     const form = new FormData();
     form.set('model', model);
     form.set('file', fixtureFile('speech.wav'));
+
     return app.request('http://localhost/v1/audio/transcriptions', {
       method: 'POST',
       body: form,

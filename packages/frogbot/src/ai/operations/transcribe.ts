@@ -68,6 +68,7 @@ export async function transcribeOperation(
     model: modelId,
     context: { req: req as FrogBotRequest | undefined },
   });
+
   await op.start();
 
   try {
@@ -77,7 +78,9 @@ export async function transcribeOperation(
       providerOptions: toProviderOptions(resolvedProviderOptions),
       model: op.transcribeModel(),
     });
+
     await op.finish();
+
     return result;
   } catch (error) {
     await op.finish({ error });

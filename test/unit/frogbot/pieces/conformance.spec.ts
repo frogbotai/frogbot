@@ -28,12 +28,14 @@ type ValidTypes = {
   };
   triggers: { itemCreated: { input: z.output<typeof empty>; output: unknown } };
 };
+
 type ChannelTypes = {
   auth: z.output<typeof tokenAuth>;
   options: z.output<typeof secretOptions>;
   actions: Record<string, never>;
   triggers: Record<string, never>;
 };
+
 type ValidFixtures = PieceConformanceFixtures &
   Required<Pick<PieceConformanceFixtures, 'options' | 'triggers'>>;
 
@@ -182,9 +184,12 @@ describe('pieceConformance', () => {
   it('requires exact, unique action coverage', async () => {
     const missing = validFixtures();
     missing.actions.pop();
+
     await expect(pieceConformance(createValid(), missing)).rejects.toThrow('must cover exactly');
+
     const duplicate = validFixtures();
     duplicate.actions.push(duplicate.actions[0]);
+
     await expect(pieceConformance(createValid(), duplicate)).rejects.toThrow(
       "Action fixtures contains duplicate 'getItem'",
     );
@@ -193,20 +198,26 @@ describe('pieceConformance', () => {
   it('rejects invalid factory options and action inputs', async () => {
     const options = validFixtures();
     options.factoryOptions = { region: 1 };
+
     await expect(pieceConformance(createValid(), options)).rejects.toThrow(
       'factory options are invalid',
     );
+
     const input = validFixtures();
     input.actions[0].input = { id: 1 };
+
     await expect(pieceConformance(createValid(), input)).rejects.toThrow('expected string');
   });
 
   it('rejects incorrect results and error expectations', async () => {
     const result = validFixtures();
     result.actions[0].expect = { result: { id: 'wrong', region: 'us' } };
+
     await expect(pieceConformance(createValid(), result)).rejects.toThrow('unexpected result');
+
     const error = validFixtures();
     error.actions[1].expect = { error: 'different error' };
+
     await expect(pieceConformance(createValid(), error)).rejects.toThrow(
       "threw 'vendor unavailable'",
     );
@@ -226,6 +237,7 @@ describe('pieceConformance', () => {
         },
       ],
     });
+
     await expect(
       pieceConformance(createInvalidOutput, {
         actions: [{ slug: 'run', input: {}, expect: { result: 1 } }],
@@ -236,17 +248,21 @@ describe('pieceConformance', () => {
   it('requires declared option callbacks and their exact choices', async () => {
     const missing = validFixtures();
     missing.options[0].field = 'missing';
+
     await expect(pieceConformance(createValid(), missing)).rejects.toThrow(
       "has no options callback for 'missing'",
     );
+
     const choices = validFixtures();
     choices.options[0].expect = [];
+
     await expect(pieceConformance(createValid(), choices)).rejects.toThrow('unexpected choices');
   });
 
   it('requires trigger declarations to match exactly', async () => {
     const fixtures = validFixtures();
     fixtures.triggers = [{ slug: 'itemCreated', type: 'polling' }];
+
     await expect(pieceConformance(createValid(), fixtures)).rejects.toThrow(
       'trigger fixtures must match declarations',
     );
@@ -260,6 +276,7 @@ describe('pieceConformance', () => {
       client: ({ auth }) => auth,
       actions: [],
     });
+
     await expect(
       pieceConformance(createTokenShaped, {
         factoryOptions: { auth: { accessToken: 'token' } },
@@ -280,6 +297,7 @@ describe('pieceConformance', () => {
       },
       actions: [],
     });
+
     await expect(
       pieceConformance(createOAuth, {
         factoryOptions: { auth: { credential: 'token' } },
@@ -295,9 +313,11 @@ describe('pieceConformance', () => {
       label: 'Execution',
       actions: [{ slug: 'run', description: 'Run', input: z.object({}), run }],
     });
+
     await pieceConformance(createPiece, {
       actions: [{ slug: 'run', input: {}, expect: { result: 'ok' } }],
     });
+
     expect(run).toHaveBeenCalledOnce();
   });
 

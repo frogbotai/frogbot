@@ -13,6 +13,7 @@ expectTypeOf<Parameters<typeof csv.convertCsvToJson>[0]['input']>().toEqualTypeO
   hasHeaders?: boolean | undefined;
   delimiter?: ',' | '\t' | undefined;
 }>();
+
 expectTypeOf(rows).toEqualTypeOf<Promise<(string[] | Record<string, string>)[]>>();
 
 const _convertCsvToJsonRejectsConvertJsonToCsvInput = () =>

@@ -182,6 +182,7 @@ function startSlackApi() {
       .split('/')
       .filter(Boolean)
       .at(-1)!;
+
     const raw = await text(req);
     const body = (
       raw.startsWith('{') ? JSON.parse(raw) : Object.fromEntries(new URLSearchParams(raw))
@@ -242,6 +243,7 @@ function pagesClient(): PagesClient {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
       });
+
       const result = (await response.json()) as Record<string, unknown>;
 
       if (result.ok !== true) throw new Error(`Slack API request failed: ${String(result.error)}`);
@@ -271,6 +273,7 @@ async function postPage({
     text: body,
     ...(blocks ? { blocks } : {}),
   });
+
   const ts = String(response.ts);
 
   return { id: ts, postedAt: slackTime(ts) };
@@ -368,6 +371,7 @@ const pagesQuestions: PieceChannelQuestions<PagesClient> = {
             },
           ]
         : [];
+
     const card = await postCard({ call, client, q: 0, threadId: thread.id });
 
     return [
@@ -577,6 +581,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         channel_type: 'channel',
       }),
     );
+
     await work();
   }
 
@@ -658,6 +663,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: AbortSignal.timeout(30_000),
     });
+
     const raw = await response.text();
 
     return {
@@ -672,6 +678,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       data: { email, password: PASSWORD },
       overrideAccess: true,
     });
+
     const login = await request('POST', '/users/login', { body: { email, password: PASSWORD } });
 
     expect(login.status).toBe(200);
@@ -1006,6 +1013,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
           ),
         ),
       );
+
       await work();
 
       const stored = (await record({ instance: 'pages', thread, toolCallId }))!;
@@ -1120,6 +1128,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         queue: 'frogbot-channel:support:pages',
         input: queued.input,
       });
+
       await work();
 
       expect(since(mark)).toEqual([]);
@@ -1177,6 +1186,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         queue: 'frogbot-channel:support:pages',
         input: stale.input,
       });
+
       await work();
 
       expect(stale.input.revision).toBe(1);
@@ -1326,14 +1336,17 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         body: { chatId: chat.id, prompt: 'Hello from the web.' },
         user: alice,
       });
+
       const settle = await request('POST', `/agents/support/chats/${chat.id}/settle`, {
         body: { toolCallId, output: { answers: [{ header: 'Color', selected: ['Red'] }] } },
         user: alice,
       });
+
       const dismiss = await request('POST', `/agents/support/chats/${chat.id}/settle`, {
         body: { toolCallId, dismissed: true },
         user: alice,
       });
+
       const create = await request('POST', '/messages', {
         body: {
           id: 'web-injected',
@@ -1367,6 +1380,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         'context[channel][threadId]': chat.channelThread.thread.id,
         'context[channel][author][id]': 'U1',
       });
+
       const context = {
         channel: { piece: 'slack', threadId: chat.channelThread.thread.id, author: { id: 'U1' } },
       };
@@ -1375,10 +1389,12 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         body: { chatId: chat.id, prompt: 'Forged.' },
         user: alice,
       });
+
       const sendWithContext = await request('POST', '/agents/support', {
         body: { chatId: chat.id, prompt: 'Forged.', context },
         user: alice,
       });
+
       const create = await request('POST', `/messages?${forged}`, {
         body: {
           id: 'web-forged',
@@ -1403,6 +1419,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
           },
           user: alice,
         });
+
         expect(reshaped.status, JSON.stringify(shape)).toBeGreaterThanOrEqual(400);
       }
 
@@ -1446,6 +1463,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         },
         user: alice,
       });
+
       const stored = await chatOf(thread);
 
       expect(patch.status).toBe(200);
@@ -1504,7 +1522,9 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       });
 
       expect(stranger.status).toBe(403);
+
       await work();
+
       expect(since(mark)).toEqual([]);
       expect(await messagesOf(chat.id)).toEqual(source);
     });

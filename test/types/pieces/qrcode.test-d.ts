@@ -11,6 +11,7 @@ const image = qrcode.createQrCode({ input: { text: 'https://example.com' }, req 
 expectTypeOf<Parameters<typeof qrcode.createQrCode>[0]['input']>().toEqualTypeOf<{
   text: string;
 }>();
+
 expectTypeOf(image).toEqualTypeOf<
   Promise<{
     id: string | number;

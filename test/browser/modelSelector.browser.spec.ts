@@ -305,6 +305,7 @@ test('typing sonnet filters about 500 models within 100 ms per key', async ({
     type: 'timings',
     description: `${browserName}: ${timings.join(', ')} ms`,
   });
+
   console.log(`model search timings (${browserName}): ${timings.join(', ')} ms`);
 
   const ids = await list

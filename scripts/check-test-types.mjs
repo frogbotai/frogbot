@@ -97,6 +97,7 @@ export function mergeErrors(lists) {
     if (seen.has(key)) return false;
 
     seen.add(key);
+
     return true;
   });
 }
@@ -314,6 +315,7 @@ function tsc(config, tmp) {
     dir,
     buildInfo: path.join(tmp, `${name}.tsbuildinfo`),
   });
+
   const project = stable ? path.join(tmp, name) : path.join(ROOT, config);
 
   if (stable) writeFileSync(project, JSON.stringify(stable));
@@ -333,12 +335,14 @@ function tsc(config, tmp) {
         stdio: ['ignore', 'pipe', 'pipe'],
       },
     );
+
     let stdout = '';
     let stderr = '';
 
     child.stdout.on('data', (chunk) => (stdout += chunk));
     child.stderr.on('data', (chunk) => (stderr += chunk));
     child.on('error', (error) => resolve({ errors: [], global: [`${config} ${error.message}`] }));
+
     child.on('close', (code) => {
       const parsed = parseTsc(stdout, config);
 
@@ -402,6 +406,7 @@ async function main() {
   if (args.some((arg) => arg !== '--write')) {
     console.log(USAGE);
     process.exitCode = 2;
+
     return;
   }
 
@@ -412,6 +417,7 @@ async function main() {
   if (global.length > 0) {
     console.log(global.join('\n'));
     process.exitCode = 1;
+
     return;
   }
 
@@ -421,6 +427,7 @@ async function main() {
   if (write && !existsSync(file)) {
     writeBaseline(counts);
     console.log(`${BASELINE}: ${errors.length} errors in ${Object.keys(counts).length} files`);
+
     return;
   }
 
@@ -431,9 +438,11 @@ async function main() {
     const lowered = lowerBaseline({ counts, baseline });
 
     writeBaseline(lowered);
+
     console.log(
       `${BASELINE}: ${baselineTotal(lowered)} errors in ${Object.keys(lowered).length} files`,
     );
+
     return;
   }
 

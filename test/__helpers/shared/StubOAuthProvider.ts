@@ -32,7 +32,9 @@ export function pkceChallenge(verifier: string): string {
 
 async function readForm(req: IncomingMessage): Promise<Record<string, string>> {
   const chunks: Buffer[] = [];
+
   for await (const chunk of req) chunks.push(Buffer.from(chunk));
+
   return Object.fromEntries(new URLSearchParams(Buffer.concat(chunks).toString()));
 }
 
@@ -58,6 +60,7 @@ export async function startStubOAuthProvider(): Promise<StubOAuthProvider> {
       redirect.searchParams.set('code', `code-for-${state}`);
       redirect.searchParams.set('state', state);
       res.writeHead(302, { location: redirect.toString() }).end();
+
       return;
     }
 
@@ -68,9 +71,12 @@ export async function startStubOAuthProvider(): Promise<StubOAuthProvider> {
         if (body.refresh_token !== stubOAuthTokens.refresh) {
           res.writeHead(400, { 'content-type': 'application/json' });
           res.end(JSON.stringify({ error: 'invalid_grant' }));
+
           return;
         }
+
         res.writeHead(200, { 'content-type': 'application/json' });
+
         res.end(
           JSON.stringify({
             access_token: stubOAuthTokens.refreshed,
@@ -79,15 +85,20 @@ export async function startStubOAuthProvider(): Promise<StubOAuthProvider> {
             token_type: 'Bearer',
           }),
         );
+
         return;
       }
+
       const state = (body.code ?? '').replace('code-for-', '');
       if (challenges.get(state) !== pkceChallenge(body.code_verifier ?? '')) {
         res.writeHead(400, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: 'invalid_grant' }));
+
         return;
       }
+
       res.writeHead(200, { 'content-type': 'application/json' });
+
       res.end(
         JSON.stringify({
           access_token: stubOAuthTokens.access,
@@ -97,6 +108,7 @@ export async function startStubOAuthProvider(): Promise<StubOAuthProvider> {
           token_type: 'Bearer',
         }),
       );
+
       return;
     }
 
@@ -104,10 +116,13 @@ export async function startStubOAuthProvider(): Promise<StubOAuthProvider> {
       requests.account.push(req.headers.authorization);
       if (!req.headers.authorization?.startsWith('Bearer ')) {
         res.writeHead(401).end();
+
         return;
       }
+
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(stubOAuthAccount));
+
       return;
     }
 
@@ -115,6 +130,7 @@ export async function startStubOAuthProvider(): Promise<StubOAuthProvider> {
       requests.revoke.push(await readForm(req));
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end('{}');
+
       return;
     }
 

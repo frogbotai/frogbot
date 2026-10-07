@@ -125,6 +125,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         models: ctx.models,
         allowlists: ctx.allowlists,
       });
+
       const model = resolved.instance.languageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});
 
@@ -137,6 +138,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         model: body.model,
         provider: resolved.providerName,
       };
+
       phase = 'beforeUpstream';
 
       // Translate Anthropic messages → AI SDK format.
@@ -146,6 +148,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         system: body.system as AnthropicSystemParam | undefined,
         logger,
       });
+
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
@@ -164,18 +167,21 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           service_tier: body.service_tier,
         };
       }
+
       // Top-level cache_control ("cache the last cacheable block") →
       // providerOptions.unknown.cache_control; forwardLanguageParams re-homes
       // it to the SDK namespace (anthropic.cacheControl) after hooks run.
       const cachingOpts = parsePromptCachingOptions({
         cache_control: body.cache_control,
       });
+
       if (cachingOpts) {
         providerOptions.unknown = {
           ...providerOptions.unknown,
           ...cachingOpts,
         };
       }
+
       const params = {
         temperature: body.temperature ?? undefined,
         topP: body.top_p ?? undefined,
@@ -189,6 +195,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       // which the anthropic provider renders back into `output_config.format`.
       const outputConfig =
         body.output_config ?? (body.output_format ? { format: body.output_format } : undefined);
+
       const outputFormat = outputConfig?.format;
       const output =
         outputFormat?.type === 'json_schema'
@@ -258,6 +265,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           phase,
           logger,
         });
+
         lifecycle = streamLifecycle;
         const result = otelContext.with(activeContext, () =>
           streamText({
@@ -274,6 +282,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
             },
           }),
         );
+
         const sseStream = result.fullStream.pipeThrough(
           createAnthropicStreamTransform({
             model: body.model,
@@ -287,7 +296,9 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           if (upstream.timedOut()) {
             throw upstreamTimeoutError();
           }
+
           finishReason = 'streaming';
+
           return createSseResponse(
             toSseStream(new ReadableStream<string>(), {
               appendDone: false,
@@ -302,6 +313,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           finishReason = 'error';
           await lifecycle.finalizeNow();
           const { error } = firstError.body;
+
           return Response.json(
             {
               type: 'error',
@@ -326,6 +338,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         }
 
         finishReason = 'streaming';
+
         return createSseResponse(
           toSseStream(peeked.stream, {
             appendDone: false,
@@ -344,6 +357,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
 
       // --- Non-streaming path ---
       const result = await otelContext.with(activeContext, () => generateText(aiOptions));
+
       usage = {
         inputTokens: result.usage.inputTokens ?? 0,
         outputTokens: result.usage.outputTokens ?? 0,
@@ -352,9 +366,11 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         cacheWriteTokens: result.usage.inputTokenDetails?.cacheWriteTokens,
         reasoningTokens: result.usage.outputTokenDetails?.reasoningTokens,
       };
+
       finishReason = result.finishReason;
 
       phase = 'afterUpstream';
+
       await runHooks(
         hooks.afterUpstream,
         {
@@ -372,8 +388,10 @@ export function messagesRoute(ctx: MessagesRouteContext) {
 
       const anthropicUsage = result.providerMetadata?.anthropic?.usage as
         Record<string, unknown> | undefined;
+
       const serviceTier =
         typeof anthropicUsage?.service_tier === 'string' ? anthropicUsage.service_tier : undefined;
+
       // Same-provider Anthropic surfaces thinking tokens only on the raw usage
       // object (convert-anthropic-usage.ts leaves outputTokens.reasoning
       // undefined); other providers surface them via outputTokenDetails.
@@ -423,6 +441,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           { isolate: true, logger },
         );
       }
+
       throw err;
     } finally {
       // `afterOperation` is the guaranteed-fire billing/audit slot. For
@@ -438,6 +457,7 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       // would re-fire the `afterError` the `catch` already fired).
       const streamThrewBeforeFinalize =
         lifecycle !== undefined && operationError !== undefined && !lifecycle.hasFinalized();
+
       if (base && (!lifecycle || streamThrewBeforeFinalize)) {
         await runHooks(
           hooks.afterOperation,
@@ -460,13 +480,16 @@ export function messagesRoute(ctx: MessagesRouteContext) {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
     }
+
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     const { body, status } = toAnthropicErrorResponse(err, { requestId });
     const headers = headersForError(err, status);
+
     for (const [k, v] of Object.entries(headers)) {
       c.header(k, v);
     }
+
     return c.json(body, toContentfulStatus(status));
   });
 
@@ -504,6 +527,7 @@ function applyThinking(
     budget_tokens?: unknown;
     display?: unknown;
   };
+
   if (typeof type !== 'string') return;
 
   const mapped: Record<string, JSONValue> = { type };
@@ -531,7 +555,9 @@ function applyToolChoiceOptions(
   const { disable_parallel_tool_use } = toolChoice as {
     disable_parallel_tool_use?: unknown;
   };
+
   if (typeof disable_parallel_tool_use !== 'boolean') return;
+
   providerOptions.anthropic = {
     ...(providerOptions.anthropic ?? {}),
     disableParallelToolUse: disable_parallel_tool_use,
@@ -555,19 +581,24 @@ function applyMcpServers(
       name: s.name,
       url: s.url,
     };
+
     if (s.authorization_token != null) {
       server.authorizationToken = s.authorization_token;
     }
+
     if (s.tool_configuration != null) {
       const toolConfiguration: Record<string, JSONValue> = {};
       if (s.tool_configuration.enabled != null) {
         toolConfiguration.enabled = s.tool_configuration.enabled;
       }
+
       if (s.tool_configuration.allowed_tools != null) {
         toolConfiguration.allowedTools = s.tool_configuration.allowed_tools;
       }
+
       server.toolConfiguration = toolConfiguration;
     }
+
     return server;
   });
 
@@ -598,6 +629,7 @@ function applyContainer(
     if (container.id != null) {
       mapped.id = container.id;
     }
+
     if (container.skills != null) {
       mapped.skills = container.skills.map((skill): JSONValue => ({
         type: skill.type,
@@ -623,14 +655,17 @@ function firstAnthropicStreamErrorEnvelope(chunk: string) {
     if (!data) {
       continue;
     }
+
     try {
       const parsed = JSON.parse(data) as {
         error?: { type?: string; message?: string };
       };
+
       const error = parsed.error;
       if (!error?.message) {
         continue;
       }
+
       return {
         body: {
           type: 'error' as const,
@@ -642,6 +677,7 @@ function firstAnthropicStreamErrorEnvelope(chunk: string) {
       return undefined;
     }
   }
+
   return undefined;
 }
 
@@ -653,6 +689,7 @@ async function peekAnthropicStream(stream: ReadableStream<string>) {
     const { done, value } = await reader.read();
     if (done) {
       reader.releaseLock();
+
       return chunks.length === 0
         ? undefined
         : { first: chunks.join(''), stream: streamFromChunks(chunks) };
@@ -679,14 +716,18 @@ function streamFromChunks(chunks: string[], reader?: ReadableStreamDefaultReader
     async pull(controller) {
       if (!reader) {
         controller.close();
+
         return;
       }
+
       const next = await reader.read();
       if (next.done) {
         reader.releaseLock();
         controller.close();
+
         return;
       }
+
       controller.enqueue(next.value);
     },
     async cancel(reason) {

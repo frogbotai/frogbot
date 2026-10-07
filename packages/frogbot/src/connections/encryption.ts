@@ -23,6 +23,7 @@ function decryptWithKey(value: string, key: Buffer): string {
   ) {
     throw new CredentialCryptoError();
   }
+
   try {
     const iv = Buffer.from(encodedIV, 'base64url');
     const tag = Buffer.from(encodedTag, 'base64url');
@@ -36,8 +37,10 @@ function decryptWithKey(value: string, key: Buffer): string {
     ) {
       throw new CredentialCryptoError();
     }
+
     const decipher = createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
     decipher.setAuthTag(tag);
+
     return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
   } catch {
     throw new CredentialCryptoError();
@@ -46,11 +49,13 @@ function decryptWithKey(value: string, key: Buffer): string {
 
 export function createCredentialEncryption({ secret }: { secret: string }): CredentialEncryption {
   const key = keyFor(secret, CORE_LABEL);
+
   return {
     encrypt(value) {
       const iv = randomBytes(12);
       const cipher = createCipheriv('aes-256-gcm', key, iv);
       const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+
       return [
         'v1',
         iv.toString('base64url'),

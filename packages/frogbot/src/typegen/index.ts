@@ -46,9 +46,11 @@ export function buildGeneratedTypesFooter(
       : `{
 ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')}
     }`;
+
   const modelIds = getConfiguredModelIds(ai);
   const models =
     modelIds.length === 0 ? 'never' : modelIds.map((id) => JSON.stringify(id)).join(' | ');
+
   const roles =
     roleSlugs.length === 0 ? 'never' : roleSlugs.map((slug) => JSON.stringify(slug)).join(' | ');
 
@@ -69,6 +71,7 @@ type SchemaGroup = {
   required?: string[];
   [key: string]: unknown;
 };
+
 type ConfigJSONSchema = {
   properties?: Record<string, SchemaGroup | undefined>;
   definitions?: Record<string, unknown>;
@@ -78,8 +81,10 @@ function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
   if (!schema || typeof schema !== 'object') return;
   if (Array.isArray(schema)) {
     for (const item of schema) stripRefs(item, stripped);
+
     return;
   }
+
   const obj = schema as Record<string, unknown>;
   if (typeof obj.$ref === 'string') {
     const match = /#\/definitions\/(.+)/.exec(obj.$ref);
@@ -88,6 +93,7 @@ function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
       obj.type = 'null';
     }
   }
+
   for (const value of Object.values(obj)) {
     stripRefs(value, stripped);
   }
@@ -105,9 +111,11 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
   ]) {
     const group = schema.properties?.[key];
     if (!group) continue;
+
     for (const slug of Object.keys(group.properties ?? {})) {
       if (isInternal(slug)) delete group.properties![slug];
     }
+
     if (Array.isArray(group.required)) {
       group.required = group.required.filter((slug) => !isInternal(slug));
     }
@@ -119,6 +127,7 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
   for (const name of internalDefs) {
     delete schema.definitions![name];
   }
+
   stripRefs(schema, internalDefs);
 }
 
@@ -155,6 +164,7 @@ function resolveOutputPath(config: SanitizedConfig, dir: string): string {
   // FrogBot's filename so we don't litter `payload-types.ts` next to
   // the user's config. Otherwise honor whatever they explicitly set.
   if (fromConfig && !fromConfig.endsWith('/payload-types.ts')) return fromConfig;
+
   return join(resolve(dir), DEFAULT_FILENAME);
 }
 
@@ -176,8 +186,10 @@ async function compileTypes(
   // newer versions; 3.68.5 returns the bare schema. Normalize.
   const result = configToJSONSchema(config, config.db.defaultIDType, i18n) as
     { jsonSchema: unknown; typeStringDefinitions?: Set<string> } | object;
+
   const jsonSchema =
     'jsonSchema' in result ? (result as { jsonSchema: unknown }).jsonSchema : result;
+
   stripInternalCollections(jsonSchema as ConfigJSONSchema);
   nameInternalSelects(jsonSchema as ConfigJSONSchema);
   const extraTypeStrings =
@@ -199,6 +211,7 @@ async function compileTypes(
   }
 
   const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai, roleSlugs)}\n`;
+
   return format(output, { parser: 'typescript', singleQuote: true });
 }
 
@@ -225,5 +238,6 @@ export async function writeGeneratedTypes(
   }
 
   await fs.writeFile(outputPath, compiled);
+
   return { outputPath, changed: true };
 }

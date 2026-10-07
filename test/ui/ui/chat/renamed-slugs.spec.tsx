@@ -23,6 +23,7 @@ function respond(url: string): Response {
       agents: [{ slug: 'support' }],
     });
   }
+
   if (url === 'https://frogbot.example/api/agents') {
     return Response.json({
       defaultAgent: 'support',
@@ -37,6 +38,7 @@ function respond(url: string): Response {
       ],
     });
   }
+
   if (url.startsWith('https://frogbot.example/api/conversations?')) {
     return Response.json({
       docs: [{ id: 'chat-1', agent: 'support', title: 'Renamed chat' }],
@@ -45,6 +47,7 @@ function respond(url: string): Response {
       totalPages: 1,
     });
   }
+
   if (url.startsWith('https://frogbot.example/api/turns?')) {
     return Response.json({
       docs: [
@@ -60,6 +63,7 @@ function respond(url: string): Response {
       totalPages: 1,
     });
   }
+
   return new Response(null, { status: 404 });
 }
 
@@ -93,10 +97,12 @@ describe('renamed collection acceptance', () => {
     );
 
     await screen.findByText('Renamed chat');
+
     await waitFor(() =>
       expect(
         fetch.mock.calls.some(([url]) => {
           const value = decodeURIComponent(String(url));
+
           return (
             value.startsWith('https://frogbot.example/api/conversations?') &&
             value.includes('where[agent][equals]=support')
@@ -104,6 +110,7 @@ describe('renamed collection acceptance', () => {
         }),
       ).toBe(true),
     );
+
     expect(
       fetch.mock.calls.some(([url]) =>
         String(url).startsWith('https://frogbot.example/api/turns?'),

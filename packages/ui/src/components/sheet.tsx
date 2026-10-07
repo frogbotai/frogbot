@@ -10,6 +10,7 @@ import { PortalTheme } from '../theme/provider.js';
 export const Sheet = Primitive.Root;
 export const SheetTrigger = Primitive.Trigger;
 export const SheetClose = Primitive.Close;
+
 export function SheetContent({
   children,
   className,
@@ -34,17 +35,21 @@ export function SheetContent({
     </Primitive.Portal>
   );
 }
+
 export function SheetHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div className={`fb-sheet__header${className ? ` ${className}` : ''}`} {...props} />;
 }
+
 export function SheetFooter({ className, ...props }: ComponentProps<'div'>) {
   return <div className={`fb-sheet__footer${className ? ` ${className}` : ''}`} {...props} />;
 }
+
 export function SheetTitle({ className, ...props }: ComponentProps<typeof Primitive.Title>) {
   return (
     <Primitive.Title className={`fb-sheet__title${className ? ` ${className}` : ''}`} {...props} />
   );
 }
+
 export function SheetDescription({
   className,
   ...props

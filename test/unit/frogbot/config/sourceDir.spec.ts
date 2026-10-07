@@ -11,6 +11,7 @@ const dirs: string[] = [];
 async function makeDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'frogbot-source-dir-'));
   dirs.push(dir);
+
   return dir;
 }
 

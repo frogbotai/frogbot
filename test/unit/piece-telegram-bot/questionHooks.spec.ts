@@ -245,6 +245,7 @@ describe('Telegram question hooks', () => {
       code: 400,
       description: 'Bad Request: message is not modified',
     });
+
     const { client, req, thread } = fixture({ failures: [unchanged] });
 
     await expect(

@@ -69,6 +69,7 @@ describe('resolveUsageCollection', () => {
 
   it('adds an indexed chat relationship when chat is enabled', () => {
     const collection = resolveUsageCollection(makeConfig(), 'chats').collections.at(-1);
+
     expect(collection?.fields).toContainEqual(
       expect.objectContaining({
         name: 'chat',
@@ -89,9 +90,11 @@ describe('resolveUsageCollection', () => {
         },
       ],
     });
+
     const collection = resolveUsageCollection(config).collections.find(
       ({ slug }) => slug === 'ai-usage',
     );
+
     expect(collection?.fields).toContainEqual(expect.objectContaining({ name: 'team' }));
     expect(collection?.fields).toContainEqual(
       expect.objectContaining({ name: 'requestId', index: true }),
@@ -104,6 +107,7 @@ describe('resolveUsageCollection', () => {
         collections: [{ slug: 'ai-usage', usageLog: true, fields: [] }],
       }),
     );
+
     expect(result.slug).toBe('ai-usage');
     expect(result.collections).toHaveLength(1);
   });
@@ -122,6 +126,7 @@ describe('resolveUsageCollection', () => {
         ],
       }),
     );
+
     expect(result.collections[0]?.access?.read).toBe(read);
   });
 
@@ -131,7 +136,9 @@ describe('resolveUsageCollection', () => {
         collections: [{ slug: 'ai-usage', usageLog: true, fields: [] }],
       }),
     );
+
     const access = result.collections[0]?.access;
+
     expect(access?.create?.({ req: {} } as never)).toBe(false);
     expect(access?.update?.({ req: {} } as never)).toBe(false);
     expect(access?.delete?.({ req: {} } as never)).toBe(false);
@@ -140,6 +147,7 @@ describe('resolveUsageCollection', () => {
   it('allows authenticated reads and denies anonymous requests by default', async () => {
     const result = resolveUsageCollection(makeConfig());
     const access = result.collections.at(-1)?.access;
+
     expect(await access?.read?.({ req: { user: { id: 'user-1' } } } as never)).toBe(true);
     expect(await access?.read?.({ req: { user: null } } as never)).toBe(false);
   });

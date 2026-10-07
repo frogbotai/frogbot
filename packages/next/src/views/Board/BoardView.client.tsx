@@ -22,6 +22,7 @@ import { buildBoardReorderBody, buildColumnWhere, getBoardColumnKey } from './da
 import type { ResolvedBoardColumn } from './resolveColumns.js';
 
 type Row = Record<string, unknown> & { id: number | string };
+
 export type BoardViewClientProps = {
   Card?: ComponentType<{ disabled: boolean; row: Row }>;
   ColumnHeader?: ComponentType<{ column: ResolvedBoardColumn; count: number }>;
@@ -55,6 +56,7 @@ function BoardDocumentCard({
       admin: { dateFormat },
     },
   } = useConfig();
+
   const title = formatDocTitle({
     collectionConfig,
     data: row,
@@ -106,11 +108,13 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const collectionConfig = getEntityConfig({
     collectionSlug: props.collectionSlug,
   });
+
   const useAsTitle = collectionConfig.admin?.useAsTitle;
   const cardColumns = useMemo(
     () => getViewCardColumns(columnState, useAsTitle),
     [columnState, useAsTitle],
   );
+
   const [rows, setRows] = useState<Row[]>([]);
   const [pages, setPages] = useState<Record<string, number>>({});
   const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
@@ -122,19 +126,23 @@ export function BoardViewClient(props: BoardViewClientProps) {
       limit: String(props.limit),
       page: String(page),
     });
+
     const where = props.filter ? { and: [props.filter, query.where].filter(Boolean) } : query.where;
     appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
     appendQuery(params, 'sort', query.sort);
     const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
       credentials: 'include',
     });
+
     if (!response.ok) throw new Error(response.statusText);
     const result = (await response.json()) as { docs: Row[]; hasNextPage: boolean };
+
     setRows((current) =>
       replace
         ? [
             ...current.filter((row) => {
               const value = toCellData(getPath(row, props.groupBy));
+
               return (
                 (value === null || value === undefined ? '' : getBoardColumnKey(value)) !== key
               );
@@ -143,18 +151,21 @@ export function BoardViewClient(props: BoardViewClientProps) {
           ]
         : [...current, ...result.docs.filter((doc) => !current.some(({ id }) => id === doc.id))],
     );
+
     setPages((current) => ({ ...current, [key]: page }));
     setHasMore((current) => ({ ...current, [key]: result.hasNextPage }));
   };
 
   const loadBoard = () => {
     setRows([]);
+
     void Promise.all(
       [...props.columns.map(({ key }) => key), ''].map((key) => fetchColumn(key, 1, true)),
     ).catch((error) =>
       toast.error(error instanceof Error ? error.message : 'Failed to load board'),
     );
   };
+
   const loadBoardRef = useRef(loadBoard);
 
   useEffect(() => {
@@ -171,16 +182,20 @@ export function BoardViewClient(props: BoardViewClientProps) {
       headers: { 'Content-Type': 'application/json' },
       ...init,
     });
+
     const result = (await response.json().catch(() => ({}))) as Record<string, unknown> & {
       errors?: { message?: string }[];
     };
+
     if (!response.ok) {
       const message = String(
         result.errors?.[0]?.message ?? result.error ?? result.message ?? response.statusText,
       );
+
       toast.error(message);
       throw new Error(message);
     }
+
     return result;
   };
 
@@ -192,12 +207,14 @@ export function BoardViewClient(props: BoardViewClientProps) {
       rowId: row.id,
       target,
     });
+
     const result = await request('/reorder', { body: JSON.stringify(body), method: 'POST' });
     if (result.message !== 'initial migration') return;
     const fresh = (await request(
       `/${props.collectionSlug}/${target.id}?depth=0&select[${props.orderField}]=true`,
       { method: 'GET' },
     )) as Row;
+
     if (fresh[props.orderField]) await reorder(row, fresh, before);
   };
 
@@ -216,11 +233,13 @@ export function BoardViewClient(props: BoardViewClientProps) {
   }) => {
     if (from !== to) {
       const value = props.columns.find((column) => column.key === to)?.value ?? null;
+
       await request(`/${props.collectionSlug}/${row.id}`, {
         body: JSON.stringify(setPath(props.groupBy, value)),
         method: 'PATCH',
       });
     }
+
     const target = before ?? after;
     if (isManual && target) await reorder(row, target, Boolean(before));
     await Promise.all([...new Set([from ?? '', to ?? ''])].map((key) => fetchColumn(key, 1, true)));
@@ -235,6 +254,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
           getId={(row) => String(row.id)}
           groupBy={(row) => {
             const value = toCellData(getPath(row, props.groupBy));
+
             return value === null || value === undefined ? null : getBoardColumnKey(value);
           }}
           hasMore={hasMore}

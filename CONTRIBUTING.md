@@ -97,14 +97,11 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 
 ### Blank lines
 
-Favor breathing room over fewer lines; when a blank line is debatable, add it. Concise code means less logic, not compressed spacing. Prettier keeps blank lines but never adds them, so review edited code for missing ones.
+Favor breathing room over fewer lines; when a blank line is debatable, add it. Concise code means less logic, not compressed spacing. ESLint adds the mechanical ones (before a `return`, around loops, multiline statements, blocks, top-level declarations and `expect` groups); these need judgement:
 
 - One blank line between logical steps, even within one phase: preparing input, validating, building a query, mutating, side effects and returning read as separate paragraphs.
-- Separate a multiline declaration from the next statement. Short declarations stay grouped only when they prepare the same operation.
-- Put a blank line before and after loops and iteration calls such as `forEach`, inside callbacks and nested branches too.
+- Short declarations stay grouped only when they prepare the same operation.
 - Separate a condition's setup from its `if`, a guard from the work after it, and independent conditionals from each other. Separate calculations from mutations, and a base query from its optional modifiers.
-- Put a blank line before a final `return` that follows other statements, and between top-level functions, classes and types.
-- In tests, separate setup, execution and assertions with blank lines, not comments.
 - Never two blank lines in a row, and none directly inside a block, between every object property or inside one expression.
 
 ```ts

@@ -27,6 +27,7 @@ const releaseHandler = waitForCommand('release-handler');
 
 process.on('SIGTERM', () => report('sigterm-observed'));
 process.on('SIGINT', () => report('sigint-observed'));
+
 process.on('message', (message) => {
   if (message?.type === 'ping') report('pong');
 });

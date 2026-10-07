@@ -21,9 +21,11 @@ export function MicControl({
     transcribe: async (file) =>
       capability ? (await provider.sdk.ai.transcribe({ file, model: capability.model })).text : '',
   });
+
   useEffect(() => {
     onWaveformChange?.(transcription.status === 'recording' ? transcription.audioData : undefined);
   }, [onWaveformChange, transcription.audioData, transcription.status]);
+
   useEffect(() => () => onWaveformChange?.(undefined), [onWaveformChange]);
   if (!capability || !transcription.canRecord) return null;
   const active = transcription.status === 'recording' || transcription.status === 'transcribing';

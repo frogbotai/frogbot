@@ -198,9 +198,11 @@ function ChatInner({
     onChange: onChatIdChange,
     value: controlledChatId,
   });
+
   const [runtimeChatId, setRuntimeChatId] = useState(
     activeChatId === undefined ? `new:${agent}` : String(activeChatId),
   );
+
   const createdChatId = useRef<string | undefined>(undefined);
   const reportedChatId = useRef<string | undefined>(undefined);
   const previousAgent = useRef(agent);
@@ -214,6 +216,7 @@ function ChatInner({
     chatId: activeChatId,
     initialData: initialChat,
   });
+
   const channel = activeChat.chat?.channel || undefined;
   const channelLabel = channel && (activeChat.chat?.channelLabel || channel);
   const isReadonly = channelLabel !== undefined;
@@ -243,6 +246,7 @@ function ChatInner({
       }),
     [agent, sdk],
   );
+
   const chat = useChat({
     id: runtimeChatId,
     messages: initialMessages,
@@ -260,6 +264,7 @@ function ChatInner({
     onToolCall: adapter.executeClientTool
       ? async ({ toolCall }) => {
           const output = await adapter.executeClientTool?.(toolCall.toolName, toolCall.input);
+
           await addToolOutput({
             tool: toolCall.toolName,
             toolCallId: toolCall.toolCallId,
@@ -392,6 +397,7 @@ function ChatInner({
     setActiveChatId(createdChatId.current);
     createdChatId.current = undefined;
     chats.refresh();
+
     return true;
   }
 
@@ -403,6 +409,7 @@ function ChatInner({
     setRuntimeChatId(`new:${agent}`);
     chat.setMessages([]);
   };
+
   const latest = useRef({ clearConversation, setActiveChatId });
   latest.current = { clearConversation, setActiveChatId };
   const { setMessages } = chat;
@@ -422,7 +429,9 @@ function ChatInner({
     const observer = new ResizeObserver(() => {
       main.style.setProperty('--fb-composer-height', `${node.offsetHeight}px`);
     });
+
     observer.observe(node);
+
     return () => {
       observer.disconnect();
       main.style.removeProperty('--fb-composer-height');
@@ -452,12 +461,16 @@ function ChatInner({
     if (!chatIdControlled) return;
     if (controlledChatId === undefined) {
       latest.current.clearConversation();
+
       return;
     }
+
     if (String(controlledChatId) === reportedChatId.current) {
       reportedChatId.current = undefined;
+
       return;
     }
+
     if (String(controlledChatId) !== runtimeChatId) setRuntimeChatId(String(controlledChatId));
   }, [chatIdControlled, controlledChatId, runtimeChatId]);
 
@@ -477,6 +490,7 @@ function ChatInner({
     setRuntimeChatId(String(nextChatId));
     setActiveChatId(nextChatId);
   };
+
   const mutate = (chatDocument: ChatDocument): ChatActions => ({
     rename: async (title) => {
       await renameChat({ sdk, chatsSlug, chatId: chatDocument.id }, title);
@@ -488,9 +502,11 @@ function ChatInner({
         clearConversation();
         setActiveChatId(undefined);
       }
+
       chats.refresh();
     },
   });
+
   const submit = async (text: string, attachments: ComposerAttachment[]) => {
     setAborted(false);
     const parts = [
@@ -504,24 +520,29 @@ function ChatInner({
       ),
       ...(text ? [{ type: 'text' as const, text }] : []),
     ];
+
     const message: UIMessage = { id: '', role: 'user', parts: parts as UIMessage['parts'] };
     const metadata = await adapter.buildMetadata?.(message);
     await chat.sendMessage({ parts: message.parts, metadata });
   };
+
   const stop = () => {
     setAborted(true);
     void chat.stop();
   };
+
   const editMessage = async (message: UIMessage, text: string) => {
     const parts = [
       ...message.parts.filter((part) => part.type !== 'text'),
       { type: 'text' as const, text },
     ] as UIMessage['parts'];
+
     const revisedMessage = { ...message, parts };
     const metadata = (await adapter.buildMetadata?.(revisedMessage)) ?? message.metadata;
     await chat.sendMessage({ messageId: message.id, parts, metadata });
     setEditingMessageId(undefined);
   };
+
   const branchMessage = async (message: UIMessage) => {
     if (activeChatId === undefined) return;
     setActionError(undefined);
@@ -536,6 +557,7 @@ function ChatInner({
       setBranching(false);
     }
   };
+
   const turnError = chat.error && !isSilentTurnError(chat.error) ? chat.error : undefined;
   const error =
     actionError ??
@@ -543,6 +565,7 @@ function ChatInner({
     activeChat.error ??
     chats.error ??
     (turnError && toChatError(turnError));
+
   const pending = chat.status === 'submitted' || chat.status === 'streaming';
   const lastMessage = chat.messages.at(-1);
   const pendingToolCallIds = useMemo(
@@ -557,6 +580,7 @@ function ChatInner({
       ),
     [lastMessage, pending],
   );
+
   const dismissPendingToolCall = async (toolCallId: string) => {
     const chatId = request.current.chatId;
 
@@ -581,6 +605,7 @@ function ChatInner({
       failAction(error, 'Failed to dismiss');
     }
   };
+
   const toolActions: ToolActions = {
     addToolOutput,
     dismissToolCall: dismissPendingToolCall,
@@ -588,11 +613,13 @@ function ChatInner({
     isReadonly,
     channelLabel,
   };
+
   const displayedChats = (chats.docs ?? []).map((chatDocument) =>
     String(chatDocument.id) === String(activeChatId) && !chatDocument.title
       ? { ...chatDocument, title: deriveChatTitle(chat.messages, fallbackTitle) }
       : chatDocument,
   );
+
   const profile = agents.find(({ slug }) => slug === agent)?.profile;
   const displayName = profile?.name ?? agent;
   const initials = displayName
@@ -601,6 +628,7 @@ function ChatInner({
     .join('')
     .slice(0, 2)
     .toUpperCase();
+
   const timestampFor = (message: UIMessage) => {
     const createdAt = (message.metadata as { createdAt?: unknown } | undefined)?.createdAt;
     if (typeof createdAt === 'string' || typeof createdAt === 'number') return createdAt;
@@ -608,8 +636,10 @@ function ChatInner({
     if (seen) return seen;
     const now = new Date().toISOString();
     renderedAt.current.set(message.id, now);
+
     return now;
   };
+
   const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => {
     const text = messageText(message);
     const defaultActions = !pending ? (
@@ -627,12 +657,14 @@ function ChatInner({
         }
       />
     ) : null;
+
     const MessageActionsSlot =
       message.role === 'user'
         ? UserMessageActions
         : message.role === 'assistant'
           ? AssistantMessageActions
           : false;
+
     const actions =
       (message.role !== 'user' && message.role !== 'assistant') ||
       editingMessageId === message.id ||

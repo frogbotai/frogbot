@@ -149,6 +149,7 @@ describePostgres(`postgres hybrid search [${driver}]`, () => {
     const result = await search({ limit: 1, candidates: 1 });
 
     expect(result.hits.map(({ doc }) => doc.id)).toEqual([narrow[0].id]);
+
     expectComponents(result.hits, narrow);
   });
 

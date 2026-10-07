@@ -26,6 +26,7 @@ describe('AI provider prompt', () => {
     vi.mocked(p.select).mockImplementation(({ options }: { options: { value: unknown }[] }) =>
       Promise.resolve(options[0].value),
     );
+
     vi.mocked(p.password).mockResolvedValue('');
   });
 

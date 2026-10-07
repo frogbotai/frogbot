@@ -36,6 +36,7 @@ function findChatCollection(
         'Mark exactly one.',
     );
   }
+
   return marked[0];
 }
 
@@ -50,6 +51,7 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
 
   const enabled =
     config.agents !== undefined || chatCollection !== undefined || messageCollection !== undefined;
+
   if (!enabled) {
     return { collections: config.collections, chat: { enabled: false } };
   }
@@ -77,6 +79,7 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
       'channelLabel',
     ],
   });
+
   const withMessages = resolveMarkedCollection({
     collectionLabel: 'chat message',
     collections: withChats,

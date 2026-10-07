@@ -13,11 +13,14 @@ const findResolvedUrl = (root: object): string | undefined => {
     if (obj == null || typeof obj !== 'object' || seen.has(obj)) {
       return undefined;
     }
+
     seen.add(obj);
+
     for (const value of Object.values(obj as Record<string, unknown>)) {
       if (typeof value === 'string' && value.startsWith('http')) {
         return value;
       }
+
       if (value != null && typeof value === 'object') {
         const found = visit(value);
         if (found != null) {
@@ -25,8 +28,10 @@ const findResolvedUrl = (root: object): string | undefined => {
         }
       }
     }
+
     return undefined;
   };
+
   return visit(root);
 };
 
@@ -47,41 +52,51 @@ const mockSetupModules = (captured: {
       }
     },
   }));
+
   vi.doMock('@opentelemetry/sdk-trace-node', () => ({
     NodeTracerProvider: class {
       constructor(options: { resource?: { attributes: Record<string, unknown> } } = {}) {
         captured.providerOptions = options;
       }
+
       register() {}
       forceFlush() {
         return Promise.resolve();
       }
+
       shutdown() {
         return Promise.resolve();
       }
     },
   }));
+
   vi.doMock('@opentelemetry/sdk-trace-base', () => ({ BatchSpanProcessor: class {} }));
+
   vi.doMock('@opentelemetry/sdk-metrics', () => ({
     MeterProvider: class {
       forceFlush() {
         return Promise.resolve();
       }
+
       shutdown() {
         return Promise.resolve();
       }
     },
     PeriodicExportingMetricReader: class {},
   }));
+
   vi.doMock('@opentelemetry/exporter-metrics-otlp-http', () => ({ OTLPMetricExporter: class {} }));
+
   vi.doMock('@opentelemetry/context-async-hooks', () => ({
     AsyncLocalStorageContextManager: class {},
   }));
+
   // Keep the real api surface (diag, createContextKey, ... — used by the real
   // @opentelemetry/resources at import time) but neuter the global registration
   // side effects.
   vi.doMock('@opentelemetry/api', async (importOriginal) => {
     const actual = await importOriginal<typeof otelApi>();
+
     return {
       ...actual,
       context: { setGlobalContextManager() {} },
@@ -103,6 +118,7 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     } else {
       process.env.OTEL_EXPORTER_OTLP_ENDPOINT = original;
     }
+
     vi.restoreAllMocks();
   });
 
@@ -122,6 +138,7 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
 
     const { setupTracing } =
       await import('../../../../packages/gateway/src/observability/setup.js');
+
     setupTracing();
 
     expect(captured.exporterConstructed).toBe(true);
@@ -134,7 +151,9 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     const actual = await vi.importActual<{ OTLPTraceExporter: typeof OTLPTraceExporter }>(
       '@opentelemetry/exporter-trace-otlp-http',
     );
+
     const real = new actual.OTLPTraceExporter(captured.exporterConfig);
+
     expect(findResolvedUrl(real)).toBe('http://otel-collector:4318/v1/traces');
   });
 
@@ -148,6 +167,7 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
 
     const { setupTracing } =
       await import('../../../../packages/gateway/src/observability/setup.js');
+
     setupTracing({ endpoint: 'http://collector.internal:4318/v1/traces' });
 
     expect(captured.exporterConfig?.url).toBe('http://collector.internal:4318/v1/traces');
@@ -167,6 +187,7 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
 
     const { setupTracing } =
       await import('../../../../packages/gateway/src/observability/setup.js');
+
     setupTracing({ logger });
     await setupTracing({ logger })();
 
@@ -189,6 +210,7 @@ describe('setupTracing resource / service identity (G94)', () => {
     } else {
       process.env.OTEL_SERVICE_NAME = originalServiceName;
     }
+
     vi.restoreAllMocks();
   });
 
@@ -200,13 +222,16 @@ describe('setupTracing resource / service identity (G94)', () => {
 
     const captured: { providerOptions?: { resource?: { attributes: Record<string, unknown> } } } =
       {};
+
     mockSetupModules(captured);
 
     const { setupTracing } =
       await import('../../../../packages/gateway/src/observability/setup.js');
+
     setupTracing();
 
     const attributes = captured.providerOptions?.resource?.attributes;
+
     expect(attributes?.['service.name']).toBe('@frogbotai/gateway');
     expect(attributes?.['service.instance.id']).toEqual(expect.any(String));
     expect(attributes?.['deployment.environment.name']).toEqual(expect.any(String));
@@ -218,10 +243,12 @@ describe('setupTracing resource / service identity (G94)', () => {
 
     const captured: { providerOptions?: { resource?: { attributes: Record<string, unknown> } } } =
       {};
+
     mockSetupModules(captured);
 
     const { setupTracing } =
       await import('../../../../packages/gateway/src/observability/setup.js');
+
     setupTracing();
 
     expect(captured.providerOptions?.resource?.attributes['service.name']).toBe('my-gateway');

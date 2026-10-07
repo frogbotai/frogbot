@@ -44,6 +44,7 @@ function upstreamResponse(input: RequestInfo | URL, init?: RequestInit) {
         { headers: { 'content-type': 'application/json' } },
       );
     }
+
     return new Response(
       JSON.stringify({
         id: 'chat-1',
@@ -58,6 +59,7 @@ function upstreamResponse(input: RequestInfo | URL, init?: RequestInit) {
       { headers: { 'content-type': 'application/json' } },
     );
   }
+
   return new Response(
     JSON.stringify({
       output: { message: { role: 'assistant', content: [{ text: 'ok' }] } },
@@ -184,6 +186,7 @@ describe('Bedrock file content wire contract', () => {
   it('sends Mantle chat image data as a valid data URL', async () => {
     const key = `bedrock/${MANTLE_CHAT_MODEL}`;
     const get = DEFAULT_MODEL_CATALOG.get.bind(DEFAULT_MODEL_CATALOG);
+
     vi.spyOn(DEFAULT_MODEL_CATALOG, 'get').mockImplementation((id) =>
       id === key
         ? {
@@ -196,6 +199,7 @@ describe('Bedrock file content wire contract', () => {
           }
         : get(id),
     );
+
     await postJson(makeApp(), '/v1/chat/completions', {
       model: `bedrock/${MANTLE_CHAT_MODEL}`,
       messages: [
@@ -242,6 +246,7 @@ describe('Bedrock file content wire contract', () => {
         ],
       }),
     });
+
     await response.text();
 
     expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
@@ -256,6 +261,7 @@ describe('Bedrock file content wire contract', () => {
         content: [{ type: 'file', mediaType: 'image/png', data: { type: 'data', data: PNG } }],
       },
     ];
+
     await asV4(gateway.chatModel(`bedrock/${STANDARD_MODEL}`)).doGenerate({ prompt });
 
     expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });

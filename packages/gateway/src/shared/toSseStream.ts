@@ -107,9 +107,12 @@ export function toSseStream<TError = unknown>(
           if (opts.appendDone) {
             controller.enqueue(serializeSseFrame({ kind: 'done' }));
           }
+
           controller.close();
+
           return;
         }
+
         controller.enqueue(value);
       } catch (err) {
         stopHeartbeat();
@@ -121,6 +124,7 @@ export function toSseStream<TError = unknown>(
           if (opts.appendDone) {
             controller.enqueue(serializeSseFrame({ kind: 'done' }));
           }
+
           controller.close();
         } else {
           controller.error(err);
@@ -132,6 +136,7 @@ export function toSseStream<TError = unknown>(
       cancelled = true;
       stopHeartbeat();
       await opts.onDone?.({ kind: 'cancel', reason });
+
       // Propagate cancel upstream so the AI SDK stops the request.
       await reader.cancel(reason).catch(() => {
         /* upstream may already be closed — swallow */

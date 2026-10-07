@@ -23,11 +23,13 @@ function setup({ revoked = false } = {}) {
     findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
     update: vi.fn().mockResolvedValue({}),
   };
+
   const strategy = createApiKeyStrategy({
     authCollection: 'users',
     collectionSlug: 'api-keys',
     tokenPrefix: 'fb',
   });
+
   const request = (value: string) =>
     ({
       headers: new Headers({ authorization: `Bearer ${value}` }),

@@ -46,6 +46,7 @@ export function createPagerdutyClient({ auth }: { auth: unknown }) {
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
+
     const text = await response.text();
     const data = text ? (JSON.parse(text) as unknown) : undefined;
 

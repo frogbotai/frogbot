@@ -419,6 +419,7 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
     const messageId = card.id!;
 
     await click({ customId: control({ toolCallId, verb: 'option', n: 2 }), messageId, threadId });
+
     await click({
       customId: control({ toolCallId, q: 1, verb: 'select', n: 0 }),
       messageId,
@@ -426,12 +427,14 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
       user: 'U3',
       values: ['2', '0'],
     });
+
     await click({
       customId: control({ toolCallId, q: 1, verb: 'submit' }),
       messageId,
       threadId,
       user: 'U3',
     });
+
     await click({ customId: control({ toolCallId, q: 2, verb: 'custom' }), messageId, threadId });
 
     const edits = api.edits(threadId, messageId).map(({ body }) => JSON.stringify(body));

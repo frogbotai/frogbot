@@ -24,6 +24,7 @@ const cli = path.join(repoRoot, 'packages', 'create-frogbot-app', 'bin.js');
 const cliPackage = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'packages', 'create-frogbot-app', 'package.json'), 'utf8'),
 ) as { version: string };
+
 const postgresAvailable = RUN_E2E ? await serviceAvailable(5433) : false;
 const mongodbAvailable = RUN_E2E ? await serviceAvailable(27018) : false;
 
@@ -42,6 +43,7 @@ async function expectAppBoots(directory: string, databaseUrl?: string): Promise<
       env: subprocessEnvironment(directory, databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
     },
   );
+
   let output = '';
 
   for (const stream of [child.stdout, child.stderr]) {
@@ -197,6 +199,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     const firstPackage = JSON.parse(
       fs.readFileSync(path.join(appDirectories.get('sqlite-zen')!, 'package.json'), 'utf8'),
     ) as { dependencies: Record<string, string> };
+
     const frogbotDependencies = Object.keys(firstPackage.dependencies).filter(
       (name) => name === 'frogbot' || name.startsWith('@frogbotai/'),
     );
@@ -228,11 +231,15 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     expect(pkg.dependencies['@frogbotai/richtext-lexical']).toBe(`^${cliPackage.version}`);
 
     for (const text of appCase.configIncludes) expect(config).toContain(text);
+
     for (const text of appCase.configExcludes) expect(config).not.toContain(text);
+
     for (const line of appCase.envIncludes) expect(env).toContain(line);
+
     for (const name of appCase.absentDependencies) {
       expect(pkg.dependencies).not.toHaveProperty(name);
     }
+
     for (const file of appCase.absentPaths) {
       expect(fs.existsSync(path.join(directory, file))).toBe(false);
     }
@@ -245,6 +252,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
         'utf8',
       ),
     ) as { dependencies: Record<string, string> };
+
     const runtime = Object.entries(adapter.dependencies).filter(
       ([, version]) => !version.startsWith('workspace:'),
     );
@@ -299,6 +307,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     expect(seed).toBeDefined();
 
     fs.writeFileSync(path.join(directory, 'src', 'seed.ts'), `${seed}\n`);
+
     fs.writeFileSync(
       path.join(directory, '.env.local'),
       'DATABASE_URL=file:./run-e2e.db\nFROGBOT_SECRET=frogbot-run-e2e-secret\n',

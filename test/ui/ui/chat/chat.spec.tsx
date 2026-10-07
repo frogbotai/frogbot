@@ -36,9 +36,11 @@ const state = vi.hoisted(() => ({
 vi.mock('@ai-sdk/react', () => ({
   useChat: (options: ChatInit<UIMessage>) => {
     state.options = options;
+
     return state;
   },
 }));
+
 vi.mock('../../../../packages/ui/src/chat/provider', () => ({
   useChatProvider: () => ({
     adapter: state.adapter,
@@ -58,10 +60,12 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
     agentManifest: state.agentManifest,
   }),
 }));
+
 vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
   useChatMessages: () => state.history,
   loadChatMessages: () => Promise.resolve({ messages: [], queued: [] }),
 }));
+
 vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   emitChatMutation: vi.fn(),
   useChatDocument: () => ({ refresh: vi.fn() }),
@@ -98,6 +102,7 @@ const props = {
   abortedContent: 'Aborted',
   renderSidebar,
 };
+
 const message: UIMessage = {
   id: 'user-1',
   role: 'user',
@@ -108,7 +113,9 @@ async function sendTransportMessage() {
   state.adapter.fetch.mockResolvedValue(
     new Response(new ReadableStream({ start: (controller) => controller.close() })),
   );
+
   const transport = (state.options as ChatInit<UIMessage>).transport;
+
   await transport?.sendMessages({
     trigger: 'submit-message',
     chatId: 'chat',
@@ -116,6 +123,7 @@ async function sendTransportMessage() {
     messages: [message],
     abortSignal: undefined,
   });
+
   return JSON.parse(state.adapter.fetch.mock.calls[0][1].body as string);
 }
 
@@ -146,11 +154,13 @@ describe('Chat', () => {
 
   it('renders no sidebar by default', () => {
     const { container } = render(<Chat agent="support" />);
+
     expect(container.querySelector('.fb-chat-shell__sidebar')).toBeNull();
   });
 
   it('renders a caller-provided sidebar with history context', () => {
     const { container } = render(<Chat {...props} defaultChatId="one" />);
+
     expect(container.querySelector('.fb-chat-shell__sidebar')).toBeTruthy();
     expect(screen.getByText('One').getAttribute('aria-current')).toBe('page');
   });
@@ -159,36 +169,47 @@ describe('Chat', () => {
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
+
     render(<Chat agent="support" renderMessage={(item) => <div>Custom {item.id}</div>} />);
+
     expect(screen.getByText('Custom assistant')).toBeTruthy();
   });
 
   it('renders header slot content above the message list', () => {
     state.agents = [{ slug: 'support', profile: { name: 'Ada' } }];
+
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
+
     render(<Chat agent="support" headerSlot={<div>Agent controls</div>} />);
     const header = screen.getByText('Agent controls');
     const message = screen.getByText('Hello');
+
     expect(header.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('renders a configured assistant profile avatar', () => {
     state.agents = [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }];
+
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
+
     render(<Chat agent="support" />);
+
     expect(screen.getByRole('img', { name: 'Ada' }).getAttribute('src')).toBe('/ada.png');
   });
 
   it('renders profile initials when the avatar is omitted', () => {
     state.agents = [{ slug: 'support', profile: { name: 'Ada Lovelace' } }];
+
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
+
     render(<Chat agent="support" />);
+
     expect(screen.getByText('AL')).toBeTruthy();
   });
 
@@ -196,8 +217,10 @@ describe('Chat', () => {
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
+
     render(<Chat agent="support" />);
     const message = screen.getByText('Hello').closest('[data-message]');
+
     expect(message?.querySelector('.fb-chat__assistant-avatar')).toBeNull();
     expect(message?.querySelector('.fb-message__content')?.textContent).toBe('Hello');
   });
@@ -206,11 +229,14 @@ describe('Chat', () => {
     const onChatIdChange = vi.fn();
     render(<Chat {...props} defaultChatId="one" onChatIdChange={onChatIdChange} />);
     fireEvent.click(screen.getByText('Untitled'));
+
     expect(onChatIdChange).toHaveBeenCalledWith('two');
     expect(screen.getByText('Untitled').getAttribute('aria-current')).toBe('page');
+
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'Hello' } });
     fireEvent.keyDown(input, { key: 'Enter' });
+
     await waitFor(() =>
       expect(state.sendMessage).toHaveBeenCalledWith({
         parts: [{ type: 'text', text: 'Hello' }],
@@ -221,6 +247,7 @@ describe('Chat', () => {
 
   it('uploads long pasted text and sends it as a pasted file reference', async () => {
     state.assetsSlug = 'assets';
+
     state.adapter.fetch.mockResolvedValue(
       Response.json({ doc: { id: 'asset-1', filename: 'pasted-1.txt', mimeType: 'text/plain' } }),
     );
@@ -230,6 +257,7 @@ describe('Chat', () => {
     fireEvent.paste(screen.getByRole('textbox'), {
       clipboardData: { getData: () => 'p'.repeat(651) },
     });
+
     fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
@@ -246,11 +274,13 @@ describe('Chat', () => {
         metadata: { source: 'ui' },
       }),
     );
+
     expect(String(state.adapter.fetch.mock.calls[0]?.[0])).toBe('/api/assets');
   });
 
   it("gives the composer the selected model's file types and name", async () => {
     state.assetsSlug = 'assets';
+
     state.agentManifest = {
       defaultAgent: 'support',
       agents: [
@@ -289,10 +319,13 @@ describe('Chat', () => {
 
   it('submits long pasted text as data-paste without upload storage', async () => {
     render(<Chat agent="support" />);
+
     fireEvent.paste(screen.getByRole('textbox'), {
       clipboardData: { getData: () => 'p'.repeat(651) },
     });
+
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
     await waitFor(() =>
       expect(state.sendMessage).toHaveBeenCalledWith({
         parts: [
@@ -304,16 +337,19 @@ describe('Chat', () => {
         metadata: { source: 'ui' },
       }),
     );
+
     expect(state.adapter.fetch).not.toHaveBeenCalled();
   });
 
   it('sends the strict request body for a new chat', async () => {
     render(<Chat agent="support" />);
+
     expect(await sendTransportMessage()).toEqual({ messages: [message] });
   });
 
   it('sends the strict request body for an existing chat', async () => {
     render(<Chat agent="support" defaultChatId="chat-1" />);
+
     expect(await sendTransportMessage()).toEqual({ messages: [message], chatId: 'chat-1' });
   });
 
@@ -339,6 +375,7 @@ describe('Chat', () => {
         messages: [message],
         abortSignal: undefined,
       });
+
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
         headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
@@ -346,6 +383,7 @@ describe('Chat', () => {
     );
 
     await send();
+
     expect(JSON.parse(state.adapter.fetch.mock.calls[0][1].body as string)).toEqual({
       messages: [message],
     });
@@ -355,7 +393,9 @@ describe('Chat', () => {
     });
 
     expect(chatInit().transport).toBe(transport);
+
     await send();
+
     expect(JSON.parse(state.adapter.fetch.mock.calls[1][1].body as string)).toEqual({
       messages: [message],
       chatId: 'chat-9',
@@ -365,12 +405,15 @@ describe('Chat', () => {
   it('broadcasts a delayed refresh after a new chat finishes', async () => {
     vi.useFakeTimers();
     render(<Chat agent="support" />);
+
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
         headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
       }),
     );
+
     const transport = (state.options as ChatInit<UIMessage>).transport;
+
     await transport?.sendMessages({
       trigger: 'submit-message',
       chatId: 'new:support',
@@ -378,6 +421,7 @@ describe('Chat', () => {
       messages: [message],
       abortSignal: undefined,
     });
+
     vi.mocked(emitChatMutation).mockClear();
 
     state.options?.onFinish?.({
@@ -387,9 +431,13 @@ describe('Chat', () => {
       isDisconnect: false,
       isError: false,
     });
+
     expect(emitChatMutation).not.toHaveBeenCalled();
+
     await vi.advanceTimersByTimeAsync(2_500);
+
     expect(emitChatMutation).toHaveBeenCalledOnce();
+
     vi.useRealTimers();
   });
 
@@ -397,6 +445,7 @@ describe('Chat', () => {
     const onChatIdChange = vi.fn();
     render(<Chat {...props} chatId="one" onChatIdChange={onChatIdChange} />);
     fireEvent.click(screen.getByText('Untitled'));
+
     expect(onChatIdChange).toHaveBeenCalledWith('two');
     expect(screen.getByText('One').getAttribute('aria-current')).toBe('page');
   });
@@ -405,7 +454,9 @@ describe('Chat', () => {
     state.messages = [
       { id: 'user', role: 'user', parts: [{ type: 'text', text: 'Derived conversation title' }] },
     ];
+
     render(<Chat agent="support" defaultChatId="two" renderSidebar={renderSidebar} />);
+
     expect(
       screen
         .getByRole('button', { name: 'Derived conversation title' })
@@ -417,9 +468,11 @@ describe('Chat', () => {
   it('executes client tools and records their output', async () => {
     state.adapter.executeClientTool.mockResolvedValue('complete');
     render(<Chat agent="support" />);
+
     await state.options?.onToolCall?.({
       toolCall: { dynamic: true, toolName: 'lookup', toolCallId: 'call', input: { id: 1 } },
     });
+
     expect(state.adapter.executeClientTool).toHaveBeenCalledWith('lookup', { id: 1 });
     expect(state.addToolOutput).toHaveBeenCalledWith({
       tool: 'lookup',
@@ -432,13 +485,16 @@ describe('Chat', () => {
     state.messages = [
       { id: 'live', role: 'assistant', parts: [{ type: 'text', text: 'Live response' }] },
     ];
+
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
         headers: { 'X-FrogBot-Chat-Id': 'created' },
       }),
     );
+
     const { rerender } = render(<Chat agent="support" />);
     const transport = (state.options as ChatInit<UIMessage>).transport;
+
     await transport?.sendMessages({
       trigger: 'submit-message',
       chatId: 'new:support',
@@ -446,6 +502,7 @@ describe('Chat', () => {
       messages: state.messages,
       abortSignal: undefined,
     });
+
     state.options?.onFinish?.({
       message: state.messages[0],
       messages: state.messages,
@@ -453,19 +510,23 @@ describe('Chat', () => {
       isDisconnect: false,
       isError: false,
     });
+
     state.history = {
       messages: [{ id: 'stale', role: 'user', parts: [{ type: 'text', text: 'Stale history' }] }],
       queued: [],
       loadedChatId: 'created',
       loading: false,
     };
+
     rerender(<Chat agent="support" />);
+
     expect(state.setMessages).not.toHaveBeenCalled();
     expect(state.refresh).toHaveBeenCalledOnce();
   });
 
   it('refreshes history after rename and delete', async () => {
     state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old chat' }] }];
+
     state.adapter.fetch.mockImplementation((input) =>
       Promise.resolve(
         String(input).startsWith('/api/messages?')
@@ -473,6 +534,7 @@ describe('Chat', () => {
           : Response.json({}),
       ),
     );
+
     render(
       <Chat
         agent="support"
@@ -481,6 +543,7 @@ describe('Chat', () => {
           <>
             {context.chats.map((chat) => {
               const actions = context.actions(chat);
+
               return (
                 <div key={chat.id}>
                   <button onClick={() => void actions.rename('Renamed')}>Rename {chat.id}</button>
@@ -492,10 +555,12 @@ describe('Chat', () => {
         )}
       />,
     );
+
     fireEvent.click(screen.getByText('Rename one'));
     await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByText('Delete one'));
     await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(2));
+
     expect(state.setMessages).toHaveBeenCalledWith([]);
   });
 
@@ -505,9 +570,11 @@ describe('Chat', () => {
     const { rerender } = render(
       <Chat agent="support" chatId="one" onChatIdChange={onChatIdChange} />,
     );
+
     state.setMessages.mockClear();
     rerender(<Chat agent="support" chatId={undefined} onChatIdChange={onChatIdChange} />);
     await waitFor(() => expect(state.setMessages).toHaveBeenCalledWith([]));
+
     expect(onChatIdChange).not.toHaveBeenCalled();
   });
 
@@ -517,8 +584,10 @@ describe('Chat', () => {
     const { rerender } = render(
       <Chat agent="support" defaultChatId="one" onChatIdChange={onChatIdChange} />,
     );
+
     state.setMessages.mockClear();
     rerender(<Chat agent="sales" defaultChatId="one" onChatIdChange={onChatIdChange} />);
+
     expect(state.setMessages).not.toHaveBeenCalled();
     expect(onChatIdChange).not.toHaveBeenCalled();
     expect(screen.getByText('Old agent')).toBeTruthy();
@@ -528,8 +597,11 @@ describe('Chat', () => {
     state.status = 'streaming';
     state.error = new Error('Stream failed');
     render(<Chat {...props} />);
+
     expect(screen.getByText('Stream failed')).toBeTruthy();
+
     fireEvent.click(screen.getByText('Stop'));
+
     expect(state.stop).toHaveBeenCalledOnce();
     expect(screen.getByText('Aborted')).toBeTruthy();
   });
@@ -551,6 +623,7 @@ describe('Chat', () => {
     act(() => state.options?.onError?.(turnRequestError('selection-unavailable')));
 
     await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+
     expect(onError.mock.calls[0][0].message).toBe('The selected model is unavailable.');
   });
 
@@ -561,6 +634,7 @@ describe('Chat', () => {
     act(() => state.options?.onError?.(turnRequestError('already-settled')));
 
     await waitFor(() => expect(state.clearError).toHaveBeenCalledOnce());
+
     expect(onError).not.toHaveBeenCalled();
   });
 

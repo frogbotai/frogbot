@@ -68,6 +68,7 @@ const cases: RouteCase[] = [
                   if (fail) {
                     return Promise.reject(upstreamError);
                   }
+
                   return Promise.resolve({
                     embeddings: values.map(() => [1, 2]),
                     usage: { tokens: 3 },
@@ -102,6 +103,7 @@ const cases: RouteCase[] = [
                   if (fail) {
                     return Promise.reject(upstreamError);
                   }
+
                   return Promise.resolve({
                     images: ['aW1hZ2U='],
                     usage: { inputTokens: 1, outputTokens: 0, totalTokens: 1 },
@@ -134,6 +136,7 @@ const cases: RouteCase[] = [
                   if (fail) {
                     return Promise.reject(upstreamError);
                   }
+
                   return Promise.resolve({
                     audio: new Uint8Array([1]),
                     warnings: [],
@@ -173,6 +176,7 @@ const cases: RouteCase[] = [
                   if (fail) {
                     return Promise.reject(upstreamError);
                   }
+
                   return Promise.resolve({
                     text: 'frog',
                     segments: [],
@@ -195,6 +199,7 @@ const cases: RouteCase[] = [
       const form = new FormData();
       form.set('model', 'openai/whisper-1');
       form.set('file', new File([new Uint8Array([1])], 'audio.mp3', { type: 'audio/mpeg' }));
+
       return { method: 'POST', body: form };
     },
   },
@@ -211,6 +216,7 @@ const cases: RouteCase[] = [
           if (fail) {
             return Promise.reject(upstreamError);
           }
+
           return Promise.resolve({
             videos: [
               {
@@ -257,6 +263,7 @@ const cases: RouteCase[] = [
                   if (fail) {
                     return Promise.reject(upstreamError);
                   }
+
                   return Promise.resolve({
                     ranking: [{ index: 0, relevanceScore: 0.9 }],
                     warnings: [],
@@ -326,6 +333,7 @@ describe('modality handler operation runner', () => {
     const abortError = Object.assign(new Error('aborted'), {
       name: 'AbortError',
     });
+
     const controller = new AbortController();
     const app = cases[0].buildApp({
       fail: false,

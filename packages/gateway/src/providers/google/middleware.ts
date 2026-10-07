@@ -11,6 +11,7 @@ export const googleEmbedDimensions: BeforeUpstreamHook = (args) => {
     ...(args.providerOptions.google ?? {}),
     outputDimensionality: dimensions,
   };
+
   delete unknown.dimensions;
 };
 

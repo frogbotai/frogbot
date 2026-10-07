@@ -9,6 +9,7 @@ async function collectEvents(parts: TextStreamPart<ToolSet>[]) {
       for (const part of parts) {
         controller.enqueue(part);
       }
+
       controller.close();
     },
   })
@@ -21,6 +22,7 @@ async function collectEvents(parts: TextStreamPart<ToolSet>[]) {
     .getReader();
 
   const events: Array<{ event: string; data: any }> = [];
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) return events;
@@ -96,8 +98,10 @@ describe('createResponsesStreamTransform', () => {
     ]);
 
     const sequences = events.map((event) => event.data.sequence_number);
+
     expect(sequences[0]).toBe(0);
     expect(sequences).toEqual(sequences.map((_, index) => index));
+
     for (const event of events) {
       expect(typeof event.data.sequence_number).toBe('number');
     }
@@ -159,7 +163,9 @@ describe('createResponsesStreamTransform', () => {
       'response.output_item.done',
       'response.completed',
     ]);
+
     const added = events[2].data;
+
     expect(added.item).toMatchObject({
       type: 'function_call',
       call_id: 'call_1',
@@ -182,7 +188,9 @@ describe('createResponsesStreamTransform', () => {
         arguments: '{"city":"Paris"}',
       },
     ]);
+
     const sequences = events.map((event) => event.data.sequence_number);
+
     expect(sequences).toEqual(sequences.map((_, index) => index));
   });
 
@@ -250,7 +258,9 @@ describe('createResponsesStreamTransform', () => {
     expect(events[4].data).toMatchObject({ delta: 'thinking' });
     expect(events[4].data.reasoningEncryptedContent).toBeUndefined();
     expect(events[5].data.text).toBe('thinking');
+
     const completed = events[events.length - 1].data.response.output;
+
     expect(completed[0]).toMatchObject({
       type: 'reasoning',
       status: 'completed',
@@ -270,6 +280,7 @@ describe('createResponsesStreamTransform', () => {
     ]);
 
     const terminal = events[events.length - 1];
+
     expect(terminal.event).toBe('response.completed');
     expect(terminal.data.response.status).toBe('completed');
   });
@@ -281,6 +292,7 @@ describe('createResponsesStreamTransform', () => {
     ]);
 
     const terminal = events[events.length - 1];
+
     expect(terminal.event).toBe('response.incomplete');
     expect(terminal.data.response).toMatchObject({
       status: 'incomplete',
@@ -295,6 +307,7 @@ describe('createResponsesStreamTransform', () => {
     ]);
 
     const terminal = events[events.length - 1];
+
     expect(terminal.event).toBe('response.incomplete');
     expect(terminal.data.response.incomplete_details).toEqual({
       reason: 'content_filter',
@@ -308,6 +321,7 @@ describe('createResponsesStreamTransform', () => {
     ]);
 
     const terminal = events[events.length - 1];
+
     expect(terminal.event).toBe('response.failed');
     expect(terminal.data.response).toMatchObject({
       status: 'failed',
@@ -326,7 +340,9 @@ describe('createResponsesStreamTransform', () => {
     ]);
 
     expect(events.some((event) => event.event === 'error')).toBe(true);
+
     const terminal = events[events.length - 1];
+
     expect(terminal.event).toBe('response.failed');
     expect(terminal.data.response.error.message).toBe('boom');
   });

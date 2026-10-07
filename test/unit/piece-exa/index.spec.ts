@@ -64,6 +64,7 @@ describe('exa', () => {
         headers: { 'content-type': 'application/json' },
       }),
     );
+
     vi.stubGlobal('fetch', fetch);
     const exa = createExa({ auth: { apiKey: 'exa-test' } });
 

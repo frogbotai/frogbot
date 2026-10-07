@@ -30,10 +30,13 @@ async function mutation<T>(query: PromiseLike<T>): Promise<T> {
     return await query;
   } catch (error) {
     let cause = error;
+
     while (cause instanceof Error && cause.cause instanceof Error) cause = cause.cause;
+
     if (cause instanceof Error && cause.message.includes(overflowMarker)) {
       throw new RangeError('KV ttl exceeds the SQL expiration range', { cause: error });
     }
+
     throw error;
   }
 }
@@ -54,6 +57,7 @@ export function createSQLKV({
     const { clientConfig } = adapter as DrizzleAdapter & {
       clientConfig?: { syncUrl?: string; url?: string };
     };
+
     if (!clientConfig?.url?.startsWith('file:') || clientConfig.syncUrl) {
       unsupported('SQL KV requires local SQLite; remote or replicated libSQL is not qualified');
     }
@@ -79,12 +83,15 @@ export function createSQLKV({
   const postgres = () => {
     const db = adapter.primaryDrizzle ?? adapter.drizzle;
     if (!is(db, PgDatabase)) throw new Error('SQL KV expected a PostgreSQL connection');
+
     return db;
   };
+
   const now = sqlite ? sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')` : sql`clock_timestamp()`;
   const nowMilliseconds = sqlite
     ? sql`cast(strftime('%s', 'now') as integer) * 1000 + cast(substr(strftime('%f', 'now'), 4, 3) as integer)`
     : sql`floor(extract(epoch from clock_timestamp()) * 1000)`;
+
   const expiryTime = sqlite ? sql`julianday(${table.expiresAt})` : sql`${table.expiresAt}`;
   const currentTime = sqlite ? sql`julianday('now')` : now;
   const finite = sqlite ? sql`${expiryTime} is not null` : sql`isfinite(${table.expiresAt})`;
@@ -102,12 +109,14 @@ export function createSQLKV({
         remaining: sql<number>`${maxExpiration} - (${nowMilliseconds})`.mapWith(Number),
       })
       .from(sql`(select 1) as kv_clock`);
+
     if (!Number.isSafeInteger(remaining) || ttl > remaining) {
       throw new RangeError('KV ttl exceeds the SQL expiration range');
     }
 
     if (sqlite) {
       const value = sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ${`${ttl / 1000} seconds`})`;
+
       return sql`case when ${value} is not null then ${value} else json_extract('null', ${overflowMarker}) end`;
     }
 
@@ -135,6 +144,7 @@ export function createSQLKV({
     const timestamps = columns.updatedAt ? { updatedAt: now } : {};
     const insert = (db: SQLiteDB, deadline: SQL | null) => {
       const updates = { data, expiresAt: deadline, ...timestamps };
+
       return db
         .insert(table)
         .values({
@@ -152,12 +162,14 @@ export function createSQLKV({
 
     if (sqlite || expiresAt === null) {
       const rows = await mutation(insert(primary(), expiresAt));
+
       return rows.length > 0;
     }
 
     if (!is(rawTable, PgTable)) throw new Error('SQL KV expected a PostgreSQL table');
     const pgTable = rawTable;
     const pgColumns = getTableColumns(pgTable);
+
     return mutation(
       postgres().transaction(async (transaction) => {
         const updates = { data, expiresAt: null, ...timestamps };
@@ -174,13 +186,16 @@ export function createSQLKV({
             setWhere: ifAbsent ? expired : undefined,
           })
           .returning({ key: pgColumns.key });
+
         if (!inserted.length) return false;
         const finalized = await transaction
           .update(pgTable)
           .set({ expiresAt, ...timestamps })
           .where(sql`${table.key} = ${key}`)
           .returning({ key: pgColumns.key });
+
         if (!finalized.length) throw new Error('SQL KV could not finalize expiration');
+
         return true;
       }),
     );
@@ -196,7 +211,9 @@ export function createSQLKV({
           : primary()
               .update(table)
               .set({ expiresAt, ...(columns.updatedAt ? { updatedAt: now } : {}) });
+
       const rows = await mutation(query.where(owned(lock)).returning());
+
       return rows.length > 0;
     }
 
@@ -205,6 +222,7 @@ export function createSQLKV({
         ? sql`delete from ${table}`
         : sql`update ${table} set ${sql.identifier(table.expiresAt.name)} = ${expiresAt}
           ${columns.updatedAt ? sql`, ${sql.identifier(columns.updatedAt.name)} = ${now}` : sql``}`;
+
     const result = await mutation(
       postgres().execute(sql`
       with kv_owner as materialized (
@@ -240,6 +258,7 @@ export function createSQLKV({
     async extendLock(lock, ttl) {
       validateKVTTL(ttl);
       const expiresAt = await expiration(ttl);
+
       return ownership({ lock, expiresAt });
     },
     async get<T extends KVStoreValue>(key: string): Promise<T | null> {
@@ -248,6 +267,7 @@ export function createSQLKV({
         .from(table)
         .where(and(sql`${table.key} = ${key}`, readable))
         .limit(1);
+
       return rows.length ? (rows[0].data as T) : null;
     },
     async has(key) {
@@ -256,10 +276,12 @@ export function createSQLKV({
         .from(table)
         .where(and(sql`${table.key} = ${key}`, readable))
         .limit(1);
+
       return rows.length > 0;
     },
     async keys() {
       const rows = await primary().select({ key: table.key }).from(table).where(readable);
+
       return rows.map((row) => row.key as string);
     },
     async releaseLock(lock) {

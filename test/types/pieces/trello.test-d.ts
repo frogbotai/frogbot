@@ -15,6 +15,7 @@ expectTypeOf<Parameters<typeof trello.createCard>[0]['input']>().toEqualTypeOf<{
   position?: 'top' | 'bottom' | undefined;
   labelIds?: string[] | undefined;
 }>();
+
 expectTypeOf<Awaited<typeof _card>['id']>().toEqualTypeOf<string>();
 expectTypeOf<Awaited<typeof _card>['due']>().toEqualTypeOf<string | null | undefined>();
 
@@ -29,5 +30,6 @@ expectTypeOf<Awaited<typeof _attachments>[number]['url']>().toEqualTypeOf<string
 expectTypeOf<keyof typeof trello.triggers>().toEqualTypeOf<
   'cardCreated' | 'cardMovedToList' | 'cardDeadline'
 >();
+
 expectTypeOf(trello.triggers.cardMovedToList.type).toEqualTypeOf<'webhook'>();
 expectTypeOf(trello.triggers.cardDeadline.type).toEqualTypeOf<'polling'>();

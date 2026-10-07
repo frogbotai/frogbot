@@ -23,6 +23,7 @@ export const updateContact = defineAction({
       last_name: input.last_name || undefined,
       unsubscribed: input.unsubscribed ?? undefined,
     });
+
     return client.request({
       method: 'PATCH',
       path: `/audiences/${audience_id}/contacts/${contact_id}`,

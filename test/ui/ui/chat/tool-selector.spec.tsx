@@ -14,8 +14,11 @@ describe('ToolSelector', () => {
     const { container, rerender } = render(
       <ToolSelector selected={[]} onToolsChange={() => undefined} />,
     );
+
     expect(container.innerHTML).toBe('');
+
     rerender(<ToolSelector tools={[]} selected={[]} onToolsChange={() => undefined} />);
+
     expect(container.innerHTML).toBe('');
   });
 
@@ -25,14 +28,19 @@ describe('ToolSelector', () => {
     const { rerender } = render(
       <ToolSelector tools={tools} selected={['search']} onToolsChange={onToolsChange} />,
     );
+
     await user.click(screen.getByRole('button', { name: /Tools/ }));
     await user.click(screen.getByRole('menuitemcheckbox', { name: 'Files' }));
+
     expect(onToolsChange).toHaveBeenLastCalledWith(['search', 'files']);
     expect(screen.getByRole('menuitemcheckbox', { name: 'Search' })).toBeTruthy();
+
     rerender(
       <ToolSelector tools={tools} selected={['search', 'files']} onToolsChange={onToolsChange} />,
     );
+
     await user.click(screen.getByRole('menuitemcheckbox', { name: 'Search' }));
+
     expect(onToolsChange).toHaveBeenLastCalledWith(['files']);
   });
 
@@ -41,6 +49,7 @@ describe('ToolSelector', () => {
     render(<ToolSelector tools={tools} selected={['search']} onToolsChange={() => undefined} />);
 
     const trigger = screen.getByRole('button', { name: /Tools/ });
+
     expect(trigger.className).toContain('fb-tool-selector__trigger');
     expect(trigger.querySelector('.fb-tool-selector__trigger-icon')).toBeTruthy();
     expect(trigger.querySelector('.fb-tool-selector__chevron')).toBeTruthy();
@@ -48,6 +57,7 @@ describe('ToolSelector', () => {
     await user.click(trigger);
 
     const selectedItem = screen.getByRole('menuitemcheckbox', { name: 'Search' });
+
     expect(selectedItem.className).toContain('fb-tool-selector__item');
     expect(selectedItem.closest('.fb-tool-selector__content')).toBeTruthy();
     expect(selectedItem.querySelector('.fb-tool-selector__name')).toBeTruthy();

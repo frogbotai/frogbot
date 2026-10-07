@@ -15,6 +15,7 @@ describe('KV Adapters [Redis]', () => {
   const harness = createKVRuntimeHarness({
     kv: () => redisKVAdapter({ redisURL: 'redis://localhost:6379', keyPrefix }),
   });
+
   let booted: KVRuntime;
   let second: KVRuntime;
   let skipSuite = false;
@@ -25,13 +26,17 @@ describe('KV Adapters [Redis]', () => {
       if (process.env.CI === 'true') {
         throw new Error('Redis is required in CI but is not reachable at localhost:6379');
       }
+
       skipSuite = true;
+
       console.warn(
         '\x1b[33m⚠ Skipping KV Redis tests — Redis not reachable at localhost:6379. ' +
           'Start with: docker compose -f test/docker-compose.yml --profile redis up -d\x1b[0m',
       );
+
       return;
     }
+
     booted = await harness.boot();
     await booted.frogbot.kv.set('boot-sentinel', 'must survive second boot');
     second = await harness.boot();
@@ -45,14 +50,17 @@ describe('KV Adapters [Redis]', () => {
   beforeEach(async (ctx) => {
     if (skipSuite) {
       ctx.skip();
+
       return;
     }
+
     await booted.frogbot.kv.clear();
   });
 
   it('uses independent Redis connections sharing an isolated prefix', () => {
     const a = booted.payload.kv as RedisKVAdapter;
     const b = second.payload.kv as RedisKVAdapter;
+
     expect(a).toBeInstanceOf(RedisKVAdapter);
     expect(b).toBeInstanceOf(RedisKVAdapter);
     expect(a.redisClient).not.toBe(b.redisClient);
@@ -66,16 +74,19 @@ describe('KV Adapters [Redis]', () => {
   it('set + get stores and retrieves a value', async () => {
     await booted.frogbot.kv.set('test-key-1', { userId: 1 });
     const result = await booted.frogbot.kv.get('test-key-1');
+
     expect(result).toStrictEqual({ userId: 1 });
   });
 
   it('get returns null for missing key', async () => {
     const result = await booted.frogbot.kv.get('nonexistent-key');
+
     expect(result).toBeNull();
   });
 
   it('has returns true for existing key, false for missing', async () => {
     await booted.frogbot.kv.set('has-check', 'value');
+
     expect(await booted.frogbot.kv.has('has-check')).toBe(true);
     expect(await booted.frogbot.kv.has('no-such-key')).toBe(false);
   });
@@ -85,6 +96,7 @@ describe('KV Adapters [Redis]', () => {
     await booted.frogbot.kv.set('key-a', 'a');
     await booted.frogbot.kv.set('key-b', 'b');
     const keys = await booted.frogbot.kv.keys();
+
     expect(keys).toHaveLength(2);
     expect(keys).toContain('key-a');
     expect(keys).toContain('key-b');
@@ -94,12 +106,14 @@ describe('KV Adapters [Redis]', () => {
     await booted.frogbot.kv.set('overwrite-key', { v: 1 });
     await booted.frogbot.kv.set('overwrite-key', { v: 2 });
     const result = await booted.frogbot.kv.get('overwrite-key');
+
     expect(result).toStrictEqual({ v: 2 });
   });
 
   it('delete removes a key', async () => {
     await booted.frogbot.kv.set('del-key', 'value');
     await booted.frogbot.kv.delete('del-key');
+
     expect(await booted.frogbot.kv.get('del-key')).toBeNull();
     expect(await booted.frogbot.kv.has('del-key')).toBe(false);
   });
@@ -109,12 +123,14 @@ describe('KV Adapters [Redis]', () => {
     await booted.frogbot.kv.set('clear-2', 'b');
     await booted.frogbot.kv.clear();
     const keys = await booted.frogbot.kv.keys();
+
     expect(keys).toHaveLength(0);
   });
 
   it('stores complex nested objects', async () => {
     const complex = { user: { name: 'test', roles: ['admin', 'editor'] }, count: 42 };
     await booted.frogbot.kv.set('complex', complex);
+
     expect(await booted.frogbot.kv.get('complex')).toStrictEqual(complex);
   });
 

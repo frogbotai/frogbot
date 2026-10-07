@@ -14,11 +14,13 @@ export function rolesOf(req: FrogBotRequest): RoleSlug[] {
 
 export function hasRole(req: FrogBotRequest, ...roles: RoleSlug[]): boolean {
   const assigned = rolesOf(req);
+
   return roles.some((role) => assigned.includes(role));
 }
 
 export function ownRows(req: FrogBotRequest, field: string): Where | false {
   if (!req.user) return false;
+
   return { [field]: { equals: req.user.id } };
 }
 

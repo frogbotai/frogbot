@@ -113,6 +113,7 @@ export function Composer({
     ) {
       return;
     }
+
     event.preventDefault();
     submit();
   };

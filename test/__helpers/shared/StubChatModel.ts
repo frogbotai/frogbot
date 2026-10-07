@@ -107,6 +107,7 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
 
     if (!body.stream) {
       res.setHeader('content-type', 'application/json');
+
       res.end(
         JSON.stringify({
           ...completion,

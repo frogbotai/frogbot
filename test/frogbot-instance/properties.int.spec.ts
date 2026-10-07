@@ -14,6 +14,7 @@ describe('frogbot-instance: Properties', () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
   });
+
   afterAll(async () => {
     await booted.shutdown();
   });

@@ -24,6 +24,7 @@ export const createContact = defineAction({
       last_name: input.last_name || undefined,
       unsubscribed: input.unsubscribed,
     });
+
     return client.request({ method: 'POST', path: `/audiences/${audience_id}/contacts`, body });
   },
 });

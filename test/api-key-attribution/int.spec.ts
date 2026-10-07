@@ -37,6 +37,7 @@ describe('API key attribution on usage rows and captures', () => {
         const { model } = JSON.parse(body) as { model: string };
 
         response.writeHead(200, { 'content-type': 'application/json' });
+
         response.end(
           JSON.stringify({
             id: 'chatcmpl-attribution',
@@ -55,12 +56,14 @@ describe('API key attribution on usage rows and captures', () => {
         );
       });
     });
+
     await new Promise<void>((resolve) => upstream.listen(upstreamPort, '127.0.0.1', resolve));
     booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {
     await booted.shutdown();
+
     await new Promise<void>((resolve, reject) =>
       upstream.close((error) => (error ? reject(error) : resolve())),
     );

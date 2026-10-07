@@ -16,9 +16,11 @@ describe('frogbot-instance: CRUD expansion', () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
   });
+
   afterAll(async () => {
     await booted.shutdown();
   });
+
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
   });
@@ -74,11 +76,13 @@ describe('frogbot-instance: CRUD expansion', () => {
         data: { title: 'A', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'B', status: 'published' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'C', status: 'draft' },
@@ -104,6 +108,7 @@ describe('frogbot-instance: CRUD expansion', () => {
         data: { title: 'FilterMe', status: 'draft' },
         overrideAccess: true,
       });
+
       await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'IgnoreMe', status: 'published' },

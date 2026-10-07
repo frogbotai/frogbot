@@ -52,6 +52,7 @@ function deepFreeze<T extends Record<string, unknown>>(obj: T): Readonly<T> {
       deepFreeze(value as Record<string, unknown>);
     }
   }
+
   return Object.freeze(obj);
 }
 
@@ -63,6 +64,7 @@ const addOptionalTokens = (a: number | undefined, b: number | undefined): number
 
 function addUsage(acc: HookUsage | undefined, next: HookUsage): HookUsage {
   if (!acc) return { ...next };
+
   return {
     inputTokens: acc.inputTokens + next.inputTokens,
     outputTokens: acc.outputTokens + next.outputTokens,
@@ -193,6 +195,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       return withLanguageModelHooks(resolved.instance.languageModel(resolved.modelName), {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -210,6 +213,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       return withEmbeddingModelHooks(resolved.instance.embeddingModel(resolved.modelName), {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -227,6 +231,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       return withImageModelHooks(resolved.instance.imageModel(resolved.modelName), {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -244,11 +249,13 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       const model = requireVideoModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       return withVideoModelHooks(model, {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -266,11 +273,13 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       const model = requireSpeechModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       return withSpeechModelHooks(model, {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -292,11 +301,13 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       const model = requireTranscriptionModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       return withTranscriptionModelHooks(model, {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -314,11 +325,13 @@ export function buildGateway(config: GatewayConfig): Gateway {
         models: catalog,
         allowlists,
       });
+
       const model = requireRerankingModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
         modelName: resolved.modelName,
       });
+
       return withRerankingModelHooks(model, {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -437,6 +450,7 @@ export function buildGateway(config: GatewayConfig): Gateway {
         finish: async (result) => {
           if (finished) return;
           finished = true;
+
           await runHooks(
             validated.hooks?.afterOperation,
             {

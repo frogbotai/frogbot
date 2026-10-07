@@ -38,6 +38,7 @@ function webhookTrigger<const TSlug extends string, TInput extends z.ZodObject>(
       const existing = (await client.listWebhooks()).find(
         (webhook) => webhook.idModel === idModel && webhook.callbackURL === webhookUrl,
       );
+
       const webhook = existing ?? (await client.createWebhook(idModel, webhookUrl));
 
       return { webhookId: webhook.id, webhookUrl, owned: !existing };
@@ -136,6 +137,7 @@ export const cardDeadline = definePollingTrigger({
 
       return !card.dueComplete && due > now && due < now + range && due > since;
     });
+
     const latest = events.reduce((value, card) => Math.max(value, Date.parse(card.due!)), since);
 
     return { events, cursor: latest };

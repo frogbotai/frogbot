@@ -19,9 +19,11 @@ export function BoardCard({
     if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) {
       return;
     }
+
     event.preventDefault();
     onClick?.();
   };
+
   return (
     <div
       {...draggable.attributes}

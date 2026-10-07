@@ -86,9 +86,12 @@ export function AppSidebar({
     setTooltip(null);
     if (!open) {
       setLabelsVisible(false);
+
       return;
     }
+
     const timeout = setTimeout(() => setLabelsVisible(true), 100);
+
     return () => clearTimeout(timeout);
   }, [open]);
 
@@ -115,11 +118,13 @@ export function AppSidebar({
           ? iconRegistry[item.icon]
           : FolderIcon
         : (item.icon ?? FolderIcon);
+
     const active =
       item.path === homePath
         ? currentPath === item.path
         : currentPath === item.path ||
           (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
+
     return (
       <button
         aria-label={item.label}

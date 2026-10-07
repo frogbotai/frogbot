@@ -40,6 +40,7 @@ export function lexicalHTMLField(args: Args): Field {
       populate,
     });
   };
+
   const field: Field = {
     name: htmlFieldName,
     type: 'code',

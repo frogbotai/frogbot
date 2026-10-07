@@ -18,6 +18,7 @@ export const cerebrasProvider = {
   envVars: ['CEREBRAS_API_KEY', 'CEREBRAS_BASE_URL'],
   fromEnv: (env) => {
     if (!env.CEREBRAS_API_KEY) return undefined;
+
     return {
       apiKey: env.CEREBRAS_API_KEY,
       ...(env.CEREBRAS_BASE_URL && { baseURL: env.CEREBRAS_BASE_URL }),

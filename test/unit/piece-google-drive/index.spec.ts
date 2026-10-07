@@ -3,10 +3,12 @@ import { google } from 'googleapis';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
 vi.mock(
   'frogbot/pieces/test',
   () => import('../../../packages/frogbot/src/exports/pieces-test.js'),
 );
+
 vi.mock(
   '@frogbotai/piece-google',
   () => import('../../../packages/pieces/piece-google/src/index.js'),
@@ -31,12 +33,14 @@ describe('native Google Drive contract', () => {
   it('exposes exactly 16 semantic actions, typed schemas, and no triggers', () => {
     const drive = createGoogleDrive({ auth });
     const definition = pieceFactoryDefinition(createGoogleDrive);
+
     expect(googleDriveActions).toHaveLength(16);
     expect(definition.actions.map(({ slug }) => slug)).toEqual(googleDriveActions);
     expect(pieceInstanceTools(drive)?.map(({ slug }) => slug)).toEqual(
       googleDriveActions.map((slug) => `google-drive_${slug}`),
     );
     expect(drive.triggers).toEqual({});
+
     for (const action of definition.actions) {
       expect(action.input).toBeDefined();
       expect(action.output).toBeDefined();
@@ -47,6 +51,7 @@ describe('native Google Drive contract', () => {
 
   it('extends the shared Google identity recipe and maps stored tokens', () => {
     const definition = pieceFactoryDefinition(createGoogleDrive);
+
     expect(definition.oauth).toMatchObject({
       ...googleOAuth,
       scopes: [...googleOAuth.scopes, ...googleDriveScopes],
@@ -66,6 +71,7 @@ describe('native Google Drive contract', () => {
   it('resolves connection credentials and keeps refresh tokens out of the SDK', async () => {
     const { drive, req, oauth } = await fixture();
     await drive.getFile({ req, input: { fileId: 'file' } });
+
     expect(req.frogbot.connections.resolvePieceCredential).toHaveBeenCalled();
     expect(oauth.credentials.refresh_token).toBeUndefined();
   });
@@ -77,10 +83,14 @@ describe('native Google Drive contract', () => {
       if (url.pathname.endsWith('/permissions')) {
         return json(method === 'GET' ? { permissions: [] } : { id: 'permission' });
       }
+
       if (url.pathname === '/drive/v3/files' && method === 'GET') return json({ files: [] });
+
       return json(metadata);
     });
+
     const setCredentials = google.auth.OAuth2.prototype.setCredentials;
+
     vi.spyOn(google.auth.OAuth2.prototype, 'setCredentials').mockImplementation(function (
       this: InstanceType<typeof google.auth.OAuth2>,
       credentials: Parameters<typeof setCredentials>[0],
@@ -88,7 +98,9 @@ describe('native Google Drive contract', () => {
       setCredentials.call(this, credentials);
       this.transporter.defaults.fetchImplementation = network;
     });
+
     const file = { fileId: 'file' };
+
     expect(
       await pieceConformance(createGoogleDrive, {
         factoryOptions: { auth },

@@ -18,6 +18,7 @@ export const deepseekProvider = {
   envVars: ['DEEPSEEK_API_KEY', 'DEEPSEEK_BASE_URL'],
   fromEnv: (env) => {
     if (!env.DEEPSEEK_API_KEY) return undefined;
+
     return {
       apiKey: env.DEEPSEEK_API_KEY,
       ...(env.DEEPSEEK_BASE_URL && { baseURL: env.DEEPSEEK_BASE_URL }),

@@ -14,6 +14,7 @@ export const googleProvider = {
   envVars: ['GOOGLE_GENERATIVE_AI_API_KEY', 'GOOGLE_BASE_URL'],
   fromEnv: (env) => {
     if (!env.GOOGLE_GENERATIVE_AI_API_KEY) return undefined;
+
     return {
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
       ...(env.GOOGLE_BASE_URL && { baseURL: env.GOOGLE_BASE_URL }),
