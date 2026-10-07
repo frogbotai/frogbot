@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { acquireSlot } from '../../../scripts/lib/slot.mjs';
+import { acquireSlot, LAND_LOCK, SLOT_DIR, SLOTS } from '../../../scripts/lib/slot.mjs';
 
 const slotScript = fileURLToPath(new URL('../../../scripts/lib/slot.mjs', import.meta.url));
 
@@ -96,5 +96,34 @@ describe('acquireSlot', () => {
 
     expect(child.stdout.trim()).toBe('true');
     expect(existsSync(slot(0))).toBe(false);
+  });
+});
+
+describe('LAND_LOCK', () => {
+  it('is one slot in its own directory, beside the three heavy slots', () => {
+    expect(SLOTS).toBe(3);
+    expect(LAND_LOCK.slots).toBe(1);
+    expect(LAND_LOCK.dir).not.toBe(SLOT_DIR);
+  });
+
+  it('lets one land through at a time, naming the holder to the next', async () => {
+    const lock = { ...LAND_LOCK, dir };
+    const first = await acquireSlot('land 256p', { ...lock, pid: holder.pid! });
+    const logged: string[] = [];
+    let second: (() => void) | undefined;
+    const waiting = acquireSlot('land 256q', {
+      ...lock,
+      interval: 10,
+      log: (line) => logged.push(line),
+    }).then((release) => (second = release));
+
+    await vi.waitFor(() => expect(logged).toHaveLength(1));
+    expect(logged[0]).toMatch(/^waiting for the land lock \(held by: land 256p · /);
+    expect(second).toBeUndefined();
+
+    first();
+    await waiting;
+    expect(readFileSync(slot(0), 'utf8')).toMatch(new RegExp(`^${process.pid} land 256q`));
+    second!();
   });
 });

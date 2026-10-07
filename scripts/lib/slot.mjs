@@ -2,6 +2,7 @@
 // files in a directory every worktree shares, so parallel worktrees never run more than SLOTS at
 // once. A slot file holds its owner's pid; a slot whose owner is dead is free again. As a script,
 // `node scripts/lib/slot.mjs <name>` holds a slot until its stdin closes, for Playwright's webServer.
+// `pnpm ticket land` takes the single LAND_LOCK slot in its own directory, so lands run one at a time.
 import { randomUUID } from 'node:crypto';
 import { linkSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -11,6 +12,12 @@ import { fileURLToPath } from 'node:url';
 export const SLOTS = 3;
 
 export const SLOT_DIR = path.join(os.tmpdir(), 'frogbot-heavy-slots');
+
+export const LAND_LOCK = {
+  dir: path.join(os.tmpdir(), 'frogbot-land-lock'),
+  slots: 1,
+  noun: 'the land lock',
+};
 
 const alive = (pid) => {
   try {
@@ -70,7 +77,14 @@ function take(files, pid, label) {
 
 export async function acquireSlot(
   name,
-  { dir = SLOT_DIR, slots = SLOTS, pid = process.pid, interval = 2000, log = console.log } = {},
+  {
+    dir = SLOT_DIR,
+    slots = SLOTS,
+    noun = 'a heavy-test slot',
+    pid = process.pid,
+    interval = 2000,
+    log = console.log,
+  } = {},
 ) {
   const label = `${name} · ${path.basename(process.cwd())}`;
   const files = Array.from({ length: slots }, (_, index) => path.join(dir, `slot-${index}`));
@@ -96,7 +110,7 @@ export async function acquireSlot(
     if (!waiting) {
       const held = files.map((file) => holder(file)?.label).filter(Boolean);
 
-      log(`waiting for a heavy-test slot (held by: ${held.join(', ')})`);
+      log(`waiting for ${noun} (held by: ${held.join(', ')})`);
     }
 
     await new Promise((resolve) => setTimeout(resolve, interval));

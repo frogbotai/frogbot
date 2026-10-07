@@ -25,6 +25,7 @@ import {
   parseTouches,
   parseWorktrees,
   slugOf,
+  squashMessage,
   stageOf,
   statusRow,
   tail,
@@ -46,11 +47,7 @@ describe('parseArgs', () => {
       type: 'chore',
     });
 
-    expect(parseArgs(['--', 'land', '999', '-m', 'chore: scratch'])).toEqual({
-      command: 'land',
-      ticket: 999,
-      message: 'chore: scratch',
-    });
+    expect(parseArgs(['--', 'land', '999'])).toEqual({ command: 'land', ticket: 999 });
 
     expect(parseArgs(['status', '--batch', '28'])).toEqual({ command: 'status', batch: 28 });
     expect(parseArgs(['status', '--batch', 'deferred'])).toEqual({
@@ -92,7 +89,7 @@ describe('parseArgs', () => {
     [['new', 'abc'], '"abc" is not a ticket number'],
     [['new', '999', '--type', 'feature'], '--type "feature" is not one of'],
     [['land', '999', '--type', 'fix'], 'land takes no --type'],
-    [['land', '999', '-m'], '-m needs a value'],
+    [['land', '999', '-m', 'chore: scratch'], 'unknown argument "-m"'],
     [['next', '5'], 'next takes no arguments'],
     [['status', '--batch', 'soon'], '--batch "soon" is not a batch'],
     [['status', '--all'], 'unknown argument "--all"'],
@@ -523,6 +520,33 @@ describe('landGates', () => {
       'test:int:sqlite',
       'test:browser',
     ]);
+  });
+});
+
+describe('squashMessage', () => {
+  it('keeps the first subject and every body in order', () => {
+    expect(
+      squashMessage([
+        'feat(ui): add a toggle\n\nThe toggle hides the panel.\n',
+        'fix: typo',
+        'test: cover the toggle\n\nOne spec.\nTwo lines.',
+      ]),
+    ).toBe('feat(ui): add a toggle\n\nThe toggle hides the panel.\n\nOne spec.\nTwo lines.\n');
+  });
+
+  it('marks the subject breaking and keeps each BREAKING CHANGE footer last, once', () => {
+    expect(
+      squashMessage([
+        'feat(ui): add a toggle\n\nFirst body.',
+        'refactor: rename\n\nSecond body.\n\nBREAKING CHANGE: `open` is now `expanded`\nand defaults to false.\nRefs: #12',
+        'fix: follow up\n\nBREAKING CHANGE: `open` is now `expanded`\nand defaults to false.',
+      ]),
+    ).toBe(
+      'feat(ui)!: add a toggle\n\nFirst body.\n\nSecond body.\n\nRefs: #12\n\nBREAKING CHANGE: `open` is now `expanded`\nand defaults to false.\n',
+    );
+
+    expect(squashMessage(['chore: a', 'feat(x)!: b'])).toBe('chore!: a\n');
+    expect(squashMessage(['chore!: a', 'fix: b'])).toBe('chore!: a\n');
   });
 });
 
