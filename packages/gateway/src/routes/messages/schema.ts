@@ -1,33 +1,7 @@
-// Zod schema for `POST /v1/messages` request bodies (Anthropic-compatible).
-//
-// ---------------------------------------------------------------------------
-// Same "limited schema" philosophy as `chat-completions-schema.ts`:
-//   - Every z.object() uses .loose() — unknown fields survive.
-//   - Optional/provider-specific fields use .nullish().
-//   - Content-part discrimination uses z.union() + catch-all for forward compat.
-//   - Semantic validation lives in the translator, not the schema.
-//
-// What we DO enforce at the schema level (structural invariants only):
-//   - model: required non-empty string.
-//   - max_tokens: required positive integer (Anthropic mandates this).
-//   - messages: non-empty array.
-//   - Alternating user/assistant roles (Anthropic requirement).
-//   - tool_result.tool_use_id: required for correlation.
-//   - tool_use.id / name: required for tool dispatch.
-//
-// What we deliberately DON'T validate here (translator's job):
-//   - Image source well-formedness (base64 data validity, URL reachability).
-//   - Tool input JSON structure.
-//   - Content block type support (UnsupportedModalityError with context).
-
 import { z } from 'zod';
 
 import { RequestValidationError } from '../../errors/gatewayError.js';
 import { formatZodPath } from '../../shared/formatZodPath.js';
-
-// ---------------------------------------------------------------------------
-// Cache control (per-block, per-message)
-// ---------------------------------------------------------------------------
 
 const cacheControlSchema = z
   .object({
@@ -35,10 +9,6 @@ const cacheControlSchema = z
     ttl: z.enum(['5m', '1h', '24h']).nullish(),
   })
   .loose();
-
-// ---------------------------------------------------------------------------
-// Content block schemas (user messages)
-// ---------------------------------------------------------------------------
 
 const textBlockSchema = z
   .object({
@@ -48,8 +18,6 @@ const textBlockSchema = z
   })
   .loose();
 
-// Anthropic media sources: base64 payload or remote URL. Documents also
-// support an inline text variant (see documentBlockSchema).
 const mediaSourceSchema = z.union([
   z
     .object({
@@ -75,7 +43,6 @@ const imageBlockSchema = z
   })
   .loose();
 
-// Tool results carry either a string or a mixed array of text/image sub-blocks.
 const toolResultSubBlockSchema = z.union([
   z.object({ type: z.literal('text'), text: z.string() }).loose(),
   z.object({ type: z.literal('image'), source: mediaSourceSchema }).loose(),
@@ -111,7 +78,6 @@ const documentBlockSchema = z
   })
   .loose();
 
-// Catch-all for unknown user content block types
 const unknownUserBlockSchema = z
   .object({
     type: z.string(),
@@ -125,10 +91,6 @@ const userContentBlockSchema = z.union([
   documentBlockSchema,
   unknownUserBlockSchema,
 ]);
-
-// ---------------------------------------------------------------------------
-// Content block schemas (assistant messages)
-// ---------------------------------------------------------------------------
 
 const assistantTextBlockSchema = z
   .object({
@@ -177,10 +139,6 @@ const assistantContentBlockSchema = z.union([
   unknownAssistantBlockSchema,
 ]);
 
-// ---------------------------------------------------------------------------
-// Message schemas
-// ---------------------------------------------------------------------------
-
 const userMessageSchema = z
   .object({
     role: z.literal('user'),
@@ -197,10 +155,6 @@ const assistantMessageSchema = z
 
 const messageSchema = z.union([userMessageSchema, assistantMessageSchema]);
 
-// ---------------------------------------------------------------------------
-// System parameter (string or structured array)
-// ---------------------------------------------------------------------------
-
 const systemTextBlockSchema = z
   .object({
     type: z.literal('text'),
@@ -210,10 +164,6 @@ const systemTextBlockSchema = z
   .loose();
 
 const systemSchema = z.union([z.string(), z.array(systemTextBlockSchema).min(1)]);
-
-// ---------------------------------------------------------------------------
-// Tool definitions
-// ---------------------------------------------------------------------------
 
 const toolInputSchemaSchema = z
   .object({
@@ -231,22 +181,12 @@ const toolDefinitionSchema = z
   })
   .loose();
 
-// ---------------------------------------------------------------------------
-// Thinking (extended thinking config)
-// ---------------------------------------------------------------------------
-
-// Anthropic wire format: `{ type: 'enabled', budget_tokens }` (or `disabled`).
-// `.loose()` keeps forward-compat variants (e.g. `adaptive`) surviving.
 const thinkingSchema = z
   .object({
     type: z.string(),
     budget_tokens: z.number().int().nullish(),
   })
   .loose();
-
-// ---------------------------------------------------------------------------
-// Structured output (`output_config` GA / deprecated top-level `output_format`)
-// ---------------------------------------------------------------------------
 
 const outputFormatSchema = z
   .object({
@@ -261,10 +201,6 @@ const outputConfigSchema = z
     effort: z.enum(['low', 'medium', 'high', 'max']).nullish(),
   })
   .loose();
-
-// ---------------------------------------------------------------------------
-// Remote MCP servers & code-execution container (top-level Anthropic fields)
-// ---------------------------------------------------------------------------
 
 const mcpServerSchema = z
   .object({
@@ -302,17 +238,12 @@ const containerSchema = z.union([
     .loose(),
 ]);
 
-// ---------------------------------------------------------------------------
-// Top-level request
-// ---------------------------------------------------------------------------
-
 export const messagesRequestSchema = z
   .object({
     model: z.string().min(1, 'model is required'),
     messages: z.array(messageSchema).min(1, 'messages must contain at least one message'),
     max_tokens: z.number().int().positive('max_tokens must be a positive integer'),
 
-    // Optional parameters
     system: systemSchema.nullish(),
     temperature: z.number().nullish(),
     top_p: z.number().nullish(),
@@ -334,17 +265,12 @@ export const messagesRequestSchema = z
       .loose()
       .nullish(),
 
-    // Tools
     tools: z.array(toolDefinitionSchema).nullish(),
     tool_choice: z.unknown().nullish(),
   })
   .loose();
 
 export type MessagesRequest = z.infer<typeof messagesRequestSchema>;
-
-// ---------------------------------------------------------------------------
-// Parse helper
-// ---------------------------------------------------------------------------
 
 export function parseMessagesRequest(body: unknown): MessagesRequest {
   const result = messagesRequestSchema.safeParse(body);

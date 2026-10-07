@@ -1,12 +1,3 @@
-// Strict structured output — the gateway checks the reply against the schema.
-//
-// Some providers can't enforce a schema (Bedrock rejects it for the newest
-// Claude models), so a `strict: true` request is checked by the gateway: a
-// non-streaming mismatch is retried once with the problems shown to the model,
-// a second mismatch is a 502 `structured_output_invalid`, and a streamed
-// mismatch ends with an error event. Live proof: the Bedrock Claude Sonnet 5
-// case in test/gateway/live/scenarios.e2e.spec.ts.
-
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
@@ -39,7 +30,6 @@ const usage = (input: number, output: number) =>
 
 const response = { id: 'r', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') };
 
-// Answers each call with the next scripted reply and records the prompts.
 function scriptedModel(replies: Reply[]) {
   const calls: LanguageModelV4CallOptions[] = [];
   const next = (options: LanguageModelV4CallOptions) => {

@@ -1,9 +1,3 @@
-/**
- * Locates and loads a project's `frogbot.config.{ts,js,mjs}` from the
- * filesystem and returns its sanitized config (the awaited default
- * export). Used by the CLI and first-party `@frogbotai/*` packages through
- * `frogbot/internal`; never exported publicly.
- */
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 

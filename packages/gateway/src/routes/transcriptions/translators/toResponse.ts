@@ -86,9 +86,6 @@ function getRawVerboseJson(result: TranscriptionResult): RawVerboseJson | undefi
   return isRawVerboseJson(body) ? body : undefined;
 }
 
-// The AI SDK's public TranscriptionModelResponseMetadata omits `body`, but the
-// V4 provider result carries it at runtime (e.g. OpenAI attaches the raw
-// verbose JSON). Narrow structurally until the upstream type includes it.
 function getResponseBody(response: object | undefined): unknown {
   return response && 'body' in response ? response.body : undefined;
 }

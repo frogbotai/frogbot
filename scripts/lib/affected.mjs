@@ -33,7 +33,6 @@ const DOCS_PAGES = ['docs/**', 'skills/**', 'README.md', '**/README.md'];
 
 const MANIFESTS = ['package.json', '**/package.json'];
 
-// The files each `pnpm check <name>` reads, besides its own scripts/check-<name>.mjs.
 export const CHECK_INPUTS = {
   branding: [...DOCS_PAGES, 'templates/**', 'examples/**', 'packages/create-frogbot-app/**'],
   'dist-imports': ['packages/**/src/**', ...MANIFESTS],
@@ -53,12 +52,8 @@ export const CHECK_INPUTS = {
   'ui-architecture': ['packages/ui/src/**'],
 };
 
-// These check the shape of code (import paths, file layout), not what it does, so they run for a
-// file without covering it.
 const STRUCTURAL_CHECKS = ['dist-imports', 'test-types', 'tests', 'typed-lint', 'ui-architecture'];
 
-// Verify runs the groups in this order and stops at the first that fails. Passing every group
-// with a level reaches the highest of those levels; browser projects add no level of their own.
 export const GROUPS = [
   { group: 'typecheck', level: 'typecheck' },
   { group: 'checks', level: 'typecheck' },
@@ -296,11 +291,6 @@ function checkSet({ files, checks, cover }) {
   });
 }
 
-// Maps changed files to what covers them. `packages` are workspace packages ({ name, dir,
-// typecheck, typeTests, areas }), `vitest` lists each project's specs, `related` gives each spec
-// the changed files in its import graph, and `browser` holds the Playwright projects, the files
-// every project depends on, each spec's imports and each fixture's workspace packages. Typecheck
-// alone covers only type tests: a source file nothing else exercises is listed as uncovered.
 export function affectedSet({ files, packages, vitest = [], related = [], browser, checks = [] }) {
   const runs = affectedRuns(files);
   const covered = new Set();

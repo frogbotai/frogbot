@@ -135,11 +135,6 @@ async function projectConfigPaths(cwd: string, env: NodeJS.ProcessEnv): Promise<
   return out.reverse();
 }
 
-// Bounds the project config walk so it never traverses past the project root
-// into untrusted ancestor directories (a stray `gateway.config.ts` there would
-// otherwise be dynamically imported and executed). The boundary is an explicit
-// GATEWAY_CONFIG_ROOT override, else the nearest ancestor holding a `.git` or
-// `package.json`. With no marker found, discovery is confined to `cwd`.
 function findProjectRoot(start: string, env: NodeJS.ProcessEnv): string {
   const override = env.GATEWAY_CONFIG_ROOT;
   if (override) {
@@ -171,9 +166,7 @@ async function existing(paths: string[]): Promise<string[]> {
     try {
       await access(path);
       out.push(path);
-    } catch {
-      // Not readable / doesn't exist — skip it.
-    }
+    } catch {}
   }
 
   return out;

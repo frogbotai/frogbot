@@ -1,44 +1,3 @@
-// OpenAI-shaped error envelope.
-//
-// Locks the wire response shape for every error path in the gateway so M1+
-// can extend it consistently. Error sources handled, in order:
-//
-//   1. `GatewayError` — our own taxonomy (invalid model id, provider not
-//      configured, streaming not supported, etc.). Mapped via the table below.
-//   2. AI SDK `APICallError` — same-provider call failures. When the provider
-//      returned an OpenAI-shaped `{ error: { ... } }` body we forward it
-//      verbatim with the upstream `statusCode`. We additionally:
-//        - normalize context-overflow signals from any provider into
-//          `code: context_length_exceeded` (see `overflow.ts`),
-//        - detect HTML response bodies from upstream proxies/gateways and
-//          substitute a friendly 401/403 message,
-//        - tolerate numeric `code` values (OpenRouter and similar),
-//        - tolerate `error.message` being a JSON-encoded string of the
-//          real envelope (double-encoded; OpenRouter again).
-//   2b. `@ai-sdk/gateway` `GatewayError` — Vercel AI Gateway call failures.
-//      The adapter throws its own classes instead of `APICallError`; mapped
-//      by their `statusCode`. The statusless error `ai` substitutes for
-//      `GatewayAuthenticationError` maps to 401.
-//   3. AI SDK `RetryError` — thrown by `generateText`/`streamText` once
-//      their internal retries (`maxRetries`) are exhausted on a retryable
-//      upstream failure. Unwraps `err.lastError`: an `APICallError` or
-//      `GatewayError` recurses into (2)/(2b); anything else falls back to a
-//      502 `server_error`.
-//   4. AI SDK subclasses (`NoSuchModelError`, `InvalidPromptError`,
-//      `LoadAPIKeyError`, `JSONParseError`, `TypeValidationError`,
-//      `AISDKError`) — mapped to specific statuses/codes.
-//   5. Anything else (including non-`Error` throws) → 500 `server_error`.
-//
-// An upstream failure carrying a non-error status (< 400, e.g. a 200 whose
-// body failed to parse) is a bad upstream response → 502.
-//
-// The output is `{ error: { message, type, code, param } }` per OpenAI's
-// schema, paired with the HTTP status to use.
-//
-// `error.code` is emitted as `string | null` even when the upstream gave us
-// a number — OpenAI's documented schema strings the field, but their
-// libraries accept either; we normalize on output.
-
 import { GatewayError as AIGatewayError, GatewayModelNotFoundError } from '@ai-sdk/gateway';
 import {
   AISDKError,
@@ -65,10 +24,6 @@ import {
   statusToOpenAIType,
 } from './statusMaps.js';
 import { unwrapRetryError } from './unwrapRetryError.js';
-
-// ---------------------------------------------------------------------------
-// OpenAI error type taxonomy
-// ---------------------------------------------------------------------------
 
 /** OpenAI's documented `error.type` values. */
 export type OpenAIErrorType =
@@ -98,16 +53,10 @@ export type ErrorResponseOptions = {
 export type GatewayHttpStatus =
   400 | 401 | 402 | 403 | 404 | 408 | 409 | 413 | 422 | 429 | 500 | 502 | 503 | 504 | 529;
 
-// Hono's `ContentfulStatusCode` omits non-standard codes like 529 (Anthropic's
-// "overloaded"), which the gateway intentionally serves. Hono serves 529
-// correctly at runtime; only the conservative type rejects it, so we narrow at
-// the single `c.json(body, status)` seam.
 export function toContentfulStatus(status: GatewayHttpStatus): ContentfulStatusCode {
   return status as ContentfulStatusCode;
 }
 
-// Local reason-phrase map so the error path never imports `node:http` —
-// `STATUS_CODES` is Node-only and breaks strict WinterCG runtimes (G46).
 const HTTP_STATUS_TEXT: Record<number, string> = {
   400: 'Bad Request',
   401: 'Unauthorized',
@@ -123,7 +72,7 @@ const HTTP_STATUS_TEXT: Record<number, string> = {
   502: 'Bad Gateway',
   503: 'Service Unavailable',
   504: 'Gateway Timeout',
-  529: 'Overloaded', // Anthropic
+  529: 'Overloaded',
 };
 
 /** Standard HTTP reason phrase for a status, for telemetry `error.type` labels. */
@@ -135,10 +84,6 @@ export function httpStatusText(status: number): string {
 export function statusForError(err: unknown): GatewayHttpStatus {
   return toOpenAIErrorResponse(err).status;
 }
-
-// ---------------------------------------------------------------------------
-// GatewayError → OpenAI `type` mapping
-// ---------------------------------------------------------------------------
 
 const GATEWAY_CODE_TO_TYPE: Record<GatewayErrorCode, OpenAIErrorType> = {
   budget_exceeded: 'invalid_request_error',
@@ -158,17 +103,6 @@ const GATEWAY_CODE_TO_TYPE: Record<GatewayErrorCode, OpenAIErrorType> = {
   structured_output_invalid: 'server_error',
 };
 
-// ---------------------------------------------------------------------------
-// Status code → OpenAI type: see `statusMaps.ts` (`statusToOpenAIType`) —
-// single source of truth shared with `streamError.ts` and the mid-stream
-// extractors (G88).
-// ---------------------------------------------------------------------------
-
-/**
- * Best-effort OpenAI `code` slug for a bare status code (no upstream code
- * available). Mirrors the strings OpenAI uses in its own envelopes when
- * possible; falls back to `null` for unknown statuses.
- */
 function openAICodeForStatus(status: number): string | null {
   switch (status) {
     case 400:
@@ -200,22 +134,8 @@ function openAICodeForStatus(status: number): string | null {
   }
 }
 
-// ---------------------------------------------------------------------------
-// HTTP body sniffing helpers
-// ---------------------------------------------------------------------------
-
 const HTML_BODY_RE = /^\s*<(?:!doctype|html)/i;
 
-/**
- * Parse an upstream response body as JSON if possible. Accepts:
- *   - already-parsed objects,
- *   - JSON strings,
- *   - double-encoded JSON (`{"error":{"message":"{...real envelope...}"}}`) —
- *     we unwrap one level when the inner `message` itself parses to an
- *     object with an `error` field.
- *
- * Returns `undefined` if the input is neither parseable nor an object.
- */
 function looseJson(input: unknown): Record<string, unknown> | undefined {
   let value: unknown = input;
   if (typeof input === 'string') {
@@ -230,7 +150,6 @@ function looseJson(input: unknown): Record<string, unknown> | undefined {
 
   const obj = value as Record<string, unknown>;
 
-  // Unwrap double-encoded message: `{ error: { message: "<json>" } }`
   const err = obj.error;
   if (typeof err === 'object' && err !== null) {
     const innerMessage = (err as { message?: unknown }).message;
@@ -240,9 +159,7 @@ function looseJson(input: unknown): Record<string, unknown> | undefined {
         if (typeof reparsed === 'object' && reparsed !== null && 'error' in reparsed) {
           return reparsed;
         }
-      } catch {
-        /* not double-encoded — fall through to obj */
-      }
+      } catch {}
     }
   }
 
@@ -300,11 +217,6 @@ function normalizeType(type: unknown, fallback: OpenAIErrorType): OpenAIErrorTyp
   }
 }
 
-/**
- * Friendly message for an HTML response body (a sign that an upstream proxy
- * or auth gateway intercepted the call before it reached the provider).
- * Returns `undefined` for non-HTML bodies.
- */
 function htmlBodyMessage(body: string | undefined, status: number | undefined): string | undefined {
   if (!body || !HTML_BODY_RE.test(body)) return undefined;
   if (status === 401) {
@@ -318,10 +230,6 @@ function htmlBodyMessage(body: string | undefined, status: number | undefined): 
   return 'Upstream returned an HTML response. The request likely did not reach the provider.';
 }
 
-// ---------------------------------------------------------------------------
-// Public translator
-// ---------------------------------------------------------------------------
-
 export function toOpenAIErrorResponse(
   err: unknown,
   opts: ErrorResponseOptions = {},
@@ -333,7 +241,6 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
   body: OpenAIErrorEnvelope;
   status: GatewayHttpStatus;
 } {
-  // 1. Our own taxonomy
   if (isGatewayError(err)) {
     return {
       body: {
@@ -348,22 +255,16 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     };
   }
 
-  // 1b. Upstream abort/timeout. Client aborts never reach this translator —
-  // route `onError` short-circuits them to a bodyless 499 via `isClientAbort`
-  // (signal-gated) — so any AbortError/TimeoutError here is an upstream fault
-  // (fired server deadline or aborted upstream fetch) → 504 gateway_timeout.
   if (isUpstreamAbortError(err)) {
     const message = err.message || 'The upstream request timed out.';
 
     return envelope(message, 'server_error', openAICodeForStatus(504), null, 504);
   }
 
-  // 2. AI SDK same-provider call failure
   if (APICallError.isInstance(err)) {
     return fromAPICallError(err);
   }
 
-  // 2b. Vercel AI Gateway call failure
   if (AIGatewayError.isInstance(err)) {
     return fromAIGatewayError(err);
   }
@@ -378,7 +279,6 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     );
   }
 
-  // 3. AI SDK retry exhaustion — unwrap to the last attempt's cause.
   if (RetryError.isInstance(err)) {
     const cause = unwrapRetryError(err);
 
@@ -393,7 +293,6 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     return envelope(err.message, 'server_error', null, null, 502);
   }
 
-  // 4. AI SDK subclasses with specific meaning
   if (NoSuchModelError.isInstance(err)) {
     return envelope(err.message, 'not_found_error', 'model_not_found', 'model', 404);
   }
@@ -426,7 +325,6 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     );
   }
 
-  // 5. Exhaustive three-bucket classification for the remaining AI SDK classes.
   const classified = classifyAiSdkError(err);
   if (classified) {
     const message = err instanceof Error && err.message ? err.message : 'Internal server error';
@@ -441,12 +339,10 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     return envelope(message, 'server_error', null, null, 500);
   }
 
-  // 6. Generic AISDKError catch-all
   if (AISDKError.isInstance(err)) {
     return envelope(err.message, 'server_error', null, null, 500);
   }
 
-  // 7. Unknown / non-Error
   const message = err instanceof Error && err.message ? err.message : 'Internal server error';
 
   return envelope(message, 'server_error', null, null, 500);
@@ -471,10 +367,6 @@ function maskOpenAIResponse(
   };
 }
 
-// ---------------------------------------------------------------------------
-// APICallError handler
-// ---------------------------------------------------------------------------
-
 function fromAPICallError(err: APICallError): {
   body: OpenAIErrorEnvelope;
   status: GatewayHttpStatus;
@@ -487,13 +379,10 @@ function fromAPICallError(err: APICallError): {
   const parsedBody = looseJson(err.data) ?? looseJson(err.responseBody);
   const looseBody = asLooseOpenAIBody(parsedBody);
   const upstreamCode = looseBody?.error.code;
-  // Upstream messages can echo fragments of the operator's credential (G34);
-  // redact key-shaped tokens on every upstream-derived message below.
   const upstreamMessage = redactKeyFragments(
     typeof looseBody?.error.message === 'string' ? looseBody.error.message : err.message,
   );
 
-  // 2a. Context overflow normalization (cross-provider)
   if (
     isContextOverflow({
       message: err.message,
@@ -520,7 +409,6 @@ function fromAPICallError(err: APICallError): {
     };
   }
 
-  // 2b. HTML body from proxy/gateway
   const htmlMessage =
     typeof err.responseBody === 'string' ? htmlBodyMessage(err.responseBody, status) : undefined;
 
@@ -544,7 +432,6 @@ function fromAPICallError(err: APICallError): {
     );
   }
 
-  // 2c. Verbatim OpenAI-shaped passthrough (message redacted above)
   if (looseBody && typeof looseBody.error.message === 'string') {
     return {
       body: {
@@ -559,8 +446,6 @@ function fromAPICallError(err: APICallError): {
     };
   }
 
-  // 2d. Status-only fallback. Use the AI SDK message, then the body, then
-  // the standard HTTP reason phrase.
   const fallbackMessage = redactKeyFragments(
     (err.message && err.message.trim()) ||
       (typeof err.responseBody === 'string' && err.responseBody.trim()) ||
@@ -576,10 +461,6 @@ function fromAPICallError(err: APICallError): {
     status,
   );
 }
-
-// ---------------------------------------------------------------------------
-// Vercel AI Gateway error handler
-// ---------------------------------------------------------------------------
 
 const AI_GATEWAY_AUTH_MESSAGE = 'AI Gateway authentication failed: Invalid API key or token.';
 
@@ -623,10 +504,6 @@ function fromAIGatewayError(err: AIGatewayError): {
   return envelope(message, statusToOpenAIType(status), openAICodeForStatus(status), null, status);
 }
 
-// ---------------------------------------------------------------------------
-// Small constructors
-// ---------------------------------------------------------------------------
-
 function invalidUpstreamResponse(message: string): {
   body: OpenAIErrorEnvelope;
   status: GatewayHttpStatus;
@@ -655,12 +532,6 @@ function envelope(
   };
 }
 
-// ===========================================================================
-// Anthropic-shaped error envelope
-// ===========================================================================
-// Anthropic's error shape: `{ type: 'error', error: { type, message } }`
-// Used by the `/v1/messages` route for wire-correct error responses.
-
 export type AnthropicErrorType =
   | 'invalid_request_error'
   | 'authentication_error'
@@ -683,11 +554,6 @@ export type AnthropicErrorEnvelope = {
   request_id?: string;
 };
 
-// Status ↔ Anthropic error-type mapping lives in `statusMaps.ts`
-// (`statusToAnthropicType` / `statusForAnthropicErrorType`) — the single
-// source of truth shared with the mid-stream extractors and the messages
-// route's peek path (G88).
-
 export function toAnthropicErrorResponse(
   err: unknown,
   opts: ErrorResponseOptions = {},
@@ -699,7 +565,6 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
   body: AnthropicErrorEnvelope;
   status: GatewayHttpStatus;
 } {
-  // 1. Our own taxonomy
   if (isGatewayError(err)) {
     return {
       body: {
@@ -714,20 +579,16 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     };
   }
 
-  // 1b. Upstream abort/timeout → 504 timeout_error (see the OpenAI-shaped
-  // translator above for the classification rationale).
   if (isUpstreamAbortError(err)) {
     const message = err.message || 'The upstream request timed out.';
 
     return anthropicEnvelope(message, 'timeout_error', 504);
   }
 
-  // 2. AI SDK same-provider call failure
   if (APICallError.isInstance(err)) {
     return fromAnthropicAPICallError(err);
   }
 
-  // 2b. Vercel AI Gateway call failure
   if (AIGatewayError.isInstance(err)) {
     return fromAnthropicAIGatewayError(err);
   }
@@ -736,7 +597,6 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     return anthropicEnvelope(AI_GATEWAY_AUTH_MESSAGE, 'authentication_error', 401);
   }
 
-  // 3. AI SDK retry exhaustion — unwrap to the last attempt's cause.
   if (RetryError.isInstance(err)) {
     const cause = unwrapRetryError(err);
 
@@ -751,7 +611,6 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     return anthropicEnvelope(err.message, 'api_error', 502);
   }
 
-  // 4. AI SDK subclasses
   if (NoSuchModelError.isInstance(err)) {
     return anthropicEnvelope(err.message, 'not_found_error', 404);
   }
@@ -772,7 +631,6 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     );
   }
 
-  // 5. Exhaustive three-bucket classification for the remaining AI SDK classes.
   const classified = classifyAiSdkError(err);
   if (classified) {
     const message = err instanceof Error && err.message ? err.message : 'Internal server error';
@@ -787,12 +645,10 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     return anthropicEnvelope(message, 'api_error', 500);
   }
 
-  // 6. Generic
   if (AISDKError.isInstance(err)) {
     return anthropicEnvelope(err.message, 'api_error', 500);
   }
 
-  // 7. Unknown
   const message = err instanceof Error && err.message ? err.message : 'Internal server error';
 
   return anthropicEnvelope(message, 'api_error', 500);
@@ -833,10 +689,6 @@ function anthropicEnvelope(
   };
 }
 
-// ---------------------------------------------------------------------------
-// APICallError handler (Anthropic)
-// ---------------------------------------------------------------------------
-
 function fromAnthropicAPICallError(err: APICallError): {
   body: AnthropicErrorEnvelope;
   status: GatewayHttpStatus;
@@ -846,10 +698,8 @@ function fromAnthropicAPICallError(err: APICallError): {
   }
 
   const status = (err.statusCode ?? 500) as GatewayHttpStatus;
-  // Try to extract message from upstream Anthropic body
   const parsedBody = looseJson(err.data) ?? looseJson(err.responseBody);
   const anthropicBody = parsedBody as { error?: { message?: string; type?: string } } | undefined;
-  // Redact operator-credential fragments from the upstream message (G34).
   const message = redactKeyFragments(
     (typeof anthropicBody?.error?.message === 'string' && anthropicBody.error.message) ||
       (err.message && err.message.trim()) ||
@@ -867,10 +717,6 @@ function fromAnthropicAPICallError(err: APICallError): {
     status,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Vercel AI Gateway error handler (Anthropic)
-// ---------------------------------------------------------------------------
 
 function fromAnthropicAIGatewayError(err: AIGatewayError): {
   body: AnthropicErrorEnvelope;

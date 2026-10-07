@@ -1,10 +1,3 @@
-// The FrogBot ↔ Payload config seam. Before sanitization a FrogBot config is
-// a Payload config whose reshaped keys (collections, hooks, access, …) take
-// `FrogBotRequest`; sanitization adapts those keys. A Payload plugin reads
-// and returns the shared keys, and FrogBot sanitizes whatever it adds, so
-// handing the config across is a type change only. The checks pin the
-// keys FrogBot does not reshape to Payload's types, both ways.
-
 import { flattenTopLevelFields as flattenPayloadFields } from 'payload/shared';
 
 import type { COLLECTION_MARKERS, CollectionConfig } from '../collections/config/types.js';

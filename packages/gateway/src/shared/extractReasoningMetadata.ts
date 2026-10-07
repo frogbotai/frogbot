@@ -1,15 +1,3 @@
-// Extracts reasoning metadata (signature / redactedData) from AI SDK provider metadata.
-//
-// Two branches:
-//   1. "encrypted" — `redactedData` present (Anthropic redacted thinking)
-//   2. "text+signature" — `signature` present (Anthropic extended thinking / o-series)
-//
-// Iterates all provider-metadata namespaces (`anthropic`, `unknown`, etc.) so
-// it works for both direct Anthropic and Bedrock-via-unknown adapters.
-
-// Iterates all provider-metadata namespaces (`anthropic`, `unknown`, etc.) so
-// it works for both direct Anthropic and Bedrock-via-unknown adapters.
-
 export type ReasoningMetadata = {
   redactedData?: string;
   signature?: string;

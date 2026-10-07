@@ -1,5 +1,3 @@
-// Anthropic middleware tests — claudeThinkingEffort hook.
-
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../../packages/gateway/src/hooks.js';
@@ -61,7 +59,6 @@ describe('claudeThinkingEffort', () => {
 
     await claudeThinkingEffort(args);
 
-    // 15% of 2048 = 307, clamped to 1024
     expect(args.providerOptions['anthropic']).toEqual({
       thinking: { type: 'enabled', budgetTokens: 1024 },
     });
@@ -75,7 +72,6 @@ describe('claudeThinkingEffort', () => {
 
     await claudeThinkingEffort(args);
 
-    // 80% of default 16384 = 13107
     expect(args.providerOptions['anthropic']).toEqual({
       thinking: { type: 'enabled', budgetTokens: 13107 },
     });
@@ -101,7 +97,6 @@ describe('claudeThinkingEffort', () => {
 
     await claudeThinkingEffort(args);
 
-    // Should NOT overwrite
     expect((args.providerOptions['anthropic'] as any).thinking.budget_tokens).toBe(999);
   });
 
@@ -122,7 +117,6 @@ describe('claudeThinkingEffort', () => {
 
     await claudeThinkingEffort(args);
 
-    // budget = 0, so hook returns early
     expect(args.providerOptions['anthropic']).toBeUndefined();
   });
 });

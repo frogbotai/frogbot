@@ -1,14 +1,3 @@
-// Mid-stream SSE error-frame masking.
-//
-// G35 (HE4): a mid-stream `{type:'error'}` part is serialized by the stream
-// transform (chatCompletions/translators/stream.ts, messages
-// translators/stream.ts, responses/translators/stream.ts) via
-// extract*StreamErrorInfo. FIXED: the extractors now route every message
-// through `maybeMaskMessage` (with `redactKeyFragments`) using the
-// requestId/production context threaded from the handlers into the transform
-// factories, so a 5xx error emitted AFTER the first content chunk is masked
-// in production instead of streaming raw internals verbatim.
-
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
@@ -19,12 +8,6 @@ import { parseSse } from '../__helpers/gateway/parse-sse.js';
 const SENSITIVE =
   'upstream failure: internal-host-42.corp.local connection refused stacktrace at /srv/app/worker.js:214';
 
-/**
- * A model that emits a real content chunk, THEN a `{type:'error'}` part with a
- * 5xx-class error carrying sensitive internal detail. Because content already
- * flowed, this is a mid-stream error handled by the transform, not the
- * early-peek path or the reader-level `toError` path.
- */
 function createMidStreamErrorModel(): LanguageModelV4 {
   const error = Object.assign(new Error(SENSITIVE), { statusCode: 503 });
 
@@ -64,9 +47,6 @@ function makeAppWithMockProvider(providerName: string) {
 }
 
 describe('gateway integration — mid-stream SSE error masking (G35)', () => {
-  // In production a mid-stream 5xx error frame must be masked: the client must
-  // not receive the raw internal-host/stacktrace message that the masking
-  // contract exists to redact. Currently the transform emits it verbatim.
   it('masks the mid-stream error frame message in a streaming chat response (OpenAI)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
 
@@ -85,7 +65,6 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
       }),
     });
 
-    // Content already flowed, so this is a 200 with an in-band error frame.
     expect(res.status).toBe(200);
 
     const raw = await res.text();
@@ -93,8 +72,6 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
     expect(raw).not.toContain(SENSITIVE);
   });
 
-  // Same leak on the Anthropic streaming path — the `event: error` frame's
-  // message must be masked in production.
   it('masks the mid-stream error frame message in a streaming messages response (Anthropic)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
 
@@ -122,9 +99,6 @@ describe('gateway integration — mid-stream SSE error masking (G35)', () => {
     expect(errorFrame?.data ?? '').not.toContain(SENSITIVE);
   });
 
-  // The responses route shares the OpenAI extractor; its mid-stream `error`
-  // frame (and the `failed` terminal envelope derived from it) must also be
-  // masked in production.
   it('masks the mid-stream error frame message in a streaming responses response (OpenAI Responses)', async () => {
     vi.stubEnv('NODE_ENV', 'production');
 

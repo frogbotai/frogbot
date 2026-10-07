@@ -1,13 +1,5 @@
-// Cohere provider middleware — beforeUpstream hooks.
-//
-// Re-homes the neutral `unknown.dimensions` embedding knob into Cohere's
-// `providerOptions.cohere.outputDimension` namespace (the key the shipped
-// @ai-sdk/cohere embedding model reads).
-
 import type { BeforeUpstreamHook } from '../../hooks.js';
 
-// Light-weight Cohere embedding models do not support output dimension
-// truncation; forwarding the knob makes the upstream reject the request.
 function supportsOutputDimension(model: string): boolean {
   return !model.includes('-light-');
 }

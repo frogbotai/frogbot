@@ -26,8 +26,6 @@ describe(`database contract [${adapterLabel}]`, () => {
     await clearAndSeed(booted.frogbot, 'empty');
   });
 
-  // ─── Create ────────────────────────────────────────────────────────────────
-
   describe('create', () => {
     it('returns the created document with an id', async () => {
       const doc = await booted.frogbot.create({
@@ -64,8 +62,6 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
   });
 
-  // ─── FindByID ──────────────────────────────────────────────────────────────
-
   describe('findByID', () => {
     it('retrieves a document by its ID', async () => {
       const created = await booted.frogbot.create({
@@ -95,8 +91,6 @@ describe(`database contract [${adapterLabel}]`, () => {
       ).rejects.toThrow();
     });
   });
-
-  // ─── Find ──────────────────────────────────────────────────────────────────
 
   describe('find', () => {
     it('returns all documents when no where is specified', async () => {
@@ -322,8 +316,6 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
   });
 
-  // ─── Update ────────────────────────────────────────────────────────────────
-
   describe('update', () => {
     it('updates a single field by ID', async () => {
       const created = await booted.frogbot.create({
@@ -340,7 +332,7 @@ describe(`database contract [${adapterLabel}]`, () => {
       });
 
       expect(updated.title).toBe('Modified');
-      expect(updated.priority).toBe(1); // unchanged field preserved
+      expect(updated.priority).toBe(1);
     });
 
     it('persists the update (verified via findByID)', async () => {
@@ -417,8 +409,6 @@ describe(`database contract [${adapterLabel}]`, () => {
       expect(drafts).toHaveLength(0);
     });
   });
-
-  // ─── Delete ────────────────────────────────────────────────────────────────
 
   describe('delete', () => {
     it('removes a document by ID', async () => {
@@ -501,8 +491,6 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
   });
 
-  // ─── Count ─────────────────────────────────────────────────────────────────
-
   describe('count', () => {
     it('returns total document count', async () => {
       await booted.frogbot.create({
@@ -562,8 +550,6 @@ describe(`database contract [${adapterLabel}]`, () => {
       expect(result.totalDocs).toBe(0);
     });
   });
-
-  // ─── Pagination ────────────────────────────────────────────────────────────
 
   describe('pagination', () => {
     beforeEach(async () => {
@@ -627,8 +613,6 @@ describe(`database contract [${adapterLabel}]`, () => {
       expect(result.docs).toHaveLength(12);
     });
   });
-
-  // ─── Sort ──────────────────────────────────────────────────────────────────
 
   describe('sort', () => {
     beforeEach(async () => {
@@ -714,8 +698,6 @@ describe(`database contract [${adapterLabel}]`, () => {
       expect(result.docs.map((d: any) => d.priority)).toEqual([3, 2]);
     });
   });
-
-  // ─── Connection ────────────────────────────────────────────────────────────
 
   describe('connection', () => {
     it('frogbot.collections registry is populated after boot', () => {

@@ -32,7 +32,6 @@ export type TracingOptions = {
   tracer?: Tracer;
 };
 
-/** Fields needed to tag/attribute a span; shared shape across the phases that can create or annotate one. */
 type TracedHookArgs = Pick<
   BeforeUpstreamHookArgs,
   'requestId' | 'operation' | 'model' | 'provider' | 'context'
@@ -71,22 +70,12 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
   return {
     beforeOperation: [
       async (args) => {
-        // A per-request `trace` override can only downgrade from the operator
-        // baseline, never escalate it (enforced as a per-namespace ceiling in
-        // `resolveSignalLevels`). When every base namespace is `'off'` no
-        // downgrade is possible, so no span/metric path will ever read the
-        // override — skip the body clone + JSON parse entirely.
         if (baseAllOff) {
           args.context[traceOverrideKey] = 'off';
 
           return;
         }
 
-        // The `trace` override is a gateway extension field carried only in JSON
-        // request bodies. Skip the body clone + parse for non-JSON requests
-        // (multipart uploads on transcriptions/images/speech routes) so a large
-        // binary upload isn't buffered into memory just to fail a JSON parse.
-        // In-process operations have no HTTP request — nothing to parse.
         if (!args.request) {
           args.context[traceOverrideKey] = undefined;
 
@@ -103,9 +92,7 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
         let body: unknown;
         try {
           body = await args.request.clone().json();
-        } catch {
-          // Not valid JSON — leave `body` undefined.
-        }
+        } catch {}
 
         args.context[traceOverrideKey] = signalLevelFromBody(body);
       },
@@ -126,9 +113,6 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
         );
 
         spans.set(args.requestId, span);
-        // Stash the span's context so handlers can activate it around the
-        // upstream AI SDK call — SDK-created spans become children of the
-        // gateway span and the Proxy tracer's tenant/api-key tagging fires.
         args.context[otelContextKey] = trace.setSpan(parent, span);
       },
     ],
@@ -170,13 +154,6 @@ const hookContextKey = Symbol.for('frogbot.gateway.hookContext');
 /** Context key where `beforeUpstream` stashes the OTel `Context` carrying the gateway span, for handlers to activate around the upstream AI SDK call. */
 export const otelContextKey = 'frogbot.gateway.otelContext';
 
-/**
- * Mirrors `logger.ts`'s production guard: `exception.message`/stack may carry
- * PII (provider payload excerpts, user input in validation errors, secrets in
- * stack frames — see OTel semconv #2967). In production we record only the
- * error name/type for classification, stripping message and stack. Elsewhere
- * we record the full error for debugging.
- */
 function sanitizeForTelemetry(error: unknown): Exception {
   if (!isProduction()) {
     return error instanceof Error ? error : String(error);

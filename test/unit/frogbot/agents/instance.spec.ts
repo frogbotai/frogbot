@@ -162,8 +162,6 @@ function emptyHooks(): SanitizedAIConfig['hooks'] {
 }
 
 function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
-  // Mirrors the gateway's operation lifecycle: hooks receive top-level
-  // req/user/agent lifted from the seeded context (as toGatewayHooks does in prod).
   const lift = (context: Record<string, unknown>) => {
     const seed = context as { req?: FrogBotRequest; agent?: unknown };
 

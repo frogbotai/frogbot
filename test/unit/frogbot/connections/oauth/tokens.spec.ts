@@ -420,7 +420,6 @@ describe('OAuth token and account transport', () => {
   });
 
   it('uses recipe refresh and never extends an old expires_in when omitted', async () => {
-    // A JavaScript recipe can return an explicit undefined, which OAuthTokens cannot express.
     const custom: OAuthTokens = { access_token: 'custom' };
     Object.assign(custom, { refresh_token: undefined });
     const refresh = vi.fn(() => Promise.resolve(custom));

@@ -108,7 +108,6 @@ describe('prepareForwardHeaders', () => {
 
     const result = prepareForwardHeaders(incoming);
 
-    // Headers API normalizes to lowercase
     expect(result.get('anthropic-beta')).toBe('prompt-caching-2024-07-31');
     expect(result.get('openai-beta')).toBe('assistants=v2');
   });

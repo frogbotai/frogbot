@@ -1,5 +1,3 @@
-// Provider definition: OpenRouter.
-
 import {
   createOpenRouter,
   type OpenRouterProvider,

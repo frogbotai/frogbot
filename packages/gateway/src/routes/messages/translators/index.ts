@@ -14,10 +14,8 @@ export type {
   AnthropicImageBlock,
   AnthropicMediaSource,
   AnthropicMessage,
-  // Request
   AnthropicMessagesRequest,
   AnthropicRedactedThinkingBlock,
-  // Response
   AnthropicResponse,
   AnthropicResponseBlock,
   AnthropicResponseRedactedThinkingBlock,

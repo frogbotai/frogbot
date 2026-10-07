@@ -1,10 +1,3 @@
-// Vitest globalSetup for the e2e project. Before any spec starts, kill
-// orphaned test servers left over from earlier killed runs, so a new run never
-// stacks on top of them.
-//
-// Only orphans are touched: processes whose parent is gone (ppid 1) and whose
-// command line runs this repo's `next` or the test guardian. A live
-// `pnpm dev` keeps its parent, so it is never matched.
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
@@ -64,9 +57,7 @@ export default function setup(): void {
   for (const { pid } of orphans) {
     try {
       process.kill(pid, 'SIGKILL');
-    } catch {
-      // Already gone.
-    }
+    } catch {}
   }
 
   const mb = Math.round(orphans.reduce((sum, row) => sum + row.rss, 0) / 1024);

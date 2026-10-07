@@ -1,14 +1,3 @@
-// Scaffolding for AI SDK's `experimental_repairToolCall` — hardens the
-// chat routes against models that emit invalid or unknown tool calls.
-//
-// Strategy: rather than surfacing a hard failure, redirect the malformed
-// call to a synthetic `invalid` tool that the model can observe in the
-// subsequent turn and self-correct from. This is the opencode pattern
-// (`session/llm.ts:343-363`) applied at the gateway layer.
-//
-// The wrapper is defensive: if the AI SDK's experimental surface changes,
-// we degrade gracefully and let the original error propagate.
-
 import type { ToolCallRepairFunction, ToolSet } from 'ai';
 
 /**

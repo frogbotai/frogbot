@@ -1,5 +1,3 @@
-// generateText operation — reference pattern for all AI operations.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { generateId, generateText as aiGenerateText } from 'ai';
 
@@ -30,10 +28,8 @@ export async function generateTextOperation(
 
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
 
-  // 1. Resolve model.
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

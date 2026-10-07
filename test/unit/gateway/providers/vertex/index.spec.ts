@@ -1,5 +1,3 @@
-// Vertex provider credential validation tests.
-
 import { describe, expect, it } from 'vitest';
 
 import { vertexProvider } from '../../../../../packages/gateway/src/providers/vertex/index.js';
@@ -73,7 +71,6 @@ describe('vertexProvider.fromEnv', () => {
       }),
     );
 
-    // Express mode wins — apiKey present
     expect(result).toHaveProperty('apiKey', 'AIza-key');
   });
 });

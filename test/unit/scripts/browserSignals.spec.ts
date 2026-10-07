@@ -22,9 +22,7 @@ afterEach(() => {
   for (const group of groups.splice(0)) {
     try {
       process.kill(-group, 'SIGKILL');
-    } catch {
-      // already gone
-    }
+    } catch {}
   }
 
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });

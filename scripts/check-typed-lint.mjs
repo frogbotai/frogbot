@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-// `pnpm check typed-lint [--all] [oxlint args]` runs the type-aware rules in `.oxlintrc.json` on
-// oxlint (tsgolint) and prints one `file:line rule message` line per problem. It lints the files
-// changed against local `main`, uncommitted and untracked ones included, as Payload's lint-staged
-// does; `--all`, or a changed `.oxlintrc.json` or tsconfig, lints the whole repo. Other args go to
-// oxlint. Needs built packages.
-//
-// Known violations are `.oxlintrc.json` overrides that set one rule to "warn" for exact files. A
-// warning there passes; an override whose file no longer warns fails, so the list only shrinks.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -23,22 +15,16 @@ const LINTABLE = /\.(?:[cm]?ts|tsx)$/;
 
 export const SKIP_LINE = 'typed-lint: skipped, no changed .ts or .tsx files';
 
-// A changed file that `.oxlintrc.json` ignores, such as a generated `frogbot-types.ts`, leaves
-// nothing to lint; `--no-error-on-unmatched-pattern` keeps that from failing.
 export function typedLintArgs(args = [], targets = ['.']) {
   return [...targets, '--no-error-on-unmatched-pattern', '--format', 'json', ...args];
 }
 
-// Deleted files are in the diff but have nothing to lint.
 export function typedLintTargets(files, exists = (file) => existsSync(path.join(ROOT, file))) {
   return files.filter((file) => LINTABLE.test(file) && exists(file));
 }
 
-// A changed lint or TypeScript config changes the types of files the diff doesn't touch.
 const CONFIGS = /(?:^|\/)(?:\.oxlintrc|tsconfig[^/]*)\.json$/;
 
-// The oxlint args and targets for `pnpm check typed-lint [args]`, or null when no changed file is
-// lintable. `targets` is null for the whole repo.
 export function typedLintCommand(args, changed = () => changedFiles(ROOT)) {
   const rest = args.filter((arg) => arg !== '--all');
   const files = rest.length < args.length ? null : changed();
@@ -52,7 +38,6 @@ export function typedLintCommand(args, changed = () => changedFiles(ROOT)) {
   return targets.length > 0 ? { args: typedLintArgs(rest, targets), targets } : null;
 }
 
-// The known violations in the linted files: every one for the whole repo, when `targets` is null.
 export function exceptions(config, targets) {
   return (config.overrides ?? []).flatMap(({ files, rules }) =>
     Object.entries(rules)

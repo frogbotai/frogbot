@@ -1,5 +1,3 @@
-// Provider definition: xAI.
-
 import { createXai, type XaiProvider, type XaiProviderSettings } from '@ai-sdk/xai';
 
 import type { ProviderDefinition } from '../types.js';
@@ -8,19 +6,11 @@ export type XaiConfig = Omit<XaiProviderSettings, 'apiKey' | 'fetch'> & {
   apiKey?: string;
 };
 
-/**
- * @ai-sdk/xai (≤ 5.0.10) maps a non-streamed Responses `status: "incomplete"`
- * to finish reason `other`, ignoring `incomplete_details.reason` (its stream
- * path reads it). Clients then can't tell a max-tokens cut-off from a finished
- * answer, so recover `length` / `content-filter` from the raw body.
- */
 type GenerateResult = {
   finishReason: { unified: string; raw?: string };
   response?: { body?: unknown };
 };
 
-// Generic so it preserves the SDK's own `LanguageModelV4` (xai pins a
-// different @ai-sdk/provider than the gateway).
 export function fixIncompleteFinishReason<
   M extends { doGenerate: (options: never) => PromiseLike<GenerateResult> },
 >(model: M): M {

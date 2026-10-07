@@ -21,7 +21,6 @@ function isError(value: unknown): value is Error {
   return types.isNativeError(value) || value instanceof Error;
 }
 
-// A throwing getter or Proxy must not replace the error being reported.
 function nextCause(value: unknown): unknown {
   try {
     return isError(value) ? value.cause : undefined;

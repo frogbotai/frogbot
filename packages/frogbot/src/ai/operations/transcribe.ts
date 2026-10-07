@@ -1,6 +1,3 @@
-// transcribe operation — audio-to-text transcription via AI SDK.
-// Uses ProxyTranscriptionModel pointed at the proxy URL.
-
 import { type Gateway, toTranscriptionLanguageOptions } from '@frogbotai/gateway';
 import { transcribe as aiTranscribe } from 'ai';
 
@@ -35,11 +32,9 @@ export async function transcribeOperation(
 
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model.
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

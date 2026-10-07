@@ -1,30 +1,3 @@
-// OpenAI SSE stream-error frame parser.
-//
-// When upstream providers fail mid-stream they emit a frame on the SSE
-// `data:` channel instead of an HTTP error status. The two canonical shapes
-// the OpenAI ecosystem produces are:
-//
-//   Chat / Responses early error:
-//     { "type": "error",
-//       "error": { "code": "rate_limit_exceeded",
-//                  "message": "Rate limit reached",
-//                  "type": "rate_limit_error" | null,
-//                  "param": null } }
-//
-//   Responses API completion failure:
-//     { "type": "response.failed",
-//       "response": { "error": { "code": "server_error",
-//                                "message": "response failed" } } }
-//
-// We also see lightly-malformed variants from OpenRouter / proxies where
-// `error.message` is itself a JSON-encoded string of the real envelope.
-//
-// Streaming routes use this before committing HTTP 200. We build
-// it now (with tests) so M1's streaming route only needs to wire it.
-//
-// Implementation cribbed from `@ai-sdk/openai`'s `openai-stream-error.ts`
-// (Apache-2.0, re-licensed MIT for this repo).
-
 import type { OpenAIErrorEnvelope, OpenAIErrorType } from './envelope.js';
 import { redactKeyFragments } from './maskMessage.js';
 import { statusToOpenAIType } from './statusMaps.js';
@@ -39,7 +12,6 @@ export type ParsedStreamErrorFrame = {
   frame: unknown;
 };
 
-/** Try to read an unknown value as a record. */
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return typeof value === 'object' && value !== null
     ? (value as Record<string, unknown>)
@@ -56,9 +28,6 @@ function asStringOrNumber(value: unknown): string | number | undefined {
  * them defensively).
  */
 export function parseStreamErrorFrame(frame: unknown): ParsedStreamErrorFrame | undefined {
-  // Accept double-encoded JSON in `error.message` (OpenRouter pattern).
-  // The outer frame may be a string at this layer if a caller forgot to
-  // decode SSE data — handle that too.
   let value = asRecord(frame);
   if (!value && typeof frame === 'string') {
     try {
@@ -71,7 +40,6 @@ export function parseStreamErrorFrame(frame: unknown): ParsedStreamErrorFrame | 
 
   if (!value) return undefined;
 
-  // Responses API: `{ type: "response.failed", response: { error: {...} } }`
   if (value.type === 'response.failed') {
     const response = asRecord(value.response);
     const responseError = asRecord(response?.error);
@@ -85,15 +53,10 @@ export function parseStreamErrorFrame(frame: unknown): ParsedStreamErrorFrame | 
     };
   }
 
-  // Chat / Responses early error: `{ type: "error", error: {...} }`
-  // Also tolerate the shape `{ error: {...} }` without an explicit `type`.
   const errorObj = asRecord(value.error) ?? value;
   const message = errorObj.message;
   if (typeof message !== 'string') return undefined;
 
-  // Guard against tagging unrelated objects as errors. Require at least one
-  // of the OpenAI-shape signals (the parent had `error` set, OR the obj
-  // carries `type`/`code`/`param`).
   const looksLikeError =
     asRecord(value.error) != null ||
     typeof errorObj.type === 'string' ||
@@ -153,10 +116,6 @@ function isHttpErrorStatus(n: number): boolean {
   return Number.isInteger(n) && n >= 400 && n <= 599;
 }
 
-// ---------------------------------------------------------------------------
-// Convenience: stream-error frame → envelope shape
-// ---------------------------------------------------------------------------
-
 /**
  * Translate a parsed stream-error frame to the OpenAI envelope.
  *
@@ -178,8 +137,6 @@ export function streamErrorFrameToEnvelope(
   return {
     body: {
       error: {
-        // Stream-error frames carry upstream text verbatim; strip
-        // operator-credential fragments before it reaches a client (G34).
         message: redactKeyFragments(parsed.message),
         type,
         code: parsed.code != null ? String(parsed.code) : null,
@@ -191,9 +148,6 @@ export function streamErrorFrameToEnvelope(
 }
 
 function inferOpenAIType(parsed: ParsedStreamErrorFrame, status: number): OpenAIErrorType {
-  // Shared status→type map (G88). It only falls back to
-  // `invalid_request_error` for unmapped 4xx statuses — in that case, prefer
-  // a recognized OpenAI type string from the upstream frame.
   const mapped = statusToOpenAIType(status);
   if (mapped !== 'invalid_request_error') return mapped;
 

@@ -405,8 +405,6 @@ describe('worktreePatchId', () => {
     expect(worktreePatchId(repo)).toBe(committed);
   });
 
-  // A same-size rewrite within the index's own timestamp only shows up through git's racy-git
-  // check, which needs the scratch index to keep the real index's mtime.
   it('sees a same-size rewrite made in the same second as the last index write', () => {
     repo = mkdtempSync(path.join(os.tmpdir(), 'verify-patch-'));
 

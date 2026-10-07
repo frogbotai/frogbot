@@ -1,26 +1,9 @@
-// Hook lifecycle types for gateway middleware.
-//
-// Hooks are the single extension mechanism: first-party provider middleware,
-// third-party plugins, and user code all use the same shapes. Provider-level
-// middleware (reasoning effort, thinking budget, cache control) registers as
-// `beforeUpstream` hooks — nothing special about built-in behavior.
-//
-// Each lifecycle phase has its own explicit hook type (Payload CMS-style)
-// rather than a single generic context narrowed by conditional types. This
-// keeps the surface legible: a hook's type signature is the exhaustive list
-// of fields it receives — no field is present-but-lying (e.g. `model: ''`)
-// and no field is absent-but-typed-as-present.
-
 import type { Attributes } from '@opentelemetry/api';
 
 import { type GatewayLogger, serializeError } from './observability/logger.js';
 import type { GatewayLanguageModel } from './providers/registry.js';
 
 export type GatewayEnv = { Bindings: { context: Record<string, unknown> } };
-
-// ---------------------------------------------------------------------------
-// Phase + Operation enums
-// ---------------------------------------------------------------------------
 
 export type HookOperation =
   | 'chat.completions'
@@ -41,10 +24,6 @@ export type HookPhase =
   | 'afterUpstream'
   | 'afterError'
   | 'afterOperation';
-
-// ---------------------------------------------------------------------------
-// Shared pieces
-// ---------------------------------------------------------------------------
 
 /** Token usage passed to `afterUpstream`/`afterOperation`, mirroring the AI SDK's partitions. */
 export interface HookUsage {
@@ -71,19 +50,11 @@ export interface LanguageParams {
   seed?: number;
 }
 
-/**
- * Fields every hook phase receives, regardless of what's happened yet.
- * `context` and `otel` are the mutable channels hooks use to communicate
- * with each other and with tracing/metrics (Payload CMS's `RequestContext`,
- * hebo's `state`/`otel`).
- */
 interface HookBase {
   readonly requestId: string;
   readonly operation: HookOperation;
   readonly startedAt: number;
-  /** Mutable bag for passing data between hooks (e.g. auth → billing). */
   context: Record<string, unknown>;
-  /** OpenTelemetry attributes contributed by hooks; flushed to spans + metrics. Low-cardinality operational attributes only (no user/session IDs) — every entry becomes a metric dimension. */
   otel: Attributes;
 }
 
@@ -103,10 +74,6 @@ export type OperationBase<Op extends HookOperation = HookOperation> = {
   model: string;
   provider: string;
 };
-
-// ---------------------------------------------------------------------------
-// Per-phase hook argument types
-// ---------------------------------------------------------------------------
 
 export interface BeforeOperationHookArgs extends HookBase {
   readonly phase: 'beforeOperation';
@@ -211,10 +178,6 @@ export interface Hooks {
   afterError?: AfterErrorHook[];
   afterOperation?: AfterOperationHook[];
 }
-
-// ---------------------------------------------------------------------------
-// Runner (sequential execution; afterError/afterOperation isolate failures)
-// ---------------------------------------------------------------------------
 
 export async function runHooks<
   A extends { readonly requestId: string; readonly operation: HookOperation },

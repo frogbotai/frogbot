@@ -9,10 +9,6 @@ import { finish, mockUsage } from './mockModel.js';
 
 const TOOL_CALLS_FINISH = finish('tool-calls', 'tool_calls');
 
-/**
- * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
- * hands to `doGenerate`/`doStream`. Mirrors paramForwarding.int.spec.ts.
- */
 function createRecordingModel(opts?: {
   text?: string;
   onCall?: (options: LanguageModelV4CallOptions) => void;
@@ -73,16 +69,7 @@ function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   return createApp({ registry });
 }
 
-// ---------------------------------------------------------------------------
-// G19a (RS3) — hosted tools must be forwarded to the model as
-// provider-defined tools ({ type: 'provider', id: 'openai.*' }) on an OpenAI
-// upstream; today translators/tools.ts:13 drops every non-'function' tool and
-// the request proceeds tool-less with 200.
-// ---------------------------------------------------------------------------
-
-// G19a
 describe('responses hosted tools forwarded upstream (openai)', () => {
-  // G19 — tools:[{type:'web_search'}] silently stripped (callOptions.tools undefined, 200); flip to it() when fixed. See 056_full_gateway_review.
   it('forwards tools:[{type: web_search}] as provider-defined tool id openai.web_search', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -101,8 +88,6 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
     });
 
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);
-    // AI SDK seam: LanguageModelV4ProviderTool (prepare-tools.ts maps ToolSet
-    // provider tools to { type: 'provider', id, name, args }).
     expect(callOptions?.tools).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: 'provider', id: 'openai.web_search' }),
@@ -110,7 +95,6 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
     );
   });
 
-  // G19 — tools:[{type:'mcp',...}] silently stripped including server config; flip to it() when fixed. See 056_full_gateway_review.
   it('forwards tools:[{type: mcp, server_label, server_url}] as provider-defined tool id openai.mcp with server args', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -140,15 +124,12 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
       expect.arrayContaining([expect.objectContaining({ type: 'provider', id: 'openai.mcp' })]),
     );
 
-    // The server connection config must survive translation (openai-responses
-    // mcpArgsSchema: serverLabel/serverUrl/requireApproval).
     const serialized = JSON.stringify(callOptions?.tools ?? []);
 
     expect(serialized).toContain('deepwiki');
     expect(serialized).toContain('https://mcp.deepwiki.com/mcp');
   });
 
-  // G19 — hosted tool dropped even alongside a surviving function tool (partial toolset, no warning); flip to it() when fixed. See 056_full_gateway_review.
   it('keeps hosted tools when mixed with function tools', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -183,17 +164,7 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G19b (RS3) — hosted tool_choice ({ type: 'web_search' }) must be forwarded
-// as { type: 'tool', toolName: 'web_search' } at the AI SDK seam (ai-core
-// prepare-tool-choice.ts; openai-responses maps it back to
-// { type: 'web_search' } on the wire); today translators/tools.ts:38-39
-// silently degrades every hosted shape to undefined (upstream default 'auto').
-// ---------------------------------------------------------------------------
-
-// G19b
 describe('responses hosted tool_choice forwarded upstream', () => {
-  // G19 — tool_choice {type:'web_search'} silently degraded to undefined/auto; flip to it() when fixed. See 056_full_gateway_review.
   it('forwards tool_choice {type: web_search} as {type: tool, toolName: web_search}', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -217,17 +188,7 @@ describe('responses hosted tool_choice forwarded upstream', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G19c (RS3) — cross-provider honesty: hosted OpenAI tools cannot work on a
-// non-OpenAI upstream, so the correct behavior is a typed 400
-// (invalid_request_error), not silent stripping. Today: the hosted tool is
-// dropped on the floor, the model is called tool-less, and the client gets a
-// clean 200 — the model "answers" a web-search request with zero tools.
-// ---------------------------------------------------------------------------
-
-// G19c
 describe('responses hosted tools on non-OpenAI upstream', () => {
-  // G19 — non-OpenAI upstream: hosted tool silently stripped → tool-less 200 (documented actual: status 200, callOptions.tools undefined, model invoked); flip to it() when fixed. See 056_full_gateway_review.
   it('rejects hosted tools with a typed 400 instead of silently degrading', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     let modelCalled = false;
@@ -257,7 +218,6 @@ describe('responses hosted tools on non-OpenAI upstream', () => {
         `(modelCalled=${modelCalled}, tools=${JSON.stringify(callOptions?.tools)})`,
     ).toBe(400);
     expect(body).toHaveProperty('error.type', 'invalid_request_error');
-    // The upstream must never be invoked with the hosted tool silently removed.
     expect(modelCalled).toBe(false);
   });
 });

@@ -6,7 +6,6 @@ import { del, list } from '@vercel/blob';
 import { storageContractSuite } from '../__helpers/shared/storage/storageContractSuite';
 import { mediaSlug } from './shared.js';
 
-// Must be set before any @vercel/blob calls
 process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_emulator_test';
 process.env.NEXT_PUBLIC_VERCEL_BLOB_API_URL = 'http://localhost:3100/api/blob';
 process.env.STORAGE_VERCEL_BLOB_BASE_URL = 'http://localhost:3100';

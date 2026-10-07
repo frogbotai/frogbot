@@ -1,11 +1,5 @@
-// Public surface of the `@frogbotai/gateway` package.
-//
-// Kept deliberately lean (FILE_STRUCTURE §3): factory + config + hook types +
-// model catalog type. Errors live behind `./errors`, hook composition behind
-// `./hooks`. Config/provider/catalog internals are implementation details and
-// are imported directly by the CLI and routes — never re-exported here.
-
-// Gateway factory — the primary entry point
+export type { GatewayConfig } from './config/schema.js';
+export { defineConfig } from './config/schema.js';
 export type {
   Gateway,
   GatewayHandler,
@@ -13,12 +7,6 @@ export type {
   GatewayOperationOptions,
 } from './gateway.js';
 export { createGateway } from './gateway.js';
-
-// Config
-export type { GatewayConfig } from './config/schema.js';
-export { defineConfig } from './config/schema.js';
-
-// Hook lifecycle types (also available via the `./hooks` subpath)
 export type {
   AfterErrorHook,
   AfterOperationHook,
@@ -30,8 +18,6 @@ export type {
   Hooks,
   HookUsage,
 } from './hooks.js';
-
-// Model catalog types — powers GET /v1/models discovery and operation validation
 export { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
 export type {
   Modality,
@@ -48,7 +34,5 @@ export { calculateModelCostUSD } from './providers/cost.js';
 export type { ReasoningVariant, ResolveReasoningVariantsArgs } from './providers/reasoning.js';
 export { resolveReasoningVariants } from './providers/reasoning.js';
 export { canonicalizeModelId, providerKeyEnvVar } from './providers/registry.js';
-
-// Transcription option translation, shared with in-process callers
 export type { ToTranscriptionLanguageOptionsArgs } from './routes/transcriptions/translators/index.js';
 export { toTranscriptionLanguageOptions } from './routes/transcriptions/translators/index.js';

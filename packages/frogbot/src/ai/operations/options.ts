@@ -1,5 +1,3 @@
-// Runtime-checked conversions from FrogBot's public option types to AI SDK types.
-
 import type { generateText, JSONValue } from 'ai';
 
 type ProviderOptions = NonNullable<Parameters<typeof generateText>[0]['providerOptions']>;
@@ -53,7 +51,6 @@ export function toProviderOptions(
   options: Record<string, unknown> | undefined,
 ): ProviderOptions | undefined {
   if (options === undefined) return undefined;
-  // An absent provider entry (`{ openai: undefined }`) means "no options", as in the AI SDK.
   const present = Object.values(options).some((entry) => entry === undefined || entry === null)
     ? Object.fromEntries(
         Object.entries(options).filter(([, entry]) => entry !== undefined && entry !== null),

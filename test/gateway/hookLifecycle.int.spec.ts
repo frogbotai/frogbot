@@ -1,17 +1,3 @@
-// Gateway streaming hook-lifecycle tests — proving two review findings at
-// the public `app.request()` / `createApp()` seam.
-//
-//   G26 — `afterOperation` (the "always runs, even on error" billing/audit
-//         slot) is silently skipped when the upstream stream REJECTS at the
-//         reader level before emitting its first frame (a network-reset style
-//         failure, not an in-band `{type:'error'}` part).
-//   G30 — the `otel` attribute bag that hooks write into is documented as
-//         "flushed to spans + metrics" and the built-in tracing hook flushes
-//         it onto the request span in `afterOperation`.
-//
-// Both started as `it.fails(...)` red tests and were flipped green when the
-// findings were fixed.
-
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import type { Span, Tracer } from '@opentelemetry/api';
 import { describe, expect, it, vi } from 'vitest';
@@ -33,13 +19,6 @@ function makeAppWithModel(providerName: string, model: LanguageModelV4, hooks?: 
   return createApp({ registry, hooks });
 }
 
-/**
- * A streaming mock whose `doStream` resolves fine but whose returned
- * `ReadableStream` THROWS on its first `pull` — i.e. it rejects at the reader
- * level before emitting a single frame. This models a network reset / socket
- * error mid-connection, which the AI SDK propagates as a `fullStream` read
- * rejection (`controller.error`), NOT as an in-band `{type:'error'}` part.
- */
 function createPreFirstByteRejectingStreamModel(error: unknown): LanguageModelV4 {
   return {
     specificationVersion: 'v4',
@@ -53,7 +32,6 @@ function createPreFirstByteRejectingStreamModel(error: unknown): LanguageModelV4
       Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           pull() {
-            // Reject at the reader level before any frame is enqueued.
             throw error;
           },
         }),
@@ -114,18 +92,7 @@ function createNonStreamingMock(): LanguageModelV4 {
   };
 }
 
-// ---------------------------------------------------------------------------
-// G26 — afterOperation must still fire on a pre-first-byte reader-level
-// stream rejection. Today it does not: the handler creates the lifecycle
-// BEFORE peeking the stream, so the outer `finally` guard (`if (base &&
-// !lifecycle)`) skips afterOperation, and the reader-level rejection never
-// reaches onFinish/onAbort/onStreamDone either — the billing/audit slot is
-// silently lost for an entire class of upstream failures.
-// ---------------------------------------------------------------------------
-
 describe('gateway streaming lifecycle — reader-level stream rejection (G26)', () => {
-  // G26: chat streaming — a pre-first-byte reader rejection must still fire the
-  // afterOperation billing/audit hook exactly once (it currently fires zero).
   it('chat: fires afterOperation once (not zero) when the stream rejects before the first byte', async () => {
     const afterErrorCalls: AfterErrorHookArgs[] = [];
     const afterOperationCalls: AfterOperationHookArgs[] = [];
@@ -157,16 +124,11 @@ describe('gateway streaming lifecycle — reader-level stream rejection (G26)', 
 
     await res.text().catch(() => undefined);
 
-    // The upstream failed before any byte reached the client → a pre-flight
-    // 500, afterError fires once, and afterOperation — the always-runs
-    // billing/audit slot — must still fire exactly once.
     expect(res.status).toBe(500);
     expect(afterErrorCalls).toHaveLength(1);
     expect(afterOperationCalls).toHaveLength(1);
   });
 
-  // G26: messages streaming — same reader-level rejection, same lost
-  // afterOperation on the Anthropic route (identical handler shape).
   it('messages: fires afterOperation once (not zero) when the stream rejects before the first byte', async () => {
     const afterErrorCalls: AfterErrorHookArgs[] = [];
     const afterOperationCalls: AfterOperationHookArgs[] = [];
@@ -204,8 +166,6 @@ describe('gateway streaming lifecycle — reader-level stream rejection (G26)', 
     expect(afterOperationCalls).toHaveLength(1);
   });
 
-  // G26: responses streaming — same reader-level rejection, same lost
-  // afterOperation on the OpenAI Responses route.
   it('responses: fires afterOperation once (not zero) when the stream rejects before the first byte', async () => {
     const afterErrorCalls: AfterErrorHookArgs[] = [];
     const afterOperationCalls: AfterOperationHookArgs[] = [];
@@ -243,16 +203,7 @@ describe('gateway streaming lifecycle — reader-level stream rejection (G26)', 
   });
 });
 
-// ---------------------------------------------------------------------------
-// G30 — an `otel` attribute a hook contributes is documented as flushed to
-// spans + metrics; the built-in tracing hook spreads `args.otel` onto the
-// request span in `afterOperation`, so operator-contributed attributes land
-// on the exported span.
-// ---------------------------------------------------------------------------
-
 describe('gateway observability — otel bag flushed to spans (G30)', () => {
-  // G30: an attribute a hook writes into the `otel` bag must appear on the
-  // request span, flushed by the tracing hook's afterOperation.
   it('flushes a hook-contributed otel attribute onto the exported span', async () => {
     const span = makeSpan();
     const tracer = { startSpan: vi.fn(() => span) } as unknown as Tracer;
@@ -263,7 +214,6 @@ describe('gateway observability — otel bag flushed to spans (G30)', () => {
     const app = createApp({
       registry,
       tracer,
-      // `required` ensures the tracing hook actually creates a span.
       signalLevel: 'required',
       hooks: {
         beforeUpstream: [
@@ -285,8 +235,6 @@ describe('gateway observability — otel bag flushed to spans (G30)', () => {
 
     expect(res.status).toBe(200);
     expect(span.ended).toBe(true);
-    // The documented contract: hook-contributed otel attributes are flushed to
-    // the span. Currently the tracing hook ignores `args.otel` entirely.
     expect(span.attributes['frogbot.custom_attribute']).toBe('from-hook');
   });
 });

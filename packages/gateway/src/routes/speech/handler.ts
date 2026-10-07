@@ -29,10 +29,6 @@ import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { parseSpeechRequest, type SpeechResponseFormat } from './schema.js';
 import { toSpeechParams } from './translators/index.js';
 
-// OpenAI serves a Content-Type matching the requested response_format. The AI
-// SDK derives mediaType via magic-byte sniffing (generate-speech.ts) which
-// returns audio/mp3 for headerless PCM and misses ID3-tagged MP3; map the
-// requested format to its registered IANA type instead.
 const SPEECH_FORMAT_MEDIA_TYPES: Record<SpeechResponseFormat, string> = {
   mp3: 'audio/mpeg',
   opus: 'audio/opus',
@@ -63,9 +59,6 @@ export function speechRoute(ctx: SpeechRouteContext) {
     const otel: Attributes = {};
     const startedAt = Date.now();
 
-    // Lifecycle state hoisted for `catch`/`finally`. `base` only exists once
-    // the provider is resolved; failures before that point rethrow to
-    // `app.onError`, which shapes the OpenAI error envelope.
     let base: OperationBase<typeof operation> | undefined;
     let phase: HookPhase = 'beforeOperation';
     let finishReason: string | undefined;
@@ -74,8 +67,6 @@ export function speechRoute(ctx: SpeechRouteContext) {
     let hooks: Hooks = ctx.hooks ?? {};
 
     try {
-      // `beforeOperation` runs first — a pre-flight gate (auth, rate limit)
-      // that fires before the body is parsed or a provider is resolved.
       await runHooks(hooks.beforeOperation, {
         phase,
         operation,
@@ -115,14 +106,11 @@ export function speechRoute(ctx: SpeechRouteContext) {
 
       phase = 'beforeUpstream';
 
-      // Translate OpenAI wire format → AI SDK format.
       const { providerOptions, outputFormat, ...speechParams } = toSpeechParams(body);
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
 
-      // `beforeUpstream` hooks may mutate `headers`/`providerOptions` in
-      // place; the upstream call below consumes the mutated values.
       await runHooks(hooks.beforeUpstream, {
         ...base,
         phase,
@@ -167,9 +155,6 @@ export function speechRoute(ctx: SpeechRouteContext) {
       });
     } catch (err) {
       operationError = err;
-      // afterError is operation-scoped: it only fires once the provider is
-      // resolved. Pre-resolution failures (beforeOperation, parse, resolve)
-      // rethrow straight to `app.onError`, which shapes the error envelope.
       if (base) {
         await runHooks(
           hooks.afterError,
@@ -197,8 +182,6 @@ export function speechRoute(ctx: SpeechRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces OpenAI-shaped errors. The handler
-  // rethrows (Payload's routeError model), keeping the operation body lean.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });

@@ -212,8 +212,6 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces OpenAI-shaped errors, matching
-  // `chatCompletions/handler.ts`.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });

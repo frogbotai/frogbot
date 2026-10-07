@@ -1,15 +1,3 @@
-// P2 observability findings — G95, G101, G103.
-//
-// G95  — token metrics always emit 4 partitioned points (even when all cache
-//        fields are 0) instead of falling back to 2 bare points. Zero-value
-//        cache partitions pollute dashboards with meaningless series.
-// G101 — pre-resolution failures (schema 400s, provider-not-found 404s) produce
-//        zero log lines. The loggingHooks only fire at `beforeUpstream` and
-//        later; failures that escape to `app.onError` are silently swallowed.
-// G103 — `x-request-id` is accepted verbatim without sanitisation, so a client
-//        can inject an arbitrary string that becomes the span-map key and the
-//        echoed response header.
-
 import { Writable } from 'node:stream';
 
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
@@ -22,10 +10,6 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { finish, mockUsage } from './mockModel.js';
 
 const API_CALL_ERROR_MARKER = Symbol.for('vercel.ai.error.AI_APICallError');
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
 
 function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
   const text = opts.text ?? 'hi';
@@ -104,37 +88,13 @@ function capturePino() {
   return { logger, lines };
 }
 
-// ---------------------------------------------------------------------------
-// G95 — token metrics always partition even when cache is zero (D-class)
-// ---------------------------------------------------------------------------
-// G95 is D-class (code-fact confirmed by source inspection):
-// `recordGenAiTokenUsage` in genAi.ts unconditionally calls histogram.record()
-// 4× (lines 38-41): cacheRead, uncachedInput, reasoningOutput, textOutput.
-// When cacheRead=0 and reasoningOutput=0 these emit zero-value histogram points
-// with cache/reasoning partition labels, polluting dashboards with meaningless
-// series. No runtime test is required for a D-class finding; this describe
-// block is present for tracking only.
-//
-// Evidence: genAi.ts:38-41 — four unconditional .record() calls, even when
-// `cacheRead` and `reasoningOutput` are both 0.
-
 describe('G95 — token usage always partitioned (D-class, code-fact)', () => {
   it('CONFIRMED by source: genAi.ts emits 4 histogram points unconditionally (tracked, no runtime assertion)', () => {
-    // D-class — verdict recorded here, no runtime assertion needed.
-    // Fix: gate each .record() call on value > 0.
     expect(true).toBe(true);
   });
 });
 
-// ---------------------------------------------------------------------------
-// G101 — pre-resolution failures produce zero log lines
-// ---------------------------------------------------------------------------
-
 describe('G101 — pre-resolution failures produce zero log lines', () => {
-  // A schema-validation 400 (malformed body) throws before `base` is set.
-  // It escapes to `app.onError` which returns a JSON 400 but calls no logger.
-  // `createLoggingHooks` only fires `beforeUpstream` and later — so this
-  // failure is completely silent in the log stream.
   it('logs at least one line for a schema-validation 400', async () => {
     const logLines: Array<{ level: string; msg?: string }> = [];
     const capture: LogFn = (first: Record<string, unknown> | string, msg?: string) => {
@@ -160,7 +120,6 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
 
     const app = createApp({ registry, logger });
 
-    // Sending a body that fails Zod schema: missing required `messages` field.
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -168,7 +127,6 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
     });
 
     expect(res.status).toBe(400);
-    // G101: the gateway should log the 400 at error or warn level.
     expect(logLines.length).toBeGreaterThan(0);
   });
 
@@ -197,7 +155,6 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
 
     const app = createApp({ registry, logger });
 
-    // Provider `badprovider` is not in the registry → ProviderNotConfiguredError.
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -208,7 +165,6 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
     });
 
     expect(res.status).toBe(404);
-    // G101: the gateway should log the not-found error.
     expect(logLines.length).toBeGreaterThan(0);
   });
 });
@@ -275,14 +231,7 @@ describe('gateway errors with a real pino instance', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G103 — x-request-id accepted verbatim without sanitisation
-// ---------------------------------------------------------------------------
-
 describe('G103 — x-request-id injection: no sanitisation or prefix', () => {
-  // An inbound `x-request-id` with a path-traversal-shaped value is echoed
-  // verbatim in the response header. No `req_` prefix is applied, and no
-  // charset/length validation is performed.
   it('sanitises / rejects a path-traversal-shaped x-request-id', async () => {
     const app = makeApp();
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -296,26 +245,16 @@ describe('G103 — x-request-id injection: no sanitisation or prefix', () => {
 
     const echoed = res.headers.get('x-request-id') ?? '';
 
-    // G103: the echoed ID must not contain path-traversal sequences.
     expect(echoed).not.toContain('..');
-    // And must be normalised to a safe charset. The gateway generates bare
-    // UUIDs via crypto.randomUUID() (requestId.ts:7) — no `req_` prefix is a
-    // gateway/OpenAI contract, so we assert only a safe charset (alphanumeric,
-    // dash, underscore), which any sound sanitisation of untrusted input and
-    // the gateway's own UUID output both satisfy. `../../evil` fails this.
     expect(echoed).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
-  // Two concurrent requests both sending the SAME requestId: the span-map uses
-  // requestId as key, so whichever span is stored first gets `.end()`-ed by the
-  // second request's afterOperation hook — a wrong-span-end collision.
   it('isolates span-map entries when two requests share the same x-request-id', async () => {
     const ended: string[] = [];
     const spans: Record<string, unknown> = {};
 
     const app = makeApp();
 
-    // Fire two requests concurrently with the SAME request-id.
     const id = 'collision-test-id';
     const [res1, res2] = await Promise.all([
       app.request('http://localhost/v1/chat/completions', {
@@ -336,8 +275,6 @@ describe('G103 — x-request-id injection: no sanitisation or prefix', () => {
       }),
     ]);
 
-    // G103: both requests should succeed and have DISTINCT request-ids echoed,
-    // meaning the gateway must not allow externally-supplied IDs to collide.
     expect(res1.status).toBe(200);
     expect(res2.status).toBe(200);
 

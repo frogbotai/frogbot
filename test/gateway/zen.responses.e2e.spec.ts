@@ -1,22 +1,3 @@
-// Gateway E2E — /v1/responses (OpenAI Responses wire) against OpenCode Zen.
-//
-// Responses-wire clients (the OpenAI SDK's modern surface) pointed at the
-// gateway, translated live to Zen's OpenAI-compatible /chat/completions
-// upstream. Covers the response envelope (string + message-array input),
-// streaming event sequence, function tool calls, and the error envelope.
-//
-// Model: deepseek-v4.1-flash (paid; Zen's free models only work inside
-// OpenCode). It emits reasoning, so budget max_tokens >= 1024 except where a
-// test deliberately truncates.
-//
-// Known-bug interplay (dev/plans/frogbot_gateway/056_full_gateway_review):
-//   - G7 — response id flips mid-stream (response.created resp_<uuid> vs
-//     response.completed upstream id): it.fails real-model confirmation.
-//   - G3 — function_call/function_call_output input items 400, making the
-//     tool round trip impossible: it.fails real-model confirmation.
-//
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.responses.e2e.spec.ts
-
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -110,9 +91,6 @@ describeLive(
   () => {
     const app = makeZenApp();
 
-    // -------------------------------------------------------------------------
-    // 16. Basic: input as string + instructions → response envelope.
-    // -------------------------------------------------------------------------
     it(
       'string input + instructions → completed response envelope with usage',
       async () => {
@@ -148,9 +126,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 17. input as a message array (multi-turn with assistant history).
-    // -------------------------------------------------------------------------
     it(
       'message-array input with assistant history → answer uses the history',
       async () => {
@@ -182,11 +157,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 18. Streaming: created → in_progress → output_item.added →
-    //     output_text.delta* → output_item.done → completed, with monotonic
-    //     sequence numbers and terminal usage. Reasoning events may interleave.
-    // -------------------------------------------------------------------------
     it(
       'streaming emits the Responses event sequence with terminal usage',
       async () => {
@@ -206,14 +176,12 @@ describeLive(
         expect(names[1]).toBe('response.in_progress');
         expect(names[names.length - 1]).toBe('response.completed');
 
-        // The message item lifecycle appears, in order.
         const added = names.indexOf('response.output_item.added');
         const done = names.lastIndexOf('response.output_item.done');
 
         expect(added).toBeGreaterThan(1);
         expect(done).toBeGreaterThan(added);
 
-        // Text deltas accumulate to non-empty output.
         const text = events
           .filter((e) => e.event === 'response.output_text.delta')
           .map((e) => e.data.delta ?? '')
@@ -221,12 +189,10 @@ describeLive(
 
         expect(text.length).toBeGreaterThan(0);
 
-        // sequence_number is 0..n monotonic across every event.
         const sequences = events.map((e) => e.data.sequence_number);
 
         expect(sequences).toEqual(sequences.map((_, i) => i));
 
-        // Terminal usage on response.completed is real.
         const completed = events[events.length - 1].data.response;
 
         expect(completed?.status).toBe('completed');
@@ -236,8 +202,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // G7 — real-model confirmation. The response id must be stable across the
-    // stream: response.created and response.completed carry the SAME id.
     it(
       'streaming response id is stable created == completed (G7 — real-model confirmation)',
       async () => {
@@ -262,9 +226,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 19a. Function tool call: the model emits a function_call output item.
-    // -------------------------------------------------------------------------
     it(
       'function tool: model emits a function_call output item (flaky-model tolerant)',
       async () => {
@@ -293,12 +254,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // 19b. G3 — real-model confirmation. The tool round trip: turn 2 sends
-    // function_call + function_call_output input items back; today the input
-    // schema 400s every non-message input item, so agentic Responses clients
-    // cannot complete a tool loop at all. Items are hardcoded (no dependence on
-    // the model calling the tool) so this fails deterministically on the schema
-    // 400. Flip to it() when G3 is fixed.
     it(
       'tool round trip: function_call_output input items are accepted and answered (G3 — real-model confirmation)',
       async () => {
@@ -331,19 +286,11 @@ describeLive(
         expect(body.status).toBe('completed');
         expect(typeof body.output_text).toBe('string');
         expect(body.output_text!.length).toBeGreaterThan(0);
-        // The final answer must reference the injected tool result.
         expect(body.output_text!).toMatch(/18|sunny/i);
       },
       TEST_TIMEOUT,
     );
 
-    // G21 — real-model confirmation. The OpenAI Responses spec requires the
-    // response envelope to echo back the always-present request-echo fields
-    // (parallel_tool_calls, tool_choice, tools are required WITHOUT defaults in
-    // openai-python's Response). Anything that re-validates our envelope
-    // (Response.model_validate, LiteLLM chaining, typed SDKs) fails because the
-    // gateway omits them. Assert the correct behavior: a 200 response echoes the
-    // request's tools/tool_choice/parallel_tool_calls.
     it(
       'response envelope echoes spec-required tools/tool_choice/parallel_tool_calls (G21 — real-model confirmation)',
       async () => {
@@ -367,7 +314,6 @@ describeLive(
         });
 
         expect(status).toBe(200);
-        // The three spec-required-without-default echo fields must be present.
         expect(Array.isArray(body.tools)).toBe(true);
         expect(body.tool_choice).toBeDefined();
         expect(body.parallel_tool_calls).toBe(true);
@@ -375,18 +321,9 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // G23 — real-model confirmation (KNOWN-DEFERRED mechanism, B6). Zen is a
-    // NON-OpenAI provider, so the handler drops previous_response_id before
-    // upstream (handler.ts gates the OpenAI options on providerName==='openai')
-    // yet toResponse.ts still echoes previous_response_id back unconditionally.
-    // The response claims it continued a conversation that was never loaded — a
-    // behavioral lie. The honest fix is to reject with 400
-    // unsupported_parameter_for_provider when the provider can't honor stateful
-    // continuation. Assert that correct behavior. Flip to it() when fixed.
     it.fails(
       'rejects previous_response_id on a non-OpenAI provider instead of silently lying (G23 — real-model confirmation)',
       async () => {
-        // Turn 1 — establish a fact and capture the response id.
         const first = await postJson<ResponsesBody>(app, '/v1/responses', {
           model: MODEL,
           input: 'Remember: the secret word is BANANA. Reply with just OK.',
@@ -399,10 +336,6 @@ describeLive(
 
         expect(typeof priorId).toBe('string');
 
-        // Turn 2 — reference the prior turn ONLY via previous_response_id, with
-        // no re-inclusion of the fact in input. On a non-OpenAI provider the
-        // gateway can't actually load that prior state, so the honest response
-        // is a 400 rather than a 200 that echoes the id and answers blind.
         const { status, body } = await postJson<
           ResponsesBody & { error?: { code?: string; message?: string } | null }
         >(app, '/v1/responses', {
@@ -418,9 +351,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 20. Error envelope shape on a bad model.
-    // -------------------------------------------------------------------------
     it(
       'nonexistent model → well-formed error envelope',
       async () => {

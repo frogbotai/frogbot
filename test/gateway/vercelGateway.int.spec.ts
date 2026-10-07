@@ -1,8 +1,3 @@
-// Vercel AI Gateway through the real routes and the real `@ai-sdk/gateway`
-// adapter, with a recording `fetch` in place of AI Gateway. Response bodies
-// follow the adapter's wire format: serialized LanguageModelV4 results and
-// stream parts (see `@ai-sdk/gateway` gateway-language-model tests).
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';

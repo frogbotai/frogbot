@@ -327,9 +327,6 @@ describe('modality handler operation runner', () => {
   });
 
   it('returns 499 with no body when the client aborts', async () => {
-    // A client abort is a fetch-layer AbortError *with the inbound request
-    // signal aborted* — a bare AbortError with a connected client is an
-    // upstream fault (504), not a client abort (G86).
     const abortError = Object.assign(new Error('aborted'), {
       name: 'AbortError',
     });
@@ -380,7 +377,6 @@ describe('modality handler operation runner', () => {
     const res = await app.request(cases[0].path, cases[0].init());
 
     expect(res.status).toBe(200);
-    // A throwing hook does not stop later hooks in the same phase.
     expect(events).toEqual(['afterOperation:ran']);
   });
 

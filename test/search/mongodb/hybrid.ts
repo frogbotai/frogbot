@@ -20,10 +20,6 @@ type SearchArgs = {
   where?: Where;
 };
 
-// The hybrid search cases, run once per pipeline. Without `rankFusion`, the server answers the
-// `$rankFusion` probe the way MongoDB before 8.1 does, and search falls back to `$unionWith`.
-// Support is probed once per connection, and a spec file's instance keeps its connection, so
-// each pipeline has its own spec file.
 export function describeHybridSearch({
   boot,
   rankFusion,

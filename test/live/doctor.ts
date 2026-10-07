@@ -102,8 +102,6 @@ const PROBES: Probe[] = [
       }),
   },
   {
-    // Bedrock API key (long-term keys can be set to never expire). SSO profiles
-    // (AWS_PROFILE) and access keys are also accepted by the live suite.
     name: 'bedrock',
     keys: ['AWS_BEARER_TOKEN_BEDROCK'],
     check: (env) =>
@@ -225,7 +223,6 @@ const PROBES: Probe[] = [
     keys: ['RESEND_API_KEY'],
     check: (env) => get('https://api.resend.com/domains', bearer(env.RESEND_API_KEY)),
   },
-  // Hosted databases for the RAG smoke checks; the RAG suite itself connects.
   { name: 'neon', keys: ['NEON_DATABASE_URL'] },
   { name: 'atlas', keys: ['ATLAS_URI'] },
   {

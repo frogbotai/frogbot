@@ -86,8 +86,6 @@ const castBans = [
   },
 ];
 
-// The checked converters, the only product files that may cast across a seam. Each cast there
-// sits beside a type-level check that fails tsc when FrogBot's and Payload's types drift.
 const CAST_CONVERTERS = [
   'packages/frogbot/src/seams/config.ts',
   'packages/frogbot/src/seams/request.ts',
@@ -156,8 +154,6 @@ const blankLines = [
   { blankLine: 'any', prev: OVERLOAD, next: FUNCTION },
 ];
 
-// A statement that starts with `expect`, as vitest/padding-around-expect-groups groups them, so a
-// multiline assertion stays in its group.
 function startsWith(name, depth = 6) {
   let paths = [''];
   const starts = [];
@@ -220,6 +216,7 @@ export default tseslint.config(
       ],
       'no-restricted-syntax': ['error', ...brandBans],
       'no-console': 'error',
+      'no-empty': ['error', { allowEmptyCatch: true }],
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
       curly: ['error', 'multi-line'],
     },
@@ -288,9 +285,14 @@ export default tseslint.config(
   {
     plugins: { frogbot },
     rules: {
+      'frogbot/no-comments': 'error',
       'frogbot/no-imports-from-exports-dir': 'error',
       'frogbot/no-imports-from-self': 'error',
     },
+  },
+  {
+    files: ['templates/**', 'examples/**'],
+    rules: { 'frogbot/no-comments': 'off' },
   },
   {
     files: ['packages/{ui,next}/**'],

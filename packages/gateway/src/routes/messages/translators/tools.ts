@@ -23,10 +23,6 @@ export function toAISDKTools(
       continue;
     }
 
-    // Per-tool cache_control rides providerOptions.anthropic.cacheControl —
-    // the key the AI SDK anthropic provider reads (anthropic-prepare-tools.ts
-    // via get-cache-control.ts). Tool providerOptions are NOT walked by
-    // forwardMessageProviderOptions, so the namespace is set directly.
     let providerOptions: Record<string, Record<string, JSONValue>> | undefined;
     if (t.cache_control) {
       const cacheControl: Record<string, JSONValue> = {

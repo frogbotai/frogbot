@@ -1,10 +1,3 @@
-// FrogBot's root-level admin configuration. The collection-level admin
-// surface (`AdminConfig` for a single collection) is re-exported from
-// Payload in Stage 8's public surface; FrogBot does not diverge there.
-//
-// This file owns only the root `admin` block where FrogBot's `app` /
-// branding story differs from Payload's.
-
 import type { Metadata } from 'next';
 import type { CustomComponent } from 'payload';
 
@@ -136,12 +129,6 @@ export interface RootAdminConfig {
   theme?: 'all' | 'dark' | 'light';
 }
 
-// FrogBot's component reference types.
-//
-// Users hand FrogBot component *references* — an import path string, or a path
-// plus props — never React elements. These aliases keep Payload's component
-// type names out of user-facing hovers and error messages.
-
 /**
  * Reference to a React component rendered by the admin panel.
  *
@@ -157,8 +144,6 @@ export type FrogBotComponent<TProps extends object = Record<string, unknown>> =
  */
 export type AdminIcon = Exclude<FrogBotComponent, string> | (string & {}) | IconName;
 
-/** Payload's root `admin.components` block. Source for the slot value types
- *  Payload does not export under a usable name. */
 type PayloadAdminComponents = NonNullable<NonNullable<PayloadConfig['admin']>['components']>;
 
 /** Reference to a component that wraps the admin panel and renders `children`. */

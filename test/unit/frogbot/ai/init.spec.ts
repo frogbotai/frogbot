@@ -1,5 +1,3 @@
-// Tests for embedded gateway construction — provider config mapping + boot.
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildGatewayConfig, createAIGateway } from '../../../../packages/frogbot/src/ai/init.js';

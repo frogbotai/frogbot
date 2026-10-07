@@ -61,8 +61,6 @@ export function toAISDKToolChoice(toolChoice: unknown): AISDKToolChoiceResult {
       return { toolChoice: { type: 'tool', toolName: tc.function.name }, activeTools: undefined };
     }
 
-    // OpenAI `allowed_tools` → AI SDK `toolChoice` (the mode) + `activeTools`
-    // (the list of tool names the model is allowed to call).
     if (tc.type === 'allowed_tools' && tc.allowed_tools) {
       const mode = tc.allowed_tools.mode;
       if (mode !== 'auto' && mode !== 'required') {

@@ -1,5 +1,3 @@
-// Provider definition: Groq.
-
 import { createGroq, type GroqProvider, type GroqProviderSettings } from '@ai-sdk/groq';
 
 import type { ProviderDefinition } from '../types.js';

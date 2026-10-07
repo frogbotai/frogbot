@@ -1,5 +1,3 @@
-// Parse raw SSE text into structured frames.
-
 export type SseFrame = {
   event?: string;
   data: string;
@@ -19,8 +17,6 @@ export function parseSse(raw: string): SseFrame[] {
         event = line.slice(7);
       } else if (line.startsWith('data: ')) {
         data += line.slice(6);
-      } else if (line.startsWith(':')) {
-        // comment (heartbeat), skip
       }
     }
 

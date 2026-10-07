@@ -104,9 +104,6 @@ export function installWriteLock({
 
     const { rollback, close } = begun;
 
-    // libsql's own commit prepares `COMMIT`; when it fails, that statement is never reset and
-    // keeps a SHARED lock on the file until garbage collection, so in rollback-journal mode
-    // every later commit is busy. `executeMultiple` runs it with `exec`, which leaves nothing open.
     begun.commit = async () => {
       try {
         await begun.executeMultiple('COMMIT');
@@ -217,9 +214,6 @@ const readPragmasWithArgument = new Set([
 
 const writePragmas = new Set(['incremental_vacuum', 'optimize', 'wal_checkpoint']);
 
-/**
- * Whether a statement only reads. Anything it can't place is a write, so it takes the lock.
- */
 function isRead(statement: unknown): boolean {
   const text =
     typeof statement === 'string' ? statement : (statement as { sql?: unknown } | undefined)?.sql;
@@ -245,11 +239,6 @@ function isRead(statement: unknown): boolean {
   return /^(?:select|values)\b/.test(sql.startsWith('with') ? mainStatement(sql) : sql);
 }
 
-/**
- * Lowercases a statement and replaces comments, string literals, and quoted identifiers with
- * a space or a placeholder, so their text can't look like a keyword. Returns `undefined` when
- * a quote or comment is left open.
- */
 function mask(text: string): string | undefined {
   let out = '';
 
@@ -292,9 +281,6 @@ function mask(text: string): string | undefined {
   return out.trim();
 }
 
-/**
- * Skips the CTEs of a masked `WITH` statement and returns what follows them.
- */
 function mainStatement(sql: string): string {
   let rest = sql.replace(/^with\s+(?:recursive\s+)?/, '');
 

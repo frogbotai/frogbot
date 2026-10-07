@@ -70,9 +70,7 @@ function makeLogFn(level: Exclude<LogLevel, 'silent'>): LogFn {
         ? { level, time: Date.now(), msg: first }
         : { level, time: Date.now(), msg, ...first };
 
-    // The default sink for a standalone gateway with no host logger. Every other
-    // gateway log goes through a GatewayLogger, so this is its only console write.
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- the default sink of a standalone gateway
     console.log(JSON.stringify(entry));
   };
 }
@@ -286,9 +284,7 @@ export function createAiSdkWarningLogger(logger: GatewayLogger): LogWarningsFunc
     for (const warning of warnings) {
       try {
         logger.warn({ provider, model, warning }, `ai-sdk-${warning.type}`);
-      } catch {
-        /* logger errors must not propagate out of the SDK warning path */
-      }
+      } catch {}
     }
   };
 }

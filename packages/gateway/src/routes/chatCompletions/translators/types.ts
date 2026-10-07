@@ -1,9 +1,5 @@
 import type { CacheControl, ProviderMetadata } from '../../../shared/types.js';
 
-// ---------------------------------------------------------------------------
-// OpenAI wire types (request) — mirrors the OpenAI /v1/chat/completions schema
-// ---------------------------------------------------------------------------
-
 export type OpenAIChatRequest = {
   model: string;
   messages: OpenAIMessage[];
@@ -121,10 +117,6 @@ export type OpenAITool = {
     strict?: boolean;
   };
 };
-
-// ---------------------------------------------------------------------------
-// OpenAI wire types (response)
-// ---------------------------------------------------------------------------
 
 export type OpenAIChatResponse = {
   id: string;

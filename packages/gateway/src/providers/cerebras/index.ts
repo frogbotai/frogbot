@@ -1,5 +1,3 @@
-// Provider definition: Cerebras.
-
 import {
   type CerebrasProvider,
   type CerebrasProviderSettings,

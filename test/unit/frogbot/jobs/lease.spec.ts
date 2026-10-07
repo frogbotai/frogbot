@@ -15,7 +15,6 @@ import { jobRow, nativeRunner } from './nativeRunner.js';
 
 type RunJobs = Payload['jobs']['run'];
 
-// Payload types `run` as resolving to a promise; resolving with the inner promise matches that type.
 function nativeRun(run: () => Promise<Awaited<ReturnType<RunJobs>>>): RunJobs {
   return () => new Promise((resolve) => resolve(run()));
 }

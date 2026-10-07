@@ -1,6 +1,3 @@
-// Fetch wrapper: JSON POST → parsed response.
-// Used by gateway integration and golden tests.
-
 import type { Hono } from 'hono';
 
 export type JsonResponse<T = unknown> = {

@@ -211,7 +211,6 @@ describe('loadLayeredConfig', () => {
     const project = join(outer, 'project');
     mkdirSync(project, { recursive: true });
 
-    // Ancestor config above the project root — must NOT be discovered.
     writeFileSync(
       join(outer, 'gateway.config.json'),
       JSON.stringify({
@@ -219,7 +218,6 @@ describe('loadLayeredConfig', () => {
       }),
     );
 
-    // `.git` marks the project root; the walk must stop here.
     mkdirSync(join(project, '.git'));
 
     writeFileSync(

@@ -22,7 +22,6 @@ export async function clearAndSeed(frogbot: FrogBotInstance, scenario: Scenario)
 }
 
 async function clearAll(frogbot: FrogBotInstance): Promise<void> {
-  // Payload's delete takes `trash: true`, so trashed documents go too; FrogBot's doesn't.
   const payload = getFrogBotPayload(frogbot);
   let pending = Object.keys(frogbot.collections) as CollectionSlug[];
 

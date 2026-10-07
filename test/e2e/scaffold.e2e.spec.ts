@@ -1,8 +1,3 @@
-// Scaffold e2e — boots `templates/blank` (the exact app `create-frogbot-app`
-// ships) through the real Next.js dev server and asserts the public surface:
-// admin panel up + FrogBot-branded, agent listing, agent SSE streaming, and
-// the gateway auth gate. Gated by RUN_E2E=1 (`pnpm test:e2e`).
-
 import '../live/env';
 
 import type { ChildProcess } from 'node:child_process';
@@ -124,8 +119,6 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     });
 
     expect(res.status).toBe(200);
-    // `reasoning` levels vary by model; assert the agent/model wiring only.
-    // `general()` offers the whole configured catalog, so only its default is fixed.
     expect(await res.json()).toMatchObject({
       defaultAgent: 'general',
       agents: [
@@ -164,8 +157,6 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     expect(new TextDecoder().decode(value)).toContain('data:');
   });
 
-  // The template's default model must actually answer — a scaffold whose first
-  // chat errors (as the old Zen free-tier default did) must fail here.
   it.skipIf(!process.env.OPENAI_API_KEY)(
     'answers the first chat with the default model',
     async () => {

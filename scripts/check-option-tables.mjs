@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// Option-table registry: every `| Option |` table in docs/ is listed in docs/option-tables.json as
-// `{ page, heading, type }`, where `type` is a TypeScript type expression evaluated against the
-// built packages (`import('frogbot').FrogBotConfig['jobs']`). A table's first column must equal
-// the type's properties; a nested row such as `options.token` is checked against the type of
-// `options`, and `[key]` against an index signature. Properties starting with `_` or typed `never`
-// may be left out. Tables under one heading match that heading's entries in document order.
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';

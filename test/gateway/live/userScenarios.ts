@@ -609,8 +609,6 @@ export async function expectPromptCache(
 
   let cached = 0;
 
-  // Several providers (Groq, Gemini implicit) cache best-effort across a node
-  // pool, so a hit can take a few tries; a real regression still fails all six.
   for (let attempt = 0; attempt < 6 && cached === 0; attempt++) {
     if (attempt > 0) await sleep(3000);
 

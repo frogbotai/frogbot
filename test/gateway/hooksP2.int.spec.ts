@@ -1,34 +1,3 @@
-// P2 triage — G84–G88 findings.
-//
-// G84 (HE6)  DEFERRED — afterOperation §4.4 "always runs" vs scoped semantics.
-//            Policy call: the hook fires on every route (chat, messages,
-//            responses, images, speech, …) via the inline finally block.
-//            The "§4.4 claim" requires a doc review to determine if the
-//            language implies a universal guarantee vs an operation-scoped one.
-//            No behavioral gap found in code — all routes have the pattern.
-//
-// G85 (HE8)  CONFIRMED D — gateway.hooks is exposed but Object.freeze is
-//            cosmetic: the top-level object is frozen but array values inside
-//            it remain mutable. Test confirms array mutation survives the freeze.
-//
-// G86 (HE9)  CONFIRMED A — isClientAbort maps ANY AbortError (including
-//            upstream timeouts) to 499. A server-side timeout abort should
-//            surface as 504, not 499.
-//
-// G87 (HE12) FIXED — beforeUpstream no longer passes dummy messages:[]/params:{}
-//            on modality routes (images, speech, embeddings, videos, rerank,
-//            transcriptions). Those fields are omitted (typed optional) since
-//            the operations have no messages/params; headers/providerOptions
-//            remain mutable in place. system/tools are typed read-only.
-//
-// G88 (HE13) FIXED — status→type maps consolidated into
-//            errors/statusMaps.ts (statusToOpenAIType, statusToAnthropicType,
-//            statusForAnthropicErrorType). envelope.ts, streamError.ts
-//            (inferOpenAIType), and shared/extractStreamErrorInfo.ts all
-//            delegate to it. The two stream-error extractors
-//            (extractOpenAIStreamErrorInfo / extractAnthropicStreamErrorInfo)
-//            now also mask via maybeMaskMessage (G35).
-
 import type {
   EmbeddingModelV4,
   LanguageModelV4,
@@ -42,10 +11,6 @@ import type { BeforeUpstreamHookArgs, Hooks } from '../../packages/gateway/src/h
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { finish, mockUsage } from './mockModel.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeLanguageModel(opts?: { error?: Error }): LanguageModelV4 {
   return {
@@ -109,10 +74,6 @@ function makeAppWithModel(model: LanguageModelV4, hooks?: Hooks) {
   return createApp({ registry, hooks });
 }
 
-// ---------------------------------------------------------------------------
-// G85 — gateway.hooks freeze is cosmetic
-// ---------------------------------------------------------------------------
-
 describe('G85 — gateway.hooks freeze is deep (HE8)', () => {
   it('Object.freeze on gateway.hooks deep-freezes the inner arrays', () => {
     const afterOpHook = () => {};
@@ -122,10 +83,8 @@ describe('G85 — gateway.hooks freeze is deep (HE8)', () => {
       hooks: { afterOperation: [afterOpHook] },
     });
 
-    // The top-level object IS frozen — adding a new key throws in strict mode.
     expect(Object.isFrozen(gw.hooks)).toBe(true);
 
-    // G85: the inner ARRAY is now also frozen — push throws in strict mode.
     const arr = gw.hooks.afterOperation!;
 
     expect(Object.isFrozen(arr)).toBe(true);
@@ -137,18 +96,8 @@ describe('G85 — gateway.hooks freeze is deep (HE8)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G86 — isClientAbort misclassifies upstream AbortError as 499
-// ---------------------------------------------------------------------------
-
 describe('G86 — isClientAbort misclassifies upstream AbortError as 499 (HE9)', () => {
-  // Scenario: a mock upstream that throws a DOMException('AbortError') to
-  // simulate an upstream-side timeout abort (NOT a client disconnect).
-  // `isClientAbort` is now signal-gated: a bare AbortError with a
-  // still-connected client is an upstream fault → 504 gateway_timeout.
   it('upstream AbortError should not be classified as 499 client abort (G86)', async () => {
-    // Simulate upstream timeout: the provider throws an AbortError that
-    // originated server-side (e.g. AbortSignal.timeout() on the fetch).
     const upstreamAbortError = new DOMException('upstream timeout', 'AbortError');
     const model = makeLanguageModel({ error: upstreamAbortError });
     const app = makeAppWithModel(model);
@@ -162,16 +111,10 @@ describe('G86 — isClientAbort misclassifies upstream AbortError as 499 (HE9)',
       }),
     });
 
-    // The request signal never aborted, so this is not a client abort:
-    // it maps to 504 gateway_timeout instead of a bodyless 499.
     expect(res.status).not.toBe(499);
     expect(res.status).toBe(504);
   });
 });
-
-// ---------------------------------------------------------------------------
-// G87 — beforeUpstream mutation contract on modality routes
-// ---------------------------------------------------------------------------
 
 function makeEmbeddingModel(
   capture: (opts: Record<string, Record<string, unknown>> | undefined) => void,
@@ -226,10 +169,8 @@ describe('G87 — beforeUpstream contract on modality routes (HE12)', () => {
     });
 
     expect(status).toBe(200);
-    // No present-but-lying dummy fields: messages/params are absent entirely.
     expect(captured?.messages).toBeUndefined();
     expect(captured?.params).toBeUndefined();
-    // In-place providerOptions mutation still reaches the upstream call.
     expect(providerOptsAtUpstream?.openai).toMatchObject({ injected: true });
   });
 });

@@ -3,10 +3,6 @@ import { jsonSchema, tool, type ToolSet } from 'ai';
 import { UnsupportedModalityError } from '../../../errors/gatewayError.js';
 import type { ResponsesFunctionTool } from '../schema.js';
 
-// OpenAI hosted (built-in) tool types. These are executed by the OpenAI
-// Responses upstream itself; the AI SDK forwards them as provider-defined
-// tools (`{ type: 'provider', id: 'openai.<tool>', args }`), which
-// openai-responses-prepare-tools.ts maps back onto the wire.
 const HOSTED_TOOL_TYPES = new Set([
   'web_search',
   'web_search_preview',
@@ -19,21 +15,14 @@ const HOSTED_TOOL_TYPES = new Set([
   'apply_patch',
 ]);
 
-// Hosted tools whose calls the client executes (OpenAI returns the call; the caller runs it).
 const CLIENT_EXECUTED_TOOL_TYPES = new Set(['computer_use_preview', 'local_shell', 'apply_patch']);
 
-// The AI SDK's own default for a tool without a schema, set so a hosted tool is a typed `Tool`.
 const inputSchema = jsonSchema<Record<string, never>>({
   type: 'object',
   properties: {},
   additionalProperties: false,
 });
 
-// OpenAI Responses tools use a flat shape (`{ type, name, parameters }`),
-// unlike chat completions' nested `{ type, function: { name, ... } }`.
-// Function tools become AI SDK tools; hosted tools become provider-defined
-// tools (OpenAI upstream only). A hosted tool on a non-OpenAI upstream can
-// never execute, so it is rejected rather than silently dropped.
 export function toResponsesTools(
   tools: Array<ResponsesFunctionTool | { type: string }> | null | undefined,
   providerName: string,
@@ -91,16 +80,11 @@ export function toResponsesToolChoice(
   if (toolChoice === 'required') return 'required';
   if (typeof toolChoice === 'object') {
     const tc = toolChoice as { type?: string; name?: string; function?: { name?: string } };
-    // Responses uses a flat `{ type: 'function', name }`; tolerate the nested
-    // chat shape too.
     const name = tc.name ?? tc.function?.name;
     if (tc.type === 'function' && name) {
       return { type: 'tool', toolName: name };
     }
 
-    // Hosted tool_choice (`{ type: 'web_search' }`, etc.) → the AI SDK
-    // `{ type: 'tool', toolName }` shape, which openai-responses maps back to
-    // `{ type: '<tool>' }` on the wire.
     if (tc.type && HOSTED_TOOL_TYPES.has(tc.type)) {
       return { type: 'tool', toolName: tc.type };
     }

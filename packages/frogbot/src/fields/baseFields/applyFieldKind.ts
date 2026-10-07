@@ -45,8 +45,6 @@ function composeValidate(field: KindField, check: NonNullable<FieldKindSpec['che
 
   if (!base) throw new Error(`applyFieldKind: check is not supported on ${field.type} fields`);
 
-  // Payload calls a field's validate with that field's own options, so the
-  // developer's validator gets the options the composed one received.
   const developerValidate = ('validate' in field ? field.validate : undefined) as
     BaseValidate | undefined;
 

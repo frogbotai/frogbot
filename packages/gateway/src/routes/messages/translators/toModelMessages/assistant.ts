@@ -51,8 +51,6 @@ export function parseAssistantMessage(
       }
 
       case 'redacted_thinking': {
-        // Empty text + redactedData marker — the AI SDK re-emits this when
-        // re-serializing to Anthropic (see toAnthropicResponse).
         parts.push({
           type: 'reasoning',
           text: '',
@@ -67,7 +65,6 @@ export function parseAssistantMessage(
           type: 'tool-call',
           toolCallId: block.id,
           toolName: block.name,
-          // Anthropic ships tool_use.input as a parsed object.
           input: block.input,
         };
 
@@ -80,8 +77,6 @@ export function parseAssistantMessage(
       }
 
       default: {
-        // Reachable at runtime for forward-compat unknown block types the
-        // schema lets through.
         const blockType: unknown = Reflect.get(block, 'type');
 
         logger.warn(
@@ -94,8 +89,6 @@ export function parseAssistantMessage(
     }
   }
 
-  // Collapse a lone text part to string form — unless it carries
-  // providerOptions (cache_control), which string content cannot hold.
   if (parts.length === 1 && parts[0].type === 'text' && !parts[0].providerOptions) {
     return { role: 'assistant', content: (parts[0] as { type: 'text'; text: string }).text };
   }

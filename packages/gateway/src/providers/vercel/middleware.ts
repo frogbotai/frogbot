@@ -1,10 +1,3 @@
-// Vercel AI Gateway provider middleware — beforeUpstream hooks for
-// `vercel/<creator>/<model>` IDs.
-//
-// AI Gateway forwards each creator's own `providerOptions` namespace upstream
-// and reads routing options from `providerOptions.gateway`. These hooks give a
-// `vercel/anthropic/...` request the same translation as `anthropic/...`.
-
 import type { BeforeUpstreamHook } from '../../hooks.js';
 import { forwardLanguageParams, forwardMessageProviderOptions } from '../../utils/params.js';
 import { claudeThinkingEffort } from '../anthropic/middleware.js';

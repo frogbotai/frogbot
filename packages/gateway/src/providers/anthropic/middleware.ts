@@ -1,8 +1,3 @@
-// Anthropic provider middleware — beforeUpstream hooks for Claude models.
-//
-// Translates cross-provider reasoning params into Anthropic-native format.
-// Registered as `beforeUpstream` hooks when the Anthropic provider is resolved.
-
 import type { BeforeUpstreamHook } from '../../hooks.js';
 import { calculateReasoningBudgetFromEffort } from '../../utils/params.js';
 
@@ -17,10 +12,8 @@ import { calculateReasoningBudgetFromEffort } from '../../utils/params.js';
  * explicitly, this hook does nothing (explicit config wins).
  */
 export const claudeThinkingEffort: BeforeUpstreamHook = (args) => {
-  // Only applies to Claude models
   if (!args.model.includes('claude')) return;
 
-  // Check if thinking is already explicitly configured
   const anthropicOpts = args.providerOptions['anthropic'] as
     { thinking?: { type?: string; budgetTokens?: number } } | undefined;
 
@@ -29,13 +22,10 @@ export const claudeThinkingEffort: BeforeUpstreamHook = (args) => {
   const effort = args.providerOptions['unknown']?.['reasoning_effort'];
   if (typeof effort !== 'string') return;
 
-  // Calculate budget from effort
   const budgetTokens = calculateReasoningBudgetFromEffort(effort, args.params?.maxOutputTokens);
 
   if (budgetTokens <= 0) return;
 
-  // Set Anthropic thinking config. Key is camelCase `budgetTokens` — the
-  // shipped AnthropicProviderOptions type reads that, not snake_case.
   args.providerOptions['anthropic'] = {
     ...(args.providerOptions['anthropic'] ?? {}),
     thinking: { type: 'enabled', budgetTokens },

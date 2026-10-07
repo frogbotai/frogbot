@@ -281,7 +281,6 @@ describe('Chat for a channel conversation', () => {
 
     await screen.findByText('This conversation happens in Slack.');
 
-    // The chat and its messages load separately; wait for the messages before checking actions.
     expect((await screen.findAllByRole('button', { name: 'Copy' })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
   });
@@ -293,7 +292,6 @@ describe('Chat for a channel conversation', () => {
 
     const { container } = renderChat();
 
-    // Branch needs the last message, which loads separately from the chat.
     await screen.findByText('Waiting for an answer in Slack');
 
     const notice = screen
@@ -362,7 +360,6 @@ describe('Chat for a channel conversation', () => {
     expect(await screen.findByText('This conversation happens in Slack.')).toBeTruthy();
     expect(container.querySelector('.fb-composer')).toBeNull();
 
-    // The refused message goes when the messages reload, which can land after the notice.
     await waitFor(() => expect(screen.queryByText('Ship it anyway')).toBeNull());
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });

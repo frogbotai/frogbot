@@ -1,29 +1,3 @@
-// P2 triage — G89–G93 findings.
-//
-// G89 (DX4)  CONFIRMED D — createGateway() return type has no `routes` property.
-//            `gw.routes` for selective mounting is absent from Gateway type.
-//
-// G90 (DX8)  CONFIRMED A — /health endpoint returns 404 (not implemented).
-//            Docker HEALTHCHECK would fail.
-//
-// G91 (DX9)  CONFIRMED D — CLI discards serve() return value; no .close() on
-//            SIGTERM. OTel setupTracing registers its own process.once('SIGTERM')
-//            handler that calls process.exit(0) — but this is AFTER graceful
-//            shutdown, NOT a force-exit racing drain. Finding is partially
-//            incorrect: the OTel handler IS the graceful shutdown. The real
-//            bug is that serve() result is discarded so there is no HTTP-layer
-//            close/drain before process.exit.
-//
-// G92 (DX10) CONFIRMED D — projectConfigPaths walks up to filesystem root (64
-//            iterations) and merges every ancestor config found. An ancestor-
-//            dir stale/malicious .gateway.config.ts gets merged in silently.
-//
-// G93 (DX11) CONFIRMED D — provider-name typos (e.g. { openaai: {...} }) are
-//            silently accepted. parseGatewayConfig only validates that at least
-//            one provider is configured; unknown keys in providers pass through.
-//            JSON path: GATEWAY_CONFIG_JSON is parsed with JSON.parse (no Zod)
-//            so there is no structural validation beyond isRecord check.
-
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,10 +10,6 @@ import { loadLayeredConfig } from '../../packages/gateway/src/config/layered.js'
 import { createGateway } from '../../packages/gateway/src/gateway.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { finish, mockUsage } from './mockModel.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeMockModel(): LanguageModelV4 {
   return {
@@ -98,10 +68,6 @@ function makeApp() {
   return createApp({ registry });
 }
 
-// ---------------------------------------------------------------------------
-// G89 — gw.routes absent
-// ---------------------------------------------------------------------------
-
 describe('G89 — gateway.routes present (DX4)', () => {
   it('createGateway() exposes a routes map for selective mounting (G89)', () => {
     const gw = createGateway({ providers: { openai: { apiKey: 'sk-test' } } });
@@ -112,23 +78,14 @@ describe('G89 — gateway.routes present (DX4)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G90 — /health endpoint not implemented
-// ---------------------------------------------------------------------------
-
 describe('G90 — /health endpoint not implemented (DX8)', () => {
   it('GET /health returns 200 (G90)', async () => {
     const app = makeApp();
     const res = await app.request('http://localhost/health', { method: 'GET' });
 
-    // Currently returns 404 — should be 200 for Docker HEALTHCHECK support.
     expect(res.status).toBe(200);
   });
 });
-
-// ---------------------------------------------------------------------------
-// G92 — config walk bounded to the project root (DX10)
-// ---------------------------------------------------------------------------
 
 describe('G92 — project config walk stops at the project root (DX10)', () => {
   it('does not merge a malicious ancestor config above the project root (G92)', async () => {
@@ -137,7 +94,6 @@ describe('G92 — project config walk stops at the project root (DX10)', () => {
     const project = join(outer, 'project');
     mkdirSync(project, { recursive: true });
 
-    // Untrusted ancestor config above the project root — must NOT be loaded.
     writeFileSync(
       join(outer, 'gateway.config.json'),
       JSON.stringify({ providers: { openai: { apiKey: 'malicious-key', organization: 'evil' } } }),
@@ -162,15 +118,8 @@ describe('G92 — project config walk stops at the project root (DX10)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G93 — provider-name typos silently accepted
-// ---------------------------------------------------------------------------
-
 describe('G93 — provider-name typos silently accepted (DX11)', () => {
   it('createGateway with typo provider key "openaai" should warn or error (G93)', () => {
-    // parseGatewayConfig validates provider names against PROVIDER_NAMES. A
-    // typo key like "openaai" is not a known provider, so validation throws
-    // with a "did you mean" hint instead of silently dropping it.
     expect(() => {
       createGateway({
         providers: {

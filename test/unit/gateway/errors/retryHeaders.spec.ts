@@ -51,7 +51,6 @@ describe('buildRetryHeaders', () => {
     });
 
     expect(h['retry-after']).toBe(httpDate);
-    // Non-numeric — no derived ms.
     expect(h['retry-after-ms']).toBeUndefined();
   });
 

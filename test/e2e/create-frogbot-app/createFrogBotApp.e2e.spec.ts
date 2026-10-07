@@ -56,7 +56,6 @@ async function expectAppBoots(directory: string, databaseUrl?: string): Promise<
     await waitForServer(
       child,
       async () => {
-        // A request can hang while the app waits on startup, so each attempt has its own limit.
         const response = await fetch(`http://127.0.0.1:${port}/api/users/me`, {
           signal: AbortSignal.timeout(10000),
         }).catch(() => undefined);
@@ -127,8 +126,6 @@ const cases: AppCase[] = [
   },
 ];
 
-// The generated Postgres app pushes its schema in dev. On a shared database holding other
-// tests' tables, Drizzle stops at an interactive data-loss prompt, so it gets its own database.
 let postgresDatabase: Awaited<ReturnType<typeof createPostgresDatabase>> | undefined;
 
 function postgresURL(): string {
@@ -244,8 +241,6 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
       expect(fs.existsSync(path.join(directory, file))).toBe(false);
     }
 
-    // Adapter runtime deps are direct so Next dev resolves them even when it
-    // loads the adapter through its node_modules symlink.
     const adapter = JSON.parse(
       fs.readFileSync(
         path.join(repoRoot, 'packages', `db-${appCase.database}`, 'package.json'),

@@ -1,5 +1,3 @@
-// generateVideo operation — text-to-video via AI SDK.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { experimental_generateVideo as aiGenerateVideo } from 'ai';
 
@@ -25,11 +23,9 @@ export async function generateVideoOperation(
   const { model: input, req, overrideAccess, prompt, providerOptions, abortSignal } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model.
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

@@ -1,6 +1,3 @@
-// Internal conversion from frogbot Tool[] → AI SDK ToolSet.
-// Users never import this — the ToolSet record is an implementation detail.
-
 import type { ModelMessage, Tool, ToolSet } from 'ai';
 import { tool as aiTool } from 'ai';
 import { z } from 'zod';
@@ -17,7 +14,6 @@ export const SKIPPED_FOR_CLIENT_INPUT = {
 type WithToolCtx<TOOL> =
   TOOL extends Tool<infer INPUT, infer OUTPUT> ? Tool<INPUT, OUTPUT, ToolCtx> : never;
 
-// ToolSet with its untyped tool context replaced by ToolCtx, so the AI SDK accepts `toolsContext`.
 export type AISDKTools = Record<
   string,
   WithToolCtx<ToolSet[string]> &

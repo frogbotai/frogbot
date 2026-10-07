@@ -1,13 +1,3 @@
-// FrogBot's CollectionConfig — the user-facing authoring shape.
-//
-// Strategy: extend Payload's CollectionConfig but override hooks, access,
-// endpoints, and fields with frogbot's own types (which use FrogBotRequest
-// instead of PayloadRequest). Users write hooks against `req.frogbot` —
-// sanitize() wraps them for Payload at runtime.
-//
-// Users import this from `'frogbot'`. They never see the underlying Payload
-// type name or import path.
-
 import type {
   AccessArgs as PayloadAccessArgs,
   CollectionAfterChangeHook as PayloadCollectionAfterChangeHook,
@@ -162,11 +152,6 @@ export type Collection = {
   search?: SearchIndexDescriptors;
 };
 
-// FrogBot's access control types.
-//
-// Same shape as Payload's but with `FrogBotRequest`. Users write access
-// functions against these; sanitize() wraps them for Payload at runtime.
-
 export type AccessResult = boolean | Where;
 
 export type AccessArgs<TData = PayloadDocument> = FrogBotArgs<PayloadAccessArgs<TData>>;
@@ -185,8 +170,6 @@ export type CollectionAccess = {
     : Access;
 };
 
-// ── Field-level access ────────────────────────────────────────────────
-
 export type FieldAccessArgs<
   TData extends TypeWithID = PayloadDocument,
   TSiblingData = PayloadDocument,
@@ -196,12 +179,6 @@ export type FieldAccess<
   TData extends TypeWithID = PayloadDocument,
   TSiblingData = PayloadDocument,
 > = (args: FieldAccessArgs<TData, TSiblingData>) => boolean | Promise<boolean>;
-
-// FrogBot's collection hook types.
-//
-// Same shape as Payload's hooks but with `FrogBotRequest` instead of
-// `PayloadRequest`. Users write hooks against these types; at runtime,
-// sanitize() wraps them so Payload sees PayloadRequest-compatible functions.
 
 type SwapReq<T> = T extends unknown
   ? 'req' extends keyof T
@@ -330,26 +307,20 @@ type CommonArgs = {
 };
 
 type WriteArgs = CommonArgs & {
-  /** Skip the database transaction this operation would otherwise open. */
   disableTransaction?: boolean;
 };
 
 type LockedWriteArgs = WriteArgs & {
-  /** Set to `false` to reject the write while another user holds the document lock. */
   overrideLock?: boolean;
 };
 
 type UploadArgs = {
-  /** Upload collections only. Absolute path of a file on disk to store. */
   filePath?: string;
-  /** Replace a stored file with the same name instead of saving the upload under a new name. */
   overwriteExistingFiles?: boolean;
 };
 
 type LocalePublishArgs = {
-  /** Publish every locale. Needs `versions.drafts.localizeStatus`. */
   publishAllLocales?: boolean;
-  /** Unpublish every locale. Needs `versions.drafts.localizeStatus`. */
   unpublishAllLocales?: boolean;
 };
 
@@ -475,14 +446,10 @@ export type DeleteResult<TSlug extends CollectionSlug, TArgs> = TArgs extends {
   ? TypedCollection<TSlug>
   : BulkResult<TypedCollection<TSlug>>;
 
-// ── Duplicate ─────────────────────────────────────────────────────────
-
 export type DuplicateArgs<TSlug extends CollectionSlug> = WriteArgs & {
   collection: TSlug;
   id: DocID;
 };
-
-// ── FindDistinct ──────────────────────────────────────────────────────
 
 export type FindDistinctArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;

@@ -26,8 +26,6 @@ const AUDIO_FORMAT_MIME: Record<string, string> = {
 export function toModelMessages(input: string | ResponsesInputItem[]): ModelMessage[] {
   if (typeof input === 'string') return [{ role: 'user', content: input }];
 
-  // A `function_call_output` has no `name` in the OpenAI wire format; the tool
-  // name is resolved from the matching `function_call` earlier in the input.
   const toolNameByCallId = new Map<string, string>();
 
   for (const item of input) {
@@ -100,8 +98,6 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
     return { role, content: message.content };
   }
 
-  // Assistant messages carry `output_text` parts (prior turns in a
-  // multi-turn conversation). Map them to AI SDK assistant text parts.
   if (role === 'assistant') {
     const content = (message.content as ResponsesInputPart[]).map(
       (part, partIndex): Exclude<AssistantModelMessage['content'], string>[number] => {

@@ -1,5 +1,3 @@
-// Provider definition: Moonshot AI.
-
 import {
   createMoonshotAI,
   type MoonshotAIProvider,

@@ -203,7 +203,6 @@ export function createSQLKV({
 
   async function ownership({ lock, expiresAt }: { lock: KVLock; expiresAt?: SQL | null }) {
     if (sqlite) {
-      // Without @frogbotai/db-sqlite's write lock, this write would fail SQLITE_BUSY beside an open transaction.
       if (!queuesWrites && Object.keys(adapter.sessions).length) return false;
       const query =
         expiresAt === undefined

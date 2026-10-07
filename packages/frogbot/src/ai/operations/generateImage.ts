@@ -1,5 +1,3 @@
-// generateImage operation — image generation via AI SDK.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { generateImage as aiGenerateImage } from 'ai';
 
@@ -26,11 +24,9 @@ export async function generateImageOperation(
   const { model: input, req, overrideAccess, size, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model.
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

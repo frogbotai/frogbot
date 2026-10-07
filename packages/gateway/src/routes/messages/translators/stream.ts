@@ -1,27 +1,3 @@
-// Anthropic SSE stream translator.
-//
-// Converts AI SDK `fullStream` (TextStreamPart) chunks into Anthropic-compatible
-// Server-Sent Events for `/v1/messages` with `stream: true`.
-//
-// Anthropic streaming shape:
-//   event: <event_type>\ndata: <JSON>\n\n
-//
-// Event sequence:
-//   message_start → ping
-//                 → (content_block_start → content_block_delta* → content_block_stop)*
-//                 → message_delta → message_stop
-//
-// Design decisions:
-//   - Block indices are allocated in strict emission order via a single
-//     monotonic counter. Every start bumps it, every stop closes the current.
-//   - We drive text blocks off `text-start`/`text-end` (AI SDK provides them)
-//     rather than inferring boundaries from delta arrival — no stateful
-//     "current block" flush needed for text.
-//   - `signature_delta` for extended thinking is emitted inline when it first
-//     appears on a `reasoning-delta`, matching Anthropic's actual wire order.
-//   - Non-streaming `tool-call` (no preceding `tool-input-start`) is expanded
-//     inline into start+delta+stop so the client sees a complete block.
-
 import type { TextStreamPart, ToolSet } from 'ai';
 
 import { extractReasoningMetadata } from '../../../shared/extractReasoningMetadata.js';
@@ -37,10 +13,6 @@ import {
   usageDetailFields,
 } from './toAnthropicResponse.js';
 import type { AnthropicStopReason } from './types.js';
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 
 /**
  * Creates a TransformStream that converts AI SDK TextStreamParts into
@@ -62,10 +34,6 @@ export function createAnthropicStreamTransform(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Stream state
-// ---------------------------------------------------------------------------
-
 type StreamState = {
   messageStarted: boolean;
   blockIndex: number;
@@ -75,17 +43,9 @@ type StreamState = {
   responseId: string;
   model: string;
   errored: boolean;
-  /** Tracks whether a refusal text block has been opened via raw peek. */
   refusalBlockOpen: boolean;
-  /** Matched stop sequence from providerMetadata.anthropic (same-provider only). */
   stopSequence: string | undefined;
-  /**
-   * Raw provider usage from the last finish-step. The finish part's
-   * `totalUsage` is built by addLanguageModelUsage (ai/src/types/usage.ts),
-   * which drops `raw` — only the per-step usage carries it.
-   */
   rawUsage: Record<string, unknown> | undefined;
-  /** Masking context for mid-stream error frames (G35). */
   maskOpts: StreamErrorMaskOptions;
 };
 
@@ -106,16 +66,11 @@ function createStreamState(args: { model: string } & StreamErrorMaskOptions): St
   };
 }
 
-// ---------------------------------------------------------------------------
-// Part → Anthropic SSE event(s)
-// ---------------------------------------------------------------------------
-
 function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string[] {
   const events: string[] = [];
 
   if (state.errored) return events;
 
-  // Emit message_start + ping lazily on the first part.
   if (!state.messageStarted) {
     state.messageStarted = true;
 
@@ -154,8 +109,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
 
     case 'reasoning-delta': {
       const signature = extractSignature(part);
-      // Emit signature_delta the first time we see one for this block —
-      // Anthropic's wire has it interleaved with thinking_delta.
       if (signature && state.signatureEmittedForBlockIndex !== state.blockIndex) {
         events.push(
           formatEvent('content_block_delta', {
@@ -182,7 +135,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
     }
 
     case 'reasoning-end': {
-      // Fallback for providers that only surface the signature at end.
       const signature = extractSignature(part);
       if (signature && state.signatureEmittedForBlockIndex !== state.blockIndex) {
         events.push(
@@ -278,7 +230,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
 
     case 'tool-call': {
       if (state.currentToolCallId === part.toolCallId) {
-        // Streaming tool input already started — just close the block.
         events.push(
           formatEvent('content_block_stop', {
             type: 'content_block_stop',
@@ -290,7 +241,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
         state.blockIndex++;
         state.currentToolCallId = undefined;
       } else {
-        // Non-streaming tool call: emit start + full input + stop atomically.
         events.push(
           formatEvent('content_block_start', {
             type: 'content_block_start',
@@ -352,7 +302,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
     }
 
     case 'finish': {
-      // If a refusal block was opened, close it before finishing
       if (state.refusalBlockOpen) {
         events.push(
           formatEvent('content_block_stop', {
@@ -366,7 +315,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
         state.refusalBlockOpen = false;
       }
 
-      // content-filter → refusal (inverse of the AI SDK's refusal → content-filter map).
       const stopReason: AnthropicStopReason = mapStopReason(
         part.finishReason,
         part.rawFinishReason,
@@ -412,12 +360,9 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
     }
 
     case 'raw': {
-      // Peek for refusal from raw OpenAI chunks — Anthropic has no canonical
-      // refusal wire, so we emit a synthesized text block prefixed `[refusal] `.
       const extras = peekRawValue(part.rawValue);
       if (extras?.refusal) {
         if (!state.refusalBlockOpen) {
-          // Open a new text block for the refusal
           events.push(
             formatEvent('content_block_start', {
               type: 'content_block_start',
@@ -428,7 +373,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
 
           state.openBlockIndex = state.blockIndex;
 
-          // Emit the prefix
           events.push(
             formatEvent('content_block_delta', {
               type: 'content_block_delta',
@@ -488,10 +432,6 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
   return events;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function formatEvent(eventType: string, data: unknown): string {
   return `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
 }
@@ -499,7 +439,5 @@ function formatEvent(eventType: string, data: unknown): string {
 function extractSignature(part: {
   providerMetadata?: Record<string, Record<string, unknown>>;
 }): string | undefined {
-  // Any namespace: `anthropic` (direct), `bedrock`/`amazonBedrock` (Claude on
-  // Bedrock), `unknown` (compat adapters).
   return extractReasoningMetadata(part.providerMetadata).signature;
 }

@@ -1,11 +1,3 @@
-// Internal type re-exports from Payload.
-//
-// Owned FrogBot types that extend Payload's shape route through
-// this barrel so direct `from 'payload'` imports stay minimal
-// and easy to audit.
-//
-// Type-only — no runtime imports.
-
 export type {
   Locale,
   Payload,

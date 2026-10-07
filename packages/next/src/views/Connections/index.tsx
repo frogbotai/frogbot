@@ -9,7 +9,6 @@ import type { ConnectionItem, ConnectionPiece } from './types.js';
 
 export async function ConnectionsView({ initPageResult, payload }: AdminViewServerProps) {
   const { req: payloadReq } = initPageResult;
-  // A Next admin request may carry no `req.frogbot`; the view then reads the cached instance.
   const frogbot = hasFrogBot(payloadReq) ? payloadReq.frogbot : getCachedFrogBot();
   if (!payloadReq.user || !frogbot?.config.connections.enabled) return null;
   const req = Object.assign(payloadReq, { frogbot });

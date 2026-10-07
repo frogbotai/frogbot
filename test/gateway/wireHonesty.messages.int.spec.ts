@@ -13,13 +13,6 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { finish, mockUsage } from './mockModel.js';
 
-/**
- * Builds an error that passes `APICallError.isInstance()` at runtime without
- * importing `@ai-sdk/provider` as a value (see paramForwarding.int.spec.ts for the
- * rationale — the AI SDK identifies error classes via `Symbol.for` markers).
- * `isRetryable: false` keeps the SDK's retry loop out of the way so the
- * original status code reaches the gateway envelope untouched.
- */
 function createApiCallError(opts: {
   message: string;
   statusCode: number;
@@ -38,16 +31,6 @@ function createApiCallError(opts: {
   });
 }
 
-/**
- * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
- * hands to `doGenerate`/`doStream`. Mirrors the batch-1 recording model, plus:
- *   - `finishReason` in the real `{ unified, raw }` shape (generateText reads
- *     `finishReason.unified` — a bare string mock would masquerade as
- *     `undefined` and default-map, hiding the G12 defect),
- *   - `providerMetadata` on the doGenerate result (how the real anthropic
- *     model surfaces raw usage, incl. `service_tier`),
- *   - `streamParts` to override the doStream chunk sequence.
- */
 function createRecordingModel(opts?: {
   text?: string;
   error?: Error;
@@ -74,8 +57,6 @@ function createRecordingModel(opts?: {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    // Accept every URL natively so the AI SDK forwards URL file parts to the
-    // model instead of trying to download them (keeps G14 hermetic).
     get supportedUrls() {
       return Promise.resolve({ '*': [/.*/] });
     },
@@ -138,16 +119,7 @@ function postMessages(app: ReturnType<typeof createApp>, body: Record<string, un
   });
 }
 
-// ---------------------------------------------------------------------------
-// G12 (AM3) — `content-filter` finish reason must surface as
-// stop_reason 'refusal' on the Anthropic wire (the AI SDK's inverse map:
-// refusal → 'content-filter'); today it is emitted as 'stop_sequence' — a
-// wire lie claiming one of the client's stop_sequences matched.
-// ---------------------------------------------------------------------------
-
-// G12
 describe('messages content-filter → stop_reason refusal', () => {
-  // G12
   it('non-streaming: content-filter finish emits stop_reason refusal', async () => {
     const app = makeAppWithModel(
       'anthropic',
@@ -163,7 +135,6 @@ describe('messages content-filter → stop_reason refusal', () => {
     expect(body).toHaveProperty('stop_reason', 'refusal');
   });
 
-  // G12
   it('streaming: content-filter finish emits message_delta stop_reason refusal', async () => {
     const usage = mockUsage({
       inputTokens: { total: 5, noCache: 5 },
@@ -211,17 +182,7 @@ describe('messages content-filter → stop_reason refusal', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G13 (AM4) — server tool definitions (web_search_20250305 etc.) must NOT be
-// converted into client function tools with empty schemas. Compliant
-// behaviors: filter-and-warn (hebo parity), provider-defined tool mapping, or
-// a typed 400 — anything except registering a fake client tool the model may
-// call and then dead-end on (stop_reason tool_use with no executor).
-// ---------------------------------------------------------------------------
-
-// G13
 describe('messages server tools not mis-translated', () => {
-  // G13 — tools.ts:9-21 ignores the `type` discriminator: web_search_20250305 becomes a client function tool with an empty schema; flip to it() when fixed. See 056_full_gateway_review.
   it('does not register web_search_20250305 as a client function tool', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -237,8 +198,6 @@ describe('messages server tools not mis-translated', () => {
       tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
     });
 
-    // Regardless of whether the request 200s (drop/provider-defined) or 400s,
-    // the upstream must never see a plain function tool for a server tool.
     const tools = (callOptions?.tools ?? []) as Array<{ type: string; name: string }>;
     const fakeClientTool = tools.find((t) => t.type === 'function' && t.name === 'web_search');
 
@@ -246,15 +205,6 @@ describe('messages server tools not mis-translated', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G14 (AM5) — URL document blocks without media_type (the normal Anthropic
-// wire shape: URL documents are PDFs and carry no media_type field) must not
-// be forwarded as application/octet-stream — the AI SDK anthropic converter
-// accepts URL file parts only as application/pdf or text/plain and throws
-// UnsupportedFunctionalityError (→ gateway 500) for anything else.
-// ---------------------------------------------------------------------------
-
-// G14
 describe('messages URL document defaults to application/pdf', () => {
   it('forwards a media_type-less URL document as application/pdf', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
@@ -291,21 +241,7 @@ describe('messages URL document defaults to application/pdf', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G15 (AM6) — `service_tier` must be forwarded on the request and emitted in
-// response usage. Spec: request `service_tier: 'auto'|'standard_only'`;
-// response `usage.service_tier: 'standard'|'priority'|'batch'`. NOTE: the
-// current AI SDK anthropic package has no typed serviceTier language-model
-// option (verified against ~/code/ai — the finding's proposed
-// `providerOptions.anthropic.serviceTier` key does not exist there), so the
-// request-side assertion only requires the value to reach the upstream call's
-// providerOptions under some namespace. Raw usage (incl. service_tier) comes
-// back via `providerMetadata.anthropic.usage`.
-// ---------------------------------------------------------------------------
-
-// G15
 describe('messages service_tier round trip', () => {
-  // G15 — service_tier forwarded to the upstream call under providerOptions.unknown. See 056_full_gateway_review.
   it('forwards request service_tier to the upstream call', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -320,12 +256,9 @@ describe('messages service_tier round trip', () => {
     const { status } = await postMessages(app, { service_tier: 'standard_only' });
 
     expect(status).toBe(200);
-    // Namespace-agnostic: the fix may land under anthropic or the unknown
-    // passthrough — what matters is the value reaches the provider call.
     expect(JSON.stringify(callOptions?.providerOptions ?? {})).toContain('standard_only');
   });
 
-  // G15 — usage.service_tier emitted from providerMetadata.anthropic.usage. See 056_full_gateway_review.
   it('emits usage.service_tier from provider metadata on the response', async () => {
     const app = makeAppWithModel(
       'anthropic',
@@ -346,17 +279,6 @@ describe('messages service_tier round trip', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G16 (AM7 + AM23 + HE14) — Anthropic error envelope defects. Spec
-// (platform.claude.com/docs/en/api/errors): 402 billing_error,
-// 413 request_too_large, 504 timeout_error, 529 overloaded_error (reserved
-// for 529 — a 502 from an OpenAI upstream is NOT "overloaded"), and every
-// error body carries a top-level `request_id`. AM23: the streaming peek map
-// (messages/handler.ts:390-397) re-materializes `overloaded_error` as 503
-// while the envelope's inverse (envelope.ts:478) produces it from 529.
-// ---------------------------------------------------------------------------
-
-// G16 (+ AM23 / HE14)
 describe('messages Anthropic error envelope fidelity', () => {
   function appWithUpstreamStatus(statusCode: number, message: string) {
     return makeAppWithModel(
@@ -367,7 +289,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     );
   }
 
-  // G16 — 413 maps to request_too_large (envelope anthropicTypeForStatus). See 056_full_gateway_review.
   it('upstream 413 → request_too_large', async () => {
     const { status, body } = await postMessages(
       appWithUpstreamStatus(413, 'Request exceeds the maximum allowed number of bytes'),
@@ -378,7 +299,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     expect(body).toHaveProperty('error.type', 'request_too_large');
   });
 
-  // G16 — 402 maps to billing_error. See 056_full_gateway_review.
   it('upstream 402 → billing_error', async () => {
     const { status, body } = await postMessages(appWithUpstreamStatus(402, 'Payment required'), {});
 
@@ -386,7 +306,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     expect(body).toHaveProperty('error.type', 'billing_error');
   });
 
-  // G16 — 504 maps to timeout_error. See 056_full_gateway_review.
   it('upstream 504 → timeout_error', async () => {
     const { status, body } = await postMessages(
       appWithUpstreamStatus(504, 'Upstream timed out'),
@@ -397,7 +316,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     expect(body).toHaveProperty('error.type', 'timeout_error');
   });
 
-  // G16 — 502 maps to api_error; overloaded_error is reserved for 529. See 056_full_gateway_review.
   it('upstream 502 → api_error, not overloaded_error', async () => {
     const { status, body } = await postMessages(appWithUpstreamStatus(502, 'Bad gateway'), {});
 
@@ -405,7 +323,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     expect(body).toHaveProperty('error.type', 'api_error');
   });
 
-  // G16 — 529 passthrough is runtime-correct today (via the unchecked GatewayHttpStatus cast, envelope.ts:508); the HE14 type-level lie is not runtime-observable. Kept as passing evidence.
   it('upstream 529 passes through as 529 overloaded_error (runtime works despite GatewayHttpStatus excluding 529)', async () => {
     const { status, body } = await postMessages(appWithUpstreamStatus(529, 'Overloaded'), {});
 
@@ -413,7 +330,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     expect(body).toHaveProperty('error.type', 'overloaded_error');
   });
 
-  // G16 — top-level request_id field in the error body matches x-request-id header. See 056_full_gateway_review.
   it('error body carries a top-level request_id matching x-request-id', async () => {
     const { headers, body } = await postMessages(appWithUpstreamStatus(429, 'Rate limited'), {});
     const requestId = headers.get('x-request-id');
@@ -422,7 +338,6 @@ describe('messages Anthropic error envelope fidelity', () => {
     expect(body).toHaveProperty('request_id', requestId);
   });
 
-  // G16/AM23 — peek map now maps overloaded_error→529 (shared statusForAnthropicErrorType). See 056_full_gateway_review.
   it('streaming pre-first-byte upstream 529 re-materializes as HTTP 529', async () => {
     const app = makeAppWithModel(
       'anthropic',
@@ -454,15 +369,6 @@ describe('messages Anthropic error envelope fidelity', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G17 (AM8) — structured output must be forwarded: `output_config.format`
-// (GA) with {type:'json_schema', schema} maps to the AI SDK's
-// responseFormat {type:'json', schema} (which the anthropic provider turns
-// back into output_config.format on the wire); today no reader exists and
-// JSON mode silently no-ops with a 200.
-// ---------------------------------------------------------------------------
-
-// G17
 describe('messages structured output forwarded upstream', () => {
   const schema = {
     type: 'object',
@@ -473,9 +379,6 @@ describe('messages structured output forwarded upstream', () => {
 
   it('forwards output_config.format json_schema as responseFormat {type: json, schema}', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    // Mock returns valid JSON text: generateText with `output` set eagerly
-    // parses the final text (ai generate-text.ts parseCompleteOutput) and a
-    // non-JSON reply would fail the request before the assertion lands.
     const app = makeAppWithModel(
       'anthropic',
       createRecordingModel({
@@ -520,21 +423,7 @@ describe('messages structured output forwarded upstream', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G18 (AM9) — POLICY-DECISION. `metadata.user_id` is hard-rejected with a
-// typed 400 (rejectUnsupportedMessagesParams, messages/handler.ts:309-322),
-// which complies with the documented forward-or-400 rule (REASSESSMENT_2
-// §1.4): the drop is explicit, typed, param-attributed, and int-tested
-// (int.spec.ts:579) — not silent. Note for any future policy change: the AI
-// SDK supports forwarding natively via
-// `providerOptions.anthropic.metadata.userId` → `metadata: { user_id }`
-// (anthropic-language-model.ts:495-496), so the compat-friendlier fix in
-// AM9 is available. This test pins the current, policy-compliant behavior.
-// ---------------------------------------------------------------------------
-
-// G18
 describe('messages metadata.user_id explicit 400', () => {
-  // G18 POLICY — explicit typed 400 is forward-or-400 compliant; revisit only if the drop-in-compat decision is reversed. See 056_full_gateway_review.
   it('rejects metadata.user_id with a typed, param-attributed 400 (not a silent drop)', async () => {
     let upstreamCalled = false;
     const app = makeAppWithModel(

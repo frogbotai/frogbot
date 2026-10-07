@@ -1,12 +1,3 @@
-// Gateway configuration — types and minimal runtime validation.
-//
-// The config type is derived from the provider table in `providers/registry.ts`.
-// Validation is intentionally minimal: TypeScript catches structural errors
-// at compile time (config files are .ts-only), and the AI SDK's own
-// `loadApiKey` throws descriptive errors for missing/invalid credentials at
-// call time. We only guard against the one case TS can't: an empty
-// `providers` object that would produce a gateway with nothing to route to.
-
 import type { Tracer } from '@opentelemetry/api';
 
 import { ConfigError } from '../errors/gatewayError.js';
@@ -25,10 +16,6 @@ import {
   type ProvidersInput,
 } from '../providers/registry.js';
 import type { ProviderCredentialForm } from '../providers/types.js';
-
-// ---------------------------------------------------------------------------
-// Public config type
-// ---------------------------------------------------------------------------
 
 export type GatewayConfig = {
   /**
@@ -95,10 +82,6 @@ export type GatewayConfig = {
   signalLevel?: SignalLevelInput;
 };
 
-// ---------------------------------------------------------------------------
-// Validator — guards the single invariant TS can't express
-// ---------------------------------------------------------------------------
-
 /**
  * Validates a gateway config at runtime. Ensures at least one provider is
  * configured. All structural/type errors are caught by TypeScript when the
@@ -125,11 +108,6 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
 
   const issues: string[] = [];
 
-  // Validate each provider entry. Known providers are checked against their
-  // required keys; any other key is a generic OpenAI-compatible endpoint and
-  // must supply a non-empty `baseURL` (this is what distinguishes a deliberate
-  // custom endpoint from a typo of a built-in provider name). Instance
-  // passthrough (config shape #2) is skipped — the user already built it.
   for (const [name, cfg] of Object.entries(input.providers)) {
     if (cfg == null) {
       continue;
@@ -146,7 +124,6 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
 
     const def = providers[name as ProviderName];
     if (!def) {
-      // Generic OpenAI-compatible endpoint.
       if (name.includes('/')) {
         issues.push(`providers.${name} name must not contain "/"`);
       }
@@ -234,10 +211,6 @@ function credentialIssues({ name, config, credentials }: CredentialIssuesArgs): 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
-
-// ---------------------------------------------------------------------------
-// defineConfig helper — provides autocomplete in config files
-// ---------------------------------------------------------------------------
 
 /**
  * Type-safe helper for `gateway.config.ts` files. Returns the input

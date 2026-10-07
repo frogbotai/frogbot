@@ -1,11 +1,3 @@
-// Stream-based request body size enforcement.
-//
-// Hoisted from `routes/transcriptions/handler.ts` so every route (JSON and
-// multipart alike) can cap request bodies that arrive without a
-// Content-Length header (chunked transfer). The wrapped stream errors with a
-// 413 `BodyTooLargeError` as soon as the running byte count crosses the cap,
-// so the gateway never buffers more than `maxBodyBytes` (+ one chunk).
-
 import { BodyTooLargeError } from '../errors/gatewayError.js';
 
 export function withStreamBodyLimit(request: Request, maxBodyBytes: number): Request {

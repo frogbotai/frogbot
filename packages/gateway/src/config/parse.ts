@@ -1,13 +1,3 @@
-// Config file loader + idempotent merge.
-//
-// Handles `gateway.config.{ts,js,mjs,cjs,json}` files, merges them on top of
-// env-derived config, and applies `enabled_providers` / `disabled_providers`
-// allow/deny lists.
-//
-// Idempotent: a config that has already been through `finalizeConfig` is
-// returned unchanged. Detected via the `Symbol.for('frogbotai.gateway.parsed')`
-// marker (hebo `kParsed` pattern).
-
 import { extname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -25,10 +15,6 @@ import { interpolateConfigText } from './variable.js';
 export const kParsed: unique symbol = Symbol.for('frogbotai.gateway.parsed');
 
 type ParsedMarked = GatewayConfig & { [kParsed]?: true };
-
-// ---------------------------------------------------------------------------
-// File loading
-// ---------------------------------------------------------------------------
 
 const SUPPORTED_EXTS = new Set(['.ts', '.mts', '.cts', '.js', '.mjs', '.cjs', '.json']);
 
@@ -100,17 +86,6 @@ function pickExport(mod: Record<string, unknown>, abs: string): unknown {
   ]);
 }
 
-// ---------------------------------------------------------------------------
-// Merge
-// ---------------------------------------------------------------------------
-
-/**
- * Merge two GatewayConfigs. `overlay` wins on any conflict; provider entries
- * are shallow-merged so an overlay entry with a partial config extends the
- * base rather than replacing it entirely.
- *
- * Order intended for callers: `mergeConfigs(defaults, mergeConfigs(env, file))`.
- */
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 export function mergeConfigs(base: GatewayConfig, overlay: GatewayConfig): GatewayConfig {
@@ -163,9 +138,6 @@ function isProviderConfig(value: unknown): value is Record<string, unknown> {
   return isPlainObject(value) && !isProviderInstance(value);
 }
 
-// One-level merge: overlay's own keys replace base's. Not recursive — nested
-// sub-objects are replaced wholesale, not merged. Callers only pass flat shapes
-// (LoggerOptions, TracingOptions).
 function shallowMerge<T>(base: T | undefined, overlay: T | undefined): T | undefined {
   if (overlay == null) return base;
   if (!isPlainObject(base) || !isPlainObject(overlay)) return overlay;
@@ -185,10 +157,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
-
-// ---------------------------------------------------------------------------
-// Allow/deny filtering
-// ---------------------------------------------------------------------------
 
 function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   const enabled = config.enabled_providers?.length ? new Set(config.enabled_providers) : null;
@@ -241,10 +209,6 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
     providers,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Public entry point
-// ---------------------------------------------------------------------------
 
 /**
  * Finalize a config: apply allow/deny lists, validate, and mark idempotent.

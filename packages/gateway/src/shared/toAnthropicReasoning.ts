@@ -14,8 +14,6 @@ export function toAnthropicReasoning(
     .filter((r) => r.type === 'reasoning' && typeof r.text === 'string')
     .map((r) => ({
       text: r.text as string,
-      // `finalStep.reasoning` parts carry the signature on `providerOptions`
-      // (the replayable message shape); stream/content parts use `providerMetadata`.
       ...extractReasoningMetadata(r.providerMetadata ?? r.providerOptions),
     }));
 }

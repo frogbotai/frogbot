@@ -19,7 +19,6 @@ function groupMembers(pgid: number): number[] {
   }
 }
 
-// A server that forks a long-lived grandchild, like `next dev` -> `next-server`.
 const forkingServer = [
   '-e',
   "require('child_process').spawn('sleep', ['300'], { stdio: 'ignore' }); setInterval(() => {}, 1000);",
@@ -27,8 +26,6 @@ const forkingServer = [
 
 describe.skipIf(process.platform === 'win32')('test server process groups', () => {
   it('kills the whole group, grandchildren included, when the spawner is SIGKILLed', async () => {
-    // Stand-in for a vitest worker: spawns a guarded server, prints the
-    // guardian PID, then gets SIGKILLed so no cleanup hook can run.
     const worker = spawn(
       process.execPath,
       [
@@ -92,10 +89,8 @@ describe('orphan sweep', () => {
       { pid: 10, ppid: 1, rss: 1, command: next },
       { pid: 11, ppid: 10, rss: 1, command: 'next-server (v15.4.11)' },
       { pid: 12, ppid: 11, rss: 1, command: 'node worker.js' },
-      // A live `pnpm dev`: next still has its parent.
       { pid: 20, ppid: 1, rss: 1, command: 'node pnpm dev' },
       { pid: 21, ppid: 20, rss: 1, command: next },
-      // Another project's orphaned next server.
       { pid: 30, ppid: 1, rss: 1, command: 'node /elsewhere/node_modules/next/dist/bin/next dev' },
       { pid: 40, ppid: 1, rss: 1, command: `node ${root}/test/e2e/guardian.mjs node x` },
     ];

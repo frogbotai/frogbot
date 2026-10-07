@@ -44,17 +44,10 @@ export type ClientTool<
   execute?: never;
 };
 
-// `any` (not `z.ZodType`/`unknown`) is intentional: this is the type-erased
-// container used to hold a heterogeneous set of concrete `Tool<Schema, Result>`
-// instances (e.g. `AgentConfig.tools`). `TSchema` and `TResult` appear in
-// `execute`'s parameter/return positions, so a concrete `Tool<Schema>` is not
-// assignable to `Tool<z.ZodType, unknown>` under TS's variance rules — the
-// same reason the AI SDK's own `ToolSet` uses `Tool<any, any, any>` rather
-// than a concrete default.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- a type-erased container, like the AI SDK ToolSet
 export type AnyTool = Tool<any, any> | AnyClientTool;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- a type-erased container, like the AI SDK ToolSet
 export type AnyClientTool = ClientTool<any, any>;
 
 export function isClientTool(tool: AnyTool): tool is AnyClientTool {

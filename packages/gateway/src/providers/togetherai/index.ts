@@ -1,5 +1,3 @@
-// Provider definition: Together AI.
-
 import {
   createTogetherAI,
   type TogetherAIProvider,

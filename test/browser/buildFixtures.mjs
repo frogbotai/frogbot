@@ -1,8 +1,3 @@
-// Builds the browser fixtures listed in FROGBOT_BROWSER_FIXTURES for `next start`, two at a time,
-// and skips each one whose inputs match the stamp of its last build. A build also pushes the
-// schema into an empty database for resetDatabase.mjs to copy, because a production server never
-// pushes its own. Playwright runs this script as the first webServer and waits for "ready"; it then
-// stays up until Playwright closes its stdin, because a webServer that exits counts as failed.
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, rmSync } from 'node:fs';

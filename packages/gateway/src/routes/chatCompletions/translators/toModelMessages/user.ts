@@ -5,9 +5,6 @@ import type { CacheControl } from '../../../../shared/types.js';
 import { parseDataUrl } from '../../../../utils/parseDataUrl.js';
 import type { OpenAIUserMessage } from '../types.js';
 
-// OpenAI accepts these audio formats on `input_audio` parts. Per OpenAI
-// docs as of 2026-06 the set is `wav | mp3 | flac | opus | pcm16`. The
-// MIME mapping below is what the AI SDK and downstream providers expect.
 const AUDIO_FORMAT_MIME: Record<string, string> = {
   wav: 'audio/wav',
   mp3: 'audio/mpeg',
@@ -36,9 +33,6 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
         return { type: 'text', text: part.text, providerOptions };
       }
 
-      // Inline data URLs only. Remote URLs are rejected with a
-      // clean 400 — we can't introspect the MIME without a HEAD request.
-      // M1+ may add a download/sniff path if a real use case appears.
       case 'image_url': {
         const dataUrl = parseDataUrl(part.image_url.url);
         if (!dataUrl) {
@@ -49,9 +43,6 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
           });
         }
 
-        // G55: forward `detail` (low/high/auto) via the `unknown` namespace —
-        // forwardLanguageParams remaps it to `<provider>.imageDetail`, the key
-        // the AI SDK's OpenAI converter reads for outbound `image_url.detail`.
         const detail = part.image_url.detail;
 
         return {
@@ -82,9 +73,6 @@ export function parseUserMessage(msg: OpenAIUserMessage, messageIndex: number): 
         };
       }
 
-      // OpenAI ships two file shapes: inline `file_data` (data URL) and
-      // server-side `file_id` reference. We support `file_data` for PDFs;
-      // `file_id` is a future provider-reference TODO.
       case 'file': {
         if (!part.file.file_data) {
           throw new UnsupportedModalityError({

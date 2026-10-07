@@ -75,10 +75,6 @@ const messageSchema = z
   })
   .loose();
 
-// Non-message input items (OpenAI Responses tool loop). A `function_call`
-// carries the model's tool request from a prior turn; `function_call_output`
-// carries the client's tool result; `reasoning` replays prior reasoning
-// (incl. ZDR `encrypted_content`); `item_reference` points at a stored item.
 const functionCallItemSchema = z
   .object({
     type: z.literal('function_call'),
@@ -132,9 +128,6 @@ const inputItemSchema = z.union([
   itemReferenceSchema,
 ]);
 
-// Function tool definition. The OpenAI Responses API uses a flat shape
-// (`{ type, name, description, parameters, strict }`) — distinct from the
-// nested `{ type, function: { name, ... } }` shape of chat completions.
 const functionToolSchema = z
   .object({
     type: z.literal('function'),
@@ -145,21 +138,12 @@ const functionToolSchema = z
   })
   .loose();
 
-// Catch-all for non-function (hosted) tool types (web_search, file_search,
-// code_interpreter, image_generation, mcp, ...). Accepted at the boundary;
-// translation lives in toResponsesTools (forwarded as provider-defined tools
-// on OpenAI, rejected 400 on other providers).
 const unknownToolSchema = z.object({ type: z.string() }).loose();
 
 const toolSchema = z.union([functionToolSchema, unknownToolSchema]);
 
-// Loosened to z.unknown() — Responses tool_choice accepts strings
-// (`none`/`auto`/`required`) and named/hosted objects. Translation lives in
-// the handler's toResponsesToolChoice.
 const toolChoiceSchema = z.unknown().nullish();
 
-// Structured output — `text.format` carries the json_schema config. Loosened
-// so hosted/verbosity fields survive; translation lives in the handler.
 const textConfigSchema = z
   .object({
     verbosity: z.string().nullish(),
@@ -176,9 +160,6 @@ const textConfigSchema = z
   })
   .loose();
 
-// Reasoning controls (`reasoning.{effort,summary}`). Loosened so forward-compat
-// sub-keys other gateways accept (`enabled`/`max_tokens`/`exclude`) survive;
-// translation to providerOptions.openai lives in the handler.
 const reasoningConfigSchema = z
   .object({
     effort: z.string().nullish(),

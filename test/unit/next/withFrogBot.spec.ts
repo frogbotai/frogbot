@@ -19,7 +19,6 @@ const LIBSQL_PLATFORMS = [
 
 let fixtureRoot: string | undefined;
 
-// Node reads NODE_PATH once at startup; this re-reads it after a stub.
 function reloadNodePath(): void {
   (Module as unknown as { _initPaths: () => void })._initPaths();
 }

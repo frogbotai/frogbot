@@ -1,5 +1,3 @@
-// Azure provider credential validation tests.
-
 import { describe, expect, it } from 'vitest';
 
 import { azureProvider } from '../../../../../packages/gateway/src/providers/azure/index.js';
@@ -19,7 +17,6 @@ describe('azureProvider.fromEnv', () => {
       }),
     );
 
-    // No API key means skip
     expect(result).toBeUndefined();
   });
 

@@ -1,10 +1,3 @@
-// gateway.operation() — first-class in-process operation lifecycle.
-//
-// Covers the 5-phase hook lifecycle for in-process callers (FrogBot):
-// `start()` gates via beforeOperation, model getters share the operation's
-// requestId/context with upstream hooks, and `finish()` fires afterOperation
-// with accumulated finishReason/usage/error.
-
 import { generateText } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it, vi } from 'vitest';
@@ -244,8 +237,6 @@ describe('gateway.handler context seed', () => {
   });
 
   it('defaults hook context to a fresh unseeded bag without an env seed', async () => {
-    // Built-in observability hooks stamp their own keys into the bag before
-    // user hooks run, so assert freshness + absence of seeds rather than {}.
     const contexts: Record<string, unknown>[] = [];
     const gw = makeGateway({
       beforeOperation: [

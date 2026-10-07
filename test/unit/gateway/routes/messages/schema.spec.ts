@@ -1,5 +1,3 @@
-// Tests for the Anthropic /v1/messages request schema validation.
-
 import { describe, expect, test } from 'vitest';
 
 import { RequestValidationError } from '../../../../../packages/gateway/src/errors/gatewayError.js';
@@ -68,12 +66,6 @@ describe('parseMessagesRequest — content blocks', () => {
     ).toThrow(RequestValidationError);
   });
 
-  // NOTE: empty tool_use_id / tool_use id+name do NOT throw at the schema
-  // level — the discriminated-variant min(1) check fails, but the forward-compat
-  // `unknownUserBlockSchema`/`unknownAssistantBlockSchema` catch-all (which only
-  // requires `type: string`) accepts the block. Correlation is handled leniently
-  // in the translator (empty tool name fallback). The min(1) messages in schema.ts
-  // are therefore only reachable when the block is not otherwise catch-all valid.
   test('accepts empty tool_result.tool_use_id via the catch-all', () => {
     const result = parseMessagesRequest({
       ...valid,

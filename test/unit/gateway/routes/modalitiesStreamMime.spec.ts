@@ -1,35 +1,10 @@
-// Modalities P2 findings that require ai-test provider mocks (G76, G78).
-//
-// These live as a COLOCATED UNIT spec because the ai-test mock helpers
-// (MockProviderV4, MockSpeechModelV4, MockTranscriptionModelV4) only resolve
-// in the vitest unit project; the int project cannot import them. This mirrors
-// the colocated routes handler specs that use the same mock helpers.
-//
-// G76 — Transcriptions: the stream flag is silently ignored, yielding buffered
-//        JSON instead of an event-stream response. The schema has no stream
-//        field and the handler never streams.
-// G78 — Speech: the response Content-Type is driven by AI SDK magic-byte
-//        detection, NOT the requested response_format. pcm has no signature so
-//        it falls back to audio/mp3; the IANA name for mp3 is audio/mpeg. The
-//        handler forwards result.audio.mediaType verbatim (speech/handler.ts:135).
-//
-// Each failing case is tagged // G## and marks a CONFIRMED bug; flip on fix.
-
 import { MockProviderV4, MockSpeechModelV4, MockTranscriptionModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../../../packages/gateway/src/providers/registry.js';
 
-// ---------------------------------------------------------------------------
-// G76 — transcriptions stream=true silently ignored (returns JSON, not SSE)
-// ---------------------------------------------------------------------------
-
 describe('G76 — transcriptions: stream=true silently ignored', () => {
-  // G76 — the AI SDK's transcribe() has no streaming interface, so the gateway
-  // rejects stream=true with a typed 400 rather than silently returning buffered
-  // JSON (the previous behavioral lie). SSE streaming is deferred until the AI
-  // SDK provides a doStream() surface for transcription models.
   it('POST /v1/audio/transcriptions with stream=true is rejected with a 400', async () => {
     const registry = {
       openai: new MockProviderV4({
@@ -66,14 +41,7 @@ describe('G76 — transcriptions: stream=true silently ignored', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G78 — speech Content-Type matches requested outputFormat
-// ---------------------------------------------------------------------------
-
 describe('G78 — speech Content-Type matches requested outputFormat', () => {
-  // G78 — pcm has no magic-byte signature → generateSpeech falls back to
-  // audio/mp3 (generate-speech.ts) → handler forwards it (speech/handler.ts:135).
-  // Requested response_format:pcm should yield audio/pcm.
   it('POST /v1/audio/speech with response_format:pcm returns Content-Type: audio/pcm', async () => {
     const registry = {
       openai: new MockProviderV4({
@@ -107,9 +75,6 @@ describe('G78 — speech Content-Type matches requested outputFormat', () => {
     expect(res.headers.get('content-type')).toBe('audio/pcm');
   });
 
-  // G78 — mp3 IANA type is audio/mpeg. detectMediaType only matches MPEG
-  // frame-sync bytes (0xff 0xfb/...), NOT the ID3 tag (0x49 0x44 0x33), so
-  // detection misses → fallback audio/mp3. Gateway should map mp3 → audio/mpeg.
   it('POST /v1/audio/speech with response_format:mp3 returns Content-Type: audio/mpeg', async () => {
     const registry = {
       openai: new MockProviderV4({

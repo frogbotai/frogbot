@@ -1,9 +1,3 @@
-// The FrogBot class — headless runtime singleton.
-//
-// Owns a private Payload instance. Exposes CRUD, auth, versions, and
-// utilities. Framework-agnostic: works in scripts, tests, serverless,
-// and standalone servers.
-
 import type { Gateway } from '@frogbotai/gateway';
 import type { Payload } from 'payload';
 import { createLocalReq, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
@@ -190,8 +184,6 @@ export class FrogBot {
     return state(this).payload.jobs as Jobs;
   }
 
-  // ── Lifecycle ───────────────────────────────────────────────────────────
-
   async init(options: InitOptions): Promise<FrogBot> {
     const config = await options.config;
     const payloadConfig = config._internal.payloadConfig;
@@ -208,8 +200,6 @@ export class FrogBot {
     await shutdownChannelHost(this);
     await state(this).payload.destroy();
   }
-
-  // ── HTTP (framework-agnostic) ──────────────────────────────────────────
 
   async handleRequest(request: Request): Promise<Response> {
     return handleEndpoints({
@@ -236,8 +226,6 @@ export class FrogBot {
 
     await state(this).payload.jobs.queue({ ...args, input });
   }
-
-  // ── CRUD ────────────────────────────────────────────────────────────────
 
   async find<T extends CollectionSlug>(
     args: FindArgs<T>,
@@ -287,8 +275,6 @@ export class FrogBot {
     return state(this).local.findDistinct(args);
   }
 
-  // ── Versions ────────────────────────────────────────────────────────────
-
   async findVersions<T extends CollectionSlug>(
     args: FindVersionsArgs<T>,
   ): Promise<PaginatedDocs<TypeWithVersion<TypedCollection<T>>>> {
@@ -312,8 +298,6 @@ export class FrogBot {
   ): Promise<TypedCollection<T>> {
     return state(this).local.restoreVersion(args);
   }
-
-  // ── Auth ────────────────────────────────────────────────────────────────
 
   async auth(args: AuthArgs): Promise<AuthResult> {
     return state(this).local.auth(args);
@@ -376,8 +360,6 @@ export class FrogBot {
     return state(this).local.unlock(args);
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────
-
   encrypt(text: string): string {
     return state(this).payload.encrypt(text);
   }
@@ -393,8 +375,6 @@ export class FrogBot {
   getAPIURL(): string {
     return state(this).payload.getAPIURL();
   }
-
-  // ── AI ──────────────────────────────────────────────────────────────────
 
   generateText = (opts: GenerateTextOpts): ReturnType<typeof generateTextOperation> =>
     generateTextOperation(aiDeps(this), opts);
@@ -426,8 +406,6 @@ export class FrogBot {
   evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
     opts: EvaluateOpts<QUESTIONS>,
   ): Promise<EvaluateResult<QUESTIONS>> => evaluateOperation(aiDeps(this), opts);
-
-  // ── Training data ───────────────────────────────────────────────────────
 
   exportTrainingData(options: ReadTrainingDataOptions = {}): ReadableStream<Uint8Array> {
     return encodeTrainingData(readTrainingData(this, options));
@@ -574,11 +552,10 @@ function aiDeps(frogbot: FrogBot) {
 async function registerAITelemetry(ai: SanitizedAIConfig): Promise<void> {
   if (!ai.telemetry.enabled) return;
 
-  let otelModule: typeof import('@ai-sdk/otel') | undefined; // eslint-disable-line @typescript-eslint/consistent-type-imports
+  let otelModule: typeof import('@ai-sdk/otel') | undefined; // eslint-disable-line @typescript-eslint/consistent-type-imports -- the optional peer is imported lazily
   try {
     otelModule = await import('@ai-sdk/otel');
   } catch {
-    // Optional peer dep not installed — telemetry silently disabled.
     return;
   }
 

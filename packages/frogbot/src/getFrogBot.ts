@@ -1,9 +1,3 @@
-// Singleton accessor for the FrogBot instance.
-//
-// Mirrors Payload's `getPayload()` pattern. Caches the instance on
-// `globalThis` so repeated calls return the same object even when the
-// module graph is re-evaluated (e.g. Next.js dev HMR).
-
 import type { FrogBotSanitizedConfig } from './config/sanitized.js';
 import type { InitOptions } from './frogbot.js';
 import { FrogBot } from './frogbot.js';

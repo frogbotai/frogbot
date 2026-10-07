@@ -1,7 +1,3 @@
-// Typed builders for hand-rolled LanguageModelV4 mocks in the gateway int
-// specs. They fill the fields the spec types require (every usage key, the
-// `{ unified, raw }` finish reason) so a spec only writes what it checks.
-
 import type {
   LanguageModelV3,
   LanguageModelV4,

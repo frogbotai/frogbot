@@ -1,13 +1,3 @@
-// Provider definition: Azure OpenAI.
-//
-// Auth: `AZURE_API_KEY` + `AZURE_RESOURCE_NAME` (or `AZURE_OPENAI_BASE_URL`).
-// Optional: `AZURE_API_VERSION`, `AZURE_DEPLOYMENT_NAME`.
-//
-// An API key without a resource name or base URL skips the provider — per the
-// `fromEnv` contract, discovery never throws (G41).
-//
-// Model IDs are deployment names (e.g. `azure/my-gpt4o-deployment`).
-
 import {
   type AzureOpenAIProvider,
   type AzureOpenAIProviderSettings,
@@ -24,14 +14,11 @@ export const azureProvider = {
   fromEnv: (env) => {
     const apiKey = env.AZURE_API_KEY;
 
-    // No API key — skip provider.
     if (!apiKey) return undefined;
 
     const resourceName = env.AZURE_RESOURCE_NAME;
     const baseURL = env.AZURE_OPENAI_BASE_URL;
 
-    // Key without a resource name or base URL cannot build a client — skip
-    // provider. Discovery never throws (G41).
     if (!resourceName && !baseURL) return undefined;
 
     return {

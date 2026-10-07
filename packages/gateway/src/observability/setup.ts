@@ -1,11 +1,3 @@
-// Node-only OpenTelemetry setup. This module statically imports the OTel SDK
-// packages (which depend on `node:async_hooks`, `node:perf_hooks`, etc.) and
-// MUST NOT be imported from the core gateway path. Node hosts and the CLI
-// import it explicitly to register global tracer + meter providers.
-//
-// Non-Node runtimes should register their own providers (or none — the gateway
-// degrades to no-op tracing/metrics). See `tracing.ts` for the api-only core.
-
 import { context, metrics } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -45,12 +37,6 @@ export type SetupTracingOptions = {
 let registered = false;
 let meterProvider: MeterProvider | undefined;
 
-/**
- * Resource shared by traces + metrics: explicit service identity (name,
- * version, per-process instance id, environment) with env-detected attributes
- * (`OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`) taking precedence.
- * Without this every span exports as `unknown_service:node`.
- */
 function buildResource(): Resource {
   return defaultResource()
     .merge(
@@ -165,7 +151,6 @@ export async function gracefulShutdown(
       }),
     ]);
   } catch {
-    // Timed out or the exporter rejected — fall through to shutdown/exit.
   } finally {
     if (timer) {
       clearTimeout(timer);
@@ -174,7 +159,5 @@ export async function gracefulShutdown(
 
   try {
     await provider.shutdown();
-  } catch {
-    // Best-effort shutdown — nothing to do if it fails.
-  }
+  } catch {}
 }

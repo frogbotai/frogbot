@@ -1,8 +1,3 @@
-// Heavy test runs (int, gateway-integration, e2e, browser, test-types) each take one of SLOTS slot
-// files in a directory every worktree shares, so parallel worktrees never run more than SLOTS at
-// once. A slot file holds its owner's pid; a slot whose owner is dead is free again. As a script,
-// `node scripts/lib/slot.mjs <name>` holds a slot until its stdin closes, for Playwright's webServer.
-// `pnpm ticket land` takes the single LAND_LOCK slot in its own directory, so lands run one at a time.
 import { randomUUID } from 'node:crypto';
 import { linkSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -48,9 +43,6 @@ const attempt = (fn) => {
   }
 };
 
-// A slot is taken by hard-linking a finished file to its name, which fails if the name exists.
-// Reclaiming renames the dead slot aside first, so of two processes reclaiming it only one moves
-// the dead file; the other may move the winner's new file instead, and links it back.
 function take(files, pid, label) {
   const temp = path.join(path.dirname(files[0]), `${randomUUID()}.tmp`);
 
@@ -92,7 +84,6 @@ export async function acquireSlot(
 
   mkdirSync(dir, { recursive: true });
 
-  // One slot per process: a run whose several projects each ask holds just the first.
   if (files.some((file) => holder(file)?.pid === pid)) return () => {};
 
   for (let waiting = false; ; waiting = true) {

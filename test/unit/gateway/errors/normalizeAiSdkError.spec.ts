@@ -8,10 +8,6 @@ import {
   isRetryableError,
 } from '../../../../packages/gateway/src/errors/normalizeAiSdkError.js';
 
-// ---------------------------------------------------------------------------
-// Test helpers
-// ---------------------------------------------------------------------------
-
 const apiCallError = (overrides: Partial<ConstructorParameters<typeof APICallError>[0]> = {}) =>
   new APICallError({
     message: 'upstream failed',
@@ -19,10 +15,6 @@ const apiCallError = (overrides: Partial<ConstructorParameters<typeof APICallErr
     requestBodyValues: {},
     ...overrides,
   });
-
-// ---------------------------------------------------------------------------
-// headersForError
-// ---------------------------------------------------------------------------
 
 describe('headersForError', () => {
   it('uses policy retry timing', () => {
@@ -51,7 +43,6 @@ describe('headersForError', () => {
 
     const headers = headersForError(retryError, 429);
 
-    // Real upstream retry-after (45), not the synthesized default (30).
     expect(headers['retry-after']).toBe('45');
     expect(headers['x-should-retry']).toBe('true');
   });
@@ -69,10 +60,6 @@ describe('headersForError', () => {
     expect(headers['x-should-retry']).toBe('true');
   });
 });
-
-// ---------------------------------------------------------------------------
-// isRetryableError
-// ---------------------------------------------------------------------------
 
 describe('isRetryableError', () => {
   it('returns true when the status itself is retryable', () => {

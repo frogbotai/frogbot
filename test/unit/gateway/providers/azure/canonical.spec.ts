@@ -1,5 +1,3 @@
-// Azure canonical ID mapping tests.
-
 import { describe, expect, it } from 'vitest';
 
 import {

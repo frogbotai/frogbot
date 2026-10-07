@@ -1,5 +1,3 @@
-// Provider definition: Perplexity.
-
 import {
   createPerplexity,
   type PerplexityProvider,

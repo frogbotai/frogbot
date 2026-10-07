@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// `pnpm check peer-variants` reads the importers of `pnpm-lock.yaml` and fails when a package that
-// several workspace folders depend on resolves, at one version, to more than one peer variant:
-// two `.pnpm` copies of the same package, so `vi.mock` or `instanceof` in one folder misses the
-// copy another folder loads. ALLOWED lists the variants kept on purpose, each with its reason.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +21,6 @@ const DEPENDENCY = /^ {6}(\S.*):$/;
 
 const VERSION = /^ {8}version: (.+)$/;
 
-// `{ name: { version: [importer] } }` for every installed direct dependency of each importer.
 export function importerVersions(lockfile) {
   const versions = {};
   let inImporters = false;
@@ -71,8 +66,6 @@ function allowed(name, importer, allow) {
   return allow.some((entry) => entry.name === name && entry.importer === importer);
 }
 
-// One problem per package and version installed as several peer variants, listing each variant
-// with its importers; an allowed importer's variant doesn't count.
 export function peerVariants({ lockfile, allow = ALLOWED }) {
   const problems = [];
 
@@ -93,7 +86,6 @@ export function peerVariants({ lockfile, allow = ALLOWED }) {
   return problems.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// The ALLOWED entries whose importer no longer has a variant of its own.
 export function unusedAllowances({ lockfile, allow = ALLOWED }) {
   const problems = peerVariants({ lockfile, allow: [] });
 

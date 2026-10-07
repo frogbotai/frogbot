@@ -1,12 +1,3 @@
-// Typed intermediate SSE frame representation.
-//
-// Both routes construct wire chunks and errors via the same typed frame
-// before serialization. Keeping a discriminated union in the middle lets
-// heartbeat/keep-alive/[DONE] logic live in one place (see `toSseStream`)
-// without any translator having to know about SSE framing.
-//
-// **Ref:** hebo `utils/stream.ts`.
-
 /**
  * A single SSE frame: either a data event carrying a translator payload,
  * a named event with a payload (Anthropic uses this shape), a comment

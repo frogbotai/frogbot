@@ -95,12 +95,10 @@ export async function migrate(args: string[]): Promise<void> {
   const cwd = process.cwd();
   const frogbotConfig = await loadConfig({ cwd });
   const config = await frogbotConfig._internal.payloadConfig;
-  // Use a synchronous logger so CLI output is not truncated by process.exit
   config.logger = 'sync';
 
   await payload.init({
     config,
-    // Schema generation only inspects the schema; no database connection needed
     disableDBConnect: command === 'migrate:create',
     disableOnInit: true,
   });

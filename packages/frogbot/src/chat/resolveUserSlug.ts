@@ -1,8 +1,3 @@
-// Derive the user collection slug from the config (design §3):
-//   - zero `auth: true` collections → Payload injects its default `users`
-//   - exactly one → it is the user collection, regardless of slug
-//   - multiple → `admin.user` must pick one, otherwise throw
-
 import type { FrogBotConfig } from '../config/types.js';
 
 export function resolveUserSlug(config: Pick<FrogBotConfig, 'collections' | 'admin'>): string {

@@ -1,9 +1,3 @@
-// Gateway AI SDK telemetry activation (G100) — proving at the public
-// `createApp()` seam that the gateway passes the v7 `telemetry` option to the
-// AI SDK with the gateway tracer wired through, so SDK inner spans
-// (`invoke_agent ...`, step and model-call spans) are actually emitted — and
-// that the resolved signal levels gate them off again.
-
 import type { LanguageModelV4 } from '@ai-sdk/provider';
 import type { Span, Tracer } from '@opentelemetry/api';
 import { describe, expect, it, vi } from 'vitest';
@@ -99,9 +93,6 @@ async function postChat(app: ReturnType<typeof createApp>) {
 }
 
 describe('gateway AI SDK telemetry activation (G100)', () => {
-  // G100: at gen_ai 'full' the gateway must pass the AI SDK `telemetry` option
-  // with the @ai-sdk/otel integration wired to the gateway tracer, so the SDK
-  // emits its inner spans through it in addition to the gateway span.
   it('emits AI SDK inner spans through the gateway tracer at signal level full', async () => {
     const spanNames: string[] = [];
     const app = makeApp('full', spanNames);
@@ -110,13 +101,9 @@ describe('gateway AI SDK telemetry activation (G100)', () => {
 
     expect(res.status).toBe(200);
     expect(spanNames).toContain('gateway.chat.completions');
-    // The SDK operation root span (`invoke_agent <model>`) proves telemetry
-    // activation reached the AI SDK call.
     expect(spanNames.some((name) => name.startsWith('invoke_agent'))).toBe(true);
   });
 
-  // The frogbot namespace below 'recommended' must gate SDK telemetry off:
-  // only the gateway span is created.
   it('emits no AI SDK inner spans at signal level required', async () => {
     const spanNames: string[] = [];
     const app = makeApp('required', spanNames);

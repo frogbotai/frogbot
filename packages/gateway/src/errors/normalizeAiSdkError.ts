@@ -1,19 +1,3 @@
-// AI SDK error → gateway headers extraction.
-//
-// The existing `toOpenAIErrorResponse` / `toAnthropicErrorResponse` map
-// error → { body, status }. This module adds the header dimension:
-// pulling `retry-after` / `retry-after-ms` from an upstream `APICallError`
-// so the gateway can propagate retry hints to the client.
-//
-// Also exports `isRetryableError` for downstream consumers that want to
-// classify without unwrapping the envelope.
-//
-// Both functions unwrap `RetryError` first (via `unwrapRetryError`) so a
-// retry-exhausted upstream failure — the real `APICallError` is buried in
-// `err.lastError` — is classified and forwards its headers the same as an
-// unwrapped `APICallError` would. A Vercel AI Gateway `GatewayError` keeps
-// the upstream `APICallError` (and its headers) in `cause`.
-
 import { GatewayError as AIGatewayError } from '@ai-sdk/gateway';
 import { APICallError } from '@ai-sdk/provider';
 

@@ -1,12 +1,3 @@
-// Model catalog — authoritative built-in model routing and metadata.
-//
-// Catalog entries are built with `defineModelCatalog(...presets)` and the
-// `presetFor` helper which provides a type-safe factory for model families.
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 export type Modality = 'text' | 'image' | 'audio' | 'video' | 'pdf' | 'embedding';
 
 export type ModelReasoningOption =
@@ -112,10 +103,6 @@ export function calculateCostUSD(usage: CostUsage, cost?: ModelCost): number {
 
 export type ModelCatalog = Map<string, ModelCatalogEntry>;
 
-// ---------------------------------------------------------------------------
-// presetFor — type-safe factory for model families
-// ---------------------------------------------------------------------------
-
 /**
  * Creates a typed preset factory for a known set of model IDs. The factory
  * produces `ModelCatalogEntry` values with the given base merged with
@@ -139,10 +126,6 @@ export function presetFor<
     id,
   });
 }
-
-// ---------------------------------------------------------------------------
-// defineModelCatalog — assemble a catalog from preset entries
-// ---------------------------------------------------------------------------
 
 /**
  * Build a `ModelCatalog` (Map<id, entry>) from an array of preset entries.

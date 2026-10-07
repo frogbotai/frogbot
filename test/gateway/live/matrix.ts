@@ -101,12 +101,6 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     text: text('mistral', 'mistral-medium-latest', ['tools', 'vision', 'json']),
     embeddings: models('mistral', 'embeddings', ['mistral-embed']),
   },
-  // {
-  //   label: 'xai',
-  //   provider: 'xai',
-  //   keys: ['XAI_API_KEY'],
-  //   text: text('xai', 'grok-4.7', ['tools', 'vision', 'json', 'reasoning', 'cache']),
-  // },
   {
     label: 'deepseek',
     provider: 'deepseek',

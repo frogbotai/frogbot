@@ -75,9 +75,6 @@ function apiCallError(overrides: Partial<ConstructorParameters<typeof APICallErr
 
 describe('GatewayLogger structural compatibility', () => {
   it('accepts a pino.Logger with no adapter (Payload embedding requirement)', () => {
-    // Compile-time proof: pino.Logger (== Payload's PayloadLogger) extends
-    // GatewayLogger, so `createGateway({ logger: payload.logger })` type-checks
-    // with no adapter.
     expectTypeOf<PinoLogger>().toExtend<GatewayLogger>();
 
     const pinoLogger = null as unknown as PinoLogger;

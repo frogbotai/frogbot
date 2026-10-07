@@ -1,6 +1,3 @@
-// Unit tests for the SSRF download guard (G33). All hermetic — literal-IP
-// URLs never hit DNS, and the passthrough case never fetches.
-
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -13,9 +10,9 @@ describe('isPrivateAddress', () => {
   it.each([
     '0.0.0.0',
     '10.1.2.3',
-    '100.100.100.200', // CGNAT (Alibaba IMDS)
+    '100.100.100.200',
     '127.0.0.1',
-    '169.254.169.254', // AWS/GCP/Azure IMDS
+    '169.254.169.254',
     '172.16.0.1',
     '172.31.255.255',
     '192.0.0.1',
@@ -93,7 +90,6 @@ describe('assertPublicHttpsUrl', () => {
 
 describe('guardedDownload', () => {
   it('passes through model-supported URLs without validating or fetching', async () => {
-    // Even a blatantly unsafe URL returns null (provider fetches server-side).
     const result = await guardedDownload([
       { url: new URL('http://169.254.169.254/'), isUrlSupportedByModel: true },
     ]);

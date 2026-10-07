@@ -1,5 +1,3 @@
-// generateSpeech operation — text-to-speech via AI SDK.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { experimental_generateSpeech as aiGenerateSpeech } from 'ai';
 
@@ -25,11 +23,9 @@ export async function generateSpeechOperation(
   const { model: input, req, overrideAccess, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model.
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

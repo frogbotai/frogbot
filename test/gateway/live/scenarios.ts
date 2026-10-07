@@ -1,23 +1,9 @@
-// Deep-scenario runners for the live e2e suite — the "push it" layer on top
-// of the smoke-level `routes.ts` runners. Each scenario exercises a behavior
-// real clients depend on: tool round trips (per wire), parallel tool calls,
-// multi-turn recall, truncation semantics, error envelopes, mid-stream client
-// aborts, and oversized payloads.
-//
-// If a model refuses to call a tool the scenario throws with a clear message
-// (a real failure signal, not a soft skip) — pick a tool-reliable model via
-// `scenario.model` in matrix.ts, or drop 'tools' from `scenario.features`.
-
 import { expect } from 'vitest';
 
 import { parseSse } from '../../__helpers/gateway/parse-sse.js';
 import { type LiveApp, post, postRaw } from './routes.js';
 
 const MAX_TOKENS = 1024;
-
-// ---------------------------------------------------------------------------
-// Tool definitions, one per wire dialect.
-// ---------------------------------------------------------------------------
 
 const WEATHER_PARAMS = {
   type: 'object',
@@ -73,10 +59,6 @@ function noToolCall(model: string, wire: string, detail: string): Error {
       'different scenario.model in matrix.ts.',
   );
 }
-
-// ---------------------------------------------------------------------------
-// Tool round trips — request → tool_call → tool result → final answer.
-// ---------------------------------------------------------------------------
 
 type ChatToolCall = {
   id?: string;
@@ -207,8 +189,6 @@ type ResponsesBody = {
   error?: { type?: string; message?: string } | null;
 };
 
-// G3 regression territory: function_call/function_call_output input items
-// must round-trip on the Responses wire.
 export async function expectResponsesToolRoundTrip(app: LiveApp, model: string): Promise<void> {
   const first = await post<ResponsesBody>(app, '/v1/responses', {
     model,
@@ -247,10 +227,6 @@ export async function expectResponsesToolRoundTrip(app: LiveApp, model: string):
   expect(second.body.output_text ?? '').toMatch(FINAL_ANSWER);
 }
 
-// ---------------------------------------------------------------------------
-// Parallel tool calls (chat wire).
-// ---------------------------------------------------------------------------
-
 export async function expectChatParallelToolCalls(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<ChatBody>(app, '/v1/chat/completions', {
     model,
@@ -278,12 +254,8 @@ export async function expectChatParallelToolCalls(app: LiveApp, model: string): 
   }
 
   const ids = toolCalls.map((c) => c.id);
-  expect(new Set(ids).size).toBe(ids.length); // ids must be unique
+  expect(new Set(ids).size).toBe(ids.length);
 }
-
-// ---------------------------------------------------------------------------
-// Multi-turn recall — planted fact must survive history translation.
-// ---------------------------------------------------------------------------
 
 const PLANT = 'My name is Waldo. Remember it.';
 const PLANT_ACK = 'Nice to meet you, Waldo.';
@@ -340,10 +312,6 @@ export async function expectResponsesMultiTurn(app: LiveApp, model: string): Pro
   expect(body.output_text ?? '').toMatch(RECALLED);
 }
 
-// ---------------------------------------------------------------------------
-// Truncation — tiny budgets must surface the wire-correct truncation signal.
-// ---------------------------------------------------------------------------
-
 const LONG_ASK = 'Write a detailed 2000-word essay about the history of frogs.';
 const TINY_BUDGET = 16;
 
@@ -377,20 +345,12 @@ export async function expectResponsesTruncation(app: LiveApp, model: string): Pr
   });
 
   expect(status).toBe(200);
-  // Wire contract: a truncated response is status=incomplete. Budget must
-  // actually bind either way.
   expect(['incomplete', 'completed']).toContain(body.status);
-  // Some providers (xAI) report reasoning inside output_tokens without letting
-  // max_output_tokens bound it; the budget contract is on the visible answer.
   const visible =
     (body.usage?.output_tokens ?? 0) - (body.usage?.output_tokens_details?.reasoning_tokens ?? 0);
 
   expect(visible).toBeLessThanOrEqual(TINY_BUDGET * 4);
 }
-
-// ---------------------------------------------------------------------------
-// Error envelopes — a bogus model must fail in the wire's OWN error dialect.
-// ---------------------------------------------------------------------------
 
 const BOGUS_MODEL_SUFFIX = 'does-not-exist-xyz';
 
@@ -437,11 +397,6 @@ export async function expectResponsesErrorEnvelope(app: LiveApp, label: string):
   expect(typeof body.error?.message).toBe('string');
 }
 
-// ---------------------------------------------------------------------------
-// Mid-stream client abort — cancel after the first chunk; the app must not
-// wedge (the follow-up request must still get a well-formed response).
-// ---------------------------------------------------------------------------
-
 export async function expectChatStreamAbort(
   app: LiveApp,
   model: string,
@@ -458,17 +413,10 @@ export async function expectChatStreamAbort(
   const reader = res.body!.getReader();
   const first = await reader.read();
   expect(first.done).toBe(false);
-  await reader.cancel(); // client walks away mid-stream
+  await reader.cancel();
 
-  // Liveness probe: the app must still serve requests cleanly (cheap: bogus
-  // model → error envelope, no tokens spent).
   await expectChatErrorEnvelope(app, label);
 }
-
-// ---------------------------------------------------------------------------
-// Context overflow — a prompt past every model's context window must come back
-// as a 400 `context_length_exceeded` envelope.
-// ---------------------------------------------------------------------------
 
 const OVERSIZED_PROMPT = Array.from({ length: 1_300_000 }, (_, index) => `w${index % 1000}`).join(
   ' ',
@@ -486,10 +434,6 @@ export async function expectChatContextOverflow(app: LiveApp, model: string): Pr
   expect(res.status, JSON.stringify(body)).toBe(400);
   expect(body.error?.code).toBe('context_length_exceeded');
 }
-
-// ---------------------------------------------------------------------------
-// Streaming tool call — deltas must coalesce into a complete tool call.
-// ---------------------------------------------------------------------------
 
 type ChatChunk = {
   choices?: Array<{

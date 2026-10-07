@@ -2,14 +2,6 @@ import { jsonSchema, Output } from 'ai';
 
 import { RequestValidationError } from '../../../errors/gatewayError.js';
 
-// Maps the OpenAI chat `response_format` param to an AI SDK `Output` spec.
-// The AI SDK's public structured-output API is the `output` option on
-// `generateText`/`streamText` (ai generate-text.ts) — it resolves
-// `output.responseFormat` into the LanguageModelV4CallOptions
-// `responseFormat` key; a raw `responseFormat` in settings is overridden.
-// `json_schema` → Output.object(...), `json_object` → Output.json(),
-// `text`/absent → undefined (default text mode). Anything else is a 400.
-
 type JsonSchemaConfig = {
   name?: string;
   description?: string;

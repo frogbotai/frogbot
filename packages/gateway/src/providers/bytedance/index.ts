@@ -1,5 +1,3 @@
-// Provider definition: ByteDance (Doubao / Ark).
-
 import {
   type ByteDanceProvider,
   type ByteDanceProviderSettings,

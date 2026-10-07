@@ -85,8 +85,6 @@ describe('createResponsesStreamTransform', () => {
       previous_response_id: 'resp_prev',
       usage: { input_tokens: 3, output_tokens: 2, total_tokens: 5 },
     });
-    // G7: the synthetic response id is frozen at construction and never
-    // adopts the upstream finish-step id — stable created → completed.
     expect(events[0].data.response.id).toMatch(/^resp_/);
     expect(events[9].data.response.id).not.toBe('resp_test');
   });

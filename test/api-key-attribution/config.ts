@@ -40,7 +40,6 @@ const Accounts: CollectionConfig = {
   auth: true,
   access: openAccess,
   fields: [
-    // Same type as the adapter's ids, so a session user can carry a real-looking key id.
     process.env.FROGBOT_DATABASE === 'mongodb'
       ? { name: 'apiKeyId', type: 'text' }
       : { name: 'apiKeyId', type: 'number' },

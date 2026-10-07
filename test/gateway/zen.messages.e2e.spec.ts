@@ -1,21 +1,3 @@
-// Gateway E2E — /v1/messages (Anthropic wire) against OpenCode Zen.
-//
-// THE cross-provider case: an Anthropic-SDK client (e.g. a Claude-SDK app)
-// pointed at the gateway, translated live to Zen's OpenAI-compatible upstream.
-// Covers the basic envelope, multi-turn history, the full Anthropic-style tool
-// loop (tool_use → tool_result), the streaming event sequence, budget/stop
-// params, and the Anthropic error envelope.
-//
-// Model: deepseek-v4.1-flash (paid; Zen's free models only work inside
-// OpenCode). It emits reasoning, so budget max_tokens >= 1024 except where a
-// test deliberately truncates.
-//
-// Known-bug interplay (dev/plans/frogbot_gateway/056_full_gateway_review):
-//   - G6 — Anthropic streaming wire reports input_tokens 0 / omits them:
-//     asserted as it.fails real-model confirmation (non-streaming usage works).
-//
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.messages.e2e.spec.ts
-
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -82,7 +64,6 @@ function eventsOf(frames: SseFrame[]): AnthropicEvent[] {
   }));
 }
 
-/** Fails with `failure` unless the reply stopped to use a tool; returns that block. */
 function expectToolUse(body: MessagesBody, failure: string): ContentBlock {
   const toolUse = (body.content ?? []).find((b) => b.type === 'tool_use');
 
@@ -93,11 +74,6 @@ function expectToolUse(body: MessagesBody, failure: string): ContentBlock {
   return toolUse;
 }
 
-/**
- * Ends the two-step loop after turn 2: a second tool use is answered and must
- * lead to a final answer; a direct answer is the terminal turn. Either is
- * protocol-valid.
- */
 async function expectLoopFinish({
   app,
   tools,
@@ -145,8 +121,6 @@ async function expectLoopFinish({
   }
 }
 
-/** Reasoning models can hit a stop sequence inside reasoning, leaving the
- * visible text empty. Wire-legal — warn, don't fail. */
 function warnOnEmptyText(text: string) {
   if (text.length === 0) {
     console.warn(
@@ -198,11 +172,6 @@ describeLive(
   () => {
     const app = makeZenApp();
 
-    // -------------------------------------------------------------------------
-    // 10. Basic: system + user → Anthropic response envelope. Non-streaming
-    //     usage must be real (streaming input_tokens is G6, below).
-    // -------------------------------------------------------------------------
-    // G155 regression guard — system prompts must work on this route.
     it(
       'basic system + user message → Anthropic envelope with real usage',
       async () => {
@@ -231,10 +200,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 11. Multi-turn with assistant history.
-    // -------------------------------------------------------------------------
-    // G155 regression guard — top-level system param must work on this route.
     it(
       'multi-turn conversation with assistant history',
       async () => {
@@ -260,10 +225,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 12. FULL TOOL LOOP Anthropic-style: tool_use block → tool_result block →
-    //     final answer. Cross-provider tool translation, live.
-    // -------------------------------------------------------------------------
     it(
       'full Anthropic tool loop: tool_use → tool_result → final answer references it',
       async () => {
@@ -290,7 +251,6 @@ describeLive(
         expect(toolUse.name).toBe('get_weather');
         expect(typeof toolUse.input).toBe('object');
 
-        // Turn 2 — assistant turn (text + tool_use blocks only) + tool_result.
         const assistantBlocks = (turn1.body.content ?? []).filter(
           (b) => b.type === 'text' || b.type === 'tool_use',
         );
@@ -326,11 +286,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 13. Streaming: full Anthropic event sequence, properly bracketed.
-    //     Reasoning models interleave thinking blocks — assert ordering
-    //     constraints, not an exact event list.
-    // -------------------------------------------------------------------------
     it(
       'streaming emits the Anthropic event sequence in order with bracketed content blocks',
       async () => {
@@ -347,7 +302,6 @@ describeLive(
         const events = eventsOf(frames);
         const names = events.map((e) => e.event);
 
-        // message_start first, message_stop last.
         expect(names[0]).toBe('message_start');
         expect(names[names.length - 1]).toBe('message_stop');
 
@@ -355,7 +309,6 @@ describeLive(
 
         expect(typeof startData.message?.id).toBe('string');
 
-        // Exactly one message_delta, carrying a stop_reason, before message_stop.
         const deltaIndices = names
           .map((n, i) => (n === 'message_delta' ? i : -1))
           .filter((i) => i >= 0);
@@ -368,7 +321,6 @@ describeLive(
         expect(messageDelta.delta?.stop_reason).toBeTruthy();
         expect(messageDelta.usage?.output_tokens).toBeGreaterThan(0);
 
-        // Content blocks properly bracketed: start → deltas → stop, per index.
         const open = new Set<number>();
         let blockCount = 0;
 
@@ -392,7 +344,6 @@ describeLive(
         expect(open.size).toBe(0);
         expect(blockCount).toBeGreaterThan(0);
 
-        // Text deltas accumulate to non-empty visible text.
         const text = events
           .filter((e) => e.event === 'content_block_delta' && e.data.delta?.type === 'text_delta')
           .map((e) => e.data.delta?.text ?? '')
@@ -403,9 +354,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // G6 — real-model confirmation. Anthropic's wire reports real input_tokens
-    // in message_delta.usage; the gateway now forwards inputTokens from the
-    // finish part's totalUsage.
     it(
       'streaming message_delta.usage carries real input_tokens (G6 — real-model confirmation)',
       async () => {
@@ -426,9 +374,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 14a. max_tokens honored → stop_reason 'max_tokens'.
-    // -------------------------------------------------------------------------
     it(
       'tiny max_tokens → stop_reason max_tokens with capped output',
       async () => {
@@ -446,9 +391,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 14b. stop_sequences accepted and enforced upstream.
-    // -------------------------------------------------------------------------
     it(
       'stop_sequences cut generation before the post-stop text',
       async () => {
@@ -476,9 +418,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 15. Error envelope: bad model → Anthropic-shaped {type:'error', error:{…}}.
-    // -------------------------------------------------------------------------
     it(
       'nonexistent model → Anthropic-shaped error envelope',
       async () => {
@@ -498,13 +437,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 16b. TWO-STEP SEQUENTIAL tool loop (Anthropic wire): tool_use A →
-    //      tool_result A → tool_use B → tool_result B → final answer. Real
-    //      multi-hop agent shape, cross-provider. Each turn's envelope +
-    //      tool_use_id round-trip is asserted; the model's *choice* to call a
-    //      second tool is flaky-tolerant.
-    // -------------------------------------------------------------------------
     it(
       'two-step sequential Anthropic tool loop: tool_use A → result → tool_use B → result → final',
       async () => {
@@ -563,12 +495,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 16c. Anthropic `system` as an ARRAY of text blocks (G65 territory). The
-    //      Anthropic wire allows system to be either a string or an array of
-    //      {type:'text', text} blocks. Live smoke: array-form system must not
-    //      break the route (200) and the guidance should be honored.
-    // -------------------------------------------------------------------------
     it(
       'system as an array of text blocks → 200 and guidance is honored',
       async () => {
@@ -594,7 +520,6 @@ describeLive(
         const text = textOf(body.content);
 
         expect(text.length).toBeGreaterThan(0);
-        // The system guidance (both blocks) must reach the model.
         expect(text.toLowerCase()).toContain('falcon');
       },
       TEST_TIMEOUT,

@@ -49,17 +49,12 @@ export function rerankRoute(ctx: RerankRouteContext) {
     const otel: Attributes = {};
     const startedAt = Date.now();
 
-    // Lifecycle state hoisted for `catch`/`finally`. `base` only exists once
-    // the provider is resolved; failures before that point rethrow to
-    // `app.onError`, which shapes the OpenAI error envelope.
     let base: OperationBase<typeof operation> | undefined;
     let phase: HookPhase = 'beforeOperation';
     let operationError: unknown;
     let hooks: Hooks = ctx.hooks ?? {};
 
     try {
-      // `beforeOperation` runs first — a pre-flight gate (auth, rate limit)
-      // that fires before the body is parsed or a provider is resolved.
       await runHooks(hooks.beforeOperation, {
         phase,
         operation,
@@ -104,10 +99,6 @@ export function rerankRoute(ctx: RerankRouteContext) {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
 
-      // `beforeUpstream` hooks may mutate `headers`/`providerOptions` in
-      // place; the upstream call is built afterward so it consumes the
-      // mutated values. Rerank has no `messages`/`params` of its own, so
-      // those fields are omitted from the hook args.
       await runHooks(hooks.beforeUpstream, {
         ...base,
         phase,
@@ -140,9 +131,6 @@ export function rerankRoute(ctx: RerankRouteContext) {
       return c.json(response);
     } catch (err) {
       operationError = err;
-      // afterError is operation-scoped: it only fires once the provider is
-      // resolved. Pre-resolution failures (beforeOperation, parse, resolve)
-      // rethrow straight to `app.onError`, which shapes the error envelope.
       if (base) {
         await runHooks(
           hooks.afterError,
@@ -168,8 +156,6 @@ export function rerankRoute(ctx: RerankRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces OpenAI-shaped errors. The handler
-  // rethrows (Payload's routeError model), keeping the operation body lean.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });

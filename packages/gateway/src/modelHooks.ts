@@ -35,13 +35,7 @@ type ModelHookOptions = {
   model: string;
   operation: HookOperation;
   provider: string;
-  /**
-   * Externally-owned operation base (shared requestId/context/otel). When
-   * provided, upstream hooks join the caller's operation lifecycle instead of
-   * minting a fresh requestId + empty context per call.
-   */
   base?: OperationBase;
-  /** Host logger; defaults to the console logger. */
   logger?: GatewayLogger;
 };
 

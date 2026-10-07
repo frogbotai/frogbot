@@ -44,9 +44,6 @@ export function toOpenAIResponse(args: {
     content: text || null,
   };
 
-  // G59: generateText exposes the raw parsed provider response on
-  // `response.body` (ai/packages/openai/src/chat/openai-chat-language-model.ts:421);
-  // lift `choices[0].message.refusal` so non-streaming refusals stay visible.
   const refusal = extractRefusal(response.body);
   if (refusal !== undefined) {
     message.refusal = refusal;
@@ -131,9 +128,6 @@ function buildUsage(usage: UsageInput): OpenAIUsage {
   return out;
 }
 
-// G57: 'error'/'other'/'unknown' are AI SDK finish reasons with no OpenAI
-// enum value — pass 'error' through and fold 'unknown' into 'other' so a
-// failed step is never masked as a clean 'stop'.
 function mapFinishReason(reason: string): string {
   switch (reason) {
     case 'stop':

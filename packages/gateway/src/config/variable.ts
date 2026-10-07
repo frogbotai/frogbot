@@ -105,20 +105,12 @@ async function resolveConfigFilePath(options: ResolveConfigFilePathOptions): Pro
   return canonical;
 }
 
-/** True when `target` is `base` itself or nested under it, avoiding the `startsWith` prefix bug. */
 function isInside(base: string, target: string): boolean {
   const rel = relative(base, target);
 
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 }
 
-/**
- * Canonicalize `p` with `realpath` to defeat symlink escapes. If `p` (or an
- * ancestor) does not exist yet, `realpath` throws ENOENT — fall back to the
- * deepest existing ancestor's canonical path joined with the remaining
- * lexical tail, so a non-existent path is still checked against the base
- * without leaking existence.
- */
 async function realpathOrSelf(p: string): Promise<string> {
   try {
     return await realpath(p);

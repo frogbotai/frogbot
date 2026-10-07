@@ -87,10 +87,6 @@ for (const template of TEMPLATES) {
   );
 }
 
-// Generated apps declare each FrogBot database adapter's runtime dependencies
-// directly (at the adapter's exact versions, so pnpm dedupes them). Next dev can
-// load an externalized adapter through its node_modules symlink rather than its
-// real path; without a direct dependency, `@payloadcms/db-*` is then unresolvable.
 const { DATABASE_CHOICES } = await import('../dist/lib/db.js');
 const databaseDependencies = {};
 

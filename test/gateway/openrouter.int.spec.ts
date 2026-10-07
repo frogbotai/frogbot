@@ -306,7 +306,6 @@ describe('OpenRouter embeddings', () => {
   });
 });
 
-// Stage 6 — independent testing: adversarial and regression cases.
 describe('OpenRouter adversarial cases', () => {
   it('routes a :free variant and sends the suffixed upstream ID', async () => {
     const { status, text, upstream, operations } = await post('/chat/completions', {
@@ -439,7 +438,6 @@ describe('Raw provider clients', () => {
     expect(status, text).toBe(200);
     expect(captured[0]?.body.model).toBe('anthropic/claude-sonnet-4.6');
     expect(captured[0]?.headers.get('authorization')).toBe('Bearer sk-or-v1-raw');
-    // Raw client: no FrogBot attribution defaults.
     expect(captured[0]?.headers.get('x-openrouter-title')).toBeNull();
   });
 

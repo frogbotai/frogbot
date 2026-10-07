@@ -1,13 +1,3 @@
-// Bridges FrogBot's AI hooks onto the gateway's hook lifecycle.
-//
-// The gateway carries a generic `context` bag through every phase. FrogBot
-// seeds it per-operation with `{ req, agent }` (via `gateway.operation({
-// context })` for direct calls, or `gateway.handler(req, { context })` for the
-// HTTP proxy). `toGatewayHooks` is a pure, stateless reshaper: it lifts those
-// values out of `context` onto the top-level hook args so FrogBot hooks read
-// `args.req` / `args.req.user` / `args.agent` — Payload-style — without the
-// gateway ever knowing what a FrogBotRequest is.
-
 import type { Hooks, HookUsage } from '@frogbotai/gateway';
 
 import type { FrogBotRequest } from '../types/request.js';
@@ -21,7 +11,6 @@ export type AIOperationContext = {
   usageFields?: Record<string, unknown>;
 };
 
-/** Lifts FrogBot's seeded context onto top-level hook fields. */
 function lift(context: Record<string, unknown>): AIHookContext {
   const seed = context as AIOperationContext;
 

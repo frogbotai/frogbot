@@ -1,24 +1,8 @@
-// Route-level integration tests for POST /v1/chat/completions.
-//
-// These tests hit the real Hono app via `app.request()` and exercise the
-// full validation → error envelope round-trip. They specifically guard the
-// class of failures that previously surfaced as 500 server_errors and now
-// should be clean 400s with `param` pointing at the exact field.
-//
-// Note: these tests deliberately do NOT exercise the upstream provider call
-// path — they all fail at validation or at gateway-internal checks before
-// registry resolution hands off to `generateText`. That keeps them deterministic
-// and dependency-free.
-
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../../packages/gateway/src/app.js';
 import { buildProviderRegistry } from '../../../packages/gateway/src/providers/registry.js';
 import { providerMap } from '../../unit/gateway/config/fixtures.js';
-
-// ---------------------------------------------------------------------------
-// Test harness — an app with a single configured (but never called) provider
-// ---------------------------------------------------------------------------
 
 function makeApp() {
   return createApp({
@@ -43,10 +27,6 @@ async function post(body: unknown): Promise<{
 
   return { status: res.status, body: data };
 }
-
-// ---------------------------------------------------------------------------
-// Schema validation — top-level fields
-// ---------------------------------------------------------------------------
 
 describe('chat-completions route — top-level validation', () => {
   it('rejects empty body with 400 and param=model', async () => {
@@ -84,8 +64,6 @@ describe('chat-completions route — top-level validation', () => {
   });
 
   it('rejects bare-name model with 400 invalid_model_id (registry layer)', async () => {
-    // Passes schema validation (model is a non-empty string) but the
-    // registry rejects bare names.
     const { status, body } = await post({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
@@ -120,16 +98,8 @@ describe('chat-completions route — top-level validation', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Schema validation — per-message field paths
-// ---------------------------------------------------------------------------
-
 describe('chat-completions route — per-message validation', () => {
   it('passes unknown role through schema (no invalid_request_body) — translator forwards it', async () => {
-    // Unknown roles (e.g. legacy `function`, vendor-specific) no longer 400
-    // at the schema boundary — they reach the translator and are forwarded as
-    // system messages. The request may still fail (e.g. provider auth), but
-    // the failure code is NOT invalid_request_body.
     const { body } = await post({
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'wizard', content: 'hi' }],
@@ -139,8 +109,6 @@ describe('chat-completions route — per-message validation', () => {
   });
 
   it('passes extra fields on known messages through schema without error', async () => {
-    // Extra fields (e.g. Google `thinking`, OpenRouter `reasoning_signature`)
-    // must not cause schema validation failures.
     const { body } = await post({
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi', thinking: 'blah', vendor_field: 123 }],
@@ -150,8 +118,6 @@ describe('chat-completions route — per-message validation', () => {
   });
 
   it('passes extended response_format shapes through without error', async () => {
-    // Providers send { type: 'json_schema', json_schema: {...} } which our old
-    // strict enum would reject. Must reach translator/provider level now.
     const { body } = await post({
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
@@ -230,10 +196,6 @@ describe('chat-completions route — per-message validation', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Translator-level rejections (semantic, post-schema)
-// ---------------------------------------------------------------------------
-
 describe('chat-completions route — translator semantic rejections', () => {
   it('rejects remote image URL with 400 unsupported_modality and image_url.url param', async () => {
     const { status, body } = await post({
@@ -290,10 +252,6 @@ describe('chat-completions route — translator semantic rejections', () => {
     expect(body.error.param).toBe('messages[0].content[0].file.file_id');
   });
 });
-
-// ---------------------------------------------------------------------------
-// Regression: things that used to be 500 server_error are now 400 invalid_request_error
-// ---------------------------------------------------------------------------
 
 describe('chat-completions route — regression: 500→400 conversion', () => {
   it.each([

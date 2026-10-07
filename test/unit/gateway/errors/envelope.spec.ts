@@ -24,10 +24,6 @@ import {
   UnsupportedModalityError,
 } from '../../../../packages/gateway/src/errors/gatewayError.js';
 
-// ---------------------------------------------------------------------------
-// Test helpers
-// ---------------------------------------------------------------------------
-
 const apiCallError = (overrides: Partial<ConstructorParameters<typeof APICallError>[0]> = {}) =>
   new APICallError({
     message: 'upstream failed',
@@ -49,10 +45,6 @@ describe('policy errors', () => {
     expect(toOpenAIErrorResponse(error)).toMatchObject({ status, body: { error: { code } } });
   });
 });
-
-// ---------------------------------------------------------------------------
-// 1. GatewayError taxonomy
-// ---------------------------------------------------------------------------
 
 describe('toOpenAIErrorResponse — GatewayError taxonomy', () => {
   it('maps ModelIdError to 400 invalid_request_error with param=model', () => {
@@ -92,10 +84,6 @@ describe('toOpenAIErrorResponse — GatewayError taxonomy', () => {
     expect(body.error.code).toBe('config_invalid');
   });
 });
-
-// ---------------------------------------------------------------------------
-// 2. APICallError — status coverage
-// ---------------------------------------------------------------------------
 
 describe('toOpenAIErrorResponse — APICallError status coverage', () => {
   it.each([
@@ -172,10 +160,6 @@ describe('AI SDK tool choice violations', () => {
     expect(anthropic.body.error.type).toBe('api_error');
   });
 });
-
-// ---------------------------------------------------------------------------
-// 3. APICallError — verbatim OpenAI-shaped passthrough
-// ---------------------------------------------------------------------------
 
 describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
   it('forwards a full OpenAI envelope verbatim', () => {
@@ -275,10 +259,6 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 4. APICallError — HTML body from upstream proxy
-// ---------------------------------------------------------------------------
-
 describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () => {
   it('substitutes friendly 401 message when body is HTML', () => {
     const html = '<!doctype html><html><body><h1>401 Unauthorized</h1></body></html>';
@@ -311,10 +291,6 @@ describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () =
     expect(body.error.message).toMatch(/HTML response/);
   });
 });
-
-// ---------------------------------------------------------------------------
-// 5. APICallError — empty / malformed bodies
-// ---------------------------------------------------------------------------
 
 describe('toOpenAIErrorResponse — empty / malformed bodies', () => {
   it('uses err.message when responseBody is missing', () => {
@@ -349,10 +325,6 @@ describe('toOpenAIErrorResponse — empty / malformed bodies', () => {
     expect(body.error.type).toBe('server_error');
   });
 });
-
-// ---------------------------------------------------------------------------
-// 6. Context overflow normalization
-// ---------------------------------------------------------------------------
 
 describe('toOpenAIErrorResponse — context overflow normalization', () => {
   it('normalizes OpenAI context_length_exceeded body to canonical envelope', () => {
@@ -416,10 +388,6 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 7. AI SDK subclasses
-// ---------------------------------------------------------------------------
-
 describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   it('maps NoSuchModelError to 404 model_not_found', () => {
     const err = new NoSuchModelError({ modelId: 'gpt-99', modelType: 'languageModel' });
@@ -482,10 +450,6 @@ describe('toOpenAIErrorResponse — AI SDK error subclasses', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 8. Unknown / non-Error throws
-// ---------------------------------------------------------------------------
-
 describe('toOpenAIErrorResponse — unknown throws', () => {
   it('handles plain Error', () => {
     const { body, status } = toOpenAIErrorResponse(new Error('boom'));
@@ -520,15 +484,6 @@ describe('toOpenAIErrorResponse — unknown throws', () => {
     expect(body.error.message).toBe('Internal server error');
   });
 });
-
-// ---------------------------------------------------------------------------
-// 9. RetryError unwrapping (G4 / HE1)
-// ---------------------------------------------------------------------------
-//
-// `generateText`/`streamText` throw `RetryError` (from `ai`) once their
-// internal retries are exhausted on a retryable upstream failure. The
-// envelope translators must unwrap `err.lastError` rather than falling into
-// the generic `AISDKError` catch-all.
 
 describe('toOpenAIErrorResponse — RetryError unwrapping', () => {
   it('unwraps a RetryError wrapping a 429 APICallError to 429 rate_limit_error with the wrapped message', () => {

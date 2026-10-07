@@ -1,11 +1,3 @@
-// Gateway E2E smoke tests against OpenCode Zen (https://opencode.ai/zen/v1),
-// an OpenAI-compatible upstream. Exercises the gateway's openai-compatible
-// provider path: non-streaming chat, SSE streaming, tool calls, and error
-// normalization. Zen's free models only work inside OpenCode, so the suites
-// use a paid model and need OPENCODE_API_KEY in .env.live.local.
-//
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.e2e.spec.ts
-
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -20,7 +12,6 @@ const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
 const ZEN_MODEL = 'deepseek-v4.1-flash';
 const MODEL = `zen/${ZEN_MODEL}`;
 
-// Real network: keep prompts tiny and budgets generous.
 const TEST_TIMEOUT = 60_000;
 
 function makeZenApp() {
@@ -65,12 +56,11 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
       const { status, body } = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
         model: MODEL,
         messages: [{ role: 'user', content: 'Say hi' }],
-        max_tokens: 1024, // reasoning model: budget covers reasoning_content + text
+        max_tokens: 1024,
       });
 
       expect(status).toBe(200);
 
-      // Envelope fields real clients depend on.
       expect(typeof body.id).toBe('string');
       expect(body.id!.length).toBeGreaterThan(0);
       expect(body.object).toBe('chat.completion');
@@ -99,7 +89,7 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
         body: JSON.stringify({
           model: MODEL,
           messages: [{ role: 'user', content: 'Say hi' }],
-          max_tokens: 1024, // reasoning model: budget covers reasoning_content + text
+          max_tokens: 1024,
           stream: true,
         }),
       });
@@ -114,24 +104,18 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
 
       expect(chunks.length).toBeGreaterThan(0);
 
-      // First content-bearing chunk carries the assistant role.
       expect(chunks[0].choices?.[0]?.delta?.role).toBe('assistant');
 
-      // Deltas accumulate to non-empty text.
       const text = chunks.map((c) => c.choices?.[0]?.delta?.content ?? '').join('');
 
       expect(text.length).toBeGreaterThan(0);
 
-      // Some chunk carries a terminal finish_reason.
       const finishReasons = chunks
         .map((c) => c.choices?.[0]?.finish_reason)
         .filter((r): r is string => typeof r === 'string' && r.length > 0);
 
       expect(finishReasons.length).toBeGreaterThan(0);
 
-      // [DONE] sentinel present. G5 (double [DONE] on every chat stream) is a
-      // known open bug, so we assert presence (>=1), not exactly-once.
-      // TODO tighten to exactly-once when G5 fixed
       const doneCount = frames.filter((f) => f.data === '[DONE]').length;
 
       expect(doneCount).toBeGreaterThanOrEqual(1);
@@ -187,7 +171,6 @@ describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () 
       expect(call.function?.name).toBe('get_weather');
       expect(typeof call.function?.arguments).toBe('string');
 
-      // arguments must be valid JSON
       const args = JSON.parse(call.function!.arguments!) as Record<string, unknown>;
 
       expect(typeof args).toBe('object');

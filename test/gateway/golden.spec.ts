@@ -1,15 +1,3 @@
-// Gateway golden tests — replay committed SSE fixtures byte-exact through translators.
-//
-// Each fixture folder under __fixtures__/<scenario>/ contains:
-//   - request.json — inbound wire body
-//   - provider-http.json — recorded provider HTTP responses replayed through @ai-sdk/* packages
-//   - chunks.txt — legacy newline-delimited AI SDK stream parts for pre-M4 fixtures
-//   - expected-openai.txt — expected OpenAI SSE output
-//   - expected-anthropic.txt — expected Anthropic SSE output
-//
-// Golden tests verify that translator output exactly matches the committed fixtures.
-// When upstream wire formats change, re-record gated E2E fixtures with `RUN_E2E=1 ... --update`.
-
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 

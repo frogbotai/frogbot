@@ -1,33 +1,8 @@
-// P2 security finding — G107. P1 security finding — G33.
-//
-// G107 — The header forward allowlist includes `api-key` (Azure OpenAI header)
-//        and `openai-organization` / `openai-project`. A client who can set
-//        these headers on an outbound request can override the upstream
-//        credentials the gateway operator configured. This is a credential
-//        takeover vector: the client substitutes their own Azure `api-key` or
-//        OpenAI org/project, bypassing the operator's access control and
-//        potentially billing a different account.
-//
-// G33  — SSRF: `/v1/messages` (Anthropic `source: { type: 'url' }`) and
-//        `/v1/responses` (`input_image` / `input_file` URLs) accepted any
-//        user-supplied URL. When the resolved provider does not natively
-//        support URL file parts, the AI SDK's default download function
-//        fetched the URL from inside the gateway process — SSRF against
-//        IMDS (169.254.169.254), loopback, and internal services. Fixed by
-//        passing an SSRF-guarded `experimental_download` (utils/downloadGuard).
-//
-// G107 tests assert the CORRECT behavior (override is blocked), which the
-// gateway now enforces by removing the credential headers from the allowlist.
-
 import type { LanguageModelV4 } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
-
-// ---------------------------------------------------------------------------
-// Recording model — captures the exact headers the AI SDK hands to doGenerate.
-// ---------------------------------------------------------------------------
 
 type RecordedCall = { headers?: Record<string, string> | undefined };
 
@@ -92,14 +67,7 @@ function makeApp(capturer: ReturnType<typeof createHeaderCapturingModel>) {
   return createApp({ registry });
 }
 
-// ---------------------------------------------------------------------------
-// G107 — client can inject api-key / openai-organization / openai-project
-// ---------------------------------------------------------------------------
-
 describe('G107 — credential header injection via allowlist', () => {
-  // The Azure `api-key` header is in the forward allowlist. A client who adds
-  // `api-key: <attacker-key>` to their request will have that header forwarded
-  // to the upstream, potentially overriding the operator's configured credential.
   it('strips inbound api-key header before forwarding to upstream', async () => {
     const capturer = createHeaderCapturingModel();
     const app = makeApp(capturer);
@@ -113,7 +81,6 @@ describe('G107 — credential header injection via allowlist', () => {
       body: JSON.stringify({ model: 'openai/gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
     });
 
-    // G107: the attacker-supplied api-key must NOT reach the upstream model.
     expect(capturer.calls).toHaveLength(1);
 
     const forwarded = capturer.calls[0]?.headers ?? {};
@@ -121,8 +88,6 @@ describe('G107 — credential header injection via allowlist', () => {
     expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain('api-key');
   });
 
-  // The `openai-organization` header allows switching the billing org on OpenAI.
-  // A client who sets it can redirect charges to a different organisation.
   it('strips inbound openai-organization header before forwarding to upstream', async () => {
     const capturer = createHeaderCapturingModel();
     const app = makeApp(capturer);
@@ -143,8 +108,6 @@ describe('G107 — credential header injection via allowlist', () => {
     expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain('openai-organization');
   });
 
-  // The `openai-project` header selects the active project on OpenAI (affects
-  // rate limits, billing, and access control). Same injection vector.
   it('strips inbound openai-project header before forwarding to upstream', async () => {
     const capturer = createHeaderCapturingModel();
     const app = makeApp(capturer);
@@ -165,15 +128,6 @@ describe('G107 — credential header injection via allowlist', () => {
     expect(Object.keys(forwarded).map((k) => k.toLowerCase())).not.toContain('openai-project');
   });
 });
-
-// ---------------------------------------------------------------------------
-// G33 — SSRF via user-supplied remote media URLs
-//
-// The mock model declares `supportedUrls: {}`, so the AI SDK plans an
-// in-process download for every URL file part — exactly the vulnerable path.
-// The guard must reject the URL (400) before any network fetch and before the
-// request ever reaches the model.
-// ---------------------------------------------------------------------------
 
 describe('G33 — SSRF via remote URL fetch', () => {
   it('rejects /v1/messages url source pointing at loopback with a 400', async () => {
@@ -201,7 +155,6 @@ describe('G33 — SSRF via remote URL fetch', () => {
 
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.message).toContain('scheme "http:" is not allowed');
-    // The request must never reach the provider.
     expect(capturer.calls).toHaveLength(0);
   });
 
@@ -292,8 +245,6 @@ describe('G33 — SSRF via remote URL fetch', () => {
     expect(capturer.calls).toHaveLength(0);
   });
 
-  // Regression guard: the chat route already rejects remote URLs at the
-  // translator layer ("Inline data URLs only") — keep it that way.
   it('rejects /v1/chat/completions remote image_url with a 400 (pre-existing posture)', async () => {
     const capturer = createHeaderCapturingModel();
     const app = makeApp(capturer);

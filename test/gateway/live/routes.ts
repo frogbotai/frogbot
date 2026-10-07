@@ -1,9 +1,3 @@
-// Shared route runners for the live matrix suite. Each runner sends one
-// real request through the gateway app and asserts the wire envelope a real
-// client would depend on. Assertions are deliberately envelope-level (shape,
-// non-empty content, real usage) — model-behavior detail lives in the
-// dedicated zen.*.e2e suites.
-
 import type { Hono } from 'hono';
 import { expect } from 'vitest';
 
@@ -19,10 +13,6 @@ import { FIXTURE_FACTS, fixtureFile } from '../../live/live.js';
 import type { LiveProviderEntry } from './matrix.js';
 
 export type LiveApp = Hono;
-
-// ---------------------------------------------------------------------------
-// App builder — one gateway app per matrix entry, from env keys.
-// ---------------------------------------------------------------------------
 
 export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
   if (entry.compat) {
@@ -52,10 +42,6 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
 
   return createApp({ registry });
 }
-
-// ---------------------------------------------------------------------------
-// Backoff for rate limits and transient upstream overload.
-// ---------------------------------------------------------------------------
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -96,12 +82,8 @@ export async function postRaw(app: LiveApp, path: string, body: unknown): Promis
   );
 }
 
-// ---------------------------------------------------------------------------
-// Text wires — chat / messages / responses, non-stream + stream.
-// ---------------------------------------------------------------------------
-
 const PROMPT = 'Say hi';
-const MAX_TOKENS = 1024; // reasoning models: budget covers thinking + text
+const MAX_TOKENS = 1024;
 
 type ChatBody = {
   id?: string;
@@ -262,10 +244,6 @@ export async function expectResponsesStream(app: LiveApp, model: string): Promis
   expect(text.length).toBeGreaterThan(0);
 }
 
-// ---------------------------------------------------------------------------
-// Embeddings + rerank.
-// ---------------------------------------------------------------------------
-
 type EmbeddingsBody = {
   object?: string;
   data?: Array<{ object?: string; embedding?: number[]; index?: number }>;
@@ -332,13 +310,8 @@ export async function expectRerank(app: LiveApp, model: string): Promise<void> {
     expect(typeof result.relevance_score).toBe('number');
   }
 
-  // The frog document must win.
   expect(body.results![0].index).toBe(1);
 }
-
-// ---------------------------------------------------------------------------
-// Audio — transcriptions (multipart WAV upload) + speech (audio bytes back).
-// ---------------------------------------------------------------------------
 
 type TranscriptionBody = { text?: string };
 
@@ -372,10 +345,6 @@ export async function expectSpeech(app: LiveApp, model: string, voice: string): 
   const bytes = new Uint8Array(await res.arrayBuffer());
   expect(bytes.length).toBeGreaterThan(500);
 }
-
-// ---------------------------------------------------------------------------
-// Images + videos.
-// ---------------------------------------------------------------------------
 
 type ImagesBody = { data?: Array<{ b64_json?: string }> };
 

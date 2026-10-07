@@ -1,14 +1,3 @@
-// Sanitize a FrogBot config into two outputs:
-//   1. A `FrogBotSanitizedConfig` — FrogBot's own metadata preserved.
-//   2. A Payload-shaped config stored in `_internal.payloadConfig`.
-//
-// Concerns:
-//   1. Reject `globals` at runtime with a clear `[frogbot]` error.
-//   2. Inject the `req.frogbot` bootstrap into every collection's
-//      `beforeOperation` hooks.
-//   3. Wrap every custom endpoint handler (root and per-collection) so
-//      `req.frogbot` is attached before the user's handler executes.
-
 import { Cron } from 'croner';
 import type {
   AdminViewConfig,
@@ -217,7 +206,6 @@ function wrapRootHooks(
   if (!hooks?.afterError) return hooks as PayloadConfig['hooks'];
 
   return {
-    // Payload sets `req.payload` before it runs afterError (`utilities/routeError.ts`).
     afterError: hooks.afterError.map(
       (hook) => async (args) => hook({ ...args, req: await attachFrogBot(args.req) }),
     ),
@@ -311,7 +299,6 @@ function toPayloadLoginWithUsername(
 
   const { allowEmailLogin, ...rest } = loginWithUsername;
 
-  // Payload's sanitization makes the same promotion: without email login, a username is required.
   return allowEmailLogin === false
     ? { ...rest, allowEmailLogin, requireUsername: true }
     : { ...rest, ...(allowEmailLogin ? { allowEmailLogin } : {}) };
@@ -508,7 +495,6 @@ function sanitizeCollection(
       : {}),
   };
 
-  // Capture auth state into `custom.frogbot`.
   const auth = c.auth !== undefined && c.auth !== false;
 
   if (typeof c.auth === 'object') {
@@ -566,7 +552,6 @@ function sanitizeCollection(
     },
   };
 
-  // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
   const setupFrogBot = (args: { req: PayloadRequest }) => bootstrapFrogBot(args, attachFrogBot);
   const { afterError, afterLogout, afterMe } = existingHooks;
 
@@ -586,7 +571,6 @@ function sanitizeCollection(
     ...(afterError?.length ? { afterError: [setupFrogBot, ...afterError] } : {}),
   };
 
-  // Wrap per-collection custom endpoints.
   const searchEndpoints = search ? buildSearchEndpoints({ collection: c.slug }) : [];
 
   if (c.endpoints !== undefined || signIn.length || searchEndpoints.length) {
@@ -607,8 +591,6 @@ function sanitizeCollection(
   return out;
 }
 
-// ─── AI Config Sanitization ──────────────────────────────────────────────────
-
 const defaultAccessFn = ({ req }: { req: FrogBotRequest }) => !!req.user;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -626,7 +608,6 @@ function usesFileModality(modalities: unknown): boolean {
 type SanitizedAIBase = Omit<SanitizedAIConfig, 'usage'>;
 
 function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
-  // Validate providers.
   if (!isRecord(ai.providers)) {
     throw new Error('[frogbot] `ai.providers` is required and must be an object.');
   }
@@ -744,7 +725,6 @@ function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
     }
   }
 
-  // Validate routers.
   if (ai.routers !== undefined && !isRecord(ai.routers)) {
     throw new Error('[frogbot] `ai.routers` must be an object.');
   }
@@ -802,11 +782,10 @@ function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
 
     if (mode === 'runtime') throw new Error(message);
 
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- build-time config warnings go to the terminal
     console.warn(message);
   }
 
-  // Normalize hooks to arrays.
   const hooks = {
     beforeOperation: ai.hooks?.beforeOperation ?? [],
     beforeUpstream: ai.hooks?.beforeUpstream ?? [],
@@ -815,7 +794,6 @@ function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
     afterOperation: ai.hooks?.afterOperation ?? [],
   };
 
-  // Apply access defaults.
   const access = {
     generate: ai.access?.generate ?? defaultAccessFn,
     embed: ai.access?.embed ?? defaultAccessFn,
@@ -824,12 +802,10 @@ function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
     evaluate: ai.access?.evaluate ?? defaultAccessFn,
   };
 
-  // Deployment identifier for telemetry spans.
   const _internal = {
     deploymentId: ai.deploymentId ?? process.env.FROGBOT_DEPLOYMENT_ID ?? 'local',
   };
 
-  // Telemetry — default enabled, user opts out via { enabled: false }.
   const telemetry = {
     enabled: ai.telemetry?.enabled !== false,
     enrichSpan: ai.telemetry?.enrichSpan,
@@ -1167,7 +1143,7 @@ function sanitizeAgents(
       if (message) {
         if (mode === 'runtime') throw new Error(message);
 
-        // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console -- build-time config warnings go to the terminal
         console.warn(message);
       }
     }
@@ -1186,7 +1162,7 @@ function sanitizeAgents(
 
       for (const slug of agentToolSlugs) {
         if (rootTools.some((tool) => tool.slug === slug)) {
-          // eslint-disable-next-line no-console
+          // eslint-disable-next-line no-console -- build-time config warnings go to the terminal
           console.warn(
             `[frogbot] Agent '${agent.slug}' tool '${slug}' shadows root tool '${slug}'.`,
           );
@@ -1534,8 +1510,6 @@ function fillViewMeta(view: AdminViewConfig, adminMeta: RootAdminMetaConfig): Ad
   };
 }
 
-// ─── Payload Config Building ─────────────────────────────────────────────────
-
 function buildPayloadConfig(
   config: FrogBotConfig,
   onInit: NonNullable<PayloadConfig['onInit']>,
@@ -1770,7 +1744,6 @@ function buildPayloadConfig(
           }
         : {}),
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogBotNav',
-      // FrogBot-only slot, read by @frogbotai/next; Payload passes unknown component keys through.
       ...navSections(admin?.components?.navSections),
       providers: [...(admin?.components?.providers ?? []), '@frogbotai/next/client#StepNavReset'],
       graphics: {
@@ -1800,7 +1773,6 @@ function buildPayloadConfig(
       ...admin?.importMap,
       autoGenerate: false,
     },
-    // FrogBot-only key, read by @frogbotai/next's settings view.
     ...{ settings },
   };
 
@@ -1904,7 +1876,6 @@ export function sanitize(
     return attachFrogBotInstance(req, frogbot);
   };
 
-  // Sanitize AI config if present.
   let sanitizedAI = config.ai ? sanitizeAI(config.ai, mode) : undefined;
   if (sanitizedAI) {
     const authCollection = resolveUserSlug(config);
@@ -2057,7 +2028,6 @@ export function sanitize(
     );
   }
 
-  // Resolve chat persistence — adopt marked collections or inject defaults.
   const chatResult = resolveChatCollections({ ...config, agents });
   const { collections: usageCollections, slug: usageSlug } = resolveUsageCollection(
     { ...config, agents, collections: chatResult.collections },
@@ -2127,7 +2097,6 @@ export function sanitize(
       )
     : collections;
 
-  // Build collection metadata for FrogBot's sanitized config.
   const localizeStatus = config.experimental?.localizeStatus === true;
 
   const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => {
@@ -2146,7 +2115,6 @@ export function sanitize(
 
   const autonumbers: AutonumberEntry[] = [];
 
-  // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
     { ...config, agents, collections: payloadCollections, jobs, kv, settings },
     async (payload) => {
@@ -2215,7 +2183,7 @@ export function sanitize(
     },
     collections: collectionsMeta,
     secret: config.secret,
-    port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any
+    port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any -- port is not on the Payload config type
     onInit: normalizeOnInit(config.onInit),
     ai: sanitizedAI && { ...sanitizedAI, usage: { slug: usageSlug } },
     agents,

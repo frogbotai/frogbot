@@ -1,15 +1,5 @@
 #!/usr/bin/env node
 // check: full-only
-// `pnpm check test-types [--write]` typechecks `test/` against `test/typecheck-baseline.json`,
-// which counts the known errors per file and error code. Every `tsconfig.json` under `test/` is
-// its own program, so a suite's generated `declare module 'frogbot'` types never reach another
-// suite (DR-046), and `test/tsconfig.json` covers the rest, excluding every other program's
-// folder. The programs run in parallel and their errors merge, an error several programs report
-// counting once. It prints the errors of every file and code over its count, and every count that
-// dropped, so the baseline only shrinks. `--write` lowers the dropped counts, and refuses while
-// any count is over; with no baseline file it writes one from every current error. Needs built
-// packages; it generates missing fixture import maps first. The run holds one heavy-test slot
-// (scripts/lib/slot.mjs).
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -26,15 +16,10 @@ export const TSCONFIG = 'test/tsconfig.json';
 
 export const HEAP_MB = 16_384;
 
-// The pool runs as many programs as fit in MEMORY_SHARE of the machine's memory at PROGRAM_MB
-// each, at most one per core. Measured peaks: a suite 0.6 to 1.3 GB, `test/tsconfig.json` 2.2 GB,
-// `test/unit` 3.9 to 4.8 GB and `test/unit/frogbot` 2.7 to 4.8 GB; they start first, being the
-// largest.
 export const PROGRAM_MB = 2_048;
 
 export const MEMORY_SHARE = 0.25;
 
-// Folders under `test/` with a tsconfig that another typecheck already compiles.
 export const ELSEWHERE = {
   'test/types':
     'the `typecheck` scripts of `frogbot`, `sdk`, `ui`, `richtext-lexical`, `plugin-seo`',
@@ -55,8 +40,6 @@ const AUGMENTS = /^declare module ['"]frogbot(?:\/[^'"]*)?['"]/m;
 
 const NEXT_TYPES = '.next/';
 
-// tsc prints one `file(line,col): error TSxxxx: message` line per error, with indented
-// continuation lines, and `error TSxxxx: message` for config errors, which never go in a baseline.
 export function parseTsc(output, tsconfig = TSCONFIG) {
   const errors = [];
   const global = [];
@@ -86,8 +69,6 @@ export function parseTsc(output, tsconfig = TSCONFIG) {
   return { errors, global };
 }
 
-// One list of every program's errors, an error with the same code at the same place once: two
-// programs can word it differently, for example `and 43 more` properties.
 export function mergeErrors(lists) {
   const seen = new Set();
 
@@ -102,17 +83,12 @@ export function mergeErrors(lists) {
   });
 }
 
-// The deepest of `dirs` that `file` is inside, or '' when none is.
 function nearestDir(file, dirs) {
   return dirs
     .filter((dir) => file.startsWith(`${dir}/`))
     .reduce((nearest, dir) => (dir.length > nearest.length ? dir : nearest), '');
 }
 
-// Problems that would let one program compile another's folder, or a suite's generated types
-// reach every file of `test/tsconfig.json`: each program must exclude exactly the programs and
-// ELSEWHERE folders nearest inside it, and every file in `augmented`, which declares
-// `module 'frogbot'`, must be in a program of its own.
 export function layoutProblems({ programs, augmented }) {
   const dirs = programs.map(({ config }) => path.posix.dirname(config));
   const owner = (file) => nearestDir(file, dirs);
@@ -148,8 +124,6 @@ export function layoutProblems({ programs, augmented }) {
   ];
 }
 
-// Next fixtures include `.next/types`, which exists only after a build, and write a build-info
-// file. Their program extends their tsconfig without either, so a build never changes the result.
 export function stableConfig(config, { dir, buildInfo }) {
   const include = config.include ?? [];
 
@@ -176,8 +150,6 @@ export function poolSize({
   return Math.max(1, Math.min(cores, Math.floor((memoryMB * MEMORY_SHARE) / PROGRAM_MB)));
 }
 
-// Every `tsconfig.json` under `test/` outside ELSEWHERE, the one with the most files of its own
-// first so the longest programs start first, and every file that augments `frogbot`.
 export function discoverPrograms(root = ROOT) {
   const configs = [];
   const sources = [];
@@ -246,8 +218,6 @@ function sortCounts(counts) {
   );
 }
 
-// `over` lists each file and code with more errors than the baseline allows, `dropped` each one
-// with fewer, a missing entry counting as 0.
 export function compareBaseline({ counts, baseline }) {
   const over = [];
   const dropped = [];
@@ -269,7 +239,6 @@ export function compareBaseline({ counts, baseline }) {
   return { over, dropped };
 }
 
-// The baseline with every dropped count lowered, entries at 0 removed.
 export function lowerBaseline({ counts, baseline }) {
   const lowered = {};
 

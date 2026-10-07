@@ -1,22 +1,9 @@
-// Responses P2 wire findings — G70–G75
-//
-// G70: CONFIRMED — No JSON notFound handler; unimplemented responses sub-routes return plain-text
-// G71: REJECTED — Stream error event already has correct nested shape
-// G72: CONFIRMED — Post-peek catastrophic errors (toSseStream toError path) emit bare data: frame
-// G73: CONFIRMED — response.completed usage drops input_tokens_details / output_tokens_details
-// G74: CONFIRMED — Reasoning deltas duplicated into both summary and content parts
-// G75: FIXED — include[] forwarded and reasoning encrypted_content now surfaced on output items
-
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { finish, mockUsage } from './mockModel.js';
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
 
 function makeApp(mockModel: LanguageModelV4) {
   const fakeProvider = { languageModel: () => mockModel };
@@ -48,18 +35,8 @@ function makeBaseModel() {
   } as unknown as LanguageModelV4;
 }
 
-// ---------------------------------------------------------------------------
-// G70 — Plain-text Hono 404 on unimplemented responses sub-routes
-//
-// The gateway only registers POST /v1/responses. GET /v1/responses/:id,
-// DELETE /v1/responses/:id, GET /v1/responses/:id/cancel and any unknown
-// route all fall through to Hono's default plain-text "Not Found" handler.
-// A conformant gateway should return a JSON error envelope for all 404s.
-// ---------------------------------------------------------------------------
-
 describe('G70 — responses sub-routes and global notFound return JSON error envelope', () => {
-  it(// G70: GET /v1/responses/:id returns a JSON error envelope (not plain-text)
-  'GET /v1/responses/:id returns JSON error envelope', async () => {
+  it('GET /v1/responses/:id returns JSON error envelope', async () => {
     const app = makeApp(makeBaseModel());
     const res = await app.request('http://localhost/v1/responses/resp_123', {
       method: 'GET',
@@ -73,8 +50,7 @@ describe('G70 — responses sub-routes and global notFound return JSON error env
     expect(body).toHaveProperty('error');
   });
 
-  it(// G70: DELETE /v1/responses/:id returns a JSON error envelope (not plain-text)
-  'DELETE /v1/responses/:id returns JSON error envelope', async () => {
+  it('DELETE /v1/responses/:id returns JSON error envelope', async () => {
     const app = makeApp(makeBaseModel());
     const res = await app.request('http://localhost/v1/responses/resp_123', {
       method: 'DELETE',
@@ -84,8 +60,7 @@ describe('G70 — responses sub-routes and global notFound return JSON error env
     expect(res.status).toBe(404);
   });
 
-  it(// G70: unknown routes return a JSON error envelope (not plain-text)
-  'GET /v1/nonexistent returns JSON error envelope', async () => {
+  it('GET /v1/nonexistent returns JSON error envelope', async () => {
     const app = makeApp(makeBaseModel());
     const res = await app.request('http://localhost/v1/nonexistent', {
       method: 'GET',
@@ -100,16 +75,6 @@ describe('G70 — responses sub-routes and global notFound return JSON error env
   });
 });
 
-// ---------------------------------------------------------------------------
-// G71 — Stream error event shape (REJECTED — shape is already correct)
-//
-// The responses stream translator emits the error part as:
-//   event: error
-//   data: { type: "error", error: { message, type, code }, sequence_number: N }
-//
-// This IS the nested `data.error.*` shape expected by the Responses API spec.
-// ---------------------------------------------------------------------------
-
 describe('G71 — responses streaming error event has correct nested shape (REJECTED)', () => {
   it('stream error event carries nested data.error object', async () => {
     const error = Object.assign(new Error('upstream failed'), { statusCode: 503 });
@@ -119,7 +84,6 @@ describe('G71 — responses streaming error event has correct nested shape (REJE
         Promise.resolve({
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
-              // Emit text first so we commit to HTTP 200
               controller.enqueue({ type: 'text-start', id: 'text-0' });
 
               controller.enqueue({
@@ -146,7 +110,6 @@ describe('G71 — responses streaming error event has correct nested shape (REJE
 
     const text = await res.text();
 
-    // Find the error event block
     const errorBlock = text.split('\n\n').find((block) => block.includes('event: error'));
 
     expect(errorBlock).toBeDefined();
@@ -157,39 +120,20 @@ describe('G71 — responses streaming error event has correct nested shape (REJE
 
     const data = JSON.parse(dataLine!) as Record<string, unknown>;
 
-    // Nested shape: data.error.message, data.error.type, data.error.code
     expect(data).toHaveProperty('error');
     expect(data).toHaveProperty('error.message');
     expect(typeof (data.error as Record<string, unknown>).message).toBe('string');
   });
 });
 
-// ---------------------------------------------------------------------------
-// G72 — Post-peek catastrophic errors emit bare data: frame
-//
-// After the peek phase the handler passes `toError` to toSseStream which
-// maps stream exceptions to:
-//   [{ kind: 'data', data: toOpenAIErrorResponse(err, { requestId }).body }]
-//
-// This emits a bare `data: {...error envelope...}` frame (no `event:` line).
-// A conformant responses stream should emit `event: error` + `event: response.failed`.
-//
-// To trigger the `toError` path: inject a model whose stream throws a JS
-// exception (not just enqueues an error part) after the preamble is sent.
-// ---------------------------------------------------------------------------
-
 describe('G72 — post-peek catastrophic stream errors emit bare data: frame (not event:error)', () => {
   it('catastrophic post-peek error emits event:error frame, not a bare data: frame', async () => {
-    // Inject a model whose stream throws a JS exception mid-flight
-    // (not an SSE-level error part — that is handled by the transformer).
-    // This exercises the toSseStream `toError` callback path.
     const model = {
       ...makeBaseModel(),
       doStream: () =>
         Promise.resolve({
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
-              // Emit enough to pass the preamble (peek sees text)
               controller.enqueue({ type: 'text-start', id: 'text-0' });
 
               controller.enqueue({
@@ -198,9 +142,6 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
                 delta: 'hello',
               });
 
-              // Then close normally — the catastrophic throw comes from the
-              // transform phase itself via a TransformStream that errors.
-              // Simulate via stream that throws on pull:
               controller.close();
             },
           }).pipeThrough(
@@ -228,8 +169,6 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
     const text = await res.text();
     const blocks = text.split('\n\n').filter(Boolean);
 
-    // Every non-comment block with JSON data must have an explicit event: line.
-    // Filter first, then assert — avoids conditional expect.
     const dataOnlyBlocks = blocks.filter(
       (block) =>
         !block.startsWith(':') &&
@@ -241,16 +180,6 @@ describe('G72 — post-peek catastrophic stream errors emit bare data: frame (no
     expect(dataOnlyBlocks).toHaveLength(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// G73 — response.completed usage drops input_tokens_details / output_tokens_details
-//
-// The streaming translator records usage in state.usage as:
-//   { input_tokens, output_tokens, total_tokens }
-// but never includes input_tokens_details (cached_tokens) or
-// output_tokens_details (reasoning_tokens) that the AI SDK emits via
-// finish-step's usage.inputTokenDetails / outputTokenDetails.
-// ---------------------------------------------------------------------------
 
 describe('G73 — response.completed usage includes token details', () => {
   it('response.completed carries input_tokens_details.cached_tokens and output_tokens_details.reasoning_tokens', async () => {
@@ -327,18 +256,6 @@ describe('G73 — response.completed usage includes token details', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G74 — Reasoning deltas duplicated into both summary and content parts
-//
-// When a reasoning-delta fires (stream.ts:179-196), the translator emits
-// TWO events for each delta:
-//   response.reasoning_summary_text.delta  (summary track)
-//   response.reasoning_text.delta           (content track)
-//
-// The OpenAI Responses API spec only expects ONE of these per reasoning delta
-// depending on the model variant. Emitting both causes double-written text.
-// ---------------------------------------------------------------------------
-
 describe('G74 — reasoning delta duplication', () => {
   it('reasoning-delta emits exactly one delta event type (not both summary and content)', async () => {
     const model = {
@@ -392,21 +309,13 @@ describe('G74 — reasoning delta duplication', () => {
     const summaryDeltas = events.filter((e) => e === 'response.reasoning_summary_text.delta');
     const contentDeltas = events.filter((e) => e === 'response.reasoning_text.delta');
 
-    // G74: only the summary track is emitted per reasoning-delta.
     const totalDeltaEvents = summaryDeltas.length + contentDeltas.length;
 
     expect(totalDeltaEvents).toBe(1);
   });
 });
 
-// ---------------------------------------------------------------------------
-// G49 — streaming responses SSE must carry x-request-id, matching the
-// non-streaming path. createSseResponse now merges the handler's requestId into
-// the SSE response headers.
-// ---------------------------------------------------------------------------
-
 describe('G49 — x-request-id present on streaming responses SSE response', () => {
-  // G49 — createSseResponse merges requestId into SSE headers; streaming parity with non-streaming.
   it('streaming responses response includes x-request-id header', async () => {
     const model = {
       ...makeBaseModel(),
@@ -445,19 +354,7 @@ describe('G49 — x-request-id present on streaming responses SSE response', () 
   });
 });
 
-// ---------------------------------------------------------------------------
-// G51 (S17 ← S2/G5) — composed-wire terminal-frame count on a successful
-// responses stream. The Responses wire terminates with `response.completed`
-// and this route sets appendDone:false, so the OpenAI-chat-only `data: [DONE]`
-// sentinel must NEVER appear here. Guards the S2/G5 class of duplicate/leaked
-// terminal sentinels for /v1/responses.
-// ---------------------------------------------------------------------------
-
 describe('G51 — responses stream terminal-frame count', () => {
-  // G51 — exactly one response.completed, zero [DONE] on a successful stream.
-  // finishReason must use the real `{ unified, raw }` shape — a bare string
-  // normalizes to `unknown` → response.failed (see translators/stream.ts
-  // mapFinishReason), which would mask the terminal-frame assertion.
   it('terminates with exactly one response.completed and no [DONE] sentinel', async () => {
     const model = {
       ...makeBaseModel(),
@@ -514,17 +411,6 @@ describe('G51 — responses stream terminal-frame count', () => {
     expect(doneCount, 'responses wire must not carry the OpenAI-chat-only [DONE] sentinel').toBe(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// G75 — include[] forwarded but requested extras never surfaced
-//
-// A client requesting include: ["reasoning.encrypted_content"] (the ZDR
-// stateless replay pattern) gets encrypted reasoning tokens from OpenAI. The
-// AI SDK surfaces these via providerMetadata.openai.reasoningEncryptedContent.
-// The gateway must emit them as `encrypted_content` on the reasoning output
-// item in both the non-streaming and streaming paths so the client can replay
-// them in the next turn.
-// ---------------------------------------------------------------------------
 
 describe('G75 — reasoning items surface encrypted_content', () => {
   it('non-streaming reasoning item carries encrypted_content from providerMetadata', async () => {
