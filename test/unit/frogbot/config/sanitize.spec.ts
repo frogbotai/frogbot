@@ -2776,6 +2776,24 @@ describe('frogbot sanitize', () => {
       );
     });
 
+    it('rejects static Bedrock credentials combined with a credential provider', () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            bedrock: {
+              accessKeyId: 'ak',
+              secretAccessKey: 'sk',
+              credentialProvider: () =>
+                Promise.resolve({ accessKeyId: 'ak', secretAccessKey: 'sk' }),
+            },
+          },
+        },
+      } as never);
+      expect(() => sanitize(config)).toThrow(
+        "Provider 'bedrock' accepts either accessKeyId and secretAccessKey or a credentialProvider, not both",
+      );
+    });
+
     it('throws when a custom provider has an empty models array', () => {
       const config = makeConfig({
         ai: {

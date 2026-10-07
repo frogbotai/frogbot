@@ -705,6 +705,11 @@ function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase {
           `[frogbot] Provider 'bedrock' requires both accessKeyId and secretAccessKey when either is set.`,
         );
       }
+      if (hasCredentialProvider && (hasAccessKey || hasSecretKey)) {
+        throw new Error(
+          `[frogbot] Provider 'bedrock' accepts either accessKeyId and secretAccessKey or a credentialProvider, not both.`,
+        );
+      }
       continue;
     }
     if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {

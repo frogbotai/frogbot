@@ -5,8 +5,8 @@
 //   - user props win per-key (deep merge, user over base)
 //   - base hooks run first, then user hooks — both run, base is foundational
 //   - base fields missing from the user's collection are appended
-//   - a base field's `type` is locked; the user may customize other props
-//     (label, admin, index, hooks, relationTo) but not `type`
+//   - a base field's `type` is locked; the user must restate it and may
+//     customize other props (label, admin, index, hooks, relationTo)
 //   - reserved field names throw at build
 
 import type { Field } from '../../fields/config/types.js';
@@ -53,7 +53,12 @@ function fieldType(field: Field): string | undefined {
 function mergeField(base: Field, user: Field, slug: string, feature: string): Field {
   const baseType = fieldType(base);
   const userType = fieldType(user);
-  if (baseType !== undefined && userType !== undefined && baseType !== userType) {
+  if (userType === undefined) {
+    throw new Error(
+      `[frogbot] Field '${fieldName(base)}' on collection '${slug}' must set type '${baseType}' required by ${feature}.`,
+    );
+  }
+  if (baseType !== userType) {
     throw new Error(
       `[frogbot] Field '${fieldName(base)}' on collection '${slug}' has type '${baseType}' required by ` +
         `${feature} and cannot be changed to '${userType}'.`,
