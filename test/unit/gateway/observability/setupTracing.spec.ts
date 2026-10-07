@@ -2,11 +2,6 @@ import type * as otelApi from '@opentelemetry/api';
 import type { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Walk the exporter object graph to find the resolved POST URL the transport
-// will actually hit. On a real OTLPTraceExporter this lives at
-// _delegate._transport._transport._parameters.url; we scan for it structurally
-// so the assertion reflects what a collector receives, not a reimplementation
-// of the SDK's URL rules.
 const findResolvedUrl = (root: object): string | undefined => {
   const seen = new Set<object>();
   const visit = (obj: unknown): string | undefined => {
@@ -35,10 +30,6 @@ const findResolvedUrl = (root: object): string | undefined => {
   return visit(root);
 };
 
-// Hermetic module mocks: don't register real global providers or install
-// process signal handlers as a side effect of setupTracing. The trace exporter
-// mock captures the exact config setup.ts hands it; the tracer-provider mock
-// captures the resource so G94 can assert service identity.
 const mockSetupModules = (captured: {
   exporterConfig?: { url?: string };
   exporterConstructed?: boolean;
@@ -91,9 +82,6 @@ const mockSetupModules = (captured: {
     AsyncLocalStorageContextManager: class {},
   }));
 
-  // Keep the real api surface (diag, createContextKey, ... — used by the real
-  // @opentelemetry/resources at import time) but neuter the global registration
-  // side effects.
   vi.doMock('@opentelemetry/api', async (importOriginal) => {
     const actual = await importOriginal<typeof otelApi>();
 
@@ -122,14 +110,6 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     vi.restoreAllMocks();
   });
 
-  // An operator setting only OTEL_EXPORTER_OTLP_ENDPOINT (the standard base URL
-  // with no path, e.g. from docker-compose/K8s) expects spans to POST to the
-  // spec-mandated .../v1/traces path. setup.ts must NOT read that env var in
-  // app code and hand it to the exporter as an explicit `url` (which the SDK
-  // uses verbatim, defeating the /v1/traces append) — it must leave `url`
-  // unset so the exporter's own env handling appends the signal path. This
-  // captures the exact `url` setupTracing gives OTLPTraceExporter, builds a
-  // real exporter the same way, and reads the URL its transport will POST to.
   it('resolves the exporter POST URL to /v1/traces when only the base OTLP endpoint env var is set', async () => {
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT = 'http://otel-collector:4318';
 
@@ -142,12 +122,8 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     setupTracing();
 
     expect(captured.exporterConstructed).toBe(true);
-    // No config-level url: the env var must flow through the exporter's own
-    // env handling (which appends the signal path), not app code.
     expect(captured.exporterConfig?.url).toBeUndefined();
 
-    // Build a REAL exporter with the SAME config setup.ts passed, then read
-    // the URL its transport will actually POST spans to.
     const actual = await vi.importActual<{ OTLPTraceExporter: typeof OTLPTraceExporter }>(
       '@opentelemetry/exporter-trace-otlp-http',
     );
@@ -157,8 +133,6 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     expect(findResolvedUrl(real)).toBe('http://otel-collector:4318/v1/traces');
   });
 
-  // An explicit endpoint option is documented as a FULL signal URL and must be
-  // passed verbatim.
   it('passes an explicit endpoint option verbatim as the exporter url', async () => {
     delete process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
@@ -214,9 +188,6 @@ describe('setupTracing resource / service identity (G94)', () => {
     vi.restoreAllMocks();
   });
 
-  // Without a resource, SDK 2.x defaults every span to service.name
-  // `unknown_service:node` and silently ignores OTEL_SERVICE_NAME. The
-  // provider must receive a resource with a real gateway identity.
   it('gives the tracer provider a resource with the gateway service name, not unknown_service', async () => {
     delete process.env.OTEL_SERVICE_NAME;
 
@@ -237,7 +208,6 @@ describe('setupTracing resource / service identity (G94)', () => {
     expect(attributes?.['deployment.environment.name']).toEqual(expect.any(String));
   });
 
-  // The standard env var must win over the built-in default.
   it('honors OTEL_SERVICE_NAME via env resource detection', async () => {
     process.env.OTEL_SERVICE_NAME = 'my-gateway';
 

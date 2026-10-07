@@ -1,24 +1,3 @@
-// Exhaustive three-bucket classification for AI SDK error subclasses.
-//
-// The envelope translators (`envelope.ts`) handle a handful of AI SDK classes
-// with bespoke messages/codes (`NoSuchModelError`, `InvalidPromptError`, etc.).
-// Every other `AISDKError` subclass previously fell to the generic catch-all →
-// 500 `server_error` with a null code, masking whether the fault was upstream
-// (retryable 502), client-attributable (4xx), or a gateway config problem.
-//
-// This classifier buckets the remaining classes the same way hebo-gateway does
-// (`hebo-gateway/src/errors/ai-sdk.ts:56-121`):
-//
-//   - `upstream` (502): the provider returned nothing usable / unparseable.
-//   - `client`   (422): the request or the model's tool output was invalid.
-//   - `config`   (500): a gateway credential/setting could not be loaded.
-//
-// Each translator maps the bucket to its own wire type/code. Classes already
-// handled explicitly upstream of this call (APICallError, RetryError,
-// NoSuchModelError, InvalidPromptError, TooManyEmbeddingValuesForCallError,
-// LoadAPIKeyError, JSONParseError, TypeValidationError) are intentionally not
-// repeated here.
-
 import {
   EmptyResponseBodyError,
   Experimental_EvaluationUnsupportedQuestionTypeError,
@@ -66,7 +45,6 @@ export type AiSdkErrorClassification = {
  * generic `AISDKError` catch-all as a safety net).
  */
 export function classifyAiSdkError(err: unknown): AiSdkErrorClassification | undefined {
-  // 502 — upstream fault: the provider returned nothing usable or unparseable.
   if (
     EmptyResponseBodyError.isInstance(err) ||
     InvalidResponseDataError.isInstance(err) ||
@@ -86,7 +64,6 @@ export function classifyAiSdkError(err: unknown): AiSdkErrorClassification | und
     return { bucket: 'upstream', status: 502 };
   }
 
-  // 422 — client fault: the request or the model's tool output was invalid.
   if (
     InvalidArgumentError.isInstance(err) ||
     Experimental_EvaluationUnsupportedQuestionTypeError.isInstance(err) ||
@@ -104,7 +81,6 @@ export function classifyAiSdkError(err: unknown): AiSdkErrorClassification | und
     return { bucket: 'client', status: 422 };
   }
 
-  // 500 — config fault: a gateway credential/setting could not be loaded.
   if (LoadSettingError.isInstance(err)) {
     return { bucket: 'config', status: 500 };
   }

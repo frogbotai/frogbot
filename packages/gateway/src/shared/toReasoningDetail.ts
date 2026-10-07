@@ -1,11 +1,3 @@
-// Converts a reasoning part to the OpenAI `reasoning_details` wire format.
-//
-// Two variants:
-//   - `reasoning.encrypted` — when `redactedData` is present (Anthropic redacted thinking)
-//   - `reasoning.text` — normal reasoning text with optional signature
-//
-// Used by both OpenAI and Anthropic response translators for cross-provider parity.
-
 import { extractReasoningMetadata } from './extractReasoningMetadata.js';
 
 export type ReasoningDetailEncrypted = {

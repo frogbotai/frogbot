@@ -24,8 +24,6 @@ const getTokenUsage = () =>
     unit: '{token}',
   }));
 
-// Spec-aligned bucket advice (OTel GenAI semconv `gen_ai.server.request.duration`,
-// seconds) with a tail extended to 30min for slow provider tiers, matching hebo.
 const getRequestDuration = () =>
   (requestDurationHistogram ??= getMeter().createHistogram('gen_ai.server.request.duration', {
     unit: 's',
@@ -87,7 +85,6 @@ export function recordGenAiTokenUsage(
   const emit = (value: number, extra: Record<string, unknown>) =>
     tokenUsage.record(value, { ...base, ...extra });
 
-  // Input: partition only when a cache breakdown is reported; otherwise emit a bare point.
   if (usage.cachedInputTokens === undefined && usage.cacheWriteTokens === undefined) {
     emit(inputTokens, { 'gen_ai.token.type': 'input' });
   } else {
@@ -97,7 +94,6 @@ export function recordGenAiTokenUsage(
     emit(uncachedInput, { 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'uncached' });
   }
 
-  // Output: partition only when a reasoning breakdown is reported; otherwise emit a bare point.
   if (usage.reasoningTokens === undefined) {
     emit(outputTokens, { 'gen_ai.token.type': 'output' });
   } else {

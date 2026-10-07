@@ -552,8 +552,6 @@ describe('FrogBot class', () => {
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ path: '/v1/chat/completions' });
-      // The gateway route handlers own the hook lifecycle; FrogBot only seeds
-      // `req` into the hook context so the gateway's hooks can read it back.
       expect(handler).toHaveBeenCalledOnce();
 
       const [forwarded, opts] = handler.mock.calls[0];

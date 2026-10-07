@@ -1,5 +1,3 @@
-// Model resolution — router slug → model ID, or pass through raw model ID.
-
 import type { SanitizedAIConfig } from './types.js';
 
 export function resolveModel(input: string, config: SanitizedAIConfig): string {

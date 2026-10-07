@@ -1,8 +1,3 @@
-// Provider definition: Vercel AI Gateway.
-//
-// `apiKey` is a required key so the adapter never falls back to Vercel's OIDC
-// deployment token: a Vercel deployment alone must not enable this provider.
-
 import { createGateway, type GatewayProvider, type GatewayProviderSettings } from '@ai-sdk/gateway';
 
 import type { ProviderDefinition } from '../types.js';

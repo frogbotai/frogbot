@@ -1,12 +1,3 @@
-// Status ↔ error-type maps — the single source of truth (G88 / HE13).
-//
-// Every status→type decision in the gateway routes through these functions:
-// the JSON envelope builders (`envelope.ts`), the stream-error frame parser
-// (`streamError.ts`), and the mid-stream extractors
-// (`shared/extractStreamErrorInfo.ts`). Do NOT re-implement these branches
-// elsewhere — drift between copies is exactly the bug this file exists to
-// prevent.
-
 import type { AnthropicErrorType, GatewayHttpStatus, OpenAIErrorType } from './envelope.js';
 
 export function isUpstreamSuccessStatus(status: number | undefined): boolean {
@@ -24,9 +15,6 @@ export function statusToOpenAIType(status: number): OpenAIErrorType {
   return 'invalid_request_error';
 }
 
-// Per platform.claude.com/docs/en/api/errors: 402 billing_error,
-// 413 request_too_large, 504 timeout_error, 529 overloaded_error (reserved
-// for 529 only — a 502/503 is api_error, not "overloaded").
 /** Map an HTTP status to Anthropic's documented `error.type` values. */
 export function statusToAnthropicType(status: number): AnthropicErrorType {
   switch (status) {

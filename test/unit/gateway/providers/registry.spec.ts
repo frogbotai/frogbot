@@ -1,5 +1,3 @@
-// Registry unit tests — resolveProvider, buildProviderRegistry.
-
 import { createOpenAI } from '@ai-sdk/openai';
 import { MockProviderV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
@@ -26,10 +24,6 @@ import {
   resolveProvider,
 } from '../../../../packages/gateway/src/providers/registry.js';
 import { providerMap } from '../config/fixtures.js';
-
-// ---------------------------------------------------------------------------
-// resolveProvider
-// ---------------------------------------------------------------------------
 
 describe('resolveProvider', () => {
   const mockProvider = new MockProviderV4();
@@ -128,7 +122,6 @@ describe('resolveProvider', () => {
     ).toThrow(ModelNotFoundError);
   });
 
-  // G36.1
   it('throws ModelNotFoundError for prototype key "constructor" as provider', () => {
     expect(() =>
       resolveProvider({
@@ -139,7 +132,6 @@ describe('resolveProvider', () => {
     ).toThrow(ModelNotFoundError);
   });
 
-  // G36.2
   it('throws ModelNotFoundError for prototype key "__proto__" as provider', () => {
     expect(() =>
       resolveProvider({
@@ -150,7 +142,6 @@ describe('resolveProvider', () => {
     ).toThrow(ModelNotFoundError);
   });
 
-  // G36.3
   it('throws ModelNotFoundError for prototype key "toString" as provider', () => {
     expect(() =>
       resolveProvider({
@@ -161,7 +152,6 @@ describe('resolveProvider', () => {
     ).toThrow(ModelNotFoundError);
   });
 
-  // G36.3 (companion prototype keys)
   it('throws ModelNotFoundError for "hasOwnProperty" and "valueOf" as provider', () => {
     for (const key of ['hasOwnProperty', 'valueOf']) {
       expect(() =>
@@ -318,10 +308,6 @@ describe('resolveProvider', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// buildProviderRegistry
-// ---------------------------------------------------------------------------
-
 describe('buildProviderRegistry', () => {
   it('builds registry from provider configs', () => {
     const registry = buildProviderRegistry(
@@ -354,25 +340,19 @@ describe('buildProviderRegistry', () => {
     expect(registry.groq).toBeUndefined();
   });
 
-  // G36.4
   it('does not mutate Object.prototype for a hostile openai-compatible key', () => {
     const before = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__');
-    // A JSON-sourced config can carry a genuine own `__proto__` key.
     const hostile = JSON.parse(
       '{"__proto__": {"baseURL": "http://localhost:11434/v1"}}',
     ) as ProviderConfigMap;
 
     const registry = buildProviderRegistry(hostile);
 
-    // Object.prototype's native __proto__ accessor is untouched (still an accessor,
-    // not a data property holding the provider instance).
     expect(Object.getOwnPropertyDescriptor(Object.prototype, '__proto__')).toEqual(before);
     expect(({} as Record<string, unknown>)['languageModel']).toBeUndefined();
-    // The entry lands as an own property of the registry, not on the prototype.
     expect(Object.hasOwn(registry, '__proto__')).toBe(true);
   });
 
-  // G36.5
   it('builds a null-prototype registry so prototype keys resolve to undefined', () => {
     const registry = buildProviderRegistry(providerMap({ openai: { apiKey: 'sk-test' } }));
 
@@ -381,7 +361,6 @@ describe('buildProviderRegistry', () => {
     expect((registry as Record<string, unknown>)['toString']).toBeUndefined();
   });
 
-  // G80 — config value shape #2: pre-built provider instance used as-is.
   it('passes a pre-built provider instance through as-is (no rebuild)', () => {
     const prebuilt = createOpenAI({ apiKey: 'sk-test' });
     const registry = buildProviderRegistry(providerMap({ openai: prebuilt }));
@@ -389,7 +368,6 @@ describe('buildProviderRegistry', () => {
     expect(registry.openai).toBe(prebuilt);
   });
 
-  // G80 — instance passthrough coexists with shorthand-built providers.
   it('mixes pre-built instances and shorthand configs in one registry', () => {
     const prebuilt = createOpenAI({ apiKey: 'sk-test' });
     const registry = buildProviderRegistry(

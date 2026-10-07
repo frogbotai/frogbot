@@ -1,10 +1,3 @@
-// OpenRouter-specific beforeUpstream middleware.
-//
-// `@openrouter/ai-sdk-provider` reads reasoning only from
-// `providerOptions.openrouter.reasoning`, so the cross-provider reasoning
-// params each wire produces are re-homed there. Cache control needs no hook:
-// the adapter already reads part-level `anthropic.cacheControl`.
-
 import type { OpenRouterProviderOptions } from '@openrouter/ai-sdk-provider';
 
 import type { BeforeUpstreamHook } from '../../hooks.js';

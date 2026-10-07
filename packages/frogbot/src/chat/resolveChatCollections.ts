@@ -1,12 +1,3 @@
-// Marker-based resolver for chat collections:
-//   - `chat: true` / `message: true` marks a collection as the chat
-//     or message store — FrogBot merges its default fields in; the slug
-//     stays the user's
-//   - no marked collection → inject the default (`chats` / `messages`),
-//     mirroring Payload's `defaultUserCollection` injection
-//   - persistence is on whenever agents are configured or a collection
-//     is marked; there is no opt-out
-
 import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogBotConfig } from '../config/types.js';

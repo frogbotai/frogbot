@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// `pnpm check scripts`: every root script has a row in CONTRIBUTING's command table and every
-// `pnpm <script>` in that table is a root script; packages have only build, clean and typecheck.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

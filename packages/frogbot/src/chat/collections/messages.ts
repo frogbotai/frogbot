@@ -97,8 +97,6 @@ export function defaultMessagesCollection({
   return {
     slug,
     trash: true,
-    // A message belongs to one position in one chat. Duplicating it would skip
-    // the chat write rule, because create access runs before the source is merged.
     disableDuplicate: true,
     admin: {
       hidden: true,

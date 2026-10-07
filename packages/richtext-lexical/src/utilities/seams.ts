@@ -1,8 +1,3 @@
-// The FrogBot ↔ Payload server-feature seam. A FrogBot server feature is a
-// Payload server feature whose `nodes` hooks take `FrogBotRequest`; Payload
-// passes them through untouched, so handing the args across is a type change
-// only. The checks pin everything but `nodes` to Payload's types, both ways.
-
 import type {
   FeatureProviderProviderServer,
   ServerFeature as PayloadServerFeature,

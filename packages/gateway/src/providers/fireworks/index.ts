@@ -1,5 +1,3 @@
-// Provider definition: Fireworks AI.
-
 import {
   createFireworks,
   type FireworksProvider,

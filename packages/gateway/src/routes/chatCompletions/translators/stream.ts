@@ -1,18 +1,3 @@
-// OpenAI SSE stream translator.
-//
-// Converts AI SDK `fullStream` (TextStreamPart) chunks into OpenAI-compatible
-// Server-Sent Events for `/v1/chat/completions` with `stream: true`.
-//
-// Each SSE frame is `data: <JSON>\n\n`; the terminal `data: [DONE]\n\n` is
-// appended by the SSE wrapper (`toSseStream`), not this translator.
-//
-// Design decisions (locked from research doc Finding 1):
-//   - Role injection: first text/tool delta includes `role: "assistant"`.
-//   - Block-index allocator: maps AI SDK block `id`s to integer indices.
-//   - Tool-call streaming: incremental `function.arguments` JSON fragments.
-//   - `includeRawChunks: true` is always passed to AI SDK for refusal/fingerprint peek.
-//   - Heartbeat: not implemented in v0 (clients handle silence fine for <30s).
-
 import type { TextStreamPart, ToolSet } from 'ai';
 
 import {
@@ -22,10 +7,6 @@ import {
 import { peekRawValue } from '../../../shared/rawPeek.js';
 import { toReasoningDetail } from '../../../shared/toReasoningDetail.js';
 import type { OpenAIReasoningDetail } from './types.js';
-
-// ---------------------------------------------------------------------------
-// OpenAI streaming chunk types
-// ---------------------------------------------------------------------------
 
 export type OpenAIStreamChunk = {
   id: string;
@@ -81,16 +62,10 @@ type OpenAIStreamUsage = {
   };
 };
 
-// ---------------------------------------------------------------------------
-// Stream state
-// ---------------------------------------------------------------------------
-
 type StreamState = {
   roleEmitted: boolean;
-  /** Maps AI SDK block IDs to integer tool-call indices. */
   toolCallIndices: Map<string, number>;
   nextToolCallIndex: number;
-  /** Maps AI SDK reasoning block IDs to stable integer indices. */
   reasoningIdToIndex: Map<string, number>;
   nextReasoningIndex: number;
   responseId: string;
@@ -98,11 +73,8 @@ type StreamState = {
   created: number;
   systemFingerprint: string | null;
   serviceTier: string | null;
-  /** When true, honor OpenAI `stream_options.include_usage` wire semantics. */
   includeUsage: boolean;
-  /** Accumulated refusal text from raw chunks. */
   refusal: string | null;
-  /** Masking context for mid-stream error frames (G35). */
   maskOpts: StreamErrorMaskOptions;
 };
 
@@ -125,10 +97,6 @@ function createStreamState(
     maskOpts: { requestId: args.requestId, production: args.production },
   };
 }
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 
 /**
  * Creates a TransformStream that converts AI SDK TextStreamParts into
@@ -153,10 +121,6 @@ export function createOpenAIStreamTransform(
     },
   });
 }
-
-// ---------------------------------------------------------------------------
-// Part → OpenAI chunk(s) mapping
-// ---------------------------------------------------------------------------
 
 function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAIStreamChunk[] {
   switch (part.type) {
@@ -238,21 +202,12 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
     }
 
     case 'finish-step': {
-      // G7: id/model/created are frozen at construction (synthetic chatcmpl id
-      // + user-requested model). Every chunk in a stream must share the same
-      // id/model per OpenAI's wire contract, so the upstream provider's
-      // response id/modelId from `finish-step` is NOT adopted.
-
-      // G54: refusal text is orthogonal to finish_reason — OpenAI returns
-      // 'stop' for model refusals; 'content_filter' is reserved for the
-      // infrastructure safety layer. Pass through the upstream reason.
       const finishReason = mapFinishReason(part.finishReason);
       const chunk = makeChunk(state, {
         delta: {},
         finish_reason: finishReason,
       });
 
-      // Build the usage totals for the request.
       const usage: OpenAIStreamUsage = {
         prompt_tokens: part.usage.inputTokens ?? 0,
         completion_tokens: part.usage.outputTokens ?? 0,
@@ -282,20 +237,15 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
       }
 
       if (state.includeUsage) {
-        // include_usage: the finish chunk carries usage: null (set by
-        // makeChunk); the populated totals arrive on a dedicated empty-choices
-        // chunk emitted after it and before the terminal [DONE].
         return [chunk, makeUsageChunk(state, usage)];
       }
 
-      // Default (backward-compatible) path: usage populated on the finish chunk.
       chunk.usage = usage;
 
       return [chunk];
     }
 
     case 'raw': {
-      // Peek for system_fingerprint, service_tier, and refusal from raw OpenAI chunks
       const extras = peekRawValue(part.rawValue);
       if (extras) {
         if (extras.systemFingerprint) {
@@ -307,7 +257,6 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
         }
 
         if (extras.refusal) {
-          // Emit refusal delta inline — OpenAI surfaces refusal as a delta field
           state.refusal = (state.refusal ?? '') + extras.refusal;
           const delta: OpenAIStreamDelta = { refusal: extras.refusal };
           if (!state.roleEmitted) {
@@ -323,9 +272,6 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
     }
 
     case 'error': {
-      // Mid-stream error: emit a chunk with an error field and null finish_reason.
-      // This matches OpenAI's observed mid-stream behavior — the chunk carries
-      // error info but the HTTP status remains 200 (already sent).
       const errorInfo = extractOpenAIStreamErrorInfo(part.error, state.maskOpts);
       const chunk = makeChunk(state, { delta: {}, finish_reason: null });
 
@@ -338,15 +284,10 @@ function partToChunks(part: TextStreamPart<ToolSet>, state: StreamState): OpenAI
       return [chunk];
     }
 
-    // Parts we don't emit for (stream bookkeeping, sources, files, etc.)
     default:
       return [];
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeChunk(
   state: StreamState,
@@ -362,8 +303,6 @@ function makeChunk(
     choices: [{ index: 0, ...choice }],
   };
 
-  // include_usage contract: every non-final chunk carries an explicit
-  // `usage: null`; the populated totals arrive on a dedicated final chunk.
   if (state.includeUsage) {
     chunk.usage = null;
   }
@@ -371,10 +310,6 @@ function makeChunk(
   return chunk;
 }
 
-// Dedicated empty-choices usage chunk emitted before the terminal [DONE] when
-// the client requested `stream_options.include_usage`. Shares the stream's
-// id/created/model (plus system_fingerprint/service_tier when present) with
-// every other chunk — a full-shaped `chat.completion.chunk`, not a bare object.
 function makeUsageChunk(state: StreamState, usage: OpenAIStreamUsage): OpenAIStreamChunk {
   return {
     id: state.responseId,
@@ -388,9 +323,6 @@ function makeUsageChunk(state: StreamState, usage: OpenAIStreamUsage): OpenAIStr
   };
 }
 
-// G57: 'error'/'other'/'unknown' are AI SDK finish reasons with no OpenAI
-// enum value — pass 'error' through and fold 'unknown' into 'other' so a
-// failed step is never masked as a clean 'stop'.
 function mapFinishReason(reason: string): string {
   switch (reason) {
     case 'stop':

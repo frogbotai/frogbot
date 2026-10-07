@@ -1,8 +1,3 @@
-// Provider definition: OpenAI.
-//
-// Sources the config type directly from `@ai-sdk/openai`'s exported
-// `OpenAIProviderSettings`, excluding custom fetch from shorthand config.
-
 import { createOpenAI, type OpenAIProvider, type OpenAIProviderSettings } from '@ai-sdk/openai';
 
 import type { ProviderDefinition } from '../types.js';

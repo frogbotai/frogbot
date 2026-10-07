@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// Branding gate: user-visible files must never mention Payload. Scaffold files (the template, the
-// packed create-frogbot-app template, examples) reject any `Payload` substring; docs, skills and
-// READMEs reject the whole word, so identifiers such as `disablePayloadAccessControl` pass.
-// Both reject `@payloadcms/`. ALLOWLIST sections are for plugin authors who wrap upstream code.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';

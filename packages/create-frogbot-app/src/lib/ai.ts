@@ -4,8 +4,6 @@ import path from 'node:path';
 import type { AIProvider, ScaffoldPlan } from '../types.js';
 import { CONFIG_ANCHORS, replaceOnce } from './anchors.js';
 
-// Default models are cheap, current, and exercised by the live suite
-// (test/gateway/live/matrix.ts), so a fresh project's first chat works.
 export const AI_PROVIDERS: Record<
   Exclude<AIProvider, 'none'>,
   {

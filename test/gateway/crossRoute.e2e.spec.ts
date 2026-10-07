@@ -1,16 +1,3 @@
-// Gateway E2E — cross-route fidelity. The SAME logical question, sent through
-// all three wire surfaces (/v1/chat/completions, /v1/messages, /v1/responses)
-// on the SAME model, must:
-//   1. all return 200,
-//   2. each come back in ITS OWN correct wire envelope (the three shapes
-//      differ — chatcmpl vs Anthropic message vs Responses response),
-//   3. all contain the same correct answer.
-// Divergence in status or shape between routes = a translation bug. This is
-// high-value fidelity coverage: it catches a route that silently mistranslates
-// a request the other two handle.
-//
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/crossRoute.e2e.spec.ts
-
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -33,7 +20,6 @@ function makeZenApp() {
   return createApp({ registry });
 }
 
-// The one prompt, with a deterministic single-token answer.
 const QUESTION = 'What is 17*23? Reply with just the number.';
 const EXPECTED = '391';
 
@@ -86,20 +72,16 @@ describeLive(
           }),
         ]);
 
-        // 1. All three succeed.
         expect(chat.status, `chat body: ${JSON.stringify(chat.body)}`).toBe(200);
         expect(messages.status, `messages body: ${JSON.stringify(messages.body)}`).toBe(200);
         expect(responses.status, `responses body: ${JSON.stringify(responses.body)}`).toBe(200);
 
-        // 2. Each in ITS OWN correct wire envelope — the shapes must differ.
-        // chat.completions — OpenAI chatcmpl envelope.
         expect(chat.body.object).toBe('chat.completion');
 
         const chatText = chat.body.choices?.[0]?.message?.content ?? '';
 
         expect(typeof chatText).toBe('string');
 
-        // messages — Anthropic message envelope.
         expect(messages.body.type).toBe('message');
         expect(messages.body.role).toBe('assistant');
         expect(Array.isArray(messages.body.content)).toBe(true);
@@ -109,19 +91,15 @@ describeLive(
           .map((b) => b.text ?? '')
           .join('');
 
-        // responses — OpenAI Responses envelope.
         expect(responses.body.object).toBe('response');
         expect(responses.body.status).toBe('completed');
         expect(typeof responses.body.output_text).toBe('string');
 
         const responsesText = responses.body.output_text ?? '';
 
-        // The three envelopes are genuinely distinct surfaces (no route leaking
-        // another route's shape).
         expect(chat.body.object).not.toBe(responses.body.object);
         expect((messages.body as { object?: string }).object).toBeUndefined();
 
-        // 3. All three arrive at the same correct answer.
         expect(chatText).toContain(EXPECTED);
         expect(messagesText).toContain(EXPECTED);
         expect(responsesText).toContain(EXPECTED);

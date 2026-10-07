@@ -1,9 +1,5 @@
 #!/usr/bin/env node
 // check: full-only
-// `pnpm check generated [--write]` regenerates every tracked `importMap.js`, `frogbot-types.ts`
-// and `piece-types.ts` with a pinned environment and prints `stale: <path>` for each one that
-// differs from the committed file. `--write` regenerates the stale files in place. Needs built
-// packages.
 import { spawn, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';

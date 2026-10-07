@@ -26,8 +26,6 @@ describe('installGracefulShutdown (G91)', () => {
     vi.useRealTimers();
   });
 
-  // On SIGTERM the handler must stop accepting new connections, wait for the
-  // drain callback, flush the exporter, then exit 0 — not force-exit mid-stream.
   it('drains connections, flushes, then exits 0', async () => {
     const { server, finishDrain } = makeServer();
     const exit = vi.fn<(code: number) => never>();
@@ -52,8 +50,6 @@ describe('installGracefulShutdown (G91)', () => {
     expect(flush).toHaveBeenCalledTimes(1);
   });
 
-  // If the drain never completes, the hard timeout must force exit 1 so a
-  // wedged connection can't hang past the grace period.
   it('force-exits 1 when the drain never completes', () => {
     vi.useFakeTimers();
     const { server } = makeServer();

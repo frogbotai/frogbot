@@ -65,8 +65,6 @@ function renderLastCellData(): HTMLElement {
 
 const optionColors = { done: 'green' };
 
-// Payload's client `admin` type Picks from an optional type, which makes every picked key
-// required; a fixture states only the admin keys it uses.
 function selectField(
   field: Omit<SelectFieldClient, 'admin'> & {
     admin?: Partial<NonNullable<SelectFieldClient['admin']>>;

@@ -96,8 +96,5 @@ export async function handleGatewayRequest({
 
   const forwarded = new Request(url, request);
 
-  // The gateway's route handlers own the full 5-phase hook lifecycle. We only
-  // seed `req` into the hook context so FrogBot's hooks see it (Payload-style
-  // `args.req`); no FrogBot-side lifecycle needed.
   return gateway.handler(forwarded, { context: { req } });
 }

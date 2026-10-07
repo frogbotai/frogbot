@@ -1,11 +1,3 @@
-// OpenAI /v1/chat/completions → AI SDK ModelMessage[] translation.
-//
-// Inverted branch-for-branch from the AI SDK's
-// `convertToOpenAICompatibleChatMessages` (Apache-2.0, Vercel).
-//
-// Tool correlation: remember assistant tool-call names, then coalesce adjacent
-// OpenAI role:'tool' messages into one AI SDK tool message in wire order.
-
 import type { ModelMessage, ToolModelMessage, ToolResultPart } from '@ai-sdk/provider-utils';
 
 import { createLogger, type GatewayLogger } from '../../../../observability/logger.js';

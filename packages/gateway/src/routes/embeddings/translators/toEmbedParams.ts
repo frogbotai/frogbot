@@ -8,11 +8,6 @@ export type EmbedParams = {
 };
 
 export function toEmbedParams(body: EmbeddingsRequest): EmbedParams {
-  // Stage cross-provider knobs in the neutral `unknown` namespace. Each
-  // provider's `beforeUpstream` middleware re-homes them into its own namespace
-  // (cohere.outputDimension, google.outputDimensionality, etc.). `user` is an
-  // OpenAI-only concept, so only the OpenAI hook re-homes it; other providers
-  // leave it in `unknown`, where they never read it (silent no-op).
   const unknown: Record<string, JSONValue> = {};
   if (body.dimensions != null) {
     unknown.dimensions = body.dimensions;

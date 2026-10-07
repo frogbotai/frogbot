@@ -46,7 +46,6 @@ function Admin({ nav }: { nav: StepNavItem[] }) {
   );
 }
 
-// MutationObserver callbacks run on a microtask; an async act lets them deliver before it returns.
 function headChange(change: () => void): Promise<void> {
   return act(() => {
     change();

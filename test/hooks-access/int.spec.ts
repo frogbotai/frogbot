@@ -47,7 +47,6 @@ describe('hooks-access', () => {
   beforeAll(async () => {
     booted = await bootFrogBot(dirname);
 
-    // Import the hook log from the config module (same instance the hooks write to)
     const configMod = await import('./config.js');
     clearHookLog = configMod.clearHookLog;
     getHookLog = () => configMod.hookLog;
@@ -88,10 +87,6 @@ describe('hooks-access', () => {
 
     expect((req as unknown as { frogbot: unknown }).frogbot).toBe(booted.frogbot);
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Hook lifecycle ordering
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('hook lifecycle ordering', () => {
     it('find uses the changed where returned by beforeOperation only for the scoped request', async () => {
@@ -237,7 +232,6 @@ describe('hooks-access', () => {
         overrideAccess: true,
       });
 
-      // Check create log - no beforeRead
       let log = getHookLog();
 
       expect(log).not.toContain('beforeRead');
@@ -269,34 +263,26 @@ describe('hooks-access', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // req.frogbot in hooks
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('req.frogbot in hooks', () => {
     it('beforeChange can call req.frogbot.find() and get results', async () => {
-      // Seed one doc first so the hook's find() returns count > 0
       await booted.frogbot.create({
         collection: reqAccessSlug,
         data: { title: 'seed' },
         overrideAccess: true,
       });
 
-      // Create another - the beforeChange hook calls find() and stores totalDocs
       const doc = await booted.frogbot.create({
         collection: reqAccessSlug,
         data: { title: 'second' },
         overrideAccess: true,
       });
 
-      // The afterChange hook writes hookCount via req.frogbot.update()
       const fetched = await booted.frogbot.findByID({
         collection: reqAccessSlug,
         id: doc.id,
         overrideAccess: true,
       });
 
-      // At the time of beforeChange, there was 1 doc (the seed)
       expect(fetched.hookCount).toBe(1);
     });
 
@@ -313,12 +299,10 @@ describe('hooks-access', () => {
         overrideAccess: true,
       });
 
-      // When creating the first doc, find() returns 0 totalDocs
       expect(fetched.hookCount).toBe(0);
     });
 
     it('afterChange can call req.frogbot.update() on the same doc', async () => {
-      // Create two docs; the second should have hookCount = 1
       await booted.frogbot.create({
         collection: reqAccessSlug,
         data: { title: 'A' },
@@ -365,14 +349,9 @@ describe('hooks-access', () => {
         overrideAccess: true,
       });
 
-      // At time of C's beforeChange, A and B exist
       expect(fetched.hookCount).toBe(2);
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Collection access — boolean
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('collection access — boolean', () => {
     it('can create a doc (access.create = true)', async () => {
@@ -435,10 +414,6 @@ describe('hooks-access', () => {
       ).rejects.toThrow();
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Collection access — where clause
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('collection access — where clause', () => {
     it('can read docs where hidden=false', async () => {
@@ -523,10 +498,6 @@ describe('hooks-access', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Field-level access
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('field-level access', () => {
     it('secret field is excluded from read response (field read access = false)', async () => {
       const doc = await booted.frogbot.create({
@@ -576,7 +547,6 @@ describe('hooks-access', () => {
         overrideAccess: false,
       });
 
-      // Field update access = false means the value doesn't change
       const found = await booted.frogbot.findByID({
         collection: fieldAccessSlug,
         id: doc.id,
@@ -609,10 +579,6 @@ describe('hooks-access', () => {
       expect(found.public).toBe('new-value');
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Validate with req.frogbot
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('validate with req.frogbot', () => {
     it('create succeeds when mustMatch === title', async () => {
@@ -647,9 +613,6 @@ describe('hooks-access', () => {
     });
 
     it('req.frogbot is defined in validate context', async () => {
-      // If req.frogbot were not available, the validate fn returns
-      // 'req.frogbot is not available' which would cause a validation error
-      // even when mustMatch === title
       const doc = await booted.frogbot.create({
         collection: validateSlug,
         data: { title: 'check', mustMatch: 'check' },
@@ -659,10 +622,6 @@ describe('hooks-access', () => {
       expect(doc.id).toBeDefined();
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // overrideAccess forwarding
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('overrideAccess forwarding', () => {
     it('with overrideAccess=true, can read from restricted collection', async () => {
@@ -712,10 +671,6 @@ describe('hooks-access', () => {
       ).rejects.toThrow();
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Auth hooks
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('auth hooks', () => {
     async function createVerifiedUser(email = testUserEmail, password = testUserPassword) {
@@ -894,10 +849,6 @@ describe('hooks-access', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Auth operations (forgotPassword, resetPassword, verifyEmail, unlock)
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('auth operations', () => {
     async function createVerifiedUser(email = testUserEmail, password = testUserPassword) {
       await booted.frogbot.create({
@@ -945,7 +896,6 @@ describe('hooks-access', () => {
 
         expect(result.user).toBeDefined();
 
-        // Can login with new password
         const loginResult = await booted.frogbot.login({
           collection: usersSlug,
           data: { email: testUserEmail, password: 'new-password-456' },
@@ -971,7 +921,6 @@ describe('hooks-access', () => {
       it('verifyEmail confirms the user with a valid token', async () => {
         await createUnverifiedUser();
 
-        // Get the verification token with showHiddenFields
         const users = await booted.frogbot.find({
           collection: usersSlug,
           where: { email: { equals: testUserEmail } },
@@ -1007,7 +956,6 @@ describe('hooks-access', () => {
       it('unlock restores access after account lockout', async () => {
         await createVerifiedUser();
 
-        // Trigger lockout by exceeding maxLoginAttempts (2)
         for (let i = 0; i < 3; i++) {
           await expect(
             booted.frogbot.login({
@@ -1017,7 +965,6 @@ describe('hooks-access', () => {
           ).rejects.toThrow();
         }
 
-        // Account should be locked — login with correct password fails
         await expect(
           booted.frogbot.login({
             collection: usersSlug,
@@ -1025,7 +972,6 @@ describe('hooks-access', () => {
           }),
         ).rejects.toThrow();
 
-        // Unlock the account
         const result = await booted.frogbot.unlock({
           collection: usersSlug,
           data: { email: testUserEmail },
@@ -1034,7 +980,6 @@ describe('hooks-access', () => {
 
         expect(result).toBe(true);
 
-        // Can login again
         const loginResult = await booted.frogbot.login({
           collection: usersSlug,
           data: { email: testUserEmail, password: testUserPassword },
@@ -1044,10 +989,6 @@ describe('hooks-access', () => {
       });
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // afterOperation result mutation
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('afterOperation result mutation', () => {
     it('create returns title with " [processed]" appended', async () => {
@@ -1067,10 +1008,6 @@ describe('hooks-access', () => {
         overrideAccess: true,
       });
 
-      // Read directly - afterRead doesn't mutate, only afterChange does
-      // But afterRead also fires on findByID... the afterChange hook only
-      // fires on create/update. So the DB value should be 'hello'.
-      // Use payload directly to bypass afterChange return value.
       const raw = await booted.payload.findByID({
         collection: afterOpSlug,
         id: doc.id,
@@ -1098,14 +1035,8 @@ describe('hooks-access', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Context flow between hooks
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('context flow between hooks', () => {
     it('beforeChange sets context.seedValue', async () => {
-      // Indirectly tested by the next assertion — if beforeChange didn't set it,
-      // afterChange wouldn't write 'seeded' to contextResult.
       const doc = await booted.frogbot.create({
         collection: contextFlowSlug,
         data: { title: 'test' },
@@ -1173,9 +1104,7 @@ describe('hooks-access', () => {
         overrideAccess: true,
       });
 
-      // First request uses custom context passed from API
       expect(fetched1.contextResult).toBe('custom-from-api');
-      // Second request uses the default 'seeded' from beforeChange
       expect(fetched2.contextResult).toBe('seeded');
     });
   });

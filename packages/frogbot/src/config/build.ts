@@ -1,10 +1,3 @@
-// FrogBot's public entry point for config.
-//
-// `buildConfig` validates the FrogBot-shaped config, runs the plugin
-// pipeline serially, sanitizes the result, and returns a
-// `FrogBotSanitizedConfig`. This is what the config file's default
-// export resolves to.
-
 import { sanitize } from './sanitize.js';
 import type { FrogBotSanitizedConfig } from './sanitized.js';
 import type { FrogBotConfig } from './types.js';

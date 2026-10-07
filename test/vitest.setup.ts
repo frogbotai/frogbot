@@ -25,9 +25,6 @@ if (adapter === 'postgres' && !process.env.POSTGRES_URL && !process.env.DATABASE
 
 generateDatabaseAdapter(adapter);
 
-/**
- * TCP-ping the adapter's host:port. Skips file-based adapters.
- */
 async function assertDbReachable(adapterName: DatabaseAdapterType): Promise<void> {
   const entry = dbAdapters[adapterName];
   if (!('port' in entry) || !entry.port || !entry.host) {

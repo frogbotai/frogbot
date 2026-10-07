@@ -1,23 +1,4 @@
 #!/usr/bin/env node
-// CLI entry — `bunx @frogbotai/gateway` (or `npx`).
-//
-// Reads environment variables to assemble a gateway config, then starts a
-// Hono server on the configured port.
-//
-// Per-provider env var conventions live on each provider definition's
-// `fromEnv()` (see `providers/<name>/index.ts`). The CLI is provider-agnostic:
-// it iterates the registry and asks each provider to build itself from env.
-// Adding a new provider requires zero changes here.
-//
-// Flags:
-//   --config <path>   load an explicit config at the env-explicit layer
-//   --port <port>     bind port
-//   --quiet           suppress startup banner
-//   --help            print usage
-//
-// Infra env vars (owned by the CLI itself):
-//   PORT  → bind port (default 3939)
-//   HOST  → bind host (default 0.0.0.0)
 
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -35,9 +16,6 @@ import { startupBanner } from './banner.js';
 const DEFAULT_PORT = 3939;
 const DEFAULT_HOST = '0.0.0.0';
 
-// Max time to wait for in-flight requests to drain before forcing exit. Kept
-// under the Kubernetes default `terminationGracePeriodSeconds` (30s) so the
-// exporter flush and a hard-kill buffer fit inside the grace window.
 const DRAIN_TIMEOUT_MS = 25_000;
 
 export type GracefulShutdownDeps = {
@@ -108,8 +86,6 @@ export function buildProvidersFromEnv(env: NodeJS.ProcessEnv = process.env): Pro
         (out as Record<string, unknown>)[name] = cfg;
       }
     } catch (error) {
-      // Discovery must never abort boot (G41): a mis-set provider env should
-      // skip that provider, not take down the ones that are configured.
       console.warn(
         JSON.stringify({
           type: 'provider-discovery-skipped',

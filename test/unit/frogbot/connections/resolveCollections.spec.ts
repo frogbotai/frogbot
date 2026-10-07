@@ -26,7 +26,6 @@ const createPiece = definePiece({
   actions: [],
 });
 
-// Entries as a JavaScript config may write them; the resolver validates them at runtime.
 type UncheckedConnectionEntry = { piece: PieceInstance; oauth?: unknown; secret?: unknown };
 
 function config({

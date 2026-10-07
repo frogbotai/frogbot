@@ -1,13 +1,6 @@
 import type { CatalogModelId } from '../ai/generated.js';
 import type { UntypedJobs } from '../jobs/types.js';
 
-// FrogBot's generated-types contract.
-//
-// `GeneratedTypes` is the augmentation point for the generated Config,
-// including collections and FrogBot-specific domains such as agents.
-//
-// Pre-codegen, `UntypedFrogBotTypes` provides permissive fallbacks.
-
 /** Minimum shape every stored document satisfies. */
 export type TypeWithID = {
   id: string | number;
@@ -33,7 +26,7 @@ export interface UntypedFrogBotTypes {
 /**
  * Augmentation point populated by the generated `frogbot-types.ts` file.
  */
-export interface GeneratedTypes {} // eslint-disable-line @typescript-eslint/no-empty-object-type
+export interface GeneratedTypes {} // eslint-disable-line @typescript-eslint/no-empty-object-type -- the generated types augment it
 
 type IsAugmented = keyof GeneratedTypes extends never ? false : true;
 

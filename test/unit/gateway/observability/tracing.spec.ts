@@ -322,7 +322,6 @@ describe('tracing', () => {
     });
 
     expect(clone).not.toHaveBeenCalled();
-    // A per-request `trace: full` can't upgrade from an all-off baseline.
     expect(args.context['frogbot.gateway.traceOverride']).toBe('off');
   });
 

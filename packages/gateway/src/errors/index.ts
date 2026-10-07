@@ -1,10 +1,3 @@
-// Public error surface for the `@frogbotai/gateway` package (`./errors` subpath).
-//
-// Error classes, envelope builders, and retry/header helpers that downstream
-// consumers (custom handlers, embedding hosts) may need. Stream-frame parsing,
-// message masking, and header filtering are implementation details and are
-// intentionally NOT re-exported here.
-
 export { ClientAbortError, isClientAbort, isUpstreamAbortError } from './clientAbort.js';
 export type {
   AnthropicErrorEnvelope,

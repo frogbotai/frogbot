@@ -1,12 +1,3 @@
-// POST /v1/videos/generations — gateway-defined synchronous video generation.
-// OpenAI's async `/v1/videos` job API (POST /videos, GET /videos/{id},
-// GET /videos/{id}/content) is not implemented; this endpoint awaits the AI
-// SDK's internal polling and returns base64 video bytes in a single response.
-//
-// The hook lifecycle runs inline (Payload CMS-style): each phase fires at the
-// exact point in the handler where it belongs, so the control flow reads
-// top-to-bottom with nothing hidden behind a runner abstraction.
-
 import type { Attributes } from '@opentelemetry/api';
 import { experimental_generateVideo as generateVideo } from 'ai';
 import { Hono } from 'hono';
@@ -62,17 +53,12 @@ export function videosRoute(ctx: VideosRouteContext) {
     const otel: Attributes = {};
     const startedAt = Date.now();
 
-    // Lifecycle state hoisted for `catch`/`finally`. `base` only exists once
-    // the provider is resolved; failures before that point rethrow to
-    // `app.onError`, which shapes the OpenAI error envelope.
     let base: OperationBase<typeof operation> | undefined;
     let phase: HookPhase = 'beforeOperation';
     let operationError: unknown;
     let hooks: Hooks = ctx.hooks ?? {};
 
     try {
-      // `beforeOperation` runs first — a pre-flight gate (auth, rate limit)
-      // that fires before the body is parsed or a provider is resolved.
       await runHooks(hooks.beforeOperation, {
         phase,
         operation,
@@ -122,9 +108,6 @@ export function videosRoute(ctx: VideosRouteContext) {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
 
-      // `beforeUpstream` hooks may mutate `headers`/`providerOptions` in
-      // place; the upstream call is built afterward so it consumes the
-      // mutated values.
       await runHooks(hooks.beforeUpstream, {
         ...base,
         phase,
@@ -167,9 +150,6 @@ export function videosRoute(ctx: VideosRouteContext) {
       );
     } catch (err) {
       operationError = err;
-      // afterError is operation-scoped: it only fires once the provider is
-      // resolved. Pre-resolution failures (beforeOperation, parse, resolve)
-      // rethrow straight to `app.onError`, which shapes the error envelope.
       if (base) {
         await runHooks(
           hooks.afterError,
@@ -195,8 +175,6 @@ export function videosRoute(ctx: VideosRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces OpenAI-shaped errors. The handler
-  // rethrows (Payload's routeError model), keeping the operation body lean.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });

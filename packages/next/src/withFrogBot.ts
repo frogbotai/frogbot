@@ -38,7 +38,6 @@ function getProjectRelativePath(path: string): string {
   return projectRelativePath.startsWith('.') ? projectRelativePath : `./${projectRelativePath}`;
 }
 
-// Only the project's own node_modules folders, as a standalone server sees them; NODE_PATH is ignored.
 function findLibsqlPackage(): LibsqlPackage | undefined {
   const manifestPath = getNodeModulesPaths(process.cwd())
     .map((path) => join(path, 'libsql', 'package.json'))

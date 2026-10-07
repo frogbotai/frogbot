@@ -18,7 +18,6 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-// The component continues on a microtask after a deferred resolves; the async act lets it run.
 function settle(resolve: () => void): Promise<void> {
   return act(() => {
     resolve();

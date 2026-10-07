@@ -1,11 +1,3 @@
-// Embedded gateway construction — maps FrogBot's AI provider config onto
-// `@frogbotai/gateway` and creates the in-process gateway instance at boot.
-//
-// FrogBot's provider keys mostly match the gateway's provider table; the
-// Replicate's `apiKey` → `apiToken` is normalized here. Custom
-// `openai-compatible` entries become gateway providers under their configured
-// key.
-
 import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 import { createGateway } from '@frogbotai/gateway';
 

@@ -33,7 +33,6 @@ describe.runIf(adapterName === 'mongodb')('limited claims on MongoDB', () => {
       ),
     );
 
-    // Hold both workers after their claim snapshot so they race for the same two jobs.
     vi.spyOn(adapter, 'find').mockImplementation(async (args) => {
       const result = await find(args);
 

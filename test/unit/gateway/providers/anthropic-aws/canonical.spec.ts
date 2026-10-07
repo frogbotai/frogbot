@@ -1,5 +1,3 @@
-// Anthropic-AWS canonical ID mapping tests.
-
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -20,8 +18,6 @@ describe('resolveAnthropicAwsModelId', () => {
   });
 
   it('never emits Bedrock ARN-style IDs (wrong wire format for anthropic-aws)', () => {
-    // G40: the provider speaks the native Anthropic Messages API, so Bedrock
-    // IDs like `anthropic.claude-...-v2:0` would 404 upstream.
     for (const value of Object.values(ANTHROPIC_AWS_CANONICAL_IDS)) {
       expect(value).not.toMatch(/^anthropic\./);
       expect(value).not.toMatch(/:\d+$/);

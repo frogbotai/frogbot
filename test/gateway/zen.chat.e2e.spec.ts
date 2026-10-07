@@ -1,24 +1,3 @@
-// Gateway E2E — /v1/chat/completions against OpenCode Zen.
-//
-// Realistic OpenAI-wire client behaviors against a REAL upstream: multi-turn
-// conversations, the full agentic tool loop, streaming (incl. usage, tool-call
-// delta accumulation, client abort), sampling/stop params, error envelopes,
-// and concurrent streams.
-//
-// Model: deepseek-v4.1-flash (paid; Zen's free models only work inside
-// OpenCode). It emits reasoning, so budget max_tokens >= 1024 except where a
-// test deliberately truncates.
-//
-// Known-bug interplay (dev/plans/frogbot_gateway/056_full_gateway_review):
-//   - G53 — stream_options.include_usage semantics: FIXED — real-model confirmation of the dedicated empty-choices usage chunk.
-//   - G5  — double [DONE]: presence (>=1) asserted, exactly-once NOT (smoke file owns the note).
-//   - G1  — response_format no-op: SKIPPED here; a real model can comply with
-//     "reply in JSON" by chance and we cannot introspect what was sent
-//     upstream, so a live test can neither prove nor disprove the drop.
-//     review056.int.spec.ts owns the G1 proof at the AI SDK seam.
-//
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.chat.e2e.spec.ts
-
 import { expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -85,7 +64,6 @@ type Choice = NonNullable<ChatCompletionBody['choices']>[number];
 
 type ToolCallChoice = Choice & { message: { tool_calls: ToolCall[] } };
 
-/** Fails with `failure` unless the choice finished by calling at least one tool. */
 function expectToolCallChoice(
   choice: Choice | undefined,
   failure: string,
@@ -96,23 +74,17 @@ function expectToolCallChoice(
   expect(choice?.message?.tool_calls?.length, failure).toBeGreaterThan(0);
 }
 
-/** Reads to the end; true once the stream finishes or rejects (an abort is a clean end). */
 async function drainTerminates(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<boolean> {
   try {
-    // Bounded loop: a broken abort chain that keeps streaming to completion
-    // still terminates via done; a hang is caught by the test timeout.
     for (;;) {
       const { done } = await reader.read();
       if (done) return true;
     }
   } catch {
-    return true; // abort rejection is a clean termination
+    return true;
   }
 }
 
-/**
- * Ends the two-step loop after turn 2.
- */
 async function expectLoopFinish({
   app,
   tools,
@@ -126,15 +98,11 @@ async function expectLoopFinish({
   callA: ToolCall;
   c2: Choice;
 }) {
-  // If the model called a SECOND tool, complete the loop (turn 3) and
-  // assert the final answer. If it answered directly, that answer is the
-  // terminal turn — either is protocol-valid.
   if (c2.finish_reason === 'tool_calls' && c2.message?.tool_calls?.length) {
     const callB = c2.message.tool_calls[0];
 
     expect(typeof callB.id).toBe('string');
     expect(callB.id!.length).toBeGreaterThan(0);
-    // Distinct id from callA — the round-trip must not reuse ids.
     expect(callB.id).not.toBe(callA.id);
     expect(typeof JSON.parse(callB.function!.arguments!)).toBe('object');
 
@@ -171,8 +139,6 @@ async function expectLoopFinish({
   }
 }
 
-/** Reasoning models can hit a stop sequence inside reasoning_content, leaving
- * the visible content empty. Wire-legal — warn, don't fail. */
 function warnOnEmptyContent(content: string) {
   if (content.length === 0) {
     console.warn(
@@ -247,11 +213,6 @@ describeLive(
   () => {
     const app = makeZenApp();
 
-    // -------------------------------------------------------------------------
-    // 1. Multi-turn conversation with a system prompt and prior assistant turn —
-    //    the most common call shape in existence.
-    // -------------------------------------------------------------------------
-    // G155 regression guard — system prompts must work on this route.
     it(
       'multi-turn conversation with system prompt and assistant history',
       async () => {
@@ -276,18 +237,12 @@ describeLive(
 
         expect(typeof content).toBe('string');
         expect(content!.length).toBeGreaterThan(0);
-        // The model must actually use the conversation history.
         expect(content!.toLowerCase()).toContain('waldo');
         expect(body.choices?.[0]?.finish_reason).toBe('stop');
       },
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 2. FULL AGENTIC TOOL LOOP — turn 1 returns tool_calls, turn 2 sends the
-    //    role:'tool' result back, final answer references it. THE core agent
-    //    pattern.
-    // -------------------------------------------------------------------------
     it(
       'full agentic tool loop: tool_calls → role:tool result → final answer references it',
       async () => {
@@ -323,7 +278,6 @@ describeLive(
 
         expect(typeof args).toBe('object');
 
-        // Turn 2 — echo the assistant turn + tool result, ask for the final answer.
         const turn2 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: [
@@ -358,15 +312,11 @@ describeLive(
         const finalText = final?.message?.content ?? '';
 
         expect(finalText.length).toBeGreaterThan(0);
-        // The final answer must reference the tool result we injected.
         expect(finalText).toMatch(/18|sunny/i);
       },
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 3. Streaming + stream_options.include_usage.
-    // -------------------------------------------------------------------------
     it(
       'streaming carries real usage numbers on the wire',
       async () => {
@@ -389,16 +339,11 @@ describeLive(
         expect(usageChunk!.usage!.prompt_tokens).toBeGreaterThan(0);
         expect(usageChunk!.usage!.completion_tokens).toBeGreaterThan(0);
 
-        // [DONE] present (G5 double-[DONE] tracked in the smoke file — presence only).
         expect(frames.some((f) => f.data === '[DONE]')).toBe(true);
       },
       TEST_TIMEOUT,
     );
 
-    // G53 — real-model confirmation. OpenAI semantics for
-    // stream_options.include_usage: the usage arrives on a FINAL EXTRA chunk with
-    // `choices: []`. Fixed: the gateway now emits a dedicated empty-choices usage
-    // chunk before [DONE] when include_usage is requested.
     it(
       'stream_options.include_usage emits a usage-only chunk with empty choices (G53 — real-model confirmation)',
       async () => {
@@ -415,15 +360,11 @@ describeLive(
         const usageChunk = chunks.find((c) => c.usage && typeof c.usage.prompt_tokens === 'number');
 
         expect(usageChunk).toBeDefined();
-        // Spec: the usage chunk is an extra terminal chunk with no choices.
         expect(usageChunk!.choices ?? []).toEqual([]);
       },
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 4. Streaming tool call — accumulate tool_calls deltas into valid JSON.
-    // -------------------------------------------------------------------------
     it(
       'streaming tool call: deltas accumulate to a valid tool call (flaky-model tolerant)',
       async () => {
@@ -446,7 +387,6 @@ describeLive(
 
         expect(chunks.length).toBeGreaterThan(0);
 
-        // Accumulate tool_calls deltas keyed by index, OpenAI-client style.
         const acc = new Map<number, { id: string; name: string; args: string }>();
 
         for (const chunk of chunks) {
@@ -480,10 +420,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 5a. Stop sequences: the upstream must cut generation at the stop sequence
-    //     (the text after it never appears; the sequence itself is excluded).
-    // -------------------------------------------------------------------------
     it(
       'stop sequence cuts generation before the post-stop text',
       async () => {
@@ -508,16 +444,12 @@ describeLive(
         const content = choice?.message?.content ?? '';
         warnOnEmptyContent(content);
 
-        // The text after the stop sequence must never reach the client.
         expect(content).not.toContain('omega');
         expect(content).not.toContain('BANANA');
       },
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 5b. temperature: 0 accepted + max_tokens honored → finish_reason 'length'.
-    // -------------------------------------------------------------------------
     it(
       'temperature 0 + tiny max_tokens → finish_reason length, completion_tokens capped',
       async () => {
@@ -536,23 +468,9 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 6. response_format json_object — G1 (response_format silently dropped).
-    //    SKIPPED as a live test: a real model can produce valid JSON by chance
-    //    (prompt-following), and we cannot introspect what the gateway sent
-    //    upstream, so a green JSON.parse here would NOT prove response_format
-    //    was forwarded — and a red one would flake. The mock-seam proof lives in
-    //    review056.int.spec.ts (G1). Re-enable only if a deterministic live
-    //    oracle for "JSON mode active" exists.
-    // -------------------------------------------------------------------------
-    // eslint-disable-next-line vitest/no-disabled-tests -- unprovable against a live model, see the comment above
-    it.skip('response_format json_object yields parseable JSON (G1 — unprovable against a live model)', () => {
-      // intentionally empty — see comment above
-    });
+    // eslint-disable-next-line vitest/no-disabled-tests -- unprovable against a live model
+    it.skip('response_format json_object yields parseable JSON (G1 — unprovable against a live model)', () => {});
 
-    // -------------------------------------------------------------------------
-    // 7. Client abort mid-stream — real-upstream abort-chain exercise.
-    // -------------------------------------------------------------------------
     it(
       'client abort mid-stream terminates cleanly without crashing the app',
       async () => {
@@ -573,15 +491,12 @@ describeLive(
 
         const reader = res.body!.getReader();
 
-        // Read a couple of chunks, then abort mid-stream.
         await reader.read();
         await reader.read();
         controller.abort();
 
-        // The stream must terminate (done or abort rejection) — not hang, not crash.
         expect(await drainTerminates(reader)).toBe(true);
 
-        // The app must still serve requests after the abort (no crashed state).
         const after = await postJson<ErrorBody>(app, '/v1/chat/completions', {
           model: 'zen/does-not-exist-xyz',
           messages: [{ role: 'user', content: 'ping' }],
@@ -594,10 +509,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 8. Error envelopes: unprefixed model id, empty messages array.
-    //    (Bad-but-prefixed model id is covered by the smoke suite.)
-    // -------------------------------------------------------------------------
     it(
       'model id without provider prefix → 400 invalid_model_id',
       async () => {
@@ -630,9 +541,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 9. Concurrency: three simultaneous streams complete independently.
-    // -------------------------------------------------------------------------
     it(
       'three concurrent streams all complete independently',
       async () => {
@@ -669,13 +577,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 21. TWO-STEP SEQUENTIAL tool loop — model calls tool A (get_weather), we
-    //     return A's result, model then calls tool B (get_population) that
-    //     depends on the flow, we return B, final answer references both. The
-    //     real multi-hop agent shape. Each turn's envelope + tool_call_id
-    //     round-trip is asserted; the model's *choice* to call is flaky-tolerant.
-    // -------------------------------------------------------------------------
     it(
       'two-step sequential tool loop: tool A → result → tool B → result → final answer',
       async () => {
@@ -689,7 +590,6 @@ describeLive(
           },
         ];
 
-        // Turn 1 — expect a get_weather call.
         const turn1 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: baseMessages,
@@ -711,10 +611,8 @@ describeLive(
         expect(typeof callA.id).toBe('string');
         expect(callA.id!.length).toBeGreaterThan(0);
         expect(typeof callA.function?.name).toBe('string');
-        // arguments must be valid JSON regardless of which tool the model picked
         expect(typeof JSON.parse(callA.function!.arguments!)).toBe('object');
 
-        // Turn 2 — return A's result, expect the model to continue (call B or answer).
         const turn2Messages: Array<Record<string, unknown>> = [
           ...baseMessages,
           {
@@ -755,13 +653,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 22. PARALLEL tool calls in ONE turn — two tools needed, both requested in
-    //     a single assistant turn. Exercises tool_call_id matching + index
-    //     tracking on the return path. Return BOTH tool results and assert the
-    //     final answer. Flaky-tolerant: a model that emits only one still gets a
-    //     well-formedness check.
-    // -------------------------------------------------------------------------
     it(
       'parallel tool calls in one turn: two tools, both results returned, final answer',
       async () => {
@@ -792,7 +683,6 @@ describeLive(
         expectToolCallChoice(c1, '[zen.chat.e2e] parallel: model called no tools');
 
         const calls = c1.message.tool_calls;
-        // Every emitted call is individually well-formed with a unique id.
         const ids = new Set<string>();
 
         for (const call of calls) {
@@ -811,8 +701,6 @@ describeLive(
           `[zen.chat.e2e] parallel: model emitted only ${calls.length} tool call(s)`,
         ).toBeGreaterThanOrEqual(2);
 
-        // Return a result for EACH call, matching tool_call_id. Order of tool
-        // results must not matter to the upstream.
         const toolResults = calls.map((call, i) => ({
           role: 'tool' as const,
           tool_call_id: call.id,
@@ -848,11 +736,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 23. Streaming WITH tools — accumulate tool-call deltas across chunks into a
-    //     valid call, then feed it back on a (non-streamed) follow-up turn and
-    //     assert a coherent final answer. The real streaming-agent shape.
-    // -------------------------------------------------------------------------
     it(
       'streaming tool call then follow-up: accumulate deltas, round-trip, coherent answer',
       async () => {
@@ -904,7 +787,6 @@ describeLive(
 
         expect(typeof args).toBe('object');
 
-        // Follow-up turn (non-streamed): return the accumulated call's result.
         const turn2 = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: [
@@ -944,11 +826,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 24. Long interleaved conversation — system + >=6 turns mixing user /
-    //     assistant / tool messages. Hard version of the G155 shape: the model
-    //     must honor the system prompt AND recall a fact from the earliest turn.
-    // -------------------------------------------------------------------------
     it(
       'long interleaved conversation (system + tool + >=6 turns) recalls early context',
       async () => {
@@ -996,17 +873,11 @@ describeLive(
 
         expect(content.length).toBeGreaterThan(0);
         expect(body.choices?.[0]?.finish_reason).toBe('stop');
-        // Must recall the fact from the very first user turn through a long,
-        // tool-interleaved history.
         expect(content.toLowerCase()).toContain('lisbon');
       },
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 25a. tool_choice FORCED (named) — the model MUST return exactly that tool
-    //      call. This is deterministic (forced), so asserted strictly.
-    // -------------------------------------------------------------------------
     it(
       'tool_choice forced (named) → model returns exactly that tool call',
       async () => {
@@ -1039,10 +910,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 25b. tool_choice: 'required' — the model MUST call some tool. Deterministic
-    //      given a tool-relevant prompt, so asserted strictly.
-    // -------------------------------------------------------------------------
     it(
       "tool_choice 'required' → model must emit a tool call",
       async () => {
@@ -1073,11 +940,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 26. Usage accounting across a full multi-turn — prompt_tokens must grow as
-    //     the history grows; totals must equal prompt + completion each turn.
-    //     Catches billing-accounting drift.
-    // -------------------------------------------------------------------------
     it(
       'usage accounting is monotonic and self-consistent across a 3-turn conversation',
       async () => {
@@ -1092,7 +954,6 @@ describeLive(
           'Add 3 to it. Reply with just the number.',
         ];
 
-        // Turn 1
         let turn = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
           model: MODEL,
           messages: history,
@@ -1118,7 +979,6 @@ describeLive(
           content: turn.body.choices?.[0]?.message?.content ?? '7',
         });
 
-        // Turns 2 and 3 — each appends the prior answer, growing the prompt.
         for (const content of prompts) {
           history.push({ role: 'user', content });
 
@@ -1148,19 +1008,12 @@ describeLive(
           });
         }
 
-        // prompt_tokens must grow strictly as history accumulates.
         expect(usages[1].prompt).toBeGreaterThan(usages[0].prompt);
         expect(usages[2].prompt).toBeGreaterThan(usages[1].prompt);
       },
       TEST_TIMEOUT,
     );
 
-    // -------------------------------------------------------------------------
-    // 28. Abort mid tool-call stream — start a streaming tool-call request, abort
-    //     after the first chunk, assert the app doesn't crash and the stream
-    //     terminates cleanly. Extends the plain-text abort test into the tool
-    //     path (where a partial tool-call delta stream is torn down).
-    // -------------------------------------------------------------------------
     it(
       'client abort mid tool-call stream terminates cleanly without crashing',
       async () => {
@@ -1192,7 +1045,6 @@ describeLive(
 
         expect(await drainTerminates(reader)).toBe(true);
 
-        // App still serves requests after aborting a tool-call stream.
         const after = await postJson<ErrorBody>(app, '/v1/chat/completions', {
           model: 'zen/does-not-exist-xyz',
           messages: [{ role: 'user', content: 'ping' }],
@@ -1205,11 +1057,6 @@ describeLive(
       TEST_TIMEOUT,
     );
 
-    // G31 (SP1) — live confirmation against the REAL Zen upstream. An operator
-    // configures maxBodyBytes as a DoS guard; a real client POSTs an oversized
-    // body. The gateway must reject with 413 BEFORE it buffers + forwards the
-    // body upstream. (Mock proof lives in bodyLimit.int.spec.ts; this proves a
-    // real client actually hits it.)
     it(
       'rejects an oversized real chat request with 413 when maxBodyBytes is configured',
       async () => {

@@ -1,11 +1,3 @@
-// POST /v1/responses — OpenAI Responses API-compatible route.
-//
-// Supports both non-streaming (default) and streaming (`stream: true`).
-//
-// The hook lifecycle runs inline (Payload CMS-style): each phase fires at the
-// exact point in the handler where it belongs, so the control flow reads
-// top-to-bottom with nothing hidden behind a runner abstraction.
-
 import {
   type Attributes,
   type Context as OtelContext,
@@ -82,23 +74,15 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
     const otel: Attributes = {};
     const startedAt = Date.now();
 
-    // Lifecycle state hoisted for `catch`/`finally`. `base` only exists once
-    // the provider is resolved; failures before that point rethrow to
-    // `app.onError`, which shapes the OpenAI error envelope.
     let base: OperationBase<typeof operation> | undefined;
     let phase: HookPhase = 'beforeOperation';
     let finishReason: string | undefined;
     let usage: HookUsage | undefined;
     let operationError: unknown;
     let hooks: Hooks = ctx.hooks ?? {};
-    // Set only for streaming requests — drives `afterOperation`/`afterError`
-    // off the stream's real terminal signal instead of HTTP-return time.
-    // See `shared/streamLifecycle.ts`.
     let lifecycle: StreamLifecycle | undefined;
 
     try {
-      // `beforeOperation` runs first — a pre-flight gate (auth, rate limit)
-      // that fires before the body is parsed or a provider is resolved.
       await runHooks(hooks.beforeOperation, {
         phase,
         operation,
@@ -133,7 +117,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
 
       phase = 'beforeUpstream';
 
-      // Translate OpenAI Responses wire format → AI SDK format.
       const messages = toModelMessages(body.input);
       const tools = toResponsesTools(body.tools, resolved.providerName);
       const toolChoice = toResponsesToolChoice(body.tool_choice);
@@ -149,9 +132,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
 
-      // `beforeUpstream` hooks may mutate `messages`/`params`/`headers`/
-      // `providerOptions` in place; `aiOptions` is built afterward so it
-      // consumes the mutated values.
       await runHooks(hooks.beforeUpstream, {
         ...base,
         phase,
@@ -169,10 +149,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       const aiOptions = {
         model: isStrictResponsesOutput(body.text) ? withStrictOutput(model) : model,
         messages,
-        // `instructions` maps to the Responses `instructions` field; passed as
-        // a top-level AI SDK option (system messages in `messages` are rejected
-        // by the Responses model). `allowSystemInMessages` tolerates any
-        // system/developer turns carried in the input array.
         ...(instructions ? { instructions } : {}),
         allowSystemInMessages: true,
         tools,
@@ -182,21 +158,15 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         ...params,
         abortSignal: upstream.signal,
         headers: Object.fromEntries(headers),
-        // SSRF guard (G33): user-supplied media URLs the provider can't fetch
-        // natively would otherwise be downloaded in-process by the SDK default.
         experimental_download: guardedDownload,
         telemetry: ctx.telemetry?.forRequest(context),
       };
 
-      // Run the upstream call with the gateway span's context active so AI SDK
-      // inner spans parent under it (stashed by the tracing hook's
-      // `beforeUpstream`; falls back to the ambient context when tracing is off).
       const activeContext =
         (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
 
       phase = 'upstream';
 
-      // --- Streaming path ---
       if (body.stream) {
         const streamLifecycle = createStreamLifecycle({
           base,
@@ -213,9 +183,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
             includeRawChunks: true,
             onFinish: streamLifecycle.onFinish,
             onError: streamLifecycle.onError,
-            // A fired server deadline is an upstream fault, not a client abort:
-            // skip the 499 abort finalization and let the thrown timeout error
-            // drive `afterError`/`afterOperation` instead.
             onAbort: async () => {
               if (upstream.timedOut()) return;
               await streamLifecycle.onAbort();
@@ -269,10 +236,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         return createSseResponse(
           toSseStream(peeked?.stream ?? new ReadableStream<string>(), {
             appendDone: false,
-            // Post-peek catastrophic errors must be framed as a spec-compliant
-            // Responses `error` event (nested `data.error`, matching the
-            // in-stream `error` part shape), never a bare `data:` frame with no
-            // `event:` line.
             toError: (err) => [
               {
                 kind: 'event',
@@ -289,7 +252,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         );
       }
 
-      // --- Non-streaming path ---
       const result = await otelContext.with(activeContext, () => generateText(aiOptions));
       finishReason = result.finishReason;
 
@@ -339,9 +301,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       );
     } catch (err) {
       operationError = err;
-      // afterError is operation-scoped: it only fires once the provider is
-      // resolved. Pre-resolution failures (beforeOperation, parse, resolve)
-      // rethrow straight to `app.onError`, which shapes the error envelope.
       if (base) {
         await runHooks(
           hooks.afterError,
@@ -352,17 +311,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
 
       throw err;
     } finally {
-      // `afterOperation` is the guaranteed-fire billing/audit slot. For
-      // streaming, the lifecycle owns it and fires once the stream actually
-      // concludes — so on the success path the lifecycle is unfinalized here
-      // (the stream hasn't drained yet) and `finally` must NOT fire. The one
-      // gap is a throw between lifecycle creation and HTTP return (e.g. a
-      // pre-first-byte reader rejection in `peekStream`): the lifecycle never
-      // finalizes because `toSseStream` was never constructed, `catch` fired
-      // `afterError` and rethrew, and nothing fires `afterOperation`. Detect
-      // that via `operationError` being set with an unfinalized lifecycle, and
-      // fire `afterOperation` directly (not `finalizeNow`, which would re-fire
-      // the `afterError` the `catch` already fired).
       const streamThrewBeforeFinalize =
         lifecycle !== undefined && operationError !== undefined && !lifecycle.hasFinalized();
 
@@ -383,8 +331,6 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces OpenAI-shaped errors. The handler
-  // rethrows (Payload's routeError model), keeping the operation body lean.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
@@ -473,13 +419,6 @@ function buildOpenAIResponseOptions(body: ResponsesRequest): Record<string, JSON
   return options;
 }
 
-// Splits Responses wire params into cross-provider language params (spread as
-// top-level `generateText`/`streamText` options) and OpenAI-only
-// `providerOptions.openai` params (only when the provider is OpenAI and only
-// when non-empty). Other providers receive `reasoning.effort` as the
-// cross-provider `providerOptions.unknown.reasoning_effort` for their
-// `beforeUpstream` hooks to translate. Mirrors the chat route's
-// `buildLanguageParams` factoring and hebo's `convertToTextCallOptions`.
 export function forwardResponseParams(
   body: ResponsesRequest,
   providerName: string,

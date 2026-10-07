@@ -1,6 +1,3 @@
-// rerank operation — rerank documents by relevance to a query.
-// Uses ProxyRerankingModel pointed at the proxy URL.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { rerank as aiRerank } from 'ai';
 
@@ -25,11 +22,9 @@ export async function rerankOperation(
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model.
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

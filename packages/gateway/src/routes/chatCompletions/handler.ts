@@ -1,17 +1,3 @@
-// POST /v1/chat/completions — OpenAI-compatible chat completions route.
-//
-// Supports both non-streaming (`stream: false`) and streaming (`stream: true`).
-//
-// Validation happens at the route boundary via `parseChatCompletionRequest`
-// (zod). Any structural issue surfaces as a 400 `invalid_request_body` with
-// `param` pointing at the exact field. The translator below then only
-// throws for semantic rejections it can't express in the schema (invalid
-// data URLs, malformed tool-call JSON, unsupported modalities).
-//
-// The hook lifecycle runs inline (Payload CMS-style): each phase fires at the
-// exact point in the handler where it belongs, so the control flow reads
-// top-to-bottom with nothing hidden behind a runner abstraction.
-
 import {
   type Attributes,
   type Context as OtelContext,
@@ -95,23 +81,15 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
     const otel: Attributes = {};
     const startedAt = Date.now();
 
-    // Lifecycle state hoisted for `catch`/`finally`. `base` only exists once
-    // the provider is resolved; failures before that point rethrow to
-    // `app.onError`, which shapes the OpenAI error envelope.
     let base: OperationBase<typeof operation> | undefined;
     let phase: HookPhase = 'beforeOperation';
     let finishReason: string | undefined;
     let usage: HookUsage | undefined;
     let operationError: unknown;
     let hooks: Hooks = ctx.hooks ?? {};
-    // Set only for streaming requests — drives `afterOperation`/`afterError`
-    // off the stream's real terminal signal instead of HTTP-return time.
-    // See `shared/streamLifecycle.ts`.
     let lifecycle: StreamLifecycle | undefined;
 
     try {
-      // `beforeOperation` runs first — a pre-flight gate (auth, rate limit)
-      // that fires before the body is parsed or a provider is resolved.
       await runHooks(hooks.beforeOperation, {
         phase,
         operation,
@@ -122,9 +100,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         request: c.req.raw,
       });
 
-      // Validate the wire-level shape. Any issue is a clean 400 with `param`
-      // pointing at the exact field; nothing past this point can produce a
-      // `Cannot read properties of undefined` 500.
       const body = parseChatCompletionRequest(await parseJsonBody(c, ctx.maxBodyBytes));
       const resolved = resolveProvider({
         modelId: body.model,
@@ -149,7 +124,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       phase = 'beforeUpstream';
 
-      // Translate OpenAI wire format → AI SDK format.
       rejectUnsupportedChatParams(body);
       const messages = toModelMessages(body.messages, logger);
       const tools = toAISDKTools(body.tools as OpenAITool[] | null | undefined);
@@ -157,7 +131,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       const output = toChatOutput(body.response_format);
       const params = buildLanguageParams(body);
 
-      // Parse top-level prompt caching options → providerOptions.unknown
       const cachingOpts = parsePromptCachingOptions(body as Record<string, unknown>);
       if (
         cachingOpts?.prompt_cache_key &&
@@ -172,9 +145,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         ...(cachingOpts ?? {}),
       };
 
-      // Producer for the vendor reasoning-translation chain: stash the raw
-      // cross-provider `reasoning_effort` under `unknown` so the provider
-      // middleware / forwardLanguageParams can route it to the SDK namespace.
       if (typeof body.reasoning_effort === 'string') {
         unknownOpts.reasoning_effort = body.reasoning_effort;
       }
@@ -188,9 +158,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
 
-      // `beforeUpstream` hooks may mutate `messages`/`params`/`headers`/
-      // `providerOptions` in place; `aiOptions` is built afterward so it
-      // consumes the mutated values.
       await runHooks(hooks.beforeUpstream, {
         ...base,
         phase,
@@ -202,9 +169,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         resolvedModel: model,
       });
 
-      // Forward message-level and request-level `unknown` namespaces into the
-      // SDK provider namespace AFTER hooks run so provider middleware can
-      // consume `unknown.cache_control` before it is drained.
       forwardMessageProviderOptions(messages, resolved.providerName);
       forwardLanguageParams(providerOptions, resolved.providerName);
 
@@ -225,15 +189,11 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         ...params,
       };
 
-      // Run the upstream call with the gateway span's context active so AI SDK
-      // inner spans parent under it (stashed by the tracing hook's
-      // `beforeUpstream`; falls back to the ambient context when tracing is off).
       const activeContext =
         (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
 
       phase = 'upstream';
 
-      // --- Streaming path ---
       if (body.stream) {
         const streamLifecycle = createStreamLifecycle({
           base,
@@ -250,9 +210,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
             includeRawChunks: true,
             onFinish: streamLifecycle.onFinish,
             onError: streamLifecycle.onError,
-            // A fired server deadline is an upstream fault, not a client abort:
-            // skip the 499 abort finalization and let the thrown timeout error
-            // drive `afterError`/`afterOperation` instead.
             onAbort: async () => {
               if (upstream.timedOut()) return;
               await streamLifecycle.onAbort();
@@ -326,10 +283,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         );
       }
 
-      // --- Non-streaming path ---
-      // G59: `include.responseBody` defaults to false (ai/src/generate-text/
-      // generate-text.ts:549) — opt in so the raw provider body is available
-      // for refusal extraction in toOpenAIResponse.
       const result = await otelContext.with(activeContext, () =>
         generateText({
           ...aiOptions,
@@ -365,7 +318,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       const reasoningDetails = extractReasoningDetails(result.finalStep?.reasoning);
 
-      // Translate AI SDK result → OpenAI response
       const response = toOpenAIResponse({
         text: result.text,
         finishReason: result.finishReason,
@@ -391,9 +343,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       return c.json(response);
     } catch (err) {
       operationError = err;
-      // afterError is operation-scoped: it only fires once the provider is
-      // resolved. Pre-resolution failures (beforeOperation, parse, resolve)
-      // rethrow straight to `app.onError`, which shapes the error envelope.
       if (base) {
         await runHooks(
           hooks.afterError,
@@ -404,17 +353,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       throw err;
     } finally {
-      // `afterOperation` is the guaranteed-fire billing/audit slot. For
-      // streaming, the lifecycle owns it and fires once the stream actually
-      // concludes — so on the success path the lifecycle is unfinalized here
-      // (the stream hasn't drained yet) and `finally` must NOT fire. The one
-      // gap is a throw between lifecycle creation and HTTP return (e.g. a
-      // pre-first-byte reader rejection in `peekStream`): the lifecycle never
-      // finalizes because `toSseStream` was never constructed, `catch` fired
-      // `afterError` and rethrew, and nothing fires `afterOperation`. Detect
-      // that via `operationError` being set with an unfinalized lifecycle, and
-      // fire `afterOperation` directly (not `finalizeNow`, which would re-fire
-      // the `afterError` the `catch` already fired).
       const streamThrewBeforeFinalize =
         lifecycle !== undefined && operationError !== undefined && !lifecycle.hasFinalized();
 
@@ -435,8 +373,6 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces OpenAI-shaped errors. The handler
-  // rethrows (Payload's routeError model), keeping the operation body lean.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
@@ -503,8 +439,6 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
     rejectParam('logit_bias', '`logit_bias` is not supported by this gateway.');
   }
 
-  // `logprobs: false`/null is a spec-valid no-op — accept and drop. Reject only
-  // `logprobs: true` until response logprobs plumbing exists (056 review, OC11).
   if (body.logprobs === true) {
     rejectParam(
       'logprobs',
@@ -512,8 +446,6 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
     );
   }
 
-  // Legacy tool-calling API: forwarding these into a provider namespace would
-  // not translate to actual tools, so reject-400 and point clients at `tools`.
   if (body.functions !== undefined && body.functions !== null) {
     rejectParam(
       'functions',
@@ -529,13 +461,6 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
   }
 }
 
-/**
- * Fields the handler maps explicitly (or intentionally rejects). Everything
- * NOT in this set is a documented-but-unmapped OpenAI field, which we forward
- * verbatim into `providerOptions.unknown` rather than silently dropping —
- * mirrors hebo-gateway's `convertToTextCallOptions` `...rest` spread.
- * REASSESSMENT_2 §1.4: forward faithfully or reject with a typed 400.
- */
 const HANDLED_CHAT_PARAMS = new Set<string>([
   'model',
   'messages',
@@ -565,7 +490,6 @@ const HANDLED_CHAT_PARAMS = new Set<string>([
   'function_call',
 ]);
 
-/** Scoop every unmapped, non-null body field into a `providerOptions.unknown` bag. */
 function collectPassthroughChatParams(body: Record<string, unknown>): Record<string, JSONValue> {
   const rest: Record<string, JSONValue> = {};
 

@@ -1,5 +1,3 @@
-// Provider definition: Anthropic.
-
 import {
   type AnthropicProvider,
   type AnthropicProviderSettings,

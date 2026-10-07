@@ -31,7 +31,6 @@ const VITEST_PROJECTS = ['unit', 'gateway-unit', 'ui', 'int', 'gateway-integrati
 
 const PLAYWRIGHT_CONFIG = 'test/browser/playwright.config.ts';
 
-// Playwright reads these by path rather than by import; every browser project depends on them.
 const BROWSER_SCRIPTS = [
   'test/browser/auth.setup.ts',
   'test/browser/buildFixtures.mjs',
@@ -82,11 +81,6 @@ export function changedFiles(root) {
   return [...new Set([...changed, ...untracked])].sort();
 }
 
-// The patch-id of the working tree against the merge base with local `main`, untracked files
-// included, so it equals `git patch-id` of `main...HEAD` once the same change is committed. The
-// diff is staged into a throwaway copy of the index, so the real index is never touched. The copy
-// keeps the index's times: git's racy-git check compares them with each file's mtime, and a fresh
-// mtime would let a same-size rewrite from the same second pass as unchanged.
 export function worktreePatchId(root) {
   const base = git(root, ['merge-base', MAIN, 'HEAD']).trim();
   const scratch = mkdtempSync(path.join(os.tmpdir(), 'frogbot-verify-'));
@@ -285,8 +279,6 @@ async function browserInputs(root, packages) {
   };
 }
 
-// Everything `affectedSet` needs for the working tree at `root`, read from git, pnpm, Vitest and
-// the Playwright config.
 export async function verifyInputs(root, log, files = changedFiles(root)) {
   const packages = packageInputs(root, log);
   const { vitest, related } = await vitestInputs(root, files);
@@ -315,8 +307,6 @@ function runCommand(log, args, cwd) {
   return { ok: code === 0, output: readFileSync(log).subarray(start).toString('utf8') };
 }
 
-// Builds stale packages, then runs each group's commands in order, printing one line per group.
-// Stops at the first failing command; the groups after it are printed as skipped.
 export async function runGroups({ root, log, groups, build = buildStale }) {
   const width = Math.max('uncovered'.length, ...groups.map(({ group }) => group.length));
   const label = (name) => name.padEnd(width);

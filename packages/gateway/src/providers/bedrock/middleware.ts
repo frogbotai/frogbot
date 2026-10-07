@@ -1,8 +1,3 @@
-// Bedrock-specific beforeUpstream middleware.
-//
-// `bedrockCachePoint` — injects `cachePoint` markers at Bedrock-specific positions
-// for models that support prompt caching (Claude on Bedrock).
-
 import type { BeforeUpstreamHook } from '../../hooks.js';
 import { calculateReasoningBudgetFromEffort } from '../../utils/params.js';
 
@@ -118,9 +113,6 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
 
   if (bedrockOpts?.reasoningConfig || amazonBedrockOpts?.reasoningConfig) return;
 
-  // `/v1/messages` maps the Anthropic `thinking` param to
-  // `providerOptions.anthropic.thinking`, which the Bedrock SDK never reads.
-  // Re-home it as `reasoningConfig` so Claude-on-Bedrock actually thinks.
   const anthropicThinking = (
     args.providerOptions['anthropic'] as
       { thinking?: { type?: unknown; budgetTokens?: unknown; display?: unknown } } | undefined

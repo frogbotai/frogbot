@@ -1,18 +1,7 @@
-// Parameter translation utilities for cross-provider middleware.
-//
-// These utilities handle the impedance mismatch between provider-specific
-// parameter formats (OpenAI's `reasoning_effort` vs Anthropic's
-// `thinking.budget_tokens`) and common operations like snake_case → camelCase
-// conversion for providerOptions namespacing.
-
 import { z } from 'zod';
 
 import { RequestValidationError } from '../errors/gatewayError.js';
 import type { ReasoningEffort } from '../shared/types.js';
-
-// ---------------------------------------------------------------------------
-// String case conversion
-// ---------------------------------------------------------------------------
 
 /** Convert a snake_case string to camelCase. */
 export function snakeToCamel(s: string): string {
@@ -24,15 +13,6 @@ export function camelToSnake(s: string): string {
   return s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 }
 
-// ---------------------------------------------------------------------------
-// Reasoning budget calculation
-// ---------------------------------------------------------------------------
-
-/**
- * Default budget percentages by effort level. Maps the OpenAI-style
- * `reasoning_effort` enum to a fraction of `maxOutputTokens` used as
- * Anthropic's `thinking.budget_tokens`.
- */
 const EFFORT_BUDGET_FRACTIONS: Record<string, number> = {
   none: 0,
   minimal: 0.05,
@@ -43,10 +23,8 @@ const EFFORT_BUDGET_FRACTIONS: Record<string, number> = {
   max: 1.0,
 };
 
-/** Minimum budget tokens when effort > 'none'. Anthropic rejects 0. */
 const MIN_BUDGET_TOKENS = 1024;
 
-/** Default max output tokens when none specified. */
 const DEFAULT_MAX_OUTPUT_TOKENS = 16384;
 
 /**
@@ -76,25 +54,6 @@ export function calculateReasoningBudgetFromEffort(
   return Math.max(raw, minBudget);
 }
 
-// ---------------------------------------------------------------------------
-// forwardLanguageParams — namespace remapping for providerOptions
-// ---------------------------------------------------------------------------
-
-/**
- * Maps the gateway's registry provider key to the exact camelCase namespace
- * the shipped AI SDK reads from `providerOptions`. The SDK's
- * `parseProviderOptions` looks up `providerOptions[provider]` where `provider`
- * is the package's own namespace string — never the model ID, never a hyphen.
- * Only registry keys whose SDK namespace differs are listed here:
- *
- *   - `anthropic-aws` builds `@ai-sdk/anthropic-aws`, whose message, part, and
- *     tool metadata reads use the `anthropic` namespace. Request-level options
- *     accept both namespaces, so remapping is safe at every level.
- *   - `vertex` is intentionally absent: the Vertex language model reads
- *     provider options under `['googleVertex', 'vertex']` (google-language-
- *     model.ts:131-134), so the registry key `vertex` is itself a valid,
- *     SDK-read namespace.
- */
 const PROVIDER_OPTIONS_NAMESPACE: Record<string, string> = {
   'anthropic-aws': 'anthropic',
 };
@@ -134,7 +93,6 @@ export function forwardLanguageParams(
 
   for (const [key, value] of Object.entries(unknown)) {
     const camelKey = snakeToCamel(key);
-    // Don't overwrite explicit provider-namespaced values
     if (!(camelKey in merged)) {
       merged[camelKey] = value;
     }
@@ -170,10 +128,6 @@ export function forwardProviderOptions(value: unknown, providerName: string) {
   if (providerOptions) forwardLanguageParams(providerOptions, providerName);
 }
 
-// ---------------------------------------------------------------------------
-// Effort ↔ provider mapping helpers
-// ---------------------------------------------------------------------------
-
 /**
  * Map an Anthropic thinking budget back to the closest OpenAI reasoning_effort.
  * Used by the OpenAI middleware when an Anthropic-style budget is provided
@@ -188,9 +142,6 @@ export function effortFromBudget(
   const max = maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const fraction = budgetTokens / max;
 
-  // Find the closest effort level. `effortFromBudget` feeds OpenAI's
-  // `reasoningEffort`, whose shipped enum tops out at 'xhigh' — 'max' is only
-  // valid for Anthropic's separate `effort` key, so it never appears here.
   if (fraction >= 0.85) return 'xhigh' as ReasoningEffort;
   if (fraction >= 0.65) return 'high' as ReasoningEffort;
   if (fraction >= 0.3) return 'medium' as ReasoningEffort;
@@ -198,10 +149,6 @@ export function effortFromBudget(
 
   return 'minimal' as ReasoningEffort;
 }
-
-// ---------------------------------------------------------------------------
-// Prompt caching options
-// ---------------------------------------------------------------------------
 
 export type PromptCachingOptions = {
   prompt_cache_key?: string;
@@ -270,10 +217,6 @@ export function parsePromptCachingOptions(opts: {
 
   return hasValue ? result : undefined;
 }
-
-// ---------------------------------------------------------------------------
-// Provider drop list for forwardLanguageParams
-// ---------------------------------------------------------------------------
 
 /**
  * Providers that explicitly reject cache_control fields. `forwardLanguageParams`

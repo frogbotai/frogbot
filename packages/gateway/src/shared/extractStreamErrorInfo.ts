@@ -1,11 +1,3 @@
-// Mid-stream error-part extraction for the SSE stream transforms.
-//
-// These run AFTER the HTTP 200 has been committed, so the error text lands in
-// an in-band SSE error frame. That frame is still a client-facing error
-// surface: 5xx messages must be masked in production (G35 / HE4) and
-// operator-credential fragments stripped unconditionally (G34), exactly like
-// the JSON envelope path in `errors/envelope.ts`.
-
 import { isGatewayError } from '../errors/gatewayError.js';
 import { maybeMaskMessage, redactKeyFragments } from '../errors/maskMessage.js';
 import {
@@ -27,11 +19,6 @@ export type StreamErrorMaskOptions = {
   production?: boolean | undefined;
 };
 
-/**
- * Apply the gateway's masking contract to an upstream-derived mid-stream
- * error message. Errors without a status are server faults (500-class), so
- * they mask in production too.
- */
 function maskStreamErrorMessage(
   message: string,
   status: number | undefined,
@@ -54,8 +41,6 @@ function errorStatusCode(error: Error): number | undefined {
   return isUpstreamSuccessStatus(statusCode) ? 502 : statusCode;
 }
 
-// A gateway error keeps its own code (e.g. `structured_output_invalid`) so a
-// client can tell it apart from a plain upstream status.
 function errorCode(error: Error, statusCode: number | undefined): string | null {
   if (isGatewayError(error)) return error.code;
 

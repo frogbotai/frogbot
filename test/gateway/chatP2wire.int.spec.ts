@@ -1,11 +1,3 @@
-// P2 triage — /v1/chat/completions findings G47–G59.
-//
-// Each `it.fails` is tagged // G## and marks a CONFIRMED bug.
-// Each `it` (passing) is tagged // G## and marks a REJECTED finding (behavior works).
-// Findings triage via D-class grep evidence are noted in comments only.
-//
-// All tests use the createApp + mock-provider pattern from int.spec.ts.
-
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
@@ -21,10 +13,6 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { finish, mockUsage, partStream } from './mockModel.js';
-
-// ---------------------------------------------------------------------------
-// Shared harness (mirrors wireHonesty.chat.int.spec.ts)
-// ---------------------------------------------------------------------------
 
 const DEFAULT_USAGE = mockUsage({
   inputTokens: { total: 5, noCache: 5 },
@@ -106,20 +94,6 @@ async function postRaw(app: Hono, path: string, body: unknown) {
   return { status: res.status, headers: res.headers, text: await res.text() };
 }
 
-// ---------------------------------------------------------------------------
-// G47 — type-safety seams: tool-input-delta id fallback → index 0 (user-scenario)
-//
-// If a `tool-input-delta` part arrives whose id was never seen in a prior
-// `tool-input-start`, the fallback `?? 0` maps it to tool-call index 0.
-// This means a second parallel tool call whose delta arrives before its start
-// corrupts the arguments of the FIRST tool call (wrong index assignment).
-//
-// The test streams two tool-input-starts then injects a delta for an unseen id.
-// Expected: gateway emits a `tool_calls[1]` delta (the correct index for an
-// unknown id would be a new slot, not index 0).
-// Actual: gateway emits `tool_calls[0]` delta, corrupting tool-call 0.
-// ---------------------------------------------------------------------------
-
 describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', () => {
   it.fails(
     'tool-input-delta with unseen id does not corrupt tool_calls[0] arguments (G47)',
@@ -127,10 +101,8 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
       const model = createRecordingModel({
         streamParts: [
           { type: 'stream-start', warnings: [] },
-          // Register two tool calls so index 0 = 'call_a', index 1 = 'call_b'
           { type: 'tool-input-start', id: 'call_a', toolName: 'search', toolCallType: 'function' },
           { type: 'tool-input-start', id: 'call_b', toolName: 'calc', toolCallType: 'function' },
-          // Delta for an id that was never started: should NOT map to index 0
           { type: 'tool-input-delta', id: 'call_unknown', delta: '"corrupted"' },
           { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
         ] as unknown as LanguageModelV4StreamPart[],
@@ -162,7 +134,6 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
         );
       });
 
-      // The corrupted delta should NOT appear at index 0 (tool_calls[0] belongs to call_a)
       const corruptedOnZero = chunks.some((c) => {
         const d = JSON.parse(c.data) as Record<string, unknown>;
         const calls = (
@@ -180,19 +151,8 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
   );
 });
 
-// ---------------------------------------------------------------------------
-// G48 — service_tier captured but never emitted on SSE output.
-// system_fingerprint IS emitted (state.systemFingerprint in makeChunk:269).
-// service_tier is stored in state.serviceTier but never written to any chunk.
-//
-// We inject a raw chunk (via rawValue) that carries service_tier.
-// The test verifies service_tier appears on the wire. It currently does not.
-// ---------------------------------------------------------------------------
-
 describe('G48 — service_tier missing from streaming SSE output', () => {
-  // G48 — service_tier captured in state.serviceTier but makeChunk (stream.ts:260) never emits it; flip to it() when fixed.
   it('streaming chat includes service_tier on wire when provider returns it', async () => {
-    // Inject a raw chunk with service_tier so the translator can capture it.
     const rawChunk = {
       id: 'chatcmpl-test',
       object: 'chat.completion.chunk',
@@ -230,14 +190,7 @@ describe('G48 — service_tier missing from streaming SSE output', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G48 — non-streaming chat response must emit service_tier when the provider
-// surfaces it in providerMetadata (via shared normalizeServiceTier, matching
-// the responses/messages routes). toOpenAIResponse previously had no field.
-// ---------------------------------------------------------------------------
-
 describe('G48 — service_tier on non-streaming chat response', () => {
-  // G48 — non-streaming chat emits service_tier from providerMetadata via normalizeServiceTier.
   it('non-streaming chat includes service_tier from provider metadata', async () => {
     const model = createRecordingModel({
       providerMetadata: { openai: { service_tier: 'flex' } },
@@ -257,15 +210,7 @@ describe('G48 — service_tier on non-streaming chat response', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G49 — streaming responses lack x-request-id header.
-// createSseResponse (toSseStream.ts:148) returns SSE_RESPONSE_HEADERS which
-// has no x-request-id — the requestId computed in the handler is never
-// forwarded to the SSE response.
-// ---------------------------------------------------------------------------
-
 describe('G49 — x-request-id absent on streaming SSE response', () => {
-  // G49 — FIXED: createSseResponse now merges the handler's requestId into the SSE response headers.
   it('streaming chat response includes x-request-id header', async () => {
     const app = makeAppWithModel('openai', createRecordingModel());
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -288,16 +233,7 @@ describe('G49 — x-request-id absent on streaming SSE response', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G52 — max_tokens/max_completion_tokens precedence
-// buildLanguageParams: `maxOutputTokens: body.max_completion_tokens ?? body.max_tokens`
-// When BOTH are present, max_completion_tokens wins — OpenAI deprecates
-// max_tokens in favor of max_completion_tokens, which is required for
-// o-series models. Matches hebo-gateway (converters.ts:112).
-// ---------------------------------------------------------------------------
-
 describe('G52 — max_tokens/max_completion_tokens precedence', () => {
-  // G52 — max_completion_tokens supersedes the deprecated max_tokens when both present.
   it('max_completion_tokens takes priority over max_tokens when both present', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -316,23 +252,13 @@ describe('G52 — max_tokens/max_completion_tokens precedence', () => {
       max_completion_tokens: 200,
     });
 
-    // Per OpenAI spec, max_completion_tokens (200) wins over deprecated max_tokens (100).
     expect(capturedOptions?.maxOutputTokens, 'max_completion_tokens should take priority').toBe(
       200,
     );
   });
 });
 
-// ---------------------------------------------------------------------------
-// G53 — stream_options.include_usage wire semantics (FIXED).
-// When a client sends stream_options: {include_usage: true} with stream: true,
-// every non-final chunk carries usage: null and a dedicated empty-choices chunk
-// with the populated usage totals is emitted before [DONE]. When stream_options
-// is absent, the legacy wire shape is preserved (usage on the finish chunk).
-// ---------------------------------------------------------------------------
-
 describe('G53 — stream_options.include_usage wire semantics', () => {
-  // G53 — usage-only chunk with empty choices is emitted before [DONE].
   it('stream_options.include_usage produces a usage-only chunk before [DONE]', async () => {
     const app = makeAppWithModel('openai', createRecordingModel());
     const { status, text } = await postRaw(app, '/v1/chat/completions', {
@@ -348,7 +274,6 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
 
-    // The last real chunk before [DONE] should have usage + empty choices.
     const usageChunk = chunks.find(
       (c) =>
         c.usage !== null &&
@@ -375,7 +300,6 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
 
-    // Exactly one dedicated usage chunk: empty choices + populated usage.
     const usageChunks = chunks.filter(
       (c) => Array.isArray(c.choices) && (c.choices as unknown[]).length === 0 && c.usage != null,
     );
@@ -385,10 +309,8 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
     const usageChunk = usageChunks[0];
 
     expect(usageChunk.usage as Record<string, unknown>).toHaveProperty('total_tokens');
-    // It is the LAST chunk before [DONE].
     expect(chunks[chunks.length - 1]).toBe(usageChunk);
 
-    // Every non-final chunk (non-empty choices, incl. the finish chunk) carries usage: null.
     const deltaChunks = chunks.filter(
       (c) => Array.isArray(c.choices) && (c.choices as unknown[]).length > 0,
     );
@@ -399,7 +321,6 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
       expect(c.usage, 'non-final chunk must carry usage: null').toBeNull();
     }
 
-    // The dedicated usage chunk shares the stream id + model with the delta chunks.
     expect(usageChunk.id).toBe(deltaChunks[0].id);
     expect(usageChunk.model).toBe(deltaChunks[0].model);
   });
@@ -418,14 +339,12 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
       .filter((f) => f.data !== '[DONE]')
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
 
-    // No dedicated empty-choices usage chunk.
     const dedicated = chunks.filter(
       (c) => Array.isArray(c.choices) && (c.choices as unknown[]).length === 0,
     );
 
     expect(dedicated).toHaveLength(0);
 
-    // Exactly one chunk carries a usage key, and it is the finish chunk.
     const withUsage = chunks.filter((c) => c.usage !== undefined);
 
     expect(withUsage).toHaveLength(1);
@@ -434,17 +353,9 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
 
     expect((finishChunk.choices as Array<Record<string, unknown>>)[0].finish_reason).toBe('stop');
 
-    // No usage: null stubs anywhere on the legacy path.
     expect(chunks.some((c) => c.usage === null)).toBe(false);
   });
 });
-
-// ---------------------------------------------------------------------------
-// G54 — refusal finish_reason must be 'stop' not 'content_filter'
-// OpenAI's wire returns finish_reason: 'stop' for model refusals; refusal text
-// is an orthogonal delta field. The stream translator passes the upstream
-// finish reason through unchanged.
-// ---------------------------------------------------------------------------
 
 describe('G54 — refusal finish_reason: content_filter instead of stop', () => {
   it('refusal finish_reason is stop not content_filter', async () => {
@@ -485,17 +396,9 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
 
     const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
 
-    // OpenAI spec: refusal → 'stop', not 'content_filter'
     expect(finishReason, 'refusal should map to stop not content_filter').toBe('stop');
   });
 });
-
-// ---------------------------------------------------------------------------
-// G55 — re-ingestion drops assistant `refusal` (FIXED) — the translator now
-// preserves re-ingested refusals as a text part in the assistant turn.
-// `name` remains intentionally dropped (no ModelMessage mapping; parity with
-// the AI SDK's converters).
-// ---------------------------------------------------------------------------
 
 describe('G55 — assistant refusal preserved on re-ingestion', () => {
   it('assistant message refusal reaches upstream prompt', async () => {
@@ -524,18 +427,11 @@ describe('G55 — assistant refusal preserved on re-ingestion', () => {
 
     expect(assistantMsg).toBeDefined();
 
-    // refusal is preserved as a text part in the translated assistant turn
     const opts = JSON.stringify(capturedOptions?.prompt ?? {});
 
     expect(opts).toContain('I cannot do that.');
   });
 });
-
-// ---------------------------------------------------------------------------
-// G56 — over-broad 400s on benign values (FIXED) — parallel_tool_calls and
-// user are forwarded via providerOptions; logprobs:false/null is a no-op.
-// Only logprobs:true still 400s (response logprobs plumbing pending, OC11).
-// ---------------------------------------------------------------------------
 
 describe('G56 — over-broad 400s on benign values', () => {
   it('parallel_tool_calls: true is accepted (not a 400)', async () => {
@@ -571,12 +467,6 @@ describe('G56 — over-broad 400s on benign values', () => {
     expect(status, 'logprobs:false should not 400').toBe(200);
   });
 });
-
-// ---------------------------------------------------------------------------
-// G57 — mapFinishReason masks 'error'/'unknown' as 'stop' (FIXED) — the chat
-// translators now pass 'error' through and fold 'other'/'unknown' into
-// 'other', so a failed step is never masked as a clean 'stop'.
-// ---------------------------------------------------------------------------
 
 describe('G57 — mapFinishReason masks error/unknown as stop', () => {
   it('streaming: error finish reason appears as error not stop on wire', async () => {
@@ -616,11 +506,6 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
     expect(finishReason).toBe('error');
   });
 });
-
-// ---------------------------------------------------------------------------
-// G58 — tools: strict forwarded (FIXED) — tools.ts passes `strict` into the
-// AI SDK tool() helper; non-function tool types now 400 at tools[N].type.
-// ---------------------------------------------------------------------------
 
 describe('G58 — tools strict field forwarded', () => {
   it('tool strict: true reaches upstream via providerOptions', async () => {
@@ -672,19 +557,12 @@ describe('G58 — tools strict field forwarded', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G59 — non-streaming refusal (FIXED) — toOpenAIResponse lifts
-// `choices[0].message.refusal` from the raw provider response body
-// (generateText's `result.response.body`) into the response message,
-// matching the streaming path's delta.refusal handling.
-// ---------------------------------------------------------------------------
-
 describe('G59 — non-streaming refusal surfaced', () => {
   it('non-streaming response includes refusal field when model refuses', async () => {
     const app = makeAppWithModel(
       'openai',
       createRecordingModel({
-        text: '', // model refuses, empty text
+        text: '',
         finishReason: { unified: 'stop', raw: 'stop' },
         responseBody: {
           id: 'chatcmpl-refusal',
@@ -709,12 +587,10 @@ describe('G59 — non-streaming refusal surfaced', () => {
 
     const choice = (body as Record<string, unknown>).choices as Array<Record<string, unknown>>;
 
-    // OpenAI spec: refusal response should have message.refusal set
     expect(choice[0]).toBeDefined();
 
     const message = choice[0].message as Record<string, unknown>;
 
-    // When a model returns a refusal, message.refusal should be a string, not missing
     expect(message).toHaveProperty('refusal');
     expect(message.refusal).toBe('I cannot help with that.');
     expect(message.content).toBeNull();

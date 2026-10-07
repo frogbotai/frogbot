@@ -49,9 +49,6 @@ export function runNext(command: 'dev' | 'start', args: string[] = []): void {
     process.exit(1);
   }
 
-  // `next start` must be able to parse next.config.ts, which requires the
-  // TypeScript compiler at runtime. Instead of letting Next.js silently
-  // install it on a production machine, fail fast with an actionable message.
   if (path.basename(configFile) === 'next.config.ts' && !canResolveFromProject(cwd, 'typescript')) {
     console.error(
       `[frogbot] ${configFile} requires TypeScript at runtime, but \`typescript\` is not installed. ` +

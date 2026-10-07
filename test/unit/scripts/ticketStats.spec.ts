@@ -28,8 +28,6 @@ const session = (
   { agent = 'general', directory = `${main}-ticket211` } = {},
 ) => ({ id, parentID, title, agent, directory, messages });
 
-// One coordinator runs 211A (two stages, a fix and a lint run), 211B, an untagged review and
-// one session for a ticket outside the batch. Another project has a session tagged 211A.
 const sessions = [
   session(
     'ses_coord',
@@ -126,7 +124,6 @@ beforeAll(() => {
   const insertMessage = db.prepare('INSERT INTO session_message VALUES (?, ?, ?, ?, ?, ?, ?)');
 
   for (const { id, parentID, title, agent, directory, messages } of sessions) {
-    // time_updated is stale for foreground children; stats must not read it.
     insertSession.run(id, parentID, title, agent, directory, T0, T0);
 
     messages.forEach(([type, minute, cost], seq) => {

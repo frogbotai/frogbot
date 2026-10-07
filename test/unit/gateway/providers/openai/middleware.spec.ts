@@ -1,5 +1,3 @@
-// OpenAI middleware tests — openaiReasoningEffort hook.
-
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../../packages/gateway/src/hooks.js';
@@ -39,7 +37,6 @@ describe('openaiReasoningEffort', () => {
 
     await openaiReasoningEffort(args);
 
-    // 13000/16384 ≈ 0.79 → 'high'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'high' });
   });
 
@@ -51,7 +48,6 @@ describe('openaiReasoningEffort', () => {
 
     await openaiReasoningEffort(args);
 
-    // 500/16384 ≈ 0.03 → 'minimal'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'minimal' });
   });
 
@@ -63,7 +59,6 @@ describe('openaiReasoningEffort', () => {
 
     await openaiReasoningEffort(args);
 
-    // 16000/16384 ≈ 0.98 → clamped to 'xhigh'
     expect(args.providerOptions['openai']).toEqual({ reasoningEffort: 'xhigh' });
   });
 
@@ -87,7 +82,6 @@ describe('openaiReasoningEffort', () => {
 
     await openaiReasoningEffort(args);
 
-    // Should NOT overwrite
     expect((args.providerOptions['openai'] as any).reasoningEffort).toBe('low');
   });
 

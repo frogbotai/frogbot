@@ -158,7 +158,7 @@ export function sanitizeAIFields({
       if (problem) {
         if (mode === 'runtime') throw fail(problem);
 
-        // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console -- build-time config warnings go to the terminal
         console.warn(message(problem));
       }
 

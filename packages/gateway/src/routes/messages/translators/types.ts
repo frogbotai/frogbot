@@ -1,17 +1,5 @@
 import type { CacheControl } from '../../../shared/types.js';
 
-// ---------------------------------------------------------------------------
-// Anthropic /v1/messages wire types (request + response).
-//
-// Structural mirror of Anthropic's public API. Discriminated unions are used
-// wherever the API spec has one, so downstream translators can narrow via
-// `switch` without `as` casts.
-// ---------------------------------------------------------------------------
-
-// ===========================================================================
-// Request
-// ===========================================================================
-
 export type AnthropicMessagesRequest = {
   model: string;
   messages: AnthropicMessage[];
@@ -40,8 +28,6 @@ export type AnthropicAssistantMessage = {
   content: string | AnthropicAssistantBlock[];
 };
 
-// -- System --
-
 export type AnthropicSystemTextBlock = {
   type: 'text';
   text: string;
@@ -49,8 +35,6 @@ export type AnthropicSystemTextBlock = {
 };
 
 export type AnthropicSystemParam = string | AnthropicSystemTextBlock[];
-
-// -- User content blocks --
 
 export type AnthropicUserBlock =
   AnthropicTextBlock | AnthropicImageBlock | AnthropicToolResultBlock | AnthropicDocumentBlock;
@@ -61,13 +45,10 @@ export type AnthropicTextBlock = {
   cache_control?: CacheControl | null;
 };
 
-// Image source: base64 payload or remote URL. Anthropic uses the same
-// two-variant shape for `document.source` as well.
 export type AnthropicMediaSource =
   | { type: 'base64'; media_type: string; data: string }
   | { type: 'url'; url: string; media_type?: string | null };
 
-// Document sources additionally allow a `text` variant (inline text file).
 export type AnthropicDocumentSource =
   AnthropicMediaSource | { type: 'text'; media_type?: string | null; data: string };
 
@@ -86,7 +67,6 @@ export type AnthropicDocumentBlock = {
   cache_control?: CacheControl | null;
 };
 
-// tool_result.content can be a string, or an array of text/image sub-blocks.
 export type AnthropicToolResultSubBlock =
   { type: 'text'; text: string } | { type: 'image'; source: AnthropicMediaSource };
 
@@ -97,8 +77,6 @@ export type AnthropicToolResultBlock = {
   is_error?: boolean | null;
   cache_control?: CacheControl | null;
 };
-
-// -- Assistant content blocks --
 
 export type AnthropicAssistantBlock =
   | AnthropicTextBlock
@@ -125,13 +103,10 @@ export type AnthropicToolUseBlock = {
   cache_control?: CacheControl | null;
 };
 
-// Forward-compat catch-all for block types we don't know yet.
 export type AnthropicUnknownBlock = {
   type: string;
   [key: string]: unknown;
 };
-
-// -- Tools --
 
 export type AnthropicToolDefinition = {
   name: string;
@@ -142,10 +117,6 @@ export type AnthropicToolDefinition = {
 
 export type AnthropicToolChoice =
   { type: 'auto' } | { type: 'any' } | { type: 'none' } | { type: 'tool'; name: string };
-
-// ===========================================================================
-// Response
-// ===========================================================================
 
 export type AnthropicResponse = {
   id: string;

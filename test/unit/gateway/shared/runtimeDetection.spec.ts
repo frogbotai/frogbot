@@ -1,12 +1,3 @@
-// G46 — WinterCG leakage guards.
-//
-// Two protections: (1) unit coverage for the centralized runtime detection
-// helpers, including the no-`process` (strict WinterCG) branch, and (2) a
-// static scan asserting the request/error/stream path never regresses to
-// `node:*` imports or bare `process.env` reads. The scan intentionally skips
-// Node-by-design surfaces: the CLI, the config layer, observability setup
-// (CLI/init-only), and test files.
-
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,17 +67,11 @@ describe('readEnv / isProduction (G46)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Static scan — request-path source must stay WinterCG-clean
-// ---------------------------------------------------------------------------
-
 const srcDir = fileURLToPath(new URL('../../../../packages/gateway/src/', import.meta.url));
 
-/** Request/error/stream-path surfaces that must stay WinterCG-safe. */
 const scannedRoots = ['errors', 'shared', 'routes', 'providers'] as const;
 const scannedFiles = ['observability/logger.ts', 'observability/tracing.ts'] as const;
 
-/** Guarded reads live here; everything else must go through it. */
 const exemptFiles = new Set(['shared/runtimeDetection.ts']);
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {

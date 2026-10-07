@@ -1,9 +1,3 @@
-// Provider definition: Hugging Face Inference.
-//
-// Supported subset: models hosted via HF Inference Endpoints that expose an
-// OpenAI-compatible chat completions interface. Serverless Inference API models
-// and custom pipeline models are NOT guaranteed to work.
-
 import {
   createHuggingFace,
   type HuggingFaceProvider,

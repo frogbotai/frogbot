@@ -1,5 +1,3 @@
-// Catalog unit tests — defineModelCatalog, presetFor, supportsOperation.
-
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_MODEL_CATALOG } from '../../../../packages/gateway/src/providers/catalog.data.js';
@@ -10,10 +8,6 @@ import {
   presetFor,
   supportsOperation,
 } from '../../../../packages/gateway/src/providers/catalog.js';
-
-// ---------------------------------------------------------------------------
-// presetFor
-// ---------------------------------------------------------------------------
 
 describe('presetFor', () => {
   it('creates a ModelCatalogEntry with the given id and base', () => {
@@ -75,10 +69,6 @@ describe('calculateCostUSD', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// defineModelCatalog
-// ---------------------------------------------------------------------------
-
 describe('defineModelCatalog', () => {
   const entry1: ModelCatalogEntry = {
     id: 'openai/gpt-4o',
@@ -138,10 +128,6 @@ describe('default catalog Bedrock inference profiles', () => {
     for (const id of bareIds) expect(DEFAULT_MODEL_CATALOG.has(id)).toBe(false);
   });
 });
-
-// ---------------------------------------------------------------------------
-// supportsOperation
-// ---------------------------------------------------------------------------
 
 describe('supportsOperation', () => {
   const entry: ModelCatalogEntry = {

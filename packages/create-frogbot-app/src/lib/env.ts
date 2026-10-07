@@ -36,7 +36,6 @@ export function writeEnv(
   let env = setLine(example, 'FROGBOT_SECRET', randomBytes(24).toString('hex'));
   const keyEnv = providerKeyEnv(plan.ai);
 
-  // The secret only goes to `.env` (gitignored); `.env.example` keeps the name.
   if (keyEnv && plan.apiKey) env = setLine(env, keyEnv, plan.apiKey);
 
   fs.writeFileSync(path.join(dest, '.env'), env);

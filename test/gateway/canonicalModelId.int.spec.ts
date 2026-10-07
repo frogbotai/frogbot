@@ -1,13 +1,3 @@
-// G38 (PR2 + DT3) — the Bedrock canonical-ID map (BEDROCK_CANONICAL_IDS) is
-// wired into resolveProvider: a client sending a shorthand alias like
-// `bedrock/claude-4-sonnet` gets the resolved canonical ID
-// (`anthropic.claude-sonnet-4-20250514-v1:0`) forwarded upstream, not the
-// raw alias Bedrock would reject.
-//
-// Mock int test (not a live Zen e2e): exercising Bedrock ID resolution needs
-// AWS/Bedrock creds that Zen's free OpenAI-compatible models can't stand in for;
-// the observable seam is "which model id did languageModel() receive".
-
 import type { LanguageModelV4 } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
@@ -35,10 +25,6 @@ function createMockModel(): LanguageModelV4 {
 }
 
 describe('bedrock shorthand alias resolves to canonical ID before upstream — G38', () => {
-  // A client sends the documented shorthand `bedrock/claude-4-sonnet`.
-  // The gateway resolves it through BEDROCK_CANONICAL_IDS in resolveProvider
-  // and calls languageModel() with the full canonical ID that Bedrock
-  // actually accepts.
   it('passes the resolved canonical Bedrock ID to languageModel(), not the shorthand alias', async () => {
     const alias = 'claude-4-sonnet';
     const canonical = BEDROCK_CANONICAL_IDS[alias];

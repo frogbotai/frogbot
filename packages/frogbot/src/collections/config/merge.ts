@@ -1,14 +1,3 @@
-// Merge a base collection into a user-authored collection with the
-// same slug — FrogBot's mirror of Payload's `mergeBaseFields` semantics
-// (the `auth: true` machinery, not exported from Payload):
-//
-//   - user props win per-key (deep merge, user over base)
-//   - base hooks run first, then user hooks — both run, base is foundational
-//   - base fields missing from the user's collection are appended
-//   - a base field's `type` is locked; the user must restate it and may
-//     customize other props (label, admin, index, hooks, relationTo)
-//   - reserved field names throw at build
-
 import type { Field } from '../../fields/config/types.js';
 import type { CollectionConfig } from './types.js';
 

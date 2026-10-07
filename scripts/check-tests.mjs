@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// `pnpm check tests`: no test files under `packages/**/src`; every tracked spec belongs to a
-// vitest or Playwright project; every int spec that calls `bootFrogBot` resets data with
-// `clearAndSeed`, itself or through a module it imports, unless READ_ONLY lists it; and every
-// `mkdtemp` scratch folder starts from `os.tmpdir()` or the gitignored `test/.tmp/`.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
@@ -15,7 +11,6 @@ const VITEST_CONFIG = 'vitest.config.ts';
 
 const PLAYWRIGHT_CONFIGS = ['test/browser/playwright.config.ts'];
 
-// Int specs whose tests only read, so nothing leaks from one test to the next.
 export const READ_ONLY = {
   'test/frogbot-instance/boot.int.spec.ts': 'checks the booted collections and a 404 route',
   'test/frogbot-instance/properties.int.spec.ts': 'checks instance properties',
@@ -34,7 +29,6 @@ const INT_SPEC = /int\.spec\.ts$/;
 
 const SCRIPT = /^test\/.+\.[cm]?[jt]sx?$/;
 
-// Its samples quote the mkdtemp calls this check rejects.
 const OWN_SPEC = 'test/unit/scripts/checkTests.spec.ts';
 
 const BOOT = /\bbootFrogBot\(/;
@@ -253,8 +247,6 @@ export function loadConfig(file) {
   return import(pathToFileURL(path.join(ROOT, file)).href).then((module) => module.default);
 }
 
-// The configs import TypeScript modules without an extension, which only bundlers resolve; retry
-// those as `.ts`.
 export function resolveExtensionless() {
   registerHooks({
     resolve(specifier, context, next) {

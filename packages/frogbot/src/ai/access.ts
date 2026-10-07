@@ -1,5 +1,3 @@
-// AI access control enforcement.
-
 import type { FrogBotRequest } from '../types/request.js';
 import type { AIAccessConfig, AIMethod, SanitizedAIConfig } from './types.js';
 
@@ -13,7 +11,6 @@ export type EnforceAccessArgs = {
 export async function enforceAIAccess(args: EnforceAccessArgs): Promise<void> {
   const { req, method, config } = args;
 
-  // 1. Base access.
   const category = methodToCategory(method);
   const baseFn = config.access[category];
   if (baseFn && !(await baseFn({ req }))) {

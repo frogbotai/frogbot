@@ -23,8 +23,6 @@ import {
   validateSlug,
 } from './shared.js';
 
-// ── Side-effect log for hook ordering tests ───────────────────────────
-
 export let hookLog: string[] = [];
 
 export function clearHookLog() {
@@ -47,8 +45,6 @@ function getAuthRequestState(req: FrogBotRequest): AuthRequestState {
     payload: (req as unknown as PayloadRequest).payload,
   };
 }
-
-// ── 1. hook-order ─────────────────────────────────────────────────────
 
 const HookOrder: CollectionConfig = {
   slug: hookOrderSlug,
@@ -112,8 +108,6 @@ const HookOrder: CollectionConfig = {
   fields: [{ name: 'title', type: 'text', required: true }],
 };
 
-// ── 2. req-access ─────────────────────────────────────────────────────
-
 const ReqAccess: CollectionConfig = {
   slug: reqAccessSlug,
   access: {
@@ -156,8 +150,6 @@ const ReqAccess: CollectionConfig = {
   ],
 };
 
-// ── 3. access-boolean ─────────────────────────────────────────────────
-
 const AccessBoolean: CollectionConfig = {
   slug: accessBooleanSlug,
   access: {
@@ -168,8 +160,6 @@ const AccessBoolean: CollectionConfig = {
   },
   fields: [{ name: 'title', type: 'text' }],
 };
-
-// ── 4. access-where ───────────────────────────────────────────────────
 
 const AccessWhere: CollectionConfig = {
   slug: accessWhereSlug,
@@ -184,8 +174,6 @@ const AccessWhere: CollectionConfig = {
     { name: 'hidden', type: 'checkbox', defaultValue: false },
   ],
 };
-
-// ── 5. field-access ───────────────────────────────────────────────────
 
 const FieldAccess: CollectionConfig = {
   slug: fieldAccessSlug,
@@ -205,8 +193,6 @@ const FieldAccess: CollectionConfig = {
     },
   ],
 };
-
-// ── 6. validate-ctx ───────────────────────────────────────────────────
 
 const ValidateCtx: CollectionConfig = {
   slug: validateSlug,
@@ -231,8 +217,6 @@ const ValidateCtx: CollectionConfig = {
   ],
 };
 
-// ── 7. after-operation ────────────────────────────────────────────────
-
 const AfterOperation: CollectionConfig = {
   slug: afterOpSlug,
   access: openAccess,
@@ -245,8 +229,6 @@ const AfterOperation: CollectionConfig = {
   },
   fields: [{ name: 'title', type: 'text', required: true }],
 };
-
-// ── 8. context-flow ───────────────────────────────────────────────────
 
 const ContextFlow: CollectionConfig = {
   slug: contextFlowSlug,
@@ -286,8 +268,6 @@ const ContextFlow: CollectionConfig = {
   ],
 };
 
-// ── 9. override-access ────────────────────────────────────────────────
-
 const OverrideAccess: CollectionConfig = {
   slug: overrideAccessSlug,
   access: {
@@ -305,8 +285,6 @@ const OverrideAccess: CollectionConfig = {
   },
   fields: [{ name: 'title', type: 'text' }],
 };
-
-// ── 10. users (auth) ──────────────────────────────────────────────────
 
 const Users: CollectionConfig = {
   slug: usersSlug,
@@ -374,8 +352,6 @@ const Users: CollectionConfig = {
     { name: 'lastLogin', type: 'text' },
   ],
 };
-
-// ── Export config ─────────────────────────────────────────────────────
 
 export default await buildTestConfig({
   collections: [

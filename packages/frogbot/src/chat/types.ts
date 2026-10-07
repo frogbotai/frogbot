@@ -1,9 +1,5 @@
 import type { AgentProfile } from '../agents/types.js';
 
-// Resolved chat persistence state — derived from `chat: true` /
-// `message: true` markers on collections (or injected defaults), never
-// from a config key. Milestone B reads the slugs from here.
-
 export type SanitizedChatConfig =
   | { enabled: false }
   | { enabled: true; chatsSlug: string; messagesSlug: string; assetsSlug: string };

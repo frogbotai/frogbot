@@ -1,12 +1,3 @@
-// anthropic-aws provider credential validation tests.
-//
-// G40 (PR6, FIXED): the "anthropic-aws" provider now wraps `createAnthropicAws`
-// from `@ai-sdk/anthropic-aws` (the native Anthropic-on-AWS wire format), not
-// `createAmazonBedrock`. Its `fromEnv` gate reads the provider-named
-// `ANTHROPIC_AWS_API_KEY` first, then falls back to AWS SigV4 credentials —
-// and no longer reads `AWS_BEARER_TOKEN_BEDROCK`, so a Bedrock bearer token
-// enables only the bedrock provider.
-
 import { describe, expect, it } from 'vitest';
 
 import { anthropicAwsProvider } from '../../../../../packages/gateway/src/providers/anthropic-aws/index.js';
@@ -14,10 +5,7 @@ import { bedrockProvider } from '../../../../../packages/gateway/src/providers/b
 import { testEnv } from '../../config/fixtures.js';
 
 describe('anthropicAwsProvider.fromEnv', () => {
-  // An operator who reads "anthropic-aws" and sets ANTHROPIC_AWS_API_KEY (the
-  // provider-named key) expects the provider to turn on.
   it('enables the provider when ANTHROPIC_AWS_API_KEY is set', () => {
-    // G40 — provider-named credential var enables API-key mode.
     const result = anthropicAwsProvider.fromEnv(
       testEnv({
         ANTHROPIC_AWS_API_KEY: 'key-123',
@@ -49,8 +37,6 @@ describe('anthropicAwsProvider.fromEnv', () => {
   });
 
   it('AWS_BEARER_TOKEN_BEDROCK no longer enables anthropic-aws', () => {
-    // The bedrock bearer token is a Bedrock-only credential; the dedicated
-    // anthropic-aws SDK does not support it.
     expect(
       anthropicAwsProvider.fromEnv(testEnv({ AWS_BEARER_TOKEN_BEDROCK: 'bearer-123' })),
     ).toBeUndefined();
@@ -84,10 +70,6 @@ describe('anthropicAwsProvider.fromEnv', () => {
     expect(anthropicAwsProvider.fromEnv(testEnv())).toBeUndefined();
   });
 
-  // A shared AWS SigV4 credential set still enables both providers (they are
-  // both legitimate consumers of AWS credentials), but the auth surfaces are
-  // now distinct: API-key mode is anthropic-aws-only, bearer-token mode is
-  // bedrock-only.
   it('SigV4 enables both providers, but provider-specific credentials enable exactly one', () => {
     const sigv4 = testEnv({
       AWS_ACCESS_KEY_ID: 'AKIAIOSFODNN7EXAMPLE',
@@ -98,7 +80,6 @@ describe('anthropicAwsProvider.fromEnv', () => {
     expect(bedrockProvider.fromEnv(sigv4)).toBeDefined();
     expect(anthropicAwsProvider.fromEnv(sigv4)).toBeDefined();
 
-    // Provider-specific credentials no longer cross-enable.
     expect(
       anthropicAwsProvider.fromEnv(testEnv({ AWS_BEARER_TOKEN_BEDROCK: 'b' })),
     ).toBeUndefined();

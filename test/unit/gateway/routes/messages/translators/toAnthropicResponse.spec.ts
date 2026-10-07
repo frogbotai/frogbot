@@ -1,6 +1,3 @@
-// Tests for the Anthropic /v1/messages response translator
-// (AI SDK generate result → Anthropic wire envelope).
-
 import { describe, expect, test } from 'vitest';
 
 import {

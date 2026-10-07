@@ -984,7 +984,6 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
       settled = true;
     });
 
-    // One call after another, so a call lands between the failed COMMIT and its rethrow
     const ended = (async () => {
       let calls = 0;
 
@@ -1058,7 +1057,6 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
   it('a migration commits under the lock while other writes run beside it', async () => {
     const payload = getFrogBotPayload(app.frogbot);
 
-    // push mode records a batch -1 migration, which makes `migrate` prompt
     await payload.delete({ collection: 'payload-migrations', where: { batch: { equals: -1 } } });
 
     const migrating = payload.db.migrate({
@@ -1169,8 +1167,6 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
   });
 
   it('wal: false on a database that ran with the WAL default returns to the rollback journal', async () => {
-    // The WAL run is another process, like a restart: in this process libsql never closes a
-    // transaction's connection, and an open connection keeps the file in WAL
     const previous = new Database(databasePath);
 
     previous.exec('pragma journal_mode = wal');
@@ -1227,7 +1223,6 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     crashed.exec('create table stale (id integer primary key, value text)');
     crashed.exec("insert into stale (value) values ('stale')");
 
-    // `notes` from the old run, so a replay would show up as an extra row
     crashed.exec(
       'create table notes (id integer primary key, title text, updated_at text, created_at text)',
     );
@@ -1238,7 +1233,6 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     frogbot = await boot({ defaultWal: true });
     await frogbot.create({ collection: notesSlug, data: { title: 'Fresh' } });
 
-    // the old process's handle goes away (crash, exit, or GC of a leaked connection)
     crashed.close();
 
     await frogbot.create({ collection: notesSlug, data: { title: 'After close' } });

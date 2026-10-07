@@ -199,9 +199,7 @@ describe('frogbot-instance: Version operations', () => {
         overrideAccess: true,
       });
 
-      // Total count should be >= sum of individual filtered counts
       expect(countAll).toBeGreaterThanOrEqual(countA + countB);
-      // Each filtered count should be less than or equal to total
       expect(countA).toBeLessThanOrEqual(countAll);
       expect(countB).toBeLessThanOrEqual(countAll);
     });
@@ -209,14 +207,12 @@ describe('frogbot-instance: Version operations', () => {
 
   describe('restoreVersion', () => {
     it('reverts doc to a prior version data', async () => {
-      // Create initial doc as published
       const post = await booted.frogbot.create({
         collection: postsSlug,
         data: { title: 'Restore Original', content: 'original content', _status: 'published' },
         overrideAccess: true,
       });
 
-      // Update creates a new version snapshot of the previous state
       await booted.frogbot.update({
         collection: postsSlug,
         id: post.id,
@@ -233,7 +229,6 @@ describe('frogbot-instance: Version operations', () => {
 
       expect(versions.docs.length).toBeGreaterThanOrEqual(2);
 
-      // Restore the oldest version (last in default sort) — mirrors Payload's pattern
       const versionToRestore = versions.docs[versions.docs.length - 1];
 
       const restored = await booted.frogbot.restoreVersion({

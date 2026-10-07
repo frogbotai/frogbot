@@ -1,8 +1,3 @@
-// Runtime guards that narrow a database adapter by its `name`, as Payload's
-// own code tells adapters apart (`adapter.name === 'postgres'`). Instances
-// are named 'postgres' (db-postgres, db-vercel-postgres), 'sqlite'
-// (db-sqlite, db-d1-sqlite) or 'mongoose' (db-mongodb).
-
 import type { DrizzleAdapter } from '@payloadcms/drizzle';
 import type { BasePostgresAdapter } from '@payloadcms/drizzle/postgres';
 import type { BaseSQLiteAdapter } from '@payloadcms/drizzle/sqlite';

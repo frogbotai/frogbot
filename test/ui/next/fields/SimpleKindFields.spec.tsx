@@ -85,8 +85,6 @@ function numberField(
   };
 }
 
-// Payload's client `admin` type Picks from an optional type, which makes every picked key
-// required; a fixture states only the admin keys it uses.
 function numberFieldClient(
   field: Omit<NumberFieldClient, 'admin'> & {
     admin?: Partial<NonNullable<NumberFieldClient['admin']>>;

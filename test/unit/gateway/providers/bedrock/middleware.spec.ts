@@ -1,5 +1,3 @@
-// Bedrock middleware tests — bedrockCachePoint hook.
-
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../../packages/gateway/src/hooks.js';

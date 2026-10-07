@@ -1,5 +1,3 @@
-// streamText operation — async pre-checks, then returns the stream.
-
 import type { Gateway } from '@frogbotai/gateway';
 import type { LanguageModelUsage } from 'ai';
 import { generateId, streamText as aiStreamText } from 'ai';
@@ -41,11 +39,9 @@ export async function streamTextOperation(
 
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model (router slug → model ID).
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

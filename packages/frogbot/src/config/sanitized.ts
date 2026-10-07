@@ -1,9 +1,3 @@
-// FrogBot's sanitized config shape — the output of `buildConfig`.
-//
-// Preserves FrogBot metadata (auth flags, onInit) through the
-// sanitization boundary. The Payload config is stored internally and
-// never exposed to users.
-
 import type { SettingsEntry } from '../admin/types.js';
 import type { SanitizedAgentConfig } from '../agents/types.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
@@ -45,7 +39,7 @@ export type FrogBotSanitizedConfig = {
 
   /** @internal — not part of the public API. */
   _internal: {
-    payloadConfig: Promise<import('payload').SanitizedConfig>; // eslint-disable-line @typescript-eslint/consistent-type-imports
+    payloadConfig: Promise<import('payload').SanitizedConfig>; // eslint-disable-line @typescript-eslint/consistent-type-imports -- keeps payload out of the static import graph
     noEmail: boolean;
     triggers: IngressRegistry;
     autonumbers: AutonumberEntry[];

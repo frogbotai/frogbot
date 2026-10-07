@@ -3,7 +3,6 @@ import { createElement, forwardRef } from 'react';
 import defaultAttributes from './defaultAttributes.js';
 import type { IconNode, LucideProps } from './types.js';
 
-// Helper functions (simplified versions)
 const mergeClasses = (...classes: (string | undefined)[]): string => {
   return classes.filter(Boolean).join(' ');
 };
@@ -58,9 +57,7 @@ const IconBase = forwardRef<SVGSVGElement, IconComponentProps>(
         ...rest,
       },
       [
-        // Map iconNode array to actual SVG elements
         ...iconNode.map(([tag, attrs], index) => createElement(tag, { ...attrs, key: index })),
-        // Include any children passed to the component
         ...(Array.isArray(children) ? children : [children]),
       ],
     );

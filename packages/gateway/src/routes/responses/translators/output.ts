@@ -9,9 +9,6 @@ export function isStrictResponsesOutput(text: ResponsesTextConfig | null | undef
   return format?.type === 'json_schema' && format.strict === true && !!format.schema;
 }
 
-// Maps the Responses `text.format` config to an AI SDK `Output` spec.
-// Only `json_schema` maps to structured output; `text`/`json_object`/unknown
-// formats fall through to the default text output.
 export function toResponsesOutput(
   text: ResponsesTextConfig | null | undefined,
 ): ReturnType<typeof Output.object> | undefined {

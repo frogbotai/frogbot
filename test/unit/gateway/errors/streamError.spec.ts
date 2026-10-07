@@ -6,10 +6,6 @@ import {
   streamErrorFrameToEnvelope,
 } from '../../../../packages/gateway/src/errors/streamError.js';
 
-// ---------------------------------------------------------------------------
-// parseStreamErrorFrame
-// ---------------------------------------------------------------------------
-
 describe('parseStreamErrorFrame', () => {
   it('parses an OpenAI Chat-style early error frame', () => {
     const frame = {
@@ -79,10 +75,6 @@ describe('parseStreamErrorFrame', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// inferStatusFromStreamError
-// ---------------------------------------------------------------------------
-
 describe('inferStatusFromStreamError', () => {
   it.each([
     ['numeric 429 code', { message: 'x', code: 429, type: null, frame: null }, 429],
@@ -138,10 +130,6 @@ describe('inferStatusFromStreamError', () => {
     ).toBe(expected);
   });
 });
-
-// ---------------------------------------------------------------------------
-// streamErrorFrameToEnvelope
-// ---------------------------------------------------------------------------
 
 describe('streamErrorFrameToEnvelope', () => {
   it('produces a complete OpenAI envelope for a rate-limit frame', () => {

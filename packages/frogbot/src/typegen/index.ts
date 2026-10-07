@@ -1,18 +1,3 @@
-// Type generation for `frogbot generate:types` and boot-time autogenerate.
-//
-// Pipeline: sanitized config → JSON schema → compile TypeScript → diff
-// → write to disk.
-//
-// We deliberately do not call Payload's `generateTypes` directly:
-// Payload's version always writes to disk (no `returnString` in 3.68.5),
-// emits a Payload-branded banner, and appends a `'payload'`
-// augmentation footer that would need post-processing. Calling the
-// public `configToJSONSchema` and compiling ourselves avoids all of
-// that — no temp file, no string rewrite, FrogBot branding throughout.
-//
-// Output is deterministic — running twice in a row leaves the file
-// unchanged (byte-identical short-circuit before write).
-
 import fs from 'node:fs/promises';
 import { isAbsolute, join, resolve } from 'node:path';
 
@@ -63,7 +48,6 @@ ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')
 }`;
 }
 
-/** Default output filename, matching Payload's `payload-types.ts` convention. */
 const DEFAULT_FILENAME = 'frogbot-types.ts';
 
 type SchemaGroup = {
@@ -159,10 +143,6 @@ function resolveOutputPath(config: SanitizedConfig, dir: string): string {
   if (fromEnv) return isAbsolute(fromEnv) ? fromEnv : resolve(dir, fromEnv);
 
   const fromConfig = config.typescript?.outputFile;
-  // Payload defaults `typescript.outputFile` to `<cwd>/payload-types.ts`
-  // during sanitization. If the user hasn't customized it, redirect to
-  // FrogBot's filename so we don't litter `payload-types.ts` next to
-  // the user's config. Otherwise honor whatever they explicitly set.
   if (fromConfig && !fromConfig.endsWith('/payload-types.ts')) return fromConfig;
 
   return join(resolve(dir), DEFAULT_FILENAME);
@@ -182,8 +162,6 @@ async function compileTypes(
     language,
   });
 
-  // Payload's helper returns `{ jsonSchema, typeStringDefinitions }` in
-  // newer versions; 3.68.5 returns the bare schema. Normalize.
   const result = configToJSONSchema(config, config.db.defaultIDType, i18n) as
     { jsonSchema: unknown; typeStringDefinitions?: Set<string> } | object;
 
@@ -200,8 +178,6 @@ async function compileTypes(
   let compiled = await compile(jsonSchema as Parameters<typeof compile>[0], 'Config', {
     bannerComment: BANNER,
     style: { singleQuote: true },
-    // Emit code for $defs not referenced elsewhere — preserves user
-    // `interfaceName` opt-ins even when nothing references them.
     unreachableDefinitions: true,
     cwd: process.cwd(),
   });
@@ -233,9 +209,7 @@ export async function writeGeneratedTypes(
     if (existing === compiled) {
       return { outputPath, changed: false };
     }
-  } catch {
-    // No existing file — fall through to write.
-  }
+  } catch {}
 
   await fs.writeFile(outputPath, compiled);
 

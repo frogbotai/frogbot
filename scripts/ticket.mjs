@@ -541,8 +541,6 @@ function splitMessage(text) {
   return { subject, body: body.join('\n').trim(), breaking };
 }
 
-// The one commit land makes of a branch's commits, oldest first: the first subject (with `!` when
-// any commit breaks), every body in order, then each distinct BREAKING CHANGE footer.
 export function squashMessage(messages) {
   const commits = messages.map(splitMessage);
   const breaking = [...new Set(commits.flatMap((commit) => commit.breaking))];
@@ -554,8 +552,6 @@ export function squashMessage(messages) {
   return `${[subject, ...commits.map(({ body }) => body), breaking.join('\n')].filter(Boolean).join('\n\n')}\n`;
 }
 
-// Runs a land round (rebase, gates, squash) until main stays where the round started, so a land
-// that main moved under rebases and reruns its gates by itself.
 export async function untilMainSettles({ head, round, log = console.log }) {
   for (let start = head(); ;) {
     const result = await round();
@@ -568,8 +564,6 @@ export async function untilMainSettles({ head, round, log = console.log }) {
   }
 }
 
-// The test/docker-compose.yml services a gate's specs reach. Those specs skip when their service
-// is down outside CI, so land checks them first rather than pass on skipped suites.
 export const GATE_SERVICES = {
   'test:int:sqlite': [
     { name: 'PostgreSQL', profile: 'postgres', port: 5433 },
@@ -931,8 +925,6 @@ function commandNew(main, { ticket, part, type }) {
   const log = openLog(main, key);
   const writeAdapter = `import('../../test/__helpers/shared/db/dbAdapters.ts').then(({ generateDatabaseAdapter }) => generateDatabaseAdapter('sqlite'))`;
 
-  // `pnpm check` builds every package; check-generated (--full) loads configs that import the
-  // gitignored test/databaseAdapter.js, which otherwise only the int-test setup writes.
   for (const [label, args, cwd] of [
     ['pnpm install', ['install'], dir],
     [

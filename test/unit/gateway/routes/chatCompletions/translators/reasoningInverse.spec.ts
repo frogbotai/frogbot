@@ -101,7 +101,7 @@ describe('reasoning_details inverse (wire → AI SDK)', () => {
     const result = parseAssistantMessage(msg, 0);
     const content = result.content as Array<Record<string, unknown>>;
 
-    expect(content).toHaveLength(4); // 3 reasoning + 1 text
+    expect(content).toHaveLength(4);
     expect(content[0]).toMatchObject({ type: 'reasoning', text: 'Step 1' });
     expect(content[1]).toMatchObject({
       type: 'reasoning',

@@ -83,7 +83,6 @@ type CommonArgs = {
   showHiddenFields?: boolean;
   user?: unknown;
 };
-// ── Auth operations ───────────────────────────────────────────────────
 
 export type LoginArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
@@ -122,8 +121,6 @@ export type UnlockArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
   data: { email: string };
 };
-
-// ── Auth (headers-based) ──────────────────────────────────────────────
 
 export type AuthArgs = {
   /** Let auth strategies return `responseHeaders`, such as a refreshed cookie. */

@@ -1,13 +1,3 @@
-// Provider definition: Amazon Bedrock.
-//
-// Supports two auth modes:
-//   1. Bearer token (`AWS_BEARER_TOKEN_BEDROCK`) — simplest path.
-//   2. SigV4 (`AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` + optional `AWS_SESSION_TOKEN`).
-//
-// Partial SigV4 creds (e.g. only `AWS_REGION`, set on virtually every AWS
-// runtime) skip the provider — per the `fromEnv` contract, discovery never
-// throws (G41).
-
 import {
   type AmazonBedrockProvider,
   type AmazonBedrockProviderSettings,
@@ -45,7 +35,6 @@ export const bedrockProvider: ProviderDefinition<'bedrock', BedrockConfig, Amazo
       'AWS_WEB_IDENTITY_TOKEN_FILE',
     ],
     fromEnv: (env) => {
-      // Bearer token mode — single env var, highest priority.
       if (env.AWS_BEARER_TOKEN_BEDROCK) {
         return {
           apiKey: env.AWS_BEARER_TOKEN_BEDROCK,
@@ -53,7 +42,6 @@ export const bedrockProvider: ProviderDefinition<'bedrock', BedrockConfig, Amazo
         };
       }
 
-      // SigV4 mode — requires all three core credentials.
       const accessKeyId = env.AWS_ACCESS_KEY_ID;
       const secretAccessKey = env.AWS_SECRET_ACCESS_KEY;
       const region = env.AWS_REGION;

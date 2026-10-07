@@ -16,9 +16,6 @@ const resetDatabaseScript = path.join(dirname, 'resetDatabase.mjs');
 const buildFixturesScript = path.join(dirname, 'buildFixtures.mjs');
 const slotScript = path.join(repoRoot, 'scripts', 'lib', 'slot.mjs');
 
-// FROGBOT_BROWSER_DEV=1 runs every project in series against `next dev`, with each browser
-// variant reusing its Chromium server, for debugging. The default builds each fixture once and
-// runs the projects in parallel, each on its own `next start` server and database.
 const dev = process.env.FROGBOT_BROWSER_DEV === '1';
 
 process.env.FROGBOT_TEST_PORT_OFFSET = String(testPortOffset);
@@ -101,9 +98,7 @@ type Server = {
   fixture: keyof typeof fixtures;
   port: number;
   database: string;
-  // In dev mode a browser variant reuses this server instead of starting its own.
   devServer?: string;
-  // The plugin-wrappers fixture has no front-end page, so its server is ready once /admin answers.
   readyPath?: string;
   env?: Record<string, string>;
   modelPort?: number;
@@ -222,7 +217,6 @@ const signInOptions: Record<string, SignInOptions> = {
   'plugin-seo': { adminRoute: '/admin' },
 };
 
-// Longest first, so the slowest projects start as soon as their servers sign in.
 const testProjects = [
   project({
     name: 'question',
@@ -303,10 +297,6 @@ const nextBin = (fixture: Fixture) =>
 const schemaDatabase = (fixture: Fixture) =>
   path.join(fixture.dir, '.next', 'frogbot-browser', 'schema.db');
 
-// Each server starts from an empty database, like Payload's PAYLOAD_DROP_DATABASE. The reset runs
-// as part of the server command, so a reused dev server keeps its data. Production servers run
-// `next start` directly: the build already generated the import map, and the frogbot CLI would
-// stay up as a parent process holding the config it loaded.
 const webServer = (name: string) => {
   const { fixture: fixtureName, port, database, readyPath = '', env } = servers[name];
   const fixture: Fixture = fixtures[fixtureName];
@@ -363,8 +353,6 @@ const buildServer = {
   env: { FROGBOT_BROWSER_FIXTURES: JSON.stringify(selectedFixtures), NEXT_TELEMETRY_DISABLED: '1' },
 };
 
-// Playwright starts web servers before globalSetup, so the run's heavy-test slot is the first web
-// server: it waits for a free slot, says "ready", and holds the slot until Playwright stops it.
 const slotServer = {
   name: 'slot',
   command: `node ${quoted(slotScript, 'browser')}`,

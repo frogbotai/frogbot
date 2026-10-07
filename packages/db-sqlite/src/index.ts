@@ -85,18 +85,10 @@ function isFileDatabase(url: string | undefined): boolean {
   return Boolean(url?.startsWith('file:') && !/:memory:|mode=memory/.test(url));
 }
 
-/**
- * The libsql transaction behind a Payload session: Drizzle keeps it on the session's `tx`.
- */
 function libsqlTransaction(session: SQLiteAdapter['sessions'][string] | undefined) {
   return (session?.db as { session?: { tx?: object } } | undefined)?.session?.tx;
 }
 
-/**
- * Payload sets `journal_mode` only when `wal` is on, and the mode is stored in the database file,
- * so a database that ran with WAL would stay in WAL. Opens the client first and switches it back
- * before Payload's `connect`, which then skips its own setup for the existing client.
- */
 async function useRollbackJournal(adapter: SQLiteAdapter): Promise<void> {
   try {
     adapter.client = createClient(adapter.clientConfig);
@@ -123,7 +115,6 @@ async function useRollbackJournal(adapter: SQLiteAdapter): Promise<void> {
     adapter.payload.logger.info('[db-sqlite] Disabling WAL mode: `wal` is false.');
     await adapter.client.execute('PRAGMA journal_mode = DELETE');
   } catch (error) {
-    // Leaving WAL needs every other connection to the file closed
     adapter.payload.logger.warn({
       err: error,
       msg: `[db-sqlite] Could not disable WAL mode, so the database stays in WAL: ${error instanceof Error ? error.message : String(error)}`,

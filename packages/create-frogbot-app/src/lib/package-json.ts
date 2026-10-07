@@ -29,9 +29,6 @@ export function applyPackageJson(
 
   if (database === 'mongodb') delete pkg.dependencies['drizzle-kit'];
 
-  // The adapter's own runtime dependencies (e.g. @payloadcms/db-mongodb) must
-  // resolve from the app root: Next dev can load an externalized adapter via
-  // its node_modules symlink instead of its real path.
   Object.assign(pkg.dependencies, databaseDependencies[database]);
 
   pkg.dependencies = Object.fromEntries(

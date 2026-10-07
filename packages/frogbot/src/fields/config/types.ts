@@ -89,9 +89,6 @@ type FieldHooks = {
       TPhase in Exclude<keyof NonNullable<PayloadFieldBase['hooks']>, 'afterChange'>
     ]?: FieldHookWithSiblingFields[];
   } & {
-    // Payload types siblingFields as required, but never passes it to afterChange hooks
-    // (afterChange/traverseFields.ts forwards it without setting it from `fields`).
-    // Make it required here once Payload fixes that.
     afterChange?: FieldHook[];
   };
 };

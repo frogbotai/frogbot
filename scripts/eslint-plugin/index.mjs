@@ -1,4 +1,5 @@
 import clientImports from './rules/client-imports.mjs';
+import noComments from './rules/no-comments.mjs';
 import noImportsFromExportsDir from './rules/no-imports-from-exports-dir.mjs';
 import noImportsFromSelf from './rules/no-imports-from-self.mjs';
 
@@ -7,6 +8,7 @@ export default {
   meta: { name: 'frogbot' },
   rules: {
     'client-imports': clientImports,
+    'no-comments': noComments,
     'no-imports-from-exports-dir': noImportsFromExportsDir,
     'no-imports-from-self': noImportsFromSelf,
   },

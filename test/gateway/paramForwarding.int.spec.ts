@@ -1,10 +1,3 @@
-// Review 056 P0 triage — reproduction tests for G1–G4 from
-// dev/plans/frogbot_gateway/056_full_gateway_review/00_SUMMARY.md §3.
-//
-// Each test asserts the CORRECT (compliant) behavior at the composed-app seam.
-// Confirmed findings are wrapped as `it.fails(...)` so the suite stays green;
-// flip to `it()` when the corresponding fix lands.
-
 import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
@@ -13,14 +6,6 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { finish, mockUsage } from './mockModel.js';
 
-/**
- * Builds an error that passes `APICallError.isInstance()` at runtime without
- * importing `@ai-sdk/provider` as a value (it is a gateway-package dep, not
- * resolvable from the root test workspace). The AI SDK identifies its error
- * classes via `Symbol.for` markers (ai-sdk-error.ts `hasMarker`), so tagging
- * a plain Error with the markers is behaviorally identical for the SDK's
- * retry loop and the gateway's envelope translators.
- */
 function createRetryableApiCallError(opts: {
   message: string;
   statusCode: number;
@@ -40,11 +25,6 @@ function createRetryableApiCallError(opts: {
   });
 }
 
-/**
- * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
- * hands to `doGenerate`/`doStream` so tests can assert what actually reached
- * the (mocked) upstream. Mirrors `createMockLanguageModel` in int.spec.ts.
- */
 function createRecordingModel(opts?: {
   text?: string;
   error?: Error;
@@ -106,19 +86,9 @@ function makeAppWithModel(providerName: string, model: LanguageModelV4) {
   return createApp({ registry });
 }
 
-// ---------------------------------------------------------------------------
-// G1 (OC1) — /v1/chat/completions `response_format` must be forwarded to the
-// AI SDK as `responseFormat` ({ type: 'json', schema? }); today it is accepted
-// by the schema and silently dropped.
-// ---------------------------------------------------------------------------
-
-// G1
 describe('chat response_format forwarded upstream', () => {
   it('forwards response_format {type: json_object} as responseFormat {type: json}', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    // Mock returns valid JSON text: generateText with `output` set eagerly
-    // parses the final text (ai generate-text.ts parseCompleteOutput) and a
-    // non-JSON reply would fail the request before the assertion lands.
     const app = makeAppWithModel(
       'openai',
       createRecordingModel({
@@ -177,13 +147,6 @@ describe('chat response_format forwarded upstream', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G2 (AM1) — /v1/messages `thinking` must map to
-// providerOptions.anthropic.thinking = { type: 'enabled', budgetTokens }
-// (AI SDK anthropic-language-model-options.ts); today it is silently dropped.
-// ---------------------------------------------------------------------------
-
-// G2
 describe('messages thinking forwarded upstream', () => {
   it('maps thinking {type: enabled, budget_tokens} to providerOptions.anthropic.thinking.budgetTokens', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
@@ -236,13 +199,6 @@ describe('messages thinking forwarded upstream', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G3 (RS1) — /v1/responses must accept `function_call` /
-// `function_call_output` input items (tool round trip); today the schema only
-// accepts role-bearing messages and 400s the whole request.
-// ---------------------------------------------------------------------------
-
-// G3
 describe('responses tool-call round trip', () => {
   it('accepts function_call + function_call_output input items and delivers the tool result upstream', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
@@ -284,7 +240,6 @@ describe('responses tool-call round trip', () => {
 
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);
 
-    // The tool result must reach the model as a tool-role message.
     const toolMessage = callOptions?.prompt.find((m) => m.role === 'tool');
 
     expect(toolMessage).toBeDefined();
@@ -292,20 +247,8 @@ describe('responses tool-call round trip', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G4 (HE1) — AI SDK `RetryError` (thrown after internal retries of a
-// retryable upstream 429 exhaust) must unwrap to a 429 rate_limit_error
-// envelope with retry headers; today it hits the catch-all → generic 500.
-// ---------------------------------------------------------------------------
-
-// G4
 describe('RetryError unwraps to upstream 429 envelope', () => {
-  // G4 / HE1 — fixed: envelope.ts + normalizeAiSdkError.ts now unwrap
-  // RetryError to its lastError before classifying. See 056_full_gateway_review.
   it('returns 429 rate_limit_error with retry headers when upstream 429s exhaust SDK retries', async () => {
-    // Always-throwing retryable 429. `retry-after-ms: 0` keeps the SDK's
-    // internal retry delays at ~0 so the retries exhaust immediately and
-    // generateText throws RetryError (retry-with-exponential-backoff.ts).
     const upstreamError = createRetryableApiCallError({
       message: 'Rate limit exceeded',
       statusCode: 429,

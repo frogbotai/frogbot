@@ -1,5 +1,3 @@
-// Vertex middleware tests — vertexThinkingBudget hook.
-
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../../packages/gateway/src/hooks.js';
@@ -94,7 +92,6 @@ describe('vertexThinkingBudget', () => {
 
     await vertexThinkingBudget(args);
 
-    // 15% of 2048 = 307, floor = 1024
     expect(args.providerOptions['google']).toEqual({
       thinkingConfig: { thinkingBudget: 1024 },
     });

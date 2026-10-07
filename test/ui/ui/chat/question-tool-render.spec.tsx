@@ -607,8 +607,6 @@ describe('QuestionToolRender in Chat', () => {
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull());
 
-    // A resubmit would start as the first turn finished, so it would reach the server before a
-    // message sent after the turn.
     fireEvent.change(composer, { target: { value: 'One more thing' } });
     fireEvent.keyDown(composer, { key: 'Enter' });
 

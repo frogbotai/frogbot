@@ -1,7 +1,3 @@
-// `pnpm release [--resume]`
-//
-// Publishes every package that `pnpm bump` released. `--resume` skips the install after a
-// partial publish; pnpm skips versions that are already on the registry.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 

@@ -1,5 +1,3 @@
-// embedMany operation — batch embedding for multiple values.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { embedMany as aiEmbedMany } from 'ai';
 
@@ -25,11 +23,9 @@ export async function embedManyOperation(
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  // 1. Resolve model.
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

@@ -1,16 +1,3 @@
-// Gateway billing-usage red test — proving review finding G96 at the public
-// hook seam (the payload a billing hook actually receives).
-//
-//   G96 — cache-WRITE tokens (Anthropic `cache_creation_input_tokens`, the
-//         priciest token class at 1.25×/2× on Anthropic) are invisible to
-//         billing hooks. `HookUsage` carries only `cachedInputTokens` (from
-//         `inputTokenDetails.cacheReadTokens`); the AI SDK v7 also exposes
-//         `inputTokenDetails.cacheWriteTokens`, but the gateway never maps it,
-//         so cache-writes get silently lumped into the uncached input total.
-//
-// Marked `it.fails(...)` because it asserts the CORRECT behavior — a
-// `cacheWriteTokens` field on the hook usage — which does not exist yet.
-
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
@@ -19,8 +6,6 @@ import type { AfterOperationHookArgs, Hooks, HookUsage } from '../../packages/ga
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { finish, mockUsage } from './mockModel.js';
 
-// AI SDK v7 usage partition: `inputTokens.total` includes cache-read AND
-// cache-write; `cacheWrite` maps to `LanguageModelUsage.inputTokenDetails.cacheWriteTokens`.
 const USAGE = mockUsage({
   inputTokens: { total: 100, noCache: 70, cacheRead: 10, cacheWrite: 20 },
   outputTokens: { total: 50, text: 50 },
@@ -81,16 +66,10 @@ function makeApp(providerName: string, hooks: Hooks) {
   return createApp({ registry, hooks });
 }
 
-// A billing hook reads `cacheWriteTokens` off the usage payload. `HookUsage`
-// has no such field today, so the read is `undefined` (and the property does
-// not even exist on the type). `.cacheWriteTokens` is accessed via an index to
-// keep the test compiling against the current (missing-field) type.
 const readCacheWrite = (usage: HookUsage | undefined): number | undefined =>
   (usage as unknown as { cacheWriteTokens?: number } | undefined)?.cacheWriteTokens;
 
 describe('gateway billing usage — cache-write token attribution (G96)', () => {
-  // G96 (non-streaming): a billing hook must see cache-write tokens (20) as a
-  // distinct field; today HookUsage only exposes cachedInputTokens (cache-read).
   it('chat non-streaming: exposes cacheWriteTokens to afterOperation hooks', async () => {
     const calls: AfterOperationHookArgs[] = [];
     const app = makeApp('openai', {
@@ -112,13 +91,10 @@ describe('gateway billing usage — cache-write token attribution (G96)', () => 
 
     expect(res.status).toBe(200);
     expect(calls).toHaveLength(1);
-    // Cache-read is already exposed; cache-write must be too.
     expect(calls[0].usage?.cachedInputTokens).toBe(10);
     expect(readCacheWrite(calls[0].usage)).toBe(20);
   });
 
-  // G96 (streaming): the same cache-write field must reach afterOperation once
-  // the stream drains; the streaming lifecycle's toHookUsage drops it today.
   it('chat streaming: exposes cacheWriteTokens to afterOperation hooks', async () => {
     const calls: AfterOperationHookArgs[] = [];
     const app = makeApp('openai', {

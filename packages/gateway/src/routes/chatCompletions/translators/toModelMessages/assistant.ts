@@ -15,13 +15,9 @@ export function parseAssistantMessage(
   const hasReasoningDetails = !!msg.reasoning_details && msg.reasoning_details.length > 0;
   const hasReasoning = hasReasoningDetails || !!msg.reasoning_content;
   const hasToolCalls = !!msg.tool_calls && msg.tool_calls.length > 0;
-  // G55: the AI SDK's AssistantContent union has no refusal part type, so a
-  // re-ingested refusal is preserved as a plain text part — dropping it would
-  // silently erase the assistant turn on round-trip.
   const hasRefusal = typeof msg.refusal === 'string' && msg.refusal.length > 0;
   const providerOptions = assistantProviderOptions(msg);
 
-  // Fast path: plain text only
   if (!hasReasoning && !hasToolCalls && !hasRefusal) {
     const result: AssistantModelMessage = { role: 'assistant', content: text };
     if (providerOptions) {
@@ -33,8 +29,6 @@ export function parseAssistantMessage(
 
   const parts: Exclude<AssistantContent, string> = [];
 
-  // Reasoning first — order matters for some providers' caching semantics.
-  // Prefer structured `reasoning_details` over flat `reasoning_content`.
   if (hasReasoningDetails) {
     for (const detail of msg.reasoning_details!) {
       if (detail.type === 'reasoning.text') {
@@ -87,12 +81,6 @@ export function parseAssistantMessage(
   return result;
 }
 
-/**
- * Build message-level providerOptions from `extra_content` (already
- * provider-namespaced metadata, forwarded verbatim — G55) merged with the
- * gateway's `unknown.cache_control` namespace. An explicit `cache_control`
- * field wins over one nested inside `extra_content.unknown`.
- */
 function assistantProviderOptions(msg: OpenAIAssistantMessage): ProviderMetadata | undefined {
   if (!msg.extra_content && !msg.cache_control) {
     return undefined;
@@ -112,10 +100,6 @@ function assistantProviderOptions(msg: OpenAIAssistantMessage): ProviderMetadata
   return options;
 }
 
-/**
- * Parse OpenAI's JSON-encoded tool-call arguments. Non-streaming requests receive
- * complete strings, so any parse failure is a real client error (400).
- */
 function parseToolCallArguments(s: string, path: string): unknown {
   if (s === '' || s == null) return {};
   try {

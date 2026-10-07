@@ -1,9 +1,3 @@
-// The FrogBot ↔ Payload request seam. A `FrogBotRequest` is Payload's
-// request object with `frogbot` attached: `payload` is hidden from the type,
-// not removed, so handing it back to Payload is a type change only. The
-// local API is the same: FrogBot's methods are Payload's, called with those
-// requests.
-
 import type { FrogBot } from '../frogbot.js';
 import type { FrogBotLocalAPI } from '../localAPI.js';
 import type { TypedUser } from '../types/generated.js';

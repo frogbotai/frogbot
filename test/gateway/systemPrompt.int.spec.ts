@@ -1,23 +1,3 @@
-// Review 056 — G155: LIVE-UPSTREAM DISCOVERY (found by the Zen real-model
-// e2e suite, 2026-07-11; missed by every mock test and both prior reviews).
-//
-// ai@7.0.0 renamed `system` → `instructions` (vercel/ai #15110) and
-// `standardizePrompt` now THROWS `InvalidPromptError` on any `role: 'system'`
-// message in `messages` unless `allowSystemInMessages: true` is passed.
-// The responses handler passes it (responses/handler.ts:137); the
-// chatCompletions and messages handlers do NOT — so on the two PRIMARY
-// routes, EVERY request carrying a system prompt fails with:
-//   400 {"error":{"message":"Invalid prompt: System messages are not
-//   allowed...","code":"invalid_prompt"}}
-//
-// Why mocks never caught it: no int test posts a system prompt AND asserts
-// 200 on chat/messages (int.spec.ts's two system tests only capture
-// beforeUpstream hook args and never check the response status).
-//
-// Both tests below assert the CORRECT behavior and now serve as regression
-// guards (fixed by passing `allowSystemInMessages: true` in both handlers,
-// mirroring the responses handler).
-
 import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
@@ -70,8 +50,6 @@ function makeAppWithModel(providerName: string, model: LanguageModelV4) {
 }
 
 describe('system prompts must reach upstream on all text routes', () => {
-  // G155 regression guard — ai@7 renamed system→instructions and standardizePrompt
-  // rejects role:system in messages without allowSystemInMessages.
   it('chat completions: system message → 200 and system content reaches upstream', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -95,7 +73,6 @@ describe('system prompts must reach upstream on all text routes', () => {
     expect(callOptions?.prompt.some((m) => m.role === 'system')).toBe(true);
   });
 
-  // G155 regression guard — same defect on /v1/messages via top-level `system` param.
   it('messages: top-level system param → 200 and system content reaches upstream', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(

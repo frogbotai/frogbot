@@ -1,9 +1,3 @@
-// Azure OpenAI canonical ID mapping.
-//
-// In Azure, model IDs ARE deployment names. This module provides a mapping
-// from common model shorthand names to their likely deployment names, plus
-// a pass-through for custom deployment names.
-
 /**
  * Common Azure deployment name patterns.
  * Maps friendly model names to typical Azure deployment names.

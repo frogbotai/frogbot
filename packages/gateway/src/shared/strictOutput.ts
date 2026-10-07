@@ -1,17 +1,3 @@
-// Strict structured output, checked by the gateway.
-//
-// A client that sends `strict: true` with a JSON schema expects every reply to
-// match it. Most providers enforce that themselves, but some cannot: Bedrock
-// rejects both native structured output and strict tools for the newest Claude
-// models, so the AI SDK falls back to a plain `json` tool and the model
-// sometimes returns the wrong shape.
-//
-// This middleware checks each reply against the schema. A non-streaming reply
-// that doesn't match is retried once with the problems shown to the model, the
-// way opencode handles a bad StructuredOutput tool call. A second mismatch
-// fails with `StructuredOutputError` (502). A streamed reply has already been
-// sent, so it ends with an error event instead of a retry.
-
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
@@ -78,7 +64,6 @@ function schemaCheck(params: LanguageModelV4CallOptions): Check | undefined {
   try {
     schema = z.fromJSONSchema(format.schema as Parameters<typeof z.fromJSONSchema>[0]);
   } catch {
-    // A schema zod can't read is left to the provider rather than refused.
     return undefined;
   }
 
@@ -111,9 +96,6 @@ function replyText(content: LanguageModelV4Content[], finishReason: string): str
   return checksReply({ finishReason, text, calledTool }) ? text : undefined;
 }
 
-// Only a finished text answer is checked, matching when the AI SDK parses
-// structured output. A tool call or a reply cut off at the token limit passes
-// through, so the client sees its real finish reason.
 function checksReply(reply: { finishReason: string; text: string; calledTool: boolean }) {
   if (reply.calledTool) return false;
   if (reply.finishReason === 'length' || reply.finishReason === 'tool-calls') return false;

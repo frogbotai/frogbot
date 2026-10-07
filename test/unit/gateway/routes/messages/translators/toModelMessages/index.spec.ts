@@ -1,19 +1,7 @@
-// Tests for the Anthropic /v1/messages inbound parser (`toModelMessages`).
-//
-// Mirrors the coverage pattern of the OpenAI chat-completions barrel suite
-// (chatCompletions/translators/chatCompletions.spec.ts). Exercises the full
-// inversion of `convertToAnthropicPrompt`: system flattening, user/tool run
-// splitting, multimodal ingestion, tool_use_id correlation, cache_control
-// forwarding, and assistant block handling.
-
 import { describe, expect, test, vi } from 'vitest';
 
 import { UnsupportedModalityError } from '../../../../../../../packages/gateway/src/errors/gatewayError.js';
 import { toModelMessages } from '../../../../../../../packages/gateway/src/routes/messages/translators/toModelMessages/index.js';
-
-// ---------------------------------------------------------------------------
-// system parameter
-// ---------------------------------------------------------------------------
 
 describe('system parameter', () => {
   test('returns no system message when system is absent', () => {
@@ -59,10 +47,6 @@ describe('system parameter', () => {
     });
   });
 });
-
-// ---------------------------------------------------------------------------
-// user messages
-// ---------------------------------------------------------------------------
 
 describe('user messages', () => {
   test('passes through string content unchanged', () => {
@@ -217,10 +201,6 @@ describe('user messages', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// tool_result splitting and correlation
-// ---------------------------------------------------------------------------
-
 describe('tool_result handling', () => {
   test('splits mixed content into contiguous user/tool/user runs', () => {
     const result = toModelMessages({
@@ -371,10 +351,6 @@ describe('tool_result handling', () => {
     });
   });
 });
-
-// ---------------------------------------------------------------------------
-// assistant messages
-// ---------------------------------------------------------------------------
 
 describe('assistant messages', () => {
   test('passes through string content unchanged', () => {

@@ -50,14 +50,12 @@ describe('genAi metrics', () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
 
-    // Importing the module must not create any histograms.
     expect(createHistogram).not.toHaveBeenCalled();
 
     recordGenAiTokenUsage(ctx, usage, 'recommended');
 
     expect(createHistogram).toHaveBeenCalledTimes(1);
     expect(createHistogram).toHaveBeenCalledWith('gen_ai.client.token.usage', { unit: '{token}' });
-    // cache read(20), uncached input(80), reasoning output(10), non-reasoning output(40)
     expect(record).toHaveBeenCalledWith(
       20,
       expect.objectContaining({ 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'read' }),
@@ -228,7 +226,6 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     });
   });
 
-  // RED at baseline: pre-fix silently clamped textOutput to 0 with no warning.
   it('clamps and warns on output sum-invariant violation (outputTokens < reasoningTokens)', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
@@ -253,7 +250,6 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     );
   });
 
-  // RED at baseline: pre-fix silently clamped uncachedInput to 0 with no warning.
   it('clamps and warns on input sum-invariant violation (inputTokens < cachedInputTokens)', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
@@ -278,7 +274,6 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     );
   });
 
-  // RED at baseline: pre-fix had no non-finite guard; NaN/Infinity poisoned the histogram.
   it('records 0 for non-finite token values without throwing or poisoning', async () => {
     const { recordGenAiTokenUsage } =
       await import('../../../../packages/gateway/src/observability/genAi.js');
@@ -333,12 +328,10 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     const inputs = await inputPoints();
     const outputs = await outputPoints();
 
-    // No cache partition attributes at all — a single bare input point carrying the full total.
     expect(inputs).toHaveLength(1);
     expect(inputs[0].value).toBe(100);
     expect(inputs[0].attributes['gen_ai.token.cache']).toBeUndefined();
 
-    // No reasoning partition attributes — a single bare output point.
     expect(outputs).toHaveLength(1);
     expect(outputs[0].value).toBe(50);
     expect(outputs[0].attributes['gen_ai.token.reasoning']).toBeUndefined();

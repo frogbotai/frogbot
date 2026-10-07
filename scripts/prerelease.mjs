@@ -1,9 +1,3 @@
-// `pnpm bump <major|minor|patch> [--from <step>] [--list]`
-//
-// Runs the release gate (install, single frogbot install, sync, format, build,
-// dist imports, UI packaging, services, tests) and only then rewrites versions with
-// scripts/bump.mjs. Each step is named so a failure can be resumed with
-// `--from <step>` instead of redoing everything.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -39,7 +33,6 @@ export const STEPS = [
     ],
     docker: true,
   },
-  // { name: 'browser', run: ['pnpm', 'test:browser'] },
   { name: 'version', run: (bump) => ['node', 'scripts/bump.mjs', bump] },
 ];
 
@@ -131,7 +124,6 @@ function main() {
 
   const steps = STEPS.slice(start);
 
-  // Check prerequisites before spending minutes on install/build.
   if (steps.some((s) => s.docker)) ensureDocker();
 
   const began = Date.now();

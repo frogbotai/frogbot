@@ -1,5 +1,3 @@
-// Bedrock provider credential validation tests.
-
 import { afterEach, assert, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 const { createAmazonBedrock, standardLanguageModel } = vi.hoisted(() => ({

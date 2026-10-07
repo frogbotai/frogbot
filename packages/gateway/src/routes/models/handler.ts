@@ -1,10 +1,3 @@
-// GET /v1/models — OpenAI-compatible model discovery endpoint.
-//
-// Serializes the configured model catalog as an OpenAI-shaped list
-// (`{ object: 'list', data: [{ id, object, created, owned_by }] }`),
-// filtered to entries servable by at least one configured provider.
-//
-
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';

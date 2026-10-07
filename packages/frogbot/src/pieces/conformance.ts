@@ -147,7 +147,6 @@ export async function pieceConformance<T extends PieceDefinition>(
   }
 
   const configuredAuth = pieceInstanceRuntime(instance).auth;
-  // Pieces reach credentials only through `req.frogbot.connections`; the kit fakes that slice.
   const stub: ConformanceRequest = {
     frogbot: {
       connections: {

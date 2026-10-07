@@ -1,12 +1,3 @@
-// Gateway integration tests — in-process createGateway() + Hono fetch.
-//
-// Tests exercise the full request → translate → (mocked upstream) → translate → response
-// pipeline without real HTTP or real provider calls.
-//
-// Matrix: 2 endpoints × {same-provider, cross-provider} × {non-streaming, error}
-// M2 additions: provider-sprawl cases for groq, bedrock, vertex, azure,
-// openai-compatible — validation, credential errors, and mock model injection.
-
 import type {
   EmbeddingModelV4,
   EmbeddingModelV4CallOptions,
@@ -37,11 +28,6 @@ import { postJson } from '../__helpers/gateway/post-json.js';
 import { providerMap } from '../unit/gateway/config/fixtures.js';
 import { finish, mockModel, mockUsage, partStream } from './mockModel.js';
 
-// ---------------------------------------------------------------------------
-// Shared test app — providers configured but never actually called for
-// validation-only tests. Provider calls would require mock model injection.
-// ---------------------------------------------------------------------------
-
 function makeApp() {
   return createApp({
     registry: buildProviderRegistry(
@@ -53,10 +39,6 @@ function makeApp() {
   });
 }
 
-/**
- * Lightweight mock LanguageModelV4 — avoids importing ai/test from the root
- * workspace. Returns canned text response for doGenerate.
- */
 function createMockLanguageModel(opts?: {
   text?: string;
   toolCalls?: Array<{ toolCallId: string; toolName: string; input: string }>;
@@ -136,7 +118,6 @@ function createMockLanguageModel(opts?: {
   });
 }
 
-/** The language params a chat-route `beforeUpstream` hook mutates. */
 function languageParams(
   args: BeforeUpstreamHookArgs,
 ): NonNullable<BeforeUpstreamHookArgs['params']> {
@@ -145,9 +126,6 @@ function languageParams(
   return args.params;
 }
 
-/**
- * Creates an app with a mock language model injected as the given provider.
- */
 function makeAppWithMockProvider(providerName: string, mockModel?: LanguageModelV4, hooks?: Hooks) {
   const model = mockModel ?? createMockLanguageModel();
   const fakeProvider = { languageModel: () => model };
@@ -156,14 +134,6 @@ function makeAppWithMockProvider(providerName: string, mockModel?: LanguageModel
   return createApp({ registry, hooks });
 }
 
-/**
- * A streaming mock model whose `doStream` emits an initial text chunk
- * immediately, then delays `delayMs` before emitting the `finish` chunk
- * (with real usage numbers) and closing. Used to prove `afterOperation`'s
- * `durationMs` reflects the full stream duration, not time-to-first-byte —
- * a fixed synchronous mock (like `createMockLanguageModel`) can't
- * distinguish the two since everything resolves in the same microtask.
- */
 function createDelayedStreamModel(opts: {
   delayMs: number;
   text?: string;
@@ -198,8 +168,6 @@ function createDelayedStreamModel(opts: {
             setTimeout(() => {
               controller.enqueue({
                 type: 'finish',
-                // `LanguageModelV4FinishReason` is `{ unified, raw }`, not a
-                // plain string — real providers always shape it this way.
                 finishReason: finish(finishReason, finishReason),
                 usage: mockUsage({
                   inputTokens: { total: inputTokens, noCache: inputTokens },
@@ -215,12 +183,6 @@ function createDelayedStreamModel(opts: {
   };
 }
 
-/**
- * A streaming mock model whose `doStream` emits a well-behaved mid-stream
- * provider error: a real content chunk, then an `{type:'error'}` part, then
- * the raw stream closes with no explicit `finish` part (the AI SDK
- * synthesizes `finishReason: 'error'` for the step itself).
- */
 function createMidStreamErrorModel(error: unknown): LanguageModelV4 {
   return {
     ...createMockLanguageModel(),
@@ -325,10 +287,6 @@ function makeAppWithMockModalityProvider(
   return createApp({ registry });
 }
 
-// ---------------------------------------------------------------------------
-// OpenAI endpoint — validation + error envelope
-// ---------------------------------------------------------------------------
-
 describe('gateway integration — /v1/chat/completions', () => {
   it('rejects malformed model id with 400', async () => {
     const app = makeApp();
@@ -355,21 +313,15 @@ describe('gateway integration — /v1/chat/completions', () => {
 
   it('cross-provider model id parses correctly for configured provider', async () => {
     const app = makeApp();
-    // Non-streaming: will attempt upstream call with fake key → auth error, not 400
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'anthropic/claude-sonnet-4-20250514',
       messages: [{ role: 'user', content: 'hello' }],
     });
 
-    // Should get an upstream auth error (401), not a validation error (400)
     expect(status).toBe(401);
     expect(body).toHaveProperty('error.type', 'authentication_error');
   });
 });
-
-// ---------------------------------------------------------------------------
-// Anthropic endpoint — validation + error envelope
-// ---------------------------------------------------------------------------
 
 describe('gateway integration — /v1/messages', () => {
   it('rejects missing model with Anthropic-shaped error', async () => {
@@ -407,8 +359,6 @@ describe('gateway integration — /v1/messages', () => {
       max_tokens: 100,
     });
 
-    // Passes validation, then fails at the upstream call with the mock key.
-    // Must be a 401 auth error from upstream, NOT a 400 validation error.
     expect(status).toBe(401);
   });
 
@@ -429,7 +379,6 @@ describe('gateway integration — /v1/messages', () => {
       system: [{ type: 'text', text: 'be terse' }],
     });
 
-    // G155: system prompts must not just reach hooks — the request must succeed.
     expect(status).toBe(200);
     expect(captured).toEqual([{ type: 'text', text: 'be terse' }]);
   });
@@ -451,22 +400,14 @@ describe('gateway integration — /v1/messages', () => {
       system: 'be terse',
     });
 
-    // G155: system prompts must not just reach hooks — the request must succeed.
     expect(status).toBe(200);
     expect(captured).toBe('be terse');
   });
 });
 
-// ---------------------------------------------------------------------------
-// Error header propagation
-// ---------------------------------------------------------------------------
-
 describe('gateway integration — error headers', () => {
   it('returns x-should-retry header on retryable errors', async () => {
     const app = makeApp();
-    // Valid shape → passes validation, then hits the real OpenAI upstream with
-    // the fake `sk-test-int` key → 401 authentication_error. A 401 is not
-    // retryable, so x-should-retry must be absent.
     const { status, headers } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
@@ -476,10 +417,6 @@ describe('gateway integration — error headers', () => {
     expect(headers.get('x-should-retry')).toBe('false');
   });
 });
-
-// ---------------------------------------------------------------------------
-// M2 Provider sprawl — mock model injection tests
-// ---------------------------------------------------------------------------
 
 describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => {
   it('groq provider resolves and returns mock response', async () => {
@@ -910,7 +847,6 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
     expect(res.status).toBe(429);
     expect(res.headers.get('content-type')).toContain('application/json');
-    // G27: streaming early-error 429 must carry retry hints like the non-streaming path.
     expect(res.headers.get('retry-after')).toBe('30');
     expect(res.headers.get('x-should-retry')).toBe('true');
     await expect(res.json()).resolves.toHaveProperty('error.type', 'rate_limit_error');
@@ -943,7 +879,6 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     });
 
     expect(res.status).toBe(429);
-    // G27: streaming early-error 429 must carry retry hints like the non-streaming path.
     expect(res.headers.get('retry-after')).toBe('30');
     expect(res.headers.get('x-should-retry')).toBe('true');
     await expect(res.json()).resolves.toHaveProperty('error.type', 'rate_limit_error');
@@ -976,7 +911,6 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     });
 
     expect(res.status).toBe(429);
-    // G27: streaming early-error 429 must carry retry hints like the non-streaming path.
     expect(res.headers.get('retry-after')).toBe('30');
     expect(res.headers.get('x-should-retry')).toBe('true');
     await expect(res.json()).resolves.toHaveProperty('error.type', 'rate_limit_error');
@@ -1095,7 +1029,6 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
     expect(status).toBe(500);
 
-    // G103: the gateway mints its own id and does not echo the client value.
     const requestId = headers.get('x-request-id') ?? '';
 
     expect(requestId).not.toBe('req-stage-7');
@@ -1245,12 +1178,6 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   });
 });
 
-// ---------------------------------------------------------------------------
-// P0-A1 — streaming `afterOperation`/`afterError` fire off the stream's real
-// terminal signal (success, mid-stream error, client abort), not at
-// HTTP-return time. See `shared/streamLifecycle.ts`.
-// ---------------------------------------------------------------------------
-
 describe('gateway integration — streaming lifecycle (afterOperation timing)', () => {
   it('does not fire afterOperation at HTTP-return time, and fires it exactly once with real usage/finishReason once the stream drains', async () => {
     const afterOperationCalls: AfterOperationHookArgs[] = [];
@@ -1280,11 +1207,9 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     });
 
     expect(res.status).toBe(200);
-    // The core bug this fix closes: `afterOperation` must NOT have fired yet
-    // at the moment the handler returns the streaming Response.
     expect(afterOperationCalls).toHaveLength(0);
 
-    await res.text(); // drains the SSE stream to completion
+    await res.text();
 
     expect(afterOperationCalls).toHaveLength(1);
 
@@ -1298,8 +1223,6 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       cachedInputTokens: undefined,
       reasoningTokens: undefined,
     });
-    // Real duration, not time-to-first-byte: the model delays 40ms before
-    // its `finish` chunk, so a TTFB-anchored `durationMs` would be ~0.
     expect(call.durationMs).toBeGreaterThanOrEqual(30);
   });
 
@@ -1335,8 +1258,6 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
       }),
     });
 
-    // The stream already emitted real content before the error, so this is
-    // a 200 with an in-band SSE error frame, not a pre-flight JSON error.
     expect(res.status).toBe(200);
 
     await res.text();
@@ -1744,8 +1665,6 @@ describe('gateway integration — M3 embeddings and images', () => {
     expect(body).toHaveProperty('data[0].embedding', 'AACAPgAAAD8=');
     expect(body).toHaveProperty('data[1].embedding', 'AACgPwAAwD8=');
     expect(callOptions?.values).toEqual(['one', 'two']);
-    // `dimensions` is re-homed to voyage's own namespace; `user` is OpenAI-only,
-    // so it is left in the neutral namespace where voyage never reads it.
     expect(callOptions?.providerOptions).toEqual({
       voyage: { outputDimension: 2 },
       unknown: { user: 'user-1' },
@@ -2011,10 +1930,6 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
     expect(body).toHaveProperty('results[0].document', { text: 'frog robot' });
   });
 });
-
-// ---------------------------------------------------------------------------
-// M2 Provider sprawl — credential validation paths
-// ---------------------------------------------------------------------------
 
 describe('gateway integration — credential validation', () => {
   it('unconfigured groq returns 404 for groq model', async () => {

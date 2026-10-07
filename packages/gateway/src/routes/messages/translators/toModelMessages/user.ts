@@ -66,7 +66,6 @@ export function parseUserMessage(
       continue;
     }
 
-    // Non-tool_result → user part. Flush any pending tool run first.
     flushTool();
 
     const part = parseUserContentBlock(block, path);
@@ -80,10 +79,6 @@ export function parseUserMessage(
 
   return out.length > 0 ? out : [{ role: 'user', content: '' }];
 }
-
-// ---------------------------------------------------------------------------
-// Individual block parsers
-// ---------------------------------------------------------------------------
 
 function parseUserContentBlock(
   block: Exclude<AnthropicUserBlock, AnthropicToolResultBlock>,
@@ -113,10 +108,6 @@ function parseUserContentBlock(
     }
 
     case 'document': {
-      // Anthropic documents can be base64/url binary or inline text. All map to
-      // AI SDK `file` parts — the text variant becomes a `{ type: 'text' }` file
-      // part (not a plain TextPart) so the anthropic provider routes it back to
-      // a `document` block and honors title/context/citations.
       const src = block.source;
       const part: FilePart =
         src.type === 'text'
@@ -136,9 +127,6 @@ function parseUserContentBlock(
     }
 
     default: {
-      // Reachable at runtime because the request schema allows unknown block
-      // types through as a forward-compat catch-all; TS considers it `never`
-      // once the strict union is exhausted.
       const blockType: unknown = Reflect.get(block, 'type');
       throw new UnsupportedModalityError({
         provider: 'anthropic',
@@ -168,8 +156,6 @@ function mediaSourceToFilePart(
         data: { type: 'url', url: new URL(source.url) },
       };
     default: {
-      // Reachable at runtime if AnthropicMediaSource grows a new variant
-      // before we update the types.
       const sourceType: unknown = Reflect.get(source, 'type');
       throw new UnsupportedModalityError({
         provider: 'anthropic',
@@ -180,10 +166,6 @@ function mediaSourceToFilePart(
   }
 }
 
-// Build the providerOptions for a document block. Anthropic document features
-// (title/context/citations) are file-part options the AI SDK reads from the
-// `anthropic` namespace with camelCase keys; cache_control rides `unknown` and
-// forwardLanguageParams re-homes it to the SDK namespace after hooks run.
 function documentProviderOptions(block: AnthropicDocumentBlock): ProviderOptions | undefined {
   const anthropic: Record<string, JSONValue> = {};
   if (block.title) {
@@ -238,12 +220,9 @@ function toolResultOutput(block: AnthropicToolResultBlock): ToolResultPart['outp
   }
 
   if (typeof block.content === 'string') {
-    // Preserve structure when the tool result is JSON — matches OpenAI
-    // translator behavior so downstream reasoning can see typed output.
     return parseJsonOrText(block.content);
   }
 
-  // Array of sub-blocks: text | image. Convert to AI SDK content list.
   const parts: Extract<ToolResultPart['output'], { type: 'content' }>['value'] = [];
 
   for (const sub of block.content) {

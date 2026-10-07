@@ -4,7 +4,6 @@ import type { CollectionConfig } from 'frogbot';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { mediaSlug, usersSlug } from './shared.js';
 
-// Vercel Blob emulator env vars (must be set before the plugin runs)
 process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_emulator_test';
 process.env.NEXT_PUBLIC_VERCEL_BLOB_API_URL = 'http://localhost:3100/api/blob';
 process.env.STORAGE_VERCEL_BLOB_BASE_URL = 'http://localhost:3100';

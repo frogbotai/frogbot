@@ -93,7 +93,7 @@ describe('pnpm lint', () => {
       "import { expect, it } from 'vitest';\n\n" +
         "it('drops the FrogBot plugins key from the payload config', () => {\n" +
         '  const payloadConfig: unknown = {};\n\n' +
-        '  expect((payloadConfig as any).plugins).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any\n' +
+        '  expect((payloadConfig as any).plugins).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any -- the cast is untyped\n' +
         '});\n',
       ['--format', 'json'],
     );
@@ -222,7 +222,6 @@ describe('product-code cast ban (DR-047)', () => {
 });
 
 describe('brand spelling (DR-056)', () => {
-  // Split so this file does not trip the rule it tests.
   const misspellings = ['Frog' + 'bot', 'frog' + 'Bot'];
 
   function brand(filename: string, code: string) {
@@ -724,8 +723,6 @@ describe('typed and React lint', () => {
     );
   }
 
-  // oxlint reads no stdin, so the code goes to a temporary file outside every tsconfig, which
-  // tsgolint lints in an inferred program, under the repo's `.oxlintrc.json`.
   function typed(filename: string, code: string) {
     const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-typed-lint-'));
     const file = path.join(dir, path.basename(filename));

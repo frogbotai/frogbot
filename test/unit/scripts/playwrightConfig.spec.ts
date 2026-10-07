@@ -22,7 +22,6 @@ const dependencyURLs: Record<string, string[]> = {
   'chat-assets': [`http://localhost:${testPort(3126)}/health`],
 };
 
-// The plugin-wrappers fixture has no front-end page, so its server is ready once /admin answers.
 const readyPaths: Record<string, string> = {
   'plugin-seo': '/admin',
 };

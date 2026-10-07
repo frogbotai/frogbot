@@ -1,15 +1,3 @@
-// /v1/responses wire-fidelity — mock-tier proofs for behaviors that a live
-// free model can neither prove nor disprove (upstream param introspection and
-// injected finishReason faults).
-//
-// Tiers, per the gateway testing policy: live Zen e2e is the gold standard, but
-//   - G20 needs to observe what provider options actually reach the model's
-//     doGenerate seam (a real model can comply by chance; we can't introspect
-//     the forwarded params live).
-//   - G22 needs a non-streaming provider that finishes with finishReason
-//     'error' on demand (a free model won't reproduce that fault reliably).
-// Both are captured here with a MockLanguageModelV4.
-
 import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
@@ -18,8 +6,6 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { finish, mockUsage } from './mockModel.js';
 
-// A mock model that records the options it was called with, so a test can
-// assert exactly which provider options the gateway forwarded to the SDK seam.
 function createCapturingModel(
   capture: (options: LanguageModelV4CallOptions) => void,
 ): LanguageModelV4 {
@@ -33,9 +19,6 @@ function createCapturingModel(
     doGenerate: (options: LanguageModelV4CallOptions) => {
       capture(options);
 
-      // Return valid JSON text so a json_schema structured-output request
-      // parses cleanly — this keeps the request a 200 so the assertion lands
-      // on the forwarded provider options, not an incidental parse error.
       return Promise.resolve({
         content: [{ type: 'text', text: '{}' }],
         finishReason: finish('stop', 'stop'),
@@ -51,10 +34,6 @@ function createCapturingModel(
   };
 }
 
-// A non-streaming model that finishes with finishReason 'error' — the exact
-// finishReason that toResponseStatus maps to status 'failed' (toResponse.ts:57).
-// This is the finishReason path, NOT a thrown provider error: doGenerate
-// resolves normally with usage + content, it just reports 'error'.
 function createErrorFinishModel(): LanguageModelV4 {
   return {
     specificationVersion: 'v4',
@@ -91,16 +70,8 @@ type ResponsesBody = {
 };
 
 describe('gateway integration — /v1/responses wire fidelity (mock tier)', () => {
-  // G20 — the reasoning / text.verbosity / text.format.strict knobs a client
-  // sends on /v1/responses must reach the model as OpenAI provider options
-  // (reasoningEffort / reasoningSummary / textVerbosity / strictJsonSchema).
-  // Today the request schema has no `reasoning` key and textConfigSchema parses
-  // only `format`, and buildOpenAIResponseOptions forwards none of the four, so
-  // a client asking for high reasoning effort silently gets default behavior.
   it('forwards reasoning/verbosity/strict as OpenAI provider options to the model', async () => {
     let captured: LanguageModelV4CallOptions | undefined;
-    // Provider is 'openai' so the OpenAI provider-option gate is active — this
-    // isolates the drop to the reasoning/text params, not the provider gate.
     const app = makeApp(
       'openai',
       createCapturingModel((options) => {
@@ -128,11 +99,6 @@ describe('gateway integration — /v1/responses wire fidelity (mock tier)', () =
     expect(openai?.strictJsonSchema).toBe(true);
   });
 
-  // G22 — a non-streaming response that finishes with finishReason 'error'
-  // reports status 'failed' but ships error:null (toResponse.ts:33 hardcodes
-  // it). A failed response must carry a machine-readable error object so a
-  // client can tell WHY it failed; the streaming path already emits one via
-  // failedError, this is a non-streaming route asymmetry.
   it('non-streaming failed status carries a non-null error object', async () => {
     const app = makeApp('openai', createErrorFinishModel());
 

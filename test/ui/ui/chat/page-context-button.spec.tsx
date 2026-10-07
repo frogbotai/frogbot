@@ -28,8 +28,6 @@ describe('PageContextButton', () => {
       </TooltipProvider>,
     );
 
-    // The outside-click listener is added in an effect after the menu renders; opening inside
-    // `act` runs that effect before the outside press below.
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add tab context' }));
       await openTabs;

@@ -1,17 +1,3 @@
-// Shared contract every provider definition must satisfy.
-//
-// A provider definition is a static, stateless description: a name literal,
-// the env vars it consumes, a pure `fromEnv` translator, and a `build` factory
-// that constructs the AI SDK provider instance. No classes, no `this` — this
-// matches the AI SDK's own idiom (`createOpenAI` returns a plain object) and
-// keeps us at zero stylistic distance from the thing we wrap.
-//
-// The three type parameters preserve per-provider information so the registry
-// can produce a discriminated, fully-typed union across all providers:
-//   - `TName`     — the string literal naming the provider (used as the key)
-//   - `TConfig`   — the provider's specific config shape
-//   - `TInstance` — the AI SDK provider instance type returned by `build`
-
 export type ProviderCredentialForm = Readonly<Record<string, string | null>>;
 
 export interface ProviderDefinition<TName extends string, TConfig, TInstance> {

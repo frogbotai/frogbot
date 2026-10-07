@@ -1,7 +1,3 @@
-// Thin fetch wrapper bound to a running frogbot Hono server. Returns
-// parsed JSON plus status for ergonomic assertions. Modeled on
-// Payload's NextRESTClient.
-
 export type RESTResponse<T = unknown> = {
   status: number;
   body: T;

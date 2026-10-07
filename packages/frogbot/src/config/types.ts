@@ -1,12 +1,3 @@
-// FrogBot's root configuration shape — what users hand to `buildConfig`.
-//
-// Extends Payload's `Config`, replacing the collections array with FrogBot's
-// `CollectionConfig`, the admin block with FrogBot's `RootAdminConfig`, and
-// forbidding `globals` entirely. Everything else passes through.
-//
-// Users import this from `'frogbot'` and never see the underlying Payload
-// type name or import path.
-
 import type { RootAdminConfig, SettingsEntry } from '../admin/types.js';
 import type { AgentConfig } from '../agents/types.js';
 import type { AIConfig } from '../ai/types.js';
@@ -94,8 +85,6 @@ export type RolesPrewiring = {
   roles?: string[];
 };
 
-/** Root config keys FrogBot overrides or forbids. Excluded from the
- *  Payload pass-through so FrogBot can declare its own shape for them. */
 type FrogBotOverridden =
   | 'admin'
   | 'blocks'

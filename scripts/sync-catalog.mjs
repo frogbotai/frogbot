@@ -125,7 +125,6 @@ function reasoningOptionsFor(options) {
 }
 
 function isPricedLanguageModel(model) {
-  // A real $0 price (free variants) is kept; only a missing price is skipped.
   const priced = model.cost !== undefined;
   const textOnly = model.modalities.output.every((modality) => modality === 'text');
 

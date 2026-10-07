@@ -1437,7 +1437,6 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       const copy = (duplicate.body.doc ?? duplicate.body) as Record<string, unknown>;
       const cleared = { channel: null, channelKey: null, channelThread: null, channelLabel: null };
 
-      // Either the copy drops the channel home or the duplicate is rejected.
       expect([
         { status: 200, ...cleared },
         { status: 201, ...cleared },

@@ -1,15 +1,3 @@
-// Anthropic /v1/messages response translation: AI SDK result → Anthropic wire.
-//
-// ---------------------------------------------------------------------------
-// Attribution
-// ---------------------------------------------------------------------------
-// The response translator inverts the parsing logic in
-// `anthropic-language-model.ts` from the Vercel AI SDK (Apache-2.0).
-//
-// Original copyright © Vercel, Inc. Licensed under Apache-2.0.
-// Adapted for the gateway under MIT.
-// ---------------------------------------------------------------------------
-
 import type {
   AnthropicResponse,
   AnthropicResponseBlock,
@@ -57,7 +45,6 @@ export function toAnthropicResponse(args: ToAnthropicResponseArgs): AnthropicRes
 
   const content: AnthropicResponseBlock[] = [];
 
-  // Order matches Anthropic: thinking → text → tool_use.
   if (reasoning) {
     for (const r of reasoning) {
       if (r.redactedData) {
@@ -78,13 +65,11 @@ export function toAnthropicResponse(args: ToAnthropicResponseArgs): AnthropicRes
         type: 'tool_use',
         id: tc.toolCallId,
         name: tc.toolName,
-        // Anthropic ships input as a parsed object.
         input: typeof tc.args === 'string' ? safeParseJson(tc.args) : tc.args,
       });
     }
   }
 
-  // Anthropic requires non-empty content[].
   if (content.length === 0) {
     content.push({ type: 'text', text: '' });
   }
@@ -111,18 +96,6 @@ export function toAnthropicResponse(args: ToAnthropicResponseArgs): AnthropicRes
     },
   };
 }
-
-// ---------------------------------------------------------------------------
-// Usage detail fields (G62)
-//
-// Anthropic emits a per-TTL `cache_creation` breakdown alongside the aggregate
-// `cache_creation_input_tokens` (docs.anthropic.com/en/build-with-claude/
-// prompt-caching), and `output_tokens_details.thinking_tokens` for extended
-// thinking. Both live only on the raw provider usage object — the AI SDK
-// anthropic provider passes it through untouched via
-// `providerMetadata.anthropic.usage` and `usage.raw` (anthropic-language-model.ts,
-// convert-anthropic-usage.ts: `raw: rawUsage ?? usage`).
-// ---------------------------------------------------------------------------
 
 export function usageDetailFields(args: {
   thinkingTokens?: number;
@@ -179,10 +152,6 @@ function safeParseJson(s: string): unknown {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Finish reason mapping (AI SDK → Anthropic)
-// ---------------------------------------------------------------------------
-
 const ANTHROPIC_STOP_REASONS: ReadonlySet<string> = new Set([
   'end_turn',
   'max_tokens',
@@ -195,9 +164,6 @@ const ANTHROPIC_STOP_REASONS: ReadonlySet<string> = new Set([
 ] satisfies AnthropicStopReason[]);
 
 export function mapStopReason(reason: string, rawReason?: string): AnthropicStopReason {
-  // The AI SDK anthropic provider folds several raw stop reasons into one
-  // unified value (map-anthropic-stop-reason.ts:13-29), so when the raw
-  // finish reason is already a known Anthropic wire literal, emit it verbatim.
   if (rawReason !== undefined && ANTHROPIC_STOP_REASONS.has(rawReason)) {
     return rawReason as AnthropicStopReason;
   }
@@ -211,10 +177,6 @@ export function mapStopReason(reason: string, rawReason?: string): AnthropicStop
       return 'max_tokens';
     case 'content-filter':
       return 'refusal';
-    // Anthropic spec: stop_reason is non-null on completed messages
-    // (https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons),
-    // so unhandled upstream stops (unified 'other') and gateway-internal
-    // 'error' fall back to 'end_turn' instead of null.
     case 'error':
     case 'other':
       return 'end_turn';

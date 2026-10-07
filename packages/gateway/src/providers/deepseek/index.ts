@@ -1,5 +1,3 @@
-// Provider definition: DeepSeek.
-
 import {
   createDeepSeek,
   type DeepSeekProvider,

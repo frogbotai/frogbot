@@ -12,13 +12,9 @@ function killGroup(child: ChildProcess): void {
   if (!child.pid) return;
   try {
     process.kill(-child.pid, 'SIGKILL');
-  } catch {
-    // Group already gone.
-  }
+  } catch {}
 }
 
-// Fast path on a normal exit. The guardian covers every other way this
-// process can die (Ctrl-C, crash, SIGKILL, OOM).
 process.once('exit', () => live.forEach(killGroup));
 
 /**
@@ -41,7 +37,6 @@ export function spawnServer(
   const child = spawn(process.execPath, [guardian, command, ...args], {
     ...rest,
     detached: true,
-    // stdin stays a pipe: when this process dies, the guardian sees EOF.
     stdio: ['pipe', stdout, stderr],
   });
 

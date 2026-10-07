@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// `node scripts/lib/generate-import-map.mjs [--write]`, run in a project directory, regenerates
-// that project's import map without loading its `.env` files and prints `{"changed":<bool>}`.
-// Without `--write` it only compares (`dryRun`). Used by `scripts/check-generated.mjs`.
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';

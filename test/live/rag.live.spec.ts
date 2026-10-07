@@ -1,12 +1,3 @@
-// Live RAG: real embeddings → real database → hybrid search → real model answer.
-//
-// This is the flow a new user builds first: index a small knowledge base, ask
-// a question, retrieve the right chunk (scoped to their tenant), and have a
-// model answer from it. It runs against:
-//   - local pgvector + local Atlas (docker `postgres` / `mongodb-search` profiles)
-//   - hosted Neon (NEON_DATABASE_URL) and hosted Atlas (ATLAS_URI) when set,
-//     so hosted-only breakage (TLS, poolers, index build latency) surfaces too.
-
 import { randomUUID } from 'node:crypto';
 
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
@@ -32,8 +23,6 @@ const KEYS = ['GOOGLE_GENERATIVE_AI_API_KEY'] as const;
 
 const slug = 'live-rag-docs';
 
-// Tenant "acme" owns the answer; tenant "globex" has a near-identical
-// distractor with a different code. Retrieval must respect the tenant filter.
 const DOCS = [
   {
     tenant: 'acme',
@@ -62,7 +51,6 @@ const QUESTION = 'How do I get my money back, and what code do I need?';
 type Target = {
   name: string;
   keys: readonly string[];
-  // `beforeDestroy` runs while FrogBot is still connected; `afterDestroy` once its pool is closed.
   setup: () => Promise<{
     db: FrogBotConfig['db'];
     beforeDestroy?: () => Promise<void>;
@@ -107,7 +95,6 @@ function postgresTarget(name: string, envKey?: string): Target {
         };
       }
 
-      // Hosted: isolate in a throwaway schema so we never touch user tables.
       const connectionString = process.env[envKey]!;
       const schemaName = `frogbot_live_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
       const admin = createPostgresClient(connectionString);
@@ -154,7 +141,6 @@ async function embed(texts: string[]): Promise<number[][]> {
   return res.body.data!.map((d) => d.embedding);
 }
 
-// Atlas search indexes build asynchronously (seconds locally, up to a minute hosted).
 function waitFor<T>(read: () => Promise<T>, done: (v: T) => boolean): Promise<T> {
   return vi.waitFor(
     async () => {
@@ -206,9 +192,6 @@ for (const target of TARGETS) {
         ],
       });
 
-      // A fresh BasePayload per target: `FrogBot.init()` goes through Payload's
-      // process-wide `getPayload()` cache, which would hand back the previous
-      // (destroyed) target's instance.
       payload = new BasePayload();
 
       await payload.init({
@@ -244,7 +227,6 @@ for (const target of TARGETS) {
 
     afterAll(async () => {
       await setup?.beforeDestroy?.().catch(() => undefined);
-      // payload.destroy() leaves the pg pool open; close it before dropping the database.
       const pool = isPostgres(payload?.db) ? payload.db.pool : undefined;
       await payload?.destroy();
       await closePostgresPool(pool);

@@ -1,8 +1,3 @@
-// Tests for the chat-completions `response_format` → AI SDK `Output` mapping
-// (`toChatOutput`). The AI SDK resolves `output.responseFormat` into the
-// LanguageModelV4CallOptions `responseFormat` key, so each case asserts the
-// resolved responseFormat value.
-
 import { describe, expect, test } from 'vitest';
 
 import { toChatOutput } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/output.js';

@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-// `pnpm check [--full]` runs the static checks: prettier (report only), ESLint (a warning or an
-// unpruned suppression fails too), a build of every package whose `dist` is missing or older than
-// its sources, every missing gitignored test-fixture `importMap.js`, the typecheck of packages
-// changed against local `main` (every package with `--full`), then every `scripts/check-*.mjs`.
-// A check file with `// check: full-only` in its first 5 lines runs only with `--full` or by name.
-// `pnpm check <name> [args]` runs one of those checks. It never runs tests or starts servers.
-// Tool output goes to `.idea/tmp/check-<time>.log`; stdout gets a `built N packages` line when
-// it built and a `generated N import maps` line when it generated, then one `check: OK` line,
-// or at most MAX_LINES `file:line rule message` lines and the log path.
 import { spawn, spawnSync } from 'node:child_process';
 import {
   appendFileSync,

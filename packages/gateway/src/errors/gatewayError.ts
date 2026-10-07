@@ -1,10 +1,3 @@
-// Gateway error classes.
-//
-// All gateway errors extend `GatewayError`. Each carries an HTTP `status`
-// and a stable `code` so the OpenAI/Anthropic error envelope translators can
-// map errors to a wire-correct response without sniffing the
-// message string.
-
 export type GatewayErrorCode =
   | 'config_invalid'
   | 'invalid_model_id'

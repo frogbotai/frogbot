@@ -19,7 +19,6 @@ type CommonArgs = {
   showHiddenFields?: boolean;
   user?: unknown;
 };
-// ── Version wrapper ───────────────────────────────────────────────────
 
 export type TypeWithVersion<T> = {
   createdAt: string;
@@ -31,8 +30,6 @@ export type TypeWithVersion<T> = {
   updatedAt: string;
   version: T;
 };
-
-// ── Versions ──────────────────────────────────────────────────────────
 
 export type FindVersionsArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;

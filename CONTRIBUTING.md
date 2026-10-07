@@ -89,7 +89,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 ## Code style
 
 - Crisp, simple code. Prefer object parameters over several positional ones.
-- Don't add comments unless asked: no comment blocks, citations or rationale. Put the explanation in the commit or the conversation.
+- No comments except JSDoc on exports, tool directives and `// Workaround: <upstream URL>, remove when <condition>`; `frogbot/no-comments` enforces it, and `pnpm lint:fix` removes the rest.
 - Name consistently and briefly: `createTextDoc`/`updateTextDoc`, not `saveTextDocumentToDatabase`. Prefix types with their context (`ArtifactCreateProps`) and match them to their function (`dbCreate` → `ArtifactDBCreateProps`).
 - Name a private component that continues past a provider or readiness guard `*Inner` (`ChatInner`).
 - Brand casing: `frogbot` when the brand leads a camelCase identifier, `FrogBot` everywhere else in identifiers and file names (`frogbotFavicon`, `FrogBotConfig`, `getFrogBot`, `bootFrogBot.ts`). Lint rejects `frogBot` and `Frogbot` in identifiers and strings (`@typescript-eslint/naming-convention`, `no-restricted-syntax` in `eslint.config.js`). Package names, paths, CLI commands, slugs, environment variables and wire values stay lowercase (`FROGBOT_*` for constants).

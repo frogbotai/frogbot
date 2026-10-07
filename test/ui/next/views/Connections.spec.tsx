@@ -50,7 +50,6 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-// A Next admin request carries no `req.frogbot`, so the view reads the cached instance.
 function asNextAdminRequest(req: { frogbot?: unknown }) {
   getCachedFrogBot.mockReturnValue(req.frogbot);
   Reflect.deleteProperty(req, 'frogbot');

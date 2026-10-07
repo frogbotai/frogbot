@@ -1,8 +1,3 @@
-// AI-related types for FrogBot's AI configuration surface.
-//
-// Near-passthrough of AI SDK 7 — developers who know the AI SDK feel at home.
-// FrogBot adds: typed model resolution, access control, hooks, and routers.
-
 import type { ModelReasoningOption } from '@frogbotai/gateway';
 import type {
   DataContent,
@@ -24,8 +19,6 @@ import type { FrogBotRequest } from '../types/request.js';
 import type { AIHooks, SanitizedAIHooks } from './hooks/types.js';
 
 export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
-
-// ─── Provider Configuration ──────────────────────────────────────────────────
 
 type ProviderModelName<
   P extends ProviderName,
@@ -86,8 +79,6 @@ export type ProviderConfig = {
   [customKey: string]: ProviderEntry | BedrockEntry | CustomProviderEntry | undefined;
 };
 
-// ─── Model Configuration ─────────────────────────────────────────────────────
-
 export type ModelMode =
   | 'chat'
   | 'embedding'
@@ -126,15 +117,11 @@ export type ModelConfig = {
   status?: 'alpha' | 'beta' | 'deprecated';
 };
 
-// ─── Router Configuration ────────────────────────────────────────────────────
-
 export type RouterConfig = {
   model: string;
   /** @notImplemented — reserved for future admin UI integration. */
   hidden?: boolean;
 };
-
-// ─── Access Control ──────────────────────────────────────────────────────────
 
 export type AIAccessFn = (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
 
@@ -157,8 +144,6 @@ export type AIMethod =
   | 'generateVideo'
   | 'rerank'
   | 'evaluate';
-
-// ─── Telemetry Configuration ─────────────────────────────────────────────────
 
 /**
  * Span types emitted by `@ai-sdk/otel`. Matches `OpenTelemetrySpanType`
@@ -193,8 +178,6 @@ export type AITelemetryConfig = {
   enrichSpan?: AIEnrichSpan;
 };
 
-// ─── Top-Level AI Config ─────────────────────────────────────────────────────
-
 export type AIConfig = {
   providers: ProviderConfig;
   routers?: Record<string, RouterConfig>;
@@ -207,8 +190,6 @@ export type AIConfig = {
   deploymentId?: string;
   telemetry?: AITelemetryConfig;
 };
-
-// ─── Sanitized AI Config ─────────────────────────────────────────────────────
 
 export type SanitizedAITelemetryConfig = {
   enabled: boolean;
@@ -232,11 +213,7 @@ export type SanitizedAIConfig = {
   };
 };
 
-// ─── Model ID Type ───────────────────────────────────────────────────────────
-//
 export type ModelId = FrogBotTypes['models'];
-
-// ─── Operation Options Types ─────────────────────────────────────────────────
 
 export type BaseAIOpts = {
   model: ModelId;

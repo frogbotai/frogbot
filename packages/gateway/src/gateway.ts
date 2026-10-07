@@ -1,9 +1,3 @@
-// createGateway() — the public factory for constructing a gateway instance.
-//
-// Returns a `handler` (WinterCG fetch function) and modality resolvers.
-// The handler can be mounted in any Hono/Bun/Deno/Workers/Next app, or used
-// directly by the CLI.
-
 import type {
   Experimental_EvaluationModelV4,
   Experimental_VideoModelV4,
@@ -56,9 +50,6 @@ function deepFreeze<T extends Record<string, unknown>>(obj: T): Readonly<T> {
   return Object.freeze(obj);
 }
 
-// Tool loops fire multiple upstream rounds per operation — usage is summed
-// across rounds with ADD semantics (optional partitions stay undefined until
-// a round reports them).
 const addOptionalTokens = (a: number | undefined, b: number | undefined): number | undefined =>
   a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0);
 
@@ -172,20 +163,12 @@ export function createGateway<const P extends ProvidersInput<P>>(
  * hold a `GatewayConfig`. Not re-exported from the package entry.
  */
 export function buildGateway(config: GatewayConfig): Gateway {
-  // finalizeConfig applies enabled_providers / disabled_providers filtering
-  // before validation. Idempotent (kParsed), so the CLI's own finalizeConfig
-  // call is a no-op here.
   const validated = finalizeConfig(config);
   const registry = buildProviderRegistry(validated.providers);
   const catalog = validated.catalog ?? DEFAULT_MODEL_CATALOG;
   const allowlists = buildProviderModelAllowlists(validated.providers);
   const logger = resolveLogger(validated.logger);
 
-  // Shared modality resolvers — one per operation kind, closed over `registry`.
-  // Both the public `gateway.xModel(id)` getters and `gateway.operation(...)`
-  // use these; the only per-call variation is `hooks` (the operation merges in
-  // its accumulators) and `base` (present so upstream hooks join the operation
-  // lifecycle instead of minting a fresh one).
   const resolvers = {
     chatModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayLanguageModel => {
       const resolved = resolveProvider({
@@ -408,17 +391,11 @@ export function buildGateway(config: GatewayConfig): Gateway {
         provider: opts.model.split('/', 1)[0] ?? '',
       };
 
-      // Accumulated across upstream rounds by the internal hooks below, so
-      // `finish()` can bill/audit without the caller re-plumbing results.
       let accFinishReason: string | undefined;
       let accUsage: HookUsage | undefined;
       let accError: unknown;
       let finished = false;
 
-      // The operation joins the upstream lifecycle by passing this merged hook
-      // set (user hooks + accumulators) and the shared `base` into the model
-      // resolvers, so `beforeUpstream`/`afterUpstream`/`afterError` see the
-      // operation's requestId + context.
       const hooks = mergeHooks(validated.hooks ?? {}, {
         afterUpstream: [
           (args) => {

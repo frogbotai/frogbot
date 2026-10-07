@@ -1,14 +1,3 @@
-// Provider registry — constructs AI SDK provider instances from gateway config.
-//
-// Each provider is defined in its own folder (`providers/<name>/index.ts`)
-// and registered in the `providers` table below. Adding a provider means:
-//   1. Create `providers/<name>/index.ts` with an object that
-//      `satisfies ProviderDefinition<...>`.
-//   2. Add a row to `providers` here.
-// Everything downstream (config types, instance types, CLI
-// env-detect) is derived from the table via the `ProviderDefinition` generics
-// — there are no per-provider conditionals in this file.
-
 import type {
   EmbeddingModelV3,
   EmbeddingModelV4,
@@ -80,10 +69,6 @@ import { vertexProvider } from './vertex/index.js';
 import { voyageProvider } from './voyage/index.js';
 import { xaiProvider } from './xai/index.js';
 
-// ---------------------------------------------------------------------------
-// Provider table — the single source of truth for known providers.
-// ---------------------------------------------------------------------------
-
 export const providers = {
   alibaba: alibabaProvider,
   anthropic: anthropicProvider,
@@ -148,16 +133,10 @@ export type GatewayTranscriptionModel = TranscriptionModelV4 | TranscriptionMode
 
 export type GatewayRerankingModel = RerankingModelV4 | RerankingModelV3;
 
-// ---------------------------------------------------------------------------
-// Derived types.
-// ---------------------------------------------------------------------------
-
-/** The config shape required by provider `K`. */
 type ConfigOf<K extends ProviderName> = Parameters<(typeof providers)[K]['build']>[0] & {
   models?: string[];
 };
 
-/** The AI SDK instance type returned by provider `K`'s `build`. */
 type InstanceOf<K extends ProviderName> = ReturnType<(typeof providers)[K]['build']>;
 
 /** Union of every provider's AI SDK instance type. Grows automatically with the table. */
@@ -214,10 +193,6 @@ export type ProviderRegistry = { [K in ProviderName]?: InstanceOf<K> } & {
   [name: string]: AIProvider | undefined;
 };
 
-// ---------------------------------------------------------------------------
-// Builder (eager — used by createGateway)
-// ---------------------------------------------------------------------------
-
 type ProviderBuilders = {
   [K in ProviderName]: { build: (config: Omit<ConfigOf<K>, 'models'>) => InstanceOf<K> };
 };
@@ -246,9 +221,6 @@ export function isProviderInstance(value: unknown): value is AIProvider {
 }
 
 export function buildProviderRegistry(configProviders: ProviderConfigMap): ProviderRegistry {
-  // Null prototype: prevents prototype-chain lookups (`constructor`, `__proto__`,
-  // `toString`, ...) from resolving to Object.prototype members, and prevents a
-  // hostile provider `name` from mutating Object.prototype.
   const registry: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
   const knownNames = new Set<string>(PROVIDER_NAMES);
 
@@ -257,29 +229,17 @@ export function buildProviderRegistry(configProviders: ProviderConfigMap): Provi
       continue;
     }
 
-    // A pre-built instance is used as-is (config shape #2); `fromEnv` and
-    // shorthand `build` are intentionally bypassed — the user already
-    // constructed and configured it.
     if (isProviderInstance(cfg)) {
       registry[name] = cfg;
     } else if (knownNames.has(name)) {
       registry[name] = buildOne(name as ProviderName, cfg as ConfigOf<ProviderName>);
     } else {
-      // Any key that isn't a built-in provider is a generic OpenAI-compatible
-      // endpoint. The map key supplies the provider name.
       registry[name] = buildOpenAICompatibleProvider(name, cfg as OpenAICompatibleConfig);
     }
   }
 
   return registry as ProviderRegistry;
 }
-
-// ---------------------------------------------------------------------------
-// Canonical model-ID resolution — friendly aliases are resolved to the exact
-// IDs the upstream API requires before the AI SDK sees them (e.g.
-// `bedrock/claude-4-sonnet` → `anthropic.claude-sonnet-4-20250514-v1:0`).
-// Full IDs pass through unchanged.
-// ---------------------------------------------------------------------------
 
 const canonicalIdResolvers = new Map<string, (modelId: string) => string>([
   ['bedrock', resolveBedrockModelId],
@@ -321,10 +281,6 @@ export function buildProviderModelAllowlists(config: ProviderConfigMap): Provide
   return allowlists;
 }
 
-// ---------------------------------------------------------------------------
-// resolveProvider — the canonical M2 resolver
-// ---------------------------------------------------------------------------
-
 export type ResolveProviderArgs = {
   /** The full canonical model ID (e.g. `openai/gpt-4o`). */
   modelId: string;
@@ -364,7 +320,6 @@ export type ResolvedProvider = {
 export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   const { modelId, operation, providers: registry, models, allowlists } = args;
 
-  // Guard: at least one provider must be configured.
   const configuredProviders = Object.keys(registry).filter(
     (k) => registry[k as keyof ProviderRegistry] != null,
   );
@@ -373,7 +328,6 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
     throw new NoProvidersError();
   }
 
-  // Parse the model ID — split on first `/` only.
   if (typeof modelId !== 'string' || modelId.length === 0) {
     throw new ModelIdError(String(modelId));
   }
@@ -385,9 +339,6 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
 
   const providerName = modelId.slice(0, slashIndex);
 
-  // Look up the provider in the registry. Own-property checks only —
-  // prototype keys (`constructor`, `__proto__`, ...) must resolve to
-  // ModelNotFoundError, not Object.prototype members.
   const instance = Object.hasOwn(registry, providerName)
     ? registry[providerName as keyof ProviderRegistry]
     : undefined;
@@ -410,7 +361,6 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
     throw new ModelNotFoundError(modelId);
   }
 
-  // If a catalog is provided, validate the operation is supported.
   if (entry && !supportsOperation(entry, operation)) {
     throw new ModelUnsupportedOperationError({ modelId, operation });
   }

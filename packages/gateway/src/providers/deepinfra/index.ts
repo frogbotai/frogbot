@@ -1,5 +1,3 @@
-// Provider definition: DeepInfra.
-
 import {
   createDeepInfra,
   type DeepInfraProvider,

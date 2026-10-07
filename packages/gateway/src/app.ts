@@ -1,19 +1,3 @@
-// Gateway Hono app — mounts all routes and wires error handling.
-//
-// Routes (served bare AND under `basePath`, default `/v1`):
-//   POST /v1/chat/completions — OpenAI-compatible (errors are OpenAI-shaped)
-//   POST /v1/messages         — Anthropic-compatible (errors are Anthropic-shaped)
-//
-// Route sub-apps register bare paths (e.g. `/chat/completions`); createApp
-// mounts each sub-app twice — at `/` and at `basePath` — so the handler works
-// both called directly at `/v1/...` and embedded via `host.mount('/v1', ...)`,
-// where the host framework strips the mount prefix before dispatching (G44).
-//
-// Each route mounts its own error handler for wire-correct error envelopes.
-// The global error handler below catches anything that escapes a route
-// (should not happen in normal operation) and produces OpenAI-shaped errors
-// as a safe default.
-
 import type { Tracer } from '@opentelemetry/api';
 import { Hono } from 'hono';
 
@@ -128,11 +112,6 @@ export function createApp(ctx: AppContext) {
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);
     await next();
-    // Envelope-layer error log. Pre-resolution failures (schema 400s,
-    // unknown-model 404s, `beforeOperation` auth rejections) never reach the
-    // `beforeUpstream` logging hook, so this is their only log signal
-    // (G101 / OB12). Post-resolution errors are additionally logged with full
-    // operation context by the afterError/afterOperation hooks.
     const status = c.res.status;
     if (c.error && status >= 400 && status !== 499) {
       logGatewayError(logger, {
@@ -144,9 +123,6 @@ export function createApp(ctx: AppContext) {
     }
   });
 
-  // Mount routes — each sub-app registers bare paths (`/chat/completions`).
-  // Mounting at both `/` and `basePath` serves `/chat/completions` AND
-  // `/v1/chat/completions`, so the handler works mounted at any prefix.
   const routeCtx = {
     registry: ctx.registry,
     models: ctx.catalog,
@@ -190,9 +166,6 @@ export function createApp(ctx: AppContext) {
 
   routesByApp.set(app, routes);
 
-  // Health endpoint — unauthenticated liveness check for Docker HEALTHCHECK
-  // and Kubernetes probes. Served bare at `/health` (the standard Docker path)
-  // and under `basePath` for consistency with the double-mount route pattern.
   const healthResponse = {
     version: GATEWAY_PACKAGE_VERSION,
     providers: Object.keys(ctx.registry).filter(
@@ -206,7 +179,6 @@ export function createApp(ctx: AppContext) {
     app.get(`${basePath}/health`, (c) => c.json(healthResponse, 200));
   }
 
-  // Global error handler — produces OpenAI-shaped error envelope (fallback)
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
@@ -224,9 +196,6 @@ export function createApp(ctx: AppContext) {
     return c.json(body, toContentfulStatus(status));
   });
 
-  // Global 404 fallback — unmapped paths and unsupported methods return an
-  // OpenAI-shaped JSON error envelope (matching the global `onError` choice),
-  // never Hono's plain-text default.
   app.notFound((c) => {
     const requestId = ensureRequestId(c.req.raw);
     c.header('x-request-id', requestId);

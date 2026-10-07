@@ -1,25 +1,3 @@
-// Tests for the OpenAI chat-completions inbound parser (`toModelMessages`).
-//
-// ---------------------------------------------------------------------------
-// Attribution
-// ---------------------------------------------------------------------------
-// Test cases adapted from opencode (Apache-2.0):
-//   - packages/core/test/github-copilot/convert-to-copilot-messages.test.ts
-// Original copyright © sst.dev. Licensed under Apache-2.0.
-// Adapted for the gateway under MIT.
-//
-// **Inversion**: opencode's tests exercise the forward direction
-// (`LanguageModelV3Prompt → OpenAI wire`). Our parser is the inverse
-// (`OpenAI wire → AI SDK ModelMessage[]`). For each upstream case we swap
-// input ↔ expected output. A handful of forward-only quirks (copilot
-// `reasoning_opaque` providerOptions plumbing, image-detail forwarding) are
-// dropped — those belong to outbound translation, not inbound parsing.
-//
-// Three OpenAI-wire-specific cases the upstream tests don't cover are added
-// at the bottom (lenient data-URL parser, adjacent-tool-message coalesce,
-// `developer` role mapping). These exercise the stage-4.5 parser additions.
-// ---------------------------------------------------------------------------
-
 import { describe, expect, test, vi } from 'vitest';
 
 import type { GatewayLogger } from '../../../../../../packages/gateway/src/observability/logger.js';
@@ -36,10 +14,6 @@ const makeLogger = (): GatewayLogger => ({
   error: vi.fn(),
   fatal: vi.fn(),
 });
-
-// ---------------------------------------------------------------------------
-// system messages
-// ---------------------------------------------------------------------------
 
 describe('system messages', () => {
   test('forwards system message content as a string', () => {
@@ -59,10 +33,6 @@ describe('system messages', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// user messages
-// ---------------------------------------------------------------------------
-
 describe('user messages', () => {
   test('passes through string content unchanged', () => {
     const result = toModelMessages([{ role: 'user', content: 'Hello' }]);
@@ -77,7 +47,6 @@ describe('user messages', () => {
   });
 
   test('parses base64 data-URL image_url into a file part', () => {
-    // Inverse of opencode's "should convert messages with image parts".
     const result = toModelMessages([
       {
         role: 'user',
@@ -107,10 +76,6 @@ describe('user messages', () => {
   });
 
   test('rejects http(s) image_url with a clean 400 (data URLs only)', () => {
-    // Decision (Stage 7.5): we previously emitted `mediaType: "image"` as a
-    // sentinel for remote URLs, but that's not a valid MIME and downstream
-    // providers may reject it silently. We support inline data URLs only;
-    // remote URLs throw an `UnsupportedModalityError` with a precise param.
     expect(() =>
       toModelMessages([
         {
@@ -202,23 +167,14 @@ describe('user messages', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// assistant messages
-// ---------------------------------------------------------------------------
-
 describe('assistant messages', () => {
   test('text-only assistant collapses to a string content (fast path)', () => {
-    // Inverse of opencode's "should convert assistant text messages". The
-    // parser's fast path emits a string instead of `[{type:'text',...}]`.
     const result = toModelMessages([{ role: 'assistant', content: 'Hello back!' }]);
 
     expect(result).toEqual([{ role: 'assistant', content: 'Hello back!' }]);
   });
 
   test('tool-calls-only assistant emits a single tool-call part with parsed args', () => {
-    // Inverse of opencode's "should handle assistant message with null
-    // content when only tool calls". OpenAI ships arguments as a JSON string;
-    // our parser inverts that with `JSON.parse`.
     const result = toModelMessages([
       {
         role: 'assistant',
@@ -252,11 +208,6 @@ describe('assistant messages', () => {
   });
 
   test('text + multiple tool calls produces text part followed by tool-call parts', () => {
-    // Inverse of opencode's "text plus multiple tool calls". The upstream
-    // forward direction concatenates adjacent text into a single
-    // `content` string; OpenAI's wire shape only has one `content` string
-    // per assistant message, so on the way back in we get a single text
-    // part rather than the two text parts the forward test emitted.
     const result = toModelMessages([
       {
         role: 'assistant',
@@ -305,11 +256,6 @@ describe('assistant messages', () => {
   });
 
   test('reasoning_content lifts into a reasoning part ordered before text', () => {
-    // Adapted from opencode's reasoning tests. Their wire field
-    // (`reasoning_text` + `reasoning_opaque`) is copilot-specific; OpenAI's
-    // canonical wire field is `reasoning_content` (no opaque signature). We
-    // test the canonical shape — opaque-signature plumbing belongs to
-    // outbound translation, not inbound parsing.
     const result = toModelMessages([
       {
         role: 'assistant',
@@ -347,18 +293,8 @@ describe('assistant messages', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// tool calls / results (coalesce)
-// ---------------------------------------------------------------------------
-
 describe('tool calls and results', () => {
   test('correlated tool-call + tool-result round-trip with toolName resolution', () => {
-    // Inverse of opencode's "should stringify arguments to tool calls".
-    // OpenAI's wire format omits `toolName` from the tool message — correlation
-    // is `tool_call_id` only. The translator runs a pre-pass to build a
-    // `tool_call_id → toolName` map from prior assistant turns and fills it
-    // in during coalescing. opencode does the equivalent via its `toolNames`
-    // set (`session/message-v2.ts:787-821`).
     const result = toModelMessages([
       {
         role: 'assistant',
@@ -408,9 +344,6 @@ describe('tool calls and results', () => {
   });
 
   test('tool message without a prior matching tool_call falls back to empty toolName', () => {
-    // Malformed input — a tool message referencing an id that no prior
-    // assistant turn produced. We tolerate it (empty toolName) rather than
-    // reject, matching the spirit of opencode's lenient correlation pass.
     const result = toModelMessages([{ role: 'tool', tool_call_id: 'orphan-id', content: 'oops' }]);
 
     expect(result).toEqual([
@@ -453,10 +386,6 @@ describe('tool calls and results', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// full conversation
-// ---------------------------------------------------------------------------
-
 describe('full conversation', () => {
   test('multi-turn conversation with reasoning round-trips', () => {
     const result = toModelMessages([
@@ -485,20 +414,8 @@ describe('full conversation', () => {
   });
 });
 
-// ===========================================================================
-// OpenAI-wire-specific cases not present in opencode's forward tests
-// ===========================================================================
-//
-// Per the stage-7 development plan, these three cases exercise parser
-// behavior that only matters on the inbound side and therefore has no
-// forward-direction analogue in opencode's suite.
-
 describe('lenient data URL parser (extra: stage 4.5)', () => {
   test('accepts data URL with extra parameters before the base64 marker', () => {
-    // RFC 2397 allows arbitrary `;<param>=<value>` segments before the
-    // optional `;base64` marker. Real clients occasionally append `charset`
-    // or `name=` when pasting images from clipboards/email — the parser
-    // must tolerate these without losing the media type.
     const result = toModelMessages([
       {
         role: 'user',
@@ -530,10 +447,6 @@ describe('lenient data URL parser (extra: stage 4.5)', () => {
 
 describe('adjacent tool-message coalesce (extra: stage 4.5)', () => {
   test('three wire tool messages collapse into one AI SDK tool ModelMessage', () => {
-    // OpenAI's wire format ships ONE message per tool result, each with its
-    // own `tool_call_id`. AI SDK's convention is ONE `tool` ModelMessage
-    // whose `content` is an array of `tool-result` parts. The parser
-    // coalesces runs of adjacent tool messages — verifies the fan-in.
     const wire: OpenAIMessage[] = [
       { role: 'tool', tool_call_id: 'call1', content: 'Result 1' },
       { role: 'tool', tool_call_id: 'call2', content: 'Result 2' },
@@ -569,8 +482,6 @@ describe('adjacent tool-message coalesce (extra: stage 4.5)', () => {
   });
 
   test('non-tool message between tool runs starts a new tool ModelMessage', () => {
-    // Verifies that the coalesce is run-bounded — only ADJACENT tool wire
-    // messages merge. An intervening assistant/user message must flush.
     const wire: OpenAIMessage[] = [
       { role: 'tool', tool_call_id: 'a', content: 'A' },
       { role: 'assistant', content: 'thinking...' },
@@ -588,17 +499,11 @@ describe('adjacent tool-message coalesce (extra: stage 4.5)', () => {
 
 describe('developer role mapping (extra: stage 4.5)', () => {
   test('OpenAI o1-series `developer` role maps to AI SDK `system`', () => {
-    // OpenAI's o1-series renamed `system` to `developer`. Both flow into the
-    // AI SDK's `system` role so downstream providers see a uniform shape.
     const result = toModelMessages([{ role: 'developer', content: 'You are a careful reasoner.' }]);
 
     expect(result).toEqual([{ role: 'system', content: 'You are a careful reasoner.' }]);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Stage 7.5 additions: hardening
-// ---------------------------------------------------------------------------
 
 describe('audio format coverage', () => {
   test.each([
@@ -776,22 +681,10 @@ describe('file part handling', () => {
 });
 
 describe('skipped fields (M1+) — tracked gaps', () => {
-  // These describe placeholders pin the milestones for fields we type but
-  // intentionally drop. When the milestone lands, replace `test.todo` with a
-  // real test asserting the field round-trips.
-
   test.todo('M1: body.tools forwarded to generateText');
   test.todo('M1: body.tool_choice forwarded to generateText');
   test.todo('M1: body.parallel_tool_calls forwarded to generateText');
 });
-
-// ---------------------------------------------------------------------------
-// G55 (OC12) — re-ingested fields must not be silently dropped.
-// `refusal` → text part, `image_url.detail` → unknown.image_detail (remapped
-// to `<provider>.imageDetail` by forwardLanguageParams), `extra_content` →
-// message providerOptions. `name` has no ModelMessage mapping and is
-// intentionally dropped (parity with the AI SDK's converters).
-// ---------------------------------------------------------------------------
 
 describe('re-ingested field forwarding (G55)', () => {
   test('assistant `refusal` surfaces in translated content as a text part', () => {
@@ -935,11 +828,6 @@ describe('re-ingested field forwarding (G55)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G8 (OC3) — array-of-text-parts content on system, tool, and assistant
-// messages must be accepted and joined to a string.
-// ---------------------------------------------------------------------------
-
 describe('array-of-text-parts content (G8)', () => {
   test('system message content as array is joined to a string', () => {
     const result = toModelMessages([
@@ -993,12 +881,6 @@ describe('array-of-text-parts content (G8)', () => {
     expect(result).toEqual([{ role: 'assistant', content: 'prior turn' }]);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Compatibility tolerance — unknown roles + extra fields (AI SDK philosophy)
-// ---------------------------------------------------------------------------
-// Mirrors the AI SDK's "limited schema" approach: unknown fields pass through,
-// unknown roles are forwarded rather than rejected.
 
 describe('compatibility tolerance', () => {
   test('unknown role is forwarded as system message with [role=X] prefix', () => {
@@ -1065,9 +947,6 @@ describe('compatibility tolerance', () => {
   });
 
   test('unknown audio format throws UnsupportedModalityError from translator not schema', () => {
-    // Previously this was caught by z.enum at schema level with a generic error.
-    // Now the schema passes `format: z.string()` and the translator throws with
-    // the precise param path.
     expect(() =>
       toModelMessages([
         {

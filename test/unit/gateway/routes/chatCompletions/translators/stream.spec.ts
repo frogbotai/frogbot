@@ -152,7 +152,6 @@ describe('createOpenAIStreamTransform', () => {
       } as unknown as TextStreamPart<ToolSet>,
     ]);
 
-    // First chunk: tool-input-start
     const tc0 = chunks[0].choices[0].delta.tool_calls![0];
 
     expect(tc0.index).toBe(0);
@@ -161,13 +160,11 @@ describe('createOpenAIStreamTransform', () => {
     expect(tc0.function!.name).toBe('get_weather');
     expect(tc0.function!.arguments).toBe('');
 
-    // Second chunk: tool-input-delta
     const tc1 = chunks[1].choices[0].delta.tool_calls![0];
 
     expect(tc1.index).toBe(0);
     expect(tc1.function!.arguments).toBe('{"city"');
 
-    // Third chunk
     const tc2 = chunks[2].choices[0].delta.tool_calls![0];
 
     expect(tc2.function!.arguments).toBe(':"NYC"}');
@@ -257,13 +254,11 @@ describe('createOpenAIStreamTransform', () => {
     );
 
     expect(chunks).toHaveLength(3);
-    // Text-delta and finish chunk both carry an explicit usage: null.
     expect(chunks[0].usage).toBeNull();
     expect(chunks[0].choices[0].delta.content).toBe('Hi');
     expect(chunks[1].usage).toBeNull();
     expect(chunks[1].choices[0].finish_reason).toBe('stop');
 
-    // Dedicated final chunk: empty choices, populated usage, shared id/model.
     const usageChunk = chunks[2];
 
     expect(usageChunk.choices).toEqual([]);
@@ -292,15 +287,12 @@ describe('createOpenAIStreamTransform', () => {
     ]);
 
     expect(chunks).toHaveLength(2);
-    // No null stub on the delta chunk (legacy wire shape).
     expect(chunks[0].usage).toBeUndefined();
-    // Usage populated on the finish chunk.
     expect(chunks[1].usage).toEqual({
       prompt_tokens: 10,
       completion_tokens: 5,
       total_tokens: 15,
     });
-    // No dedicated empty-choices chunk.
     expect(chunks.some((c) => c.choices.length === 0)).toBe(false);
   });
 
@@ -314,9 +306,7 @@ describe('createOpenAIStreamTransform', () => {
       { type: 'text-delta', text: 'Hi' } as TextStreamPart<ToolSet>,
     ]);
 
-    // raw chunk produces no output frame
     expect(chunks).toHaveLength(1);
-    // But subsequent chunks carry system_fingerprint
     expect(chunks[0].system_fingerprint).toBe('fp-abc123');
   });
 
@@ -337,9 +327,7 @@ describe('createOpenAIStreamTransform', () => {
       } as unknown as TextStreamPart<ToolSet>,
     ]);
 
-    // Refusal delta emitted
     expect(chunks[0].choices[0].delta.refusal).toBe('I cannot help with that.');
-    // G54: refusal is orthogonal to finish_reason — upstream 'stop' passes through
     expect(chunks[1].choices[0].finish_reason).toBe('stop');
   });
 

@@ -289,14 +289,6 @@ export function createAgentInstance(
   const runGenerate = async (call: Call): Promise<AgentGenerateResult> => {
     const { req, runId, run, call: preparedCall } = await prepareRun(call);
     const model = run.selection.model;
-    // Op-model-join NOT taken: the agent's chat model is fixed at construction and
-    // re-set per call inside `prepareCall`, which has no access to the op. The AI SDK's
-    // `AgentCallParameters` (what `baseAgent.generate` accepts) carries no `model` field,
-    // so `preparedCall.model = op.chatModel()` would be ignored — model overrides only
-    // flow through the `prepareCall` and `prepareStep` returns. Injecting a per-op model via
-    // a shared closure variable would race across concurrent invocations. So upstream calls use
-    // `gateway.chatModel(...)` (upstream hooks mint their own requestId), and the op only
-    // drives beforeOperation (start) / afterOperation (finish).
     const op = gateway.operation({
       operation: 'chat.completions',
       model,

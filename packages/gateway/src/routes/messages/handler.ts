@@ -1,15 +1,3 @@
-// POST /v1/messages — Anthropic-compatible messages route.
-//
-// Supports both non-streaming (`stream: false`) and streaming (`stream: true`).
-//
-// Validation happens at the route boundary via `parseMessagesRequest` (zod).
-// The translator then maps the Anthropic wire format to AI SDK ModelMessage[]
-// and maps the AI SDK result back to the Anthropic response envelope.
-//
-// The hook lifecycle runs inline (Payload CMS-style): each phase fires at the
-// exact point in the handler where it belongs, so the control flow reads
-// top-to-bottom with nothing hidden behind a runner abstraction.
-
 import {
   type Attributes,
   type Context as OtelContext,
@@ -90,23 +78,15 @@ export function messagesRoute(ctx: MessagesRouteContext) {
     const otel: Attributes = {};
     const startedAt = Date.now();
 
-    // Lifecycle state hoisted for `catch`/`finally`. `base` only exists once
-    // the provider is resolved; failures before that point rethrow to
-    // `app.onError`, which shapes the Anthropic error envelope.
     let base: OperationBase<typeof operation> | undefined;
     let phase: HookPhase = 'beforeOperation';
     let finishReason: string | undefined;
     let usage: HookUsage | undefined;
     let operationError: unknown;
     let hooks: Hooks = ctx.hooks ?? {};
-    // Set only for streaming requests — drives `afterOperation`/`afterError`
-    // off the stream's real terminal signal instead of HTTP-return time.
-    // See `shared/streamLifecycle.ts`.
     let lifecycle: StreamLifecycle | undefined;
 
     try {
-      // `beforeOperation` runs first — a pre-flight gate (auth, rate limit)
-      // that fires before the body is parsed or a provider is resolved.
       await runHooks(hooks.beforeOperation, {
         phase,
         operation,
@@ -141,7 +121,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
 
       phase = 'beforeUpstream';
 
-      // Translate Anthropic messages → AI SDK format.
       rejectUnsupportedMessagesParams(body);
       const messages = toModelMessages({
         messages: body.messages as AnthropicMessage[],
@@ -153,7 +132,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
 
-      // Convert Anthropic tools → AI SDK tools.
       const tools = toAISDKTools(body.tools);
       const toolChoice = toAISDKToolChoice(body.tool_choice);
       const providerOptions: Record<string, Record<string, JSONValue>> = {};
@@ -168,9 +146,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         };
       }
 
-      // Top-level cache_control ("cache the last cacheable block") →
-      // providerOptions.unknown.cache_control; forwardLanguageParams re-homes
-      // it to the SDK namespace (anthropic.cacheControl) after hooks run.
       const cachingOpts = parsePromptCachingOptions({
         cache_control: body.cache_control,
       });
@@ -190,9 +165,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         stopSequences: body.stop_sequences ?? undefined,
       };
 
-      // Structured output: `output_config.format` (GA) with the deprecated
-      // top-level `output_format` as a fallback. `json_schema` → Output.object,
-      // which the anthropic provider renders back into `output_config.format`.
       const outputConfig =
         body.output_config ?? (body.output_format ? { format: body.output_format } : undefined);
 
@@ -202,9 +174,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
           ? Output.object({ schema: jsonSchema(outputFormat.schema) })
           : undefined;
 
-      // `beforeUpstream` hooks may mutate `messages`/`params`/`headers`/
-      // `providerOptions` in place; `aiOptions` is built afterward so it
-      // consumes the mutated values.
       await runHooks(hooks.beforeUpstream, {
         ...base,
         phase,
@@ -217,17 +186,11 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         resolvedModel: model,
       });
 
-      // Forward message-level and request-level `unknown` namespaces into the
-      // SDK provider namespace AFTER hooks run so provider middleware can
-      // consume `unknown.cache_control` before it is drained.
       forwardMessageProviderOptions(messages, resolved.providerName);
       forwardLanguageParams(providerOptions, resolved.providerName);
 
-      // Shared AI SDK options.
       const upstream = createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs);
       const aiOptions = {
-        // Anthropic's `output_config.format` is always strict, so every
-        // schema reply is checked.
         model: output ? withStrictOutput(model) : model,
         messages,
         allowSystemInMessages: true,
@@ -236,8 +199,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         providerOptions,
         abortSignal: upstream.signal,
         headers: Object.fromEntries(headers),
-        // SSRF guard (G33): user-supplied media URLs the provider can't fetch
-        // natively would otherwise be downloaded in-process by the SDK default.
         experimental_download: guardedDownload,
         temperature: params.temperature,
         topP: params.topP,
@@ -248,15 +209,11 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         ...(output ? { output } : {}),
       };
 
-      // Run the upstream call with the gateway span's context active so AI SDK
-      // inner spans parent under it (stashed by the tracing hook's
-      // `beforeUpstream`; falls back to the ambient context when tracing is off).
       const activeContext =
         (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
 
       phase = 'upstream';
 
-      // --- Streaming path ---
       if (body.stream) {
         const streamLifecycle = createStreamLifecycle({
           base,
@@ -273,9 +230,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
             includeRawChunks: true,
             onFinish: streamLifecycle.onFinish,
             onError: streamLifecycle.onError,
-            // A fired server deadline is an upstream fault, not a client abort:
-            // skip the 499 abort finalization and let the thrown timeout error
-            // drive `afterError`/`afterOperation` instead.
             onAbort: async () => {
               if (upstream.timedOut()) return;
               await streamLifecycle.onAbort();
@@ -355,7 +309,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         );
       }
 
-      // --- Non-streaming path ---
       const result = await otelContext.with(activeContext, () => generateText(aiOptions));
 
       usage = {
@@ -392,18 +345,12 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       const serviceTier =
         typeof anthropicUsage?.service_tier === 'string' ? anthropicUsage.service_tier : undefined;
 
-      // Same-provider Anthropic surfaces thinking tokens only on the raw usage
-      // object (convert-anthropic-usage.ts leaves outputTokens.reasoning
-      // undefined); other providers surface them via outputTokenDetails.
       const thinkingTokens =
         extractThinkingTokens(anthropicUsage) ?? result.usage.outputTokenDetails?.reasoningTokens;
 
-      // Same-provider only: non-Anthropic upstreams never populate
-      // providerMetadata.anthropic, so cross-provider stop_sequence stays null.
       const metaStopSequence = result.providerMetadata?.anthropic?.stopSequence;
       const stopSequence = typeof metaStopSequence === 'string' ? metaStopSequence : undefined;
 
-      // Translate AI SDK result → Anthropic response.
       const response = toAnthropicResponse({
         text: result.text,
         finishReason: result.finishReason,
@@ -431,9 +378,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       return c.json(response);
     } catch (err) {
       operationError = err;
-      // afterError is operation-scoped: it only fires once the provider is
-      // resolved. Pre-resolution failures (beforeOperation, parse, resolve)
-      // rethrow straight to `app.onError`, which shapes the error envelope.
       if (base) {
         await runHooks(
           hooks.afterError,
@@ -444,17 +388,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
 
       throw err;
     } finally {
-      // `afterOperation` is the guaranteed-fire billing/audit slot. For
-      // streaming, the lifecycle owns it and fires once the stream actually
-      // concludes — so on the success path the lifecycle is unfinalized here
-      // (the stream hasn't drained yet) and `finally` must NOT fire. The one
-      // gap is a throw between lifecycle creation and HTTP return (e.g. a
-      // pre-first-byte reader rejection in `peekAnthropicStream`): the lifecycle
-      // never finalizes because `toSseStream` was never constructed, `catch`
-      // fired `afterError` and rethrew, and nothing fires `afterOperation`.
-      // Detect that via `operationError` being set with an unfinalized
-      // lifecycle, and fire `afterOperation` directly (not `finalizeNow`, which
-      // would re-fire the `afterError` the `catch` already fired).
       const streamThrewBeforeFinalize =
         lifecycle !== undefined && operationError !== undefined && !lifecycle.hasFinalized();
 
@@ -475,7 +408,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
     }
   });
 
-  // Route-specific error handler — produces Anthropic-shaped errors.
   app.onError((err, c) => {
     if (isClientAbort(err, c.req.raw.signal)) {
       return new Response(null, { status: 499 });
@@ -511,12 +443,6 @@ function rejectUnsupportedMessagesParams(body: Record<string, unknown>) {
   }
 }
 
-/**
- * Map the Anthropic wire `thinking` param onto the SDK-read
- * `providerOptions.anthropic.thinking`. The wire uses snake_case
- * `budget_tokens`; the shipped AnthropicProviderOptions reads camelCase
- * `budgetTokens` (anthropic-language-model-options.ts).
- */
 function applyThinking(
   providerOptions: Record<string, Record<string, JSONValue>>,
   thinking: unknown,
@@ -542,11 +468,6 @@ function applyThinking(
   };
 }
 
-/**
- * Map `tool_choice.disable_parallel_tool_use` onto the SDK-read
- * `providerOptions.anthropic.disableParallelToolUse`
- * (anthropic-language-model-options.ts).
- */
 function applyToolChoiceOptions(
   providerOptions: Record<string, Record<string, JSONValue>>,
   toolChoice: unknown,
@@ -564,11 +485,6 @@ function applyToolChoiceOptions(
   };
 }
 
-/**
- * Map the wire's snake_case `mcp_servers` entries onto the camelCase shape
- * the AI SDK anthropic provider reads from `providerOptions.anthropic.mcpServers`
- * (anthropic-language-model.ts serializes them back to snake_case).
- */
 function applyMcpServers(
   providerOptions: Record<string, Record<string, JSONValue>>,
   mcpServers: MessagesRequest['mcp_servers'],
@@ -608,14 +524,6 @@ function applyMcpServers(
   };
 }
 
-/**
- * Map the wire's `container` (string id, or object with agent skills) onto
- * `providerOptions.anthropic.container` — always the object form the AI SDK
- * reads; a bare id string round-trips back to a string on the wire
- * (anthropic-language-model.ts container case). Custom skills carry their
- * wire `skill_id` as `providerReference.anthropic`, which the SDK resolves
- * back to `skill_id` (resolve-provider-reference.ts).
- */
 function applyContainer(
   providerOptions: Record<string, Record<string, JSONValue>>,
   container: MessagesRequest['container'],

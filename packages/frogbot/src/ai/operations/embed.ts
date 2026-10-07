@@ -1,5 +1,3 @@
-// embed operation — single value embedding.
-
 import type { Gateway } from '@frogbotai/gateway';
 import { embed as aiEmbed } from 'ai';
 
@@ -27,10 +25,8 @@ export async function embedOperation(
 
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
 
-  // 1. Resolve model.
   const modelId = resolveModel(input, config);
 
-  // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
       req: req as FrogBotRequest,

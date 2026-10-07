@@ -1,9 +1,3 @@
-// Canonical model ID mapping for Anthropic on AWS (Claude Platform on AWS).
-//
-// The provider speaks the native Anthropic Messages API (`@ai-sdk/anthropic-aws`),
-// so shorthands resolve to native Anthropic model IDs — NOT Bedrock ARN-style
-// IDs like `anthropic.claude-3-5-sonnet-20241022-v2:0`.
-
 export type AnthropicAwsCanonicalId = string;
 
 export const ANTHROPIC_AWS_CANONICAL_IDS: Record<string, AnthropicAwsCanonicalId> = {

@@ -16,7 +16,6 @@ import type { PieceTriggerReference } from '../../../../packages/frogbot/src/pie
 import { buildIngressRegistry } from '../../../../packages/frogbot/src/triggers/registry.js';
 import { createEchoPiece } from './fixtures/createEchoPiece.js';
 
-// Tolerates the invalid references some tests pass on purpose.
 function isAppTrigger(
   trigger: PieceTriggerReference,
 ): trigger is Extract<PieceTriggerReference, { type: 'app' }> {

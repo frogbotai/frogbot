@@ -41,9 +41,6 @@ export function parseSystemMessages(msg: OpenAISystemMessage): SystemModelMessag
   });
 }
 
-// Unknown role (e.g. legacy `function`, vendor-specific roles).
-// Forward as a system message with a synthetic role prefix so the
-// provider sees the content rather than us silently dropping it.
 export function parseUnknownMessage(
   msg: OpenAIUnknownMessage,
   logger: GatewayLogger,

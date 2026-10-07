@@ -40,8 +40,6 @@ vi.mock('@payloadcms/ui', () => ({
 const { MoneyCell, MoneyField } =
   await import('../../../../packages/next/src/fields/Money/index.client.js');
 
-// Payload's client `admin` type Picks from an optional type, which makes every picked key
-// required; the fixture states only the admin keys it uses.
 function moneyField(currency = 'USD', admin: Record<string, unknown> = {}): NumberFieldClient {
   const field: Omit<NumberFieldClient, 'admin'> & {
     admin?: Partial<NonNullable<NumberFieldClient['admin']>>;

@@ -1,23 +1,3 @@
-// SSE stream helper — heartbeat, [DONE] sentinel, and reader cancel on client abort.
-//
-// Wraps an inner string stream (already SSE-framed by a translator) with:
-//   - A 15s heartbeat comment (`: heartbeat\n\n`) on silence — keeps
-//     idle TCP connections alive across proxies (nginx, Cloudflare, ALB).
-//   - An optional terminal `[DONE]` sentinel appended after the inner
-//     stream closes normally (OpenAI convention; Anthropic uses `event: message_stop`
-//     inline and does NOT want `[DONE]`).
-//   - Reader cancel propagation on client abort — when the HTTP response
-//     body is cancelled we cancel the upstream reader so the AI SDK stops
-//     the upstream request instead of leaking tokens.
-//   - An optional error-to-frame mapper for stream-time errors so the
-//     handler can format the error as an SSE frame in the client's wire format
-//     rather than surfacing a naked exception.
-//
-// `createSseResponse` wraps the string stream with `text/event-stream`
-// headers and TextEncoder piping.
-//
-// **Ref:** hebo `utils/stream.ts`; opencode `server/routes/instance/httpapi/event.ts:60-64`.
-
 import { serializeSseFrame, type SseFrame } from './sseFrame.js';
 
 const DEFAULT_HEARTBEAT_MS = 15_000;
@@ -137,10 +117,7 @@ export function toSseStream<TError = unknown>(
       stopHeartbeat();
       await opts.onDone?.({ kind: 'cancel', reason });
 
-      // Propagate cancel upstream so the AI SDK stops the request.
-      await reader.cancel(reason).catch(() => {
-        /* upstream may already be closed — swallow */
-      });
+      await reader.cancel(reason).catch(() => {});
     },
   });
 }

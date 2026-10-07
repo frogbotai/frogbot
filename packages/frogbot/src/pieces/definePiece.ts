@@ -263,8 +263,6 @@ export function definePiece<const T extends PieceDefinition>(
     }
   }
 
-  // Action methods are defined per definition at runtime, so the typed call
-  // signature is an overload over the untyped implementation.
   function factory<const TConfig extends PieceFactoryOptions<T>>(
     ...args: object extends PieceFactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
   ): DefinedPiece<T, TConfig>;

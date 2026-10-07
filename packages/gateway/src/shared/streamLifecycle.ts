@@ -1,39 +1,3 @@
-// Streaming operation lifecycle — fires `afterOperation`/`afterError`
-// exactly once, at the point the SSE stream *actually* concludes, not at
-// HTTP-return time.
-//
-// The inline `try/catch/finally` pattern each route handler uses works for
-// non-streaming requests because `return` and "the operation is done" are
-// the same moment. For streaming requests they aren't: `return
-// createSseResponse(...)` just hands the client a `ReadableStream` handle —
-// the client hasn't read a single byte yet, so a `finally` block firing at
-// that point sees no real `usage`/`finishReason` and a `durationMs` that's
-// really time-to-first-byte.
-//
-// This module fires hooks from whichever terminal signal actually reaches
-// us first:
-//   - `streamText`'s `onFinish` — real aggregated usage, once the stream is
-//     fully drained. Also fires for the "well-behaved" mid-stream-error
-//     case (an `{type:'error'}` chunk followed by a `finish` chunk) with
-//     `finishReason: 'error'`.
-//   - `streamText`'s `onError` — fires for any `{type:'error'}` chunk. May
-//     fire alone (a synchronous provider throw with no steps ever
-//     recorded means `onFinish` never runs) or just before `onFinish` in
-//     the well-behaved case. We only *capture* here; `onFinish` or the
-//     `onStreamDone` fallback decides when to actually fire hooks.
-//   - `streamText`'s `onAbort` — client disconnect via `abortSignal`.
-//   - `toSseStream`'s wire-level terminal points (`onDone`) — a fallback
-//     for the catastrophic case where the readable stream errors out at
-//     the reader level and neither `onFinish` nor `onAbort` ever fires.
-//
-// Exactly-once is enforced by a single `finished` flag shared across every
-// entry point; whichever fires first wins and the rest become no-ops.
-//
-// **Amended invariant:** `afterOperation` always fires exactly once, once
-// the operation is established (`base` resolved), at the point the
-// operation actually concludes (success, upstream error, or client abort)
-// — not at HTTP-return time for streaming paths.
-
 import type { LanguageModelUsage } from 'ai';
 
 import {
@@ -189,10 +153,6 @@ export function createStreamLifecycle(args: {
     },
 
     onError(event) {
-      // Capture only — `onFinish` may still follow (the well-behaved
-      // mid-stream-error case). If it never does (a synchronous provider
-      // throw with zero steps recorded), `onStreamDone`/`finalizeNow`
-      // picks this up.
       capturedError = event.error;
     },
 
@@ -214,8 +174,6 @@ export function createStreamLifecycle(args: {
         return;
       }
 
-      // Normal wire-level close with nothing captured by `streamText`'s
-      // own callbacks — defensive fallback, should be rare in practice.
       await fireAfterOperation({
         finishReason: capturedFinishReason,
         usage: capturedUsage,

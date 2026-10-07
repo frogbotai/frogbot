@@ -4,10 +4,6 @@ import { normalizeServiceTier } from '../../../shared/normalizeServiceTier.js';
 
 type ResponsesToolCall = { toolCallId: string; toolName: string; input: unknown };
 
-// Spec-required request-echo fields sourced from the request body. The OpenAI
-// Responses envelope always carries these keys (with defaults when the client
-// omitted them) — see ai/packages/openai/src/responses/
-// openai-responses-language-model.test.ts response.created snapshot.
 export type ResponsesEchoParams = {
   parallel_tool_calls?: boolean | null;
   tools?: unknown[] | null;
@@ -67,8 +63,6 @@ export function toResponsesResponse(args: {
   };
 }
 
-// Always-present spec-echo fields with OpenAI defaults. Echoes request-provided
-// values when set, otherwise the wire-spec defaults.
 export function echoFields(body: ResponsesEchoParams): Record<string, unknown> {
   return {
     parallel_tool_calls: body.parallel_tool_calls ?? true,
@@ -134,9 +128,6 @@ function toOutputItems(result: {
     });
   }
 
-  // Always emit a message item when there is text or no tool calls — mirrors
-  // Hebo's toOutputItems fall-through so an empty response still carries a
-  // message item with empty output_text rather than an empty output array.
   if (result.text || toolCalls.length === 0) {
     output.push({
       id: `msg_${crypto.randomUUID()}`,
@@ -160,10 +151,6 @@ function reasoningItem(text: string, encryptedContent?: string): Record<string, 
   };
 }
 
-// OpenAI surfaces ZDR reasoning replay tokens (requested via
-// include: ["reasoning.encrypted_content"]) through the AI SDK as
-// providerMetadata.openai.reasoningEncryptedContent — see
-// ai/packages/openai/src/responses/openai-responses-provider-metadata.ts:20-23.
 export function reasoningEncryptedContent(
   providerMetadata: Record<string, Record<string, unknown>> | undefined,
 ): string | undefined {

@@ -1,11 +1,3 @@
-// P2 triage — /v1/messages findings G60–G69.
-//
-// Each `it.fails` is tagged // G## and marks a CONFIRMED bug.
-// Each `it` (passing) is tagged // G## and marks a REJECTED finding.
-// D-class findings (G61/G66/G69) are confirmed via grep evidence in comments.
-//
-// All tests use the createApp + mock-provider pattern from int.spec.ts.
-
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
@@ -21,10 +13,6 @@ import type { ProviderRegistry } from '../../packages/gateway/src/providers/regi
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 import { finish, mockUsage } from './mockModel.js';
-
-// ---------------------------------------------------------------------------
-// Shared harness
-// ---------------------------------------------------------------------------
 
 const DEFAULT_USAGE = mockUsage({
   inputTokens: { total: 5, noCache: 5 },
@@ -115,18 +103,8 @@ async function postRaw(app: Hono, path: string, body: unknown) {
   return { status: res.status, headers: res.headers, text: await res.text() };
 }
 
-// ---------------------------------------------------------------------------
-// G60 — stop_sequence field echoes the matched sequence (FIXED)
-// toAnthropicResponse now forwards providerMetadata.anthropic.stopSequence and
-// mapStopReason prefers the raw `stop_sequence` finish reason, matching the
-// AI SDK anthropic provider (map-anthropic-stop-reason.ts:16 folds raw
-// stop_sequence into unified 'stop'; the metadata carries the matched string).
-// ---------------------------------------------------------------------------
-
 describe('G60 — stop_sequence response field always null', () => {
   it('stop_sequence field echoes the matched stop sequence', async () => {
-    // Real anthropic provider shape for a stop-sequence halt: unified 'stop',
-    // raw 'stop_sequence', matched sequence in providerMetadata.anthropic.
     const stopSequenceFinish = finish('stop', 'stop_sequence');
 
     const app = makeAppWithModel(
@@ -146,11 +124,9 @@ describe('G60 — stop_sequence response field always null', () => {
 
     expect(status).toBe(200);
 
-    // When stop_reason is 'stop_sequence', the stop_sequence field should be the matched sequence.
     const resp = body as Record<string, unknown>;
 
     expect(resp.stop_reason).toBe('stop_sequence');
-    // stop_sequence should echo which one was matched, not null.
     expect(
       resp.stop_sequence,
       'stop_sequence field should not be null when stop_reason is stop_sequence',
@@ -159,22 +135,11 @@ describe('G60 — stop_sequence response field always null', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G61 — stop-reason taxonomy (FIXED)
-//
-// mapStopReason now emits the raw upstream stop_reason verbatim when it is a
-// known Anthropic wire literal (pause_turn, model_context_window_exceeded,
-// compaction, ...), and maps unified 'other'/'error' to 'end_turn' instead of
-// null. The Anthropic spec requires a non-null stop_reason on every completed
-// non-streaming message.
-// ---------------------------------------------------------------------------
-
 describe('G61 — stop-reason taxonomy: other → null is spec-invalid', () => {
   it('non-streaming message never returns null stop_reason (G61)', async () => {
     const app = makeAppWithModel(
       'anthropic',
       createRecordingModel({
-        // AI SDK surfaces context-window / unmapped stops as finishReason 'other'
         finishReason: finish('other', 'model_context_window_exceeded'),
       }),
     );
@@ -189,20 +154,9 @@ describe('G61 — stop-reason taxonomy: other → null is spec-invalid', () => {
 
     const resp = body as Record<string, unknown>;
 
-    // Anthropic clients switch on stop_reason; null breaks the discriminant.
     expect(resp.stop_reason, 'completed message must carry a non-null stop_reason').not.toBeNull();
   });
 });
-
-// ---------------------------------------------------------------------------
-// G62 — usage detail fields (FIXED)
-// toAnthropicResponse and the stream translator now emit
-// `output_tokens_details.thinking_tokens` (from raw usage or the normalized
-// outputTokenDetails.reasoningTokens) and the per-TTL `cache_creation`
-// breakdown (from the raw provider usage; providerMetadata.anthropic.usage
-// non-streaming, finish-step usage.raw streaming). Fields are omitted when the
-// upstream provides no data — never backfilled with 0/0.
-// ---------------------------------------------------------------------------
 
 describe('G62 — usage detail fields on messages responses', () => {
   it('messages response includes output_tokens_details.thinking_tokens', async () => {
@@ -230,7 +184,6 @@ describe('G62 — usage detail fields on messages responses', () => {
     const usage = resp.usage as Record<string, unknown>;
 
     expect(usage).toBeDefined();
-    // Anthropic's API surfaces thinking tokens in output_tokens_details
     expect(usage).toHaveProperty('output_tokens_details');
 
     const details = usage.output_tokens_details as Record<string, unknown>;
@@ -334,21 +287,12 @@ describe('G62 — usage detail fields on messages responses', () => {
 
     const usage = (body as Record<string, unknown>).usage as Record<string, unknown>;
 
-    // Never backfill 0/0 — omit the fields when the upstream has no data.
     expect(usage).not.toHaveProperty('output_tokens_details');
     expect(usage).not.toHaveProperty('cache_creation');
   });
 });
 
-// ---------------------------------------------------------------------------
-// G63 — tool strict + cache_control (FIXED)
-// toAISDKTools (messages/translators/tools.ts) forwards per-tool cache_control
-// via tool.providerOptions.anthropic.cacheControl and passes `strict` through.
-// ---------------------------------------------------------------------------
-
 describe('G63 — messages tools: strict and cache_control forwarded', () => {
-  // G63 — per-tool cache_control rides tool.providerOptions.anthropic.cacheControl
-  // (AI SDK anthropic-prepare-tools.ts + get-cache-control.ts:15-18).
   it('tool cache_control reaches upstream providerOptions', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -378,27 +322,13 @@ describe('G63 — messages tools: strict and cache_control forwarded', () => {
 
     const toolsStr = JSON.stringify(capturedOptions?.tools ?? {});
 
-    // AI SDK Anthropic provider reads per-tool cache_control from
-    // tool.providerOptions.anthropic.cacheControl (get-cache-control.ts:15-18
-    // prefers `cacheControl`, snake `cache_control` also accepted). Tools are
-    // NOT run through forwardMessageProviderOptions (that only walks messages),
-    // so a correct fix sets `cacheControl` directly under the `anthropic`
-    // namespace — asserting snake `cache_control` would enforce the wrong key.
     expect(toolsStr).toContain('ephemeral');
     expect(toolsStr).toContain('anthropic');
     expect(toolsStr).toContain('cacheControl');
   });
 });
 
-// ---------------------------------------------------------------------------
-// G64 — assistant-side cache_control (FIXED)
-// parseAssistantMessage (messages/translators/toModelMessages/assistant.ts)
-// attaches providerOptions.unknown.cache_control to text and tool_use parts;
-// forwardMessageProviderOptions re-homes it to the provider namespace.
-// ---------------------------------------------------------------------------
-
 describe('G64 — assistant cache_control forwarded in messages route', () => {
-  // G64 — assistant text/tool_use blocks mirror the user-side cache_control pattern.
   it('assistant message cache_control reaches upstream providerOptions', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -437,18 +367,7 @@ describe('G64 — assistant cache_control forwarded in messages route', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G65 — system block array cache breakpoints (FIXED)
-// parseSystemParam (messages/translators/toModelMessages/system.ts) emits one
-// system message per block, each carrying its own cache_control. AI SDK
-// SystemModelMessage.content is string-only, and the anthropic provider emits
-// one system text block per system message (convert-to-anthropic-prompt.ts
-// system case), so N blocks round-trip as N wire blocks with N breakpoints.
-// ---------------------------------------------------------------------------
-
 describe('G65 — system block array: cache_control breakpoints preserved', () => {
-  // G65 — each system block becomes its own system message with its own
-  // providerOptions.anthropic.cacheControl after namespace forwarding.
   it('multiple system blocks with cache_control produce separate cache breakpoints', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -473,9 +392,6 @@ describe('G65 — system block array: cache_control breakpoints preserved', () =
 
     expect(status).toBe(200);
 
-    // Two blocks carry cache_control, so the prompt must carry two cache
-    // breakpoints. Since SystemModelMessage.content is string-only, that means
-    // multiple system messages (each with its own cacheControl), not one.
     const prompt = capturedOptions?.prompt ?? [];
     const systemMsgs = prompt.filter((m) => m.role === 'system');
     const cacheBreakpoints = systemMsgs.filter((m) => {
@@ -489,18 +405,7 @@ describe('G65 — system block array: cache_control breakpoints preserved', () =
   });
 });
 
-// ---------------------------------------------------------------------------
-// G66 — grouped top-level drops (FIXED for mcp_servers/container/cache_control)
-//
-// A client sending Anthropic's `mcp_servers` (remote MCP tool servers) expects
-// the gateway to forward it to the upstream. The messages schema now models
-// mcp_servers/container/cache_control and the handler maps them onto the
-// SDK-read providerOptions.anthropic namespace (camelCase keys per
-// anthropic-language-model-options.ts).
-// ---------------------------------------------------------------------------
-
 describe('G66 — top-level mcp_servers forwarded', () => {
-  // G66 — mcp_servers → providerOptions.anthropic.mcpServers.
   it('mcp_servers reaches upstream providerOptions (G66)', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -524,32 +429,12 @@ describe('G66 — top-level mcp_servers forwarded', () => {
     const anthropicOpts = capturedOptions?.providerOptions?.anthropic as
       Record<string, unknown> | undefined;
 
-    // The MCP servers must reach the provider; otherwise the client's tools vanish.
     expect(anthropicOpts?.mcpServers ?? anthropicOpts?.mcp_servers).toBeDefined();
   });
 });
 
-// ---------------------------------------------------------------------------
-// G67 — streaming block indices: emission order only
-// stream.ts comment (line 15) documents this as a design decision.
-// The monotonic counter means an upstream that uses non-sequential block ids
-// gets re-sequenced by emission order. This is observable but by design.
-// The finding asks to confirm this is emission-order only — confirmed.
-// DEFERRED as policy/design decision (stream.ts explicitly chooses this).
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// G68 — empty upstream stream produces invalid wire on messages route.
-// messages/handler.ts:185-191: if peekAnthropicStream returns undefined (no
-// chunks), the handler returns createSseResponse(toSseStream(new ReadableStream,
-// {appendDone:false})) which emits nothing — no message_start, no message_stop.
-// The Anthropic spec requires at minimum message_start + message_stop.
-// ---------------------------------------------------------------------------
-
 describe('G68 — empty upstream stream produces invalid messages wire', () => {
-  // G68 — messages handler !peeked branch (handler.ts:185) returns empty SSE with no message_start/message_stop; flip to it() when fixed.
   it.fails('empty upstream stream emits valid message_start + message_stop', async () => {
-    // A model whose doStream returns a stream with zero parts.
     const emptyStreamModel: LanguageModelV4 = {
       specificationVersion: 'v4',
       provider: 'mock',
@@ -564,7 +449,6 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
         Promise.resolve({
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
-              // Emit nothing — empty stream
               controller.close();
             },
           }),
@@ -591,9 +475,6 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
     expect(events).toContain('message_stop');
   });
 
-  // G68 — chat handler !peeked branch (handler.ts:184): an empty stream (no parts) causes the AI SDK to
-  // throw "Stream finished with an error" and the handler returns 500 instead of a graceful [DONE].
-  // appendDone:true only fires if the stream reach the normal done path; it never does with zero parts.
   it.fails('empty upstream stream on chat completions emits at least [DONE]', async () => {
     const emptyStreamModel: LanguageModelV4 = {
       specificationVersion: 'v4',
@@ -634,20 +515,7 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G69 — document title not plumbed (user-scenario)
-//
-// A client attaches a document block with a `title` (which Anthropic uses to
-// label the source in citations). The schema accepts `title` (schema.ts:92)
-// but the user translator (toModelMessages/user.ts document case) maps only
-// `source` → file/text part and drops `title`. The model never sees the
-// document label, so any citation it produces references an untitled source.
-// We assert the title survives into the file part's provider metadata.
-// ---------------------------------------------------------------------------
-
 describe('G69 — document title dropped in translation', () => {
-  // G69 — user.ts document case forwards block.title/citations/context to the
-  // file part's providerOptions.anthropic so the model receives the label.
   it('document block title reaches the model (G69)', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
     const app = makeAppWithModel(
@@ -678,8 +546,6 @@ describe('G69 — document title dropped in translation', () => {
 
     expect(status).toBe(200);
 
-    // Find the file/text part the document was translated into and confirm the
-    // title survived somewhere on it (providerOptions or a filename).
     const prompt = capturedOptions?.prompt ?? [];
     const serialized = JSON.stringify(prompt);
 
@@ -689,14 +555,7 @@ describe('G69 — document title dropped in translation', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// G49 — streaming messages SSE responses must carry x-request-id, matching the
-// non-streaming path. createSseResponse now merges the handler's requestId into
-// the SSE response headers.
-// ---------------------------------------------------------------------------
-
 describe('G49 — x-request-id present on streaming messages SSE response', () => {
-  // G49 — createSseResponse merges requestId into SSE headers; streaming parity with non-streaming.
   it('streaming messages response includes x-request-id header', async () => {
     const app = makeAppWithModel('anthropic', createRecordingModel());
     const { status, headers } = await postRaw(app, '/v1/messages', {
@@ -714,16 +573,7 @@ describe('G49 — x-request-id present on streaming messages SSE response', () =
   });
 });
 
-// ---------------------------------------------------------------------------
-// G51 (S17 ← S2/G5) — composed-wire terminal-frame count on a successful
-// messages stream. The Anthropic wire terminates with `message_stop` and this
-// route sets appendDone:false, so the OpenAI-only `data: [DONE]` sentinel must
-// NEVER appear here (findings/01_streaming_sse.md: "[DONE] scoping: OpenAI-only").
-// Guards the S2/G5 class of duplicate/leaked terminal sentinels for /v1/messages.
-// ---------------------------------------------------------------------------
-
 describe('G51 — messages stream terminal-frame count', () => {
-  // G51 — exactly one message_stop, zero [DONE] on a successful stream.
   it('terminates with exactly one message_stop and no [DONE] sentinel', async () => {
     const app = makeAppWithModel('anthropic', createRecordingModel());
     const { status, text } = await postRaw(app, '/v1/messages', {

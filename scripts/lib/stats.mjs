@@ -266,7 +266,6 @@ export function inProject(directory, main) {
 const SESSION_COLUMNS = 'id, parent_id AS parentID, title, agent, directory';
 
 export function readSessions(file, { main, tickets }) {
-  // Loaded here so other ticket commands don't print node:sqlite's experimental warning.
   const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite');
   const db = new DatabaseSync(file, { readOnly: true });
 

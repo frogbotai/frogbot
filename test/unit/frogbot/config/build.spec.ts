@@ -209,7 +209,6 @@ describe('frogbot buildConfig', () => {
 
       const config = makeConfig({ plugins: [addField] });
       const result = await buildConfig(config);
-      // Result is now FrogBotSanitizedConfig — check via _internal.payloadConfig
       const payloadConfig = await result._internal.payloadConfig;
       const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
       const fieldNames = users.fields.map((f: any) => f.name);

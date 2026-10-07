@@ -1,23 +1,3 @@
-// Provider definition: generic OpenAI-compatible endpoints.
-//
-// Any key in the gateway config's `providers` map that isn't one of the
-// built-in provider names is treated as a generic OpenAI-compatible endpoint.
-// The map key becomes the provider name and `<name>/<model>` dispatch prefix:
-//
-//   {
-//     providers: {
-//       ollama: { baseURL: 'http://localhost:11434/v1' },
-//       'lm-studio': { baseURL: 'http://localhost:1234/v1' },
-//     }
-//   }
-//
-// `baseURL` is required — it's what distinguishes a deliberate custom endpoint
-// from a typo of a built-in provider name.
-//
-// This provider is intentionally NOT part of env auto-discovery — there's
-// no reasonable way to derive a base URL from env alone, and multi-endpoint
-// setups need explicit declarations.
-
 import { createOpenAICompatible, type OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
 
 /**

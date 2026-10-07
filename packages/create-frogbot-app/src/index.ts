@@ -51,7 +51,6 @@ function readVersion(): string {
   return pkg.version;
 }
 
-// Written by scripts/pack-templates.mjs next to the built entry point.
 function readDatabaseDependencies(): DatabaseDependencies {
   const file = path.join(dirname, 'database-dependencies.json');
 

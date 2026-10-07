@@ -25,10 +25,6 @@ export function resolveSignalLevels(
   input?: SignalLevelInput,
   base?: Required<SignalLevels>,
 ): Required<SignalLevels> {
-  // No `base` means the operator is establishing the baseline from defaults —
-  // any level is allowed. When a `base` is supplied the input is a per-request
-  // client override, which may only downgrade the operator baseline (a ceiling),
-  // never escalate it — for both scalar and per-namespace object overrides.
   if (base === undefined) {
     if (!input) {
       return defaultSignalLevels;

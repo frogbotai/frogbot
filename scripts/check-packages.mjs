@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// `pnpm check packages` expands every `pnpm-workspace.yaml` glob against the disk and prints
-// `<folder>: no tracked package.json` for each matched folder whose `package.json` is missing or
-// untracked. A folder that only groups other globs (`packages/pieces` for `packages/pieces/*`)
-// is skipped. Globs support literal and `*` segments; anything else fails as unsupported.
 import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';

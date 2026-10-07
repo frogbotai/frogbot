@@ -43,7 +43,6 @@ type ResponsesStreamState = {
   errorInfo?: { code?: string | null; message: string };
   usage: Record<string, unknown> | null;
   body: ResponsesEchoParams;
-  /** Masking context for mid-stream error frames (G35). */
   maskOpts: StreamErrorMaskOptions;
 };
 
@@ -78,12 +77,6 @@ export function createResponsesStreamTransform(
   return new TransformStream({
     transform(part, controller) {
       const events = partToEvents(part, state);
-      // Defer the `response.created`/`response.in_progress` preamble until the
-      // first meaningful frame is produced. If that first frame is an error,
-      // emit only the error so the SSE peek in the handler can catch it and
-      // return a proper JSON error status instead of committing to HTTP 200.
-      // Bookkeeping-only parts (`start`, `raw`, `finish-step`) produce no
-      // events and must not trigger the preamble on their own.
       if (!state.started && events.length > 0 && part.type !== 'error') {
         emitPreamble(controller, state, args.previousResponseId);
       }
@@ -93,8 +86,6 @@ export function createResponsesStreamTransform(
       }
     },
     flush(controller) {
-      // Nothing streamed and no error surfaced — still emit the preamble so a
-      // well-behaved empty response has a `response.created` before completion.
       if (!state.started) {
         emitPreamble(controller, state, args.previousResponseId);
       }
@@ -258,10 +249,6 @@ function partToEvents(
     }
 
     case 'finish-step': {
-      // G7: responseId/model/createdAt are frozen at construction (synthetic
-      // resp id + user-requested model). `response.created` and
-      // `response.completed` must share the same response id, so the upstream
-      // provider's response id/modelId from `finish-step` is NOT adopted.
       state.finishReason = mapFinishReason(part.finishReason);
       state.usage = toResponseUsage(part.usage);
 
@@ -334,8 +321,6 @@ function partToEvents(
 
     case 'tool-call': {
       let call = state.toolCalls.get(part.toolCallId);
-      // Non-streaming providers may emit `tool-call` without prior
-      // `tool-input-*` parts — synthesize the full item lifecycle.
       if (!call) {
         const outputIndex = state.nextOutputIndex++;
 
@@ -473,10 +458,6 @@ function reasoningItem(reasoning: ResponsesReasoningState, status: 'in_progress'
   };
 }
 
-// OpenAI surfaces ZDR reasoning replay tokens (requested via
-// include: ["reasoning.encrypted_content"]) through the AI SDK as
-// providerMetadata.openai.reasoningEncryptedContent — see
-// ai/packages/openai/src/responses/openai-responses-provider-metadata.ts:20-23.
 function captureEncryptedContent(
   reasoning: ResponsesReasoningState,
   providerMetadata: Record<string, Record<string, unknown>> | undefined,
