@@ -32,8 +32,9 @@ type BuilderState<T> = Pick<
 const envNamePattern = /^[A-Z_][A-Z0-9_]*$/;
 
 const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
-  const builder = {
+  const builder: EnvBuilderDescriptor<T> = {
     ...state,
+    _output: undefined,
     default(value: T) {
       if (state.requiredMode) {
         throw new Error('An env variable cannot be both required and defaulted');
@@ -66,7 +67,7 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
         requiredPredicate: predicate,
       }) as EnvBuilder<T, T>;
     },
-  } as unknown as EnvBuilderDescriptor<T>;
+  };
 
   return Object.freeze(builder) as EnvBuilder<T>;
 };

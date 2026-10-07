@@ -134,10 +134,10 @@ function parseUserContentBlock(
       // Reachable at runtime because the request schema allows unknown block
       // types through as a forward-compat catch-all; TS considers it `never`
       // once the strict union is exhausted.
-      const unknown = block as unknown as { type: string };
+      const blockType: unknown = Reflect.get(block, 'type');
       throw new UnsupportedModalityError({
         provider: 'anthropic',
-        modality: `content block type "${unknown.type}"`,
+        modality: `content block type "${String(blockType)}"`,
         param: `${path}.type`,
       });
     }
@@ -165,10 +165,10 @@ function mediaSourceToFilePart(
     default: {
       // Reachable at runtime if AnthropicMediaSource grows a new variant
       // before we update the types.
-      const unknown = source as unknown as { type: string };
+      const sourceType: unknown = Reflect.get(source, 'type');
       throw new UnsupportedModalityError({
         provider: 'anthropic',
-        modality: `source type "${unknown.type}"`,
+        modality: `source type "${String(sourceType)}"`,
         param: `${path}.source.type`,
       });
     }

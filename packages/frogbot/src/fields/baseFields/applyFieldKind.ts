@@ -45,7 +45,10 @@ function composeValidate(field: KindField, check: NonNullable<FieldKindSpec['che
 
   if (!base) throw new Error(`applyFieldKind: check is not supported on ${field.type} fields`);
 
-  const developerValidate = 'validate' in field ? field.validate : undefined;
+  // Payload calls a field's validate with that field's own options, so the
+  // developer's validator gets the options the composed one received.
+  const developerValidate = ('validate' in field ? field.validate : undefined) as
+    BaseValidate | undefined;
 
   return async (value, options) => {
     const baseResult = await base(value, options);
@@ -58,9 +61,7 @@ function composeValidate(field: KindField, check: NonNullable<FieldKindSpec['che
       if (kindResult !== true) return kindResult;
     }
 
-    return typeof developerValidate === 'function'
-      ? developerValidate(value, options as never)
-      : true;
+    return typeof developerValidate === 'function' ? developerValidate(value, options) : true;
   };
 }
 

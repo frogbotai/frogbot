@@ -3,6 +3,7 @@ import { generateId } from 'ai';
 import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
 import type { DocID } from '../collections/config/types.js';
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 import { placeholderChatTitle } from './title.js';
@@ -36,8 +37,6 @@ type MessageDocument = {
   createdAt: string;
 };
 
-type TransactionReq = Parameters<typeof initTransaction>[0];
-
 function relationID(value: { id: DocID } | DocID | null | undefined): DocID | null {
   return typeof value === 'object' && value !== null ? value.id : (value ?? null);
 }
@@ -58,17 +57,17 @@ async function duplicateTitle({
   sourceTitle: string;
 }): Promise<string> {
   const base = duplicateBase(sourceTitle) || 'New chat';
-  const chats = (await req.frogbot.find({
+  const chats = await req.frogbot.find({
     collection: chatsSlug,
     where: { user: { equals: ownerId } },
     pagination: false,
     depth: 0,
     req,
     overrideAccess: true,
-  })) as unknown as { docs: Array<{ title?: string | null }> };
+  });
   let next = 1;
   for (const chat of chats.docs) {
-    const title = chat.title?.trim();
+    const title = typeof chat.title === 'string' ? chat.title.trim() : undefined;
     const match = title?.match(/^(.*) \((\d+)\)$/);
     if (match?.[1] === base) next = Math.max(next, Number(match[2]) + 1);
   }
@@ -93,7 +92,7 @@ export async function branchChat({
   const ownerId = relationID(source.user);
   if (ownerId === null || ownerId !== req.user?.id) throw new NotFound(req.t);
 
-  const sourceMessages = (await req.frogbot.find({
+  const sourceMessages = await req.frogbot.find({
     collection: config.messagesSlug,
     where: { and: [{ chat: { equals: source.id } }, { status: { not_equals: 'queued' } }] },
     sort: ['createdAt', 'id'],
@@ -101,15 +100,14 @@ export async function branchChat({
     depth: 0,
     req,
     overrideAccess: false,
-  })) as unknown as { docs: MessageDocument[] };
-  const selectedIndex = sourceMessages.docs.findIndex(
-    (message) => String(message.id) === String(messageId),
-  );
+  });
+  const sourceDocs = sourceMessages.docs as MessageDocument[];
+  const selectedIndex = sourceDocs.findIndex((message) => String(message.id) === String(messageId));
   if (selectedIndex === -1) throw new NotFound(req.t);
-  const messages = sourceMessages.docs.slice(0, selectedIndex + 1);
+  const messages = sourceDocs.slice(0, selectedIndex + 1);
   const sourceTitle = source.title?.trim() || placeholderChatTitle(messages) || 'New chat';
 
-  const transactionReq = req as unknown as TransactionReq;
+  const transactionReq = toPayloadRequest(req);
   const ownsTransaction = await initTransaction(transactionReq);
   try {
     const title = await duplicateTitle({

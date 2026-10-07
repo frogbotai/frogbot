@@ -1,7 +1,7 @@
 // Internal conversion from frogbot Tool[] → AI SDK ToolSet.
 // Users never import this — the ToolSet record is an implementation detail.
 
-import type { ModelMessage, ToolSet } from 'ai';
+import type { ModelMessage, Tool, ToolSet } from 'ai';
 import { tool as aiTool } from 'ai';
 import { z } from 'zod';
 
@@ -14,6 +14,19 @@ export const SKIPPED_FOR_CLIENT_INPUT = {
     'Not run: this step also asked the user for input. Call the tool again after the answer if it is still needed.',
 } as const;
 
+type WithToolCtx<TOOL> =
+  TOOL extends Tool<infer INPUT, infer OUTPUT> ? Tool<INPUT, OUTPUT, ToolCtx> : never;
+
+// ToolSet with its untyped tool context replaced by ToolCtx, so the AI SDK accepts `toolsContext`.
+export type AISDKTools = Record<
+  string,
+  WithToolCtx<ToolSet[string]> &
+    Pick<
+      ToolSet[string],
+      'execute' | 'onInputAvailable' | 'onInputStart' | 'onInputDelta' | 'needsApproval'
+    >
+>;
+
 export type ToAISDKToolsOptions = {
   skip?: (messages: ModelMessage[]) => boolean;
 };
@@ -21,7 +34,7 @@ export type ToAISDKToolsOptions = {
 export function toAISDKTools(
   tools: readonly AnyTool[] | undefined,
   { skip }: ToAISDKToolsOptions = {},
-): ToolSet {
+): AISDKTools {
   if (!tools || tools.length === 0) return {};
 
   return Object.fromEntries(

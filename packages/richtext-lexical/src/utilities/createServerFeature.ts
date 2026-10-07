@@ -9,6 +9,7 @@ import { createServerFeature as upstreamCreateServerFeature } from '@payloadcms/
 import type { SanitizedConfig } from 'payload';
 
 import type { ServerFeature } from '../features/typesServer.js';
+import { toPayloadServerFeatureArgs } from './seams.js';
 
 export type CreateServerFeatureArgs<UnSanitizedProps, SanitizedProps, ClientProps> = Pick<
   FeatureProviderServer<UnSanitizedProps, SanitizedProps, ClientProps>,
@@ -29,10 +30,11 @@ export type CreateServerFeatureArgs<UnSanitizedProps, SanitizedProps, ClientProp
     | Omit<ServerFeature<SanitizedProps, ClientProps>, 'sanitizedServerFeatureProps'>;
 };
 
-export const createServerFeature = upstreamCreateServerFeature as unknown as <
+export const createServerFeature = <
   UnSanitizedProps = undefined,
   SanitizedProps = UnSanitizedProps,
   ClientProps = undefined,
 >(
   args: CreateServerFeatureArgs<UnSanitizedProps, SanitizedProps, ClientProps>,
-) => FeatureProviderProviderServer<UnSanitizedProps, SanitizedProps, ClientProps>;
+): FeatureProviderProviderServer<UnSanitizedProps, SanitizedProps, ClientProps> =>
+  upstreamCreateServerFeature(toPayloadServerFeatureArgs(args));

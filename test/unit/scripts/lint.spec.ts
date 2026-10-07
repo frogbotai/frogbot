@@ -180,6 +180,45 @@ describe('pnpm lint', () => {
   });
 });
 
+describe('product-code cast ban (DR-047)', () => {
+  const code =
+    'declare const value: { id: string };\n' +
+    'export const hidden = value as never;\n' +
+    'export const forced = value as unknown as number;\n' +
+    'export const narrowed = value as { id: string };\n';
+
+  function casts(filename: string) {
+    const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));
+    const suppressions = path.join(dir, 'eslint-suppressions.json');
+
+    temporary.push(dir);
+    writeFileSync(suppressions, '{}');
+
+    return messages(
+      lintText(filename, code, ['--format', 'json', '--suppressions-location', suppressions])
+        .stdout,
+    )
+      .filter(({ message }) => message.includes('DR-047'))
+      .map(({ ruleId, severity }) => `${ruleId} ${severity}`);
+  }
+
+  it('reports `as never` and `as unknown as` in package source, not a single checked `as`', () => {
+    expect(casts('packages/frogbot/src/chat/example.ts')).toEqual([
+      'no-restricted-syntax 2',
+      'no-restricted-syntax 2',
+    ]);
+  });
+
+  it.each([
+    'packages/frogbot/src/chat/example.spec.ts',
+    'packages/frogbot/src/seams/config.ts',
+    'packages/frogbot/src/seams/request.ts',
+    'packages/richtext-lexical/src/utilities/seams.ts',
+  ])('allows them in %s', (filename) => {
+    expect(casts(filename)).toEqual([]);
+  });
+});
+
 describe('test lint', () => {
   function lintSpec(filename: string, code: string) {
     const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));

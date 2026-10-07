@@ -1,6 +1,7 @@
 import type { RequireDrizzleKit } from '@payloadcms/drizzle';
 
 import type { BuildSearchSchema } from '../../../database/types.js';
+import { assertSQLiteSearchAdapter, getSearchDatabase } from './guards.js';
 import type { AssertSearchPrerequisitesArgs } from './prerequisites.js';
 import {
   addSearchSnapshot,
@@ -9,7 +10,6 @@ import {
 } from './schema/getSearchMigration.js';
 import { getSearchSchema } from './schema/getSearchSchema.js';
 import { type PushResult, pushSearchSchema } from './schema/pushSearchSchema.js';
-import type { SearchDatabase, SQLiteSearchAdapter } from './types.js';
 
 type AssertSearchPrerequisites = (args: AssertSearchPrerequisitesArgs) => Promise<void>;
 
@@ -19,7 +19,7 @@ export function createSchemaBuilder({
   assertPrerequisites?: AssertSearchPrerequisites;
 } = {}): BuildSearchSchema {
   return ({ collections, db }) => {
-    const adapter = db as unknown as SQLiteSearchAdapter;
+    const adapter = assertSQLiteSearchAdapter(db);
     const { connect, migrate, requireDrizzleKit } = adapter;
     const checkPrerequisites = async () => assertPrerequisites?.({ adapter, collections });
     const getSchema = () => getSearchSchema({ adapter, collections });
@@ -45,7 +45,7 @@ export function createSchemaBuilder({
           await checkPrerequisites();
 
           return pushSearchSchema({
-            drizzle: drizzle as unknown as SearchDatabase,
+            drizzle: getSearchDatabase(drizzle),
             push: () => kit.pushSchema(schema, drizzle, ...args) as Promise<PushResult>,
             schema: getSchema(),
           });

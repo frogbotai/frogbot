@@ -34,14 +34,9 @@ import type {
   ValueWithRelation as PayloadValueWithRelation,
 } from 'payload';
 import {
-  fieldIsLocalized as payloadFieldIsLocalized,
-  fieldIsVirtual as payloadFieldIsVirtual,
-  fieldShouldBeLocalized as payloadFieldShouldBeLocalized,
-  groupHasName as payloadGroupHasName,
   optionIsObject as payloadOptionIsObject,
   optionIsValue as payloadOptionIsValue,
   optionsAreObjects as payloadOptionsAreObjects,
-  tabHasName as payloadTabHasName,
   valueIsValueWithRelation as payloadValueIsValueWithRelation,
 } from 'payload/shared';
 
@@ -359,15 +354,15 @@ export function fieldAffectsData<T extends Field | TabAsField>(
 }
 
 export function tabHasName<T extends Tab>(tab: T): tab is T & NamedTab {
-  return payloadTabHasName(tab as never);
+  return 'name' in tab;
 }
 
 export function groupHasName<T extends GroupField>(group: T): group is T & NamedGroupField {
-  return payloadGroupHasName(group as never);
+  return 'name' in group;
 }
 
 export function fieldIsLocalized(field: Field | Tab): boolean {
-  return Boolean(payloadFieldIsLocalized(field as never));
+  return 'localized' in field && Boolean(field.localized);
 }
 
 export function fieldShouldBeLocalized({
@@ -377,11 +372,16 @@ export function fieldShouldBeLocalized({
   field: Field | Tab;
   parentIsLocalized: boolean;
 }): boolean {
-  return payloadFieldShouldBeLocalized({ field: field as never, parentIsLocalized });
+  return Boolean(
+    'localized' in field &&
+    field.localized &&
+    (!parentIsLocalized ||
+      process.env.NEXT_PUBLIC_PAYLOAD_COMPATIBILITY_allowLocalizedWithinLocalized === 'true'),
+  );
 }
 
 export function fieldIsVirtual(field: Field | Tab): boolean {
-  return Boolean(payloadFieldIsVirtual(field as never));
+  return 'virtual' in field && Boolean(field.virtual);
 }
 
 export function optionIsObject(option: Option): option is OptionObject {

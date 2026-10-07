@@ -225,7 +225,7 @@ export async function lookupOAuthAccount({
   try {
     return await timed(
       async (signal) => {
-        const client = await definition.client({ auth, options: options as object });
+        const client = await definition.client({ auth, options });
         signal.throwIfAborted();
 
         const account = await definition.oauth!.account!({

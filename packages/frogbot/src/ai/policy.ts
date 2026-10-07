@@ -135,20 +135,21 @@ export function createPolicyHooks({
     }) => {
       if (!args.req?.user || args.error || !args.usage) return;
       const user = args.req.user as PolicyDocument;
-      if (user.id === undefined) return;
+      const id = user.id;
+      if (id === undefined) return;
       const cost = calculateUsageCostUSD({ model: args.model, providers, usage: args.usage });
       if (cost <= 0) return;
-      await queue.run(String(user.id), async () => {
+      await queue.run(String(id), async () => {
         const current = (await args.req!.frogbot.findByID({
-          collection: authCollection as never,
-          id: user.id as never,
+          collection: authCollection,
+          id,
           depth: 0,
           overrideAccess: true,
           req: args.req,
         })) as PolicyDocument;
         await args.req!.frogbot.update({
-          collection: authCollection as never,
-          id: user.id as never,
+          collection: authCollection,
+          id,
           data: { spendThisPeriodUSD: (current.spendThisPeriodUSD ?? 0) + cost },
           overrideAccess: true,
           req: args.req,

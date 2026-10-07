@@ -23,7 +23,7 @@ function validate(config: FrogBotConfig): void {
   if (!Array.isArray(config.collections)) {
     throw new Error('[frogbot] `collections` is required and must be an array.');
   }
-  if ((config as unknown as Record<string, unknown>).globals !== undefined) {
+  if ('globals' in config && config.globals !== undefined) {
     throw new Error(GLOBALS_ERROR);
   }
 }

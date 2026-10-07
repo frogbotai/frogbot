@@ -1,5 +1,3 @@
-import type { DrizzleAdapter } from '@payloadcms/drizzle';
-
 import type { SearchFieldPath, SearchIndexDescriptor } from '../../../types.js';
 import { getSearchTableName } from '../../getSearchTableName.js';
 import { resolveSearchColumn } from '../../resolveSearchColumn.js';
@@ -27,8 +25,7 @@ export function getSearchTarget({
   index: SearchIndexDescriptor;
   versions: boolean;
 }): SearchTarget {
-  const drizzleAdapter = adapter as unknown as DrizzleAdapter;
-  const table = getSearchTableName({ adapter: drizzleAdapter, collection, versions });
+  const table = getSearchTableName({ adapter, collection, versions });
   const columns = table ? adapter.rawTables[table]?.columns : undefined;
 
   if (!table || !columns) fail(collection, index.name, 'the collection has no table');
@@ -36,7 +33,7 @@ export function getSearchTarget({
   const localesTable = `${table}${adapter.localesSuffix ?? ''}`;
 
   const resolve = ({ path }: SearchFieldPath): SearchColumn => {
-    const column = resolveSearchColumn({ adapter: drizzleAdapter, collection, path, versions });
+    const column = resolveSearchColumn({ adapter, collection, path, versions });
 
     if (!column) fail(collection, index.name, `field '${path}' has no column in '${table}'`);
 

@@ -23,5 +23,6 @@ export type StorageAdapterCollections<TOptions = unknown> = Partial<
 
 export type StorageAdapterRegistration = {
   collections: StorageAdapterCollections;
-  plugin: (collections: Record<string, unknown>) => PayloadPlugin;
+  /** Builds the Payload plugin; `builtIns` are FrogBot's upload collections it also serves. */
+  plugin: (builtIns: string[]) => PayloadPlugin;
 };

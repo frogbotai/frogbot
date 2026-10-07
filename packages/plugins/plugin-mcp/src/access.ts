@@ -1,7 +1,7 @@
 import type { MCPAccessSettings } from '@payloadcms/plugin-mcp';
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp';
-import type { AuthStrategy, AuthStrategyResult, FrogBotRequest } from 'frogbot';
-import { executeAuthStrategy } from 'frogbot/internal';
+import type { AuthStrategy, AuthStrategyResult } from 'frogbot';
+import { attachRegisteredFrogBot, executeAuthStrategy } from 'frogbot/internal';
 import type { PayloadRequest } from 'payload';
 import { UnauthorizedError } from 'payload';
 
@@ -66,7 +66,7 @@ export async function resolveMcpAccess({
   pluginOptions,
   req,
 }: ResolveMcpAccessOptions): Promise<MCPAccessSettings> {
-  const frogbotReq = req as unknown as FrogBotRequest;
+  const frogbotReq = attachRegisteredFrogBot(req);
   const frogbot = frogbotReq.frogbot;
   let result: AuthStrategyResult;
 

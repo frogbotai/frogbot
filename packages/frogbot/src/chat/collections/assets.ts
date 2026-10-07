@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { type PayloadRequest, ValidationError } from 'payload';
 
 import type { Access, AccessResult, CollectionConfig } from '../../collections/config/types.js';
+import { toPayloadRequest } from '../../seams/request.js';
 import type { Where } from '../../types/payload.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { hashUpload } from '../../uploads/hashUpload.js';
@@ -53,7 +54,7 @@ async function readableChats({
 
   if (!read) return Boolean(req.user);
 
-  return read({ req: req as unknown as PayloadRequest });
+  return read({ req: toPayloadRequest(req) });
 }
 
 async function uploadBytes({ data, tempFilePath }: UploadedFile): Promise<Uint8Array> {

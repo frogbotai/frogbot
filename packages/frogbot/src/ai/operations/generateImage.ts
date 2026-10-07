@@ -10,6 +10,7 @@ import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { GenerateImageOpts, SanitizedAIConfig } from '../types.js';
+import { toImageSize, toProviderOptions } from './options.js';
 
 export type GenerateImageDeps = {
   gateway: Gateway;
@@ -22,7 +23,7 @@ export async function generateImageOperation(
   opts: GenerateImageOpts,
 ): Promise<Awaited<ReturnType<typeof aiGenerateImage>>> {
   const { gateway, config } = deps;
-  const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
+  const { model: input, req, overrideAccess, size, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model.
@@ -49,8 +50,10 @@ export async function generateImageOperation(
   try {
     const result = await aiGenerateImage({
       ...aiSdkOpts,
+      size: toImageSize(size),
+      providerOptions: toProviderOptions(providerOptions),
       model: op.imageModel(),
-    } as unknown as Parameters<typeof aiGenerateImage>[0]);
+    });
     await op.finish({ usage: toHookUsage(result.usage) });
     return result;
   } catch (error) {

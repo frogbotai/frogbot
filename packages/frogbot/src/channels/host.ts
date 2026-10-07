@@ -117,7 +117,7 @@ export class ChannelHost {
 
     const adapter = runtime.definition.channel!.adapter({
       auth: runtime.auth,
-      options: runtime.options as never,
+      options: runtime.options,
     });
 
     const namespace = `${agent?.slug ?? 'ingress'}:${instance.slug}`;

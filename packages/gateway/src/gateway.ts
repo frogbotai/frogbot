@@ -162,10 +162,18 @@ export type Gateway = {
 export function createGateway<const P extends ProvidersInput<P>>(
   config: Omit<GatewayConfig, 'providers'> & { providers: P },
 ): Gateway {
+  return buildGateway(config as GatewayConfig);
+}
+
+/**
+ * Internal factory behind `createGateway`, for callers (the CLI) that already
+ * hold a `GatewayConfig`. Not re-exported from the package entry.
+ */
+export function buildGateway(config: GatewayConfig): Gateway {
   // finalizeConfig applies enabled_providers / disabled_providers filtering
   // before validation. Idempotent (kParsed), so the CLI's own finalizeConfig
   // call is a no-op here.
-  const validated = finalizeConfig(config as GatewayConfig);
+  const validated = finalizeConfig(config);
   const registry = buildProviderRegistry(validated.providers);
   const catalog = validated.catalog ?? DEFAULT_MODEL_CATALOG;
   const allowlists = buildProviderModelAllowlists(validated.providers);

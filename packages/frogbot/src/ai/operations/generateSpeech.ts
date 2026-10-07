@@ -9,6 +9,7 @@ import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { GenerateSpeechOpts, SanitizedAIConfig } from '../types.js';
+import { toProviderOptions } from './options.js';
 
 export type GenerateSpeechDeps = {
   gateway: Gateway;
@@ -21,7 +22,7 @@ export async function generateSpeechOperation(
   opts: GenerateSpeechOpts,
 ): Promise<Awaited<ReturnType<typeof aiGenerateSpeech>>> {
   const { gateway, config } = deps;
-  const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
+  const { model: input, req, overrideAccess, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model.
@@ -48,8 +49,9 @@ export async function generateSpeechOperation(
   try {
     const result = await aiGenerateSpeech({
       ...aiSdkOpts,
+      providerOptions: toProviderOptions(providerOptions),
       model: op.speechModel(),
-    } as unknown as Parameters<typeof aiGenerateSpeech>[0]);
+    });
     await op.finish();
     return result;
   } catch (error) {

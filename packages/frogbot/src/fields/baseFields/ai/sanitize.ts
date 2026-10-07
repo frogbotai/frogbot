@@ -1,9 +1,8 @@
-import { flattenTopLevelFields } from 'payload/shared';
-
 import { getConfiguredChatModelIds, getConfiguredModelIds } from '../../../ai/models.js';
 import type { AIConfig } from '../../../ai/types.js';
 import type { CollectionConfig } from '../../../collections/config/types.js';
 import type { ValidationMode } from '../../../config/validationContext.js';
+import { flattenTopLevelFields } from '../../../seams/config.js';
 import type { Block, Field } from '../../config/types.js';
 import { getAIKind } from './hooks.js';
 import { aiFieldPaths, type AIKind } from './state.js';
@@ -141,7 +140,7 @@ export function sanitizeAIFields({
 
     if (found.length === 0) continue;
 
-    const topLevelNames = flattenTopLevelFields(collection.fields as never)
+    const topLevelNames = flattenTopLevelFields(collection.fields)
       .map((field) => ('name' in field ? field.name : undefined))
       .filter((name): name is string => typeof name === 'string');
 

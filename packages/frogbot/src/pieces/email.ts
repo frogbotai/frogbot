@@ -63,7 +63,7 @@ export function pieceEmailAdapter(piece: unknown): PayloadEmailAdapter {
       return email.send({
         message: { ...message, from: message.from ?? defaultFrom },
         client,
-        options: options as object,
+        options,
         req,
       });
     },

@@ -1,9 +1,9 @@
 import './BoardView.css';
 
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import type { FrogBotRequest } from 'frogbot';
+import { attachRegisteredFrogBot } from 'frogbot/internal';
 import { notFound } from 'next/navigation';
-import type { AdminViewServerProps, SanitizedFieldPermissions } from 'payload';
+import type { AdminViewServerProps, PayloadComponent, SanitizedFieldPermissions } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
 import type { ComponentType } from 'react';
 
@@ -165,7 +165,7 @@ export async function BoardView(props: AdminViewServerProps) {
   });
   const filter =
     typeof board.filter === 'function'
-      ? await board.filter({ req: initPageResult.req as unknown as FrogBotRequest })
+      ? await board.filter({ req: attachRegisteredFrogBot(initPageResult.req) })
       : board.filter;
   let fieldPermission: SanitizedFieldPermissions | undefined;
   let fieldPermissions = permissions?.fields;
@@ -177,11 +177,11 @@ export async function BoardView(props: AdminViewServerProps) {
     fieldPermission = fieldPermissions[key];
     fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
   }
-  const resolve = <TProps extends object>(component: unknown) =>
+  const resolve = <TProps extends object>(component: PayloadComponent | undefined) =>
     component
       ? getFromImportMap<ComponentType<TProps>>({
           importMap,
-          PayloadComponent: component as never,
+          PayloadComponent: component,
           schemaPath: '',
         })
       : undefined;

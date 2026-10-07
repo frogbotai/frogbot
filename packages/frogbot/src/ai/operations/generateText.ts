@@ -11,6 +11,7 @@ import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { GenerateTextOpts, SanitizedAIConfig } from '../types.js';
+import { toProviderOptions } from './options.js';
 
 export type GenerateTextDeps = {
   gateway: Gateway;
@@ -24,7 +25,7 @@ export async function generateTextOperation(
   opts: GenerateTextOpts,
 ): Promise<Awaited<ReturnType<typeof aiGenerateText>>> {
   const { gateway, config, frogbot } = deps;
-  const { model: input, req, overrideAccess, tools, ...aiSdkOpts } = opts;
+  const { model: input, req, overrideAccess, tools, providerOptions, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
@@ -63,8 +64,9 @@ export async function generateTextOperation(
     const result = await aiGenerateText({
       ...aiSdkOpts,
       model: op.chatModel(),
+      providerOptions: toProviderOptions(providerOptions),
       ...(tools?.length && { tools: aiTools, toolsContext }),
-    } as unknown as Parameters<typeof aiGenerateText>[0]);
+    });
     await op.finish({
       finishReason: result.finishReason,
       usage: toHookUsage(result.usage),

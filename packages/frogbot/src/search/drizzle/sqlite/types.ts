@@ -1,10 +1,11 @@
-import type { BaseSQLiteAdapter, MigrateUpArgs } from '@payloadcms/drizzle/sqlite';
+import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
 
-export type SearchDatabase = MigrateUpArgs['db'];
+import type { SQLiteAdapter } from '../../../database/guards.js';
 
-export type SQLiteSearchAdapter = BaseSQLiteAdapter & {
+export type SearchDatabase = Pick<BaseSQLiteDatabase<'async', unknown>, 'all' | 'run'>;
+
+export type SQLiteSearchAdapter = SQLiteAdapter & {
   clientConfig?: { url?: string };
-  drizzle: SearchDatabase;
 };
 
 export type SearchObject = {

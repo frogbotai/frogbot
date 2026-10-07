@@ -11,6 +11,7 @@
 
 import { Cron } from 'croner';
 import type {
+  AdminViewConfig,
   AuthStrategy as PayloadAuthStrategy,
   AuthStrategyResult as PayloadAuthStrategyResult,
   CollectionConfig as PayloadCollectionConfig,
@@ -26,8 +27,8 @@ import type {
 import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 
 import { validateAdminIcon } from '../admin/icons.js';
-import type { RootAdminMetaConfig, SettingsEntry } from '../admin/types.js';
-import type { CollectionView } from '../admin/views/types.js';
+import type { RootAdminComponents, RootAdminMetaConfig, SettingsEntry } from '../admin/types.js';
+import type { CollectionView, DashboardConfig } from '../admin/views/types.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import {
   AGENT_SCHEDULE_TASK_SLUG,
@@ -51,7 +52,7 @@ import { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 import { unwrapSessionPayload } from '../auth/operation.js';
 import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
-import type { AuthEmail, AuthStrategy } from '../auth/types.js';
+import type { AuthConfig, AuthEmail, AuthStrategy } from '../auth/types.js';
 import { buildChannelGatewayEndpoints } from '../channels/endpoints.js';
 import {
   CHANNEL_QUESTION_UPDATE_TASK_SLUG,
@@ -63,12 +64,11 @@ import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import type { CollectionAdminConfig, CollectionConfig } from '../collections/config/types.js';
-import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { MapVectorField } from '../database/types.js';
-import type { Endpoint } from '../endpoints/types.js';
+import type { Endpoint, Handler } from '../endpoints/types.js';
 import { sanitizeAIFields } from '../fields/baseFields/ai/sanitize.js';
 import { resolveAIFieldTask } from '../fields/baseFields/ai/task.js';
 import {
@@ -105,6 +105,7 @@ import {
   type PieceInstance,
   type SanitizedPiecesConfig,
 } from '../pieces/types.js';
+import { toPayloadCollectionConfig, toPayloadConfig, toPayloadFields } from '../seams/config.js';
 import { buildSearchEndpoints, buildSearchManyEndpoint } from '../search/endpoints.js';
 import { buildSearchQueries } from '../search/graphQL.js';
 import { withSearchRuntime } from '../search/runtime.js';
@@ -204,14 +205,8 @@ async function bootstrapFrogBot(
   await attachFrogBot(args.req);
 }
 
-function wrapEndpointHandler(
-  handler: PayloadHandler,
-  attachFrogBot: AttachFrogBot,
-): PayloadHandler {
-  return async (req) => {
-    await attachFrogBot(req);
-    return handler(req);
-  };
+function wrapEndpointHandler(handler: Handler, attachFrogBot: AttachFrogBot): PayloadHandler {
+  return async (req) => handler(await attachFrogBot(req));
 }
 
 function wrapRootHooks(
@@ -220,10 +215,10 @@ function wrapRootHooks(
 ): PayloadConfig['hooks'] {
   if (!hooks?.afterError) return hooks as PayloadConfig['hooks'];
   return {
-    afterError: hooks.afterError.map((hook) => async (args) => {
-      if (!args.req.payload) return hook(args as never);
-      return hook({ ...args, req: await attachFrogBot(args.req) });
-    }),
+    // Payload sets `req.payload` before it runs afterError (`utilities/routeError.ts`).
+    afterError: hooks.afterError.map(
+      (hook) => async (args) => hook({ ...args, req: await attachFrogBot(args.req) }),
+    ),
   };
 }
 
@@ -275,24 +270,62 @@ function wrapUploadHandlers(
 
 type AuthEmailTemplate = NonNullable<AuthEmail['generateEmailHTML']>;
 
-type PayloadAuthEmailTemplate = (args: {
-  req: PayloadRequest;
-  token: string;
-  user: unknown;
+type PayloadAuthEmailTemplate = (args?: {
+  req?: PayloadRequest;
+  token?: string;
+  user?: unknown;
 }) => Promise<string>;
 
 function wrapAuthEmailTemplate(
   template: AuthEmailTemplate,
   attachFrogBot: AttachFrogBot,
 ): PayloadAuthEmailTemplate {
-  return async (args) => template({ ...args, req: await attachFrogBot(args.req) });
+  return async (args) => {
+    if (!args?.req || args.token === undefined) {
+      throw new Error('[frogbot] Auth email templates are called with the request and token.');
+    }
+
+    return template({ req: await attachFrogBot(args.req), token: args.token, user: args.user });
+  };
 }
 
-function wrapAuthEmail(email: AuthEmail, attachFrogBot: AttachFrogBot): Record<string, unknown> {
-  const { generateEmailHTML, generateEmailSubject } = email;
+const SAME_SITE = { lax: 'Lax', none: 'None', strict: 'Strict' } as const;
+
+type PayloadCookies = PayloadAuth['cookies'];
+
+function toPayloadCookies({
+  sameSite,
+  ...cookies
+}: NonNullable<AuthConfig['cookies']>): PayloadCookies {
+  return { ...cookies, ...(sameSite ? { sameSite: SAME_SITE[sameSite] } : {}) };
+}
+
+type PayloadAuth = Exclude<NonNullable<PayloadCollectionConfig['auth']>, boolean>;
+
+function toPayloadLoginWithUsername(
+  loginWithUsername: NonNullable<AuthConfig['loginWithUsername']>,
+): PayloadAuth['loginWithUsername'] {
+  if (typeof loginWithUsername === 'boolean') return loginWithUsername;
+
+  const { allowEmailLogin, ...rest } = loginWithUsername;
+
+  // Payload's sanitization makes the same promotion: without email login, a username is required.
+  return allowEmailLogin === false
+    ? { ...rest, allowEmailLogin, requireUsername: true }
+    : { ...rest, ...(allowEmailLogin ? { allowEmailLogin } : {}) };
+}
+
+function wrapAuthEmail<TEmail extends AuthEmail>(
+  email: TEmail,
+  attachFrogBot: AttachFrogBot,
+): Omit<TEmail, keyof AuthEmail> & {
+  generateEmailHTML?: PayloadAuthEmailTemplate;
+  generateEmailSubject?: PayloadAuthEmailTemplate;
+} {
+  const { generateEmailHTML, generateEmailSubject, ...rest } = email;
 
   return {
-    ...email,
+    ...rest,
     ...(generateEmailHTML
       ? { generateEmailHTML: wrapAuthEmailTemplate(generateEmailHTML, attachFrogBot) }
       : {}),
@@ -324,37 +357,27 @@ function wrapEndpoints(
   attachFrogBot: AttachFrogBot,
 ): PayloadEndpoint[] | false | undefined {
   if (!endpoints) return endpoints;
+  return wrapEndpointList(endpoints, attachFrogBot);
+}
+
+function wrapEndpointList(endpoints: Endpoint[], attachFrogBot: AttachFrogBot): PayloadEndpoint[] {
   return endpoints.map((e) => ({
     ...e,
-    handler: wrapEndpointHandler(e.handler as unknown as PayloadHandler, attachFrogBot),
+    handler: wrapEndpointHandler(e.handler, attachFrogBot),
   }));
 }
 
 type PayloadCollectionAccess = NonNullable<PayloadCollectionConfig['access']>;
 
-function wrapCollectionAccessFunction<
-  TAccess extends NonNullable<PayloadCollectionAccess[keyof PayloadCollectionAccess]>,
->(access: TAccess, attachFrogBot: AttachFrogBot): TAccess {
-  const wrapped = async (args: Parameters<TAccess>[0]) => {
-    const accessArgs = args as { req?: PayloadRequest };
-
-    if (!accessArgs.req?.payload) return access(args as never);
-
-    await attachFrogBot(accessArgs.req);
-
-    return access(args as never);
-  };
-
-  return wrapped as TAccess;
-}
-
-function assignWrappedCollectionAccess<TOperation extends keyof PayloadCollectionAccess>(
-  accessConfig: PayloadCollectionAccess,
-  operation: TOperation,
-  access: NonNullable<PayloadCollectionAccess[TOperation]>,
+function wrapCollectionAccessFunction<TArgs extends { req?: PayloadRequest }, TResult>(
+  access: (args: TArgs) => Promise<TResult> | TResult,
   attachFrogBot: AttachFrogBot,
-): void {
-  accessConfig[operation] = wrapCollectionAccessFunction(access, attachFrogBot);
+): (args: TArgs) => Promise<TResult> {
+  return async (args) => {
+    if (args.req?.payload) await attachFrogBot(args.req);
+
+    return access(args);
+  };
 }
 
 function wrapCollectionAccess(
@@ -368,11 +391,21 @@ function wrapCollectionAccess(
   const operations = Object.keys(accessConfig) as (keyof PayloadCollectionAccess)[];
 
   for (const operation of operations) {
+    if (operation === 'admin') {
+      const { admin } = accessConfig;
+
+      if (typeof admin === 'function') {
+        accessConfig.admin = wrapCollectionAccessFunction(admin, attachFrogBot);
+      }
+
+      continue;
+    }
+
     const access = accessConfig[operation];
 
     if (typeof access !== 'function') continue;
 
-    assignWrappedCollectionAccess(accessConfig, operation, access, attachFrogBot);
+    accessConfig[operation] = wrapCollectionAccessFunction(access, attachFrogBot);
   }
 }
 
@@ -416,17 +449,28 @@ function sanitizeCollection(
 
   const views = admin?.components?.views;
   const orderFieldNames = getBoardOrderFieldNames(c);
-  const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
-  const out: Record<string, unknown> = {
-    ...(c as unknown as Record<string, unknown>),
-    fields: wrapFieldRequestFunctions(
-      sanitizeVectorFields({
-        collection: c.slug,
-        fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
-        mapVectorField,
-        onAutonumber,
-        users,
-      }),
+  const {
+    chat: _chat,
+    file: _file,
+    message: _message,
+    usageLog: _usageLog,
+    search: _searchConfig,
+    ...collection
+  } = c;
+  const base = toPayloadCollectionConfig(collection);
+  const existingHooks = base.hooks ?? {};
+  const out: PayloadCollectionConfig = {
+    ...base,
+    fields: toPayloadFields(
+      wrapFieldRequestFunctions(
+        sanitizeVectorFields({
+          collection: c.slug,
+          fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
+          mapVectorField,
+          onAutonumber,
+          users,
+        }),
+      ),
     ),
     ...(admin ? { admin } : {}),
     ...(typeof c.upload === 'object' && c.upload.handlers
@@ -450,12 +494,9 @@ function sanitizeCollection(
               ...admin?.components,
               views: {
                 ...views,
-                edit: {
-                  ...views?.edit,
-                  root: views?.edit?.root ?? {
-                    Component: '@frogbotai/next/views#ChatView',
-                  },
-                },
+                edit: views?.edit?.root
+                  ? views.edit
+                  : { root: { Component: '@frogbotai/next/views#ChatView' } },
               },
             },
           },
@@ -463,27 +504,30 @@ function sanitizeCollection(
       : {}),
   };
 
-  // Strip chat role markers — FrogBot-only keys.
-  for (const marker of COLLECTION_MARKERS) {
-    delete out[marker];
-  }
-
-  delete out.search;
-
   // Capture auth state into `custom.frogbot`.
   const auth = c.auth !== undefined && c.auth !== false;
 
   if (typeof c.auth === 'object') {
-    const { signIn: _signIn, strategies, ...collectionAuth } = c.auth;
+    const {
+      signIn: _signIn,
+      strategies,
+      cookies,
+      forgotPassword,
+      loginWithUsername,
+      verify,
+      ...collectionAuth
+    } = c.auth;
 
     out.auth = {
       ...collectionAuth,
-      ...(typeof collectionAuth.verify === 'object'
-        ? { verify: wrapAuthEmail(collectionAuth.verify, attachFrogBot) }
+      ...(loginWithUsername !== undefined
+        ? { loginWithUsername: toPayloadLoginWithUsername(loginWithUsername) }
         : {}),
-      ...(collectionAuth.forgotPassword
-        ? { forgotPassword: wrapAuthEmail(collectionAuth.forgotPassword, attachFrogBot) }
+      ...(cookies ? { cookies: toPayloadCookies(cookies) } : {}),
+      ...(verify !== undefined
+        ? { verify: typeof verify === 'object' ? wrapAuthEmail(verify, attachFrogBot) : verify }
         : {}),
+      ...(forgotPassword ? { forgotPassword: wrapAuthEmail(forgotPassword, attachFrogBot) } : {}),
       ...(strategies
         ? { strategies: wrapAuthStrategies({ collection: c.slug, strategies, resolveFrogBot }) }
         : {}),
@@ -519,31 +563,24 @@ function sanitizeCollection(
   };
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
-  const existingBeforeOp = (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
   const setupFrogBot = (args: { req: PayloadRequest }) => bootstrapFrogBot(args, attachFrogBot);
+  const { afterError, afterLogout, afterMe } = existingHooks;
 
-  const hooks: Record<string, unknown[]> = {
+  out.hooks = {
     ...existingHooks,
     ...(orderFieldNames.length
       ? {
           beforeChange: [
-            ...((existingHooks.beforeChange as unknown[] | undefined) ?? []),
+            ...(existingHooks.beforeChange ?? []),
             buildBoardOrderHook(orderFieldNames),
           ],
         }
       : {}),
-    beforeOperation: [setupFrogBot, ...existingBeforeOp],
+    beforeOperation: [setupFrogBot, ...(existingHooks.beforeOperation ?? [])],
+    ...(afterMe?.length ? { afterMe: [setupFrogBot, ...afterMe] } : {}),
+    ...(afterLogout?.length ? { afterLogout: [setupFrogBot, ...afterLogout] } : {}),
+    ...(afterError?.length ? { afterError: [setupFrogBot, ...afterError] } : {}),
   };
-
-  for (const phase of ['afterMe', 'afterLogout', 'afterError']) {
-    const existing = existingHooks[phase];
-
-    if (existing?.length) {
-      hooks[phase] = [setupFrogBot, ...existing];
-    }
-  }
-
-  out.hooks = hooks;
 
   // Wrap per-collection custom endpoints.
   const searchEndpoints = search ? buildSearchEndpoints({ collection: c.slug }) : [];
@@ -563,7 +600,7 @@ function sanitizeCollection(
     );
   }
 
-  return out as unknown as PayloadCollectionConfig;
+  return out;
 }
 
 // ─── AI Config Sanitization ──────────────────────────────────────────────────
@@ -1338,13 +1375,45 @@ function viewTitleText(title: unknown): string | undefined {
   return undefined;
 }
 
-function fillViewMeta(
-  view: Record<string, unknown>,
-  adminMeta: RootAdminMetaConfig,
-): Record<string, unknown> {
-  const meta =
+function navSections(
+  sections: RootAdminComponents['navSections'],
+): Pick<RootAdminComponents, 'navSections'> {
+  return { navSections: sections ?? ['@frogbotai/next#CollectionsSection'] };
+}
+
+type PayloadDashboard = NonNullable<NonNullable<PayloadConfig['admin']>['dashboard']>;
+
+function wrapDashboard(dashboard: DashboardConfig, attachFrogBot: AttachFrogBot): PayloadDashboard {
+  const { defaultLayout, widgets, ...base } = dashboard;
+  const rest = {
+    ...base,
+    widgets: widgets.map(({ fields, ...widget }) => ({
+      ...widget,
+      ...(fields ? { fields: toPayloadFields(wrapFieldRequestFunctions(fields)) } : {}),
+    })),
+  };
+
+  if (typeof defaultLayout !== 'function') {
+    return { ...rest, ...(defaultLayout ? { defaultLayout } : {}) };
+  }
+
+  return {
+    ...rest,
+    defaultLayout: async ({ req }) => defaultLayout({ req: await attachFrogBot(req) }),
+  };
+}
+
+const SETTINGS_VIEW: AdminViewConfig = {
+  Component: '@frogbotai/next/views#SettingsView',
+  exact: false,
+  path: '/settings',
+  meta: { title: 'Settings' },
+};
+
+function fillViewMeta(view: AdminViewConfig, adminMeta: RootAdminMetaConfig): AdminViewConfig {
+  const meta: RootAdminMetaConfig =
     typeof view.meta === 'object' && view.meta !== null && !Array.isArray(view.meta)
-      ? (view.meta as RootAdminMetaConfig)
+      ? view.meta
       : {};
 
   const ownText = viewTitleText(meta.title ?? adminMeta.title);
@@ -1386,18 +1455,6 @@ function buildPayloadConfig(
   searchCollections: SearchCollection[] = [],
   autonumbers: AutonumberEntry[] = [],
 ): PayloadConfig {
-  const frogbotKeys = new Set([
-    'agents',
-    'ai',
-    'connections',
-    'email',
-    'onInit',
-    'plugins',
-    'port',
-    'settings',
-    'tools',
-  ]);
-
   const mapVectorField = config.db.mapVectorField;
 
   const authSlugs = config.collections
@@ -1446,19 +1503,32 @@ function buildPayloadConfig(
       }),
     );
   }
-  const out: Record<string, unknown> = {
-    ...Object.fromEntries(Object.entries(config).filter(([key]) => !frogbotKeys.has(key))),
+  const {
+    agents: _agents,
+    ai: _ai,
+    connections: _connections,
+    email: _email,
+    onInit: _onInit,
+    plugins: _plugins,
+    settings: _settings,
+    tools: _tools,
+    ...payloadKeys
+  } = config;
+  const out: PayloadConfig = {
+    ...toPayloadConfig(payloadKeys),
     ...(config.blocks
       ? {
           blocks: config.blocks.map((block) => ({
             ...block,
-            fields: wrapFieldRequestFunctions(
-              sanitizeVectorFields({
-                block: block.slug,
-                fields: block.fields,
-                mapVectorField,
-                users,
-              }),
+            fields: toPayloadFields(
+              wrapFieldRequestFunctions(
+                sanitizeVectorFields({
+                  block: block.slug,
+                  fields: block.fields,
+                  mapVectorField,
+                  users,
+                }),
+              ),
             ),
           })),
         }
@@ -1494,23 +1564,17 @@ function buildPayloadConfig(
     out.db = db;
   }
 
-  const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
+  const userEndpoints: unknown = config.endpoints;
   const agentEndpoints = config.agents?.length ? buildAgentEndpoints() : [];
   const allEndpoints = [
     ...buildResumeEndpoints(),
-    ...(Array.isArray(userEndpoints) ? userEndpoints : []),
+    ...(Array.isArray(userEndpoints) ? (config.endpoints ?? []) : []),
     buildManifestEndpoint(),
     ...agentEndpoints,
     ...internalEndpoints,
   ];
 
-  if (allEndpoints.length > 0) {
-    out.endpoints = wrapEndpoints(allEndpoints, attachFrogBot);
-  } else if (userEndpoints === false) {
-    out.endpoints = false;
-  } else if (userEndpoints !== undefined) {
-    out.endpoints = wrapEndpoints(userEndpoints, attachFrogBot);
-  }
+  out.endpoints = wrapEndpointList(allEndpoints, attachFrogBot);
 
   if (config.graphQL || searchCollections.length) {
     const queries = wrapGraphQLExtension(config.graphQL?.queries, attachFrogBot);
@@ -1552,34 +1616,10 @@ function buildPayloadConfig(
   };
   out.cookiePrefix = config.cookiePrefix ?? 'frogbot';
 
-  const admin = (
-    config as {
-      admin?: {
-        components?: { graphics?: Record<string, unknown> } & Record<string, unknown>;
-        importMap?: Record<string, unknown>;
-        meta?: { openGraph?: Record<string, unknown> } & Record<string, unknown>;
-      } & Record<string, unknown>;
-    }
-  ).admin;
+  const { admin } = config;
   const settings = sanitizeSettings(config.settings);
-  const dashboard = admin?.dashboard as
-    | {
-        defaultLayout?: ((args: { req: FrogBotRequest }) => unknown) | unknown[];
-        widgets: unknown[];
-      }
-    | undefined;
-  const defaultLayout = dashboard?.defaultLayout;
-  const adaptedDashboard = dashboard
-    ? {
-        ...dashboard,
-        ...(typeof defaultLayout === 'function'
-          ? {
-              defaultLayout: async ({ req }: { req: PayloadRequest }) =>
-                defaultLayout({ req: await attachFrogBot(req) }),
-            }
-          : {}),
-      }
-    : undefined;
+  const { dashboard, livePreview, ...adminRest } = admin ?? {};
+  const adaptedDashboard = dashboard ? wrapDashboard(dashboard, attachFrogBot) : undefined;
   const hasAdminSignIn = config.collections.some(
     ({ slug, auth }) =>
       typeof auth === 'object' && auth.signIn?.length && slug === resolveUserSlug(config),
@@ -1608,17 +1648,15 @@ function buildPayloadConfig(
   };
 
   out.admin = {
-    ...admin,
-    ...(admin?.livePreview
-      ? { livePreview: wrapLivePreview(config.admin?.livePreview, attachFrogBot) }
-      : {}),
+    ...adminRest,
+    ...(livePreview ? { livePreview: wrapLivePreview(livePreview, attachFrogBot) } : {}),
     ...(adaptedDashboard ? { dashboard: adaptedDashboard } : {}),
     components: {
       ...admin?.components,
       ...(hasAdminSignIn
         ? {
             afterLogin: [
-              ...((admin?.components?.afterLogin as unknown[] | undefined) ?? []),
+              ...(admin?.components?.afterLogin ?? []),
               '@frogbotai/next/rsc#SignInButtons',
             ],
           }
@@ -1626,17 +1664,15 @@ function buildPayloadConfig(
       ...(admin?.components?.chat || Object.keys(toolComponents).length > 0
         ? {
             chat: {
-              ...(admin?.components?.chat as Record<string, unknown> | undefined),
+              ...admin?.components?.chat,
               ...(Object.keys(toolComponents).length > 0 ? { toolComponents } : {}),
             },
           }
         : {}),
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogBotNav',
-      navSections: admin?.components?.navSections ?? ['@frogbotai/next#CollectionsSection'],
-      providers: [
-        ...((admin?.components?.providers as unknown[] | undefined) ?? []),
-        '@frogbotai/next/client#StepNavReset',
-      ],
+      // FrogBot-only slot, read by @frogbotai/next; Payload passes unknown component keys through.
+      ...navSections(admin?.components?.navSections),
+      providers: [...(admin?.components?.providers ?? []), '@frogbotai/next/client#StepNavReset'],
       graphics: {
         Icon: '@frogbotai/next/rsc#FrogBotIcon',
         Logo: '@frogbotai/next/rsc#FrogBotLogo',
@@ -1644,15 +1680,8 @@ function buildPayloadConfig(
       },
       views: Object.fromEntries(
         Object.entries({
-          ...(admin?.components?.views as Record<string, unknown> | undefined),
-          settings:
-            (admin?.components?.views as Record<string, unknown> | undefined)?.settings ??
-            ({
-              Component: '@frogbotai/next/views#SettingsView',
-              exact: false,
-              path: '/settings',
-              meta: { title: 'Settings' },
-            } as const),
+          ...admin?.components?.views,
+          settings: admin?.components?.views?.settings ?? SETTINGS_VIEW,
         }).map(([key, view]) => [
           key,
           key === 'account' ||
@@ -1661,7 +1690,7 @@ function buildPayloadConfig(
           view === null ||
           Array.isArray(view)
             ? view
-            : fillViewMeta(view as Record<string, unknown>, adminMeta),
+            : fillViewMeta(view, adminMeta),
         ]),
       ),
     },
@@ -1671,7 +1700,8 @@ function buildPayloadConfig(
       ...admin?.importMap,
       autoGenerate: false,
     },
-    settings,
+    // FrogBot-only key, read by @frogbotai/next's settings view.
+    ...{ settings },
   };
 
   const i18n = (
@@ -1697,7 +1727,7 @@ function buildPayloadConfig(
 
   out.onInit = onInit;
 
-  return out as unknown as PayloadConfig;
+  return out;
 }
 
 function normalizeOnInit(onInit: OnInit | OnInit[] | undefined): OnInit | undefined {
@@ -1714,7 +1744,7 @@ export function sanitize(
 ): FrogBotSanitizedConfig {
   assertRichTextEditor(config);
 
-  if ((config as unknown as Record<string, unknown>).globals !== undefined) {
+  if ('globals' in config && config.globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
 

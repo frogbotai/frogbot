@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => {
   const i18n = { language: 'en', t: (key: string) => key };
 
   return {
-    attachRegisteredFrogBot: vi.fn((req: Record<string, unknown>) => ({ ...req, frogbot })),
+    attachRegisteredFrogBot: vi.fn((req: Record<string, unknown>) =>
+      Object.assign(req, { frogbot }),
+    ),
     createLocalReq: vi.fn((options: { req?: Record<string, unknown> }) =>
       Promise.resolve({ ...options.req }),
     ),

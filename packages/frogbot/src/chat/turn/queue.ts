@@ -182,7 +182,7 @@ export async function promoteSteerMessages({
   }
 
   return promoted.map((message) => ({
-    message: messagesToUIMessages([message as never])[0],
+    message: messagesToUIMessages([message])[0],
     selection: readSelection(message),
   }));
 }
@@ -259,7 +259,7 @@ async function findQueuedMessages({
     overrideAccess: true,
   });
 
-  return result.docs as unknown as TurnMessageDocument[];
+  return result.docs as TurnMessageDocument[];
 }
 
 async function requestForActor({

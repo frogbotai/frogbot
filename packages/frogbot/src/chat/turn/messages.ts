@@ -1,4 +1,4 @@
-import type { DynamicToolUIPart, ToolUIPart, UIMessage } from 'ai';
+import type { DynamicToolUIPart, ToolSet, ToolUIPart, UIMessage } from 'ai';
 import { getToolName, isToolUIPart } from 'ai';
 
 import type { DocID } from '../../collections/config/types.js';
@@ -6,7 +6,7 @@ import { updateIfVersion } from '../../database/compareAndSet.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { StoredMessageUsage } from '../collections/messages.js';
 import { mergeUsage, MESSAGE_USAGE_CONTEXT_KEY } from '../collections/messages.js';
-import { messagesToUIMessages } from '../messagesToUIMessages.js';
+import { messagesToUIMessages, type PersistedMessage } from '../messagesToUIMessages.js';
 import { validateChatMessages } from '../validateMessages.js';
 import { TurnError } from './errors.js';
 import type { ClientToolSettlement, MessageDelivery, PendingCall, TurnActor } from './types.js';
@@ -71,11 +71,7 @@ export function repairInterruptedParts(parts: UIMessage['parts']): UIMessage['pa
     isToolPart(part) &&
     part.providerExecuted !== true &&
     (part.state === 'input-streaming' || part.state === 'input-available')
-      ? ({
-          ...part,
-          state: 'output-error',
-          errorText: INTERRUPTED_TOOL_ERROR,
-        } as unknown as ToolPart)
+      ? { ...part, state: 'output-error', input: part.input, errorText: INTERRUPTED_TOOL_ERROR }
       : part,
   );
 }
@@ -146,7 +142,21 @@ export async function loadChatHistory({
     overrideAccess: true,
   });
 
-  return validateChatMessages(messagesToUIMessages(history.docs as never), tools as never);
+  return validateChatMessages(
+    messagesToUIMessages(history.docs as PersistedMessage[]),
+    toolSet(tools),
+  );
+}
+
+function isToolSet(tools: object): tools is ToolSet {
+  return Object.values(tools).every((tool) => typeof tool === 'object' && tool !== null);
+}
+
+function toolSet(tools: unknown): ToolSet | undefined {
+  if (tools === undefined || tools === null) return undefined;
+  if (typeof tools === 'object' && isToolSet(tools)) return tools;
+
+  throw new TypeError('[frogbot] Chat tools must be an object of AI SDK tools.');
 }
 
 export async function persistTurnMessage({

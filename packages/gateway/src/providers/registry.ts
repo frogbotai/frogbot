@@ -213,9 +213,15 @@ export type ProviderRegistry = { [K in ProviderName]?: InstanceOf<K> } & {
 // Builder (eager — used by createGateway)
 // ---------------------------------------------------------------------------
 
+type ProviderBuilders = {
+  [K in ProviderName]: { build: (config: Omit<ConfigOf<K>, 'models'>) => InstanceOf<K> };
+};
+
+const builders: ProviderBuilders = providers;
+
 function buildOne<K extends ProviderName>(name: K, cfg: ConfigOf<K>): InstanceOf<K> {
   const { models: _, ...providerConfig } = cfg;
-  return providers[name].build(providerConfig as never) as InstanceOf<K>;
+  return builders[name].build(providerConfig);
 }
 
 /**

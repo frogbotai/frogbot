@@ -1,8 +1,9 @@
-import { addDataAndFileToRequest, type PayloadRequest } from 'payload';
+import { addDataAndFileToRequest } from 'payload';
 
 import { getChannelHost } from '../channels/host.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { TRIGGER_SUBSCRIPTIONS_SLUG } from './collection.js';
 import { dispatchTriggerEvents } from './dispatch.js';
@@ -13,6 +14,10 @@ import type { TriggerSubscriber } from './types.js';
 
 function requestClone(req: FrogBotRequest): FrogBotRequest {
   return Object.assign(req.clone!(), Object.fromEntries(Object.entries(req))) as FrogBotRequest;
+}
+
+function channelRequestClone(req: FrogBotRequest): Request {
+  return Object.assign(req.clone!(), Object.fromEntries(Object.entries(req)));
 }
 
 async function handler(req: FrogBotRequest): Promise<Response> {
@@ -27,7 +32,7 @@ async function handler(req: FrogBotRequest): Promise<Response> {
   const webhookReq = Object.assign(requestClone(req), { user: null });
   const channelRequest =
     !subscription && (entry.channelAgentSlug || requiresAdapterVerification(entry))
-      ? requestClone(req)
+      ? channelRequestClone(req)
       : undefined;
 
   const channelHost = channelRequest ? getChannelHost(req.frogbot) : undefined;
@@ -38,7 +43,7 @@ async function handler(req: FrogBotRequest): Promise<Response> {
 
   if (req.method === 'GET') {
     const channelResponse = channelRequest
-      ? await channelHost!.webhook(instanceSlug!, channelRequest as unknown as Request)
+      ? await channelHost!.webhook(instanceSlug!, channelRequest)
       : undefined;
 
     if (channelResponse) return channelResponse;
@@ -50,7 +55,7 @@ async function handler(req: FrogBotRequest): Promise<Response> {
     return (
       (await definition.webhook.handshake?.({
         req: requestClone(webhookReq),
-        options: runtime.options as never,
+        options: runtime.options,
       })) ?? new Response(null, { status: 404 })
     );
   }
@@ -62,7 +67,7 @@ async function handler(req: FrogBotRequest): Promise<Response> {
   if (definition.webhook?.verify) {
     const verifyReq = requestClone(req);
 
-    if (!(await definition.webhook.verify({ req: verifyReq, options: runtime.options as never }))) {
+    if (!(await definition.webhook.verify({ req: verifyReq, options: runtime.options }))) {
       return new Response(null, { status: 401 });
     }
   } else if (definition.webhook && !channelRequest) {
@@ -70,7 +75,7 @@ async function handler(req: FrogBotRequest): Promise<Response> {
   }
 
   const channelResponse = channelRequest
-    ? await channelHost!.webhook(instanceSlug!, channelRequest as unknown as Request)
+    ? await channelHost!.webhook(instanceSlug!, channelRequest)
     : undefined;
 
   if (channelRequest && !channelResponse) {
@@ -124,12 +129,12 @@ async function dispatchWebhookTriggers({
     if (!row) return new Response(null, { status: 404 });
   }
   const parsedReq = requestClone(webhookReq);
-  await addDataAndFileToRequest(parsedReq as unknown as PayloadRequest);
+  await addDataAndFileToRequest(toPayloadRequest(parsedReq));
   webhookReq.data = parsedReq.data;
   const handshake = definition.webhook?.handshake
     ? await definition.webhook.handshake({
         req: requestClone(webhookReq),
-        options: runtime.options as never,
+        options: runtime.options,
       })
     : null;
   if (handshake) return handshake;
@@ -170,9 +175,9 @@ async function dispatchWebhookTriggers({
         ? parseSubscriptionInput({ schema: trigger.input, input: row.input })
         : candidate.input;
       const context = {
-        input: input as never,
-        client: (await runtime.client({ req: triggerReq })) as never,
-        options: runtime.options as never,
+        input: input,
+        client: await runtime.client({ req: triggerReq }),
+        options: runtime.options,
         req: triggerReq,
       };
 

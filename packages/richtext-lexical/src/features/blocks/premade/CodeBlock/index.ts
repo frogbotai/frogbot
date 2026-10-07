@@ -1,5 +1,6 @@
 import { CodeBlock as upstreamCodeBlock } from '@payloadcms/richtext-lexical';
 import type { Field } from 'frogbot';
+import { fromPayloadFields } from 'frogbot/internal';
 import type { Block as PayloadBlock } from 'payload';
 
 type UpstreamCodeBlockArgs = NonNullable<Parameters<typeof upstreamCodeBlock>[0]>;
@@ -11,7 +12,8 @@ export type CodeBlockArgs = Omit<UpstreamCodeBlockArgs, 'fieldOverrides'> & {
 
 export const CodeBlock = (args?: CodeBlockArgs): CodeBlockConfig => {
   const { fieldOverrides, ...options } = args ?? {};
-  const block = upstreamCodeBlock(options) as unknown as CodeBlockConfig;
+  const upstream = upstreamCodeBlock(options);
+  const block: CodeBlockConfig = { ...upstream, fields: fromPayloadFields(upstream.fields) };
 
   block.admin = {
     ...block.admin,

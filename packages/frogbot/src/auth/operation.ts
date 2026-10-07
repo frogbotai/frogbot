@@ -15,6 +15,7 @@ import {
 import { KVLockContentionError } from '../kv/errors.js';
 import { runKVLock } from '../kv/lock.js';
 import type { KV, KVLockCallback } from '../kv/types.js';
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 type SessionCleanup = (signal: AbortSignal) => Promise<void>;
@@ -389,7 +390,7 @@ export async function withAuthOperation<T>({
     req,
     collectionSlug,
     fn: async ({ signal }) => {
-      const payloadReq = req as unknown as PayloadRequest;
+      const payloadReq = toPayloadRequest(req);
       const operation = operations.getStore()!;
       const previousPayload = payloadReq.payload;
       operation.kind = kind;

@@ -2,11 +2,12 @@ import path from 'node:path';
 
 import type { ModelMessage, TextPart, ToolSet, UIMessage } from 'ai';
 import { convertToModelMessages } from 'ai';
-import type { PayloadRequest, UploadConfig } from 'payload';
+import type { UploadConfig } from 'payload';
 import { getFileByPath } from 'payload';
 
 import { AgentServiceError } from '../agents/service.js';
 import { resolveModelInputs } from '../ai/modelInputs.js';
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { AttachmentKind } from './attachmentParts.js';
 import {
@@ -87,7 +88,7 @@ export async function toAgentModelMessages({
 
   const resolved =
     parts.length === 0
-      ? new Map<UIPart, UIPart>()
+      ? new Map<object, UIPart>()
       : await resolveReferences({ req, parts, chatId, model, onUnavailable });
 
   const uiMessages = messages.map((message) => ({
@@ -120,7 +121,7 @@ async function resolveReferences({
   chatId?: string | number;
   model: string;
   onUnavailable: 'throw' | 'marker';
-}): Promise<Map<UIPart, UIPart>> {
+}): Promise<Map<object, UIPart>> {
   const collection = await assetsCollection(req);
   const lookups = new Map<string | number, Lookup>();
   const references: Reference[] = [];
@@ -189,12 +190,7 @@ async function resolveReferences({
     }
   }
 
-  return new Map(
-    references.map((reference, index) => [
-      reference.part as unknown as UIPart,
-      resolved[index].part,
-    ]),
-  );
+  return new Map(references.map((reference, index) => [reference.part, resolved[index].part]));
 }
 
 async function assetsCollection(req: FrogBotRequest): Promise<AssetsCollection> {
@@ -448,7 +444,7 @@ async function handlerResponse({
   };
 
   for (const handler of handlers) {
-    const response = await handler(req as unknown as PayloadRequest, { doc, headers, params });
+    const response = await handler(toPayloadRequest(req), { doc, headers, params });
 
     if (response instanceof Response) return response;
   }

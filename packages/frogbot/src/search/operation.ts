@@ -1,8 +1,9 @@
-import type { Payload, PayloadRequest, SanitizedCollectionConfig, Where } from 'payload';
+import type { Payload, SanitizedCollectionConfig, Where } from 'payload';
 import { createLocalReq, validateQueryPaths } from 'payload';
 
-import type { Field } from '../fields/config/types.js';
 import type { FrogBot } from '../frogbot.js';
+import { fromPayloadFields } from '../seams/config.js';
+import { toPayloadRequest } from '../seams/request.js';
 import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
@@ -256,7 +257,7 @@ async function createSearchRequest(
 
   const payloadReq = await createLocalReq(
     {
-      req: (req ?? (await frogbot.createRequest())) as unknown as PayloadRequest,
+      req: toPayloadRequest(req ?? (await frogbot.createRequest())),
       locale,
       fallbackLocale,
     },
@@ -277,11 +278,11 @@ async function runSearch<T extends CollectionSlug>(
     throw new SearchFilterUnsupportedError(`${label} requires one locale per ranked result.`);
   }
 
-  const payloadReq = req as unknown as PayloadRequest;
+  const payloadReq = toPayloadRequest(req);
   const overrideAccess = options.overrideAccess === true;
   const draft = options.draft === true;
 
-  const nodes = overrideAccess ? undefined : getFieldNodes(collection.fields as unknown as Field[]);
+  const nodes = overrideAccess ? undefined : getFieldNodes(fromPayloadFields(collection.fields));
 
   if (nodes && getRankedPaths(index, mode).some((path) => isReadGuarded(nodes, path))) {
     throw new SearchFilterUnsupportedError(

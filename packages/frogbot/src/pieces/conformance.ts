@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { MessageHandler, StateAdapter } from 'chat';
 
 import { ChannelChat } from '../channels/chat.js';
+import type { FrogBot } from '../frogbot.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { pieceFactoryDefinition, pieceInstanceRuntime } from './definePiece.js';
 import type {
@@ -14,6 +15,10 @@ import type {
 } from './types.js';
 
 type ConformanceError = string | RegExp;
+
+type ConformanceRequest = Pick<FrogBotRequest, 'user'> & {
+  frogbot: { connections: Pick<FrogBot['connections'], 'resolvePieceCredential'> };
+};
 type ConformanceExpectation = { result: unknown } | { error: ConformanceError };
 
 type ConformanceAction = {
@@ -138,20 +143,24 @@ export async function pieceConformance<T extends PieceDefinition>(
   }
 
   const configuredAuth = pieceInstanceRuntime(instance).auth;
-  const req = {
+  // Pieces reach credentials only through `req.frogbot.connections`; the kit fakes that slice.
+  const stub: ConformanceRequest = {
     frogbot: {
       connections: {
         resolvePieceCredential: () => Promise.resolve({ auth: configuredAuth, key: instance }),
       },
     },
     user: null,
-  } as never;
+  };
+  const req = stub as FrogBotRequest;
 
   for (const fixture of fixtures.actions) {
     const action = instance[fixture.slug];
     if (typeof action !== 'function') fail(`action '${fixture.slug}' is not callable.`);
     try {
-      const result = await (action as (args: { input: unknown; req: never }) => Promise<unknown>)({
+      const result = await (
+        action as (args: { input: unknown; req: FrogBotRequest }) => Promise<unknown>
+      )({
         input: fixture.input,
         req,
       });
@@ -196,7 +205,7 @@ export async function pieceConformance<T extends PieceDefinition>(
             input: Record<string, unknown>;
             client: unknown;
             options: unknown;
-            req: never;
+            req: FrogBotRequest;
           }) => Promise<PieceOption[]>
         >
       | undefined = action.options;

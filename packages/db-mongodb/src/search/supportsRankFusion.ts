@@ -1,5 +1,5 @@
 import { getErrorCode } from './createSearchSetupError.js';
-import type { SearchModel, SearchPipeline } from './getSearchModel.js';
+import type { SearchModel } from './getSearchModel.js';
 
 const unsupportedCodes = new Set([224, 40324]);
 
@@ -16,8 +16,9 @@ export function supportsRankFusion(Model: SearchModel): Promise<boolean> {
     { $limit: 1 },
   ];
 
-  const supported = Model.aggregate(pipeline as unknown as SearchPipeline)
-    .exec()
+  const supported = Model.collection
+    .aggregate(pipeline)
+    .toArray()
     .then(
       () => true,
       (error: unknown) => {

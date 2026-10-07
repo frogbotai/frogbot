@@ -1,4 +1,4 @@
-import type { UIMessage } from 'ai';
+import type { TextStreamPart, ToolSet, UIMessage } from 'ai';
 import { consumeStream, generateId, toUIMessageStream } from 'ai';
 
 import type { AgentGenerateResult } from '../agents/types.js';
@@ -7,7 +7,7 @@ import { createMessageUsage } from './messagePersistence.js';
 export type GenerateMessageProps = {
   result: AgentGenerateResult;
   originalMessages: UIMessage[];
-  tools: Record<string, unknown>;
+  tools: ToolSet;
   model: string;
 };
 
@@ -20,7 +20,7 @@ export async function generateMessage({
   let responseMessage: UIMessage | undefined;
   const stream = toUIMessageStream({
     stream: streamResult(result),
-    tools: tools as never,
+    tools,
     originalMessages,
     generateMessageId: generateId,
     sendSources: true,
@@ -36,15 +36,23 @@ export async function generateMessage({
   return responseMessage;
 }
 
-function streamResult(result: AgentGenerateResult): ReadableStream<never> {
-  const parts: unknown[] = [{ type: 'start' }];
+function streamResult(result: AgentGenerateResult): ReadableStream<TextStreamPart<ToolSet>> {
+  const parts: TextStreamPart<ToolSet>[] = [{ type: 'start' }];
 
   for (const step of result.steps) {
-    parts.push({ type: 'start-step' });
+    parts.push({ type: 'start-step', request: step.request, warnings: step.warnings ?? [] });
     for (const part of step.content) {
       parts.push(...toStreamParts(part));
     }
-    parts.push({ type: 'finish-step' });
+    parts.push({
+      type: 'finish-step',
+      response: step.response,
+      usage: step.usage,
+      performance: step.performance,
+      finishReason: step.finishReason,
+      rawFinishReason: step.rawFinishReason,
+      providerMetadata: step.providerMetadata,
+    });
   }
 
   parts.push({
@@ -57,14 +65,16 @@ function streamResult(result: AgentGenerateResult): ReadableStream<never> {
   return new ReadableStream({
     start(controller) {
       for (const part of parts) {
-        controller.enqueue(part as never);
+        controller.enqueue(part);
       }
       controller.close();
     },
   });
 }
 
-function toStreamParts(part: AgentGenerateResult['steps'][number]['content'][number]): unknown[] {
+function toStreamParts(
+  part: AgentGenerateResult['steps'][number]['content'][number],
+): TextStreamPart<ToolSet>[] {
   if (part.type === 'text') {
     const id = generateId();
     return [

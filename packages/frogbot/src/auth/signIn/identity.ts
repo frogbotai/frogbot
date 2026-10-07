@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto';
 
-import { type PayloadRequest, ValidationError } from 'payload';
+import { ValidationError } from 'payload';
 import { z } from 'zod';
 
 import { OAuthError } from '../../connections/oauth/index.js';
+import { toPayloadRequest } from '../../seams/request.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { withSessionOperation } from '../operation.js';
 
@@ -39,7 +40,7 @@ export async function resolveSignInIdentity({
           collection: collectionSlug,
           limit: 2,
           pagination: false,
-          req: req as unknown as PayloadRequest,
+          req: toPayloadRequest(req),
           where: {
             and: [
               { email: { equals: email } },

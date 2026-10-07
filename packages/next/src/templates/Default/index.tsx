@@ -3,6 +3,7 @@ import {
   type DefaultTemplateProps as PayloadDefaultTemplateProps,
 } from '@payloadcms/next/templates';
 import type { FrogBotRequest } from 'frogbot';
+import { toPayloadRequest } from 'frogbot/internal';
 
 export type DefaultTemplateProps = Omit<
   PayloadDefaultTemplateProps,
@@ -29,5 +30,11 @@ function getIssuedRuntime(req: FrogBotRequest): PayloadDefaultTemplateProps['pay
 }
 
 export function DefaultTemplate({ req, ...props }: DefaultTemplateProps) {
-  return <PayloadDefaultTemplate {...props} payload={getIssuedRuntime(req)} req={req as never} />;
+  return (
+    <PayloadDefaultTemplate
+      {...props}
+      payload={getIssuedRuntime(req)}
+      req={toPayloadRequest(req)}
+    />
+  );
 }

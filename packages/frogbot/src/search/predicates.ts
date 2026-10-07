@@ -1,6 +1,7 @@
-import type { PayloadRequest, SanitizedCollectionConfig, Where } from 'payload';
+import type { SanitizedCollectionConfig, Where } from 'payload';
 import { executeAccess, Forbidden } from 'payload';
 
+import { toPayloadRequest } from '../seams/request.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { describeSearchIndex, SearchFilterUnsupportedError } from './errors.js';
 import type { SearchIndexDescriptor } from './types.js';
@@ -105,7 +106,7 @@ export async function resolveSearchPredicate({
 }): Promise<Where> {
   const access = overrideAccess
     ? true
-    : await executeAccess({ req: req as unknown as PayloadRequest }, collection.access.read);
+    : await executeAccess({ req: toPayloadRequest(req) }, collection.access.read);
 
   if (!access) throw new Forbidden(req.t);
 

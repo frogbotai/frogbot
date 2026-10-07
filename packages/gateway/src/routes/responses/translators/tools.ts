@@ -19,6 +19,16 @@ const HOSTED_TOOL_TYPES = new Set([
   'apply_patch',
 ]);
 
+// Hosted tools whose calls the client executes (OpenAI returns the call; the caller runs it).
+const CLIENT_EXECUTED_TOOL_TYPES = new Set(['computer_use_preview', 'local_shell', 'apply_patch']);
+
+// The AI SDK's own default for a tool without a schema, set so a hosted tool is a typed `Tool`.
+const inputSchema = jsonSchema<Record<string, never>>({
+  type: 'object',
+  properties: {},
+  additionalProperties: false,
+});
+
 // OpenAI Responses tools use a flat shape (`{ type, name, parameters }`),
 // unlike chat completions' nested `{ type, function: { name, ... } }`.
 // Function tools become AI SDK tools; hosted tools become provider-defined
@@ -49,11 +59,10 @@ export function toResponsesTools(
         });
       }
       const { type, ...args } = t as { type: string } & Record<string, unknown>;
-      result[type] = {
-        type: 'provider',
-        id: `openai.${type}`,
-        args: args as Record<string, unknown>,
-      } as unknown as ToolSet[string];
+      const hosted = { type: 'provider', id: `openai.${type}`, args, inputSchema } as const;
+      result[type] = CLIENT_EXECUTED_TOOL_TYPES.has(type)
+        ? { ...hosted, isProviderExecuted: false }
+        : { ...hosted, isProviderExecuted: true };
       continue;
     }
 

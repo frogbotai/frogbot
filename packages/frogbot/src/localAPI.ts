@@ -1,6 +1,7 @@
 import type { Payload } from 'payload';
 
 import type { FrogBot } from './frogbot.js';
+import { toFrogBotLocalAPI } from './seams/request.js';
 
 export type FrogBotLocalAPI = Pick<
   FrogBot,
@@ -25,5 +26,5 @@ export type FrogBotLocalAPI = Pick<
 >;
 
 export function createFrogBotLocalAPI(payload: Payload): FrogBotLocalAPI {
-  return payload as unknown as FrogBotLocalAPI;
+  return toFrogBotLocalAPI(payload);
 }

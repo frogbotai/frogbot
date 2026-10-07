@@ -48,7 +48,7 @@ export async function suggestChatTitleForChat({
   if (owner === undefined || owner === null || String(owner) !== String(req.user?.id)) {
     return undefined;
   }
-  const messages = (await req.frogbot.find({
+  const messages = await req.frogbot.find({
     collection: config.messagesSlug,
     where: { and: [{ chat: { equals: chatId } }, { status: { not_equals: 'queued' } }] },
     sort: ['createdAt', 'id'],
@@ -56,12 +56,12 @@ export async function suggestChatTitleForChat({
     depth: 0,
     req,
     overrideAccess: false,
-  })) as unknown as { docs: PersistedMessage[] };
+  });
   const agent = getAgent({ req, slug: chat.agent ?? undefined });
   try {
     return await suggestChatTitle({
       req,
-      history: messagesToUIMessages(messages.docs),
+      history: messagesToUIMessages(messages.docs as PersistedMessage[]),
       mainModel: resolveModel(agent.config.model.default, req.frogbot.config.ai!),
     });
   } catch (error) {

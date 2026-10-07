@@ -2,7 +2,6 @@ import type { SQLiteAdapter } from '@payloadcms/db-sqlite';
 
 type Client = SQLiteAdapter['client'];
 type Transaction = Awaited<ReturnType<Client['transaction']>>;
-type Method = (...args: unknown[]) => Promise<unknown>;
 type Mode = 'deferred' | 'read' | 'write';
 
 const locked = new WeakSet<Client>();
@@ -54,11 +53,7 @@ export function installWriteLock({
 
   locked.add(client);
 
-  const target = client as unknown as Record<
-    'batch' | 'execute' | 'executeMultiple' | 'migrate',
-    Method
-  >;
-  const execute = target.execute.bind(client);
+  const execute = client.execute.bind(client);
   const transaction = client.transaction.bind(client);
   const lock = createLock(timeout);
 
@@ -81,16 +76,17 @@ export function installWriteLock({
     throw error;
   };
 
-  const run = (method: Method, args: unknown[]) => method(...args).catch(recover);
+  const run = <T>(call: () => Promise<T>) => call().catch(recover);
+  const batch = client.batch.bind(client);
+  const executeMultiple = client.executeMultiple.bind(client);
+  const migrate = client.migrate.bind(client);
 
-  for (const name of ['batch', 'executeMultiple', 'migrate'] as const) {
-    const method = target[name].bind(client);
+  client.batch = (...args) => lock.run(() => run(() => batch(...args)));
+  client.executeMultiple = (...args) => lock.run(() => run(() => executeMultiple(...args)));
+  client.migrate = (...args) => lock.run(() => run(() => migrate(...args)));
 
-    target[name] = (...args) => lock.run(() => run(method, args));
-  }
-
-  target.execute = (...args) =>
-    isRead(args[0]) ? run(execute, args) : lock.run(() => run(execute, args));
+  client.execute = (...args) =>
+    isRead(args[0]) ? run(() => execute(...args)) : lock.run(() => run(() => execute(...args)));
 
   client.transaction = async (mode?: Mode) => {
     const release = await lock.acquire();

@@ -206,7 +206,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
                 async ({ data, req }: { data?: Record<string, unknown>; req: FrogBotRequest }) => {
                   if (data?.id === undefined) return 0;
                   const result = await req.frogbot.find({
-                    collection: usageCollection as never,
+                    collection: usageCollection,
                     depth: 0,
                     overrideAccess: true,
                     pagination: false,

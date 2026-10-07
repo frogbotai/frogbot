@@ -167,14 +167,30 @@ function unsupported(reason: string): KVUnsupportedError {
   return error;
 }
 
+function isMongoKVModel(value: unknown): value is MongoKVModel {
+  return (
+    typeof value === 'function' &&
+    'collection' in value &&
+    'init' in value &&
+    typeof value.init === 'function'
+  );
+}
+
+function findModel(adapter: object, collectionSlug: string): MongoKVModel | undefined {
+  if (!('collections' in adapter)) return undefined;
+  const { collections } = adapter;
+  if (typeof collections !== 'object' || collections === null) return undefined;
+  const model: unknown = Reflect.get(collections, collectionSlug);
+  return isMongoKVModel(model) ? model : undefined;
+}
+
 export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): KVDatabaseAdapter {
   let ready: Promise<MongoKVModel> | undefined;
   let atomicReady: Promise<MongoKVModel> | undefined;
 
   const getModel = (): Promise<MongoKVModel> => {
     ready ??= (async () => {
-      const model = (adapter as unknown as { collections?: Record<string, MongoKVModel> })
-        .collections?.[collectionSlug];
+      const model = findModel(adapter, collectionSlug);
       if (!model) throw new Error(`Mongo KV collection "${collectionSlug}" is not initialized`);
       await model.init();
       return model;

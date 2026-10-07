@@ -39,13 +39,14 @@ export function resolveJobsConfig(jobs: JobsConfig = {}): PayloadJobsConfig & {
   runHooks: false;
   depth: 0;
 } {
-  const { runHooks, depth } = jobs as unknown as PayloadJobsConfig;
+  const runHooks = 'runHooks' in jobs ? jobs.runHooks : undefined;
+  const depth = 'depth' in jobs ? jobs.depth : undefined;
 
   if (runHooks) {
     throw new Error('FrogBot jobs.runHooks is unsupported because job claims must be atomic.');
   }
 
-  if (depth && depth > 0) {
+  if (Number(depth) > 0) {
     throw new Error('FrogBot jobs.depth must be 0 because job claims must be atomic.');
   }
 

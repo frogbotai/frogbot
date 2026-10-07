@@ -314,7 +314,7 @@ export type PieceInstance = {
   readonly [pieceCapabilities]: PieceCapabilities;
 };
 
-type FactoryOptions<T extends PieceDefinition> = {
+export type PieceFactoryOptions<T extends PieceDefinition> = {
   slug?: string;
   auth?: T extends { auth: infer TAuth extends z.ZodType } ? z.input<TAuth> : never;
   oauth?: T extends { oauth: object } ? OAuthApp : never;
@@ -333,7 +333,7 @@ type RequiresRequest<TConfig> = TConfig extends { auth: infer TAuth }
     : false
   : true;
 
-type DefinedPiece<T extends PieceDefinition, TConfig> = {
+export type DefinedPiece<T extends PieceDefinition, TConfig> = {
   slug: string;
   piece: string;
   oauth?: OAuthApp;
@@ -368,8 +368,10 @@ type DefinedPiece<T extends PieceDefinition, TConfig> = {
     : ReturnType<TAction['run']>;
 };
 
-export type PieceFactory<T extends PieceDefinition> = <const TConfig extends FactoryOptions<T>>(
-  ...args: object extends FactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
+export type PieceFactory<T extends PieceDefinition> = <
+  const TConfig extends PieceFactoryOptions<T>,
+>(
+  ...args: object extends PieceFactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
 ) => DefinedPiece<T, TConfig>;
 
 export type { ConnectionEntry } from '../connections/types.js';

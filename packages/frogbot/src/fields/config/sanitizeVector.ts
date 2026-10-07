@@ -1,14 +1,11 @@
-import {
-  type Field as PayloadField,
-  type JSONField as PayloadJSONField,
-  ValidationError,
-} from 'payload';
+import { ValidationError } from 'payload';
 
 import type { MapVectorField } from '../../database/types.js';
+import { fromPayloadField, toPayloadField } from '../../seams/config.js';
 import { validateVector } from '../validations.js';
 import { FIELD_CELL_PATH, sanitizeOptionColors } from './sanitizeOptionColors.js';
 import { getSystemKind, sanitizeSystemKind, type SystemKindUsers } from './sanitizeSystemKinds.js';
-import type { Field, VectorField } from './types.js';
+import type { Field, JSONField, VectorField } from './types.js';
 
 type VectorOwner =
   { block?: undefined; collection: string } | { block: string; collection?: undefined };
@@ -36,7 +33,7 @@ function sanitizeVectorField({
   field,
   mapVectorField,
   path,
-}: SanitizeVectorFieldArgs): PayloadField {
+}: SanitizeVectorFieldArgs): Field {
   const { dimensions, validate, ...rest } = field;
 
   if (!Number.isSafeInteger(dimensions) || dimensions <= 0) {
@@ -50,24 +47,22 @@ function sanitizeVectorField({
   const existingCustom = field.custom ?? {};
   const frogbot = existingCustom.frogbot;
 
-  const vectorValidate: PayloadJSONField['validate'] = async (value, options) => {
+  const vectorValidate: JSONField['validate'] = async (value, options) => {
     const result = validateVector(value, dimensions, Boolean(options.required));
 
     if (result !== true) return result;
 
-    return validate ? validate(value as number[] | null | undefined, options as never) : true;
+    return validate ? validate(value as number[] | null | undefined, options) : true;
   };
 
-  const vectorSchema: NonNullable<PayloadJSONField['typescriptSchema']>[number] = ({
-    jsonSchema,
-  }) => ({
+  const vectorSchema: NonNullable<JSONField['typescriptSchema']>[number] = ({ jsonSchema }) => ({
     ...jsonSchema,
     type: field.required ? 'array' : ['array', 'null'],
     items: { type: 'number' },
   });
 
   const validateStoredVector: NonNullable<
-    NonNullable<PayloadJSONField['hooks']>['beforeChange']
+    NonNullable<JSONField['hooks']>['beforeChange']
   >[number] = ({ path: fieldPath, value }) => {
     const result = validateVector(value, dimensions, false);
 
@@ -79,7 +74,7 @@ function sanitizeVectorField({
     }
   };
 
-  const lowered = {
+  const lowered: JSONField = {
     ...rest,
     type: 'json',
     validate: vectorValidate,
@@ -95,11 +90,13 @@ function sanitizeVectorField({
       beforeChange: [...(field.hooks?.beforeChange ?? []), validateStoredVector],
     },
     typescriptSchema: [...(field.typescriptSchema ?? []), vectorSchema],
-  } as unknown as PayloadJSONField;
+  };
 
   if (!mapVectorField) return lowered;
 
-  return mapVectorField({ collection, block, dimensions, field: lowered, path });
+  return fromPayloadField(
+    mapVectorField({ collection, block, dimensions, field: toPayloadField(lowered), path }),
+  );
 }
 
 function sanitizeVirtualPath(field: Field): Field {
@@ -131,7 +128,7 @@ function sanitizeFields(
     }
 
     if (field.type === 'vector') {
-      return sanitizeVectorField({ ...args, field, path }) as unknown as Field;
+      return sanitizeVectorField({ ...args, field, path });
     }
 
     if (field.type === 'select' || field.type === 'radio') {

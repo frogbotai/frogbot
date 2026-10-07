@@ -1,5 +1,6 @@
 import type { SearchCapabilities, SearchCapability } from '../../../database/types.js';
 import type { SearchIndexDescriptor, SearchMode } from '../../types.js';
+import { assertSQLiteSearchAdapter } from './guards.js';
 import { getConnectionKind, getSearchPrerequisites } from './prerequisites.js';
 import { getTokenizer } from './tokenizers.js';
 import type { SQLiteSearchAdapter } from './types.js';
@@ -23,7 +24,7 @@ export function getLexicalCapability(index: SearchIndexDescriptor): SearchCapabi
 }
 
 export const capabilities: SearchCapabilities = ({ db, index }) =>
-  adapterCapabilities(db as unknown as SQLiteSearchAdapter, index);
+  adapterCapabilities(assertSQLiteSearchAdapter(db), index);
 
 export function adapterCapabilities(
   adapter: SQLiteSearchAdapter,

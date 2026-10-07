@@ -10,6 +10,7 @@ import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 import type { SanitizedAIConfig, TranscribeAudio, TranscribeOpts } from '../types.js';
+import { toProviderOptions } from './options.js';
 
 export type TranscribeDeps = {
   gateway: Gateway;
@@ -73,9 +74,9 @@ export async function transcribeOperation(
     const result = await aiTranscribe({
       ...aiSdkOpts,
       audio: audioData,
-      providerOptions: resolvedProviderOptions,
+      providerOptions: toProviderOptions(resolvedProviderOptions),
       model: op.transcribeModel(),
-    } as unknown as Parameters<typeof aiTranscribe>[0]);
+    });
     await op.finish();
     return result;
   } catch (error) {

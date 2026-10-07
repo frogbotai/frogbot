@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { type Config, createLocalReq, type Job, type Payload, type PayloadRequest } from 'payload';
 
 import { compareAndSet } from '../database/compareAndSet.js';
+import { toPayloadRequest } from '../seams/request.js';
 import { type JobInsertDatabase, jobInsertOperations } from './insert.js';
 import { getJobLeaseContext, withJobLease } from './lease.js';
 import { type JobLogDatabase, jobLogOperations } from './log.js';
@@ -20,6 +21,16 @@ type JobEnqueue = (
   args: Parameters<Payload['jobs']['queue']>[0],
   seed?: JobQueueSeed,
 ) => Promise<Job>;
+
+function inTransaction(session: unknown): boolean {
+  return (
+    typeof session === 'object' &&
+    session !== null &&
+    'inTransaction' in session &&
+    typeof session.inTransaction === 'function' &&
+    session.inTransaction() === true
+  );
+}
 
 const queueContext = new AsyncLocalStorage<{ payload: Payload; seed: JobQueueSeed } | undefined>();
 const runtimes = new WeakMap<Payload, Jobs>();
@@ -194,13 +205,10 @@ export function installJobsRuntime({
             : insert());
         } catch (error) {
           const transactionID = await args.req?.transactionID;
-          const sessions = payload.db.sessions as unknown as
-            Record<string, { inTransaction(): boolean }> | undefined;
-
           if (
             payload.db.name === 'mongoose' &&
             transactionID &&
-            sessions?.[transactionID]?.inTransaction()
+            inTransaction(payload.db.sessions?.[transactionID])
           ) {
             throw error;
           }
@@ -236,7 +244,10 @@ export function installJobsRuntime({
     resumeWaitpoint({
       token,
       data,
-      req: await createLocalReq({ req: req as unknown as PayloadRequest }, payload),
+      req: await createLocalReq(
+        { req: req && 'frogbot' in req ? toPayloadRequest(req) : req },
+        payload,
+      ),
     });
 
   jobs.run = (args) =>

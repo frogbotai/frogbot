@@ -201,7 +201,7 @@ export function serializeError(error: unknown, seen = new WeakSet<object>()): un
     if (key === 'requestBodyValues') continue;
 
     try {
-      const value = (error as unknown as Record<string, unknown>)[key];
+      const value: unknown = Reflect.get(error, key);
       serialized[key] =
         key === 'responseBody' && typeof value === 'string'
           ? truncateResponseBody(redactKeyFragments(value))
