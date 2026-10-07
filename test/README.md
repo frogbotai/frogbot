@@ -33,6 +33,8 @@ pnpm test:int
 pnpm test:int test/kv/int.spec.ts test/storage/int.spec.ts test/storage-s3/int.spec.ts test/storage-gcs/int.spec.ts test/storage-azure/int.spec.ts test/storage-vercel-blob/int.spec.ts
 ```
 
+The int, gateway-integration, e2e and browser runs and `pnpm check test-types` each hold one of 3 machine-wide slots (`scripts/lib/slot.mjs`), so parallel worktrees wait for a free one instead of running more at once.
+
 ## Layout
 
 ```

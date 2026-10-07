@@ -84,6 +84,7 @@ export default defineConfig({
           testTimeout: 90000,
           retry: process.env.CI ? 2 : 0,
           setupFiles: ['./test/vitest.setup.ts'],
+          globalSetup: ['./test/heavySlot.ts'],
         },
       },
       {
@@ -93,7 +94,7 @@ export default defineConfig({
           exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'node',
           setupFiles: ['./test/live/env.ts'],
-          globalSetup: ['./test/e2e/sweep.ts'],
+          globalSetup: ['./test/heavySlot.ts', './test/e2e/sweep.ts'],
           fileParallelism: false,
           hookTimeout: 240000,
           testTimeout: 120000,
@@ -119,6 +120,7 @@ export default defineConfig({
           testTimeout: 90000,
           retry: process.env.CI ? 2 : 0,
           setupFiles: ['./test/vitest.setup.ts'],
+          globalSetup: ['./test/heavySlot.ts'],
         },
       },
       {

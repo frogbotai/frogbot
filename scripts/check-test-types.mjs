@@ -8,7 +8,8 @@
 // counting once. It prints the errors of every file and code over its count, and every count that
 // dropped, so the baseline only shrinks. `--write` lowers the dropped counts, and refuses while
 // any count is over; with no baseline file it writes one from every current error. Needs built
-// packages; it generates missing fixture import maps first.
+// packages; it generates missing fixture import maps first. The run holds one heavy-test slot
+// (scripts/lib/slot.mjs).
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -16,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { importMaps, openLog } from './check.mjs';
+import { acquireSlot } from './lib/slot.mjs';
 import { readJSON, ROOT } from './lib/workspace.mjs';
 
 export const BASELINE = 'test/typecheck-baseline.json';
@@ -402,6 +404,8 @@ async function main() {
     process.exitCode = 2;
     return;
   }
+
+  await acquireSlot('test-types');
 
   const { errors, global } = await typecheck();
 

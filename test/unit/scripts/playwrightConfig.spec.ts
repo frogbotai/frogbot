@@ -193,7 +193,11 @@ describe('browser project servers', () => {
 
     const { default: config } = await import('../../browser/playwright.config.js');
 
-    expect(webServers(config)[0]?.name).toBe('build');
+    expect(
+      webServers(config)
+        .map(({ name }) => name)
+        .slice(0, 2),
+    ).toEqual(['slot', 'build']);
     expect(builtFixtures(config)).toEqual(['question', 'plugin-wrappers']);
   });
 
@@ -210,8 +214,9 @@ describe('browser project servers', () => {
     expect(project('question-firefox')?.use?.baseURL).toBe(project('question')?.use?.baseURL);
     expect(project('question-firefox')?.dependencies).toEqual(['question-setup']);
     expect(webServers(config).map((server) => server.url)).toEqual([
+      undefined,
       `http://localhost:${testPort(3127)}`,
     ]);
-    expect(webServers(config)[0]?.command).toMatch(/"dev"$/);
+    expect(webServers(config)[1]?.command).toMatch(/"dev"$/);
   });
 });
