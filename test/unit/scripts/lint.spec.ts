@@ -43,7 +43,12 @@ function lint(args: string[], input?: string) {
     input,
   });
 
-  return { code: result.status, stdout: result.stdout, output: result.stdout + result.stderr };
+  return {
+    code: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    output: result.stdout + result.stderr,
+  };
 }
 
 function lintText(filename: string, code: string, args: string[] = []) {
@@ -178,6 +183,21 @@ describe('pnpm lint', () => {
     expect(eslintResult(result)).toMatchObject({
       ok: false,
       groups: [[expect.stringContaining('pnpm lint --prune-suppressions')]],
+    });
+  });
+
+  it('reads the prune notice from stderr, not from a suppressed file source such as scripts/check.mjs', () => {
+    const stdout = JSON.stringify([
+      {
+        filePath: path.join(root, 'scripts/check.mjs'),
+        messages: [],
+        source: "const UNPRUNED = 'There are suppressions left that do not occur anymore';",
+      },
+    ]);
+
+    expect(eslintResult({ code: 0, stdout, stderr: '', output: stdout })).toMatchObject({
+      ok: true,
+      groups: [[]],
     });
   });
 });
@@ -419,6 +439,55 @@ describe('blank lines', () => {
         '',
       ].join('\n'),
     );
+  });
+});
+
+describe('size limits', () => {
+  function sizeRules(filename: string, code: string) {
+    const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));
+    const suppressions = path.join(dir, 'eslint-suppressions.json');
+
+    temporary.push(dir);
+    writeFileSync(suppressions, '{}');
+
+    return messages(
+      lintText(filename, code, ['--format', 'json', '--suppressions-location', suppressions])
+        .stdout,
+    )
+      .filter(({ ruleId }) => ruleId === 'max-lines' || ruleId === '@typescript-eslint/max-params')
+      .map(({ ruleId, severity }) => `${ruleId} ${severity}`);
+  }
+
+  function lines(count: number) {
+    return Array.from({ length: count }, (_, index) => `export const value${index} = ${index};`)
+      .join('\n\n')
+      .concat('\n');
+  }
+
+  it.each([
+    [501, ['max-lines 2']],
+    [500, []],
+  ])('counts %i non-blank lines in package source against the 500 cap', (count, expected) => {
+    expect(sizeRules('packages/frogbot/src/chat/example.ts', lines(count))).toEqual(expected);
+  });
+
+  it('exempts specs from the line cap', () => {
+    expect(sizeRules('packages/frogbot/src/chat/example.spec.ts', lines(501))).toEqual([]);
+    expect(sizeRules('test/unit/example.spec.ts', lines(501))).toEqual([]);
+  });
+
+  it.each([
+    ['packages/frogbot/src/chat/example.ts'],
+    ['test/unit/example.spec.ts'],
+    ['scripts/example.mjs'],
+  ])('reports a fourth parameter, not a third, in %s', (filename) => {
+    expect(
+      sizeRules(
+        filename,
+        'export const three = (a, b, c) => [a, b, c];\n\n' +
+          'export const four = (a, b, c, d) => [a, b, c, d];\n',
+      ),
+    ).toEqual(['@typescript-eslint/max-params 2']);
   });
 });
 

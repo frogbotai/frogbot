@@ -5,6 +5,7 @@ import { wrapGraphQLExtension } from '../../../../packages/frogbot/src/config/wr
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 type ResolverField = {
+  // eslint-disable-next-line @typescript-eslint/max-params -- GraphQL resolver signature
   resolve: (source: unknown, args: unknown, context: unknown, info: unknown) => Promise<unknown>;
 };
 

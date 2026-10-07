@@ -88,7 +88,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 
 ## Code style
 
-- Crisp, simple code. Prefer object parameters over several positional ones.
+- Crisp, simple code. Lint caps package source at 500 lines (`max-lines`) and functions at 3 parameters (`@typescript-eslint/max-params`).
 - No comments except JSDoc on exports, tool directives and `// Workaround: <upstream URL>, remove when <condition>`; `frogbot/no-comments` enforces it, and `pnpm lint:fix` removes the rest.
 - Name consistently and briefly: `createTextDoc`/`updateTextDoc`, not `saveTextDocumentToDatabase`. Prefix types with their context (`ArtifactCreateProps`) and match them to their function (`dbCreate` → `ArtifactDBCreateProps`).
 - Name a private component that continues past a provider or readiness guard `*Inner` (`ChatInner`).

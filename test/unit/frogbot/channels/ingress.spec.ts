@@ -153,6 +153,7 @@ describe('ChannelHost ingress-only lifecycle', () => {
     let listenerSignal: AbortSignal | undefined;
 
     const startGatewayListener = vi.fn(
+      // eslint-disable-next-line @typescript-eslint/max-params -- Chat SDK startGatewayListener signature
       async (_options: unknown, _duration: number, signal: AbortSignal, _webhookUrl: string) => {
         listenerSignal = signal;
         started.resolve();
