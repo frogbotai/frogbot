@@ -24,14 +24,6 @@
       "count": 2
     }
   },
-  "packages/frogbot/src/config/sanitize.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    }
-  },
   "packages/frogbot/src/connections/api.ts": {
     "@typescript-eslint/max-params": {
       "count": 1
