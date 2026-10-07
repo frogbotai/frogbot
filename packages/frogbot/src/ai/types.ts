@@ -45,12 +45,14 @@ export type BedrockProviderEntry = (
       accessKeyId?: never;
       secretAccessKey?: never;
       sessionToken?: never;
+      credentialProvider?: never;
     }
   | {
       region?: string;
       accessKeyId: string;
       secretAccessKey: string;
       sessionToken?: string;
+      credentialProvider?: never;
     }
   | {
       region?: string;

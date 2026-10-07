@@ -50,12 +50,6 @@
   "test/unit/db-sqlite/jobs.spec.ts": {
     "TS2740": 1
   },
-  "test/unit/frogbot/ai/types.spec.ts": {
-    "TS2554": 1
-  },
-  "test/unit/frogbot/collections/config/merge.spec.ts": {
-    "TS2322": 1
-  },
   "test/unit/frogbot/config/sanitize.spec.ts": {
     "TS2339": 1,
     "TS2345": 1

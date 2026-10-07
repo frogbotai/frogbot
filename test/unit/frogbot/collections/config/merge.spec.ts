@@ -189,9 +189,9 @@ describe('mergeCollection', () => {
     );
   });
 
-  it('allows cosmetic overrides when the type is unchanged or omitted', () => {
+  it('allows cosmetic overrides when the type is unchanged', () => {
     const merged = mergeChatCollection({
-      user: { slug: 'chats', fields: [{ name: 'agent', label: 'Assistant' }] },
+      user: { slug: 'chats', fields: [{ name: 'agent', type: 'text', label: 'Assistant' }] },
       base: makeBase(),
       reservedFields: [],
     });
@@ -201,6 +201,18 @@ describe('mergeCollection', () => {
       index: true,
       label: 'Assistant',
     });
+  });
+
+  it('throws when an override omits the base field type', () => {
+    expect(() =>
+      mergeChatCollection({
+        user: { slug: 'chats', fields: [{ name: 'agent', label: 'Assistant' }] } as never,
+        base: makeBase(),
+        reservedFields: [],
+      }),
+    ).toThrow(
+      "[frogbot] Field 'agent' on collection 'chats' must set type 'text' required by chat persistence.",
+    );
   });
 
   it('allows the user to repoint relationTo (follows renamed collections)', () => {
