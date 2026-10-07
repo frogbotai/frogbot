@@ -52,7 +52,7 @@ ruleTester.run('client-imports', rule, {
       errors: [{ messageId: 'rsc', data: { source: '@payloadcms/ui/rsc' } }],
     },
     {
-      name: 'd45e2c40 packages/next/src/withFrogbot.ts import in a client file',
+      name: 'd45e2c40 packages/next/src/withFrogBot.ts import in a client file',
       code: "'use client';\nimport { createRequire } from 'node:module';",
       filename,
       errors: [{ messageId: 'node', data: { source: 'node:module' } }],

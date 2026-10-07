@@ -219,6 +219,62 @@ describe('product-code cast ban (DR-047)', () => {
   });
 });
 
+describe('brand spelling (DR-056)', () => {
+  // Split so this file does not trip the rule it tests.
+  const misspellings = ['Frog' + 'bot', 'frog' + 'Bot'];
+
+  function brand(filename: string, code: string) {
+    const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));
+    const suppressions = path.join(dir, 'eslint-suppressions.json');
+
+    temporary.push(dir);
+    writeFileSync(suppressions, '{}');
+
+    return messages(
+      lintText(filename, code, ['--format', 'json', '--suppressions-location', suppressions])
+        .stdout,
+    )
+      .filter(
+        ({ ruleId, message }) =>
+          ruleId === '@typescript-eslint/naming-convention' || message.includes('Spell the brand'),
+      )
+      .map(({ ruleId }) => ruleId);
+  }
+
+  it.each(
+    misspellings.flatMap((name) =>
+      [
+        'packages/frogbot/src/chat/example.ts',
+        'test/chat/example.int.spec.ts',
+        'test/unit/example.spec.ts',
+        'scripts/example.mjs',
+      ].map((filename) => [name, filename]),
+    ),
+  )('reports %s in an identifier, a string and a template in %s', (name, filename) => {
+    expect(
+      brand(
+        filename,
+        `export const get${name}Name = () => '${name}';\n` +
+          `export const label = (id) => \`${name} \${id}\`;\n`,
+      ),
+    ).toEqual([
+      '@typescript-eslint/naming-convention',
+      'no-restricted-syntax',
+      'no-restricted-syntax',
+    ]);
+  });
+
+  it('allows FrogBot and lowercase frogbot', () => {
+    expect(
+      brand(
+        'packages/frogbot/src/chat/example.ts',
+        "export const getFrogBot = () => 'FrogBot';\n" +
+          'export const frogbotSlug = `frogbot-chat-${getFrogBot()}`;\n',
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('test lint', () => {
   function lintSpec(filename: string, code: string) {
     const dir = mkdtempSync(path.join(tmpdir(), 'frogbot-lint-'));

@@ -92,7 +92,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 - Don't add comments unless asked: no comment blocks, citations or rationale. Put the explanation in the commit or the conversation.
 - Name consistently and briefly: `createTextDoc`/`updateTextDoc`, not `saveTextDocumentToDatabase`. Prefix types with their context (`ArtifactCreateProps`) and match them to their function (`dbCreate` → `ArtifactDBCreateProps`).
 - Name a private component that continues past a provider or readiness guard `*Inner` (`ChatInner`).
-- Brand casing: `frogbot` when the brand leads a camelCase identifier, `FrogBot` everywhere else in identifiers and file names (`frogbotFavicon`, `FrogBotConfig`, `getFrogBot`, `bootFrogBot.ts`); never `frogBot` or `Frogbot`. Package names, paths, CLI commands, slugs, environment variables and wire values stay lowercase (`FROGBOT_*` for constants).
+- Brand casing: `frogbot` when the brand leads a camelCase identifier, `FrogBot` everywhere else in identifiers and file names (`frogbotFavicon`, `FrogBotConfig`, `getFrogBot`, `bootFrogBot.ts`). Lint rejects `frogBot` and `Frogbot` in identifiers and strings (`@typescript-eslint/naming-convention`, `no-restricted-syntax` in `eslint.config.js`). Package names, paths, CLI commands, slugs, environment variables and wire values stay lowercase (`FROGBOT_*` for constants).
 - Use the `FrogBot*` prefix only for a type that wraps a `Payload*` type (`FrogBotConfig` wraps `PayloadConfig`). New domain types get no prefix (`CollectionConfig`, `Field`); on a name clash, import the Payload type under a `Payload*` alias.
 
 ### Blank lines
