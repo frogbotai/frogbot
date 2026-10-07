@@ -38,7 +38,7 @@ afterEach(() => {
 describe('checkDistImports', () => {
   it('reports an import whose file name differs only in letter case', () => {
     manifest();
-    write('dist/getFrogbot.js', 'export const getFrogBot = () => {};\n');
+    write('dist/getfrogbot.js', 'export const getFrogBot = () => {};\n');
     write('dist/index.js', "export { getFrogBot } from './getFrogBot.js';\n");
 
     const problems = check();
@@ -72,7 +72,7 @@ describe('checkDistImports', () => {
 
   it('resolves a .js specifier in a declaration file to its declaration', () => {
     manifest();
-    write('dist/getFrogbot.d.ts', 'export declare const getFrogBot: () => void;\n');
+    write('dist/getfrogbot.d.ts', 'export declare const getFrogBot: () => void;\n');
     write('dist/index.d.ts', "export { getFrogBot } from './getFrogBot.js';\n");
 
     const problems = check();

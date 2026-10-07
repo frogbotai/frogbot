@@ -27,6 +27,16 @@ const IGNORES = [
 
 const SPECS = ['**/*.spec.ts', '**/*.spec.tsx'];
 
+const MISSPELLED_BRAND = 'Frog[b]ot|frog[B]ot';
+
+const brandBans = [
+  `Literal[value=/${MISSPELLED_BRAND}/]`,
+  `TemplateElement[value.raw=/${MISSPELLED_BRAND}/]`,
+].map((selector) => ({
+  selector,
+  message: 'Spell the brand FrogBot, or frogbot in lowercase names',
+}));
+
 const BROWSER_SPECS = 'test/browser/**/*.spec.ts';
 
 const SLEEP = 'Wait for a condition, not a fixed time';
@@ -139,6 +149,11 @@ export default tseslint.config(
       ],
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
+      '@typescript-eslint/naming-convention': [
+        'error',
+        { selector: 'default', format: null, custom: { regex: MISSPELLED_BRAND, match: false } },
+      ],
+      'no-restricted-syntax': ['error', ...brandBans],
       'no-console': 'error',
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
       curly: ['error', 'multi-line'],
@@ -147,14 +162,14 @@ export default tseslint.config(
   {
     files: SPECS,
     rules: {
-      'no-restricted-syntax': ['error', ...testSyntaxBans],
+      'no-restricted-syntax': ['error', ...brandBans, ...testSyntaxBans],
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
     },
   },
   {
     files: ['**/*.int.spec.ts', '**/*.e2e.spec.ts', BROWSER_SPECS],
-    rules: { 'no-restricted-syntax': ['error', ...testSyntaxBans, ...mockBans] },
+    rules: { 'no-restricted-syntax': ['error', ...brandBans, ...testSyntaxBans, ...mockBans] },
   },
   {
     files: SPECS,
@@ -217,7 +232,7 @@ export default tseslint.config(
   {
     files: ['packages/**/src/**/*.{ts,tsx}'],
     ignores: [...SPECS, '**/vitest.setup.ts', ...CAST_CONVERTERS],
-    rules: { 'no-restricted-syntax': ['error', ...castBans] },
+    rules: { 'no-restricted-syntax': ['error', ...brandBans, ...castBans] },
   },
   {
     files: [UI_SOURCE],

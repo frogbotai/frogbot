@@ -2,8 +2,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { GRAPHQL_PLAYGROUND_GET, GRAPHQL_POST, REST_OPTIONS } from '@frogbotai/next/routes';
+import { formatNames } from 'payload';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
@@ -356,8 +358,9 @@ describe('GraphQL routes', () => {
   });
 
   it('POST /api/graphql rejects queries for hidden internal collections', async () => {
+    const chatAssets = formatNames(CHAT_ASSETS_SLUG).plural;
     const { body } = await query(
-      '{ FrogbotChatAssets { docs { id } } PayloadPreferences { totalDocs } }',
+      `{ ${chatAssets} { docs { id } } PayloadPreferences { totalDocs } }`,
       {
         token: userA.token,
       },
@@ -368,7 +371,7 @@ describe('GraphQL routes', () => {
     expect(body.data ?? null).toBeNull();
     expect(messages).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('Cannot query field "FrogbotChatAssets"'),
+        expect.stringContaining(`Cannot query field "${chatAssets}"`),
         expect.stringContaining('Cannot query field "PayloadPreferences"'),
       ]),
     );

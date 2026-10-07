@@ -3,8 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { formatNames } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { CHAT_TURNS_SLUG } from '../../packages/frogbot/src/chat/collections/turns.js';
 import {
   applyLocalOverrides,
   packLocalClosure,
@@ -182,7 +184,7 @@ describe.skipIf(!RUN_E2E)('GraphQL in a scaffolded application', () => {
 
     expect(result.status, result.output).toBe(0);
     expect(sdl).toContain('type User {');
-    expect(sdl).not.toContain('FrogbotChatTurn');
+    expect(sdl).not.toContain(formatNames(CHAT_TURNS_SLUG).singular);
     expect(sdl).not.toContain('PayloadPreference');
   }, 120000);
 
