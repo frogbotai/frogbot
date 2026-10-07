@@ -15,6 +15,7 @@ export default await buildTestConfig({
   agents: [
     {
       slug: 'assistant',
+      // @ts-expect-error a model from an unconfigured provider must be rejected by the CLI at runtime
       model: 'unconfigured/model',
       instructions: 'Help the user.',
     },

@@ -63,6 +63,7 @@ describe('MCP agent tool recipe', () => {
             slug: 'support',
             model: 'openai/gpt-4o-mini',
             instructions: 'Help',
+            // @ts-expect-error raw MCP tools without a slug must be rejected at runtime
             tools: Object.values(mcpTools),
           },
         ],
@@ -90,6 +91,7 @@ describe('MCP agent tool recipe', () => {
       buildTestConfig({
         collections: [],
         ai: { providers: { openai: { apiKey: 'test' } } },
+        // @ts-expect-error a tool without a description must be rejected at runtime
         agents: [{ slug: 'support', model: 'openai/gpt-4o-mini', instructions: 'Help', tools }],
       }),
     ).rejects.toThrow(/requires a description/);

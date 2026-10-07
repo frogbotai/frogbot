@@ -1,5 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import { type AgentModelId, buildConfig } from 'frogbot';
+import { buildConfig } from 'frogbot';
 
 import {
   agentSlug,
@@ -44,8 +44,8 @@ export default buildConfig({
     {
       slug: agentSlug,
       model: {
-        default: 'browser/attachment-reader' as AgentModelId,
-        options: ['browser/attachment-reader', 'browser/text-reader'] as AgentModelId[],
+        default: 'browser/attachment-reader',
+        options: ['browser/attachment-reader', 'browser/text-reader'],
       },
       instructions: 'Describe the attachment.',
       access: ({ req }) => Boolean(req.user),
@@ -58,15 +58,13 @@ export default buildConfig({
       handler: async (req) => {
         if (!req.user) return new Response(null, { status: 401 });
 
-        for (const collection of [assetsSlug, messagesSlug, chatsSlug, filesSlug]) {
+        for (const collection of [assetsSlug, messagesSlug, chatsSlug, filesSlug] as const) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
 
-        await req.frogbot.delete({
+        await req.frogbot.db.deleteMany({
           collection: 'payload-preferences',
           where: { key: { equals: chatPicksPreference } },
-          overrideAccess: true,
-          req,
         });
 
         return Response.json({ reset: true });

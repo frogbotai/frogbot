@@ -9,6 +9,7 @@ import { FrogBot } from 'frogbot/test';
 import { question, type QuestionInput } from 'frogbot/tools';
 import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { createGithub } from '../../packages/pieces/piece-github/src/index.js';
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel.js';
@@ -30,7 +31,12 @@ const RUN_E2E = process.env.RUN_E2E === '1';
 const MODEL_PORT = testPort(4097);
 const CHANNEL_TASKS = ['frogbot-run-channel-message', 'frogbot-update-channel-question'];
 
-type ChannelJob = { id: number | string; input: { kind?: string; thread: { id: string } } };
+const ChannelJob = z.looseObject({
+  id: z.union([z.number(), z.string()]),
+  input: z.looseObject({ kind: z.string().optional(), thread: z.looseObject({ id: z.string() }) }),
+});
+
+type ChannelJob = z.infer<typeof ChannelJob>;
 
 const alice: GithubPerson = { id: 41, login: 'alice', email: 'alice@example.com' };
 const bob: GithubPerson = { id: 42, login: 'bob', email: 'bob@example.com' };
@@ -95,14 +101,14 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
 
   async function channelJobs(where: Where = {}): Promise<ChannelJob[]> {
     const result = await frogbot.find({
-      collection: 'payload-jobs' as never,
+      collection: 'payload-jobs',
       where: { and: [{ taskSlug: { in: CHANNEL_TASKS } }, where] },
       sort: 'createdAt',
       limit: 0,
       overrideAccess: true,
     });
 
-    return result.docs;
+    return z.array(ChannelJob).parse(result.docs);
   }
 
   async function kinds(issue: number): Promise<Record<string, number>> {
@@ -228,8 +234,8 @@ describe.skipIf(!RUN_E2E)('GitHub questions e2e — webhook to continuation over
     await Promise.all(
       [alice, bob].map(({ email }) =>
         frogbot.create({
-          collection: 'users' as never,
-          data: { email: email!, password: 'github-questions-e2e' } as never,
+          collection: 'users',
+          data: { email: email!, password: 'github-questions-e2e' },
           overrideAccess: true,
         }),
       ),

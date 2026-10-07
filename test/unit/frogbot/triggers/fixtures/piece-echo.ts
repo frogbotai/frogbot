@@ -1,11 +1,7 @@
 import { createHmac } from 'node:crypto';
 
+import { createPieceHelpers, type definePiece } from 'frogbot/pieces';
 import { z } from 'zod';
-
-import {
-  createPieceHelpers,
-  definePiece,
-} from '../../../../../packages/frogbot/src/pieces/definePiece.js';
 
 export const echoSecret = 'echo-secret';
 export const echoCalls: Array<Record<string, unknown>> = [];
@@ -104,5 +100,3 @@ export function defineEchoPiece(define: typeof definePiece) {
     triggers: [receivedTrigger, subscribedTrigger, otherTrigger],
   });
 }
-
-export const createEchoPiece = defineEchoPiece(definePiece);

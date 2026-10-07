@@ -430,7 +430,7 @@ Fully mocked — no real API calls. Resend tests mock `global.fetch`, Nodemailer
 | ---------------------------------------- | ---------------------------- | ---------------------------------- |
 | Unit (pure logic, colocated with source) | `packages/**` or `apps/**`   | `*.spec.ts`                        |
 | Integration (boot frogbot, hit REST)     | `test/<feature>/int.spec.ts` | one suite dir per feature          |
-| End-to-end (Playwright browser)          | `test/e2e/*.e2e.spec.ts`     | promote `test.skip` to `test(...)` |
+| End-to-end (Playwright browser)          | `test/e2e/**/*.e2e.spec.ts`  | promote `test.skip` to `test(...)` |
 
 ## Running
 

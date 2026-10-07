@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const canonical = resolve(import.meta.dirname, '../../../../../skills/frogbot');
+const canonical = resolve(import.meta.dirname, '../../../../skills/frogbot');
 const entry = readFileSync(join(canonical, 'SKILL.md'), 'utf8');
 const fallbacks = [
   ...entry.matchAll(

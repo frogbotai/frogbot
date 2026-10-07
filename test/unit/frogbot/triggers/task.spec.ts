@@ -7,7 +7,7 @@ import {
   AGENT_TRIGGER_TASK_SLUG,
   resolveTriggerTasks,
 } from '../../../../packages/frogbot/src/triggers/task.js';
-import { createEchoPiece } from './fixtures/piece-echo.js';
+import { createEchoPiece } from './fixtures/createEchoPiece.js';
 
 describe('agent trigger task', () => {
   it('installs an automatic all-queues runner for trigger-only configs', () => {

@@ -255,6 +255,7 @@ describe('connection config boot', () => {
 
   it('validates each enabled capability through the full config path', () => {
     expect(() =>
+      // @ts-expect-error OAuth on a piece without factory OAuth must be rejected at runtime
       sanitize(config({ connections: [{ piece: createPiece(), oauth: true }] })),
     ).toThrow('requires factory OAuth clientId and clientSecret');
     const opaque = definePiece({

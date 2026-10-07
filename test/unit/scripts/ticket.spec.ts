@@ -289,7 +289,7 @@ describe('naming', () => {
 
     expect(branchName({ type: 'feat', ticket: key, slug: 'kinds' })).toBe('feat/ticket-210b-kinds');
     expect(worktreePath('/code/frogbot/frogbot', key)).toBe('/code/frogbot/frogbot-ticket210b');
-    expect(ticketKeyOf({ ticket: 210 })).toBe('210');
+    expect(ticketKeyOf({ ticket: 210, part: undefined })).toBe('210');
   });
 
   it.each([

@@ -51,23 +51,38 @@ type StoredQuestion = QuestionRecord & {
 
 type PagesState = { q: number; answers: Array<{ header: string; selected: string[] }> };
 
-type Job = {
-  id: number | string;
-  taskSlug: string;
-  completedAt?: string | null;
-  hasError?: boolean;
-  input: { kind?: string; revision?: number; thread: { id: string } };
-};
+const Job = z.looseObject({
+  id: z.union([z.number(), z.string()]),
+  taskSlug: z.string(),
+  completedAt: z.string().nullish(),
+  hasError: z.boolean().nullish(),
+  input: z.looseObject({
+    kind: z.string().optional(),
+    revision: z.number().optional(),
+    thread: z.looseObject({ id: z.string() }),
+  }),
+});
+
+type Job = z.infer<typeof Job>;
 
 type QuestionToolInput = z.input<typeof QuestionInput>;
 
 type User = { id: number | string; email: string; headers: Record<string, string> };
 
-type StoredMessage = {
-  id: string;
-  role: string;
-  parts: Array<{ type: string; state?: string; text?: string; errorText?: string }>;
-};
+const StoredMessage = z.looseObject({
+  id: z.string(),
+  role: z.string(),
+  parts: z.array(
+    z.looseObject({
+      type: z.string(),
+      state: z.string().optional(),
+      text: z.string().optional(),
+      errorText: z.string().optional(),
+    }),
+  ),
+});
+
+type StoredMessage = z.infer<typeof StoredMessage>;
 
 const people: Record<string, string> = {
   U1: 'alice@channel-questions.test',
@@ -602,14 +617,14 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
   async function jobs(where: Where = {}): Promise<Job[]> {
     const result = await frogbot.find({
-      collection: 'payload-jobs' as never,
+      collection: 'payload-jobs',
       where: { and: [{ taskSlug: { in: [CHANNEL_TASK, UPDATE_TASK] } }, where] },
       sort: 'createdAt',
       limit: 0,
       overrideAccess: true,
     });
 
-    return result.docs;
+    return z.array(Job).parse(result.docs);
   }
 
   async function work({ timeout = 20_000 }: { timeout?: number } = {}) {
@@ -653,8 +668,8 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
   async function signIn(email: string): Promise<User> {
     const doc = await frogbot.create({
-      collection: 'users' as never,
-      data: { email, password: PASSWORD } as never,
+      collection: 'users',
+      data: { email, password: PASSWORD },
       overrideAccess: true,
     });
     const login = await request('POST', '/users/login', { body: { email, password: PASSWORD } });
@@ -686,7 +701,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
 
   async function messagesOf(chatId: number | string): Promise<StoredMessage[]> {
     const result = await frogbot.find({
-      collection: 'messages' as never,
+      collection: 'messages',
       where: { chat: { equals: chatId } },
       sort: 'createdAt',
       limit: 0,
@@ -694,7 +709,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
       overrideAccess: true,
     });
 
-    return result.docs;
+    return z.array(StoredMessage).parse(result.docs);
   }
 
   async function record({
@@ -1104,7 +1119,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         task: UPDATE_TASK,
         queue: 'frogbot-channel:support:pages',
         input: queued.input,
-      } as never);
+      });
       await work();
 
       expect(since(mark)).toEqual([]);
@@ -1161,7 +1176,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         task: UPDATE_TASK,
         queue: 'frogbot-channel:support:pages',
         input: stale.input,
-      } as never);
+      });
       await work();
 
       expect(stale.input.revision).toBe(1);
