@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/db-vercel-postgres",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "FrogBot Vercel Postgres adapter.",
   "license": "MIT",
   "author": "Colby Gilbert",

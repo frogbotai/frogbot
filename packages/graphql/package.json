@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/graphql",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "GraphQL schema tools, helper types, and the frogbot-graphql CLI for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

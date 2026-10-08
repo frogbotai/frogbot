@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/gateway",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "The open-source, self-hostable AI gateway built on the Vercel AI SDK. The server side of what Vercel kept closed-source.",
   "license": "MIT",
   "author": "Colby Gilbert",
@@ -81,7 +81,7 @@
     "@ai-sdk/klingai": "^4.0.51",
     "@ai-sdk/lmnt": "^3.0.36",
     "@ai-sdk/luma": "^3.0.50",
-    "@ai-sdk/mistral": "^4.0.52",
+    "@ai-sdk/mistral": "^4.0.59",
     "@ai-sdk/moonshotai": "^3.0.58",
     "@ai-sdk/openai": "^4.0.78",
     "@ai-sdk/openai-compatible": "^3.0.57",
