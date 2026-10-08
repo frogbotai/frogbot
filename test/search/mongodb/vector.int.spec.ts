@@ -261,7 +261,11 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
   });
 
   it('matches text in the requested locale', async () => {
-    const fr = await search({ collection: postsSlug, text: 'bonjour', locale: 'fr' });
+    const fr = await waitFor(
+      () => search({ collection: postsSlug, text: 'bonjour', locale: 'fr' }),
+      ({ ids }) => ids.length > 0,
+    );
+
     const en = await search({ collection: postsSlug, text: 'bonjour', locale: 'en' });
 
     expect(fr.ids).toEqual([posts.first]);

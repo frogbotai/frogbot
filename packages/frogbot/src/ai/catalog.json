@@ -20,6 +20,11 @@
     "mode": "chat"
   },
   {
+    "id": "anthropic/claude-haiku-5-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
     "id": "anthropic/claude-opus-4-5",
     "provider": "anthropic",
     "mode": "chat"
@@ -110,6 +115,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/anthropic.claude-haiku-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/anthropic.claude-opus-4-5-20251101-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -176,6 +186,11 @@
   },
   {
     "id": "bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/au.anthropic.claude-haiku-5-5",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -270,6 +285,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/eu.anthropic.claude-haiku-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -341,6 +361,11 @@
   },
   {
     "id": "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.anthropic.claude-haiku-5-5",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -445,6 +470,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/global.zai.glm-5.3",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/google.gemma-3-12b-it",
     "provider": "bedrock",
     "mode": "chat"
@@ -506,6 +536,11 @@
   },
   {
     "id": "bedrock/jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/jp.anthropic.claude-haiku-5-5",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -805,6 +840,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/us.anthropic.claude-haiku-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -946,6 +986,11 @@
   },
   {
     "id": "bedrock/us.xai.grok-4.7",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.zai.glm-5.3",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -1740,17 +1785,32 @@
     "mode": "audio_transcription"
   },
   {
+    "id": "mistral/codestral-2508",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
     "id": "mistral/codestral-latest",
     "provider": "mistral",
     "mode": "chat"
   },
   {
-    "id": "mistral/magistral-medium-latest",
+    "id": "mistral/ministral-14b-2512",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/ministral-3b-2512",
     "provider": "mistral",
     "mode": "chat"
   },
   {
     "id": "mistral/ministral-3b-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/ministral-8b-2512",
     "provider": "mistral",
     "mode": "chat"
   },
@@ -1765,27 +1825,17 @@
     "mode": "embedding"
   },
   {
-    "id": "mistral/mistral-large-2411",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
     "id": "mistral/mistral-large-2512",
     "provider": "mistral",
     "mode": "chat"
   },
   {
+    "id": "mistral/mistral-large-4",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
     "id": "mistral/mistral-large-latest",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/mistral-medium-2505",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/mistral-medium-2508",
     "provider": "mistral",
     "mode": "chat"
   },
@@ -1800,47 +1850,12 @@
     "mode": "chat"
   },
   {
-    "id": "mistral/mistral-nemo",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/mistral-small-2506",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
     "id": "mistral/mistral-small-2603",
     "provider": "mistral",
     "mode": "chat"
   },
   {
     "id": "mistral/mistral-small-latest",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/open-mistral-7b",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/open-mixtral-8x22b",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/open-mixtral-8x7b",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/pixtral-12b",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
-    "id": "mistral/pixtral-large-latest",
     "provider": "mistral",
     "mode": "chat"
   },
@@ -1855,12 +1870,12 @@
     "mode": "audio_speech"
   },
   {
-    "id": "mistral/voxtral-small-latest",
+    "id": "mistral/voxtral-small-2507",
     "provider": "mistral",
     "mode": "chat"
   },
   {
-    "id": "mistral/zai-glm-5-2",
+    "id": "mistral/voxtral-small-latest",
     "provider": "mistral",
     "mode": "chat"
   },
@@ -2251,6 +2266,11 @@
   },
   {
     "id": "openrouter/anthropic/claude-haiku-4.5",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/anthropic/claude-haiku-5.5",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2650,11 +2670,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/kwaipilot/kat-coder-pro-v2.5",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/liquid/lfm-2.5-2.6b:free",
     "provider": "openrouter",
     "mode": "chat"
@@ -2826,6 +2841,11 @@
   },
   {
     "id": "openrouter/mistralai/mistral-large-2512",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/mistralai/mistral-large-4-0",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3615,11 +3635,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/qwen/qwen3.8-27b:free",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/qwen/qwen3.8-flash",
     "provider": "openrouter",
     "mode": "chat"
@@ -3691,11 +3706,6 @@
   },
   {
     "id": "openrouter/sao10k/l3.3-euryale-70b",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/stealth/space-bunny-alpha",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -4275,6 +4285,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/anthropic/claude-haiku-5.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/anthropic/claude-opus-4",
     "provider": "vercel",
     "mode": "chat"
@@ -4381,11 +4396,6 @@
   },
   {
     "id": "vercel/deepseek/deepseek-v3.1",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/deepseek/deepseek-v3.1-terminus",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4545,11 +4555,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/inclusionai/ling-3.0-flash-sante-free",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/inclusionai/ling-3.0-flash-vl",
     "provider": "vercel",
     "mode": "chat"
@@ -4705,6 +4710,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/mistral/mistral-large-4",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/mistral/mistral-medium-3.5",
     "provider": "vercel",
     "mode": "chat"
@@ -4726,11 +4736,6 @@
   },
   {
     "id": "vercel/moonshotai/kimi-k2",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/moonshotai/kimi-k2-thinking",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5210,7 +5215,7 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/stepfun/step-3.5-flash",
+    "id": "vercel/stealth/glyph-cluster",
     "provider": "vercel",
     "mode": "chat"
   },
