@@ -454,7 +454,7 @@ describe('size limits', () => {
       lintText(filename, code, ['--format', 'json', '--suppressions-location', suppressions])
         .stdout,
     )
-      .filter(({ ruleId }) => ruleId === 'max-lines' || ruleId === '@typescript-eslint/max-params')
+      .filter(({ ruleId }) => ruleId === 'max-lines')
       .map(({ ruleId, severity }) => `${ruleId} ${severity}`);
   }
 
@@ -474,20 +474,6 @@ describe('size limits', () => {
   it('exempts specs from the line cap', () => {
     expect(sizeRules('packages/frogbot/src/chat/example.spec.ts', lines(501))).toEqual([]);
     expect(sizeRules('test/unit/example.spec.ts', lines(501))).toEqual([]);
-  });
-
-  it.each([
-    ['packages/frogbot/src/chat/example.ts'],
-    ['test/unit/example.spec.ts'],
-    ['scripts/example.mjs'],
-  ])('reports a fourth parameter, not a third, in %s', (filename) => {
-    expect(
-      sizeRules(
-        filename,
-        'export const three = (a, b, c) => [a, b, c];\n\n' +
-          'export const four = (a, b, c, d) => [a, b, c, d];\n',
-      ),
-    ).toEqual(['@typescript-eslint/max-params 2']);
   });
 });
 

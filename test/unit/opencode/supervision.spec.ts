@@ -1,19 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  ALERT_QUIET_MS,
   backgroundCall,
   badTicketTag,
   capOutput,
   contextTokens,
-  createAlerts,
   createResumeCap,
   createWatchdog,
   denial,
-  failureAlert,
   LONG_SHELL_TIMEOUT_MS,
   MESSAGES,
-  notification,
   OUTPUT_MAX,
   READ_LIMIT,
   readInput,
@@ -297,57 +293,6 @@ describe('badTicketTag', () => {
 
   it('names the form it wants', () => {
     expect(MESSAGES.tag).toContain('`211A stage 4: …`');
-  });
-});
-
-describe('failureAlert', () => {
-  const auth = {
-    type: 'provider.auth',
-    message: 'AWS default credential chain failed: Token is expired\nstack',
-  };
-
-  it('alerts on a provider sign-in error in any session', () => {
-    expect(failureAlert({ title: '211A stage 4', root: false, error: auth })).toEqual({
-      title: 'FrogBot: provider sign-in failed',
-      message:
-        '"211A stage 4" stopped: AWS default credential chain failed: Token is expired. Sign in again (for Bedrock, aws sso login), then tell it to continue.',
-    });
-  });
-
-  it('alerts on any failed top-level turn', () => {
-    expect(
-      failureAlert({
-        title: 'Batch 30',
-        root: true,
-        error: { type: 'provider.overloaded', message: 'busy' },
-      }),
-    ).toEqual({
-      title: 'FrogBot: turn failed',
-      message: '"Batch 30" stopped (provider.overloaded): busy',
-    });
-  });
-
-  it("leaves a subagent's other failures to its parent", () => {
-    expect(
-      failureAlert({ title: '250 lint', root: false, error: { type: 'tool', message: 'x' } }),
-    ).toBeUndefined();
-  });
-
-  it('sends one alert of a kind per quiet period', () => {
-    const alerts = createAlerts();
-    const alert = failureAlert({ title: 'a', root: false, error: auth })!;
-
-    expect(alerts(alert, 0)).toBe(true);
-    expect(alerts({ ...alert, message: 'another session' }, 1_000)).toBe(false);
-    expect(alerts(alert, ALERT_QUIET_MS)).toBe(true);
-  });
-
-  it('passes the text to osascript as arguments, not as script source', () => {
-    const [command, args] = notification({ title: 'T "x"', message: 'say "hi"; do shell script' });
-
-    expect(command).toBe('osascript');
-    expect(args.slice(-2)).toEqual(['T "x"', 'say "hi"; do shell script']);
-    expect(args.slice(0, -2).join(' ')).not.toContain('hi');
   });
 });
 

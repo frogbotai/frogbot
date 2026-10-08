@@ -22,7 +22,6 @@ export async function interpolateConfigText(
 
   const withEnv = options.text.replace(
     ENV_TOKEN,
-    // eslint-disable-next-line @typescript-eslint/max-params -- String.prototype.replace callback signature
     (_m, slashes: string, token: string, name: string) => {
       const prefix = '\\'.repeat(Math.floor(slashes.length / 2));
       if (slashes.length % 2 === 1) return prefix + token;

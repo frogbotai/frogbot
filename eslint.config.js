@@ -221,7 +221,6 @@ export default tseslint.config(
         { selector: 'default', format: null, custom: { regex: MISSPELLED_BRAND, match: false } },
       ],
       'no-restricted-syntax': ['error', ...brandBans],
-      '@typescript-eslint/max-params': ['error', { max: 3 }],
       'no-console': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],

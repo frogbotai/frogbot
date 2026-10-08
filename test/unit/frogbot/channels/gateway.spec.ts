@@ -78,7 +78,6 @@ describe('channel gateway listener', () => {
     const adapter = {
       name: 'gateway',
       startGatewayListener: vi.fn(
-        // eslint-disable-next-line @typescript-eslint/max-params -- Chat SDK startGatewayListener signature
         async (_options: unknown, _duration: number, signal: AbortSignal, webhookUrl: string) => {
           starts.push({ signal, webhookUrl });
 
