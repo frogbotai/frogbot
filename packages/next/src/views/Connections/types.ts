@@ -18,6 +18,7 @@ export type ConnectionPiece = {
   label: string;
   oauth: boolean;
   secret: boolean;
+  icon?: string;
   secretSchema?: ConnectionField;
 };
 

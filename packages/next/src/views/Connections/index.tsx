@@ -1,8 +1,10 @@
+import { getTranslation } from '@payloadcms/translations';
 import { getCachedFrogBot } from 'frogbot';
 import { hasFrogBot } from 'frogbot/internal';
 import type { AdminViewServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
+import { ConnectionsPage } from './ConnectionsPage.client.js';
 import { ConnectionsViewClient } from './ConnectionsView.client.js';
 import { projectConnectionSchema } from './schema.js';
 import type { ConnectionItem, ConnectionPiece } from './types.js';
@@ -13,13 +15,18 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
   if (!payloadReq.user || !frogbot?.config.connections.enabled) return null;
   const req = Object.assign(payloadReq, { frogbot });
   const connections = frogbot.config.connections;
+  const collection =
+    connections.slug && initPageResult.collectionConfig?.slug === connections.slug
+      ? initPageResult.collectionConfig
+      : undefined;
 
   const pieces: ConnectionPiece[] = Object.values(connections.entries).map(
-    ({ piece, oauth, secret, secretSchema }) => ({
+    ({ piece, oauth, secret, secretSchema, icon }) => ({
       slug: piece.piece,
       label: piece.piece.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
       oauth,
       secret,
+      ...(icon ? { icon } : {}),
       ...(secret && secretSchema ? { secretSchema: projectConnectionSchema(secretSchema) } : {}),
     }),
   );
@@ -39,16 +46,24 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
     initialError = 'Could not load your linked accounts. Please try again.';
   }
 
-  return (
+  const view = (
     <ConnectionsViewClient
       apiPath={`${payload.config.routes.api.replace(/\/$/, '')}/connections`}
       returnTo={formatAdminURL({
         adminRoute: payload.config.routes.admin,
-        path: '/settings/connections',
+        path: collection ? `/collections/${collection.slug}` : '/settings/connections',
       })}
       pieces={pieces}
       initialConnections={initialConnections}
       initialError={initialError}
     />
+  );
+
+  return collection ? (
+    <ConnectionsPage title={getTranslation(collection.labels.plural, req.i18n)}>
+      {view}
+    </ConnectionsPage>
+  ) : (
+    view
   );
 }

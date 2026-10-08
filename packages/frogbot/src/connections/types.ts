@@ -30,6 +30,7 @@ export type SanitizedConnectionEntry = {
   oauth: boolean;
   secret: boolean;
   secretSchema?: ConnectionSchema;
+  icon?: string;
 };
 
 export type SanitizedConnectionsConfig = {

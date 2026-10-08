@@ -87,7 +87,9 @@ These seven combinations apply to credential-requiring pieces. OAuth combination
 3. Authorize with OAuth or enter the requested credential fields. When both methods are enabled, choose **OAuth** or **Static credentials**.
 4. View the linked account and its status in the list. Use the row menu's **Disconnect** action to remove it.
 
-The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty. Linking another account or switching methods replaces the existing connection for that owner and piece.
+The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty, and the same view is the default view of the `connections` collection at `/admin/collections/connections`. Linking another account or switching methods replaces the existing connection for that owner and piece.
+
+Each integration shows the logo URL from its piece's `admin.icon`, or a link icon when the piece has none or the image fails to load.
 
 ## Connection endpoints
 

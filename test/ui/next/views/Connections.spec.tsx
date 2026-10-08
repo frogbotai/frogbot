@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ConnectionsPage } from '../../../../packages/next/src/views/Connections/ConnectionsPage.client.js';
 import { ConnectionsViewClient } from '../../../../packages/next/src/views/Connections/ConnectionsView.client.js';
 import { ConnectionsView } from '../../../../packages/next/src/views/Connections/index.js';
 import {
@@ -11,8 +12,10 @@ import {
 import type { ConnectionPiece } from '../../../../packages/next/src/views/Connections/types.js';
 
 const getCachedFrogBot = vi.hoisted(() => vi.fn<() => unknown>());
+const setStepNav = vi.hoisted(() => vi.fn());
 
 vi.mock('frogbot', () => ({ getCachedFrogBot }));
+vi.mock('@payloadcms/ui', () => ({ useStepNav: () => ({ setStepNav }) }));
 
 const pieces: ConnectionPiece[] = [
   { slug: 'mail', label: 'Mail', oauth: true, secret: true, secretSchema: { type: 'string' } },
@@ -48,7 +51,10 @@ beforeEach(() => {
   }));
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 function asNextAdminRequest(req: { frogbot?: unknown }) {
   getCachedFrogBot.mockReturnValue(req.frogbot);
@@ -117,6 +123,114 @@ describe('linked accounts', () => {
       ]) {
         expect(serialized).not.toContain(secret);
       }
+    },
+  );
+
+  it('is the default view of the connections collection', async () => {
+    const req = {
+      user: { id: 1 },
+      i18n: { language: 'en', fallbackLanguage: 'en' },
+      frogbot: {
+        config: {
+          connections: {
+            enabled: true,
+            slug: 'connections',
+            entries: {
+              mail: {
+                piece: { piece: 'mail' },
+                oauth: true,
+                secret: false,
+                icon: 'https://example.com/mail.svg',
+              },
+            },
+          },
+        },
+        connections: { list: vi.fn().mockResolvedValue([row]) },
+      },
+    };
+
+    const view = await ConnectionsView({
+      initPageResult: {
+        req,
+        collectionConfig: { slug: 'connections', labels: { plural: 'Connections' } },
+      },
+      payload: { config: { routes: { api: '/custom-api', admin: '/control' } } },
+    } as never);
+
+    expect(view?.type).toBe(ConnectionsPage);
+    expect(view?.props.title).toBe('Connections');
+    expect(view?.props.children.props).toMatchObject({
+      returnTo: '/control/collections/connections',
+      pieces: [{ slug: 'mail', icon: 'https://example.com/mail.svg' }],
+    });
+
+    render(view);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Connections' })).toBeTruthy();
+    expect(screen.getByText('Work')).toBeTruthy();
+    expect(setStepNav).toHaveBeenCalledWith([{ label: 'Connections' }]);
+  });
+
+  it('shows piece logos once loaded and falls back to the link icon', () => {
+    const { container } = render(
+      <ConnectionsViewClient
+        {...props}
+        pieces={[{ ...pieces[0], icon: 'https://example.com/mail.svg' }, pieces[1]]}
+      />,
+    );
+
+    const rowIcon = container.querySelector(
+      '.frogbot-connections__row .frogbot-connections__icon',
+    )!;
+
+    const rowLogo = rowIcon.querySelector('img')!;
+
+    expect(rowLogo.getAttribute('src')).toBe('https://example.com/mail.svg');
+    expect(rowLogo.hidden).toBe(true);
+    expect(rowIcon.querySelector('svg')).not.toBeNull();
+
+    vi.spyOn(rowLogo, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(rowLogo, 'naturalWidth', 'get').mockReturnValue(24);
+    fireEvent.load(rowLogo);
+
+    expect(rowLogo.hidden).toBe(false);
+    expect(rowIcon.querySelector('svg')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    const mail = screen.getByRole('button', { name: /Mail OAuth/ });
+    const staticPiece = screen.getByRole('button', { name: /^Static Static credentials/ });
+    const logo = mail.querySelector('img')!;
+
+    expect(logo.getAttribute('alt')).toBe('');
+    expect(staticPiece.querySelector('img')).toBeNull();
+    expect(staticPiece.querySelector('.frogbot-connections__icon svg')).not.toBeNull();
+
+    fireEvent.error(logo);
+
+    expect(mail.querySelector('img')).toBeNull();
+    expect(mail.querySelector('.frogbot-connections__icon svg')).not.toBeNull();
+  });
+
+  it.each([
+    { naturalWidth: 0, logo: false },
+    { naturalWidth: 24, logo: true },
+  ])(
+    'settles an image already complete at mount without load events: width $naturalWidth',
+    ({ naturalWidth, logo }) => {
+      vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+      vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(naturalWidth);
+
+      const { container } = render(
+        <ConnectionsViewClient
+          {...props}
+          pieces={[{ ...pieces[0], icon: 'https://example.com/broken.png' }]}
+        />,
+      );
+
+      const icon = container.querySelector('.frogbot-connections__row .frogbot-connections__icon')!;
+
+      expect(icon.querySelector('img:not([hidden])') !== null).toBe(logo);
+      expect(icon.querySelector('svg') !== null).toBe(!logo);
     },
   );
 
