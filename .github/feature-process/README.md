@@ -59,7 +59,7 @@ Stage is read from these files and git, never stored. For small edits the owner 
   - `verify [--list]`, in a ticket worktree, maps the diff against local `main` (`scripts/lib/affected.mjs`, the map `land` uses) to typecheck areas, unit, UI, int and browser specs and repo checks, runs them cheapest first, and prints one line per group, the tier and the changed files nothing covers. It writes a `verify` ledger row at the level reached, or `failed`. `--list` prints the set without running it.
 - **Ticket keys.** A ticket split into parts uses a letter: `pnpm ticket new 210b` makes `frogbot-ticket210b` and `feat/ticket-210b-<slug>`, and its ledger rows say `210b`.
 - **Subagent descriptions** start with the ticket key, for example `211a stage 4: autonumber` or `250 lint: pnpm check`, so `stats` can count the session. A description with no number is fine and counts as "other"; the plugin refuses only one that starts with a number it can't read as a key.
-- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs, `git stash` while other worktrees exist, and background calls inside subagents, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents. A failed top-level turn, or any provider sign-in error, raises a macOS notification.
+- **OpenCode config and plugin** (`.opencode/`) block `git push`, `git merge`, `--no-verify`, sleep loops, whole-suite test runs, `git stash` while other worktrees exist, and background calls inside subagents, naming what to use instead. They cap resumes, timeouts and output, and flag stalled agents.
 
 ## Where things live
 

@@ -1,46 +1,6 @@
 {
-  "packages/create-frogbot-app/src/lib/anchors.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/create-frogbot-app/src/lib/package-json.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
   "packages/frogbot/src/agents/instance.ts": {
     "max-lines": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/channels/questions/handleQuestionInteraction.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/collections/config/merge.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    }
-  },
-  "packages/frogbot/src/connections/api.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/connections/oauth/state.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/fields/config/assertRichTextEditor.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/frogbot.ts": {
-    "@typescript-eslint/max-params": {
       "count": 1
     }
   },
@@ -49,42 +9,9 @@
       "count": 1
     }
   },
-  "packages/frogbot/src/instanceRegistry.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/search/drizzle/sqlite/schema/buildSearchObjects.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/search/errors.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/search/sanitize.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/frogbot/src/typegen/index.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
   "packages/gateway/src/errors/envelope.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    },
     "max-lines": {
       "count": 1
-    }
-  },
-  "packages/gateway/src/observability/genAi.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
     }
   },
   "packages/gateway/src/routes/messages/handler.ts": {
@@ -92,20 +19,7 @@
       "count": 1
     }
   },
-  "packages/gateway/src/routes/responses/translators/stream.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/pieces/piece-dropbox/src/client.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
   "packages/pieces/piece-front/src/actions.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    },
     "max-lines": {
       "count": 1
     }
@@ -115,206 +29,18 @@
       "count": 1
     }
   },
-  "packages/pieces/piece-monday/src/actions.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    }
-  },
-  "packages/pieces/piece-notion/src/actions/core.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/pieces/piece-pdf/src/actions.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    }
-  },
   "packages/pieces/piece-slack/src/actions.ts": {
     "max-lines": {
       "count": 1
     }
   },
-  "packages/pieces/piece-telegram-bot/src/actions/index.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    }
-  },
   "packages/pieces/piece-xero/src/actions.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    },
     "max-lines": {
-      "count": 1
-    }
-  },
-  "packages/plugins/plugin-audit-log/src/hooks.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "packages/plugins/plugin-roles/src/index.ts": {
-    "@typescript-eslint/max-params": {
       "count": 1
     }
   },
   "packages/ui/src/chat/chat.tsx": {
     "max-lines": {
-      "count": 1
-    }
-  },
-  "packages/ui/src/icons/createLucideIcon.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "scripts/check.mjs": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "scripts/lib/verify.mjs": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "scripts/ticket.mjs": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/__helpers/gateway/post-json.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/__helpers/shared/FrogBotRESTClient.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/__helpers/shared/storage/storageContractSuite.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/chat/chatWrites.int.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/e2e/skill-distribution/installation/harness.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    }
-  },
-  "test/gateway/vercelGateway.int.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/jobs/reservation-races.int.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/kv/db.int.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/search/postgres/vector.int.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/system-fields/users.int.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/ui/ui/icons/icons.spec.tsx": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/eslint/uiImports.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/frogbot/channels/discordQuestions.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/frogbot/chat/collections/messages.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/frogbot/search/operation.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/opencode/supervision.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-discord/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-exa/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-front/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    }
-  },
-  "test/unit/piece-github/questions.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-google-sheets/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-stripe/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-telegram-bot/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-telegram-bot/questions.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/piece-trello/index.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    }
-  },
-  "test/unit/scripts/lint.spec.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 6
-    }
-  },
-  "test/unit/scripts/ticketStats.spec.ts": {
-    "@typescript-eslint/max-params": {
       "count": 1
     }
   }
