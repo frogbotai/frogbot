@@ -36,7 +36,10 @@ export async function loadConfig({
   try {
     mod = await runWithValidationMode({
       mode,
-      load: () => import(pathToFileURL(configPath).href) as Promise<{ default?: unknown }>,
+      load: () =>
+        import(
+          /* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(configPath).href
+        ) as Promise<{ default?: unknown }>,
     });
   } catch (cause) {
     throw new Error(`[frogbot] failed to load ${configPath}`, { cause });
