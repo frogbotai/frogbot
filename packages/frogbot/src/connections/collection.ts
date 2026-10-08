@@ -14,8 +14,9 @@ export function defaultConnectionsCollection({
       useAsTitle: 'piece',
       views: [
         {
-          type: 'list',
-          defaultFields: ['piece', 'method', 'account', 'status', 'updatedAt'],
+          type: 'custom',
+          component: '@frogbotai/next/views#ConnectionsView',
+          shell: false,
         },
       ],
     },

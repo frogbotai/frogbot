@@ -53,6 +53,28 @@
     color: var(--theme-base-600);
   }
 
+  .frogbot-connections__logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 6px;
+  }
+
+  .frogbot-connections__lift:hover {
+    transform: translateY(-4px);
+  }
+
+  .frogbot-connections__menu {
+    background: transparent;
+  }
+
+  .frogbot-connections__menu:hover,
+  .frogbot-connections__menu:focus-visible,
+  .frogbot-connections__menu[data-state="open"] {
+    color: var(--theme-base-1000);
+    background: var(--theme-base-400);
+  }
+
   .frogbot-connections__row strong,
   .frogbot-connections__piece strong {
     display: block;
@@ -112,6 +134,7 @@
     width: min(500px, calc(100vw - 32px));
     max-width: 500px;
     max-height: 70dvh;
+    overflow-x: hidden;
     overflow-y: auto;
     gap: 16px;
   }
@@ -123,6 +146,7 @@
 
   .frogbot-connections__picker {
     max-height: 400px;
+    overflow-x: hidden;
     overflow-y: auto;
     gap: 4px;
   }
@@ -139,14 +163,11 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition:
-      background 150ms,
-      transform 150ms;
+    transition: background 150ms;
   }
 
   .frogbot-connections__piece:hover {
     background: var(--theme-base-200);
-    transform: translateX(2px);
   }
 
   .frogbot-connections__form,
@@ -264,8 +285,12 @@
     .frogbot-connections__spinner {
       animation: none;
     }
-    .frogbot-connections__piece {
+    .frogbot-connections__piece,
+    .frogbot-connections__lift {
       transition: none;
+    }
+    .frogbot-connections__lift:hover {
+      transform: none;
     }
   }
 }

@@ -27,6 +27,7 @@ import {
 import { useId, useRef, useState } from 'react';
 
 import { ConnectionFields } from './ConnectionFields.js';
+import { PieceLogo } from './PieceLogo.js';
 import { connectionInput, initialConnectionValue } from './schema.js';
 import type { ConnectionItem, ConnectionPiece, ConnectionsViewClientProps } from './types.js';
 
@@ -284,9 +285,7 @@ function NewConnectionDialog({
                   className="frogbot-connections__piece"
                   onClick={() => setSelected(piece)}
                 >
-                  <span className="frogbot-connections__icon">
-                    <LinkSquareIcon size={20} />
-                  </span>
+                  <PieceLogo src={piece.icon} />
                   <span>
                     <strong>{piece.label}</strong>
                     <span className="frogbot-connections__muted">
@@ -308,11 +307,13 @@ function NewConnectionDialog({
 function ConnectionRow({
   connection,
   label,
+  icon,
   busy,
   onDisconnect,
 }: {
   connection: ConnectionItem;
   label: string;
+  icon?: string;
   busy: boolean;
   onDisconnect: () => void;
 }) {
@@ -326,9 +327,7 @@ function ConnectionRow({
   return (
     <div className="frogbot-connections__row">
       <div className="frogbot-connections__identity">
-        <span className="frogbot-connections__icon">
-          <LinkSquareIcon size={20} />
-        </span>
+        <PieceLogo src={icon} />
         <div>
           <strong>{connection.account?.label || connection.account?.email || label}</strong>
           <span className="frogbot-connections__muted">
@@ -348,7 +347,13 @@ function ConnectionRow({
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={busy} aria-label={`Options for ${label}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="frogbot-connections__menu"
+              disabled={busy}
+              aria-label={`Options for ${label}`}
+            >
               {busy ? (
                 <LoadingIcon className="frogbot-connections__spinner" size={16} />
               ) : (
@@ -384,6 +389,7 @@ export function ConnectionsViewClient({
   const requestID = useRef(0);
   const removing = useRef(false);
   const labels = new Map(pieces.map((piece) => [piece.slug, piece.label]));
+  const icons = new Map(pieces.map((piece) => [piece.slug, piece.icon]));
   const query = search.trim().toLowerCase();
   const filtered = connections.filter((connection) =>
     [
@@ -454,7 +460,12 @@ export function ConnectionsViewClient({
           value={search}
           onChange={setSearch}
         />
-        <Button size="sm" onClick={() => setOpen(true)} disabled={pieces.length === 0}>
+        <Button
+          size="sm"
+          className="frogbot-connections__lift"
+          onClick={() => setOpen(true)}
+          disabled={pieces.length === 0}
+        >
           + New Connection
         </Button>
       </div>
@@ -480,6 +491,7 @@ export function ConnectionsViewClient({
               <Button
                 variant="outline"
                 size="sm"
+                className="frogbot-connections__lift"
                 disabled={pieces.length === 0}
                 onClick={() => setOpen(true)}
               >
@@ -495,6 +507,7 @@ export function ConnectionsViewClient({
               key={connection.id}
               connection={connection}
               label={labels.get(connection.piece) ?? connection.piece}
+              icon={icons.get(connection.piece)}
               busy={deleting === connection.id}
               onDisconnect={() => void disconnect(connection.id)}
             />

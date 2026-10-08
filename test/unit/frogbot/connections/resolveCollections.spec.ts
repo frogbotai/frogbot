@@ -279,4 +279,35 @@ describe('resolveConnectionsCollections', () => {
     expect(field).toMatchObject({ type: 'text', required: true });
     expect(collection.indexes).toEqual([{ fields: ['owner', 'piece'], unique: true }]);
   });
+
+  it('uses the linked accounts view as the collection default view', () => {
+    const result = resolveConnectionsCollections(config());
+    const collection = result.collections.find((item) => item.slug === 'connections')!;
+
+    expect(collection.admin?.views).toEqual([
+      { type: 'custom', component: '@frogbotai/next/views#ConnectionsView', shell: false },
+    ]);
+  });
+
+  it.each([
+    { icon: ' https://example.com/logo.svg ', expected: 'https://example.com/logo.svg' },
+    { icon: '  ', expected: undefined },
+    { icon: { component: true }, expected: undefined },
+    { icon: undefined, expected: undefined },
+  ])('passes the piece logo through: $icon', ({ icon, expected }) => {
+    const piece = definePiece({
+      slug: 'static',
+      label: 'Static',
+      ...(icon === undefined ? {} : { admin: { icon } }),
+      auth: z.string(),
+      client: ({ auth }: { auth: unknown }) => auth,
+      actions: [],
+    })();
+
+    const { connections } = resolveConnectionsCollections(
+      config({ connections: [{ piece, secret: true }] }),
+    );
+
+    expect(connections.entries.static?.icon).toBe(expected);
+  });
 });

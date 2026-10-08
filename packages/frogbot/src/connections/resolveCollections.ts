@@ -113,7 +113,15 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
       }
     }
 
-    entries[slug] = { piece: entry.piece, oauth, secret, ...(secret ? { secretSchema } : {}) };
+    const icon = definition.admin?.icon;
+
+    entries[slug] = {
+      piece: entry.piece,
+      oauth,
+      secret,
+      ...(secret ? { secretSchema } : {}),
+      ...(typeof icon === 'string' && icon.trim() ? { icon: icon.trim() } : {}),
+    };
   }
 
   return entries;
