@@ -512,6 +512,35 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
   await expectNoReload(page);
 });
 
+test('a new chat is listed first under Today in Recents while its reply is held', async ({
+  page,
+}) => {
+  const reply = held();
+
+  model.respond({ text: 'Here is the summary.', hold: reply.hold });
+
+  await createChat(page, threadTitle);
+  await openFirstPage(page, `/collections/${usersSlug}`);
+
+  await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
+  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+
+  await send(page, firstMessage);
+
+  const today = recents(page).locator('.frogbot-recents-section__group', {
+    has: page.locator('.frogbot-recents-section__group-label', { hasText: /^Today$/ }),
+  });
+
+  await expect(today.locator('.frogbot-recents-section__item').first()).toHaveText(
+    placeholderTitle,
+  );
+  await expect(page.getByText('Here is the summary.', { exact: true })).toHaveCount(0);
+
+  reply.release();
+
+  await expect(page.getByText('Here is the summary.', { exact: true })).toBeVisible();
+});
+
 for (const title of ['', ' \n\t ']) {
   test(`a chat with the blank title ${JSON.stringify(title)} uses Untitled in the tab`, async ({
     page,

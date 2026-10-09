@@ -379,6 +379,9 @@ describe('agent persisted stream with the installed AI SDK', () => {
     const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
     const text: string[] = [];
 
+    expect(chat.lastMessageAt).toEqual(expect.any(String));
+    expect(messages.map((message) => message.role)).toEqual(['user']);
+
     for await (const part of result.stream) {
       if (part.type === 'text-delta') text.push(part.text);
     }
@@ -598,7 +601,9 @@ describe('agent persisted stream with the installed AI SDK', () => {
     await result.consumeStream();
     await writing.promise;
 
-    expect(frogbot.update).not.toHaveBeenCalled();
+    expect(frogbot.update).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ collection: 'chats', id: 'chat-1' }),
+    );
 
     write.reject(new Error('Assistant write failed'));
 
