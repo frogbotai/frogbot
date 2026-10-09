@@ -93,6 +93,38 @@ Actions are callable properties on each piece instance. Tool slugs use the insta
 - Drive `getFile` returns metadata. `downloadFile` saves a FrogBot file and returns its reference, not extracted text. `uploadFile` accepts `file: { fileId, name? }` referring to an accessible FrogBot file.
 - Calendar `createEvent` uses `calendarId`, `title`, and `startDateTime`, with optional `endDateTime` (default duration: 30 minutes). Date-times must include a timezone. `findFreeBusyPeriods` takes `calendarIds`, `startDate`, and `endDate` and returns busy intervals and per-calendar errors.
 
+## Custom API calls
+
+Gmail, Sheets, Drive, Calendar and the provider packages in [More packages](#more-packages), except Exa, Front, Linear and Monday, have a `customApiCall` action for endpoints their other actions don't cover. It sends the request with the connected credential and works the same way in every piece.
+
+```ts
+const res = await gmail.customApiCall({
+  input: { method: 'GET', path: '/users/me/profile' },
+  req
+})
+
+res.status // 200
+res.headers['content-type'] // header names are lowercase
+res.body.emailAddress // parsed JSON
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `method` | `'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE' \| 'HEAD'` | Required | HTTP method. `GET` and `HEAD` take no `body`. |
+| `path` | `string` | Required | Path relative to the piece's API base, such as `/users/me/profile` for Gmail. A query string in the path is kept. Absolute URLs and paths containing `//`, `\`, `..` or a leading `@` are refused. Slack and Telegram take a method name, such as `chat.postMessage` or `getMe`. |
+| `query` | `Record<string, string \| number \| boolean \| array>` | — | Query parameters. Array values are sent as repeated keys: `{ a: [1, 2] }` becomes `a=1&a=2`. |
+| `headers` | `Record<string, string>` | — | Request headers. `Authorization`, `Proxy-Authorization`, `Cookie`, `Host` and the piece's own credential headers are refused. |
+| `bodyType` | `'json' \| 'form' \| 'raw' \| 'formData'` | `'json'` | How `body` is sent. `form` encodes nested objects as `a[b]=c` and arrays of objects as `a[0][b]=c`; arrays of scalars repeat the key (`a=1&a=2`), except in Stripe, which indexes them (`a[0]=1`); `raw` sends a string as is; `formData` sends `multipart/form-data`. Stripe and Twilio send `json` bodies form-encoded. |
+| `body` | JSON value | — | Request body. |
+| `responseType` | `'json' \| 'text' \| 'binary'` | `'json'` | `json` parses JSON responses and keeps other bodies as text. `binary` saves the response as a file. |
+| `fileName` | `string` | The last path segment | Name of the saved file for `binary` responses. |
+| `failsafe` | `boolean` | `false` | Return the response for a non-2xx status instead of throwing. |
+| `timeoutSeconds` | `number` | `30` | Abort the request after this many seconds. The request is also aborted with `req.signal`. |
+
+The result is always `{ status, headers, body }`. An empty body is `null`. A non-2xx status throws an error with the piece, the status and the first 500 characters of the body, unless `failsafe` is `true`. Redirects are never followed: a 3xx throws, or is returned with `failsafe`. Slack and Telegram also throw when a 2xx response has `ok: false`.
+
+With `responseType: 'binary'`, `body` is the saved file, `{ id, name, mimeType, size, url }`. The file is created as the caller, with access control. Binary calls need an upload collection with `file: true`; without one the call throws before sending the request.
+
 ## More packages
 
 Each shipped package is a native FrogBot piece and defines its own actions, triggers, and credential requirements.

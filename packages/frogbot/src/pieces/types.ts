@@ -6,6 +6,7 @@ import type { PieceChannelQuestions } from '../channels/questions/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
 import type { TypedUser } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
+import type { CustomApiCallAction, CustomApiCallConfig } from './customApiCall.js';
 
 export type OAuthTokens = Record<string, PieceJSON> & {
   access_token?: string;
@@ -141,6 +142,7 @@ export type PieceTriggerDefinition<
 type AfterOutputInference<TOutput, TDefinition> = TOutput extends unknown ? TDefinition : never;
 
 export type PieceHelpers<TClient, TOptions> = {
+  defineCustomApiCall(config: CustomApiCallConfig<TClient>): CustomApiCallAction<TOptions, TClient>;
   defineAction<
     const TSlug extends string,
     TInput extends z.ZodType,

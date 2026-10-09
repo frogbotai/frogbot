@@ -21,14 +21,14 @@ not claim to create or delete the PagerDuty subscription.
 
 ## Actions
 
-| Upstream action slug   | Previous wrapper export | Native action         | Notes                                                                                        |
-| ---------------------- | ----------------------- | --------------------- | -------------------------------------------------------------------------------------------- |
-| `create_incident`      | `createIncident`        | `createIncident`      |                                                                                              |
-| `list_incidents`       | `listIncidents`         | `listIncidents`       |                                                                                              |
-| `get_incident`         | `getIncident`           | `getIncident`         |                                                                                              |
-| `acknowledge_incident` | `acknowledgeIncident`   | `acknowledgeIncident` |                                                                                              |
-| `resolve_incident`     | `resolveIncident`       | `resolveIncident`     |                                                                                              |
-| `custom_api_call`      | `customApiCall`         | `customApiCall`       | Caller headers are intentionally unsupported so credentials cannot be replaced or forwarded. |
+| Upstream action slug   | Previous wrapper export | Native action         | Notes                                                                                                              |
+| ---------------------- | ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `create_incident`      | `createIncident`        | `createIncident`      |                                                                                                                    |
+| `list_incidents`       | `listIncidents`         | `listIncidents`       |                                                                                                                    |
+| `get_incident`         | `getIncident`           | `getIncident`         |                                                                                                                    |
+| `acknowledge_incident` | `acknowledgeIncident`   | `acknowledgeIncident` |                                                                                                                    |
+| `resolve_incident`     | `resolveIncident`       | `resolveIncident`     |                                                                                                                    |
+| `custom_api_call`      | `customApiCall`         | `customApiCall`       | Paths are relative to `https://api.pagerduty.com`; caller headers (such as `From`) cannot replace `Authorization`. |
 
 ## Triggers
 

@@ -17,6 +17,15 @@ export function createGoogleCalendarClient({ auth }: { auth: unknown }) {
   return google.calendar({ version: 'v3', auth: oauth });
 }
 
+export async function authorize(client: GoogleCalendar, url: URL, headers: Headers) {
+  const auth = client.context._options.auth;
+  if (!auth || typeof auth === 'string') {
+    throw new Error('[frogbot] Google Calendar client is missing authenticated transport.');
+  }
+
+  (await auth.getRequestHeaders(url)).forEach((value, key) => headers.set(key, value));
+}
+
 export function requestOptions(req: FrogBotRequest) {
   req.signal?.throwIfAborted();
 

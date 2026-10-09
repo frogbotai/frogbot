@@ -360,14 +360,40 @@ export interface AirtableTypes {
     };
     customApiCall: {
       input: {
-        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
+        /**
+         * API path relative to the piece base URL.
+         */
         path: string;
+        /**
+         * Query parameters. Array values are sent as repeated keys.
+         */
         query?: {
-          [k: string]: string | number | boolean;
+          [k: string]: (string | number | boolean) | (string | number | boolean)[];
         };
+        headers?: {
+          [k: string]: string;
+        };
+        bodyType: 'json' | 'form' | 'raw' | 'formData';
         body?: unknown;
+        responseType: 'json' | 'text' | 'binary';
+        /**
+         * Name of the saved file for binary responses.
+         */
+        fileName?: string;
+        /**
+         * Return the response instead of throwing on a non-2xx status.
+         */
+        failsafe: boolean;
+        timeoutSeconds: number;
       };
-      output: unknown;
+      output: {
+        status: number;
+        headers: {
+          [k: string]: string;
+        };
+        body: unknown;
+      };
     };
   };
   triggers: {

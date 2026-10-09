@@ -69,7 +69,7 @@ export async function loadFile({
   };
 }
 
-export async function saveFile({
+async function saveFile({
   req,
   data,
   name,

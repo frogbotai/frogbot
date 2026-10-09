@@ -94,5 +94,9 @@ export function createNotionClient({ auth }: { auth: unknown }) {
     return results;
   }
 
-  return { request, listAll };
+  function authorize(headers: Headers) {
+    headers.set('authorization', `Bearer ${accessToken}`);
+  }
+
+  return { request, listAll, authorize };
 }

@@ -148,9 +148,17 @@ export function createGithubClient({ auth }: { auth: unknown }) {
     }
   }
 
+  async function authorize(url: URL, headers: Headers) {
+    if (url.origin !== apiOrigin) throw new Error('URL must target the GitHub API.');
+
+    apiUrl(url.pathname);
+    headers.set('authorization', `Bearer ${await accessToken()}`);
+  }
+
   return {
     request,
     listAll,
+    authorize,
     verify(body: Buffer, signature: string | null, secret: string) {
       if (!signature?.startsWith('sha256=')) return false;
 
@@ -164,6 +172,3 @@ export function createGithubClient({ auth }: { auth: unknown }) {
     },
   };
 }
-
-export const githubApiUrl = apiUrl;
-export const githubForbiddenHeaders = forbiddenHeaders;

@@ -54,6 +54,18 @@ function request(data: unknown = {}, overrides: object = {}): FrogBotRequest {
   return requestFixture(data, overrides) as unknown as FrogBotRequest;
 }
 
+function connectedRequest(auth: unknown): FrogBotRequest {
+  return request(
+    {},
+    {
+      frogbot: {
+        connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
+      },
+      user: null,
+    },
+  );
+}
+
 function coreRequest(): CoreRequest {
   return requestFixture({}, {}) as unknown as CoreRequest;
 }
@@ -81,6 +93,7 @@ describe('xero inventory and OAuth', () => {
     const xero = createXero({ auth: { accessToken: 'token' } });
     const oauth = pieceInstanceRuntime(xero).definition.oauth;
     const client = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({
         sub: 'user-1',
@@ -107,6 +120,7 @@ describe('xero inventory and OAuth', () => {
   it('loads every connected tenant as an organization option', async () => {
     const definition = action('createPayment');
     const client = {
+      authorize: vi.fn(),
       listTenants: vi.fn().mockResolvedValue([
         { tenantId: 'tenant-1', tenantName: 'One' },
         { tenantId: 'tenant-2', tenantName: 'Two' },
@@ -163,21 +177,60 @@ describe('xero transport and actions', () => {
     ).rejects.toThrow('escapes its API base');
   });
 
-  it.each(['/../connections', '/%2e%2e/connections', '/Contacts?url=https://evil.test'])(
+  it('sends custom calls to the accounting API with the caller tenant header', async () => {
+    const fetch = vi.fn().mockResolvedValue(Response.json({ Invoices: [] }));
+
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      createXero({ auth: { accessToken: 'secret' } }).customApiCall({
+        input: {
+          method: 'GET',
+          path: '/Invoices',
+          query: { page: 2 },
+          headers: { 'Xero-Tenant-Id': 'tenant-1' },
+        },
+        req: connectedRequest({ accessToken: 'secret' }),
+      }),
+    ).resolves.toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { Invoices: [] },
+    });
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
+      'https://api.xero.com/api.xro/2.0/Invoices?page=2',
+    );
+
+    const headers = new Headers(fetch.mock.calls[0]?.[1]?.headers);
+
+    expect(headers.get('authorization')).toBe('Bearer secret');
+    expect(headers.get('xero-tenant-id')).toBe('tenant-1');
+    expect(headers.get('accept')).toBe('application/json');
+  });
+
+  it.each(['/../connections', '/%2e%2e/connections', '//evil.test/Contacts'])(
     'rejects unsafe custom path %s',
     async (path) => {
+      const fetch = vi.fn();
+
+      vi.stubGlobal('fetch', fetch);
+
       await expect(
-        action('customApiCall').input.parseAsync({
-          tenantId: 'tenant-1',
-          method: 'GET',
-          path,
+        createXero({ auth: { accessToken: 'secret' } }).customApiCall({
+          input: { method: 'GET', path, headers: { 'Xero-Tenant-Id': 'tenant-1' } },
+          req: connectedRequest({ accessToken: 'secret' }),
         }),
-      ).rejects.toBeDefined();
+      ).rejects.toThrow('Xero custom API path must be relative to the Xero API.');
+      expect(fetch).not.toHaveBeenCalled();
     },
   );
 
   it('replaces all invoice lines without fetching current lines', async () => {
-    const client = { listTenants: vi.fn(), request: vi.fn().mockResolvedValue({ Invoices: [] }) };
+    const client = {
+      authorize: vi.fn(),
+      listTenants: vi.fn(),
+      request: vi.fn().mockResolvedValue({ Invoices: [] }),
+    };
 
     await action('updateInvoice').run({
       input: {
@@ -205,6 +258,7 @@ describe('xero transport and actions', () => {
 
   it('merges matching invoice lines and appends new lines', async () => {
     const client = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi
         .fn()
@@ -274,7 +328,7 @@ describe('xero transport and actions', () => {
           contentType: 'application/pdf',
           includeOnline: false,
         },
-        client: { listTenants: vi.fn(), request: vi.fn() },
+        client: { authorize: vi.fn(), listTenants: vi.fn(), request: vi.fn() },
         options: {},
         req,
       }),
@@ -285,6 +339,7 @@ describe('xero transport and actions', () => {
     const fetch = vi.fn().mockResolvedValue(new Response('pdf'));
     vi.stubGlobal('fetch', fetch);
     const client = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({ Attachments: [] }),
     };
@@ -383,6 +438,7 @@ describe('xero webhook', () => {
     };
 
     const client = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({ Invoices: [{ InvoiceID: 'bill', Type: 'ACCPAY' }] }),
     };
@@ -442,7 +498,7 @@ describe('xero webhook', () => {
 
     const definition = trigger('contactCreated');
 
-    const client = { listTenants: vi.fn(), request: vi.fn() };
+    const client = { authorize: vi.fn(), listTenants: vi.fn(), request: vi.fn() };
     const tenantOne = await definition.run({
       input: { tenantId: 'tenant-1', fetchFullRecord: false },
       client,
@@ -475,6 +531,7 @@ describe('xero polling', () => {
     const definition = trigger('paymentCreated');
 
     const client = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi.fn().mockImplementation(({ query }) =>
         Promise.resolve({
@@ -510,6 +567,7 @@ describe('xero polling', () => {
 
     const input = { tenantId: 'tenant-1', statuses: [], types: [], pageSize: 10 };
     const paymentClient = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi
         .fn()
@@ -535,6 +593,7 @@ describe('xero polling', () => {
     expect(second.events).toHaveLength(0);
 
     const billClient = {
+      authorize: vi.fn(),
       listTenants: vi.fn(),
       request: vi.fn().mockResolvedValue({
         Invoices: [

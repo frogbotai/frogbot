@@ -128,7 +128,11 @@ export function createXeroClient({ auth }: { auth: unknown }) {
     );
   }
 
-  return { listTenants, request };
+  function authorize(headers: Headers) {
+    headers.set('authorization', `Bearer ${accessToken}`);
+  }
+
+  return { authorize, listTenants, request };
 }
 
 export const xeroIdentity = z.object({

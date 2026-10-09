@@ -25,12 +25,12 @@ Change the requested scopes with the factory's `scopes` option: `createZoom({ oa
 
 ## Actions
 
-| Upstream action slug             | Previous wrapper export       | Native action             | Notes                                                                             |
-| -------------------------------- | ----------------------------- | ------------------------- | --------------------------------------------------------------------------------- |
-| `zoom_create_meeting`            | `zoomCreateMeeting`           | `createMeeting`           |                                                                                   |
-| `zoom_create_meeting_registrant` | `zoomCreateMeetingRegistrant` | `createMeetingRegistrant` |                                                                                   |
-| `zoom_find_meeting`              | `zoomFindMeeting`             | `getMeeting`              | Meeting options load every scheduled-meeting page.                                |
-| `zoom_update_meeting`            | `zoomUpdateMeeting`           | `updateMeeting`           | Meeting options load every scheduled-meeting page.                                |
-| `custom_api_call`                | `customApiCall`               | `customApiCall`           | Restricted to the Zoom API origin; connection authorization cannot be overridden. |
+| Upstream action slug             | Previous wrapper export       | Native action             | Notes                                                                                 |
+| -------------------------------- | ----------------------------- | ------------------------- | ------------------------------------------------------------------------------------- |
+| `zoom_create_meeting`            | `zoomCreateMeeting`           | `createMeeting`           |                                                                                       |
+| `zoom_create_meeting_registrant` | `zoomCreateMeetingRegistrant` | `createMeetingRegistrant` |                                                                                       |
+| `zoom_find_meeting`              | `zoomFindMeeting`             | `getMeeting`              | Meeting options load every scheduled-meeting page.                                    |
+| `zoom_update_meeting`            | `zoomUpdateMeeting`           | `updateMeeting`           | Meeting options load every scheduled-meeting page.                                    |
+| `custom_api_call`                | `customApiCall`               | `customApiCall`           | Paths are relative to `https://api.zoom.us/v2`; `Authorization` cannot be overridden. |
 
 The upstream piece registers no triggers.

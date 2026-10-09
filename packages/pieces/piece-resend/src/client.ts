@@ -1,40 +1,44 @@
 export type ResendRequestOptions = {
-  allowFailure?: boolean;
-  binary?: boolean;
   body?: unknown;
   headers?: Record<string, string>;
   method?: string;
   path: string;
   query?: Record<string, unknown>;
-  rawBody?: boolean;
   redirect?: RequestRedirect;
   response?: boolean;
-  signal?: AbortSignal;
 };
 
+function checkUrl(url: URL | undefined): asserts url is URL {
+  if (url?.origin !== 'https://api.resend.com') {
+    throw new Error('[frogbot] Resend request URL must stay on https://api.resend.com.');
+  }
+}
+
+function checkHeaders(names: string[]) {
+  if (names.some((name) => name.toLowerCase() === 'authorization')) {
+    throw new Error('[frogbot] Resend request headers must not set `Authorization`.');
+  }
+}
+
 export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
+  authorize(url: URL, headers: Headers) {
+    checkUrl(url);
+    checkHeaders([...headers.keys()]);
+    headers.set('authorization', `Bearer ${apiKey}`);
+  },
   async request({
-    allowFailure,
-    binary,
     body,
     headers,
     method = 'GET',
     path,
     query,
-    rawBody,
     redirect,
     response: includeResponse,
-    signal,
   }: ResendRequestOptions) {
     const url = path.startsWith('/') ? new URL(`https://api.resend.com${path}`) : undefined;
 
-    if (url?.origin !== 'https://api.resend.com') {
-      throw new Error('[frogbot] Resend request URL must stay on https://api.resend.com.');
-    }
-
-    if (Object.keys(headers ?? {}).some((name) => name.toLowerCase() === 'authorization')) {
-      throw new Error('[frogbot] Resend request headers must not set `Authorization`.');
-    }
+    checkUrl(url);
+    checkHeaders(Object.keys(headers ?? {}));
 
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value));
@@ -43,13 +47,12 @@ export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
     const response = await fetch(url, {
       method,
       redirect,
-      signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        ...(body === undefined || rawBody ? {} : { 'Content-Type': 'application/json' }),
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
         ...headers,
       },
-      ...(body === undefined ? {} : { body: rawBody ? (body as BodyInit) : JSON.stringify(body) }),
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
 
     if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
@@ -58,11 +61,9 @@ export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
       );
     }
 
-    const result: unknown = binary
-      ? new Uint8Array(await response.arrayBuffer())
-      : await response.json().catch(() => null);
+    const result: unknown = await response.json().catch(() => null);
 
-    if (!response.ok && !allowFailure) {
+    if (!response.ok) {
       const message =
         result && typeof result === 'object' && 'message' in result
           ? result.message

@@ -18,7 +18,6 @@ import {
   createBranch,
   createDiscussionComment,
   createIssue,
-  customApiCall,
 } from '../../../packages/pieces/piece-github/src/actions.js';
 import { createGithubClient } from '../../../packages/pieces/piece-github/src/client.js';
 import {
@@ -56,6 +55,15 @@ function json(value: unknown, status = 200) {
 
 function request(overrides: Partial<FrogBotRequest> = {}): FrogBotRequest {
   return { headers: new Headers(), ...overrides } as unknown as FrogBotRequest;
+}
+
+function connectedRequest(): FrogBotRequest {
+  return request({
+    frogbot: {
+      connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
+    },
+    user: null,
+  } as never);
 }
 
 type Delivery = NonNullable<FrogBotRequest['data']>;
@@ -412,32 +420,77 @@ describe('github', () => {
     '/../../login/oauth/access_token',
     '/%2e%2e/login/oauth/access_token',
   ])('rejects unsafe custom REST path %s', async (path) => {
-    await expect(customApiCall.input.parseAsync({ method: 'GET', path })).rejects.toThrow(
-      'URL must target the GitHub API',
-    );
+    const fetch = vi.fn();
+
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      createGithub({ auth }).customApiCall({
+        input: { method: 'GET', path },
+        req: connectedRequest(),
+      }),
+    ).rejects.toThrow('custom API path must be relative to the GitHub API');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('refuses a double-encoded parent segment before sending the token', async () => {
+    const fetch = vi.fn();
+
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      createGithub({ auth }).customApiCall({
+        input: { method: 'GET', path: '/%252e%252e/login/oauth/access_token' },
+        req: connectedRequest(),
+      }),
+    ).rejects.toThrow('URL must target the GitHub API');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('sends custom REST calls with the GitHub defaults and returns the envelope', async () => {
+    const fetch = vi.fn().mockResolvedValue(json({ login: 'frog' }));
+
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      createGithub({ auth }).customApiCall({
+        input: { method: 'GET', path: '/user', query: { per_page: 5 } },
+        req: connectedRequest(),
+      }),
+    ).resolves.toMatchObject({ status: 200, body: { login: 'frog' } });
+
+    const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
+    const headers = new Headers(init.headers);
+
+    expect(url.href).toBe('https://api.github.com/user?per_page=5');
+    expect(init.redirect).toBe('manual');
+    expect(headers.get('authorization')).toBe(`Bearer ${auth.accessToken}`);
+    expect(headers.get('accept')).toBe('application/vnd.github+json');
+    expect(headers.get('x-github-api-version')).toBe('2022-11-28');
   });
 
   it('rejects auth overrides and redirects in custom REST calls', async () => {
-    await expect(
-      customApiCall.input.parseAsync({
-        method: 'GET',
-        path: '/user',
-        headers: { Authorization: 'Bearer stolen' },
-      }),
-    ).rejects.toThrow('Authentication and transport headers cannot be overridden');
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(null, { status: 302, headers: { location: 'https://x.test/' } }),
+      );
 
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 302 })));
-
-    const input = customApiCall.input.parse({ method: 'GET', path: '/user' });
+    vi.stubGlobal('fetch', fetch);
+    const github = createGithub({ auth });
 
     await expect(
-      customApiCall.run({
-        client: createGithubClient({ auth }),
-        input,
-        options: {},
-        req: request(),
+      github.customApiCall({
+        input: { method: 'GET', path: '/user', headers: { Authorization: 'Bearer stolen' } },
+        req: connectedRequest(),
       }),
-    ).rejects.toThrow('redirects are not allowed');
+    ).rejects.toThrow("cannot set the 'Authorization' header");
+    expect(fetch).not.toHaveBeenCalled();
+
+    await expect(
+      github.customApiCall({ input: { method: 'GET', path: '/user' }, req: connectedRequest() }),
+    ).rejects.toThrow('GitHub API redirected (302) to https://x.test/.');
+    expect(fetch).toHaveBeenCalledOnce();
   });
 
   it('creates and deletes the exact owned hook with a persisted secret', async () => {

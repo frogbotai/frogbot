@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
-import { githubApiUrl, githubForbiddenHeaders } from './client.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 import { assignees, branches, issues, labels, milestones, repositoryOptions } from './options.js';
 import {
   branchOutput,
@@ -430,47 +429,12 @@ export const createGist = defineAction({
     }),
 });
 
-const scalar = z.union([z.string(), z.number(), z.boolean()]);
-const customInput = z.object({
-  method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']),
-  path: z
-    .string()
-    .min(1)
-    .refine((path) => {
-      try {
-        githubApiUrl(path);
-
-        return true;
-      } catch {
-        return false;
-      }
-    }, 'URL must target the GitHub API.'),
-  headers: z
-    .record(z.string(), z.string())
-    .default({})
-    .refine(
-      (headers) =>
-        Object.keys(headers).every((name) => !githubForbiddenHeaders.has(name.toLowerCase())),
-      'Authentication and transport headers cannot be overridden.',
-    ),
-  query: z.record(z.string(), scalar).optional(),
-  body: z.json().optional(),
-});
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Make an authenticated call to the GitHub REST API. Redirects are rejected.',
-  input: customInput,
-  output: z.union([z.json(), emptyOutput]),
-  idempotent: false,
-  run: ({ client, input, req }) =>
-    client.request(input.path, z.union([z.json(), emptyOutput]), {
-      method: input.method,
-      headers: input.headers,
-      query: input.query,
-      body: input.body,
-      signal: req.signal,
-    }),
+export const customApiCall = defineCustomApiCall({
+  name: 'GitHub',
+  baseUrl: 'https://api.github.com',
+  headers: { accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28' },
+  reservedHeaders: ['content-length', 'transfer-encoding'],
+  authorize: ({ client, url, headers }) => client.authorize(url, headers),
 });
 
 export const githubActionDefinitions = [

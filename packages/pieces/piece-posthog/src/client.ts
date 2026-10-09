@@ -1,6 +1,5 @@
 export type PosthogRequest = {
   body?: unknown;
-  headers?: Record<string, string>;
   method?: string;
   path: string;
   query?: Record<string, string | number | boolean | undefined>;
@@ -23,7 +22,7 @@ function posthogUrl(path: string) {
 export function createPosthogClient({ personalApiKey }: { personalApiKey: string }) {
   return {
     personalApiKey,
-    async request({ body, headers, method = 'GET', path, query }: PosthogRequest) {
+    async request({ body, method = 'GET', path, query }: PosthogRequest) {
       const url = posthogUrl(path);
 
       for (const [key, value] of Object.entries(query ?? {})) {
@@ -36,7 +35,6 @@ export function createPosthogClient({ personalApiKey }: { personalApiKey: string
         headers: {
           Authorization: `Bearer ${personalApiKey}`,
           ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-          ...headers,
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
@@ -66,6 +64,9 @@ export function createPosthogClient({ personalApiKey }: { personalApiKey: string
         headers: Object.fromEntries(response.headers.entries()),
         body: result,
       };
+    },
+    authorize(headers: Headers) {
+      headers.set('authorization', `Bearer ${personalApiKey}`);
     },
   };
 }

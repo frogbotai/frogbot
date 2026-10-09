@@ -53,7 +53,7 @@ Change the requested scopes with the factory's `scopes` option: `createXero({ oa
 | `xero_get_invoice_history`             | `xeroGetInvoiceHistory`           | `getInvoiceHistory`      |                                                                                                                                   |
 | `xero_create_bank_transaction`         | `xeroCreateBankTransaction`       | `createBankTransaction`  |                                                                                                                                   |
 | `xero_find_or_create_contact`          | `xeroFindOrCreateContact`         | `findOrCreateContact`    |                                                                                                                                   |
-| `custom_api_call`                      | `customApiCall`                   | `customApiCall`          | Relative accounting API paths only; OAuth authorization and tenant headers cannot be overridden.                                  |
+| `custom_api_call`                      | `customApiCall`                   | `customApiCall`          | Paths are relative to the accounting API; send the organization in the `Xero-Tenant-Id` header.                                   |
 
 ## Triggers
 
@@ -85,4 +85,4 @@ FrogBot validates `x-xero-signature` against the untouched request body with HMA
 
 - Webhook creation and deletion remain manual because Xero does not provide a vendor registration API.
 - Polling requests at most five pages per run, then persists the next page and original modification window until all pages have been drained. It retains the latest 5,000 identifiers for overlap deduplication.
-- The custom action is intentionally restricted to the Xero accounting API origin and cannot send arbitrary authorization headers.
+- The custom action is restricted to the Xero accounting API and cannot set `Authorization`. It takes no `tenantId` input; send `Xero-Tenant-Id` in `headers`.

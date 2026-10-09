@@ -33,7 +33,7 @@ Change the requested scopes with the factory's `scopes` option: `createGmail({ o
 | `create_draft_reply`       | `createDraftReply`      | `createDraftReply` |                                                        |
 | `gmail_get_mail`           | `gmailGetMail`          | `getEmail`         |                                                        |
 | `gmail_search_mail`        | `gmailSearchMail`       | `searchEmails`     |                                                        |
-| `custom_api_call`          | `customApiCall`         | `customApiCall`    | Restricted to Gmail API paths.                         |
+| `custom_api_call`          | `customApiCall`         | `customApiCall`    | Paths are relative to `/gmail/v1`.                     |
 
 ## Triggers
 

@@ -1,6 +1,7 @@
 import { createDefaultRequest } from '../getFrogBot.js';
 import type { AnyTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { defineCustomApiCall } from './customApiCall.js';
 import {
   type DefinedPiece,
   type OAuthApp,
@@ -180,6 +181,7 @@ export function createPieceHelpers<
   return {
     defineAction: define,
     defineAppTrigger: define,
+    defineCustomApiCall,
     definePollingTrigger: define,
     defineWebhookTrigger: define,
   };

@@ -41,6 +41,13 @@ function useTransport(client: SheetsClient, transport: (config: any) => Promise<
   Object.assign(client.auth.transporter, { request: transport });
 }
 
+function stubFetch(respond: () => Response) {
+  const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(respond()));
+  vi.stubGlobal('fetch', fetch);
+
+  return fetch;
+}
+
 function abortReason(signal: AbortSignal): Error {
   return signal.reason instanceof Error ? signal.reason : new Error(String(signal.reason));
 }
@@ -315,6 +322,11 @@ describe('native Google Sheets', () => {
       transport,
     );
 
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(Response.json({ ok: true }))),
+    );
+
     const appended = {
       row: 6,
       updates: { updatedRange: "'Owner''s sheet'!A6:C6", updatedRows: 1 },
@@ -441,8 +453,12 @@ describe('native Google Sheets', () => {
       },
       {
         slug: 'customApiCall',
-        input: { path: '/spreadsheets/example' },
-        result: { status: 200, headers: {}, body: { ok: true } },
+        input: { method: 'GET', path: '/spreadsheets/example' },
+        result: {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: { ok: true },
+        },
       },
     ];
 
@@ -1073,6 +1089,7 @@ describe('native Google Sheets', () => {
 
   it('makes bound custom API calls with query, body, response metadata, and redirects disabled', async () => {
     const { piece, req, transport } = await fixture();
+    const fetch = stubFetch(() => Response.json({ spreadsheetId: 'book', replies: [] }));
 
     expect(
       await piece.customApiCall({
@@ -1082,24 +1099,25 @@ describe('native Google Sheets', () => {
           method: 'POST',
           query: { prettyPrint: false },
           headers: { 'x-request-id': 'test' },
-          body: { type: 'json', value: { requests: [] } },
+          body: { requests: [] },
         },
       }),
-    ).toMatchObject({ status: 200, body: { spreadsheetId: 'book', replies: [] } });
-
-    const call = transport.mock.calls[0][0];
-
-    expect(String(call.url)).toBe('https://sheets.googleapis.com/v4/spreadsheets/book:batchUpdate');
-    expect(call).toMatchObject({
-      params: { prettyPrint: false },
-      data: { requests: [] },
-      redirect: 'error',
-      maxRedirects: 0,
-      signal: req.signal,
-      timeout: 30000,
+    ).toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { spreadsheetId: 'book', replies: [] },
     });
-    expect(call.headers.get('authorization')).toBe('Bearer access-test');
-    expect(call.validateStatus(302)).toBe(false);
+
+    const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
+    const headers = new Headers(init.headers);
+
+    expect(String(url)).toBe(
+      'https://sheets.googleapis.com/v4/spreadsheets/book:batchUpdate?prettyPrint=false',
+    );
+    expect(init).toMatchObject({ method: 'POST', body: '{"requests":[]}', redirect: 'manual' });
+    expect(headers.get('authorization')).toBe('Bearer access-test');
+    expect(headers.get('x-request-id')).toBe('test');
+    expect(transport).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -1108,53 +1126,39 @@ describe('native Google Sheets', () => {
     '/%2e%2e/oauth2',
     '/spreadsheets/book#fragment',
     '/spreadsheets\\evil',
-  ])('rejects custom API escape %s before transport', async (path) => {
-    const { piece, req, transport } = await fixture();
+    '/files',
+    '/spreadsheetsx',
+  ])('rejects custom API escape %s before fetch', async (path) => {
+    const { piece, req } = await fixture();
+    const fetch = stubFetch(() => Response.json({}));
 
-    await expect(piece.customApiCall({ req, input: { path } })).rejects.toThrow();
-    expect(transport).not.toHaveBeenCalled();
+    await expect(piece.customApiCall({ req, input: { method: 'GET', path } })).rejects.toThrow(
+      'Google Sheets custom API path',
+    );
+    expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('supports raw bodies, form file references, and binary responses with access checks', async () => {
-    const { piece, req, transport, findByID, create, respond } = await fixture();
-    const fetch = vi.fn().mockResolvedValue(new Response('source'));
-    vi.stubGlobal('fetch', fetch);
+  it.each(['Authorization', 'X-Goog-Api-Key', 'Cookie'])(
+    'rejects reserved custom header %s',
+    async (name) => {
+      const { piece, req } = await fixture();
+      const fetch = stubFetch(() => Response.json({}));
 
-    transport.mockImplementation((config) =>
-      Promise.resolve(respond(Buffer.from('binary'), config, 200, { 'content-type': 'text/csv' })),
+      await expect(
+        piece.customApiCall({
+          req,
+          input: { method: 'GET', path: '/spreadsheets/book', headers: { [name]: 'other' } },
+        }),
+      ).rejects.toThrow();
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
+
+  it('sends raw and form bodies and saves binary responses with access checks', async () => {
+    const { piece, req, create } = await fixture();
+    const fetch = stubFetch(
+      () => new Response(Buffer.from('binary'), { headers: { 'content-type': 'text/csv' } }),
     );
-
-    await piece.customApiCall({
-      req,
-      input: {
-        path: '/spreadsheets/book',
-        method: 'POST',
-        body: {
-          type: 'form',
-          fields: [
-            { name: 'text', value: 'value' },
-            { name: 'file', file: { fileId: 'file' } },
-          ],
-        },
-        binary: true,
-        filename: 'download.csv',
-      },
-    });
-
-    expect(findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'file', req, overrideAccess: false }),
-    );
-    expect(fetch.mock.calls[0][1].headers.get('authorization')).toBe('Bearer app');
-    expect(fetch.mock.calls[0][1]).toMatchObject({ signal: req.signal, redirect: 'error' });
-    expect(transport.mock.calls[0][0].data.get('text')).toBe('value');
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        overrideAccess: false,
-        file: expect.objectContaining({ data: Buffer.from('binary'), name: 'download.csv' }),
-      }),
-    );
-
-    transport.mockImplementationOnce((config) => Promise.resolve(respond('plain', config)));
 
     expect(
       await piece.customApiCall({
@@ -1162,39 +1166,35 @@ describe('native Google Sheets', () => {
         input: {
           path: '/spreadsheets/book',
           method: 'POST',
-          body: { type: 'raw', value: 'plain' },
+          bodyType: 'formData',
+          body: { text: 'value' },
+          responseType: 'binary',
+          fileName: 'download.csv',
         },
       }),
-    ).toMatchObject({ body: 'plain' });
-    expect(transport.mock.calls[1][0].data).toBe('plain');
-  });
-
-  it('does not forward app credentials to external file storage and rejects reserved custom headers', async () => {
-    const { piece, req, findByID, transport } = await fixture();
-    findByID.mockResolvedValue({ url: 'https://storage.test/signed', filename: 'source.csv' });
-    const fetch = vi.fn().mockResolvedValue(new Response('source'));
-    vi.stubGlobal('fetch', fetch);
-
-    await piece.customApiCall({
-      req,
-      input: {
-        path: '/spreadsheets/book',
-        method: 'POST',
-        body: { type: 'form', fields: [{ name: 'file', file: { fileId: 'file' } }] },
-      },
+    ).toMatchObject({
+      status: 200,
+      body: { id: 'saved', name: 'download.csv', mimeType: 'text/csv' },
     });
-
-    expect([...fetch.mock.calls[0][1].headers]).toEqual([]);
-
-    transport.mockClear();
-
-    await expect(
-      piece.customApiCall({
-        req,
-        input: { path: '/spreadsheets/book', headers: { Authorization: 'other' } },
+    expect((fetch.mock.calls[0]?.[1]?.body as FormData).get('text')).toBe('value');
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        overrideAccess: false,
+        file: expect.objectContaining({ data: Buffer.from('binary'), name: 'download.csv' }),
       }),
-    ).rejects.toThrow('reserved');
-    expect(transport).not.toHaveBeenCalled();
+    );
+
+    fetch.mockImplementationOnce(() =>
+      Promise.resolve(new Response('plain', { headers: { 'content-type': 'text/plain' } })),
+    );
+
+    expect(
+      await piece.customApiCall({
+        req,
+        input: { path: '/spreadsheets/book', method: 'POST', bodyType: 'raw', body: 'plain' },
+      }),
+    ).toMatchObject({ body: 'plain' });
+    expect(fetch.mock.calls[1]?.[1]?.body).toBe('plain');
   });
 
   it('honors cancellation before any SDK request', async () => {
@@ -1211,33 +1211,35 @@ describe('native Google Sheets', () => {
     expect(transport).not.toHaveBeenCalled();
   });
 
-  it('uses real Gaxios to reject redirects even in failsafe mode and propagate provider errors without refreshing', async () => {
-    const { piece, req, client } = await fixture();
-    client.auth.transporter.request = Object.getPrototypeOf(client.auth.transporter).request;
+  it('refuses redirects and only returns provider errors with failsafe', async () => {
+    const { piece, req } = await fixture();
     const fetch = vi
-      .fn()
+      .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(
         new Response('', { status: 302, headers: { location: 'https://attacker.test/steal' } }),
       )
       .mockResolvedValueOnce(Response.json({ error: { message: 'expired' } }, { status: 401 }))
       .mockResolvedValueOnce(Response.json({ error: { message: 'limited' } }, { status: 429 }));
 
-    client.auth.transporter.defaults.fetchImplementation = fetch;
+    vi.stubGlobal('fetch', fetch);
 
     await expect(
-      piece.customApiCall({ req, input: { path: '/spreadsheets/book', failOnError: false } }),
-    ).rejects.toThrow();
+      piece.customApiCall({ req, input: { method: 'GET', path: '/spreadsheets/book' } }),
+    ).rejects.toThrow('Google Sheets API redirected (302) to https://attacker.test/steal.');
     await expect(
-      piece.customApiCall({ req, input: { path: '/spreadsheets/book' } }),
-    ).rejects.toThrow('expired');
+      piece.customApiCall({ req, input: { method: 'GET', path: '/spreadsheets/book' } }),
+    ).rejects.toThrow('[frogbot] Google Sheets API request failed (401)');
     expect(
-      await piece.customApiCall({ req, input: { path: '/spreadsheets/book', failOnError: false } }),
+      await piece.customApiCall({
+        req,
+        input: { method: 'GET', path: '/spreadsheets/book', failsafe: true },
+      }),
     ).toMatchObject({ status: 429, body: { error: { message: 'limited' } } });
     expect(fetch).toHaveBeenCalledTimes(3);
 
-    for (const [url, options] of fetch.mock.calls) {
+    for (const [url, init] of fetch.mock.calls) {
       expect(new URL(String(url)).origin).toBe('https://sheets.googleapis.com');
-      expect(options.redirect).toBe('error');
+      expect(init?.redirect).toBe('manual');
     }
   });
 });

@@ -13,8 +13,6 @@ type RequestOptions = {
   headers?: HeadersInit;
   body?: BodyInit;
   signal?: AbortSignal;
-  timeout?: number;
-  failsafe?: boolean;
 };
 
 export type DropboxResponse = {
@@ -41,11 +39,11 @@ export class DropboxClient {
   }
 
   async request(path: string, options: RequestOptions = {}): Promise<DropboxResponse> {
-    const timeout = AbortSignal.timeout(options.timeout ?? 30_000);
+    const timeout = AbortSignal.timeout(30_000);
     const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
     const headers = new Headers(options.headers);
 
-    headers.set('authorization', `Bearer ${this.accessToken}`);
+    this.authorize(headers);
     signal.throwIfAborted();
 
     const response = await fetch(path, {
@@ -61,13 +59,17 @@ export class DropboxClient {
       ? await response.json()
       : await response.arrayBuffer();
 
-    if (!response.ok && !options.failsafe) throw new Error(errorMessage(body, response.status));
+    if (!response.ok) throw new Error(errorMessage(body, response.status));
 
     return {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
       body,
     };
+  }
+
+  authorize(headers: Headers): void {
+    headers.set('authorization', `Bearer ${this.accessToken}`);
   }
 
   async rpc<T>(

@@ -273,6 +273,7 @@ Build the inventory from the upstream piece's registered `actions` and `triggers
 | `ctx.store`                                                                          | Trigger `state` or polling `cursor`; actions may use `req.frogbot.kv`.                                        |
 | `ctx.files.write`                                                                    | `req.frogbot.create` on `filesCollectionSlug(req, '<Piece label>')`, which throws without a files collection. |
 | `ctx.connections.get`                                                                | Drop; credential resolution produces `client`.                                                                |
+| `createCustomApiCallAction`                                                          | `defineCustomApiCall({ name, baseUrl, authorize })` from `createPieceHelpers`; never a hand-written action.   |
 | `ctx.server`                                                                         | Drop; use the in-process local API. `webhookUrl` is explicit where needed.                                    |
 | `ctx.run.id`, `stop`, `respond`                                                      | Drop; these belong to the workflow host.                                                                      |
 | Waitpoints, `executionType`, `resumePayload`, `run.pause`, `generateResumeUrl`       | Drop; durable waits belong to workflows. Accept resume URLs as action input when needed.                      |

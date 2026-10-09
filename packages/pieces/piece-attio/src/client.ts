@@ -4,7 +4,6 @@ export type AttioRequest = {
   method?: string;
   path: string;
   query?: Record<string, unknown>;
-  rawResponse?: boolean;
   redirect?: RequestRedirect;
   signal?: AbortSignal;
 };
@@ -21,7 +20,6 @@ export function createAttioClient({ auth }: { auth: unknown }) {
       method = 'GET',
       path,
       query,
-      rawResponse,
       redirect,
       signal,
     }: AttioRequest): Promise<T> {
@@ -66,15 +64,10 @@ export function createAttioClient({ auth }: { auth: unknown }) {
         throw new Error(`Attio request failed (${response.status}): ${String(message)}`);
       }
 
-      return (
-        rawResponse
-          ? {
-              status: response.status,
-              headers: Object.fromEntries(response.headers.entries()),
-              body: result,
-            }
-          : result
-      ) as T;
+      return result as T;
+    },
+    authorize(headers: Headers) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
     },
   };
 }

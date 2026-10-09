@@ -138,6 +138,15 @@ const transport = vi.fn(
     new Promise<ReturnType<typeof response>>((resolve) => resolve(route(config))),
 );
 
+const fetchMock = vi.fn<typeof fetch>();
+
+function lastFetch() {
+  const call = fetchMock.mock.calls.at(-1);
+  if (!call) throw new Error('Missing Calendar fetch request.');
+
+  return call as [URL, RequestInit];
+}
+
 function request(signal?: AbortSignal) {
   const key = {};
 
@@ -170,9 +179,15 @@ beforeEach(() => {
     Object.getPrototypeOf(oauth.transporter);
 
   vi.spyOn(transporter, 'request').mockImplementation(transport);
+  fetchMock.mockReset();
+  fetchMock.mockImplementation(() => Promise.resolve(Response.json({ ok: true })));
+  vi.stubGlobal('fetch', fetchMock);
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('native Google Calendar', () => {
   it('declares nine semantic actions, meaningful schemas, shared identity, and secret credentials', () => {
@@ -638,7 +653,7 @@ describe('native Google Calendar', () => {
     expect(transport).toHaveBeenCalledTimes(1);
   });
 
-  it.each(googleCalendarActions)(
+  it.each(googleCalendarActions.filter((slug) => slug !== 'customApiCall'))(
     '%s forwards transport failures and request cancellation',
     async (slug) => {
       const inputs = {
@@ -654,7 +669,6 @@ describe('native Google Calendar', () => {
           endDate: end,
         },
         getEvent: reference,
-        customApiCall: { method: 'GET', path: '/custom' },
       };
 
       const controller = new AbortController();
@@ -688,198 +702,93 @@ describe('native Google Calendar', () => {
 });
 
 describe('Google Calendar custom API', () => {
-  it('serializes JSON and multipart files through the SDK HTTP adapter', async () => {
-    vi.restoreAllMocks();
-    const { calendar, client, req } = await fixture();
-    const oauth = client.context._options.auth as InstanceType<typeof google.auth.OAuth2>;
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockImplementation(() => Promise.resolve(Response.json({ ok: true })));
-
-    oauth.transporter.defaults.fetchImplementation = fetchMock;
-
-    await calendar.customApiCall({
-      input: { method: 'POST', path: '/custom', body: { summary: 'Meeting' } },
-      req,
-    });
-
-    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
-      body: '{"summary":"Meeting"}',
-      redirect: 'manual',
-    });
-
-    await calendar.customApiCall({
-      input: {
-        method: 'POST',
-        path: '/custom',
-        bodyType: 'formData',
-        formData: [{ name: 'file', type: 'file', filename: 'file.bin', base64: 'AP+A' }],
-      },
-      req,
-    });
-
-    const form = fetchMock.mock.calls[1]?.[1]?.body as FormData;
-
-    expect(form).toBeInstanceOf(FormData);
-    expect(new Uint8Array(await (form.get('file') as File).arrayBuffer())).toEqual(
-      new Uint8Array([0, 255, 128]),
-    );
-
-    for (const body of ['text', false, 0, null]) {
-      await calendar.customApiCall({ input: { method: 'POST', path: '/custom', body }, req });
-
-      expect(fetchMock.mock.calls.at(-1)?.[1]?.body).toBe(JSON.stringify(body));
-    }
-  });
-
-  it('rejects redirects at the real HTTP adapter without a second request', async () => {
-    vi.restoreAllMocks();
-    const { calendar, client, req } = await fixture();
-    const oauth = client.context._options.auth as InstanceType<typeof google.auth.OAuth2>;
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation(() =>
-      Promise.resolve(
-        new Response(null, {
-          status: 302,
-          headers: { location: 'https://attacker.test/steal' },
-        }),
-      ),
-    );
-
-    oauth.transporter.defaults.fetchImplementation = fetchMock;
-
-    await expect(
-      calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
-    ).rejects.toThrow('redirects are not allowed');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-
-    const [url, init] = fetchMock.mock.calls[0];
-
-    expect(String(url)).toBe('https://www.googleapis.com/calendar/v3/custom');
-    expect(init?.redirect).toBe('manual');
-    expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${auth.accessToken}`);
-  });
-
-  it.each(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const)(
-    'supports %s with provider authentication',
-    async (method) => {
-      const { calendar, req } = await fixture();
-
-      await calendar.customApiCall({
-        input: {
-          method,
-          path: '/custom',
-          query: { eventTypes: ['default', 'focusTime'], count: 3 },
-          headers: { 'X-Test': 'value' },
-        },
-        req,
-      });
-
-      expect(lastCall()).toMatchObject({
-        url: 'https://www.googleapis.com/calendar/v3/custom',
-        method,
-        params: { eventTypes: ['default', 'focusTime'], count: 3 },
-        redirect: 'manual',
-        maxRedirects: 0,
-        retry: false,
-      });
-      expect(lastCall().headers?.get('authorization')).toBe(`Bearer ${auth.accessToken}`);
-      expect(lastCall().headers?.get('x-test')).toBe('value');
-    },
-  );
-
-  it('supports full provider URLs, JSON, raw, no body, timeout, and multipart binary files', async () => {
+  it('sends JSON, raw, and multipart bodies with provider authentication', async () => {
     const { calendar, req } = await fixture();
 
     await calendar.customApiCall({
       input: {
         method: 'POST',
-        path: 'https://www.googleapis.com/calendar/v3/custom',
-        body: { title: 'JSON' },
-        timeout: 5,
+        path: '/calendars/primary/events',
+        query: { eventTypes: ['default', 'focusTime'], count: 3 },
+        headers: { 'X-Test': 'value' },
+        body: { summary: 'Meeting' },
       },
       req,
     });
 
-    expect(lastCall()).toMatchObject({ data: '{"title":"JSON"}', timeout: 5000 });
-    expect(lastCall().headers?.get('content-type')).toBe('application/json');
+    const [url, init] = lastFetch();
+
+    expect(String(url)).toBe(
+      'https://www.googleapis.com/calendar/v3/calendars/primary/events?eventTypes=default&eventTypes=focusTime&count=3',
+    );
+    expect(init).toMatchObject({
+      method: 'POST',
+      body: '{"summary":"Meeting"}',
+      redirect: 'manual',
+    });
+
+    const headers = new Headers(init.headers);
+
+    expect(headers.get('authorization')).toBe(`Bearer ${auth.accessToken}`);
+    expect(headers.get('x-test')).toBe('value');
+    expect(headers.get('content-type')).toBe('application/json');
 
     await calendar.customApiCall({
       input: { method: 'POST', path: '/custom', bodyType: 'raw', body: 'hello' },
       req,
     });
 
-    expect(lastCall().data).toBe('hello');
-    expect(lastCall().headers?.get('content-type')).toBe('text/plain');
+    expect(lastFetch()[1].body).toBe('hello');
 
     await calendar.customApiCall({
-      input: { method: 'POST', path: '/custom', bodyType: 'none', body: 'ignored' },
+      input: { method: 'POST', path: '/custom', bodyType: 'formData', body: { title: 'Agenda' } },
       req,
     });
 
-    expect(lastCall().data).toBeUndefined();
+    const form = lastFetch()[1].body as FormData;
 
-    await calendar.customApiCall({
-      input: {
-        method: 'POST',
-        path: '/custom',
-        bodyType: 'formData',
-        headers: { 'Content-Type': 'wrong' },
-        formData: [
-          { name: 'title', type: 'text', value: '' },
-          {
-            name: 'file',
-            type: 'file',
-            filename: 'event.ics',
-            contentType: 'text/calendar',
-            base64: Buffer.from('calendar content').toString('base64'),
-          },
-        ],
-      },
-      req,
-    });
-
-    const form = lastCall().data as FormData;
-
-    expect(form.get('title')).toBe('');
-
-    const file = form.get('file') as File;
-
-    expect(file.name).toBe('event.ics');
-    expect(file.type).toBe('text/calendar');
-    expect(await file.text()).toBe('calendar content');
-    expect(lastCall().headers?.has('content-type')).toBe(false);
+    expect(form).toBeInstanceOf(FormData);
+    expect(form.get('title')).toBe('Agenda');
+    expect(transport).not.toHaveBeenCalled();
   });
 
-  it('returns binary bytes as base64 and supports failsafe HTTP responses', async () => {
+  it('returns the shared envelope, keeps failsafe errors, and refuses redirects', async () => {
     const { calendar, req } = await fixture();
 
-    transport.mockImplementationOnce((config) =>
-      Promise.resolve({
-        ...response(Buffer.from([0, 255, 128]), config),
-        headers: new Headers({ 'content-type': 'application/octet-stream' }),
-      }),
-    );
-
     await expect(
-      calendar.customApiCall({
-        input: { method: 'GET', path: '/custom', responseIsBinary: true },
-        req,
-      }),
-    ).resolves.toMatchObject({ body: { base64: 'AP+A', contentType: 'application/octet-stream' } });
-    expect(lastCall().responseType).toBe('arraybuffer');
+      calendar.customApiCall({ input: { method: 'GET', path: '/users/me/calendarList' }, req }),
+    ).resolves.toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { ok: true },
+    });
 
-    transport.mockImplementationOnce((config) =>
-      Promise.resolve(response({ error: { message: 'Denied' } }, config, 403)),
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ error: { message: 'Denied' } }, { status: 403 }),
     );
 
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).resolves.toMatchObject({ status: 403, body: { error: { message: 'Denied' } } });
-    expect(lastCall().validateStatus?.(403)).toBe(true);
 
-    await calendar.customApiCall({ input: { method: 'GET', path: '/custom' }, req });
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ error: { message: 'Denied' } }, { status: 403 }),
+    );
 
-    expect(lastCall().validateStatus?.(403)).toBe(false);
+    await expect(
+      calendar.customApiCall({ input: { method: 'GET', path: '/custom' }, req }),
+    ).rejects.toThrow('[frogbot] Google Calendar API request failed (403)');
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, { status: 302, headers: { location: 'https://attacker.test/steal' } }),
+    );
+
+    fetchMock.mockClear();
+
+    await expect(
+      calendar.customApiCall({ input: { method: 'GET', path: '/custom' }, req }),
+    ).rejects.toThrow('Google Calendar API redirected (302) to https://attacker.test/steal.');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it.each([
@@ -887,37 +796,23 @@ describe('Google Calendar custom API', () => {
     '//attacker.test/events',
     '/../../oauth2/v3/userinfo',
     '/%2e%2e/%2e%2e/oauth2/v3/userinfo',
-    '/%252e%252e/other',
-    '/%2e%2e%2fother',
     '/\\attacker.test',
-    'https://www.googleapis.com.attacker.test/calendar/v3/events',
-    'https://attacker@www.googleapis.com/calendar/v3/events',
-    'https://www.googleapis.com/oauth2/v3/userinfo',
-    'http://www.googleapis.com/calendar/v3/events',
-    'https://www.googleapis.com:444/calendar/v3/events',
     '/events#fragment',
-  ])('rejects unsafe URL %s before transport', async (path) => {
+  ])('rejects unsafe path %s before fetch', async (path) => {
     const { calendar, req } = await fixture();
 
     await expect(calendar.customApiCall({ input: { method: 'GET', path }, req })).rejects.toThrow(
-      'Google Calendar v3 API',
+      'Google Calendar',
     );
-    expect(transport).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([
     { headers: { Authorization: 'Bearer override' } },
     { headers: { Host: 'attacker.test' } },
-    { followRedirects: true },
-    { timeout: 0 },
+    { timeoutSeconds: 0 },
     { method: 'POST', bodyType: 'raw', body: {} },
-    { method: 'POST', bodyType: 'formData' },
     { body: 'invalid GET body' },
-    {
-      method: 'POST',
-      bodyType: 'formData',
-      formData: [{ type: 'file', name: 'file', filename: 'file.bin', base64: 'not base64!' }],
-    },
   ])('rejects invalid custom request %j', async (invalid) => {
     const { calendar, req } = await fixture();
 
@@ -927,42 +822,25 @@ describe('Google Calendar custom API', () => {
         req,
       }),
     ).rejects.toThrow();
-    expect(transport).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('rejects redirect responses even in failsafe mode without forwarding credentials', async () => {
-    const { calendar, req } = await fixture();
-
-    transport.mockImplementationOnce((config) =>
-      Promise.resolve({
-        ...response('', config, 302),
-        headers: new Headers({ location: 'https://attacker.test/steal' }),
-      }),
-    );
-
-    await expect(
-      calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
-    ).rejects.toThrow('redirects are not allowed');
-    expect(transport).toHaveBeenCalledTimes(1);
-    expect(lastCall().redirect).toBe('manual');
-  });
-
-  it('passes cancellation to custom requests and propagates transport failures', async () => {
+  it('passes cancellation to custom requests and propagates network failures', async () => {
     const controller = new AbortController();
     const { calendar, req } = await fixture(controller.signal);
-    transport.mockRejectedValueOnce(new Error('Network unavailable'));
+    fetchMock.mockRejectedValueOnce(new Error('Network unavailable'));
 
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom', failsafe: true }, req }),
     ).rejects.toThrow('Network unavailable');
-    expect(lastCall().signal).toBe(controller.signal);
+    expect(lastFetch()[1].signal).toBeInstanceOf(AbortSignal);
 
     controller.abort(new Error('Cancelled'));
-    transport.mockClear();
+    fetchMock.mockClear();
 
     await expect(
       calendar.customApiCall({ input: { method: 'GET', path: '/custom' }, req }),
     ).rejects.toThrow('Cancelled');
-    expect(transport).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -16,6 +16,13 @@ export type {
   RenderedQuestion,
 } from '../channels/questions/types.js';
 export type { TurnActor } from '../chat/turn/types.js';
+export type {
+  CustomApiCallAction,
+  CustomApiCallConfig,
+  CustomApiCallFile,
+  CustomApiCallInput,
+  CustomApiCallOutput,
+} from '../pieces/customApiCall.js';
 export { createPieceHelpers, definePiece } from '../pieces/definePiece.js';
 export type { EmailPiece } from '../pieces/email.js';
 export type { PieceFile } from '../pieces/files.js';

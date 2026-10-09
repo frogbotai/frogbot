@@ -42,6 +42,12 @@ export function createDiscordClient({
   const apiUrl = discordApiUrl(options?.apiUrl) ?? defaultApiUrl;
   const { origin } = new URL(apiUrl);
 
+  function checkOrigin(url: URL) {
+    if (url.origin !== origin) {
+      throw new Error(`[frogbot] Discord request URL must stay on ${origin}.`);
+    }
+  }
+
   async function request({
     method = 'GET',
     path,
@@ -62,9 +68,7 @@ export function createDiscordClient({
 
     const url = path.startsWith('https://') ? path : `${apiUrl}${path}`;
 
-    if (authenticated && new URL(url).origin !== origin) {
-      throw new Error(`[frogbot] Discord request URL must stay on ${origin}.`);
-    }
+    if (authenticated) checkOrigin(new URL(url));
 
     const response = await fetch(url, {
       method,
@@ -93,12 +97,12 @@ export function createDiscordClient({
     return { status: response.status, headers: Object.fromEntries(response.headers), body: result };
   }
 
-  return { request };
+  function authorize(url: URL, headers: Headers) {
+    checkOrigin(url);
+    headers.set('authorization', `Bot ${botToken}`);
+  }
+
+  return { apiUrl, request, authorize };
 }
 
 export const discordObject = z.record(z.string(), z.unknown());
-export const discordResponse = z.object({
-  status: z.number().int(),
-  headers: z.record(z.string(), z.string()),
-  body: z.unknown(),
-});

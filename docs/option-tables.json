@@ -1190,6 +1190,11 @@
     "type": "Parameters<typeof import('@frogbotai/piece-google-sheets').createGoogleSheets>[0]"
   },
   {
+    "page": "pieces/index",
+    "heading": "Custom API calls",
+    "type": "import('frogbot/pieces').CustomApiCallInput"
+  },
+  {
     "page": "pieces/linear",
     "heading": "Connect an agent",
     "type": "Parameters<typeof import('@frogbotai/piece-linear').createLinear>[0]"

@@ -43,7 +43,7 @@ export const stripeActions = [
   'deactivatePaymentLink',
   'getPaymentIntent',
   'findInvoice',
-  'sendRequest',
+  'customApiCall',
 ] as const;
 export const stripeTriggers = stripeTriggerDefinitions.map(({ slug }) => slug);
 export const stripeScopes = [] as const;

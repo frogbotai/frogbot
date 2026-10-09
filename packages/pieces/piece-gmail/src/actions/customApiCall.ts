@@ -1,42 +1,8 @@
-import { z } from 'zod';
+import { authorize } from '../client.js';
+import { defineCustomApiCall } from '../define.js';
 
-import { defineAction } from '../define.js';
-
-const inputSchema = z.object({
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
-  path: z.string().startsWith('/'),
-  query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  body: z.unknown().optional(),
-});
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Make an authenticated Gmail API call.',
-  input: inputSchema,
-  output: z.unknown(),
-  idempotent: false,
-  async run({ client, input }) {
-    const request = client.context._options.auth;
-    if (!request || typeof request === 'string' || !('request' in request)) {
-      throw new Error('[frogbot] Gmail client is missing authenticated transport.');
-    }
-
-    const response = await request.request({
-      method: input.method,
-      url: `https://gmail.googleapis.com/gmail/v1${input.path}`,
-      params: input.query,
-      data: input.body,
-      redirect: 'manual',
-      maxRedirects: 0,
-      validateStatus: (status) => status >= 200 && status < 400,
-    });
-
-    if (response.status >= 300) {
-      throw new Error(
-        `Gmail API redirected (${response.status}) to ${response.headers.get('location')}.`,
-      );
-    }
-
-    return response.data;
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Gmail',
+  baseUrl: 'https://gmail.googleapis.com/gmail/v1',
+  authorize: ({ client, url, headers }) => authorize(client, url, headers),
 });

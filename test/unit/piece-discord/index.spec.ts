@@ -451,28 +451,27 @@ describe('discord', () => {
     vi.stubGlobal('fetch', fetch);
 
     const discord = createDiscord({ auth: { botToken: 'discord_test_token' } });
-    const result = await discord.sendApiRequest({
-      input: {
-        path: '/users/@me',
-        method: 'GET',
-        headers: {},
-        queryParams: { with_counts: true },
-      },
+    const result = await discord.customApiCall({
+      input: { path: '/users/@me', method: 'GET', query: { with_counts: true } },
       req: req(),
     });
 
-    expect(fetch.mock.calls[0]?.[0]).toBe('https://discord.com/api/v10/users/@me?with_counts=true');
+    const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
+
+    expect(String(url)).toBe('https://discord.com/api/v10/users/@me?with_counts=true');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bot discord_test_token');
     expect(result).toEqual({
       status: 200,
       headers: { 'content-type': 'application/json', 'x-request-id': 'request' },
       body: { id: 'g' },
     });
     await expect(
-      discord.sendApiRequest({
-        input: { path: 'https://attacker.example', method: 'GET', headers: {}, queryParams: {} },
+      discord.customApiCall({
+        input: { path: 'https://attacker.example', method: 'GET' },
         req: req(),
       }),
-    ).rejects.toThrow('Path must be relative');
+    ).rejects.toThrow('[frogbot] Discord custom API path must be relative to the Discord API.');
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it('sends the bot token only to the configured API origin', async () => {

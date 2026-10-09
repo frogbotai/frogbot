@@ -54,36 +54,36 @@ These are bot scopes. User scopes are fixed in the recipe's `user_scope` paramet
 
 ## Actions
 
-| Upstream action slug              | Previous wrapper export        | Native action            | Notes                                                                                |
-| --------------------------------- | ------------------------------ | ------------------------ | ------------------------------------------------------------------------------------ |
-| `slack-add-reaction-to-message`   | `slackAddReactionToMessage`    | `addReaction`            |                                                                                      |
-| `send_direct_message`             | `sendDirectMessage`            | `sendDirectMessage`      |                                                                                      |
-| `send_channel_message`            | `sendChannelMessage`           | `sendChannelMessage`     |                                                                                      |
-| `request_approval_direct_message` | `requestApprovalDirectMessage` | Omitted                  | Workflow waitpoint approval action.                                                  |
-| `request_approval_message`        | `requestApprovalMessage`       | Omitted                  | Workflow waitpoint approval action.                                                  |
-| `request_action_direct_message`   | `requestActionDirectMessage`   | Omitted                  | Workflow waitpoint action selection.                                                 |
-| `request_action_message`          | `requestActionMessage`         | Omitted                  | Workflow waitpoint action selection.                                                 |
-| `uploadFile`                      | `uploadFile`                   | `uploadFile`             | Uses Slack's external upload flow.                                                   |
-| `get-file`                        | `getFile`                      | `getFile`                | Safely persists downloaded bytes in the files collection.                            |
-| `searchMessages`                  | `searchMessages`               | `searchMessages`         | Requires a user token.                                                               |
-| `slack-find-user-by-email`        | `slackFindUserByEmail`         | `findUserByEmail`        |                                                                                      |
-| `slack-find-user-by-handle`       | `slackFindUserByHandle`        | `findUserByHandle`       |                                                                                      |
-| `find-user-by-id`                 | `findUserById`                 | `findUserById`           |                                                                                      |
-| `listUsers`                       | `listUsers`                    | `listUsers`              |                                                                                      |
-| `updateMessage`                   | `updateMessage`                | `updateMessage`          |                                                                                      |
-| `delete-message`                  | `deleteMessage`                | `deleteMessage`          | Requires a user token.                                                               |
-| `slack-create-channel`            | `slackCreateChannel`           | `createChannel`          |                                                                                      |
-| `slack-update-profile`            | `slackUpdateProfile`           | `updateProfile`          | Requires a user token.                                                               |
-| `getChannelHistory`               | `getChannelHistory`            | `getChannelHistory`      |                                                                                      |
-| `slack-set-user-status`           | `slackSetUserStatus`           | `setUserStatus`          | Requires a user token.                                                               |
-| `markdownToSlackFormat`           | `markdownToSlackFormat`        | `markdownToSlack`        | Local conversion.                                                                    |
-| `retrieveThreadMessages`          | `retrieveThreadMessages`       | `listThreadMessages`     |                                                                                      |
-| `set-channel-topic`               | `setChannelTopic`              | `setChannelTopic`        |                                                                                      |
-| `get-message`                     | `getMessage`                   | `getMessage`             |                                                                                      |
-| `invite-user-to-channel`          | `inviteUserToChannel`          | `inviteUserToChannel`    |                                                                                      |
-| `get_group_by_handle`             | `getGroupByHandle`             | `getUserGroupByHandle`   |                                                                                      |
-| `update_group_users`              | `updateGroupUsers`             | `updateUserGroupMembers` | User-token update.                                                                   |
-| `custom_api_call`                 | `customApiCall`                | `customApiCall`          | Relative Slack Web API methods only; redirects and caller auth headers are rejected. |
+| Upstream action slug              | Previous wrapper export        | Native action            | Notes                                                                         |
+| --------------------------------- | ------------------------------ | ------------------------ | ----------------------------------------------------------------------------- |
+| `slack-add-reaction-to-message`   | `slackAddReactionToMessage`    | `addReaction`            |                                                                               |
+| `send_direct_message`             | `sendDirectMessage`            | `sendDirectMessage`      |                                                                               |
+| `send_channel_message`            | `sendChannelMessage`           | `sendChannelMessage`     |                                                                               |
+| `request_approval_direct_message` | `requestApprovalDirectMessage` | Omitted                  | Workflow waitpoint approval action.                                           |
+| `request_approval_message`        | `requestApprovalMessage`       | Omitted                  | Workflow waitpoint approval action.                                           |
+| `request_action_direct_message`   | `requestActionDirectMessage`   | Omitted                  | Workflow waitpoint action selection.                                          |
+| `request_action_message`          | `requestActionMessage`         | Omitted                  | Workflow waitpoint action selection.                                          |
+| `uploadFile`                      | `uploadFile`                   | `uploadFile`             | Uses Slack's external upload flow.                                            |
+| `get-file`                        | `getFile`                      | `getFile`                | Safely persists downloaded bytes in the files collection.                     |
+| `searchMessages`                  | `searchMessages`               | `searchMessages`         | Requires a user token.                                                        |
+| `slack-find-user-by-email`        | `slackFindUserByEmail`         | `findUserByEmail`        |                                                                               |
+| `slack-find-user-by-handle`       | `slackFindUserByHandle`        | `findUserByHandle`       |                                                                               |
+| `find-user-by-id`                 | `findUserById`                 | `findUserById`           |                                                                               |
+| `listUsers`                       | `listUsers`                    | `listUsers`              |                                                                               |
+| `updateMessage`                   | `updateMessage`                | `updateMessage`          |                                                                               |
+| `delete-message`                  | `deleteMessage`                | `deleteMessage`          | Requires a user token.                                                        |
+| `slack-create-channel`            | `slackCreateChannel`           | `createChannel`          |                                                                               |
+| `slack-update-profile`            | `slackUpdateProfile`           | `updateProfile`          | Requires a user token.                                                        |
+| `getChannelHistory`               | `getChannelHistory`            | `getChannelHistory`      |                                                                               |
+| `slack-set-user-status`           | `slackSetUserStatus`           | `setUserStatus`          | Requires a user token.                                                        |
+| `markdownToSlackFormat`           | `markdownToSlackFormat`        | `markdownToSlack`        | Local conversion.                                                             |
+| `retrieveThreadMessages`          | `retrieveThreadMessages`       | `listThreadMessages`     |                                                                               |
+| `set-channel-topic`               | `setChannelTopic`              | `setChannelTopic`        |                                                                               |
+| `get-message`                     | `getMessage`                   | `getMessage`             |                                                                               |
+| `invite-user-to-channel`          | `inviteUserToChannel`          | `inviteUserToChannel`    |                                                                               |
+| `get_group_by_handle`             | `getGroupByHandle`             | `getUserGroupByHandle`   |                                                                               |
+| `update_group_users`              | `updateGroupUsers`             | `updateUserGroupMembers` | User-token update.                                                            |
+| `custom_api_call`                 | `customApiCall`                | `customApiCall`          | Slack Web API method names only, sent with the bot token; `ok: false` throws. |
 
 ## Triggers
 

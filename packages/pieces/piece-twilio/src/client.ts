@@ -10,6 +10,12 @@ type RequestOptions = {
   redirect?: RequestRedirect;
 };
 
+function checkOrigin(url: URL, base: string) {
+  if (url.origin !== base) {
+    throw new Error(`[frogbot] Twilio request URL must stay on ${base}.`);
+  }
+}
+
 export function createTwilioClient({ auth, options }: { auth: unknown; options: unknown }) {
   const { username, password } = twilioAuth.parse(auth);
 
@@ -19,6 +25,10 @@ export function createTwilioClient({ auth, options }: { auth: unknown; options: 
 
   return {
     accountSid: username,
+    authorize(url: URL, headers: Headers) {
+      checkOrigin(url, 'https://api.twilio.com');
+      headers.set('authorization', authorization);
+    },
     async request({
       body,
       method = 'GET',
@@ -35,9 +45,7 @@ export function createTwilioClient({ auth, options }: { auth: unknown; options: 
       const base = service === 'lookup' ? 'https://lookups.twilio.com' : 'https://api.twilio.com';
       const url = new URL(path, `${base}/`);
 
-      if (url.origin !== base) {
-        throw new Error(`[frogbot] Twilio request URL must stay on ${base}.`);
-      }
+      checkOrigin(url, base);
 
       for (const [key, value] of Object.entries(query ?? {})) {
         if (value !== undefined) url.searchParams.set(key, String(value));

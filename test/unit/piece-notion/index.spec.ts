@@ -258,7 +258,13 @@ describe('native Notion', () => {
         {
           slug: 'customApiCall',
           input: { method: 'GET', path: '/custom' },
-          expect: { result: { ok: true } },
+          expect: {
+            result: {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+              body: { ok: true },
+            },
+          },
         },
       ],
       triggers: notionTriggers.map((slug) => ({ slug, type: 'polling' })),
@@ -274,13 +280,21 @@ describe('native Notion', () => {
 
     await piece.customApiCall({ input: { method: 'GET', path: '/custom' }, req });
 
-    expect(requests[0]?.init.headers).toMatchObject({
+    expect(requests[0]?.url.href).toBe('https://api.notion.com/v1/custom');
+    expect(Object.fromEntries(new Headers(requests[0]?.init.headers))).toMatchObject({
       authorization: 'Bearer secret_test',
       'notion-version': '2022-02-22',
     });
     await expect(
       piece.customApiCall({ input: { method: 'GET', path: '/users/../custom' }, req }),
-    ).rejects.toThrow();
+    ).rejects.toThrow('custom API path must be relative to the Notion API');
+    await expect(
+      piece.customApiCall({
+        input: { method: 'GET', path: '/custom', headers: { Authorization: 'Bearer stolen' } },
+        req,
+      }),
+    ).rejects.toThrow("cannot set the 'Authorization' header");
+    expect(requests).toHaveLength(1);
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response({ id: 'missing-object' })));
 

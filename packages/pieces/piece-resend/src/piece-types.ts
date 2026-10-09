@@ -177,21 +177,40 @@ export interface ResendTypes {
     };
     customApiCall: {
       input: {
-        method: string;
-        url: string;
+        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
+        /**
+         * API path relative to the piece base URL.
+         */
+        path: string;
+        /**
+         * Query parameters. Array values are sent as repeated keys.
+         */
+        query?: {
+          [k: string]: (string | number | boolean) | (string | number | boolean)[];
+        };
         headers?: {
           [k: string]: string;
         };
-        queryParams?: {
-          [k: string]: unknown;
-        };
-        body_type?: 'none' | 'json' | 'form_data' | 'raw';
+        bodyType: 'json' | 'form' | 'raw' | 'formData';
         body?: unknown;
-        response_is_binary?: boolean;
-        failsafe?: boolean;
-        timeout?: number;
+        responseType: 'json' | 'text' | 'binary';
+        /**
+         * Name of the saved file for binary responses.
+         */
+        fileName?: string;
+        /**
+         * Return the response instead of throwing on a non-2xx status.
+         */
+        failsafe: boolean;
+        timeoutSeconds: number;
       };
-      output: unknown;
+      output: {
+        status: number;
+        headers: {
+          [k: string]: string;
+        };
+        body: unknown;
+      };
     };
   };
   triggers: {};

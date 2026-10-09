@@ -250,6 +250,47 @@ describe('Slack native piece', () => {
     await expect(client.request('chat.postMessage')).rejects.toThrow('not_in_channel');
   });
 
+  it('calls Slack Web API methods with the bot token and throws on ok: false', async () => {
+    const auth = { botToken: 'xoxb-test' };
+    const piece = createSlack({ auth });
+    const req = {
+      headers: new Headers(),
+      user: null,
+      frogbot: {
+        connections: { resolvePieceCredential: () => Promise.resolve({ auth, key: piece }) },
+      },
+    } as unknown as FrogBotRequest;
+
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ ok: true, team_id: 'T1' }))
+      .mockResolvedValueOnce(Response.json({ ok: false, error: 'invalid_auth' }));
+
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      piece.customApiCall({
+        input: { method: 'POST', path: 'auth.test', body: { channel: 'C1' } },
+        req,
+      }),
+    ).resolves.toMatchObject({ status: 200, body: { ok: true, team_id: 'T1' } });
+
+    const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
+
+    expect(String(url)).toBe('https://slack.com/api/auth.test');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer xoxb-test');
+    expect(init.body).toBe('{"channel":"C1"}');
+
+    await expect(
+      piece.customApiCall({ input: { method: 'GET', path: 'auth.test' }, req }),
+    ).rejects.toThrow('Slack API error: invalid_auth');
+
+    await expect(
+      piece.customApiCall({ input: { method: 'GET', path: 'admin/users.list' }, req }),
+    ).rejects.toThrow("Slack custom API path '/admin/users.list' is not allowed.");
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('loads a local file safely and completes Slack external upload', async () => {
     const fetch = vi.fn((value: URL | RequestInfo) =>
       Promise.resolve(uploadResponse(String(value))),

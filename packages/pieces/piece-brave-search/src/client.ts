@@ -5,15 +5,8 @@ const baseUrl = 'https://api.search.brave.com/res/v1';
 type QueryValue = string | number | boolean | readonly (string | number | boolean)[];
 
 export type BraveSearchRequest = {
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   path: string;
   query?: Record<string, QueryValue | undefined>;
-  headers?: Record<string, string>;
-  body?: BodyInit;
-  timeout?: number;
-  followRedirects?: boolean;
-  responseIsBinary?: boolean;
-  failsafe?: boolean;
   signal?: AbortSignal;
 };
 
@@ -48,58 +41,32 @@ export function createBraveSearchClient({ auth }: { auth: unknown }) {
         });
       });
 
-      const controller = new AbortController();
-      const abort = () => controller.abort(request.signal?.reason);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json', 'X-Subscription-Token': apiKey },
+        redirect: 'manual',
+        signal: request.signal,
+      });
 
-      request.signal?.addEventListener('abort', abort, { once: true });
+      const contentType = response.headers.get('content-type') ?? '';
+      const body: unknown = contentType.includes('application/json')
+        ? await response.json()
+        : await response.text();
 
-      if (request.signal?.aborted) abort();
-      const timeout = request.timeout
-        ? setTimeout(() => controller.abort(), request.timeout * 1_000)
-        : undefined;
+      if (!response.ok) {
+        const detail = typeof body === 'string' ? body : JSON.stringify(body);
 
-      try {
-        const response = await fetch(url, {
-          method: request.method ?? 'GET',
-          headers: (() => {
-            const headers = new Headers(request.headers);
-
-            if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-
-            headers.set('X-Subscription-Token', apiKey);
-
-            return headers;
-          })(),
-          body: request.body,
-          redirect: 'manual',
-          signal: controller.signal,
-        });
-
-        const contentType = response.headers.get('content-type') ?? '';
-        const body = request.responseIsBinary
-          ? new Uint8Array(await response.arrayBuffer())
-          : contentType.includes('application/json')
-            ? await response.json()
-            : await response.text();
-
-        const result = {
-          status: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
-          body,
-        };
-
-        if (!response.ok && !request.failsafe) {
-          const detail = typeof body === 'string' ? body : JSON.stringify(body);
-
-          throw new Error(`[frogbot] Brave Search request failed (${response.status}): ${detail}`);
-        }
-
-        return result;
-      } finally {
-        if (timeout) clearTimeout(timeout);
-
-        request.signal?.removeEventListener('abort', abort);
+        throw new Error(`[frogbot] Brave Search request failed (${response.status}): ${detail}`);
       }
+
+      return {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        body,
+      };
+    },
+    authorize(headers: Headers) {
+      headers.set('X-Subscription-Token', apiKey);
     },
   };
 }

@@ -32,7 +32,7 @@ export const stripe = createStripe({ auth: { apiKey: process.env.STRIPE_SECRET_K
 | `deactivate_payment_link` | `deactivatePaymentLink` | `deactivatePaymentLink` | Was omitted from wrapper defaults.                                                     |
 | `retrieve_payment_intent` | `retrievePaymentIntent` | `getPaymentIntent`      | Semantic get-by-ID name.                                                               |
 | `find_invoice`            | `findInvoice`           | `findInvoice`           | Explicit ID variant without dynamic choices.                                           |
-| `custom_api_call`         | `customApiCall`         | `sendRequest`           | Authenticated Stripe `/v1` request; refuses paths that leave `https://api.stripe.com`. |
+| `custom_api_call`         | `customApiCall`         | `customApiCall`         | Paths include the version, such as `/v1/balance`; JSON object bodies are form-encoded. |
 
 ## Triggers
 

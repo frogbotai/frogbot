@@ -1,6 +1,7 @@
 import type { gmailScopes } from '@frogbotai/piece-gmail';
 import { createGmail } from '@frogbotai/piece-gmail';
 import type { googleScopes } from '@frogbotai/piece-google';
+import type { CustomApiCallOutput } from 'frogbot/pieces';
 import { expectTypeOf } from 'vitest';
 
 const gmail = createGmail({ auth: { accessToken: 'token' } });
@@ -52,3 +53,7 @@ createGmail({ oauth, scopes: ['gmail.lables'] });
 
 // @ts-expect-error scopes belong on the factory, not the OAuth app
 createGmail({ oauth: { ...oauth, scopes: ['gmail.labels'] } });
+
+const _profile = gmail.customApiCall({ input: { method: 'GET', path: '/users/me/profile' } });
+
+expectTypeOf<Awaited<typeof _profile>>().toEqualTypeOf<CustomApiCallOutput>();

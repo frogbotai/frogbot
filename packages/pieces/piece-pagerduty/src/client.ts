@@ -68,5 +68,9 @@ export function createPagerdutyClient({ auth }: { auth: unknown }) {
     return data;
   }
 
-  return { request };
+  function authorize(headers: Headers) {
+    headers.set('authorization', `Token token=${apiKey}`);
+  }
+
+  return { request, authorize };
 }

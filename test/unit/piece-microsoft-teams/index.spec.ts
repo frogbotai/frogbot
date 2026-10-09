@@ -489,14 +489,14 @@ describe('native Microsoft Teams actions', () => {
     ).resolves.toEqual({ found: true, result: [member] });
     await expect(
       piece.customApiCall({
-        input: { method: 'POST', path: '/v1.0/teams/custom', body: { enabled: true } },
+        input: { method: 'POST', path: '/teams/custom', body: { enabled: true } },
         req: request,
       }),
-    ).resolves.toEqual({ status: 201, body: { ok: true } });
+    ).resolves.toMatchObject({ status: 201, body: { ok: true } });
 
-    expect(calls.every((call) => call.init?.headers && 'authorization' in call.init.headers)).toBe(
-      true,
-    );
+    expect(
+      calls.every((call) => new Headers(call.init?.headers).get('authorization') !== null),
+    ).toBe(true);
     expect(calls.some((call) => JSON.stringify(body(call)).includes('membershipType'))).toBe(true);
     expect(calls.some((call) => call.url.includes('Leader%27%27s'))).toBe(true);
     expect(calls.some((call) => call.url.includes('member%27%27s%40example.com'))).toBe(true);
@@ -584,7 +584,9 @@ describe('native Microsoft Teams actions', () => {
         input: { method: 'GET', path: 'https://example.com/steal' },
         req: req(),
       }),
-    ).rejects.toThrow('must target Microsoft Graph');
+    ).rejects.toThrow(
+      'Microsoft Graph custom API path must be relative to the Microsoft Graph API.',
+    );
     expect(calls).toEqual([]);
   });
 });
