@@ -442,7 +442,7 @@ export function ticketGit(ticket, { branches, merged, worktrees, landed }) {
   const worktree = worktrees.find((tree) => ticketOfWorktree(tree) === ticket) ?? null;
   const branch = own.includes(worktree?.branch) ? worktree.branch : (own[0] ?? null);
   const isMerged = branch ? merged.includes(branch) : null;
-  const wasLanded = landed.some((name) => ticketOfBranch(name) === ticket);
+  const wasLanded = landed.some((name) => keyOf(BRANCH_TICKET.exec(name)) === String(ticket));
 
   return {
     branch,

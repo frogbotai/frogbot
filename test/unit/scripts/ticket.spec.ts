@@ -403,6 +403,16 @@ describe('git output', () => {
     });
   });
 
+  it('is not landed when only a part of the ticket (a letter key) was merged', () => {
+    expect(
+      ticketGit(256, { ...state, landed: [...state.landed, 'chore/ticket-256q-land-finish'] }),
+    ).toMatchObject({ landed: false });
+
+    expect(ticketGit(256, { ...state, landed: ['feat/ticket-256-cookies'] })).toMatchObject({
+      landed: true,
+    });
+  });
+
   it('builds a status row', () => {
     const row = statusRow({
       ticket: 218,
