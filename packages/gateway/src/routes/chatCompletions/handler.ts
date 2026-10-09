@@ -30,6 +30,7 @@ import {
   type ProviderRegistry,
   resolveProvider,
 } from '../../providers/registry.js';
+import { isVertexAnthropicModel } from '../../providers/vertex/models.js';
 import { normalizeServiceTier } from '../../shared/normalizeServiceTier.js';
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
@@ -135,7 +136,8 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       if (
         cachingOpts?.prompt_cache_key &&
         !cachingOpts.cached_content &&
-        (resolved.providerName === 'google' || resolved.providerName === 'vertex')
+        (resolved.providerName === 'google' ||
+          (resolved.providerName === 'vertex' && !isVertexAnthropicModel(body.model)))
       ) {
         cachingOpts.cached_content = cachingOpts.prompt_cache_key;
       }

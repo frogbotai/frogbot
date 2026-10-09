@@ -14,6 +14,7 @@ export type ProviderSlug =
   | 'togetherai'
   | 'typesafe-ai'
   | 'vercel'
+  | 'vertex'
   | 'voyage'
   | 'xai';
 
@@ -292,10 +293,8 @@ export type DeepinfraModelId =
   | 'deepinfra/meta-llama/Llama-4-Scout-17B-16E-Instruct'
   | 'deepinfra/moonshotai/Kimi-K2.6'
   | 'deepinfra/moonshotai/Kimi-K3'
-  | 'deepinfra/nvidia/Nemotron-3-Nano-30B-A3B'
   | 'deepinfra/openai/gpt-oss-120b'
   | 'deepinfra/openai/gpt-oss-20b'
-  | 'deepinfra/tencent/Hy3'
   | 'deepinfra/tencent/Hy4-preview'
   | 'deepinfra/thinkingmachines/Inkling'
   | 'deepinfra/thinkingmachines/Inkling-Small'
@@ -487,7 +486,6 @@ export type OpenrouterModelId =
   | 'openrouter/anthropic/claude-sonnet-5.5'
   | 'openrouter/apodex/apodex-1.1-mini:free'
   | 'openrouter/arcee-ai/trinity-large-thinking'
-  | 'openrouter/baidu/ernie-4.5-vl-424b-a47b'
   | 'openrouter/bytedance-seed/seed-1.6'
   | 'openrouter/bytedance-seed/seed-1.6-flash'
   | 'openrouter/bytedance-seed/seed-2-1-turbo'
@@ -547,7 +545,7 @@ export type OpenrouterModelId =
   | 'openrouter/inception/mercury-2.5'
   | 'openrouter/inclusionai/ling-3.0-flash'
   | 'openrouter/inclusionai/ling-3.0-flash-fin'
-  | 'openrouter/inclusionai/ling-3.0-flash-sante:free'
+  | 'openrouter/inclusionai/ling-3.0-flash-sante'
   | 'openrouter/inclusionai/ling-3.0-flash-vl'
   | 'openrouter/inclusionai/ling-3.1-flash'
   | 'openrouter/inference-net/schematron-v2-small'
@@ -762,6 +760,7 @@ export type OpenrouterModelId =
   | 'openrouter/sao10k/l3.3-euryale-70b'
   | 'openrouter/stepfun/step-3.5-flash'
   | 'openrouter/stepfun/step-3.7-flash'
+  | 'openrouter/stepfun/step-5-preview'
   | 'openrouter/tencent/hunyuan-a13b-instruct'
   | 'openrouter/tencent/hy-mt2-1.8b'
   | 'openrouter/tencent/hy-mt2-30b-a3b'
@@ -919,6 +918,7 @@ export type VercelModelId =
   | 'vercel/bytedance/seed-1.6'
   | 'vercel/bytedance/seed-1.8'
   | 'vercel/bytedance/seed-2.1-turbo'
+  | 'vercel/callstack/apex'
   | 'vercel/cohere/command-a'
   | 'vercel/deepseek/deepseek-r1'
   | 'vercel/deepseek/deepseek-v3.1'
@@ -930,7 +930,6 @@ export type VercelModelId =
   | 'vercel/deepseek/deepseek-v4-pro'
   | 'vercel/deepseek/deepseek-v4-pro-0813'
   | 'vercel/deepseek/deepseek-v4.1-flash'
-  | 'vercel/deepseek/deepseek-v4.1-flash-fast'
   | 'vercel/fireworks/ember-1'
   | 'vercel/google/gemini-2.5-flash'
   | 'vercel/google/gemini-2.5-flash-lite'
@@ -1118,6 +1117,37 @@ export type VercelModelId =
   | 'vercel/zai/glm-5.3-flashx'
   | 'vercel/zai/glm-5v-turbo';
 
+export type VertexModelId =
+  | 'vertex/claude-fable-5-1@default'
+  | 'vertex/claude-fable-5@default'
+  | 'vertex/claude-haiku-4-5@20251001'
+  | 'vertex/claude-haiku-5-5@default'
+  | 'vertex/claude-opus-4-5@20251101'
+  | 'vertex/claude-opus-4-6@default'
+  | 'vertex/claude-opus-4-7@default'
+  | 'vertex/claude-opus-4-8@default'
+  | 'vertex/claude-opus-5-5@default'
+  | 'vertex/claude-opus-5@default'
+  | 'vertex/claude-sonnet-4-6@default'
+  | 'vertex/claude-sonnet-5-5@default'
+  | 'vertex/claude-sonnet-5@default'
+  | 'vertex/gemini-2.5-flash-image'
+  | 'vertex/gemini-2.5-flash-tts'
+  | 'vertex/gemini-2.5-pro-tts'
+  | 'vertex/gemini-3-flash-preview'
+  | 'vertex/gemini-3-pro-image'
+  | 'vertex/gemini-3.1-flash-image'
+  | 'vertex/gemini-3.1-flash-lite'
+  | 'vertex/gemini-3.1-flash-lite-image'
+  | 'vertex/gemini-3.1-pro-preview'
+  | 'vertex/gemini-3.1-pro-preview-customtools'
+  | 'vertex/gemini-3.5-flash'
+  | 'vertex/gemini-3.5-flash-lite'
+  | 'vertex/gemini-3.7-flash'
+  | 'vertex/gemini-3.8-flash'
+  | 'vertex/gemini-embedding-001'
+  | 'vertex/gemini-nano-banana-2.1';
+
 export type VoyageModelId = 'voyage/voyage-3' | 'voyage/voyage-3-lite' | 'voyage/voyage-code-3';
 
 export type XAIModelId =
@@ -1151,5 +1181,6 @@ export type CatalogModelId =
   | TogetherAIModelId
   | TypesafeAiModelId
   | VercelModelId
+  | VertexModelId
   | VoyageModelId
   | XAIModelId;

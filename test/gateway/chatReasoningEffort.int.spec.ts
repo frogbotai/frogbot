@@ -91,7 +91,7 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     expect(anthropic?.['thinking']).toEqual({ type: 'enabled', budgetTokens: 8000 });
   });
 
-  it('forwards reasoning_effort:high on a Vertex Gemini model as google.thinkingConfig', async () => {
+  it('forwards reasoning_effort:high on a Vertex Gemini model as vertex.thinkingConfig', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     const app = makeApp('vertex', (o) => {
       callOptions = o;
@@ -106,11 +106,11 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
 
     expect(status).toBe(200);
 
-    const google = (
+    const vertex = (
       callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
-    )?.['google'];
+    )?.['vertex'];
 
-    expect(google?.['thinkingConfig']).toEqual({ thinkingBudget: 8000 });
+    expect(vertex?.['thinkingConfig']).toEqual({ thinkingBudget: 8000 });
   });
 
   it('forwards Responses reasoning.effort on a Claude model as anthropic.thinking', async () => {

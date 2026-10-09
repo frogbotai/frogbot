@@ -120,6 +120,26 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ bedrock: entry });
   });
 
+  it('maps true Vertex to environment and ADC config', () => {
+    const config = buildGatewayConfig(makeAIConfig({ vertex: true }));
+
+    expect(config.providers).toEqual({ vertex: {} });
+  });
+
+  it('passes a Vertex entry through unchanged', () => {
+    const entry = {
+      project: 'example-project',
+      location: 'global',
+      googleAuthOptions: { keyFilename: '/secrets/sa.json' },
+      anthropic: { location: 'us-east5' },
+      models: ['gemini-3.5-flash' as const],
+    };
+
+    const config = buildGatewayConfig(makeAIConfig({ vertex: entry }));
+
+    expect(config.providers).toEqual({ vertex: entry });
+  });
+
   it('configures Together AI', () => {
     const config = buildGatewayConfig(makeAIConfig({ togetherai: { apiKey: 'sk-t' } }));
 

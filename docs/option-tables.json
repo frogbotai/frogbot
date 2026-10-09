@@ -136,6 +136,11 @@
   },
   {
     "page": "ai/overview",
+    "heading": "Vertex provider options",
+    "type": "Exclude<NonNullable<NonNullable<import('frogbot').AIConfig['providers']>['vertex']>, true>"
+  },
+  {
+    "page": "ai/overview",
     "heading": "Custom provider options",
     "type": "Extract<NonNullable<import('frogbot').AIConfig['providers']>[string], { type: 'openai-compatible' }>"
   },

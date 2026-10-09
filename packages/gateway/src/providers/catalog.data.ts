@@ -1217,7 +1217,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2,
       output: 10,
-      cache_read: 0.2,
+      cache_read: 0.1,
       cache_write: 2.5,
     },
     providers: ['bedrock'],
@@ -2391,7 +2391,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2.2,
       output: 11,
-      cache_read: 0.22,
+      cache_read: 0.11,
       cache_write: 2.75,
     },
     providers: ['bedrock'],
@@ -2961,7 +2961,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2,
       output: 10,
-      cache_read: 0.2,
+      cache_read: 0.1,
       cache_write: 2.5,
     },
     providers: ['bedrock'],
@@ -5996,7 +5996,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2.2,
       output: 11,
-      cache_read: 0.22,
+      cache_read: 0.11,
       cache_write: 2.75,
     },
     providers: ['bedrock'],
@@ -7929,36 +7929,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['deepinfra'],
   }),
-  model('deepinfra/nvidia/Nemotron-3-Nano-30B-A3B', {
-    name: 'Nemotron 3 Nano 30B A3B',
-    created: '2025-12-15',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 262144,
-    },
-    cost: {
-      input: 0.05,
-      output: 0.2,
-      cache_read: 0.025,
-    },
-    providers: ['deepinfra'],
-  }),
   model('deepinfra/openai/gpt-oss-120b', {
     name: 'GPT OSS 120B',
     created: '2025-08-05',
@@ -8494,32 +8464,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1.65,
       output: 4.951,
       cache_read: 0.206,
-    },
-    providers: ['deepinfra'],
-  }),
-  model('deepinfra/tencent/Hy3', {
-    name: 'Hy3',
-    created: '2026-07-06',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 128000,
-    },
-    cost: {
-      input: 0.13,
-      output: 0.53,
-      cache_read: 0.033,
     },
     providers: ['deepinfra'],
   }),
@@ -11280,7 +11224,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 524288,
+      input: 1048576,
       output: 262144,
     },
     cost: {
@@ -13033,9 +12977,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.0184,
+      input: 0.016,
       output: 1.2,
-      cache_read: 0.01,
+      cache_read: 0.005,
     },
     providers: ['openrouter'],
   }),
@@ -13065,12 +13009,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943718,
+      output: 393216,
     },
     cost: {
-      input: 0.22,
-      output: 3.4,
-      cache_read: 0.2,
+      input: 0.162,
+      output: 8,
+      cache_read: 0.16,
     },
     providers: ['openrouter'],
   }),
@@ -13103,9 +13047,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.0137,
+      input: 0.006,
       output: 1.28,
-      cache_read: 0.0137,
+      cache_read: 0.006,
     },
     providers: ['openrouter'],
   }),
@@ -13209,9 +13153,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.64,
+      input: 0.59,
       output: 13,
-      cache_read: 0.45,
+      cache_read: 0.3,
     },
     providers: ['openrouter'],
   }),
@@ -13449,7 +13393,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     cost: {
       input: 0.032,
-      output: 0.66,
+      output: 1.487179,
       cache_read: 0.02,
     },
     providers: ['openrouter'],
@@ -13480,9 +13424,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.0392,
+      input: 0.0312,
       output: 12,
-      cache_read: 0.0365,
+      cache_read: 0.029,
     },
     providers: ['openrouter'],
   }),
@@ -14424,35 +14368,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/baidu/ernie-4.5-vl-424b-a47b', {
-    name: 'ERNIE 4.5 VL 424B A47B ',
-    created: '2025-06-30',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['image', 'text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 123000,
-      output: 16000,
-    },
-    cost: {
-      input: 0.42,
-      output: 1.25,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/bytedance-seed/seed-1.6', {
     name: 'Seed 1.6',
     created: '2025-12-23',
@@ -15102,9 +15017,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.0228,
+      input: 0.0173,
       output: 1.28,
-      cache_read: 0.0228,
+      cache_read: 0.0173,
     },
     providers: ['openrouter'],
   }),
@@ -15138,9 +15053,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.0137,
+      input: 0.006,
       output: 1.28,
-      cache_read: 0.0137,
+      cache_read: 0.006,
     },
     providers: ['openrouter'],
   }),
@@ -16274,8 +16189,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/inclusionai/ling-3.0-flash-sante:free', {
-    name: 'Ling 3.0 Flash Sante (free)',
+  model('openrouter/inclusionai/ling-3.0-flash-sante', {
+    name: 'Ling 3.0 Flash Sante',
     created: '2026-09-04',
     modalities: {
       input: ['text'],
@@ -16290,6 +16205,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'toggle',
         },
       ],
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -16297,8 +16213,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 32768,
     },
     cost: {
-      input: 0,
-      output: 0,
+      input: 0.042,
+      output: 0.1232,
+      cache_read: 0.0084,
     },
     providers: ['openrouter'],
   }),
@@ -16596,6 +16513,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       structuredOutput: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -16603,8 +16521,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 16384,
     },
     cost: {
-      input: 0.1,
-      output: 0.32,
+      input: 0.22,
+      output: 0.5,
+      cache_read: 0.11,
     },
     providers: ['openrouter'],
   }),
@@ -17365,7 +17284,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 524288,
+      input: 1048576,
       output: 262144,
     },
     cost: {
@@ -17479,7 +17398,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 16384,
     },
     cost: {
-      input: 0.019,
+      input: 0.029,
       output: 0.03,
     },
     providers: ['openrouter'],
@@ -17864,9 +17783,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.65,
-      output: 15,
-      cache_read: 0.43,
+      input: 0.6,
+      output: 12,
+      cache_read: 0.3,
     },
     providers: ['openrouter'],
   }),
@@ -18141,11 +18060,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 16384,
+      output: 235929,
     },
     cost: {
-      input: 0.085,
-      output: 0.4,
+      input: 0.08,
+      output: 0.45,
     },
     providers: ['openrouter'],
   }),
@@ -20916,11 +20835,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 32000,
+      output: 235929,
     },
     cost: {
-      input: 0.04815,
-      output: 0.19305,
+      input: 0.1,
+      output: 0.3,
     },
     providers: ['openrouter'],
   }),
@@ -21208,11 +21127,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 32768,
+      output: 16384,
     },
     cost: {
-      input: 0.15,
-      output: 1.5,
+      input: 0.09,
+      output: 1.1,
     },
     providers: ['openrouter'],
   }),
@@ -21496,17 +21415,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
-      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 262144,
-      output: 235929,
+      output: 65536,
     },
     cost: {
-      input: 0.15,
-      output: 1,
-      cache_read: 0.05,
+      input: 0.1625,
+      output: 1.3,
     },
     providers: ['openrouter'],
   }),
@@ -21533,12 +21450,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 81920,
+      output: 235929,
     },
     cost: {
-      input: 0.45,
-      output: 3,
-      cache_read: 0.22,
+      input: 0.55,
+      output: 3.5,
+      cache_read: 0.225,
     },
     providers: ['openrouter'],
   }),
@@ -21682,7 +21599,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
-      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -21690,9 +21606,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 65536,
     },
     cost: {
-      input: 0.3,
-      output: 2,
-      cache_read: 0.03,
+      input: 0.45,
+      output: 2.7,
     },
     providers: ['openrouter'],
   }),
@@ -22387,7 +22302,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     operations: ['chat.completions'],
     capabilities: {
-      toolCalling: true,
       structuredOutput: true,
       streaming: true,
     },
@@ -22479,6 +22393,39 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.2,
       output: 1.15,
       cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/stepfun/step-5-preview', {
+    name: 'Step 5 Preview',
+    created: '2026-09-16',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 2.7,
+      cache_read: 0.05,
     },
     providers: ['openrouter'],
   }),
@@ -23784,12 +23731,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 131072,
+      output: 943718,
     },
     cost: {
-      input: 0.0855,
-      output: 12,
-      cache_read: 0.077,
+      input: 0.084,
+      output: 4.3,
+      cache_read: 0.083,
     },
     providers: ['openrouter'],
   }),
@@ -23819,9 +23766,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.049,
+      input: 0.039,
       output: 3.39,
-      cache_read: 0.048,
+      cache_read: 0.038,
     },
     providers: ['openrouter'],
   }),
@@ -26621,6 +26568,38 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
+  model('vercel/callstack/apex', {
+    name: 'Apex',
+    created: '2026-10-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
   model('vercel/cohere/command-a', {
     name: 'Command A',
     created: '2025-03-13',
@@ -26946,40 +26925,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.2,
       cache_read: 0.007,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/deepseek/deepseek-v4.1-flash-fast', {
-    name: 'DeepSeek V4.1 Flash Fast',
-    created: '2026-09-10',
-    knowledge: '2025-05',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['none', 'low', 'medium', 'high'],
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1048576,
-      output: 1000000,
-    },
-    cost: {
-      input: 0.3,
-      output: 1.2,
-      cache_read: 0.006,
     },
     providers: ['vercel'],
   }),
@@ -27437,6 +27382,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         {
           type: 'effort',
           values: ['none', 'low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
         },
       ],
       vision: true,
@@ -32076,9 +32024,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.04,
-      output: 1.28,
-      cache_read: 0.04,
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
     },
     providers: ['vercel'],
   }),
@@ -32674,6 +32622,990 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.24,
     },
     providers: ['vercel'],
+  }),
+  model('vertex/claude-fable-5-1@default', {
+    name: 'Claude Fable 5.1',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
+      cache_write: 12.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-fable-5@default', {
+    name: 'Claude Fable 5',
+    created: '2026-06-09',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-haiku-4-5@20251001', {
+    name: 'Claude Haiku 4.5',
+    created: '2025-10-15',
+    knowledge: '2025-02-28',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.1,
+      cache_write: 1.25,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-haiku-5-5@default', {
+    name: 'Claude Haiku 5.5',
+    created: '2026-10-07',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-opus-4-5@20251101', {
+    name: 'Claude Opus 4.5',
+    created: '2025-11-01',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-opus-4-6@default', {
+    name: 'Claude Opus 4.6',
+    created: '2026-02-05',
+    knowledge: '2025-05-31',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-opus-4-7@default', {
+    name: 'Claude Opus 4.7',
+    created: '2026-04-16',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-opus-4-8@default', {
+    name: 'Claude Opus 4.8',
+    created: '2026-05-28',
+    knowledge: '2026-01',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-opus-5-5@default', {
+    name: 'Claude Opus 5.5',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-opus-5@default', {
+    name: 'Claude Opus 5',
+    created: '2026-07-24',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-sonnet-4-6@default', {
+    name: 'Claude Sonnet 4.6',
+    created: '2026-02-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-sonnet-5-5@default', {
+    name: 'Claude Sonnet 5.5',
+    created: '2026-09-28',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.1,
+      cache_write: 2.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/claude-sonnet-5@default', {
+    name: 'Claude Sonnet 5',
+    created: '2026-06-30',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/google-vertex/anthropic',
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-2.5-flash-image', {
+    name: 'Nano Banana',
+    created: '2025-08-26',
+    knowledge: '2024-06',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text', 'image'],
+    },
+    operations: ['chat.completions', 'images.generations'],
+    capabilities: {
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 32768,
+    },
+    cost: {
+      input: 0.3,
+      output: 30,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-2.5-flash-tts', {
+    name: 'Gemini 2.5 Flash TTS',
+    created: '2025-09-30',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text'],
+      output: ['audio'],
+    },
+    operations: ['audio.speech'],
+    capabilities: {},
+    context: {
+      input: 32768,
+      output: 16384,
+    },
+    cost: {
+      input: 0.5,
+      output: 10,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-2.5-pro-tts', {
+    name: 'Gemini 2.5 Pro TTS',
+    created: '2025-09-30',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text'],
+      output: ['audio'],
+    },
+    operations: ['audio.speech'],
+    capabilities: {},
+    context: {
+      input: 32768,
+      output: 16384,
+    },
+    cost: {
+      input: 1,
+      output: 20,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3-flash-preview', {
+    name: 'Gemini 3 Flash Preview',
+    created: '2025-12-17',
+    knowledge: '2025-01',
+    status: 'beta',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.05,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3-pro-image', {
+    name: 'Nano Banana Pro',
+    created: '2026-05-28',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text', 'image'],
+    },
+    operations: ['chat.completions', 'images.generations'],
+    capabilities: {
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 32768,
+    },
+    cost: {
+      input: 2,
+      output: 120,
+      cache_read: 0.2,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.1-flash-image', {
+    name: 'Nano Banana 2',
+    created: '2026-05-28',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'pdf'],
+      output: ['text', 'image'],
+    },
+    operations: ['chat.completions', 'images.generations'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.5,
+      output: 60,
+      cache_read: 0.05,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.1-flash-lite', {
+    name: 'Gemini 3.1 Flash Lite',
+    created: '2026-05-07',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.25,
+      output: 1.5,
+      cache_read: 0.025,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.1-flash-lite-image', {
+    name: 'Nano Banana 2 Lite',
+    created: '2026-06-30',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text', 'image'],
+    },
+    operations: ['chat.completions', 'images.generations'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 4096,
+    },
+    cost: {
+      input: 0.25,
+      output: 30,
+      cache_read: 0.025,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.1-pro-preview', {
+    name: 'Gemini 3.1 Pro Preview',
+    created: '2026-02-19',
+    knowledge: '2025-01',
+    status: 'beta',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.1-pro-preview-customtools', {
+    name: 'Gemini 3.1 Pro Preview Custom Tools',
+    created: '2026-02-19',
+    knowledge: '2025-01',
+    status: 'beta',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.5-flash', {
+    name: 'Gemini 3.5 Flash',
+    created: '2026-05-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 1.5,
+      output: 9,
+      cache_read: 0.15,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.5-flash-lite', {
+    name: 'Gemini 3.5 Flash Lite',
+    created: '2026-07-21',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.03,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.7-flash', {
+    name: 'Gemini 3.7 Flash',
+    created: '2026-08-13',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-3.8-flash', {
+    name: 'Gemini 3.8 Flash',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-embedding-001', {
+    name: 'Gemini Embedding 001',
+    created: '2025-05-20',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['embedding'],
+    },
+    operations: ['embeddings'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 2048,
+      output: 1,
+    },
+    cost: {
+      input: 0.15,
+      output: 0,
+    },
+    providers: ['vertex'],
+  }),
+  model('vertex/gemini-nano-banana-2.1', {
+    name: 'Nano Banana 2.1',
+    created: '2026-10-06',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text', 'image'],
+    },
+    operations: ['chat.completions', 'images.generations'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 1.5,
+      output: 30,
+      cache_read: 0.15,
+    },
+    providers: ['vertex'],
   }),
   model('voyage/voyage-3', {
     name: 'Voyage 3',

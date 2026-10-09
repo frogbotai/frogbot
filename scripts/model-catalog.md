@@ -17,6 +17,11 @@ and commit these artifacts together:
 `scripts/sync-catalog.mjs` contains the pinned field transformations and provider
 aliases. Models marked `deprecated` by models.dev are excluded.
 
+models.dev `google-vertex` syncs as `vertex` and keeps only the models served by
+`@ai-sdk/google-vertex` (Gemini) or `@ai-sdk/google-vertex/anthropic` (Claude):
+a model's `provider.npm`, or the provider's `npm` when the model has none. Its
+Model-as-a-Service and partner models (`@ai-sdk/openai-compatible`) are dropped.
+
 Catalogs are sorted by model ID; provider logos are sorted by FrogBot provider
 slug and formatted with Prettier. A second `pnpm sync:catalog` against
 the same source data must leave the worktree unchanged.

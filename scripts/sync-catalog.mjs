@@ -20,6 +20,7 @@ const PROVIDERS = {
   deepinfra: 'deepinfra',
   'fireworks-ai': 'fireworks',
   google: 'google',
+  'google-vertex': 'vertex',
   groq: 'groq',
   mistral: 'mistral',
   openai: 'openai',
@@ -33,6 +34,9 @@ const PROVIDERS = {
 const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
 const OVERLAY_PROVIDERS = new Set(['replicate', 'typesafe-ai', 'voyage']);
 const AGGREGATOR_PROVIDERS = new Set(['openrouter', 'vercel']);
+const PROVIDER_PACKAGES = {
+  vertex: new Set(['@ai-sdk/google-vertex', '@ai-sdk/google-vertex/anthropic']),
+};
 
 const MODALITIES = new Set(['text', 'image', 'audio', 'video', 'pdf', 'embedding']);
 const GATEWAY_FIELDS = new Set([
@@ -184,6 +188,7 @@ export function buildCatalogs({ overlays, source }) {
 
   for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
     const models = source[sourceProvider]?.models ?? {};
+    const packages = PROVIDER_PACKAGES[provider];
 
     for (const model of Object.values(models)) {
       sourceIds.add(`${provider}/${model.id}`);
@@ -191,6 +196,8 @@ export function buildCatalogs({ overlays, source }) {
       if (model.status === 'deprecated') continue;
 
       if (AGGREGATOR_PROVIDERS.has(provider) && !isPricedLanguageModel(model)) continue;
+
+      if (packages && !packages.has(model.provider?.npm ?? source[sourceProvider].npm)) continue;
 
       const entry = mapModel({ model, provider });
 

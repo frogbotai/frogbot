@@ -10,6 +10,7 @@ import type {
   BuiltInProviderEntry,
   CustomProviderEntry,
   SanitizedAIConfig,
+  VertexProviderEntry,
 } from './types.js';
 
 function isCustomProvider(entry: object): entry is CustomProviderEntry {
@@ -22,6 +23,10 @@ function isBuiltInProvider(entry: object): entry is BuiltInProviderEntry {
 
 function isBedrockProvider(entry: object): entry is BedrockProviderEntry {
   return 'region' in entry || 'accessKeyId' in entry || 'credentialProvider' in entry;
+}
+
+function isVertexProvider(entry: object): entry is VertexProviderEntry {
+  return 'project' in entry && 'location' in entry;
 }
 
 function setGatewayProvider<K extends keyof GatewayConfig['providers']>(
@@ -90,6 +95,15 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       }
 
       providers.bedrock = entry;
+      continue;
+    }
+
+    if (key === 'vertex') {
+      if (!isVertexProvider(entry)) {
+        throw new Error("[frogbot] Provider 'vertex' requires a project and a location.");
+      }
+
+      providers.vertex = entry;
       continue;
     }
 

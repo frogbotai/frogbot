@@ -1,8 +1,12 @@
 import { readFile } from 'node:fs/promises';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import catalog from '../../../../packages/frogbot/src/ai/catalog.json' with { type: 'json' };
+import type {
+  CatalogModelId,
+  ProviderSlug,
+} from '../../../../packages/frogbot/src/ai/generated.js';
 import { renderAIModelTypes } from '../../../../scripts/sync-catalog.mjs';
 
 describe('generated AI model types', () => {
@@ -20,6 +24,17 @@ describe('generated AI model types', () => {
 
     expect(ids).toContain('anthropic/claude-opus-4-8');
     expect(ids).not.toContain('anthropic/claude-3-5-sonnet-20241022');
+  });
+
+  it('contains Vertex Gemini and Claude models', () => {
+    const ids = catalog.map(({ id }) => id);
+
+    expect(ids).toContain('vertex/gemini-3.5-flash');
+    expect(ids).toContain('vertex/claude-sonnet-4-6@default');
+
+    expectTypeOf<'vertex/gemini-3.5-flash'>().toExtend<CatalogModelId>();
+    expectTypeOf<'vertex/claude-sonnet-4-6@default'>().toExtend<CatalogModelId>();
+    expectTypeOf<'vertex'>().toExtend<ProviderSlug>();
   });
 
   it('contains invocable Bedrock profiles without broken bare IDs', async () => {

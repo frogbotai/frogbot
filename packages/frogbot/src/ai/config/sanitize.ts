@@ -12,6 +12,8 @@ import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types.js';
 
 export const defaultAccessFn = ({ req }: { req: FrogBotRequest }) => !!req.user;
 
+const VERTEX_KEYS = new Set(['project', 'location', 'googleAuthOptions', 'anthropic', 'models']);
+
 function usesFileModality(modalities: unknown): boolean {
   if (!isRecord(modalities)) return false;
 
@@ -128,6 +130,29 @@ export function sanitizeAI(ai: AIConfig, mode: ValidationMode): SanitizedAIBase 
         throw new Error(
           `[frogbot] Provider 'bedrock' accepts either accessKeyId and secretAccessKey or a credentialProvider, not both.`,
         );
+      }
+
+      continue;
+    }
+
+    if (key === 'vertex') {
+      const unknownKey = Object.keys(provider).find((name) => !VERTEX_KEYS.has(name));
+      if (unknownKey !== undefined) {
+        throw new Error(`[frogbot] Provider 'vertex' does not accept '${unknownKey}'.`);
+      }
+
+      for (const name of ['project', 'location'] as const) {
+        const value = provider[name];
+        if (typeof value !== 'string' || !value.trim()) {
+          throw new Error(`[frogbot] Provider 'vertex' requires a non-empty ${name}.`);
+        }
+      }
+
+      if (provider.anthropic !== undefined) {
+        const location = isRecord(provider.anthropic) ? provider.anthropic.location : undefined;
+        if (typeof location !== 'string' || !location.trim()) {
+          throw new Error(`[frogbot] Provider 'vertex' requires a non-empty anthropic.location.`);
+        }
       }
 
       continue;

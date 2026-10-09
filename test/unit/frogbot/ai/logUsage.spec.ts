@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@frogbotai/gateway', async (importOriginal) => ({
   ...(await importOriginal<typeof Gateway>()),
-  calculateModelCostUSD: () => 0.001,
+  calculateModelCostUSD: vi.fn(() => 0.001),
 }));
+
+import { calculateModelCostUSD } from '@frogbotai/gateway';
 
 import { logUsage } from '../../../../packages/frogbot/src/ai/logUsage.js';
 
@@ -171,6 +173,30 @@ describe('logUsage', () => {
     await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
 
     expect(create.mock.calls[0]?.[0].data.costUSD).toBe(0.001);
+  });
+
+  it('stores a Vertex Claude row with its full id and catalog cost', async () => {
+    const actual = await vi.importActual<typeof Gateway>('@frogbotai/gateway');
+    vi.mocked(calculateModelCostUSD).mockImplementationOnce(actual.calculateModelCostUSD);
+    const { req, create } = makeReq();
+
+    await logUsage({
+      requestId: 'req-9',
+      operation: 'chat.completions',
+      startedAt: 1,
+      context: { req },
+      model: 'vertex/claude-sonnet-4-6@default',
+      provider: 'vertex',
+      usage: { inputTokens: 1000, outputTokens: 100, totalTokens: 1100 },
+    } as never);
+
+    await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+
+    const data = create.mock.calls[0]?.[0].data;
+
+    expect(data.model).toBe('vertex/claude-sonnet-4-6@default');
+    expect(data.costUSD).toBeGreaterThan(0);
+    expect(data.costUSD).not.toBe(0.001);
   });
 
   it('logs a failed write without surfacing it to the operation', async () => {

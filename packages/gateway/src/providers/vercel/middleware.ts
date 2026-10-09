@@ -8,7 +8,7 @@ type CreatorTranslation = { namespace: string; hooks: BeforeUpstreamHook[] };
 
 const CREATORS: Record<string, CreatorTranslation> = {
   anthropic: { namespace: 'anthropic', hooks: [claudeThinkingEffort] },
-  google: { namespace: 'google', hooks: [vertexThinkingBudget] },
+  google: { namespace: 'google', hooks: [vertexThinkingBudget('google')] },
   openai: { namespace: 'openai', hooks: [openaiReasoningEffort, openaiPromptCacheBreakpoint] },
 };
 

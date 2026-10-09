@@ -1240,11 +1240,6 @@
     "mode": "chat"
   },
   {
-    "id": "deepinfra/nvidia/Nemotron-3-Nano-30B-A3B",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
     "id": "deepinfra/openai/gpt-oss-120b",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1341,11 +1336,6 @@
   },
   {
     "id": "deepinfra/Qwen/Qwen3.8-Max",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
-    "id": "deepinfra/tencent/Hy3",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -2345,11 +2335,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/baidu/ernie-4.5-vl-424b-a47b",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/bytedance-seed/seed-1.6",
     "provider": "openrouter",
     "mode": "chat"
@@ -2645,7 +2630,7 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/inclusionai/ling-3.0-flash-sante:free",
+    "id": "openrouter/inclusionai/ling-3.0-flash-sante",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3720,6 +3705,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/stepfun/step-5-preview",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/tencent/hunyuan-a13b-instruct",
     "provider": "openrouter",
     "mode": "chat"
@@ -4385,6 +4375,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/callstack/apex",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/cohere/command-a",
     "provider": "vercel",
     "mode": "chat"
@@ -4436,11 +4431,6 @@
   },
   {
     "id": "vercel/deepseek/deepseek-v4.1-flash",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/deepseek/deepseek-v4.1-flash-fast",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5373,6 +5363,151 @@
     "id": "vercel/zai/glm-5v-turbo",
     "provider": "vercel",
     "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-fable-5-1@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-fable-5@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-haiku-4-5@20251001",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-haiku-5-5@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-opus-4-5@20251101",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-opus-4-6@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-opus-4-7@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-opus-4-8@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-opus-5-5@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-opus-5@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-sonnet-4-6@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-sonnet-5-5@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/claude-sonnet-5@default",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-2.5-flash-image",
+    "provider": "vertex",
+    "mode": "image_generation"
+  },
+  {
+    "id": "vertex/gemini-2.5-flash-tts",
+    "provider": "vertex",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "vertex/gemini-2.5-pro-tts",
+    "provider": "vertex",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "vertex/gemini-3-flash-preview",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3-pro-image",
+    "provider": "vertex",
+    "mode": "image_generation"
+  },
+  {
+    "id": "vertex/gemini-3.1-flash-image",
+    "provider": "vertex",
+    "mode": "image_generation"
+  },
+  {
+    "id": "vertex/gemini-3.1-flash-lite",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3.1-flash-lite-image",
+    "provider": "vertex",
+    "mode": "image_generation"
+  },
+  {
+    "id": "vertex/gemini-3.1-pro-preview",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3.1-pro-preview-customtools",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3.5-flash",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3.5-flash-lite",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3.7-flash",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-3.8-flash",
+    "provider": "vertex",
+    "mode": "chat"
+  },
+  {
+    "id": "vertex/gemini-embedding-001",
+    "provider": "vertex",
+    "mode": "embedding"
+  },
+  {
+    "id": "vertex/gemini-nano-banana-2.1",
+    "provider": "vertex",
+    "mode": "image_generation"
   },
   {
     "id": "voyage/voyage-3",

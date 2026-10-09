@@ -2905,6 +2905,64 @@ describe('frogbot sanitize', () => {
       );
     });
 
+    it('accepts the Vertex reproduction from #150', () => {
+      const config = makeConfig({
+        ai: {
+          defaultModel: 'vertex/gemini-3.5-flash',
+          providers: { vertex: { project: 'example-project', location: 'global' } },
+        },
+      });
+
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it('accepts Vertex from the environment, with auth options, a Claude location and models', () => {
+      expect(() => sanitize(makeConfig({ ai: { providers: { vertex: true } } }))).not.toThrow();
+
+      const config = makeConfig({
+        ai: {
+          providers: {
+            vertex: {
+              project: 'example-project',
+              location: 'global',
+              googleAuthOptions: { keyFilename: '/secrets/sa.json' },
+              anthropic: { location: 'us-east5' },
+              models: ['gemini-3.5-flash', 'claude-sonnet-4-6@default'],
+            },
+          },
+        },
+      });
+
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it.each([
+      [{ location: 'global' }, "Provider 'vertex' requires a non-empty project"],
+      [{ project: ' ', location: 'global' }, "Provider 'vertex' requires a non-empty project"],
+      [{ project: 'p' }, "Provider 'vertex' requires a non-empty location"],
+      [{ project: 'p', location: '' }, "Provider 'vertex' requires a non-empty location"],
+      [
+        { project: 'p', location: 'global', apiKey: 'key' },
+        "Provider 'vertex' does not accept 'apiKey'",
+      ],
+      [
+        { project: 'p', location: 'global', anthropic: { location: ' ' } },
+        "Provider 'vertex' requires a non-empty anthropic.location",
+      ],
+      [
+        { project: 'p', location: 'global', anthropic: {} },
+        "Provider 'vertex' requires a non-empty anthropic.location",
+      ],
+      [
+        { project: 'p', location: 'global', models: ['gpt-4o'] },
+        "Provider 'vertex' models contains unknown model: gpt-4o",
+      ],
+    ])('rejects the Vertex entry %j', (vertex, message) => {
+      const config = makeConfig({ ai: { providers: { vertex } } } as never);
+
+      expect(() => sanitize(config)).toThrow(message);
+    });
+
     it('throws when a custom provider has an empty models array', () => {
       const config = makeConfig({
         ai: {
