@@ -338,4 +338,57 @@ describe('OAuth browser state', () => {
     expect(params.has('code_verifier')).toBe(false);
     expect((await consumeOAuthState(flow.args)).intent.verifier).toBeUndefined();
   });
+
+  describe('with cookiePrefix acme', () => {
+    async function start(change: { callbackUrl?: string; cookiePrefix?: string } = {}) {
+      const fixture = setup();
+      const binding = { ...fixture.binding, cookiePrefix: 'acme', ...change };
+      const started = await createOAuthState({ ...fixture, ...binding, returnTo: '/' });
+      const args = { ...fixture, ...binding, cookiePrefix: 'acme', state: started.state };
+
+      return { ...fixture, ...started, args };
+    }
+
+    it('names the http cookie acme-oauth-<state> without Secure or __Host-', async () => {
+      const flow = await start({ callbackUrl: 'http://app.test/api/connections/example/callback' });
+
+      expect(flow.setCookie.startsWith(`acme-oauth-${flow.state}=`)).toBe(true);
+      expect(flow.setCookie).not.toContain('Secure');
+      expect(flow.setCookie).not.toContain('__Host-');
+    });
+
+    it('names the https cookie __Host-acme-oauth-<state> with the attributes __Host- requires', async () => {
+      const flow = await start();
+
+      expect(flow.setCookie.startsWith(`__Host-acme-oauth-${flow.state}=`)).toBe(true);
+      expect(flow.setCookie).toContain('; Path=/; HttpOnly; SameSite=Lax; Max-Age=600; Secure');
+      expect(flow.setCookie).not.toContain('Domain');
+    });
+
+    it('accepts the prefixed cookie and clears it under the same name', async () => {
+      const flow = await start();
+      flow.req.headers.set('cookie', flow.setCookie.split(';')[0]);
+      const { clearCookie } = await consumeOAuthState(flow.args);
+
+      expect(clearCookie.startsWith(`__Host-acme-oauth-${flow.state}=;`)).toBe(true);
+      expect(clearCookie).toContain('Max-Age=0');
+    });
+
+    it('rejects the right value under the old frogbot name', async () => {
+      const flow = await start();
+      const value = flow.setCookie.split(';')[0].split('=')[1];
+      flow.req.headers.set('cookie', `__Host-frogbot-oauth-${flow.state}=${value}`);
+
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+      expect(flow.values.has(`oauth:consumed:${flow.state}`)).toBe(false);
+    });
+
+    it('rejects a flow started under frogbot and finished under acme', async () => {
+      const flow = await start({ cookiePrefix: 'frogbot' });
+      flow.req.headers.set('cookie', flow.setCookie.split(';')[0]);
+
+      expect(flow.setCookie.startsWith(`__Host-frogbot-oauth-${flow.state}=`)).toBe(true);
+      await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
+    });
+  });
 });

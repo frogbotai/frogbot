@@ -41,6 +41,7 @@ export type OAuthStateBinding = {
   piece: PieceInstance;
   collection: string;
   callbackUrl: string;
+  cookiePrefix: string;
 };
 
 export type OAuthStateStorage = {
@@ -75,12 +76,18 @@ function safeReturnTo(value: string, callbackUrl: string): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function cookieName(state: string, callbackUrl: string): string {
-  return `${callbackURL(callbackUrl).protocol === 'https:' ? '__Host-' : ''}frogbot-oauth-${state}`;
+function cookieName(cookiePrefix: string, state: string, callbackUrl: string): string {
+  return `${callbackURL(callbackUrl).protocol === 'https:' ? '__Host-' : ''}${cookiePrefix}-oauth-${state}`;
 }
 
-function cookie(state: string, callbackUrl: string, value: string, maxAge: number): string {
-  return `${cookieName(state, callbackUrl)}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${callbackURL(callbackUrl).protocol === 'https:' ? '; Secure' : ''}`;
+function cookie(
+  cookiePrefix: string,
+  state: string,
+  callbackUrl: string,
+  value: string,
+  maxAge: number,
+): string {
+  return `${cookieName(cookiePrefix, state, callbackUrl)}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${callbackURL(callbackUrl).protocol === 'https:' ? '; Secure' : ''}`;
 }
 
 export async function createOAuthState({
@@ -90,6 +97,7 @@ export async function createOAuthState({
   flow,
   collection,
   callbackUrl,
+  cookiePrefix,
   returnTo,
   req,
 }: OAuthStateStorage &
@@ -171,7 +179,7 @@ export async function createOAuthState({
   return {
     state,
     authorizationUrl: url.href,
-    setCookie: cookie(state, callback, browser, lifetime / 1000),
+    setCookie: cookie(cookiePrefix, state, callback, browser, lifetime / 1000),
   };
 }
 
@@ -183,6 +191,7 @@ export async function consumeOAuthState({
   flow,
   collection,
   callbackUrl,
+  cookiePrefix,
   req,
 }: OAuthStateStorage &
   OAuthStateBinding & {
@@ -225,7 +234,7 @@ export async function consumeOAuthState({
       throw new OAuthError('state');
     }
 
-    const name = cookieName(state, intent.callbackUrl);
+    const name = cookieName(cookiePrefix, state, intent.callbackUrl);
     const values = (req.headers.get('cookie') ?? '')
       .split(';')
       .map((part) => part.trim())
@@ -244,7 +253,7 @@ export async function consumeOAuthState({
 
     if (intent.expiresAt <= Date.now()) throw new OAuthError('state');
 
-    return { intent, clearCookie: cookie(state, intent.callbackUrl, '', 0) };
+    return { intent, clearCookie: cookie(cookiePrefix, state, intent.callbackUrl, '', 0) };
   } catch {
     throw new OAuthError('state');
   }

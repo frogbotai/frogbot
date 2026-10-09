@@ -49,6 +49,7 @@ async function routeURLs({
       server.origin,
     ).href,
     returnTo: path(config.routes.admin, 'settings/connections'),
+    cookiePrefix: config.cookiePrefix,
   };
 }
 
@@ -94,6 +95,7 @@ export function buildConnectionOAuthEndpoints({
             flow: 'link',
             collection: userSlug,
             callbackUrl: urls.callbackUrl,
+            cookiePrefix: urls.cookiePrefix,
             returnTo: params.get('returnTo') ?? urls.returnTo,
             req,
           });
@@ -119,7 +121,7 @@ export function buildConnectionOAuthEndpoints({
         if (!entry) return failure(404, headers, 'Connection not found');
 
         try {
-          const { callbackUrl } = await routeURLs({
+          const { callbackUrl, cookiePrefix } = await routeURLs({
             req,
             slug: connections.slug!,
             piece: entry.piece.piece,
@@ -136,6 +138,7 @@ export function buildConnectionOAuthEndpoints({
             flow: 'link',
             collection: userSlug,
             callbackUrl,
+            cookiePrefix,
             req,
           });
 

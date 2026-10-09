@@ -49,6 +49,7 @@ async function routeURLs({
       server.origin,
     ).href,
     returnTo: collectionSlug === config.admin.user ? config.routes.admin : '/',
+    cookiePrefix: config.cookiePrefix,
   };
 }
 
@@ -88,6 +89,7 @@ export function buildSignInEndpoints({
             flow: 'login',
             collection: collectionSlug,
             callbackUrl: urls.callbackUrl,
+            cookiePrefix: urls.cookiePrefix,
             returnTo: params.get('returnTo') ?? urls.returnTo,
             req,
           });
@@ -113,7 +115,7 @@ export function buildSignInEndpoints({
         if (!method) return failure(404, headers);
 
         try {
-          const { callbackUrl } = await routeURLs({ req, collectionSlug, method });
+          const { callbackUrl, cookiePrefix } = await routeURLs({ req, collectionSlug, method });
           const params = new URL(req.url!).searchParams;
           if (params.getAll('state').length !== 1) throw new OAuthError('state');
 
@@ -125,6 +127,7 @@ export function buildSignInEndpoints({
             flow: 'login',
             collection: collectionSlug,
             callbackUrl,
+            cookiePrefix,
             req,
           });
 

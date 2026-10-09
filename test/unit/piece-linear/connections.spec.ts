@@ -145,6 +145,7 @@ describe('Linear connections', () => {
       flow: 'link',
       collection: 'users',
       callbackUrl: 'https://app.test/api/connections/linear/callback',
+      cookiePrefix: 'frogbot',
       returnTo: '/',
       req: { user: { id: 'owner', collection: 'users' } },
     });
