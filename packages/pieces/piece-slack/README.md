@@ -42,6 +42,16 @@ export default buildConfig({
 });
 ```
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createSlack({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'pins:read'] })` adds one, and an array replaces the defaults. `slackScopes` maps each name to the provider's scope string.
+
+These are bot scopes. User scopes are fixed in the recipe's `user_scope` parameter.
+
+- Always requested: none.
+- Defaults: `channels:history`, `channels:join`, `channels:manage`, `channels:read`, `channels:write.invites`, `chat:write`, `chat:write.customize`, `conversations.connect:write`, `emoji:read`, `files:read`, `files:write`, `groups:history`, `groups:read`, `groups:write`, `groups:write.invites`, `im:history`, `im:read`, `im:write`, `links:read`, `links:write`, `mpim:history`, `mpim:read`, `mpim:write`, `reactions:read`, `reactions:write`, `usergroups:read`, `usergroups:write`, `users.profile:read`, `users:read`, `users:read.email`.
+- Also available: `app_mentions:read`, `assistant:write`, `bookmarks:read`, `bookmarks:write`, `bots:read`, `calls:read`, `calls:write`, `chat:write.public`, `commands`, `conversations.connect:manage`, `conversations.connect:read`, `dnd:read`, `incoming-webhook`, `links.embed:write`, `metadata.message:read`, `pins:read`, `pins:write`, `reminders:read`, `reminders:write`, `remote_files:read`, `remote_files:share`, `remote_files:write`, `team:read`, `users:write`.
+
 ## Actions
 
 | Upstream action slug              | Previous wrapper export        | Native action            | Notes                                                                                |

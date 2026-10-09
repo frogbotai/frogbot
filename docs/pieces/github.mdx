@@ -44,12 +44,13 @@ The instance slug defaults to `github`. Give each instance its own slug when you
 | `auth.privateKey` | `string` | Required for app credentials | A private key generated for the app. |
 | `auth.installationId` | `number` | Required for app credentials | The installation to act as. Numeric strings are converted. |
 | `auth.accessToken` | `string` | Required for token credentials | A personal access token or OAuth token, used instead of the three app fields. Works for actions, not for channels. |
-| `oauth` | `OAuthApp` | — | Your GitHub OAuth app, for [user connections](/connections/overview). Default scopes are `admin:repo_hook`, `admin:org`, `repo`, `gist`, and `user:email`. |
+| `oauth` | `OAuthApp` | — | Your GitHub OAuth app, for [user connections](/connections/overview). |
+| `scopes` | Scope names, or `({ defaultScopes }) => names` | `admin:repo_hook`, `admin:org`, `repo`, `gist` | OAuth scopes, such as `({ defaultScopes }) => [...defaultScopes, 'read:user']`. `user:email` is always requested, because the account lookup reads `/user/emails`. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
 | `webhookSecret` | `string` | — | Required for channels. The secret you set on the app's webhook; FrogBot rejects deliveries, including trigger events, that are not signed with it. |
 | `botUsername` | `string` | — | The name participants mention, such as `my-app[bot]`. |
 | `botUserId` | `number` | Looked up at startup | The numeric user ID of the app's bot account. FrogBot uses it to ignore its own comments; set it so this never depends on looking the bot up at startup. |
 
-`auth` takes either the three app fields or `accessToken`. See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
+`auth` takes either the three app fields or `accessToken`. See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, `oauth`, and `scopes`.
 
 Channels need GitHub App credentials. A personal access token works for the piece's actions, not for channels.
 

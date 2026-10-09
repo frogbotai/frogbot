@@ -1,4 +1,4 @@
-import { definePiece, type PieceOAuthRecipe } from 'frogbot/pieces';
+import { definePiece, type PieceOAuthAccount, type PieceOAuthRecipe } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { customApiCall } from './actions/customApiCall.js';
@@ -7,11 +7,26 @@ import { createMeetingRegistrant } from './actions/registrants.js';
 import { createZoomClient, type ZoomClient } from './client.js';
 import { zoomAuth, zoomScopes } from './config.js';
 
-const zoomOAuth: PieceOAuthRecipe<z.output<typeof zoomAuth>, ZoomClient> = {
+const zoomOAuth: PieceOAuthRecipe<
+  z.output<typeof zoomAuth>,
+  ZoomClient,
+  PieceOAuthAccount,
+  keyof typeof zoomScopes
+> = {
   authorizationUrl: 'https://zoom.us/oauth/authorize',
   tokenUrl: 'https://zoom.us/oauth/token',
   tokenEndpointAuthMethod: 'client_secret_basic',
-  scopes: [...zoomScopes],
+  scopes: {
+    catalog: zoomScopes,
+    defaults: [
+      'meeting:write:meeting',
+      'meeting:read:meeting',
+      'meeting:read:list_meetings',
+      'meeting:update:meeting',
+      'meeting:write:registrant',
+    ],
+    required: ['user:read:user'],
+  },
   toAuth: ({ tokens }) => {
     if (!tokens.access_token?.trim()) {
       throw new Error('Zoom OAuth response did not include an access token.');

@@ -8,3 +8,10 @@ expectTypeOf<Extract<keyof typeof google, string>>().toEqualTypeOf<
 >();
 
 expectTypeOf(google.triggers).toEqualTypeOf<Record<string, never>>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createGoogle({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'openid'] });
+
+// @ts-expect-error userinfo.mail is not a Google scope name
+createGoogle({ oauth: app, scopes: ['userinfo.mail'] });

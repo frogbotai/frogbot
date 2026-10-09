@@ -444,6 +444,15 @@ describe('OAuth token and account transport', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('splits granted scopes on commas and whitespace', () => {
+    for (const scope of ['repo,gist', 'repo, gist', ' repo  gist ', 'repo,,gist,repo']) {
+      expect(oauthTokenMetadata({ tokens: { access_token: 'token', scope } }).scopes).toEqual([
+        'repo',
+        'gist',
+      ]);
+    }
+  });
+
   it('refreshes with HTTP Basic app credentials outside the request body', async () => {
     const fixture = setup(
       {

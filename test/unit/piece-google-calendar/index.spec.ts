@@ -15,6 +15,7 @@ vi.mock(
   () => import('../../../packages/pieces/piece-google/src/index.js'),
 );
 
+import { oauthScopes } from '../../../packages/frogbot/src/connections/oauth/scopes.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
@@ -185,7 +186,11 @@ describe('native Google Calendar', () => {
     const definition = pieceFactoryDefinition(createGoogleCalendar);
 
     expect(definition.oauth?.account).toBe(googleOAuth.account);
-    expect(definition.oauth?.scopes).toEqual([...googleOAuth.scopes, ...googleCalendarScopes]);
+    expect(oauthScopes(createGoogleCalendar())).toEqual([
+      ...Object.values(googleOAuth.scopes.catalog),
+      googleCalendarScopes['calendar.events'],
+      googleCalendarScopes['calendar.readonly'],
+    ]);
     expect(
       definition.oauth?.toAuth?.({ tokens: { access_token: 'access', refresh_token: 'refresh' } }),
     ).toEqual({ accessToken: 'access', refreshToken: 'refresh' });

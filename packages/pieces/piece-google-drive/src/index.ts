@@ -1,4 +1,4 @@
-import { googleOAuth } from '@frogbotai/piece-google';
+import { googleOAuth, googleScopes } from '@frogbotai/piece-google';
 import { definePiece } from 'frogbot/pieces';
 
 import { customApiCall } from './actions/customApiCall.js';
@@ -60,7 +60,16 @@ export const googleDriveActions = [
   'trashFile',
   'customApiCall',
 ] as const;
-export const googleDriveScopes = ['https://www.googleapis.com/auth/drive'] as const;
+export const googleDriveScopes = {
+  drive: 'https://www.googleapis.com/auth/drive',
+  'drive.file': 'https://www.googleapis.com/auth/drive.file',
+  'drive.readonly': 'https://www.googleapis.com/auth/drive.readonly',
+  'drive.metadata': 'https://www.googleapis.com/auth/drive.metadata',
+  'drive.metadata.readonly': 'https://www.googleapis.com/auth/drive.metadata.readonly',
+  'drive.appdata': 'https://www.googleapis.com/auth/drive.appdata',
+  'drive.activity': 'https://www.googleapis.com/auth/drive.activity',
+  'drive.activity.readonly': 'https://www.googleapis.com/auth/drive.activity.readonly',
+} as const;
 
 export const createGoogleDrive = definePiece({
   slug: 'google-drive',
@@ -73,7 +82,11 @@ export const createGoogleDrive = definePiece({
   client: createGoogleDriveClient,
   oauth: {
     ...googleOAuth,
-    scopes: [...googleOAuth.scopes, ...googleDriveScopes],
+    scopes: {
+      catalog: { ...googleScopes, ...googleDriveScopes },
+      defaults: ['drive'],
+      required: googleOAuth.scopes.required,
+    },
     toAuth: ({ tokens }) => ({
       accessToken: tokens.access_token ?? '',
       refreshToken: tokens.refresh_token,

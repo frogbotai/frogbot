@@ -29,6 +29,7 @@ Install the package for your integration and create an instance with its factory
 | `auth.accessToken` | `string` | Required with `auth` | A Google OAuth access token with the product's scopes. |
 | `auth.refreshToken` | `string` | — | Accepted with the access token. FrogBot refreshes only tokens stored by OAuth [connections](/connections/overview), so keep a factory `accessToken` current yourself. |
 | `oauth` | `OAuthApp` | — | Your Google OAuth app, usually `google.oauth`. Enables `oauth: true` connection entries. |
+| `scopes` | Scope names, or `({ defaultScopes }) => names` | The product's default scopes | OAuth scopes for this instance, such as `({ defaultScopes }) => [...defaultScopes, 'gmail.labels']`. The identity scopes are always requested. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
 
 `createGoogle` accepts `slug` (default `'google'`), `oauth` for [sign-in](/authentication/sign-in), and `auth: { accessToken }`. It has no actions, so its `auth` is not used for API calls. See [factory options](/pieces/overview#factory-options) for the shared options. Linear and Resend options are on the [Linear](/pieces/linear#connect-an-agent) and [Email](/email/overview#configure-resend) pages.
 
@@ -72,7 +73,7 @@ export const gmail = createGmail({ oauth: google.oauth })
 export const connections: ConnectionEntry[] = [{ piece: gmail, oauth: true }]
 ```
 
-Google's identity recipe requests OpenID, email, and profile access. Gmail extends it with mailbox scopes. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/connections/overview#configure-linking) and [redirect setup](/connections/overview#configure-oauth-redirects).
+Google's identity recipe requests OpenID, email, and profile access. Gmail adds mailbox scopes, and a `scopes` option on `createGmail` changes only Gmail's consent screen, not the shared app. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/connections/overview#configure-linking) and [redirect setup](/connections/overview#configure-oauth-redirects).
 
 ## Google actions
 

@@ -247,7 +247,7 @@ const createOAuth = definePiece({
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
     toAuth: ({ tokens }) => {
       expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
 
@@ -536,7 +536,7 @@ const createSignIn = definePiece({
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
     account({ tokens, client, req }) {
       expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
       expectTypeOf(client).toEqualTypeOf<OAuthClient>();
@@ -687,7 +687,7 @@ const createOAuthOnly = definePiece({
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
   },
   actions: [],
 } satisfies PieceDefinition<PlainTypes, undefined>);

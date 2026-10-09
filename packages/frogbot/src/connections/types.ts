@@ -29,6 +29,7 @@ export type SanitizedConnectionEntry = {
   piece: PieceInstance;
   oauth: boolean;
   secret: boolean;
+  scopes?: string[];
   secretSchema?: ConnectionSchema;
   icon?: string;
 };

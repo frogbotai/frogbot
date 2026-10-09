@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { getPayloadConfig } from '../../packages/frogbot/src/config/getPayloadConfig.js';
+import { oauthScopes } from '../../packages/frogbot/src/connections/oauth/scopes.js';
 import type {
   ConnectionOwner,
   ConnectionRow,
@@ -13,6 +14,8 @@ import type {
 import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { createPieceHelpers, definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
+import { gmailScopes } from '../../packages/pieces/piece-gmail/src/config.js';
+import { googleOAuth, googleScopes } from '../../packages/pieces/piece-google/src/index.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 const client = vi.fn(({ auth }) => ({ token: auth.token.value }));
@@ -39,10 +42,27 @@ const createPiece = definePiece({
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
     toAuth: ({ tokens }) => ({ token: tokens.access_token }),
   },
   actions: [read],
+});
+
+const createGmail = definePiece({
+  slug: 'gmail',
+  label: 'Gmail',
+  auth: z.object({ accessToken: z.string().min(1) }),
+  client: ({ auth }: { auth: unknown }) => auth,
+  oauth: {
+    ...googleOAuth,
+    scopes: {
+      catalog: { ...googleScopes, ...gmailScopes },
+      defaults: ['gmail.send', 'gmail.readonly', 'gmail.compose'],
+      required: googleOAuth.scopes.required,
+    },
+    toAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
+  },
+  actions: [],
 });
 
 describe(`connection resolution and static routes [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
@@ -56,6 +76,11 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     slug: 'custom-alias',
     auth: { token: 'factory' },
     oauth: { clientId: 'id', clientSecret: 'secret' },
+  });
+
+  const gmail = createGmail({
+    oauth: { clientId: 'google-id', clientSecret: 'google-secret' },
+    scopes: ({ defaultScopes }) => [...defaultScopes, 'gmail.labels'],
   });
 
   const request = (user: ConnectionOwner | null = owner): FrogBotRequest =>
@@ -86,7 +111,10 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
         { slug: 'members', auth: true, fields: [] },
         { slug: 'customers', auth: true, fields: [] },
       ],
-      connections: [{ piece, oauth: true, secret: true }],
+      connections: [
+        { piece, oauth: true, secret: true },
+        { piece: gmail, oauth: true },
+      ],
     });
 
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
@@ -211,6 +239,36 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       expiresAt: null,
     });
     expect(await piece.read({ input: {}, req: request() })).toBe('static-token');
+  });
+
+  it('asks a connection linked before a scope was added to re-link', async () => {
+    const granted = oauthScopes(gmail).filter((scope) => scope !== gmailScopes['gmail.labels']);
+    const link = (accessToken: string, scopes: string[]) =>
+      store.upsert({
+        owner,
+        piece: 'gmail',
+        method: 'oauth',
+        credential: { access_token: accessToken },
+        scopes,
+        account: { id: 'google-user', label: 'Google User' },
+      });
+
+    await link('old-grant', granted);
+
+    await expect(
+      frogbot.connections.resolve({ piece: gmail, req: request() }),
+    ).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code: 'scopes',
+      missingScopes: ['https://www.googleapis.com/auth/gmail.labels'],
+      piece: 'gmail',
+    });
+
+    await link('new-grant', [...granted, gmailScopes['gmail.labels']]);
+
+    await expect(frogbot.connections.resolve({ piece: gmail, req: request() })).resolves.toEqual({
+      accessToken: 'new-grant',
+    });
   });
 
   it('does not replace a row with malformed credentials or leak validation input', async () => {

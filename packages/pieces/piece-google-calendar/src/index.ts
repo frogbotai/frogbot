@@ -1,4 +1,4 @@
-import { googleOAuth } from '@frogbotai/piece-google';
+import { googleOAuth, googleScopes } from '@frogbotai/piece-google';
 import { definePiece } from 'frogbot/pieces';
 
 import { customApiCall } from './actions/customApiCall.js';
@@ -37,7 +37,11 @@ export const createGoogleCalendar = definePiece({
   client: createGoogleCalendarClient,
   oauth: {
     ...googleOAuth,
-    scopes: [...googleOAuth.scopes, ...googleCalendarScopes],
+    scopes: {
+      catalog: { ...googleScopes, ...googleCalendarScopes },
+      defaults: ['calendar.events', 'calendar.readonly'],
+      required: googleOAuth.scopes.required,
+    },
     toAuth: ({ tokens }) => ({
       accessToken: tokens.access_token ?? '',
       refreshToken: tokens.refresh_token,

@@ -19,7 +19,7 @@ export const definition = {
   oauth: {
     authorizationUrl: 'https://provider.test/authorize',
     tokenUrl: 'https://provider.test/token',
-    scopes: ['read'],
+    scopes: { catalog: { read: 'read' }, defaults: ['read'] },
     pkce: true,
     toAuth: ({ tokens }) => ({ token: tokens.access_token }),
   },

@@ -5,8 +5,10 @@ export const googleSheetsAuth = z.object({
   refreshToken: z.string().optional().meta({ label: 'Refresh token', secret: true }),
 });
 
-export const googleSheetsScopes = [
-  'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/drive.readonly',
-  'https://www.googleapis.com/auth/drive',
-] as const;
+export const googleSheetsScopes = {
+  spreadsheets: 'https://www.googleapis.com/auth/spreadsheets',
+  'spreadsheets.readonly': 'https://www.googleapis.com/auth/spreadsheets.readonly',
+  drive: 'https://www.googleapis.com/auth/drive',
+  'drive.file': 'https://www.googleapis.com/auth/drive.file',
+  'drive.readonly': 'https://www.googleapis.com/auth/drive.readonly',
+} as const;

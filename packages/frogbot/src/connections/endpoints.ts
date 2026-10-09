@@ -1,5 +1,4 @@
 import type { Endpoint } from '../endpoints/types.js';
-import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { FrogBotRequest } from '../types/request.js';
 import {
   consumeOAuthState,
@@ -7,6 +6,7 @@ import {
   exchangeOAuthCode,
   lookupOAuthAccount,
   OAuthError,
+  oauthScopes,
   oauthTokenMetadata,
 } from './oauth/index.js';
 import type { SanitizedConnectionsConfig } from './types.js';
@@ -169,7 +169,7 @@ export function buildConnectionOAuthEndpoints({
 
           const metadata = oauthTokenMetadata({
             tokens,
-            scopes: entry.piece.oauth?.scopes ?? pieceInstanceDefinition(entry.piece).oauth!.scopes,
+            scopes: oauthScopes(entry.piece),
           });
 
           const account = await lookupOAuthAccount({

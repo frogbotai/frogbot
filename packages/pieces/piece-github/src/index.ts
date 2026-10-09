@@ -3,6 +3,7 @@ import {
   definePiece,
   findUserByEmail,
   type PieceChannel,
+  type PieceOAuthAccount,
   type PieceOAuthRecipe,
   type PieceWebhook,
 } from 'frogbot/pieces';
@@ -56,7 +57,11 @@ export const githubTriggers = [
 export const githubOAuth = {
   authorizationUrl: 'https://github.com/login/oauth/authorize',
   tokenUrl: 'https://github.com/login/oauth/access_token',
-  scopes: [...githubScopes],
+  scopes: {
+    catalog: githubScopes,
+    defaults: ['admin:repo_hook', 'admin:org', 'repo', 'gist'],
+    required: ['user:email'],
+  },
   toAuth({ tokens }) {
     if (!tokens.access_token?.trim()) {
       throw new Error('GitHub OAuth did not return an access token.');
@@ -85,7 +90,12 @@ export const githubOAuth = {
 
     return { id: String(user.id), label: user.name?.trim() || user.login, email };
   },
-} satisfies PieceOAuthRecipe<z.output<typeof githubAuth>, GithubClient>;
+} satisfies PieceOAuthRecipe<
+  z.output<typeof githubAuth>,
+  GithubClient,
+  PieceOAuthAccount,
+  keyof typeof githubScopes
+>;
 
 const githubWebhook = {
   verify: verifyGithubWebhook,

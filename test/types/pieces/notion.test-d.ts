@@ -22,3 +22,10 @@ expectTypeOf<keyof typeof notion.triggers>().toEqualTypeOf<
 >();
 
 expectTypeOf(notion.triggers.updatedDatabaseItem.type).toEqualTypeOf<'polling'>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createNotion({ oauth: app, scopes: [] });
+
+// @ts-expect-error Notion has no scope names
+createNotion({ oauth: app, scopes: ['read'] });

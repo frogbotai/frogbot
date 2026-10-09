@@ -1,4 +1,4 @@
-import { googleOAuth } from '@frogbotai/piece-google';
+import { googleOAuth, googleScopes } from '@frogbotai/piece-google';
 import { definePiece } from 'frogbot/pieces';
 
 import { customApiCall, exportWorksheet } from './api.js';
@@ -76,7 +76,11 @@ export const createGoogleSheets = definePiece({
   client: createGoogleSheetsClient,
   oauth: {
     ...googleOAuth,
-    scopes: [...googleOAuth.scopes, ...googleSheetsScopes],
+    scopes: {
+      catalog: { ...googleScopes, ...googleSheetsScopes },
+      defaults: ['spreadsheets', 'drive.readonly', 'drive'],
+      required: googleOAuth.scopes.required,
+    },
     toAuth: ({ tokens }) => ({
       accessToken: tokens.access_token ?? '',
       refreshToken: tokens.refresh_token,

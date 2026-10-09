@@ -15,6 +15,14 @@ export const dropbox = createDropbox({
 });
 ```
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createDropbox({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'sharing.read'] })` adds one, and an array replaces the defaults. `dropboxScopes` maps each name to the provider's scope string.
+
+- Always requested: none.
+- Defaults: `files.metadata.write`, `files.metadata.read`, `files.content.write`, `files.content.read`.
+- Also available: `account_info.read`, `account_info.write`, `file_requests.read`, `file_requests.write`, `sharing.read`, `sharing.write`, `contacts.read`, `contacts.write`, `openid`, `email`, `profile`.
+
 ## Actions
 
 | Upstream action slug           | Previous wrapper export    | Native action      | Notes                                                                      |

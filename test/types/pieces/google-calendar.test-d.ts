@@ -29,3 +29,13 @@ const deleted = googleCalendar.deleteEvent({
 });
 
 expectTypeOf(deleted).toEqualTypeOf<Promise<{ deleted: true }>>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createGoogleCalendar({
+  oauth: app,
+  scopes: ({ defaultScopes }) => [...defaultScopes, 'calendar.events.readonly'],
+});
+
+// @ts-expect-error calendar.event is not a Google Calendar scope name
+createGoogleCalendar({ oauth: app, scopes: ['calendar.event'] });

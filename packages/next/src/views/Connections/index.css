@@ -105,7 +105,8 @@
     color: var(--theme-brand-600);
   }
 
-  .frogbot-connections__status--expired {
+  .frogbot-connections__status--expired,
+  .frogbot-connections__status--relink {
     background: color-mix(in srgb, var(--color-orange-350) 10%, transparent);
     color: var(--theme-base-800);
   }

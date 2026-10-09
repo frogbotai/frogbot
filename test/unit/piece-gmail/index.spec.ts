@@ -7,6 +7,7 @@ vi.mock(
   () => import('../../../packages/pieces/piece-google/src/index.js'),
 );
 
+import { oauthScopes } from '../../../packages/frogbot/src/connections/oauth/scopes.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
@@ -142,14 +143,16 @@ describe('gmail', () => {
     expect(definition.oauth).toMatchObject({
       authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenUrl: 'https://oauth2.googleapis.com/token',
-      scopes: [
-        'openid',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        ...gmailScopes,
-      ],
       params: { access_type: 'offline', prompt: 'consent' },
     });
+    expect(oauthScopes(createGmail())).toEqual([
+      'openid',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      gmailScopes['gmail.send'],
+      gmailScopes['gmail.readonly'],
+      gmailScopes['gmail.compose'],
+    ]);
     expect(
       definition.oauth?.toAuth?.({ tokens: { access_token: 'access', refresh_token: 'refresh' } }),
     ).toEqual({ accessToken: 'access', refreshToken: 'refresh' });

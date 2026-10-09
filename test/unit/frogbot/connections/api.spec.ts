@@ -5,7 +5,10 @@ import { Connections, connectionsState } from '../../../../packages/frogbot/src/
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import type { ConnectionRow } from '../../../../packages/frogbot/src/connections/store.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { PieceDefinition } from '../../../../packages/frogbot/src/pieces/types.js';
+import type {
+  PieceDefinition,
+  PieceScopes,
+} from '../../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const definition = {
@@ -16,7 +19,7 @@ const definition = {
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: ['read'],
+    scopes: { catalog: { read: 'read' }, defaults: ['read'] },
     toAuth: ({ tokens }) => ({ token: tokens.access_token }),
   },
   actions: [],
@@ -28,15 +31,22 @@ async function setup({
   oauth = true,
   secret = true,
   pieceDefinition = definition,
+  scopes,
 }: {
   row?: Partial<ConnectionRow> & { value?: unknown };
   auth?: { token: string };
   oauth?: boolean;
   secret?: boolean;
   pieceDefinition?: PieceDefinition;
+  scopes?: PieceScopes<string>;
 } = {}) {
   const factory = definePiece(pieceDefinition);
-  const piece = factory({ slug: 'alias', ...(auth ? { auth } : {}) });
+  const piece = factory({
+    slug: 'alias',
+    ...(auth ? { auth } : {}),
+    ...(scopes ? { scopes: scopes as never } : {}),
+  });
+
   const encryption = createCredentialEncryption({ secret: 'test' });
   const stored = row
     ? {
@@ -336,6 +346,61 @@ describe('connections API', () => {
     expect(await factory.api.authorizations({ pieces: [factory.piece], req: factory.req })).toEqual(
       [],
     );
+  });
+
+  it('checks a tool instance against the entry instance scopes', async () => {
+    const pieceDefinition = {
+      ...definition,
+      oauth: {
+        ...definition.oauth,
+        scopes: {
+          catalog: { read: 'https://provider/read', labels: 'https://provider/labels' },
+          defaults: ['read'],
+        },
+      },
+    } satisfies PieceDefinition;
+
+    const granted = await setup({
+      pieceDefinition,
+      scopes: ({ defaultScopes }: { defaultScopes: string[] }) => [...defaultScopes, 'labels'],
+      row: {
+        method: 'oauth',
+        value: { access_token: 'oauth-token' },
+        scopes: ['https://provider/read', 'https://provider/labels'],
+      },
+    });
+
+    await expect(
+      granted.api.resolve({ piece: granted.factory(), req: granted.req }),
+    ).resolves.toEqual({
+      token: 'oauth-token',
+    });
+
+    const narrow = await setup({
+      pieceDefinition,
+      scopes: ({ defaultScopes }: { defaultScopes: string[] }) => [...defaultScopes, 'labels'],
+      row: {
+        method: 'oauth',
+        value: { access_token: 'oauth-token' },
+        scopes: ['https://provider/read'],
+      },
+    });
+
+    const tool = narrow.factory();
+
+    await expect(narrow.api.resolve({ piece: tool, req: narrow.req })).rejects.toMatchObject({
+      code: 'scopes',
+      missingScopes: ['https://provider/labels'],
+    });
+    expect(await narrow.api.authorizations({ pieces: [tool], req: narrow.req })).toEqual([
+      {
+        piece: 'example',
+        oauth: true,
+        secret: true,
+        scopes: ['https://provider/read', 'https://provider/labels'],
+        authorizeUrl: '/custom-api/connections/example/authorize',
+      },
+    ]);
   });
 
   it('offers relinking for failed rows even with factory auth', async () => {

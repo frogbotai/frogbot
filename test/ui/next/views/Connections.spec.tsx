@@ -9,7 +9,10 @@ import {
   initialConnectionValue,
   projectConnectionSchema,
 } from '../../../../packages/next/src/views/Connections/schema.js';
-import type { ConnectionPiece } from '../../../../packages/next/src/views/Connections/types.js';
+import type {
+  ConnectionItem,
+  ConnectionPiece,
+} from '../../../../packages/next/src/views/Connections/types.js';
 
 const getCachedFrogBot = vi.hoisted(() => vi.fn<() => unknown>());
 const setStepNav = vi.hoisted(() => vi.fn());
@@ -71,6 +74,7 @@ describe('linked accounts', () => {
       const list = vi.fn().mockResolvedValue([
         {
           ...row,
+          scopes: ['mail.read'],
           credential: 'ciphertext',
           owner: 'private-owner',
           account: { ...row.account, token: 'private-token' },
@@ -88,6 +92,7 @@ describe('linked accounts', () => {
                   piece: { piece: 'mail', oauth: { clientSecret: 'oauth-secret' } },
                   oauth: true,
                   secret: true,
+                  scopes: ['mail.read'],
                   secretSchema: {
                     type: 'string',
                     default: 'credential-default',
@@ -110,6 +115,8 @@ describe('linked accounts', () => {
       expect(list).toHaveBeenCalledWith({ req });
       expect(view?.props.apiPath).toBe('/custom-api/connections');
       expect(view?.props.returnTo).toBe('/control/settings/connections');
+      expect(view?.props.pieces[0].scopes).toEqual(['mail.read']);
+      expect(view?.props.initialConnections[0].scopes).toEqual(['mail.read']);
 
       const serialized = JSON.stringify(view?.props);
 
@@ -233,6 +240,35 @@ describe('linked accounts', () => {
       expect(icon.querySelector('svg') !== null).toBe(!logo);
     },
   );
+
+  it('shows needs re-link for an active OAuth row missing a piece scope', () => {
+    const status = (connection: Partial<ConnectionItem>) => {
+      const { container, unmount } = render(
+        <ConnectionsViewClient
+          {...props}
+          pieces={[{ ...pieces[0], scopes: ['mail.read', 'mail.labels'] }]}
+          initialConnections={[{ ...row, ...connection }]}
+        />,
+      );
+
+      const element = container.querySelector('.frogbot-connections__status')!;
+      const result = { text: element.textContent, className: element.className };
+      unmount();
+
+      return result;
+    };
+
+    expect(status({ scopes: ['mail.read'] })).toEqual({
+      text: 'needs re-link',
+      className: 'frogbot-connections__status frogbot-connections__status--relink',
+    });
+    expect(status({ scopes: ['mail.labels', 'mail.read'] }).text).toBe('active');
+    expect(status({ scopes: ['mail.read'], expiresAt: '2000-01-01T00:00:00Z' }).text).toBe(
+      'expired',
+    );
+    expect(status({ scopes: [], status: 'revoked' }).text).toBe('revoked');
+    expect(status({ scopes: [], method: 'secret' }).text).toBe('active');
+  });
 
   it('renders without a FrogBot theme wrapper', () => {
     const { container } = render(<ConnectionsViewClient {...props} />);

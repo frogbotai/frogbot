@@ -21,11 +21,12 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
       : undefined;
 
   const pieces: ConnectionPiece[] = Object.values(connections.entries).map(
-    ({ piece, oauth, secret, secretSchema, icon }) => ({
+    ({ piece, oauth, secret, scopes, secretSchema, icon }) => ({
       slug: piece.piece,
       label: piece.piece.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
       oauth,
       secret,
+      ...(scopes ? { scopes } : {}),
       ...(icon ? { icon } : {}),
       ...(secret && secretSchema ? { secretSchema: projectConnectionSchema(secretSchema) } : {}),
     }),
@@ -39,6 +40,7 @@ export async function ConnectionsView({ initPageResult, payload }: AdminViewServ
       piece: row.piece,
       method: row.method,
       status: row.status,
+      scopes: row.scopes,
       expiresAt: row.expiresAt,
       account: row.account ? { label: row.account.label, email: row.account.email } : null,
     }));

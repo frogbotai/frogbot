@@ -18,7 +18,7 @@ const createIdentity = definePiece({
   oauth: {
     authorizationUrl: 'https://identity.example/authorize',
     tokenUrl: 'https://identity.example/token',
-    scopes: ['email'],
+    scopes: { catalog: { email: 'email' }, defaults: ['email'] },
     account: () =>
       Promise.resolve({ id: 'account', label: 'Account', email: 'person@example.com' }),
   },
@@ -107,7 +107,7 @@ describe('collection sign-in configuration', () => {
       oauth: {
         authorizationUrl: 'https://example.com',
         tokenUrl: 'https://example.com',
-        scopes: [],
+        scopes: { catalog: {}, defaults: [] },
       },
     })({ oauth });
 

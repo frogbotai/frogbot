@@ -27,3 +27,13 @@ expectTypeOf(exported).toEqualTypeOf<
 const _exportWorksheetRejectsCreateSpreadsheetInput = () =>
   // @ts-expect-error exportWorksheet does not accept createSpreadsheet input
   sheets.exportWorksheet({ input: { title: 'Budget' } });
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createGoogleSheets({
+  oauth: app,
+  scopes: ({ defaultScopes }) => [...defaultScopes, 'spreadsheets.readonly'],
+});
+
+// @ts-expect-error sheets is not a Google Sheets scope name
+createGoogleSheets({ oauth: app, scopes: ['sheets'] });

@@ -33,3 +33,13 @@ expectTypeOf<keyof typeof teams.triggers>().toEqualTypeOf<
 
 expectTypeOf(teams.triggers.channelCreated.type).toEqualTypeOf<'polling'>();
 expectTypeOf(teams.triggers.messageReceived.type).toEqualTypeOf<'app'>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createMicrosoftTeams({
+  oauth: app,
+  scopes: ({ defaultScopes }) => [...defaultScopes, 'ChatMessage.Send'],
+});
+
+// @ts-expect-error Chat.Send is not a Microsoft Teams scope name
+createMicrosoftTeams({ oauth: app, scopes: ['Chat.Send'] });

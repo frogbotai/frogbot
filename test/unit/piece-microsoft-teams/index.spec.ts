@@ -231,7 +231,7 @@ describe('native Microsoft Teams OAuth', () => {
     expect(definition.oauth).toMatchObject({
       authorizationUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
       tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-      scopes: microsoftTeamsScopes,
+      scopes: { catalog: microsoftTeamsScopes, required: ['offline_access', 'User.Read'] },
     });
     expect(definition.oauth?.toAuth?.({ tokens: { access_token: 'stored-access-token' } })).toEqual(
       auth,

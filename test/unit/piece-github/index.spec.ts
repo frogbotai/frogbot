@@ -25,6 +25,7 @@ import {
   createGithub,
   githubActions,
   githubOAuth,
+  githubScopes,
   githubTriggers,
 } from '../../../packages/pieces/piece-github/src/index.js';
 import {
@@ -180,7 +181,11 @@ describe('github', () => {
     expect(definition.oauth).toMatchObject({
       authorizationUrl: 'https://github.com/login/oauth/authorize',
       tokenUrl: 'https://github.com/login/oauth/access_token',
-      scopes: ['admin:repo_hook', 'admin:org', 'repo', 'gist', 'user:email'],
+      scopes: {
+        catalog: githubScopes,
+        defaults: ['admin:repo_hook', 'admin:org', 'repo', 'gist'],
+        required: ['user:email'],
+      },
     });
     expect(definition.oauth?.toAuth?.({ tokens: { access_token: 'stored-token' } })).toEqual({
       accessToken: 'stored-token',

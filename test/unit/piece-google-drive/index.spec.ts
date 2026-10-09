@@ -14,6 +14,7 @@ vi.mock(
   () => import('../../../packages/pieces/piece-google/src/index.js'),
 );
 
+import { oauthScopes } from '../../../packages/frogbot/src/connections/oauth/scopes.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
@@ -54,8 +55,16 @@ describe('native Google Drive contract', () => {
 
     expect(definition.oauth).toMatchObject({
       ...googleOAuth,
-      scopes: [...googleOAuth.scopes, ...googleDriveScopes],
+      scopes: {
+        catalog: { ...googleOAuth.scopes.catalog, ...googleDriveScopes },
+        defaults: ['drive'],
+        required: googleOAuth.scopes.required,
+      },
     });
+    expect(oauthScopes(createGoogleDrive())).toEqual([
+      ...Object.values(googleOAuth.scopes.catalog),
+      googleDriveScopes.drive,
+    ]);
     expect(definition.oauth?.account).toBe(googleOAuth.account);
     expect(
       definition.oauth?.toAuth?.({ tokens: { access_token: 'access', refresh_token: 'refresh' } }),

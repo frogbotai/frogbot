@@ -35,11 +35,12 @@ The instance slug defaults to `linear`. Give each instance its own slug when you
 | `auth.apiKey` | `string` | Required unless `accessToken` is set | A personal API key. Suits [comments mode](#channel-modes). |
 | `auth.accessToken` | `string` | Required unless `apiKey` is set | An OAuth access token, such as the app user's token from installing your OAuth application. |
 | `oauth` | `OAuthApp` | — | Your Linear OAuth application, for [user connections](/connections/overview). |
+| `scopes` | Scope names, or `({ defaultScopes }) => names` | `write`, `comments:create`, `issues:create`, `app:mentionable` | OAuth scopes, such as `({ defaultScopes }) => [...defaultScopes, 'app:assignable']`. `read` is always requested. See [the scope table](#create-the-linear-app). |
 | `webhookSecret` | `string` | — | Required for channels. The webhook signing secret; FrogBot rejects deliveries, including trigger events, that are not signed with it. |
 | `channelMode` | `'agent-sessions' \| 'comments'` | `'agent-sessions'` | Where the agent converses. See [Channel modes](#channel-modes). |
 | `botUsername` | `string` | — | The bot's name in conversations. |
 
-`auth` takes either `apiKey` or `accessToken`. See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
+`auth` takes either `apiKey` or `accessToken`. See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, `oauth`, and `scopes`.
 
 ## Create the Linear app
 
@@ -53,10 +54,11 @@ Create an OAuth application under **Settings > API > Applications** in Linear, a
 
 | Scope | Why |
 | --- | --- |
-| `read`, `write` | Read issues and users, and post agent activities |
+| `read` | Read issues and users. Always requested, because the account lookup reads `viewer` |
+| `write` | Post agent activities |
 | `comments:create`, `issues:create` | Used by the piece's actions |
 | `app:mentionable` | Start a session by mentioning the app |
-| `app:assignable` | Start a session by delegating an issue to the app. Not requested by default; add it to `oauth.scopes` if you want delegation |
+| `app:assignable` | Start a session by delegating an issue to the app. Not requested by default; add it with `scopes: ({ defaultScopes }) => [...defaultScopes, 'app:assignable']` |
 
 FrogBot checks the `Linear-Signature` header and the signed timestamp on every delivery and rejects anything missing, invalid, or stale before the agent sees it.
 

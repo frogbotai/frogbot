@@ -10,7 +10,7 @@ import type { z } from 'zod';
 
 import { slackActions } from './actions.js';
 import { createSlackClient, type SlackClient } from './client.js';
-import { slackAuth, slackOptions, slackScopes } from './config.js';
+import { slackAuth, slackDefaultScopes, slackOptions, slackScopes } from './config.js';
 import { slackQuestions } from './questions/index.js';
 import { slackTriggers } from './triggers.js';
 import { parseSlackWebhook, slackHandshake, verifySlackWebhook } from './webhook.js';
@@ -73,7 +73,7 @@ export const createSlack = definePiece({
   oauth: {
     authorizationUrl: 'https://slack.com/oauth/v2/authorize',
     tokenUrl: 'https://slack.com/api/oauth.v2.access',
-    scopes: [...slackScopes],
+    scopes: { catalog: slackScopes, defaults: slackDefaultScopes },
     params: {
       user_scope:
         'search:read,users.profile:write,reactions:read,reactions:write,im:history,stars:read,channels:write,groups:write,im:write,mpim:write,channels:write.invites,groups:write.invites,channels:history,groups:history,chat:write,users:read,usergroups:write',

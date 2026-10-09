@@ -28,3 +28,13 @@ const updated = zoom.updateMeeting({ input: { meeting_id: '123', topic: 'Frogs' 
 expectTypeOf(updated).toEqualTypeOf<
   Promise<{ success: true; message: 'Meeting updated successfully' }>
 >();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createZoom({
+  oauth: app,
+  scopes: ({ defaultScopes }) => [...defaultScopes, 'meeting:delete:meeting'],
+});
+
+// @ts-expect-error meeting:remove:meeting is not a Zoom scope name
+createZoom({ oauth: app, scopes: ['meeting:remove:meeting'] });

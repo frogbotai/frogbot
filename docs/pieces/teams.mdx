@@ -41,12 +41,13 @@ The instance slug defaults to `microsoft-teams`. Give each instance its own slug
 | `auth.cloud` | `'login.microsoftonline.com'` | `'login.microsoftonline.com'` | Sign-in host. `createMicrosoftTeams` accepts only the commercial cloud. |
 | `auth.tenantId` | `'common'` | `'common'` | Tenant for Graph sign-in. `createMicrosoftTeams` accepts only `'common'`. |
 | `oauth` | `OAuthApp` | — | Your Microsoft Entra app, for Graph [user connections](/connections/overview). |
+| `scopes` | Graph permission names, or `({ defaultScopes }) => names` | The permissions listed in the package README | Delegated Graph permissions for OAuth connections, such as `({ defaultScopes }) => [...defaultScopes, 'Chat.Create']`. `offline_access` and `User.Read` are always requested. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
 | `botAppType` | `'MultiTenant' \| 'SingleTenant'` | `'MultiTenant'` | Set `'SingleTenant'` for a bot registered in one tenant. |
 | `botTenantId` | `string` | — | Required with `'SingleTenant'`. |
 | `botApiUrl` | `string` | Public Bot Framework service | Bot Framework service URL for sovereign clouds. |
 | `botUsername` | `string` | `'bot'` | The bot's name in conversations. |
 
-See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
+See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, `oauth`, and `scopes`.
 
 ## Register the bot
 

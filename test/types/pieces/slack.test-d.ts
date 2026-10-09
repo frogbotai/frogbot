@@ -38,3 +38,10 @@ expectTypeOf<keyof typeof slack.triggers>().toEqualTypeOf<
 >();
 
 expectTypeOf(slack.triggers.reactionAdded.type).toEqualTypeOf<'app'>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createSlack({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'pins:read'] });
+
+// @ts-expect-error pin:read is not a Slack scope name
+createSlack({ oauth: app, scopes: ['pin:read'] });

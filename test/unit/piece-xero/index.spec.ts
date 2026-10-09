@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
+import { oauthScopes } from '../../../packages/frogbot/src/connections/oauth/scopes.js';
 import {
   pieceInstanceRuntime,
   pieceInstanceTools,
@@ -72,7 +73,8 @@ describe('xero inventory and OAuth', () => {
     );
     expect(xeroActionNames).toHaveLength(25);
     expect(xeroTriggerNames).toHaveLength(13);
-    expect(xeroScopes).toContain('offline_access');
+    expect(oauthScopes(xero).slice(0, 4)).toEqual(['openid', 'profile', 'email', 'offline_access']);
+    expect(oauthScopes(xero)).toContain(xeroScopes.projects);
   });
 
   it('maps rotating tokens and resolves account identity', async () => {

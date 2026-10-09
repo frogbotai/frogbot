@@ -17,6 +17,14 @@ export const xero = createXero({
 
 Xero rotates refresh tokens. FrogBot stores the replacement `refresh_token` returned by each OAuth refresh and maps it back to `refreshToken`. Account identity comes from Xero OpenID Connect user info. Every accounting request requires an explicit organization (`tenantId`) and sends it as `Xero-Tenant-Id`.
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createXero({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'payroll.employees.read'] })` adds one, and an array replaces the defaults. `xeroScopes` maps each name to the provider's scope string.
+
+- Always requested: `openid`, `profile`, `email`, `offline_access`.
+- Defaults: `accounting.contacts`, `accounting.transactions`, `accounting.reports.read`, `accounting.journals.read`, `accounting.budgets.read`, `accounting.attachments`, `accounting.settings`, `projects`.
+- Also available: `accounting.transactions.read`, `accounting.contacts.read`, `accounting.settings.read`, `accounting.attachments.read`, `payroll.employees`, `payroll.employees.read`, `payroll.payruns`, `payroll.payruns.read`, `payroll.payslip`, `payroll.payslip.read`, `payroll.timesheets`, `payroll.timesheets.read`, `payroll.settings`, `payroll.settings.read`, `files`, `files.read`, `assets`, `assets.read`, `projects.read`.
+
 ## Actions
 
 | Upstream action slug                   | Previous wrapper export           | Native action            | Notes                                                                                                                             |

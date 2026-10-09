@@ -21,3 +21,10 @@ expectTypeOf<Awaited<typeof listed>['incompleteSearch']>().toEqualTypeOf<boolean
 const _listFilesRejectsSearchFilesInput = () =>
   // @ts-expect-error listFiles does not accept searchFiles input
   drive.listFiles({ input: { query: 'report' } });
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createGoogleDrive({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'drive.file'] });
+
+// @ts-expect-error drive.files is not a Google Drive scope name
+createGoogleDrive({ oauth: app, scopes: ['drive.files'] });

@@ -15,6 +15,7 @@ vi.mock(
 );
 
 import { sanitize } from '../../../packages/frogbot/src/config/sanitize.js';
+import { oauthScopes } from '../../../packages/frogbot/src/connections/oauth/scopes.js';
 import { runKVLock } from '../../../packages/frogbot/src/kv/lock.js';
 import {
   pieceFactoryDefinition,
@@ -289,13 +290,15 @@ describe('native Google Sheets', () => {
 
     const definition = pieceFactoryDefinition(createGoogleSheets);
 
+    expect(oauthScopes(createGoogleSheets())).toEqual([
+      'openid',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      googleSheetsScopes.spreadsheets,
+      googleSheetsScopes['drive.readonly'],
+      googleSheetsScopes.drive,
+    ]);
     expect(definition.oauth).toMatchObject({
-      scopes: [
-        'openid',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        ...googleSheetsScopes,
-      ],
       params: { access_type: 'offline', prompt: 'consent' },
     });
     expect(

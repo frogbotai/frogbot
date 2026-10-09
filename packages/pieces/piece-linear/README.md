@@ -21,8 +21,8 @@ OAuth linking requires factory `oauth: { clientId, clientSecret }` and
 `connections: [{ piece: linear, oauth: true }]`. The built-in recipe requests `actor=app`: a workspace
 admin installs the application, and actions use the app's identity. It does not authorize actions
 as the installing user. For actions as a person, link their API key or an externally obtained
-user-actor OAuth access token through the credential form. Scope overrides remain an array of
-individual scopes in `oauth.scopes`; FrogBot serializes them with commas for Linear.
+user-actor OAuth access token through the credential form. FrogBot serializes the requested scopes
+with commas for Linear; see [OAuth scopes](#oauth-scopes) to change them.
 
 ## Channel setup
 
@@ -66,6 +66,14 @@ question up to 25 options shows buttons, and other questions show numbered optio
 Linear signs the exact request body in `Linear-Signature` with HMAC-SHA256. FrogBot rejects missing,
 invalid, or stale signed deliveries before channel or trigger dispatch. Channel replies are handled
 by the adapter; the triggers below remain independent per-subscription workflows.
+
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createLinear({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'app:assignable'] })` adds one, and an array replaces the defaults. `linearScopes` maps each name to the provider's scope string.
+
+- Always requested: `read`.
+- Defaults: `write`, `comments:create`, `issues:create`, `app:mentionable`.
+- Also available: `timeSchedule:write`, `admin`, `app:assignable`.
 
 ## Actions
 

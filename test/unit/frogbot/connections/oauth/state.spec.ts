@@ -69,7 +69,10 @@ describe('OAuth browser state', () => {
   it('keeps space-separated scopes for recipes without a provider separator', async () => {
     const fixture = setup({
       ...definition,
-      oauth: { ...definition.oauth, scopes: ['read', 'write'] },
+      oauth: {
+        ...definition.oauth,
+        scopes: { catalog: { read: 'read', write: 'write' }, defaults: ['read', 'write'] },
+      },
     });
 
     const flow = await begin(fixture);
