@@ -18,9 +18,6 @@
     "TS2345": 1,
     "TS2740": 2
   },
-  "packages/next/src/exports/views.tsx": {
-    "TS2307": 2
-  },
   "test/__helpers/shared/bootFrogBot.ts": {
     "TS2352": 1
   },

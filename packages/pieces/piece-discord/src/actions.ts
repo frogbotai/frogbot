@@ -459,6 +459,7 @@ export const sendApiRequest = defineAction({
       path: `${url.pathname}${url.search}`,
       headers: input.headers,
       body: input.body as Record<string, unknown> | undefined,
+      redirect: 'manual',
     });
   },
 });

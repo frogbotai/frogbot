@@ -168,6 +168,6 @@ export const customApiCall = defineAction({
   input: customApiCallInput,
   output: z.unknown(),
   async run({ input, client }) {
-    return client.request(input);
+    return client.request({ ...input, redirect: 'manual' });
   },
 });

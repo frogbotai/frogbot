@@ -5,6 +5,7 @@ export type AttioRequest = {
   path: string;
   query?: Record<string, unknown>;
   rawResponse?: boolean;
+  redirect?: RequestRedirect;
   signal?: AbortSignal;
 };
 
@@ -21,6 +22,7 @@ export function createAttioClient({ auth }: { auth: unknown }) {
       path,
       query,
       rawResponse,
+      redirect,
       signal,
     }: AttioRequest): Promise<T> {
       if (!path.startsWith('/') || path.split('/').includes('..')) {
@@ -43,8 +45,15 @@ export function createAttioClient({ auth }: { auth: unknown }) {
         method,
         headers: requestHeaders,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        redirect,
         signal,
       });
+
+      if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+        throw new Error(
+          `Attio API redirected (${response.status}) to ${response.headers.get('location')}.`,
+        );
+      }
 
       const result = await response.json().catch(() => null);
 

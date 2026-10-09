@@ -21,13 +21,22 @@ export const customApiCall = defineAction({
       throw new Error('[frogbot] Gmail client is missing authenticated transport.');
     }
 
-    return (
-      await request.request({
-        method: input.method,
-        url: `https://gmail.googleapis.com/gmail/v1${input.path}`,
-        params: input.query,
-        data: input.body,
-      })
-    ).data;
+    const response = await request.request({
+      method: input.method,
+      url: `https://gmail.googleapis.com/gmail/v1${input.path}`,
+      params: input.query,
+      data: input.body,
+      redirect: 'manual',
+      maxRedirects: 0,
+      validateStatus: (status) => status >= 200 && status < 400,
+    });
+
+    if (response.status >= 300) {
+      throw new Error(
+        `Gmail API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
+
+    return response.data;
   },
 });

@@ -13,7 +13,6 @@ const input = z.object({
   response_is_binary: z.boolean().optional(),
   failsafe: z.boolean().optional(),
   timeout: z.number().optional(),
-  followRedirects: z.boolean().optional(),
 });
 
 export const customApiCall = defineAction({
@@ -62,7 +61,7 @@ export const customApiCall = defineAction({
       body: bodyValue,
       query: input.queryParams,
       rawBody,
-      redirect: input.followRedirects === false ? 'manual' : 'follow',
+      redirect: 'manual',
       response: true,
       signal: timeout,
     });
@@ -85,7 +84,8 @@ export const customApiCall = defineAction({
         name: `output.${extension}`,
         size: response.body.byteLength,
       },
-      overrideAccess: true,
+      req,
+      overrideAccess: false,
     });
 
     const url = doc.url;

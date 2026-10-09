@@ -7,6 +7,7 @@ type RequestOptions = {
   query?: Record<string, unknown>;
   service?: 'api' | 'lookup';
   binary?: boolean;
+  redirect?: RequestRedirect;
 };
 
 export function createTwilioClient({ auth, options }: { auth: unknown; options: unknown }) {
@@ -18,13 +19,25 @@ export function createTwilioClient({ auth, options }: { auth: unknown; options: 
 
   return {
     accountSid: username,
-    async request({ body, method = 'GET', path, query, service = 'api', binary }: RequestOptions) {
+    async request({
+      body,
+      method = 'GET',
+      path,
+      query,
+      service = 'api',
+      binary,
+      redirect,
+    }: RequestOptions) {
       if (!path.startsWith('/') || path.startsWith('//')) {
         throw new Error('[frogbot] Twilio request paths must be relative to the Twilio API.');
       }
 
       const base = service === 'lookup' ? 'https://lookups.twilio.com' : 'https://api.twilio.com';
       const url = new URL(path, `${base}/`);
+
+      if (url.origin !== base) {
+        throw new Error(`[frogbot] Twilio request URL must stay on ${base}.`);
+      }
 
       for (const [key, value] of Object.entries(query ?? {})) {
         if (value !== undefined) url.searchParams.set(key, String(value));
@@ -43,7 +56,14 @@ export function createTwilioClient({ auth, options }: { auth: unknown; options: 
           ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
         },
         body: form,
+        redirect,
       });
+
+      if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+        throw new Error(
+          `Twilio API redirected (${response.status}) to ${response.headers.get('location')}.`,
+        );
+      }
 
       const result = binary
         ? new Uint8Array(await response.arrayBuffer())

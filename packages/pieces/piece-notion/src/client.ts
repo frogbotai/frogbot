@@ -16,12 +16,14 @@ export function createNotionClient({ auth }: { auth: unknown }) {
     query,
     body,
     signal,
+    redirect,
   }: {
     method?: string;
     path: string;
     query?: Record<string, QueryValue>;
     body?: unknown;
     signal?: AbortSignal;
+    redirect?: RequestRedirect;
   }) {
     if (!path.startsWith('/') || path.split('/').includes('..')) {
       throw new Error('Notion request path must be API-relative without parent segments.');
@@ -41,8 +43,15 @@ export function createNotionClient({ auth }: { auth: unknown }) {
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
+      redirect,
       signal,
     });
+
+    if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `Notion API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
 
     const value: unknown = await response.json();
 

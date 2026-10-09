@@ -20,17 +20,17 @@ Create an application at [Trello's Power-Up administration page](https://trello.
 
 ## Actions
 
-| Upstream action slug     | Previous wrapper export | Native action          | Notes                              |
-| ------------------------ | ----------------------- | ---------------------- | ---------------------------------- |
-| `create_card`            | `createCard`            | `createCard`           |                                    |
-| `get_card`               | `getCard`               | `getCard`              |                                    |
-| `update_card`            | `updateCard`            | `updateCard`           |                                    |
-| `delete_card`            | `deleteCard`            | `deleteCard`           |                                    |
-| `get_card_attachments`   | `getCardAttachments`    | `listCardAttachments`  | Uses collection naming.            |
-| `add_card_attachment`    | `addCardAttachment`     | `addCardAttachment`    | Uploads from FrogBot files.        |
-| `get_card_attachment`    | `getCardAttachment`     | `getCardAttachment`    |                                    |
-| `delete_card_attachment` | `deleteCardAttachment`  | `deleteCardAttachment` |                                    |
-| `custom_api_call`        | `customApiCall`         | `customApiCall`        | Auth is added as query parameters. |
+| Upstream action slug     | Previous wrapper export | Native action          | Notes                                                                                         |
+| ------------------------ | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
+| `create_card`            | `createCard`            | `createCard`           |                                                                                               |
+| `get_card`               | `getCard`               | `getCard`              |                                                                                               |
+| `update_card`            | `updateCard`            | `updateCard`           |                                                                                               |
+| `delete_card`            | `deleteCard`            | `deleteCard`           |                                                                                               |
+| `get_card_attachments`   | `getCardAttachments`    | `listCardAttachments`  | Uses collection naming.                                                                       |
+| `add_card_attachment`    | `addCardAttachment`     | `addCardAttachment`    | Uploads from FrogBot files.                                                                   |
+| `get_card_attachment`    | `getCardAttachment`     | `getCardAttachment`    |                                                                                               |
+| `delete_card_attachment` | `deleteCardAttachment`  | `deleteCardAttachment` |                                                                                               |
+| `custom_api_call`        | `customApiCall`         | `customApiCall`        | Auth is added as query parameters; a `path` or `query` that sets `key` or `token` is refused. |
 
 ## Triggers
 

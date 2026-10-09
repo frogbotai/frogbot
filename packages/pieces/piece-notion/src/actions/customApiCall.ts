@@ -23,6 +23,7 @@ export const customApiCall = defineAction({
       path: input.path,
       query: input.query,
       body: input.body,
+      redirect: 'manual',
       signal: req.signal ?? undefined,
     });
 

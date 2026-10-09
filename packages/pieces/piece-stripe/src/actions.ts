@@ -506,6 +506,7 @@ export const sendRequest = defineAction({
       input.path,
       input.method,
       input.method === 'GET' ? input.query : input.body,
+      'manual',
     );
   },
 });

@@ -44,6 +44,7 @@ export type TelegramRequest = {
   headers?: Record<string, string>;
   query?: Record<string, unknown>;
   body?: unknown;
+  redirect?: RequestRedirect;
 };
 
 function queryString(query: Record<string, unknown> | undefined) {
@@ -85,6 +86,17 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
   );
 
   const baseUrl = `${apiUrl}/bot${auth.botToken}`;
+  const { origin } = new URL(apiUrl);
+
+  function botUrl(path: string) {
+    const url = new URL(`${baseUrl}/${path}`);
+
+    if (url.origin !== origin) {
+      throw new Error(`[frogbot] Telegram request URL must stay on ${origin}.`);
+    }
+
+    return url.href;
+  }
 
   return {
     fileUrl(path: string) {
@@ -92,7 +104,7 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
     },
     async call(method: string, body?: unknown): Promise<TelegramResponse> {
       const multipart = body instanceof FormData;
-      const response = await fetch(`${baseUrl}/${method}`, {
+      const response = await fetch(botUrl(method), {
         method: 'POST',
         headers: multipart ? undefined : { 'Content-Type': 'application/json' },
         body: multipart ? body : JSON.stringify(body ?? {}),
@@ -106,14 +118,21 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
     },
     async request(endpoint: string, request: TelegramRequest): Promise<unknown> {
       const path = endpoint.replace(/^\/+/, '');
-      const response = await fetch(`${baseUrl}/${path}${queryString(request.query)}`, {
+      const response = await fetch(botUrl(`${path}${queryString(request.query)}`), {
         method: request.method ?? 'GET',
         headers:
           request.body === undefined
             ? request.headers
             : { 'Content-Type': 'application/json', ...request.headers },
         body: request.body === undefined ? undefined : JSON.stringify(request.body),
+        redirect: request.redirect,
       });
+
+      if (request.redirect === 'manual' && response.status >= 300 && response.status < 400) {
+        throw new Error(
+          `Telegram API redirected (${response.status}) to ${response.headers.get('location')}.`,
+        );
+      }
 
       const result = telegramResponse.parse(await response.json());
 

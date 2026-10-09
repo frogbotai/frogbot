@@ -15,12 +15,14 @@ export function createPagerdutyClient({ auth }: { auth: unknown }) {
     query,
     body,
     fromEmail,
+    redirect,
   }: {
     method: string;
     path: string;
     query?: Query;
     body?: unknown;
     fromEmail?: string;
+    redirect?: RequestRedirect;
   }) {
     const url = new URL(path, baseUrl);
 
@@ -45,7 +47,14 @@ export function createPagerdutyClient({ auth }: { auth: unknown }) {
         ...(fromEmail ? { From: fromEmail } : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
+      redirect,
     });
+
+    if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `PagerDuty API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
 
     const text = await response.text();
     const data = text ? (JSON.parse(text) as unknown) : undefined;
