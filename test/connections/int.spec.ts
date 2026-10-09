@@ -103,8 +103,11 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     const callback = new URL(url.searchParams.get('redirect_uri')!);
     callback.searchParams.set('state', url.searchParams.get('state')!);
     callback.searchParams.set('code', 'success');
+    const cookie = response.headers.get('set-cookie')!.split(';')[0];
 
-    return { url, callback, cookie: response.headers.get('set-cookie')!.split(';')[0] };
+    expect(cookie.startsWith(`linked-oauth-${url.searchParams.get('state')}=`)).toBe(true);
+
+    return { url, callback, cookie };
   };
 
   const callback = (flow: { callback: URL; cookie: string }, token?: string) =>
@@ -162,6 +165,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     const config = await buildConfig({
       secret: 'connection-storage-test-secret',
       serverURL: baseURL,
+      cookiePrefix: 'linked',
       routes: { api: '/rest/v1', admin: '/control' },
       db: await getTestDatabaseAdapter({
         sqlite: sqliteAdapter({ client: { url: 'file::memory:' } }),
@@ -454,7 +458,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
 
       expect(response.status).toBe(302);
       expect(response.headers.get('location')).toBe('/control/settings/connections');
-      expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+      expect(response.headers.get('set-cookie')).toMatch(/^linked-oauth-.*Max-Age=0/);
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(accounts).toEqual([{ auth: { apiKey: 'fresh-success' }, user: null }]);
       expect(exchanges).toHaveLength(1);

@@ -398,11 +398,16 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe('/control/settings?tab=profile');
     expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(response.headers.getSetCookie()).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('Max-Age=0'),
-        expect.stringContaining('HttpOnly'),
-      ]),
+
+    const state = flow.url.searchParams.get('state')!;
+    const cookies = response.headers.getSetCookie();
+
+    expect(flow.cookie.startsWith(`identity-oauth-${state}=`)).toBe(true);
+    expect(cookies.filter((value) => value.startsWith(`identity-oauth-${state}=;`))).toEqual([
+      expect.stringContaining('Max-Age=0'),
+    ]);
+    expect(cookies).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^identity-token=.*HttpOnly/)]),
     );
 
     const user = await rawUser('person@example.com');
@@ -511,6 +516,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
           flow: 'link',
           collection: 'users',
           callbackUrl: `${baseURL}/rest/v1/users/sign-in/work/callback`,
+          cookiePrefix: 'identity',
           returnTo: '/control',
           req: { user: { id: 1, collection: 'users' } },
         });

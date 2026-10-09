@@ -11,20 +11,31 @@ FrogBot offers the ability to [Authenticate](/authentication/overview) via HTTP-
 
 FrogBot uses the `frogbot` cookie prefix by default. Authentication tokens are stored in `frogbot-token`; language and theme preferences use `frogbot-lng` and `frogbot-theme`.
 
-You can override the prefix with the root `cookiePrefix` configuration option:
+While a user is in a "Sign in with …" or "Connect account" flow, FrogBot also sets a short-lived OAuth state cookie, `frogbot-oauth-<state>`, or `__Host-frogbot-oauth-<state>` when the callback URL is https. It lasts 10 minutes and is cleared when the provider redirects back.
+
+You can override the prefix with the root `cookiePrefix` configuration option. Every cookie above follows it:
 
 ```ts
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
-  cookiePrefix: 'acme',
+  cookiePrefix: 'acme', // acme-token, acme-theme, acme-lng, acme-oauth-<state>
 })
 ```
 
 <Warning>
   Apps upgrading from the previous default invalidate existing `payload-token`
-  sessions. Users must log in once after the upgrade.
+  sessions. Users must log in once after the upgrade. Changing `cookiePrefix`
+  has the same effect, and an OAuth sign-in or account connection in progress
+  during the change fails and must be started again.
 </Warning>
+
+#### Browser storage
+
+The admin panel also keeps some short-lived UI state in browser storage. These keys have fixed names, never leave the browser and don't follow `cookiePrefix`:
+
+- sessionStorage `payload-pending-success-toast`, after saving a document;
+- localStorage `_payloadClipboard`, when copying a field or row.
 
 <Tip>
   **Tip:** You can access the logged-in user from within [Access

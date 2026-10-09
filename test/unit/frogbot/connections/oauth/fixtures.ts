@@ -85,6 +85,7 @@ export function setup(
     collection: 'users',
     piece,
     callbackUrl: 'https://app.test/api/connections/example/callback',
+    cookiePrefix: 'frogbot',
   };
 
   return { ...memory, encryption, req, piece, binding };
