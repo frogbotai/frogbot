@@ -1,4 +1,4 @@
-import { googleOAuth } from '@frogbotai/piece-google';
+import { googleOAuth, googleScopes } from '@frogbotai/piece-google';
 import { definePiece } from 'frogbot/pieces';
 
 import { customApiCall } from './actions/customApiCall.js';
@@ -29,7 +29,11 @@ export const createGmail = definePiece({
   client: createGmailClient,
   oauth: {
     ...googleOAuth,
-    scopes: [...googleOAuth.scopes, ...gmailScopes],
+    scopes: {
+      catalog: { ...googleScopes, ...gmailScopes },
+      defaults: ['gmail.send', 'gmail.readonly', 'gmail.compose'],
+      required: googleOAuth.scopes.required,
+    },
     toAuth: ({ tokens }) => ({
       accessToken: tokens.access_token ?? '',
       refreshToken: tokens.refresh_token,

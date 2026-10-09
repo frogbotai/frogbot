@@ -28,7 +28,7 @@ it('completes a real provider redirect, PKCE exchange, userinfo lookup and refre
       ...definition.oauth,
       authorizationUrl: `${provider.url}/authorize`,
       tokenUrl: `${provider.url}/token`,
-      scopes: ['profile'],
+      scopes: { catalog: { profile: 'profile' }, defaults: ['profile'] },
       account: async ({ tokens }) => {
         const response = await fetch(`${provider.url}/userinfo`, {
           headers: { authorization: `Bearer ${tokens.access_token}` },

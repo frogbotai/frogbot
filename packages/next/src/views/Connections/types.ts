@@ -18,6 +18,7 @@ export type ConnectionPiece = {
   label: string;
   oauth: boolean;
   secret: boolean;
+  scopes?: string[];
   icon?: string;
   secretSchema?: ConnectionField;
 };
@@ -28,6 +29,7 @@ export type ConnectionItem = {
   method: 'oauth' | 'secret';
   account?: { label: string; email?: string } | null;
   status: 'active' | 'revoked' | 'error';
+  scopes?: string[];
   expiresAt?: string | null;
 };
 

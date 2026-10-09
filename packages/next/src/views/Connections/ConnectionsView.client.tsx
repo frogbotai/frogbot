@@ -29,6 +29,7 @@ import { useId, useRef, useState } from 'react';
 import { ConnectionFields } from './ConnectionFields.js';
 import { PieceLogo } from './PieceLogo.js';
 import { connectionInput, initialConnectionValue } from './schema.js';
+import { connectionStatus } from './status.js';
 import type { ConnectionItem, ConnectionPiece, ConnectionsViewClientProps } from './types.js';
 
 function ConnectionForm({
@@ -308,21 +309,18 @@ function ConnectionRow({
   connection,
   label,
   icon,
+  scopes,
   busy,
   onDisconnect,
 }: {
   connection: ConnectionItem;
   label: string;
   icon?: string;
+  scopes?: string[];
   busy: boolean;
   onDisconnect: () => void;
 }) {
-  const expired =
-    connection.status === 'active' &&
-    connection.expiresAt &&
-    Date.parse(connection.expiresAt) <= Date.now();
-
-  const status = expired ? 'expired' : connection.status;
+  const status = connectionStatus(connection, scopes);
 
   return (
     <div className="frogbot-connections__row">
@@ -340,7 +338,7 @@ function ConnectionRow({
       </div>
       <div className="frogbot-connections__row-actions">
         <span className={`frogbot-connections__status frogbot-connections__status--${status}`}>
-          {status}
+          {status === 'relink' ? 'needs re-link' : status}
         </span>
         <span className="frogbot-connections__muted">
           {connection.method === 'oauth' ? 'OAuth' : 'Static credentials'}
@@ -390,6 +388,7 @@ export function ConnectionsViewClient({
   const removing = useRef(false);
   const labels = new Map(pieces.map((piece) => [piece.slug, piece.label]));
   const icons = new Map(pieces.map((piece) => [piece.slug, piece.icon]));
+  const scopes = new Map(pieces.map((piece) => [piece.slug, piece.scopes]));
   const query = search.trim().toLowerCase();
   const filtered = connections.filter((connection) =>
     [
@@ -508,6 +507,7 @@ export function ConnectionsViewClient({
               connection={connection}
               label={labels.get(connection.piece) ?? connection.piece}
               icon={icons.get(connection.piece)}
+              scopes={scopes.get(connection.piece)}
               busy={deleting === connection.id}
               onDisconnect={() => void disconnect(connection.id)}
             />

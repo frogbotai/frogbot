@@ -10,20 +10,54 @@ vi.mock(
 import { Connections } from '../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../packages/frogbot/src/connections/encryption.js';
 import {
+  createOAuthState,
   exchangeOAuthCode,
   lookupOAuthAccount,
+  oauthScopes,
   oauthTokenMetadata,
 } from '../../../packages/frogbot/src/connections/oauth/index.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import { pieceCapabilities } from '../../../packages/frogbot/src/pieces/types.js';
+import {
+  pieceCapabilities,
+  type PieceInstance,
+} from '../../../packages/frogbot/src/pieces/types.js';
 import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createGmail, gmailScopes } from '../../../packages/pieces/piece-gmail/src/index.js';
-import { createGoogle, googleOAuth } from '../../../packages/pieces/piece-google/src/index.js';
+import {
+  createGoogle,
+  googleOAuth,
+  googleScopes,
+} from '../../../packages/pieces/piece-google/src/index.js';
+import { createGoogleDrive } from '../../../packages/pieces/piece-google-drive/src/index.js';
+import { memoryKV } from '../frogbot/connections/oauth/fixtures.js';
 
 const signal = new AbortController().signal;
+const identity = Object.values(googleScopes);
+const gmailDefaults = [
+  gmailScopes['gmail.send'],
+  gmailScopes['gmail.readonly'],
+  gmailScopes['gmail.compose'],
+];
+
+async function authorizeScope(piece: PieceInstance, flow: 'link' | 'login' = 'link') {
+  const { authorizationUrl } = await createOAuthState({
+    kv: memoryKV().kv,
+    encryption: createCredentialEncryption({ secret: 'test' }),
+    piece,
+    flow,
+    collection: 'users',
+    callbackUrl: 'https://app.test/callback',
+    cookiePrefix: 'frogbot',
+    returnTo: '/admin',
+    req: { user: { id: 'owner', collection: 'users' } },
+  });
+
+  return new URL(authorizationUrl).searchParams.get('scope')!.split(' ');
+}
+
 const account = () =>
   googleOAuth.account({
     tokens: { access_token: 'access' },
@@ -41,7 +75,7 @@ describe('Google identity', () => {
     expect(pieceInstanceTools(google)).toEqual([]);
     expect(google[pieceCapabilities]).toMatchObject({ signIn: true });
     expect(pieceFactoryDefinition(createGoogle).oauth).toBe(googleOAuth);
-    expect(googleOAuth.scopes).toEqual([
+    expect(oauthScopes(google)).toEqual([
       'openid',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -50,9 +84,13 @@ describe('Google identity', () => {
     expect(pieceFactoryDefinition(createGmail).oauth).toMatchObject({
       authorizationUrl: googleOAuth.authorizationUrl,
       tokenUrl: googleOAuth.tokenUrl,
-      scopes: [...googleOAuth.scopes, ...gmailScopes],
+      scopes: {
+        catalog: { ...googleScopes, ...gmailScopes },
+        required: googleOAuth.scopes.required,
+      },
       account: googleOAuth.account,
     });
+    expect(oauthScopes(gmail)).toEqual([...identity, ...gmailDefaults]);
     expect(googleOAuth.params).toMatchObject({ access_type: 'offline' });
   });
 
@@ -61,7 +99,12 @@ describe('Google identity', () => {
     ['gmail', { value: expect.objectContaining({ accessToken: 'google-token' }) }],
     [
       'gmail-missing-permission',
-      { error: expect.objectContaining({ code: 'scopes', missingScopes: [gmailScopes[0]] }) },
+      {
+        error: expect.objectContaining({
+          code: 'scopes',
+          missingScopes: [gmailScopes['gmail.send']],
+        }),
+      },
     ],
   ])(
     'resolves canonical returned scopes and rejects missing Gmail permission: %s',
@@ -79,7 +122,9 @@ describe('Google identity', () => {
               'https://www.googleapis.com/auth/gmail.readonly',
               'https://www.googleapis.com/auth/gmail.compose',
             ]),
-      ].filter((scope) => scenario !== 'gmail-missing-permission' || scope !== gmailScopes[0]);
+      ].filter(
+        (scope) => scenario !== 'gmail-missing-permission' || scope !== gmailScopes['gmail.send'],
+      );
 
       vi.stubGlobal(
         'fetch',
@@ -96,10 +141,7 @@ describe('Google identity', () => {
         callbackUrl: 'https://app.test/callback',
       });
 
-      const metadata = oauthTokenMetadata({
-        tokens,
-        scopes: [...googleOAuth.scopes, ...gmailScopes],
-      });
+      const metadata = oauthTokenMetadata({ tokens, scopes: oauthScopes(piece) });
 
       const encryption = createCredentialEncryption({ secret: 'test' });
       const row = {
@@ -138,6 +180,45 @@ describe('Google identity', () => {
       ).resolves.toEqual(expected);
     },
   );
+
+  it('adds a Gmail scope to the identity scopes and defaults, once each', async () => {
+    const google = createGoogle({ oauth: { clientId: 'client', clientSecret: 'secret' } });
+    const gmail = createGmail({
+      oauth: google.oauth,
+      scopes: ({ defaultScopes }) => [...defaultScopes, 'gmail.labels', 'openid', 'gmail.send'],
+    });
+
+    expect(await authorizeScope(gmail)).toEqual([
+      ...identity,
+      ...gmailDefaults,
+      gmailScopes['gmail.labels'],
+    ]);
+    expect(
+      await authorizeScope(createGmail({ oauth: google.oauth, scopes: ['gmail.readonly'] })),
+    ).toEqual([...identity, gmailScopes['gmail.readonly']]);
+    expect(await authorizeScope(createGmail({ oauth: google.oauth, scopes: [] }))).toEqual(
+      identity,
+    );
+  });
+
+  it('keeps a Gmail scope out of Drive and sign-in sharing the same app', async () => {
+    const google = createGoogle({ oauth: { clientId: 'client', clientSecret: 'secret' } });
+    const gmail = createGmail({
+      oauth: google.oauth,
+      scopes: ({ defaultScopes }) => [...defaultScopes, 'gmail.labels'],
+    });
+
+    const drive = createGoogleDrive({ oauth: google.oauth });
+
+    expect(gmail.oauth).toBe(google.oauth);
+    expect(google.oauth).toEqual({ clientId: 'client', clientSecret: 'secret' });
+    expect(await authorizeScope(gmail)).toContain(gmailScopes['gmail.labels']);
+    expect(await authorizeScope(drive)).toEqual([
+      ...identity,
+      'https://www.googleapis.com/auth/drive',
+    ]);
+    expect(await authorizeScope(google, 'login')).toEqual(identity);
+  });
 
   it('looks up a verified identity with the access token and request cancellation signal', async () => {
     const fetch = vi.fn().mockResolvedValue(

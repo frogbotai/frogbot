@@ -3,6 +3,7 @@ import {
   definePiece,
   findUserByEmail,
   type PieceChannel,
+  type PieceOAuthAccount,
   type PieceOAuthRecipe,
 } from 'frogbot/pieces';
 import type { z } from 'zod';
@@ -43,12 +44,25 @@ export const linearTriggers = [
   'projectUpdated',
   'projectRemoved',
 ] as const;
-export const linearScopes = [] as const;
+export const linearScopes = {
+  read: 'read',
+  write: 'write',
+  'issues:create': 'issues:create',
+  'comments:create': 'comments:create',
+  'timeSchedule:write': 'timeSchedule:write',
+  admin: 'admin',
+  'app:assignable': 'app:assignable',
+  'app:mentionable': 'app:mentionable',
+} as const;
 
 export const linearOAuth = {
   authorizationUrl: 'https://linear.app/oauth/authorize',
   tokenUrl: 'https://api.linear.app/oauth/token',
-  scopes: ['read', 'write', 'comments:create', 'issues:create', 'app:mentionable'],
+  scopes: {
+    catalog: linearScopes,
+    defaults: ['write', 'comments:create', 'issues:create', 'app:mentionable'],
+    required: ['read'],
+  },
   scopeSeparator: ',',
   params: { actor: 'app' },
   toAuth({ tokens }) {
@@ -67,7 +81,12 @@ export const linearOAuth = {
 
     return { id: viewer.id, label: viewer.name, email: viewer.email };
   },
-} satisfies PieceOAuthRecipe<z.output<typeof linearAuth>, Linear>;
+} satisfies PieceOAuthRecipe<
+  z.output<typeof linearAuth>,
+  Linear,
+  PieceOAuthAccount,
+  keyof typeof linearScopes
+>;
 
 const linearChannel = {
   adapter({ auth, options }) {

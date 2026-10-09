@@ -12,6 +12,7 @@ import {
   type PieceFactoryOptions,
   type PieceHelpers,
   type PieceInstance,
+  type PieceOAuthScopes,
 } from './types.js';
 
 const actionMetadata = Symbol('pieceAction');
@@ -45,6 +46,7 @@ type InstanceMetadata = {
   definition: PieceDefinition;
   options: object;
   auth: unknown;
+  scopes: string[];
 };
 
 type LiteralSlugEntries<TEntries, TMessage extends string> = {
@@ -126,6 +128,7 @@ export function pieceInstanceRuntime(instance: PieceInstance): {
   definition: PieceDefinition;
   options: object;
   auth: unknown;
+  scopes: string[];
 } {
   if (!isPieceInstance(instance)) {
     throw new Error('[frogbot] Expected a piece instance returned by definePiece.');
@@ -138,7 +141,34 @@ export function pieceInstanceRuntime(instance: PieceInstance): {
     definition: metadata.definition,
     options: metadata.options,
     auth: metadata.auth,
+    scopes: [...metadata.scopes],
   };
+}
+
+function resolveScopes(definition: PieceDefinition, configured: unknown): string[] {
+  const { catalog, defaults, required = [] } = definition.oauth!.scopes;
+  const names: unknown =
+    typeof configured === 'function'
+      ? (configured as (args: { defaultScopes: string[] }) => unknown)({
+          defaultScopes: [...defaults],
+        })
+      : (configured ?? defaults);
+
+  if (!Array.isArray(names)) {
+    throw new Error(
+      `[frogbot] Piece '${definition.slug}' scopes must be an array or a function returning one.`,
+    );
+  }
+
+  for (const name of names) {
+    if (typeof name !== 'string' || !Object.hasOwn(catalog, name)) {
+      throw new Error(
+        `[frogbot] Piece '${definition.slug}' scope '${String(name)}' is not in its catalog.`,
+      );
+    }
+  }
+
+  return [...new Set([...required, ...names].map((name) => catalog[name]))];
 }
 
 export function createPieceHelpers<
@@ -246,13 +276,38 @@ export function definePiece<const T extends PieceDefinition>(
       }
     }
 
+    const {
+      catalog,
+      defaults,
+      required = [],
+    }: Partial<PieceOAuthScopes> = definition.oauth.scopes ?? {};
+
     if (
-      !Array.isArray(definition.oauth.scopes) ||
-      definition.oauth.scopes.some((scope) => typeof scope !== 'string' || !scope.trim())
+      !catalog ||
+      typeof catalog !== 'object' ||
+      !Array.isArray(defaults) ||
+      !Array.isArray(required) ||
+      Object.entries(catalog).some(
+        ([name, value]) => !name.trim() || typeof value !== 'string' || !value.trim(),
+      )
     ) {
       throw new Error(
-        `[frogbot] Piece '${definition.slug}' OAuth scopes must be non-empty strings.`,
+        `[frogbot] Piece '${definition.slug}' OAuth scopes require a catalog of non-empty strings, defaults and required names.`,
       );
+    }
+
+    for (const name of [...defaults, ...required]) {
+      if (!Object.hasOwn(catalog, name)) {
+        throw new Error(
+          `[frogbot] Piece '${definition.slug}' scope '${String(name)}' is not in its catalog.`,
+        );
+      }
+
+      if (defaults.includes(name) && required.includes(name)) {
+        throw new Error(
+          `[frogbot] Piece '${definition.slug}' scope '${name}' is both a default and required.`,
+        );
+      }
     }
 
     if (
@@ -267,11 +322,18 @@ export function definePiece<const T extends PieceDefinition>(
     ...args: object extends PieceFactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
   ): DefinedPiece<T, TConfig>;
   function factory(config: Record<string, unknown> = {}): Record<string | symbol, unknown> {
-    if (config.oauth && !definition.oauth) {
+    if ((config.oauth || config.scopes !== undefined) && !definition.oauth) {
       throw new Error(`[frogbot] Piece '${definition.slug}' does not declare OAuth.`);
     }
 
-    const { slug = definition.slug, auth: configuredAuth, oauth, ...rawOptions } = config;
+    const {
+      slug = definition.slug,
+      auth: configuredAuth,
+      oauth,
+      scopes: configuredScopes,
+      ...rawOptions
+    } = config;
+
     if (
       typeof slug !== 'string' ||
       !slug.trim() ||
@@ -287,17 +349,20 @@ export function definePiece<const T extends PieceDefinition>(
         typeof (oauth as OAuthApp).clientId !== 'string' ||
         !(oauth as OAuthApp).clientId.trim() ||
         typeof (oauth as OAuthApp).clientSecret !== 'string' ||
-        !(oauth as OAuthApp).clientSecret.trim() ||
-        ((oauth as OAuthApp).scopes !== undefined &&
-          (!Array.isArray((oauth as OAuthApp).scopes) ||
-            (oauth as OAuthApp).scopes?.some(
-              (scope) => typeof scope !== 'string' || !scope.trim(),
-            ))))
+        !(oauth as OAuthApp).clientSecret.trim())
     ) {
       throw new Error(
         `[frogbot] Piece '${definition.slug}' OAuth app requires clientId and clientSecret.`,
       );
     }
+
+    if (oauth && Object.hasOwn(oauth, 'scopes')) {
+      throw new Error(
+        `[frogbot] Piece '${definition.slug}' OAuth app does not take scopes. Use the factory's scopes option.`,
+      );
+    }
+
+    const scopes = definition.oauth ? resolveScopes(definition, configuredScopes) : [];
 
     const auth =
       definition.auth && configuredAuth !== undefined
@@ -385,7 +450,7 @@ export function definePiece<const T extends PieceDefinition>(
     }
 
     Object.defineProperty(instance, instanceMetadata, {
-      value: { actions: tools, definition, options, auth },
+      value: { actions: tools, definition, options, auth, scopes },
     });
 
     Object.defineProperty(instance, pieceCapabilities, {

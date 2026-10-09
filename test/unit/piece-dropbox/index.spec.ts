@@ -132,7 +132,7 @@ describe('native Dropbox contract', () => {
     expect(dropboxOAuth).toMatchObject({
       authorizationUrl: 'https://www.dropbox.com/oauth2/authorize',
       tokenUrl: 'https://api.dropboxapi.com/oauth2/token',
-      scopes: dropboxScopes,
+      scopes: { catalog: dropboxScopes },
       pkce: true,
       params: { token_access_type: 'offline' },
     });

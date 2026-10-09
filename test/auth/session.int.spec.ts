@@ -278,7 +278,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       oauth: {
         authorizationUrl: 'https://identity.example.com/authorize',
         tokenUrl: 'https://identity.example.com/token',
-        scopes: ['openid', 'email'],
+        scopes: { catalog: { openid: 'openid', email: 'email' }, defaults: ['openid', 'email'] },
         account: () =>
           Promise.resolve({ id: 'identity', label: 'Identity', email: 'person@example.com' }),
       },

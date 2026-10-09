@@ -339,7 +339,7 @@ describe('agent endpoints', () => {
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
         tokenUrl: 'https://example.com/token',
-        scopes: ['sheets'],
+        scopes: { catalog: { sheets: 'sheets' }, defaults: ['sheets'] },
         toAuth: ({ tokens }) => tokens.access_token,
       },
       actions: [

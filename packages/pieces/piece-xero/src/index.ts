@@ -1,4 +1,4 @@
-import { definePiece, type PieceOAuthRecipe } from 'frogbot/pieces';
+import { definePiece, type PieceOAuthAccount, type PieceOAuthRecipe } from 'frogbot/pieces';
 
 import { xeroActions } from './actions.js';
 import { createXeroClient, type XeroClient, xeroIdentity } from './client.js';
@@ -10,10 +10,28 @@ export { xeroScopes };
 export const xeroActionNames = xeroActions.map(({ slug }) => slug);
 export const xeroTriggerNames = xeroTriggers.map(({ slug }) => slug);
 
-const xeroOAuth: PieceOAuthRecipe<XeroAuth, XeroClient> = {
+const xeroOAuth: PieceOAuthRecipe<
+  XeroAuth,
+  XeroClient,
+  PieceOAuthAccount,
+  keyof typeof xeroScopes
+> = {
   authorizationUrl: 'https://login.xero.com/identity/connect/authorize',
   tokenUrl: 'https://identity.xero.com/connect/token',
-  scopes: [...xeroScopes],
+  scopes: {
+    catalog: xeroScopes,
+    defaults: [
+      'accounting.contacts',
+      'accounting.transactions',
+      'accounting.reports.read',
+      'accounting.journals.read',
+      'accounting.budgets.read',
+      'accounting.attachments',
+      'accounting.settings',
+      'projects',
+    ],
+    required: ['openid', 'profile', 'email', 'offline_access'],
+  },
   toAuth: ({ tokens }) => ({
     accessToken: tokens.access_token ?? '',
     refreshToken: tokens.refresh_token,

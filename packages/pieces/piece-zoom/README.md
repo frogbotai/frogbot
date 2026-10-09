@@ -15,6 +15,14 @@ export const zoom = createZoom({
 });
 ```
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createZoom({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'meeting:delete:meeting'] })` adds one, and an array replaces the defaults. `zoomScopes` maps each name to the provider's scope string.
+
+- Always requested: `user:read:user`.
+- Defaults: `meeting:write:meeting`, `meeting:read:meeting`, `meeting:read:list_meetings`, `meeting:update:meeting`, `meeting:write:registrant`.
+- Also available: `meeting:delete:meeting`, `meeting:read:registrant`, `meeting:read:list_registrants`, `meeting:read:past_meeting`, `meeting:read:list_past_participants`, `user:read:email`, `user:read:settings`.
+
 ## Actions
 
 | Upstream action slug             | Previous wrapper export       | Native action             | Notes                                                                             |

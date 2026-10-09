@@ -58,7 +58,9 @@ export function oauthTokenMetadata({
 
   return {
     scopes: [
-      ...new Set(tokens.scope === undefined ? scopes : tokens.scope.split(/\s+/).filter(Boolean)),
+      ...new Set(
+        tokens.scope === undefined ? scopes : tokens.scope.split(/[\s,]+/).filter(Boolean),
+      ),
     ],
     expiresAt: expiry === undefined ? null : new Date(expiry).toISOString(),
   };

@@ -59,7 +59,7 @@ describe('zoom', () => {
       authorizationUrl: 'https://zoom.us/oauth/authorize',
       tokenUrl: 'https://zoom.us/oauth/token',
       tokenEndpointAuthMethod: 'client_secret_basic',
-      scopes: zoomScopes,
+      scopes: { catalog: zoomScopes, required: ['user:read:user'] },
     });
     expect(
       oauth?.toAuth?.({

@@ -30,3 +30,10 @@ expectTypeOf<keyof typeof linear.triggers>().toEqualTypeOf<
 >();
 
 expectTypeOf(linear.triggers.commentCreated.type).toEqualTypeOf<'webhook'>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createLinear({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'app:assignable'] });
+
+// @ts-expect-error app:assign is not a Linear scope name
+createLinear({ oauth: app, scopes: ['app:assign'] });

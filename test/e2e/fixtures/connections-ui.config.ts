@@ -11,7 +11,7 @@ const google = definePiece({
   oauth: {
     authorizationUrl: `${process.env.SMOKE_PROVIDER_URL}/authorize`,
     tokenUrl: `${process.env.SMOKE_PROVIDER_URL}/token`,
-    scopes: ['openid', 'email'],
+    scopes: { catalog: { openid: 'openid', email: 'email' }, defaults: ['openid', 'email'] },
     toAuth: ({ tokens }) => ({ access_token: tokens.access_token }),
     account: () =>
       Promise.resolve({

@@ -128,12 +128,13 @@ describe('Linear connections', () => {
   it.each([
     { scopes: undefined, expected: 'read,write,comments:create,issues:create,app:mentionable' },
     {
-      scopes: ['read', 'comments:create', 'app:mentionable'],
+      scopes: ['comments:create', 'app:mentionable'] as const,
       expected: 'read,comments:create,app:mentionable',
     },
   ])('serializes Linear authorization scopes as $expected', async ({ scopes, expected }) => {
     const linear = createLinear({
-      oauth: { clientId: 'client', clientSecret: 'secret', scopes },
+      oauth: { clientId: 'client', clientSecret: 'secret' },
+      ...(scopes ? { scopes } : {}),
     });
 
     const { kv } = memoryKV();

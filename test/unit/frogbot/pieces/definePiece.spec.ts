@@ -5,6 +5,7 @@ vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
 
+import { oauthScopes } from '../../../../packages/frogbot/src/connections/oauth/scopes.js';
 import {
   createPieceHelpers,
   definePiece,
@@ -256,7 +257,7 @@ describe('definePiece', () => {
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
         tokenUrl: 'https://example.com/token',
-        scopes: [],
+        scopes: { catalog: {}, defaults: [] },
       },
       actions: [],
     });
@@ -311,6 +312,105 @@ describe('definePiece', () => {
     ).toThrow("duplicate trigger 'same'");
   });
 
+  it('resolves factory scopes against the recipe catalog', () => {
+    const recipe = (scopes: object) =>
+      ({
+        slug: 'scoped',
+        label: 'Scoped',
+        auth: accessTokenAuth,
+        client: ({ auth }: { auth: unknown }) => auth,
+        oauth: {
+          authorizationUrl: 'https://example.com/a',
+          tokenUrl: 'https://example.com/t',
+          scopes,
+        },
+        actions: [],
+      }) as never;
+
+    const createScoped = definePiece({
+      slug: 'scoped',
+      label: 'Scoped',
+      auth: accessTokenAuth,
+      client: ({ auth }) => auth,
+      oauth: {
+        authorizationUrl: 'https://example.com/authorize',
+        tokenUrl: 'https://example.com/token',
+        scopes: {
+          catalog: {
+            id: 'https://id',
+            read: 'https://read',
+            write: 'https://write',
+            labels: 'https://labels',
+          },
+          defaults: ['read', 'write'],
+          required: ['id'],
+        },
+      },
+      actions: [],
+    });
+
+    const oauth = { clientId: 'id', clientSecret: 'secret' };
+    const defaultScopes = vi.fn(({ defaultScopes }: { defaultScopes: string[] }) => [
+      ...defaultScopes,
+      'labels',
+    ]);
+
+    expect(oauthScopes(createScoped({ oauth }))).toEqual([
+      'https://id',
+      'https://read',
+      'https://write',
+    ]);
+    expect(oauthScopes(createScoped({ oauth, scopes: defaultScopes as never }))).toEqual([
+      'https://id',
+      'https://read',
+      'https://write',
+      'https://labels',
+    ]);
+    expect(defaultScopes).toHaveBeenCalledWith({ defaultScopes: ['read', 'write'] });
+    expect(oauthScopes(createScoped({ oauth, scopes: ['write', 'id', 'write'] }))).toEqual([
+      'https://id',
+      'https://write',
+    ]);
+    expect(oauthScopes(createScoped())).toEqual(['https://id', 'https://read', 'https://write']);
+
+    expect(() => definePiece(recipe({ catalog: { read: 'r' }, defaults: ['write'] }))).toThrow(
+      "scope 'write' is not in its catalog",
+    );
+    expect(() =>
+      definePiece(recipe({ catalog: { read: 'r' }, defaults: [], required: ['write'] })),
+    ).toThrow("scope 'write' is not in its catalog");
+    expect(() =>
+      definePiece(recipe({ catalog: { read: 'r' }, defaults: ['read'], required: ['read'] })),
+    ).toThrow("scope 'read' is both a default and required");
+    expect(() => definePiece(recipe({ catalog: { read: '' }, defaults: [] }))).toThrow(
+      'OAuth scopes require a catalog of non-empty strings',
+    );
+    expect(() => definePiece(recipe(['read']))).toThrow(
+      'OAuth scopes require a catalog of non-empty strings',
+    );
+    expect(() => createScoped({ oauth, scopes: ['lables'] as never })).toThrow(
+      "Piece 'scoped' scope 'lables' is not in its catalog",
+    );
+    expect(() =>
+      createScoped({
+        oauth,
+        scopes: (({ defaultScopes }: { defaultScopes: string[] }) => [
+          ...defaultScopes,
+          'lables',
+        ]) as never,
+      }),
+    ).toThrow("scope 'lables' is not in its catalog");
+    expect(() => createScoped({ oauth, scopes: 'read' as never })).toThrow(
+      'scopes must be an array or a function returning one',
+    );
+    expect(() => createScoped({ oauth: { ...oauth, scopes: ['read'] } as never })).toThrow(
+      "OAuth app does not take scopes. Use the factory's scopes option",
+    );
+    expect(() =>
+      createExample({ auth: { token: 'token' }, prefix: 'value', scopes: [] } as never),
+    ).toThrow("Piece 'example' does not declare OAuth");
+  });
+
   it('attaches capability and factory OAuth metadata', () => {
     const createCapable = definePiece({
       slug: 'capable',
@@ -320,7 +420,7 @@ describe('definePiece', () => {
       oauth: {
         authorizationUrl: 'https://example.com/authorize',
         tokenUrl: 'https://example.com/token',
-        scopes: [],
+        scopes: { catalog: {}, defaults: [] },
         account() {
           return Promise.resolve({ id: 'id', label: 'Account', email: 'user@example.com' });
         },

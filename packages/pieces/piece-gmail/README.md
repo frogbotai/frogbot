@@ -15,6 +15,14 @@ export const gmail = createGmail({
 });
 ```
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createGmail({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'gmail.labels'] })` adds one, and an array replaces the defaults. `gmailScopes` maps each name to the provider's scope string. Names stand for `https://www.googleapis.com/auth/<name>`, except `openid` and `mail.google.com` (`https://mail.google.com/`).
+
+- Always requested: `openid`, `userinfo.email`, `userinfo.profile`.
+- Defaults: `gmail.send`, `gmail.readonly`, `gmail.compose`.
+- Also available: `mail.google.com`, `gmail.modify`, `gmail.insert`, `gmail.labels`, `gmail.metadata`, `gmail.settings.basic`, `gmail.settings.sharing`.
+
 ## Actions
 
 | Upstream action slug       | Previous wrapper export | Native action      | Notes                                                  |

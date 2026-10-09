@@ -39,7 +39,8 @@ Save this as `collections/Users.ts` and add `Users` to your root `collections`.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `oauth` | `{ clientId: string; clientSecret: string; scopes?: string[] }` | Required for sign-in | Your Google OAuth app. `scopes` replaces the piece's scopes. |
+| `oauth` | `{ clientId: string; clientSecret: string }` | Required for sign-in | Your Google OAuth app. Scopes that a product such as Gmail adds with its own `scopes` option never reach sign-in. |
+| `scopes` | Scope names, or `({ defaultScopes }) => names` | None | Google identity has no optional scopes. Sign-in always requests the identity scopes below, whatever this lists. |
 | `slug` | `string` | `'google'` | Instance slug used in the sign-in routes. Set a different slug to register two Google instances. |
 | `auth` | `{ accessToken: string }` | — | Static credential for the piece's client. Sign-in doesn't use it. |
 

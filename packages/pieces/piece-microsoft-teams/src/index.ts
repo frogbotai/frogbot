@@ -64,7 +64,26 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
   const oauth = {
     authorizationUrl: `https://${cloud.loginHost}/${tenant}/oauth2/v2.0/authorize`,
     tokenUrl: `https://${cloud.loginHost}/${tenant}/oauth2/v2.0/token`,
-    scopes: microsoftTeamsScopes,
+    scopes: {
+      catalog: microsoftTeamsScopes,
+      defaults: [
+        'openid',
+        'email',
+        'profile',
+        'Channel.Create',
+        'Channel.ReadBasic.All',
+        'ChannelMessage.Send',
+        'Team.ReadBasic.All',
+        'Chat.ReadWrite',
+        'ChannelMessage.Read.All',
+        'TeamMember.Read.All',
+        'User.ReadBasic.All',
+        'Presence.Read.All',
+        'OnlineMeetingTranscript.Read.All',
+        'OnlineMeetingRecording.Read.All',
+      ],
+      required: ['offline_access', 'User.Read'],
+    },
     params: { prompt: 'select_account' },
     toAuth: ({ tokens }) => ({
       accessToken: tokens.access_token ?? '',

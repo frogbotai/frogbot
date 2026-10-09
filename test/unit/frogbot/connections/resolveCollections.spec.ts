@@ -21,7 +21,7 @@ const createPiece = definePiece({
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
   },
   actions: [],
 });

@@ -28,3 +28,10 @@ expectTypeOf<Awaited<typeof _copied>['metadata']['.tag']>().toEqualTypeOf<
 
 expectTypeOf<keyof typeof dropbox.triggers>().toEqualTypeOf<'newFolder'>();
 expectTypeOf(dropbox.triggers.newFolder.type).toEqualTypeOf<'polling'>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createDropbox({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'sharing.read'] });
+
+// @ts-expect-error share.read is not a Dropbox scope name
+createDropbox({ oauth: app, scopes: ['share.read'] });

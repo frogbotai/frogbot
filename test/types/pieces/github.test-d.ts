@@ -36,3 +36,10 @@ expectTypeOf<keyof typeof github.triggers>().toEqualTypeOf<
 >();
 
 expectTypeOf(github.triggers.mentioned.type).toEqualTypeOf<'webhook'>();
+
+const app = { clientId: 'client', clientSecret: 'secret' };
+
+createGithub({ oauth: app, scopes: ({ defaultScopes }) => [...defaultScopes, 'read:org'] });
+
+// @ts-expect-error org:read is not a GitHub scope name
+createGithub({ oauth: app, scopes: ['org:read'] });

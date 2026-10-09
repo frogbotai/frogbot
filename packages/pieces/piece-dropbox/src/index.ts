@@ -1,4 +1,4 @@
-import { definePiece, type PieceOAuthRecipe } from 'frogbot/pieces';
+import { definePiece, type PieceOAuthAccount, type PieceOAuthRecipe } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { customApiCall } from './actions/customApiCall.js';
@@ -43,12 +43,23 @@ export const dropboxActions = [
   'listFolder',
   'customApiCall',
 ];
-export const dropboxScopes = [
-  'files.metadata.write',
-  'files.metadata.read',
-  'files.content.write',
-  'files.content.read',
-];
+export const dropboxScopes = {
+  'account_info.read': 'account_info.read',
+  'account_info.write': 'account_info.write',
+  'files.metadata.read': 'files.metadata.read',
+  'files.metadata.write': 'files.metadata.write',
+  'files.content.read': 'files.content.read',
+  'files.content.write': 'files.content.write',
+  'file_requests.read': 'file_requests.read',
+  'file_requests.write': 'file_requests.write',
+  'sharing.read': 'sharing.read',
+  'sharing.write': 'sharing.write',
+  'contacts.read': 'contacts.read',
+  'contacts.write': 'contacts.write',
+  openid: 'openid',
+  email: 'email',
+  profile: 'profile',
+} as const;
 
 const accountSchema = z.object({
   account_id: z.string().min(1),
@@ -59,7 +70,15 @@ const accountSchema = z.object({
 export const dropboxOAuth = {
   authorizationUrl: 'https://www.dropbox.com/oauth2/authorize',
   tokenUrl: 'https://api.dropboxapi.com/oauth2/token',
-  scopes: dropboxScopes,
+  scopes: {
+    catalog: dropboxScopes,
+    defaults: [
+      'files.metadata.write',
+      'files.metadata.read',
+      'files.content.write',
+      'files.content.read',
+    ],
+  },
   pkce: true,
   params: { token_access_type: 'offline' },
   toAuth: ({ tokens }) => ({
@@ -76,7 +95,12 @@ export const dropboxOAuth = {
 
     return { id: account.account_id, label: account.name.display_name, email: account.email };
   },
-} satisfies PieceOAuthRecipe<DropboxAuth, DropboxClient>;
+} satisfies PieceOAuthRecipe<
+  DropboxAuth,
+  DropboxClient,
+  PieceOAuthAccount,
+  keyof typeof dropboxScopes
+>;
 
 export const createDropbox = definePiece({
   slug: 'dropbox',

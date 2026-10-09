@@ -65,7 +65,7 @@ export const createNotion = definePiece({
     authorizationUrl: 'https://api.notion.com/v1/oauth/authorize',
     tokenUrl: 'https://api.notion.com/v1/oauth/token',
     tokenEndpointAuthMethod: 'client_secret_basic',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
     params: { owner: 'user' },
     toAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
   },

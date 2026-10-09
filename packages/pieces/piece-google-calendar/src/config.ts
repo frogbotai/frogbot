@@ -4,10 +4,28 @@ export const googleCalendarAuth = z.object({
   accessToken: z.string().min(1).meta({ label: 'Access token', secret: true }),
   refreshToken: z.string().min(1).optional().meta({ label: 'Refresh token', secret: true }),
 });
-export const googleCalendarScopes = [
-  'https://www.googleapis.com/auth/calendar.events',
-  'https://www.googleapis.com/auth/calendar.readonly',
-] as const;
+export const googleCalendarScopes = {
+  calendar: 'https://www.googleapis.com/auth/calendar',
+  'calendar.readonly': 'https://www.googleapis.com/auth/calendar.readonly',
+  'calendar.events': 'https://www.googleapis.com/auth/calendar.events',
+  'calendar.events.readonly': 'https://www.googleapis.com/auth/calendar.events.readonly',
+  'calendar.events.owned': 'https://www.googleapis.com/auth/calendar.events.owned',
+  'calendar.events.owned.readonly':
+    'https://www.googleapis.com/auth/calendar.events.owned.readonly',
+  'calendar.events.freebusy': 'https://www.googleapis.com/auth/calendar.events.freebusy',
+  'calendar.events.public.readonly':
+    'https://www.googleapis.com/auth/calendar.events.public.readonly',
+  'calendar.calendarlist': 'https://www.googleapis.com/auth/calendar.calendarlist',
+  'calendar.calendarlist.readonly':
+    'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+  'calendar.calendars': 'https://www.googleapis.com/auth/calendar.calendars',
+  'calendar.calendars.readonly': 'https://www.googleapis.com/auth/calendar.calendars.readonly',
+  'calendar.acls': 'https://www.googleapis.com/auth/calendar.acls',
+  'calendar.acls.readonly': 'https://www.googleapis.com/auth/calendar.acls.readonly',
+  'calendar.freebusy': 'https://www.googleapis.com/auth/calendar.freebusy',
+  'calendar.settings.readonly': 'https://www.googleapis.com/auth/calendar.settings.readonly',
+  'calendar.app.created': 'https://www.googleapis.com/auth/calendar.app.created',
+} as const;
 
 export const calendarId = z.string().trim().min(1).meta({ label: 'Calendar' });
 export const eventId = z.string().trim().min(5).max(1024).meta({ label: 'Event ID' });

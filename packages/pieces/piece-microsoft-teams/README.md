@@ -44,6 +44,14 @@ The separate Graph OAuth app registration uses the scopes below for user actions
 
 When an agent with the `question` tool runs in Teams, each question call appears as one Adaptive Card with the choices, an optional text box, and **Submit** and **Dismiss** buttons. The card is replaced in place with the answer and who gave it, and the agent continues in the same conversation. The person who submits is matched to a FrogBot user by the email from the conversation's member list and must pass the agent's `access` check; others get a private notice. No Microsoft Graph permission is required. See the Microsoft Teams page in the FrogBot docs for the manifest, limits, and troubleshooting.
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createMicrosoftTeams({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'Chat.Create'] })` adds one, and an array replaces the defaults. `microsoftTeamsScopes` maps each name to the provider's scope string.
+
+- Always requested: `offline_access`, `User.Read`.
+- Defaults: `openid`, `email`, `profile`, `Channel.Create`, `Channel.ReadBasic.All`, `ChannelMessage.Send`, `Team.ReadBasic.All`, `Chat.ReadWrite`, `ChannelMessage.Read.All`, `TeamMember.Read.All`, `User.ReadBasic.All`, `Presence.Read.All`, `OnlineMeetingTranscript.Read.All`, `OnlineMeetingRecording.Read.All`.
+- Also available: `User.Read.All`, `Team.Create`, `TeamSettings.Read.All`, `TeamSettings.ReadWrite.All`, `Channel.Delete.All`, `ChannelSettings.Read.All`, `ChannelSettings.ReadWrite.All`, `ChannelMember.Read.All`, `ChannelMember.ReadWrite.All`, `ChannelMessage.ReadWrite`, `ChannelMessage.Edit`, `Chat.Create`, `Chat.Read`, `Chat.ReadBasic`, `ChatMessage.Send`, `ChatMessage.Read`, `ChatMember.Read`, `ChatMember.ReadWrite`, `TeamMember.ReadWrite.All`, `Presence.Read`, `OnlineMeetings.Read`, `OnlineMeetings.ReadWrite`.
+
 ## Actions
 
 | Upstream action slug                           | Previous wrapper export                  | Native action              | Notes                                                                                                                                        |

@@ -15,7 +15,7 @@ export type OAuthTokens = Record<string, PieceJSON> & {
   token_type?: string;
 };
 
-export type OAuthApp = { clientId: string; clientSecret: string; scopes?: string[] };
+export type OAuthApp = { clientId: string; clientSecret: string };
 
 export type PieceOption = { label: string; value: string };
 
@@ -206,15 +206,26 @@ export type PieceTriggerReference = Readonly<
 
 export type PieceOAuthAccount = { id: string; label: string; email?: string };
 
+/**
+ * A recipe's scopes: short names mapped to provider strings, the names requested by default,
+ * and the names always requested because `account()` or refresh needs them.
+ */
+export type PieceOAuthScopes<TScope extends string = string> = {
+  catalog: Readonly<Record<TScope, string>>;
+  defaults: readonly TScope[];
+  required?: readonly TScope[];
+};
+
 export type PieceOAuthRecipe<
   TAuth,
   TClient,
   TAccount extends PieceOAuthAccount = PieceOAuthAccount,
+  TScope extends string = string,
 > = {
   authorizationUrl: string;
   tokenUrl: string;
   tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
-  scopes: string[];
+  scopes: PieceOAuthScopes<TScope>;
   scopeSeparator?: ' ' | ',';
   pkce?: boolean;
   params?: Record<string, string>;
@@ -321,10 +332,23 @@ export type PieceInstance = {
   readonly [pieceCapabilities]: PieceCapabilities;
 };
 
+export type PieceScopeName<T> = T extends { oauth: { scopes: { catalog: infer TCatalog } } }
+  ? keyof TCatalog & string
+  : never;
+
+/**
+ * A piece instance's OAuth scopes, as names from the piece's catalog. A function receives the
+ * defaults, `({ defaultScopes }) => [...defaultScopes, 'gmail.labels']`; an array replaces them.
+ * The recipe's required scopes are always requested.
+ */
+export type PieceScopes<TName extends string> =
+  readonly TName[] | ((args: { defaultScopes: TName[] }) => readonly TName[]);
+
 export type PieceFactoryOptions<T extends PieceDefinition> = {
   slug?: string;
   auth?: T extends { auth: infer TAuth extends z.ZodType } ? z.input<TAuth> : never;
-  oauth?: T extends { oauth: object } ? OAuthApp : never;
+  oauth?: T extends { oauth: object } ? OAuthApp & { scopes?: never } : never;
+  scopes?: T extends { oauth: object } ? PieceScopes<PieceScopeName<T>> : never;
 } & (T extends { options: infer TOptions extends z.ZodType }
   ? z.input<TOptions> extends Record<string, never>
     ? object

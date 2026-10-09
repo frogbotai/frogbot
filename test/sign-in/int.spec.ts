@@ -89,7 +89,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       oauth: {
         authorizationUrl: `${providerURL}/authorize`,
         tokenUrl: `${providerURL}/token`,
-        scopes: ['openid', 'email'],
+        scopes: { catalog: { openid: 'openid', email: 'email' }, defaults: ['openid', 'email'] },
         pkce: true,
         toAuth: ({ tokens }) => ({ access_token: tokens.access_token }),
         account: ({ tokens, client }) => {

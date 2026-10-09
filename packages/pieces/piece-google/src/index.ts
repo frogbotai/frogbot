@@ -1,14 +1,20 @@
-import { definePiece, type PieceOAuthRecipe } from 'frogbot/pieces';
+import { definePiece, type PieceOAuthAccount, type PieceOAuthRecipe } from 'frogbot/pieces';
 import { z } from 'zod';
+
+export const googleScopes = {
+  openid: 'openid',
+  'userinfo.email': 'https://www.googleapis.com/auth/userinfo.email',
+  'userinfo.profile': 'https://www.googleapis.com/auth/userinfo.profile',
+} as const;
 
 export const googleOAuth = {
   authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
-  scopes: [
-    'openid',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile',
-  ],
+  scopes: {
+    catalog: googleScopes,
+    defaults: [],
+    required: ['openid', 'userinfo.email', 'userinfo.profile'],
+  },
   params: { access_type: 'offline', prompt: 'consent' },
   async account({ tokens, req }) {
     const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -42,7 +48,7 @@ export const googleOAuth = {
       email: account.email,
     };
   },
-} satisfies PieceOAuthRecipe<unknown, unknown>;
+} satisfies PieceOAuthRecipe<unknown, unknown, PieceOAuthAccount, keyof typeof googleScopes>;
 
 const googleAuth = z.object({ accessToken: z.string().min(1).meta({ secret: true }) });
 

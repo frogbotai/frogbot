@@ -26,7 +26,7 @@ const createPiece = definePiece({
   oauth: {
     authorizationUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
-    scopes: [],
+    scopes: { catalog: {}, defaults: [] },
   },
   actions: [],
 });
@@ -59,7 +59,10 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       oauth: {
         authorizationUrl: `${providerURL}/authorize`,
         tokenUrl: `${providerURL}/token`,
-        scopes: ['default'],
+        scopes: {
+          catalog: { default: 'default', read: 'read', write: 'write' },
+          defaults: ['default'],
+        },
         pkce: true,
         toAuth: ({ tokens }) => ({
           apiKey: tokens.access_token === 'fresh-bad-auth' ? '' : (tokens.access_token ?? ''),
@@ -77,11 +80,8 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
       actions: [],
     })({
       slug: `${slug}-instance`,
-      oauth: {
-        clientId: 'private-client-id',
-        clientSecret: 'private-client-secret',
-        scopes: ['read', 'write'],
-      },
+      oauth: { clientId: 'private-client-id', clientSecret: 'private-client-secret' },
+      scopes: ['read', 'write'],
       ...(slug === 'case-ac' || slug === 'case-abc'
         ? { auth: { apiKey: 'developer-fallback' } }
         : {}),

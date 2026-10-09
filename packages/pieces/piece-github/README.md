@@ -47,6 +47,14 @@ the GitHub chat adapter. Issue and pull request conversations remain separate, a
 review-comment thread continue in that thread. GitHub does not support direct messages, ephemeral
 messages, typing indicators, or token-by-token streaming.
 
+## OAuth scopes
+
+Change the requested scopes with the factory's `scopes` option: `createGithub({ oauth, scopes: ({ defaultScopes }) => [...defaultScopes, 'read:user'] })` adds one, and an array replaces the defaults. `githubScopes` maps each name to the provider's scope string.
+
+- Always requested: `user:email`.
+- Defaults: `admin:repo_hook`, `admin:org`, `repo`, `gist`.
+- Also available: `repo:status`, `repo_deployment`, `public_repo`, `repo:invite`, `security_events`, `write:repo_hook`, `read:repo_hook`, `write:org`, `read:org`, `admin:org_hook`, `admin:public_key`, `write:public_key`, `read:public_key`, `notifications`, `user`, `read:user`, `user:follow`, `project`, `read:project`, `delete_repo`, `workflow`, `write:packages`, `read:packages`, `delete:packages`, `write:discussion`, `read:discussion`, `codespace`.
+
 ## Actions
 
 | Upstream action slug                        | Previous wrapper export                | Native action                    | Notes                                                              |

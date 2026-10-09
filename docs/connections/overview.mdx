@@ -136,17 +136,33 @@ Start product linking at `/api/connections/:piece/authorize`, replacing `:piece`
 
 OAuth state is encrypted, browser-bound, single-use, and expires after ten minutes. It binds the piece, OAuth app, collection, callback, and link intent to the original owner. PKCE is used when the piece recipe enables it. The callback validates that intent before storing credentials.
 
-The piece supplies default scopes. Factory `oauth.scopes` overrides them. Sharing an OAuth app between pieces reuses app credentials; each piece still has its own consent flow, callback, and connection.
+### Choose OAuth scopes
+
+Each piece requests its default scopes plus the scopes its account lookup and token refresh need. Change the list with the factory's `scopes` option, beside `oauth`. A function receives the defaults and adds to them; an array replaces them:
+
+```ts
+const gmail = createGmail({
+  oauth: google.oauth,
+  scopes: ({ defaultScopes }) => [...defaultScopes, 'gmail.labels'],
+})
+
+const readOnlyGmail = createGmail({ oauth: google.oauth, scopes: ['gmail.readonly'] })
+```
+
+Scopes are short names from the piece's catalog, such as `gmail.labels` for `https://www.googleapis.com/auth/gmail.labels`. Your editor autocompletes them, and an unknown name fails to compile. Each OAuth piece exports its catalog as `<piece>Scopes`, for example `gmailScopes`, and its page lists the names. The required scopes are always requested, and no form removes them. For the Google products these are `openid`, `userinfo.email` and `userinfo.profile`.
+
+`scopes` belongs to one instance. Sharing an OAuth app between pieces reuses only the app credentials, so a scope added to Gmail never reaches Drive or Google sign-in. Each piece still has its own consent flow, callback, and connection. Selecting fewer agent actions does not narrow OAuth scopes.
 
 The Google product recipes add these scopes to the identity scopes:
 
 | Product | Default product scopes under `https://www.googleapis.com/auth/` |
 | --- | --- |
+| Gmail | `gmail.send`, `gmail.readonly`, `gmail.compose` |
 | Sheets | `spreadsheets`, `drive.readonly`, `drive` |
 | Drive | `drive` |
 | Calendar | `calendar.events`, `calendar.readonly` |
 
-Leave `scopes` unset on the shared app to retain each product's defaults. An explicit shared override applies to every instance that receives it; selecting fewer agent actions does not narrow OAuth scopes.
+When you add a scope, accounts linked earlier lack it. Every action for that piece then throws `ConnectionError` with code `scopes`, and `missingScopes` lists the provider strings. Settings → Linked accounts shows those rows as **needs re-link**, and `frogbot.connections.authorizations()` lists the piece with its `authorizeUrl`. Linking again asks for the full list and replaces the row.
 
 ## Resolve credentials on the server
 

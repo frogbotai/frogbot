@@ -36,9 +36,10 @@ The instance slug defaults to `slack`. Give each instance its own slug when you 
 | `auth.userToken` | `string` | — | A user token, for actions that act as a user. Those actions fail without it. |
 | `auth.teamId` | `string` | Looked up with `auth.test` | The workspace ID. |
 | `oauth` | `OAuthApp` | — | Your Slack app's OAuth credentials, for [user connections](/connections/overview). An OAuth connection stores the bot token, user token, and workspace ID. |
+| `scopes` | Bot scope names, or `({ defaultScopes }) => names` | The bot scopes listed in the package README | Bot scopes for OAuth connections, such as `({ defaultScopes }) => [...defaultScopes, 'pins:read']`. User scopes are fixed. See [Choose OAuth scopes](/connections/overview#choose-oauth-scopes). |
 | `signingSecret` | `string` | — | Required for channels. The app's signing secret; FrogBot rejects requests, including trigger events, that are not signed with it. |
 
-See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, and `oauth`.
+See [factory options](/pieces/overview#factory-options) for `slug`, `auth`, `oauth`, and `scopes`.
 
 ## Create the Slack app
 

@@ -6,6 +6,7 @@ import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance, PieceJSON } from '../pieces/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { refreshOAuthConnection } from './oauth/refresh.js';
+import { oauthScopes } from './oauth/scopes.js';
 import { oauthAuth, parseOAuthTokens } from './oauth/tokens.js';
 import { type ConnectionOwner, ConnectionStore } from './store.js';
 import type { SanitizedConnectionsConfig } from './types.js';
@@ -172,11 +173,7 @@ export class Connections {
       return fail('error', 'uses an unavailable method');
     }
 
-    const requiredScopes =
-      scopes ??
-      (row.method === 'oauth'
-        ? (piece.oauth?.scopes ?? runtime.definition.oauth?.scopes ?? [])
-        : []);
+    const requiredScopes = scopes ?? (row.method === 'oauth' ? oauthScopes(entry.piece) : []);
 
     const missingScopes = [...new Set(requiredScopes)].filter(
       (scope) => !row.scopes.includes(scope),
@@ -278,13 +275,12 @@ export class Connections {
         await this.resolve({ piece, req });
       } catch (error) {
         if (!(error instanceof ConnectionError)) throw error;
-        const recipe = pieceInstanceRuntime(entry.piece).definition.oauth;
 
         requirements.set(piece.piece, {
           piece: piece.piece,
           oauth: entry.oauth,
           secret: entry.secret,
-          scopes: entry.oauth ? [...(entry.piece.oauth?.scopes ?? recipe?.scopes ?? [])] : [],
+          scopes: entry.oauth ? oauthScopes(entry.piece) : [],
           ...(entry.oauth
             ? {
                 authorizeUrl: `${routes.api}/connections/${encodeURIComponent(piece.piece)}/authorize`,

@@ -8,6 +8,7 @@ import type { PieceInstance } from '../../pieces/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { CredentialEncryption } from '../encryption.js';
 import { OAuthError } from './error.js';
+import { oauthScopes } from './scopes.js';
 
 const lifetime = 600_000;
 const randomValue = () => randomBytes(32).toString('base64url');
@@ -161,7 +162,7 @@ export async function createOAuthState({
   url.searchParams.set('redirect_uri', callback);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('state', state);
-  url.searchParams.set('scope', (app.scopes ?? recipe.scopes).join(recipe.scopeSeparator ?? ' '));
+  url.searchParams.set('scope', oauthScopes(piece).join(recipe.scopeSeparator ?? ' '));
   if (verifier) {
     url.searchParams.set(
       'code_challenge',

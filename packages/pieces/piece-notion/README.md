@@ -14,6 +14,10 @@ export const notion = createNotion({
 });
 ```
 
+## OAuth scopes
+
+Notion grants access per page at consent time, so the piece requests no scopes and its `scopes` option accepts only `[]`.
+
 ## Actions
 
 | Upstream action slug        | Previous wrapper export | Native action         | Notes                                                                                                                                                             |

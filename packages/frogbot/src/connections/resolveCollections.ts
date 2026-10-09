@@ -7,6 +7,7 @@ import { isPieceInstance, pieceInstanceDefinition } from '../pieces/definePiece.
 import { defaultConnectionsCollection } from './collection.js';
 import { createCredentialEncryption } from './encryption.js';
 import { buildConnectionOAuthEndpoints } from './endpoints.js';
+import { oauthScopes } from './oauth/scopes.js';
 import type {
   ConnectionSchema,
   SanitizedConnectionEntry,
@@ -119,6 +120,7 @@ function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entr
       piece: entry.piece,
       oauth,
       secret,
+      ...(oauth ? { scopes: oauthScopes(entry.piece) } : {}),
       ...(secret ? { secretSchema } : {}),
       ...(typeof icon === 'string' && icon.trim() ? { icon: icon.trim() } : {}),
     };
