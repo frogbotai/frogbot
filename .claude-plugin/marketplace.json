@@ -9,7 +9,7 @@
       "name": "frogbot",
       "source": "./",
       "description": "FrogBot development skill for coding agents",
-      "version": "0.31.0"
+      "version": "0.32.0"
     }
   ]
 }
