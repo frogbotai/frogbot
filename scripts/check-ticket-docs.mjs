@@ -498,13 +498,17 @@ function checkResearch(doc, context) {
   );
 }
 
-function checkBanned(doc, problem) {
+function checkBanned(doc, { decisions, problem }) {
   const outOfScope = section(doc, 'Out of scope');
 
   doc.lines.forEach((line, index) => {
     if (outOfScope && index > outOfScope.index && index < outOfScope.end) return;
 
     if (/^\s*>/.test(line)) return;
+
+    const row = /^\s*- (DR-\d+)\b/.exec(line);
+
+    if (row && decisions.rows.get(row[1])?.text === line.trim()) return;
 
     const lower = line.toLowerCase();
 
@@ -592,7 +596,7 @@ function checkSpec(doc, context, researchIds) {
 
   checkStatus(doc, 'spec', problem);
   checkCards(doc, context);
-  checkBanned(doc, problem);
+  checkBanned(doc, context);
   checkWords(doc, 'spec', problem);
 
   if (!rulings) {
@@ -681,11 +685,13 @@ function checkStages(doc, problem) {
   });
 }
 
-function checkPlan(doc, { problem }) {
+function checkPlan(doc, context) {
+  const { problem } = context;
+
   checkStatus(doc, 'plan', problem);
   checkTouches(doc, problem);
   checkStages(doc, problem);
-  checkBanned(doc, problem);
+  checkBanned(doc, context);
   checkWords(doc, 'plan', problem);
 }
 
