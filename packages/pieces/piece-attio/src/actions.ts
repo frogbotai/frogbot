@@ -433,6 +433,7 @@ export const attioActions = [
         query: input.query,
         body: input.body,
         rawResponse: true,
+        redirect: 'manual',
         signal: req.signal ?? undefined,
       });
     },

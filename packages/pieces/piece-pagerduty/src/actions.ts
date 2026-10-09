@@ -215,6 +215,7 @@ export const customApiCall = defineAction({
       path: input.path,
       query: input.queryParams,
       body: input.body,
+      redirect: 'manual',
     });
 
     return customApiCallOutput.parse(response);

@@ -18,6 +18,12 @@ export function createTrelloClient({ auth }: { auth: unknown }) {
   async function request<T>(path: string, init: RequestInit & { query?: Query } = {}): Promise<T> {
     const url = new URL(`https://api.trello.com/1/${path.replace(/^\//, '')}`);
 
+    const names = [...url.searchParams.keys(), ...Object.keys(init.query ?? {})];
+
+    if (names.some((name) => /^(key|token)$/i.test(name))) {
+      throw new Error('[frogbot] Trello query must not set `key` or `token`.');
+    }
+
     url.searchParams.set('key', credential.username);
     url.searchParams.set('token', credential.password);
 
@@ -26,6 +32,13 @@ export function createTrelloClient({ auth }: { auth: unknown }) {
     });
 
     const response = await fetch(url, init);
+
+    if (init.redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `Trello API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
+
     const text = await response.text();
 
     if (!response.ok) {

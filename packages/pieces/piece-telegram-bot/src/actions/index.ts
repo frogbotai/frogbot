@@ -409,6 +409,6 @@ export const customApiCall = defineAction({
   output: customOutput,
   idempotent: false,
   async run({ client, input }) {
-    return client.request(input.endpoint, input);
+    return client.request(input.endpoint, { ...input, redirect: 'manual' });
   },
 });

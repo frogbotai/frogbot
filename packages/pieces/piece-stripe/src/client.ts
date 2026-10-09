@@ -49,8 +49,14 @@ export function createStripeClient({ auth }: { auth: StripeAuth }) {
     path: string,
     method: 'DELETE' | 'GET' | 'POST' = 'GET',
     values: Record<string, unknown> = {},
+    redirect?: RequestRedirect,
   ) {
     const url = new URL(path.replace(/^\//, ''), `${baseUrl}/`);
+
+    if (url.origin !== 'https://api.stripe.com') {
+      throw new Error('[frogbot] Stripe request URL must stay on https://api.stripe.com.');
+    }
+
     const params = encode(values);
 
     if (method === 'GET') url.search = params.toString();
@@ -62,7 +68,14 @@ export function createStripeClient({ auth }: { auth: StripeAuth }) {
         ...(method !== 'GET' ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
       },
       ...(method !== 'GET' ? { body: params } : {}),
+      redirect,
     });
+
+    if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `Stripe API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
 
     const data = (await response.json()) as StripeResponse;
 

@@ -10,6 +10,7 @@ export type DiscordRequest = {
   body?: BodyInit | Record<string, unknown>;
   headers?: HeadersInit;
   authenticated?: boolean;
+  redirect?: RequestRedirect;
 };
 
 export type DiscordClient = ReturnType<typeof createDiscordClient>;
@@ -39,6 +40,7 @@ export function createDiscordClient({
 }) {
   const { botToken } = discordAuth.parse(auth);
   const apiUrl = discordApiUrl(options?.apiUrl) ?? defaultApiUrl;
+  const { origin } = new URL(apiUrl);
 
   async function request({
     method = 'GET',
@@ -46,6 +48,7 @@ export function createDiscordClient({
     body,
     headers,
     authenticated = true,
+    redirect,
   }: DiscordRequest) {
     const requestHeaders = new Headers(headers);
     let requestBody = body as BodyInit | undefined;
@@ -57,11 +60,24 @@ export function createDiscordClient({
       requestBody = JSON.stringify(body);
     }
 
-    const response = await fetch(path.startsWith('https://') ? path : `${apiUrl}${path}`, {
+    const url = path.startsWith('https://') ? path : `${apiUrl}${path}`;
+
+    if (authenticated && new URL(url).origin !== origin) {
+      throw new Error(`[frogbot] Discord request URL must stay on ${origin}.`);
+    }
+
+    const response = await fetch(url, {
       method,
       headers: requestHeaders,
       body: requestBody,
+      redirect,
     });
+
+    if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `Discord API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
 
     const result = await parseResponse(response);
 

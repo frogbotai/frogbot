@@ -21,6 +21,7 @@ import {
   addRoleToMember,
   sendMessage,
 } from '../../../packages/pieces/piece-discord/src/actions.js';
+import { createDiscordClient } from '../../../packages/pieces/piece-discord/src/client.js';
 import { discordOptions } from '../../../packages/pieces/piece-discord/src/config.js';
 import {
   createDiscord,
@@ -472,6 +473,27 @@ describe('discord', () => {
         req: req(),
       }),
     ).rejects.toThrow('Path must be relative');
+  });
+
+  it('sends the bot token only to the configured API origin', async () => {
+    const fetch = vi.fn().mockImplementation(() => Promise.resolve(json({ id: 'g' })));
+    vi.stubGlobal('fetch', fetch);
+
+    const client = createDiscordClient({
+      auth: { botToken: 'discord_test_token' },
+      options: { apiUrl: 'https://discord.proxy.test/api/v10/' },
+    });
+
+    await client.request({ path: '/users/@me' });
+    await client.request({ path: 'https://x.test/webhook', authenticated: false });
+
+    await expect(client.request({ path: 'https://x.test/users/@me' })).rejects.toThrow(
+      'Discord request URL must stay on https://discord.proxy.test.',
+    );
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      'https://discord.proxy.test/api/v10/users/@me',
+      'https://x.test/webhook',
+    ]);
   });
 
   it('loads dynamic guild, channel, and role choices', async () => {

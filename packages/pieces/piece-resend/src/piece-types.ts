@@ -190,7 +190,6 @@ export interface ResendTypes {
         response_is_binary?: boolean;
         failsafe?: boolean;
         timeout?: number;
-        followRedirects?: boolean;
       };
       output: unknown;
     };

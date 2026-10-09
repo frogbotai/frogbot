@@ -13,6 +13,7 @@ export function createAirtableClient({ auth }: { auth: unknown }) {
     query,
     body,
     signal,
+    redirect,
     baseUrl = 'https://api.airtable.com/v0',
   }: {
     method?: string;
@@ -20,6 +21,7 @@ export function createAirtableClient({ auth }: { auth: unknown }) {
     query?: Record<string, QueryValue>;
     body?: unknown;
     signal?: AbortSignal;
+    redirect?: RequestRedirect;
     baseUrl?: string;
   }): Promise<T> {
     if (!path.startsWith('/') || path.split('/').includes('..')) {
@@ -39,8 +41,15 @@ export function createAirtableClient({ auth }: { auth: unknown }) {
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
+      redirect,
       signal,
     });
+
+    if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `Airtable API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
 
     if (!response.ok) {
       const detail = await response.text();

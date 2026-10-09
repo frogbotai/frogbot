@@ -185,6 +185,7 @@ export const customApiCall = defineAction({
       },
       body: input.body === undefined ? undefined : JSON.stringify(input.body),
       query: input.query,
+      redirect: 'manual',
     });
   },
 });

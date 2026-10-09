@@ -26,7 +26,15 @@ export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
     response: includeResponse,
     signal,
   }: ResendRequestOptions) {
-    const url = new URL(`https://api.resend.com${path}`);
+    const url = path.startsWith('/') ? new URL(`https://api.resend.com${path}`) : undefined;
+
+    if (url?.origin !== 'https://api.resend.com') {
+      throw new Error('[frogbot] Resend request URL must stay on https://api.resend.com.');
+    }
+
+    if (Object.keys(headers ?? {}).some((name) => name.toLowerCase() === 'authorization')) {
+      throw new Error('[frogbot] Resend request headers must not set `Authorization`.');
+    }
 
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value));
@@ -43,6 +51,12 @@ export const createResendClient = ({ apiKey }: { apiKey: string }) => ({
       },
       ...(body === undefined ? {} : { body: rawBody ? (body as BodyInit) : JSON.stringify(body) }),
     });
+
+    if (redirect === 'manual' && response.status >= 300 && response.status < 400) {
+      throw new Error(
+        `Resend API redirected (${response.status}) to ${response.headers.get('location')}.`,
+      );
+    }
 
     const result: unknown = binary
       ? new Uint8Array(await response.arrayBuffer())

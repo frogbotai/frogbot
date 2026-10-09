@@ -12,27 +12,27 @@ export const stripe = createStripe({ auth: { apiKey: process.env.STRIPE_SECRET_K
 
 ## Actions
 
-| Upstream action slug      | Previous wrapper export | Native action           | Notes                                        |
-| ------------------------- | ----------------------- | ----------------------- | -------------------------------------------- |
-| `create_customer`         | `createCustomer`        | `createCustomer`        |                                              |
-| `create_invoice`          | `createInvoice`         | `createInvoice`         |                                              |
-| `search_customer`         | `searchCustomer`        | `searchCustomers`       | Semantic plural search result.               |
-| `search_subscriptions`    | `searchSubscriptions`   | `searchSubscriptions`   | Was omitted from wrapper defaults.           |
-| `retrieve_customer`       | `retrieveCustomer`      | `getCustomer`           | Semantic get-by-ID name.                     |
-| `update_customer`         | `updateCustomer`        | `updateCustomer`        | Was omitted from wrapper defaults.           |
-| `create_payment_intent`   | `createPaymentIntent`   | `createPaymentIntent`   | Was omitted from wrapper defaults.           |
-| `create_product`          | `createProduct`         | `createProduct`         | Was omitted from wrapper defaults.           |
-| `create_price`            | `createPrice`           | `createPrice`           | Was omitted from wrapper defaults.           |
-| `create_subscription`     | `createSubscription`    | `createSubscription`    | Was omitted from wrapper defaults.           |
-| `cancel_subscription`     | `cancelSubscription`    | `cancelSubscription`    | Was omitted from wrapper defaults.           |
-| `retrieve_invoice`        | `retrieveInvoice`       | `getInvoice`            | Uses dynamic invoice choices.                |
-| `retrieve_payout`         | `retrievePayout`        | `getPayout`             | Was omitted from wrapper defaults.           |
-| `create_refund`           | `createRefund`          | `createRefund`          |                                              |
-| `create_payment_link`     | `createPaymentLink`     | `createPaymentLink`     |                                              |
-| `deactivate_payment_link` | `deactivatePaymentLink` | `deactivatePaymentLink` | Was omitted from wrapper defaults.           |
-| `retrieve_payment_intent` | `retrievePaymentIntent` | `getPaymentIntent`      | Semantic get-by-ID name.                     |
-| `find_invoice`            | `findInvoice`           | `findInvoice`           | Explicit ID variant without dynamic choices. |
-| `custom_api_call`         | `customApiCall`         | `sendRequest`           | Authenticated Stripe `/v1` request.          |
+| Upstream action slug      | Previous wrapper export | Native action           | Notes                                                                                  |
+| ------------------------- | ----------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
+| `create_customer`         | `createCustomer`        | `createCustomer`        |                                                                                        |
+| `create_invoice`          | `createInvoice`         | `createInvoice`         |                                                                                        |
+| `search_customer`         | `searchCustomer`        | `searchCustomers`       | Semantic plural search result.                                                         |
+| `search_subscriptions`    | `searchSubscriptions`   | `searchSubscriptions`   | Was omitted from wrapper defaults.                                                     |
+| `retrieve_customer`       | `retrieveCustomer`      | `getCustomer`           | Semantic get-by-ID name.                                                               |
+| `update_customer`         | `updateCustomer`        | `updateCustomer`        | Was omitted from wrapper defaults.                                                     |
+| `create_payment_intent`   | `createPaymentIntent`   | `createPaymentIntent`   | Was omitted from wrapper defaults.                                                     |
+| `create_product`          | `createProduct`         | `createProduct`         | Was omitted from wrapper defaults.                                                     |
+| `create_price`            | `createPrice`           | `createPrice`           | Was omitted from wrapper defaults.                                                     |
+| `create_subscription`     | `createSubscription`    | `createSubscription`    | Was omitted from wrapper defaults.                                                     |
+| `cancel_subscription`     | `cancelSubscription`    | `cancelSubscription`    | Was omitted from wrapper defaults.                                                     |
+| `retrieve_invoice`        | `retrieveInvoice`       | `getInvoice`            | Uses dynamic invoice choices.                                                          |
+| `retrieve_payout`         | `retrievePayout`        | `getPayout`             | Was omitted from wrapper defaults.                                                     |
+| `create_refund`           | `createRefund`          | `createRefund`          |                                                                                        |
+| `create_payment_link`     | `createPaymentLink`     | `createPaymentLink`     |                                                                                        |
+| `deactivate_payment_link` | `deactivatePaymentLink` | `deactivatePaymentLink` | Was omitted from wrapper defaults.                                                     |
+| `retrieve_payment_intent` | `retrievePaymentIntent` | `getPaymentIntent`      | Semantic get-by-ID name.                                                               |
+| `find_invoice`            | `findInvoice`           | `findInvoice`           | Explicit ID variant without dynamic choices.                                           |
+| `custom_api_call`         | `customApiCall`         | `sendRequest`           | Authenticated Stripe `/v1` request; refuses paths that leave `https://api.stripe.com`. |
 
 ## Triggers
 
