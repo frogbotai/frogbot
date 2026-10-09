@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-airtable",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "description": "airtable tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
