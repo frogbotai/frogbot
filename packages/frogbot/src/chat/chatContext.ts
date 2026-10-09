@@ -127,6 +127,7 @@ async function createChat({
     data: {
       user: req.user?.id ?? null,
       agent: agentSlug,
+      lastMessageAt: new Date().toISOString(),
       ...(title ? { title } : {}),
     },
     req,
@@ -180,7 +181,7 @@ async function persistIncoming({
   selection: AgentSelection;
   delivery?: MessageDelivery;
 }): Promise<void> {
-  const { messagesSlug } = messagesConfig(req);
+  const { chatsSlug, messagesSlug } = messagesConfig(req);
   const overrideAccess = true;
   const author = actorFromRequest(req);
 
@@ -255,6 +256,14 @@ async function persistIncoming({
         overrideAccess,
       });
     }
+
+    await req.frogbot.update({
+      collection: chatsSlug,
+      id: chatId,
+      data: { lastMessageAt: new Date().toISOString() },
+      req,
+      overrideAccess,
+    });
 
     if (ownsTransaction) await commitTransaction(transactionReq);
   } catch (error) {

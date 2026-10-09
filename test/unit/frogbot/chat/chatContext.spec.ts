@@ -33,6 +33,18 @@ const questionPart = {
 
 const answered: UIMessage = { id: 'a1', role: 'assistant', parts: [questionPart] as never };
 
+const isoString = expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+
+function lastMessageAtBump(req: FrogBotRequest, id: unknown) {
+  return {
+    collection: 'chats',
+    id,
+    data: { lastMessageAt: isoString },
+    req,
+    overrideAccess: true,
+  };
+}
+
 type FindArgs = { limit?: number; sort?: string[] };
 
 function makeFind({
@@ -124,7 +136,7 @@ describe('resolveChatContext', () => {
       expect(result.chatId).toBe('chat-1');
       expect(create).toHaveBeenNthCalledWith(1, {
         collection: 'chats',
-        data: { user: null, agent: 'support', title: 'One' },
+        data: { user: null, agent: 'support', lastMessageAt: isoString, title: 'One' },
         req,
         overrideAccess: true,
       });
@@ -143,7 +155,7 @@ describe('resolveChatContext', () => {
       expect(create).toHaveBeenCalledTimes(3);
       expect(create).toHaveBeenNthCalledWith(1, {
         collection: 'chats',
-        data: { user: 'user-1', agent: 'support', title: 'One' },
+        data: { user: 'user-1', agent: 'support', lastMessageAt: isoString, title: 'One' },
         req,
         overrideAccess: true,
       });
@@ -183,7 +195,9 @@ describe('resolveChatContext', () => {
 
       expect(create).toHaveBeenNthCalledWith(
         1,
-        expect.objectContaining({ data: { user: 'user-1', agent: 'support' } }),
+        expect.objectContaining({
+          data: { user: 'user-1', agent: 'support', lastMessageAt: isoString },
+        }),
       );
     });
 
@@ -198,7 +212,9 @@ describe('resolveChatContext', () => {
         tools: {},
       });
 
-      expect(update).toHaveBeenCalledExactlyOnceWith({
+      expect(update).toHaveBeenCalledTimes(2);
+      expect(update).toHaveBeenNthCalledWith(1, lastMessageAtBump(req, 'chat-1'));
+      expect(update).toHaveBeenNthCalledWith(2, {
         collection: 'chats',
         id: 'chat-1',
         data: { title: 'One' },
@@ -222,7 +238,7 @@ describe('resolveChatContext', () => {
         tools: {},
       });
 
-      expect(update).not.toHaveBeenCalled();
+      expect(update).toHaveBeenCalledExactlyOnceWith(lastMessageAtBump(req, 'chat-1'));
     });
 
     it('saves no placeholder title for an untitled chat that already has a reply', async () => {
@@ -241,7 +257,7 @@ describe('resolveChatContext', () => {
         tools: {},
       });
 
-      expect(update).not.toHaveBeenCalled();
+      expect(update).toHaveBeenCalledExactlyOnceWith(lastMessageAtBump(req, 'chat-1'));
     });
 
     it('saves the placeholder title after the message transaction commits', async () => {
@@ -261,13 +277,25 @@ describe('resolveChatContext', () => {
         tools: {},
       });
 
+      expect(update.mock.invocationCallOrder[0]).toBeLessThan(
+        db.commitTransaction.mock.invocationCallOrder[0],
+      );
       expect(db.commitTransaction.mock.invocationCallOrder[0]).toBeLessThan(
-        update.mock.invocationCallOrder[0],
+        update.mock.invocationCallOrder[1],
+      );
+      expect(update).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ data: { title: 'One' } }),
       );
     });
 
     it('logs a failed placeholder title write and still starts the turn', async () => {
-      const update = vi.fn(() => Promise.reject(new Error('title write failed')));
+      const update = vi.fn((args: { data: Record<string, unknown> }) =>
+        'title' in args.data
+          ? Promise.reject(new Error('title write failed'))
+          : Promise.resolve({}),
+      );
+
       const { req, error } = makeReq({ update });
 
       const result = await resolveChatContext({
@@ -352,7 +380,7 @@ describe('resolveChatContext', () => {
     });
 
     it('verifies ownership and persists only the last incoming message when chatId is given', async () => {
-      const { req, create, findByID } = makeReq();
+      const { req, create, findByID, update } = makeReq();
 
       await resolveChatContext({
         req,
@@ -376,6 +404,8 @@ describe('resolveChatContext', () => {
           data: expect.objectContaining({ chat: 'chat-1', parts: incoming[1].parts }),
         }),
       );
+      expect(update).toHaveBeenNthCalledWith(1, lastMessageAtBump(req, 'chat-1'));
+      expect(create.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[0]);
     });
 
     it('writes relationships with the stored chat id when the caller sends a different id type', async () => {
@@ -440,6 +470,8 @@ describe('resolveChatContext', () => {
           },
         }),
       );
+      expect(update).toHaveBeenNthCalledWith(2, lastMessageAtBump(req, 'chat-1'));
+      expect(deleteFn.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[1]);
     });
 
     it.each([
@@ -570,7 +602,7 @@ describe('resolveChatContext', () => {
         rollbackTransaction: vi.fn(() => Promise.resolve()),
       };
 
-      const { req, create } = makeReq({ db });
+      const { req, create, update } = makeReq({ db });
 
       await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
 
@@ -578,6 +610,13 @@ describe('resolveChatContext', () => {
       expect(db.commitTransaction).toHaveBeenCalledWith('tx-1');
       expect(db.rollbackTransaction).not.toHaveBeenCalled();
       expect(Math.max(...create.mock.invocationCallOrder)).toBeLessThan(
+        db.commitTransaction.mock.invocationCallOrder[0],
+      );
+      expect(update).toHaveBeenCalledExactlyOnceWith(lastMessageAtBump(req, 'chat-1'));
+      expect(Math.max(...create.mock.invocationCallOrder)).toBeLessThan(
+        update.mock.invocationCallOrder[0],
+      );
+      expect(update.mock.invocationCallOrder[0]).toBeLessThan(
         db.commitTransaction.mock.invocationCallOrder[0],
       );
       expect((req as { transactionID?: unknown }).transactionID).toBeUndefined();
@@ -595,11 +634,35 @@ describe('resolveChatContext', () => {
         .mockResolvedValueOnce({ id: 'chat-1' })
         .mockRejectedValueOnce(new Error('write failed'));
 
-      const { req } = makeReq({ create, db });
+      const { req, update } = makeReq({ create, db });
 
       await expect(
         resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} }),
       ).rejects.toThrow('write failed');
+      expect(db.rollbackTransaction).toHaveBeenCalledWith('tx-1');
+      expect(db.commitTransaction).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+      expect(releaseTurn).toHaveBeenCalledWith({
+        req,
+        claim: { chatId: 'chat-1', attempt: 'attempt-1' },
+        state: 'idle',
+      });
+    });
+
+    it('rolls back the transaction, releases the turn, and rethrows when the lastMessageAt bump fails', async () => {
+      const db = {
+        beginTransaction: vi.fn(() => Promise.resolve('tx-1')),
+        commitTransaction: vi.fn(() => Promise.resolve()),
+        rollbackTransaction: vi.fn(() => Promise.resolve()),
+      };
+
+      const update = vi.fn(() => Promise.reject(new Error('bump failed')));
+      const { req } = makeReq({ db, update });
+
+      await expect(
+        resolveChatContext({ req, agentSlug: 'support', chatId: 'chat-1', incoming, tools: {} }),
+      ).rejects.toThrow('bump failed');
+      expect(update).toHaveBeenCalledExactlyOnceWith(lastMessageAtBump(req, 'chat-1'));
       expect(db.rollbackTransaction).toHaveBeenCalledWith('tx-1');
       expect(db.commitTransaction).not.toHaveBeenCalled();
       expect(releaseTurn).toHaveBeenCalledWith({
@@ -618,7 +681,7 @@ describe('resolveChatContext', () => {
     it.each(['queue', 'steer'] as const)(
       'persists only the last message as queued with its selection for %s delivery',
       async (delivery) => {
-        const { req, create } = makeReq();
+        const { req, create, update } = makeReq();
 
         const result = await resolveChatContext({
           req,
@@ -631,6 +694,8 @@ describe('resolveChatContext', () => {
         });
 
         expect(result).toEqual({ status: 'queued', chatId: 'chat-1', messageId: 'u2', delivery });
+        expect(update).toHaveBeenCalledExactlyOnceWith(lastMessageAtBump(req, 'chat-1'));
+        expect(create.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[0]);
         expect(create).toHaveBeenCalledExactlyOnceWith(
           expect.objectContaining({
             collection: 'messages',

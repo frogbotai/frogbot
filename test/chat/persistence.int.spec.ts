@@ -183,6 +183,91 @@ describe('chat persistence: chat context', () => {
     expect(followUp.uiMessages[1].parts).toEqual([{ type: 'text', text: 'Second turn' }]);
   });
 
+  async function lastMessageAt(id: number | string) {
+    const chat = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id,
+      depth: 0,
+      overrideAccess: true,
+    })) as { lastMessageAt?: string | null };
+
+    return chat.lastMessageAt;
+  }
+
+  async function setLastMessageAt(id: number | string, value: string) {
+    await booted.frogbot.update({
+      collection: chatsSlug,
+      id,
+      data: { lastMessageAt: value },
+      overrideAccess: true,
+    });
+  }
+
+  const dayAgo = () => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  it('sets lastMessageAt on a new chat before any reply is saved', async () => {
+    const req = await makeOwnerReq();
+    const { chatId } = await startTurn({
+      req,
+      agentSlug,
+      incoming: [userMessage('Fresh chat', 'recents-new')],
+      tools: {},
+    });
+
+    expect(await lastMessageAt(chatId)).toEqual(expect.any(String));
+  });
+
+  it('bumps lastMessageAt when a follow-up user message is saved', async () => {
+    const { chatId } = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('First', 'recents-follow-1')],
+      tools: {},
+    });
+
+    await setLastMessageAt(chatId, dayAgo());
+
+    const startedAt = Date.now();
+
+    await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      chatId,
+      incoming: [userMessage('Second', 'recents-follow-2')],
+      tools: {},
+    });
+
+    expect(Date.parse((await lastMessageAt(chatId))!)).toBeGreaterThanOrEqual(startedAt);
+  });
+
+  it('leaves lastMessageAt unchanged when the user-message write fails', async () => {
+    const req = await makeOwnerReq();
+    const { chatId } = await startTurn({
+      req,
+      agentSlug,
+      incoming: [userMessage('Question', 'recents-fail-user')],
+      tools: {},
+    });
+
+    await persistAssistantMessage({ req, chatId, message: assistantReply('recents-fail-reply') });
+
+    const before = dayAgo();
+
+    await setLastMessageAt(chatId, before);
+
+    await expect(
+      resolveChatContext({
+        req: await makeOwnerReq(),
+        agentSlug,
+        chatId,
+        incoming: [userMessage('Overwrite the reply', 'recents-fail-reply')],
+        tools: {},
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    expect(Date.parse((await lastMessageAt(chatId))!)).toBe(Date.parse(before));
+  });
+
   it('rejects a chat owned by another user', async () => {
     const req = await makeOwnerReq();
     const { chatId } = await startTurn({
