@@ -366,6 +366,28 @@ describe('check ticket-docs', () => {
         `.idea/${SPEC}:15 banned phrase "release note" (allowed only under Out of scope or in a > quote)`,
       ]);
     });
+
+    it('allows a phrase inside a ruling copied whole from decisions.md, not in free text', () => {
+      const row =
+        '- DR-003 (summary) rename freely → No migration guides or aliases. [source](archive/notes.md#L3)';
+
+      const decisions = { '_process/decisions.md': `${fixture('_process/decisions.md')}${row}\n` };
+      const research = edit(RESEARCH, ROW_1, `${ROW_1}\n  ${row}`);
+
+      expect(
+        check({ ...decisions, ...research, ...edit(SPEC, ROW_1, `${ROW_1}\n${row}`) }),
+      ).toEqual({ code: 0, lines: ['ticket-docs: OK · 1 ticket'] });
+
+      expect(
+        problems({
+          ...decisions,
+          ...research,
+          ...edit(SPEC, ROW_1, `${ROW_1}\n${row}\n\nNo migration guide either.`),
+        }),
+      ).toEqual([
+        `.idea/${SPEC}:14 banned phrase "migration guide" (allowed only under Out of scope or in a > quote)`,
+      ]);
+    });
   });
 
   describe('budgets', () => {
