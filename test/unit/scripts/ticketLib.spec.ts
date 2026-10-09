@@ -54,10 +54,9 @@ describe('flakyRetry', () => {
         },
       ],
       args: [
-        '--project',
-        'rich-text',
         'test/browser/richText.browser.spec.ts:21',
         'test/browser/richText.browser.spec.ts:391',
+        '--project=rich-text',
       ],
     });
   });

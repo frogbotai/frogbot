@@ -41,11 +41,8 @@ export function flakyRetry(output, known = KNOWN_FLAKY) {
   return {
     tests: found,
     args: [
-      ...[...new Set(found.map(({ project }) => project))].flatMap((project) => [
-        '--project',
-        project,
-      ]),
       ...new Set(found.map(({ test }) => test)),
+      ...[...new Set(found.map(({ project }) => project))].map((project) => `--project=${project}`),
     ],
   };
 }
