@@ -71,7 +71,7 @@ Change the requested scopes with the factory's `scopes` option: `createMicrosoft
 | `microsoft_teams_get_meeting_recording`        | `microsoftTeamsGetMeetingRecording`      | `getMeetingRecording`      | Lists or returns metadata; upstream does not download recording bytes                                                                        |
 | `request_approval_in_channel`                  | `requestApprovalInChannel`               | Omitted                    | Activepieces-specific waitpoint action calls `run.pause` and resumes from an approval URL; durable waits belong to the FrogBot workflow host |
 | `request_approval_direct_message`              | `requestApprovalDirectMessage`           | Omitted                    | Activepieces-specific waitpoint action calls `run.pause` and resumes from an approval URL; durable waits belong to the FrogBot workflow host |
-| `custom_api_call`                              | `customApiCall`                          | `customApiCall`            | Authenticated JSON requests restricted to the configured Microsoft Graph v1.0 origin; redirects and cross-origin URLs are rejected           |
+| `custom_api_call`                              | `customApiCall`                          | `customApiCall`            | Paths are relative to Microsoft Graph v1.0 in the configured cloud; redirects are not followed                                               |
 
 ## Triggers
 

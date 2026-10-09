@@ -201,7 +201,7 @@ describe('native Dropbox contract', () => {
         input: {
           method: 'POST',
           path: '/files/delete_v2',
-          body: { type: 'json', value: { path: '/a' } },
+          body: { path: '/a' },
         },
       }),
     ]);
@@ -215,6 +215,18 @@ describe('native Dropbox contract', () => {
     );
     expect(requests.some(({ url }) => url.pathname.endsWith('/upload'))).toBe(true);
     expect(requests.some(({ url }) => url.pathname.endsWith('/download'))).toBe(true);
+
+    const custom = requests.filter(({ redirect }) => redirect === 'manual');
+
+    expect(custom).toHaveLength(1);
+    expect(custom[0]?.url.href).toBe('https://api.dropboxapi.com/2/files/delete_v2');
+    expect(custom[0]?.headers.get('authorization')).toBe('Bearer dropbox-access');
+    expect(JSON.parse(custom[0]?.body.toString() ?? '')).toEqual({ path: '/a' });
+    expect(results[13]).toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { metadata: file },
+    });
   });
 });
 
@@ -331,7 +343,7 @@ describe('Dropbox transport details', () => {
 
     await expect(
       dropbox.customApiCall({ req: request(), input: { method: 'POST', path } }),
-    ).rejects.toThrow('Dropbox API URL');
+    ).rejects.toThrow('custom API path must be relative to the Dropbox API');
     expect(requests).toEqual([]);
   });
 
@@ -346,7 +358,7 @@ describe('Dropbox transport details', () => {
           req: request(),
           input: { method: 'POST', path: '/files/list_folder', headers: { [name]: 'bad' } },
         }),
-      ).rejects.toThrow('reserved');
+      ).rejects.toThrow(`cannot set the '${name}' header`);
       expect(requests).toEqual([]);
     },
   );

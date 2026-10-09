@@ -8,19 +8,10 @@ const apiBase = `${apiOrigin}/api/`;
 export const slackValue = z.record(z.string(), z.unknown());
 export const slackValues = z.array(slackValue);
 export const slackResponse = z.object({ ok: z.literal(true) }).catchall(z.unknown());
-export const slackApiResult = z.object({
-  status: z.number().int(),
-  headers: z.record(z.string(), z.string()),
-  body: z.unknown(),
-});
 
 export type SlackClient = ReturnType<typeof createSlackClient>;
 
 export type SlackToken = 'bot' | 'user';
-
-function safeMethod(method: string) {
-  return ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-}
 
 function endpoint(path: string) {
   const url = new URL(path, apiBase);
@@ -62,41 +53,18 @@ export function createSlackClient({ auth }: { auth: unknown }) {
     return kind === 'user' ? tokens.userToken : tokens.botToken;
   }
 
-  async function raw({
-    path,
-    method = 'POST',
-    body,
-    headers,
-    token: tokenKind = 'bot',
-  }: {
-    path: string;
-    method?: string;
-    body?: BodyInit | Record<string, unknown>;
-    headers?: HeadersInit;
-    token?: SlackToken;
-  }) {
-    if (!safeMethod(method)) throw new Error(`Unsupported Slack API method '${method}'.`);
-
-    const requestHeaders = new Headers(headers);
-    requestHeaders.set('authorization', `Bearer ${token(tokenKind)}`);
-    let requestBody: BodyInit | undefined;
-
-    if (
-      body instanceof FormData ||
-      body instanceof Blob ||
-      body instanceof URLSearchParams ||
-      typeof body === 'string'
-    ) {
-      requestBody = body;
-    } else if (body !== undefined) {
-      requestHeaders.set('content-type', 'application/json; charset=utf-8');
-      requestBody = JSON.stringify(body);
-    }
-
+  async function request(
+    path: string,
+    body: Record<string, unknown> = {},
+    tokenKind: SlackToken = 'bot',
+  ) {
     const response = await fetch(endpoint(path), {
-      method,
-      headers: requestHeaders,
-      body: requestBody,
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token(tokenKind)}`,
+        'content-type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify(body),
       redirect: 'error',
     });
 
@@ -112,17 +80,11 @@ export function createSlackClient({ auth }: { auth: unknown }) {
       throw new Error(`Slack API request failed: ${detail}`);
     }
 
-    return { status: response.status, headers: Object.fromEntries(response.headers), body: result };
+    return slackResponse.parse(result);
   }
 
-  async function request(
-    path: string,
-    body: Record<string, unknown> = {},
-    tokenKind: SlackToken = 'bot',
-  ) {
-    const response = await raw({ path, body, token: tokenKind });
-
-    return slackResponse.parse(response.body);
+  function authorize(headers: Headers) {
+    headers.set('authorization', `Bearer ${token()}`);
   }
 
   async function paginate({
@@ -178,5 +140,5 @@ export function createSlackClient({ auth }: { auth: unknown }) {
     return resolvedWorkspaceId;
   }
 
-  return { request, raw, paginate, token, workspaceId };
+  return { request, paginate, token, workspaceId, authorize };
 }

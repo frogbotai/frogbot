@@ -17,14 +17,14 @@ export const twilio = createTwilio({
 
 ## Actions
 
-| Upstream action slug       | Previous wrapper export  | Native action       | Notes                                                                                 |
-| -------------------------- | ------------------------ | ------------------- | ------------------------------------------------------------------------------------- |
-| `send_sms`                 | `sendSms`                | `sendSms`           |                                                                                       |
-| `phone_number_lookup`      | `phoneNumberLookup`      | `lookupPhoneNumber` | Semantic verb-first name.                                                             |
-| `make_call`                | `makeCall`               | `makeCall`          |                                                                                       |
-| `get_message`              | `getMessage`             | `getMessage`        |                                                                                       |
-| `download_recording_media` | `downloadRecordingMedia` | `downloadRecording` | Returns recording bytes and metadata.                                                 |
-| `custom_api_call`          | `customApiCall`          | `customApiCall`     | Uses the Twilio REST API base URL; refuses paths that leave `https://api.twilio.com`. |
+| Upstream action slug       | Previous wrapper export  | Native action       | Notes                                                                                |
+| -------------------------- | ------------------------ | ------------------- | ------------------------------------------------------------------------------------ |
+| `send_sms`                 | `sendSms`                | `sendSms`           |                                                                                      |
+| `phone_number_lookup`      | `phoneNumberLookup`      | `lookupPhoneNumber` | Semantic verb-first name.                                                            |
+| `make_call`                | `makeCall`               | `makeCall`          |                                                                                      |
+| `get_message`              | `getMessage`             | `getMessage`        |                                                                                      |
+| `download_recording_media` | `downloadRecordingMedia` | `downloadRecording` | Returns recording bytes and metadata.                                                |
+| `custom_api_call`          | `customApiCall`          | `customApiCall`     | Paths are relative to `https://api.twilio.com`; JSON object bodies are form-encoded. |
 
 ## Triggers
 

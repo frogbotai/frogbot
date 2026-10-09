@@ -26,7 +26,6 @@ export type ZoomRequest = {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   path: string;
   query?: Record<string, string | number | boolean | undefined>;
-  headers?: Record<string, string>;
   body?: unknown;
   signal?: AbortSignal;
 };
@@ -36,7 +35,7 @@ export type ZoomClient = ReturnType<typeof createZoomClient>;
 export function createZoomClient({ auth }: { auth: unknown }) {
   const { accessToken } = zoomAuth.parse(auth);
 
-  return async ({ method = 'GET', path, query, headers, body, signal }: ZoomRequest) => {
+  const request = async ({ method = 'GET', path, query, body, signal }: ZoomRequest) => {
     if (!path.startsWith('/') || path.startsWith('//')) {
       throw new Error('Zoom request path must be relative to the Zoom API.');
     }
@@ -56,7 +55,6 @@ export function createZoomClient({ auth }: { auth: unknown }) {
       headers: {
         accept: 'application/json',
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
-        ...headers,
         authorization: `Bearer ${accessToken}`,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -70,4 +68,10 @@ export function createZoomClient({ auth }: { auth: unknown }) {
 
     return data;
   };
+
+  return Object.assign(request, {
+    authorize(headers: Headers) {
+      headers.set('authorization', `Bearer ${accessToken}`);
+    },
+  });
 }

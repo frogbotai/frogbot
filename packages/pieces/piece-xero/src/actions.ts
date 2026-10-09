@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import type { XeroClient, XeroJSON } from './client.js';
 import { xeroResponse } from './client.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 
 const tenant = { tenantId: z.string().min(1).meta({ label: 'Organization' }) };
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -1029,38 +1029,13 @@ const findOrCreateContact = defineAction({
   },
 });
 
-const customPath = z
-  .string()
-  .regex(/^\/(?!\/)(?!.*[%?#\\])[A-Za-z0-9._~!$&'()*+,;=:@/-]+$/)
-  .refine((value) => value.split('/').every((segment) => segment !== '.' && segment !== '..'));
-
-const customApiInput = z.object({
-  ...tenant,
-  method: z.enum(['DELETE', 'GET', 'POST', 'PUT']),
-  path: customPath,
-  query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
-  body: z.json().optional(),
-});
-
-const customApiCall = defineAction({
-  ...apiDefaults,
-  slug: 'customApiCall',
-  label: 'Custom API call',
-  description: 'Call a relative Xero accounting API path.',
-  input: customApiInput,
-  async run({ input, client, req }) {
-    return client.request(
-      {
-        path: input.path,
-        method: input.method,
-        tenantId: input.tenantId,
-        query: input.query,
-        body: input.body,
-        signal: req.signal ?? undefined,
-      },
-      xeroResponse,
-    );
-  },
+const customApiCall = defineCustomApiCall({
+  name: 'Xero',
+  description:
+    'Call a Xero accounting API path. Send the organization in the `Xero-Tenant-Id` header.',
+  baseUrl: 'https://api.xero.com/api.xro/2.0',
+  headers: { Accept: 'application/json' },
+  authorize: ({ client, headers }) => client.authorize(headers),
 });
 
 export const xeroActions = [

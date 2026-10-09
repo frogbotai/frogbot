@@ -145,17 +145,29 @@ describe('attio', () => {
         input: { method: 'GET', path: '/../workspace_members' },
         req,
       }),
-    ).rejects.toThrow('parent segments');
+    ).rejects.toThrow('custom API path must be relative to the Attio API');
 
-    await attio.customApiCall({
-      input: {
-        method: 'GET',
-        path: '/workspace_members',
-        headers: { Authorization: 'Bearer attacker' },
-      },
-      req,
+    await expect(
+      attio.customApiCall({
+        input: {
+          method: 'GET',
+          path: '/workspace_members',
+          headers: { Authorization: 'Bearer attacker' },
+        },
+        req,
+      }),
+    ).rejects.toThrow("cannot set the 'Authorization' header");
+
+    await expect(
+      attio.customApiCall({ input: { method: 'GET', path: '/workspace_members' }, req }),
+    ).resolves.toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { data: true },
     });
 
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(String(fetch.mock.calls[0]?.[0])).toBe('https://api.attio.com/v2/workspace_members');
     expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get('authorization')).toBe(
       'Bearer attio-token',
     );

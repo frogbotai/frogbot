@@ -1,32 +1,8 @@
-import { z } from 'zod';
+import { defineCustomApiCall } from '../define.js';
 
-import { defineAction } from '../define.js';
-
-const json = z.json();
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Call a Notion API endpoint with the configured credential.',
-  input: z.object({
-    method: z.enum(['GET', 'POST', 'PATCH', 'DELETE']),
-    path: z
-      .string()
-      .startsWith('/')
-      .refine((path) => !path.split('/').includes('..')),
-    query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-    body: json.optional(),
-  }),
-  output: json,
-  async run({ client, input, req }) {
-    const result = await client.request({
-      method: input.method,
-      path: input.path,
-      query: input.query,
-      body: input.body,
-      redirect: 'manual',
-      signal: req.signal ?? undefined,
-    });
-
-    return json.parse(result);
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Notion',
+  baseUrl: 'https://api.notion.com/v1',
+  headers: { 'notion-version': '2022-02-22' },
+  authorize: ({ client, headers }) => client.authorize(headers),
 });

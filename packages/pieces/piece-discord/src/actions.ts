@@ -1,9 +1,9 @@
 import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import { type DiscordClient, discordObject, discordResponse } from './client.js';
+import { type DiscordClient, discordObject } from './client.js';
 import { channelId, type DiscordOptions, guildId, roleId } from './config.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 import { discordAttachment, loadDiscordAttachment } from './files.js';
 import { channelOptions, guildOptions, roleOptions } from './options.js';
 
@@ -433,33 +433,8 @@ export const deleteRole = defineAction({
   },
 });
 
-const customApiInput = z.object({
-  path: z.string().regex(/^\/(?!\/)/, 'Path must be relative to the Discord API.'),
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
-  headers: z.record(z.string(), z.string()).default({}),
-  queryParams: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
-  body: z.unknown().optional(),
-});
-
-export const sendApiRequest = defineAction({
-  slug: 'sendApiRequest',
-  description: 'Send an authenticated request to a relative Discord API path.',
-  input: customApiInput,
-  output: discordResponse,
-  idempotent: false,
-  async run({ client, input }) {
-    const url = new URL(`https://discord.com${input.path}`);
-
-    for (const [key, value] of Object.entries(input.queryParams)) {
-      url.searchParams.set(key, String(value));
-    }
-
-    return client.request({
-      method: input.method,
-      path: `${url.pathname}${url.search}`,
-      headers: input.headers,
-      body: input.body as Record<string, unknown> | undefined,
-      redirect: 'manual',
-    });
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Discord',
+  baseUrl: (client) => client.apiUrl,
+  authorize: ({ client, url, headers }) => client.authorize(url, headers),
 });

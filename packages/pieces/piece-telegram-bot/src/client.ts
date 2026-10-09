@@ -39,26 +39,6 @@ export class TelegramApiError extends Error {
   }
 }
 
-export type TelegramRequest = {
-  method?: string;
-  headers?: Record<string, string>;
-  query?: Record<string, unknown>;
-  body?: unknown;
-  redirect?: RequestRedirect;
-};
-
-function queryString(query: Record<string, unknown> | undefined) {
-  const params = new URLSearchParams();
-
-  Object.entries(query ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) params.set(key, String(value));
-  });
-
-  const value = params.toString();
-
-  return value ? `?${value}` : '';
-}
-
 function apiError({
   method,
   response,
@@ -98,7 +78,13 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
     return url.href;
   }
 
+  const basePath = new URL(apiUrl).pathname.replace(/\/+$/, '');
+
   return {
+    apiUrl,
+    authorize(url: URL) {
+      url.href = botUrl(`${url.pathname.slice(basePath.length + 1)}${url.search}`);
+    },
     fileUrl(path: string) {
       return `${apiUrl}/file/bot${auth.botToken}/${path.replace(/^\/+/, '')}`;
     },
@@ -113,32 +99,6 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
       const result = telegramResponse.parse(await response.json());
 
       if (!response.ok || !result.ok) throw apiError({ method, response, result });
-
-      return result;
-    },
-    async request(endpoint: string, request: TelegramRequest): Promise<unknown> {
-      const path = endpoint.replace(/^\/+/, '');
-      const response = await fetch(botUrl(`${path}${queryString(request.query)}`), {
-        method: request.method ?? 'GET',
-        headers:
-          request.body === undefined
-            ? request.headers
-            : { 'Content-Type': 'application/json', ...request.headers },
-        body: request.body === undefined ? undefined : JSON.stringify(request.body),
-        redirect: request.redirect,
-      });
-
-      if (request.redirect === 'manual' && response.status >= 300 && response.status < 400) {
-        throw new Error(
-          `Telegram API redirected (${response.status}) to ${response.headers.get('location')}.`,
-        );
-      }
-
-      const result = telegramResponse.parse(await response.json());
-
-      if (!response.ok || (typeof result.ok === 'boolean' && !result.ok)) {
-        throw apiError({ method: path, response, result });
-      }
 
       return result;
     },

@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
 import { folderOptions } from '../../../packages/pieces/piece-google-drive/src/actions/list.js';
 import { folderMimeType } from '../../../packages/pieces/piece-google-drive/src/schemas.js';

@@ -2,14 +2,13 @@ import { createPieceFile, filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import {
-  slackApiResult,
   type SlackClient,
   slackResponse,
   type SlackToken,
   slackValue,
   slackValues,
 } from './client.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 import { loadSlackFile, slackFile } from './files.js';
 import { channelOptions, userOptions } from './options.js';
 
@@ -732,44 +731,15 @@ export const updateUserGroupMembers = defineAction({
   },
 });
 
-const customApiInput = z.object({
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
-  path: z.string().regex(/^[a-zA-Z][a-zA-Z0-9._-]*$/),
-  headers: z.record(z.string(), z.string()).default({}),
-  queryParams: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
-  body: z.record(z.string(), z.unknown()).optional(),
-  useUserToken: z.boolean().default(false),
-});
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Call one relative Slack Web API method.',
-  input: customApiInput,
-  output: slackApiResult,
-  idempotent: false,
-  async run({ client, input }) {
-    const query = new URLSearchParams();
-
-    for (const [key, value] of Object.entries(input.queryParams)) query.set(key, String(value));
-
-    const suffix = query.size ? `?${query}` : '';
-    const headers = new Headers(input.headers);
-
-    headers.delete('authorization');
-    headers.delete('cookie');
-    headers.delete('host');
-
-    if (input.body !== undefined && !headers.has('content-type')) {
-      headers.set('content-type', 'application/json; charset=utf-8');
+export const customApiCall = defineCustomApiCall({
+  name: 'Slack',
+  baseUrl: 'https://slack.com/api',
+  path: /^\/[a-zA-Z][a-zA-Z0-9._-]*$/,
+  authorize: ({ client, headers }) => client.authorize(headers),
+  check({ body }) {
+    if (body && typeof body === 'object' && 'ok' in body && body.ok === false) {
+      throw new Error(`Slack API error: ${'error' in body ? String(body.error) : 'unknown_error'}`);
     }
-
-    return client.raw({
-      path: `${input.path}${suffix}`,
-      method: input.method,
-      headers,
-      body: input.body === undefined ? undefined : JSON.stringify(input.body),
-      token: input.useUserToken ? 'user' : 'bot',
-    });
   },
 });
 

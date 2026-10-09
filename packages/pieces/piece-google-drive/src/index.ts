@@ -18,7 +18,6 @@ import { listFiles, searchFiles } from './actions/list.js';
 import { createPermission, deletePermission, setPublicAccess } from './actions/permissions.js';
 import { createGoogleDriveClient, googleDriveAuth } from './client.js';
 
-export type { CustomApiCallInput, CustomApiCallOutput } from './actions/customApiCall.js';
 export type {
   CopyFileInput,
   CreateFileInput,

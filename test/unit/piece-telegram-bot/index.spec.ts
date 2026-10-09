@@ -1,5 +1,5 @@
 import type { FrogBotRequest as PieceRequest } from 'frogbot/pieces';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
@@ -355,5 +355,42 @@ describe('telegram-bot', () => {
     await expect(
       createTelegramBot({ auth }).getChat({ input: { chatId: 10 }, req: req() }),
     ).rejects.toThrow('Telegram API getChat failed (400): Bad Request: chat not found');
+  });
+
+  it('calls Bot API methods through customApiCall and throws on ok: false', async () => {
+    vi.stubEnv('TELEGRAM_API_BASE_URL', 'https://telegram.proxy.test/base/');
+
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response({ id: 7 }))
+      .mockResolvedValueOnce(
+        Response.json({ ok: false, error_code: 400, description: 'Bad Request: chat not found' }),
+      );
+
+    vi.stubGlobal('fetch', fetch);
+    const telegram = createTelegramBot({ auth });
+
+    await expect(
+      telegram.customApiCall({
+        input: { method: 'GET', path: 'getMe', query: { a: 1 } },
+        req: req(),
+      }),
+    ).resolves.toMatchObject({ status: 200, body: { ok: true, result: { id: 7 } } });
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
+      'https://telegram.proxy.test/base/bottelegram_test_key/getMe?a=1',
+    );
+
+    await expect(
+      telegram.customApiCall({ input: { method: 'POST', path: 'getChat', body: {} }, req: req() }),
+    ).rejects.toThrow('Telegram API error: Bad Request: chat not found');
+
+    await expect(
+      telegram.customApiCall({ input: { method: 'GET', path: 'file/getMe' }, req: req() }),
+    ).rejects.toThrow("Telegram custom API path '/file/getMe' is not allowed.");
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });

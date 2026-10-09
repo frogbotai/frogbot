@@ -32,6 +32,12 @@ function encode(values: Record<string, unknown>): URLSearchParams {
   return params;
 }
 
+function checkOrigin(url: URL) {
+  if (url.origin !== 'https://api.stripe.com') {
+    throw new Error('[frogbot] Stripe request URL must stay on https://api.stripe.com.');
+  }
+}
+
 export function createStripeClient({ auth }: { auth: StripeAuth }) {
   const baseUrl = 'https://api.stripe.com/v1';
 
@@ -53,9 +59,7 @@ export function createStripeClient({ auth }: { auth: StripeAuth }) {
   ) {
     const url = new URL(path.replace(/^\//, ''), `${baseUrl}/`);
 
-    if (url.origin !== 'https://api.stripe.com') {
-      throw new Error('[frogbot] Stripe request URL must stay on https://api.stripe.com.');
-    }
+    checkOrigin(url);
 
     const params = encode(values);
 
@@ -95,7 +99,10 @@ export function createStripeClient({ auth }: { auth: StripeAuth }) {
 
   return {
     request,
-    requestResponse,
+    authorize(url: URL, headers: Headers) {
+      checkOrigin(url);
+      headers.set('authorization', `Bearer ${auth.apiKey}`);
+    },
     async options(resource: string, label: (item: StripeResponse) => string) {
       const response = await request(resource, 'GET', { limit: 100 });
       const data = Array.isArray(response.data) ? (response.data as StripeResponse[]) : [];

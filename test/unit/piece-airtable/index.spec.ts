@@ -224,7 +224,13 @@ describe('native Airtable', () => {
         {
           slug: 'customApiCall',
           input: { method: 'GET', path: '/whoami' },
-          expect: { result: { id: 'usr1' } },
+          expect: {
+            result: {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+              body: { id: 'usr1' },
+            },
+          },
         },
       ],
       triggers: [
@@ -254,7 +260,7 @@ describe('native Airtable', () => {
 
     await expect(
       piece.customApiCall({ input: { method: 'GET', path: '/bad' }, req }),
-    ).rejects.toThrow('Airtable request failed (422)');
+    ).rejects.toThrow('[frogbot] Airtable API request failed (422)');
   });
 
   it('rejects malformed record responses', async () => {

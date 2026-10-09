@@ -7,6 +7,7 @@ import {
   banMember,
   createChannel,
   createRole,
+  customApiCall,
   deleteChannel,
   deleteRole,
   findChannel,
@@ -15,7 +16,6 @@ import {
   removeRoleFromMember,
   renameChannel,
   requestApproval,
-  sendApiRequest,
   sendMessage,
   sendWebhookMessage,
   unbanMember,
@@ -47,7 +47,7 @@ export const discordActions = [
   'createRole',
   'deleteRole',
   'banMember',
-  'sendApiRequest',
+  'customApiCall',
 ] as const;
 export const discordTriggers = [
   'commandReceived',
@@ -129,7 +129,7 @@ export const createDiscord = definePiece({
     createRole,
     deleteRole,
     banMember,
-    sendApiRequest,
+    customApiCall,
   ],
   triggers: [commandReceived, componentReceived, messageCreated, reactionAdded, reactionRemoved],
 });

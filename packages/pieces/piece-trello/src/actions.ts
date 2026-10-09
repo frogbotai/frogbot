@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 import { loadAttachment } from './files.js';
 import { boardOptions, labelOptions, listOptions } from './options.js';
 import { attachmentOutput, cardOutput, emptyOutput } from './schemas.js';
@@ -162,30 +162,8 @@ export const deleteCardAttachment = defineAction({
   },
 });
 
-const customInput = z.object({
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
-  path: z.string().startsWith('/'),
-  headers: z.record(z.string(), z.string()).optional(),
-  query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  body: z.json().optional(),
-});
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Make an authenticated Trello API call.',
-  input: customInput,
-  output: z.json(),
-  idempotent: false,
-  async run({ client, input }) {
-    return client.request(input.path, {
-      method: input.method,
-      headers: {
-        ...input.headers,
-        ...(input.body === undefined ? {} : { 'Content-Type': 'application/json' }),
-      },
-      body: input.body === undefined ? undefined : JSON.stringify(input.body),
-      query: input.query,
-      redirect: 'manual',
-    });
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Trello',
+  baseUrl: 'https://api.trello.com/1',
+  authorize: ({ client, url }) => client.authorize(url),
 });

@@ -72,8 +72,7 @@ describe('brave-search', () => {
         method: 'POST',
         path: '/web/search',
         headers: { 'X-Test': 'yes' },
-        queryParams: { q: 'frogs', tag: ['green', 'small'] },
-        bodyType: 'json',
+        query: { q: 'frogs', tag: ['green', 'small'] },
         body: { count: 2 },
       },
       req: req(),
@@ -90,11 +89,34 @@ describe('brave-search', () => {
       redirect: 'manual',
     });
     expect(Object.fromEntries(new Headers(options.headers))).toMatchObject({
+      accept: 'application/json',
       'content-type': 'application/json',
       'x-subscription-token': 'brave-test-key',
       'x-test': 'yes',
     });
-    expect(result).toMatchObject({ status: 201, body: { ok: true } });
+    expect(result).toEqual({
+      status: 201,
+      headers: { 'content-type': 'application/json', 'x-fixture': 'brave' },
+      body: { ok: true },
+    });
+  });
+
+  it('refuses a caller subscription token header', async () => {
+    const fetch = vi.fn();
+
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      createBraveSearch({ auth: { apiKey: 'brave-test-key' } }).customApiCall({
+        input: {
+          method: 'GET',
+          path: '/web/search',
+          headers: { 'x-subscription-token': 'attacker' },
+        },
+        req: req(),
+      }),
+    ).rejects.toThrow("cannot set the 'x-subscription-token' header");
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('rejects invalid auth and search counts before transport', async () => {

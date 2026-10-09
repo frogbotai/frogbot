@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { signal } from './client.js';
 import { contentType, identifier, meetingIdentifierType } from './config.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 import { channels, chats, members, teams } from './options.js';
 import {
   channel,
@@ -341,35 +341,11 @@ export const getMeetingRecording = defineAction({
   },
 });
 
-const customInput = z.object({
-  method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']),
-  path: z.string().min(1),
-  query: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-  body: z.json().optional(),
-});
-
-const customOutput = z.object({ status: z.number().int(), body: z.json() });
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Make an authenticated JSON request within Microsoft Graph v1.0.',
-  input: customInput,
-  output: customOutput,
-  idempotent: false,
-  async run({ client, input, req }) {
-    const target = new URL(input.path, `${client.baseUrl}/v1.0/`);
-
-    if (target.origin !== client.baseUrl || !target.pathname.startsWith('/v1.0/')) {
-      throw new Error('Custom API calls must target Microsoft Graph v1.0 in the configured cloud.');
-    }
-
-    return client.custom(target.toString(), z.json(), {
-      method: input.method,
-      query: input.query,
-      body: input.body,
-      signal: signal(req),
-    });
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Microsoft Graph',
+  description: 'Make an authenticated request within Microsoft Graph v1.0.',
+  baseUrl: (client) => `${client.baseUrl}/v1.0`,
+  authorize: ({ client, url, headers }) => client.authorize(url, headers),
 });
 
 export const microsoftTeamsActionDefinitions = [

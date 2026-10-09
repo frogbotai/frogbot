@@ -238,20 +238,25 @@ describe('trello', () => {
 
     vi.stubGlobal('fetch', fetch);
 
-    await createTrello({ auth }).customApiCall({
-      input: {
-        method: 'POST',
-        path: '/boards',
-        query: { fields: 'name' },
-        body: { name: 'Board' },
-      },
-      req: req(),
-    });
+    await expect(
+      createTrello({ auth }).customApiCall({
+        input: {
+          method: 'POST',
+          path: '/boards',
+          query: { fields: 'name' },
+          body: { name: 'Board' },
+        },
+        req: req(),
+      }),
+    ).resolves.toMatchObject({ status: 200, body: { ok: true } });
 
     const url = new URL(String(fetch.mock.calls[0][0]));
 
     expect(url.origin).toBe('https://api.trello.com');
+    expect(url.pathname).toBe('/1/boards');
     expect(url.searchParams.get('fields')).toBe('name');
+    expect(url.searchParams.get('key')).toBe(auth.username);
+    expect(url.searchParams.get('token')).toBe(auth.password);
     expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ name: 'Board' });
   });
 

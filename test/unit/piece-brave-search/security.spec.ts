@@ -1,6 +1,16 @@
 import { afterEach, expect, it, vi } from 'vitest';
 
-import { createBraveSearchClient } from '../../../packages/pieces/piece-brave-search/src/client.js';
+vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+
+import { createBraveSearch } from '../../../packages/pieces/piece-brave-search/src/index.js';
+
+const auth = { apiKey: 'brave-test' };
+const req = {
+  frogbot: {
+    connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
+  },
+  user: null,
+} as never;
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -14,9 +24,12 @@ it('does not follow redirects with the Brave credential', async () => {
 
   vi.stubGlobal('fetch', fetch);
 
-  const client = createBraveSearchClient({ auth: { apiKey: 'brave-test' } });
-
-  await client.request({ path: '/web/search', followRedirects: true, failsafe: true });
+  await expect(
+    createBraveSearch({ auth }).customApiCall({
+      input: { method: 'GET', path: '/web/search' },
+      req,
+    }),
+  ).rejects.toThrow('Brave Search API redirected (302) to https://attacker.example/collect.');
 
   expect(fetch).toHaveBeenCalledOnce();
   expect(fetch.mock.calls[0]?.[1]?.redirect).toBe('manual');
@@ -24,14 +37,15 @@ it('does not follow redirects with the Brave credential', async () => {
 
 it('keeps custom request paths on the Brave API origin', async () => {
   const fetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+
   vi.stubGlobal('fetch', fetch);
 
-  const client = createBraveSearchClient({ auth: { apiKey: 'brave-test' } });
+  await expect(
+    createBraveSearch({ auth }).customApiCall({
+      input: { method: 'GET', path: '//attacker.example/collect' },
+      req,
+    }),
+  ).rejects.toThrow('custom API path must be relative to the Brave Search API');
 
-  await client.request({ path: '//attacker.example/collect' });
-
-  expect(fetch).toHaveBeenCalledOnce();
-  expect(fetch.mock.calls[0]?.[0]).toEqual(
-    new URL('https://api.search.brave.com/res/v1//attacker.example/collect'),
-  );
+  expect(fetch).not.toHaveBeenCalled();
 });

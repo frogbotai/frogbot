@@ -180,24 +180,37 @@ describe('zoom', () => {
         input: {
           method: 'POST',
           path: '/meetings/123',
-          headers: { Authorization: 'Bearer attacker', 'x-test': 'safe' },
+          headers: { 'x-test': 'safe' },
           query: { occurrence_id: 'one' },
           body: { topic: 'Safe' },
         },
         req,
       }),
-    ).resolves.toEqual({ ok: true });
-    expect(fetch).toHaveBeenCalledWith(
-      new URL('https://api.zoom.us/v2/meetings/123?occurrence_id=one'),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          authorization: 'Bearer stored-access',
-          'x-test': 'safe',
-        }),
-      }),
+    ).resolves.toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { ok: true },
+    });
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
+      'https://api.zoom.us/v2/meetings/123?occurrence_id=one',
     );
+
+    const headers = new Headers(fetch.mock.calls[0]?.[1]?.headers);
+
+    expect(headers.get('authorization')).toBe('Bearer stored-access');
+    expect(headers.get('x-test')).toBe('safe');
     await expect(
-      zoom.customApiCall({ input: { path: '//evil.example/steal' }, req }),
+      zoom.customApiCall({
+        input: {
+          method: 'GET',
+          path: '/users/me',
+          headers: { Authorization: 'Bearer attacker' },
+        },
+        req,
+      }),
+    ).rejects.toThrow();
+    await expect(
+      zoom.customApiCall({ input: { method: 'GET', path: '//evil.example/steal' }, req }),
     ).rejects.toThrow('must be relative');
     expect(fetch).toHaveBeenCalledTimes(1);
   });

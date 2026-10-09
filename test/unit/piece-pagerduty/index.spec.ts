@@ -176,10 +176,10 @@ describe('pagerduty', () => {
     expect(fetch.mock.calls[1]?.[0].toString()).toContain('offset=100');
   });
 
-  it('keeps custom calls on PagerDuty without caller-controlled headers', async () => {
+  it('keeps custom calls on PagerDuty with the linked credential', async () => {
     const fetch = vi
       .fn()
-      .mockResolvedValueOnce(response({ ok: true }))
+      .mockResolvedValueOnce(Response.json({ ok: true }))
       .mockResolvedValueOnce(response({ error: { message: 'Denied' } }, 403));
 
     vi.stubGlobal('fetch', fetch);
@@ -191,21 +191,26 @@ describe('pagerduty', () => {
         input: {
           method: 'POST',
           path: '/incidents',
-          queryParams: { a: ['1', '2'] },
+          query: { a: ['1', '2'] },
+          headers: { From: 'ops@example.com' },
           body: { x: 1 },
         },
       }),
-    ).resolves.toEqual({ ok: true });
+    ).resolves.toMatchObject({ status: 200, body: { ok: true } });
 
-    expect(fetch.mock.calls[0]?.[1]?.headers).toMatchObject({
-      Authorization: 'Token token=pd_test_key',
-    });
+    expect(String(fetch.mock.calls[0]?.[0])).toBe('https://api.pagerduty.com/incidents?a=1&a=2');
+
+    const headers = new Headers(fetch.mock.calls[0]?.[1]?.headers);
+
+    expect(headers.get('authorization')).toBe('Token token=pd_test_key');
+    expect(headers.get('accept')).toBe('application/vnd.pagerduty+json;version=2');
+    expect(headers.get('from')).toBe('ops@example.com');
     await expect(
       piece.customApiCall({
         req: req(),
-        input: { method: 'GET', path: '//example.com/collect', queryParams: {} },
+        input: { method: 'GET', path: '//example.com/collect' },
       }),
-    ).rejects.toThrow('Path must target the PagerDuty API.');
+    ).rejects.toThrow('PagerDuty custom API path must be relative to the PagerDuty API.');
     await expect(piece.getIncident({ req: req(), input: { incidentId: 'P1' } })).rejects.toThrow(
       'Denied',
     );

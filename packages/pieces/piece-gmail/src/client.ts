@@ -15,3 +15,12 @@ export function createGmailClient({ auth }: { auth: unknown }) {
 
   return google.gmail({ version: 'v1', auth: oauth });
 }
+
+export async function authorize(client: Gmail, url: URL, headers: Headers) {
+  const auth = client.context._options.auth;
+  if (!auth || typeof auth === 'string') {
+    throw new Error('[frogbot] Gmail client is missing authenticated transport.');
+  }
+
+  (await auth.getRequestHeaders(url)).forEach((value, key) => headers.set(key, value));
+}

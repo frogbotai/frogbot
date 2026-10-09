@@ -32,12 +32,16 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
     return credential.accessToken;
   }
 
-  function url(path: string, query?: RequestOptions['query']) {
-    const target = new URL(path, `${baseUrl}/v1.0/`);
-
+  function assertCloudUrl(target: URL) {
     if (target.origin !== baseUrl || target.username || target.password) {
       throw new Error('Microsoft Graph URL must stay within the configured cloud.');
     }
+  }
+
+  function url(path: string, query?: RequestOptions['query']) {
+    const target = new URL(path, `${baseUrl}/v1.0/`);
+
+    assertCloudUrl(target);
 
     for (const [name, value] of Object.entries(query ?? {})) {
       target.searchParams.set(name, String(value));
@@ -137,11 +141,9 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
     list,
     page: getPage,
     meetingId,
-    async custom<T>(path: string, schema: z.ZodType<T>, options?: RequestOptions) {
-      const response = await raw(path, options);
-      const value: unknown = response.status === 204 ? null : await response.json();
-
-      return { status: response.status, body: schema.parse(value) };
+    authorize(target: URL, headers: Headers) {
+      assertCloudUrl(target);
+      headers.set('authorization', `Bearer ${accessToken()}`);
     },
   };
 }

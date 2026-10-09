@@ -12,18 +12,21 @@ export type TrelloWebhook = {
 
 export type Trello = ReturnType<typeof createTrelloClient>;
 
+function refuseCredentialQuery(url: URL, query?: Query) {
+  const names = [...url.searchParams.keys(), ...Object.keys(query ?? {})];
+
+  if (names.some((name) => /^(key|token)$/i.test(name))) {
+    throw new Error('[frogbot] Trello query must not set `key` or `token`.');
+  }
+}
+
 export function createTrelloClient({ auth }: { auth: unknown }) {
   const credential = trelloAuth.parse(auth);
 
   async function request<T>(path: string, init: RequestInit & { query?: Query } = {}): Promise<T> {
     const url = new URL(`https://api.trello.com/1/${path.replace(/^\//, '')}`);
 
-    const names = [...url.searchParams.keys(), ...Object.keys(init.query ?? {})];
-
-    if (names.some((name) => /^(key|token)$/i.test(name))) {
-      throw new Error('[frogbot] Trello query must not set `key` or `token`.');
-    }
-
+    refuseCredentialQuery(url, init.query);
     url.searchParams.set('key', credential.username);
     url.searchParams.set('token', credential.password);
 
@@ -50,6 +53,11 @@ export function createTrelloClient({ auth }: { auth: unknown }) {
 
   return {
     request,
+    authorize(url: URL) {
+      refuseCredentialQuery(url);
+      url.searchParams.set('key', credential.username);
+      url.searchParams.set('token', credential.password);
+    },
     verifyWebhook(body: Buffer, signature: string | null, webhookUrl: string) {
       if (!signature || !/^[A-Za-z\d+/]{27}=$/.test(signature)) return false;
 

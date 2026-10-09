@@ -2,7 +2,7 @@ import { createPieceFile, filesCollectionSlug } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { TwilioClient } from './client.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 
 const resource = z.looseObject({ sid: z.string() });
 const phoneNumber = z.string().min(1);
@@ -20,13 +20,6 @@ const downloadRecordingInput = z.object({
   recordingSid: z.string().min(1),
   format: z.enum(['mp3', 'wav']).default('mp3'),
   channels: z.union([z.literal(1), z.literal(2)]).optional(),
-});
-
-const customApiCallInput = z.object({
-  method: z.string().default('GET'),
-  path: z.string().regex(/^\/(?!\/)/),
-  query: z.record(z.string(), z.unknown()).optional(),
-  body: z.record(z.string(), z.unknown()).optional(),
 });
 
 async function phoneNumberOptions({ client }: { client: TwilioClient }) {
@@ -162,12 +155,9 @@ export const downloadRecording = defineAction({
   },
 });
 
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Make a custom Twilio REST API call',
-  input: customApiCallInput,
-  output: z.unknown(),
-  async run({ input, client }) {
-    return client.request({ ...input, redirect: 'manual' });
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Twilio',
+  baseUrl: 'https://api.twilio.com',
+  bodyEncoding: 'form',
+  authorize: ({ client, url, headers }) => client.authorize(url, headers),
 });

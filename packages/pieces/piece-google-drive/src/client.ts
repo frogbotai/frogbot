@@ -19,6 +19,15 @@ export function createGoogleDriveClient({ auth }: { auth: unknown }): GoogleDriv
   return google.drive({ version: 'v3', auth: oauth });
 }
 
+export async function authorize(client: GoogleDriveClient, url: URL, headers: Headers) {
+  const auth = client.context._options.auth;
+  if (!auth || typeof auth === 'string') {
+    throw new Error('[frogbot] Google Drive client has no authenticated transport.');
+  }
+
+  (await auth.getRequestHeaders(url)).forEach((value, key) => headers.set(key, value));
+}
+
 export function requestOptions(req: FrogBotRequest) {
   req.signal?.throwIfAborted();
 

@@ -45,7 +45,7 @@ Use `mentionRoleIds` for role mentions, `respondToChannelIds` for channels where
 | `createGuildRole`          | `createGuildRole`        | `createRole`           |                                                                                             |
 | `deleteGuildRole`          | `deleteGuildRole`        | `deleteRole`           |                                                                                             |
 | `ban_guild_member`         | `banGuildMember`         | `banMember`            |                                                                                             |
-| `custom_api_call`          | `customApiCall`          | `sendApiRequest`       | Restricts requests to relative Discord API paths so the bot token cannot be sent elsewhere. |
+| `custom_api_call`          | `customApiCall`          | `customApiCall`        | Restricts requests to relative Discord API paths so the bot token cannot be sent elsewhere. |
 
 ## Triggers
 

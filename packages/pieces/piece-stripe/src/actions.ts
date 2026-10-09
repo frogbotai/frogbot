@@ -2,7 +2,7 @@ import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { StripeClient, StripeResponse } from './client.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 
 const output = z.record(z.string(), z.json());
 const metadata = z.record(z.string(), z.string()).optional();
@@ -483,32 +483,12 @@ export const findInvoice = action({
   idempotent: true,
 });
 
-const customOutput = z.object({
-  status: z.number().int(),
-  headers: z.record(z.string(), z.string()),
-  body: z.record(z.string(), z.json()),
-});
-
-const customInput = z.object({
-  method: z.enum(['DELETE', 'GET', 'POST']),
-  path: z.string().regex(/^\/(?!\/)/, 'Path must be relative to the Stripe API.'),
-  query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  body: z.record(z.string(), z.unknown()).optional(),
-});
-
-export const sendRequest = defineAction({
-  slug: 'sendRequest',
-  description: 'Send an authenticated request to the Stripe API.',
-  input: customInput,
-  output: customOutput,
-  async run({ client, input }) {
-    return client.requestResponse(
-      input.path,
-      input.method,
-      input.method === 'GET' ? input.query : input.body,
-      'manual',
-    );
-  },
+export const customApiCall = defineCustomApiCall({
+  name: 'Stripe',
+  baseUrl: 'https://api.stripe.com',
+  bodyEncoding: 'form',
+  formArrays: 'index',
+  authorize: ({ client, url, headers }) => client.authorize(url, headers),
 });
 
 export const stripeActionDefinitions = [
@@ -530,7 +510,7 @@ export const stripeActionDefinitions = [
   deactivatePaymentLink,
   getPaymentIntent,
   findInvoice,
-  sendRequest,
+  customApiCall,
 ] as const;
 
 export type { StripeResponse };

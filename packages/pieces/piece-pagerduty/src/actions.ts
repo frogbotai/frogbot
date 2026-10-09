@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 
 const incident = z.object({ id: z.string(), status: z.string().optional() }).passthrough();
 const incidentOutput = incident;
@@ -195,29 +195,10 @@ export const getIncident = defineAction({
 export const acknowledgeIncident = updateIncident('acknowledgeIncident', 'acknowledged');
 export const resolveIncident = updateIncident('resolveIncident', 'resolved');
 
-const customApiCallInput = z.object({
-  method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']),
-  path: z.string().startsWith('/'),
-  queryParams: z.record(z.string(), z.union([z.string(), z.array(z.string())])).default({}),
-  body: z.json().optional(),
-});
-
-const customApiCallOutput = z.json();
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
+export const customApiCall = defineCustomApiCall({
+  name: 'PagerDuty',
   description: 'Make a custom PagerDuty REST API v2 call.',
-  input: customApiCallInput,
-  output: customApiCallOutput,
-  async run({ input, client }) {
-    const response = await client.request({
-      method: input.method,
-      path: input.path,
-      query: input.queryParams,
-      body: input.body,
-      redirect: 'manual',
-    });
-
-    return customApiCallOutput.parse(response);
-  },
+  baseUrl: 'https://api.pagerduty.com',
+  headers: { Accept: 'application/vnd.pagerduty+json;version=2' },
+  authorize: ({ client, headers }) => client.authorize(headers),
 });

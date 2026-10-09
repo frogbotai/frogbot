@@ -106,7 +106,11 @@ describe('twilio', () => {
     await piece.getMessage({ input: { messageSid: 'SM/1' }, req });
 
     await piece.customApiCall({
-      input: { method: 'POST', path: '/2010-04-01/test.json', body: { Value: 3 } },
+      input: {
+        method: 'POST',
+        path: '/2010-04-01/test.json',
+        body: { Value: 3, Media: { Url: 'https://x.test/a.png' } },
+      },
       req,
     });
 
@@ -118,8 +122,13 @@ describe('twilio', () => {
     );
     expect((fetch.mock.calls[1]?.[1]?.body as URLSearchParams).get('Timeout')).toBe('30');
     expect((fetch.mock.calls[2]?.[0] as URL).pathname).toContain('/Messages/SM%2F1.json');
+    expect(String(fetch.mock.calls[3]?.[0])).toBe('https://api.twilio.com/2010-04-01/test.json');
+    expect(new Headers(fetch.mock.calls[3]?.[1]?.headers).get('authorization')).toBe(
+      `Basic ${Buffer.from('AC_test:token').toString('base64')}`,
+    );
     expect(Object.fromEntries(fetch.mock.calls[3]?.[1]?.body as URLSearchParams)).toEqual({
       Value: '3',
+      'Media[Url]': 'https://x.test/a.png',
     });
   });
 
@@ -133,7 +142,7 @@ describe('twilio', () => {
         input: { method: 'GET', path: '//attacker.example/collect' },
         req,
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow('[frogbot] Twilio custom API path must be relative to the Twilio API.');
     expect(fetch).not.toHaveBeenCalled();
   });
 

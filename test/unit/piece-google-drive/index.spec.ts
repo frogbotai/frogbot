@@ -28,7 +28,10 @@ import {
 } from '../../../packages/pieces/piece-google-drive/src/index.js';
 import { auth, fixture, json, metadata, networkFixture } from './fixtures.js';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('native Google Drive contract', () => {
   it('exposes exactly 16 semantic actions, typed schemas, and no triggers', () => {
@@ -98,6 +101,7 @@ describe('native Google Drive contract', () => {
       return json(metadata);
     });
 
+    vi.stubGlobal('fetch', network);
     const setCredentials = google.auth.OAuth2.prototype.setCredentials;
 
     vi.spyOn(google.auth.OAuth2.prototype, 'setCredentials').mockImplementation(function (

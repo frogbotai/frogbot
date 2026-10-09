@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { AttioClient } from './client.js';
-import { defineAction } from './define.js';
+import { defineAction, defineCustomApiCall } from './define.js';
 
 const jsonObject = z.record(z.string(), z.unknown());
 const resource = jsonObject;
@@ -403,39 +403,9 @@ export const attioActions = [
       });
     },
   }),
-  defineAction({
-    slug: 'customApiCall',
-    description: 'Make a custom Attio API call',
-    input: z.object({
-      method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'HEAD']),
-      path: z
-        .string()
-        .startsWith('/')
-        .refine((path) => !path.split('/').includes('..'), {
-          message: 'Path cannot contain parent segments.',
-        }),
-      headers: z.record(z.string(), z.string()).optional(),
-      query: z.record(z.string(), z.unknown()).optional(),
-      body: z.unknown().optional(),
-    }),
-    output: z.object({
-      status: z.number(),
-      headers: z.record(z.string(), z.string()),
-      body: z.unknown(),
-    }),
-    run: ({ input, client, req }) => {
-      if (!input.path) throw new Error('Path is required.');
-
-      return client.request({
-        method: input.method,
-        path: input.path,
-        headers: input.headers,
-        query: input.query,
-        body: input.body,
-        rawResponse: true,
-        redirect: 'manual',
-        signal: req.signal ?? undefined,
-      });
-    },
+  defineCustomApiCall({
+    name: 'Attio',
+    baseUrl: 'https://api.attio.com/v2',
+    authorize: ({ client, headers }) => client.authorize(headers),
   }),
 ];

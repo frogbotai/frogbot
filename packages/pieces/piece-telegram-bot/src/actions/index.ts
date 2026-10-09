@@ -2,7 +2,7 @@ import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { TelegramBotClient } from '../client.js';
-import { defineAction } from '../define.js';
+import { defineAction, defineCustomApiCall } from '../define.js';
 import { loadTelegramFile, telegramFile } from '../files.js';
 
 const jsonValue: z.ZodType<unknown> = z.lazy(() =>
@@ -391,24 +391,16 @@ export const answerCallbackQuery = telegramAction(
   }),
 );
 
-const customOutput = z.unknown();
-const customInput = z.object({
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).default('GET'),
-  endpoint: z
-    .string()
-    .regex(/^[A-Za-z][A-Za-z0-9_]*$/, 'Endpoint must be a Telegram Bot API method.'),
-  headers: z.record(z.string(), z.string()).optional(),
-  query: z.record(z.string(), jsonValue).optional(),
-  body: jsonValue.optional(),
-});
+export const customApiCall = defineCustomApiCall({
+  name: 'Telegram',
+  baseUrl: (client) => client.apiUrl,
+  path: /^\/[A-Za-z][A-Za-z0-9_]*$/,
+  authorize: ({ client, url }) => client.authorize(url),
+  check({ body }) {
+    if (body && typeof body === 'object' && 'ok' in body && body.ok === false) {
+      const description = 'description' in body ? String(body.description) : 'unknown error';
 
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Call a Telegram Bot API endpoint directly.',
-  input: customInput,
-  output: customOutput,
-  idempotent: false,
-  async run({ client, input }) {
-    return client.request(input.endpoint, { ...input, redirect: 'manual' });
+      throw new Error(`Telegram API error: ${description}`);
+    }
   },
 });

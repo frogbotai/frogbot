@@ -49,7 +49,7 @@ describe('resend', () => {
       createBroadcast: false,
       sendBroadcast: false,
       deleteBroadcast: false,
-      customApiCall: undefined,
+      customApiCall: false,
     });
   });
 
@@ -250,24 +250,34 @@ describe('resend', () => {
       createResend({ auth }).customApiCall({
         input: {
           method: 'POST',
-          url: '/custom',
+          path: '/custom',
           headers: { 'X-Custom': 'value' },
-          queryParams: { page: 2 },
-          body_type: 'json',
-          body: { data: { name: 'FrogBot' } },
+          query: { page: 2 },
+          body: { name: 'FrogBot' },
         },
         req,
       }),
-    ).resolves.toMatchObject({ status: 201, body: { ok: true } });
-    expect(fetch.mock.calls[0]?.[0].searchParams.get('page')).toBe('2');
-    expect(fetch.mock.calls[0]?.[1]?.headers).toMatchObject({ 'X-Custom': 'value' });
-    expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toEqual({ name: 'FrogBot' });
+    ).resolves.toEqual({
+      status: 201,
+      headers: { 'content-type': 'application/json', 'x-result': 'created' },
+      body: { ok: true },
+    });
+
+    const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
+    const headers = new Headers(init.headers);
+
+    expect(String(url)).toBe('https://api.resend.com/custom?page=2');
+    expect(headers.get('x-custom')).toBe('value');
+    expect(headers.get('authorization')).toBe('Bearer sk-test');
+    expect(JSON.parse(init.body as string)).toEqual({ name: 'FrogBot' });
   });
 
   it('encodes custom multipart forms and raw bodies', async () => {
     const fetch = vi
       .fn()
-      .mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 })),
+      );
 
     vi.stubGlobal('fetch', fetch);
     const auth = { apiKey: 'sk-test' };
@@ -283,18 +293,9 @@ describe('resend', () => {
     await resend.customApiCall({
       input: {
         method: 'POST',
-        url: '/form',
-        body_type: 'form_data',
-        body: {
-          data: [
-            { fieldName: 'name', fieldType: 'text', textFieldValue: 'FrogBot' },
-            {
-              fieldName: 'file',
-              fieldType: 'file',
-              fileFieldValue: { data: new Uint8Array([1, 2]), filename: 'file.bin' },
-            },
-          ],
-        },
+        path: '/form',
+        bodyType: 'formData',
+        body: { name: 'FrogBot', tags: ['a', 'b'] },
       },
       req,
     });
@@ -302,10 +303,10 @@ describe('resend', () => {
     const form = fetch.mock.calls[0]?.[1]?.body as FormData;
 
     expect(form.get('name')).toBe('FrogBot');
-    expect((form.get('file') as File).name).toBe('file.bin');
+    expect(form.getAll('tags')).toEqual(['a', 'b']);
 
     await resend.customApiCall({
-      input: { method: 'POST', url: '/raw', body_type: 'raw', body: { data: 'raw body' } },
+      input: { method: 'POST', path: '/raw', bodyType: 'raw', body: 'raw body' },
       req,
     });
 
@@ -336,14 +337,23 @@ describe('resend', () => {
 
     await expect(
       createResend({ auth }).customApiCall({
-        input: { method: 'GET', url: '/binary', response_is_binary: true },
+        input: { method: 'GET', path: '/binary', responseType: 'binary', fileName: 'output.pdf' },
         req,
       }),
-    ).resolves.toMatchObject({ status: 200, body: '/api/files/output.pdf' });
+    ).resolves.toMatchObject({
+      status: 200,
+      body: {
+        name: 'output.pdf',
+        mimeType: 'application/pdf',
+        size: 3,
+        url: '/api/files/output.pdf',
+      },
+    });
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'files',
         file: expect.objectContaining({ name: 'output.pdf' }),
+        overrideAccess: false,
       }),
     );
   });

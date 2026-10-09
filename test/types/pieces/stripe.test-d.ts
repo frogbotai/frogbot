@@ -28,7 +28,7 @@ const _createCustomerRejectsGetInvoiceInput = () =>
   // @ts-expect-error createCustomer does not accept getInvoice input
   stripe.createCustomer({ input: { invoiceId: 'in_123' } });
 
-const _response = stripe.sendRequest({ input: { method: 'GET', path: '/customers' } });
+const _response = stripe.customApiCall({ input: { method: 'GET', path: '/v1/customers' } });
 
 expectTypeOf<Awaited<typeof _response>['status']>().toEqualTypeOf<number>();
 

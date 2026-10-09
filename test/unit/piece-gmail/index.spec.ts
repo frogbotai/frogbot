@@ -212,7 +212,7 @@ describe('gmail', () => {
   });
 
   it('maps get, search, and custom API calls', async () => {
-    const { gmail, transport } = await fixture();
+    const { gmail } = await fixture();
 
     await expect(gmail.getEmail({ input: { messageId: 'original' }, req })).resolves.toMatchObject({
       id: 'original',
@@ -230,6 +230,15 @@ describe('gmail', () => {
         req,
       }),
     ).resolves.toEqual([expect.objectContaining({ id: 'found' })]);
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'Label_1', name: 'Work' }), {
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
     await expect(
       gmail.customApiCall({
         input: {
@@ -240,14 +249,17 @@ describe('gmail', () => {
         },
         req,
       }),
-    ).resolves.toEqual({ ok: true });
-    expect(
-      transport.mock.calls.some(
-        ([config]) =>
-          config.url === 'https://gmail.googleapis.com/gmail/v1/users/me/labels' &&
-          config.params.view === 'full',
-      ),
-    ).toBe(true);
+    ).resolves.toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { id: 'Label_1', name: 'Work' },
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+
+    expect(String(url)).toBe('https://gmail.googleapis.com/gmail/v1/users/me/labels?view=full');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer google-test');
+    expect(init.body).toBe(JSON.stringify({ name: 'Work' }));
   });
 
   it('getEmail returns a full message without attachments when no files collection exists', async () => {

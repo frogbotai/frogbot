@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { defineAction } from './define.js';
-import { fileReference, loadFile, savedFile, saveFile } from './files.js';
+import { defineAction, defineCustomApiCall } from './define.js';
+import { savedFile, saveFile } from './files.js';
 import { requestOptions, sheetInput } from './shared.js';
 
 const exportInput = sheetInput.extend({
@@ -80,119 +80,14 @@ export const exportWorksheet = defineAction({
   },
 });
 
-const customInput = z.object({
-  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']).default('GET'),
-  path: z.string().startsWith('/'),
-  query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  body: z
-    .union([
-      z.object({ type: z.literal('json'), value: z.json() }),
-      z.object({ type: z.literal('raw'), value: z.string() }),
-      z.object({
-        type: z.literal('form'),
-        fields: z.array(
-          z.union([
-            z.object({ name: z.string(), value: z.string() }),
-            z.object({ name: z.string(), file: fileReference }),
-          ]),
-        ),
-      }),
-    ])
-    .optional(),
-  binary: z.boolean().default(false),
-  filename: z.string().min(1).default('response.bin'),
-  failOnError: z.boolean().default(true),
-  timeoutMs: z.number().int().positive().max(300_000).default(30_000),
-});
-
-export const customApiCall = defineAction({
-  slug: 'customApiCall',
-  description: 'Call a Sheets v4 endpoint under /spreadsheets with redirects disabled.',
-  input: customInput,
-  output: z.object({
-    status: z.number().int(),
-    headers: z.record(z.string(), z.string()),
-    body: z.json().optional(),
-    file: savedFile.optional(),
-  }),
-  idempotent: false,
-  async run({ client, req, input }) {
-    const url = new URL(`https://sheets.googleapis.com/v4${input.path}`);
-    if (
-      /[\\\r\n]/.test(input.path) ||
-      url.origin !== 'https://sheets.googleapis.com' ||
-      !/^\/v4\/spreadsheets(?:\/|$|:)/.test(url.pathname) ||
-      url.hash ||
-      url.username ||
-      url.password
-    ) {
-      throw new Error('Custom API paths must remain inside the Google Sheets v4 spreadsheets API.');
-    }
-
-    const headers = new Headers(input.headers);
-
-    for (const name of headers.keys()) {
-      if (
-        ['authorization', 'cookie', 'host', 'proxy-authorization', 'x-goog-api-key'].includes(name)
-      ) {
-        throw new Error(`Custom header '${name}' is reserved.`);
-      }
-    }
-
-    let data: string | number | boolean | object | undefined;
-    if (input.body?.type === 'form') {
-      const form = new FormData();
-
-      for (const field of input.body.fields) {
-        if ('value' in field) form.append(field.name, field.value);
-        else {
-          const file = await loadFile({ req, file: field.file });
-          form.append(field.name, file.blob, file.name);
-        }
-      }
-
-      data = form;
-    } else if (input.body) {
-      data = input.body.value === null ? 'null' : input.body.value;
-      if (input.body.type === 'json' && !headers.has('content-type')) {
-        headers.set('content-type', 'application/json');
-      }
-    }
-
-    const response = await client.auth.request({
-      ...requestOptions(req),
-      url: url.toString(),
-      method: input.method,
-      params: input.query,
-      headers,
-      data,
-      timeout: input.timeoutMs,
-      responseType: input.binary ? 'arraybuffer' : 'json',
-      validateStatus: (status) =>
-        input.failOnError ? status >= 200 && status < 300 : status < 300 || status >= 400,
-    });
-
-    const result = {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-    };
-
-    if (input.binary) {
-      return {
-        ...result,
-        file: await saveFile({
-          req,
-          data: Buffer.from(response.data as ArrayBuffer),
-          name: input.filename,
-          mimeType: response.headers.get('content-type') ?? 'application/octet-stream',
-        }),
-      };
-    }
-
-    return {
-      ...result,
-      body: response.data == null || response.data === '' ? null : z.json().parse(response.data),
-    };
+export const customApiCall = defineCustomApiCall({
+  name: 'Google Sheets',
+  description:
+    'Call a Sheets v4 endpoint under /spreadsheets with the connected credential. Returns { status, headers, body }.',
+  baseUrl: 'https://sheets.googleapis.com/v4',
+  path: /^\/spreadsheets(?:[/:]|$)/,
+  reservedHeaders: ['x-goog-api-key'],
+  authorize: async ({ client, url, headers }) => {
+    (await client.auth.getRequestHeaders(url)).forEach((value, key) => headers.set(key, value));
   },
 });

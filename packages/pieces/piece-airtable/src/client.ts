@@ -90,5 +90,9 @@ export function createAirtableClient({ auth }: { auth: unknown }) {
     return values;
   }
 
-  return { request, listAll };
+  function authorize(headers: Headers) {
+    headers.set('authorization', `Bearer ${personalAccessToken}`);
+  }
+
+  return { request, listAll, authorize };
 }

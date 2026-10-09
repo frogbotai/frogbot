@@ -123,7 +123,14 @@ describe('posthog', () => {
     expect(fetch.mock.calls[0]?.[0].toString()).toBe(
       'https://app.posthog.com/api/projects/?limit=10',
     );
-    expect(result).toMatchObject({ status: 200, body: { results: [] } });
+    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get('authorization')).toBe(
+      'Bearer phx_test',
+    );
+    expect(result).toEqual({
+      status: 200,
+      headers: { 'content-type': 'application/json', 'x-request-id': 'request-1' },
+      body: { results: [] },
+    });
   });
 
   it('rejects external custom URLs and reports PostHog failures', async () => {
@@ -132,7 +139,7 @@ describe('posthog', () => {
         input: { method: 'GET', path: 'https://example.com/api' },
         req,
       }),
-    ).rejects.toThrow('Path must target the PostHog API.');
+    ).rejects.toThrow('PostHog custom API path must be relative to the PostHog API.');
 
     vi.stubGlobal(
       'fetch',

@@ -76,7 +76,6 @@ describe('stripe actions', () => {
     ['deactivatePaymentLink', { paymentLinkId: 'plink_1' }, 'POST', '/v1/payment_links/plink_1'],
     ['getPaymentIntent', { paymentIntentId: 'pi_1' }, 'GET', '/v1/payment_intents/pi_1'],
     ['findInvoice', { invoiceId: 'in_1' }, 'GET', '/v1/invoices/in_1'],
-    ['sendRequest', { method: 'GET', path: '/balance' }, 'GET', '/v1/balance'],
   ] as const)(
     'runs %s through the controlled Stripe transport',
     async (slug, input, method, path) => {
@@ -125,22 +124,34 @@ describe('stripe actions', () => {
     ).rejects.toThrow('Stripe request failed (404): No such customer');
   });
 
-  it('returns the real status and headers from custom API calls', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ deleted: true }), {
-          status: 202,
-          headers: { 'Content-Type': 'application/json', 'x-request-id': 'request' },
-        }),
-      ),
+  it('sends custom API calls form-encoded and returns the response envelope', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ deleted: true }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'request' },
+      }),
     );
 
-    const result = await createStripe({ auth }).sendRequest({
-      input: { method: 'DELETE', path: '/customers/cus_1', body: { cascade: true } },
+    vi.stubGlobal('fetch', fetch);
+
+    const result = await createStripe({ auth }).customApiCall({
+      input: {
+        method: 'POST',
+        path: '/v1/customers/cus_1',
+        body: { metadata: { tier: 'gold' }, name: 'Frog', expand: ['customer'] },
+      },
       req: req(),
     });
 
+    const [url, init] = fetch.mock.calls[0] as [URL, RequestInit];
+
+    expect(String(url)).toBe('https://api.stripe.com/v1/customers/cus_1');
+    expect(new Headers(init.headers).get('authorization')).toBe(`Bearer ${auth.apiKey}`);
+    expect(Object.fromEntries(init.body as URLSearchParams)).toEqual({
+      'metadata[tier]': 'gold',
+      name: 'Frog',
+      'expand[0]': 'customer',
+    });
     expect(result).toEqual({
       status: 202,
       headers: { 'content-type': 'application/json', 'x-request-id': 'request' },
