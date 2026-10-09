@@ -167,6 +167,15 @@
     ],
     "exclude": []
   },
+  "vertex": {
+    "correct": [
+      {
+        "id": "vertex/gemini-embedding-001",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      }
+    ]
+  },
   "voyage": {
     "add": [
       {

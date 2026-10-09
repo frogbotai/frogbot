@@ -140,6 +140,50 @@ describe('model catalog sync', () => {
     );
   });
 
+  it('syncs google-vertex as vertex, keeping only Gemini and Claude models', async () => {
+    const { buildCatalogs } = await loadSync();
+
+    const vertexModel = (id: string, extra: Record<string, unknown> = {}) => ({
+      id,
+      name: id,
+      modalities: { input: ['text'], output: ['text'] },
+      limit: { context: 1_000_000, output: 64_000 },
+      cost: { input: 1, output: 2 },
+      ...extra,
+    });
+
+    const { catalog, gateway } = buildCatalogs({
+      overlays: {},
+      source: {
+        'google-vertex': {
+          id: 'google-vertex',
+          npm: '@ai-sdk/google-vertex',
+          models: {
+            'gemini-current': vertexModel('gemini-current'),
+            'claude-current@default': vertexModel('claude-current@default', {
+              provider: { npm: '@ai-sdk/google-vertex/anthropic' },
+            }),
+            'partner-model': vertexModel('partner-model', {
+              provider: { npm: '@ai-sdk/openai-compatible', api: 'https://example.test/v1' },
+            }),
+            'gemini-retired': vertexModel('gemini-retired', { status: 'deprecated' }),
+          },
+        },
+      },
+    });
+
+    expect(catalog).toEqual([
+      { id: 'vertex/claude-current@default', mode: 'chat', provider: 'vertex' },
+      { id: 'vertex/gemini-current', mode: 'chat', provider: 'vertex' },
+    ]);
+    expect(
+      gateway.find(({ id }: { id: string }) => id === 'vertex/claude-current@default'),
+    ).toMatchObject({
+      providers: ['vertex'],
+      sdk: { npm: '@ai-sdk/google-vertex/anthropic' },
+    });
+  });
+
   it('leaves source and overlay fixtures unchanged when applying corrections', async () => {
     const { buildCatalogs } = await loadSync();
     const originalSource = structuredClone(source);

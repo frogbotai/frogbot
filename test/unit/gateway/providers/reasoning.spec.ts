@@ -295,6 +295,41 @@ describe('resolveReasoningVariants — Google', () => {
   });
 });
 
+describe('resolveReasoningVariants — Vertex', () => {
+  const catalogArgs = (modelId: string) => {
+    const entry = DEFAULT_MODEL_CATALOG.get(modelId);
+
+    return {
+      modelId,
+      options: entry?.capabilities.reasoningOptions,
+      outputLimit: entry?.context.output,
+    };
+  };
+
+  it('offers Gemini presets under the vertex namespace', () => {
+    const args = catalogArgs('vertex/gemini-3.5-flash');
+
+    expect(keys(args)).toEqual(['minimal', 'low', 'medium', 'high']);
+    expect(variant(args, 'high')?.providerOptions).toEqual({
+      vertex: { thinkingConfig: { includeThoughts: true, thinkingLevel: 'high' } },
+    });
+  });
+
+  it('offers Claude the Anthropic presets under the anthropic namespace', () => {
+    const vertex = resolveReasoningVariants(catalogArgs('vertex/claude-sonnet-4-6@default'));
+    const anthropic = resolveReasoningVariants({
+      ...catalogArgs('vertex/claude-sonnet-4-6@default'),
+      modelId: 'anthropic/claude-sonnet-4-6',
+    });
+
+    expect(vertex.length).toBeGreaterThan(0);
+    expect(vertex).toEqual(anthropic);
+    expect(vertex.every((item) => Object.keys(item.providerOptions).join() === 'anthropic')).toBe(
+      true,
+    );
+  });
+});
+
 describe('resolveReasoningVariants — Bedrock', () => {
   it('sends Claude efforts through reasoningConfig with adaptive thinking', () => {
     const args = {
@@ -543,7 +578,6 @@ describe('resolveReasoningVariants — unsupported input', () => {
   });
 
   it('returns nothing for families FrogBot does not route', () => {
-    expect(keys({ modelId: 'vertex/gemini-3.6-flash', options: [effort('low')] })).toEqual([]);
     expect(keys({ modelId: 'azure/gpt-5.6', options: [effort('low')] })).toEqual([]);
     expect(keys({ modelId: 'local/qwen', options: [effort('low')] })).toEqual([]);
   });

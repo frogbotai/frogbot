@@ -2,6 +2,7 @@ import type { JSONObject, SharedV4ProviderOptions } from '@ai-sdk/provider';
 
 import { DEFAULT_MODEL_CATALOG } from './catalog.data.js';
 import type { ModelReasoningOption } from './catalog.js';
+import { isVertexAnthropicModel } from './vertex/models.js';
 
 export type ReasoningVariant = {
   key: string;
@@ -281,6 +282,12 @@ function reasoningTarget(args: ResolveReasoningVariantsArgs) {
 
   if (provider === 'bedrock' && sdk?.npm === '@ai-sdk/amazon-bedrock/mantle') {
     return { id, namespace: 'openai', protocol: openaiResponses };
+  }
+
+  if (provider === 'vertex') {
+    return isVertexAnthropicModel(args.modelId)
+      ? { id, namespace: 'anthropic', protocol: anthropicMessages }
+      : { id, namespace: 'vertex', protocol: gemini };
   }
 
   const protocol = PROTOCOLS.get(provider);

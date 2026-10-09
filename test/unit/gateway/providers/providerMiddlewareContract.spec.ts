@@ -103,18 +103,18 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     expect(validEfforts).toContain(effort as (typeof validEfforts)[number]);
   });
 
-  it('vertexThinkingBudget emits the SDK-read google.thinkingConfig.thinkingBudget key', () => {
+  it('vertexThinkingBudget emits the SDK-read vertex.thinkingConfig.thinkingBudget key', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       unknown: { reasoning_effort: 'high' },
     };
 
-    void vertexThinkingBudget(
+    void vertexThinkingBudget('vertex')(
       makeArgs({ model: 'vertex/gemini-2.5-pro', providerOptions, maxOutputTokens: 4096 }),
     );
 
-    const google = providerOptions['google'] as GoogleGenerativeAIProviderOptions;
+    const vertex = providerOptions['vertex'] as GoogleGenerativeAIProviderOptions;
 
-    expect(google.thinkingConfig?.thinkingBudget).toBeTypeOf('number');
+    expect(vertex.thinkingConfig?.thinkingBudget).toBeTypeOf('number');
   });
 
   it('vercelBeforeUpstream emits SDK-read Anthropic and OpenAI option keys', async () => {

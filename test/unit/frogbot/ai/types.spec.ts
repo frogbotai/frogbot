@@ -9,6 +9,7 @@ import type {
   BuiltInProviderEntry,
   ModelId,
   ProviderConfig,
+  VertexProviderEntry,
 } from '../../../../packages/frogbot/src/ai/types.js';
 import type { FrogBotTypes } from '../../../../packages/frogbot/src/types/generated.js';
 
@@ -41,6 +42,44 @@ describe('AI config types', () => {
       accessKeyId: string;
       secretAccessKey: string;
     }>().not.toMatchTypeOf<BedrockProviderEntry>();
+  });
+
+  it('accepts Vertex from the environment or with a project and location', () => {
+    expectTypeOf<true>().toMatchTypeOf<ProviderConfig['vertex']>();
+
+    const reproduction: AIConfig = {
+      defaultModel: 'vertex/gemini-3.5-flash',
+      providers: { vertex: { project: 'example-project', location: 'global' } },
+    };
+
+    const full: VertexProviderEntry = {
+      project: 'example-project',
+      location: 'global',
+      googleAuthOptions: { keyFilename: '/secrets/sa.json' },
+      anthropic: { location: 'us-east5' },
+      models: ['gemini-3.5-flash', 'claude-sonnet-4-6@default'],
+    };
+
+    expectTypeOf(reproduction.providers.vertex).toMatchTypeOf<ProviderConfig['vertex']>();
+    expectTypeOf(full).toMatchTypeOf<ProviderConfig['vertex']>();
+    expectTypeOf<'vertex/claude-sonnet-4-6@default'>().toMatchTypeOf<ModelId>();
+  });
+
+  it('rejects incomplete or key-based Vertex entries', () => {
+    const entries: ProviderConfig['vertex'][] = [
+      // @ts-expect-error a Vertex entry needs a project
+      { location: 'global' },
+      // @ts-expect-error a Vertex entry needs a location
+      { project: 'example-project' },
+      // @ts-expect-error Vertex uses Google credentials, not an API key
+      { project: 'example-project', location: 'global', apiKey: 'key' },
+      // @ts-expect-error a Vertex model must be in the vertex catalog
+      { project: 'example-project', location: 'global', models: ['gpt-4o'] },
+      // @ts-expect-error googleAuthOptions are google-auth-library options
+      { project: 'example-project', location: 'global', googleAuthOptions: { keyFilename: 1 } },
+    ];
+
+    expectTypeOf(entries).toBeArray();
   });
 
   it('uses the catalog as the pre-generation agent model fallback', () => {

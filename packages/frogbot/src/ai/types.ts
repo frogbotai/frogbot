@@ -1,4 +1,4 @@
-import type { ModelReasoningOption } from '@frogbotai/gateway';
+import type { GatewayConfig, ModelReasoningOption } from '@frogbotai/gateway';
 import type {
   DataContent,
   Experimental_EvaluationQuestion,
@@ -61,9 +61,25 @@ export type BedrockProviderEntry = (
 ) &
   BedrockModels;
 
+export type VertexProviderEntry = {
+  project: string;
+  location: string;
+  /** Passed unchanged to google-auth-library; Application Default Credentials fill the rest. */
+  googleAuthOptions?: Extract<
+    GatewayConfig['providers']['vertex'],
+    { googleAuthOptions?: unknown }
+  >['googleAuthOptions'];
+  /** Claude on Vertex. Its `location` overrides the shared one. */
+  anthropic?: { location: string };
+  models?: ProviderModelName<'vertex'>[];
+  apiKey?: never;
+};
+
 type ProviderEntry<P extends ProviderName = ProviderName> = true | BuiltInProviderEntry<P>;
 
 type BedrockEntry = true | BedrockProviderEntry;
+
+type VertexEntry = true | VertexProviderEntry;
 
 export type CustomProviderEntry = {
   type: 'openai-compatible';
@@ -74,9 +90,13 @@ export type CustomProviderEntry = {
 };
 
 export type ProviderConfig = {
-  [K in ProviderName]?: K extends 'bedrock' ? BedrockEntry : ProviderEntry<K>;
+  [K in ProviderName]?: K extends 'bedrock'
+    ? BedrockEntry
+    : K extends 'vertex'
+      ? VertexEntry
+      : ProviderEntry<K>;
 } & {
-  [customKey: string]: ProviderEntry | BedrockEntry | CustomProviderEntry | undefined;
+  [customKey: string]: ProviderEntry | BedrockEntry | VertexEntry | CustomProviderEntry | undefined;
 };
 
 export type ModelMode =

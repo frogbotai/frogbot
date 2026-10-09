@@ -60,11 +60,28 @@ export default buildConfig({
 })
 ```
 
-Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `togetherai`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, `replicate`, `typesafe-ai`, and `vercel`. See [TypeSafe AI setup](/gateway/providers#typesafe-ai-evaluation) for its server-side credential and evaluation-only models.
+Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `vertex`, `groq`, `mistral`, `cohere`, `togetherai`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, `replicate`, `typesafe-ai`, `openrouter`, and `vercel`. See [TypeSafe AI setup](/gateway/providers#typesafe-ai-evaluation) for its server-side credential and evaluation-only models.
 
 Model IDs use `<provider>/<model>`, where `<provider>` is the exact key you used under `ai.providers`, such as `bedrock/...` or `togetherai/...`. Replicate's `apiKey` maps to its `apiToken` option. Bedrock uses bearer tokens first, then explicit SigV4 keys, then the AWS default credential chain.
 
 Use `{ apiKey: process.env.CUSTOM_KEY }` only for an alternate credential. Explicit keys must be non-empty. Bedrock accepts `true`, `{ region }`, paired `{ accessKeyId, secretAccessKey, sessionToken? }` overrides, or a custom `credentialProvider`. In Node.js, the default chain supports AWS profiles and IAM Identity Center, web identity, ECS task roles, and EC2 instance profiles. Install the optional `@aws-sdk/credential-providers` peer dependency to use this fallback. Edge runtimes must provide an edge-compatible `credentialProvider` instead.
+
+Vertex AI serves Gemini and Claude through one `vertex` entry, using Google Cloud Application Default Credentials (ADC) instead of an API key:
+
+```ts
+ai: {
+  defaultModel: 'vertex/gemini-3.5-flash',
+  providers: {
+    vertex: {
+      project: 'example-project',
+      location: 'global',
+      anthropic: { location: 'us-east5' }
+    }
+  }
+}
+```
+
+Call Gemini as `vertex/gemini-3.5-flash` and Claude as `vertex/claude-sonnet-4-6@default`. `vertex: true` reads the project and location from `GOOGLE_VERTEX_PROJECT` and `GOOGLE_VERTEX_LOCATION`. Locally, ADC uses the credentials from `gcloud auth application-default login`. In deployment, it uses the attached service account or workload identity, so no key file is needed. Pass `googleAuthOptions`, such as `{ keyFilename }` or `{ credentials }`, to use another identity. ADC needs Node.js, so the `vertex` provider doesn't run on edge runtimes. Before calling Claude, enable each Claude model for the project in the Vertex AI Model Garden, accepting Anthropic's terms there, and make sure the project has quota for it in the Claude location.
 
 Add an OpenAI-compatible endpoint with any non-built-in key. Its `models` list is required for validation, and calls use the custom key as the provider prefix.
 
@@ -102,7 +119,7 @@ A provider's `models` list decides what the app can use, while an [agent's `mode
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `providers` | `Record<string, true \| BuiltInProviderEntry \| BedrockProviderEntry \| CustomProviderEntry>` | Required | Providers keyed by name. At least one entry must be set. A built-in key takes `true` or [built-in provider options](#built-in-provider-options), `bedrock` takes `true` or [Bedrock provider options](#bedrock-provider-options), and any other key needs [custom provider options](#custom-provider-options). |
+| `providers` | `Record<string, true \| BuiltInProviderEntry \| BedrockProviderEntry \| VertexProviderEntry \| CustomProviderEntry>` | Required | Providers keyed by name. At least one entry must be set. A built-in key takes `true` or [built-in provider options](#built-in-provider-options), `bedrock` takes `true` or [Bedrock provider options](#bedrock-provider-options), `vertex` takes `true` or [Vertex provider options](#vertex-provider-options), and any other key needs [custom provider options](#custom-provider-options). |
 | `routers` | `Record<string, RouterConfig>` | `{}` | Aliases from a slug to one model ID. See [Router options](#router-options). |
 | `defaultModel` | `ModelId` | — | Model or router slug for agents that set no `model` and no `model.default`. Must resolve to a configured provider. |
 | `smallModel` | `ModelId` | A recent low-cost model from the active model's provider | Model or router slug for internal utility calls such as naming chats. Must be a configured chat model. See [Choose a utility model](#choose-a-utility-model). |
@@ -133,6 +150,20 @@ Pass `true` to use bearer tokens or the AWS default credential chain, or an obje
 | `sessionToken` | `string` | — | Temporary session token for the explicit keys. |
 | `credentialProvider` | `() => Promise<{ accessKeyId: string; secretAccessKey: string; sessionToken?: string }>` | — | Returns AWS credentials for each request. Use it for edge runtimes or custom credential sources; can't be combined with explicit keys. |
 | `models` | `string[]` | Every Bedrock catalog model | Allowlist of Bedrock catalog model names, as for [built-in providers](#built-in-provider-options). |
+
+### Vertex provider options
+
+Pass `true` to read the project and location from the environment, or an object with both:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `project` | `string` | Required | Google Cloud project ID. Must be non-empty. |
+| `location` | `string` | Required | Vertex AI location, such as `global` or `us-central1`. Must be non-empty. |
+| `googleAuthOptions` | `GoogleAuthOptions` | Application Default Credentials | Passed unchanged to `google-auth-library`, such as `{ keyFilename }` or `{ credentials }`. |
+| `anthropic` | `{ location: string }` | `location` | Location for Claude models, which share the project and credentials. Set it when a Claude model isn't served from the shared location. |
+| `models` | `string[]` | Every Vertex catalog model | Allowlist of Vertex catalog model names, such as `gemini-3.5-flash` or `claude-sonnet-4-6@default`, as for [built-in providers](#built-in-provider-options). |
+
+An `apiKey` or any other key fails startup: Vertex API keys (express mode) don't work for Claude, and the `google` provider already takes a Gemini API key.
 
 ### Custom provider options
 

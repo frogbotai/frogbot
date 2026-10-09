@@ -51,7 +51,15 @@ function languageModel(modelId: string): GatewayLanguageModel {
   };
 
   return definition
-    .build({ apiKey: 'test', region: 'us-east-1' })
+    .build({
+      apiKey: 'test',
+      region: 'us-east-1',
+      project: 'test-project',
+      location: 'global',
+      googleAuthOptions: {
+        authClient: { getAccessToken: () => Promise.resolve({ token: 'adc' }) },
+      },
+    })
     .languageModel(name) as GatewayLanguageModel;
 }
 

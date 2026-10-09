@@ -146,6 +146,7 @@ Some providers accept more options. Each row is written as `<key>.<option>` and 
 | `vercel.metadataCacheRefreshMillis` | `number` | `300000` | How often Vercel's model metadata cache refreshes, in milliseconds. |
 | `vertex.project` | `string` | `GOOGLE_VERTEX_PROJECT` | Google Cloud project. |
 | `vertex.location` | `string` | `GOOGLE_VERTEX_LOCATION` | Google Cloud location, such as `us-central1`. |
+| `vertex.anthropic` | `{ location?: string }` | `vertex.location` | Settings for Claude models, which share the project and credentials. `location` overrides the shared location, since some Claude models aren't served from `global`. Claude needs a project and a location, from config or the environment, and fails at request time without them. Express-mode API keys don't work for Claude. |
 | `vertex.apiKey` | `string` | `GOOGLE_VERTEX_API_KEY` | API key for Vertex express mode. Without it, Vertex uses Google Cloud application credentials. |
 | `vertex.googleAuthOptions` | `GoogleAuthOptions` | Application default credentials | Options for `google-auth-library`, such as `credentials` or `keyFile`. |
 | `vertex.headers` | `Record<string, string \| undefined>`, a promise of one, or a function returning either | — | Extra headers. Unlike other providers, Vertex can resolve them per request. |

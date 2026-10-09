@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../../packages/gateway/src/hooks.js';
-import { vertexThinkingBudget } from '../../../../../packages/gateway/src/providers/vertex/middleware.js';
+import {
+  vertexBeforeUpstream,
+  vertexThinkingBudget,
+} from '../../../../../packages/gateway/src/providers/vertex/middleware.js';
 
 function makeArgs(
   model: string,
@@ -24,27 +27,36 @@ function makeArgs(
   };
 }
 
+async function runVertexHooks(args: BeforeUpstreamHookArgs) {
+  for (const hook of vertexBeforeUpstream) {
+    await hook(args);
+  }
+}
+
 describe('vertexThinkingBudget', () => {
-  it('maps reasoning_effort to google.thinkingConfig.thinkingBudget for Gemini', async () => {
+  const vertexBudget = vertexThinkingBudget('vertex');
+
+  it('maps reasoning_effort to thinkingConfig.thinkingBudget in the given namespace', async () => {
     const args = makeArgs('vertex/gemini-2.0-flash', {
       providerOptions: { unknown: { reasoning_effort: 'high' } },
       params: { maxOutputTokens: 16384 },
     });
 
-    await vertexThinkingBudget(args);
+    await vertexBudget(args);
 
-    expect(args.providerOptions['google']).toEqual({
+    expect(args.providerOptions['vertex']).toEqual({
       thinkingConfig: { thinkingBudget: 13107 },
     });
+    expect(args.providerOptions['google']).toBeUndefined();
   });
 
-  it('maps medium effort to 50%', async () => {
-    const args = makeArgs('vertex/gemini-2.0-flash', {
+  it('writes google when asked, for the AI Gateway creator hook', async () => {
+    const args = makeArgs('vercel/google/gemini-2.5-pro', {
       providerOptions: { unknown: { reasoning_effort: 'medium' } },
       params: { maxOutputTokens: 8192 },
     });
 
-    await vertexThinkingBudget(args);
+    await vertexThinkingBudget('google')(args);
 
     expect(args.providerOptions['google']).toEqual({
       thinkingConfig: { thinkingBudget: 4096 },
@@ -56,22 +68,22 @@ describe('vertexThinkingBudget', () => {
       providerOptions: { unknown: { reasoning_effort: 'high' } },
     });
 
-    await vertexThinkingBudget(args);
+    await vertexBudget(args);
 
-    expect(args.providerOptions['google']).toBeUndefined();
+    expect(args.providerOptions['vertex']).toBeUndefined();
   });
 
-  it('skips if google.thinkingConfig is already set', async () => {
+  it('keeps an explicit thinkingConfig in its namespace', async () => {
     const args = makeArgs('vertex/gemini-2.0-flash', {
       providerOptions: {
         unknown: { reasoning_effort: 'high' },
-        google: { thinkingConfig: { thinkingBudget: 999 } },
+        vertex: { thinkingConfig: { thinkingBudget: 999 } },
       },
     });
 
-    await vertexThinkingBudget(args);
+    await vertexBudget(args);
 
-    expect((args.providerOptions['google'] as any).thinkingConfig.thinkingBudget).toBe(999);
+    expect(args.providerOptions['vertex']).toEqual({ thinkingConfig: { thinkingBudget: 999 } });
   });
 
   it('skips if no reasoning_effort', async () => {
@@ -79,9 +91,9 @@ describe('vertexThinkingBudget', () => {
       providerOptions: {},
     });
 
-    await vertexThinkingBudget(args);
+    await vertexBudget(args);
 
-    expect(args.providerOptions['google']).toBeUndefined();
+    expect(args.providerOptions['vertex']).toBeUndefined();
   });
 
   it('applies minimum budget floor', async () => {
@@ -90,10 +102,83 @@ describe('vertexThinkingBudget', () => {
       params: { maxOutputTokens: 2048 },
     });
 
-    await vertexThinkingBudget(args);
+    await vertexBudget(args);
 
-    expect(args.providerOptions['google']).toEqual({
+    expect(args.providerOptions['vertex']).toEqual({
       thinkingConfig: { thinkingBudget: 1024 },
     });
+  });
+});
+
+describe('vertexBeforeUpstream', () => {
+  it('sends a Gemini thinking budget under vertex and leaves passthrough options for the route', async () => {
+    const args = makeArgs('vertex/gemini-3.5-flash', {
+      providerOptions: { unknown: { reasoning_effort: 'high', safety_settings: [] } },
+      params: { maxOutputTokens: 10_000 },
+    });
+
+    await runVertexHooks(args);
+
+    expect(args.providerOptions['vertex']).toEqual({
+      thinkingConfig: { thinkingBudget: 8000 },
+    });
+    expect(args.providerOptions['unknown']).toEqual({
+      reasoning_effort: 'high',
+      safety_settings: [],
+    });
+  });
+
+  it('maps a Claude request to Anthropic thinking and re-homes its options under anthropic', async () => {
+    const message = {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: 'hi',
+          providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+        },
+      ],
+    };
+
+    const args = makeArgs('vertex/claude-sonnet-4-6@default', {
+      messages: [message] as BeforeUpstreamHookArgs['messages'],
+      providerOptions: { unknown: { reasoning_effort: 'high', prompt_cache_key: 'k' } },
+      params: { maxOutputTokens: 10_000 },
+    });
+
+    await runVertexHooks(args);
+
+    expect(args.providerOptions).toEqual({
+      anthropic: {
+        thinking: { type: 'enabled', budgetTokens: 8000 },
+        reasoningEffort: 'high',
+        promptCacheKey: 'k',
+      },
+    });
+    expect(message.content[0]?.providerOptions).toEqual({
+      anthropic: { cacheControl: { type: 'ephemeral' } },
+    });
+  });
+
+  it('keeps an explicit anthropic.thinking on Claude', async () => {
+    const thinking = { type: 'enabled', budgetTokens: 2048 };
+    const args = makeArgs('vertex/claude-sonnet-4-6@default', {
+      providerOptions: { unknown: { reasoning_effort: 'high' }, anthropic: { thinking } },
+    });
+
+    await runVertexHooks(args);
+
+    expect(args.providerOptions['anthropic']?.['thinking']).toEqual(thinking);
+  });
+
+  it('treats a vertex id outside the catalog as Gemini', async () => {
+    const args = makeArgs('vertex/gemini-2.0-flash', {
+      providerOptions: { unknown: { reasoning_effort: 'high' } },
+    });
+
+    await runVertexHooks(args);
+
+    expect(args.providerOptions['vertex']).toHaveProperty('thinkingConfig');
+    expect(args.providerOptions['anthropic']).toBeUndefined();
   });
 });

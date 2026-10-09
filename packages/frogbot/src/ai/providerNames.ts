@@ -3,6 +3,7 @@ export const PROVIDER_NAMES = [
   'anthropic',
   'google',
   'bedrock',
+  'vertex',
   'groq',
   'mistral',
   'cohere',
