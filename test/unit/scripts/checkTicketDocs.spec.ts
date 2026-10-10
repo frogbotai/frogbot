@@ -445,6 +445,20 @@ describe('check ticket-docs', () => {
       ]);
     });
 
+    it('resolves a citation into another repo under ~/code/frogbot/', () => {
+      const cite = (span: string) =>
+        check(edit(RESEARCH, '- **Risks:** none.', `- **Risks:** see \`${span}\`.`));
+
+      expect(cite('~/code/frogbot/sidekick/src/loop.ts:2')).toEqual({
+        code: 0,
+        lines: ['ticket-docs: OK · 1 ticket'],
+      });
+
+      expect(cite('~/code/frogbot/sidekick/src/loop.ts:9').lines).toEqual([
+        `.idea/${RESEARCH}:12 \`~/code/frogbot/sidekick/src/loop.ts:9\`: line 9 is out of range (3 lines)`,
+      ]);
+    });
+
     it('warns once and passes when a reference repo is missing', () => {
       const result = check(
         edit(
@@ -477,6 +491,20 @@ describe('check ticket-docs', () => {
         `.idea/${GOOD}/issue.md:1 title "Great ticket" is "Good ticket" in audits/process/PLAN.md:7`,
         `.idea/${GOOD}/issue.md:3 Plan: P3, but audits/process/PLAN.md:7 says P1`,
         `.idea/${GOOD}/issue.md:3 Depends on: 899, but audits/process/PLAN.md:7 says none`,
+      ]);
+    });
+
+    it('accepts a Repo: field naming a known repo and rejects any other', () => {
+      const issue = (repo: string) => ({
+        [`${GOOD}/issue.md`]: fixture(`${GOOD}/issue.md`).replace(
+          'Batch: 1',
+          `Batch: 1 · Repo: ${repo}`,
+        ),
+      });
+
+      expect(check(issue('sidekick'))).toEqual({ code: 0, lines: ['ticket-docs: OK · 1 ticket'] });
+      expect(problems(issue('elsewhere'))).toEqual([
+        `.idea/${GOOD}/issue.md:3 Repo: "elsewhere" is not one of frogbot, sidekick`,
       ]);
     });
 

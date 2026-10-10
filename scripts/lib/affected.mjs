@@ -375,6 +375,8 @@ export function groupSize({ group, commands }) {
 
   const specs = commands.flatMap(specArgs).length;
 
+  if (specs === 0) return 'all';
+
   return `${specs} ${specs === 1 ? 'spec' : 'specs'}`;
 }
 

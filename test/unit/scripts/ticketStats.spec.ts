@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   busyIntervals,
+  inProject,
   readSessions,
   statsRows,
   summarize,
@@ -159,6 +160,19 @@ describe('ticketKey', () => {
     ['2110xy stage', null],
   ])('%s → %s', (title, key) => {
     expect(ticketKey(title)).toBe(key);
+  });
+});
+
+describe('inProject', () => {
+  it('counts the main checkout and its worktrees, plus any named repo checkouts', () => {
+    expect(inProject('/code/frogbot/frogbot-ticket264', main)).toBe(true);
+    expect(inProject('/code/frogbot/sidekick-ticket265', main)).toBe(false);
+
+    const checkouts = ['frogbot', 'sidekick'];
+
+    expect(inProject('/code/frogbot/sidekick-ticket265', main, checkouts)).toBe(true);
+    expect(inProject('/code/frogbot/sidekick', main, checkouts)).toBe(true);
+    expect(inProject('/code/elsewhere/sidekick', main, checkouts)).toBe(false);
   });
 });
 
