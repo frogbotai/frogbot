@@ -49,6 +49,17 @@ export const FULL_TIER = [
 
 export const BASE_GATES = ['check --full', 'test:unit', 'test:ui'];
 
+export const DEFAULT_REPO = 'frogbot';
+
+export const REPOS = {
+  frogbot: { dir: null, prefix: 'frogbot-ticket', gates: null },
+  sidekick: {
+    dir: 'sidekick',
+    prefix: 'sidekick-ticket',
+    gates: ['check', 'test:unit', 'test:e2e'],
+  },
+};
+
 export const LAND = 'land';
 
 export const VERIFY = 'verify';
@@ -88,7 +99,12 @@ const TICKET_KEY = /^(\d+)([a-z])?$/i;
 
 const BRANCH_TICKET = /(?:^|\/)ticket-?(\d+)([a-z])?(?=-|$)/i;
 
-const WORKTREE_TICKET = /frogbot-ticket(\d+)([a-z])?$/i;
+const WORKTREE_TICKET = new RegExp(
+  `(?:${Object.values(REPOS)
+    .map(({ prefix }) => prefix)
+    .join('|')})(\\d+)([a-z])?$`,
+  'i',
+);
 
 const REFLOG_MERGE = /^([0-9a-f]+) merge (\S+):/;
 
@@ -205,6 +221,7 @@ export function parseHeader(text) {
 
   const depends = fields.get('Depends on');
   const batch = fields.get('Batch');
+  const repo = fields.get('Repo') ?? DEFAULT_REPO;
   const problems = [];
 
   if (depends === undefined) problems.push('missing "Depends on:"');
@@ -214,10 +231,15 @@ export function parseHeader(text) {
 
   if (!BATCH.test(batch)) problems.push(`Batch: "${batch}" is not a number, none or deferred`);
 
+  if (!Object.hasOwn(REPOS, repo)) {
+    problems.push(`Repo: "${repo}" is not one of ${Object.keys(REPOS).join(', ')}`);
+  }
+
   return {
     line: index + 1,
     depends: depends && DEPENDS.test(depends) ? depends.split(',').map(Number) : [],
     batch: number(batch) ?? batch,
+    repo,
     problems,
   };
 }
@@ -375,8 +397,28 @@ export function branchName({ type, ticket, slug }) {
   return `${type}/ticket-${ticket}-${slug}`;
 }
 
-export function worktreePath(main, ticket) {
-  return path.join(path.dirname(main), `frogbot-ticket${ticket}`);
+export function repoCheckout(main, repo = DEFAULT_REPO) {
+  const { dir } = REPOS[repo];
+
+  return dir ? path.join(path.dirname(main), dir) : main;
+}
+
+export function worktreePath(main, ticket, repo = DEFAULT_REPO) {
+  return path.join(path.dirname(main), `${REPOS[repo].prefix}${ticket}`);
+}
+
+export function repoGates(gates, scripts) {
+  return gates.filter((gate) => Object.hasOwn(scripts, gate.split(' ')[0]));
+}
+
+export function repoGroups(gates) {
+  const levels = { check: 'typecheck', 'test:unit': 'unit' };
+
+  return gates.map((gate) => ({
+    group: gate,
+    level: levels[gate] ?? null,
+    commands: [['pnpm', ...gate.split(' ')]],
+  }));
 }
 
 export function ticketOfBranch(branch) {
@@ -458,6 +500,7 @@ export function statusRow({ ticket, header, research, spec, plan, git, counts, l
 
   return {
     ticket: String(ticket),
+    repo: header.repo ?? DEFAULT_REPO,
     stage: stageOf({ research, spec, plan, implement, landed: git.landed }),
     tier: tierOf(touches),
     depends: header.depends.length > 0 ? header.depends.join(', ') : 'none',
@@ -648,9 +691,27 @@ function lines(text) {
 }
 
 function mainCheckout() {
-  return path.dirname(
-    gitOut(process.cwd(), ['rev-parse', '--path-format=absolute', '--git-common-dir']),
+  const scripts = path.dirname(fileURLToPath(import.meta.url));
+
+  return path.dirname(gitOut(scripts, ['rev-parse', '--path-format=absolute', '--git-common-dir']));
+}
+
+function repoOf(found) {
+  return found.header?.repo ?? DEFAULT_REPO;
+}
+
+function presentRepos(main) {
+  return Object.keys(REPOS).filter(
+    (repo) => repo === DEFAULT_REPO || existsSync(path.join(repoCheckout(main, repo), '.git')),
   );
+}
+
+function checkoutOf(main, repo) {
+  const checkout = repoCheckout(main, repo);
+
+  if (!presentRepos(main).includes(repo)) refuse(`no ${repo} checkout at ${checkout}`);
+
+  return checkout;
 }
 
 function ticketsDir(main) {
@@ -793,8 +854,14 @@ function readLedger(main) {
 }
 
 function commandNext(main) {
+  const repos = presentRepos(main).map((repo) => repoCheckout(main, repo));
+
   console.log(
-    nextNumber({ folders: folders(main), branches: branches(main), worktrees: worktrees(main) }),
+    nextNumber({
+      folders: folders(main),
+      branches: repos.flatMap(branches),
+      worktrees: repos.flatMap(worktrees),
+    }),
   );
 }
 
@@ -826,28 +893,46 @@ function batchTickets(main, options) {
   return selected;
 }
 
+function repoState(checkout) {
+  return {
+    branches: branches(checkout),
+    merged: lines(gitOut(checkout, ['branch', '--merged', MAIN, '--format=%(refname:short)'])),
+    worktrees: worktrees(checkout),
+    landed: landedBranches(checkout),
+  };
+}
+
+const NO_STATE = { branches: [], merged: [], worktrees: [], landed: [] };
+
 function commandStatus(main, options) {
   const selected = batchTickets(main, options);
-
-  const state = {
-    branches: branches(main),
-    merged: lines(gitOut(main, ['branch', '--merged', MAIN, '--format=%(refname:short)'])),
-    worktrees: worktrees(main),
-    landed: landedBranches(main),
-  };
+  const present = presentRepos(main);
+  const states = new Map(
+    Object.keys(REPOS).map((repo) => [
+      repo,
+      present.includes(repo) ? repoState(repoCheckout(main, repo)) : NO_STATE,
+    ]),
+  );
 
   const laneOf = lanes(
     selected.map(({ ticket, header, plan }) => ({
       number: ticket,
       depends: header.depends,
-      touches: plan == null ? [] : parseTouches(plan),
+      touches: (plan == null ? [] : parseTouches(plan)).map((file) =>
+        header.repo === DEFAULT_REPO ? file : `${header.repo}:${file}`,
+      ),
     })),
   );
 
   const rows = selected.map((ticket) => {
-    const ticketState = ticketGit(ticket.ticket, state);
+    const ticketState = ticketGit(ticket.ticket, states.get(ticket.header.repo));
     const counts = ticketState.branch
-      ? gitOut(main, ['rev-list', '--left-right', '--count', `${MAIN}...${ticketState.branch}`])
+      ? gitOut(repoCheckout(main, ticket.header.repo), [
+          'rev-list',
+          '--left-right',
+          '--count',
+          `${MAIN}...${ticketState.branch}`,
+        ])
           .split(/\s+/)
           .map(Number)
       : null;
@@ -879,7 +964,8 @@ function commandStats(main, options) {
 
   if (!existsSync(file)) refuse(`no OpenCode database at ${file}`);
 
-  const { sessions, messages } = readSessions(file, { main, tickets });
+  const checkouts = Object.keys(REPOS).map((repo) => path.basename(repoCheckout(main, repo)));
+  const { sessions, messages } = readSessions(file, { main, tickets, checkouts });
   const summary = summarize({ sessions, messages, ledger: readLedger(main), tickets });
 
   console.log(formatTable(statsRows(summary)).join('\n'));
@@ -904,28 +990,12 @@ function commandFound(main, { source }) {
   console.log(line);
 }
 
-function commandNew(main, { ticket, part, type }) {
-  const { folder } = findTicket(main, ticket);
-  const key = ticketKeyOf({ ticket, part });
-  const branch = branchName({ type, ticket: key, slug: slugOf(folder) });
-  const dir = worktreePath(main, key);
+function setupSteps(repo, dir) {
+  if (repo !== DEFAULT_REPO) return [['pnpm install', ['install'], dir]];
 
-  if (git(main, ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).ok) {
-    refuse(`branch ${branch} already exists`);
-  }
-
-  if (existsSync(dir)) refuse(`${dir} already exists`);
-
-  const added = git(main, ['worktree', 'add', '-b', branch, dir, MAIN]);
-
-  if (!added.ok) refuse(`git worktree add failed: ${added.err.split('\n').at(-1)}`);
-
-  console.log(`worktree ${dir} on ${branch}`);
-
-  const log = openLog(main, key);
   const writeAdapter = `import('../../test/__helpers/shared/db/dbAdapters.ts').then(({ generateDatabaseAdapter }) => generateDatabaseAdapter('sqlite'))`;
 
-  for (const [label, args, cwd] of [
+  return [
     ['pnpm install', ['install'], dir],
     [
       'test/databaseAdapter.js',
@@ -933,7 +1003,32 @@ function commandNew(main, { ticket, part, type }) {
       path.join(dir, 'packages', 'frogbot'),
     ],
     ['pnpm check', ['check'], dir],
-  ]) {
+  ];
+}
+
+function commandNew(main, { ticket, part, type }) {
+  const found = findTicket(main, ticket);
+  const repo = repoOf(found);
+  const checkout = checkoutOf(main, repo);
+  const key = ticketKeyOf({ ticket, part });
+  const branch = branchName({ type, ticket: key, slug: slugOf(found.folder) });
+  const dir = worktreePath(main, key, repo);
+
+  if (git(checkout, ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).ok) {
+    refuse(`branch ${branch} already exists`);
+  }
+
+  if (existsSync(dir)) refuse(`${dir} already exists`);
+
+  const added = git(checkout, ['worktree', 'add', '-b', branch, dir, MAIN]);
+
+  if (!added.ok) refuse(`git worktree add failed: ${added.err.split('\n').at(-1)}`);
+
+  console.log(`worktree ${dir} on ${branch}`);
+
+  const log = openLog(main, key);
+
+  for (const [label, args, cwd] of setupSteps(repo, dir)) {
     const result = step(log, label, 'pnpm', args, cwd);
 
     if (!result.ok) {
@@ -950,7 +1045,23 @@ function markdownReaders(dir) {
   }));
 }
 
-async function landRound({ main, found, key, dir, branch }) {
+function packageScripts(dir) {
+  return JSON.parse(readOptional(path.join(dir, 'package.json')) ?? '{}').scripts ?? {};
+}
+
+function gatesOf({ repo, dir, files }) {
+  const { gates } = REPOS[repo];
+
+  if (gates) return repoGates(gates, packageScripts(dir));
+
+  return landGates({
+    base: BASE_GATES,
+    files,
+    specs: docsOnly(files) ? markdownReaders(dir) : [],
+  });
+}
+
+async function landRound({ main, repo, found, key, dir, branch }) {
   const rebased = git(dir, ['rebase', MAIN]);
 
   if (!rebased.ok) {
@@ -991,15 +1102,13 @@ async function landRound({ main, found, key, dir, branch }) {
     }
   }
 
-  const gates = landGates({
-    base: BASE_GATES,
-    files,
-    specs: docsOnly(files) ? markdownReaders(dir) : [],
-  });
+  const gates = gatesOf({ repo, dir, files });
 
   const log = openLog(main, key);
 
-  if (docsOnly(files)) console.log('docs only: test:unit and test:ui skipped');
+  if (!REPOS[repo].gates && docsOnly(files)) {
+    console.log('docs only: test:unit and test:ui skipped');
+  }
 
   const down = await downServices(gates);
 
@@ -1072,8 +1181,10 @@ async function landRound({ main, found, key, dir, branch }) {
 
 async function commandLand(main, { ticket, part }) {
   const found = findTicket(main, ticket);
+  const repo = repoOf(found);
+  const checkout = checkoutOf(main, repo);
   const key = ticketKeyOf({ ticket, part });
-  const tree = worktrees(main).find((candidate) => keyOfWorktree(candidate) === key);
+  const tree = worktrees(checkout).find((candidate) => keyOfWorktree(candidate) === key);
 
   if (!tree) refuse(`no worktree for ticket ${key}; run pnpm ticket new ${key}`);
 
@@ -1081,10 +1192,10 @@ async function commandLand(main, { ticket, part }) {
 
   if (!branch) refuse(`${dir} has no branch checked out`);
 
-  const current = git(main, ['symbolic-ref', '--short', 'HEAD']).out;
+  const current = git(checkout, ['symbolic-ref', '--short', 'HEAD']).out;
 
   if (current !== MAIN) {
-    refuse(`the main checkout ${main} is on "${current || 'a detached HEAD'}", not ${MAIN}`);
+    refuse(`the main checkout ${checkout} is on "${current || 'a detached HEAD'}", not ${MAIN}`);
   }
 
   const dirty = gitOut(dir, ['status', '--porcelain', '--untracked-files=all']);
@@ -1094,19 +1205,19 @@ async function commandLand(main, { ticket, part }) {
   const release = await acquireSlot(`land ${key}`, LAND_LOCK);
 
   try {
-    await landSerialized({ main, found, key, dir, branch });
+    await landSerialized({ main, checkout, repo, found, key, dir, branch });
   } finally {
     release();
   }
 }
 
-async function landSerialized({ main, found, key, dir, branch }) {
+async function landSerialized({ main, checkout, repo, found, key, dir, branch }) {
   const { gates, landed } = await untilMainSettles({
-    head: () => gitOut(main, ['rev-parse', MAIN]),
-    round: () => landRound({ main, found, key, dir, branch }),
+    head: () => gitOut(checkout, ['rev-parse', MAIN]),
+    round: () => landRound({ main, repo, found, key, dir, branch }),
   });
 
-  const merged = git(main, ['merge', '--ff-only', '--quiet', branch]);
+  const merged = git(checkout, ['merge', '--ff-only', '--quiet', branch]);
 
   if (!merged.ok) refuse(`git merge --ff-only refused; ${MAIN} untouched:\n${merged.err}`);
 
@@ -1118,24 +1229,44 @@ async function landSerialized({ main, found, key, dir, branch }) {
     verifier: LAND,
   });
 
-  console.log(`${MAIN} ${gitOut(main, ['log', '-1', '--format=%h %s', MAIN])}`);
-  console.log(`git worktree remove ${dir} && git branch -d ${branch}`);
+  const inRepo = checkout === main ? 'git' : `git -C ${checkout}`;
+
+  console.log(`${MAIN} ${gitOut(checkout, ['log', '-1', '--format=%h %s', MAIN])}`);
+  console.log(`${inRepo} worktree remove ${dir} && ${inRepo} branch -d ${branch}`);
+}
+
+async function affectedGroups(root, log) {
+  const set = affectedSet(await verifyInputs(root, log));
+
+  return {
+    groups: verifyGroups(set),
+    uncovered: set.uncovered.filter((file) => existsSync(path.join(root, file))),
+  };
 }
 
 async function commandVerify(main, { list }) {
   const root = gitOut(process.cwd(), ['rev-parse', '--show-toplevel']);
   const branch = git(root, ['symbolic-ref', '--short', 'HEAD']).out || null;
-  const key = root === main ? null : keyOfWorktree({ path: root, branch });
+  const home = path.dirname(
+    gitOut(root, ['rev-parse', '--path-format=absolute', '--git-common-dir']),
+  );
 
-  if (!key) refuse(`${root} is not a ticket worktree; run verify in frogbot-ticket<n>`);
+  const key = root === home ? null : keyOfWorktree({ path: root, branch });
+
+  if (!key) refuse(`${root} is not a ticket worktree; run verify in <repo>-ticket<n>`);
 
   const found = findTicket(main, Number(TICKET_KEY.exec(key)[1]));
+  const repo = repoOf(found);
+
+  if (home !== repoCheckout(main, repo)) {
+    refuse(`ticket ${key} is a ${repo} ticket; run verify in ${worktreePath(main, key, repo)}`);
+  }
+
   const tier = tierOf(found.plan == null ? null : parseTouches(found.plan));
   const log = openLog(main, `${key}-verify`);
-  const inputs = await verifyInputs(root, log);
-  const set = affectedSet(inputs);
-  const uncovered = set.uncovered.filter((file) => existsSync(path.join(root, file)));
-  const groups = verifyGroups(set);
+  const { groups, uncovered } = REPOS[repo].gates
+    ? { groups: repoGroups(repoGates(REPOS[repo].gates, packageScripts(root))), uncovered: [] }
+    : await affectedGroups(root, log);
 
   if (list) {
     console.log(formatList({ tier, groups, uncovered }).join('\n'));
@@ -1148,7 +1279,8 @@ async function commandVerify(main, { list }) {
   if (groups.length === 0) refuse('no check or test covers this diff; nothing ran, no ledger row');
 
   const id = worktreePatchId(root);
-  const result = await runGroups({ root, log, groups });
+  const build = REPOS[repo].gates ? async () => ({ ok: true, groups: [] }) : undefined;
+  const result = await runGroups({ root, log, groups, build });
 
   console.log(formatUncovered(uncovered).join('\n'));
 

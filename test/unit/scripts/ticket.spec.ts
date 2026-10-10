@@ -24,6 +24,10 @@ import {
   parseReflogMerges,
   parseTouches,
   parseWorktrees,
+  repoCheckout,
+  repoGates,
+  repoGroups,
+  REPOS,
   slugOf,
   squashMessage,
   stageOf,
@@ -109,8 +113,19 @@ describe('parseHeader', () => {
       line: 3,
       depends: [215, 216],
       batch: 29,
+      repo: 'frogbot',
       problems: [],
     });
+  });
+
+  it('reads the Repo field, naming an unknown repo', () => {
+    expect(
+      parseHeader(header('Plan: — · Depends on: none · Batch: 36 · Repo: sidekick')),
+    ).toMatchObject({ repo: 'sidekick', problems: [] });
+
+    expect(
+      parseHeader(header('Plan: — · Depends on: none · Batch: 36 · Repo: elsewhere'))?.problems,
+    ).toEqual(['Repo: "elsewhere" is not one of frogbot, sidekick']);
   });
 
   it('accepts none and deferred', () => {
@@ -284,6 +299,14 @@ describe('naming', () => {
     expect(worktreePath('/code/frogbot/frogbot', 999)).toBe('/code/frogbot/frogbot-ticket999');
   });
 
+  it('puts a ticket in another repo next to that repo, under its own prefix', () => {
+    expect(repoCheckout('/code/frogbot/frogbot')).toBe('/code/frogbot/frogbot');
+    expect(repoCheckout('/code/frogbot/frogbot', 'sidekick')).toBe('/code/frogbot/sidekick');
+    expect(worktreePath('/code/frogbot/frogbot', 265, 'sidekick')).toBe(
+      '/code/frogbot/sidekick-ticket265',
+    );
+  });
+
   it('names a part with its letter', () => {
     const key = ticketKeyOf({ ticket: 210, part: 'b' });
 
@@ -297,6 +320,8 @@ describe('naming', () => {
     [{ path: '/c/frogbot-ticket210', branch: 'feat/ticket-210-kinds' }, '210'],
     [{ path: '/c/elsewhere', branch: 'feat/ticket-212B-bulk' }, '212b'],
     [{ path: '/c/frogbot', branch: 'main' }, null],
+    [{ path: '/c/sidekick-ticket265', branch: null }, '265'],
+    [{ path: '/c/sidekick', branch: 'main' }, null],
   ])('%j has key %s', (tree, key) => {
     expect(keyOfWorktree(tree)).toBe(key);
   });
@@ -326,6 +351,13 @@ describe('nextNumber', () => {
         worktrees: [{ path: '/c/frogbot-ticket300', branch: null }],
       }),
     ).toBe(301);
+    expect(
+      nextNumber({
+        folders,
+        branches: [],
+        worktrees: [{ path: '/c/sidekick-ticket310', branch: 'feat/ticket-310-loop' }],
+      }),
+    ).toBe(311);
   });
 });
 
@@ -416,7 +448,7 @@ describe('git output', () => {
   it('builds a status row', () => {
     const row = statusRow({
       ticket: 218,
-      header: { line: 3, depends: [215, 216], batch: 29, problems: [] },
+      header: { line: 3, depends: [215, 216], batch: 29, repo: 'frogbot', problems: [] },
       research: true,
       spec: 'Status: Approved (2026-10-04)',
       plan: 'Status: Go (2026-10-04)\n\ntouches: [scripts/ticket.mjs]',
@@ -427,6 +459,7 @@ describe('git output', () => {
 
     expect(row).toEqual({
       ticket: '218',
+      repo: 'frogbot',
       stage: 'implement',
       tier: 'light',
       depends: '215, 216',
@@ -438,8 +471,8 @@ describe('git output', () => {
     });
 
     expect(formatTable([row])).toEqual([
-      'ticket  stage      tier   depends   lane  branch                      worktree  ahead/behind  merged',
-      '218     implement  light  215, 216  A     feat/ticket-218-ticket-cli  yes       +1 -0         yes',
+      'ticket  repo     stage      tier   depends   lane  branch                      worktree  ahead/behind  merged',
+      '218     frogbot  implement  light  215, 216  A     feat/ticket-218-ticket-cli  yes       +1 -0         yes',
     ]);
   });
 });
@@ -530,6 +563,32 @@ describe('landGates', () => {
       'test:int:sqlite',
       'test:browser',
     ]);
+  });
+});
+
+describe('repo gates', () => {
+  it('runs the sidekick gates its package.json has, in order', () => {
+    const scripts = { 'test:unit': 'vitest run', check: 'node scripts/check.mjs' };
+
+    expect(repoGates(REPOS.sidekick.gates, scripts)).toEqual(['check', 'test:unit']);
+    expect(repoGates(REPOS.sidekick.gates, { ...scripts, 'test:e2e': 'playwright test' })).toEqual([
+      'check',
+      'test:unit',
+      'test:e2e',
+    ]);
+    expect(landLevel(repoGates(REPOS.sidekick.gates, scripts))).toBe('unit');
+  });
+
+  it('turns each gate into one verify group', () => {
+    expect(repoGroups(['check', 'test:unit', 'test:e2e'])).toEqual([
+      { group: 'check', level: 'typecheck', commands: [['pnpm', 'check']] },
+      { group: 'test:unit', level: 'unit', commands: [['pnpm', 'test:unit']] },
+      { group: 'test:e2e', level: null, commands: [['pnpm', 'test:e2e']] },
+    ]);
+  });
+
+  it('keeps frogbot on the affected map', () => {
+    expect(REPOS.frogbot.gates).toBeNull();
   });
 });
 

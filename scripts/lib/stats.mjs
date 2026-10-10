@@ -257,15 +257,15 @@ export function statsRows(summary) {
   }));
 }
 
-export function inProject(directory, main) {
+export function inProject(directory, main, checkouts = [path.basename(main)]) {
   const [checkout] = path.relative(path.dirname(main), directory).split(path.sep);
 
-  return !checkout.startsWith('..') && checkout.startsWith(path.basename(main));
+  return !checkout.startsWith('..') && checkouts.some((name) => checkout.startsWith(name));
 }
 
 const SESSION_COLUMNS = 'id, parent_id AS parentID, title, agent, directory';
 
-export function readSessions(file, { main, tickets }) {
+export function readSessions(file, { main, tickets, checkouts = [path.basename(main)] }) {
   const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite');
   const db = new DatabaseSync(file, { readOnly: true });
 
@@ -276,7 +276,7 @@ export function readSessions(file, { main, tickets }) {
       .filter(({ title, directory }) => {
         const key = ticketKey(title);
 
-        return key !== null && tickets.has(keyTicket(key)) && inProject(directory, main);
+        return key !== null && tickets.has(keyTicket(key)) && inProject(directory, main, checkouts);
       });
 
     const parentOf = db.prepare(`SELECT ${SESSION_COLUMNS} FROM session_v2 WHERE id = ?`);
