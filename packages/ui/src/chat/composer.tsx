@@ -1,6 +1,5 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import {
   type ClipboardEvent,
   type DragEvent,
@@ -15,6 +14,7 @@ import {
 
 import ArrowUpIcon from '../icons/icons/ArrowUpIcon.js';
 import SquareIcon from '../icons/icons/SquareIcon.js';
+import type { ChatPlatformAdapter } from './adapter.js';
 import { acceptFor } from './attachment-kind.js';
 import {
   AttachmentControl,
@@ -40,18 +40,17 @@ export type ComposerProps = Omit<
   endSlot?: ReactNode;
   submitContent: ReactNode;
   stopContent: ReactNode;
-  sdk?: FrogBotSDK;
-  assetsSlug?: string;
+  adapter?: ChatPlatformAdapter;
   modelInputs?: readonly ComposerModelInput[];
   modelName?: string;
 };
 
 export function Composer({
+  adapter,
   className,
   defaultValue = '',
   disabled,
   endSlot,
-  assetsSlug,
   modelInputs,
   modelName,
   onKeyDown,
@@ -60,7 +59,6 @@ export function Composer({
   onSubmit,
   onValueChange,
   pending = false,
-  sdk,
   startSlot,
   stopContent,
   submitContent,
@@ -73,7 +71,7 @@ export function Composer({
   const [audioData, setAudioData] = useState<Float32Array | null>();
   const submitting = useRef(false);
   const currentValue = value ?? internalValue;
-  const attachments = useAttachments({ assetsSlug, modelInputs, modelName, sdk });
+  const attachments = useAttachments({ adapter, modelInputs, modelName });
   const sendable = Boolean(currentValue.trim()) || attachments.toSend.length > 0;
 
   useLayoutEffect(() => {

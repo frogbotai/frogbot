@@ -1,35 +1,21 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
-import type { ChannelThreadReference } from 'frogbot';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { chatRequest, type PayloadPage } from './rest.js';
-
-export type ChatDocument = {
-  id: string | number;
-  title?: string | null;
-  agent: string;
-  lastMessageAt?: string | null;
-  channel?: string | null;
-  channelLabel?: string | null;
-  channelThread?: ChannelThreadReference | null;
-};
+import type { ChatDocument, ChatPage, ChatPlatformAdapter } from './adapter.js';
 
 export type UseChatsOptions = {
-  sdk: FrogBotSDK;
-  chatsSlug: string;
+  adapter: ChatPlatformAdapter;
   agent?: string;
   page?: number;
   limit?: number;
-  initialData?: PayloadPage<ChatDocument>;
+  initialData?: ChatPage;
   revalidate?: boolean;
   refreshInterval?: number;
 };
 
 export type UseChatDocumentOptions = {
-  sdk: FrogBotSDK;
-  chatsSlug: string;
+  adapter: ChatPlatformAdapter;
   chatId?: string | number;
   initialData?: ChatDocument;
   revalidate?: boolean;
@@ -41,44 +27,12 @@ export function emitChatMutation() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHAT_MUTATION_EVENT));
 }
 
-export async function loadChats({
-  sdk,
-  agent,
-  chatsSlug,
-  page = 1,
-  limit = 20,
-}: UseChatsOptions): Promise<PayloadPage<ChatDocument>> {
-  const params = new URLSearchParams({
-    depth: '0',
-    sort: '-lastMessageAt',
-    page: String(page),
-    limit: String(limit),
-  });
-
-  if (agent) params.set('where[agent][equals]', agent);
-
-  return chatRequest(sdk, `/${encodeURIComponent(chatsSlug)}?${params}`);
-}
-
-export async function loadChatDocument({
-  sdk,
-  chatsSlug,
-  chatId,
-}: Omit<UseChatDocumentOptions, 'initialData' | 'revalidate'> & {
-  chatId: string | number;
-}): Promise<ChatDocument> {
-  const path = `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`;
-
-  return chatRequest(sdk, `${path}?depth=0`);
-}
-
 function isChatDocument(chat: ChatDocument | undefined, chatId: string | number | undefined) {
   return chat !== undefined && chatId !== undefined && String(chat.id) === String(chatId);
 }
 
 export function useChatDocument({
-  sdk,
-  chatsSlug,
+  adapter,
   chatId,
   initialData,
   revalidate,
@@ -97,7 +51,8 @@ export function useChatDocument({
 
     if (chatId === undefined) return;
 
-    void loadChatDocument({ sdk, chatsSlug, chatId })
+    void adapter
+      .getChat(chatId)
       .then((next) => {
         if (request.current === current) setChat(next);
       })
@@ -106,7 +61,7 @@ export function useChatDocument({
           setError(value instanceof Error ? value : new Error(String(value)));
         }
       });
-  }, [sdk, chatsSlug, chatId]);
+  }, [adapter, chatId]);
 
   useEffect(() => {
     if (isChatDocument(initial.current, chatId)) {
@@ -141,7 +96,7 @@ export function useChatDocument({
 }
 
 export function useChats(options: UseChatsOptions) {
-  const [result, setResult] = useState<PayloadPage<ChatDocument> | undefined>(options.initialData);
+  const [result, setResult] = useState<ChatPage | undefined>(options.initialData);
   const [error, setError] = useState<Error>();
   const [loading, setLoading] = useState(!options.initialData);
   const request = useRef(0);
@@ -151,7 +106,8 @@ export function useChats(options: UseChatsOptions) {
     const current = ++request.current;
     if (!hasResult.current) setLoading(true);
 
-    void loadChats(options)
+    void options.adapter
+      .listChats({ agent: options.agent, page: options.page ?? 1, limit: options.limit ?? 20 })
       .then((next) => {
         if (request.current === current) {
           hasResult.current = true;
@@ -166,7 +122,7 @@ export function useChats(options: UseChatsOptions) {
           setLoading(false);
         }
       });
-  }, [options.sdk, options.agent, options.chatsSlug, options.limit, options.page]);
+  }, [options.adapter, options.agent, options.limit, options.page]);
 
   useEffect(() => {
     if (!options.initialData) refresh();

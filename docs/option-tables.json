@@ -281,6 +281,11 @@
   },
   {
     "page": "chat/ui-provider",
+    "heading": "REST adapter options",
+    "type": "import('@frogbotai/ui/chat/rest').RestChatAdapterOptions"
+  },
+  {
+    "page": "chat/ui-provider",
     "heading": "Adapter options",
     "type": "import('@frogbotai/ui/chat').ChatPlatformAdapter"
   },

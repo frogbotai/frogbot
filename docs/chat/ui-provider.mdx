@@ -1,18 +1,21 @@
 ---
 title: "Set up the chat provider"
 sidebarTitle: "Provider setup"
-description: "Connect the chat UI to authentication and the FrogBot manifest."
-keywords: ["ChatProvider", "adapter", "authentication", "manifest"]
+description: "Connect the chat UI to a FrogBot server, or to your own backend through an adapter."
+keywords: ["ChatProvider", "adapter", "authentication", "manifest", "DirectChatTransport"]
 ---
 
-`ChatProvider` loads `/api/frogbot`, discovers the available agents and collection slugs, and supplies the platform adapter used by `<Chat>`.
+`ChatProvider` supplies the platform adapter used by `<Chat>` and loads the chat manifest through it. The adapter is the chat UI's only route to a backend: it streams turns, lists and loads chats, and provides optional capabilities such as rename or attachments.
+
+For a FrogBot server, build the adapter with `createRestChatAdapter` from `@frogbotai/ui/chat/rest`:
 
 ```tsx
 'use client'
 
-import { ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
+import { ChatProvider } from '@frogbotai/ui/chat'
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
 
-const adapter = { fetch: cookieFetch() }
+const adapter = createRestChatAdapter({ fetch: cookieFetch() })
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return <ChatProvider adapter={adapter}>{children}</ChatProvider>
@@ -22,35 +25,189 @@ export function Providers({ children }: { children: React.ReactNode }) {
 Use `bearerFetch` when authentication comes from a token instead of a same-origin cookie.
 
 ```tsx
-import { bearerFetch, ChatProvider } from '@frogbotai/ui/chat'
+import { ChatProvider } from '@frogbotai/ui/chat'
+import { bearerFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
 
-const adapter = { fetch: bearerFetch(() => sessionStorage.getItem('token') ?? undefined) }
+const adapter = createRestChatAdapter({
+  fetch: bearerFetch(() => sessionStorage.getItem('token') ?? undefined),
+})
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return <ChatProvider adapter={adapter}>{children}</ChatProvider>
 }
 ```
 
-The manifest carries renamed chat and message collection slugs. Do not duplicate those slugs in consumer code.
+The REST adapter reads renamed chat, message, and asset collection slugs from `/api/frogbot`. Do not duplicate those slugs in consumer code.
 
 ## Provider props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `adapter` | `ChatPlatformAdapter` | Required | How the UI reaches your FrogBot server. See [Adapter options](#adapter-options). Pass a stable object; a new object recreates the client and reloads the manifest. |
+| `adapter` | `ChatPlatformAdapter` | Required | How the UI reaches your backend. See [Adapter options](#adapter-options). Pass a stable object; a new object reloads the manifest. |
 | `children` | `ReactNode` | Required | The components that use the chat context. |
 | `toolRenderers` | `ToolRenderer[]` | `[]` | Custom renderers for tool calls. See [Register tools and artifacts](/chat/ui-registries). |
 | `artifactKinds` | `ArtifactRegistryItem[]` | `[]` | Artifact kinds the chat can render. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
 | `artifactPersistence` | `ArtifactPersistence` | — | `load` and `save` functions for artifacts. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
 
-`ChatProvider` reads `/api/frogbot` and `/api/agents` once per client. Until both load, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`.
+`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers }`.
 
-## Adapter options
+## REST adapter options
+
+`createRestChatAdapter` implements every adapter member against FrogBot's REST API.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `fetch` | `typeof fetch` | Required | Performs every request. Use `cookieFetch()` for same-origin cookies or `bearerFetch(getToken)` for tokens. |
 | `apiBase` | `string` | `'/api'` | Base URL of the FrogBot API. |
 | `headers` | `HeadersInit \| () => HeadersInit \| Promise<HeadersInit>` | — | Headers added to every request. Headers set on an individual request take precedence. |
+| `chatsSlug` | `string` | From `/api/frogbot` | Chats collection slug. |
+| `messagesSlug` | `string` | From `/api/frogbot` | Messages collection slug. |
+| `assetsSlug` | `string` | From `/api/frogbot` | Chat assets collection slug. |
+
+The adapter reads `/api/frogbot` on each `loadManifest`, and slug lookups reuse the latest response, so a provider mount and the requests it makes share one fetch. With all three slugs and no `ChatProvider`, as in a sidebar that only lists chats, it never fetches it. `loadManifest` also reads `/api/agents` and returns `null` when chat is disabled on the server.
+
+`FrogBotChatTransport`, the transport the REST adapter's `createTransport` returns, is exported from `@frogbotai/ui/chat/rest` too, for an AI SDK `useChat` call of your own.
+
+## Adapter options
+
+An adapter is a `ChatPlatformAdapter` object. The first five members are required. Each optional member is a capability: when it is missing, the UI hides the feature it drives.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `loadManifest` | `({ signal }) => Promise<ChatManifest \| null>` | Required | Returns `{ defaultAgent, agents, transcribe }`, or `null` when chat is disabled. Each agent is an [agent manifest](/chat/manifest) entry with an optional `profile`. |
+| `createTransport` | `({ agent, request, onChatId }) => ChatTransport<UIMessage>` | Required | Returns the AI SDK transport for one agent. `request()` returns `{ chatId, model, reasoning }` at send time; `chatId` is `undefined` for a new chat. Call `onChatId(chatId)` for a new chat before its stream ends. The backend behind the transport stores the turn: the UI never saves messages. |
+| `listChats` | `({ agent, page, limit }) => Promise<ChatPage>` | Required | One page of chats, newest first, as `{ docs, page, totalDocs, totalPages, hasNextPage, hasPrevPage }`. |
+| `getChat` | `(chatId) => Promise<ChatDocument>` | Required | One chat's document. |
+| `loadMessages` | `(chatId) => Promise<ChatMessages>` | Required | The chat's stored messages as `{ messages, queued }`. |
+| `renameChat` | `(chatId, title) => Promise<ChatDocument>` | — | Without it, the Rename row action is hidden. |
+| `deleteChat` | `(chatId) => Promise<void>` | — | Without it, the Delete row action is hidden. With neither rename nor delete, rows have no menu. |
+| `updateChatAgent` | `(chatId, agent) => Promise<ChatDocument>` | — | Moves a chat to another agent. FrogBot's admin chat uses it when the agent selector changes. |
+| `branchChat` | `(chatId, messageId) => Promise<ChatId>` | — | Copies the chat through a message and returns the new chat's ID. Without it, the Branch actions are hidden. |
+| `suggestChatTitle` | `(chatId) => Promise<string \| undefined>` | — | Without it, the rename dialog shows no suggestion. |
+| `loadTurnState` | `(agent, chatId) => Promise<TurnState>` | — | Lets `Chat` poll a turn that runs elsewhere. Without it, `Chat` reloads the messages once instead of polling. |
+| `dismissToolCall` | `(agent, chatId, toolCallId) => Promise<ToolCallSettlement>` | — | Dismisses a pending client tool call. Without it, tool renderers receive `dismiss: undefined`. Throw `ChatAdapterError('conflict')` when the call is already settled. |
+| `uploadAttachment` | `(file) => Promise<{ id, mediaType, text? }>` | — | Stores a file and returns the ID sent in its `file-reference` part. Without it, the composer has no attach button, ignores dropped and pasted files, and keeps long pastes in the browser. |
+| `readAttachment` | `(id, { signal }) => Promise<StoredAttachment>` | — | Returns a stored file as `{ filename, mediaType, filesize?, text }` or `{ …, blob }`. Without it, a file reference shows "Attachment unavailable". |
+| `transcribe` | `(file) => Promise<string>` | — | Turns recorded audio into text. The microphone shows only with this and `manifest.transcribe`. |
 | `buildMetadata` | `(message: UIMessage) => Record<string, unknown> \| Promise<Record<string, unknown>>` | — | Returns metadata to attach to each message the user sends or edits. |
 | `executeClientTool` | `(name: string, input: unknown) => unknown` | — | Runs a client tool call in the browser as it arrives and submits its return value as the output. Without it, client tools wait for a [tool renderer](/chat/ui-registries#answer-client-tools) to answer. |
+
+Adapters report failures the UI recovers from as a `ChatAdapterError`, exported from `@frogbotai/ui/chat`, with a `code`:
+
+- `conflict`: a dismissed tool call was already settled. `Chat` reloads the conversation.
+- `file-unreadable`: the backend can't read an uploaded file. The composer marks it "This file couldn't be read."
+- `file-too-large`: an upload is over the size limit. The composer marks it too large.
+
+Any other error from `uploadAttachment` marks the upload as failed, with the error's `message` as the reason. The UI emits `frogbot:chats:mutated` (`CHAT_MUTATION_EVENT`) after each rename, delete, branch, agent change, and new chat ID, so an adapter never needs to.
+
+## Custom adapter
+
+An adapter of your own lets the chat UI run without a FrogBot server, for example with an agent running in the browser and chats kept in local storage. This one runs an AI SDK agent in-process with `DirectChatTransport` and keeps chats in memory:
+
+```tsx
+'use client'
+
+import {
+  Chat,
+  type ChatDocument,
+  type ChatPlatformAdapter,
+  ChatProvider,
+} from '@frogbotai/ui/chat'
+import { DirectChatTransport, readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
+
+import { agent } from './agent' // a ToolLoopAgent built with the user's provider key
+
+const chats = new Map<string, ChatDocument>()
+const messages = new Map<string, UIMessage[]>()
+const direct = new DirectChatTransport({ agent })
+
+async function save(chatId: string, sent: UIMessage[], stream: ReadableStream<UIMessageChunk>) {
+  let reply: UIMessage | undefined
+
+  for await (const message of readUIMessageStream({ stream })) reply = message
+
+  messages.set(chatId, reply ? [...sent, reply] : sent)
+  chats.set(chatId, { ...chats.get(chatId)!, lastMessageAt: new Date().toISOString() })
+}
+
+const adapter: ChatPlatformAdapter = {
+  loadManifest: async () => ({
+    defaultAgent: 'local',
+    agents: [
+      {
+        slug: 'local',
+        label: 'Local',
+        source: 'config',
+        defaultModel: 'openai/gpt-4o',
+        models: ['openai/gpt-4o'],
+      },
+    ],
+    transcribe: false,
+  }),
+  createTransport: ({ agent: slug, request, onChatId }) => ({
+    async sendMessages(options) {
+      let chatId = request().chatId?.toString()
+
+      if (chatId === undefined) {
+        chatId = crypto.randomUUID()
+        chats.set(chatId, { id: chatId, agent: slug, title: 'New chat' })
+        onChatId(chatId)
+      }
+
+      // The agent validates the parts at run time; map any it can't read first (see below).
+      const sent = options as Parameters<typeof direct.sendMessages>[0]
+      const [ui, stored] = (await direct.sendMessages(sent)).tee()
+
+      void save(chatId, options.messages, stored)
+
+      return ui
+    },
+    reconnectToStream: async () => null,
+  }),
+  listChats: async ({ agent: slug, page, limit }) => {
+    const all = [...chats.values()]
+      .filter((chat) => !slug || chat.agent === slug)
+      .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''))
+    const docs = all.slice((page - 1) * limit, page * limit)
+    const totalPages = Math.max(1, Math.ceil(all.length / limit))
+
+    return {
+      docs,
+      page,
+      totalDocs: all.length,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    }
+  },
+  getChat: async (chatId) => chats.get(String(chatId))!,
+  loadMessages: async (chatId) => ({ messages: messages.get(String(chatId)) ?? [], queued: [] }),
+  renameChat: async (chatId, title) => {
+    const chat = { ...chats.get(String(chatId))!, title }
+
+    chats.set(String(chatId), chat)
+
+    return chat
+  },
+  deleteChat: async (chatId) => {
+    chats.delete(String(chatId))
+    messages.delete(String(chatId))
+  },
+}
+
+export function LocalChat() {
+  return (
+    <ChatProvider adapter={adapter}>
+      <Chat agent="local" />
+    </ChatProvider>
+  )
+}
+```
+
+Three things are the host's job:
+
+- **Store each turn.** The UI never saves messages; it reloads them with `loadMessages`. Here the transport tees the stream and stores the reply when it finishes.
+- **Call `onChatId` for a new chat**, before the stream ends. `Chat` then selects the chat and emits `frogbot:chats:mutated`, so lists from `useChats({ revalidate: true })` refresh.
+- **Map the parts the agent can't read.** `DirectChatTransport` rejects `file-reference` parts, and `convertToModelMessages` drops `data-*` parts such as `data-paste`. Either leave out `uploadAttachment`, so the composer offers no attachments, or turn each `file-reference` part into a `file` part before passing the messages on; turn `data-paste` and `data-page-context` parts into text if the model should see them.
+
+This adapter has no `branchChat`, `suggestChatTitle`, `uploadAttachment`, or `transcribe`, so the chat shows no Branch actions, title suggestion, attach button, or microphone.

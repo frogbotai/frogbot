@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MessagePart } from '../../../../packages/ui/src/chat/message-part';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 const apiBase = 'https://frogbot.example/custom-api';
 const assetsSlug = 'private-assets';
@@ -55,6 +56,7 @@ function createAdapter(routes: Record<string, () => Response | Promise<Response>
 
     if (path === '/frogbot') {
       return Response.json({
+        ai: { transcribe: false },
         chat: { enabled: true, assetsSlug, chatsSlug: 'chats', messagesSlug: 'messages' },
         files: { slug: 'files' },
         agents: [],
@@ -74,11 +76,13 @@ function createAdapter(routes: Record<string, () => Response | Promise<Response>
     throw new Error(`Unexpected request: ${input}`);
   });
 
-  return {
+  const adapter = createRestChatAdapter({
     apiBase,
     fetch,
     headers: () => Promise.resolve({ Authorization: 'Bearer private-session' }),
-  };
+  });
+
+  return { ...adapter, fetch };
 }
 
 describe('file references', () => {
@@ -396,6 +400,25 @@ describe('file references', () => {
 
     expect(screen.getByRole('alert').textContent).toBe('Attachment unavailable: claimed.txt');
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('shows an unavailable attachment when the adapter cannot read attachments', async () => {
+    const { readAttachment: _read, ...adapter } = createAdapter();
+
+    render(
+      <ChatProvider adapter={adapter}>
+        <MessagePart part={reference} />
+      </ChatProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toBe('Attachment unavailable: claimed.txt'),
+    );
+
+    expect(adapter.fetch.mock.calls.map(([url]) => String(url)).sort()).toEqual([
+      `${apiBase}/agents`,
+      `${apiBase}/frogbot`,
+    ]);
   });
 
   it('aborts an old reference and ignores its late metadata when the message changes', async () => {

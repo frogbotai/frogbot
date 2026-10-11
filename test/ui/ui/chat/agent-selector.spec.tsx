@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AgentSelector } from '../../../../packages/ui/src/chat/agent-selector';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 const manifest = {
   ai: { transcribe: false as const },
@@ -40,7 +41,7 @@ describe('AgentSelector', () => {
   it('selects manifest agents and marks the current agent', async () => {
     const onAgentChange = vi.fn();
     const user = userEvent.setup();
-    const adapter = { fetch: fetchManifest };
+    const adapter = createRestChatAdapter({ fetch: fetchManifest });
 
     render(
       <ChatProvider adapter={adapter}>
@@ -59,7 +60,7 @@ describe('AgentSelector', () => {
   });
 
   it('renders the agent fallback without an avatar', async () => {
-    const adapter = { fetch: fetchManifest };
+    const adapter = createRestChatAdapter({ fetch: fetchManifest });
 
     render(
       <ChatProvider adapter={adapter}>

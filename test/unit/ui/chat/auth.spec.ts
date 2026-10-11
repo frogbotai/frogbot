@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { bearerFetch, cookieFetch } from '../../../../packages/ui/src/chat/auth';
+import { bearerFetch, cookieFetch } from '../../../../packages/ui/src/chat/rest/auth';
 
 describe('chat auth fetches', () => {
   it('uses cookie credentials without changing global fetch', async () => {

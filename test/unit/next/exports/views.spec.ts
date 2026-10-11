@@ -665,6 +665,7 @@ describe('@frogbotai/next views', () => {
     expect(element?.props).toEqual({
       agent: 'general',
       chatId: 'chat-1',
+      chatsSlug: 'conversations',
       documentPath: '/admin/collections/conversations',
       initialChat: {
         id: 'chat-1',
@@ -736,6 +737,7 @@ describe('@frogbotai/next views', () => {
     expect(find).not.toHaveBeenCalled();
     expect(element?.props).toEqual({
       agent: 'general',
+      chatsSlug: 'conversations',
       documentPath: '/control/collections/conversations',
       initialMessages: [],
     });
@@ -753,6 +755,7 @@ describe('@frogbotai/next views', () => {
     expect(find).not.toHaveBeenCalled();
     expect(element?.props).toEqual({
       agent: 'general',
+      chatsSlug: 'conversations',
       documentPath: '/admin/collections/conversations',
       initialMessages: [],
     });
@@ -769,6 +772,7 @@ describe('@frogbotai/next views', () => {
     expect(find).not.toHaveBeenCalled();
     expect(element?.props).toEqual({
       agent: 'general',
+      chatsSlug: 'conversations',
       documentPath: '/admin/collections/conversations',
       initialMessages: [],
     });

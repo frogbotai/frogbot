@@ -1,9 +1,10 @@
 'use client';
 
-import { Chat, ChatHistory, ChatProvider, cookieFetch } from '@frogbotai/ui/chat';
+import { Chat, ChatHistory, ChatProvider } from '@frogbotai/ui/chat';
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest';
 import { useState } from 'react';
 
-const adapter = { fetch: cookieFetch() };
+const adapter = createRestChatAdapter({ fetch: cookieFetch() });
 
 export function SupportChat() {
   return (
@@ -36,6 +37,7 @@ export function SidebarChat() {
             activeChatId={activeChatId}
             fallbackTitle="New chat"
             onChatChange={selectChat}
+            adapter={adapter}
           />
         )}
       />

@@ -1,9 +1,9 @@
-import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Composer, type ComposerProps } from '../../../../packages/ui/src/chat/composer';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -74,13 +74,12 @@ function fileRefusal(name: string) {
 function renderComposer(props: Partial<ComposerProps> = {}) {
   const server = uploadServer();
   const onSubmit = vi.fn();
-  const sdk = createFrogBotSDK({ baseURL: '/api', fetch: server.fetch });
+  const adapter = createRestChatAdapter({ fetch: server.fetch, assetsSlug: 'assets' });
 
   const element = (next: Partial<ComposerProps>) => (
     <Composer
       aria-label="Message"
-      sdk={sdk}
-      assetsSlug="assets"
+      adapter={adapter}
       onSubmit={onSubmit}
       submitContent="Send"
       stopContent="Stop"
@@ -375,6 +374,30 @@ describe('Composer', () => {
         filename: expect.stringMatching(/^pasted-\d+\.txt$/),
       },
     ]);
+  });
+
+  it('hides the file picker and ignores drops when the adapter cannot upload', () => {
+    const { uploadAttachment: _upload, ...adapter } = createRestChatAdapter({
+      fetch: vi.fn(),
+      assetsSlug: 'assets',
+    });
+
+    const { container } = render(
+      <Composer
+        adapter={adapter}
+        aria-label="Message"
+        onSubmit={vi.fn()}
+        submitContent="Send"
+        stopContent="Stop"
+      />,
+    );
+
+    fireEvent.drop(container.querySelector('form') as HTMLFormElement, {
+      dataTransfer: { files: [new File(['notes'], 'notes.txt', { type: 'text/plain' })] },
+    });
+
+    expect(screen.queryByRole('button', { name: 'Add files' })).toBeNull();
+    expect(screen.queryByRole('listitem')).toBeNull();
   });
 
   it('uploads a Word document as itself and previews the text the server read', async () => {

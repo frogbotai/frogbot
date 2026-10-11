@@ -1,9 +1,8 @@
-import { createFrogBotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadChats } from '../../../../packages/ui/src/chat/use-chats';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
-describe('loadChats', () => {
+describe('listChats', () => {
   it('uses the dynamic chat slug, descending activity sort, and pagination', async () => {
     const result = {
       docs: [],
@@ -17,10 +16,8 @@ describe('loadChats', () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(Response.json(result)));
 
     await expect(
-      loadChats({
-        sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
+      createRestChatAdapter({ fetch, chatsSlug: 'conversations' }).listChats({
         agent: 'support',
-        chatsSlug: 'conversations',
         page: 2,
         limit: 10,
       }),

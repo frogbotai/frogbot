@@ -44,6 +44,11 @@
       "import": "./src/exports/chat.ts",
       "default": "./src/exports/chat.ts"
     },
+    "./chat/rest": {
+      "types": "./src/exports/chat-rest.ts",
+      "import": "./src/exports/chat-rest.ts",
+      "default": "./src/exports/chat-rest.ts"
+    },
     "./chat/tools": {
       "types": "./src/exports/chat-tools.ts",
       "import": "./src/exports/chat-tools.ts",
@@ -134,6 +139,11 @@
         "types": "./dist/exports/chat.d.ts",
         "import": "./dist/exports/chat.js",
         "default": "./dist/exports/chat.js"
+      },
+      "./chat/rest": {
+        "types": "./dist/exports/chat-rest.d.ts",
+        "import": "./dist/exports/chat-rest.js",
+        "default": "./dist/exports/chat-rest.js"
       },
       "./chat/tools": {
         "types": "./dist/exports/chat-tools.d.ts",

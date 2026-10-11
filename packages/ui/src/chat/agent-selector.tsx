@@ -23,7 +23,7 @@ export const AgentSelector = memo(function AgentSelector({
   selectedAgent,
   onAgentChange,
 }: AgentSelectorProps) {
-  const agents = useChatProvider()?.agentManifest?.agents ?? [];
+  const agents = useChatProvider()?.manifest?.agents ?? [];
   const selected = agents.find(({ slug }) => slug === selectedAgent);
   const selectedName = selected?.label ?? selected?.slug ?? selectedAgent;
 

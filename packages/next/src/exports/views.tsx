@@ -170,6 +170,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     !user ||
     (!isDashboard && collectionSlug !== chatsSlug) ||
     routeID === undefined ||
+    !chatsSlug ||
     !messagesSlug
   ) {
     return null;
@@ -186,6 +187,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     return agent ? (
       <ChatViewClient
         agent={agent}
+        chatsSlug={chatsSlug}
         documentPath={documentPath}
         initialMessages={[]}
         {...componentProps}
@@ -236,6 +238,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     <ChatViewClient
       agent={initialChat.agent}
       chatId={routeID}
+      chatsSlug={chatsSlug}
       documentPath={documentPath}
       initialChat={initialChat}
       initialMessages={messagesToUIMessages(

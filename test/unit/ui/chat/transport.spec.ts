@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   FrogBotChatTransport,
   prepareChatRequest,
-} from '../../../../packages/ui/src/chat/transport';
+} from '../../../../packages/ui/src/chat/rest/transport';
 
 const message = {
   id: 'user-1',
@@ -106,7 +106,7 @@ describe('FrogBotChatTransport', () => {
     });
   });
 
-  it('targets the agent endpoint and captures the chat id', async () => {
+  it('targets the agent endpoint and captures the chat id without emitting a mutation', async () => {
     const onChatId = vi.fn();
     const dispatchEvent = vi.fn();
     vi.stubGlobal('window', { dispatchEvent });
@@ -132,9 +132,7 @@ describe('FrogBotChatTransport', () => {
     );
     expect(transport.chatId).toBe('chat-1');
     expect(onChatId).toHaveBeenCalledWith('chat-1');
-    expect(dispatchEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'frogbot:chats:mutated' }),
-    );
+    expect(dispatchEvent).not.toHaveBeenCalled();
 
     vi.unstubAllGlobals();
   });

@@ -1,6 +1,5 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '../components/button.js';
@@ -14,12 +13,12 @@ import {
 } from '../components/dialog.js';
 import { Input } from '../components/input.js';
 import MagicWandIcon from '../icons/icons/MagicWandIcon.js';
-import { renameChat, suggestChatTitle } from './mutations.js';
+import type { ChatId, ChatPlatformAdapter } from './adapter.js';
+import { emitChatMutation } from './use-chats.js';
 
 export type RenameChatDialogProps = {
-  sdk: FrogBotSDK;
-  chatsSlug: string;
-  chatId: string | number;
+  adapter: ChatPlatformAdapter;
+  chatId: ChatId;
   title: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,12 +26,11 @@ export type RenameChatDialogProps = {
 };
 
 export function RenameChatDialog({
+  adapter,
   chatId,
-  chatsSlug,
   onOpenChange,
   onRenamed,
   open,
-  sdk,
   title,
 }: RenameChatDialogProps) {
   const [value, setValue] = useState(title);
@@ -46,7 +44,8 @@ export function RenameChatDialog({
     setValue(title);
     setSuggestion(undefined);
 
-    void suggestChatTitle({ sdk, chatId })
+    void adapter
+      .suggestChatTitle?.(chatId)
       .then((next) => {
         if (current) setSuggestion(next);
       })
@@ -55,14 +54,15 @@ export function RenameChatDialog({
     return () => {
       current = false;
     };
-  }, [chatId, open, sdk, title]);
+  }, [adapter, chatId, open, title]);
 
   const save = async () => {
     const next = value.trim();
-    if (!next) return;
+    if (!next || !adapter.renameChat) return;
     setSaving(true);
     try {
-      await renameChat({ sdk, chatsSlug, chatId }, next);
+      await adapter.renameChat(chatId, next);
+      emitChatMutation();
       onRenamed?.(next);
       onOpenChange(false);
     } finally {
@@ -107,7 +107,10 @@ export function RenameChatDialog({
           <Button disabled={saving} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button disabled={saving || !value.trim()} onClick={() => void save()}>
+          <Button
+            disabled={saving || !value.trim() || !adapter.renameChat}
+            onClick={() => void save()}
+          >
             Save
           </Button>
         </DialogFooter>

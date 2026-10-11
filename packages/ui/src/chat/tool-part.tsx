@@ -35,13 +35,15 @@ export function ToolPart({
 
     if (!actions?.pendingToolCallIds.has(part.toolCallId)) return <renderer.render part={part} />;
 
+    const { dismissToolCall } = actions;
+
     return (
       <renderer.render
         part={part}
         addToolOutput={(output) =>
           actions.addToolOutput({ tool: getToolName(part), toolCallId: part.toolCallId, output })
         }
-        dismiss={() => actions.dismissToolCall(part.toolCallId)}
+        dismiss={dismissToolCall ? () => dismissToolCall(part.toolCallId) : undefined}
       />
     );
   }

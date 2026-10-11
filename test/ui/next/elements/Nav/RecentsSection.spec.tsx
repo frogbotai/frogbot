@@ -208,6 +208,46 @@ describe('RecentsSection', () => {
     vi.unstubAllGlobals();
   });
 
+  it('lists and deletes with the server slugs, without a manifest request', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetch);
+
+    fetch.mockImplementation((_input: string, init?: RequestInit) =>
+      Promise.resolve(
+        init?.method === 'DELETE'
+          ? new Response(null, { status: 204 })
+          : Response.json({
+              docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }],
+              page: 1,
+              totalDocs: 1,
+              totalPages: 1,
+            }),
+      ),
+    );
+
+    find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
+    render(await RecentsSection(props()));
+
+    act(() => {
+      window.dispatchEvent(new Event('frogbot:chats:mutated'));
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await vi.waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith('/api/conversations/seed', expect.anything()),
+    );
+
+    const paths = fetch.mock.calls.map(([input]) => String(input).split('?')[0]);
+
+    expect(paths).not.toContain('/api/frogbot');
+    expect(paths).toContain('/api/turns');
+
+    vi.unstubAllGlobals();
+  });
+
   it('revalidates on focus and the refresh interval', async () => {
     vi.useFakeTimers();
     vi.stubGlobal('fetch', fetch);

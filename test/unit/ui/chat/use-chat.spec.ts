@@ -1,10 +1,9 @@
-import { createFrogBotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadChat } from '../../../../packages/ui/src/chat/use-chat';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
-describe('loadChat', () => {
-  it('uses the manifest message slug and returns mapped messages in creation order', async () => {
+describe('loadMessages', () => {
+  it('uses the message slug and returns mapped messages in creation order', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(
         Response.json({ docs: [{ id: 7, role: 'user', parts: [{ type: 'text', text: 'hi' }] }] }),
@@ -12,12 +11,11 @@ describe('loadChat', () => {
     );
 
     await expect(
-      loadChat({
-        sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
-        messagesSlug: 'turns',
-        chatId: 'chat-1',
-      }),
-    ).resolves.toEqual([{ id: '7', role: 'user', parts: [{ type: 'text', text: 'hi' }] }]);
+      createRestChatAdapter({ fetch, messagesSlug: 'turns' }).loadMessages('chat-1'),
+    ).resolves.toEqual({
+      messages: [{ id: '7', role: 'user', parts: [{ type: 'text', text: 'hi' }] }],
+      queued: [],
+    });
     expect(fetch.mock.calls[0]?.[0]).toContain('/api/turns?');
     expect(decodeURIComponent(String(fetch.mock.calls[0]?.[0]))).toContain(
       'where[chat][equals]=chat-1',

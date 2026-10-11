@@ -1,4 +1,3 @@
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -6,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ChatHistory, deriveChatTitle } from '../../../../packages/ui/src/chat/chat-history';
 import { ChatShell } from '../../../../packages/ui/src/chat/chat-shell';
 import { ChatStatus } from '../../../../packages/ui/src/chat/chat-status';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 describe('provider-free chat shell', () => {
   it('selects history and exposes active state', () => {
@@ -50,7 +50,7 @@ describe('provider-free chat shell', () => {
     const user = userEvent.setup();
     const onNewChat = vi.fn();
     const request = vi
-      .fn()
+      .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
@@ -69,12 +69,14 @@ describe('provider-free chat shell', () => {
       <ChatHistory
         activeChatId="chat-1"
         chats={[{ id: 'chat-1', agent: 'a', title: 'First' }]}
-        chatsSlug="chats"
+        adapter={createRestChatAdapter({
+          fetch: request,
+          chatsSlug: 'chats',
+          messagesSlug: 'messages',
+        })}
         fallbackTitle="Untitled"
-        messagesSlug="messages"
         onChatChange={vi.fn()}
         onNewChat={onNewChat}
-        sdk={{ request } as unknown as FrogBotSDK}
       />,
     );
 
@@ -84,7 +86,48 @@ describe('provider-free chat shell', () => {
 
     await vi.waitFor(() => expect(onNewChat).toHaveBeenCalledOnce());
 
-    expect(request).toHaveBeenLastCalledWith('/chats/chat-1', { method: 'DELETE' });
+    expect(request).toHaveBeenLastCalledWith(
+      '/api/chats/chat-1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
+  it('offers only the row actions the adapter supports', async () => {
+    const user = userEvent.setup();
+    const { deleteChat: _delete, ...renameOnly } = createRestChatAdapter({
+      fetch: vi.fn<typeof globalThis.fetch>(),
+      chatsSlug: 'chats',
+      messagesSlug: 'messages',
+    });
+
+    const { renameChat: _rename, ...readOnly } = renameOnly;
+    const chats = [{ id: 'chat-1', agent: 'a', title: 'First' }];
+
+    const { rerender } = render(
+      <ChatHistory
+        adapter={renameOnly}
+        chats={chats}
+        fallbackTitle="Untitled"
+        onChatChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Rename']);
+
+    await user.keyboard('{Escape}');
+
+    rerender(
+      <ChatHistory
+        adapter={readOnly}
+        chats={chats}
+        fallbackTitle="Untitled"
+        onChatChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Chat actions' })).toBeNull();
   });
 
   it('renders shell and injected status content without a provider', () => {

@@ -3,8 +3,10 @@ import type { UIMessage, UIMessageChunk } from 'ai';
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
 import { Chat } from '../../../../packages/ui/src/chat/chat';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 import type { ToolPartValue } from '../../../../packages/ui/src/exports/chat-tools';
 import { QuestionToolRender } from '../../../../packages/ui/src/exports/chat-tools';
 
@@ -332,10 +334,16 @@ async function queuedIndicator() {
   return label.closest<HTMLElement>('[role="status"]')!;
 }
 
-function renderChat() {
+function renderChat(omit: string[] = []) {
+  const adapter = Object.fromEntries(
+    Object.entries(createRestChatAdapter({ apiBase: api, fetch: server.fetch })).filter(
+      ([key]) => !omit.includes(key),
+    ),
+  ) as ChatPlatformAdapter;
+
   return render(
     <ChatProvider
-      adapter={{ apiBase: api, fetch: server.fetch }}
+      adapter={adapter}
       toolRenderers={[{ kind: 'question', render: QuestionToolRender }]}
     >
       <Chat agent={agent} defaultChatId={chatId} errorContent={(error) => error.message} />
@@ -360,6 +368,7 @@ describe('QuestionToolRender in Chat', () => {
 
       if (url.pathname === '/api/frogbot') {
         return Response.json({
+          ai: { transcribe: false },
           chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
           files: { slug: 'files' },
           agents: [{ slug: agent }],
@@ -444,6 +453,13 @@ describe('QuestionToolRender in Chat', () => {
     expect(requests('/api/messages', 'GET')).toHaveLength(1);
   });
 
+  it('offers no dismissal when the adapter cannot settle tool calls', async () => {
+    renderChat(['dismissToolCall']);
+
+    expect(await screen.findByRole('button', { name: /Staging/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+  });
+
   it('shows the winning answer when another participant settled the question first', async () => {
     server.routes.push((url) => {
       if (url.pathname !== `/api/agents/${agent}`) return undefined;
@@ -479,88 +495,100 @@ describe('QuestionToolRender in Chat', () => {
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 
-  it('queues a message sent while a question is pending and loads its turn after answering', async () => {
-    let queuedId = '';
+  it.each([
+    ['polls the turn state', true],
+    ['reloads without polling when the adapter has no turn state', false],
+  ])(
+    'queues a message sent while a question is pending and %s after answering',
+    async (_name, loadTurnState) => {
+      let queuedId = '';
 
-    server.routes.push(
-      (url, init) => {
-        if (url.pathname !== `/api/agents/${agent}`) return undefined;
+      server.routes.push(
+        (url, init) => {
+          if (url.pathname !== `/api/agents/${agent}`) return undefined;
 
-        const sent = JSON.parse(String(init?.body)) as { messages: UIMessage[] };
-        const last = sent.messages.at(-1)!;
+          const sent = JSON.parse(String(init?.body)) as { messages: UIMessage[] };
+          const last = sent.messages.at(-1)!;
 
-        if (last.role !== 'user') return undefined;
+          if (last.role !== 'user') return undefined;
 
-        queuedId = last.id;
+          queuedId = last.id;
 
-        return stream([
-          { type: 'data-queued', data: { messageId: last.id, delivery: 'queue' }, transient: true },
-        ]);
-      },
-      (url) => {
-        if (url.pathname !== `/api/agents/${agent}`) return undefined;
+          return stream([
+            {
+              type: 'data-queued',
+              data: { messageId: last.id, delivery: 'queue' },
+              transient: true,
+            },
+          ]);
+        },
+        (url) => {
+          if (url.pathname !== `/api/agents/${agent}`) return undefined;
 
-        server.documents = [
-          userMessage,
-          {
-            ...pendingMessage,
-            parts: [
-              pendingMessage.parts[0],
-              {
-                ...pendingMessage.parts[1],
-                state: 'output-available',
-                output: { answers: [{ header: 'Target', selected: ['Staging'] }] },
-              },
-              { type: 'text', text: 'Deploying to staging.' },
-            ],
-          },
-          {
-            id: queuedId,
-            chat: chatId,
-            role: 'user',
-            parts: [{ type: 'text', text: 'Also check the logs' }],
-            status: 'active',
-          },
-          {
-            id: 'assistant-2',
-            chat: chatId,
-            role: 'assistant',
-            parts: [{ type: 'text', text: 'The logs are clean.' }],
-            status: 'active',
-          },
-        ];
+          server.documents = [
+            userMessage,
+            {
+              ...pendingMessage,
+              parts: [
+                pendingMessage.parts[0],
+                {
+                  ...pendingMessage.parts[1],
+                  state: 'output-available',
+                  output: { answers: [{ header: 'Target', selected: ['Staging'] }] },
+                },
+                { type: 'text', text: 'Deploying to staging.' },
+              ],
+            },
+            {
+              id: queuedId,
+              chat: chatId,
+              role: 'user',
+              parts: [{ type: 'text', text: 'Also check the logs' }],
+              status: 'active',
+            },
+            {
+              id: 'assistant-2',
+              chat: chatId,
+              role: 'assistant',
+              parts: [{ type: 'text', text: 'The logs are clean.' }],
+              status: 'active',
+            },
+          ];
 
-        return stream(reply('Deploying to staging.'));
-      },
-      (url) =>
-        url.pathname === `/api/agents/${agent}/chats/${chatId}/pending`
-          ? Response.json({ chatId, state: 'idle', pending: [] })
-          : undefined,
-    );
+          return stream(reply('Deploying to staging.'));
+        },
+        (url) =>
+          url.pathname === `/api/agents/${agent}/chats/${chatId}/pending`
+            ? Response.json({ chatId, state: 'idle', pending: [] })
+            : undefined,
+      );
 
-    const { container } = renderChat();
+      const { container } = renderChat(loadTurnState ? [] : ['loadTurnState']);
 
-    await screen.findByRole('button', { name: /Staging/ });
+      await screen.findByRole('button', { name: /Staging/ });
 
-    const composer = container.querySelector('.fb-composer__textarea') as HTMLTextAreaElement;
+      const composer = container.querySelector('.fb-composer__textarea') as HTMLTextAreaElement;
 
-    fireEvent.change(composer, { target: { value: 'Also check the logs' } });
-    fireEvent.keyDown(composer, { key: 'Enter' });
+      fireEvent.change(composer, { target: { value: 'Also check the logs' } });
+      fireEvent.keyDown(composer, { key: 'Enter' });
 
-    const queued = await queuedIndicator();
+      const queued = await queuedIndicator();
 
-    expect(within(queued).getByText('Queued')).toBeTruthy();
-    expect(within(queued).getByText('Also check the logs')).toBeTruthy();
-    expect(within(screen.getByRole('log')).queryByText('Also check the logs')).toBeNull();
+      expect(within(queued).getByText('Queued')).toBeTruthy();
+      expect(within(queued).getByText('Also check the logs')).toBeTruthy();
+      expect(within(screen.getByRole('log')).queryByText('Also check the logs')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /Staging/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Staging/ }));
 
-    expect(await screen.findByText('The logs are clean.')).toBeTruthy();
-    expect(screen.queryByText('Queued')).toBeNull();
-    expect(within(screen.getByRole('log')).getByText('Also check the logs')).toBeTruthy();
-    expect(requests(`/api/agents/${agent}`)).toHaveLength(2);
-    expect(requests(`/api/agents/${agent}/chats/${chatId}/pending`, 'GET')).toHaveLength(1);
-  });
+      expect(await screen.findByText('The logs are clean.')).toBeTruthy();
+      expect(screen.queryByText('Queued')).toBeNull();
+      expect(within(screen.getByRole('log')).getByText('Also check the logs')).toBeTruthy();
+      expect(requests(`/api/agents/${agent}`)).toHaveLength(2);
+      expect(requests(`/api/agents/${agent}/chats/${chatId}/pending`, 'GET')).toHaveLength(
+        loadTurnState ? 1 : 0,
+      );
+    },
+  );
 
   it('does not resubmit a completed server tool step after a queued message', async () => {
     server.documents = [

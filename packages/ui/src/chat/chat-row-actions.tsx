@@ -20,8 +20,8 @@ import MoreHorizontalIcon from '../icons/icons/MoreHorizontalIcon.js';
 import PencilIcon from '../icons/icons/PencilIcon.js';
 
 export type ChatRowMenuItemsProps = {
-  onRename: () => void;
-  onDelete: () => void;
+  onRename?: () => void;
+  onDelete?: () => void;
   context?: boolean;
 };
 
@@ -30,28 +30,35 @@ export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuIte
 
   return (
     <>
-      <Item className="fb-slide-right-1" onSelect={onRename}>
-        <PencilIcon />
-        <span>Rename</span>
-      </Item>
-      <Item className="fb-chat-row-actions__delete fb-slide-right-1" onSelect={onDelete}>
-        <DeleteIcon />
-        <span>Delete</span>
-      </Item>
+      {onRename && (
+        <Item className="fb-slide-right-1" onSelect={onRename}>
+          <PencilIcon />
+          <span>Rename</span>
+        </Item>
+      )}
+      {onDelete && (
+        <Item className="fb-chat-row-actions__delete fb-slide-right-1" onSelect={onDelete}>
+          <DeleteIcon />
+          <span>Delete</span>
+        </Item>
+      )}
     </>
   );
 }
 
 export type ChatRowActionsProps = {
   children: ReactElement<{ children?: ReactNode; className?: string }>;
-  onRename: () => void;
-  onDelete: () => void;
+  onRename?: () => void;
+  onDelete?: () => void;
 };
 
 export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const open = menuOpen || contextOpen;
+
+  if (!onRename && !onDelete) return children;
+
   const rowClassName = [
     children.props.className,
     'fb-chat-row-actions__row',
