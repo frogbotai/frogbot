@@ -1,8 +1,21 @@
-export type { ChatPlatformAdapter } from '../chat/adapter.js';
+export type {
+  ChatAdapterErrorCode,
+  ChatDocument,
+  ChatId,
+  ChatManifest,
+  ChatMessages,
+  ChatPage,
+  ChatPlatformAdapter,
+  ChatRequestState,
+  ChatTransportOptions,
+  StoredAttachment,
+  ToolCallSettlement,
+  UploadedAttachment,
+} from '../chat/adapter.js';
+export { ChatAdapterError } from '../chat/adapter.js';
 export type { AgentSelectorProps } from '../chat/agent-selector.js';
 export { AgentSelector } from '../chat/agent-selector.js';
 export type { ComposerAttachment, FileReference, PasteAttachment } from '../chat/attachments.js';
-export { bearerFetch, cookieFetch, createCookieSDK } from '../chat/auth.js';
 export type { ChannelConversationNoticeProps } from '../chat/channel-conversation-notice.js';
 export { ChannelConversationNotice } from '../chat/channel-conversation-notice.js';
 export type { ChatProps, ChatSidebarContext, MessageActionsSlotProps } from '../chat/chat.js';
@@ -62,18 +75,9 @@ export type {
   ModelSelectorReasoning,
 } from '../chat/model-selector.js';
 export { ModelSelector } from '../chat/model-selector.js';
-export type { ToolCallSettlement } from '../chat/mutations.js';
-export {
-  branchChat,
-  deleteChat,
-  dismissToolCall,
-  renameChat,
-  suggestChatTitle,
-  updateChatAgent,
-} from '../chat/mutations.js';
 export type { PageContextButtonProps, PageContextTab } from '../chat/page-context-button.js';
 export { PageContextButton } from '../chat/page-context-button.js';
-export type { ChatManifest, ChatProviderValue } from '../chat/provider.js';
+export type { ChatProviderValue } from '../chat/provider.js';
 export { ChatProvider, useChatProvider } from '../chat/provider.js';
 export { QuestionToolRender } from '../chat/question-tool-render.js';
 export { ReasoningPart } from '../chat/reasoning-part.js';
@@ -88,16 +92,12 @@ export { ToolPart } from '../chat/tool-part.js';
 export type { ToolRenderer, ToolRendererProps } from '../chat/tool-registry.js';
 export type { ToolSelectorProps, ToolSelectorTool } from '../chat/tool-selector.js';
 export { ToolSelector } from '../chat/tool-selector.js';
-export type { FrogBotChatTransportOptions } from '../chat/transport.js';
-export { FrogBotChatTransport } from '../chat/transport.js';
-export type { ChatMessages, LoadTurnStateOptions, UseChatOptions } from '../chat/use-chat.js';
-export { loadChat, loadChatMessages, loadTurnState, useChatMessages } from '../chat/use-chat.js';
-export type { ChatDocument, UseChatDocumentOptions, UseChatsOptions } from '../chat/use-chats.js';
+export type { UseChatOptions } from '../chat/use-chat.js';
+export { useChatMessages } from '../chat/use-chat.js';
+export type { UseChatDocumentOptions, UseChatsOptions } from '../chat/use-chats.js';
 export {
   CHAT_MUTATION_EVENT,
   emitChatMutation,
-  loadChatDocument,
-  loadChats,
   useChatDocument,
   useChats,
 } from '../chat/use-chats.js';

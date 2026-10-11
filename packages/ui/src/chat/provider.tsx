@@ -1,21 +1,15 @@
 'use client';
 
-import { type AgentManifest, createFrogBotSDK, type FrogBotSDK } from '@frogbotai/sdk';
-import type { ManifestResponse } from 'frogbot';
-import { createContext, type ReactNode, use, useEffect, useMemo, useState } from 'react';
+import { createContext, type ReactNode, use, useEffect, useState } from 'react';
 
-import type { ChatPlatformAdapter } from './adapter.js';
+import type { ChatManifest, ChatPlatformAdapter } from './adapter.js';
 import { ArtifactProvider } from './artifact.js';
 import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry.js';
 import type { ToolRenderer } from './tool-registry.js';
 
-export type ChatManifest = ManifestResponse;
-
 export type ChatProviderValue = {
   adapter: ChatPlatformAdapter;
-  sdk: FrogBotSDK;
-  manifest?: ChatManifest;
-  agentManifest?: AgentManifest;
+  manifest?: ChatManifest | null;
   error?: Error;
   loading: boolean;
   toolRenderers: readonly ToolRenderer[];
@@ -36,39 +30,18 @@ export function ChatProvider({
   children: ReactNode;
   toolRenderers?: readonly ToolRenderer[];
 }) {
-  const sdk = useMemo(
-    () =>
-      createFrogBotSDK({
-        baseURL: adapter.apiBase ?? '/api',
-        fetch: async (input, init) => {
-          const headers = new Headers(
-            await (typeof adapter.headers === 'function' ? adapter.headers() : adapter.headers),
-          );
-
-          new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
-
-          return adapter.fetch(input, { ...init, headers });
-        },
-      }),
-    [adapter],
-  );
-
-  const [state, setState] = useState<Omit<ChatProviderValue, 'adapter' | 'sdk' | 'toolRenderers'>>({
+  const [state, setState] = useState<Pick<ChatProviderValue, 'manifest' | 'error' | 'loading'>>({
     loading: true,
   });
 
   useEffect(() => {
     const controller = new AbortController();
 
-    void Promise.all([
-      sdk
-        .request('/frogbot', { signal: controller.signal })
-        .then((response) => response.json() as Promise<ChatManifest>),
-      sdk
-        .request('/agents', { signal: controller.signal })
-        .then((response) => response.json() as Promise<AgentManifest>),
-    ])
-      .then(([manifest, agentManifest]) => setState({ manifest, agentManifest, loading: false }))
+    void adapter
+      .loadManifest({ signal: controller.signal })
+      .then((manifest) => {
+        if (!controller.signal.aborted) setState({ manifest, loading: false });
+      })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
           setState({
@@ -79,10 +52,10 @@ export function ChatProvider({
       });
 
     return () => controller.abort();
-  }, [sdk]);
+  }, [adapter]);
 
   return (
-    <ChatContext value={{ adapter, sdk, ...state, toolRenderers }}>
+    <ChatContext value={{ adapter, ...state, toolRenderers }}>
       <ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>
         {children}
       </ArtifactProvider>

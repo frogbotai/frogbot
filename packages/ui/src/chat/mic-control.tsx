@@ -15,11 +15,10 @@ export function MicControl({
   onWaveformChange?: (audioData: Float32Array | null | undefined) => void;
 }) {
   const provider = useChatProvider();
-  const capability = provider?.manifest?.ai?.transcribe;
+  const adapter = provider?.manifest?.transcribe ? provider.adapter : undefined;
   const transcription = useTranscription({
     onText,
-    transcribe: async (file) =>
-      capability ? (await provider.sdk.ai.transcribe({ file, model: capability.model })).text : '',
+    transcribe: async (file) => (await adapter?.transcribe?.(file)) ?? '',
   });
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export function MicControl({
   }, [onWaveformChange, transcription.audioData, transcription.status]);
 
   useEffect(() => () => onWaveformChange?.(undefined), [onWaveformChange]);
-  if (!capability || !transcription.canRecord) return null;
+  if (!adapter?.transcribe || !transcription.canRecord) return null;
   const active = transcription.status === 'recording' || transcription.status === 'transcribing';
 
   return (

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Chat } from '../../../../packages/ui/src/chat/chat';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 vi.mock('@ai-sdk/react', () => ({
   useChat: () => ({
@@ -18,6 +19,7 @@ vi.mock('@ai-sdk/react', () => ({
 function respond(url: string): Response {
   if (url === 'https://frogbot.example/api/frogbot') {
     return Response.json({
+      ai: { transcribe: false },
       chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
       files: { slug: 'assets' },
       agents: [{ slug: 'support' }],
@@ -75,11 +77,11 @@ describe('renamed collection acceptance', () => {
 
     render(
       <ChatProvider
-        adapter={{
+        adapter={createRestChatAdapter({
           apiBase: 'https://frogbot.example/api',
           fetch,
           headers: { Authorization: 'Bearer runtime' },
-        }}
+        })}
       >
         <Chat
           agent="support"

@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
 import { Composer } from '../../../../packages/ui/src/chat/composer';
 import { MicControl } from '../../../../packages/ui/src/chat/mic-control';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 
 class Recorder {
   static isTypeSupported = () => true;
@@ -36,7 +36,12 @@ describe('MicControl', () => {
         String(input).endsWith('/frogbot')
           ? Response.json({
               ai: { transcribe: capability },
-              chat: { enabled: false },
+              chat: {
+                enabled: true,
+                chatsSlug: 'chats',
+                messagesSlug: 'messages',
+                assetsSlug: 'files',
+              },
               files: { slug: 'files' },
               agents: [],
             })
@@ -46,7 +51,7 @@ describe('MicControl', () => {
       ),
     );
 
-    return { fetch, adapter: { fetch } as ChatPlatformAdapter };
+    return { fetch, adapter: createRestChatAdapter({ fetch }) };
   }
 
   it('does not render without MediaRecorder', async () => {

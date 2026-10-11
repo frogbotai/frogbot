@@ -238,7 +238,7 @@ The REST response is a validation error on the `file` field, naming the file:
 }
 ```
 
-The [SDK](/rest-api/overview#frogbot-rest-api-sdk) throws a `FrogBotSDKError` with status `400` and this `errors` array, and the Local API throws the validation error. The composer shows the file as a red card; see [Attachment cards](/chat/ui-chat#attachment-cards).
+The [SDK](/rest-api/overview#frogbot-rest-api-sdk) throws a `FrogBotSDKError` with status `400` and this `errors` array, and the Local API throws the validation error. The chat UI's REST adapter turns it into a `ChatAdapterError` with code `file-unreadable`, and the composer shows the file as a red card; see [Attachment cards](/chat/ui-chat#attachment-cards).
 
 An asset without stored text, such as one saved with `saveChatAsset` or stored before FrogBot read these files on upload, is read the first time a turn sends it, and the text is saved to the asset for later turns. If it can't be read, the model receives the "couldn't be read" marker below, and FrogBot tries again on the next turn.
 

@@ -1,31 +1,31 @@
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { RenameChatDialog } from '../../../../packages/ui/src/chat/rename-chat-dialog';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
+import { CHAT_MUTATION_EVENT } from '../../../../packages/ui/src/chat/use-chats';
 
-function makeSDK(suggestion: string | null = 'Night frogs') {
+function makeAdapter(suggestion: string | null = 'Night frogs') {
   const request = vi
-    .fn()
+    .fn<typeof globalThis.fetch>()
     .mockResolvedValueOnce(new Response(JSON.stringify({ suggestion })))
     .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'chat-1', title: suggestion })));
 
-  return { sdk: { request } as unknown as FrogBotSDK, request };
+  return { adapter: createRestChatAdapter({ fetch: request, chatsSlug: 'chats' }), request };
 }
 
 describe('RenameChatDialog', () => {
   it('selects the current title and accepts the automatic suggestion', async () => {
     const user = userEvent.setup();
-    const { sdk } = makeSDK();
+    const { adapter } = makeAdapter();
 
     render(
       <RenameChatDialog
         chatId="chat-1"
-        chatsSlug="chats"
         onOpenChange={vi.fn()}
         open
-        sdk={sdk}
+        adapter={adapter}
         title="Current title"
       />,
     );
@@ -41,16 +41,18 @@ describe('RenameChatDialog', () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
     const onRenamed = vi.fn();
-    const { sdk, request } = makeSDK(null);
+    const { adapter, request } = makeAdapter(null);
+    const mutated = vi.fn();
+
+    window.addEventListener(CHAT_MUTATION_EVENT, mutated);
 
     render(
       <RenameChatDialog
         chatId="chat-1"
-        chatsSlug="chats"
         onOpenChange={onOpenChange}
         onRenamed={onRenamed}
         open
-        sdk={sdk}
+        adapter={adapter}
         title="Current title"
       />,
     );
@@ -66,21 +68,23 @@ describe('RenameChatDialog', () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(request).toHaveBeenLastCalledWith(
-      '/chats/chat-1',
+      '/api/chats/chat-1',
       expect.objectContaining({ method: 'PATCH' }),
     );
+    expect(mutated).toHaveBeenCalledOnce();
+
+    window.removeEventListener(CHAT_MUTATION_EVENT, mutated);
   });
 
   it('remains usable when suggestion generation fails', () => {
-    const request = vi.fn().mockRejectedValue(new Error('offline'));
+    const request = vi.fn<typeof globalThis.fetch>().mockRejectedValue(new Error('offline'));
 
     render(
       <RenameChatDialog
         chatId="chat-1"
-        chatsSlug="chats"
         onOpenChange={vi.fn()}
         open
-        sdk={{ request } as unknown as FrogBotSDK}
+        adapter={createRestChatAdapter({ fetch: request, chatsSlug: 'chats' })}
         title="Current title"
       />,
     );
@@ -91,5 +95,30 @@ describe('RenameChatDialog', () => {
     expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
+  });
+
+  it('offers no suggestion when the adapter cannot suggest titles', async () => {
+    const { suggestChatTitle: _suggest, ...adapter } = createRestChatAdapter({
+      fetch: vi.fn<typeof globalThis.fetch>(),
+      chatsSlug: 'chats',
+    });
+
+    render(
+      <RenameChatDialog
+        adapter={adapter}
+        chatId="chat-1"
+        onOpenChange={vi.fn()}
+        open
+        title="Current title"
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Chat title' })).toBeTruthy());
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Cancel',
+      'Save',
+      'Close',
+    ]);
   });
 });

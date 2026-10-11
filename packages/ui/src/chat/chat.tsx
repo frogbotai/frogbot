@@ -1,12 +1,19 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { type AgentManifestEntry, FrogBotSDKError } from '@frogbotai/sdk';
 import { isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from 'ai';
-import type { TurnErrorCode } from 'frogbot';
+import type { AgentManifestEntry, TurnErrorCode } from 'frogbot';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state.js';
+import {
+  ChatAdapterError,
+  type ChatDocument,
+  type ChatId,
+  type ChatManifest,
+  type ChatMessages,
+  type ChatPlatformAdapter,
+} from './adapter.js';
 import type { ComposerAttachment, ComposerModelInput } from './attachments.js';
 import { ChannelConversationNotice } from './channel-conversation-notice.js';
 import { deriveChatTitle } from './chat-history.js';
@@ -20,18 +27,11 @@ import { MessageActions } from './message-actions.js';
 import { MessageEditor } from './message-editor.js';
 import { MessageList, type MessageListProps } from './message-list.js';
 import { MessagePart } from './message-part.js';
-import { branchChat, deleteChat, dismissToolCall, renameChat } from './mutations.js';
-import { type ChatManifest, useChatProvider } from './provider.js';
+import { useChatProvider } from './provider.js';
 import { type ToolActions, ToolActionsContext } from './tool-actions.js';
 import type { ToolPartValue } from './tool-registry.js';
-import {
-  FrogBotChatTransport,
-  prepareChatRequest,
-  toChatError,
-  turnErrorCode,
-} from './transport.js';
-import { loadChatMessages, loadTurnState, useChatMessages } from './use-chat.js';
-import type { ChatDocument } from './use-chats.js';
+import { toChatError, turnErrorCode } from './turn-error.js';
+import { useChatMessages } from './use-chat.js';
 import { emitChatMutation, useChatDocument, useChats } from './use-chats.js';
 
 const TURN_SYNC_ATTEMPTS = 120;
@@ -43,8 +43,8 @@ const SILENT_TURN_ERRORS = new Set<TurnErrorCode>([
 ]);
 
 type ChatActions = {
-  rename: (title: string) => Promise<void>;
-  delete: () => Promise<void>;
+  rename?: (title: string) => Promise<void>;
+  delete?: () => Promise<void>;
 };
 
 export type ChatSidebarContext = {
@@ -120,9 +120,9 @@ export function Chat(props: ChatProps) {
   if (!provider) throw new Error('Chat requires ChatProvider');
   if (provider.loading) return props.loadingContent;
   if (provider.error) return props.errorContent ? props.errorContent(provider.error) : null;
-  if (!provider.manifest || !provider.manifest.chat.enabled) return props.disabledContent;
+  if (!provider.manifest) return props.disabledContent;
 
-  const entry = provider.agentManifest?.agents.find(({ slug }) => slug === props.agent);
+  const entry = provider.manifest.agents.find(({ slug }) => slug === props.agent);
   const model = entry?.models.find((id) => id === props.model) ?? entry?.defaultModel;
 
   return (
@@ -132,22 +132,14 @@ export function Chat(props: ChatProps) {
       modelName={entry && model ? displayModelName({ entry, model }) : undefined}
       chatIdControlled={Object.prototype.hasOwnProperty.call(props, 'chatId')}
       adapter={provider.adapter}
-      sdk={provider.sdk}
       agents={provider.manifest.agents}
-      assetsSlug={provider.manifest.chat.assetsSlug}
-      messagesSlug={provider.manifest.chat.messagesSlug}
-      chatsSlug={provider.manifest.chat.chatsSlug}
     />
   );
 }
 
 type ChatInnerProps = ChatProps & {
-  adapter: NonNullable<ReturnType<typeof useChatProvider>>['adapter'];
-  sdk: NonNullable<ReturnType<typeof useChatProvider>>['sdk'];
+  adapter: ChatPlatformAdapter;
   agents: ChatManifest['agents'];
-  assetsSlug: string;
-  messagesSlug: string;
-  chatsSlug: string;
   chatIdControlled: boolean;
   modelInputs?: ComposerModelInput[];
   modelName?: string;
@@ -164,13 +156,11 @@ function ChatInner({
   emptyContent,
   errorContent,
   fallbackTitle = 'Untitled',
-  assetsSlug,
   greeting: GreetingComponent = Greeting,
   headerSlot,
   initialChat,
   initialMessages,
   logo,
-  messagesSlug,
   assistantMessageActions: AssistantMessageActions,
   model,
   modelInputs,
@@ -181,12 +171,10 @@ function ChatInner({
   reasoning,
   renderMessage,
   renderSidebar,
-  sdk,
   stopContent = 'Stop',
   submitContent = 'Send',
   chatId: controlledChatId,
   chatIdControlled,
-  chatsSlug,
   throttle,
   userName,
   warningContent,
@@ -203,16 +191,15 @@ function ChatInner({
     activeChatId === undefined ? `new:${agent}` : String(activeChatId),
   );
 
-  const createdChatId = useRef<string | undefined>(undefined);
+  const createdChatId = useRef<ChatId | undefined>(undefined);
   const reportedChatId = useRef<string | undefined>(undefined);
   const previousAgent = useRef(agent);
   const renderedAt = useRef(new Map<string, string>());
   const composerRef = useRef<HTMLDivElement>(null);
-  const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
-  const chats = useChats({ sdk, agent, chatsSlug });
+  const history = useChatMessages({ adapter, chatId: activeChatId });
+  const chats = useChats({ adapter, agent });
   const activeChat = useChatDocument({
-    sdk,
-    chatsSlug,
+    adapter,
     chatId: activeChatId,
     initialData: initialChat,
   });
@@ -232,19 +219,15 @@ function ChatInner({
   request.current = { chatId: activeChatId, model, reasoning };
   const transport = useMemo(
     () =>
-      new FrogBotChatTransport({
-        agentSlug: agent,
-        sdk,
+      adapter.createTransport({
+        agent,
+        request: () => request.current,
         onChatId: (nextChatId) => {
           createdChatId.current = nextChatId;
+          emitChatMutation();
         },
-        prepareSendMessagesRequest: prepareChatRequest({
-          chatId: () => request.current.chatId,
-          model: () => request.current.model,
-          reasoning: () => request.current.reasoning,
-        }),
       }),
-    [agent, sdk],
+    [adapter, agent],
   );
 
   const chat = useChat({
@@ -323,7 +306,9 @@ function ChatInner({
   }
 
   async function reloadMessages() {
-    const next = await loadChatMessages({ sdk, messagesSlug, chatId: request.current.chatId });
+    const chatId = request.current.chatId;
+    const next: ChatMessages =
+      chatId === undefined ? { messages: [], queued: [] } : await adapter.loadMessages(chatId);
 
     toolOutputAdded.current = false;
     chat.setMessages(next.messages);
@@ -353,6 +338,16 @@ function ChatInner({
 
     turnSync.current?.abort();
 
+    if (!adapter.loadTurnState) {
+      try {
+        await reloadMessages();
+      } catch (error) {
+        failAction(error, 'Failed to reload chat');
+      }
+
+      return;
+    }
+
     const controller = new AbortController();
 
     turnSync.current = controller;
@@ -365,7 +360,7 @@ function ChatInner({
 
         if (controller.signal.aborted) return;
 
-        const state = await loadTurnState({ sdk, agent, chatId });
+        const state = await adapter.loadTurnState(agent, chatId);
 
         if (state === 'running' || controller.signal.aborted) continue;
 
@@ -392,8 +387,8 @@ function ChatInner({
   }
 
   function flushChatId() {
-    if (!createdChatId.current) return false;
-    reportedChatId.current = createdChatId.current;
+    if (createdChatId.current === undefined) return false;
+    reportedChatId.current = String(createdChatId.current);
     setActiveChatId(createdChatId.current);
     createdChatId.current = undefined;
     chats.refresh();
@@ -492,19 +487,26 @@ function ChatInner({
   };
 
   const mutate = (chatDocument: ChatDocument): ChatActions => ({
-    rename: async (title) => {
-      await renameChat({ sdk, chatsSlug, chatId: chatDocument.id }, title);
-      chats.refresh();
-    },
-    delete: async () => {
-      await deleteChat({ sdk, messagesSlug, chatsSlug, chatId: chatDocument.id });
-      if (String(activeChatId) === String(chatDocument.id)) {
-        clearConversation();
-        setActiveChatId(undefined);
-      }
+    rename: adapter.renameChat
+      ? async (title) => {
+          await adapter.renameChat?.(chatDocument.id, title);
+          emitChatMutation();
+          chats.refresh();
+        }
+      : undefined,
+    delete: adapter.deleteChat
+      ? async () => {
+          await adapter.deleteChat?.(chatDocument.id);
+          emitChatMutation();
 
-      chats.refresh();
-    },
+          if (String(activeChatId) === String(chatDocument.id)) {
+            clearConversation();
+            setActiveChatId(undefined);
+          }
+
+          chats.refresh();
+        }
+      : undefined,
   });
 
   const submit = async (text: string, attachments: ComposerAttachment[]) => {
@@ -544,11 +546,12 @@ function ChatInner({
   };
 
   const branchMessage = async (message: UIMessage) => {
-    if (activeChatId === undefined) return;
+    if (activeChatId === undefined || !adapter.branchChat) return;
     setActionError(undefined);
     setBranching(true);
     try {
-      const nextChatId = await branchChat({ sdk, chatId: activeChatId }, message.id);
+      const nextChatId = await adapter.branchChat(activeChatId, message.id);
+      emitChatMutation();
       chats.refresh();
       selectChat(nextChatId);
     } catch (error) {
@@ -584,19 +587,19 @@ function ChatInner({
   const dismissPendingToolCall = async (toolCallId: string) => {
     const chatId = request.current.chatId;
 
-    if (chatId === undefined) return;
+    if (chatId === undefined || !adapter.dismissToolCall) return;
 
     setActionError(undefined);
 
     try {
-      const settlement = await dismissToolCall({ sdk, agent, chatId }, toolCallId);
+      const settlement = await adapter.dismissToolCall(agent, chatId, toolCallId);
 
       if (pendingToolCallIds.size > 1) await reloadMessages();
       else applyToolPart(settlement.part);
 
       if (queued.length > 0) void syncTurn();
     } catch (error) {
-      if (error instanceof FrogBotSDKError && error.status === 409) {
+      if (error instanceof ChatAdapterError && error.code === 'conflict') {
         await recoverTurn();
 
         return;
@@ -608,7 +611,7 @@ function ChatInner({
 
   const toolActions: ToolActions = {
     addToolOutput,
-    dismissToolCall: dismissPendingToolCall,
+    dismissToolCall: adapter.dismissToolCall ? dismissPendingToolCall : undefined,
     pendingToolCallIds,
     isReadonly,
     channelLabel,
@@ -648,7 +651,7 @@ function ChatInner({
         timestamp={timestampFor(message)}
         timestampPlacement={message.role === 'user' ? 'start' : 'end'}
         onBranch={
-          message.role === 'assistant' && activeChatId !== undefined
+          message.role === 'assistant' && activeChatId !== undefined && adapter.branchChat
             ? () => branchMessage(message)
             : undefined
         }
@@ -767,12 +770,13 @@ function ChatInner({
             <ChannelConversationNotice
               channelLabel={channelLabel}
               branching={branching}
-              onBranch={lastMessage ? () => branchMessage(lastMessage) : undefined}
+              onBranch={
+                lastMessage && adapter.branchChat ? () => branchMessage(lastMessage) : undefined
+              }
             />
           ) : (
             <Composer
-              sdk={sdk}
-              assetsSlug={assetsSlug}
+              adapter={adapter}
               modelInputs={modelInputs}
               modelName={modelName}
               pending={pending}

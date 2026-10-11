@@ -33,7 +33,7 @@ const mocks = vi.hoisted(() => ({
   provider: vi.fn(),
   push: vi.fn(),
   refresh: vi.fn(),
-  request: vi.fn(),
+  request: vi.fn<(method: string, path: string) => Response | undefined>(),
   setPreference: vi.fn(),
   setStepNav: vi.fn(),
   startRouteTransition: vi.fn((transition: () => void) => transition()),
@@ -59,9 +59,8 @@ vi.mock('next/navigation.js', () => ({
 
 vi.mock('@frogbotai/ui/chat', async () => {
   const { ModelSelector } = await import('../../../../packages/ui/src/chat/model-selector.js');
-  const { useChatDocument } = await import('../../../../packages/ui/src/chat/use-chats.js');
-  const sdk = { request: mocks.request };
-  const manifest = { chat: { enabled: true, chatsSlug: 'conversations' } };
+  const { emitChatMutation, useChatDocument } =
+    await import('../../../../packages/ui/src/chat/use-chats.js');
 
   return {
     AgentSelector: ({ onAgentChange }: { onAgentChange: (agent: string) => void }) => (
@@ -73,10 +72,33 @@ vi.mock('@frogbotai/ui/chat', async () => {
 
       return props.children;
     },
-    cookieFetch: () => vi.fn(),
+    emitChatMutation,
     ModelSelector,
     useChatDocument,
-    useChatProvider: () => ({ agentManifest: mocks.manifest, loading: false, manifest, sdk }),
+    useChatProvider: () => ({ loading: false, manifest: mocks.manifest }),
+  };
+});
+
+vi.mock('@frogbotai/ui/chat/rest', async () => {
+  const { createRestChatAdapter } =
+    await import('../../../../packages/ui/src/chat/rest/adapter.js');
+
+  const serverManifest = {
+    ai: { transcribe: false },
+    agents: [],
+    chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
+  };
+
+  return {
+    cookieFetch: (): typeof globalThis.fetch => (input, init) => {
+      const method = init?.method ?? 'GET';
+      const path = String(input).replace(/^\/api/, '');
+
+      if (path === '/frogbot') return Promise.resolve(Response.json(serverManifest));
+
+      return Promise.resolve(mocks.request(method, path) ?? Response.json({}));
+    },
+    createRestChatAdapter,
   };
 });
 
@@ -120,6 +142,7 @@ function renderChatView(props: Partial<Parameters<typeof ChatViewClient>[0]> = {
   const view = () => (
     <ChatViewClient
       agent="general"
+      chatsSlug="conversations"
       documentPath="/admin/collections/conversations"
       initialMessages={[]}
       {...props}
@@ -153,9 +176,7 @@ function reportChatId(chatId: string | undefined) {
 }
 
 function serveChat(chat: { id: string; title?: string }) {
-  mocks.request.mockImplementation(() =>
-    Promise.resolve(Response.json({ agent: 'general', ...chat })),
-  );
+  mocks.request.mockImplementation(() => Response.json({ agent: 'general', ...chat }));
 }
 
 function trigger() {
@@ -320,6 +341,24 @@ describe('ChatViewClient', () => {
     fireEvent.click(await screen.findByText('Sales'));
 
     await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(sales));
+  });
+
+  it('moves an existing chat to another agent and announces the change', async () => {
+    const mutated = vi.fn();
+
+    window.addEventListener(CHAT_MUTATION_EVENT, mutated);
+    useManifest(agentEntry('general'), agentEntry('sales'));
+    serveChat({ id: 'chat-1' });
+
+    renderChatView({ chatId: 'chat-1', initialChat: { id: 'chat-1', agent: 'general' } });
+
+    fireEvent.click(await screen.findByText('Sales'));
+
+    await waitFor(() => expect(mutated).toHaveBeenCalledOnce());
+
+    expect(mocks.request).toHaveBeenCalledWith('PATCH', '/conversations/chat-1');
+
+    window.removeEventListener(CHAT_MUTATION_EVENT, mutated);
   });
 
   it('shows failed turns as an admin toast instead of an inline error', async () => {
@@ -702,7 +741,7 @@ describe('ChatViewClient', () => {
     await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
 
     expect(replaceState).toHaveBeenCalledWith(null, '', '/admin/collections/conversations/chat-2');
-    expect(mocks.request).toHaveBeenCalledWith('/conversations/chat-2?depth=0', undefined);
+    expect(mocks.request).toHaveBeenCalledWith('GET', '/conversations/chat-2?depth=0');
   });
 
   it('returns to the logo only when a new chat starts after a thread', async () => {
@@ -739,6 +778,7 @@ describe('ChatViewClient', () => {
       <ChatViewClient
         agent="general"
         chatId="chat-3"
+        chatsSlug="conversations"
         documentPath="/admin/collections/conversations"
         initialChat={{ id: 'chat-3', agent: 'general', title: 'Hiring plan' }}
         initialMessages={[]}

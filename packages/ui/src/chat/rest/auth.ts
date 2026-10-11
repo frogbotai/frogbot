@@ -16,9 +16,3 @@ export function bearerFetch(
     return fetch(input, { ...init, headers });
   };
 }
-
-export function createCookieSDK(baseURL = '/api') {
-  return createFrogBotSDK({ baseURL, fetch: cookieFetch() });
-}
-
-import { createFrogBotSDK } from '@frogbotai/sdk';

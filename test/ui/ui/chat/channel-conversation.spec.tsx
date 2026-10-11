@@ -2,10 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ChatDocument } from '../../../../packages/ui/src/chat/adapter';
 import { ChannelConversationNotice } from '../../../../packages/ui/src/chat/channel-conversation-notice';
 import { Chat } from '../../../../packages/ui/src/chat/chat';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
-import type { ChatDocument } from '../../../../packages/ui/src/chat/use-chats';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 import { QuestionToolRender } from '../../../../packages/ui/src/exports/chat-tools';
 
 const api = 'https://frogbot.example/api';
@@ -110,7 +111,7 @@ function requests(pathname: string, method = 'POST') {
 function renderChat(props: Partial<ComponentProps<typeof Chat>> = {}) {
   return render(
     <ChatProvider
-      adapter={{ apiBase: api, fetch: server.fetch }}
+      adapter={createRestChatAdapter({ apiBase: api, fetch: server.fetch })}
       toolRenderers={[{ kind: 'question', render: QuestionToolRender }]}
     >
       <Chat
@@ -216,6 +217,7 @@ describe('Chat for a channel conversation', () => {
 
       if (url.pathname === '/api/frogbot') {
         return Response.json({
+          ai: { transcribe: false },
           chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
           files: { slug: 'files' },
           agents: [{ slug: agent }],

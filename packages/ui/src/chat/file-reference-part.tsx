@@ -1,14 +1,13 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import type { FileUIPart } from 'ai';
 import { useEffect, useState } from 'react';
 
+import type { ChatPlatformAdapter } from './adapter.js';
 import { AttachmentCard, isLargeFile, LargeFileHint } from './attachment-card.js';
 import { HEAD_BYTES, kindFrom, typeLabel } from './attachment-kind.js';
 import { FilePart } from './file-part.js';
 import { useChatProvider } from './provider.js';
-import { chatRequest } from './rest.js';
 
 type FileReferencePartProps = {
   id: string | number;
@@ -37,79 +36,57 @@ function AttachmentStatus({ filename, loading }: { filename?: string; loading: b
 export function FileReferencePart(props: FileReferencePartProps) {
   const provider = useChatProvider();
 
-  if (!provider?.manifest?.chat.enabled || provider.error || provider.loading) {
+  if (
+    !provider?.manifest ||
+    provider.error ||
+    provider.loading ||
+    !provider.adapter.readAttachment
+  ) {
     return <AttachmentStatus filename={props.filename} loading={Boolean(provider?.loading)} />;
   }
 
-  const { assetsSlug } = provider.manifest.chat;
-
-  return (
-    <FileReferencePartInner
-      key={JSON.stringify([assetsSlug, props.id])}
-      {...props}
-      assetsSlug={assetsSlug}
-      sdk={provider.sdk}
-    />
-  );
+  return <FileReferencePartInner key={String(props.id)} {...props} adapter={provider.adapter} />;
 }
 
 function FileReferencePartInner({
   id,
   filename,
   origin,
-  assetsSlug,
-  sdk,
-}: FileReferencePartProps & { assetsSlug: string; sdk: FrogBotSDK }) {
+  adapter,
+}: FileReferencePartProps & { adapter: ChatPlatformAdapter }) {
   const [state, setState] = useState<{
-    sdk: FrogBotSDK;
+    adapter: ChatPlatformAdapter;
     attachment?: LoadedAttachment;
     error?: boolean;
-  }>({ sdk });
+  }>({ adapter });
 
   useEffect(() => {
     const controller = new AbortController();
     let objectURL: string | undefined;
 
-    setState({ sdk });
+    setState({ adapter });
 
     const load = async () => {
-      const collectionPath = `/${encodeURIComponent(assetsSlug)}`;
-      const asset = await chatRequest<{
-        filename: string;
-        mimeType: string;
-        filesize?: number | null;
-        text?: string | null;
-      }>(sdk, `${collectionPath}/${encodeURIComponent(String(id))}?depth=0`, {
-        signal: controller.signal,
-      });
+      const stored = await adapter.readAttachment?.(id, { signal: controller.signal });
 
       if (controller.signal.aborted) return;
 
-      if (!asset.filename || !asset.mimeType) throw new Error('Attachment unavailable');
+      if (!stored) throw new Error('Attachment unavailable');
 
-      if (typeof asset.text === 'string') {
+      const { filename: storedName, filesize: size, mediaType } = stored;
+
+      if ('text' in stored) {
         setState({
-          sdk,
-          attachment: {
-            kind: 'text',
-            filename: asset.filename,
-            mediaType: asset.mimeType,
-            text: asset.text,
-          },
+          adapter,
+          attachment: { kind: 'text', filename: storedName, mediaType, size, text: stored.text },
         });
 
         return;
       }
 
-      const response = await sdk.request(
-        `${collectionPath}/file/${encodeURIComponent(asset.filename)}`,
-        { signal: controller.signal },
-      );
-
-      const blob = await response.blob();
+      const { blob } = stored;
       const head = new Uint8Array(await blob.slice(0, HEAD_BYTES).arrayBuffer());
-      const kind = kindFrom({ mediaType: asset.mimeType, filename: asset.filename, head });
-      const size = asset.filesize ?? undefined;
+      const kind = kindFrom({ mediaType, filename: storedName, head });
 
       if (kind === 'text') {
         const text = await blob.text();
@@ -117,14 +94,8 @@ function FileReferencePartInner({
         if (controller.signal.aborted) return;
 
         setState({
-          sdk,
-          attachment: {
-            kind: 'text',
-            filename: asset.filename,
-            mediaType: asset.mimeType,
-            size,
-            text,
-          },
+          adapter,
+          attachment: { kind: 'text', filename: storedName, mediaType, size, text },
         });
 
         return;
@@ -135,22 +106,17 @@ function FileReferencePartInner({
       objectURL = URL.createObjectURL(blob);
 
       setState({
-        sdk,
+        adapter,
         attachment: {
           kind: 'file',
           size,
-          part: {
-            type: 'file',
-            filename: asset.filename,
-            mediaType: asset.mimeType,
-            url: objectURL,
-          },
+          part: { type: 'file', filename: storedName, mediaType, url: objectURL },
         },
       });
     };
 
     void load().catch(() => {
-      if (!controller.signal.aborted) setState({ sdk, error: true });
+      if (!controller.signal.aborted) setState({ adapter, error: true });
     });
 
     return () => {
@@ -158,9 +124,9 @@ function FileReferencePartInner({
 
       if (objectURL) URL.revokeObjectURL(objectURL);
     };
-  }, [assetsSlug, id, sdk]);
+  }, [adapter, id]);
 
-  const attachment = state.sdk === sdk ? state.attachment : undefined;
+  const attachment = state.adapter === adapter ? state.attachment : undefined;
 
   if (attachment?.kind === 'text') {
     const name = filename || attachment.filename;
@@ -187,5 +153,7 @@ function FileReferencePartInner({
     );
   }
 
-  return <AttachmentStatus filename={filename} loading={state.sdk !== sdk || !state.error} />;
+  return (
+    <AttachmentStatus filename={filename} loading={state.adapter !== adapter || !state.error} />
+  );
 }

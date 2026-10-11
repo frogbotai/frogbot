@@ -12,7 +12,10 @@ import { DatabaseSync } from 'node:sqlite';
 import { createFrogBotSDK } from '@frogbotai/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { FrogBotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
+import {
+  FrogBotChatTransport,
+  prepareChatRequest,
+} from '../../packages/ui/src/chat/rest/transport';
 import { getFreePort, spawnServer, terminateProcess, waitForServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';

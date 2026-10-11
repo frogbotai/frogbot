@@ -6,18 +6,17 @@ import type {
   GreetingProps,
   MessageActionsSlotProps,
   ToolRenderer,
-  UseChatDocumentOptions,
 } from '@frogbotai/ui/chat';
 import {
   AgentSelector,
   Chat,
   ChatProvider,
-  cookieFetch,
+  emitChatMutation,
   ModelSelector,
-  updateChatAgent,
   useChatDocument,
   useChatProvider,
 } from '@frogbotai/ui/chat';
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest';
 import { getTranslation } from '@payloadcms/translations';
 import {
   toast,
@@ -31,7 +30,7 @@ import type { AgentReasoningOption, UIMessage } from 'frogbot';
 import { usePathname, useRouter } from 'next/navigation.js';
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 
-const adapter = { fetch: cookieFetch() };
+const adapter = createRestChatAdapter({ fetch: cookieFetch() });
 const chatPicksPreference = 'frogbot-chat-picks';
 
 type ChatPicks = {
@@ -56,6 +55,7 @@ export type ChatViewClientProps = {
   userMessageActionsProps?: object;
   agent: string;
   chatId?: string | number;
+  chatsSlug: string;
   documentPath: string;
   initialChat?: ChatDocument;
   initialMessages: UIMessage[];
@@ -76,6 +76,7 @@ export function ChatViewClient({
   userMessageActionsProps,
   agent,
   chatId,
+  chatsSlug,
   documentPath,
   initialChat,
   initialMessages,
@@ -144,7 +145,12 @@ export function ChatViewClient({
   return (
     <div className="frogbot-chat-view">
       <ChatProvider adapter={adapter} toolRenderers={toolRenderersByAgent[selectedAgent]}>
-        <ChatStepNav chatId={labelChatId} documentPath={documentPath} initialChat={initialChat} />
+        <ChatStepNav
+          chatId={labelChatId}
+          chatsSlug={chatsSlug}
+          documentPath={documentPath}
+          initialChat={initialChat}
+        />
         <ChatViewInner
           key={session}
           agent={agent}
@@ -173,16 +179,14 @@ export function ChatViewClient({
 
 type ChatStepNavProps = {
   chatId: string | number | undefined;
+  chatsSlug: string;
   documentPath: string;
   initialChat: ChatDocument | undefined;
 };
 
-function ChatStepNav({ chatId, documentPath, initialChat }: ChatStepNavProps) {
-  const provider = useChatProvider();
+function ChatStepNav({ chatId, chatsSlug, documentPath, initialChat }: ChatStepNavProps) {
   const { setStepNav } = useStepNav();
-  const sdk = provider?.sdk;
-  const chatsSlug = provider?.manifest?.chat.enabled ? provider.manifest.chat.chatsSlug : undefined;
-  const threadOpen = sdk !== undefined && chatsSlug !== undefined && chatId !== undefined;
+  const threadOpen = chatId !== undefined;
 
   useEffect(() => {
     if (!threadOpen) setStepNav([]);
@@ -196,7 +200,6 @@ function ChatStepNav({ chatId, documentPath, initialChat }: ChatStepNavProps) {
       chatsSlug={chatsSlug}
       documentPath={documentPath}
       initialChat={initialChat}
-      sdk={sdk}
     />
   );
 }
@@ -206,12 +209,7 @@ function ChatStepNavInner({
   chatsSlug,
   documentPath,
   initialChat,
-  sdk,
-}: ChatStepNavProps & {
-  chatId: string | number;
-  chatsSlug: string;
-  sdk: UseChatDocumentOptions['sdk'];
-}) {
+}: ChatStepNavProps & { chatId: string | number }) {
   const pathname = usePathname();
   const { i18n } = useTranslation();
   const { getEntityConfig } = useConfig();
@@ -222,8 +220,7 @@ function ChatStepNavInner({
   );
 
   const { chat } = useChatDocument({
-    sdk,
-    chatsSlug,
+    adapter,
     chatId,
     initialData: initialChat,
     revalidate: true,
@@ -260,14 +257,14 @@ function ChatViewInner({
   selectedAgent,
   setSelectedAgent,
   userName,
-}: Omit<ChatViewClientProps, 'documentPath' | 'toolRenderersByAgent'> & {
+}: Omit<ChatViewClientProps, 'chatsSlug' | 'documentPath' | 'toolRenderersByAgent'> & {
   onChatIdChange: (chatId: string | number | undefined) => void;
   selectedAgent: string;
   setSelectedAgent: (agent: string) => void;
 }) {
   const provider = useChatProvider();
   const { getPreference, setPreference } = usePreferences();
-  const manifest = provider?.agentManifest;
+  const manifest = provider?.manifest;
   const entry = manifest?.agents.find(({ slug }) => slug === selectedAgent);
   const [selectedModel, setSelectedModel] = useState<string>();
   const [reasoningByModel, setReasoningByModel] = useState<Record<string, string>>({});
@@ -337,16 +334,15 @@ function ChatViewInner({
     const nextEntry = manifest?.agents.find(({ slug }) => slug === nextAgent);
     if (!nextEntry) return;
     if (chatId !== undefined) {
-      const chatsSlug = provider?.manifest?.chat.enabled
-        ? provider.manifest.chat.chatsSlug
-        : undefined;
+      if (!adapter.updateChatAgent) return;
 
-      if (!provider || !chatsSlug) return;
       try {
-        await updateChatAgent({ sdk: provider.sdk, chatsSlug, chatId }, nextAgent);
+        await adapter.updateChatAgent(chatId, nextAgent);
       } catch {
         return;
       }
+
+      emitChatMutation();
     }
 
     setSelectedAgent(nextAgent);

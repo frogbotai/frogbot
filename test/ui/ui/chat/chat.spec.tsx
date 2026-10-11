@@ -1,5 +1,3 @@
-import type { AgentManifest } from '@frogbotai/sdk';
-import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ChatInit, UIMessage } from 'ai';
 import { APICallError } from 'ai';
@@ -16,15 +14,11 @@ const state = vi.hoisted(() => ({
   clearError: vi.fn(),
   options: undefined as ChatInit<UIMessage> | undefined,
   refresh: vi.fn(),
-  adapter: {
-    fetch: vi.fn(),
-    buildMetadata: vi.fn(() => ({ source: 'ui' })),
-    executeClientTool: vi.fn(),
-  },
-  sdk: undefined as unknown as ReturnType<typeof createFrogBotSDK>,
-  agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
-  assetsSlug: undefined as string | undefined,
-  agentManifest: undefined as AgentManifest | undefined,
+  fetch: vi.fn(),
+  buildMetadata: vi.fn(() => ({ source: 'ui' })),
+  executeClientTool: vi.fn(),
+  adapter: undefined as unknown as ChatPlatformAdapter,
+  agents: [] as ChatManifest['agents'],
   history: {
     messages: [] as UIMessage[],
     queued: [] as UIMessage[],
@@ -44,26 +38,13 @@ vi.mock('@ai-sdk/react', () => ({
 vi.mock('../../../../packages/ui/src/chat/provider', () => ({
   useChatProvider: () => ({
     adapter: state.adapter,
-    sdk: state.sdk,
     loading: false,
-    manifest: {
-      ai: { transcribe: false },
-      chat: {
-        enabled: true,
-        assetsSlug: state.assetsSlug,
-        chatsSlug: 'chats',
-        messagesSlug: 'messages',
-      },
-      files: { slug: 'files' },
-      agents: state.agents,
-    },
-    agentManifest: state.agentManifest,
+    manifest: { defaultAgent: 'support', agents: state.agents, transcribe: false },
   }),
 }));
 
 vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
   useChatMessages: () => state.history,
-  loadChatMessages: () => Promise.resolve({ messages: [], queued: [] }),
 }));
 
 vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
@@ -79,9 +60,36 @@ vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   }),
 }));
 
+import type { ChatManifest, ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
 import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/chat';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 import { emitChatMutation } from '../../../../packages/ui/src/chat/use-chats';
+
+const supportAgent: ChatManifest['agents'][number] = {
+  slug: 'support',
+  label: 'Support',
+  source: 'config',
+  defaultModel: 'openai/gpt-4o',
+  models: ['openai/gpt-4o'],
+};
+
+function setAdapter(assetsSlug?: string, omit: string[] = assetsSlug ? [] : ['uploadAttachment']) {
+  const adapter: ChatPlatformAdapter = {
+    ...createRestChatAdapter({
+      fetch: state.fetch,
+      chatsSlug: 'chats',
+      messagesSlug: 'messages',
+      assetsSlug,
+    }),
+    buildMetadata: state.buildMetadata,
+    executeClientTool: state.executeClientTool,
+  };
+
+  state.adapter = Object.fromEntries(
+    Object.entries(adapter).filter(([key]) => !omit.includes(key)),
+  ) as ChatPlatformAdapter;
+}
 
 const renderSidebar = (context: ChatSidebarContext) => (
   <ChatHistory
@@ -110,7 +118,7 @@ const message: UIMessage = {
 };
 
 async function sendTransportMessage() {
-  state.adapter.fetch.mockResolvedValue(
+  state.fetch.mockResolvedValue(
     new Response(new ReadableStream({ start: (controller) => controller.close() })),
   );
 
@@ -124,12 +132,11 @@ async function sendTransportMessage() {
     abortSignal: undefined,
   });
 
-  return JSON.parse(state.adapter.fetch.mock.calls[0][1].body as string);
+  return JSON.parse(state.fetch.mock.calls[0][1].body as string);
 }
 
 describe('Chat', () => {
   beforeEach(() => {
-    state.sdk = createFrogBotSDK({ baseURL: '/api', fetch: state.adapter.fetch });
     state.status = 'ready';
     state.error = undefined;
     state.messages = [];
@@ -138,12 +145,12 @@ describe('Chat', () => {
     state.setMessages.mockReset();
     state.addToolOutput.mockReset();
     state.refresh.mockReset();
-    state.adapter.executeClientTool.mockReset();
-    state.adapter.fetch.mockReset();
+    state.executeClientTool.mockReset();
+    state.fetch.mockReset();
     state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
     state.agents = [];
-    state.assetsSlug = undefined;
-    state.agentManifest = undefined;
+    vi.mocked(emitChatMutation).mockClear();
+    setAdapter();
   });
 
   it('seeds AI SDK chat state with prefetched messages', () => {
@@ -176,7 +183,7 @@ describe('Chat', () => {
   });
 
   it('renders header slot content above the message list', () => {
-    state.agents = [{ slug: 'support', profile: { name: 'Ada' } }];
+    state.agents = [{ ...supportAgent, profile: { name: 'Ada' } }];
 
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
@@ -190,7 +197,7 @@ describe('Chat', () => {
   });
 
   it('renders a configured assistant profile avatar', () => {
-    state.agents = [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }];
+    state.agents = [{ ...supportAgent, profile: { name: 'Ada', avatar: '/ada.png' } }];
 
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
@@ -202,7 +209,7 @@ describe('Chat', () => {
   });
 
   it('renders profile initials when the avatar is omitted', () => {
-    state.agents = [{ slug: 'support', profile: { name: 'Ada Lovelace' } }];
+    state.agents = [{ ...supportAgent, profile: { name: 'Ada Lovelace' } }];
 
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
@@ -246,9 +253,9 @@ describe('Chat', () => {
   });
 
   it('uploads long pasted text and sends it as a pasted file reference', async () => {
-    state.assetsSlug = 'assets';
+    setAdapter('assets');
 
-    state.adapter.fetch.mockResolvedValue(
+    state.fetch.mockResolvedValue(
       Response.json({ doc: { id: 'asset-1', filename: 'pasted-1.txt', mimeType: 'text/plain' } }),
     );
 
@@ -275,26 +282,23 @@ describe('Chat', () => {
       }),
     );
 
-    expect(String(state.adapter.fetch.mock.calls[0]?.[0])).toBe('/api/assets');
+    expect(String(state.fetch.mock.calls[0]?.[0])).toBe('/api/assets');
   });
 
   it("gives the composer the selected model's file types and name", async () => {
-    state.assetsSlug = 'assets';
+    setAdapter('assets');
 
-    state.agentManifest = {
-      defaultAgent: 'support',
-      agents: [
-        {
-          slug: 'support',
-          label: 'Support',
-          source: 'config',
-          defaultModel: 'openai/gpt-4o',
-          models: ['openai/gpt-4o', 'openai/gpt-4o-mini'],
-          names: { 'openai/gpt-4o-mini': 'Text Only' },
-          inputs: { 'openai/gpt-4o-mini': ['text'] },
-        },
-      ],
-    };
+    state.agents = [
+      {
+        slug: 'support',
+        label: 'Support',
+        source: 'config',
+        defaultModel: 'openai/gpt-4o',
+        models: ['openai/gpt-4o', 'openai/gpt-4o-mini'],
+        names: { 'openai/gpt-4o-mini': 'Text Only' },
+        inputs: { 'openai/gpt-4o-mini': ['text'] },
+      },
+    ];
 
     const { container, rerender } = render(<Chat agent="support" />);
     const accept = () => container.querySelector('input[type="file"]')?.getAttribute('accept');
@@ -314,7 +318,7 @@ describe('Chat', () => {
     const card = await screen.findByRole('group', { name: "photo.png, PNG, won't be sent" });
 
     expect(card.textContent).toContain("Text Only can't read images.");
-    expect(state.adapter.fetch).not.toHaveBeenCalled();
+    expect(state.fetch).not.toHaveBeenCalled();
   });
 
   it('submits long pasted text as data-paste without upload storage', async () => {
@@ -338,7 +342,7 @@ describe('Chat', () => {
       }),
     );
 
-    expect(state.adapter.fetch).not.toHaveBeenCalled();
+    expect(state.fetch).not.toHaveBeenCalled();
   });
 
   it('sends the strict request body for a new chat', async () => {
@@ -376,7 +380,7 @@ describe('Chat', () => {
         abortSignal: undefined,
       });
 
-    state.adapter.fetch.mockResolvedValue(
+    state.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
         headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
       }),
@@ -384,7 +388,7 @@ describe('Chat', () => {
 
     await send();
 
-    expect(JSON.parse(state.adapter.fetch.mock.calls[0][1].body as string)).toEqual({
+    expect(JSON.parse(state.fetch.mock.calls[0][1].body as string)).toEqual({
       messages: [message],
     });
 
@@ -396,7 +400,7 @@ describe('Chat', () => {
 
     await send();
 
-    expect(JSON.parse(state.adapter.fetch.mock.calls[1][1].body as string)).toEqual({
+    expect(JSON.parse(state.fetch.mock.calls[1][1].body as string)).toEqual({
       messages: [message],
       chatId: 'chat-9',
     });
@@ -406,7 +410,7 @@ describe('Chat', () => {
     vi.useFakeTimers();
     render(<Chat agent="support" />);
 
-    state.adapter.fetch.mockResolvedValue(
+    state.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
         headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
       }),
@@ -466,14 +470,14 @@ describe('Chat', () => {
   });
 
   it('executes client tools and records their output', async () => {
-    state.adapter.executeClientTool.mockResolvedValue('complete');
+    state.executeClientTool.mockResolvedValue('complete');
     render(<Chat agent="support" />);
 
     await state.options?.onToolCall?.({
       toolCall: { dynamic: true, toolName: 'lookup', toolCallId: 'call', input: { id: 1 } },
     });
 
-    expect(state.adapter.executeClientTool).toHaveBeenCalledWith('lookup', { id: 1 });
+    expect(state.executeClientTool).toHaveBeenCalledWith('lookup', { id: 1 });
     expect(state.addToolOutput).toHaveBeenCalledWith({
       tool: 'lookup',
       toolCallId: 'call',
@@ -486,7 +490,7 @@ describe('Chat', () => {
       { id: 'live', role: 'assistant', parts: [{ type: 'text', text: 'Live response' }] },
     ];
 
-    state.adapter.fetch.mockResolvedValue(
+    state.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
         headers: { 'X-FrogBot-Chat-Id': 'created' },
       }),
@@ -527,7 +531,7 @@ describe('Chat', () => {
   it('refreshes history after rename and delete', async () => {
     state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old chat' }] }];
 
-    state.adapter.fetch.mockImplementation((input) =>
+    state.fetch.mockImplementation((input) =>
       Promise.resolve(
         String(input).startsWith('/api/messages?')
           ? Response.json({ docs: [] })
@@ -546,8 +550,8 @@ describe('Chat', () => {
 
               return (
                 <div key={chat.id}>
-                  <button onClick={() => void actions.rename('Renamed')}>Rename {chat.id}</button>
-                  <button onClick={() => void actions.delete()}>Delete {chat.id}</button>
+                  <button onClick={() => void actions.rename?.('Renamed')}>Rename {chat.id}</button>
+                  <button onClick={() => void actions.delete?.()}>Delete {chat.id}</button>
                 </div>
               );
             })}
@@ -562,6 +566,73 @@ describe('Chat', () => {
     await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(2));
 
     expect(state.setMessages).toHaveBeenCalledWith([]);
+  });
+
+  it('emits one chat mutation per rename, branch and delete', async () => {
+    state.messages = [
+      { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
+    ];
+
+    state.fetch.mockImplementation((input) =>
+      Promise.resolve(
+        String(input).startsWith('/api/messages?')
+          ? Response.json({ docs: [] })
+          : String(input) === '/api/frogbot/chat/branch'
+            ? Response.json({ chatId: 'branched' })
+            : Response.json({}),
+      ),
+    );
+
+    render(
+      <Chat
+        agent="support"
+        defaultChatId="one"
+        renderSidebar={(context) => (
+          <>
+            <button onClick={() => void context.actions(context.chats[0]).rename?.('Renamed')}>
+              Rename
+            </button>
+            <button onClick={() => void context.actions(context.chats[0]).delete?.()}>
+              Delete
+            </button>
+          </>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Rename'));
+    await waitFor(() => expect(emitChatMutation).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Branch' }));
+    await waitFor(() => expect(emitChatMutation).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByText('Delete'));
+    await waitFor(() => expect(emitChatMutation).toHaveBeenCalledTimes(3));
+  });
+
+  it('hides branch, attach and row actions the adapter does not provide', () => {
+    const actions = vi.fn();
+
+    setAdapter(undefined, ['uploadAttachment', 'branchChat', 'renameChat', 'deleteChat']);
+
+    state.messages = [
+      { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
+    ];
+
+    render(
+      <Chat
+        agent="support"
+        defaultChatId="one"
+        renderSidebar={(context) => {
+          actions(context.actions(context.chats[0]));
+
+          return null;
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Branch' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add files' })).toBeNull();
+    expect(actions).toHaveBeenLastCalledWith({ rename: undefined, delete: undefined });
   });
 
   it('treats an explicit undefined chatId as controlled and clears the conversation', async () => {

@@ -1,11 +1,7 @@
 'use client';
 
-import {
-  type ChatDocument,
-  ChatHistoryActions,
-  createCookieSDK,
-  useChats,
-} from '@frogbotai/ui/chat';
+import { type ChatDocument, ChatHistoryActions, useChats } from '@frogbotai/ui/chat';
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest';
 import { Link, useConfig } from '@payloadcms/ui';
 import { usePathname, useRouter } from 'next/navigation.js';
 import { useMemo } from 'react';
@@ -71,10 +67,19 @@ export function RecentsSectionClient({
   const { config } = useConfig();
   const pathname = usePathname();
   const router = useRouter();
-  const sdk = useMemo(() => createCookieSDK(config.routes.api), [config.routes.api]);
+  const adapter = useMemo(
+    () =>
+      createRestChatAdapter({
+        apiBase: config.routes.api,
+        fetch: cookieFetch(),
+        chatsSlug,
+        messagesSlug,
+      }),
+    [chatsSlug, config.routes.api, messagesSlug],
+  );
+
   const chats = useChats({
-    sdk,
-    chatsSlug,
+    adapter,
     limit: 30,
     initialData: {
       docs: recents,
@@ -102,16 +107,14 @@ export function RecentsSectionClient({
 
               return (
                 <ChatHistoryActions
+                  adapter={adapter}
                   chat={recent}
-                  chatsSlug={chatsSlug}
                   key={recent.id}
-                  messagesSlug={messagesSlug}
                   onDeleted={() => {
                     if (pathname === path || pathname.startsWith(`${path}/`)) {
                       router.push(collectionPath);
                     }
                   }}
-                  sdk={sdk}
                 >
                   <div className="frogbot-recents-section__item">
                     <NavItem

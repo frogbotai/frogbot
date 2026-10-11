@@ -10,9 +10,10 @@ Place `<Chat>` under `ChatProvider`. The component loads chat history, streams m
 ```tsx
 'use client'
 
-import { Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
+import { Chat, ChatProvider } from '@frogbotai/ui/chat'
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
 
-const adapter = { fetch: cookieFetch() }
+const adapter = createRestChatAdapter({ fetch: cookieFetch() })
 
 export function SupportChat() {
   return (
@@ -67,7 +68,7 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | `onError` | `(error: Error) => void` | — | Called for reply and chat-action failures. Conflicts that `Chat` resolves itself are not reported. |
 | `abortedContent` | `ReactNode` | Nothing | Shown above the composer after the user stops a reply. |
 | `warningContent` | `ReactNode` | — | Shown above the composer whenever it is set. |
-| `renderSidebar` | `(context: ChatSidebarContext) => ReactNode` | No sidebar | Renders a history surface. It receives `chats`, `activeChatId`, `selectChat`, and `actions(chat)`, which returns `rename(title)` and `delete()`. |
+| `renderSidebar` | `(context: ChatSidebarContext) => ReactNode` | No sidebar | Renders a history surface. It receives `chats`, `activeChatId`, `selectChat`, and `actions(chat)`, which returns `rename(title)` and `delete()`, each `undefined` when the adapter lacks `renameChat` or `deleteChat`. |
 | `renderMessage` | `(message: UIMessage) => ReactNode` | FrogBot's message rendering | Replaces how each message renders, including its actions, avatar, and editor. |
 | `userMessageActions` | `ComponentType<MessageActionsSlotProps> \| false` | Copy and Edit | Actions for user messages. See [Message actions](#message-actions). |
 | `assistantMessageActions` | `ComponentType<MessageActionsSlotProps> \| false` | Copy and Branch | Actions for assistant messages. |
@@ -93,7 +94,7 @@ Stopping a reply is not an error, and conflicts that `Chat` resolves by reloadin
 
 Admin recents include Rename and Delete actions. Hover a row to reveal its menu button, or right-click the row to open the same keyboard-accessible menu. Rename opens with the current title selected and requests one AI title suggestion; selecting the suggestion fills the input without saving it. Delete always asks for confirmation and removes the chat with its messages.
 
-Pass the SDK and configured collection slugs to add the same actions to a portable `ChatHistory`. Use `onNewChat` to clear controlled routing after the active chat is deleted:
+Pass the [adapter](/chat/ui-provider#adapter-options) to add the same actions to a portable `ChatHistory`. Rename shows only when the adapter has `renameChat`, Delete only when it has `deleteChat`, and a row with neither has no menu. Use `onNewChat` to clear controlled routing after the active chat is deleted:
 
 ```tsx
 <ChatHistory
@@ -102,9 +103,7 @@ Pass the SDK and configured collection slugs to add the same actions to a portab
   onChatChange={selectChat}
   onNewChat={() => setChatId(undefined)}
   fallbackTitle="Untitled"
-  sdk={sdk}
-  chatsSlug="chats"
-  messagesSlug="messages"
+  adapter={adapter}
 />
 ```
 
@@ -116,12 +115,10 @@ Pass the SDK and configured collection slugs to add the same actions to a portab
 | `fallbackTitle` | `ReactNode` | Required | Shown for chats without a title. |
 | `renderActions` | `(chat: ChatDocument) => ReactNode` | — | Extra content rendered after each row's button. |
 | `className` | `string` | — | Added to the `nav` element. |
-| `sdk` | `FrogBotSDK` | — | With `chatsSlug` and `messagesSlug`, adds Rename and Delete row actions. |
-| `chatsSlug` | `string` | — | Chats collection slug from the manifest. |
-| `messagesSlug` | `string` | — | Messages collection slug from the manifest. Deleting a chat also deletes its messages. |
+| `adapter` | `ChatPlatformAdapter` | — | Adds the Rename and Delete row actions the adapter supports. |
 | `onNewChat` | `() => void` | — | Called after the active chat is deleted. |
 
-`ChatRowActions`, `ChatRowMenuItems`, `ChatHistoryActions`, and `RenameChatDialog` are independently exported from `@frogbotai/ui/chat` for custom row composition. `suggestChatTitle({ sdk, chatId })` calls the authenticated `POST /frogbot/chat/suggest-title` endpoint and resolves to the suggestion or `undefined` when generation produces no title.
+`ChatRowActions`, `ChatRowMenuItems`, `ChatHistoryActions`, and `RenameChatDialog` are independently exported from `@frogbotai/ui/chat` for custom row composition. They work without `ChatProvider`. The rename dialog's suggestion comes from the adapter's `suggestChatTitle`; the REST adapter calls `POST /frogbot/chat/suggest-title`, which resolves to `undefined` when generation produces no title.
 
 `ChatHistoryActions` wraps one row with the menu, rename dialog, and delete confirmation:
 
@@ -129,33 +126,30 @@ Pass the SDK and configured collection slugs to add the same actions to a portab
 | --- | --- | --- | --- |
 | `children` | `ReactElement` | Required | The row element to wrap. |
 | `chat` | `ChatDocument` | Required | The chat the actions apply to. |
-| `sdk` | `FrogBotSDK` | Required | Client used for rename and delete requests. |
-| `chatsSlug` | `string` | Required | Chats collection slug. |
-| `messagesSlug` | `string` | Required | Messages collection slug. |
+| `adapter` | `ChatPlatformAdapter` | Required | Renames and deletes the chat. A missing `renameChat` or `deleteChat` hides its menu item. |
 | `onDeleted` | `(chat: ChatDocument) => void` | — | Called after the chat is deleted. |
 
-`ChatRowActions` adds the hover menu button and right-click menu to a row without any requests of its own:
+`ChatRowActions` adds the hover menu button and right-click menu to a row without any requests of its own. Leave out a handler to hide its item; with neither, the row is rendered without a menu:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactElement<{ children?: ReactNode; className?: string }>` | Required | The row element. Its `className` is kept. |
-| `onRename` | `() => void` | Required | Called when Rename is selected. |
-| `onDelete` | `() => void` | Required | Called when Delete is selected. |
+| `onRename` | `() => void` | — | Called when Rename is selected. Without it, Rename is hidden. |
+| `onDelete` | `() => void` | — | Called when Delete is selected. Without it, Delete is hidden. |
 
 `ChatRowMenuItems` renders the Rename and Delete items for a menu you build yourself:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `onRename` | `() => void` | Required | Called when Rename is selected. |
-| `onDelete` | `() => void` | Required | Called when Delete is selected. |
+| `onRename` | `() => void` | — | Called when Rename is selected. Without it, Rename is hidden. |
+| `onDelete` | `() => void` | — | Called when Delete is selected. Without it, Delete is hidden. |
 | `context` | `boolean` | `false` | Render context-menu items instead of dropdown-menu items. |
 
-`RenameChatDialog` requests a title suggestion each time it opens:
+`RenameChatDialog` requests a title suggestion from the adapter's `suggestChatTitle` each time it opens, and shows none when the adapter has no suggester:
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sdk` | `FrogBotSDK` | Required | Client used for the suggestion and rename requests. |
-| `chatsSlug` | `string` | Required | Chats collection slug. |
+| `adapter` | `ChatPlatformAdapter` | Required | Suggests a title and saves the rename. Save is disabled when the adapter has no `renameChat`. |
 | `chatId` | `string \| number` | Required | Chat to rename. |
 | `title` | `string` | Required | Current title, selected when the dialog opens. |
 | `open` | `boolean` | Required | Whether the dialog is open. |
@@ -164,7 +158,7 @@ Pass the SDK and configured collection slugs to add the same actions to a portab
 
 ## Message actions
 
-Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
+Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch; Branch needs the adapter's `branchChat` and is hidden without it. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
 
 Copy writes rendered HTML and original Markdown to the clipboard. Formatting is preserved when pasted into rich-text editors, while plain-text destinations receive the original Markdown.
 
@@ -222,8 +216,7 @@ Custom shells can build the same view from `useChatDocument` and `ChannelConvers
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sdk` | `FrogBotSDK` | Required | Client used to read the chat. |
-| `chatsSlug` | `string` | Required | Chats collection slug. |
+| `adapter` | `ChatPlatformAdapter` | Required | Reads the chat with `getChat`. |
 | `chatId` | `string \| number` | — | Chat to read. Without it, `chat` is `undefined`. |
 | `initialData` | `ChatDocument` | — | Used instead of a request when its `id` matches `chatId`. |
 | `revalidate` | `boolean` | `false` | Reload the chat when the window regains focus or another component renames or deletes a chat. |
@@ -245,9 +238,10 @@ Custom shells can build the same view from `useChatDocument` and `ChannelConvers
 'use client'
 
 import { useState } from 'react'
-import { AgentSelector, Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
+import { AgentSelector, Chat, ChatProvider } from '@frogbotai/ui/chat'
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
 
-const adapter = { fetch: cookieFetch() }
+const adapter = createRestChatAdapter({ fetch: cookieFetch() })
 
 export function AgentChat() {
   const [agent, setAgent] = useState('support')
@@ -288,12 +282,13 @@ Pass the same choice to `<Chat>` through `model` and `reasoning`; each message i
 'use client'
 
 import { useState } from 'react'
-import { Chat, ChatProvider, cookieFetch, ModelSelector, useChatProvider } from '@frogbotai/ui/chat'
+import { Chat, ChatProvider, ModelSelector, useChatProvider } from '@frogbotai/ui/chat'
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
 
-const adapter = { fetch: cookieFetch() }
+const adapter = createRestChatAdapter({ fetch: cookieFetch() })
 
 function SupportChat() {
-  const entry = useChatProvider()?.agentManifest?.agents.find(({ slug }) => slug === 'support')
+  const entry = useChatProvider()?.manifest?.agents.find(({ slug }) => slug === 'support')
   const [model, setModel] = useState<string>()
   const [reasoning, setReasoning] = useState<string>()
 
@@ -384,9 +379,9 @@ The host remains responsible for reading tab content and creating `data-page-con
 
 ## Attachments
 
-Dropping or selecting files in the composer uploads each one to the chat assets collection advertised by the manifest as `chat.assetsSlug`, then sends a `file-reference` part carrying the stored id. The server links the asset to the chat on the first message that references it, and on every agent turn sends the file in a form the selected model can read. See [chat assets](/chat/overview#chat-assets) for storage and access rules, and [how attachments reach the agent](/chat/overview#how-attachments-reach-the-agent) for what the model receives.
+Dropping or selecting files in the composer uploads each one through the adapter's `uploadAttachment`, then sends a `file-reference` part carrying the stored id. With the [REST adapter](/chat/ui-provider#rest-adapter-options), files go to the chat assets collection advertised by the manifest as `chat.assetsSlug`; the server links the asset to the chat on the first message that references it, and on every agent turn sends the file in a form the selected model can read. See [chat assets](/chat/overview#chat-assets) for storage and access rules, and [how attachments reach the agent](/chat/overview#how-attachments-reach-the-agent) for what the model receives.
 
-Pass `assetsSlug` to a standalone `Composer` to enable the attachment control; `<Chat>` supplies it from the manifest automatically, along with the selected model's input types and display name (`modelInputs` and `modelName`, see [Composer props](/chat/ui-custom-shell#composer-props)).
+Pass an `adapter` with `uploadAttachment` to a standalone `Composer` to enable the attachment control; `<Chat>` passes the provider's adapter automatically, along with the selected model's input types and display name (`modelInputs` and `modelName`, see [Composer props](/chat/ui-custom-shell#composer-props)).
 
 A `file-reference` part has these fields:
 
@@ -445,7 +440,7 @@ An attachment over 10 MB (10,000,000 bytes) that isn't red gets an amber edge an
 
 ### Sent messages
 
-A sent `file-reference` part shows the same text card for text attachments, named by the part's `filename` and opening the same viewer. For an asset with a stored [`text` field](/chat/overview#chat-assets), such as a Word or Excel file, the card uses that text and the file itself isn't downloaded; one stored without text shows a download link until a turn reads it. Images show the image; PDFs, audio, and video show a download link with the file name. Either kind gets the large-file tag over 10 MB, except a Word or Excel text card. While the file loads, the part shows "Loading attachment"; if it can't be loaded, "Attachment unavailable".
+A sent `file-reference` part shows the same text card for text attachments, named by the part's `filename` and opening the same viewer. For an asset with a stored [`text` field](/chat/overview#chat-assets), such as a Word or Excel file, the card uses that text and the file itself isn't downloaded; one stored without text shows a download link until a turn reads it. Images show the image; PDFs, audio, and video show a download link with the file name. Either kind gets the large-file tag over 10 MB, except a Word or Excel text card. While the file loads, the part shows "Loading attachment"; if it can't be loaded, or the adapter has no `readAttachment`, "Attachment unavailable".
 
 ### Screen readers
 
@@ -467,7 +462,7 @@ Several refusals in one drop are announced together, separated by full stops.
 
 ### Pasted text
 
-Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`; a paste of 650 characters or fewer stays in the textarea. With upload storage (`sdk` and `assetsSlug`), the text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. FrogBot sets no size limit on pasted text. A standalone `Composer` without upload storage keeps the text in the browser and sends it as a [`data-paste` part](#message-data-parts) instead. Either way, the agent receives `Pasted text:` followed by the text.
+Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`; a paste of 650 characters or fewer stays in the textarea. With upload storage (an adapter with `uploadAttachment`), the text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. FrogBot sets no size limit on pasted text. A composer without upload storage keeps the text in the browser and sends it as a [`data-paste` part](#message-data-parts) instead. Either way, the agent receives `Pasted text:` followed by the text.
 
 ## Message data parts
 
@@ -485,7 +480,7 @@ A `data-paste` part holds pasted text inline. The composer sends one only when i
 
 ## Voice input
 
-The composer shows a microphone when [`ai.transcriptionModel`](/ai/overview#ai-options) is set, the signed-in user may transcribe with it, and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.
+The composer shows a microphone when the `ChatProvider` adapter has `transcribe` and its manifest sets `transcribe`. With the REST adapter, that is when [`ai.transcriptionModel`](/ai/overview#ai-options) is set, the signed-in user may transcribe with it, and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.
 
 ```ts
 ai: {

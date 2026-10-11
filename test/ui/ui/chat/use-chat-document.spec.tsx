@@ -1,22 +1,18 @@
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  CHAT_MUTATION_EVENT,
-  type ChatDocument,
-  useChatDocument,
-} from '../../../../packages/ui/src/chat/use-chats';
+import type { ChatDocument } from '../../../../packages/ui/src/chat/adapter';
+import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
+import { CHAT_MUTATION_EVENT, useChatDocument } from '../../../../packages/ui/src/chat/use-chats';
 
-const request = vi.fn();
-const sdk = { request } as unknown as FrogBotSDK;
+const request = vi.fn<typeof globalThis.fetch>();
+const adapter = createRestChatAdapter({ fetch: request, chatsSlug: 'chats' });
 const initialChat: ChatDocument = { id: 'chat-1', agent: 'general', title: 'Hello' };
 
 function renderChatDocument(revalidate?: boolean) {
   return renderHook(() =>
     useChatDocument({
-      sdk,
-      chatsSlug: 'chats',
+      adapter,
       chatId: 'chat-1',
       initialData: initialChat,
       revalidate,
@@ -42,7 +38,7 @@ describe('useChatDocument', () => {
 
     await waitFor(() => expect(result.current.chat?.title).toBe('Generated title'));
 
-    expect(request).toHaveBeenCalledExactlyOnceWith('/chats/chat-1?depth=0', undefined);
+    expect(request).toHaveBeenCalledExactlyOnceWith('/api/chats/chat-1?depth=0', expect.anything());
   });
 
   it('re-fetches the chat when the window regains focus with revalidate', async () => {

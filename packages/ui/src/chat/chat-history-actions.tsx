@@ -1,40 +1,39 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import type { ReactElement, ReactNode } from 'react';
 import { useState } from 'react';
 
 import { ConfirmationDialog } from '../components/confirmation-dialog.js';
+import type { ChatDocument, ChatPlatformAdapter } from './adapter.js';
 import { ChatRowActions } from './chat-row-actions.js';
-import { deleteChat } from './mutations.js';
 import { RenameChatDialog } from './rename-chat-dialog.js';
-import type { ChatDocument } from './use-chats.js';
+import { emitChatMutation } from './use-chats.js';
 
 export type ChatHistoryActionsProps = {
   children: ReactElement<{ children?: ReactNode }>;
   chat: ChatDocument;
-  sdk: FrogBotSDK;
-  chatsSlug: string;
-  messagesSlug: string;
+  adapter: ChatPlatformAdapter;
   onDeleted?: (chat: ChatDocument) => void;
 };
 
 export function ChatHistoryActions({
+  adapter,
   chat,
-  chatsSlug,
   children,
-  messagesSlug,
   onDeleted,
-  sdk,
 }: ChatHistoryActionsProps) {
   const [renameOpen, setRenameOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const remove = async () => {
+    if (!adapter.deleteChat) return;
+
     setDeleting(true);
+
     try {
-      await deleteChat({ sdk, chatsSlug, messagesSlug, chatId: chat.id });
+      await adapter.deleteChat(chat.id);
+      emitChatMutation();
       onDeleted?.(chat);
     } finally {
       setDeleting(false);
@@ -43,28 +42,34 @@ export function ChatHistoryActions({
 
   return (
     <>
-      <ChatRowActions onDelete={() => setDeleteOpen(true)} onRename={() => setRenameOpen(true)}>
+      <ChatRowActions
+        onDelete={adapter.deleteChat ? () => setDeleteOpen(true) : undefined}
+        onRename={adapter.renameChat ? () => setRenameOpen(true) : undefined}
+      >
         {children}
       </ChatRowActions>
-      <RenameChatDialog
-        chatId={chat.id}
-        chatsSlug={chatsSlug}
-        onOpenChange={setRenameOpen}
-        open={renameOpen}
-        sdk={sdk}
-        title={chat.title || 'Untitled'}
-      />
-      <ConfirmationDialog
-        description="This permanently deletes the chat and its messages."
-        loadingText="Deleting chat..."
-        onConfirm={() => void remove()}
-        onOpenChange={setDeleteOpen}
-        open={deleteOpen}
-        primaryButtonText="Delete"
-        secondaryButtonText="Cancel"
-        showLoadingOverlay={deleting}
-        title="Delete chat?"
-      />
+      {adapter.renameChat && (
+        <RenameChatDialog
+          adapter={adapter}
+          chatId={chat.id}
+          onOpenChange={setRenameOpen}
+          open={renameOpen}
+          title={chat.title || 'Untitled'}
+        />
+      )}
+      {adapter.deleteChat && (
+        <ConfirmationDialog
+          description="This permanently deletes the chat and its messages."
+          loadingText="Deleting chat..."
+          onConfirm={() => void remove()}
+          onOpenChange={setDeleteOpen}
+          open={deleteOpen}
+          primaryButtonText="Delete"
+          secondaryButtonText="Cancel"
+          showLoadingOverlay={deleting}
+          title="Delete chat?"
+        />
+      )}
     </>
   );
 }

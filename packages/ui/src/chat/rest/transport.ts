@@ -1,14 +1,10 @@
 import type { FrogBotSDK } from '@frogbotai/sdk';
 import {
-  APICallError,
   DefaultChatTransport,
   type HttpChatTransportInitOptions,
   type PrepareSendMessagesRequest,
   type UIMessage,
 } from 'ai';
-import type { TurnErrorCode } from 'frogbot';
-
-import { emitChatMutation } from './use-chats.js';
 
 export type FrogBotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   HttpChatTransportInitOptions<UI_MESSAGE>,
@@ -88,10 +84,7 @@ export class FrogBotChatTransport<
       fetch: async (input, init) => {
         const response = await sdk.fetch(input, init);
         const chatId = response.headers.get('X-FrogBot-Chat-Id');
-        if (chatId) {
-          capture.chatId(chatId);
-          emitChatMutation();
-        }
+        if (chatId) capture.chatId(chatId);
 
         if (response.status === 499) {
           return new Response(new ReadableStream({ start: (controller) => controller.close() }), {
@@ -111,25 +104,5 @@ export class FrogBotChatTransport<
 
   override reconnectToStream(): Promise<null> {
     return Promise.resolve(null);
-  }
-}
-
-export function turnErrorCode(error: unknown): TurnErrorCode | undefined {
-  return readErrorBody(error)?.code;
-}
-
-export function toChatError(error: Error): Error {
-  const message = readErrorBody(error)?.error;
-
-  return typeof message === 'string' && message ? new Error(message, { cause: error }) : error;
-}
-
-function readErrorBody(error: unknown) {
-  if (!APICallError.isInstance(error) || !error.responseBody) return undefined;
-
-  try {
-    return JSON.parse(error.responseBody) as { code?: TurnErrorCode; error?: unknown };
-  } catch {
-    return undefined;
   }
 }

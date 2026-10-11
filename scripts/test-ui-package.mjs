@@ -16,6 +16,7 @@ const subpaths = [
   './icons/registry',
   './theme',
   './chat',
+  './chat/rest',
   './chat/tools',
   './chat/artifacts',
   './shared',
@@ -132,9 +133,22 @@ import '@frogbotai/ui/styles.css'
 import { createRoot } from 'react-dom/client'
 
 void [artifacts, iconNames, tools]
+
+const adapter: chat.ChatPlatformAdapter = {
+  loadManifest: async () => ({
+    defaultAgent: 'local',
+    agents: [{ slug: 'local', label: 'Local', source: 'config', defaultModel: 'openai/gpt-4o', models: ['openai/gpt-4o'] }],
+    transcribe: false,
+  }),
+  createTransport: () => ({ sendMessages: async () => new ReadableStream(), reconnectToStream: async () => null }),
+  listChats: async ({ page }) => ({ docs: [], page, totalDocs: 0, totalPages: 0, hasNextPage: false, hasPrevPage: false }),
+  getChat: async (id) => ({ id, agent: 'local' }),
+  loadMessages: async () => ({ messages: [], queued: [] }),
+}
+
 createRoot(document.getElementById('root')!).render(
   <ThemeProvider mode="dark">
-    <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><chat.MessageList messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Bundled chat' }] }]} /><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
+    <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><chat.MessageList messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Bundled chat' }] }]} /><chat.ChatProvider adapter={adapter}><chat.Chat agent="local" /></chat.ChatProvider><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
   </ThemeProvider>,
 )
 `,
@@ -147,6 +161,7 @@ createRoot(document.getElementById('root')!).render(
     './icons/registry',
     './theme',
     './chat',
+    './chat/rest',
     './chat/tools',
     './chat/artifacts',
     './shared',
@@ -166,6 +181,8 @@ createRoot(document.getElementById('root')!).render(
 
   assert.match(bundle, /Navigation/);
   assert.match(bundle, /Bundled chat/);
+  assert.match(bundle, /fb-chat__composer/);
+  assert.ok(!bundle.includes('FrogBotSDKError'), './chat bundled @frogbotai/sdk');
 
   const bundledCss = fs
     .readdirSync(path.join(appRoot, 'dist/assets'))

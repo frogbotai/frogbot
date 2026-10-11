@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { prepareChatRequest } from '../../../../packages/ui/src/chat/transport';
+import { prepareChatRequest } from '../../../../packages/ui/src/chat/rest/transport';
 
 const stableAttachment = {
   id: 'file-123',

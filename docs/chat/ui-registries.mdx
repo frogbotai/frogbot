@@ -10,7 +10,10 @@ Pass tool renderers and artifact kinds to `ChatProvider`. Registration uses exac
 ```tsx
 import { ChatProvider } from '@frogbotai/ui/chat'
 import type { ArtifactRendererProps } from '@frogbotai/ui/chat/artifacts'
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
 import type { ToolRendererProps } from '@frogbotai/ui/chat/tools'
+
+const adapter = createRestChatAdapter({ fetch: cookieFetch() })
 
 function SearchResult({ part }: ToolRendererProps) {
   return <pre>{JSON.stringify('output' in part ? part.output : part.input, null, 2)}</pre>
@@ -23,7 +26,7 @@ function Chart({ artifact }: ArtifactRendererProps) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ChatProvider
-      adapter={{ fetch }}
+      adapter={adapter}
       toolRenderers={[{ kind: 'search', render: SearchResult }]}
       artifactKinds={[{ kind: 'chart', render: Chart }]}
     >

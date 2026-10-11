@@ -49,12 +49,11 @@ export function CustomShell() {
 | `pending` | `boolean` | `false` | A reply is in progress: shows the stop button and blocks sending. |
 | `startSlot` | `ReactNode` | — | Controls at the start of the toolbar. |
 | `endSlot` | `ReactNode` | — | Controls at the end of the toolbar, before the microphone and send button. |
-| `sdk` | `FrogBotSDK` | — | With `assetsSlug`, enables file attachments and stores long pastes as text assets. |
-| `assetsSlug` | `string` | — | Chat assets collection slug from the manifest. With `sdk`, enables file attachments and stores long pastes as text assets. |
+| `adapter` | `ChatPlatformAdapter` | — | With `uploadAttachment`, enables file attachments and stores long pastes as text assets. See [Adapter options](/chat/ui-provider#adapter-options). |
 | `modelInputs` | `('text' \| 'image' \| 'audio' \| 'video' \| 'pdf')[]` | All file kinds accepted | Input types of the selected model, usually the agent's [`inputs`](/chat/manifest) entry for it. Images, PDFs, audio, and video the model doesn't read are refused when picked; text files are always accepted. See [which files the composer accepts](/chat/ui-chat#which-files-the-composer-accepts). |
 | `modelName` | `string` | `'This model'` | Display name of the selected model, used in refusals such as "Text Only can't read images." |
 
-Without `sdk` and `assetsSlug`, the composer has no attachment control, ignores dropped files, and keeps pastes over 650 characters in the browser as `PasteAttachment`s. `<Chat>` sets all four props from the manifest and the selected model.
+Without an adapter that has `uploadAttachment`, the composer has no attachment control, ignores dropped and pasted files, and keeps pastes over 650 characters in the browser as `PasteAttachment`s. `<Chat>` passes the provider's adapter and sets `modelInputs` and `modelName` from the selected model.
 
 ## Composer attachments
 

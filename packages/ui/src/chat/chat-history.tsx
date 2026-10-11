@@ -1,11 +1,10 @@
 'use client';
 
-import type { FrogBotSDK } from '@frogbotai/sdk';
 import type { UIMessage } from 'ai';
 import type { ReactNode } from 'react';
 
+import type { ChatDocument, ChatPlatformAdapter } from './adapter.js';
 import { ChatHistoryActions } from './chat-history-actions.js';
-import type { ChatDocument } from './use-chats.js';
 
 export function deriveChatTitle(
   messages: UIMessage[],
@@ -29,23 +28,19 @@ export type ChatHistoryProps = {
   fallbackTitle: ReactNode;
   renderActions?: (chat: ChatDocument) => ReactNode;
   className?: string;
-  sdk?: FrogBotSDK;
-  chatsSlug?: string;
-  messagesSlug?: string;
+  adapter?: ChatPlatformAdapter;
   onNewChat?: () => void;
 };
 
 export function ChatHistory({
   activeChatId,
+  adapter,
   className,
   fallbackTitle,
   onChatChange,
   renderActions,
   chats,
-  chatsSlug,
-  messagesSlug,
   onNewChat,
-  sdk,
 }: ChatHistoryProps) {
   return (
     <nav className={`fb-chat-history${className ? ` ${className}` : ''}`}>
@@ -69,16 +64,14 @@ export function ChatHistory({
           </div>
         );
 
-        return sdk && chatsSlug && messagesSlug ? (
+        return adapter ? (
           <ChatHistoryActions
+            adapter={adapter}
             chat={chat}
-            chatsSlug={chatsSlug}
             key={chat.id}
-            messagesSlug={messagesSlug}
             onDeleted={(deleted) => {
               if (String(activeChatId) === String(deleted.id)) onNewChat?.();
             }}
-            sdk={sdk}
           >
             {row}
           </ChatHistoryActions>

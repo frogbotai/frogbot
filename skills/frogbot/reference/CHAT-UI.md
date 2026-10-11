@@ -23,9 +23,10 @@ import '@frogbotai/ui/styles.css';
 ```tsx
 'use client';
 
-import { Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat';
+import { Chat, ChatProvider } from '@frogbotai/ui/chat';
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest';
 
-const adapter = { fetch: cookieFetch() };
+const adapter = createRestChatAdapter({ fetch: cookieFetch() });
 
 export function SupportChat() {
   return (
@@ -38,7 +39,9 @@ export function SupportChat() {
 }
 ```
 
-`cookieFetch()` uses the current browser session. Use `bearerFetch(token)` when the host authenticates with a bearer token. Do not expose server credentials in either adapter.
+`createRestChatAdapter` connects the chat UI to a FrogBot server. `cookieFetch()` uses the current browser session. Use `bearerFetch(getToken)` when the host authenticates with a bearer token. Do not expose server credentials in either fetch.
+
+A host without a FrogBot server passes its own `ChatPlatformAdapter`: `loadManifest`, `createTransport`, `listChats`, `getChat` and `loadMessages` are required, and each optional member, such as `renameChat`, `branchChat` or `uploadAttachment`, shows its feature only when present. The backend behind the transport stores each turn and calls `onChatId` for a new chat. See https://docs.frogbot.ai/chat/ui-provider#custom-adapter.
 
 Keep components that call `useChatProvider()` under the same `ChatProvider`; adding a second provider creates a separate chat context.
 
@@ -57,6 +60,8 @@ Use `headerSlot`, `composerStartSlot`, `composerEndSlot`, and `panel` to add app
 ```tsx
 import { Chat, ChatHistory } from '@frogbotai/ui/chat';
 
+// `adapter` is the one passed to `ChatProvider`; it adds the rename and delete row actions.
+
 <Chat
   agent="support"
   renderSidebar={({ chats, activeChatId, selectChat }) => (
@@ -65,6 +70,7 @@ import { Chat, ChatHistory } from '@frogbotai/ui/chat';
       activeChatId={activeChatId}
       fallbackTitle="New chat"
       onChatChange={selectChat}
+      adapter={adapter}
     />
   )}
 />;

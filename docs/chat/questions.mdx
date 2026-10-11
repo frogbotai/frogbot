@@ -67,10 +67,13 @@ In your own app, register the card with `ChatProvider`.
 
 ```tsx
 import { ChatProvider, QuestionToolRender } from '@frogbotai/ui/chat'
+import { cookieFetch, createRestChatAdapter } from '@frogbotai/ui/chat/rest'
+
+const adapter = createRestChatAdapter({ fetch: cookieFetch() })
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ChatProvider adapter={{ fetch }} toolRenderers={[{ kind: 'question', render: QuestionToolRender }]}>
+    <ChatProvider adapter={adapter} toolRenderers={[{ kind: 'question', render: QuestionToolRender }]}>
       {children}
     </ChatProvider>
   )

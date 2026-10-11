@@ -1,9 +1,9 @@
 'use client';
 
-import { type FrogBotSDK, FrogBotSDKError } from '@frogbotai/sdk';
 import { type ChangeEvent, useRef, useState } from 'react';
 
 import PlusSignIcon from '../icons/icons/PlusSignIcon.js';
+import { ChatAdapterError, type ChatPlatformAdapter } from './adapter.js';
 import { AttachmentCard, type AttachmentCardState } from './attachment-card.js';
 import {
   type AttachmentKind,
@@ -69,16 +69,11 @@ function attachedMessage({ name, kind, origin }: AttachmentDraft): string {
 }
 
 function uploadErrorReason(error: unknown): string | undefined {
-  return error instanceof FrogBotSDKError && error.message ? error.message : undefined;
+  return error instanceof Error && error.message ? error.message : undefined;
 }
 
-function isFileRefusal(error: unknown): boolean {
-  if (!(error instanceof FrogBotSDKError) || error.status !== 400) return false;
-
-  const [detail] = error.errors;
-  const data = detail?.data as { errors?: { path?: unknown }[] } | undefined;
-
-  return Boolean(data?.errors?.some((entry) => entry.path === 'file'));
+function adapterErrorCode(error: unknown) {
+  return error instanceof ChatAdapterError ? error.code : undefined;
 }
 
 function cardLabel({ name, kind, origin, source }: AttachmentItem): string | undefined {
@@ -88,22 +83,20 @@ function cardLabel({ name, kind, origin, source }: AttachmentItem): string | und
 }
 
 export function useAttachments({
-  assetsSlug,
+  adapter,
   modelInputs,
   modelName,
-  sdk,
 }: {
-  assetsSlug?: string;
+  adapter?: ChatPlatformAdapter;
   modelInputs?: readonly ComposerModelInput[];
   modelName?: string;
-  sdk?: FrogBotSDK;
 }) {
   const nextKey = useRef(0);
   const removed = useRef(new Set<number>());
   const [items, setItems] = useState<AttachmentItem[]>([]);
   const [classifying, setClassifying] = useState(0);
   const [status, setStatus] = useState('');
-  const storage = Boolean(sdk && assetsSlug);
+  const storage = Boolean(adapter?.uploadAttachment);
 
   const update = (key: number, changes: Partial<AttachmentItem>) =>
     setItems((current) =>
@@ -123,25 +116,25 @@ export function useAttachments({
   };
 
   const upload = async (item: AttachmentItem) => {
-    if (!sdk || !assetsSlug || !item.source) return;
+    if (!adapter?.uploadAttachment || !item.source) return;
 
     update(item.key, { state: 'uploading', reason: undefined });
 
     try {
-      const uploaded = await sdk.upload(assetsSlug, item.source);
+      const uploaded = await adapter.uploadAttachment(item.source);
 
       if (removed.current.has(item.key)) return;
 
       const reference: FileReference = {
         id: uploaded.id,
         filename: item.name,
-        mediaType: uploaded.mimeType,
+        mediaType: uploaded.mediaType,
         ...(item.origin ? { origin: item.origin } : {}),
       };
 
       update(item.key, {
         state: item.kind === 'text' ? 'text' : 'ready',
-        text: typeof uploaded.text === 'string' ? uploaded.text : item.text,
+        text: uploaded.text ?? item.text,
         attachment: reference,
       });
 
@@ -149,14 +142,16 @@ export function useAttachments({
     } catch (error) {
       if (removed.current.has(item.key)) return;
 
-      if (isFileRefusal(error)) {
+      const code = adapterErrorCode(error);
+
+      if (code === 'file-unreadable') {
         update(item.key, { state: 'refused', reason: UNREADABLE });
         setStatus(refusalMessage({ ...item, reason: UNREADABLE }));
 
         return;
       }
 
-      if (error instanceof FrogBotSDKError && error.status === 413) {
+      if (code === 'file-too-large') {
         update(item.key, { state: 'too-large' });
         setStatus(`Too large to upload: ${item.name}`);
 
