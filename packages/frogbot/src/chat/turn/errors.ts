@@ -1,16 +1,6 @@
-export type TurnErrorCode =
-  | 'already-settled'
-  | 'call-not-found'
-  | 'channel-chat'
-  | 'forbidden'
-  | 'invalid-output'
-  | 'not-awaiting'
-  | 'not-found'
-  | 'not-queued'
-  | 'pending-calls'
-  | 'selection-unavailable'
-  | 'turn-in-progress'
-  | 'write-conflict';
+import type { TurnErrorCode } from '@frogbotai/protocol';
+
+export type { TurnErrorCode };
 
 const statuses: Record<TurnErrorCode, 400 | 403 | 404 | 409> = {
   'already-settled': 409,

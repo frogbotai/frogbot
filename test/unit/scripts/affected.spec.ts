@@ -267,6 +267,7 @@ describe('typecheck areas', () => {
       'fields',
       'collections',
       'live-preview',
+      'protocol',
       'admin',
       'ai',
       'auth',

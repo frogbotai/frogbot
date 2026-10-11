@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { OptionColor } from 'frogbot';
+import type { OptionColor } from '@frogbotai/protocol';
 import type { ReactNode } from 'react';
 
 import { BoardColumn } from './BoardColumn.js';

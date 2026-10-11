@@ -1,8 +1,8 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import type { AgentManifestEntry, ChatManifest, TurnErrorCode } from '@frogbotai/protocol';
 import { isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from 'ai';
-import type { AgentManifestEntry, TurnErrorCode } from 'frogbot';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state.js';
@@ -10,7 +10,6 @@ import {
   ChatAdapterError,
   type ChatDocument,
   type ChatId,
-  type ChatManifest,
   type ChatMessages,
   type ChatPlatformAdapter,
 } from './adapter.js';

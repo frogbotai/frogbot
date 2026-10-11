@@ -24,6 +24,7 @@ const checks = [
   { area: 'fields', project: '../../test/types/fields/tsconfig.json' },
   { area: 'collections', project: '../../test/types/collections/tsconfig.json' },
   { area: 'live-preview', project: '../../test/types/live-preview/tsconfig.json' },
+  { area: 'protocol', project: '../../test/types/protocol/tsconfig.json' },
   { area: 'admin', project: '../../test/types/admin/tsconfig.json' },
   { area: 'ai', project: '../../test/types/ai/tsconfig.json' },
   { area: 'auth', project: '../../test/types/auth/tsconfig.generated.json', after: 'typegen' },

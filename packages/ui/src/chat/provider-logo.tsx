@@ -1,10 +1,10 @@
 import IconBase from '../icons/IconBase.js';
 import SparkleIcon from '../icons/icons/SparkleIcon.js';
-import { providerLogos } from './provider-logos.js';
+import { providers } from './providers.js';
 
 export function ProviderLogo({ provider }: { provider?: string }) {
   const logo =
-    provider && Object.hasOwn(providerLogos, provider) ? providerLogos[provider] : undefined;
+    provider && Object.hasOwn(providers, provider) ? providers[provider].logo : undefined;
 
   return logo ? (
     <IconBase

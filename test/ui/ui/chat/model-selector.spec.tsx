@@ -9,13 +9,13 @@ import {
   ModelSelector,
   type ModelSelectorModel,
 } from '../../../../packages/ui/src/chat/model-selector';
-import { providerLogos } from '../../../../packages/ui/src/chat/provider-logos';
+import { providers } from '../../../../packages/ui/src/chat/providers';
 import { sparkleIcon } from '../../../../packages/ui/src/icons/icons/SparkleIcon';
 
 const gpt: ModelSelectorModel = {
   id: 'openai/gpt-5',
   name: 'GPT-5',
-  provider: 'OpenAI',
+  provider: 'openai',
   reasoning: [
     { key: 'minimal', label: 'Minimal' },
     { key: 'low', label: 'Low' },
@@ -27,16 +27,16 @@ const gpt: ModelSelectorModel = {
 const mini: ModelSelectorModel = {
   id: 'openai/gpt-5-mini',
   name: 'GPT-5 mini',
-  provider: 'OpenAI',
+  provider: 'openai',
   reasoning: [{ key: 'high', label: 'High' }],
 };
 
-const plain: ModelSelectorModel = { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'OpenAI' };
+const plain: ModelSelectorModel = { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai' };
 
 const opus: ModelSelectorModel = {
   id: 'anthropic/claude-opus',
   name: 'Claude Opus',
-  provider: 'Anthropic',
+  provider: 'anthropic',
   reasoning: [
     { key: 'high', label: 'High · 16k' },
     { key: 'max', label: 'Max · 32k' },
@@ -309,7 +309,7 @@ describe('ModelSelector', () => {
     const logo = row.querySelector('.fb-model-selector__logo');
 
     expect(logo?.tagName.toLowerCase()).toBe('svg');
-    expect(logo?.getAttribute('viewBox')).toBe(providerLogos.bedrock.viewBox);
+    expect(logo?.getAttribute('viewBox')).toBe(providers.bedrock.logo?.viewBox);
     expect(logo?.getAttribute('stroke')).toBe('none');
     expect(logo?.getAttribute('aria-hidden')).toBe('true');
     expect(row.firstElementChild).toBe(logo);
@@ -900,6 +900,102 @@ describe('ModelSelector', () => {
 
     expect(openai.querySelectorAll('.fb-model-selector__option')).toHaveLength(3);
     expect(anthropic.querySelectorAll('.fb-model-selector__option')).toHaveLength(1);
+  });
+
+  it('labels a group with its first model provider name, then the registry name, then the id', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Harness
+        choices={[
+          gpt,
+          { id: 'lmstudio/qwen', name: 'Qwen', provider: 'lmstudio' },
+          { id: 'home/llama', name: 'Llama', provider: 'home', providerName: 'Home Server' },
+          { id: 'home/mistral', name: 'Mistral', provider: 'home' },
+          { id: 'anthropic/proxy', name: 'Proxy', provider: 'anthropic', providerName: 'Proxy' },
+          { ...opus, providerName: 'Ignored' },
+          { id: 'custom/model', name: 'Custom', provider: 'custom' },
+        ]}
+      />,
+    );
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    const labels = [...document.querySelectorAll('.fb-model-selector__group-label')].map(
+      (label) => label.textContent,
+    );
+
+    expect(labels).toEqual(['OpenAI', 'LM Studio', 'Home Server', 'Proxy', 'custom']);
+    expect(
+      screen
+        .getByRole('group', { name: 'Home Server' })
+        .querySelectorAll('.fb-model-selector__option'),
+    ).toHaveLength(2);
+  });
+
+  it('puts models without a provider under Other, even with a provider name', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Harness
+        choices={[
+          gpt,
+          { id: 'loose/a', name: 'Loose A' },
+          { id: 'loose/b', name: 'Loose B', providerName: 'Named' },
+        ]}
+      />,
+    );
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    expect(
+      screen.getByRole('group', { name: 'Other' }).querySelectorAll('.fb-model-selector__option'),
+    ).toHaveLength(2);
+    expect(screen.queryByRole('group', { name: 'Named' })).toBeNull();
+  });
+
+  it.each([
+    ['LM Studio', 'Qwen'],
+    ['home server', 'Llama'],
+  ])('finds models by their group label %s', async (query, name) => {
+    const user = userEvent.setup();
+
+    render(
+      <Harness
+        choices={[
+          gpt,
+          { id: 'lmstudio/qwen', name: 'Qwen', provider: 'lmstudio' },
+          { id: 'home/llama', name: 'Llama', provider: 'home', providerName: 'Home Server' },
+        ]}
+      />,
+    );
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), query);
+
+    expect(rowNames()).toEqual([name]);
+  });
+
+  it.each(['ollama', 'lmstudio'])('renders the %s logo with a visible fill', async (provider) => {
+    const user = userEvent.setup();
+    const logo = providers[provider].logo;
+
+    render(<Harness choices={[gpt, { id: `${provider}/local`, name: 'Local', provider }]} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    const svg = row('Local').querySelector('svg');
+    const fills = [...(svg?.querySelectorAll('path') ?? [])].map((path) =>
+      path.getAttribute('fill'),
+    );
+
+    expect(svg?.getAttribute('viewBox')).toBe(logo?.viewBox);
+    expect(fills).toHaveLength(logo?.nodes.length ?? -1);
+    expect(fills.every((fill) => fill !== null && fill !== 'none')).toBe(true);
   });
 
   it('lists models without provider groups when one provider is allowed', async () => {

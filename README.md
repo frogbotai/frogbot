@@ -151,10 +151,11 @@ See the [simple example](./examples/simple) for the full walkthrough.
 
 This monorepo publishes the following packages:
 
-| Package                                    | Description                                                                                                                                        |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`frogbot`](./packages/frogbot)            | FrogBot core: typed configuration surface, agent runtime, CLI, and HTTP server                                                                     |
-| [`@frogbotai/gateway`](./packages/gateway) | The embeddable, self-hostable AI gateway built on the Vercel AI SDK — fully MIT open source. Run it standalone or drop it into any existing server |
+| Package                                      | Description                                                                                                                                        |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`frogbot`](./packages/frogbot)              | FrogBot core: typed configuration surface, agent runtime, CLI, and HTTP server                                                                     |
+| [`@frogbotai/gateway`](./packages/gateway)   | The embeddable, self-hostable AI gateway built on the Vercel AI SDK — fully MIT open source. Run it standalone or drop it into any existing server |
+| [`@frogbotai/protocol`](./packages/protocol) | Types-only contract shared by the FrogBot server and its clients, with no dependencies                                                             |
 
 **Plugins**
 

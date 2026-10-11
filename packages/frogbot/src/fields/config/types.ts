@@ -1,3 +1,4 @@
+import type { OptionColor } from '@frogbotai/protocol';
 import type {
   ArrayField as PayloadArrayField,
   BaseValidateOptions as PayloadBaseValidateOptions,
@@ -291,9 +292,9 @@ export const optionColors = [
   'red',
   'pink',
   'purple',
-] as const;
+] as const satisfies readonly OptionColor[];
 
-export type OptionColor = (typeof optionColors)[number];
+export type { OptionColor };
 
 export type OptionObject = {
   color?: OptionColor;

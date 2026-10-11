@@ -9,7 +9,7 @@ const overlaysPath = resolve(root, 'scripts/model-catalog-overlays.json');
 const catalogPath = resolve(root, 'packages/frogbot/src/ai/catalog.json');
 const gatewayPath = resolve(root, 'packages/gateway/src/providers/catalog.data.ts');
 const typesPath = resolve(root, 'packages/frogbot/src/ai/generated.ts');
-const logosPath = resolve(root, 'packages/ui/src/chat/provider-logos.ts');
+const providersPath = resolve(root, 'packages/ui/src/chat/providers.ts');
 const logoProbe = 'frogbot-missing-provider-logo';
 
 const PROVIDERS = {
@@ -29,6 +29,11 @@ const PROVIDERS = {
   togetherai: 'togetherai',
   vercel: 'vercel',
   xai: 'xai',
+};
+
+const LOGO_ONLY_PROVIDERS = {
+  lmstudio: { name: 'LM Studio', logo: 'lmstudio' },
+  ollama: { name: 'Ollama', logo: 'ollama-cloud' },
 };
 
 const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
@@ -372,7 +377,7 @@ export function logoNodes(svg) {
 
   if (!root) throw new Error('Expected an SVG root');
 
-  const { viewBox } = logoAttributes(root[1]);
+  const { viewBox, fill } = logoAttributes(root[1]);
 
   if (!viewBox?.trim()) throw new Error('Missing SVG viewBox');
 
@@ -396,7 +401,7 @@ export function logoNodes(svg) {
 
     if (name !== 'path') throw new Error(`Unsupported SVG element: ${name}`);
 
-    const attributes = logoAttributes(source);
+    const attributes = { ...(fill !== undefined && { fill }), ...logoAttributes(source) };
 
     if (!attributes.d?.trim()) throw new Error('Missing SVG path d');
 
@@ -427,12 +432,15 @@ export function logoNodes(svg) {
   return { viewBox, nodes };
 }
 
-export async function renderProviderLogos(logos) {
-  const sorted = Object.fromEntries(Object.entries(logos).sort(([a], [b]) => a.localeCompare(b)));
-  const source = `import type { IconNode } from '../icons/types.js';\n\nexport const providerLogos: Record<string, { viewBox: string; nodes: IconNode }> = ${JSON.stringify(sorted, null, 2)};\n`;
-  const options = (await resolveConfig(logosPath)) ?? {};
+export async function renderProviders(providers) {
+  const sorted = Object.fromEntries(
+    Object.entries(providers).sort(([a], [b]) => a.localeCompare(b)),
+  );
 
-  return format(source, { ...options, filepath: logosPath, parser: 'typescript' });
+  const source = `import type { IconNode } from '../icons/types.js';\n\nexport const providers: Record<string, { name: string; logo?: { viewBox: string; nodes: IconNode } }> = ${JSON.stringify(sorted, null, 2)};\n`;
+  const options = (await resolveConfig(providersPath)) ?? {};
+
+  return format(source, { ...options, filepath: providersPath, parser: 'typescript' });
 }
 
 async function fetchLogo({ fetchImpl, provider }) {
@@ -473,29 +481,43 @@ export async function syncCatalog({ fetchImpl = fetch } = {}) {
   const { catalog, gateway } = buildCatalogs({ overlays, source });
   const generic = await fetchLogo({ fetchImpl, provider: logoProbe });
 
-  const logos = {};
-
-  for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
-    if (!Object.hasOwn(source, sourceProvider)) continue;
-
+  const providerLogo = async (sourceProvider) => {
     const svg = await fetchLogo({ fetchImpl, provider: sourceProvider });
 
-    if (svg === undefined || svg === generic) continue;
+    if (svg === undefined || svg === generic) return undefined;
 
     try {
-      logos[provider] = logoNodes(svg);
+      return logoNodes(svg);
     } catch (error) {
       throw new Error(`Invalid models.dev logo for '${sourceProvider}': ${error.message}`, {
         cause: error,
       });
     }
+  };
+
+  const providers = {};
+
+  for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
+    if (!Object.hasOwn(source, sourceProvider)) continue;
+
+    const { name } = source[sourceProvider];
+
+    if (typeof name !== 'string' || !name.trim()) {
+      throw new Error(`Missing models.dev name for '${sourceProvider}'`);
+    }
+
+    providers[provider] = { name, logo: await providerLogo(sourceProvider) };
+  }
+
+  for (const [provider, { name, logo: sourceProvider }] of Object.entries(LOGO_ONLY_PROVIDERS)) {
+    providers[provider] = { name, logo: await providerLogo(sourceProvider) };
   }
 
   const outputs = [
     [catalogPath, renderCatalog(catalog)],
     [gatewayPath, renderGatewayCatalog(gateway)],
     [typesPath, await renderAIModelTypes(catalog)],
-    [logosPath, await renderProviderLogos(logos)],
+    [providersPath, await renderProviders(providers)],
   ];
 
   for (const [path, content] of outputs) {

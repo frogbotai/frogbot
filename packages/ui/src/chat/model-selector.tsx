@@ -10,6 +10,7 @@ import ChevronLeftIcon from '../icons/icons/ChevronLeftIcon.js';
 import ChevronRightIcon from '../icons/icons/ChevronRightIcon.js';
 import { compactModelSearch, matchesModelSearch, normalizeModelSearch } from './model-search.js';
 import { ProviderLogo } from './provider-logo.js';
+import { providers } from './providers.js';
 
 export type ModelSelectorReasoning = {
   key: string;
@@ -20,6 +21,7 @@ export type ModelSelectorModel = {
   id: string;
   name: string;
   provider?: string;
+  providerName?: string;
   reasoning?: readonly ModelSelectorReasoning[];
 };
 
@@ -36,6 +38,16 @@ type ModelSelectorView = 'controls' | 'list';
 const focusOnMount = (node: HTMLElement | null) => {
   node?.focus();
 };
+
+function groupLabel(models: readonly ModelSelectorModel[], provider: string | undefined) {
+  if (provider === undefined) return 'Other';
+
+  const first = models.find((model) => model.provider === provider);
+
+  if (first?.providerName) return first.providerName;
+
+  return Object.hasOwn(providers, provider) ? providers[provider].name : provider;
+}
 
 export const ModelSelector = memo(function ModelSelector({
   models,
@@ -217,16 +229,29 @@ function ModelSelectorList({
     [hasSelection, focusInitialOption],
   );
 
+  const labels = useMemo(
+    () =>
+      new Map(
+        [...new Set(models.map(({ provider }) => provider))].map((provider) => [
+          provider,
+          groupLabel(models, provider),
+        ]),
+      ),
+    [models],
+  );
+
   const searchableModels = useMemo(
     () =>
       models.map((model) => ({
         model,
-        values: [model.name, model.id, model.provider ?? ''].map((value) => ({
-          normalized: normalizeModelSearch(value),
-          compact: compactModelSearch(value),
-        })),
+        values: [model.name, model.id, model.provider ?? '', labels.get(model.provider) ?? ''].map(
+          (value) => ({
+            normalized: normalizeModelSearch(value),
+            compact: compactModelSearch(value),
+          }),
+        ),
       })),
-    [models],
+    [models, labels],
   );
 
   const nameCounts = useMemo(
@@ -353,7 +378,7 @@ function ModelSelectorList({
                 className="fb-model-selector__group"
               >
                 <span id={`${groupId}-${index}`} className="fb-model-selector__group-label">
-                  {provider ?? 'Other'}
+                  {labels.get(provider)}
                 </span>
                 {providerModels.map(renderOption)}
               </div>

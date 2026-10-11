@@ -1,3 +1,4 @@
+import type { ChannelThreadReference as ProtocolChannelThreadReference } from '@frogbotai/protocol';
 import type { Adapter, Author, SerializedMessage, SerializedThread } from 'chat';
 
 import type { AgentInstance } from '../agents/types.js';
@@ -27,10 +28,9 @@ export type ChannelConversationIdentity = {
   thread?: string;
 };
 
-export type ChannelThreadReference = {
-  account: string;
-  thread: Omit<SerializedThread, 'currentMessage'>;
-};
+export type ChannelThreadReference = ProtocolChannelThreadReference<
+  Omit<SerializedThread, 'currentMessage'>
+>;
 
 export type ChannelBinding = {
   adapter: Adapter;
