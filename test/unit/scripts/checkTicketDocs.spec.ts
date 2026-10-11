@@ -401,8 +401,8 @@ describe('check ticket-docs', () => {
 
     it('rejects a spec over 1,500 words and a plan over 2,000', () => {
       const words = (count: number) => Array.from({ length: count }, () => 'word').join(' ');
-      const length = (text: string) =>
-        text.split(/\s+/).filter(Boolean).length.toLocaleString('en-US');
+      const length = (text: string) => text.split(/\s+/).filter(Boolean).length;
+      const owner = length(`${ROW_1}\n- **Answer:** A — owner, 2026-10-05`);
 
       const files = {
         ...edit(SPEC, '## Requirements', `${words(1500)}\n\n## Requirements`),
@@ -410,9 +410,27 @@ describe('check ticket-docs', () => {
       };
 
       expect(problems(files)).toEqual([
-        `.idea/${SPEC}:1 spec is ${length(files[SPEC])} words (max 1,500)`,
-        `.idea/${PLAN}:1 plan is ${length(files[PLAN])} words (max 2,000)`,
+        `.idea/${SPEC}:1 spec is ${(length(files[SPEC]) - owner).toLocaleString('en-US')} words (max 1,500)`,
+        `.idea/${PLAN}:1 plan is ${length(files[PLAN]).toLocaleString('en-US')} words (max 2,000)`,
       ]);
+    });
+
+    it("leaves the owner's answers and ruling rows out of the spec word count", () => {
+      const words = (count: number) => Array.from({ length: count }, () => 'word').join(' ');
+      const length = (text: string) => text.split(/\s+/).filter(Boolean).length;
+      const answer = '- **Answer:** A — owner, 2026-10-05';
+      const writer = length(fixture(SPEC)) - length(`${ROW_1}\n${answer}`);
+      const spec = fixture(SPEC)
+        .replace('## Requirements', `${words(1500 - writer)}\n\n## Requirements`)
+        .replace(ROW_1, `${ROW_1}\n${ROW_2}`)
+        .replace(answer, `${answer}\n  ${words(500)}`);
+
+      const result = check({
+        ...edit(RESEARCH, `- **Rulings:**\n  ${ROW_1}`, `- **Rulings:**\n  ${ROW_1}\n  ${ROW_2}`),
+        [SPEC]: spec,
+      });
+
+      expect(result.lines).toEqual(['ticket-docs: OK · 1 ticket']);
     });
   });
 

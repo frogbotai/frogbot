@@ -523,8 +523,19 @@ function checkBanned(doc, { decisions, problem }) {
   });
 }
 
+function writerLines(lines) {
+  let answer = false;
+
+  return lines.filter((line) => {
+    if (/^#{1,6} /.test(line) || /^\s*- \*\*(?!Answer:\*\*)[^*]+:\*\*/.test(line)) answer = false;
+    if (/^\s*- \*\*Answer:\*\*/.test(line)) answer = true;
+
+    return !answer && !/^\s*- DR-\d+\b/.test(line);
+  });
+}
+
 function checkWords(doc, kind, problem) {
-  const words = doc.lines.join('\n').split(/\s+/).filter(Boolean).length;
+  const words = writerLines(doc.lines).join('\n').split(/\s+/).filter(Boolean).length;
 
   if (words > WORDS[kind]) {
     problem(1, `${kind} is ${count(words)} words (max ${count(WORDS[kind])})`);
