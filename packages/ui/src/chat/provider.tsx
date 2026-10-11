@@ -1,8 +1,9 @@
 'use client';
 
+import type { ChatManifest } from '@frogbotai/protocol';
 import { createContext, type ReactNode, use, useEffect, useState } from 'react';
 
-import type { ChatManifest, ChatPlatformAdapter } from './adapter.js';
+import type { ChatPlatformAdapter } from './adapter.js';
 import { ArtifactProvider } from './artifact.js';
 import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry.js';
 import type { ToolRenderer } from './tool-registry.js';

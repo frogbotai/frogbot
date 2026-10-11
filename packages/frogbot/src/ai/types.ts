@@ -1,4 +1,5 @@
 import type { GatewayConfig, ModelReasoningOption } from '@frogbotai/gateway';
+import type { ModelModality } from '@frogbotai/protocol';
 import type {
   DataContent,
   Experimental_EvaluationQuestion,
@@ -109,7 +110,7 @@ export type ModelMode =
   | 'evaluate'
   | 'video_generation';
 
-export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'pdf';
+export type { ModelModality };
 
 export type ModelConfig = {
   id: string;

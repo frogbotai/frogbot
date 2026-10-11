@@ -60,7 +60,9 @@ vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   }),
 }));
 
-import type { ChatManifest, ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
+import type { ChatManifest } from '@frogbotai/protocol';
+
+import type { ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
 import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/chat';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';

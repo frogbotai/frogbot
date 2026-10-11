@@ -1,16 +1,16 @@
+import type { ChatManifest, TurnState } from '@frogbotai/protocol';
 import {
   type AgentManifest,
   createFrogBotSDK,
   type FrogBotSDK,
   FrogBotSDKError,
 } from '@frogbotai/sdk';
-import type { ManifestResponse, TurnState } from 'frogbot';
+import type { ManifestResponse } from 'frogbot';
 
 import {
   ChatAdapterError,
   type ChatDocument,
   type ChatId,
-  type ChatManifest,
   type ChatPage,
   type ChatPlatformAdapter,
   type StoredAttachment,

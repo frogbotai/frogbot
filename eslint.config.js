@@ -124,6 +124,27 @@ function uiImports(...patterns) {
   return ['error', { patterns: [...UI_LIBRARIES, ...patterns] }];
 }
 
+const PROTOCOL_TYPES = {
+  regex: '^@frogbotai/protocol(?:/|$)',
+  allowTypeImports: true,
+  message: '@frogbotai/protocol has types only: use `import type`.',
+};
+
+const UI_FROGBOT = {
+  regex: '^frogbot(?:/|$)',
+  message:
+    'Only packages/ui/src/chat/rest imports frogbot; import contract types from @frogbotai/protocol.',
+};
+
+const PROTOCOL_SELF_CONTAINED = {
+  regex: String.raw`^(?!\.{1,2}/)`,
+  message: '@frogbotai/protocol imports only its own files.',
+};
+
+function typeImports(...patterns) {
+  return ['error', { patterns: [PROTOCOL_TYPES, ...patterns] }];
+}
+
 function topLevel(...types) {
   const exported = types.map((type) => `[declaration.type="${type}"]`).join(', ');
 
@@ -313,6 +334,19 @@ export default tseslint.config(
     files: ['packages/**/src/**'],
     ignores: [...SPECS, ...GENERATED_CATALOG],
     rules: { 'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }] },
+  },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: { '@typescript-eslint/no-restricted-imports': typeImports() },
+  },
+  {
+    files: [UI_SOURCE],
+    ignores: ['packages/ui/src/chat/rest/**'],
+    rules: { '@typescript-eslint/no-restricted-imports': typeImports(UI_FROGBOT) },
+  },
+  {
+    files: ['packages/protocol/src/**'],
+    rules: { '@typescript-eslint/no-restricted-imports': typeImports(PROTOCOL_SELF_CONTAINED) },
   },
   {
     files: [UI_SOURCE],

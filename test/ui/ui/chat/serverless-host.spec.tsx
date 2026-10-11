@@ -1,3 +1,4 @@
+import type { ChatManifest } from '@frogbotai/protocol';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { simulateReadableStream, type UIMessage, type UIMessageChunk } from 'ai';
@@ -7,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ChatDocument,
   ChatId,
-  ChatManifest,
   ChatPlatformAdapter,
 } from '../../../../packages/ui/src/chat/adapter';
 import { Chat } from '../../../../packages/ui/src/chat/chat';

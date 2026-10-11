@@ -2,7 +2,6 @@ export type {
   ChatAdapterErrorCode,
   ChatDocument,
   ChatId,
-  ChatManifest,
   ChatMessages,
   ChatPage,
   ChatPlatformAdapter,
@@ -103,3 +102,4 @@ export {
 } from '../chat/use-chats.js';
 export type { TranscriptionStatus } from '../chat/use-transcription.js';
 export { useTranscription } from '../chat/use-transcription.js';
+export type { ChatManifest } from '@frogbotai/protocol';

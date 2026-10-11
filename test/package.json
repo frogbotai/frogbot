@@ -76,6 +76,7 @@
     "@frogbotai/plugin-sentry": "workspace:*",
     "@frogbotai/plugin-seo": "workspace:*",
     "@frogbotai/plugin-stripe": "workspace:*",
+    "@frogbotai/protocol": "workspace:*",
     "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/sdk": "workspace:*",
     "@frogbotai/storage-azure": "workspace:*",

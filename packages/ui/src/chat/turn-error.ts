@@ -1,5 +1,5 @@
+import type { TurnErrorCode } from '@frogbotai/protocol';
 import { APICallError } from 'ai';
-import type { TurnErrorCode } from 'frogbot';
 
 export function turnErrorCode(error: unknown): TurnErrorCode | undefined {
   return readErrorBody(error)?.code;

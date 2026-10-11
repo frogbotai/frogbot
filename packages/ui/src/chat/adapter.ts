@@ -1,5 +1,5 @@
+import type { ChannelThreadReference, ChatManifest, TurnState } from '@frogbotai/protocol';
 import type { ChatTransport, UIMessage } from 'ai';
-import type { AgentManifestEntry, AgentProfile, ChannelThreadReference, TurnState } from 'frogbot';
 
 import type { ToolPartValue } from './tool-registry.js';
 
@@ -27,12 +27,6 @@ export type ChatPage = {
 export type ChatMessages = {
   messages: UIMessage[];
   queued: UIMessage[];
-};
-
-export type ChatManifest = {
-  defaultAgent: string;
-  agents: (AgentManifestEntry & { profile?: AgentProfile })[];
-  transcribe: boolean;
 };
 
 export type ChatRequestState = {

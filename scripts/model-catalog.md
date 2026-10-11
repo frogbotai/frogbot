@@ -12,7 +12,7 @@ and commit these artifacts together:
 - `packages/frogbot/src/ai/catalog.json`
 - `packages/frogbot/src/ai/generated.ts`
 - `packages/gateway/src/providers/catalog.data.ts`
-- `packages/ui/src/chat/provider-logos.ts`
+- `packages/ui/src/chat/providers.ts`
 
 `scripts/sync-catalog.mjs` contains the pinned field transformations and provider
 aliases. Models marked `deprecated` by models.dev are excluded.
@@ -22,19 +22,26 @@ models.dev `google-vertex` syncs as `vertex` and keeps only the models served by
 a model's `provider.npm`, or the provider's `npm` when the model has none. Its
 Model-as-a-Service and partner models (`@ai-sdk/openai-compatible`) are dropped.
 
-Catalogs are sorted by model ID; provider logos are sorted by FrogBot provider
-slug and formatted with Prettier. A second `pnpm sync:catalog` against
+Catalogs are sorted by model ID; the provider registry is sorted by FrogBot
+provider slug and formatted with Prettier. A second `pnpm sync:catalog` against
 the same source data must leave the worktree unchanged.
 
-Provider logos come from `https://models.dev/logos/<provider>.svg` for synced
-providers present in the source dataset. They are downloaded only during the
-sync and bundled as SVG path data; the chat UI makes no runtime logo requests.
-The sync retains each logo's viewBox and only path attributes `d`, `fill`,
-`fill-rule`, `clip-rule`, and `opacity`. Other attributes are dropped. Unsupported
+The provider registry maps each FrogBot provider slug to `{ name, logo? }` for
+the chat model picker. Every synced provider present in the source dataset gets
+its models.dev `name`; a provider without one fails the sync. `LOGO_ONLY_PROVIDERS`
+in the script adds providers that have a name and logo but no catalog models:
+`ollama` ("Ollama", logo from `ollama-cloud`, because models.dev's `ollama` logo
+is the generic one) and `lmstudio` ("LM Studio").
+
+Provider logos come from `https://models.dev/logos/<provider>.svg`. They are
+downloaded only during the sync and bundled as SVG path data; the chat UI makes
+no runtime logo requests. The sync retains each logo's viewBox and only path
+attributes `d`, `fill`, `fill-rule`, `clip-rule`, and `opacity`; a path without
+`fill` takes the `<svg>` root's. Other attributes are dropped. Unsupported
 elements, missing viewBox or path data, network failures, and HTTP errors other
 than 404 fail the sync before any generated file is written. A provider 404 or a
-response identical to the known-missing probe's generic logo is omitted, so the
-UI can use its fallback icon. A 404 on the probe is also accepted.
+response identical to the known-missing probe's generic logo leaves the
+provider without a logo, so the UI uses its fallback icon. A 404 on the probe is also accepted.
 
 ## Reviewed overlays
 

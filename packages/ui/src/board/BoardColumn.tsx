@@ -1,8 +1,8 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
+import type { OptionColor } from '@frogbotai/protocol';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { OptionColor } from 'frogbot';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 

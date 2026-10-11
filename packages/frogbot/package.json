@@ -98,6 +98,7 @@
   },
   "dependencies": {
     "@frogbotai/gateway": "workspace:*",
+    "@frogbotai/protocol": "workspace:*",
     "@next/env": "15.4.10",
     "@payloadcms/drizzle": "3.90.1",
     "@payloadcms/translations": "3.90.1",

@@ -1,5 +1,8 @@
 import type * as FsPromises from 'node:fs/promises';
 import { readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -216,7 +219,7 @@ describe('model catalog sync', () => {
   });
 });
 
-describe('provider logo sync', () => {
+describe('provider registry sync', () => {
   const svg =
     '<svg viewBox="0 0 40 40"><path d="M0 0h40v40H0z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" opacity="0.5"/></svg>';
 
@@ -228,11 +231,14 @@ describe('provider logo sync', () => {
       const url = input instanceof Request ? input.url : input.toString();
 
       if (url === 'https://models.dev/api.json') {
-        const provider = {
-          models: { 'claude-current': source.anthropic.models['claude-current'] },
-        };
+        const models = { 'claude-current': source.anthropic.models['claude-current'] };
 
-        return Promise.resolve(Response.json({ 'amazon-bedrock': provider, anthropic: provider }));
+        return Promise.resolve(
+          Response.json({
+            'amazon-bedrock': { name: 'Amazon Bedrock', models },
+            anthropic: { name: 'Anthropic', models },
+          }),
+        );
       }
 
       const provider = url.slice('https://models.dev/logos/'.length, -'.svg'.length);
@@ -244,10 +250,26 @@ describe('provider logo sync', () => {
     });
   }
 
-  function renderedLogos() {
+  function renderedRegistry() {
     return vi
       .mocked(writeFile)
-      .mock.calls.find(([path]) => String(path).endsWith('/chat/provider-logos.ts'))?.[1];
+      .mock.calls.find(([path]) => String(path).endsWith('/chat/providers.ts'))?.[1];
+  }
+
+  async function renderedProviders() {
+    const actual = await vi.importActual<typeof FsPromises>('node:fs/promises');
+    const dir = await actual.mkdtemp(join(tmpdir(), 'frogbot-providers-'));
+    const file = join(dir, 'providers.ts');
+
+    try {
+      await actual.writeFile(file, String(renderedRegistry()));
+
+      const { providers } = await import(/* @vite-ignore */ pathToFileURL(file).href);
+
+      return providers as Record<string, { name: string; logo?: { viewBox: string } }>;
+    } finally {
+      await actual.rm(dir, { recursive: true, force: true });
+    }
   }
 
   beforeEach(() => {
@@ -275,6 +297,27 @@ describe('provider logo sync', () => {
         ],
       ],
     });
+  });
+
+  it('copies the root fill onto paths that set none', async () => {
+    const { logoNodes } = await loadSync();
+
+    const logo = logoNodes(
+      '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 0"/><path d="M1 1" fill="#fff"/></svg>',
+    );
+
+    expect(logo.nodes).toEqual([
+      ['path', { d: 'M0 0', fill: 'currentColor' }],
+      ['path', { d: 'M1 1', fill: '#fff' }],
+    ]);
+  });
+
+  it('rejects an external paint value on the root fill', async () => {
+    const { logoNodes } = await loadSync();
+
+    expect(() =>
+      logoNodes('<svg viewBox="0 0 24 24" fill="url(#a)"><path d="M0 0"/></svg>'),
+    ).toThrow('Unsupported SVG attribute value: fill');
   });
 
   it('drops event handlers and other attributes', async () => {
@@ -343,13 +386,13 @@ describe('provider logo sync', () => {
 
     await syncCatalog({ fetchImpl: responses() });
 
-    const first = renderedLogos();
+    const first = renderedRegistry();
 
     vi.mocked(writeFile).mockClear();
 
     await syncCatalog({ fetchImpl: responses() });
 
-    expect(renderedLogos()).toBe(first);
+    expect(renderedRegistry()).toBe(first);
   });
 
   it.each([
@@ -376,8 +419,10 @@ describe('provider logo sync', () => {
 
     await syncCatalog({ fetchImpl });
 
-    expect(renderedLogos()).toContain('bedrock:');
-    expect(renderedLogos()).not.toContain('anthropic:');
+    const providers = await renderedProviders();
+
+    expect(providers.bedrock.logo).toBeDefined();
+    expect(providers.anthropic).toEqual({ name: 'Anthropic' });
   });
 
   it('accepts a probe 404 and keys logos by FrogBot slug', async () => {
@@ -386,8 +431,10 @@ describe('provider logo sync', () => {
 
     await syncCatalog({ fetchImpl });
 
-    expect(renderedLogos()).toContain('bedrock:');
-    expect(renderedLogos()).not.toContain('amazon-bedrock');
+    const providers = await renderedProviders();
+
+    expect(providers.bedrock.logo).toBeDefined();
+    expect(Object.keys(providers)).not.toContain('amazon-bedrock');
     expect(fetchImpl.mock.calls.map(([url]) => url)).not.toContain(
       'https://models.dev/logos/openai.svg',
     );
@@ -429,7 +476,7 @@ describe('provider logo sync', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('omits a provider 404', async () => {
+  it('keeps the name and omits the logo on a provider 404', async () => {
     const { syncCatalog } = await loadSync();
     const fetchImpl = logoFetch({
       [probe]: new Response(generic),
@@ -438,8 +485,66 @@ describe('provider logo sync', () => {
 
     await syncCatalog({ fetchImpl });
 
-    expect(renderedLogos()).toContain('bedrock:');
-    expect(renderedLogos()).not.toContain('anthropic:');
+    const providers = await renderedProviders();
+
+    expect(providers.bedrock.logo).toBeDefined();
+    expect(providers.anthropic).toEqual({ name: 'Anthropic' });
+  });
+
+  it('names each synced provider from models.dev', async () => {
+    const { syncCatalog } = await loadSync();
+
+    await syncCatalog({ fetchImpl: logoFetch() });
+
+    const providers = await renderedProviders();
+
+    expect(providers.bedrock.name).toBe('Amazon Bedrock');
+    expect(providers.anthropic.name).toBe('Anthropic');
+  });
+
+  it('rejects a synced provider without a models.dev name before writing outputs', async () => {
+    const { syncCatalog } = await loadSync();
+    const fetchImpl = vi.fn<typeof fetch>(() =>
+      Promise.resolve(Response.json({ anthropic: { models: {} } })),
+    );
+
+    await expect(syncCatalog({ fetchImpl })).rejects.toThrow(
+      "Missing models.dev name for 'anthropic'",
+    );
+
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('adds Ollama and LM Studio with their logos and no catalog models', async () => {
+    const { syncCatalog } = await loadSync();
+    const fetchImpl = logoFetch({
+      [probe]: new Response(generic),
+      'ollama-cloud': new Response(svg),
+      lmstudio: new Response(svg),
+      ollama: new Response(generic),
+    });
+
+    await syncCatalog({ fetchImpl });
+
+    const catalog = vi
+      .mocked(writeFile)
+      .mock.calls.find(([path]) => String(path).endsWith('/ai/catalog.json'))?.[1];
+
+    const providers = await renderedProviders();
+
+    expect(providers.ollama).toEqual({
+      name: 'Ollama',
+      logo: expect.objectContaining({ viewBox: '0 0 40 40' }),
+    });
+    expect(providers.lmstudio).toEqual({
+      name: 'LM Studio',
+      logo: expect.objectContaining({ viewBox: '0 0 40 40' }),
+    });
+    expect(catalog).toEqual(expect.any(String));
+    expect(catalog).not.toMatch(/ollama|lmstudio/);
+    expect(fetchImpl.mock.calls.map(([url]) => url)).not.toContain(
+      'https://models.dev/logos/ollama.svg',
+    );
   });
 
   it.each([probe, 'anthropic'])(
@@ -477,11 +582,12 @@ describe('provider logo sync', () => {
   });
 
   it('renders identical sorted modules for different input orderings', async () => {
-    const { logoNodes, renderProviderLogos } = await loadSync();
-    const logo = logoNodes(svg);
+    const { logoNodes, renderProviders } = await loadSync();
+    const openai = { name: 'OpenAI', logo: logoNodes(svg) };
+    const bedrock = { name: 'Amazon Bedrock', logo: logoNodes(svg) };
 
-    const first = await renderProviderLogos({ openai: logo, bedrock: logo });
-    const second = await renderProviderLogos({ bedrock: logo, openai: logo });
+    const first = await renderProviders({ openai, bedrock });
+    const second = await renderProviders({ bedrock, openai });
 
     expect(first).toBe(second);
     expect(first.indexOf('bedrock:')).toBeLessThan(first.indexOf('openai:'));

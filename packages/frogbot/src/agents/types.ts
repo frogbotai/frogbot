@@ -1,4 +1,9 @@
 import type {
+  AgentManifestEntry as ProtocolAgentManifestEntry,
+  AgentProfile,
+  AgentReasoningOption,
+} from '@frogbotai/protocol';
+import type {
   Agent,
   GenerateTextResult,
   ModelMessage,
@@ -10,7 +15,6 @@ import type {
 } from 'ai';
 import type { z } from 'zod';
 
-import type { ModelModality } from '../ai/types.js';
 import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
@@ -80,11 +84,7 @@ export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTrig
       } & AgentPieceTriggerInput<TTrigger['input']>
     : never;
 
-export type AgentProfile = {
-  name?: string;
-  avatar?: string;
-  description?: string;
-};
+export type { AgentProfile, AgentReasoningOption };
 
 export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerReference> = {
   slug: string;
@@ -105,26 +105,12 @@ export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {
   tools?: readonly AnyTool[];
 };
 
-export type AgentReasoningOption = {
-  key: string;
-  label: string;
-};
-
 export type AgentSelection = {
   model?: AgentModelId;
   reasoning?: string;
 };
 
-export type AgentManifestEntry = {
-  slug: string;
-  label: string;
-  source: 'config' | 'collection';
-  defaultModel: AgentModelId;
-  models: AgentModelId[];
-  names?: Partial<Record<AgentModelId, string>>;
-  reasoning?: Partial<Record<AgentModelId, AgentReasoningOption[]>>;
-  inputs?: Partial<Record<AgentModelId, ModelModality[]>>;
-};
+export type AgentManifestEntry = ProtocolAgentManifestEntry<AgentModelId>;
 
 export type AgentManifest = {
   defaultAgent: string;

@@ -1,6 +1,8 @@
+import type { TurnState } from '@frogbotai/protocol';
+
 import type { DocID } from '../../collections/config/types.js';
 
-export type TurnState = 'idle' | 'running' | 'awaiting';
+export type { TurnState };
 
 export type TurnClaim = {
   chatId: DocID;
