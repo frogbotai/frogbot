@@ -78,6 +78,9 @@ export type { PageContextButtonProps, PageContextTab } from '../chat/page-contex
 export { PageContextButton } from '../chat/page-context-button.js';
 export type { ChatProviderValue } from '../chat/provider.js';
 export { ChatProvider, useChatProvider } from '../chat/provider.js';
+export type { ProviderLogoProps } from '../chat/provider-logo.js';
+export { ProviderLogo } from '../chat/provider-logo.js';
+export { providers } from '../chat/providers.js';
 export { QuestionToolRender } from '../chat/question-tool-render.js';
 export { ReasoningPart } from '../chat/reasoning-part.js';
 export type { RenameChatDialogProps } from '../chat/rename-chat-dialog.js';
