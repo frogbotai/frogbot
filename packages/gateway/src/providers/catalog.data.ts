@@ -7863,6 +7863,29 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['deepinfra'],
   }),
+  model('deepinfra/mistralai/Mistral-Small-24B-Instruct-2501', {
+    name: 'Mistral Small 3',
+    created: '2025-01-30',
+    knowledge: '2023-10-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 16384,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.08,
+    },
+    providers: ['deepinfra'],
+  }),
   model('deepinfra/moonshotai/Kimi-K2.6', {
     name: 'Kimi K2.6',
     created: '2026-04-21',
@@ -8087,32 +8110,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['deepinfra'],
   }),
-  model('deepinfra/Qwen/Qwen3-Max', {
-    name: 'Qwen3 Max',
-    created: '2025-09-23',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 256000,
-      output: 65536,
-    },
-    cost: {
-      input: 1.2,
-      output: 6,
-      cache_read: 0.24,
-    },
-    providers: ['deepinfra'],
-  }),
   model('deepinfra/Qwen/Qwen3-Next-80B-A3B-Instruct', {
     name: 'Qwen3-Next 80B-A3B Instruct',
     created: '2025-09',
@@ -8161,6 +8158,30 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.2,
       output: 0.88,
       cache_read: 0.11,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct', {
+    name: 'Qwen3 VL 30B A3B Instruct',
+    created: '2025-10-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
     },
     providers: ['deepinfra'],
   }),
@@ -8344,38 +8365,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2.5,
       output: 7.5,
       cache_read: 0.5,
-    },
-    providers: ['deepinfra'],
-  }),
-  model('deepinfra/Qwen/Qwen3.8-2.4T-A95B', {
-    name: 'Qwen3.8 2.4T A95B',
-    created: '2026-08-12',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'effort',
-          values: ['low', 'medium', 'xhigh'],
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131072,
-    },
-    cost: {
-      input: 2,
-      output: 6,
-      cache_read: 0.2,
     },
     providers: ['deepinfra'],
   }),
@@ -12977,9 +12966,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.016,
-      output: 1.2,
-      cache_read: 0.01,
+      input: 0.045,
+      output: 0.891,
+      cache_read: 0.0054,
     },
     providers: ['openrouter'],
   }),
@@ -13009,12 +12998,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 393216,
+      output: 943718,
     },
     cost: {
-      input: 0.1282,
-      output: 8,
-      cache_read: 0.13,
+      input: 0.25,
+      output: 5,
+      cache_read: 0.2,
     },
     providers: ['openrouter'],
   }),
@@ -13048,8 +13037,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     cost: {
       input: 0.0144,
-      output: 0.03408,
-      cache_read: 0.0096,
+      output: 0.576,
+      cache_read: 0.0108,
     },
     providers: ['openrouter'],
   }),
@@ -13153,9 +13142,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.49,
-      output: 13,
-      cache_read: 0.3,
+      input: 0.73,
+      output: 15,
+      cache_read: 0.55,
     },
     providers: ['openrouter'],
   }),
@@ -13392,9 +13381,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.032,
-      output: 0.326813,
-      cache_read: 0.02,
+      input: 0.0261,
+      output: 0.9,
+      cache_read: 0.0108,
     },
     providers: ['openrouter'],
   }),
@@ -13421,12 +13410,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 131072,
+      output: 943718,
     },
     cost: {
-      input: 0.0312,
-      output: 4.4,
-      cache_read: 0.029,
+      input: 0.055,
+      output: 5,
+      cache_read: 0.06,
     },
     providers: ['openrouter'],
   }),
@@ -14869,9 +14858,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     providers: ['openrouter'],
   }),
   model('openrouter/deepseek/deepseek-r1-0528', {
-    name: 'R1 0528',
+    name: 'DeepSeek R1 0528',
     created: '2025-05-28',
-    knowledge: '2025-03-31',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -14952,8 +14940,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     cost: {
       input: 0.259,
-      output: 0.42,
-      cache_read: 0.135,
+      output: 0.8,
+      cache_read: 0.14,
     },
     providers: ['openrouter'],
   }),
@@ -15017,9 +15005,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.0099,
+      input: 0.03,
       output: 1.28,
-      cache_read: 0.0099,
+      cache_read: 0.03,
     },
     providers: ['openrouter'],
   }),
@@ -15053,9 +15041,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.018,
-      output: 1.28,
-      cache_read: 0.018,
+      input: 0.016,
+      output: 0.64,
+      cache_read: 0.016,
     },
     providers: ['openrouter'],
   }),
@@ -15125,9 +15113,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 384000,
     },
     cost: {
-      input: 0.2871,
-      output: 0.5742,
-      cache_read: 0.023925,
+      input: 0.95526,
+      output: 1.91052,
+      cache_read: 0.079605,
     },
     providers: ['openrouter'],
   }),
@@ -15160,9 +15148,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 393216,
     },
     cost: {
-      input: 0.66,
-      output: 1.98,
-      cache_read: 0.022,
+      input: 1.32,
+      output: 3.96,
+      cache_read: 0.044,
     },
     providers: ['openrouter'],
   }),
@@ -15194,7 +15182,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943718,
+      output: 393216,
     },
     cost: {
       input: 0.3,
@@ -15892,9 +15880,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.09,
-      output: 0.3,
-      cache_read: 0.05,
+      input: 0.0765,
+      output: 0.255,
+      cache_read: 0.0425,
     },
     providers: ['openrouter'],
   }),
@@ -16270,7 +16258,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 32768,
+      output: 235929,
     },
     cost: {
       input: 0,
@@ -16458,7 +16446,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   model('openrouter/meta-llama/llama-3.2-1b-instruct', {
     name: 'Llama 3.2 1B Instruct',
     created: '2024-09-25',
-    knowledge: '2023-12-31',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -16517,12 +16504,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 131072,
-      output: 16384,
+      output: 32768,
     },
     cost: {
-      input: 0.22,
-      output: 0.5,
-      cache_read: 0.11,
+      input: 0.59,
+      output: 0.79,
+      cache_read: 0.295,
     },
     providers: ['openrouter'],
   }),
@@ -16570,11 +16557,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1310720,
-      output: 16384,
+      output: 117964,
     },
     cost: {
-      input: 0.1,
-      output: 0.3,
+      input: 0.18,
+      output: 0.59,
     },
     providers: ['openrouter'],
   }),
@@ -16800,6 +16787,39 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
+  model('openrouter/meta/muse-wonder', {
+    name: 'Muse Wonder',
+    created: '2026-10-12',
+    modalities: {
+      input: ['text', 'image', 'video', 'pdf', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
   model('openrouter/microsoft/phi-4', {
     name: 'Phi 4',
     created: '2025-01-10',
@@ -17011,12 +17031,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 204800,
-      output: 176947,
+      output: 131072,
     },
     cost: {
-      input: 0.21,
-      output: 0.84,
-      cache_read: 0.042,
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
     },
     providers: ['openrouter'],
   }),
@@ -17610,9 +17630,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     providers: ['openrouter'],
   }),
   model('openrouter/moonshotai/kimi-k2-0905', {
-    name: 'Kimi K2 0905',
-    created: '2025-09-04',
-    knowledge: '2024-12-31',
+    name: 'Kimi K2 Instruct 0905',
+    created: '2025-09-05',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -17646,15 +17665,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 262144,
-      output: 235929,
+      output: 98304,
     },
     cost: {
       input: 0.6,
       output: 2.5,
+      cache_read: 0.15,
     },
     providers: ['openrouter'],
   }),
@@ -17685,9 +17706,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.45,
-      output: 2.25,
-      cache_read: 0.07,
+      input: 0.5,
+      output: 2.5,
+      cache_read: 0.15,
     },
     providers: ['openrouter'],
   }),
@@ -17718,9 +17739,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.4357,
-      output: 2.45,
-      cache_read: 0.1205,
+      input: 0.65,
+      output: 3.41,
+      cache_read: 0.15,
     },
     providers: ['openrouter'],
   }),
@@ -17782,9 +17803,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.5,
-      output: 12,
-      cache_read: 0.3,
+      input: 0.73,
+      output: 15,
+      cache_read: 0.55,
     },
     providers: ['openrouter'],
   }),
@@ -18132,12 +18153,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 16384,
+      output: 182520,
     },
     cost: {
-      input: 0.5,
-      output: 2.2,
-      cache_read: 0.1,
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.12,
     },
     providers: ['openrouter'],
   }),
@@ -18254,12 +18275,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 131072,
+      output: 235929,
     },
     cost: {
-      input: 0.0469,
-      output: 0.134,
-      cache_read: 0.02345,
+      input: 0.07,
+      output: 0.2,
+      cache_read: 0.04,
     },
     providers: ['openrouter'],
   }),
@@ -19840,15 +19861,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           values: ['low', 'medium', 'high'],
         },
       ],
+      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 131072,
-      output: 117964,
+      output: 65536,
     },
     cost: {
-      input: 0.037,
-      output: 0.17,
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.075,
     },
     providers: ['openrouter'],
   }),
@@ -20632,30 +20655,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/qwen/qwen-plus-2025-07-28', {
-    name: 'Qwen Plus 0728',
-    created: '2025-09-08',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 32768,
-    },
-    cost: {
-      input: 0.26,
-      output: 0.78,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/qwen/qwen2.5-vl-72b-instruct', {
     name: 'Qwen2.5 VL 72B Instruct',
     created: '2025-02-01',
@@ -20703,41 +20702,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 131072,
+      input: 40960,
       output: 16384,
     },
     cost: {
       input: 0.12,
       output: 0.24,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3-235b-a22b', {
-    name: 'Qwen3 235B-A22B',
-    created: '2025-04',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 8192,
-    },
-    cost: {
-      input: 0.455,
-      output: 1.82,
     },
     providers: ['openrouter'],
   }),
@@ -20780,12 +20750,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 131072,
-      output: 117964,
+      input: 128000,
+      output: 16384,
     },
     cost: {
-      input: 0.23,
-      output: 2.3,
+      input: 0.45,
+      output: 3.5,
     },
     providers: ['openrouter'],
   }),
@@ -20809,7 +20779,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 131072,
+      input: 40960,
       output: 16384,
     },
     cost: {
@@ -20842,30 +20812,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/qwen/qwen3-30b-a3b-thinking-2507', {
-    name: 'Qwen3 30B A3B Thinking 2507',
-    created: '2025-08-28',
-    knowledge: '2025-06-30',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 81920,
-      output: 32768,
-    },
-    cost: {
-      input: 0.2,
-      output: 2.4,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/qwen/qwen3-32b', {
     name: 'Qwen3 32B',
     created: '2025-04',
@@ -20893,35 +20839,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.08,
       output: 0.28,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3-8b', {
-    name: 'Qwen3 8B',
-    created: '2025-04-28',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 8192,
-    },
-    cost: {
-      input: 0.117,
-      output: 0.455,
     },
     providers: ['openrouter'],
   }),
@@ -21027,89 +20944,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/qwen/qwen3-coder-plus', {
-    name: 'Qwen3 Coder Plus',
-    created: '2025-07-23',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 65536,
-    },
-    cost: {
-      input: 0.65,
-      output: 3.25,
-      cache_read: 0.13,
-      cache_write: 0.8125,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3-max', {
-    name: 'Qwen3 Max',
-    created: '2025-09-23',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 65536,
-    },
-    cost: {
-      input: 0.78,
-      output: 3.9,
-      cache_read: 0.156,
-      cache_write: 0.975,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3-max-thinking', {
-    name: 'Qwen3 Max Thinking',
-    created: '2026-02-09',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 65536,
-    },
-    cost: {
-      input: 0.78,
-      output: 3.9,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/qwen/qwen3-next-80b-a3b-instruct', {
     name: 'Qwen3-Next 80B-A3B Instruct',
     created: '2025-09',
@@ -21153,7 +20987,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 32768,
+      output: 235929,
     },
     cost: {
       input: 0.15,
@@ -21188,36 +21022,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/qwen/qwen3-vl-235b-a22b-thinking', {
-    name: 'Qwen3 VL 235B A22B Thinking',
-    created: '2025-09-23',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 32768,
-    },
-    cost: {
-      input: 0.4,
-      output: 4,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/qwen/qwen3-vl-30b-a3b-instruct', {
     name: 'Qwen3 VL 30B A3B Instruct',
-    created: '2025-10-06',
-    knowledge: '2025-03-31',
+    created: '2025-10-04',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -21257,35 +21064,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 32768,
+      output: 235929,
     },
     cost: {
-      input: 0.2,
-      output: 2.4,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3-vl-32b-instruct', {
-    name: 'Qwen3 VL 32B Instruct',
-    created: '2025-10-23',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 32768,
-    },
-    cost: {
-      input: 0.104,
-      output: 0.416,
+      input: 0.29,
+      output: 1,
     },
     providers: ['openrouter'],
   }),
@@ -21301,40 +21084,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 262144,
-      output: 32768,
+      output: 235929,
     },
     cost: {
-      input: 0.117,
-      output: 0.455,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3-vl-8b-thinking', {
-    name: 'Qwen3 VL 8B Thinking',
-    created: '2025-10-14',
-    modalities: {
-      input: ['image', 'text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 32768,
-    },
-    cost: {
-      input: 0.18,
-      output: 2.1,
+      input: 0.25,
+      output: 0.75,
+      cache_read: 0.12,
     },
     providers: ['openrouter'],
   }),
@@ -21606,11 +21366,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 65536,
+      output: 81920,
     },
     cost: {
-      input: 0.45,
-      output: 2.7,
+      input: 0.32,
+      output: 3.2,
     },
     providers: ['openrouter'],
   }),
@@ -21637,12 +21397,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 235929,
+      output: 65536,
     },
     cost: {
-      input: 0.15,
-      output: 1,
-      cache_read: 0.05,
+      input: 0.1,
+      output: 0.95,
+      cache_read: 0.1,
     },
     providers: ['openrouter'],
   }),
@@ -21674,37 +21434,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.1875,
       output: 1.125,
       cache_write: 0.234375,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/qwen/qwen3.6-max-preview', {
-    name: 'Qwen3.6 Max Preview',
-    created: '2026-04-20',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 65536,
-    },
-    cost: {
-      input: 1.027,
-      output: 6.162,
-      cache_write: 1.28375,
     },
     providers: ['openrouter'],
   }),
@@ -21900,13 +21629,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1000000,
-      output: 131072,
+      output: 235929,
     },
     cost: {
-      input: 0.425,
-      output: 2.55,
-      cache_read: 0.085,
-      cache_write: 0.53125,
+      input: 0.04,
+      output: 2.3,
+      cache_read: 0.0198,
     },
     providers: ['openrouter'],
   }),
@@ -21942,7 +21670,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.47,
       cache_read: 0.016,
-      cache_write: 0.2,
     },
     providers: ['openrouter'],
   }),
@@ -21976,7 +21703,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2,
       output: 6,
       cache_read: 0.25,
-      cache_write: 2.5,
     },
     providers: ['openrouter'],
   }),
@@ -23513,12 +23239,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 204800,
-      output: 16384,
+      output: 131072,
     },
     cost: {
-      input: 0.43,
-      output: 1.75,
-      cache_read: 0.08,
+      input: 0.5,
+      output: 2,
+      cache_read: 0.1,
     },
     providers: ['openrouter'],
   }),
@@ -23738,7 +23464,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     cost: {
       input: 0.06,
-      output: 6,
+      output: 7,
       cache_read: 0.059,
     },
     providers: ['openrouter'],
@@ -23769,9 +23495,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.04,
-      output: 3.6,
-      cache_read: 0.039,
+      input: 0.079,
+      output: 4.8,
+      cache_read: 0.059,
     },
     providers: ['openrouter'],
   }),
@@ -23799,12 +23525,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943717,
+      output: 943718,
     },
     cost: {
-      input: 0.15,
-      output: 0.5,
-      cache_read: 0.03,
+      input: 0.0261,
+      output: 0.9,
+      cache_read: 0.0108,
     },
     providers: ['openrouter'],
   }),
@@ -24693,76 +24419,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 8192,
     },
     cost: {
-      input: 0.16,
-      output: 0.64,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/alibaba/qwen-3.6-max-preview', {
-    name: 'Qwen 3.6 Max Preview',
-    created: '2026-04-20',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-        {
-          type: 'budget_tokens',
-          min: 1,
-          max: 131072,
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 240000,
-      output: 64000,
-    },
-    cost: {
-      input: 1.3,
-      output: 7.8,
-      cache_read: 0.13,
-      cache_write: 1.625,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/alibaba/qwen3-235b-a22b-thinking', {
-    name: 'Qwen3 235B A22B Thinking 2507',
-    created: '2025-09-23',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text', 'image', 'pdf'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'budget_tokens',
-          min: 1,
-          max: 81920,
-        },
-      ],
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 32768,
-    },
-    cost: {
-      input: 0.4,
-      output: 4,
+      input: 0.15,
+      output: 0.6,
     },
     providers: ['vercel'],
   }),
@@ -24783,12 +24441,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 65536,
+      output: 32768,
     },
     cost: {
-      input: 1.5,
-      output: 7.5,
-      cache_read: 0.3,
+      input: 0.22,
+      output: 1.8,
+      cache_read: 0.022,
     },
     providers: ['vercel'],
   }),
@@ -24838,81 +24496,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.5,
       output: 1.2,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/alibaba/qwen3-coder-plus', {
-    name: 'Qwen3 Coder Plus',
-    created: '2025-07-23',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 65536,
-    },
-    cost: {
-      input: 1,
-      output: 5,
-      cache_read: 0.2,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/alibaba/qwen3-max', {
-    name: 'Qwen3 Max',
-    created: '2025-09-23',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 32768,
-    },
-    cost: {
-      input: 1.2,
-      output: 6,
-      cache_read: 0.24,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/alibaba/qwen3-max-preview', {
-    name: 'Qwen3 Max Preview',
-    created: '2025-09-05',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 32768,
-    },
-    cost: {
-      input: 1.2,
-      output: 6,
-      cache_read: 0.24,
     },
     providers: ['vercel'],
   }),
@@ -25002,30 +24585,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
-  model('vercel/alibaba/qwen3-vl-235b-a22b-instruct', {
-    name: 'Qwen3 VL 235B A22B Instruct',
-    created: '2025-09-23',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 129024,
-    },
-    cost: {
-      input: 0.4,
-      output: 1.6,
-    },
-    providers: ['vercel'],
-  }),
   model('vercel/alibaba/qwen3-vl-instruct', {
     name: 'Qwen3 VL Instruct',
     created: '2025-09-23',
@@ -25038,47 +24597,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 131072,
-      output: 129024,
+      input: 262144,
+      output: 262144,
     },
     cost: {
-      input: 0.4,
-      output: 1.6,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/alibaba/qwen3-vl-thinking', {
-    name: 'Qwen3 VL Thinking',
-    created: '2025-09-23',
-    knowledge: '2025-09',
-    modalities: {
-      input: ['text', 'image', 'pdf'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'budget_tokens',
-          min: 1,
-          max: 81920,
-        },
-      ],
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 32768,
-    },
-    cost: {
-      input: 0.4,
-      output: 4,
+      input: 0.2,
+      output: 0.88,
+      cache_read: 0.11,
     },
     providers: ['vercel'],
   }),
@@ -25725,33 +25254,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
-  model('vercel/anthropic/claude-3-haiku', {
-    name: 'Claude Haiku 3',
-    created: '2024-03-13',
-    knowledge: '2023-08-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.25,
-      output: 1.25,
-      cache_read: 0.03,
-      cache_write: 0.3,
-    },
-    providers: ['vercel'],
-  }),
   model('vercel/anthropic/claude-fable-5', {
     name: 'Claude Fable 5',
     created: '2026-06-09',
@@ -25895,43 +25397,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 0.5,
       cache_read: 0.01,
       cache_write: 0.125,
-    },
-    providers: ['vercel'],
-  }),
-  model('vercel/anthropic/claude-opus-4', {
-    name: 'Claude Opus 4',
-    created: '2025-05-22',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['text', 'image', 'pdf'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-        {
-          type: 'budget_tokens',
-          min: 1024,
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 32000,
-    },
-    cost: {
-      input: 15,
-      output: 75,
-      cache_read: 1.5,
-      cache_write: 18.75,
     },
     providers: ['vercel'],
   }),
@@ -26606,7 +26071,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   model('vercel/cohere/command-a', {
     name: 'Command A',
     created: '2025-03-13',
-    knowledge: '2024-10',
+    knowledge: '2024-08-31',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -26614,6 +26079,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       streaming: true,
     },
     context: {
@@ -26928,6 +26394,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.2,
       cache_read: 0.007,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4.1-flash-fast', {
+    name: 'DeepSeek V4.1 Flash Fast',
+    created: '2026-09-10',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.014,
     },
     providers: ['vercel'],
   }),
@@ -28138,6 +27638,39 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
+  model('vercel/meta/muse-wonder-1.0', {
+    name: 'Muse Wonder',
+    created: '2026-10-12',
+    modalities: {
+      input: ['text', 'image', 'pdf'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
   model('vercel/minimax/minimax-m2', {
     name: 'MiniMax M2',
     created: '2025-10-27',
@@ -28592,7 +28125,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.019,
+      input: 0.029,
       output: 0.03,
     },
     providers: ['vercel'],
@@ -28650,6 +28183,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   model('vercel/moonshotai/kimi-k2', {
     name: 'Kimi K2 Instruct',
     created: '2025-07-11',
+    knowledge: '2024-12-31',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -31132,7 +30666,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('vercel/sakana/fugu-max', {
     name: 'Fugu Max',
-    created: '2026-09-10',
+    created: '2026-09-11',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -31140,6 +30674,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
       reasoningOptions: [
         {
@@ -31197,7 +30732,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('vercel/sakana/fugu-ultra-v2', {
     name: 'Fugu Ultra v2',
-    created: '2026-09-10',
+    created: '2026-09-11',
+    knowledge: '2026-08-28',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -31205,6 +30741,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
       reasoningOptions: [
         {

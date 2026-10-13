@@ -1230,6 +1230,11 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/mistralai/Mistral-Small-24B-Instruct-2501",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/moonshotai/Kimi-K2.6",
     "provider": "deepinfra",
     "mode": "chat"
@@ -1270,17 +1275,17 @@
     "mode": "chat"
   },
   {
-    "id": "deepinfra/Qwen/Qwen3-Max",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
     "id": "deepinfra/Qwen/Qwen3-Next-80B-A3B-Instruct",
     "provider": "deepinfra",
     "mode": "chat"
   },
   {
     "id": "deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -1316,11 +1321,6 @@
   },
   {
     "id": "deepinfra/Qwen/Qwen3.7-Max",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
-    "id": "deepinfra/Qwen/Qwen3.8-2.4T-A95B",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -2740,6 +2740,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/meta/muse-wonder",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/microsoft/phi-4",
     "provider": "openrouter",
     "mode": "chat"
@@ -3395,22 +3400,12 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/qwen/qwen-plus-2025-07-28",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/qwen/qwen2.5-vl-72b-instruct",
     "provider": "openrouter",
     "mode": "chat"
   },
   {
     "id": "openrouter/qwen/qwen3-14b",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen3-235b-a22b",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3435,17 +3430,7 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/qwen/qwen3-30b-a3b-thinking-2507",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/qwen/qwen3-32b",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen3-8b",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3470,21 +3455,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/qwen/qwen3-coder-plus",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen3-max",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen3-max-thinking",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
     "provider": "openrouter",
     "mode": "chat"
@@ -3500,11 +3470,6 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/qwen/qwen3-vl-235b-a22b-thinking",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/qwen/qwen3-vl-30b-a3b-instruct",
     "provider": "openrouter",
     "mode": "chat"
@@ -3515,17 +3480,7 @@
     "mode": "chat"
   },
   {
-    "id": "openrouter/qwen/qwen3-vl-32b-instruct",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
     "id": "openrouter/qwen/qwen3-vl-8b-instruct",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen3-vl-8b-thinking",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3581,11 +3536,6 @@
   },
   {
     "id": "openrouter/qwen/qwen3.6-flash",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/qwen/qwen3.6-max-preview",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -4095,16 +4045,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/alibaba/qwen-3.6-max-preview",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/alibaba/qwen3-235b-a22b-thinking",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/alibaba/qwen3-coder",
     "provider": "vercel",
     "mode": "chat"
@@ -4116,21 +4056,6 @@
   },
   {
     "id": "vercel/alibaba/qwen3-coder-next",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/alibaba/qwen3-coder-plus",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/alibaba/qwen3-max",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/alibaba/qwen3-max-preview",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4150,17 +4075,7 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/alibaba/qwen3-vl-235b-a22b-instruct",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/alibaba/qwen3-vl-instruct",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/alibaba/qwen3-vl-thinking",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4255,11 +4170,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/anthropic/claude-3-haiku",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/anthropic/claude-fable-5",
     "provider": "vercel",
     "mode": "chat"
@@ -4276,11 +4186,6 @@
   },
   {
     "id": "vercel/anthropic/claude-haiku-5.5",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
-    "id": "vercel/anthropic/claude-opus-4",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4431,6 +4336,11 @@
   },
   {
     "id": "vercel/deepseek/deepseek-v4.1-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4.1-flash-fast",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -4631,6 +4541,11 @@
   },
   {
     "id": "vercel/meta/muse-spark-1.3-contributor",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-wonder-1.0",
     "provider": "vercel",
     "mode": "chat"
   },
