@@ -37,8 +37,8 @@ describe('percentField', () => {
     const field = percentField({ name: 'progress' });
 
     expect(field.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#PercentField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#PercentField',
     });
   });
 

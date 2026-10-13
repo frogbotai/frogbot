@@ -35,8 +35,8 @@ describe('ratingField', () => {
     const field = ratingField({ name: 'score' });
 
     expect(field.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#RatingField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#RatingField',
     });
   });
 

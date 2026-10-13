@@ -66,7 +66,7 @@ function viewTitleText(title: unknown): string | undefined {
 export function navSections(
   sections: RootAdminComponents['navSections'],
 ): Pick<RootAdminComponents, 'navSections'> {
-  return { navSections: sections ?? ['@frogbotai/next#CollectionsSection'] };
+  return { navSections: sections ?? ['@frogbotai/ui/admin/rsc#CollectionsSection'] };
 }
 
 type PayloadDashboard = NonNullable<NonNullable<PayloadConfig['admin']>['dashboard']>;
@@ -95,7 +95,7 @@ export function wrapDashboard(
 }
 
 export const SETTINGS_VIEW: AdminViewConfig = {
-  Component: '@frogbotai/next/views#SettingsView',
+  Component: '@frogbotai/ui/admin/rsc#SettingsView',
   exact: false,
   path: '/settings',
   meta: { title: 'Settings' },

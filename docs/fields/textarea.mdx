@@ -80,7 +80,7 @@ export const Articles: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { TextareaField } from '@frogbotai/ui'
+import { TextareaField } from '@frogbotai/ui/admin'
 import type { TextareaFieldServerComponent } from 'frogbot'
 
 export const CustomTextareaServer: TextareaFieldServerComponent = (props) => (
@@ -98,7 +98,7 @@ export const CustomTextareaServer: TextareaFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { TextareaField } from '@frogbotai/ui'
+import { TextareaField } from '@frogbotai/ui/admin'
 import type { TextareaFieldClientComponent } from 'frogbot'
 
 export const CustomTextareaClient: TextareaFieldClientComponent = (props) => <TextareaField {...props} />
@@ -109,7 +109,7 @@ export const CustomTextareaClient: TextareaFieldClientComponent = (props) => <Te
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { TextareaFieldLabelServerComponent } from 'frogbot'
 
 export const CustomTextareaLabelServer: TextareaFieldLabelServerComponent = ({ clientField, path }) => (
@@ -126,7 +126,7 @@ export const CustomTextareaLabelServer: TextareaFieldLabelServerComponent = ({ c
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { TextareaFieldLabelClientComponent } from 'frogbot'
 
 export const CustomTextareaLabelClient: TextareaFieldLabelClientComponent = ({ field, path }) => (

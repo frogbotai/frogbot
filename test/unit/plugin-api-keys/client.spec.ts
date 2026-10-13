@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@payloadcms/ui', () => ({
-  Button: () => null,
-  TextInput: () => null,
+vi.mock('@frogbotai/ui/admin', () => ({
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
-  useListQuery: () => ({ data: { docs: [] }, query: {}, refineListData: vi.fn() }),
+  useListQuery: () => ({ collectionSlug: 'api-keys' }),
+  useRouteCache: () => ({ clearRouteCache: vi.fn() }),
 }));
 
 const { ApiKeysManager } = await import('../../../packages/plugins/plugin-api-keys/src/client.js');

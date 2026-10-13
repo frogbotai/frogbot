@@ -29,7 +29,7 @@ export function ratingField(args: RatingFieldArgs): NumberField {
     {
       kind: { type: 'rating', max },
       cell: true,
-      Field: '@frogbotai/next/client#RatingField',
+      Field: '@frogbotai/ui/admin#RatingField',
       check: (value) =>
         Number.isInteger(value) ? true : `Enter a whole number of stars from 1 to ${max}.`,
       description: `Whole-number rating from 1 to ${max}`,

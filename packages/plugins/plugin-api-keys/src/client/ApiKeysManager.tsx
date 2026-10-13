@@ -4,24 +4,29 @@ import './styles.css';
 
 import {
   Button,
-  CopyIcon,
-  Modal,
-  TextInput,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+  Input,
+  Label,
   Tooltip,
-  useConfig,
-  useListQuery,
-  useModal,
-  useRouteCache,
-} from '@payloadcms/ui';
-import { type ChangeEvent, type KeyboardEvent, useState } from 'react';
-
-const modalSlug = 'create-api-key-modal';
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@frogbotai/ui';
+import { useConfig, useListQuery, useRouteCache } from '@frogbotai/ui/admin';
+import { CopyIcon } from '@frogbotai/ui/icons';
+import { useId, useState } from 'react';
 
 export function ApiKeysManager() {
   const { config } = useConfig();
   const { collectionSlug } = useListQuery();
-  const { closeModal, openModal } = useModal();
   const { clearRouteCache } = useRouteCache();
+  const nameId = useId();
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
@@ -29,17 +34,18 @@ export function ApiKeysManager() {
   const [copied, setCopied] = useState(false);
   const [hoveredControl, setHoveredControl] = useState<'icon' | 'token'>();
 
-  function open() {
-    setName('');
-    setToken(undefined);
-    setError(undefined);
-    setCopied(false);
-    openModal(modalSlug);
-  }
+  function changeOpen(next: boolean) {
+    if (next) {
+      setName('');
+      setToken(undefined);
+      setError(undefined);
+      setCopied(false);
+      setHoveredControl(undefined);
+    } else if (token) {
+      clearRouteCache();
+    }
 
-  function close() {
-    closeModal(modalSlug);
-    if (token) clearRouteCache();
+    setOpen(next);
   }
 
   async function createKey() {
@@ -87,75 +93,91 @@ export function ApiKeysManager() {
   }
 
   return (
-    <>
-      <Button buttonStyle="secondary" margin={false} onClick={open} type="button">
-        Create API key
-      </Button>
-      <Modal className="api-keys-modal" closeOnBlur onClose={close} slug={modalSlug}>
-        <div className="api-keys-modal__wrapper">
-          <div className="api-keys-modal__content">
-            <h1>Create API Key</h1>
-            {token ? (
-              <>
-                <p className="api-keys-modal__warning" role="alert">
-                  Key generated! Copy it now — you won&apos;t see it again.
-                </p>
-                <div className="api-keys-modal__token-row">
-                  <button
-                    aria-label="Click to copy API key"
-                    className="api-keys-clear-button api-keys-modal__token"
-                    type="button"
-                    {...copyHandlers('token')}
-                  >
-                    <code>{token}</code>
-                    <Tooltip delay={copied ? 0 : undefined} show={hoveredControl === 'token'}>
-                      {copied ? 'Copied' : 'Click to copy'}
-                    </Tooltip>
-                  </button>
-                  <button
-                    aria-label="Copy API key"
-                    className="api-keys-clear-button api-keys-slide-up-1 api-keys-modal__copy"
-                    type="button"
-                    {...copyHandlers('icon')}
-                  >
-                    <CopyIcon />
-                    <Tooltip delay={copied ? 0 : undefined} show={hoveredControl === 'icon'}>
-                      {copied ? 'Copied' : 'Copy'}
-                    </Tooltip>
-                  </button>
-                </div>
-              </>
-            ) : (
-              <TextInput
-                label="Key name"
-                path="api-key-name"
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" type="button">
+          Create API key
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="api-keys-dialog" withCloseButton={false}>
+        <DialogTitle>Create API Key</DialogTitle>
+        {token ? (
+          <>
+            <DialogDescription className="api-keys-dialog__warning" role="alert">
+              Key generated! Copy it now — you won&apos;t see it again.
+            </DialogDescription>
+            <TooltipProvider>
+              <div className="api-keys-dialog__token-row">
+                <Tooltip open={hoveredControl === 'token'}>
+                  <TooltipTrigger asChild>
+                    <button
+                      aria-label="Click to copy API key"
+                      className="api-keys-dialog__token"
+                      type="button"
+                      {...copyHandlers('token')}
+                    >
+                      <code>{token}</code>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{copied ? 'Copied' : 'Click to copy'}</TooltipContent>
+                </Tooltip>
+                <Tooltip open={hoveredControl === 'icon'}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      aria-label="Copy API key"
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                      {...copyHandlers('icon')}
+                    >
+                      <CopyIcon />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{copied ? 'Copied' : 'Copy'}</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+          </>
+        ) : (
+          <>
+            <DialogDescription>
+              Name the key after the script or tool that uses it.
+            </DialogDescription>
+            <div className="api-keys-dialog__field">
+              <Label htmlFor={nameId}>Key name</Label>
+              <Input
+                id={nameId}
                 placeholder="Key name (e.g. My MacBook CLI)"
                 readOnly={loading}
                 value={name}
-                onChange={(event: ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
-                onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                onChange={(event) => setName(event.target.value)}
+                onKeyDown={(event) => {
                   if (event.key === 'Enter') {
                     event.preventDefault();
                     void createKey();
                   }
                 }}
               />
-            )}
-            {error ? <p role="alert">{error}</p> : null}
-          </div>
-          <div className="api-keys-modal__controls">
-            <Button buttonStyle="secondary" onClick={close} type="button">
-              {token ? 'Close' : 'Dismiss'}
+            </div>
+          </>
+        )}
+        {error ? (
+          <p className="api-keys-dialog__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => changeOpen(false)} type="button">
+            {token ? 'Close' : 'Dismiss'}
+          </Button>
+          {token ? null : (
+            <Button disabled={loading || !name.trim()} onClick={createKey} type="button">
+              {loading ? 'Generating…' : 'Generate'}
             </Button>
-            {token ? null : (
-              <Button disabled={loading || !name.trim()} onClick={createKey} type="button">
-                {loading ? 'Generating…' : 'Generate'}
-              </Button>
-            )}
-          </div>
-        </div>
-      </Modal>
-    </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -166,12 +188,17 @@ export function RevokeApiKey({
 }) {
   const { config } = useConfig();
   const { collectionSlug } = useListQuery();
-  const { closeModal, openModal } = useModal();
   const { clearRouteCache } = useRouteCache();
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [revoked, setRevoked] = useState(false);
   const [error, setError] = useState<string>();
-  const confirmSlug = `revoke-api-key-modal-${rowData.id}`;
+
+  function changeOpen(next: boolean) {
+    if (next) setError(undefined);
+
+    setOpen(next);
+  }
 
   async function revoke() {
     setLoading(true);
@@ -188,7 +215,7 @@ export function RevokeApiKey({
       return;
     }
 
-    closeModal(confirmSlug);
+    setOpen(false);
     setRevoked(true);
     clearRouteCache();
   }
@@ -196,41 +223,32 @@ export function RevokeApiKey({
   if (revoked || rowData.revokedAt) return <span>Revoked</span>;
 
   return (
-    <>
-      <Button
-        margin={false}
-        buttonStyle="secondary"
-        onClick={() => openModal(confirmSlug)}
-        size="small"
-        type="button"
-      >
-        Revoke
-      </Button>
-      <Modal
-        className="api-keys-modal"
-        closeOnBlur
-        onClose={() => closeModal(confirmSlug)}
-        slug={confirmSlug}
-      >
-        <div className="api-keys-modal__wrapper">
-          <div className="api-keys-modal__content">
-            <h1>Revoke API Key</h1>
-            <p>
-              This will immediately disable {rowData.name ?? 'this key'}. Any scripts or tools using
-              this key will stop working. This cannot be undone.
-            </p>
-            {error ? <p role="alert">{error}</p> : null}
-          </div>
-          <div className="api-keys-modal__controls">
-            <Button buttonStyle="secondary" onClick={() => closeModal(confirmSlug)} type="button">
-              Cancel
-            </Button>
-            <Button disabled={loading} onClick={revoke} type="button">
-              {loading ? 'Revoking…' : 'Revoke key'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" type="button" variant="secondary">
+          Revoke
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="api-keys-dialog" withCloseButton={false}>
+        <DialogTitle>Revoke API Key</DialogTitle>
+        <DialogDescription>
+          This will immediately disable {rowData.name ?? 'this key'}. Any scripts or tools using
+          this key will stop working. This cannot be undone.
+        </DialogDescription>
+        {error ? (
+          <p className="api-keys-dialog__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => changeOpen(false)} type="button">
+            Cancel
+          </Button>
+          <Button disabled={loading} onClick={revoke} type="button">
+            {loading ? 'Revoking…' : 'Revoke key'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

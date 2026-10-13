@@ -20,7 +20,7 @@ export function phoneField(args: PhoneFieldArgs): TextField {
     {
       kind: { type: 'phone' },
       cell: true,
-      Field: '@frogbotai/next/client#PhoneField',
+      Field: '@frogbotai/ui/admin#PhoneField',
       check: (value) =>
         getPhoneHref({ value }) ? true : 'Enter a phone number with 7 to 15 digits.',
       description: 'Phone number as text, for example +44 20 7946 0958 or (415) 555-9876',

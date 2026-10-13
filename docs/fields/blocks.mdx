@@ -387,7 +387,7 @@ Use the regular block controls for block previews and the inline controls for in
 Replace the Blocks field while retaining the default UI:
 
 ```tsx
-import { BlocksField } from '@frogbotai/ui'
+import { BlocksField } from '@frogbotai/ui/admin'
 import type { BlocksFieldServerComponent } from 'frogbot'
 
 export const CustomBlocksField: BlocksFieldServerComponent = ({
@@ -412,7 +412,7 @@ Client field replacements receive props compatible with the default field compon
 ```tsx
 'use client'
 
-import { BlocksField } from '@frogbotai/ui'
+import { BlocksField } from '@frogbotai/ui/admin'
 import type { BlocksFieldClientComponent } from 'frogbot'
 
 export const CustomBlocksFieldClient: BlocksFieldClientComponent = (props) => {
@@ -423,7 +423,7 @@ export const CustomBlocksFieldClient: BlocksFieldClientComponent = (props) => {
 Replace only the field label when the default Blocks interface should remain unchanged:
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { BlocksFieldLabelServerComponent } from 'frogbot'
 
 export const CustomBlocksLabel: BlocksFieldLabelServerComponent = ({

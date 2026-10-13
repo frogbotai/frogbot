@@ -169,7 +169,7 @@ Server Components can read the sanitized config from `req.frogbot.config`. Clien
 ```tsx
 'use client'
 
-import { useConfig } from '@frogbotai/ui'
+import { useConfig } from '@frogbotai/ui/admin'
 
 export function ServerLink() {
   const {
@@ -205,7 +205,7 @@ export const ClientFieldName: TextFieldClientComponent = ({ field }) => {
 Use `RenderCustomComponent` to choose between an already-rendered React node and a fallback. It does not resolve component paths. An `undefined` node uses the fallback; `null` renders nothing.
 
 ```tsx
-import { RenderCustomComponent } from '@frogbotai/ui'
+import { RenderCustomComponent } from '@frogbotai/ui/admin'
 import type { ReactNode } from 'react'
 
 export function ComponentSlot({ content }: { content?: ReactNode }) {
@@ -220,7 +220,7 @@ Client Components can read the current language and locale with `useTranslation`
 ```tsx
 'use client'
 
-import { useLocale, useTranslation } from '@frogbotai/ui'
+import { useLocale, useTranslation } from '@frogbotai/ui/admin'
 
 export function LocaleStatus() {
   const locale = useLocale()
@@ -234,12 +234,12 @@ See [Internationalization](/configuration/i18n) and [Localization](/configuratio
 
 ### Using Hooks
 
-FrogBot's curated `@frogbotai/ui` entry exposes hooks that share the Admin Panel's contexts. Import them from the package root:
+FrogBot's curated `@frogbotai/ui/admin` entry exposes hooks that share the Admin Panel's contexts. Import them from that entry:
 
 ```tsx
 'use client'
 
-import { useDocumentInfo, useFormFields } from '@frogbotai/ui'
+import { useDocumentInfo, useFormFields } from '@frogbotai/ui/admin'
 
 export function DocumentStatus() {
   const { collectionSlug } = useDocumentInfo()
@@ -280,6 +280,6 @@ Your component CSS beats FrogBot's styles as long as it isn't in a CSS layer. Se
 
 Keep the server/client boundary narrow. Prefer Server Components, pass only the serializable values a Client Component needs, and avoid broad form subscriptions that cause unrelated updates to re-render your component.
 
-Import Admin Panel hooks and curated UI components from the root `@frogbotai/ui` entry. Do not use deep element or icon imports.
+Import Admin Panel hooks and curated UI components from the `@frogbotai/ui/admin` entry. Do not use deep element or icon imports.
 
 If a hook returns an undefined context, confirm that the component is rendered inside the Admin Panel and that your application resolves one version of each FrogBot package. See [Troubleshooting](/troubleshooting/troubleshooting#dependency-mismatches).

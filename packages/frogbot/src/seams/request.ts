@@ -16,6 +16,11 @@ export function toPayloadRequest(req: FrogBotRequest): PayloadRequest {
   return req as unknown as PayloadRequest;
 }
 
+/** Attaches `frogbot` to a Payload request and returns it typed as a FrogBot request. */
+export function toFrogBotRequest(req: PayloadRequest, frogbot: FrogBot): FrogBotRequest {
+  return Object.assign(req, { frogbot });
+}
+
 export function hasFrogBot(req: PayloadRequest): req is PayloadRequest & { frogbot: FrogBot } {
   return 'frogbot' in req && Boolean(req.frogbot);
 }

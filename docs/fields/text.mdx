@@ -83,7 +83,7 @@ export const Pages: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { TextField } from '@frogbotai/ui'
+import { TextField } from '@frogbotai/ui/admin'
 import type { TextFieldServerComponent } from 'frogbot'
 
 export const CustomTextFieldServer: TextFieldServerComponent = (props) => (
@@ -101,7 +101,7 @@ export const CustomTextFieldServer: TextFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { TextField } from '@frogbotai/ui'
+import { TextField } from '@frogbotai/ui/admin'
 import type { TextFieldClientComponent } from 'frogbot'
 
 export const CustomTextFieldClient: TextFieldClientComponent = (props) => (
@@ -114,7 +114,7 @@ export const CustomTextFieldClient: TextFieldClientComponent = (props) => (
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { TextFieldLabelServerComponent } from 'frogbot'
 
 export const CustomTextLabelServer: TextFieldLabelServerComponent = ({ clientField, path }) => (
@@ -131,7 +131,7 @@ export const CustomTextLabelServer: TextFieldLabelServerComponent = ({ clientFie
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { TextFieldLabelClientComponent } from 'frogbot'
 
 export const CustomTextLabelClient: TextFieldLabelClientComponent = ({ field, path }) => (

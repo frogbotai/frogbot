@@ -2,7 +2,7 @@
 
 import './styles.css';
 
-import { useConfig, useTranslation } from '@payloadcms/ui';
+import { useConfig, useTranslation } from '@frogbotai/ui/admin';
 import { formatMoney } from 'frogbot/fields';
 import { useEffect, useState } from 'react';
 

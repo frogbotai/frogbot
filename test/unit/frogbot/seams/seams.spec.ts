@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import { wrapPayloadPlugin } from '../../../../packages/frogbot/src/seams/config.js';
-import { hasFrogBot } from '../../../../packages/frogbot/src/seams/request.js';
+import { hasFrogBot, toFrogBotRequest } from '../../../../packages/frogbot/src/seams/request.js';
 import type { PayloadRequest } from '../../../../packages/frogbot/src/types/payload.js';
 
 const config: FrogBotConfig = {
@@ -33,5 +34,18 @@ describe('hasFrogBot', () => {
 
     expect(hasFrogBot(req)).toBe(false);
     expect(hasFrogBot(Object.assign(req, { frogbot: {} }))).toBe(true);
+  });
+});
+
+describe('toFrogBotRequest', () => {
+  it('attaches the FrogBot instance to the same request', () => {
+    const req = new Request('https://example.com') as PayloadRequest;
+    const frogbot = {} as FrogBot;
+
+    const frogbotReq = toFrogBotRequest(req, frogbot);
+
+    expect(frogbotReq).toBe(req);
+    expect(frogbotReq.frogbot).toBe(frogbot);
+    expect(hasFrogBot(req)).toBe(true);
   });
 });

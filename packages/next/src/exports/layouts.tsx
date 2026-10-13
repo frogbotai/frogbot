@@ -1,26 +1,35 @@
+import { setServerAdapter } from '@frogbotai/ui/admin/rsc';
 import {
   handleServerFunctions as payloadHandleServerFunctions,
   RootLayout as PayloadRootLayout,
 } from '@payloadcms/next/layouts';
 import { getPayloadConfig } from 'frogbot/internal';
+import { connection } from 'next/server.js';
 import type { ComponentProps } from 'react';
 
+import { NextRouterAdapter } from '../adapters/router.client.js';
+import { nextServerAdapter } from '../adapters/server.js';
 import type { FrogBotConfigArg } from '../types.js';
 import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
 
 export type { ServerFunctionClient } from 'payload';
 
 brandImportMapErrors();
+setServerAdapter(nextServerAdapter);
 
 type RootLayoutProps = Omit<ComponentProps<typeof PayloadRootLayout>, 'config'> & {
   readonly config: FrogBotConfigArg;
 };
 
-export function RootLayout({ config, htmlProps, ...rest }: RootLayoutProps) {
+export async function RootLayout({ config, htmlProps, ...rest }: RootLayoutProps) {
+  await connection();
+
   const pageHtmlProps = { ...htmlProps, 'data-fb-ui-page': '' };
 
   return (
-    <PayloadRootLayout {...rest} config={getPayloadConfig(config)} htmlProps={pageHtmlProps} />
+    <NextRouterAdapter>
+      <PayloadRootLayout {...rest} config={getPayloadConfig(config)} htmlProps={pageHtmlProps} />
+    </NextRouterAdapter>
   );
 }
 

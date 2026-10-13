@@ -105,7 +105,7 @@ export function aiField(args: AIFieldArgs | AISelectFieldArgs): RowField {
   const value = applyFieldKind(valueField, {
     kind,
     cell: true,
-    Field: '@frogbotai/next/client#AIField',
+    Field: '@frogbotai/ui/admin#AIField',
     description: `Generated automatically by AI from: ${inputs.join(', ')}. Writing a value keeps it and stops automatic updates`,
   });
 

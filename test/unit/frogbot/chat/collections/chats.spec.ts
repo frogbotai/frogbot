@@ -49,7 +49,7 @@ describe('defaultChatsCollection', () => {
     });
     expect(collection.fields.find((f) => 'name' in f && f.name === 'channel')).toMatchObject({
       admin: {
-        components: { Cell: '@frogbotai/next/client#FieldCell' },
+        components: { Cell: '@frogbotai/ui/admin#FieldCell' },
         custom: { frogbot: { kind: { type: 'channel' } } },
       },
     });

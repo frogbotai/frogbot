@@ -166,7 +166,7 @@ export const Cars: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { SelectField } from '@frogbotai/ui'
+import { SelectField } from '@frogbotai/ui/admin'
 import type { SelectFieldServerComponent } from 'frogbot'
 
 export const CustomSelectServer: SelectFieldServerComponent = (props) => (
@@ -184,7 +184,7 @@ export const CustomSelectServer: SelectFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { SelectField } from '@frogbotai/ui'
+import { SelectField } from '@frogbotai/ui/admin'
 import type { SelectFieldClientComponent } from 'frogbot'
 
 export const CustomSelectClient: SelectFieldClientComponent = (props) => <SelectField {...props} />
@@ -195,7 +195,7 @@ export const CustomSelectClient: SelectFieldClientComponent = (props) => <Select
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { SelectFieldLabelServerComponent } from 'frogbot'
 
 export const CustomSelectLabelServer: SelectFieldLabelServerComponent = ({ clientField, path }) => (
@@ -212,7 +212,7 @@ export const CustomSelectLabelServer: SelectFieldLabelServerComponent = ({ clien
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { SelectFieldLabelClientComponent } from 'frogbot'
 
 export const CustomSelectLabelClient: SelectFieldLabelClientComponent = ({ field, path }) => (

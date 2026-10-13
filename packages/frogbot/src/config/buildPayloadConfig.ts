@@ -278,7 +278,7 @@ export function buildPayloadConfig({
         ? {
             afterLogin: [
               ...(admin?.components?.afterLogin ?? []),
-              '@frogbotai/next/rsc#SignInButtons',
+              '@frogbotai/ui/admin/rsc#SignInButtons',
             ],
           }
         : {}),
@@ -290,12 +290,12 @@ export function buildPayloadConfig({
             },
           }
         : {}),
-      Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogBotNav',
+      Nav: admin?.components?.Nav ?? '@frogbotai/ui/admin/rsc#FrogBotNav',
       ...navSections(admin?.components?.navSections),
-      providers: [...(admin?.components?.providers ?? []), '@frogbotai/next/client#StepNavReset'],
+      providers: [...(admin?.components?.providers ?? []), '@frogbotai/ui/admin#StepNavReset'],
       graphics: {
-        Icon: '@frogbotai/next/rsc#FrogBotIcon',
-        Logo: '@frogbotai/next/rsc#FrogBotLogo',
+        Icon: '@frogbotai/ui/admin/rsc#FrogBotIcon',
+        Logo: '@frogbotai/ui/admin/rsc#FrogBotLogo',
         ...admin?.components?.graphics,
       },
       views: Object.fromEntries(

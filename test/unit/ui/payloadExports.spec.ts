@@ -5,7 +5,7 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import { collisions, root, rsc, shared } from './payloadExports/classification.js';
+import { adminOverrides, collisions, root, rsc, shared } from './payloadExports/classification.js';
 
 type ExportNames = {
   types: string[];
@@ -17,7 +17,7 @@ const requireFromUI = createRequire(path.join(packageRoot, 'package.json'));
 const payloadClientEntry = requireFromUI.resolve('@payloadcms/ui');
 const payloadExportsRoot = path.dirname(payloadClientEntry);
 
-function readExports(file: string): ExportNames {
+function readExports(file: string, from?: string): ExportNames {
   const source = ts.createSourceFile(
     file,
     fs.readFileSync(file, 'utf8'),
@@ -36,6 +36,8 @@ function readExports(file: string): ExportNames {
       return;
     }
 
+    if (from && (statement.moduleSpecifier as ts.StringLiteral | undefined)?.text !== from) return;
+
     statement.exportClause.elements.forEach((element) => {
       const collection =
         statement.isTypeOnly || element.isTypeOnly ? exports.types : exports.values;
@@ -45,6 +47,21 @@ function readExports(file: string): ExportNames {
   });
 
   return exports;
+}
+
+function exportSpecifiers(file: string): string[] {
+  const source = ts.createSourceFile(
+    file,
+    fs.readFileSync(file, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+
+  return source.statements.flatMap((statement) =>
+    ts.isExportDeclaration(statement) && statement.moduleSpecifier
+      ? [(statement.moduleSpecifier as ts.StringLiteral).text]
+      : [],
+  );
 }
 
 function expectClassification(upstream: ExportNames, groups: Array<ExportNames>, label: string) {
@@ -61,16 +78,11 @@ function expectClassification(upstream: ExportNames, groups: Array<ExportNames>,
 }
 
 function expectEntry(file: string, expected: ExportNames, specifier: string) {
-  const sourceText = fs.readFileSync(file, 'utf8');
-  const source = ts.createSourceFile(file, sourceText, ts.ScriptTarget.Latest, true);
+  for (const from of exportSpecifiers(file)) {
+    expect(from === specifier || from.startsWith('../'), `${file} re-exports ${from}`).toBe(true);
+  }
 
-  source.statements.forEach((statement) => {
-    if (!ts.isExportDeclaration(statement) || !statement.moduleSpecifier) return;
-
-    expect((statement.moduleSpecifier as ts.StringLiteral).text).toBe(specifier);
-  });
-
-  const actual = readExports(file);
+  const actual = readExports(file, specifier);
 
   expect(new Set(actual.values)).toEqual(new Set(expected.values));
   expect(new Set(actual.types)).toEqual(new Set(expected.types));
@@ -95,27 +107,50 @@ describe('Payload UI export classification', () => {
     expectClassification(upstream, [rsc.included, rsc.excluded], 'rsc');
   });
 
-  it('exports only classified included names from the FrogBot entries', () => {
+  it('exports only classified included names from the admin entries', () => {
     expectEntry(
-      path.join(packageRoot, 'src/exports/client/index.ts'),
+      path.join(packageRoot, 'src/admin/exports/client.ts'),
       {
-        values: [...root.tier1.values, ...root.tier2.values],
+        values: [...root.tier1.values, ...root.tier2.values].filter(
+          (name) => !adminOverrides.includes(name),
+        ),
         types: [...root.tier1.types, ...root.tier2.types],
       },
       '@payloadcms/ui',
     );
 
     expectEntry(
-      path.join(packageRoot, 'src/exports/shared/index.ts'),
+      path.join(packageRoot, 'src/admin/exports/shared.ts'),
       shared.included,
       '@payloadcms/ui/shared',
     );
 
     expectEntry(
-      path.join(packageRoot, 'src/exports/rsc/index.ts'),
+      path.join(packageRoot, 'src/admin/exports/rsc.ts'),
       rsc.included,
       '@payloadcms/ui/rsc',
     );
+  });
+
+  it("binds each admin override to FrogBot's own module", () => {
+    const local = readExports(path.join(packageRoot, 'src/admin/exports/client.ts'));
+    const payload = readExports(
+      path.join(packageRoot, 'src/admin/exports/client.ts'),
+      '@payloadcms/ui',
+    );
+
+    for (const name of adminOverrides) {
+      expect(local.values, name).toContain(name);
+      expect(payload.values, name).not.toContain(name);
+    }
+  });
+
+  it('keeps every Payload name out of the root entry', () => {
+    expect(
+      exportSpecifiers(path.join(packageRoot, 'src/index.ts')).filter(
+        (from) => !from.startsWith('./') || from.startsWith('./admin/'),
+      ),
+    ).toEqual([]);
   });
 
   it('keeps collision names bound to FrogBot modules', () => {

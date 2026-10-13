@@ -27,7 +27,7 @@ export type KindTypescriptSchemaArgs = {
 
 type BaseValidate = (value: unknown, options: unknown) => Promise<string | true> | string | true;
 
-const FIELD_CELL_PATH = '@frogbotai/next/client#FieldCell';
+const FIELD_CELL_PATH = '@frogbotai/ui/admin#FieldCell';
 
 const baseValidators: Partial<Record<KindField['type'], BaseValidate>> = {
   number: validateNumber as BaseValidate,

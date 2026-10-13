@@ -46,7 +46,8 @@ export function ReviewState(_props: BeforeDocumentControlsServerProps) {
 'use client'
 
 import type { EditMenuItemsClientProps } from 'frogbot'
-import { DropdownMenuItem, useDocumentInfo } from '@frogbotai/ui'
+import { DropdownMenuItem } from '@frogbotai/ui'
+import { useDocumentInfo } from '@frogbotai/ui/admin'
 
 export function EditActions(_props: EditMenuItemsClientProps) {
   const { id } = useDocumentInfo()
@@ -63,7 +64,8 @@ export function EditActions(_props: EditMenuItemsClientProps) {
 'use client'
 
 import type { SaveButtonClientProps } from 'frogbot'
-import { Button, useForm } from '@frogbotai/ui'
+import { Button } from '@frogbotai/ui'
+import { useForm } from '@frogbotai/ui/admin'
 
 export function Save(_props: SaveButtonClientProps) {
   const { submit } = useForm()
@@ -80,7 +82,8 @@ export function Save(_props: SaveButtonClientProps) {
 'use client'
 
 import type { SaveDraftButtonClientProps } from 'frogbot'
-import { Button, useForm } from '@frogbotai/ui'
+import { Button } from '@frogbotai/ui'
+import { useForm } from '@frogbotai/ui/admin'
 
 export function SaveDraft(_props: SaveDraftButtonClientProps) {
   const { submit } = useForm()
@@ -97,7 +100,8 @@ export function SaveDraft(_props: SaveDraftButtonClientProps) {
 'use client'
 
 import type { PublishButtonClientProps } from 'frogbot'
-import { Button, useForm } from '@frogbotai/ui'
+import { Button } from '@frogbotai/ui'
+import { useForm } from '@frogbotai/ui/admin'
 
 export function Publish(_props: PublishButtonClientProps) {
   const { submit } = useForm()
@@ -114,7 +118,8 @@ export function Publish(_props: PublishButtonClientProps) {
 'use client'
 
 import type { UnpublishButtonClientProps } from 'frogbot'
-import { Button, useForm } from '@frogbotai/ui'
+import { Button } from '@frogbotai/ui'
+import { useForm } from '@frogbotai/ui/admin'
 
 export function Unpublish(_props: UnpublishButtonClientProps) {
   const { submit } = useForm()
@@ -131,7 +136,8 @@ export function Unpublish(_props: UnpublishButtonClientProps) {
 'use client'
 
 import type { PreviewButtonClientProps } from 'frogbot'
-import { Button, useDocumentInfo } from '@frogbotai/ui'
+import { Button } from '@frogbotai/ui'
+import { useDocumentInfo } from '@frogbotai/ui/admin'
 
 export function Preview(_props: PreviewButtonClientProps) {
   const { collectionSlug, id } = useDocumentInfo()

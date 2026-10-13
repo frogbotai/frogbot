@@ -226,7 +226,7 @@ describe('frogbot sanitize', () => {
       false,
     );
     expect(events?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/next/views#CalendarView',
+      Component: '@frogbotai/ui/admin/rsc#CalendarView',
     });
     expect(events?.admin.custom?.frogbot.views[0]).not.toHaveProperty('orderField');
   });
@@ -246,7 +246,7 @@ describe('frogbot sanitize', () => {
     }) as never as Record<string, any>;
 
     expect(admin.components.views.stub).toMatchObject({
-      Component: '@frogbotai/next/views#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
       exact: true,
       path: '/stub',
     });
@@ -1478,8 +1478,8 @@ describe('frogbot sanitize', () => {
 
     const money = {
       components: {
-        Cell: '@frogbotai/next/client#FieldCell',
-        Field: '@frogbotai/next/client#MoneyField',
+        Cell: '@frogbotai/ui/admin#FieldCell',
+        Field: '@frogbotai/ui/admin#MoneyField',
       },
       custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
     };
@@ -2298,11 +2298,15 @@ describe('frogbot sanitize', () => {
 
     expect(
       (payloadConfig.admin.components as never as { navSections: string[] }).navSections,
-    ).toEqual(['@frogbotai/next#CollectionsSection']);
+    ).toEqual(['@frogbotai/ui/admin/rsc#CollectionsSection']);
   });
 
   it('preserves configured admin nav sections', async () => {
-    const navSections = ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'];
+    const navSections = [
+      '@frogbotai/ui/admin/rsc#CollectionsSection',
+      '@frogbotai/ui/admin/rsc#RecentsSection',
+    ];
+
     const result = sanitize(makeConfig({ admin: { components: { navSections } } }));
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -2324,9 +2328,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect(payloadConfig.admin.components.providers).toEqual([
-      '@frogbotai/next/client#StepNavReset',
-    ]);
+    expect(payloadConfig.admin.components.providers).toEqual(['@frogbotai/ui/admin#StepNavReset']);
   });
 
   it('appends the step-nav reset provider after configured providers in order', async () => {
@@ -2336,7 +2338,7 @@ describe('frogbot sanitize', () => {
 
     expect(payloadConfig.admin.components.providers).toEqual([
       ...providers,
-      '@frogbotai/next/client#StepNavReset',
+      '@frogbotai/ui/admin#StepNavReset',
     ]);
   });
 
@@ -2345,9 +2347,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(payloadConfig.admin.components.Nav).toBe('./components/Nav#Nav');
-    expect(payloadConfig.admin.components.providers).toContain(
-      '@frogbotai/next/client#StepNavReset',
-    );
+    expect(payloadConfig.admin.components.providers).toContain('@frogbotai/ui/admin#StepNavReset');
   });
 
   it('defaults to the collections dashboard and the resolved chat collection views', async () => {
@@ -2375,10 +2375,10 @@ describe('frogbot sanitize', () => {
       }),
     );
     expect(chats?.admin.components?.views).toMatchObject({
-      edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
+      edit: { root: { Component: '@frogbotai/ui/admin/rsc#ChatView' } },
     });
     expect(chats?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/next/views#DefaultListView',
+      Component: '@frogbotai/ui/admin#DefaultListView',
     });
   });
 
@@ -2402,7 +2402,7 @@ describe('frogbot sanitize', () => {
   });
 
   it('preserves a Chat dashboard view at the admin root', async () => {
-    const dashboardView = { Component: '@frogbotai/next/views#ChatView', path: '/' as const };
+    const dashboardView = { Component: '@frogbotai/ui/admin/rsc#ChatView', path: '/' as const };
     const result = sanitize(
       makeConfig({ admin: { components: { views: { dashboard: dashboardView } } } }),
     );
@@ -2512,10 +2512,10 @@ describe('frogbot sanitize', () => {
 
     expect(result.chat.chatsSlug).toBe('conversations');
     expect(chats?.admin.components?.views).toMatchObject({
-      edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
+      edit: { root: { Component: '@frogbotai/ui/admin/rsc#ChatView' } },
     });
     expect(chats?.admin.components?.views?.list).toEqual({
-      Component: '@frogbotai/next/views#DefaultListView',
+      Component: '@frogbotai/ui/admin#DefaultListView',
     });
   });
 
@@ -2546,7 +2546,7 @@ describe('frogbot sanitize', () => {
 
     expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboard);
     expect(chats?.admin.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/next/views#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
     });
     expect(chats?.admin.components?.views?.edit?.root).toEqual(root);
   });
@@ -2586,8 +2586,8 @@ describe('frogbot sanitize', () => {
     const payloadConfig = (await result._internal.payloadConfig) as any;
 
     expect(payloadConfig.admin.components.graphics).toEqual({
-      Icon: '@frogbotai/next/rsc#FrogBotIcon',
-      Logo: '@frogbotai/next/rsc#FrogBotLogo',
+      Icon: '@frogbotai/ui/admin/rsc#FrogBotIcon',
+      Logo: '@frogbotai/ui/admin/rsc#FrogBotLogo',
     });
     expect(payloadConfig.admin.meta.titleSuffix).toBe('- FrogBot');
     expect(payloadConfig.admin.meta.defaultOGImageType).toBe('static');
@@ -2628,7 +2628,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = (await result._internal.payloadConfig) as any;
 
     expect(payloadConfig.admin.components.graphics).toEqual({
-      Icon: '@frogbotai/next/rsc#FrogBotIcon',
+      Icon: '@frogbotai/ui/admin/rsc#FrogBotIcon',
       Logo: '/components/Logo#MyLogo',
     });
     expect(payloadConfig.admin.meta.titleSuffix).toBe('- Acme');

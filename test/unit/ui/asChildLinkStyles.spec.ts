@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -10,6 +10,7 @@ interface CssRule {
 
 const root = resolve(import.meta.dirname, '../../..');
 const uiSource = join(root, 'packages/ui/src');
+const adminSource = join(uiSource, 'admin');
 
 const baseRules = [
   { file: 'components/button.css', selector: '.fb-button', inheritsColor: true },
@@ -148,8 +149,22 @@ describe('asChild link styles', () => {
     expect(rule.declarations.get('text-decoration-line')).toBe('underline');
   });
 
-  it('no @frogbotai/ui stylesheet targets bare anchors', () => {
-    const files = listCssFiles(uiSource);
+  it('admin stylesheets target anchors only under a class', () => {
+    const files = listCssFiles(adminSource);
+
+    const offenders = files.flatMap((file) =>
+      readRules(file)
+        .flatMap((rule) => rule.selectors)
+        .filter((selector) => anchorSelectorPattern.test(selector) && !selector.includes('.'))
+        .map((selector) => `${file}: ${selector}`),
+    );
+
+    expect(files.length).toBeGreaterThan(10);
+    expect(offenders).toEqual([]);
+  });
+
+  it('no @frogbotai/ui stylesheet outside the admin targets bare anchors', () => {
+    const files = listCssFiles(uiSource).filter((file) => !file.startsWith(adminSource + sep));
 
     const offenders = files.flatMap((file) =>
       readRules(file)

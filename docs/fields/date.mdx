@@ -119,7 +119,7 @@ export const Events: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { DateTimeField } from '@frogbotai/ui'
+import { DateTimeField } from '@frogbotai/ui/admin'
 import type { DateFieldServerComponent } from 'frogbot'
 
 export const CustomDateServer: DateFieldServerComponent = (props) => (
@@ -137,7 +137,7 @@ export const CustomDateServer: DateFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { DateTimeField } from '@frogbotai/ui'
+import { DateTimeField } from '@frogbotai/ui/admin'
 import type { DateFieldClientComponent } from 'frogbot'
 
 export const CustomDateClient: DateFieldClientComponent = (props) => <DateTimeField {...props} />
@@ -148,7 +148,7 @@ export const CustomDateClient: DateFieldClientComponent = (props) => <DateTimeFi
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { DateFieldLabelServerComponent } from 'frogbot'
 
 export const CustomDateLabelServer: DateFieldLabelServerComponent = ({ clientField, path }) => (
@@ -165,7 +165,7 @@ export const CustomDateLabelServer: DateFieldLabelServerComponent = ({ clientFie
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { DateFieldLabelClientComponent } from 'frogbot'
 
 export const CustomDateLabelClient: DateFieldLabelClientComponent = ({ field, path }) => (

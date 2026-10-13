@@ -64,7 +64,7 @@ describe('collection sign-in configuration', () => {
 
     expect(built.admin.components.afterLogin).toEqual([
       'custom#AfterLogin',
-      '@frogbotai/next/rsc#SignInButtons',
+      '@frogbotai/ui/admin/rsc#SignInButtons',
     ]);
     expect(result.connections.enabled).toBe(false);
     expect(built.collections.some(({ slug }) => slug === 'connections')).toBe(false);
@@ -81,7 +81,7 @@ describe('collection sign-in configuration', () => {
     });
 
     expect((await result._internal.payloadConfig).admin.components.afterLogin ?? []).not.toContain(
-      '@frogbotai/next/rsc#SignInButtons',
+      '@frogbotai/ui/admin/rsc#SignInButtons',
     );
   });
 

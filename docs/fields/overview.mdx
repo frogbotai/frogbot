@@ -753,13 +753,13 @@ FrogBot's server prop types expose `req.frogbot` and do not expose a separate to
 
 #### Sending and receiving form values
 
-Client components manage form state with hooks and field primitives from `@frogbotai/ui`. Import the corresponding component type from `frogbot`.
+Client components manage form state with hooks and field primitives from `@frogbotai/ui/admin`. Import the corresponding component type from `frogbot`.
 
 ```tsx
 'use client'
 
 import type { TextFieldClientComponent } from 'frogbot'
-import { FieldLabel, useField } from '@frogbotai/ui'
+import { FieldLabel, useField } from '@frogbotai/ui/admin'
 
 export const ColorField: TextFieldClientComponent = ({ field, path }) => {
   const { setValue, value } = useField<string>({ path })
@@ -824,7 +824,7 @@ export const Price: Field = {
 }
 ```
 
-A custom `Cell` appears only in the List view; [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show FrogBot's built-in display for the field. To draw a field the same way in a custom Board `Card` or Calendar `Event`, render `FieldCell` from `@frogbotai/next/client` with the Cell props below.
+A custom `Cell` appears only in the List view; [Board](/admin/collection-board) cards and [Calendar](/admin/collection-calendar) events show FrogBot's built-in display for the field. To draw a field the same way in a custom Board `Card` or Calendar `Event`, render `FieldCell` from `@frogbotai/ui/admin` with the Cell props below.
 
 Cells use the generic `DefaultCellComponentProps` or `DefaultServerCellComponentProps` types from `frogbot`. Cell components do not receive field-component form props or a request.
 
@@ -1016,7 +1016,7 @@ export const Title: Field = {
 
 These slot components receive the field family's default component props. Choose the corresponding client or server type based on whether the component uses `'use client'`.
 
-Use only the curated admin hooks and field primitives exported by `@frogbotai/ui`. General-purpose admin internals and element subpaths are not part of this contract. Component paths, server and client boundaries, and import-map generation follow the conventions above.
+Use only the curated admin hooks and field primitives exported by `@frogbotai/ui/admin`. General-purpose admin internals and element subpaths are not part of this contract. Component paths, server and client boundaries, and import-map generation follow the conventions above.
 
 ## TypeScript
 

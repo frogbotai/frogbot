@@ -77,7 +77,7 @@ describe('collection views', () => {
       { type: 'list', slug: 'list', label: 'List', path: '' },
     ]);
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/next/views#DefaultListView',
+      Component: '@frogbotai/ui/admin#DefaultListView',
     });
     expect(admin?.groupBy).toBe(true);
   });
@@ -148,11 +148,11 @@ describe('collection views', () => {
     ]);
     expect(admin?.custom?.frogbot.views[1].orderField).toBe('_order_by_owner');
     expect(admin?.custom?.frogbot.views[2].orderField).toBe('_order_by_stage');
-    expect(admin?.components?.Description).toBe('@frogbotai/next/views#CollectionViewSwitcher');
+    expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
     expect(admin?.components?.beforeList).toBeUndefined();
     expect(admin?.groupBy).toBe(true);
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/next/views#DefaultListView',
+      Component: '@frogbotai/ui/admin#DefaultListView',
     });
 
     const result = getCustomCollectionViewByRoute({
@@ -163,7 +163,7 @@ describe('collection views', () => {
     });
 
     expect(result.view).toEqual({
-      payloadComponent: '@frogbotai/next/views#CustomCollectionView',
+      payloadComponent: '@frogbotai/ui/admin/rsc#CustomCollectionView',
     });
   });
 
@@ -186,7 +186,7 @@ describe('collection views', () => {
     expect(admin?.custom?.frogbot.views[0]).not.toHaveProperty('access');
     expect(runtime[0]).toMatchObject({ access, filter });
     expect(admin?.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/next/views#BoardView',
+      Component: '@frogbotai/ui/admin/rsc#BoardView',
     });
   });
 
@@ -217,7 +217,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.views?.schedule).toEqual({
-      Component: '@frogbotai/next/views#CalendarView',
+      Component: '@frogbotai/ui/admin/rsc#CalendarView',
       exact: true,
       path: '/schedule',
     });
@@ -327,7 +327,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.views?.list).toEqual({
-      Component: '@frogbotai/next/views#DefaultListView',
+      Component: '@frogbotai/ui/admin#DefaultListView',
       actions,
     });
   });
@@ -392,7 +392,7 @@ describe('collection views', () => {
       },
     });
 
-    expect(admin?.components?.Description).toBe('@frogbotai/next/views#CollectionViewSwitcher');
+    expect(admin?.components?.Description).toBe('@frogbotai/ui/admin/rsc#CollectionViewSwitcher');
     expect(admin?.custom?.frogbot.descriptionComponent).toBe(Description);
   });
 
@@ -500,7 +500,7 @@ describe('collection views', () => {
     });
 
     expect(admin?.components?.views?.list).toMatchObject({
-      Component: '@frogbotai/next/views#CustomCollectionView',
+      Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
     });
   });
 });

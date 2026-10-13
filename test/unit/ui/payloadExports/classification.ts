@@ -58,3 +58,5 @@ export const rsc = {
 export const collisions = names(
   'Button Card Collapsible Select ShimmerEffect StaggeredShimmers Tooltip useHotkey',
 );
+
+export const adminOverrides = names('DefaultListView');

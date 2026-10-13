@@ -285,7 +285,7 @@ describe('resolveConnectionsCollections', () => {
     const collection = result.collections.find((item) => item.slug === 'connections')!;
 
     expect(collection.admin?.views).toEqual([
-      { type: 'custom', component: '@frogbotai/next/views#ConnectionsView', shell: false },
+      { type: 'custom', component: '@frogbotai/ui/admin/rsc#ConnectionsView', shell: false },
     ]);
   });
 

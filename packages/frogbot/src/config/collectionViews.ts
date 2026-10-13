@@ -212,22 +212,22 @@ export function compileCollectionViews({
 
     if (view.type === 'board') {
       runtimeViews[key] = {
-        Component: '@frogbotai/next/views#BoardView',
+        Component: '@frogbotai/ui/admin/rsc#BoardView',
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'calendar') {
       runtimeViews[key] = {
-        Component: '@frogbotai/next/views#CalendarView',
+        Component: '@frogbotai/ui/admin/rsc#CalendarView',
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'custom') {
       runtimeViews[key] = {
-        Component: '@frogbotai/next/views#CustomCollectionView',
+        Component: '@frogbotai/ui/admin/rsc#CustomCollectionView',
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'list' && isDefault) {
       runtimeViews.list = {
-        Component: '@frogbotai/next/views#DefaultListView',
+        Component: '@frogbotai/ui/admin#DefaultListView',
         ...(components?.actions ? { actions: components.actions } : {}),
       };
     }
@@ -238,7 +238,7 @@ export function compileCollectionViews({
   const hasViewSwitcher = views.length > 1;
   const components = {
     ...componentSource,
-    ...(hasViewSwitcher ? { Description: '@frogbotai/next/views#CollectionViewSwitcher' } : {}),
+    ...(hasViewSwitcher ? { Description: '@frogbotai/ui/admin/rsc#CollectionViewSwitcher' } : {}),
     ...(listComponents
       ? {
           afterList: listComponents.afterView,

@@ -138,8 +138,8 @@ describe('API keys collection', () => {
       admin: {
         readOnly: true,
         components: {
-          Cell: '@frogbotai/next/client#FieldCell',
-          Field: '@frogbotai/next/client#MoneyField',
+          Cell: '@frogbotai/ui/admin#FieldCell',
+          Field: '@frogbotai/ui/admin#MoneyField',
         },
         custom: { frogbot: { kind: { type: 'money', currency: 'USD', precision: 'auto' } } },
       },

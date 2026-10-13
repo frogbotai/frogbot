@@ -124,6 +124,7 @@ describe('affectedSet on past commits', () => {
       'docs-links',
       'docs-references',
       'option-tables',
+      'package-boundaries',
       'test-types',
       'tests',
       'typed-lint',

@@ -280,9 +280,9 @@ describe('rewriteComponentPaths', () => {
     rewriteComponentPaths(config);
 
     expect(config.collections[0]?.fields[0]?.admin?.components).toEqual({
-      Field: '@frogbotai/ui#TextField',
-      Description: '@frogbotai/ui/shared#formatAdminURL',
-      Diff: '@frogbotai/ui/rsc#FieldDiffContainer',
+      Field: '@frogbotai/ui/admin#TextField',
+      Description: '@frogbotai/ui/admin/shared#formatAdminURL',
+      Diff: '@frogbotai/ui/admin/rsc#FieldDiffContainer',
       Error: '/components/ColorField#ColorField',
       Label: '@payloadcms/ui-foo#Label',
     });

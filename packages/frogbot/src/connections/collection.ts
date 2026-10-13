@@ -15,7 +15,7 @@ export function defaultConnectionsCollection({
       views: [
         {
           type: 'custom',
-          component: '@frogbotai/next/views#ConnectionsView',
+          component: '@frogbotai/ui/admin/rsc#ConnectionsView',
           shell: false,
         },
       ],

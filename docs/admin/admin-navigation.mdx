@@ -14,21 +14,21 @@ FrogBot's default admin sidebar lists your collections, followed by a bottom rai
 ```ts
 admin: {
   components: {
-    navSections: ['@frogbotai/next#CollectionsSection']
+    navSections: ['@frogbotai/ui/admin/rsc#CollectionsSection']
   }
 }
 ```
 
 Setting `navSections` replaces that default array, so include every section you want rendered. Sections appear after configured `admin.components.navItems`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
 
-Add Recents by including `@frogbotai/next#RecentsSection` where you want it to appear:
+Add Recents by including `@frogbotai/ui/admin/rsc#RecentsSection` where you want it to appear:
 
 ```ts
 admin: {
   components: {
     navSections: [
-      '@frogbotai/next#CollectionsSection',
-      '@frogbotai/next#RecentsSection'
+      '@frogbotai/ui/admin/rsc#CollectionsSection',
+      '@frogbotai/ui/admin/rsc#RecentsSection'
     ]
   }
 }
@@ -124,14 +124,14 @@ Each `navItems` entry is a `NavItem`:
 
 ## Copy and customize a section
 
-The default sections and their prop types are exported from `@frogbotai/next`. Copy `RecentsSection` into your application when you need to change its query, heading, or server-rendered content. Keep its server component contract and import the reusable client renderer from the public client entry point:
+The default sections and their prop types are exported from `@frogbotai/ui/admin/rsc`. Copy `RecentsSection` into your application when you need to change its query, heading, or server-rendered content. Keep its server component contract and import the reusable client renderer from the public client entry point:
 
 ```tsx
-import { NavSection, type RecentsSectionProps } from '@frogbotai/next'
+import { NavSection, type RecentsSectionProps } from '@frogbotai/ui/admin/rsc'
 import {
   RecentsSectionClient,
   type RecentsSectionClientProps
-} from '@frogbotai/next/client'
+} from '@frogbotai/ui/admin'
 import { getCachedFrogBot } from 'frogbot'
 import { formatAdminURL } from 'payload/shared'
 
@@ -174,13 +174,13 @@ export async function WorkspaceRecents({ payload, req }: RecentsSectionProps) {
 }
 ```
 
-`RecentsSectionClient` preserves live refresh, date buckets, active rows, and View all. Its public `RecentsSectionClientProps` contract requires `chatsSlug`, `collectionPath`, and normalized `recents`. `bucketRecents` is also exported from `@frogbotai/next/client` when only the default grouping is needed.
+`RecentsSectionClient` preserves live refresh, date buckets, active rows, and View all. Its public `RecentsSectionClientProps` contract requires `chatsSlug`, `collectionPath`, and normalized `recents`. `bucketRecents` is also exported from `@frogbotai/ui/admin` when only the default grouping is needed.
 
 ```ts
 admin: {
   components: {
     navSections: [
-      '@frogbotai/next#CollectionsSection',
+      '@frogbotai/ui/admin/rsc#CollectionsSection',
       './src/components/WorkspaceRecents#WorkspaceRecents'
     ]
   }

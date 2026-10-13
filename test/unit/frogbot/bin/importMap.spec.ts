@@ -12,7 +12,7 @@ describe('collection import map', () => {
       collections: [
         {
           admin: {
-            components: { beforeListTable: ['@frogbotai/next/client#ViewSwitcher'] },
+            components: { beforeListTable: ['@frogbotai/ui/admin#ViewSwitcher'] },
           },
           fields: [],
           slug: 'posts',
@@ -23,7 +23,7 @@ describe('collection import map', () => {
       imports: {},
     });
 
-    expect(addToImportMap).toHaveBeenCalledWith(['@frogbotai/next/client#ViewSwitcher']);
+    expect(addToImportMap).toHaveBeenCalledWith(['@frogbotai/ui/admin#ViewSwitcher']);
   });
 
   it('collects a collection board Card override', () => {

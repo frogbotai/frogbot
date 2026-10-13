@@ -2,7 +2,7 @@
 
 import './plugin-development.styles.css';
 
-import { useConfig } from '@frogbotai/ui';
+import { useConfig } from '@frogbotai/ui/admin';
 
 export function NotesPanel() {
   const { config } = useConfig();

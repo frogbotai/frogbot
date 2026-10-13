@@ -1,0 +1,296 @@
+'use client';
+
+import { getTranslation } from '@payloadcms/translations';
+import {
+  RelationshipProvider,
+  toast,
+  useConfig,
+  useDocumentDrawer,
+  useListQuery,
+  useTableColumns,
+  useTranslation,
+} from '@payloadcms/ui';
+import { formatDocTitle } from '@payloadcms/ui/shared';
+import type { ClientCollectionConfig, Column } from 'payload';
+import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
+
+import { Board } from '../../../board/Board.js';
+import { BoardCard } from '../../../board/BoardCard.js';
+import { FieldCell } from '../../fields/FieldCell/index.client.js';
+import { appendQuery, getPath, setPath, toCellData } from '../cells.js';
+import { getViewCardColumns } from '../preferences.js';
+import { buildBoardReorderBody, buildColumnWhere, getBoardColumnKey } from './data.js';
+import type { ResolvedBoardColumn } from './resolveColumns.js';
+
+type Row = Record<string, unknown> & { id: number | string };
+
+export type BoardViewClientProps = {
+  Card?: ComponentType<{ disabled: boolean; row: Row }>;
+  ColumnHeader?: ComponentType<{ column: ResolvedBoardColumn; count: number }>;
+  collectionSlug: string;
+  columns: ResolvedBoardColumn[];
+  cover?: string;
+  filter?: Record<string, unknown>;
+  groupBy: string;
+  limit: number;
+  orderField: string;
+  canUpdate: boolean;
+};
+
+function BoardDocumentCard({
+  cardColumns,
+  collectionConfig,
+  collectionSlug,
+  cover,
+  disabled,
+  row,
+}: Pick<BoardViewClientProps, 'collectionSlug' | 'cover'> & {
+  cardColumns: Column[];
+  collectionConfig: ClientCollectionConfig;
+  disabled: boolean;
+  row: Row;
+}) {
+  const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
+  const { i18n } = useTranslation();
+  const {
+    config: {
+      admin: { dateFormat },
+    },
+  } = useConfig();
+
+  const title = formatDocTitle({
+    collectionConfig,
+    data: row,
+    dateFormat,
+    i18n,
+  });
+
+  return (
+    <>
+      <BoardCard disabled={disabled} id={String(row.id)} onClick={drawer.openDrawer}>
+        {cover ? (
+          <img
+            alt=""
+            className="collection-board__cover"
+            src={String((getPath(row, cover) as { url?: unknown } | undefined)?.url ?? '')}
+          />
+        ) : null}
+        <div className="collection-board__title">{title}</div>
+        {cardColumns.map(({ accessor, field }) => (
+          <div className="collection-board__field" key={accessor}>
+            <span className="collection-board__field-label">
+              {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
+            </span>
+            <div className="collection-board__field-value">
+              <FieldCell
+                cellData={getPath(row, accessor)}
+                collectionSlug={collectionSlug}
+                field={field}
+                link={false}
+                rowData={row}
+                viewType="board"
+              />
+            </div>
+          </div>
+        ))}
+      </BoardCard>
+      <DocumentDrawer />
+    </>
+  );
+}
+
+export function BoardViewClient(props: BoardViewClientProps) {
+  const Card = props.Card;
+  const ColumnHeader = props.ColumnHeader;
+  const { query } = useListQuery();
+  const isManual = query.sort === props.orderField;
+  const { config, getEntityConfig } = useConfig();
+  const { columns: columnState } = useTableColumns();
+  const collectionConfig = getEntityConfig({
+    collectionSlug: props.collectionSlug,
+  });
+
+  const useAsTitle = collectionConfig.admin?.useAsTitle;
+  const cardColumns = useMemo(
+    () => getViewCardColumns(columnState, useAsTitle),
+    [columnState, useAsTitle],
+  );
+
+  const [rows, setRows] = useState<Row[]>([]);
+  const [pages, setPages] = useState<Record<string, number>>({});
+  const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
+
+  const fetchColumn = async (key: string, page: number, replace = false) => {
+    const value = props.columns.find((column) => column.key === key)?.value;
+    const params = new URLSearchParams({
+      depth: '1',
+      limit: String(props.limit),
+      page: String(page),
+    });
+
+    const where = props.filter ? { and: [props.filter, query.where].filter(Boolean) } : query.where;
+    appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
+    appendQuery(params, 'sort', query.sort);
+    const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) throw new Error(response.statusText);
+    const result = (await response.json()) as { docs: Row[]; hasNextPage: boolean };
+
+    setRows((current) =>
+      replace
+        ? [
+            ...current.filter((row) => {
+              const value = toCellData(getPath(row, props.groupBy));
+
+              return (
+                (value === null || value === undefined ? '' : getBoardColumnKey(value)) !== key
+              );
+            }),
+            ...result.docs,
+          ]
+        : [...current, ...result.docs.filter((doc) => !current.some(({ id }) => id === doc.id))],
+    );
+
+    setPages((current) => ({ ...current, [key]: page }));
+    setHasMore((current) => ({ ...current, [key]: result.hasNextPage }));
+  };
+
+  const loadBoard = () => {
+    setRows([]);
+
+    void Promise.all(
+      [...props.columns.map(({ key }) => key), ''].map((key) => fetchColumn(key, 1, true)),
+    ).catch((error) =>
+      toast.error(error instanceof Error ? error.message : 'Failed to load board'),
+    );
+  };
+
+  const loadBoardRef = useRef(loadBoard);
+
+  useEffect(() => {
+    loadBoardRef.current = loadBoard;
+  });
+
+  useEffect(() => {
+    loadBoardRef.current();
+  }, [query.sort, query.where]);
+
+  const request = async (path: string, init: RequestInit) => {
+    const response = await fetch(`${config.routes.api}${path}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      ...init,
+    });
+
+    const result = (await response.json().catch(() => ({}))) as Record<string, unknown> & {
+      errors?: { message?: string }[];
+    };
+
+    if (!response.ok) {
+      const message = String(
+        result.errors?.[0]?.message ?? result.error ?? result.message ?? response.statusText,
+      );
+
+      toast.error(message);
+      throw new Error(message);
+    }
+
+    return result;
+  };
+
+  const reorder = async (row: Row, target: Row, before: boolean) => {
+    const body = buildBoardReorderBody({
+      before,
+      collectionSlug: props.collectionSlug,
+      orderField: props.orderField,
+      rowId: row.id,
+      target,
+    });
+
+    const result = await request('/reorder', { body: JSON.stringify(body), method: 'POST' });
+    if (result.message !== 'initial migration') return;
+    const fresh = (await request(
+      `/${props.collectionSlug}/${target.id}?depth=0&select[${props.orderField}]=true`,
+      { method: 'GET' },
+    )) as Row;
+
+    if (fresh[props.orderField]) await reorder(row, fresh, before);
+  };
+
+  const move = async ({
+    after,
+    before,
+    from,
+    row,
+    to,
+  }: {
+    after?: Row;
+    before?: Row;
+    from: string | null;
+    row: Row;
+    to: string | null;
+  }) => {
+    if (from !== to) {
+      const value = props.columns.find((column) => column.key === to)?.value ?? null;
+
+      await request(`/${props.collectionSlug}/${row.id}`, {
+        body: JSON.stringify(setPath(props.groupBy, value)),
+        method: 'PATCH',
+      });
+    }
+
+    const target = before ?? after;
+    if (isManual && target) await reorder(row, target, Boolean(before));
+    await Promise.all([...new Set([from ?? '', to ?? ''])].map((key) => fetchColumn(key, 1, true)));
+  };
+
+  return (
+    <RelationshipProvider>
+      <div className="collection-board">
+        <Board
+          allowReorder={isManual}
+          columns={props.columns}
+          getId={(row) => String(row.id)}
+          groupBy={(row) => {
+            const value = toCellData(getPath(row, props.groupBy));
+
+            return value === null || value === undefined ? null : getBoardColumnKey(value);
+          }}
+          hasMore={hasMore}
+          renderColumnHeader={
+            ColumnHeader
+              ? (column, count) => (
+                  <ColumnHeader
+                    column={{
+                      ...column,
+                      value: props.columns.find(({ key }) => key === column.key)?.value,
+                    }}
+                    count={count}
+                  />
+                )
+              : undefined
+          }
+          onMove={move}
+          onReachEnd={(key) => void fetchColumn(key, (pages[key] ?? 1) + 1)}
+          renderCard={(row) =>
+            Card ? (
+              <Card disabled={!props.canUpdate} row={row} />
+            ) : (
+              <BoardDocumentCard
+                cardColumns={cardColumns}
+                collectionConfig={collectionConfig}
+                collectionSlug={props.collectionSlug}
+                cover={props.cover}
+                disabled={!props.canUpdate}
+                row={row}
+              />
+            )
+          }
+          rows={rows}
+        />
+      </div>
+    </RelationshipProvider>
+  );
+}

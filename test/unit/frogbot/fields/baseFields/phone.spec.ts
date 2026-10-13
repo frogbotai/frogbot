@@ -30,8 +30,8 @@ describe('phoneField', () => {
     const field = phoneField({ name: 'phone' });
 
     expect(field.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#PhoneField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#PhoneField',
     });
   });
 

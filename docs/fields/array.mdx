@@ -142,7 +142,7 @@ export const Pages: CollectionConfig = {
 Use the public field component and FrogBot component type for a custom field wrapper:
 
 ```tsx
-import { ArrayField } from '@frogbotai/ui'
+import { ArrayField } from '@frogbotai/ui/admin'
 import type { ArrayFieldServerComponent } from 'frogbot'
 
 export const CustomArrayField: ArrayFieldServerComponent = ({
@@ -167,7 +167,7 @@ A client row label can read the current row without receiving custom props:
 ```tsx
 'use client'
 
-import { useRowLabel } from '@frogbotai/ui'
+import { useRowLabel } from '@frogbotai/ui/admin'
 
 export function LinkRowLabel() {
   const { data, rowNumber } = useRowLabel<{ label?: string }>()
@@ -183,7 +183,7 @@ Use `ArrayFieldClientComponent` for a client field wrapper. Use `ArrayFieldLabel
 ```tsx
 'use client'
 
-import { ArrayField } from '@frogbotai/ui'
+import { ArrayField } from '@frogbotai/ui/admin'
 import type { ArrayFieldClientComponent } from 'frogbot'
 
 export const CustomArrayFieldClient: ArrayFieldClientComponent = (props) => {
@@ -192,7 +192,7 @@ export const CustomArrayFieldClient: ArrayFieldClientComponent = (props) => {
 ```
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { ArrayFieldLabelServerComponent } from 'frogbot'
 
 export const CustomArrayLabel: ArrayFieldLabelServerComponent = ({

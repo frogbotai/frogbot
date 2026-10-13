@@ -31,6 +31,7 @@
     "@frogbotai/piece-resend": "workspace:*",
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",
+    "@frogbotai/ui": "workspace:*",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",
     "frogbot": "workspace:*",

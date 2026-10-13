@@ -188,7 +188,7 @@ export function sanitizeCollection(
                 ...views,
                 edit: views?.edit?.root
                   ? views.edit
-                  : { root: { Component: '@frogbotai/next/views#ChatView' } },
+                  : { root: { Component: '@frogbotai/ui/admin/rsc#ChatView' } },
               },
             },
           },

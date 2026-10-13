@@ -41,6 +41,7 @@ export const CHECK_INPUTS = {
   'docs-references': [...DOCS_PAGES, 'templates/*/README.md', 'packages/frogbot/src/bin/**'],
   generated: ['**/importMap.js', '**/frogbot-types.ts', '**/piece-types.ts'],
   'option-tables': ['docs/**'],
+  'package-boundaries': ['packages/**/src/**', 'packages/ui/package.json'],
   packages: ['pnpm-workspace.yaml', ...MANIFESTS],
   'peer-variants': ['pnpm-lock.yaml'],
   scripts: ['CONTRIBUTING.md', ...MANIFESTS],
@@ -52,7 +53,14 @@ export const CHECK_INPUTS = {
   'ui-architecture': ['packages/ui/src/**'],
 };
 
-const STRUCTURAL_CHECKS = ['dist-imports', 'test-types', 'tests', 'typed-lint', 'ui-architecture'];
+const STRUCTURAL_CHECKS = [
+  'dist-imports',
+  'package-boundaries',
+  'test-types',
+  'tests',
+  'typed-lint',
+  'ui-architecture',
+];
 
 export const GROUPS = [
   { group: 'typecheck', level: 'typecheck' },

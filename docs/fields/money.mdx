@@ -167,14 +167,14 @@ export function Total({ amount }: { amount: number | null }) {
 
 ## Custom components
 
-The money cell and input are `MoneyCell` and `MoneyField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the money input as they do on a Number field.
+The money cell and input are `MoneyCell` and `MoneyField` from `@frogbotai/ui/admin`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the money input as they do on a Number field.
 
 A custom Cell can draw the standard money display inside its own markup with [`FieldCell`](/fields/overview#cell):
 
 ```tsx
 'use client'
 
-import { FieldCell } from '@frogbotai/next/client'
+import { FieldCell } from '@frogbotai/ui/admin'
 import type { DefaultCellComponentProps } from 'frogbot'
 
 export function PriceCell(props: DefaultCellComponentProps) {

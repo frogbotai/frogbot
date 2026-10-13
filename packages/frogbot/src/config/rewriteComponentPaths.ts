@@ -33,7 +33,7 @@ function rewritePath(path: string, exportName?: string): string {
     Object.hasOwn(uiComponentExports, specifier) &&
     uiComponentExports[specifier].has(exportName || inlineExport)
   ) {
-    return path.replace('@payloadcms/ui', '@frogbotai/ui');
+    return path.replace('@payloadcms/ui', '@frogbotai/ui/admin');
   }
 
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {

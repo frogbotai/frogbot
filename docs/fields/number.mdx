@@ -86,7 +86,7 @@ export const Products: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { NumberField } from '@frogbotai/ui'
+import { NumberField } from '@frogbotai/ui/admin'
 import type { NumberFieldServerComponent } from 'frogbot'
 
 export const CustomNumberServer: NumberFieldServerComponent = (props) => (
@@ -104,7 +104,7 @@ export const CustomNumberServer: NumberFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { NumberField } from '@frogbotai/ui'
+import { NumberField } from '@frogbotai/ui/admin'
 import type { NumberFieldClientComponent } from 'frogbot'
 
 export const CustomNumberClient: NumberFieldClientComponent = (props) => <NumberField {...props} />
@@ -115,7 +115,7 @@ export const CustomNumberClient: NumberFieldClientComponent = (props) => <Number
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { NumberFieldLabelServerComponent } from 'frogbot'
 
 export const CustomNumberLabelServer: NumberFieldLabelServerComponent = ({ clientField, path }) => (
@@ -132,7 +132,7 @@ export const CustomNumberLabelServer: NumberFieldLabelServerComponent = ({ clien
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { NumberFieldLabelClientComponent } from 'frogbot'
 
 export const CustomNumberLabelClient: NumberFieldLabelClientComponent = ({ field, path }) => (

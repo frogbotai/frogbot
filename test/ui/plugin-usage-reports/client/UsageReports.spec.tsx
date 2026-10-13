@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { UsageReports } from '../../../../packages/plugins/plugin-usage-reports/src/client/UsageReports.js';
 
-vi.mock('@payloadcms/ui', () => ({
+vi.mock('@frogbotai/ui/admin', () => ({
   useConfig: () => ({
     config: { routes: { admin: '/admin', api: '/api' } },
   }),

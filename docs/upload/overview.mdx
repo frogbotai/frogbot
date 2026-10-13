@@ -414,7 +414,7 @@ export const Posts: CollectionConfig = {
 
 ### Building Custom Upload Components
 
-Wrap `UploadField` from `@frogbotai/ui` and forward the provided props, including permissions and read-only state. Render this component through the field slot so it receives the Admin Panel's form and upload providers.
+Wrap `UploadField` from `@frogbotai/ui/admin` and forward the provided props, including permissions and read-only state. Render this component through the field slot so it receives the Admin Panel's form and upload providers.
 
 #### Basic Example
 
@@ -423,7 +423,7 @@ Wrap `UploadField` from `@frogbotai/ui` and forward the provided props, includin
 ```tsx
 'use client'
 
-import { UploadField } from '@frogbotai/ui'
+import { UploadField } from '@frogbotai/ui/admin'
 import type { UploadFieldClientComponent } from 'frogbot'
 
 export const CustomUploadField: UploadFieldClientComponent = (props) => {
@@ -438,7 +438,7 @@ export const CustomUploadField: UploadFieldClientComponent = (props) => {
 
 ### Available Hooks and Components
 
-When building custom upload components, you have access to several useful hooks and components from `@frogbotai/ui`:
+When building custom upload components, you have access to several useful hooks and components from `@frogbotai/ui/admin`:
 
 | Hook / Component    | Description                                                           |
 | ------------------- | --------------------------------------------------------------------- |
@@ -456,7 +456,7 @@ The example above customizes an upload relationship field. Replacing an upload c
 | **Upload Collection Customization** | `admin.components.edit.Upload`              | Customize the UI when editing documents in an upload-enabled collection (e.g., the Media collection edit view)          |
 | **Upload Field Customization**      | `admin.components.Field` on an upload field | Customize the field that references uploads in other collections (e.g., a "Featured Image" field on a Posts collection) |
 
-`@frogbotai/ui` does not export the complete collection `Upload` editor. Keep the default collection editor unless you are implementing its file, form, and upload-state integration yourself. `UploadField` and `UploadInput` select related documents; they are not replacements for that collection slot.
+`@frogbotai/ui/admin` does not export the complete collection `Upload` editor. Keep the default collection editor unless you are implementing its file, form, and upload-state integration yourself. `UploadField` and `UploadInput` select related documents; they are not replacements for that collection slot.
 
 ### Component Export Syntax
 
