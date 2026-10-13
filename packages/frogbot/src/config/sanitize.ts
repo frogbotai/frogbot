@@ -386,7 +386,7 @@ export function sanitize(
     settings.push({
       path: 'connections',
       label: 'Linked accounts',
-      Component: '@frogbotai/next/views#ConnectionsView',
+      Component: '@frogbotai/ui/admin/rsc#ConnectionsView',
     });
   }
 

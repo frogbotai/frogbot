@@ -1,6 +1,6 @@
 'use client';
 
-import { FieldLabel, useField } from '@frogbotai/ui';
+import { FieldLabel, useField } from '@frogbotai/ui/admin';
 import type { TextFieldClientComponent } from 'frogbot';
 
 export const ColorField: TextFieldClientComponent = ({ field, path }) => {

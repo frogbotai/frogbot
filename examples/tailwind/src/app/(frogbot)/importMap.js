@@ -1,35 +1,34 @@
-import { FieldCell as FieldCell_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
-import { MoneyField as MoneyField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
-import { DefaultListView as DefaultListView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
-import { ChatView as ChatView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
-import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FieldCell as FieldCell_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { MoneyField as MoneyField_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { DefaultListView as DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { ChatView as ChatView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { FrogBotNav as FrogBotNav_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { TailwindIcon as TailwindIcon_4cc4fd2da7cdd7a04fcc7e16730a23a6 } from '../../components/TailwindBrand';
 import { TailwindLogo as TailwindLogo_4cc4fd2da7cdd7a04fcc7e16730a23a6 } from '../../components/TailwindBrand';
-import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
-import { StepNavReset as StepNavReset_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
-import { SettingsView as SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
+import { CollectionsSection as CollectionsSection_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
+import { StepNavReset as StepNavReset_53ccb9913b2925da8adcdf5fd85e01f4 } from '@frogbotai/ui/admin';
+import { SettingsView as SettingsView_a9b31afd548db1251f21130da6e46588 } from '@frogbotai/ui/admin/rsc';
 import { CollectionCards as CollectionCards_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 
 /** @type import('frogbot').ImportMap */
 export const importMap = {
-  '@frogbotai/next/client#FieldCell':
-    FieldCell_e1fc65845c25c823b271918436e716b9,
-  '@frogbotai/next/client#MoneyField':
-    MoneyField_e1fc65845c25c823b271918436e716b9,
-  '@frogbotai/next/views#DefaultListView':
-    DefaultListView_172b1613d7d7a5cf96731bcb4ca4ed45,
-  '@frogbotai/next/views#ChatView': ChatView_172b1613d7d7a5cf96731bcb4ca4ed45,
-  '@frogbotai/next/rsc#FrogBotNav': FrogBotNav_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/ui/admin#FieldCell': FieldCell_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin#MoneyField': MoneyField_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin#DefaultListView':
+    DefaultListView_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin/rsc#ChatView': ChatView_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/ui/admin/rsc#FrogBotNav':
+    FrogBotNav_a9b31afd548db1251f21130da6e46588,
   '/components/TailwindBrand#TailwindIcon':
     TailwindIcon_4cc4fd2da7cdd7a04fcc7e16730a23a6,
   '/components/TailwindBrand#TailwindLogo':
     TailwindLogo_4cc4fd2da7cdd7a04fcc7e16730a23a6,
-  '@frogbotai/next#CollectionsSection':
-    CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
-  '@frogbotai/next/client#StepNavReset':
-    StepNavReset_e1fc65845c25c823b271918436e716b9,
-  '@frogbotai/next/views#SettingsView':
-    SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45,
+  '@frogbotai/ui/admin/rsc#CollectionsSection':
+    CollectionsSection_a9b31afd548db1251f21130da6e46588,
+  '@frogbotai/ui/admin#StepNavReset':
+    StepNavReset_53ccb9913b2925da8adcdf5fd85e01f4,
+  '@frogbotai/ui/admin/rsc#SettingsView':
+    SettingsView_a9b31afd548db1251f21130da6e46588,
   '@frogbotai/next/rsc#CollectionCards':
     CollectionCards_0d74ee439e1043043a872b6d428a44d5,
 };

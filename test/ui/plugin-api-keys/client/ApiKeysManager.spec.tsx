@@ -1,61 +1,60 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const closeModal = vi.fn();
-const openModal = vi.fn();
 const clearRouteCache = vi.fn();
 
-vi.mock('@payloadcms/ui', () => ({
-  Button: ({ children, ...props }: { children: ReactNode }) => (
-    <button {...props}>{children}</button>
-  ),
-  CopyIcon: () => <svg data-testid="copy-icon" />,
-  Modal: ({ children, className }: { children: ReactNode; className?: string }) => (
-    <div className={className} role="dialog">
-      {children}
-    </div>
-  ),
-  TextInput: ({ label, ...props }: { label: string }) => <input aria-label={label} {...props} />,
-  Tooltip: ({ children, show }: { children: ReactNode; show?: boolean }) =>
-    show ? <span>{children}</span> : null,
+vi.mock('@frogbotai/ui/admin', () => ({
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
   useListQuery: () => ({ collectionSlug: 'api-keys' }),
-  useModal: () => ({ closeModal, openModal }),
   useRouteCache: () => ({ clearRouteCache }),
 }));
 
 const { ApiKeysManager, RevokeApiKey } =
   await import('../../../../packages/plugins/plugin-api-keys/src/client/ApiKeysManager.js');
 
+function mint(token = 'frogbot_secret') {
+  vi.mocked(fetch).mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ token }),
+  } as Response);
+}
+
+function openCreate() {
+  render(<ApiKeysManager />);
+  fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
+}
+
+async function generate(name = 'Deploy') {
+  fireEvent.change(screen.getByLabelText('Key name'), { target: { value: name } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+  await screen.findByText('frogbot_secret');
+}
+
 describe('API key controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('fetch', vi.fn());
-    Object.assign(navigator, { clipboard: { writeText: vi.fn() } });
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn() },
+    });
   });
 
-  it('creates and reveals an API key in the modal', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ token: 'frogbot_secret' }),
-    } as Response);
-
+  it('creates and reveals an API key in the dialog', async () => {
+    mint();
     render(<ApiKeysManager />);
 
-    expect(screen.getByRole('dialog').className).toBe('api-keys-modal');
+    expect(screen.queryByRole('dialog')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create API key' }));
 
-    expect(openModal).toHaveBeenCalledWith('create-api-key-modal');
+    expect(screen.getByRole('dialog').classList).toContain('fb-dialog__content');
 
-    fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    await generate();
 
-    expect(
-      await screen.findByText("Key generated! Copy it now — you won't see it again."),
-    ).toBeTruthy();
-    expect(screen.getByText('frogbot_secret')).toBeTruthy();
+    expect(screen.getByText("Key generated! Copy it now — you won't see it again.")).toBeTruthy();
     expect(fetch).toHaveBeenCalledWith(
       '/api/api-keys/mint',
       expect.objectContaining({
@@ -66,17 +65,30 @@ describe('API key controls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
-    expect(closeModal).toHaveBeenCalledWith('create-api-key-modal');
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).toHaveBeenCalled();
   });
 
-  it('generates on Enter in the key name input', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ token: 'frogbot_secret' }),
-    } as Response);
+  it('starts focus in the key name input', async () => {
+    openCreate();
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Key name')));
+  });
+
+  it('closes on Escape and returns focus to Create API key', async () => {
+    const user = userEvent.setup();
 
     render(<ApiKeysManager />);
+    await user.click(screen.getByRole('button', { name: 'Create API key' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Create API key' }));
+  });
+
+  it('generates on Enter in the key name input', async () => {
+    mint();
+    openCreate();
 
     fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
     fireEvent.keyDown(screen.getByLabelText('Key name'), { key: 'Enter' });
@@ -85,37 +97,40 @@ describe('API key controls', () => {
   });
 
   it('ignores Enter when the name is empty', () => {
-    render(<ApiKeysManager />);
+    openCreate();
     fireEvent.keyDown(screen.getByLabelText('Key name'), { key: 'Enter' });
 
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it('copies the token with feedback', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ token: 'frogbot_secret' }),
-    } as Response);
-
-    render(<ApiKeysManager />);
-
-    fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
-    await screen.findByText('frogbot_secret');
+    mint();
+    openCreate();
+    await generate();
 
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Copy API key' }));
+
+    expect(screen.getByRole('tooltip').textContent).toBe('Copy');
+
     fireEvent.click(screen.getByRole('button', { name: 'Copy API key' }));
-    await waitFor(() => expect(screen.getByText('Copied')).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('tooltip').textContent).toBe('Copied'));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('frogbot_secret');
-    expect(screen.getByTestId('copy-icon')).toBeTruthy();
+
+    fireEvent.mouseLeave(screen.getByRole('button', { name: 'Copy API key' }));
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Click to copy API key' }));
+
+    expect(screen.getByRole('tooltip').textContent).toBe('Click to copy');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Click to copy API key' }));
+    await waitFor(() => expect(screen.getByRole('tooltip').textContent).toBe('Copied'));
   });
 
   it('does not clear the route cache when dismissed without a key', () => {
-    render(<ApiKeysManager />);
+    openCreate();
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
 
-    expect(closeModal).toHaveBeenCalledWith('create-api-key-modal');
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
@@ -125,7 +140,7 @@ describe('API key controls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
 
-    expect(openModal).toHaveBeenCalledWith('revoke-api-key-modal-key-1');
+    expect(screen.getByRole('dialog')).toBeTruthy();
     expect(
       screen.getByText(
         'This will immediately disable Deploy. Any scripts or tools using this key will stop working. This cannot be undone.',
@@ -137,9 +152,25 @@ describe('API key controls', () => {
 
     await waitFor(() => expect(screen.getByText('Revoked')).toBeTruthy());
 
-    expect(closeModal).toHaveBeenCalledWith('revoke-api-key-modal-key-1');
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(clearRouteCache).toHaveBeenCalled();
     expect(fetch).toHaveBeenCalledWith('/api/api-keys/key-1/revoke', { method: 'POST' });
+  });
+
+  it('keeps the revoke dialog open with the error when revoking fails', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ error: 'Key is in use' }),
+    } as Response);
+
+    render(<RevokeApiKey rowData={{ id: 'key-1', name: 'Deploy' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke key' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Key is in use');
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(clearRouteCache).not.toHaveBeenCalled();
   });
 
   it('cancels revocation without calling the endpoint', () => {
@@ -148,7 +179,7 @@ describe('API key controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(closeModal).toHaveBeenCalledWith('revoke-api-key-modal-key-1');
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Revoke' })).toBeTruthy();
   });

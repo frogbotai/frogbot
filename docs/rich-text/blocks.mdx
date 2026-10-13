@@ -175,7 +175,7 @@ import {
   BlockEditButton,
   BlockRemoveButton,
 } from '@frogbotai/richtext-lexical/client'
-import { useFormFields } from '@frogbotai/ui'
+import { useFormFields } from '@frogbotai/ui/admin'
 
 export function BannerBlock(_props: LexicalBlockClientProps) {
   const content = useFormFields(([fields]) => fields.content?.value)
@@ -269,7 +269,7 @@ import {
   InlineBlockEditButton,
   InlineBlockRemoveButton,
 } from '@frogbotai/richtext-lexical/client'
-import { useFormFields } from '@frogbotai/ui'
+import { useFormFields } from '@frogbotai/ui/admin'
 
 export function MentionBadge(_props: LexicalInlineBlockClientProps) {
   const username = useFormFields(([fields]) => fields.username?.value)
@@ -305,7 +305,7 @@ import type {
   LexicalBlockLabelClientProps,
   LexicalInlineBlockLabelClientProps,
 } from '@frogbotai/richtext-lexical'
-import { useFormFields } from '@frogbotai/ui'
+import { useFormFields } from '@frogbotai/ui/admin'
 
 export function BannerLabel(_props: LexicalBlockLabelClientProps) {
   const title = useFormFields(([fields]) => fields.title?.value)

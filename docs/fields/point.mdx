@@ -136,7 +136,7 @@ Override the field or its label through `admin.components`. Custom components ca
 #### Server component
 
 ```tsx
-import { PointField } from '@frogbotai/ui'
+import { PointField } from '@frogbotai/ui/admin'
 import type { PointFieldServerComponent } from 'frogbot'
 
 export const CustomPointFieldServer: PointFieldServerComponent = ({
@@ -159,7 +159,7 @@ export const CustomPointFieldServer: PointFieldServerComponent = ({
 ```tsx
 'use client'
 
-import { PointField } from '@frogbotai/ui'
+import { PointField } from '@frogbotai/ui/admin'
 import type { PointFieldClientComponent } from 'frogbot'
 
 export const CustomPointFieldClient: PointFieldClientComponent = (props) => (
@@ -172,7 +172,7 @@ export const CustomPointFieldClient: PointFieldClientComponent = (props) => (
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { PointFieldLabelServerComponent } from 'frogbot'
 
 export const CustomPointLabelServer: PointFieldLabelServerComponent = ({
@@ -192,7 +192,7 @@ export const CustomPointLabelServer: PointFieldLabelServerComponent = ({
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { PointFieldLabelClientComponent } from 'frogbot'
 
 export const CustomPointLabelClient: PointFieldLabelClientComponent = ({ field, path }) => (

@@ -29,7 +29,7 @@ describe('urlField', () => {
   it('uses FieldCell for the list cell and the text input for editing', () => {
     const field = urlField({ name: 'website' });
 
-    expect(field.admin?.components).toEqual({ Cell: '@frogbotai/next/client#FieldCell' });
+    expect(field.admin?.components).toEqual({ Cell: '@frogbotai/ui/admin#FieldCell' });
   });
 
   it('passes text field options through unchanged', () => {

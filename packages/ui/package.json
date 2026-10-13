@@ -59,16 +59,22 @@
       "import": "./src/exports/chat-artifacts.ts",
       "default": "./src/exports/chat-artifacts.ts"
     },
-    "./shared": {
-      "types": "./src/exports/shared/index.ts",
-      "import": "./src/exports/shared/index.ts",
-      "default": "./src/exports/shared/index.ts"
+    "./admin": {
+      "types": "./src/admin/exports/client.ts",
+      "import": "./src/admin/exports/client.ts",
+      "default": "./src/admin/exports/client.ts"
     },
-    "./rsc": {
-      "types": "./src/exports/rsc/index.ts",
-      "import": "./src/exports/rsc/index.ts",
-      "default": "./src/exports/rsc/index.ts"
+    "./admin/shared": {
+      "types": "./src/admin/exports/shared.ts",
+      "import": "./src/admin/exports/shared.ts",
+      "default": "./src/admin/exports/shared.ts"
     },
+    "./admin/rsc": {
+      "types": "./src/admin/exports/rsc.ts",
+      "import": "./src/admin/exports/rsc.ts",
+      "default": "./src/admin/exports/rsc.ts"
+    },
+    "./admin/styles.css": "./src/admin/styles.css",
     "./styles.css": "./src/styles.css",
     "./utilities.css": "./src/utilities.css"
   },
@@ -81,16 +87,36 @@
     "*.css"
   ],
   "scripts": {
-    "build": "node ../../scripts/build-package.mjs",
+    "build": "node ../../scripts/build-package.mjs --assets css",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && tsc --noEmit -p ../../test/types/ui/tsconfig.json"
   },
   "peerDependencies": {
+    "@payloadcms/translations": "3.90.1",
+    "@payloadcms/ui": "3.90.1",
     "ai": "^7.0.116",
+    "frogbot": "workspace:*",
+    "payload": "3.90.1",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
+  "peerDependenciesMeta": {
+    "@payloadcms/translations": {
+      "optional": true
+    },
+    "@payloadcms/ui": {
+      "optional": true
+    },
+    "frogbot": {
+      "optional": true
+    },
+    "payload": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@payloadcms/translations": "3.90.1",
+    "@payloadcms/ui": "3.90.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/markdown-it": "^14.1.2",
@@ -100,6 +126,7 @@
     "eslint": "^9.16.0",
     "frogbot": "workspace:*",
     "jsdom": "^24.1.3",
+    "payload": "3.90.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "typescript": "5.6.2"
@@ -154,16 +181,22 @@
         "import": "./dist/exports/chat-artifacts.js",
         "default": "./dist/exports/chat-artifacts.js"
       },
-      "./shared": {
-        "types": "./dist/exports/shared/index.d.ts",
-        "import": "./dist/exports/shared/index.js",
-        "default": "./dist/exports/shared/index.js"
+      "./admin": {
+        "types": "./dist/admin/exports/client.d.ts",
+        "import": "./dist/admin/exports/client.js",
+        "default": "./dist/admin/exports/client.js"
       },
-      "./rsc": {
-        "types": "./dist/exports/rsc/index.d.ts",
-        "import": "./dist/exports/rsc/index.js",
-        "default": "./dist/exports/rsc/index.js"
+      "./admin/shared": {
+        "types": "./dist/admin/exports/shared.d.ts",
+        "import": "./dist/admin/exports/shared.js",
+        "default": "./dist/admin/exports/shared.js"
       },
+      "./admin/rsc": {
+        "types": "./dist/admin/exports/rsc.d.ts",
+        "import": "./dist/admin/exports/rsc.js",
+        "default": "./dist/admin/exports/rsc.js"
+      },
+      "./admin/styles.css": "./src/admin/styles.css",
       "./styles.css": "./src/styles.css",
       "./utilities.css": "./src/utilities.css"
     }
@@ -174,7 +207,6 @@
     "@dnd-kit/core": "^6.3.1",
     "@frogbotai/protocol": "workspace:*",
     "@frogbotai/sdk": "workspace:*",
-    "@payloadcms/ui": "3.90.1",
     "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-avatar": "^1.2.6",
     "@radix-ui/react-checkbox": "^1.3.11",

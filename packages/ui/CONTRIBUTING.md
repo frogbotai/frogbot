@@ -7,7 +7,14 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Keep reusable components flat in `src/components` and name files by intent.
 - Components must not import chat, admin, or other domain code.
 - Internal file placement and public exports are separate decisions. Add consumer APIs to `src/index.ts` explicitly.
-- The classification test governs the contents of `src/exports/{client,shared,rsc}/index.ts`.
+- The classification test governs the Payload re-exports in `src/admin/exports/{client,shared,rsc}.ts`.
+
+## Admin
+
+- `src/admin` holds FrogBot's admin and the curated Payload names, mirroring Payload's folders (`elements`, `fields`, `graphics`, `views`). Only it imports `@payloadcms/*`, `payload` or `frogbot` values, and nothing outside it imports it.
+- Admin code never imports `next`, `@payloadcms/next` or `@frogbotai/next`. Read the URL with `useRouterAdapter()` and call `getServerAdapter().notFound()` or `.redirect()` on the server.
+- Export client components from `src/admin/exports/client.ts` (`./admin`) and server components from `src/admin/exports/rsc.ts` (`./admin/rsc`). Inside `packages/ui`, import other UI modules by relative path.
+- Admin CSS may use `--theme-elevation-*` and style Payload's markup. Files imported only from CSS (Nav, Sign-in, Settings, Connections) are listed in `src/admin/styles.css`.
 
 ## Components
 

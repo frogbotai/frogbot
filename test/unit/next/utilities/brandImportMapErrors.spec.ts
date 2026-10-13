@@ -30,11 +30,11 @@ describe('brandImportMapErrors', () => {
   it('reports a missing FrogBot view with FrogBot wording', () => {
     brandImportMapErrors();
 
-    const component = lookup('@frogbotai/next/views#DefaultListView');
+    const component = lookup('@frogbotai/ui/admin#DefaultListView');
 
     expect(component).toBeUndefined();
     expect(output).toHaveBeenCalledExactlyOnceWith(
-      '[frogbot] Component "@frogbotai/next/views#DefaultListView" is missing from the import map. Run `frogbot generate:importmap`, then rebuild or restart the app.',
+      '[frogbot] Component "@frogbotai/ui/admin#DefaultListView" is missing from the import map. Run `frogbot generate:importmap`, then rebuild or restart the app.',
     );
     expect(JSON.stringify(output.mock.calls)).not.toMatch(/payload/i);
   });

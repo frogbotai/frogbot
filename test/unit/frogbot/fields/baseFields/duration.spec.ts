@@ -39,8 +39,8 @@ describe('durationField', () => {
     const field = durationField({ name: 'timeSpent' });
 
     expect(field.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#DurationField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#DurationField',
     });
   });
 

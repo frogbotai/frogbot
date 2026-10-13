@@ -1,0 +1,527 @@
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ConnectionsPage } from '../../../../../packages/ui/src/admin/views/Connections/ConnectionsPage.client.js';
+import { ConnectionsViewClient } from '../../../../../packages/ui/src/admin/views/Connections/ConnectionsView.client.js';
+import { ConnectionsView } from '../../../../../packages/ui/src/admin/views/Connections/index.js';
+import {
+  connectionInput,
+  initialConnectionValue,
+  projectConnectionSchema,
+} from '../../../../../packages/ui/src/admin/views/Connections/schema.js';
+import type {
+  ConnectionItem,
+  ConnectionPiece,
+} from '../../../../../packages/ui/src/admin/views/Connections/types.js';
+
+const getCachedFrogBot = vi.hoisted(() => vi.fn<() => unknown>());
+const setStepNav = vi.hoisted(() => vi.fn());
+
+vi.mock('frogbot', () => ({ getCachedFrogBot }));
+vi.mock('@payloadcms/ui', () => ({ useStepNav: () => ({ setStepNav }) }));
+
+const pieces: ConnectionPiece[] = [
+  { slug: 'mail', label: 'Mail', oauth: true, secret: true, secretSchema: { type: 'string' } },
+  { slug: 'static', label: 'Static', oauth: false, secret: true, secretSchema: { type: 'string' } },
+];
+
+const row = {
+  id: 'connection/1',
+  piece: 'mail',
+  method: 'oauth' as const,
+  status: 'active' as const,
+  account: { label: 'Work', email: 'work@example.com' },
+};
+
+const props = {
+  apiPath: '/custom-api/connections',
+  returnTo: '/control/settings/connections',
+  pieces,
+  initialConnections: [row],
+};
+
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  getCachedFrogBot.mockReset();
+  fetchMock.mockReset();
+  vi.stubGlobal('fetch', fetchMock);
+
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+function asNextAdminRequest(req: { frogbot?: unknown }) {
+  getCachedFrogBot.mockReturnValue(req.frogbot);
+  Reflect.deleteProperty(req, 'frogbot');
+}
+
+describe('linked accounts', () => {
+  it.each([
+    { adminRequest: false, prepare: (_req: { frogbot?: unknown }) => undefined },
+    { adminRequest: true, prepare: asNextAdminRequest },
+  ])(
+    'projects safe owner metadata with a Next admin request: $adminRequest',
+    async ({ prepare }) => {
+      const list = vi.fn().mockResolvedValue([
+        {
+          ...row,
+          scopes: ['mail.read'],
+          credential: 'ciphertext',
+          owner: 'private-owner',
+          account: { ...row.account, token: 'private-token' },
+        },
+      ]);
+
+      const req = {
+        user: { id: 1 },
+        frogbot: {
+          config: {
+            connections: {
+              enabled: true,
+              entries: {
+                mail: {
+                  piece: { piece: 'mail', oauth: { clientSecret: 'oauth-secret' } },
+                  oauth: true,
+                  secret: true,
+                  scopes: ['mail.read'],
+                  secretSchema: {
+                    type: 'string',
+                    default: 'credential-default',
+                    examples: ['credential-example'],
+                  },
+                },
+              },
+            },
+          },
+          connections: { list },
+        },
+      };
+
+      prepare(req);
+      const view = await ConnectionsView({
+        initPageResult: { req },
+        payload: { config: { routes: { api: '/custom-api', admin: '/control' } } },
+      } as never);
+
+      expect(list).toHaveBeenCalledWith({ req });
+      expect(view?.props.apiPath).toBe('/custom-api/connections');
+      expect(view?.props.returnTo).toBe('/control/settings/connections');
+      expect(view?.props.pieces[0].scopes).toEqual(['mail.read']);
+      expect(view?.props.initialConnections[0].scopes).toEqual(['mail.read']);
+
+      const serialized = JSON.stringify(view?.props);
+
+      for (const secret of [
+        'ciphertext',
+        'private-owner',
+        'private-token',
+        'oauth-secret',
+        'credential-default',
+        'credential-example',
+      ]) {
+        expect(serialized).not.toContain(secret);
+      }
+    },
+  );
+
+  it('is the default view of the connections collection', async () => {
+    const req = {
+      user: { id: 1 },
+      i18n: { language: 'en', fallbackLanguage: 'en' },
+      frogbot: {
+        config: {
+          connections: {
+            enabled: true,
+            slug: 'connections',
+            entries: {
+              mail: {
+                piece: { piece: 'mail' },
+                oauth: true,
+                secret: false,
+                icon: 'https://example.com/mail.svg',
+              },
+            },
+          },
+        },
+        connections: { list: vi.fn().mockResolvedValue([row]) },
+      },
+    };
+
+    const view = await ConnectionsView({
+      initPageResult: {
+        req,
+        collectionConfig: { slug: 'connections', labels: { plural: 'Connections' } },
+      },
+      payload: { config: { routes: { api: '/custom-api', admin: '/control' } } },
+    } as never);
+
+    expect(view?.type).toBe(ConnectionsPage);
+    expect(view?.props.title).toBe('Connections');
+    expect(view?.props.children.props).toMatchObject({
+      returnTo: '/control/collections/connections',
+      pieces: [{ slug: 'mail', icon: 'https://example.com/mail.svg' }],
+    });
+
+    render(view);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Connections' })).toBeTruthy();
+    expect(screen.getByText('Work')).toBeTruthy();
+    expect(setStepNav).toHaveBeenCalledWith([{ label: 'Connections' }]);
+  });
+
+  it('shows piece logos once loaded and falls back to the link icon', () => {
+    const { container } = render(
+      <ConnectionsViewClient
+        {...props}
+        pieces={[{ ...pieces[0], icon: 'https://example.com/mail.svg' }, pieces[1]]}
+      />,
+    );
+
+    const rowIcon = container.querySelector(
+      '.frogbot-connections__row .frogbot-connections__icon',
+    )!;
+
+    const rowLogo = rowIcon.querySelector('img')!;
+
+    expect(rowLogo.getAttribute('src')).toBe('https://example.com/mail.svg');
+    expect(rowLogo.hidden).toBe(true);
+    expect(rowIcon.querySelector('svg')).not.toBeNull();
+
+    vi.spyOn(rowLogo, 'complete', 'get').mockReturnValue(true);
+    vi.spyOn(rowLogo, 'naturalWidth', 'get').mockReturnValue(24);
+    fireEvent.load(rowLogo);
+
+    expect(rowLogo.hidden).toBe(false);
+    expect(rowIcon.querySelector('svg')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    const mail = screen.getByRole('button', { name: /Mail OAuth/ });
+    const staticPiece = screen.getByRole('button', { name: /^Static Static credentials/ });
+    const logo = mail.querySelector('img')!;
+
+    expect(logo.getAttribute('alt')).toBe('');
+    expect(staticPiece.querySelector('img')).toBeNull();
+    expect(staticPiece.querySelector('.frogbot-connections__icon svg')).not.toBeNull();
+
+    fireEvent.error(logo);
+
+    expect(mail.querySelector('img')).toBeNull();
+    expect(mail.querySelector('.frogbot-connections__icon svg')).not.toBeNull();
+  });
+
+  it.each([
+    { naturalWidth: 0, logo: false },
+    { naturalWidth: 24, logo: true },
+  ])(
+    'settles an image already complete at mount without load events: width $naturalWidth',
+    ({ naturalWidth, logo }) => {
+      vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+      vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(naturalWidth);
+
+      const { container } = render(
+        <ConnectionsViewClient
+          {...props}
+          pieces={[{ ...pieces[0], icon: 'https://example.com/broken.png' }]}
+        />,
+      );
+
+      const icon = container.querySelector('.frogbot-connections__row .frogbot-connections__icon')!;
+
+      expect(icon.querySelector('img:not([hidden])') !== null).toBe(logo);
+      expect(icon.querySelector('svg') !== null).toBe(!logo);
+    },
+  );
+
+  it('shows needs re-link for an active OAuth row missing a piece scope', () => {
+    const status = (connection: Partial<ConnectionItem>) => {
+      const { container, unmount } = render(
+        <ConnectionsViewClient
+          {...props}
+          pieces={[{ ...pieces[0], scopes: ['mail.read', 'mail.labels'] }]}
+          initialConnections={[{ ...row, ...connection }]}
+        />,
+      );
+
+      const element = container.querySelector('.frogbot-connections__status')!;
+      const result = { text: element.textContent, className: element.className };
+      unmount();
+
+      return result;
+    };
+
+    expect(status({ scopes: ['mail.read'] })).toEqual({
+      text: 'needs re-link',
+      className: 'frogbot-connections__status frogbot-connections__status--relink',
+    });
+    expect(status({ scopes: ['mail.labels', 'mail.read'] }).text).toBe('active');
+    expect(status({ scopes: ['mail.read'], expiresAt: '2000-01-01T00:00:00Z' }).text).toBe(
+      'expired',
+    );
+    expect(status({ scopes: [], status: 'revoked' }).text).toBe('revoked');
+    expect(status({ scopes: [], method: 'secret' }).text).toBe('active');
+  });
+
+  it('renders without a FrogBot theme wrapper', () => {
+    const { container } = render(<ConnectionsViewClient {...props} />);
+
+    expect(container.querySelector('.frogbot-connections')).not.toBeNull();
+    expect(container.querySelector('.fb-theme')).toBeNull();
+    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
+  });
+
+  it('searches account metadata and disconnects through the configured prefix', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json({ docs: [] }));
+
+    render(<ConnectionsViewClient {...props} />);
+    fireEvent.change(screen.getByLabelText('Search connections'), { target: { value: 'missing' } });
+
+    expect(screen.getByText('No connections match your search')).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText('Search connections'), {
+      target: { value: 'work@example.com' },
+    });
+
+    expect(screen.getByText('Work')).toBeTruthy();
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Options for Mail' }), {
+      key: 'ArrowDown',
+    });
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Disconnect' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom-api/connections/connection%2F1',
+        expect.objectContaining({ method: 'DELETE' }),
+      ),
+    );
+
+    await waitFor(() => expect(screen.queryByText('Work')).toBeNull());
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/custom-api/connections?limit=0&depth=0',
+      expect.objectContaining({ cache: 'no-store' }),
+    );
+  });
+
+  it('uses one searchable modal, switches methods and posts raw masked credentials', async () => {
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ id: 2 }))
+      .mockResolvedValueOnce(Response.json({ docs: [row] }));
+
+    render(<ConnectionsViewClient {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    fireEvent.change(screen.getByLabelText('Search integrations'), { target: { value: 'mail' } });
+
+    expect(screen.queryByRole('button', { name: /^Static/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Mail OAuth/ }));
+
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Continue with Mail' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Static credentials' }));
+    const credential = screen.getByLabelText('Credential');
+
+    expect(credential.getAttribute('type')).toBe('password');
+
+    fireEvent.change(credential, { target: { value: 'raw-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom-api/connections/mail',
+        expect.objectContaining({ method: 'POST', body: '"raw-secret"' }),
+      ),
+    );
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps failed forms open and clears credentials when returning to the picker', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 400 }));
+    render(<ConnectionsViewClient {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
+    fireEvent.change(screen.getByLabelText('Credential'), { target: { value: 'bad-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'These credentials were not accepted. Check the values and try again.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
+
+    expect(screen.getByLabelText('Credential')).toHaveProperty('value', '');
+  });
+
+  it('recovers from an initial loading error', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ docs: [row] }));
+
+    render(
+      <ConnectionsViewClient
+        {...props}
+        initialConnections={[]}
+        initialError="Could not load your linked accounts."
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(screen.getByRole('status').textContent).toContain('Loading connections');
+
+    await screen.findByText('Work');
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('distinguishes optional omission from explicit null and renders typed choices', async () => {
+    const schema = projectConnectionSchema({
+      type: 'object',
+      required: ['port'],
+      properties: {
+        token: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+        port: { type: 'integer', enum: [80, 443] },
+      },
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ id: 3 }))
+      .mockResolvedValueOnce(Response.json({ docs: [] }));
+
+    render(<ConnectionsViewClient {...props} pieces={[{ ...pieces[1], secretSchema: schema }]} />);
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
+
+    expect(screen.getByRole('combobox', { name: 'token value mode' }).textContent).toBe(
+      'Not provided',
+    );
+
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'token value mode' }), {
+      key: 'ArrowDown',
+    });
+
+    fireEvent.click(await screen.findByRole('option', { name: 'Null' }));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'port' }), { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByRole('option', { name: '443' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom-api/connections/static',
+        expect.objectContaining({ body: JSON.stringify({ token: null, port: 443 }) }),
+      ),
+    );
+  });
+
+  it('edits arrays of nested objects, booleans and numbers without a JSON textarea', async () => {
+    const schema = projectConnectionSchema({
+      type: 'object',
+      required: ['accounts'],
+      properties: {
+        accounts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['token', 'port', 'enabled'],
+            properties: {
+              token: { type: 'string' },
+              port: { type: 'integer' },
+              enabled: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ id: 3 }))
+      .mockResolvedValueOnce(Response.json({ docs: [] }));
+
+    render(<ConnectionsViewClient {...props} pieces={[{ ...pieces[1], secretSchema: schema }]} />);
+    fireEvent.click(screen.getByRole('button', { name: '+ New Connection' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Static Static credentials/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add item' }));
+    fireEvent.change(screen.getByLabelText('token'), { target: { value: 'nested-secret' } });
+    fireEvent.change(screen.getByLabelText('port'), { target: { value: '443' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'enabled' }));
+
+    expect(within(screen.getByRole('dialog')).queryByRole('textbox')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom-api/connections/static',
+        expect.objectContaining({
+          body: JSON.stringify({
+            accounts: [{ token: 'nested-secret', port: 443, enabled: true }],
+          }),
+        }),
+      ),
+    );
+  });
+});
+
+describe('connection input schemas', () => {
+  it('preserves omission, null, false, empty strings and arrays as distinct raw values', () => {
+    const field = projectConnectionSchema({
+      type: 'object',
+      required: ['nested', 'items'],
+      properties: {
+        optional: { type: 'number' },
+        nested: {
+          type: 'object',
+          required: ['nullable', 'enabled', 'empty'],
+          properties: {
+            nullable: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            enabled: { type: 'boolean' },
+            empty: { type: 'string' },
+          },
+        },
+        items: { type: 'array', items: { anyOf: [{ type: 'number' }, { type: 'null' }] } },
+      },
+    });
+
+    expect(initialConnectionValue(field)).toEqual({
+      nested: { nullable: '', enabled: false, empty: '' },
+      items: [],
+    });
+    expect(
+      connectionInput({
+        field,
+        value: { nested: { nullable: null, enabled: false, empty: '' }, items: ['1.5', null] },
+      }),
+    ).toEqual({ nested: { nullable: null, enabled: false, empty: '' }, items: [1.5, null] });
+    expect(() => connectionInput({ field: { type: 'number' }, value: '' })).toThrow('valid number');
+    expect(() => connectionInput({ field: { type: 'integer' }, value: '1.5' })).toThrow(
+      'valid integer',
+    );
+  });
+
+  it('rejects unsupported shapes instead of silently dropping them', () => {
+    for (const schema of [
+      { type: 'object', additionalProperties: { type: 'string' } },
+      { anyOf: [{ type: 'number' }, { type: 'string' }] },
+      { $ref: '#/definitions/token' },
+      { type: 'array', items: [{ type: 'string' }] },
+    ]) {
+      expect(() => projectConnectionSchema(schema)).toThrow();
+    }
+  });
+});

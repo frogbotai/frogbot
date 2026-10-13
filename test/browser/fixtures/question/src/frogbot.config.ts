@@ -73,7 +73,10 @@ export default buildConfig({
         { label: 'Reports', path: reportsPath, icon: 'home' },
         { label: 'Insights', path: insightsPath, icon: 'home' },
       ],
-      navSections: ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'],
+      navSections: [
+        '@frogbotai/ui/admin/rsc#CollectionsSection',
+        '@frogbotai/ui/admin/rsc#RecentsSection',
+      ],
       views: {
         insights: { Component: '/components/InsightsView#InsightsView', path: insightsPath },
         reports: { Component: '/components/ReportsView#ReportsView', path: reportsPath },
@@ -155,7 +158,7 @@ export default buildConfig({
               name: 'channel',
               type: 'text',
               admin: {
-                components: { Cell: '@frogbotai/next/client#FieldCell' },
+                components: { Cell: '@frogbotai/ui/admin#FieldCell' },
                 custom: { frogbot: { kind: { type: 'channel' } } },
               },
             },

@@ -122,9 +122,9 @@ describe('frogbot importMap generator', () => {
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
     expect(output).toContain("from '@frogbotai/next/rsc'");
-    expect(output).toContain("from '@frogbotai/next/views'");
-    expect(output).not.toContain("'@frogbotai/next/views#ChatView'");
-    expect(output).toContain("'@frogbotai/next/views#SettingsView'");
+    expect(output).toContain("from '@frogbotai/ui/admin/rsc'");
+    expect(output).not.toContain("'@frogbotai/ui/admin/rsc#ChatView'");
+    expect(output).toContain("'@frogbotai/ui/admin/rsc#SettingsView'");
     expect(output).toContain("'@frogbotai/next/rsc#CollectionCards'");
     expect(output).toContain("from './fields/NameField.tsx'");
     expect(output).toContain("from './components/UserIcon.tsx'");
@@ -381,7 +381,7 @@ describe('frogbot importMap generator', () => {
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    expect(output).toContain("'@frogbotai/next/views#ChatView'");
+    expect(output).toContain("'@frogbotai/ui/admin/rsc#ChatView'");
     expect(output).not.toContain('ChatListView');
   });
 
@@ -402,8 +402,8 @@ describe('frogbot importMap generator', () => {
 
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    expect(output).toContain("'@frogbotai/next/client#StepNavReset'");
-    expect(output).toContain("from '@frogbotai/next/client'");
+    expect(output).toContain("'@frogbotai/ui/admin#StepNavReset'");
+    expect(output).toContain("from '@frogbotai/ui/admin'");
   });
 
   it('maps dashboard widgets and their field components', async () => {

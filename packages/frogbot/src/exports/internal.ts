@@ -22,6 +22,6 @@ export {
   toPayloadFields,
   wrapPayloadPlugin,
 } from '../seams/config.js';
-export { hasFrogBot, toPayloadRequest } from '../seams/request.js';
+export { hasFrogBot, toFrogBotRequest, toPayloadRequest } from '../seams/request.js';
 export type { StorageAdapterOptions } from '../uploads/storage.js';
 export { storageAdapter } from '../uploads/storage.js';

@@ -112,14 +112,23 @@ const UI_LIBRARIES = [
   },
 ];
 
-const PAYLOAD_UI_MESSAGE =
-  'Only packages/ui/src/exports/{client,rsc,shared}/index.ts import @payloadcms/ui, one entry each.';
+const UI_ADMIN = 'packages/ui/src/admin/**';
 
-const PAYLOAD_UI_ENTRIES = {
-  'packages/ui/src/exports/client/index.ts': 'ui',
-  'packages/ui/src/exports/rsc/index.ts': 'ui/rsc',
-  'packages/ui/src/exports/shared/index.ts': 'ui/shared',
-};
+const UI_SHARED_BANS = [
+  {
+    regex: String.raw`^(?:@payloadcms/|payload(?:/|$)|next(?:/|$)|@frogbotai/next(?:/|$)|@frogbotai/ui/admin(?:/|$))|^\.{1,2}/(?:[^/]+/)*admin(?:/|$)`,
+    message:
+      'Only packages/ui/src/admin imports Payload or admin code, and no @frogbotai/ui file imports Next.',
+  },
+];
+
+const UI_ADMIN_BANS = [
+  {
+    regex: '^(?:next|@payloadcms/next|@frogbotai/next)(?:/|$)',
+    message:
+      'packages/ui/src/admin reaches the host only through its adapters (useRouterAdapter, getServerAdapter); it never imports Next.',
+  },
+];
 
 function uiImports(...patterns) {
   return ['error', { patterns: [...UI_LIBRARIES, ...patterns] }];
@@ -342,7 +351,7 @@ export default tseslint.config(
   },
   {
     files: [UI_SOURCE],
-    ignores: ['packages/ui/src/chat/rest/**'],
+    ignores: ['packages/ui/src/chat/rest/**', UI_ADMIN],
     rules: { '@typescript-eslint/no-restricted-imports': typeImports(UI_FROGBOT) },
   },
   {
@@ -351,31 +360,22 @@ export default tseslint.config(
   },
   {
     files: [UI_SOURCE],
-    rules: {
-      'no-restricted-imports': uiImports({ regex: '^@payloadcms/', message: PAYLOAD_UI_MESSAGE }),
-    },
+    ignores: [UI_ADMIN],
+    rules: { 'no-restricted-imports': uiImports(...UI_SHARED_BANS) },
+  },
+  {
+    files: [UI_ADMIN],
+    rules: { 'no-restricted-imports': uiImports(...UI_ADMIN_BANS) },
   },
   {
     files: ['packages/ui/src/components/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': uiImports(
-        { regex: '^@payloadcms/', message: PAYLOAD_UI_MESSAGE },
-        {
-          regex: '(?:^|/)(?:chat|admin)(?:[/.-]|$)|^@frogbotai/next(?:/|$)',
-          message: 'Components must not import chat or admin code.',
-        },
-      ),
-    },
-  },
-  ...Object.entries(PAYLOAD_UI_ENTRIES).map(([file, entry]) => ({
-    files: [file],
-    rules: {
-      'no-restricted-imports': uiImports({
-        regex: `^@payloadcms/(?!${entry}$)`,
-        message: PAYLOAD_UI_MESSAGE,
+      'no-restricted-imports': uiImports(...UI_SHARED_BANS, {
+        regex: '(?:^|/)(?:chat|admin)(?:[/.-]|$)',
+        message: 'Components must not import chat or admin code.',
       }),
     },
-  })),
+  },
   {
     files: ['**/*.tsx'],
     plugins: { 'react-hooks': reactHooks, 'jsx-a11y': jsxA11y },

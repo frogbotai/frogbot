@@ -30,7 +30,7 @@ export function durationField(args: DurationFieldArgs): NumberField {
     {
       kind: { type: 'duration', format },
       cell: true,
-      Field: '@frogbotai/next/client#DurationField',
+      Field: '@frogbotai/ui/admin#DurationField',
       check: (value) => (Number.isInteger(value) ? true : 'Enter a duration in whole seconds.'),
       description: 'Duration in whole seconds, for example 5400 for 1 hour 30 minutes',
       integer: true,

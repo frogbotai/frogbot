@@ -112,7 +112,7 @@ Override the field or its label through `admin.components`. Custom components ca
 #### Server component
 
 ```tsx
-import { JSONField } from '@frogbotai/ui'
+import { JSONField } from '@frogbotai/ui/admin'
 import type { JSONFieldServerComponent } from 'frogbot'
 
 export const CustomJSONFieldServer: JSONFieldServerComponent = ({
@@ -135,7 +135,7 @@ export const CustomJSONFieldServer: JSONFieldServerComponent = ({
 ```tsx
 'use client'
 
-import { JSONField } from '@frogbotai/ui'
+import { JSONField } from '@frogbotai/ui/admin'
 import type { JSONFieldClientComponent } from 'frogbot'
 
 export const CustomJSONFieldClient: JSONFieldClientComponent = (props) => (
@@ -148,7 +148,7 @@ export const CustomJSONFieldClient: JSONFieldClientComponent = (props) => (
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { JSONFieldLabelServerComponent } from 'frogbot'
 
 export const CustomJSONLabelServer: JSONFieldLabelServerComponent = ({
@@ -168,7 +168,7 @@ export const CustomJSONLabelServer: JSONFieldLabelServerComponent = ({
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { JSONFieldLabelClientComponent } from 'frogbot'
 
 export const CustomJSONLabelClient: JSONFieldLabelClientComponent = ({ field, path }) => (

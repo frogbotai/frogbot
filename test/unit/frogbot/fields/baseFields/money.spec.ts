@@ -40,8 +40,8 @@ describe('moneyField', () => {
     const field = moneyField({ name: 'price' });
 
     expect(field.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#MoneyField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#MoneyField',
     });
   });
 

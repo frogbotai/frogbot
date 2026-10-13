@@ -370,7 +370,7 @@ Override the field or its label through `admin.components`. Custom components ca
 #### Server component
 
 ```tsx
-import { RelationshipField } from '@frogbotai/ui'
+import { RelationshipField } from '@frogbotai/ui/admin'
 import type { RelationshipFieldServerComponent } from 'frogbot'
 
 export const CustomRelationshipFieldServer: RelationshipFieldServerComponent = ({
@@ -393,7 +393,7 @@ export const CustomRelationshipFieldServer: RelationshipFieldServerComponent = (
 ```tsx
 'use client'
 
-import { RelationshipField } from '@frogbotai/ui'
+import { RelationshipField } from '@frogbotai/ui/admin'
 import type { RelationshipFieldClientComponent } from 'frogbot'
 
 export const CustomRelationshipFieldClient: RelationshipFieldClientComponent = (
@@ -406,7 +406,7 @@ export const CustomRelationshipFieldClient: RelationshipFieldClientComponent = (
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { RelationshipFieldLabelServerComponent } from 'frogbot'
 
 export const CustomRelationshipLabelServer: RelationshipFieldLabelServerComponent = ({
@@ -426,7 +426,7 @@ export const CustomRelationshipLabelServer: RelationshipFieldLabelServerComponen
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { RelationshipFieldLabelClientComponent } from 'frogbot'
 
 export const CustomRelationshipLabelClient: RelationshipFieldLabelClientComponent = ({

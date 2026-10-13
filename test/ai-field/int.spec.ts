@@ -15,7 +15,7 @@ import {
   type AIBulkTarget,
   aiBulkTargets,
   aiRegenerateRequest,
-} from '../../packages/next/src/fields/AI/bulk.js';
+} from '../../packages/ui/src/admin/fields/AI/bulk.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';

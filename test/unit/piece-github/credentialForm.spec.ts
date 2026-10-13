@@ -4,13 +4,13 @@ vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pi
 
 import { resolveConnectionsCollections } from '../../../packages/frogbot/src/connections/resolveCollections.js';
 import { pieceInstanceRuntime } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { createGithub } from '../../../packages/pieces/piece-github/src/index.js';
+import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js';
 import {
   connectionInput,
   initialConnectionValue,
   projectConnectionSchema,
-} from '../../../packages/next/src/views/Connections/schema.js';
-import { createGithub } from '../../../packages/pieces/piece-github/src/index.js';
-import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js';
+} from '../../../packages/ui/src/admin/views/Connections/schema.js';
 
 describe('Channel credential forms', () => {
   it.each([

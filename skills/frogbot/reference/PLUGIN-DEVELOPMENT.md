@@ -127,7 +127,7 @@ In `src/client/NotesPanel.tsx`, with the package's CSS at `src/client/styles.css
 
 import './styles.css';
 
-import { useConfig } from '@frogbotai/ui';
+import { useConfig } from '@frogbotai/ui/admin';
 
 export function NotesPanel() {
   const { config } = useConfig();
@@ -144,7 +144,7 @@ export const NOTES_PANEL = '@frogbotai/plugin-notes/client#NotesPanel';
 
 Server components and server utilities stay in server-safe modules and may be exported from the package root. Create another public subpath only when consumers need a stable, distinct import boundary; mirror it in `exports` and ensure its entire dependency graph is server-safe.
 
-Within one client graph, import runtime UI APIs consistently from `@frogbotai/ui`. Use `import type` for server-owned types so they cannot pull server code into the browser bundle.
+Within one client graph, import admin APIs consistently from `@frogbotai/ui/admin` and components from `@frogbotai/ui`. Use `import type` for server-owned types so they cannot pull server code into the browser bundle.
 
 ## Build Configuration
 
@@ -364,7 +364,7 @@ In `src/client/NoteStatusField.tsx`:
 ```tsx
 'use client';
 
-import { FieldLabel, useField } from '@frogbotai/ui';
+import { FieldLabel, useField } from '@frogbotai/ui/admin';
 import type { TextFieldClientComponent } from 'frogbot';
 import { useId } from 'react';
 
@@ -729,4 +729,4 @@ Database-backed integration suites can also run with `pnpm test:int:pg` or `pnpm
 
 ## Public Boundary
 
-Import public types and runtime APIs from `frogbot`, documented FrogBot subpaths, and `@frogbotai/ui`. Never import FrogBot package internals. Export only consumer-facing factories, helpers, components, and types, and use the repository's first-party plugins and root test suites as the source of truth for contracts.
+Import public types and runtime APIs from `frogbot`, documented FrogBot subpaths, `@frogbotai/ui` and `@frogbotai/ui/admin`. Never import FrogBot package internals. Export only consumer-facing factories, helpers, components, and types, and use the repository's first-party plugins and root test suites as the source of truth for contracts.

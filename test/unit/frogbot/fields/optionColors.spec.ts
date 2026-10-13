@@ -13,7 +13,7 @@ import type {
 
 const users: SystemKindUsers = { authSlugs: ['users'], resolve: () => 'users' };
 
-const FIELD_CELL = '@frogbotai/next/client#FieldCell';
+const FIELD_CELL = '@frogbotai/ui/admin#FieldCell';
 
 function status(overrides: Partial<SelectField> = {}): SelectField {
   return {

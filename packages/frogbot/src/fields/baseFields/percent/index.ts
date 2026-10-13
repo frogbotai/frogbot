@@ -29,7 +29,7 @@ export function percentField(args: PercentFieldArgs): NumberField {
     {
       kind: { type: 'percent', precision },
       cell: true,
-      Field: '@frogbotai/next/client#PercentField',
+      Field: '@frogbotai/ui/admin#PercentField',
       check: acceptAnyValue,
       description: 'Fraction where 1 means 100%, for example 0.42 for 42%',
     },

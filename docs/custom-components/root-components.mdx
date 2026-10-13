@@ -45,7 +45,7 @@ export default buildConfig({
 | `graphics` | `{ Icon?: FrogBotComponent, Logo?: FrogBotComponent }` | FrogBot head mark and wordmark | `Icon` replaces the compact mark in navigation. `Logo` replaces the full mark on the login page and the empty-chat greeting fallback. |
 | `Nav` | `FrogBotComponent` | FrogBot sidebar | Replaces the complete sidebar navigation. See [Replace the sidebar](/admin/admin-navigation#replace-the-sidebar). |
 | `navItems` | `NavItem[]` | `[]` | Links above your collections. See [Navigation item options](/admin/admin-navigation#navigation-item-options). |
-| `navSections` | `FrogBotComponent[]` | `['@frogbotai/next#CollectionsSection']` | Sidebar sections below the links. Setting it replaces the default array. See [Configure sections](/admin/admin-navigation#configure-sections). |
+| `navSections` | `FrogBotComponent[]` | `['@frogbotai/ui/admin/rsc#CollectionsSection']` | Sidebar sections below the links. Setting it replaces the default array. See [Configure sections](/admin/admin-navigation#configure-sections). |
 | `providers` | `ProviderComponent[]` | `[]` | Components that wrap the Admin Panel and render `children`, outermost first. See [Custom Providers](./custom-providers). |
 | `views` | `Record<string, AdminViewConfig>` | Built-in views, plus a `settings` view at `/settings` | Replaces built-in root views (`account`, `dashboard`, `settings`) or adds routes under any other key. See [View options](./custom-views#view-options). |
 
@@ -134,7 +134,7 @@ components: {
 }
 ```
 
-Navigation items are empty by default. Setting `navSections` replaces the default Collections section, so include `@frogbotai/next#CollectionsSection` to keep it. See [Admin navigation](/admin/admin-navigation) for New Chat and Recents examples.
+Navigation items are empty by default. Setting `navSections` replaces the default Collections section, so include `@frogbotai/ui/admin/rsc#CollectionsSection` to keep it. See [Admin navigation](/admin/admin-navigation) for New Chat and Recents examples.
 
 ### Chat
 

@@ -27,7 +27,7 @@ describe('barcodeField', () => {
   it('uses FieldCell for the list cell and the text input for editing', () => {
     const field = barcodeField({ name: 'sku' });
 
-    expect(field.admin?.components).toEqual({ Cell: '@frogbotai/next/client#FieldCell' });
+    expect(field.admin?.components).toEqual({ Cell: '@frogbotai/ui/admin#FieldCell' });
   });
 
   it('passes text field options through unchanged', () => {

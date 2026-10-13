@@ -64,7 +64,7 @@ export function defaultChatsCollection({
         index: true,
         access: readOnly,
         admin: {
-          components: { Cell: '@frogbotai/next/client#FieldCell' },
+          components: { Cell: '@frogbotai/ui/admin#FieldCell' },
           custom: { frogbot: { kind: { type: 'channel' } } },
         },
       },

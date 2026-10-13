@@ -166,8 +166,8 @@ describe('aiField value field', () => {
     const { value } = make();
 
     expect(value.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#AIField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#AIField',
     });
   });
 
@@ -284,8 +284,8 @@ describe('aiField select output', () => {
 
     expect(value.admin?.custom).toEqual({ frogbot: { kind } });
     expect(value.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
-      Field: '@frogbotai/next/client#AIField',
+      Cell: '@frogbotai/ui/admin#FieldCell',
+      Field: '@frogbotai/ui/admin#AIField',
     });
   });
 

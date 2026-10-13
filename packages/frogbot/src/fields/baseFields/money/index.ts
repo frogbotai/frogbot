@@ -36,7 +36,7 @@ export function moneyField(args: MoneyFieldArgs): NumberField {
     {
       kind: { type: 'money', currency, precision },
       cell: true,
-      Field: '@frogbotai/next/client#MoneyField',
+      Field: '@frogbotai/ui/admin#MoneyField',
       description: `Decimal amount in ${currency}, in whole units, not minor units such as cents`,
     },
   );

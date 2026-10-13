@@ -69,7 +69,7 @@ describe('applyFieldKind components', () => {
     );
 
     expect(field.admin?.components).toEqual({
-      Cell: '@frogbotai/next/client#FieldCell',
+      Cell: '@frogbotai/ui/admin#FieldCell',
       Field: '@frogbotai/next/client#SampleField',
     });
   });

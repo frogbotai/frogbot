@@ -102,7 +102,7 @@ export const Themes: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { RadioGroupField } from '@frogbotai/ui'
+import { RadioGroupField } from '@frogbotai/ui/admin'
 import type { RadioFieldServerComponent } from 'frogbot'
 
 export const CustomRadioServer: RadioFieldServerComponent = (props) => (
@@ -120,7 +120,7 @@ export const CustomRadioServer: RadioFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { RadioGroupField } from '@frogbotai/ui'
+import { RadioGroupField } from '@frogbotai/ui/admin'
 import type { RadioFieldClientComponent } from 'frogbot'
 
 export const CustomRadioClient: RadioFieldClientComponent = (props) => <RadioGroupField {...props} />
@@ -131,7 +131,7 @@ export const CustomRadioClient: RadioFieldClientComponent = (props) => <RadioGro
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { RadioFieldLabelServerComponent } from 'frogbot'
 
 export const CustomRadioLabelServer: RadioFieldLabelServerComponent = ({ clientField, path }) => (
@@ -148,7 +148,7 @@ export const CustomRadioLabelServer: RadioFieldLabelServerComponent = ({ clientF
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { RadioFieldLabelClientComponent } from 'frogbot'
 
 export const CustomRadioLabelClient: RadioFieldLabelClientComponent = ({ field, path }) => (

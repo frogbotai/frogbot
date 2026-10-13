@@ -13,7 +13,7 @@ type SanitizeOptionColorsArgs = (
   path: string;
 };
 
-export const FIELD_CELL_PATH = '@frogbotai/next/client#FieldCell';
+export const FIELD_CELL_PATH = '@frogbotai/ui/admin#FieldCell';
 
 const knownColors = new Set<unknown>(optionColors);
 

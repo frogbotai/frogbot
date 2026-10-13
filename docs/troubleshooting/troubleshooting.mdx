@@ -44,13 +44,13 @@ Perform the same two checks for react and react-dom; a second copy of React can 
 
 #### If no duplicates are found
 
-`@frogbotai/ui` intentionally contains two bundles of itself, so you may see dual paths even when everything is correct. Inside the FrogBot Admin UI you must import only:
+Admin hooks such as `useField` and `useConfig` read the Admin Panel's React contexts, so import them only from these entries:
 
-- `@frogbotai/ui`
-- `@frogbotai/ui/rsc`
-- `@frogbotai/ui/shared`
+- `@frogbotai/ui/admin`
+- `@frogbotai/ui/admin/rsc`
+- `@frogbotai/ui/admin/shared`
 
-Any other deep import such as `@frogbotai/ui/elements/Button` should **only** be used in your own frontend, outside of the FrogBot Admin Panel. Those deep entries are published un-bundled to help you tree-shake and ship a smaller client bundle if you only need a few components from `@frogbotai/ui`.
+Components and hooks from `@frogbotai/ui` and its other entries, such as `Button` or `@frogbotai/ui/chat`, carry no admin context and work anywhere.
 
 ### Fixing dependency issues
 

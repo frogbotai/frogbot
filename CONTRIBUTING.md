@@ -67,24 +67,25 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 
 `pnpm check` runs these; each also runs alone as `pnpm check <name>`.
 
-| Name              | Fails when                                                                                                                                                               |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `branding`        | templates, examples, docs, skills or READMEs mention Payload                                                                                                             |
-| `docs-fences`     | a docs code block has no language, or marks a shell command as plain text                                                                                                |
-| `docs-links`      | a General docs link, anchor or local asset is broken                                                                                                                     |
-| `docs-references` | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)                                   |
-| `option-tables`   | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`                                     |
-| `tests`           | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/`                             |
-| `packages`        | a workspace folder has no tracked `package.json`                                                                                                                         |
-| `scripts`         | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                                                          |
-| `ui-architecture` | `packages/ui` uses forbidden imports, globals or strings                                                                                                                 |
-| `generated`       | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                                                       |
-| `test-types`      | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                                              |
-| `typed-lint`      | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file) |
-| `dist-imports`    | a built relative import or entry point does not match a file name exactly, including case                                                                                |
-| `single-frogbot`  | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                      |
-| `peer-variants`   | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                               |
-| `ticket-docs`     | a ticket folder disagrees with the templates, `.idea/_process/decisions.md` or the plan (main checkout only)                                                             |
+| Name                 | Fails when                                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branding`           | templates, examples, docs, skills or READMEs mention Payload                                                                                                                        |
+| `docs-fences`        | a docs code block has no language, or marks a shell command as plain text                                                                                                           |
+| `docs-links`         | a General docs link, anchor or local asset is broken                                                                                                                                |
+| `docs-references`    | a docs or skill example imports a name `frogbot` or `@frogbotai/*` does not export (its allowlist holds intentional placeholders only)                                              |
+| `option-tables`      | a docs option table does not list exactly its type's properties, or a `\| Option \|` table is missing from `docs/option-tables.json`                                                |
+| `tests`              | a spec sits in `packages/**/src` or in no project, an int suite skips `clearAndSeed`, or scratch files go outside `os.tmpdir()`/`test/.tmp/`                                        |
+| `packages`           | a workspace folder has no tracked `package.json`                                                                                                                                    |
+| `scripts`            | a root script has no row in the command table above (or the reverse), or a package has scripts beyond the three                                                                     |
+| `ui-architecture`    | `packages/ui` uses forbidden imports, globals or strings                                                                                                                            |
+| `package-boundaries` | `@frogbotai/ui` imports Payload or admin code outside `src/admin`, any of it imports Next, another package imports `@payloadcms/ui`, or its manifest installs Payload or names Next |
+| `generated`          | a tracked `importMap.js`, `frogbot-types.ts` or `piece-types.ts` is stale (`--full` only; `--write` rewrites them)                                                                  |
+| `test-types`         | `test/` has a type error beyond `test/typecheck-baseline.json`, or fewer than it lists (`--full` only; `--write` lowers it)                                                         |
+| `typed-lint`         | a changed `.ts` or `.tsx` file breaks a type-aware rule in `.oxlintrc.json` (run on oxlint), or one of its `"warn"` overrides no longer warns (`--all` lints every file)            |
+| `dist-imports`       | a built relative import or entry point does not match a file name exactly, including case                                                                                           |
+| `single-frogbot`     | a package lists `frogbot` as a regular dependency, or `frogbot` has framework peers                                                                                                 |
+| `peer-variants`      | a dependency of several workspace folders installs as two peer variants of one version in `pnpm-lock.yaml`                                                                          |
+| `ticket-docs`        | a ticket folder disagrees with the templates, `.idea/_process/decisions.md` or the plan (main checkout only)                                                                        |
 
 ## Code style
 
@@ -134,7 +135,17 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 ### UI
 
 - **Firmware is the spec.** Firmware (`~/code/firmware`) is FrogBot's previous iteration. Before building an admin or UI surface, find its Firmware implementation (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`) and follow it; port, don't redesign. For example, the api-keys UI is one button in the collection list view that opens a modal (create, then a one-time key reveal), as in `apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`. New UI work trends toward the Firmware desktop look, never away.
-- **Color tokens.** `--theme-base-*` for neutral colors that invert between themes; `--color-base-*` only for fixed colors that must not invert (dark scrims, text on brand surfaces); `--theme-elevation-*` only in admin-only styles, never in `packages/ui`.
+- **Color tokens.** `--theme-base-*` for neutral colors that invert between themes; `--color-base-*` only for fixed colors that must not invert (dark scrims, text on brand surfaces); `--theme-elevation-*` only in admin styles (`packages/ui/src/admin`), never elsewhere in `packages/ui`.
+- **Layers.** Every surface (Next, TanStack, Vite, a desktop app, Sidekick) uses one UI package. From the bottom up, each layer may import only the ones above it in this table; `pnpm check package-boundaries` and lint enforce it.
+
+  | Package or entry                                     | Holds                                            | May import                                  |
+  | ---------------------------------------------------- | ------------------------------------------------ | ------------------------------------------- |
+  | `@frogbotai/protocol`                                | contract types                                   | nothing                                     |
+  | `@frogbotai/ui` outside `admin`                      | primitives, theme, icons, chat, board            | React and UI libraries                      |
+  | `@frogbotai/ui/admin`, `/admin/shared`, `/admin/rsc` | curated Payload names, FrogBot's admin, adapters | the above, Payload, `frogbot`; never `next` |
+  | `@frogbotai/next`                                    | Next entry, Next adapter implementations         | anything                                    |
+
+  Admin code reaches the host only through `useRouterAdapter` (client) and `getServerAdapter` (server); a framework package installs them, as `@frogbotai/next` does in its `RootLayout` and pages.
 
 ## Verification
 

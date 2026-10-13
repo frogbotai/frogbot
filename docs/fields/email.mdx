@@ -79,7 +79,7 @@ export const Contacts: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { EmailField } from '@frogbotai/ui'
+import { EmailField } from '@frogbotai/ui/admin'
 import type { EmailFieldServerComponent } from 'frogbot'
 
 export const CustomEmailServer: EmailFieldServerComponent = (props) => (
@@ -97,7 +97,7 @@ export const CustomEmailServer: EmailFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { EmailField } from '@frogbotai/ui'
+import { EmailField } from '@frogbotai/ui/admin'
 import type { EmailFieldClientComponent } from 'frogbot'
 
 export const CustomEmailClient: EmailFieldClientComponent = (props) => <EmailField {...props} />
@@ -108,7 +108,7 @@ export const CustomEmailClient: EmailFieldClientComponent = (props) => <EmailFie
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { EmailFieldLabelServerComponent } from 'frogbot'
 
 export const CustomEmailLabelServer: EmailFieldLabelServerComponent = ({ clientField, path }) => (
@@ -125,7 +125,7 @@ export const CustomEmailLabelServer: EmailFieldLabelServerComponent = ({ clientF
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { EmailFieldLabelClientComponent } from 'frogbot'
 
 export const CustomEmailLabelClient: EmailFieldLabelClientComponent = ({ field, path }) => (

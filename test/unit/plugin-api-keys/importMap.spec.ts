@@ -9,11 +9,10 @@ import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
-vi.mock('@payloadcms/ui', () => ({
-  Button: () => null,
-  TextInput: () => null,
+vi.mock('@frogbotai/ui/admin', () => ({
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
-  useListQuery: () => ({ data: { docs: [] }, query: {}, refineListData: vi.fn() }),
+  useListQuery: () => ({ collectionSlug: 'api-keys' }),
+  useRouteCache: () => ({ clearRouteCache: vi.fn() }),
 }));
 
 const { ApiKeysManager } = await import('../../../packages/plugins/plugin-api-keys/src/client.js');

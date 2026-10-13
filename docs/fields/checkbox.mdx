@@ -65,7 +65,7 @@ export const Features: CollectionConfig = {
 #### Server component
 
 ```tsx
-import { CheckboxField } from '@frogbotai/ui'
+import { CheckboxField } from '@frogbotai/ui/admin'
 import type { CheckboxFieldServerComponent } from 'frogbot'
 
 export const CustomCheckboxServer: CheckboxFieldServerComponent = (props) => (
@@ -83,7 +83,7 @@ export const CustomCheckboxServer: CheckboxFieldServerComponent = (props) => (
 ```tsx
 'use client'
 
-import { CheckboxField } from '@frogbotai/ui'
+import { CheckboxField } from '@frogbotai/ui/admin'
 import type { CheckboxFieldClientComponent } from 'frogbot'
 
 export const CustomCheckboxClient: CheckboxFieldClientComponent = (props) => <CheckboxField {...props} />
@@ -94,7 +94,7 @@ export const CustomCheckboxClient: CheckboxFieldClientComponent = (props) => <Ch
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { CheckboxFieldLabelServerComponent } from 'frogbot'
 
 export const CustomCheckboxLabelServer: CheckboxFieldLabelServerComponent = ({ clientField, path }) => (
@@ -111,7 +111,7 @@ export const CustomCheckboxLabelServer: CheckboxFieldLabelServerComponent = ({ c
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { CheckboxFieldLabelClientComponent } from 'frogbot'
 
 export const CustomCheckboxLabelClient: CheckboxFieldLabelClientComponent = ({ field, path }) => (

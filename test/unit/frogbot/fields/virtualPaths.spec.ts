@@ -5,7 +5,7 @@ import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/type
 import { sanitizeVectorFields } from '../../../../packages/frogbot/src/fields/config/sanitizeVector.js';
 import type { Block, Field } from '../../../../packages/frogbot/src/fields/config/types.js';
 
-const FIELD_CELL = '@frogbotai/next/client#FieldCell';
+const FIELD_CELL = '@frogbotai/ui/admin#FieldCell';
 
 function projectBudget(overrides: Record<string, unknown> = {}): Field {
   return {

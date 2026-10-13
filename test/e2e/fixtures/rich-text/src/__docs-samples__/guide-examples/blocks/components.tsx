@@ -15,7 +15,7 @@ import {
   InlineBlockLabel,
   InlineBlockRemoveButton,
 } from '@frogbotai/richtext-lexical/client';
-import { useFormFields } from '@frogbotai/ui';
+import { useFormFields } from '@frogbotai/ui/admin';
 
 export function BannerBlock(_props: LexicalBlockClientProps) {
   const content = useFormFields(([fields]) => fields.content?.value);

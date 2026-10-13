@@ -83,7 +83,7 @@ Override the field or its label through `admin.components`. Custom components ca
 #### Server component
 
 ```tsx
-import { CodeField } from '@frogbotai/ui'
+import { CodeField } from '@frogbotai/ui/admin'
 import type { CodeFieldServerComponent } from 'frogbot'
 
 export const CustomCodeFieldServer: CodeFieldServerComponent = ({
@@ -106,7 +106,7 @@ export const CustomCodeFieldServer: CodeFieldServerComponent = ({
 ```tsx
 'use client'
 
-import { CodeField } from '@frogbotai/ui'
+import { CodeField } from '@frogbotai/ui/admin'
 import type { CodeFieldClientComponent } from 'frogbot'
 
 export const CustomCodeFieldClient: CodeFieldClientComponent = (props) => (
@@ -119,7 +119,7 @@ export const CustomCodeFieldClient: CodeFieldClientComponent = (props) => (
 #### Server component
 
 ```tsx
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { CodeFieldLabelServerComponent } from 'frogbot'
 
 export const CustomCodeLabelServer: CodeFieldLabelServerComponent = ({
@@ -139,7 +139,7 @@ export const CustomCodeLabelServer: CodeFieldLabelServerComponent = ({
 ```tsx
 'use client'
 
-import { FieldLabel } from '@frogbotai/ui'
+import { FieldLabel } from '@frogbotai/ui/admin'
 import type { CodeFieldLabelClientComponent } from 'frogbot'
 
 export const CustomCodeLabelClient: CodeFieldLabelClientComponent = ({ field, path }) => (

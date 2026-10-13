@@ -183,7 +183,7 @@ Override the field through `admin.components`. A custom component can wrap FrogB
 ### Server component
 
 ```tsx
-import { UploadField } from '@frogbotai/ui'
+import { UploadField } from '@frogbotai/ui/admin'
 import type { UploadFieldServerComponent } from 'frogbot'
 
 export const CustomUploadFieldServer: UploadFieldServerComponent = ({
@@ -206,7 +206,7 @@ export const CustomUploadFieldServer: UploadFieldServerComponent = ({
 ```tsx
 'use client'
 
-import { UploadField } from '@frogbotai/ui'
+import { UploadField } from '@frogbotai/ui/admin'
 import type { UploadFieldClientComponent } from 'frogbot'
 
 export const CustomUploadFieldClient: UploadFieldClientComponent = (props) => (

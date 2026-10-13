@@ -161,6 +161,6 @@ export function Progress({ value }: { value: number | null }) {
 
 ## Custom components
 
-The percent cell and input are `PercentCell` and `PercentField` from `@frogbotai/next/client`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the percent input as they do on a Number field.
+The percent cell and input are `PercentCell` and `PercentField` from `@frogbotai/ui/admin`. Your own `admin.components.Cell` or `admin.components.Field` replaces them, and other components such as `Label`, `Description`, `Error`, `beforeInput` and `afterInput` work with the percent input as they do on a Number field.
 
 A custom Cell can draw the standard percent display inside its own markup with [`FieldCell`](/fields/overview#cell), as shown for [Money fields](/fields/money#custom-components). As with any custom Cell, it appears only in the List view. Board cards and Calendar events keep the standard percent display.
