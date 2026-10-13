@@ -25,6 +25,7 @@ const IGNORES = [
   'packages/frogbot/bin.js',
   '**/migrations/**',
   'test/.tmp/',
+  '.idea/',
 ];
 
 const SPECS = ['**/*.spec.ts', '**/*.spec.tsx'];
