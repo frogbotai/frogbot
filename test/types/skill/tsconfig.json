@@ -6,5 +6,6 @@
     "declarationMap": false,
     "noEmit": true
   },
+  "files": [],
   "include": ["skill-samples.test-d.ts", "samples/**/*.ts", "samples/**/*.tsx"]
 }

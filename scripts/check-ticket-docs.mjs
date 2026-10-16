@@ -907,6 +907,13 @@ function parseTickets(argv) {
   return { tickets };
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.idea
+ * @param {string} options.root
+ * @param {string} [options.home]
+ * @param {string[]} [options.argv]
+ */
 export function run({ idea, root, home, argv = [] }) {
   if (!existsSync(path.join(idea, TICKETS))) {
     return {

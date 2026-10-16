@@ -11,3 +11,6 @@ packages:
   - 'test/browser/fixtures/custom-field'
   - 'examples/business-qa'
   - 'examples/tailwind'
+
+catalog:
+  typescript: '6.0.3'

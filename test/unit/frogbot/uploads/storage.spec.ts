@@ -117,7 +117,7 @@ describe('storage adapters', () => {
   it('leave a built-in collection on local disk when it is set to false', async () => {
     const { upload, clientUploadSlugs } = await build({
       collections: [Users, Files, Chats],
-      plugins: [s3({ collections: { [chatAssetsSlug]: false } })],
+      plugins: [s3({ clientUploads: true, collections: { [chatAssetsSlug]: false } })],
     });
 
     expect(upload('files')).toMatchObject({ adapter: 's3' });
@@ -126,7 +126,9 @@ describe('storage adapters', () => {
   });
 
   it('skip chat assets when chat persistence is disabled', async () => {
-    const { payloadConfig, clientUploadSlugs } = await build({ plugins: [s3()] });
+    const { payloadConfig, clientUploadSlugs } = await build({
+      plugins: [s3({ clientUploads: true })],
+    });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain(chatAssetsSlug);
     expect(clientUploadSlugs).toEqual(['files']);
@@ -156,7 +158,7 @@ describe('storage adapters', () => {
   it('cover only chat assets when nothing is marked file: true', async () => {
     const { payloadConfig, clientUploadSlugs } = await build({
       collections: [Users, Chats],
-      plugins: [s3()],
+      plugins: [s3({ clientUploads: true })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain('files');
@@ -166,7 +168,7 @@ describe('storage adapters', () => {
   it('build without built-in upload collections when chat is off and nothing is marked file: true', async () => {
     const { payloadConfig, clientUploadSlugs } = await build({
       collections: [Users],
-      plugins: [s3()],
+      plugins: [s3({ clientUploads: true })],
     });
 
     expect(payloadConfig.collections.map(({ slug }) => slug)).not.toContain('files');

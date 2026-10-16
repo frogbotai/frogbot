@@ -100,8 +100,8 @@
     "@frogbotai/gateway": "workspace:*",
     "@frogbotai/protocol": "workspace:*",
     "@next/env": "15.4.10",
-    "@payloadcms/drizzle": "3.90.1",
-    "@payloadcms/translations": "3.90.1",
+    "@payloadcms/drizzle": "3.90.2",
+    "@payloadcms/translations": "3.90.2",
     "ai": "7.0.116",
     "chat": "^4.40.0",
     "croner": "10.0.1",
@@ -109,7 +109,7 @@
     "fflate": "0.8.3",
     "json-schema-to-typescript": "^15.0.3",
     "mammoth": "1.13.0",
-    "payload": "3.90.1",
+    "payload": "3.90.2",
     "prettier": "^3.2.5",
     "read-excel-file": "9.3.10",
     "to-snake-case": "1.0.0",
@@ -133,7 +133,7 @@
     "eslint": "^9.16.0",
     "next": "15.4.11",
     "pino": "^9.14.0",
-    "typescript": "5.6.2",
+    "typescript": "catalog:",
     "vitest": "4.1.2"
   },
   "publishConfig": {

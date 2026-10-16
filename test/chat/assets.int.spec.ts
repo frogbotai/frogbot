@@ -130,7 +130,9 @@ describe('chat assets', () => {
   }
 
   function officeBlob({ bytes, filename }: { bytes: Uint8Array; filename: string }): Blob {
-    return new Blob([bytes], { type: filename.endsWith('.xlsx') ? XLSX_TYPE : DOCX_TYPE });
+    return new Blob([new Uint8Array(bytes)], {
+      type: filename.endsWith('.xlsx') ? XLSX_TYPE : DOCX_TYPE,
+    });
   }
 
   async function uploadOffice({
@@ -770,11 +772,14 @@ describe('chat assets', () => {
 
     const uploaded = await sdk.upload(
       CHAT_ASSETS_SLUG,
-      new File([reportDocx()], 'sdk.docx', { type: DOCX_TYPE }),
+      new File([new Uint8Array(reportDocx())], 'sdk.docx', { type: DOCX_TYPE }),
     );
 
     const refused = await sdk
-      .upload(CHAT_ASSETS_SLUG, new File([encryptedOfficeFile()], 'sdk.xlsx', { type: XLSX_TYPE }))
+      .upload(
+        CHAT_ASSETS_SLUG,
+        new File([new Uint8Array(encryptedOfficeFile())], 'sdk.xlsx', { type: XLSX_TYPE }),
+      )
       .catch((error: unknown) => error);
 
     expect(uploaded).toMatchObject({ filename: 'sdk.docx', mimeType: DOCX_TYPE, text: reportText });

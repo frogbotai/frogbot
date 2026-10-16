@@ -147,7 +147,15 @@ describe('check test-types', () => {
       stableConfig(next, { dir: '/repo/test/app', buildInfo: '/tmp/app.tsbuildinfo' }),
     ).toEqual({
       extends: '/repo/test/app/tsconfig.json',
-      compilerOptions: { tsBuildInfoFile: '/tmp/app.tsbuildinfo' },
+      compilerOptions: {
+        tsBuildInfoFile: '/tmp/app.tsbuildinfo',
+        typeRoots: [
+          '/repo/test/app/node_modules/@types',
+          '/repo/test/node_modules/@types',
+          '/repo/node_modules/@types',
+          '/node_modules/@types',
+        ],
+      },
       include: ['/repo/test/app/next-env.d.ts', '/repo/test/app/**/*.ts'],
     });
     expect(

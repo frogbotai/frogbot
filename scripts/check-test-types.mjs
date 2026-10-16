@@ -124,6 +124,15 @@ export function layoutProblems({ programs, augmented }) {
   ];
 }
 
+function typeRoots(dir) {
+  const roots = [];
+
+  for (let current = dir; ; current = path.dirname(current)) {
+    roots.push(path.join(current, 'node_modules', '@types'));
+    if (current === path.dirname(current)) return roots;
+  }
+}
+
 export function stableConfig(config, { dir, buildInfo }) {
   const include = config.include ?? [];
 
@@ -136,7 +145,7 @@ export function stableConfig(config, { dir, buildInfo }) {
 
   return {
     extends: path.join(dir, 'tsconfig.json'),
-    compilerOptions: { tsBuildInfoFile: buildInfo },
+    compilerOptions: { tsBuildInfoFile: buildInfo, typeRoots: typeRoots(dir) },
     include: include
       .filter((entry) => !entry.startsWith(NEXT_TYPES))
       .map((entry) => path.join(dir, entry)),

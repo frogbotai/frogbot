@@ -138,7 +138,7 @@ export const uploadFile = defineAction({
         mute: input.mute,
         strict_conflict: input.strictConflict,
       },
-      body,
+      body: new Uint8Array(body),
       schema: uploadResult,
       signal: requestSignal(req),
     });

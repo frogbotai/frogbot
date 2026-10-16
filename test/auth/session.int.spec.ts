@@ -1579,7 +1579,9 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const body = new ReadableStream<Uint8Array>(
       {
         pull(controller) {
-          controller.enqueue(chunks.shift());
+          const chunk = chunks.shift();
+
+          if (chunk) controller.enqueue(chunk);
           if (!chunks.length) controller.close();
         },
       },

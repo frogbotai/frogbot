@@ -122,9 +122,9 @@
   },
   "dependencies": {
     "@frogbotai/ui": "workspace:*",
-    "@payloadcms/next": "3.90.1",
-    "@payloadcms/translations": "3.90.1",
-    "@payloadcms/ui": "3.90.1"
+    "@payloadcms/next": "3.90.2",
+    "@payloadcms/translations": "3.90.2",
+    "@payloadcms/ui": "3.90.2"
   },
   "peerDependencies": {
     "frogbot": "workspace:*",
@@ -140,9 +140,9 @@
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "next": "15.4.11",
-    "payload": "3.90.1",
+    "payload": "3.90.2",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "typescript": "5.6.2"
+    "typescript": "catalog:"
   }
 }

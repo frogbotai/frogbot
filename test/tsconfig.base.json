@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -18,5 +19,6 @@
     "paths": {
       "@opentelemetry/*": ["../packages/gateway/node_modules/@opentelemetry/*"]
     }
-  }
+  },
+  "files": ["../tools/assets.d.ts"]
 }

@@ -74,13 +74,26 @@
       "import": "./src/admin/exports/rsc.ts",
       "default": "./src/admin/exports/rsc.ts"
     },
-    "./admin/styles.css": "./src/admin/styles.css",
-    "./styles.css": "./src/styles.css",
-    "./utilities.css": "./src/utilities.css"
+    "./admin/styles.css": {
+      "types": "./src/exports/css.ts",
+      "import": "./src/admin/styles.css",
+      "default": "./src/admin/styles.css"
+    },
+    "./styles.css": {
+      "types": "./src/exports/css.ts",
+      "import": "./src/styles.css",
+      "default": "./src/styles.css"
+    },
+    "./utilities.css": {
+      "types": "./src/exports/css.ts",
+      "import": "./src/utilities.css",
+      "default": "./src/utilities.css"
+    }
   },
   "files": [
     "dist",
     "src",
+    "src/admin/styles.css",
     "src/styles.css"
   ],
   "sideEffects": [
@@ -92,11 +105,11 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p ../../test/types/ui/tsconfig.json"
   },
   "peerDependencies": {
-    "@payloadcms/translations": "3.90.1",
-    "@payloadcms/ui": "3.90.1",
+    "@payloadcms/translations": "3.90.2",
+    "@payloadcms/ui": "3.90.2",
     "ai": "^7.0.116",
     "frogbot": "workspace:*",
-    "payload": "3.90.1",
+    "payload": "3.90.2",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
@@ -115,8 +128,8 @@
     }
   },
   "devDependencies": {
-    "@payloadcms/translations": "3.90.1",
-    "@payloadcms/ui": "3.90.1",
+    "@payloadcms/translations": "3.90.2",
+    "@payloadcms/ui": "3.90.2",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/markdown-it": "^14.1.2",
@@ -126,10 +139,10 @@
     "eslint": "^9.16.0",
     "frogbot": "workspace:*",
     "jsdom": "^24.1.3",
-    "payload": "3.90.1",
+    "payload": "3.90.2",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "typescript": "5.6.2"
+    "typescript": "catalog:"
   },
   "publishConfig": {
     "access": "public",
@@ -196,9 +209,21 @@
         "import": "./dist/admin/exports/rsc.js",
         "default": "./dist/admin/exports/rsc.js"
       },
-      "./admin/styles.css": "./src/admin/styles.css",
-      "./styles.css": "./src/styles.css",
-      "./utilities.css": "./src/utilities.css"
+      "./admin/styles.css": {
+        "types": "./dist/exports/css.d.ts",
+        "import": "./src/admin/styles.css",
+        "default": "./src/admin/styles.css"
+      },
+      "./styles.css": {
+        "types": "./dist/exports/css.d.ts",
+        "import": "./src/styles.css",
+        "default": "./src/styles.css"
+      },
+      "./utilities.css": {
+        "types": "./dist/exports/css.d.ts",
+        "import": "./src/utilities.css",
+        "default": "./src/utilities.css"
+      }
     }
   },
   "dependencies": {

@@ -96,7 +96,7 @@ Use an ESM package with declarations and explicit export maps. A plugin without 
     "frogbot": "workspace:*",
     "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1",
-    "typescript": "5.6.2"
+    "typescript": "6.0.3"
   },
   "publishConfig": {
     "access": "public"
@@ -156,7 +156,6 @@ First-party plugins extend the repository TypeScript configuration and emit Java
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,

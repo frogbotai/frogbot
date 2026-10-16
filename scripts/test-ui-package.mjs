@@ -31,6 +31,8 @@ const subpaths = [
   './admin/rsc',
 ];
 
+const stylesheets = ['./admin/styles.css', './styles.css', './utilities.css'];
+
 const nodeEntries = subpaths
   .filter((subpath) => !subpath.startsWith('./admin') && !subpath.includes('*'))
   .concat('./icons/menu');
@@ -75,12 +77,9 @@ try {
     'these declarations import frogbot or @frogbotai/sdk',
   );
 
-  assert.deepEqual(
-    Object.keys(packageJSON.exports).sort(),
-    [...subpaths, './admin/styles.css', './styles.css', './utilities.css'].sort(),
-  );
+  assert.deepEqual(Object.keys(packageJSON.exports).sort(), [...subpaths, ...stylesheets].sort());
 
-  for (const subpath of subpaths) {
+  for (const subpath of [...subpaths, ...stylesheets]) {
     const entry = packageJSON.exports[subpath];
     assert.equal(typeof entry, 'object');
     if (subpath.includes('*')) continue;
@@ -130,8 +129,7 @@ try {
           '@types/react-dom': '19.2.3',
           react: '19.2.6',
           'react-dom': '19.2.6',
-          typescript: '5.6.2',
-          'typescript-lib-check': 'npm:typescript@5.9.3',
+          typescript: '6.0.3',
           vite: '^6.0.0',
         },
         pnpm: { overrides: { '@frogbotai/protocol': `file:./${protocolTarball}` } },
@@ -159,6 +157,7 @@ try {
           skipLibCheck: true,
           strict: true,
           target: 'ES2022',
+          types: ['node'],
         },
         include: ['src'],
       },
@@ -219,6 +218,7 @@ createRoot(document.getElementById('root')!).render(
 import { type ChatPlatformAdapter, ModelSelector } from '@frogbotai/ui/chat'
 import * as icons from '@frogbotai/ui/icons'
 import { ThemeProvider } from '@frogbotai/ui/theme'
+import '@frogbotai/ui/styles.css'
 
 const manifest: ChatManifest = {
   defaultAgent: 'local',
@@ -279,7 +279,7 @@ export const picker = (
 
   run(
     'node',
-    ['node_modules/typescript-lib-check/bin/tsc', '--noEmit', '-p', 'tsconfig.strict.json'],
+    ['node_modules/typescript/bin/tsc', '--noEmit', '-p', 'tsconfig.strict.json'],
     appRoot,
   );
 

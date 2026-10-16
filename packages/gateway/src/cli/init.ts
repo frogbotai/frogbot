@@ -39,7 +39,7 @@ function packageJson(name: string): string {
       devDependencies: {
         '@types/node': '^22.10.2',
         tsx: '^4.19.2',
-        typescript: '^5.6.2',
+        typescript: '6.0.3',
       },
     },
     null,

@@ -143,7 +143,7 @@ export function speechRoute(ctx: SpeechRouteContext) {
         { isolate: true, logger },
       );
 
-      return new Response(result.audio.uint8Array, {
+      return new Response(new Uint8Array(result.audio.uint8Array), {
         status: 200,
         headers: {
           'content-type': SPEECH_FORMAT_MEDIA_TYPES[outputFormat],

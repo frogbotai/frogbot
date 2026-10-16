@@ -50,7 +50,9 @@ function fixture({
     },
   } as never;
 
-  const fetch = vi.fn().mockImplementation(() => Promise.resolve(new Response(bytes)));
+  const fetch = vi
+    .fn()
+    .mockImplementation(() => Promise.resolve(new Response(new Uint8Array(bytes))));
 
   vi.stubGlobal('fetch', fetch);
 

@@ -52,7 +52,7 @@ export function fixtureDataUrl(name: LiveFixture): string {
 }
 
 export function fixtureFile(name: LiveFixture): File {
-  return new File([readFixture(name)], name, { type: MEDIA_TYPES[name] });
+  return new File([new Uint8Array(readFixture(name))], name, { type: MEDIA_TYPES[name] });
 }
 
 export const FIXTURE_FACTS = {

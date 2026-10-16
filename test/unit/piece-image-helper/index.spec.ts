@@ -25,7 +25,10 @@ beforeEach(async () => {
     'fetch',
     vi.fn(() =>
       Promise.resolve(
-        new Response(source, { status: 200, headers: { 'content-type': 'image/png' } }),
+        new Response(new Uint8Array(source), {
+          status: 200,
+          headers: { 'content-type': 'image/png' },
+        }),
       ),
     ),
   );

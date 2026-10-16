@@ -55,7 +55,7 @@ describe('browser attachment kinds', () => {
   it.each(attachmentKindCases.filter((entry) => entry.head))(
     'classifies a picked $name file as $kind',
     async ({ filename, head, kind, mediaType }) => {
-      const file = new File([head!], filename, { type: mediaType });
+      const file = new File([new Uint8Array(head!)], filename, { type: mediaType });
 
       expect(await attachmentKind(file)).toBe(kind);
     },

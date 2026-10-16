@@ -49,6 +49,12 @@ export function exceptions(config, targets) {
 
 const ruleName = (code) => code?.replace(/^(\w[\w-]*)\((.+)\)$/, '$1/$2') ?? 'oxlint';
 
+/**
+ * @param {{ code: number | null, stdout: string, stderr: string }} result
+ * @param {object} [options]
+ * @param {Array<{ file: string, rule: string }>} [options.known]
+ * @param {string} [options.root]
+ */
 export function typedLintLines({ code, stdout, stderr }, { known = [], root = ROOT } = {}) {
   let diagnostics;
 

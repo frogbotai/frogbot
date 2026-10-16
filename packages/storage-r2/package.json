@@ -35,14 +35,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/storage-r2": "3.90.1"
+    "@payloadcms/storage-r2": "3.90.2"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
   },
   "devDependencies": {
     "frogbot": "workspace:*",
-    "typescript": "5.6.2"
+    "typescript": "catalog:"
   },
   "publishConfig": {
     "access": "public",

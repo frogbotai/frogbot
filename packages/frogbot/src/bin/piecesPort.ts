@@ -110,7 +110,7 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
     },
     dependencies: { zod: '^4.3.6' },
     peerDependencies: { frogbot: 'workspace:*' },
-    devDependencies: { frogbot: 'workspace:*', typescript: '5.6.2' },
+    devDependencies: { frogbot: 'workspace:*', typescript: 'catalog:' },
     publishConfig: {
       access: 'public',
       main: './dist/index.js',
