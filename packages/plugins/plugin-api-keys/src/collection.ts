@@ -251,6 +251,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     slug: collectionSlug,
     labels: { singular: 'API Key', plural: 'API Keys' },
     timestamps: true,
+    versions: false,
     ...existing,
     ...collection,
     access: {

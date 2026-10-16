@@ -101,7 +101,7 @@ describe.skipIf(!RUN_E2E)(
 
     async function work() {
       for (let round = 0; round < 10 && (await pendingJobs()) > 0; round++) {
-        await frogbot.jobs.run({ allQueues: true, silent: true });
+        await frogbot.jobs.run({ allQueues: true, silent: true, overrideAccess: true });
       }
 
       expect(await pendingJobs()).toBe(0);

@@ -84,6 +84,7 @@ export function buildBoardOrderHook(names: string[]): CollectionBeforeChangeHook
         collection: collection.slug,
         depth: 0,
         limit: 1,
+        overrideAccess: true,
         pagination: false,
         req,
         select: { [name]: true },

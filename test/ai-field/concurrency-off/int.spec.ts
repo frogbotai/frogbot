@@ -30,7 +30,10 @@ describe('aiField runs with concurrency control off', () => {
   afterEach(async () => {
     await vi.waitFor(
       async () => {
-        const { totalDocs } = await booted.payload.count({ collection: usageLogsSlug as never });
+        const { totalDocs } = await booted.payload.count({
+          collection: usageLogsSlug as never,
+          overrideAccess: true,
+        });
 
         if (totalDocs !== model.titleRequests.length) {
           throw new Error('[test] usage rows are still being written');
@@ -40,7 +43,11 @@ describe('aiField runs with concurrency control off', () => {
     );
 
     for (const collection of [usageLogsSlug, jobsSlug]) {
-      await booted.payload.delete({ collection: collection as never, where: {} });
+      await booted.payload.delete({
+        collection: collection as never,
+        where: {},
+        overrideAccess: true,
+      });
     }
 
     model.reset();
@@ -63,6 +70,7 @@ describe('aiField runs with concurrency control off', () => {
       },
       depth: 0,
       pagination: false,
+      overrideAccess: true,
     });
 
     return result.docs;
@@ -72,6 +80,7 @@ describe('aiField runs with concurrency control off', () => {
     return booted.frogbot.create({
       collection: tasksSlug,
       data,
+      overrideAccess: true,
     }) as Promise<unknown> as Promise<Doc>;
   }
 
@@ -80,6 +89,7 @@ describe('aiField runs with concurrency control off', () => {
       collection: tasksSlug,
       id,
       depth: 0,
+      overrideAccess: true,
     }) as Promise<unknown> as Promise<Doc>;
   }
 
@@ -90,7 +100,7 @@ describe('aiField runs with concurrency control off', () => {
 
     model.respondTitle({ text: 'A fence job.' });
 
-    await booted.frogbot.jobs.run({ queue: 'default' });
+    await booted.frogbot.jobs.run({ queue: 'default', overrideAccess: true });
 
     expect(await findTask(task.id)).toMatchObject({
       summary: 'A fence job.',
@@ -101,7 +111,12 @@ describe('aiField runs with concurrency control off', () => {
   it('two quick edits queue two runs', async () => {
     const task = await createTask({ notes: 'one' });
 
-    await booted.frogbot.update({ collection: tasksSlug, id: task.id, data: { notes: 'two' } });
+    await booted.frogbot.update({
+      collection: tasksSlug,
+      id: task.id,
+      data: { notes: 'two' },
+      overrideAccess: true,
+    });
 
     expect(await waitingSummaryRuns()).toHaveLength(2);
   });
@@ -113,11 +128,16 @@ describe('aiField runs with concurrency control off', () => {
 
     model.respondTitle({ text: 'From one', hold: new Promise((done) => (release = done)) });
 
-    const run = booted.frogbot.jobs.run({ queue: 'default' });
+    const run = booted.frogbot.jobs.run({ queue: 'default', overrideAccess: true });
 
     await vi.waitFor(() => expect(model.titleRequests).toHaveLength(1), { timeout: 10_000 });
 
-    await booted.frogbot.update({ collection: tasksSlug, id: task.id, data: { notes: 'two' } });
+    await booted.frogbot.update({
+      collection: tasksSlug,
+      id: task.id,
+      data: { notes: 'two' },
+      overrideAccess: true,
+    });
 
     release();
     await run;

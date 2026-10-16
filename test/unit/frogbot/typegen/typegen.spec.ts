@@ -99,6 +99,47 @@ describe('frogbot generate:types', () => {
     });
   });
 
+  it('cleans $defs refs to stripped internal definitions', () => {
+    const schema = {
+      properties: {
+        result: {
+          oneOf: [
+            { $ref: '#/$defs/public' },
+            { items: { $ref: '#/$defs/payload-folders' }, type: 'array' },
+          ],
+        },
+      },
+      $defs: {
+        public: { type: 'object' },
+        'payload-folders': { type: 'object' },
+      },
+    };
+
+    stripInternalCollections(schema);
+
+    expect(schema.properties.result.oneOf[0]).toEqual({ $ref: '#/$defs/public' });
+    expect(schema.properties.result.oneOf[1]).toEqual({ items: { type: 'null' }, type: 'array' });
+    expect(schema.$defs).toEqual({ public: { type: 'object' } });
+    expect(schema).not.toHaveProperty('definitions');
+  });
+
+  it('titles internal select $defs', () => {
+    const schema = {
+      $defs: {
+        'frogbot-waitpoints_select': { type: 'object' },
+        posts_select: { type: 'object' },
+      },
+    };
+
+    nameInternalSelects(schema);
+
+    expect(schema.$defs).toEqual({
+      'frogbot-waitpoints_select': { type: 'object', title: 'FrogBotWaitpointsSelect' },
+      posts_select: { type: 'object' },
+    });
+    expect(schema).not.toHaveProperty('definitions');
+  });
+
   it.todo('loads config from cwd via loadConfig');
   it.todo('honors FROGBOT_CONFIG_PATH when set');
   it.todo("redirects Payload's default outputFile (payload-types.ts) to frogbot-types.ts");

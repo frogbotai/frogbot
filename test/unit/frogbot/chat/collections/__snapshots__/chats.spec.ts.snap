@@ -133,5 +133,6 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
   ],
   "slug": "chats",
   "trash": true,
+  "versions": false,
 }
 `;

@@ -48,9 +48,11 @@ describe('native job lifecycle', () => {
 
       let settled = false;
 
-      const run = payload.jobs.runByID({ id: 1, req, silent: true }).finally(() => {
-        settled = true;
-      });
+      const run = payload.jobs
+        .runByID({ id: 1, req, silent: true, overrideAccess: true })
+        .finally(() => {
+          settled = true;
+        });
 
       onTestFinished(() => allowed.resolve());
 
@@ -169,7 +171,7 @@ describe('native job lifecycle', () => {
         allowed ? { processing: true, queue: 'changed' } : { processing: false, queue: 'default' },
       );
 
-      await payload.jobs.run({ req, limit: 1, silent: true });
+      await payload.jobs.run({ req, limit: 1, silent: true, overrideAccess: true });
 
       expect({ insideResult, insideError }).toEqual(
         allowed

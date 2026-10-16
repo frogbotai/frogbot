@@ -777,6 +777,7 @@ describe('channel question delivery', () => {
         revision: 1,
         thread: expect.objectContaining({ id: thread }),
       },
+      overrideAccess: true,
     });
     expect(fixture.frogbot.logger.error).toHaveBeenCalledOnce();
 

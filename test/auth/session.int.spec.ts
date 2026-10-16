@@ -114,6 +114,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     frogbot.login({
       collection: 'members',
       data: { email: `session-${sequence}@example.com`, password: 'test-password' },
+      overrideAccess: true,
     });
 
   const loginHTTP = async () => {
@@ -138,6 +139,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     frogbot.resetPassword({
       collection: 'members',
       data: { token: `reset-${sequence}`, password: 'replacement-password' },
+      overrideAccess: false,
     });
 
   const resetHTTP = async () => {
@@ -342,6 +344,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         name: 'Original',
       },
       disableVerificationEmail: true,
+      overrideAccess: true,
     });
 
     userId = user.id;
@@ -835,6 +838,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const customer = await payload.create({
       collection: 'customers',
       data: { email: 'customer@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     const result = await issueSession({ req, collectionSlug: 'customers', userId: customer.id });
@@ -941,6 +945,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         collection: 'members',
         data: { email: `session-${sequence}@example.com`, password: 'test-password' },
         req,
+        overrideAccess: true,
       }),
     ).rejects.toThrow();
     expect(finished).toBe(true);
@@ -1119,6 +1124,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       collection: 'members',
       data: { email: `session-${sequence}@example.com`, password: 'test-password' },
       req,
+      overrideAccess: true,
     });
 
     expect(req.context.nested).toBe(true);
@@ -1220,6 +1226,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const customer = await payload.create({
       collection: 'customers',
       data: { email: 'parallel-customer@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     const paused = pauseUserRead();
@@ -1228,6 +1235,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const result = await frogbot.login({
       collection: 'customers',
       data: { email: 'parallel-customer@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     await expectAuthenticated(result.token!, customer.id);
@@ -1242,10 +1250,10 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     const order: string[] = [];
     const collection = payload.collections['cookie-members'].config;
     const credentials = { email: `cookie-${sequence}@example.com`, password: 'test-password' };
-    await payload.create({ collection: 'cookie-members', data: credentials });
+    await payload.create({ collection: 'cookie-members', data: credentials, overrideAccess: true });
 
     await expect(
-      frogbot.login({ collection: 'cookie-members', data: credentials }),
+      frogbot.login({ collection: 'cookie-members', data: credentials, overrideAccess: true }),
     ).resolves.not.toHaveProperty('token');
 
     collection.hooks.beforeOperation = [
@@ -1331,6 +1339,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         frogbot.login({
           collection: 'members',
           data: { email: `session-${sequence}@example.com`, password: 'replacement-password' },
+          overrideAccess: true,
         }),
       ).resolves.toHaveProperty('token');
     },

@@ -5,6 +5,7 @@ export function createCapturesCollection(slug: string, access?: Access): Collect
 
   return {
     slug,
+    versions: false,
     labels: { singular: 'AI Capture', plural: 'AI Captures' },
     timestamps: false,
     access: { create: immutable, update: immutable, delete: immutable, read: access },

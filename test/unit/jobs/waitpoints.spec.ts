@@ -288,7 +288,7 @@ describe('workflow wait creation', () => {
 
     payload.config.serverURL = 'https://example.com';
 
-    await payload.jobs.runByID({ id: 1, req, silent: true });
+    await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     expect(rows[0].completedAt).toBeNull();
     expect(rows[0].processing).toBe(false);
@@ -575,11 +575,11 @@ describe('named wait replay', () => {
 
     payload.config.serverURL = 'https://example.com';
 
-    await payload.jobs.runByID({ id: 1, req, silent: true });
+    await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     Object.assign(storage.rows[0], { status: 'resumed', data: { approved: true } });
 
-    await payload.jobs.runByID({ id: 1, req, silent: true });
+    await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     expect(rows[0]).toMatchObject({
       id: 1,
@@ -590,7 +590,7 @@ describe('named wait replay', () => {
 
     vi.setSystemTime(new Date('2026-10-01T00:00:00.000Z'));
 
-    await payload.jobs.runByID({ id: 1, req, silent: true });
+    await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     expect(storage.rows.map(({ jobId, name }) => [jobId, name])).toEqual([
       ['1', 'approval'],
@@ -611,7 +611,7 @@ describe('named wait replay', () => {
 
     vi.setSystemTime(new Date(storage.rows[2].expiresAt!));
 
-    await payload.jobs.runByID({ id: 1, req, silent: true });
+    await payload.jobs.runByID({ id: 1, req, silent: true, overrideAccess: true });
 
     expect(storage.rows[2].status).toBe('expired');
     expect(received).toEqual([

@@ -29,9 +29,10 @@ describe(`concurrency control opt-out: ${adapterName}`, () => {
       task: 'record-effect',
       queue: marker,
       input: { marker },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.run({ queue: marker });
+    await fixture.frogbot.jobs.run({ queue: marker, overrideAccess: true });
 
     const jobs = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',

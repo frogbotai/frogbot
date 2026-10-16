@@ -207,6 +207,7 @@ describe('created by and last modified by', () => {
       collection: ticketsSlug,
       data,
       user: user.user,
+      overrideAccess: true,
     });
 
     return ticket.id;
@@ -303,6 +304,7 @@ describe('created by and last modified by', () => {
       const ticket = await booted.frogbot.create({
         collection: ticketsSlug,
         data: { title: 'From a script' },
+        overrideAccess: true,
       });
 
       expect(await savedBy(ticket.id)).toEqual({ createdBy: null, lastModifiedBy: null });
@@ -316,9 +318,10 @@ describe('created by and last modified by', () => {
       await booted.frogbot.jobs.queue({
         task: touchTicketTaskSlug,
         input: { ticket: String(id), title: 'Printer, checked' },
+        overrideAccess: true,
       } as never);
 
-      await booted.frogbot.jobs.run();
+      await booted.frogbot.jobs.run({ overrideAccess: true });
 
       const ticket = await readTicket(id);
 
@@ -397,9 +400,10 @@ describe('created by and last modified by', () => {
         data: { collectionSlug: ticketsSlug, importMode: 'create' },
         file: { data, mimetype: 'text/csv', name: 'tickets.csv', size: data.length },
         user: ana.user,
+        overrideAccess: true,
       } as never);
 
-      await booted.frogbot.jobs.run();
+      await booted.frogbot.jobs.run({ overrideAccess: true });
 
       const result = (await booted.frogbot.findByID({
         collection: importsSlug,
@@ -422,6 +426,7 @@ describe('created by and last modified by', () => {
       const ticket = await booted.frogbot.create({
         collection: ticketsSlug,
         data: { title: 'Seeded', createdBy: ana.id, lastModifiedBy: ben.id },
+        overrideAccess: true,
       });
 
       expect(await savedBy(ticket.id)).toEqual({ createdBy: ana.id, lastModifiedBy: ben.id });
@@ -431,12 +436,14 @@ describe('created by and last modified by', () => {
       const ticket = await booted.frogbot.create({
         collection: ticketsSlug,
         data: { title: 'Seeded', createdBy: ana.id },
+        overrideAccess: true,
       });
 
       await booted.frogbot.update({
         collection: ticketsSlug,
         id: ticket.id,
         data: { createdBy: ben.id },
+        overrideAccess: true,
       });
 
       expect((await savedBy(ticket.id)).createdBy).toBe(ana.id);
@@ -595,6 +602,7 @@ describe('created by and last modified by', () => {
         collection: ticketsSlug,
         id: ticket.id,
         data: { createdBy: ben.id },
+        overrideAccess: true,
       });
 
       expect((await savedBy(ticket.id)).createdBy).toBeNull();
@@ -609,6 +617,7 @@ describe('created by and last modified by', () => {
         data: { title: 'Printer, summarised' },
         user: ben.user,
         context: { frogbotAIFieldRun: true },
+        overrideAccess: true,
       } as never);
 
       expect(await savedBy(id)).toEqual({ createdBy: ana.id, lastModifiedBy: ana.id });
@@ -671,9 +680,10 @@ describe.skipIf(!isSQLite)('CSV import and export inside one SQLite transaction'
       data: { collectionSlug: ticketsSlug, importMode: 'create' },
       file: { data, mimetype: 'text/csv', name: 'tickets.csv', size: data.length },
       user: ana,
+      overrideAccess: true,
     } as never);
 
-    await frogbot.jobs.run();
+    await frogbot.jobs.run({ overrideAccess: true });
 
     const result = await frogbot.findByID({
       collection: importsSlug,
@@ -692,15 +702,20 @@ describe.skipIf(!isSQLite)('CSV import and export inside one SQLite transaction'
   });
 
   it('a CSV export queues its job with the create and saves its file', async () => {
-    await frogbot.create({ collection: ticketsSlug, data: { title: 'Exported' } });
+    await frogbot.create({
+      collection: ticketsSlug,
+      data: { title: 'Exported' },
+      overrideAccess: true,
+    });
 
     const exported = await frogbot.create({
       collection: exportsSlug,
       data: { collectionSlug: ticketsSlug, format: 'csv' },
       user: ana,
+      overrideAccess: true,
     } as never);
 
-    await frogbot.jobs.run();
+    await frogbot.jobs.run({ overrideAccess: true });
 
     const result = (await frogbot.findByID({
       collection: exportsSlug,

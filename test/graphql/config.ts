@@ -47,7 +47,11 @@ export default await buildTestConfig({
       postTotal: {
         type: new GraphQL.GraphQLNonNull(GraphQL.GraphQLInt),
         resolve: async (_source: unknown, _args: unknown, { req }: { req: FrogBotRequest }) => {
-          const { totalDocs } = await req.frogbot.count({ collection: postsSlug, req });
+          const { totalDocs } = await req.frogbot.count({
+            collection: postsSlug,
+            req,
+            overrideAccess: true,
+          });
 
           return totalDocs;
         },

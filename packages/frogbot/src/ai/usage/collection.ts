@@ -20,6 +20,7 @@ export function defaultUsageCollection({
 }: UsageCollectionProps): CollectionConfig {
   return {
     slug: USAGE_LOGS_SLUG,
+    versions: false,
     admin: {
       icon: 'ai-search',
       views: [

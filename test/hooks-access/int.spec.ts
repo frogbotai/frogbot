@@ -78,7 +78,12 @@ describe('hooks-access', () => {
       overrideAccess: true,
     });
 
-    const user = await booted.payload.findByID({ collection: usersSlug, id: created.id });
+    const user = await booted.payload.findByID({
+      collection: usersSlug,
+      id: created.id,
+      overrideAccess: true,
+    });
+
     const req = await createLocalReq({ user: { ...user, collection: usersSlug } }, booted.payload);
 
     expect(req).not.toHaveProperty('frogbot');
@@ -93,11 +98,13 @@ describe('hooks-access', () => {
       const original = await booted.frogbot.create({
         collection: hookOrderSlug,
         data: { title: 'original' },
+        overrideAccess: true,
       });
 
       const redirected = await booted.frogbot.create({
         collection: hookOrderSlug,
         data: { title: 'redirected' },
+        overrideAccess: true,
       });
 
       const endpoint = `/api/${hookOrderSlug}?where[title][equals]=original`;
@@ -772,6 +779,7 @@ describe('hooks-access', () => {
       const result = await booted.frogbot.login({
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
+        overrideAccess: true,
       });
 
       expect(result.token).toBeDefined();
@@ -785,6 +793,7 @@ describe('hooks-access', () => {
         booted.frogbot.login({
           collection: usersSlug,
           data: { email: testUserEmail, password: 'wrong-password' },
+          overrideAccess: true,
         }),
       ).rejects.toThrow();
     });
@@ -796,6 +805,7 @@ describe('hooks-access', () => {
       await booted.frogbot.login({
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
+        overrideAccess: true,
       });
 
       const user = await booted.frogbot.find({
@@ -820,6 +830,7 @@ describe('hooks-access', () => {
       await booted.frogbot.login({
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
+        overrideAccess: true,
       });
 
       const user = await booted.frogbot.find({
@@ -873,6 +884,7 @@ describe('hooks-access', () => {
           collection: usersSlug,
           data: { email: testUserEmail },
           disableEmail: true,
+          overrideAccess: true,
         });
 
         expect(token).toBeDefined();
@@ -886,6 +898,7 @@ describe('hooks-access', () => {
           collection: usersSlug,
           data: { email: testUserEmail },
           disableEmail: true,
+          overrideAccess: true,
         });
 
         const result = await booted.frogbot.resetPassword({
@@ -899,6 +912,7 @@ describe('hooks-access', () => {
         const loginResult = await booted.frogbot.login({
           collection: usersSlug,
           data: { email: testUserEmail, password: 'new-password-456' },
+          overrideAccess: true,
         });
 
         expect(loginResult.token).toBeDefined();
@@ -961,6 +975,7 @@ describe('hooks-access', () => {
             booted.frogbot.login({
               collection: usersSlug,
               data: { email: testUserEmail, password: 'wrong' },
+              overrideAccess: true,
             }),
           ).rejects.toThrow();
         }
@@ -969,6 +984,7 @@ describe('hooks-access', () => {
           booted.frogbot.login({
             collection: usersSlug,
             data: { email: testUserEmail, password: testUserPassword },
+            overrideAccess: true,
           }),
         ).rejects.toThrow();
 
@@ -983,6 +999,7 @@ describe('hooks-access', () => {
         const loginResult = await booted.frogbot.login({
           collection: usersSlug,
           data: { email: testUserEmail, password: testUserPassword },
+          overrideAccess: true,
         });
 
         expect(loginResult.token).toBeDefined();

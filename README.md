@@ -182,7 +182,6 @@ This monorepo publishes the following packages:
 | [`@frogbotai/storage-gcs`](./packages/storage-gcs)                 | Google Cloud Storage |
 | [`@frogbotai/storage-azure`](./packages/storage-azure)             | Azure Blob Storage   |
 | [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob          |
-| [`@frogbotai/storage-uploadthing`](./packages/storage-uploadthing) | UploadThing          |
 
 **Live preview**
 

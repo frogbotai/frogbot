@@ -73,7 +73,12 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
   async function createUser(name: string): Promise<PieceUser> {
     const credentials = { email: `${name}@native-piece.test`, password: 'native-piece-password' };
-    const doc = await frogbot.create({ collection: 'users' as never, data: credentials as never });
+    const doc = await frogbot.create({
+      collection: 'users' as never,
+      data: credentials as never,
+      overrideAccess: true,
+    });
+
     const login = await request({ path: '/users/login', body: credentials });
     const body = await login.json();
 

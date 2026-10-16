@@ -126,7 +126,12 @@ function useFrogBot(options: BootOptions) {
       return (app.frogbot.db as unknown as SQLiteAdapter).client;
     },
     async create(title: string, req?: Request) {
-      return app.frogbot.create({ collection: notesSlug, data: { title }, req });
+      return app.frogbot.create({
+        collection: notesSlug,
+        data: { title },
+        req,
+        overrideAccess: true,
+      });
     },
     async begin() {
       const transactionID = await getFrogBotPayload(app.frogbot).db.beginTransaction();
@@ -147,6 +152,7 @@ function useFrogBot(options: BootOptions) {
         collection: notesSlug,
         pagination: false,
         sort: 'title',
+        overrideAccess: true,
       });
 
       return docs.map((doc) => doc.title);
@@ -206,7 +212,7 @@ describe.skipIf(!isSQLite).each([
     await app.create('In transaction', req);
 
     const queued = Promise.all([
-      app.frogbot.jobs.queue({ task: 'frogbot-cleanup-kv', input: {} }),
+      app.frogbot.jobs.queue({ task: 'frogbot-cleanup-kv', input: {}, overrideAccess: true }),
       app.frogbot.kv.set('queued', 'value'),
       app.frogbot.kv.acquireLock('queued-lock', 60_000),
     ]);
@@ -221,7 +227,9 @@ describe.skipIf(!isSQLite).each([
 
     const payload = getFrogBotPayload(app.frogbot);
 
-    expect(await payload.findByID({ collection: 'payload-jobs', id: job.id })).toMatchObject({
+    expect(
+      await payload.findByID({ collection: 'payload-jobs', id: job.id, overrideAccess: true }),
+    ).toMatchObject({
       id: job.id,
     });
     expect(await app.frogbot.kv.get('queued')).toBe('value');
@@ -236,7 +244,9 @@ describe.skipIf(!isSQLite).each([
     await app.create('In transaction', req);
 
     expect(await app.titles()).toEqual(['Before']);
-    expect(await app.frogbot.count({ collection: notesSlug })).toEqual({ totalDocs: 1 });
+    expect(await app.frogbot.count({ collection: notesSlug, overrideAccess: true })).toEqual({
+      totalDocs: 1,
+    });
 
     await app.commit(transactionID);
 
@@ -323,7 +333,7 @@ describe.skipIf(!isSQLite).each([
       data: { title: 'After, on the adapter' },
     });
 
-    await app.frogbot.delete({ collection: notesSlug, id: removed.id });
+    await app.frogbot.delete({ collection: notesSlug, id: removed.id, overrideAccess: true });
 
     const { req, transactionID } = await app.begin();
 
@@ -355,10 +365,16 @@ describe.skipIf(!isSQLite).each([
       () => app.client().executeMultiple(insert('Blocked').sql.replace('?', "'Blocked'")),
       () => app.client().migrate([insert('Blocked')]),
       () => app.client().transaction('write'),
-      () => frogbot.update({ collection: notesSlug, id: kept.id, data: { title: 'Blocked' } }),
+      () =>
+        frogbot.update({
+          collection: notesSlug,
+          id: kept.id,
+          data: { title: 'Blocked' },
+          overrideAccess: true,
+        }),
       () =>
         frogbot.db.updateOne({ collection: notesSlug, id: kept.id, data: { title: 'Blocked' } }),
-      () => frogbot.delete({ collection: notesSlug, id: kept.id }),
+      () => frogbot.delete({ collection: notesSlug, id: kept.id, overrideAccess: true }),
       () => frogbot.db.deleteMany({ collection: notesSlug, where: { id: { equals: kept.id } } }),
     ];
 
@@ -366,7 +382,12 @@ describe.skipIf(!isSQLite).each([
 
     other.exec('COMMIT');
 
-    await frogbot.update({ collection: notesSlug, id: first.id, data: { title: 'Updated' } });
+    await frogbot.update({
+      collection: notesSlug,
+      id: first.id,
+      data: { title: 'Updated' },
+      overrideAccess: true,
+    });
 
     await frogbot.db.updateOne({
       collection: notesSlug,
@@ -374,7 +395,7 @@ describe.skipIf(!isSQLite).each([
       data: { title: 'Updated on the adapter' },
     });
 
-    await frogbot.delete({ collection: notesSlug, id: third.id });
+    await frogbot.delete({ collection: notesSlug, id: third.id, overrideAccess: true });
     await frogbot.db.deleteMany({ collection: notesSlug, where: { id: { equals: fourth.id } } });
 
     const expected = ['Kept', 'Other', 'Updated', 'Updated on the adapter'];
@@ -450,7 +471,9 @@ describe.skipIf(!isSQLite).each([
     other.exec('COMMIT');
 
     expect(await app.titles()).toEqual(['Before', 'Other']);
-    expect(await app.frogbot.count({ collection: notesSlug })).toEqual({ totalDocs: 2 });
+    expect(await app.frogbot.count({ collection: notesSlug, overrideAccess: true })).toEqual({
+      totalDocs: 2,
+    });
   });
 });
 
@@ -467,11 +490,12 @@ describe.skipIf(!isSQLite)('SQLite without transactions', () => {
     await Promise.all(
       created.map((note, index) =>
         index % 2
-          ? app.frogbot.delete({ collection: notesSlug, id: note.id })
+          ? app.frogbot.delete({ collection: notesSlug, id: note.id, overrideAccess: true })
           : app.frogbot.update({
               collection: notesSlug,
               id: note.id,
               data: { title: `${note.title} kept` },
+              overrideAccess: true,
             }),
       ),
     );
@@ -791,12 +815,13 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
           collection: notesSlug,
           id: note.id,
           data: { title: `${note.title} updated` },
+          overrideAccess: true,
         }),
       ),
       ...Array.from({ length: 10 }, (_, index) => app.create(`Created ${index}`)),
       ...Array.from({ length: 10 }, (_, index) => app.frogbot.kv.set(`key-${index}`, index)),
       ...Array.from({ length: 5 }, () =>
-        app.frogbot.jobs.queue({ task: 'frogbot-cleanup-kv', input: {} }),
+        app.frogbot.jobs.queue({ task: 'frogbot-cleanup-kv', input: {}, overrideAccess: true }),
       ),
       ...Array.from({ length: 10 }, (_, index) => app.client().execute(insert(`Raw ${index}`))),
     ]);
@@ -810,7 +835,9 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
     expect(await app.frogbot.kv.keys()).toEqual(
       expect.arrayContaining(Array.from({ length: 10 }, (_, index) => `key-${index}`)),
     );
-    expect((await payload.count({ collection: 'payload-jobs' })).totalDocs).toBe(5);
+    expect(
+      (await payload.count({ collection: 'payload-jobs', overrideAccess: true })).totalDocs,
+    ).toBe(5);
   });
 
   it('a write queued behind a slow transaction fails after the timeout, naming both causes', async () => {
@@ -836,7 +863,7 @@ describe.skipIf(!isSQLite)('SQLite write lock release and classification', () =>
 
     payload.db.updateJobs = () => Promise.reject(new Error('[test] claim failed'));
 
-    await app.frogbot.jobs.run({ limit: 1 }).catch(() => undefined);
+    await app.frogbot.jobs.run({ limit: 1, overrideAccess: true }).catch(() => undefined);
 
     payload.db.updateJobs = updateJobs;
 
@@ -889,7 +916,7 @@ describe.skipIf(!isSQLite)('SQLite sign-in beside another transaction', () => {
   it('a login succeeds while another request holds a transaction', async () => {
     const credentials = { email: 'race@example.com', password: 'test-password' };
 
-    await app.frogbot.create({ collection: membersSlug, data: credentials });
+    await app.frogbot.create({ collection: membersSlug, data: credentials, overrideAccess: true });
 
     const entered = gateSlowHook();
     const { kv } = app.frogbot;
@@ -906,7 +933,7 @@ describe.skipIf(!isSQLite)('SQLite sign-in beside another transaction', () => {
     };
 
     await expect(
-      app.frogbot.login({ collection: membersSlug, data: credentials }),
+      app.frogbot.login({ collection: membersSlug, data: credentials, overrideAccess: true }),
     ).resolves.toHaveProperty('token');
   });
 });
@@ -1057,7 +1084,11 @@ describe.skipIf(!isSQLite)('SQLite failed commits beside other commits (tester r
   it('a migration commits under the lock while other writes run beside it', async () => {
     const payload = getFrogBotPayload(app.frogbot);
 
-    await payload.delete({ collection: 'payload-migrations', where: { batch: { equals: -1 } } });
+    await payload.delete({
+      collection: 'payload-migrations',
+      where: { batch: { equals: -1 } },
+      overrideAccess: true,
+    });
 
     const migrating = payload.db.migrate({
       migrations: [
@@ -1157,9 +1188,15 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
       'memory',
     );
 
-    await frogbot!.create({ collection: notesSlug, data: { title: 'Memory' } });
+    await frogbot!.create({
+      collection: notesSlug,
+      data: { title: 'Memory' },
+      overrideAccess: true,
+    });
 
-    expect((await frogbot!.count({ collection: notesSlug })).totalDocs).toBe(1);
+    expect((await frogbot!.count({ collection: notesSlug, overrideAccess: true })).totalDocs).toBe(
+      1,
+    );
   });
 
   it('file::memory: keeps its own journal mode', async () => {
@@ -1175,9 +1212,15 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
 
     expect(await journalMode({ wal: false })).toBe('delete');
 
-    await frogbot!.create({ collection: notesSlug, data: { title: 'Rollback journal' } });
+    await frogbot!.create({
+      collection: notesSlug,
+      data: { title: 'Rollback journal' },
+      overrideAccess: true,
+    });
 
-    expect((await frogbot!.count({ collection: notesSlug })).totalDocs).toBe(1);
+    expect((await frogbot!.count({ collection: notesSlug, overrideAccess: true })).totalDocs).toBe(
+      1,
+    );
   });
 
   it('wal: false still boots in WAL while another connection reads the file', async () => {
@@ -1190,9 +1233,16 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     expect(await journalMode({ wal: false, busyTimeout: 50 })).toBe('wal');
 
     open.exec('rollback');
-    await frogbot!.create({ collection: notesSlug, data: { title: 'Still WAL' } });
 
-    expect((await frogbot!.count({ collection: notesSlug })).totalDocs).toBe(1);
+    await frogbot!.create({
+      collection: notesSlug,
+      data: { title: 'Still WAL' },
+      overrideAccess: true,
+    });
+
+    expect((await frogbot!.count({ collection: notesSlug, overrideAccess: true })).totalDocs).toBe(
+      1,
+    );
 
     open.close();
   });
@@ -1208,7 +1258,11 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
 
     const before = await settings();
 
-    await frogbot.create({ collection: notesSlug, data: { title: 'Transaction' } });
+    await frogbot.create({
+      collection: notesSlug,
+      data: { title: 'Transaction' },
+      overrideAccess: true,
+    });
 
     expect([before, await settings()]).toEqual([
       [1, 1234],
@@ -1231,11 +1285,16 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
     await rm(databasePath, { force: true });
 
     frogbot = await boot({ defaultWal: true });
-    await frogbot.create({ collection: notesSlug, data: { title: 'Fresh' } });
+    await frogbot.create({ collection: notesSlug, data: { title: 'Fresh' }, overrideAccess: true });
 
     crashed.close();
 
-    await frogbot.create({ collection: notesSlug, data: { title: 'After close' } });
+    await frogbot.create({
+      collection: notesSlug,
+      data: { title: 'After close' },
+      overrideAccess: true,
+    });
+
     await frogbot.destroy();
     frogbot = await boot({ defaultWal: true });
 
@@ -1244,6 +1303,7 @@ describe.skipIf(!isSQLite)('SQLite WAL default (tester round 2)', () => {
       collection: notesSlug,
       sort: 'title',
       pagination: false,
+      overrideAccess: true,
     });
 
     const integrity = await client.execute('pragma integrity_check');
@@ -1334,6 +1394,7 @@ describe.skipIf(!isSQLite)(
             kind: ['a', 'b'],
             _status: 'published',
           },
+          overrideAccess: true,
         });
 
         await app.frogbot.update({
@@ -1341,33 +1402,55 @@ describe.skipIf(!isSQLite)(
           id: post.id,
           data: { title: 'Draft', tags: [{ name: 'z' }] },
           draft: true,
+          overrideAccess: true,
         });
 
         await app.frogbot.update({
           collection: postsSlug,
           where: { title: { like: 'Post' } },
           data: { kind: ['b'] },
+          overrideAccess: true,
         });
 
         await app.frogbot.find({
           collection: postsSlug,
           depth: 2,
           where: { 'tags.name': { equals: 'x' } },
+          overrideAccess: true,
         });
 
-        await app.frogbot.findVersions({ collection: postsSlug });
-        await app.frogbot.count({ collection: postsSlug });
-        await app.frogbot.findByID({ collection: postsSlug, id: post.id, draft: true });
+        await app.frogbot.findVersions({ collection: postsSlug, overrideAccess: true });
+        await app.frogbot.count({ collection: postsSlug, overrideAccess: true });
+
+        await app.frogbot.findByID({
+          collection: postsSlug,
+          id: post.id,
+          draft: true,
+          overrideAccess: true,
+        });
+
         await app.frogbot.kv.set('key', { value: 1 }, { ttl: 60_000 });
         await app.frogbot.kv.setIfAbsent('absent', 1);
         await app.frogbot.kv.get('key');
         await app.frogbot.kv.keys();
         await app.frogbot.kv.lock('lock', 60_000, () => Promise.resolve(undefined));
         await app.frogbot.kv.delete('key');
-        await app.frogbot.jobs.queue({ task: 'frogbot-cleanup-kv', input: {} });
-        await app.frogbot.jobs.run({ limit: 1 });
-        await app.frogbot.delete({ collection: postsSlug, where: { id: { exists: true } } });
-        await app.frogbot.delete({ collection: notesSlug, id: notes[0].id });
+
+        await app.frogbot.jobs.queue({
+          task: 'frogbot-cleanup-kv',
+          input: {},
+          overrideAccess: true,
+        });
+
+        await app.frogbot.jobs.run({ limit: 1, overrideAccess: true });
+
+        await app.frogbot.delete({
+          collection: postsSlug,
+          where: { id: { exists: true } },
+          overrideAccess: true,
+        });
+
+        await app.frogbot.delete({ collection: notesSlug, id: notes[0].id, overrideAccess: true });
       });
 
       const outcomes = await classify(statements);
@@ -1474,13 +1557,17 @@ describe.skipIf(!isSQLite)(
     });
 
     it('a login inside a hook of a create with a transaction fails with the lock error, then logins work', async () => {
-      await app.frogbot.create({ collection: membersSlug, data: credentials });
+      await app.frogbot.create({
+        collection: membersSlug,
+        data: credentials,
+        overrideAccess: true,
+      });
 
       expect(causes(await app.create('Login in hook').catch((error: unknown) => error))).toMatch(
         lockTimeoutMessage,
       );
       await expect(
-        app.frogbot.login({ collection: membersSlug, data: credentials }),
+        app.frogbot.login({ collection: membersSlug, data: credentials, overrideAccess: true }),
       ).resolves.toHaveProperty('token');
     });
 
@@ -1496,13 +1583,21 @@ describe.skipIf(!isSQLite)(
     }
 
     it('two logins and a logout racing each other all complete', async () => {
-      await app.frogbot.create({ collection: membersSlug, data: credentials });
+      await app.frogbot.create({
+        collection: membersSlug,
+        data: credentials,
+        overrideAccess: true,
+      });
 
-      const { token } = await app.frogbot.login({ collection: membersSlug, data: credentials });
+      const { token } = await app.frogbot.login({
+        collection: membersSlug,
+        data: credentials,
+        overrideAccess: true,
+      });
 
       const [first, second, loggedOut] = await Promise.all([
-        app.frogbot.login({ collection: membersSlug, data: credentials }),
-        app.frogbot.login({ collection: membersSlug, data: credentials }),
+        app.frogbot.login({ collection: membersSlug, data: credentials, overrideAccess: true }),
+        app.frogbot.login({ collection: membersSlug, data: credentials, overrideAccess: true }),
         logout(token!),
       ]);
 
@@ -1514,17 +1609,26 @@ describe.skipIf(!isSQLite)(
     });
 
     it('two logins and a logout racing a short transaction all complete', async () => {
-      await app.frogbot.create({ collection: membersSlug, data: credentials });
+      await app.frogbot.create({
+        collection: membersSlug,
+        data: credentials,
+        overrideAccess: true,
+      });
 
-      const { token } = await app.frogbot.login({ collection: membersSlug, data: credentials });
+      const { token } = await app.frogbot.login({
+        collection: membersSlug,
+        data: credentials,
+        overrideAccess: true,
+      });
+
       const entered = gateSlowHook();
 
       slow = app.create('Slow beside logins');
       await entered;
 
       const racing = Promise.all([
-        app.frogbot.login({ collection: membersSlug, data: credentials }),
-        app.frogbot.login({ collection: membersSlug, data: credentials }),
+        app.frogbot.login({ collection: membersSlug, data: credentials, overrideAccess: true }),
+        app.frogbot.login({ collection: membersSlug, data: credentials, overrideAccess: true }),
         logout(token!),
       ]);
 

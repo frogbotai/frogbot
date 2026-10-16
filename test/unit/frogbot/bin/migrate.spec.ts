@@ -129,6 +129,7 @@ describe('migrate', () => {
       expect(mocks.find).toHaveBeenCalledWith({
         collection: 'payload-migrations',
         limit: 1,
+        overrideAccess: true,
         where: { batch: { equals: -1 } },
       });
       expect(mocks.adapter.migrate).not.toHaveBeenCalled();

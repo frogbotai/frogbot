@@ -50,12 +50,14 @@ describe('collections-rest', () => {
           description: 'Not selected',
           details: { owner: 'FrogBot', budget: 100 },
         },
+        overrideAccess: true,
       });
 
       const found = await booted.frogbot.findByID({
         collection: projectsSlug,
         id: created.id,
         select: { title: true, details: { owner: true } },
+        overrideAccess: true,
       });
 
       expect(found).toMatchObject({
@@ -72,6 +74,7 @@ describe('collections-rest', () => {
         collection: projectsSlug,
         data: { title: 'Persistent Project', description: 'Keep me' },
         select: { description: false },
+        overrideAccess: true,
       });
 
       expect(created.description).toBeUndefined();
@@ -79,6 +82,7 @@ describe('collections-rest', () => {
       const persisted = await booted.frogbot.findByID({
         collection: projectsSlug,
         id: created.id,
+        overrideAccess: true,
       });
 
       expect(persisted.description).toBe('Keep me');
@@ -188,11 +192,13 @@ describe('collections-rest', () => {
       const parent = await booted.frogbot.create({
         collection: projectsSlug,
         data: { title: 'Parent' },
+        overrideAccess: true,
       });
 
       await booted.frogbot.create({
         collection: projectsSlug,
         data: { title: 'Child', parent: parent.id },
+        overrideAccess: true,
       });
 
       return parent;
@@ -204,12 +210,14 @@ describe('collections-rest', () => {
       const joined = await booted.frogbot.find({
         collection: projectsSlug,
         where: { id: { equals: parent.id } },
+        overrideAccess: true,
       });
 
       const withoutJoins = await booted.frogbot.find({
         collection: projectsSlug,
         joins: false,
         where: { id: { equals: parent.id } },
+        overrideAccess: true,
       });
 
       expect(joined.docs[0]?.subprojects?.docs).toHaveLength(1);
@@ -223,6 +231,7 @@ describe('collections-rest', () => {
         collection: projectsSlug,
         id: parent.id,
         joins: false,
+        overrideAccess: true,
       });
 
       expect(withoutJoins.subprojects).toBeUndefined();

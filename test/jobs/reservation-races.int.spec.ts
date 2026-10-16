@@ -134,16 +134,17 @@ describe(`reservation races: ${adapterName}`, () => {
       workflow: 'reservation-race',
       input: {},
       jobId,
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const waiting = (await readWaitpoints())[0];
     const blocked = crashCompletion(fixture.payload, source.id, entered, release);
 
     vi.setSystemTime(now + 60_001);
 
-    const run = fixture.frogbot.jobs.run({ silent: true });
+    const run = fixture.frogbot.jobs.run({ silent: true, overrideAccess: true });
     const settled = Promise.allSettled([run]);
 
     inFlight.push(settled);
@@ -225,9 +226,10 @@ describe(`reservation races: ${adapterName}`, () => {
       workflow: 'reservation-race',
       input: {},
       jobId,
+      overrideAccess: true,
     });
 
-    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     inFlight.push(run);
 
@@ -274,8 +276,13 @@ describe(`reservation races: ${adapterName}`, () => {
       });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
-    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'reservation-race',
+      input: {},
+      overrideAccess: true,
+    });
+
+    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     inFlight.push(run);
 
@@ -322,9 +329,13 @@ describe(`reservation races: ${adapterName}`, () => {
       await waitFor('cooldown', { until: new Date(until) });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'reservation-race',
+      input: {},
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     vi.setSystemTime(now + 60_001);
 
@@ -365,9 +376,13 @@ describe(`reservation races: ${adapterName}`, () => {
       await waitFor('cooldown', { until: new Date(until) });
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'reservation-race',
+      input: {},
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const waiting = (await readWaitpoints())[0];
     const req = await createLocalReq({}, fixture.workerPayload);
@@ -381,7 +396,7 @@ describe(`reservation races: ${adapterName}`, () => {
 
     await entered.promise;
 
-    await fixture.frogbot.jobs.run({ silent: true });
+    await fixture.frogbot.jobs.run({ silent: true, overrideAccess: true });
 
     const before = await readJob(source.id);
 
@@ -415,13 +430,14 @@ describe(`reservation races: ${adapterName}`, () => {
     const source = await fixture.frogbot.jobs.queue({
       workflow: 'retrying-reservation-race',
       input: {},
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     vi.setSystemTime(now + 60_001);
 
-    await fixture.frogbot.jobs.run({ silent: true });
+    await fixture.frogbot.jobs.run({ silent: true, overrideAccess: true });
 
     const before = await readJob(source.id);
     const req = await createLocalReq({}, fixture.workerPayload);
@@ -452,9 +468,13 @@ describe(`reservation races: ${adapterName}`, () => {
         await waitFor('approval', { onWait: () => {} });
       };
 
-      const source = await fixture.frogbot.jobs.queue({ workflow: 'reservation-race', input: {} });
+      const source = await fixture.frogbot.jobs.queue({
+        workflow: 'reservation-race',
+        input: {},
+        overrideAccess: true,
+      });
 
-      await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+      await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
       const waiting = (await readWaitpoints())[0];
 
@@ -472,13 +492,18 @@ describe(`reservation races: ${adapterName}`, () => {
 
       await entered.promise;
 
-      await fixture.frogbot.delete({ collection: 'payload-jobs', id: source.id });
+      await fixture.frogbot.delete({
+        collection: 'payload-jobs',
+        id: source.id,
+        overrideAccess: true,
+      });
 
       const until = new Date(Date.now() + 120_000).toISOString();
       const replacement = await fixture.frogbot.jobs.queue({
         task: 'record-effect',
         input: { marker: 'unrelated' },
         waitUntil: new Date(until),
+        overrideAccess: true,
       });
 
       const before = await readJob(replacement.id);
@@ -497,9 +522,14 @@ describe(`reservation races: ${adapterName}`, () => {
 
   it('a nullable hasError edit cannot create two live holders of one jobId', async () => {
     const jobId = randomUUID();
-    const first = await fixture.frogbot.jobs.queue({ task: 'record-effect', input: {}, jobId });
+    const first = await fixture.frogbot.jobs.queue({
+      task: 'record-effect',
+      input: {},
+      jobId,
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.cancelByID({ id: first.id });
+    await fixture.frogbot.jobs.cancelByID({ id: first.id, overrideAccess: true });
 
     const second = await fixture.worker.jobs.queue({ task: 'record-effect', input: {}, jobId });
 
@@ -508,6 +538,7 @@ describe(`reservation races: ${adapterName}`, () => {
         collection: 'payload-jobs',
         id: first.id,
         data: { hasError: null, error: null },
+        overrideAccess: true,
       }),
     ]);
 

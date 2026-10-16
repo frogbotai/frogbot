@@ -624,6 +624,7 @@ describe('aiField queueing', () => {
         locale: 'fr',
         user: { collection: 'users', id: 3 },
       },
+      overrideAccess: true,
       req,
     });
   });
@@ -637,6 +638,7 @@ describe('aiField queueing', () => {
     expect(queue).toHaveBeenCalledWith({
       task: 'frogbot-run-ai-field',
       input: { collection: 'tasks', id: 7, field: 'summary' },
+      overrideAccess: true,
       req,
     });
   });

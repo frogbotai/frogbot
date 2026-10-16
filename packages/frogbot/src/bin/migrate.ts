@@ -113,6 +113,7 @@ export async function migrate(args: string[]): Promise<void> {
             .find({
               collection: 'payload-migrations',
               limit: 1,
+              overrideAccess: true,
               where: { batch: { equals: -1 } },
             })
             .then(({ docs }) => docs.length > 0)

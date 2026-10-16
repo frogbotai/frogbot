@@ -56,6 +56,7 @@ describe('field runtime boundaries', () => {
     return booted.frogbot.create({
       collection: fieldArgumentsSlug,
       data: { blocks: [{ ...blockData }], payloadAuthored: 'Payload authored' },
+      overrideAccess: true,
     });
   }
 
@@ -64,6 +65,7 @@ describe('field runtime boundaries', () => {
       collection: postsSlug,
       data: { title: 'Original' },
       draft: true,
+      overrideAccess: true,
     });
 
     return booted.frogbot.update({
@@ -71,6 +73,7 @@ describe('field runtime boundaries', () => {
       id: post.id,
       data: { generateSlug: true, title: 'First revision' },
       draft: true,
+      overrideAccess: true,
     });
   }
 
@@ -82,12 +85,14 @@ describe('field runtime boundaries', () => {
       id: post.id,
       data: { title: 'Second revision', slug: post.slug },
       draft: true,
+      overrideAccess: true,
     });
 
     const persisted = await booted.frogbot.findByID({
       collection: postsSlug,
       id: post.id,
       draft: true,
+      overrideAccess: true,
     });
 
     expect(persisted).toMatchObject({ title: 'Second revision', slug: 'second-revision' });
@@ -101,6 +106,7 @@ describe('field runtime boundaries', () => {
       id: post.id,
       data: { title: 'Second revision', slug: 'manual' },
       draft: true,
+      overrideAccess: true,
     });
 
     expect(updated).toMatchObject({ slug: 'manual', generateSlug: false });
@@ -116,12 +122,14 @@ describe('field runtime boundaries', () => {
         id: post.id,
         data,
         draft: true,
+        overrideAccess: true,
       });
 
       const persisted = await booted.frogbot.findByID({
         collection: postsSlug,
         id: post.id,
         draft: true,
+        overrideAccess: true,
       });
 
       expect(persisted).toMatchObject({
@@ -140,6 +148,7 @@ describe('field runtime boundaries', () => {
       id: post.id,
       data: { title: '', slug: post.slug },
       draft: true,
+      overrideAccess: true,
     });
 
     expect(updated).toMatchObject({ title: '', slug: null });
@@ -153,6 +162,7 @@ describe('field runtime boundaries', () => {
       id: post.id,
       data: { slug: 'manual' },
       draft: true,
+      overrideAccess: true,
     });
 
     expect(updated).toMatchObject({ title: 'First revision', slug: 'manual', generateSlug: false });
@@ -166,6 +176,7 @@ describe('field runtime boundaries', () => {
       id: post.id,
       data: { title: 'Second revision', generateSlug: false },
       draft: true,
+      overrideAccess: true,
     });
 
     expect(updated).toMatchObject({ slug: 'first-revision', generateSlug: false });
@@ -176,6 +187,7 @@ describe('field runtime boundaries', () => {
       collection: postsSlug,
       data: { title: 'Original' },
       draft: true,
+      overrideAccess: true,
     });
 
     const req = await booted.frogbot.createRequest({
@@ -196,6 +208,7 @@ describe('field runtime boundaries', () => {
       data: { generateSlug: true, title: 'Revision' },
       draft: true,
       req,
+      overrideAccess: true,
     });
 
     expect(countRequests).toHaveLength(1);
@@ -209,11 +222,13 @@ describe('field runtime boundaries', () => {
     await booted.frogbot.create({
       collection: postsSlug,
       data: { title: 'Hooks' },
+      overrideAccess: true,
     });
 
     await booted.frogbot.create({
       collection: nestedFieldsSlug,
       data: { group: { value: 'Nested' } },
+      overrideAccess: true,
     });
 
     expect(hookObservations).toEqual(
@@ -231,9 +246,14 @@ describe('field runtime boundaries', () => {
     const post = await booted.frogbot.create({
       collection: nestedFieldsSlug,
       data: { group: { value: 'Nested' } },
+      overrideAccess: true,
     });
 
-    await booted.frogbot.duplicate({ collection: nestedFieldsSlug, id: post.id });
+    await booted.frogbot.duplicate({
+      collection: nestedFieldsSlug,
+      id: post.id,
+      overrideAccess: true,
+    });
 
     expect(hookObservations).toContainEqual({
       field: 'value',
@@ -245,7 +265,11 @@ describe('field runtime boundaries', () => {
   it('field hooks receive path, schemaPath, indexPath and blockData in every phase', async () => {
     const doc = await createArgumentDoc();
 
-    await booted.frogbot.duplicate({ collection: fieldArgumentsSlug, id: doc.id });
+    await booted.frogbot.duplicate({
+      collection: fieldArgumentsSlug,
+      id: doc.id,
+      overrideAccess: true,
+    });
 
     const observations = hookObservations.filter(({ field }) => field === 'observed');
 

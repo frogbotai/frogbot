@@ -96,6 +96,7 @@ export function defaultMessagesCollection({
 }: DefaultMessagesCollectionProps): CollectionConfig {
   return {
     slug,
+    versions: false,
     trash: true,
     disableDuplicate: true,
     admin: {

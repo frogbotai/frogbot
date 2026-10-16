@@ -33,7 +33,12 @@ async function readJob(id: number | string) {
 }
 
 function queueJob(marker: string) {
-  return fixture.frogbot.jobs.queue({ task: 'record-effect', queue: marker, input: { marker } });
+  return fixture.frogbot.jobs.queue({
+    task: 'record-effect',
+    queue: marker,
+    input: { marker },
+    overrideAccess: true,
+  });
 }
 
 describe(`native jobs runtime regressions: ${adapterName}`, () => {
@@ -80,7 +85,7 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
         });
       });
 
-      await fixture.frogbot.jobs.runByID({ id: worker.id });
+      await fixture.frogbot.jobs.runByID({ id: worker.id, overrideAccess: true });
 
       expect(outsideResult).toMatchObject({ id: outside.id, processing: true, priority: 42 });
       expect.soft(insideResult).toMatchObject({ id: inside.id, processing: true, priority: 42 });
@@ -134,7 +139,7 @@ describe(`native jobs runtime regressions: ${adapterName}`, () => {
         );
     });
 
-    await fixture.frogbot.jobs.runByID({ id: worker.id });
+    await fixture.frogbot.jobs.runByID({ id: worker.id, overrideAccess: true });
 
     expect.soft(rejected).toMatchObject({ status: 403 });
     expect(await readJob(inside.id)).toEqual(before);

@@ -157,6 +157,7 @@ describe('triggers', () => {
     await booted.payload.jobs.run({
       allQueues: true,
       where: { id: { in: jobs.map((job) => job.id) } },
+      overrideAccess: true,
     });
 
     const deliveries = await deliveriesForEvent();
@@ -261,7 +262,7 @@ describe('triggers', () => {
     expect((await deliver({ body })).status).toBe(200);
     expect(await findJobs('app-event')).toHaveLength(2);
 
-    await booted.payload.jobs.run({ allQueues: true });
+    await booted.payload.jobs.run({ allQueues: true, overrideAccess: true });
 
     expect(
       (await findDeliveries()).docs.filter((doc) => deliveryMessage(doc) === 'echo: hello 🌍'),
@@ -325,6 +326,7 @@ describe('triggers', () => {
     await booted.payload.jobs.run({
       allQueues: true,
       where: { id: { in: completed.map(({ id }) => id) } },
+      overrideAccess: true,
     });
 
     expect(
@@ -470,6 +472,7 @@ describe('triggers', () => {
     await booted.payload.jobs.run({
       allQueues: true,
       where: { id: { in: jobs.map(({ id }) => id) } },
+      overrideAccess: true,
     });
 
     const deliveries = (await findDeliveries()).docs.filter(
@@ -504,7 +507,11 @@ describe('triggers', () => {
     expect(jobs).toHaveLength(1);
     expect(failedHandlerCalls).toEqual([]);
 
-    await booted.payload.jobs.run({ allQueues: true, where: { id: { equals: jobs[0].id } } });
+    await booted.payload.jobs.run({
+      allQueues: true,
+      where: { id: { equals: jobs[0].id } },
+      overrideAccess: true,
+    });
 
     const failed = await findJobs(eventID);
 

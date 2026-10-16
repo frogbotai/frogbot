@@ -51,7 +51,11 @@ describe('roles skill access policy', () => {
       overrideAccess: false,
     });
 
-    const persisted = await booted.frogbot.findByID({ collection: usersSlug, id: created.id });
+    const persisted = await booted.frogbot.findByID({
+      collection: usersSlug,
+      id: created.id,
+      overrideAccess: true,
+    });
 
     expect(persisted.roles).toEqual(['member']);
   });
@@ -64,7 +68,11 @@ describe('roles skill access policy', () => {
       overrideAccess: false,
     });
 
-    const persisted = await booted.frogbot.findByID({ collection: usersSlug, id: created.id });
+    const persisted = await booted.frogbot.findByID({
+      collection: usersSlug,
+      id: created.id,
+      overrideAccess: true,
+    });
 
     expect(persisted.roles).toEqual(['owner']);
   });
@@ -81,6 +89,7 @@ describe('roles skill access policy', () => {
     const persisted = await booted.frogbot.findByID({
       collection: usersSlug,
       id: memberReq.user!.id,
+      overrideAccess: true,
     });
 
     expect(persisted.roles).toEqual(['member']);
@@ -98,6 +107,7 @@ describe('roles skill access policy', () => {
     const persisted = await booted.frogbot.findByID({
       collection: usersSlug,
       id: memberReq.user!.id,
+      overrideAccess: true,
     });
 
     expect(persisted.roles).toEqual(['admin']);

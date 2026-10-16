@@ -46,6 +46,7 @@ const Users: CollectionConfig = {
           const { docs } = await frogbot.find({
             collection: usersSlug,
             where: { code: { equals: code } },
+            overrideAccess: true,
           });
 
           return {

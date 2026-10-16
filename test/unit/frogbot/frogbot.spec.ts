@@ -77,6 +77,7 @@ function createMockPayload() {
     count: vi.fn(),
     duplicate: vi.fn(),
     findDistinct: vi.fn(),
+    jobs: { queue: vi.fn() },
 
     findVersions: vi.fn(),
     findVersionByID: vi.fn(),
@@ -479,13 +480,45 @@ describe('FrogBot class', () => {
 
     it('find delegates to payload.find', async () => {
       const frogbot = await setup();
-      await frogbot.find({ collection: 'posts' as any });
+      await frogbot.find({ collection: 'posts' as any, overrideAccess: true });
       const payloadMod = await import('payload');
       const payload = (
         payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
       ).__getMockPayload();
 
       expect(payload.find).toHaveBeenCalled();
+    });
+  });
+
+  describe('queue', () => {
+    it.each([true, false, undefined])(
+      'forwards overrideAccess: %s to payload.jobs.queue as given',
+      async (overrideAccess) => {
+        const frogbot = await setup();
+        await frogbot.queue({ task: 'sync', queue: 'syncs', input: { id: 1 }, overrideAccess });
+        const payloadMod = await import('payload');
+        const payload = (
+          payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
+        ).__getMockPayload();
+
+        expect(payload.jobs.queue).toHaveBeenCalledExactlyOnceWith({
+          task: 'sync',
+          queue: 'syncs',
+          input: { id: 1 },
+          overrideAccess,
+        });
+      },
+    );
+
+    it('omits overrideAccess when the caller does', async () => {
+      const frogbot = await setup();
+      await frogbot.queue({ task: 'sync', queue: 'syncs', input: { id: 1 } });
+      const payloadMod = await import('payload');
+      const payload = (
+        payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
+      ).__getMockPayload();
+
+      expect(payload.jobs.queue.mock.calls[0]?.[0]).not.toHaveProperty('overrideAccess');
     });
   });
 

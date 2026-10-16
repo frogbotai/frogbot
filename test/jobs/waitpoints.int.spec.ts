@@ -223,9 +223,10 @@ async function pausedWorkflow(jobId: string, onResume: (result: unknown) => void
     workflow: 'wait',
     input: { key: jobId },
     jobId,
+    overrideAccess: true,
   });
 
-  await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+  await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
   const waiting = (await findWaitpoint({ req, token }))!;
 
@@ -276,6 +277,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'ignored' },
       jobId: 'forced-resumable',
+      overrideAccess: true,
     });
 
     expect(after).toMatchObject({
@@ -318,9 +320,10 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'expiring' },
       jobId: 'expiring',
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     vi.setSystemTime(now + 60_001);
 
@@ -332,6 +335,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'ignored' },
       jobId: 'expiring',
+      overrideAccess: true,
     });
 
     expect(runs).toEqual([{ id: source.id, jobId: 'expiring', result: { expired: true } }]);
@@ -375,6 +379,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'crashed-pause' },
       jobId: 'crashed-pause',
+      overrideAccess: true,
     });
 
     const blocked = interceptCompletion(fixture.payload, source.id, async () => {
@@ -385,7 +390,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       throw new Error('FrogBot crashed worker loses its database connection');
     });
 
-    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
     const settled = Promise.allSettled([run]);
 
     inFlight.push(settled);
@@ -454,9 +459,14 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'mixed-batch' },
       jobId: 'mixed-batch',
+      overrideAccess: true,
     });
 
-    const completed = await fixture.frogbot.jobs.queue({ workflow: 'complete', input: {} });
+    const completed = await fixture.frogbot.jobs.queue({
+      workflow: 'complete',
+      input: {},
+      overrideAccess: true,
+    });
 
     await fixture.worker.jobs.run({ queue: 'approvals', limit: 2, silent: true });
 
@@ -501,6 +511,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'writing' },
       jobId: 'writing',
+      overrideAccess: true,
     });
 
     const blocked = interceptCompletion(fixture.payload, source.id, async () => {
@@ -509,7 +520,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       await release.promise;
     });
 
-    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    const run = fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     inFlight.push(run);
 
@@ -548,7 +559,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
   it('cancelling a paused workflow frees its jobId and its resume link returns 409', async () => {
     const { source, waiting, token } = await pausedWorkflow('cancelled-paused');
 
-    await fixture.frogbot.jobs.cancelByID({ id: source.id });
+    await fixture.frogbot.jobs.cancelByID({ id: source.id, overrideAccess: true });
 
     const replacement = await fixture.worker.jobs.queue({
       task: 'fail-for-good',
@@ -580,6 +591,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       task: 'fail-for-good',
       input: {},
       jobId: 'resumed-complete',
+      overrideAccess: true,
     });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'yes' });
@@ -620,12 +632,13 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     const source = await fixture.frogbot.jobs.queue({
       workflow: 'wait',
       input: { key: 'early-same-millisecond' },
+      overrideAccess: true,
     });
 
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.now());
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
     await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: 'early' });
@@ -645,6 +658,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       task: 'fail-for-good',
       input: {},
       jobId: 'resumed-failure',
+      overrideAccess: true,
     });
 
     expect(failed).toMatchObject({ id: source.id, hasError: true });
@@ -658,7 +672,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     const { source, token, waiting } = await pausedWorkflow('resumed-cancel');
 
     await fixture.worker.jobs.resume({ token, data: 'yes' });
-    await fixture.frogbot.jobs.cancelByID({ id: source.id });
+    await fixture.frogbot.jobs.cancelByID({ id: source.id, overrideAccess: true });
 
     const replacement = await fixture.worker.jobs.queue({
       task: 'fail-for-good',
@@ -676,7 +690,11 @@ describe(`durable waitpoints: ${adapterName}`, () => {
   it('a deleted holder never wakes the job that reuses its id', async () => {
     const { source, token } = await pausedWorkflow('deleted-holder');
 
-    await fixture.payload.delete({ collection: 'payload-jobs', id: source.id });
+    await fixture.payload.delete({
+      collection: 'payload-jobs',
+      id: source.id,
+      overrideAccess: true,
+    });
 
     const until = new Date(Date.now() + 120_000).toISOString();
     const replacement = await fixture.worker.jobs.queue({
@@ -758,14 +776,16 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'delay-original' },
       jobId: 'delay-duplicate',
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const duplicate = await fixture.frogbot.jobs.queue({
       workflow: 'wait',
       input: { key: 'delay-duplicate' },
       jobId: 'delay-duplicate',
+      overrideAccess: true,
     });
 
     expect(duplicate.id).toBe(source.id);
@@ -787,14 +807,16 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'live-delay' },
       jobId: 'live-delay',
+      overrideAccess: true,
     });
 
     const completed = await fixture.frogbot.jobs.queue({
       workflow: 'complete',
       input: {},
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     const stored = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
@@ -841,9 +863,10 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     const source = await fixture.frogbot.jobs.queue({
       workflow: 'wait',
       input: { key: 'excluded' },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const before = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
@@ -881,9 +904,10 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'forced-delay' },
       jobId: 'forced-delay',
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const before = await fixture.payload.db.find({
       collection: 'frogbot-waitpoints',
@@ -929,9 +953,10 @@ describe(`durable waitpoints: ${adapterName}`, () => {
     const source = await fixture.frogbot.jobs.queue({
       workflow: 'wait',
       input: { key: 'sweep-delay' },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const before = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
@@ -983,7 +1008,11 @@ describe(`durable waitpoints: ${adapterName}`, () => {
 
     vi.setSystemTime(timestamp(scheduled.docs[0].waitUntil) + 1);
 
-    await fixture.frogbot.jobs.run({ queue: 'scheduled-approvals', silent: true });
+    await fixture.frogbot.jobs.run({
+      queue: 'scheduled-approvals',
+      silent: true,
+      overrideAccess: true,
+    });
 
     vi.setSystemTime(Date.now() + 60_000);
 
@@ -1032,11 +1061,12 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'approval' },
       meta: { origin: 'email' },
+      overrideAccess: true,
     });
 
     expect(source.queue).toBe('approvals');
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const paused = (
       await fixture.payload.db.find<FrogBotJob>({ collection: 'payload-jobs', limit: 0 })
@@ -1168,9 +1198,13 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       finished(result);
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'wait', input: { key: 'early' } });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'wait',
+      input: { key: 'early' },
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const waiting = (await findWaitpoint({ req, token }))!;
     const sourceAfter = await fixture.payload.db.find<FrogBotJob>({
@@ -1209,13 +1243,21 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       });
     };
 
-    const first = await fixture.frogbot.jobs.queue({ workflow: 'wait', input: { key: 'first' } });
+    const first = await fixture.frogbot.jobs.queue({
+      workflow: 'wait',
+      input: { key: 'first' },
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true, overrideAccess: true });
 
-    const second = await fixture.frogbot.jobs.queue({ workflow: 'wait', input: { key: 'second' } });
+    const second = await fixture.frogbot.jobs.queue({
+      workflow: 'wait',
+      input: { key: 'second' },
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: second.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: second.id, silent: true, overrideAccess: true });
 
     expect(second.id).not.toBe(first.id);
 
@@ -1438,9 +1480,10 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'superseded', value: 'original' },
       jobId: 'superseded',
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const replacement = await fixture.worker.jobs.queue({
       workflow: 'wait',
@@ -1551,6 +1594,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       workflow: 'wait',
       input: { key: 'delay' },
       jobId: 'delay-until',
+      overrideAccess: true,
     });
 
     await fixture.payload.db.updateOne({
@@ -1564,7 +1608,7 @@ describe(`durable waitpoints: ${adapterName}`, () => {
       },
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const paused = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',

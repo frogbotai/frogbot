@@ -186,5 +186,6 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
   },
   "slug": "messages",
   "trash": true,
+  "versions": false,
 }
 `;

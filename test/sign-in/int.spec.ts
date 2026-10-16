@@ -326,6 +326,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       await frogbot.create({
         collection: 'users',
         data: { email, password: 'local-test-password', _verified: true },
+        overrideAccess: true,
       });
 
       const run = locks.runKVLock;
@@ -428,7 +429,9 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
 
     expect(me.status).toBe(200);
     expect((await me.json()).user).toMatchObject({ id: user.id, collection: 'users' });
-    expect((await frogbot.count({ collection: 'connections' })).totalDocs).toBe(0);
+    expect(
+      (await frogbot.count({ collection: 'connections', overrideAccess: true })).totalDocs,
+    ).toBe(0);
     expect(JSON.stringify(user)).not.toContain('fresh:');
     expect(JSON.stringify(user)).not.toContain('never-persist-refresh');
   });
@@ -559,12 +562,12 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
   it.each(['missing', '', ' ', 'not-email'])(
     'rejects invalid account email %j without creating a user or session',
     async (code) => {
-      const count = await frogbot.count({ collection: 'users' });
+      const count = await frogbot.count({ collection: 'users', overrideAccess: true });
       const response = await callback(await authorize({ code }));
 
       expect(response.status).toBe(400);
       expect(sessionCookie(response)).toBeUndefined();
-      expect(await frogbot.count({ collection: 'users' })).toEqual(count);
+      expect(await frogbot.count({ collection: 'users', overrideAccess: true })).toEqual(count);
       expect(hooks).toHaveLength(0);
     },
   );
@@ -574,6 +577,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       collection: 'users',
       data: { email: 'unverified@example.com', password: 'password' },
       disableVerificationEmail: true,
+      overrideAccess: true,
     });
 
     const response = await callback(await authorize({ code: 'unverified@example.com' }));
@@ -596,12 +600,14 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       collection: 'users',
       data: { email: 'trashed@example.com', password: 'password', _verified: true },
       disableVerificationEmail: true,
+      overrideAccess: true,
     });
 
     await frogbot.update({
       collection: 'users',
       id: user.id,
       data: { deletedAt: new Date().toISOString() },
+      overrideAccess: true,
     });
 
     const response = await callback(await authorize({ code: 'trashed@example.com' }));
@@ -696,6 +702,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
         await frogbot.count({
           collection: 'users',
           where: { email: { equals: email } },
+          overrideAccess: true,
         })
       ).totalDocs,
     ).toBe(1);
@@ -713,7 +720,9 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       expect((await me.json()).user).toMatchObject({ id: user.id, collection: 'users' });
     }
 
-    expect((await frogbot.count({ collection: 'connections' })).totalDocs).toBe(0);
+    expect(
+      (await frogbot.count({ collection: 'connections', overrideAccess: true })).totalDocs,
+    ).toBe(0);
     expect(JSON.stringify(user)).not.toContain('fresh:');
     expect(JSON.stringify(user)).not.toContain('never-persist-refresh');
   });
@@ -723,7 +732,9 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       (await request('/rest/v1/users/sign-in/work?returnTo=https://evil.example')).status,
     ).toBe(400);
     expect((await request('/rest/v1/connections/identity/authorize')).status).toBe(401);
-    expect((await frogbot.count({ collection: 'connections' })).totalDocs).toBe(0);
+    expect(
+      (await frogbot.count({ collection: 'connections', overrideAccess: true })).totalDocs,
+    ).toBe(0);
   });
 
   it('preserves password login', async () => {
@@ -731,6 +742,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       collection: 'users',
       data: { email: 'password@example.com', password: 'test-password', _verified: true },
       disableVerificationEmail: true,
+      overrideAccess: true,
     });
 
     const response = await request('/rest/v1/users/login', {

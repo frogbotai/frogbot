@@ -39,9 +39,10 @@ describe(`live reservation states: ${adapterName}`, () => {
       task: 'retry-effect',
       input: { marker },
       meta: { scheduled: true },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true, overrideAccess: true });
 
     const retrying = await readJob(first.id);
     const req = await createLocalReq({}, fixture.payload);
@@ -80,9 +81,10 @@ describe(`live reservation states: ${adapterName}`, () => {
       task: 'retry-effect',
       input: { marker: jobId },
       jobId,
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true, overrideAccess: true });
 
     const before = await readJob(first.id);
     const duplicate = await fixture.worker.jobs.queue({
@@ -117,6 +119,7 @@ describe(`live reservation states: ${adapterName}`, () => {
       input: { marker: jobId },
       jobId,
       waitUntil,
+      overrideAccess: true,
     });
 
     const duplicate = await fixture.worker.jobs.queue({

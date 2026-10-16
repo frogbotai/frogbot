@@ -343,6 +343,7 @@ describe('slugField', () => {
     expect(siblingData.generateSlug).toBe(true);
     expect(countVersions).toHaveBeenCalledExactlyOnceWith({
       collection: 'posts',
+      overrideAccess: true,
       req,
       where: { parent: { equals: 'post-1' } },
     });
@@ -385,6 +386,7 @@ describe('slugField', () => {
     expect(siblingData.generateSlug).toBe(false);
     expect(countVersions).toHaveBeenCalledExactlyOnceWith({
       collection: 'posts',
+      overrideAccess: true,
       req,
       where: { parent: { equals: 'post-1' } },
     });

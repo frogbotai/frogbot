@@ -112,8 +112,13 @@ afterEach(async () => {
   vi.useRealTimers();
   triggerContexts.length = 0;
 
-  await fixture.payload.delete({ collection: 'payload-jobs', where: {} });
-  await fixture.payload.delete({ collection: 'frogbot-waitpoints', where: {} });
+  await fixture.payload.delete({ collection: 'payload-jobs', where: {}, overrideAccess: true });
+
+  await fixture.payload.delete({
+    collection: 'frogbot-waitpoints',
+    where: {},
+    overrideAccess: true,
+  });
 });
 
 afterAll(async () => fixture?.shutdown());
@@ -160,9 +165,10 @@ async function runSource() {
   const source = await fixture.frogbot.jobs.queue({
     workflow: 'http-wait',
     input: { requestId: randomUUID() },
+    overrideAccess: true,
   });
 
-  await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+  await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
   return source;
 }
@@ -289,7 +295,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     vi.setSystemTime(timestamp(scheduled[0].waitUntil) + 1);
 
-    await fixture.frogbot.jobs.runByID({ id: scheduled[0].id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: scheduled[0].id, silent: true, overrideAccess: true });
 
     const failed = (await jobs())[0];
 
@@ -303,7 +309,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect(retrying.error).toBeTruthy();
     expect(retrying.hasError).toBe(false);
 
-    await fixture.frogbot.jobs.runByID({ id: scheduled[0].id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: scheduled[0].id, silent: true, overrideAccess: true });
 
     const paused = (await jobs())[0];
 
@@ -415,7 +421,11 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const source = await runSource();
     const before = (await waits())[0];
 
-    await fixture.payload.delete({ collection: 'payload-jobs', id: source.id });
+    await fixture.payload.delete({
+      collection: 'payload-jobs',
+      id: source.id,
+      overrideAccess: true,
+    });
 
     const response = await post(url(), { approved: true });
 
@@ -453,9 +463,10 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait',
       jobId,
       input: { requestId: randomUUID() },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const paused = await holder(source.id);
     const waiting = (await waits())[0];
@@ -496,9 +507,14 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
   it('the jobId is free after the resumed workflow completes with its row retained', async () => {
     const url = approval();
     const jobId = randomUUID();
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'http-wait', jobId, input: {} });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'http-wait',
+      jobId,
+      input: {},
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     expect((await post(url(), {})).status).toBe(200);
 
@@ -510,6 +526,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait',
       jobId,
       input: { requestId: randomUUID() },
+      overrideAccess: true,
     });
 
     expect(replacement.id).not.toBe(source.id);
@@ -528,9 +545,14 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       finished(await waitFor('approval', { expiresIn: 1000, onWait: () => {} }));
     };
 
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'http-wait', jobId, input: {} });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'http-wait',
+      jobId,
+      input: {},
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     vi.setSystemTime(now + 1000);
 
@@ -565,9 +587,14 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const finished = vi.fn();
     const url = approval(finished);
     const jobId = randomUUID();
-    const source = await fixture.frogbot.jobs.queue({ workflow: 'http-wait', jobId, input: {} });
+    const source = await fixture.frogbot.jobs.queue({
+      workflow: 'http-wait',
+      jobId,
+      input: {},
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
     await fixture.worker.jobs.cancelByID({ id: source.id });
 
     const response = await post(url(), { approved: true });
@@ -580,6 +607,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait',
       jobId,
       input: {},
+      overrideAccess: true,
     });
 
     expect(replacement.id).not.toBe(source.id);
@@ -596,9 +624,10 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait-supersede',
       jobId,
       input: { key },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     const replacement = await fixture.worker.jobs.queue({
       workflow: 'http-wait-supersede',
@@ -635,9 +664,10 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait-failure',
       jobId,
       input: {},
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: source.id, silent: true, overrideAccess: true });
 
     expect((await post(url, {})).status).toBe(200);
 
@@ -649,6 +679,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
       workflow: 'http-wait',
       jobId,
       input: {},
+      overrideAccess: true,
     });
 
     expect(replacement.id).not.toBe(source.id);
@@ -680,7 +711,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     expect((await waits())[0]).toMatchObject({ status: 'resumed', data: { messageId } });
     expect((await post(url(), { messageId: 'duplicate' })).status).toBe(409);
 
-    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: { messageId } });
     expect((await holder(source.id)).completedAt).toEqual(expect.any(String));
@@ -833,7 +864,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     vi.setSystemTime(now + 1);
 
     await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
-    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(finished).toHaveBeenCalledExactlyOnceWith({ expired: false, data: { approved: true } });
     expect((await holder(original.id)).completedAt).toEqual(expect.any(String));
@@ -902,7 +933,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
 
     expect((await waits())[0].dispatched).toBe(true);
 
-    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true });
+    await fixture.frogbot.jobs.run({ queue: 'approvals', silent: true, overrideAccess: true });
 
     expect(checkpoint).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledTimes(2);
@@ -961,6 +992,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     await fixture.payload.delete({
       collection: 'payload-jobs',
       where: { completedAt: { exists: true } },
+      overrideAccess: true,
     });
 
     await fixture.worker.jobs.run({ queue: 'approvals', silent: true });
@@ -1154,6 +1186,7 @@ describe(`durable wait HTTP acceptance: ${adapterName}`, () => {
     const publicJob = await fixture.payload.findByID({
       collection: 'payload-jobs',
       id: source.id,
+      overrideAccess: true,
     });
 
     expect(publicJob).not.toHaveProperty('waitpoint');
