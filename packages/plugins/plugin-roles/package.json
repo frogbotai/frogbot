@@ -33,12 +33,12 @@
   },
   "peerDependencies": {
     "frogbot": "workspace:*",
-    "payload": "3.90.1"
+    "payload": "3.90.2"
   },
   "devDependencies": {
     "frogbot": "workspace:*",
-    "payload": "3.90.1",
-    "typescript": "5.6.2"
+    "payload": "3.90.2",
+    "typescript": "catalog:"
   },
   "publishConfig": {
     "access": "public"

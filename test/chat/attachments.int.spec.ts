@@ -214,9 +214,10 @@ describe('chat attachments reach the agent model', () => {
     data: Buffer | string;
   }): Promise<Asset> {
     const body = new FormData();
+    const part = typeof data === 'string' ? data : new Uint8Array(data);
 
     body.set('_payload', '{}');
-    body.set('file', new Blob([data], { type }), name);
+    body.set('file', new Blob([part], { type }), name);
 
     const response = await fetch(`${booted.baseUrl}/api/${CHAT_ASSETS_SLUG}`, {
       method: 'POST',

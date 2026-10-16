@@ -35,7 +35,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/db-vercel-postgres": "3.90.1",
+    "@payloadcms/db-vercel-postgres": "3.90.2",
     "drizzle-orm": "0.45.2"
   },
   "peerDependencies": {
@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "frogbot": "workspace:*",
-    "typescript": "5.6.2"
+    "typescript": "catalog:"
   },
   "publishConfig": {
     "access": "public",

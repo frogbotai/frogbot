@@ -14,6 +14,8 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
-  }
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "files": ["./tools/assets.d.ts"]
 }

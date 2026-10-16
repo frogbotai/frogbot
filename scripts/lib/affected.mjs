@@ -299,6 +299,15 @@ function checkSet({ files, checks, cover }) {
   });
 }
 
+/**
+ * @param {object} options
+ * @param {string[]} options.files
+ * @param {*} options.packages
+ * @param {Array<{ name: string, specs: string[] }>} [options.vitest]
+ * @param {Array<{ project: string, spec: string, sources: string[] }>} [options.related]
+ * @param {*} [options.browser]
+ * @param {string[]} [options.checks]
+ */
 export function affectedSet({ files, packages, vitest = [], related = [], browser, checks = [] }) {
   const runs = affectedRuns(files);
   const covered = new Set();

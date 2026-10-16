@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/json2xml": "0.1.4",
     "frogbot": "workspace:*",
-    "typescript": "5.6.2"
+    "typescript": "catalog:"
   },
   "publishConfig": {
     "access": "public",

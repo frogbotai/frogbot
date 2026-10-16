@@ -226,7 +226,6 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       './node_modules/@libsql/linux-x64-gnu/**',
-      '@libsql/client',
     ]);
   });
 
@@ -244,7 +243,6 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       './node_modules/.pnpm/libsql@0.4.7/node_modules/@libsql/darwin-arm64/**',
-      '@libsql/client',
     ]);
   });
 
@@ -259,7 +257,6 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       '../../node_modules/.pnpm/libsql@0.4.7/node_modules/@libsql/darwin-arm64/**',
-      '@libsql/client',
     ]);
   });
 
@@ -273,7 +270,6 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       '../../node_modules/@libsql/linux-x64-gnu/**',
-      '@libsql/client',
     ]);
   });
 
@@ -287,7 +283,6 @@ describe('withFrogBot', () => {
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       './node_modules/@libsql/linux-x64-gnu/**',
       './node_modules/@libsql/linux-x64-musl/**',
-      '@libsql/client',
     ]);
   });
 
@@ -296,7 +291,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual(['@libsql/client']);
+    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
   });
 
   it('adds nothing when libsql has no platform package installed', () => {
@@ -306,10 +301,10 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual(['@libsql/client']);
+    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
   });
 
-  it("keeps the app's tracing includes and the libsql client entry", () => {
+  it("keeps the app's tracing includes", () => {
     const app = createApp(createFixtureRoot());
 
     installHoistedLibsql(app, ['linux-x64-gnu']);
@@ -323,7 +318,7 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes).toEqual({
       '/custom': ['./custom/**'],
-      '**/*': ['./extra/**', './node_modules/@libsql/linux-x64-gnu/**', '@libsql/client'],
+      '**/*': ['./extra/**', './node_modules/@libsql/linux-x64-gnu/**'],
     });
   });
 
@@ -342,7 +337,6 @@ describe('withFrogBot', () => {
       './node_modules/@libsql/linux-x64-gnu/**',
       './[broken/**',
       './node_modules/@libsql/linux-x64-gnu/**',
-      '@libsql/client',
     ]);
   });
 
@@ -359,7 +353,6 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       './node_modules/libsql/node_modules/@libsql/linux-x64-gnu/**',
-      '@libsql/client',
     ]);
   });
 
@@ -373,7 +366,6 @@ describe('withFrogBot', () => {
 
     expect(config.outputFileTracingIncludes?.['**/*']).toEqual([
       './node_modules/@libsql/linux-x64-gnu/**',
-      '@libsql/client',
     ]);
   });
 
@@ -388,7 +380,7 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual(['@libsql/client']);
+    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
   });
 
   it('adds nothing when the project folder has no package.json or libsql', () => {
@@ -396,6 +388,6 @@ describe('withFrogBot', () => {
 
     const config = withFrogBot();
 
-    expect(config.outputFileTracingIncludes?.['**/*']).toEqual(['@libsql/client']);
+    expect(config.outputFileTracingIncludes?.['**/*']).toEqual([]);
   });
 });

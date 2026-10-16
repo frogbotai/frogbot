@@ -44,7 +44,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/graphql": "3.90.1",
+    "@payloadcms/graphql": "3.90.2",
     "tsx": "^4.19.2"
   },
   "peerDependencies": {
@@ -54,8 +54,8 @@
   "devDependencies": {
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
-    "payload": "3.90.1",
-    "typescript": "5.6.2"
+    "payload": "3.90.2",
+    "typescript": "catalog:"
   },
   "publishConfig": {
     "access": "public",

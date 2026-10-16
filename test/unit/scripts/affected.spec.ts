@@ -99,8 +99,10 @@ const browser = {
 
 const checks = Object.keys(CHECK_INPUTS);
 
-const map = (files: string[], related: object[] = []) =>
-  affectedSet({ files, packages, vitest, related, browser, checks });
+const map = (
+  files: string[],
+  related: { project: string; spec: string; sources: string[] }[] = [],
+) => affectedSet({ files, packages, vitest, related, browser, checks });
 
 describe('affectedSet on past commits', () => {
   it('maps da7ba14f (virtual path fields) to packages, areas, specs, projects and checks', () => {

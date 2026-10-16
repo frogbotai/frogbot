@@ -5,6 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  typescript: 6.0.3
   zod: ^4.3.6
 
 importers:
@@ -57,7 +58,7 @@ importers:
         version: 22.20.1
       '@vitest/eslint-plugin':
         specifier: ^1.1.0
-        version: 1.6.23(@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5)))
+        version: 1.6.23(@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5)))
       ai:
         specifier: 7.0.116
         version: 7.0.116(zod@4.4.3)
@@ -107,11 +108,11 @@ importers:
         specifier: ^3.2.5
         version: 3.9.5
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
       typescript-eslint:
         specifier: ^8.20.0
-        version: 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
+        version: 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       vite:
         specifier: ^6.0.0
         version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5)
@@ -213,8 +214,8 @@ importers:
         specifier: ^3.2.5
         version: 3.9.5
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   examples/tailwind:
     dependencies:
@@ -289,8 +290,8 @@ importers:
         specifier: ^4.1.18
         version: 4.3.3
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/create-frogbot-app:
     dependencies:
@@ -305,14 +306,14 @@ importers:
         specifier: ^9.16.0
         version: 9.39.5(jiti@2.7.0)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/db-d1-sqlite:
     dependencies:
       '@payloadcms/db-d1-sqlite':
-        specifier: 3.90.1
-        version: 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+        specifier: 3.90.2
+        version: 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
@@ -321,30 +322,30 @@ importers:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/db-mongodb:
     dependencies:
       '@payloadcms/db-mongodb':
-        specifier: 3.90.1
-        version: 3.90.1(@aws-sdk/credential-providers@3.1097.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(@aws-sdk/credential-providers@3.1097.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/db-postgres:
     dependencies:
       '@payloadcms/db-postgres':
-        specifier: 3.90.1
-        version: 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
@@ -353,8 +354,8 @@ importers:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/db-sqlite:
     dependencies:
@@ -362,8 +363,8 @@ importers:
         specifier: 0.14.0
         version: 0.14.0(bufferutil@4.1.0)
       '@payloadcms/db-sqlite':
-        specifier: 3.90.1
-        version: 3.90.1(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+        specifier: 3.90.2
+        version: 3.90.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
@@ -372,14 +373,14 @@ importers:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/db-vercel-postgres:
     dependencies:
       '@payloadcms/db-vercel-postgres':
-        specifier: 3.90.1
-        version: 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
@@ -388,8 +389,8 @@ importers:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/frogbot:
     dependencies:
@@ -403,11 +404,11 @@ importers:
         specifier: 15.4.10
         version: 15.4.10
       '@payloadcms/drizzle':
-        specifier: 3.90.1
-        version: 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+        specifier: 3.90.2
+        version: 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       '@payloadcms/translations':
-        specifier: 3.90.1
-        version: 3.90.1
+        specifier: 3.90.2
+        version: 3.90.2
       ai:
         specifier: 7.0.116
         version: 7.0.116(zod@4.4.3)
@@ -430,8 +431,8 @@ importers:
         specifier: 1.13.0
         version: 1.13.0
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       prettier:
         specifier: ^3.2.5
         version: 3.9.5
@@ -473,8 +474,8 @@ importers:
         specifier: ^9.14.0
         version: 9.14.0
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
       vitest:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5))
@@ -657,14 +658,14 @@ importers:
         specifier: ^9.14.0
         version: 9.14.0
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/graphql:
     dependencies:
       '@payloadcms/graphql':
-        specifier: 3.90.1
-        version: 3.90.1(graphql@16.14.2)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(graphql@16.14.2)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(typescript@6.0.3)
       tsx:
         specifier: ^4.19.2
         version: 4.23.1
@@ -676,40 +677,40 @@ importers:
         specifier: ^16.8.1
         version: 16.14.2
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/kv-redis:
     dependencies:
       '@payloadcms/kv-redis':
-        specifier: 3.90.1
-        version: 3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/live-preview:
     dependencies:
       '@payloadcms/live-preview':
-        specifier: 3.90.1
-        version: 3.90.1
+        specifier: 3.90.2
+        version: 3.90.2
     devDependencies:
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/live-preview-react:
     dependencies:
       '@payloadcms/live-preview-react':
-        specifier: 3.90.1
-        version: 3.90.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 3.90.2
+        version: 3.90.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
     devDependencies:
       '@types/react':
         specifier: 19.2.14
@@ -721,21 +722,21 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/live-preview-vue:
     dependencies:
       '@payloadcms/live-preview-vue':
-        specifier: 3.90.1
-        version: 3.90.1(vue@3.5.43(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(vue@3.5.43(typescript@6.0.3))
     devDependencies:
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
       vue:
         specifier: ^3.0.0
-        version: 3.5.43(typescript@5.6.2)
+        version: 3.5.43(typescript@6.0.3)
 
   packages/next:
     dependencies:
@@ -743,14 +744,14 @@ importers:
         specifier: workspace:*
         version: link:../ui
       '@payloadcms/next':
-        specifier: 3.90.1
-        version: 3.90.1(@types/react@19.2.14)(graphql@16.14.2)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(@types/react@19.2.14)(graphql@16.14.2)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       '@payloadcms/translations':
-        specifier: 3.90.1
-        version: 3.90.1
+        specifier: 3.90.2
+        version: 3.90.2
       '@payloadcms/ui':
-        specifier: 3.90.1
-        version: 3.90.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
     devDependencies:
       '@testing-library/react':
         specifier: ^16.3.0
@@ -774,8 +775,8 @@ importers:
         specifier: 15.4.11
         version: 15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -783,8 +784,8 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-airtable:
     dependencies:
@@ -796,8 +797,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-attio:
     dependencies:
@@ -809,8 +810,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-brave-search:
     dependencies:
@@ -822,8 +823,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-crypto:
     dependencies:
@@ -838,8 +839,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-csv:
     dependencies:
@@ -860,8 +861,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-data-summarizer:
     dependencies:
@@ -873,8 +874,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-date-helper:
     dependencies:
@@ -889,8 +890,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-discord:
     dependencies:
@@ -905,8 +906,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-dropbox:
     dependencies:
@@ -918,8 +919,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-exa:
     dependencies:
@@ -931,8 +932,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-file-helper:
     dependencies:
@@ -953,8 +954,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-front:
     dependencies:
@@ -966,8 +967,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-github:
     dependencies:
@@ -985,8 +986,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-gmail:
     dependencies:
@@ -1004,8 +1005,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-google:
     dependencies:
@@ -1017,8 +1018,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-google-calendar:
     dependencies:
@@ -1036,8 +1037,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-google-drive:
     dependencies:
@@ -1055,8 +1056,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-google-sheets:
     dependencies:
@@ -1077,8 +1078,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-graphql:
     dependencies:
@@ -1090,8 +1091,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-http:
     dependencies:
@@ -1103,8 +1104,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-image-helper:
     dependencies:
@@ -1137,8 +1138,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-linear:
     dependencies:
@@ -1156,8 +1157,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-math-helper:
     dependencies:
@@ -1169,8 +1170,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-microsoft-teams:
     dependencies:
@@ -1185,8 +1186,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-monday:
     dependencies:
@@ -1198,8 +1199,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-notion:
     dependencies:
@@ -1211,8 +1212,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-pagerduty:
     dependencies:
@@ -1224,8 +1225,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-pdf:
     dependencies:
@@ -1243,8 +1244,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-posthog:
     dependencies:
@@ -1256,8 +1257,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-qrcode:
     dependencies:
@@ -1275,8 +1276,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-resend:
     dependencies:
@@ -1288,8 +1289,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-slack:
     dependencies:
@@ -1304,8 +1305,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-stripe:
     dependencies:
@@ -1317,8 +1318,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-telegram-bot:
     dependencies:
@@ -1333,8 +1334,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-text-helper:
     dependencies:
@@ -1370,8 +1371,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-trello:
     dependencies:
@@ -1383,8 +1384,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-twilio:
     dependencies:
@@ -1396,8 +1397,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-xero:
     dependencies:
@@ -1409,8 +1410,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-xml:
     dependencies:
@@ -1431,8 +1432,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/pieces/piece-zoom:
     dependencies:
@@ -1444,8 +1445,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-api-keys:
     devDependencies:
@@ -1474,8 +1475,8 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-audit-log:
     devDependencies:
@@ -1483,8 +1484,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-capture:
     devDependencies:
@@ -1495,8 +1496,8 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
       vitest:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5))
@@ -1504,15 +1505,15 @@ importers:
   packages/plugins/plugin-import-export:
     dependencies:
       '@payloadcms/plugin-import-export':
-        specifier: 3.90.1
-        version: 3.90.1(@payloadcms/ui@3.90.1(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 3.90.2
+        version: 3.90.2(@payloadcms/ui@3.90.2(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -1520,14 +1521,14 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-mcp:
     dependencies:
       '@payloadcms/plugin-mcp':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
     devDependencies:
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
@@ -1539,43 +1540,43 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-nested-docs:
     dependencies:
       '@payloadcms/plugin-nested-docs':
-        specifier: 3.90.1
-        version: 3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-redirects:
     dependencies:
       '@payloadcms/plugin-redirects':
-        specifier: 3.90.1
-        version: 3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-roles:
     devDependencies:
@@ -1583,24 +1584,24 @@ importers:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-sentry:
     dependencies:
       '@payloadcms/plugin-sentry':
-        specifier: 3.90.1
-        version: 3.90.1(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(next@15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(webpack@5.109.2(@swc/core@1.15.3(@swc/helpers@0.5.23))(lightningcss@1.32.0))
+        specifier: 3.90.2
+        version: 3.90.2(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(next@15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(webpack@5.109.2(@swc/core@1.15.3(@swc/helpers@0.5.23))(lightningcss@1.32.0))
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -1608,21 +1609,21 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-seo:
     dependencies:
       '@payloadcms/plugin-seo':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -1630,24 +1631,24 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-stripe:
     dependencies:
       '@payloadcms/plugin-stripe':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/plugins/plugin-usage-reports:
     devDependencies:
@@ -1673,23 +1674,23 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/protocol:
     devDependencies:
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/richtext-lexical:
     dependencies:
       '@payloadcms/richtext-lexical':
-        specifier: 3.90.1
-        version: 3.90.1(@faceless-ui/modal@3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@payloadcms/next@3.90.1(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(bufferutil@4.1.0)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)(yjs@13.6.32)
+        specifier: 3.90.2
+        version: 3.90.2(@faceless-ui/modal@3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@payloadcms/next@3.90.2(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3))(bufferutil@4.1.0)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)(yjs@13.6.32)
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: ^19.0.1 || ^19.1.2 || ^19.2.1
         version: 19.2.6
@@ -1701,8 +1702,8 @@ importers:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/sdk:
     dependencies:
@@ -1714,8 +1715,8 @@ importers:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
       vitest:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5))
@@ -1723,80 +1724,80 @@ importers:
   packages/storage-azure:
     dependencies:
       '@payloadcms/storage-azure':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/storage-gcs:
     dependencies:
       '@payloadcms/storage-gcs':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/storage-r2:
     dependencies:
       '@payloadcms/storage-r2':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/storage-s3:
     dependencies:
       '@payloadcms/storage-s3':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/storage-uploadthing:
     dependencies:
       '@payloadcms/storage-uploadthing':
-        specifier: 3.90.1
-        version: 3.90.1(express@5.2.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.3)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(express@5.2.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.3)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/storage-vercel-blob:
     dependencies:
       '@payloadcms/storage-vercel-blob':
-        specifier: 3.90.1
-        version: 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/ui:
     dependencies:
@@ -1889,11 +1890,11 @@ importers:
         version: 4.0.1
     devDependencies:
       '@payloadcms/translations':
-        specifier: 3.90.1
-        version: 3.90.1
+        specifier: 3.90.2
+        version: 3.90.2
       '@payloadcms/ui':
-        specifier: 3.90.1
-        version: 3.90.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       '@testing-library/react':
         specifier: ^16.3.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1922,8 +1923,8 @@ importers:
         specifier: ^24.1.3
         version: 24.1.3(bufferutil@4.1.0)
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -1931,8 +1932,8 @@ importers:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   templates/blank:
     dependencies:
@@ -1998,8 +1999,8 @@ importers:
         specifier: ^3.2.5
         version: 3.9.5
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   test:
     devDependencies:
@@ -2232,32 +2233,32 @@ importers:
         specifier: ^1.13.7
         version: 1.19.14(hono@4.12.31)
       '@payloadcms/db-mongodb':
-        specifier: 3.90.1
-        version: 3.90.1(@aws-sdk/credential-providers@3.1097.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(@aws-sdk/credential-providers@3.1097.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
       '@payloadcms/drizzle':
-        specifier: 3.90.1
-        version: 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+        specifier: 3.90.2
+        version: 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       '@payloadcms/graphql':
-        specifier: 3.90.1
-        version: 3.90.1(graphql@16.14.2)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(graphql@16.14.2)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(typescript@6.0.3)
       '@payloadcms/kv-redis':
-        specifier: 3.90.1
-        version: 3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))
       '@payloadcms/live-preview':
-        specifier: 3.90.1
-        version: 3.90.1
+        specifier: 3.90.2
+        version: 3.90.2
       '@payloadcms/live-preview-react':
-        specifier: 3.90.1
-        version: 3.90.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 3.90.2
+        version: 3.90.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@payloadcms/live-preview-vue':
-        specifier: 3.90.1
-        version: 3.90.1(vue@3.5.43(typescript@5.6.2))
+        specifier: 3.90.2
+        version: 3.90.2(vue@3.5.43(typescript@6.0.3))
       '@payloadcms/sdk':
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       '@payloadcms/ui':
-        specifier: 3.90.1
-        version: 3.90.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       '@testing-library/react':
         specifier: ^16.3.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -2310,8 +2311,8 @@ importers:
         specifier: 6.2.0
         version: 6.2.0
       payload:
-        specifier: 3.90.1
-        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+        specifier: 3.90.2
+        version: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       pdf-lib:
         specifier: 1.17.1
         version: 1.17.1
@@ -2380,8 +2381,8 @@ importers:
         specifier: ^4.1.18
         version: 4.3.3
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   test/browser/fixtures/live-preview:
     dependencies:
@@ -2423,8 +2424,8 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   test/e2e/fixtures/plugin-wrappers:
     dependencies:
@@ -2469,8 +2470,8 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   test/e2e/fixtures/rich-text:
     dependencies:
@@ -2512,8 +2513,8 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
   test/e2e/fixtures/tool-agent:
     dependencies:
@@ -2561,8 +2562,8 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
       typescript:
-        specifier: 5.6.2
-        version: 5.6.2
+        specifier: 6.0.3
+        version: 6.0.3
 
 packages:
   '@ai-sdk/alibaba@2.0.56':
@@ -3377,14 +3378,6 @@ packages:
       }
     engines: { node: '>=6.9.0' }
 
-  '@babel/parser@7.29.7':
-    resolution:
-      {
-        integrity: sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==,
-      }
-    engines: { node: '>=6.0.0' }
-    hasBin: true
-
   '@babel/parser@7.29.9':
     resolution:
       {
@@ -3411,13 +3404,6 @@ packages:
     resolution:
       {
         integrity: sha512-EhlfNQtZ+NK22w5BM61ciuiq1m58ed33Wr1Xan//ZRTy6hgjnwyCffRYwzsGXdASJSUJ1guZILsErh1eQcl+zw==,
-      }
-    engines: { node: '>=6.9.0' }
-
-  '@babel/types@7.29.7':
-    resolution:
-      {
-        integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==,
       }
     engines: { node: '>=6.9.0' }
 
@@ -5555,7 +5541,7 @@ packages:
         integrity: sha512-qxEe+ZOeti/jueuVTx0fNc0GO8aD6OOBLP6z48VP2ACJkEW+jI15bidI9rfT+FHpDnmWCmYChHUiVL477q6JeQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5566,7 +5552,7 @@ packages:
         integrity: sha512-Sb+bDluH0JZNRrSURIfry2ZwdkQPTSRMtpV6XHRRKMFh86o4KcR9PMbfSdaGxZOHctHNabTp0JRmkpt/zrItjQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5577,7 +5563,7 @@ packages:
         integrity: sha512-0KPTDmcPL/4ObLy5N/yFo+t6l/bHE63NODPOsyUN1NACc62i0Pc8NXGwo4xhaLcpgIRDiN1ABZ+h3AVLp5GlWQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5590,7 +5576,7 @@ packages:
     peerDependencies:
       react: '>=18.x'
       react-dom: '>=18.x'
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5601,7 +5587,7 @@ packages:
         integrity: sha512-JX+uzkRn4QLIljS6bWS93Vg1TYIohTP7TXP2mUz6RrxW+x8iqzJuaAR8tjN4SkpCTxI8VpBNWFU8d6B7I9qnXg==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5612,7 +5598,7 @@ packages:
         integrity: sha512-iktLl+eLOVT6hE4BOy2GIQeuIOmsksWoPDT9WhEkIlV5IEM/OBLGAzO23Q2G0UV89tXDq1wKa4p6vwLWlCHWLA==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5623,7 +5609,7 @@ packages:
         integrity: sha512-KnkJU+49HV47KrgCoS+zqUQuTZ/e5CtH7ttu0ZgAcZJyNojZ7kHbqtdiH78kZSuqBknD75l+VCNJBpg6ShdtlQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5634,7 +5620,7 @@ packages:
         integrity: sha512-UkJsks5yNZFiBvlr1SM6M6n4D66Tayj7R3ylxpaL/gXbKgOCMUz06Q57QhMIRqaSGGiSIrzZw1Ge5WZE70imGg==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5645,7 +5631,7 @@ packages:
         integrity: sha512-UMbvTWOHxfS3SQA0oWN8uvmG64WrFgurojM1KoYjxuUbPFGjumD6al5zsA06d6+TkCDSw6l639tJ43bFr3HE5A==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5656,7 +5642,7 @@ packages:
         integrity: sha512-vMdMWvOyD9EXljNCJk3thms/WEBMUR0rLLaJdzcOk/CwUiAv1KPopGp/8vW0zFmnu42n5i9ufERv0BZ/UGzZMw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5667,7 +5653,7 @@ packages:
         integrity: sha512-FGfEKY1L1aIHEh/O+RcRxeLRQV0g95MuU5b26YuzGGyd0IX90pliK9bVph54OaqDdS1AQ0MEVEFGXfSXaGJzxg==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5678,7 +5664,7 @@ packages:
         integrity: sha512-J/Wn7+XzW3Tm56RKCaHeISPIRJrWaSywGasna7yaMwvZykTM9JS5D/bzPCg0pCCxw8qsPeRX29oDQ+nUEixmUA==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5689,7 +5675,7 @@ packages:
         integrity: sha512-eSGU10DUqS+seXkGfTVGJ475M4scdaDE15Vk52nuYODhi0lbO6zNbIoDDGKxaxvzs/CfrHHT3AUGYmruIp/LPw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5700,7 +5686,7 @@ packages:
         integrity: sha512-FClGXbLzEHFX0hJRslXb/YdO5xSZLMuPOj9skRoA3fwbWRLsBhfaIYSEz+7pjMF4P8fFqW2vPCFHvgJD+SgYXw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5711,7 +5697,7 @@ packages:
         integrity: sha512-H2z7Eed7sVCX+K/UmULqPCpkB5Ch86+/vRHs+VCe7xmDkvBRYZQmErUqx14cV7QwcrQ+wclcDlCojJTUh5MBOQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5722,7 +5708,7 @@ packages:
         integrity: sha512-jeBFFaViAWxg+i7UKoWxN+VImvwNXq9fuRUMEMXFZqfWhgsC37/NvUOMF4oNVf3mppTMsv38n2y1qR51JLujcQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5733,7 +5719,7 @@ packages:
         integrity: sha512-X1iH6yamtE6PZRlUB4T2epUOzKA19ONozWja3A87mlXEDVhCM7hxeDFzxzWnbqY1/TWsyy8ZCaFktz8GRzTFvw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5746,7 +5732,7 @@ packages:
     peerDependencies:
       react: '>=18.x'
       react-dom: '>=18.x'
-      typescript: '>=5.2'
+      typescript: 6.0.3
       yjs: '>=13.5.37'
     peerDependenciesMeta:
       typescript:
@@ -5760,7 +5746,7 @@ packages:
         integrity: sha512-4EDspglulL6zHlV53Azsq4OduRunJqyrDkldZ8ekrE8ujHhvu2UB3Utzq98Z8TSIllFPvNKmW0Qp/9lJ7378Ag==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5771,7 +5757,7 @@ packages:
         integrity: sha512-Lu4W+Ht7xd3+R8fXorzsl1LbDMF7UALgvh0LA/nbY5qlmozEyfHr1z4oaV4HAzXN5F8NxSrxCfDEXt5EHU1bfA==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5782,7 +5768,7 @@ packages:
         integrity: sha512-K5GDw8oIsujL8IQY9L5PJXxkODs0c9gqL1CROcfLw7kE4icNXeIVrK/kQ7K3SxQ/stpb5NnBLERTK9ohzPEuLQ==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5793,7 +5779,7 @@ packages:
         integrity: sha512-K2bf6NfzS+PutNrrNlWr47kZx34fCYyiX1vPT4a1/sob8LsGrYwy9mseyFFlNYDlWSP2U/xIKLv2JuaYZX8ohw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5804,7 +5790,7 @@ packages:
         integrity: sha512-iFEKYQufeCtx9I918SteutyMkEKlR6VNldovnCE2ue9ilfKMnj8ghhenMaLzRfslzttvMLrn8d9DP5TWysZqZw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5815,7 +5801,7 @@ packages:
         integrity: sha512-AfKaHZs0IpHDUS1uoB7yWbhP1VRVWuUbHZ3HnNI2bqhn0h05SWfxxwt/QCwaldLM0WzY9wszpQc8VFSHipjldA==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
       yjs: '>=13.5.37'
     peerDependenciesMeta:
       typescript:
@@ -6916,267 +6902,267 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@payloadcms/db-d1-sqlite@3.90.1':
+  '@payloadcms/db-d1-sqlite@3.90.2':
     resolution:
       {
-        integrity: sha512-xaKzJkm9RLM1qEovny4gqhyJTYLwrUV2IaY1et28JhRJPd7qGsfCebzq6y+5slcwUV+tBkUPfUwmVf43qytGCQ==,
+        integrity: sha512-rbhHN6XRUEXUDuB18bl6cRIlAt4BqszXUashPLf7cnhaawYcTDe/Yj83TglLasSf4AV6xdhKv6BE1MEhNuTmhA==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/db-mongodb@3.90.1':
+  '@payloadcms/db-mongodb@3.90.2':
     resolution:
       {
-        integrity: sha512-PEhwP0jYai9IlwK7QiJ+KCpvD10zhBbNNUYZ2nE2ia+aQWGBrv5HxzT0ssTo9YP7smX6T0qjg1cPqaXe6eJZdw==,
+        integrity: sha512-5fpA5bQAG/5/ZplD27EWnTyZR6ZUrgRhBcJdCrw+9MKWGZwXtXrzah1xWngBwVhC7QNVkgxOwKuwLE2jcDqIHg==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/db-postgres@3.90.1':
+  '@payloadcms/db-postgres@3.90.2':
     resolution:
       {
-        integrity: sha512-n0TD+UgJ5fVanvK3sti1gPzrHLnvuMqxf2+IgChQsWYI975mBc407Ev7tWXHx0YsoCOw5vXSGNQT44ttHISx0A==,
+        integrity: sha512-0DgQh5bZTnc8I7RdyE1Tvaj2MpFPGEtz0rbRdEvABYyFnhxSzuwSX0PevxAL4xma6sOdhbSSqOvW4hC3MayS9w==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/db-sqlite@3.90.1':
+  '@payloadcms/db-sqlite@3.90.2':
     resolution:
       {
-        integrity: sha512-JtDGZ/6Tbf4O3oBjydWxSK8k/dmuJ0girZZpcA0moA5mjG8UZZYEJtCTLclM/R/Eq6ELndpUQNFqflz2DgO0DQ==,
+        integrity: sha512-lkcr6HTPe+8K0atSkXp7hYUJHUAKMiheW0BWwkavjSkBF8UDRuhjaD08gCdRF9QuWVJjxO9YEe15NZsouB5ayQ==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/db-vercel-postgres@3.90.1':
+  '@payloadcms/db-vercel-postgres@3.90.2':
     resolution:
       {
-        integrity: sha512-ZPc2VBIDogGTBT71zHJgHW/8aLP7jtfq1Ld5Fm2vmz9G/4LsMkA9Yj0PgfxN2LFb0B5yJqUvGasOlDZW036J4Q==,
+        integrity: sha512-edbl80eG/pe5mVfkG5YLNygJQYytUuBhUcOCRcMjZalDz8OuKF6Kgl2h0yavYmJrwkDCQ/0YnMiWsjaSJLcf1g==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/drizzle@3.90.1':
+  '@payloadcms/drizzle@3.90.2':
     resolution:
       {
-        integrity: sha512-7iKm4RHzkrtSETVnt36DlpoCWQsUUIO5+YfBwe81g4vYai+wWSlyEz8dXUZGrIHbwsaojqJ2Qxdt+DetQlNVPw==,
+        integrity: sha512-C5r0gimzaq6ih21jh3VPQNNRxFYCi6JhTgkcbf2c/xGF7MEEzNzDn3DgfFFe4zeDE4iuC9glYrXFs85AKghq8w==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/graphql@3.90.1':
+  '@payloadcms/graphql@3.90.2':
     resolution:
       {
-        integrity: sha512-Xj/m2hIS/CiWUm+5KW9Z+WFc5iZILtYBWcespFdTWg+y3+NDqaJIYAu7fdv6Gjbmb33S7EGU19fjufd9Ie2/lA==,
+        integrity: sha512-z4a7+We4USitsIDlGkMfLpY+hclJgmF19C+I63dzC5deuOny6rJ/R3KhF/XfkaYn7Rz3VWPSk2gJh3+D041xMg==,
       }
     hasBin: true
     peerDependencies:
       graphql: ^16.8.1
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/kv-redis@3.90.1':
+  '@payloadcms/kv-redis@3.90.2':
     resolution:
       {
-        integrity: sha512-feFyJv+idMZRBP1sHDffOS1K31yt4kQs08WKZyVf7jU1UiW+vYu1EmlcDoalXRLGMKKAGm5jHPNfg/BNCWlJZw==,
+        integrity: sha512-OfA7kP8i844x5zEtJl0ZLgSgvbFP96JdMuJg1+l2HPnulpNWXCgemFEmaXfURJtOzMCxL740f0T9jTgOSlaIcA==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/live-preview-react@3.90.1':
+  '@payloadcms/live-preview-react@3.90.2':
     resolution:
       {
-        integrity: sha512-8MiiIRoUw4kcQmwxf7WYa8+q8XfyVl8wWHhyXdmj8gqv8rgsS3UWulqmSQv4skVGpSlfp8dcpUQs0ryjN8Z1kw==,
+        integrity: sha512-hMIlWbZ/WztaOoJi/bMClLVTIJ9jaBHVZammwqtxztjv9okg6xuIzmuZC4k/xBEVa/7nkQQOVig+dgX9fOODkw==,
       }
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
 
-  '@payloadcms/live-preview-vue@3.90.1':
+  '@payloadcms/live-preview-vue@3.90.2':
     resolution:
       {
-        integrity: sha512-8jg0PF44TxuT3JZcA/EMI76i6EcXX/RkJhA0zLizzSkcE8SLViJ1ziJuDYLYBoUfD6v624V48kdILQUp3OfEvQ==,
+        integrity: sha512-o3fJA23StmQGxzqAW8HLb1GJNBAJEMFUpX+r0eTTGHAO+3DJ1h3/fjH6049Fl7/qgh30O/kSyLlOqG/A83Aoag==,
       }
     peerDependencies:
       vue: ^3.0.0
 
-  '@payloadcms/live-preview@3.90.1':
+  '@payloadcms/live-preview@3.90.2':
     resolution:
       {
-        integrity: sha512-UPHDLAojJzlQi9C00mVoxmo2s7RWNy2l0TsQdOOU7nXaMIvyJaqJ4Msij7u0MCXUC5GXeybNsZwTlWq0R0mcBA==,
+        integrity: sha512-N9ryFbTPHgfHOBRK9jLDzR8Gb1OnZWP2JVW11m45Mh89b7eNW7ZDtRtOEMEWocJo7v6xRGBmiiMW6qXrThmR7A==,
       }
 
-  '@payloadcms/next@3.90.1':
+  '@payloadcms/next@3.90.2':
     resolution:
       {
-        integrity: sha512-V3dWReaacHdyLjeFIB4KiOnpiYXeJrAiSxDXL3SdgXfMz17P/8P+HsrXYuqqeChHjBUu6TeDONdITxgFR1NSwg==,
+        integrity: sha512-ED5aP8LTG2S7jJl1v9zZMlcq9ZXgjWSVsUvILJsd2UwKNI5ingGsPuQVXxTFHicv2Zj9R0WFa+d6g6iqZWQcCg==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
       graphql: ^16.8.1
       next: '>=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.3.3 <17.0.0'
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/plugin-cloud-storage@3.90.1':
+  '@payloadcms/plugin-cloud-storage@3.90.2':
     resolution:
       {
-        integrity: sha512-nXXtqrD1ecaaoDS1M0sQNPz/ovNasvwQVYluuXPtvu+E/7LqOgX+TLVp66/usV0WLE6foEJAVYGYgLJhQ/tFXg==,
+        integrity: sha512-1J3bpaG9jHClTgIvHcJXltcjdsC/bgP/wvtAHW8ZZQPtytS0hR8WrHdzpjyRt+aTgaiTiy5Otz7M07aodwguzw==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
-  '@payloadcms/plugin-import-export@3.90.1':
+  '@payloadcms/plugin-import-export@3.90.2':
     resolution:
       {
-        integrity: sha512-amI25Jdkp8o8CahimI/bL3fPXdEQdKk1cGYgNRPYx0vLpXudWnRV5EUJqvdyosFeju++jfDe9Vro5GykubSiEw==,
+        integrity: sha512-73z6N+At4cqXTo+goNgrnc6r5LrdIW65TdJd1dOxiKzOpHs5HISp9jzFLL8hw3d7WDLGJpGwhXUPkSgVD//nOw==,
       }
     peerDependencies:
-      '@payloadcms/ui': 3.90.1
-      payload: 3.90.1
+      '@payloadcms/ui': 3.90.2
+      payload: 3.90.2
 
-  '@payloadcms/plugin-mcp@3.90.1':
+  '@payloadcms/plugin-mcp@3.90.2':
     resolution:
       {
-        integrity: sha512-x0k8qTgCiUh8G1kwZF5RSWKyHA8r5Y/d3ZRihKn5pK2I80mgRe8E98dHqIAuwEWax66DCd0vPwKsHXTvLY87Aw==,
+        integrity: sha512-wG7vn+MdF4z8InlzKGc1auhU3O/TEMGU6N+L9VWJYuz0rwN1CrY29HloV3lRWek6OrTPaKMEWf4N9+M4DJsrFQ==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/plugin-nested-docs@3.90.1':
+  '@payloadcms/plugin-nested-docs@3.90.2':
     resolution:
       {
-        integrity: sha512-yF+c3pLtxtz9g7LnVAQyWfFmo4feabLq18v9nWt/gtKu6wJRmgahMV3PHRnqccY3Axy9jYE2YMoISAbH3HEhEg==,
+        integrity: sha512-LepTd9heeuvPpvTvawkYWu1MDL16Saev711A1/sX5K0lwJUrHi204WUor/lyo0LcApi3FD9MnyFJyJW3FAh5+g==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/plugin-redirects@3.90.1':
+  '@payloadcms/plugin-redirects@3.90.2':
     resolution:
       {
-        integrity: sha512-8/WCjshi+pnKj9a0I4cOOelUruKQ/NsdCrBJtjW+nClINYMkCRAY+1v6jZV1P6S6T/QHtCFSCtvzRND0z8mSkA==,
+        integrity: sha512-OEhHJwDfkLuXi7tvcMQWmil4USYPPfeMMIXdjPf0OHrFH+H2JICsGJ6Wx+GSQn5YJcEXjeD7Hm4MaqkAiysjfg==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/plugin-sentry@3.90.1':
+  '@payloadcms/plugin-sentry@3.90.2':
     resolution:
       {
-        integrity: sha512-e7XH77lxLtoxJYkYg7tzp6ubFzQMM0TUFgNrTdCw6h882jiowscrLVzHVD8IAz4pS+vJHhoquvu4CUtYtQqmPw==,
+        integrity: sha512-w8iJc5Fr/zmc/nXC7gQtqE5yp2+XESx+FGlmEXIxadnKA4hZQoF+zy7wFiEGZ0MqPjWcn8cTMUxEJCyD7T0LiQ==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
-  '@payloadcms/plugin-seo@3.90.1':
+  '@payloadcms/plugin-seo@3.90.2':
     resolution:
       {
-        integrity: sha512-lrSGQZsvXGFrG0uHJk3ID8pP6LuM1e7W6YRHZ2QAIYnxfIBqvLUlyughmyjutPwtxz7bpF9sLXaKY+2HCfpriQ==,
+        integrity: sha512-+7B8q3+pDsGO5JocwnIMUzpE7jgtmRyqZtZRbCWwLVQC7q5p6ZmB4zHwfUyJdmidJ+H7NoJueXHAy+R0ZRPwfA==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
-  '@payloadcms/plugin-stripe@3.90.1':
+  '@payloadcms/plugin-stripe@3.90.2':
     resolution:
       {
-        integrity: sha512-Zz+v7zU/uLa+Y9zoKLFC+9Z2Y5tXHkNB3gdxvRLLTTTtm/1rA7ZHyl8Qh/NDRshq6i7p2Q6jNn0jHODN3FWtig==,
+        integrity: sha512-vUNHCc/pGDjCg0jBv3uKNWs4rJIxKWBPNdZYE3DQwEPM0p98ilFrN27qd2gpONFVHC5QAR4M8O/o7UZGSBivLA==,
       }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/richtext-lexical@3.90.1':
+  '@payloadcms/richtext-lexical@3.90.2':
     resolution:
       {
-        integrity: sha512-j7jVEFk9eEt79xi6YA3RtCFitr4asSxe4Yv/nbBXQKWDFfZSMzF95AzC2heWDQLmmSFYOVw41lib91uZI79exw==,
+        integrity: sha512-9D5U7W/F6MoR4KVcIGeOSQT8QiiQ1VnCO8SeVD4xXXi8Bb4OYSisjnTK3twlmCVObjWm+aURzfkcakRJ+Pv/EA==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
       '@faceless-ui/modal': 3.0.0
       '@faceless-ui/scroll-info': 2.0.0
-      '@payloadcms/next': 3.90.1
-      payload: 3.90.1
+      '@payloadcms/next': 3.90.2
+      payload: 3.90.2
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
-  '@payloadcms/sdk@3.90.1':
+  '@payloadcms/sdk@3.90.2':
     resolution:
       {
-        integrity: sha512-YMrf98wSM2SAYxhU8/NRMeqpcnPOl7KOX7Kfz2PQ1nvQEkGs5Hd6qfr8X8+RwM3/JhZfSbBC/CacpRY+LdKPbA==,
+        integrity: sha512-Szo5Z9L1Lug08esvZBvYWfSu7U3/zO+SBX3AMWX51Ym4uGXRrtiL0g5FuDaPOcHRvSzZCu6H84e2EWKhJPLfPA==,
       }
 
-  '@payloadcms/storage-azure@3.90.1':
+  '@payloadcms/storage-azure@3.90.2':
     resolution:
       {
-        integrity: sha512-rivODYFgjfLrGMiOPO30q0cyzyeuRuCIlGilInTbRHOacqd+KIrJ5WV6t3QnHOIh8AWlUijoaYzPSMG8n8c8Sw==,
-      }
-    engines: { node: ^18.20.2 || >=20.9.0 }
-    peerDependencies:
-      payload: 3.90.1
-
-  '@payloadcms/storage-gcs@3.90.1':
-    resolution:
-      {
-        integrity: sha512-yA3tKuUFwbgf533mFYyo00+NTz7uDk6QT6u1TiUQQANXnzLOR/iP8dM1nZ/w84p/VQFPCR8Fd73Wzd3aW1J+jw==,
+        integrity: sha512-VWchKmTviyDy69uMTlQDnWzALBt1W4JKY9xnXIsty3Hwv4kHUmKiFwuBDmJYnvInmszE2ASOlFTjD9UOqqJqzw==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/storage-r2@3.90.1':
+  '@payloadcms/storage-gcs@3.90.2':
     resolution:
       {
-        integrity: sha512-fMw0sQDHLsBVYimB2iRAdPHervy8OaUlrMaHT8S2IJ6xQ1Z6Qaq6YLzCSNJOKsa7Ojddchvx74mRVPnpmu2YkQ==,
+        integrity: sha512-wDQW/uHKs/Gn3VgLGJ+ZzBPikFdMYMYbLN3sWCP0l6jKUdEZkKeKIY0imh03QPnvLeUUYGdrPSh4Woq8tv2feA==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/storage-s3@3.90.1':
+  '@payloadcms/storage-r2@3.90.2':
     resolution:
       {
-        integrity: sha512-ededXTV+2IcSPgbFM0n8I3k5aWr/aABHJx+aDLMxBDi5Fz/6PJS1vbBaZHeMcGeA2F//zJkiCIYxyOtiU4D41Q==,
+        integrity: sha512-hpmX5CYUCovUwz/CvJjrP7ES0HJyD9MMQoJ86/NyBjUuGSANSEIdMPZgz3Xeg5t80WoeVl7B/BCVuUxZmbxyww==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/storage-uploadthing@3.90.1':
+  '@payloadcms/storage-s3@3.90.2':
     resolution:
       {
-        integrity: sha512-zHYOakCJyoirx68X1Z/xrlObDPvd2wztYOPFyrsYttdMuLsLxmTkxKHXa4+HVHe4T28SVyNMC/6VgwWYMfrGbA==,
+        integrity: sha512-8fq8N+zfM4gKCENYoCVpP8R6fV00VcogDSu1uTa7EH/NHOpGmyER/WaKxERyZmHHwpE7RUR0ijtu0IeKfUJPiA==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/storage-vercel-blob@3.90.1':
+  '@payloadcms/storage-uploadthing@3.90.2':
     resolution:
       {
-        integrity: sha512-C4p2iInaGGX5Rn59EHylbQd2ODh+EUbSxRhf9nzLw69hmF9DP6Lv8qCx3aRTmuxt0STkAoNXCA7zbsBqUTVknA==,
+        integrity: sha512-LWU/fPvDD6MXX1sm/BrafZ38wLvE8XgyF2+BkafvqHQ0gz6+NsqWd3DNmSbN1OHZsVumHAIu8s9eENvoi6F54Q==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
-      payload: 3.90.1
+      payload: 3.90.2
 
-  '@payloadcms/translations@3.90.1':
+  '@payloadcms/storage-vercel-blob@3.90.2':
     resolution:
       {
-        integrity: sha512-O+pbNk2+5cqKV1UxuAE5/xX6DlapvvFR04/mKnanPBPqzBBCqQ8LKUhSr9Au4Fki9rYwIv1AwI4kuztmzxTvmQ==,
+        integrity: sha512-ayp+kmpp7KW+enrLXS43prh6wYkNanU6/LU21Xcml/XNLKHzddqGls2RIse4lcb1CQJkCNrueCLcmJi5AZJhTg==,
+      }
+    engines: { node: ^18.20.2 || >=20.9.0 }
+    peerDependencies:
+      payload: 3.90.2
+
+  '@payloadcms/translations@3.90.2':
+    resolution:
+      {
+        integrity: sha512-BGpXyw22ndzL6URrK28qlk2qIsksH8mbWpU/n8vaTt8W6O87KoniX4lJ82m5o0FR/wjWqzcuVRsE0TNX3/7gHg==,
       }
 
-  '@payloadcms/ui@3.90.1':
+  '@payloadcms/ui@3.90.2':
     resolution:
       {
-        integrity: sha512-tLzrp+cJgQybkl/54r89CLrN71zKYvg50oO0tlNHYvh2B4DpZJILie6C+U33qjxed0IS17hc9DBRkwQWD6H7aA==,
+        integrity: sha512-9OXA/WI+3u+Xa8xcvVTv4VtpAecRxx/39k9uBRlRnI20lWPGRvbOG4vIWUZKxHFQjZGGQke71HdLV4x2kFveQg==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
       next: '>=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.3.3 <17.0.0'
-      payload: 3.90.1
+      payload: 3.90.2
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
@@ -9188,7 +9174,7 @@ packages:
     peerDependencies:
       '@typescript-eslint/parser': ^8.64.0
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/parser@8.64.0':
     resolution:
@@ -9198,7 +9184,7 @@ packages:
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/project-service@8.64.0':
     resolution:
@@ -9207,7 +9193,7 @@ packages:
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/scope-manager@8.64.0':
     resolution:
@@ -9223,7 +9209,7 @@ packages:
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/type-utils@8.64.0':
     resolution:
@@ -9233,7 +9219,7 @@ packages:
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/types@8.64.0':
     resolution:
@@ -9249,7 +9235,7 @@ packages:
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/utils@8.64.0':
     resolution:
@@ -9259,7 +9245,7 @@ packages:
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
   '@typescript-eslint/visitor-keys@8.64.0':
     resolution:
@@ -9351,7 +9337,7 @@ packages:
     peerDependencies:
       '@typescript-eslint/eslint-plugin': '*'
       eslint: '>=8.57.0'
-      typescript: '>=5.0.0'
+      typescript: 6.0.3
       vitest: '*'
     peerDependenciesMeta:
       '@typescript-eslint/eslint-plugin':
@@ -13002,7 +12988,7 @@ packages:
         integrity: sha512-m/uySKGi66CEjCjIvmMeLjLgMnckCKAQn1ynFGj+YJfjlr6KtkodH/dpFL+hdLDqqEZHhR75EP64J96MNIMwDw==,
       }
     peerDependencies:
-      typescript: '>=5.2'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -14531,10 +14517,10 @@ packages:
         integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==,
       }
 
-  payload@3.90.1:
+  payload@3.90.2:
     resolution:
       {
-        integrity: sha512-72lVmcihjE7fqIqelLx9GhxpgFEYjlVKkMq1W0XCfXo52CAafUUF3qjhAq97MZNMRvXDc8M812kwiiREQM7/6A==,
+        integrity: sha512-Qn+nRiMEVOrClVg7mkCHqCKc7x5DAKQZ+jZQm6lqtLfHTS6fuGXqeOzgy5/woWquN4awRUCNgIGu2uYVNn5uvQ==,
       }
     engines: { node: ^18.20.2 || >=20.9.0 }
     hasBin: true
@@ -16274,7 +16260,7 @@ packages:
       }
     engines: { node: '>=18.12' }
     peerDependencies:
-      typescript: '>=4.8.4'
+      typescript: 6.0.3
 
   ts-essentials@10.0.3:
     resolution:
@@ -16282,7 +16268,7 @@ packages:
         integrity: sha512-/FrVAZ76JLTWxJOERk04fm8hYENDo0PWSP3YLQKxevLwWtxemGcl5JJEzN4iqfDlRve0ckyfFaOBu4xbNH/wZw==,
       }
     peerDependencies:
-      typescript: '>=4.5.0'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -16384,12 +16370,12 @@ packages:
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 6.0.3
 
-  typescript@5.6.2:
+  typescript@6.0.3:
     resolution:
       {
-        integrity: sha512-NW8ByodCSNCwZeghjN3o+JX5OFH0Ojg6sadjEKY4huZ52TqbJTJnDo5+Tw98lSy63NZvi4n+ez5m2u5d4PkZyw==,
+        integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==,
       }
     engines: { node: '>=14.17' }
     hasBin: true
@@ -16792,7 +16778,7 @@ packages:
         integrity: sha512-o5qZoksdnjIKvW1srZ3ab7pcDNYAerBjRe54D0LBLfRdCYFrSgBHVXokMas35czQc0//lmx4/tuY4ZNQ+Rf2Ng==,
       }
     peerDependencies:
-      typescript: '*'
+      typescript: 6.0.3
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -17928,10 +17914,10 @@ snapshots:
       '@babel/helper-compilation-targets': 7.29.7
       '@babel/helper-module-transforms': 7.29.7(@babel/core@7.29.7)
       '@babel/helpers': 7.29.7
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.9
       '@babel/template': 7.29.7
       '@babel/traverse': 7.29.7
-      '@babel/types': 7.29.7
+      '@babel/types': 7.29.8
       '@jridgewell/remapping': 2.3.5
       convert-source-map: 2.0.0
       debug: 4.4.3
@@ -17943,8 +17929,8 @@ snapshots:
 
   '@babel/generator@7.29.7':
     dependencies:
-      '@babel/parser': 7.29.7
-      '@babel/types': 7.29.7
+      '@babel/parser': 7.29.9
+      '@babel/types': 7.29.8
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
       jsesc: 3.1.0
@@ -17984,11 +17970,7 @@ snapshots:
   '@babel/helpers@7.29.7':
     dependencies:
       '@babel/template': 7.29.7
-      '@babel/types': 7.29.7
-
-  '@babel/parser@7.29.7':
-    dependencies:
-      '@babel/types': 7.29.7
+      '@babel/types': 7.29.8
 
   '@babel/parser@7.29.9':
     dependencies:
@@ -17999,25 +17981,20 @@ snapshots:
   '@babel/template@7.29.7':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/parser': 7.29.7
-      '@babel/types': 7.29.7
+      '@babel/parser': 7.29.9
+      '@babel/types': 7.29.8
 
   '@babel/traverse@7.29.7':
     dependencies:
       '@babel/code-frame': 7.29.7
       '@babel/generator': 7.29.7
       '@babel/helper-globals': 7.29.7
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.9
       '@babel/template': 7.29.7
-      '@babel/types': 7.29.7
+      '@babel/types': 7.29.8
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
-
-  '@babel/types@7.29.7':
-    dependencies:
-      '@babel/helper-string-parser': 7.29.7
-      '@babel/helper-validator-identifier': 7.29.7
 
   '@babel/types@7.29.8':
     dependencies:
@@ -19283,248 +19260,248 @@ snapshots:
 
   '@jsdevtools/ono@7.1.3': {}
 
-  '@lexical/a11y@0.50.0(typescript@5.6.2)':
+  '@lexical/a11y@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/clipboard@0.50.0(typescript@5.6.2)':
+  '@lexical/clipboard@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/list': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/list': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
       '@types/trusted-types': 2.0.7
-      lexical: 0.50.0(typescript@5.6.2)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/code-core@0.50.0(typescript@5.6.2)':
+  '@lexical/code-core@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/devtools-core@0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@lexical/devtools-core@0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/link': 0.50.0(typescript@5.6.2)
-      '@lexical/mark': 0.50.0(typescript@5.6.2)
-      '@lexical/table': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/link': 0.50.0(typescript@6.0.3)
+      '@lexical/mark': 0.50.0(typescript@6.0.3)
+      '@lexical/table': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/dragon@0.50.0(typescript@5.6.2)':
+  '@lexical/dragon@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/extension@0.50.0(typescript@5.6.2)':
+  '@lexical/extension@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
       '@preact/signals-core': 1.14.4
-      lexical: 0.50.0(typescript@5.6.2)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/hashtag@0.50.0(typescript@5.6.2)':
+  '@lexical/hashtag@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/text': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/text': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/headless@0.50.0(bufferutil@4.1.0)(typescript@5.6.2)':
+  '@lexical/headless@0.50.0(bufferutil@4.1.0)(typescript@6.0.3)':
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
       happy-dom: 20.14.5(bufferutil@4.1.0)
-      lexical: 0.50.0(typescript@5.6.2)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@lexical/history@0.50.0(typescript@5.6.2)':
+  '@lexical/history@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/html@0.50.0(typescript@5.6.2)':
+  '@lexical/html@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/internal@0.50.0(typescript@5.6.2)':
+  '@lexical/internal@0.50.0(typescript@6.0.3)':
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/link@0.50.0(typescript@5.6.2)':
+  '@lexical/link@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/a11y': 0.50.0(typescript@5.6.2)
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/a11y': 0.50.0(typescript@6.0.3)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/list@0.50.0(typescript@5.6.2)':
+  '@lexical/list@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/mark@0.50.0(typescript@5.6.2)':
+  '@lexical/mark@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/markdown@0.50.0(typescript@5.6.2)':
+  '@lexical/markdown@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/code-core': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/link': 0.50.0(typescript@5.6.2)
-      '@lexical/list': 0.50.0(typescript@5.6.2)
-      '@lexical/rich-text': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      '@lexical/text': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/code-core': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/link': 0.50.0(typescript@6.0.3)
+      '@lexical/list': 0.50.0(typescript@6.0.3)
+      '@lexical/rich-text': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      '@lexical/text': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/overflow@0.50.0(typescript@5.6.2)':
+  '@lexical/overflow@0.50.0(typescript@6.0.3)':
     dependencies:
-      lexical: 0.50.0(typescript@5.6.2)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/plain-text@0.50.0(typescript@5.6.2)':
+  '@lexical/plain-text@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/clipboard': 0.50.0(typescript@5.6.2)
-      '@lexical/dragon': 0.50.0(typescript@5.6.2)
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/clipboard': 0.50.0(typescript@6.0.3)
+      '@lexical/dragon': 0.50.0(typescript@6.0.3)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/react@0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)(yjs@13.6.32)':
+  '@lexical/react@0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)(yjs@13.6.32)':
     dependencies:
       '@floating-ui/react': 0.27.20(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@lexical/a11y': 0.50.0(typescript@5.6.2)
-      '@lexical/devtools-core': 0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
-      '@lexical/dragon': 0.50.0(typescript@5.6.2)
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/hashtag': 0.50.0(typescript@5.6.2)
-      '@lexical/history': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/link': 0.50.0(typescript@5.6.2)
-      '@lexical/list': 0.50.0(typescript@5.6.2)
-      '@lexical/mark': 0.50.0(typescript@5.6.2)
-      '@lexical/markdown': 0.50.0(typescript@5.6.2)
-      '@lexical/overflow': 0.50.0(typescript@5.6.2)
-      '@lexical/plain-text': 0.50.0(typescript@5.6.2)
-      '@lexical/rich-text': 0.50.0(typescript@5.6.2)
-      '@lexical/table': 0.50.0(typescript@5.6.2)
-      '@lexical/text': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      '@lexical/yjs': 0.50.0(typescript@5.6.2)(yjs@13.6.32)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/a11y': 0.50.0(typescript@6.0.3)
+      '@lexical/devtools-core': 0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
+      '@lexical/dragon': 0.50.0(typescript@6.0.3)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/hashtag': 0.50.0(typescript@6.0.3)
+      '@lexical/history': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/link': 0.50.0(typescript@6.0.3)
+      '@lexical/list': 0.50.0(typescript@6.0.3)
+      '@lexical/mark': 0.50.0(typescript@6.0.3)
+      '@lexical/markdown': 0.50.0(typescript@6.0.3)
+      '@lexical/overflow': 0.50.0(typescript@6.0.3)
+      '@lexical/plain-text': 0.50.0(typescript@6.0.3)
+      '@lexical/rich-text': 0.50.0(typescript@6.0.3)
+      '@lexical/table': 0.50.0(typescript@6.0.3)
+      '@lexical/text': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      '@lexical/yjs': 0.50.0(typescript@6.0.3)(yjs@13.6.32)
+      lexical: 0.50.0(typescript@6.0.3)
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
       yjs: 13.6.32
 
-  '@lexical/rich-text@0.50.0(typescript@5.6.2)':
+  '@lexical/rich-text@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/a11y': 0.50.0(typescript@5.6.2)
-      '@lexical/clipboard': 0.50.0(typescript@5.6.2)
-      '@lexical/dragon': 0.50.0(typescript@5.6.2)
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/a11y': 0.50.0(typescript@6.0.3)
+      '@lexical/clipboard': 0.50.0(typescript@6.0.3)
+      '@lexical/dragon': 0.50.0(typescript@6.0.3)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/selection@0.50.0(typescript@5.6.2)':
+  '@lexical/selection@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/table@0.50.0(typescript@5.6.2)':
+  '@lexical/table@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/clipboard': 0.50.0(typescript@5.6.2)
-      '@lexical/extension': 0.50.0(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/clipboard': 0.50.0(typescript@6.0.3)
+      '@lexical/extension': 0.50.0(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/text@0.50.0(typescript@5.6.2)':
+  '@lexical/text@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/utils@0.50.0(typescript@5.6.2)':
+  '@lexical/utils@0.50.0(typescript@6.0.3)':
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@lexical/yjs@0.50.0(typescript@5.6.2)(yjs@13.6.32)':
+  '@lexical/yjs@0.50.0(typescript@6.0.3)(yjs@13.6.32)':
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      lexical: 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      lexical: 0.50.0(typescript@6.0.3)
       yjs: 13.6.32
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
   '@libsql/client@0.14.0(bufferutil@4.1.0)':
     dependencies:
@@ -20267,13 +20244,13 @@ snapshots:
   '@oxlint/binding-win32-x64-msvc@1.87.0':
     optional: true
 
-  '@payloadcms/db-d1-sqlite@3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)':
+  '@payloadcms/db-d1-sqlite@3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)':
     dependencies:
-      '@payloadcms/drizzle': 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+      '@payloadcms/drizzle': 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
       drizzle-orm: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       prompts: 2.4.2
       to-snake-case: 1.0.0
       uuid: 13.0.2
@@ -20309,11 +20286,11 @@ snapshots:
       - sqlite3
       - supports-color
 
-  '@payloadcms/db-mongodb@3.90.1(@aws-sdk/credential-providers@3.1097.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/db-mongodb@3.90.2(@aws-sdk/credential-providers@3.1097.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
       mongoose: 8.24.1(@aws-sdk/credential-providers@3.1097.0)
       mongoose-paginate-v2: 1.9.4(mongoose@8.24.1(@aws-sdk/credential-providers@3.1097.0))
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       prompts: 2.4.2
       uuid: 13.0.2
     transitivePeerDependencies:
@@ -20326,14 +20303,14 @@ snapshots:
       - socks
       - supports-color
 
-  '@payloadcms/db-postgres@3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/db-postgres@3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
-      '@payloadcms/drizzle': 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+      '@payloadcms/drizzle': 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       '@types/pg': 8.20.0
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
       drizzle-orm: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       pg: 8.20.0
       prompts: 2.4.2
       to-snake-case: 1.0.0
@@ -20369,14 +20346,14 @@ snapshots:
       - sqlite3
       - supports-color
 
-  '@payloadcms/db-sqlite@3.90.1(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)':
+  '@payloadcms/db-sqlite@3.90.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)':
     dependencies:
       '@libsql/client': 0.14.0(bufferutil@4.1.0)
-      '@payloadcms/drizzle': 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+      '@payloadcms/drizzle': 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
       drizzle-orm: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       prompts: 2.4.2
       to-snake-case: 1.0.0
       uuid: 13.0.2
@@ -20413,14 +20390,14 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@payloadcms/db-vercel-postgres@3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/db-vercel-postgres@3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
-      '@payloadcms/drizzle': 3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+      '@payloadcms/drizzle': 3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)
       '@vercel/postgres': 0.10.0
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
       drizzle-orm: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       pg: 8.20.0
       prompts: 2.4.2
       to-snake-case: 1.0.0
@@ -20457,12 +20434,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@payloadcms/drizzle@3.90.1(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)':
+  '@payloadcms/drizzle@3.90.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(pg@8.20.0)':
     dependencies:
       console-table-printer: 2.12.1
       dequal: 2.0.3
       drizzle-orm: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       prompts: 2.4.2
       to-snake-case: 1.0.0
       uuid: 13.0.2
@@ -20497,45 +20474,45 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@payloadcms/graphql@3.90.1(graphql@16.14.2)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)':
+  '@payloadcms/graphql@3.90.2(graphql@16.14.2)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(typescript@6.0.3)':
     dependencies:
       graphql: 16.14.2
       graphql-scalars: 1.22.2(graphql@16.14.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       pluralize: 8.0.0
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       tsx: 4.22.4
     transitivePeerDependencies:
       - typescript
 
-  '@payloadcms/kv-redis@3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/kv-redis@3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
       ioredis: 5.11.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - supports-color
 
-  '@payloadcms/live-preview-react@3.90.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@payloadcms/live-preview-react@3.90.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
-      '@payloadcms/live-preview': 3.90.1
+      '@payloadcms/live-preview': 3.90.2
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
 
-  '@payloadcms/live-preview-vue@3.90.1(vue@3.5.43(typescript@5.6.2))':
+  '@payloadcms/live-preview-vue@3.90.2(vue@3.5.43(typescript@6.0.3))':
     dependencies:
-      '@payloadcms/live-preview': 3.90.1
-      vue: 3.5.43(typescript@5.6.2)
+      '@payloadcms/live-preview': 3.90.2
+      vue: 3.5.43(typescript@6.0.3)
 
-  '@payloadcms/live-preview@3.90.1': {}
+  '@payloadcms/live-preview@3.90.2': {}
 
-  '@payloadcms/next@3.90.1(@types/react@19.2.14)(graphql@16.14.2)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@payloadcms/next@3.90.2(@types/react@19.2.14)(graphql@16.14.2)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
       '@dnd-kit/core': 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@dnd-kit/modifiers': 9.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       '@dnd-kit/sortable': 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
-      '@payloadcms/graphql': 3.90.1(graphql@16.14.2)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)
-      '@payloadcms/translations': 3.90.1
-      '@payloadcms/ui': 3.90.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+      '@payloadcms/graphql': 3.90.2(graphql@16.14.2)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(typescript@6.0.3)
+      '@payloadcms/translations': 3.90.2
+      '@payloadcms/ui': 3.90.2(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       busboy: 1.6.0
       dequal: 2.0.3
       file-type: 21.3.4
@@ -20545,7 +20522,7 @@ snapshots:
       http-status: 2.1.0
       next: 15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
       path-to-regexp: 6.3.0
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       sass: 1.77.4
       uuid: 13.0.2
@@ -20557,14 +20534,14 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/next@3.90.1(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@payloadcms/next@3.90.2(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
       '@dnd-kit/core': 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@dnd-kit/modifiers': 9.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       '@dnd-kit/sortable': 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
-      '@payloadcms/graphql': 3.90.1(graphql@16.14.2)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)
-      '@payloadcms/translations': 3.90.1
-      '@payloadcms/ui': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+      '@payloadcms/graphql': 3.90.2(graphql@16.14.2)(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(typescript@6.0.3)
+      '@payloadcms/translations': 3.90.2
+      '@payloadcms/ui': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       busboy: 1.6.0
       dequal: 2.0.3
       file-type: 21.3.4
@@ -20574,7 +20551,7 @@ snapshots:
       http-status: 2.1.0
       next: 15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
       path-to-regexp: 6.3.0
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       sass: 1.77.4
       uuid: 13.0.2
@@ -20586,11 +20563,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/plugin-cloud-storage@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/plugin-cloud-storage@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
-      '@payloadcms/ui': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+      '@payloadcms/ui': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       find-node-modules: 2.1.3
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       range-parser: 1.3.0
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
@@ -20601,46 +20578,46 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/plugin-import-export@3.90.1(@payloadcms/ui@3.90.1(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@payloadcms/plugin-import-export@3.90.2(@payloadcms/ui@3.90.2(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
       '@faceless-ui/modal': 3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@payloadcms/translations': 3.90.1
-      '@payloadcms/ui': 3.90.1(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+      '@payloadcms/translations': 3.90.2
+      '@payloadcms/ui': 3.90.2(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       csv-parse: 5.6.0
       csv-stringify: 6.5.2
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@payloadcms/plugin-mcp@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/plugin-mcp@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
       '@modelcontextprotocol/sdk': 1.30.0(zod@4.4.3)
       '@types/json-schema': 7.0.15
       json-schema-to-zod: 2.6.1
       mcp-handler: 1.1.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       zod: 4.4.3
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - next
       - supports-color
 
-  '@payloadcms/plugin-nested-docs@3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/plugin-nested-docs@3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
 
-  '@payloadcms/plugin-redirects@3.90.1(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
+  '@payloadcms/plugin-redirects@3.90.2(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))':
     dependencies:
-      '@payloadcms/translations': 3.90.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/translations': 3.90.2
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
 
-  '@payloadcms/plugin-sentry@3.90.1(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(next@15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(webpack@5.109.2(@swc/core@1.15.3(@swc/helpers@0.5.23))(lightningcss@1.32.0))':
+  '@payloadcms/plugin-sentry@3.90.2(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(next@15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(webpack@5.109.2(@swc/core@1.15.3(@swc/helpers@0.5.23))(lightningcss@1.32.0))':
     dependencies:
       '@sentry/nextjs': 9.47.1(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(next@15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(react@19.2.6)(webpack@5.109.2(@swc/core@1.15.3(@swc/helpers@0.5.23))(lightningcss@1.32.0))
       '@sentry/types': 9.47.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
     transitivePeerDependencies:
@@ -20652,11 +20629,11 @@ snapshots:
       - supports-color
       - webpack
 
-  '@payloadcms/plugin-seo@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@payloadcms/plugin-seo@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
-      '@payloadcms/translations': 3.90.1
-      '@payloadcms/ui': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/translations': 3.90.2
+      '@payloadcms/ui': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
     transitivePeerDependencies:
@@ -20666,12 +20643,12 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/plugin-stripe@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/plugin-stripe@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
-      '@payloadcms/translations': 3.90.1
-      '@payloadcms/ui': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+      '@payloadcms/translations': 3.90.2
+      '@payloadcms/ui': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       lodash.get: 4.4.2
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       stripe: 10.17.0
       uuid: 13.0.2
     transitivePeerDependencies:
@@ -20683,40 +20660,40 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/richtext-lexical@3.90.1(@faceless-ui/modal@3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@payloadcms/next@3.90.1(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(bufferutil@4.1.0)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)(yjs@13.6.32)':
+  '@payloadcms/richtext-lexical@3.90.2(@faceless-ui/modal@3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@payloadcms/next@3.90.2(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3))(bufferutil@4.1.0)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)(yjs@13.6.32)':
     dependencies:
       '@faceless-ui/modal': 3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@lexical/clipboard': 0.50.0(typescript@5.6.2)
-      '@lexical/headless': 0.50.0(bufferutil@4.1.0)(typescript@5.6.2)
-      '@lexical/html': 0.50.0(typescript@5.6.2)
-      '@lexical/link': 0.50.0(typescript@5.6.2)
-      '@lexical/list': 0.50.0(typescript@5.6.2)
-      '@lexical/mark': 0.50.0(typescript@5.6.2)
-      '@lexical/react': 0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)(yjs@13.6.32)
-      '@lexical/rich-text': 0.50.0(typescript@5.6.2)
-      '@lexical/selection': 0.50.0(typescript@5.6.2)
-      '@lexical/table': 0.50.0(typescript@5.6.2)
-      '@lexical/utils': 0.50.0(typescript@5.6.2)
-      '@payloadcms/next': 3.90.1(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
-      '@payloadcms/translations': 3.90.1
-      '@payloadcms/ui': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+      '@lexical/clipboard': 0.50.0(typescript@6.0.3)
+      '@lexical/headless': 0.50.0(bufferutil@4.1.0)(typescript@6.0.3)
+      '@lexical/html': 0.50.0(typescript@6.0.3)
+      '@lexical/link': 0.50.0(typescript@6.0.3)
+      '@lexical/list': 0.50.0(typescript@6.0.3)
+      '@lexical/mark': 0.50.0(typescript@6.0.3)
+      '@lexical/react': 0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)(yjs@13.6.32)
+      '@lexical/rich-text': 0.50.0(typescript@6.0.3)
+      '@lexical/selection': 0.50.0(typescript@6.0.3)
+      '@lexical/table': 0.50.0(typescript@6.0.3)
+      '@lexical/utils': 0.50.0(typescript@6.0.3)
+      '@payloadcms/next': 3.90.2(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
+      '@payloadcms/translations': 3.90.2
+      '@payloadcms/ui': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       acorn: 8.16.0
       bson-objectid: 2.0.4
       csstype: 3.1.3
       dequal: 2.0.3
       escape-html: 1.0.3
       jsox: 1.2.121
-      lexical: 0.50.0(typescript@5.6.2)
+      lexical: 0.50.0(typescript@6.0.3)
       mdast-util-from-markdown: 2.0.2
       mdast-util-mdx-jsx: 3.1.3
       micromark-extension-mdx-jsx: 3.0.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
       react-error-boundary: 4.1.2(react@19.2.6)
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       uuid: 13.0.2
     transitivePeerDependencies:
       - '@types/react'
@@ -20728,11 +20705,11 @@ snapshots:
       - utf-8-validate
       - yjs
 
-  '@payloadcms/sdk@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)':
+  '@payloadcms/sdk@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)':
     dependencies:
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
     transitivePeerDependencies:
       - bufferutil
       - graphql
@@ -20740,12 +20717,12 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@payloadcms/storage-azure@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/storage-azure@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
       '@azure/abort-controller': 1.1.0
       '@azure/storage-blob': 12.33.0
-      '@payloadcms/plugin-cloud-storage': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/plugin-cloud-storage': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@types/react'
       - monaco-editor
@@ -20755,11 +20732,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/storage-gcs@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/storage-gcs@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
       '@google-cloud/storage': 7.19.0
-      '@payloadcms/plugin-cloud-storage': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/plugin-cloud-storage': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@types/react'
       - encoding
@@ -20770,10 +20747,10 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/storage-r2@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/storage-r2@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
-      '@payloadcms/plugin-cloud-storage': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/plugin-cloud-storage': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@types/react'
       - monaco-editor
@@ -20783,13 +20760,13 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/storage-s3@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/storage-s3@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
       '@aws-sdk/client-s3': 3.1090.0
       '@aws-sdk/lib-storage': 3.1090.0(@aws-sdk/client-s3@3.1090.0)
       '@aws-sdk/s3-request-presigner': 3.1090.0
-      '@payloadcms/plugin-cloud-storage': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/plugin-cloud-storage': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@types/react'
       - monaco-editor
@@ -20799,10 +20776,10 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/storage-uploadthing@3.90.1(express@5.2.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.3)(typescript@5.6.2)':
+  '@payloadcms/storage-uploadthing@3.90.2(express@5.2.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.3)(typescript@6.0.3)':
     dependencies:
-      '@payloadcms/plugin-cloud-storage': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      '@payloadcms/plugin-cloud-storage': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       uploadthing: 7.3.0(express@5.2.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(tailwindcss@4.3.3)
     transitivePeerDependencies:
       - '@types/react'
@@ -20817,11 +20794,11 @@ snapshots:
       - tailwindcss
       - typescript
 
-  '@payloadcms/storage-vercel-blob@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/storage-vercel-blob@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
-      '@payloadcms/plugin-cloud-storage': 3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)
+      '@payloadcms/plugin-cloud-storage': 3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
       '@vercel/blob': 2.3.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@types/react'
       - monaco-editor
@@ -20831,11 +20808,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/translations@3.90.1':
+  '@payloadcms/translations@3.90.2':
     dependencies:
       date-fns: 4.1.0
 
-  '@payloadcms/ui@3.90.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@payloadcms/ui@3.90.2(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
       '@date-fns/tz': 1.2.0
       '@dnd-kit/core': 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -20845,7 +20822,7 @@ snapshots:
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@faceless-ui/window-info': 3.0.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@monaco-editor/react': 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@payloadcms/translations': 3.90.1
+      '@payloadcms/translations': 3.90.2
       '@swc/helpers': 0.5.23
       bson-objectid: 2.0.4
       date-fns: 4.1.0
@@ -20853,7 +20830,7 @@ snapshots:
       md5: 2.3.0
       next: 15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
       object-to-formdata: 4.5.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       react: 19.2.6
       react-datepicker: 7.6.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -20862,7 +20839,7 @@ snapshots:
       react-select: 5.9.0(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       scheduler: 0.25.0
       sonner: 1.7.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       use-context-selector: 2.0.0(react@19.2.6)(scheduler@0.25.0)
       uuid: 13.0.2
     transitivePeerDependencies:
@@ -20871,7 +20848,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/ui@3.90.1(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@payloadcms/ui@3.90.2(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
       '@date-fns/tz': 1.2.0
       '@dnd-kit/core': 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -20881,7 +20858,7 @@ snapshots:
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@faceless-ui/window-info': 3.0.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@monaco-editor/react': 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@payloadcms/translations': 3.90.1
+      '@payloadcms/translations': 3.90.2
       '@swc/helpers': 0.5.23
       bson-objectid: 2.0.4
       date-fns: 4.1.0
@@ -20889,7 +20866,7 @@ snapshots:
       md5: 2.3.0
       next: 15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
       object-to-formdata: 4.5.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       react: 19.2.6
       react-datepicker: 7.6.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -20898,7 +20875,7 @@ snapshots:
       react-select: 5.9.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       scheduler: 0.25.0
       sonner: 1.7.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       use-context-selector: 2.0.0(react@19.2.6)(scheduler@0.25.0)
       uuid: 13.0.2
     transitivePeerDependencies:
@@ -20907,7 +20884,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/ui@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
+  '@payloadcms/ui@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)':
     dependencies:
       '@date-fns/tz': 1.2.0
       '@dnd-kit/core': 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -20917,7 +20894,7 @@ snapshots:
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@faceless-ui/window-info': 3.0.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@monaco-editor/react': 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@payloadcms/translations': 3.90.1
+      '@payloadcms/translations': 3.90.2
       '@swc/helpers': 0.5.23
       bson-objectid: 2.0.4
       date-fns: 4.1.0
@@ -20925,7 +20902,7 @@ snapshots:
       md5: 2.3.0
       next: 15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
       object-to-formdata: 4.5.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       react: 19.2.6
       react-datepicker: 7.6.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -20934,7 +20911,7 @@ snapshots:
       react-select: 5.9.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       scheduler: 0.25.0
       sonner: 1.7.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       use-context-selector: 2.0.0(react@19.2.6)(scheduler@0.25.0)
       uuid: 13.0.2
     transitivePeerDependencies:
@@ -20943,7 +20920,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@payloadcms/ui@3.90.1(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
+  '@payloadcms/ui@3.90.2(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
       '@date-fns/tz': 1.2.0
       '@dnd-kit/core': 6.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -20953,7 +20930,7 @@ snapshots:
       '@faceless-ui/scroll-info': 2.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@faceless-ui/window-info': 3.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@monaco-editor/react': 4.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@payloadcms/translations': 3.90.1
+      '@payloadcms/translations': 3.90.2
       '@swc/helpers': 0.5.23
       bson-objectid: 2.0.4
       date-fns: 4.1.0
@@ -20961,7 +20938,7 @@ snapshots:
       md5: 2.3.0
       next: 15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4)
       object-to-formdata: 4.5.1
-      payload: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      payload: 3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3)
       qs-esm: 8.0.1
       react: 19.2.7
       react-datepicker: 7.6.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -20970,7 +20947,7 @@ snapshots:
       react-select: 5.9.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       scheduler: 0.25.0
       sonner: 1.7.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       use-context-selector: 2.0.0(react@19.2.7)(scheduler@0.25.0)
       uuid: 13.0.2
     transitivePeerDependencies:
@@ -22335,40 +22312,40 @@ snapshots:
     dependencies:
       '@types/node': 22.20.1
 
-  '@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)':
+  '@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
+      '@typescript-eslint/parser': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       '@typescript-eslint/scope-manager': 8.64.0
-      '@typescript-eslint/type-utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
-      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
+      '@typescript-eslint/type-utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.64.0
       eslint: 9.39.5(jiti@2.7.0)
       ignore: 7.0.6
       natural-compare: 1.4.0
-      ts-api-utils: 2.5.0(typescript@5.6.2)
-      typescript: 5.6.2
+      ts-api-utils: 2.5.0(typescript@6.0.3)
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)':
+  '@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.64.0
       '@typescript-eslint/types': 8.64.0
-      '@typescript-eslint/typescript-estree': 8.64.0(typescript@5.6.2)
+      '@typescript-eslint/typescript-estree': 8.64.0(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.64.0
       debug: 4.4.3
       eslint: 9.39.5(jiti@2.7.0)
-      typescript: 5.6.2
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/project-service@8.64.0(typescript@5.6.2)':
+  '@typescript-eslint/project-service@8.64.0(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.64.0(typescript@5.6.2)
+      '@typescript-eslint/tsconfig-utils': 8.64.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.64.0
       debug: 4.4.3
-      typescript: 5.6.2
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
@@ -22377,47 +22354,47 @@ snapshots:
       '@typescript-eslint/types': 8.64.0
       '@typescript-eslint/visitor-keys': 8.64.0
 
-  '@typescript-eslint/tsconfig-utils@8.64.0(typescript@5.6.2)':
+  '@typescript-eslint/tsconfig-utils@8.64.0(typescript@6.0.3)':
     dependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  '@typescript-eslint/type-utils@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)':
+  '@typescript-eslint/type-utils@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.64.0
-      '@typescript-eslint/typescript-estree': 8.64.0(typescript@5.6.2)
-      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
+      '@typescript-eslint/typescript-estree': 8.64.0(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       debug: 4.4.3
       eslint: 9.39.5(jiti@2.7.0)
-      ts-api-utils: 2.5.0(typescript@5.6.2)
-      typescript: 5.6.2
+      ts-api-utils: 2.5.0(typescript@6.0.3)
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
   '@typescript-eslint/types@8.64.0': {}
 
-  '@typescript-eslint/typescript-estree@8.64.0(typescript@5.6.2)':
+  '@typescript-eslint/typescript-estree@8.64.0(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/project-service': 8.64.0(typescript@5.6.2)
-      '@typescript-eslint/tsconfig-utils': 8.64.0(typescript@5.6.2)
+      '@typescript-eslint/project-service': 8.64.0(typescript@6.0.3)
+      '@typescript-eslint/tsconfig-utils': 8.64.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.64.0
       '@typescript-eslint/visitor-keys': 8.64.0
       debug: 4.4.3
       minimatch: 10.2.5
       semver: 7.8.5
       tinyglobby: 0.2.17
-      ts-api-utils: 2.5.0(typescript@5.6.2)
-      typescript: 5.6.2
+      ts-api-utils: 2.5.0(typescript@6.0.3)
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)':
+  '@typescript-eslint/utils@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.5(jiti@2.7.0))
       '@typescript-eslint/scope-manager': 8.64.0
       '@typescript-eslint/types': 8.64.0
-      '@typescript-eslint/typescript-estree': 8.64.0(typescript@5.6.2)
+      '@typescript-eslint/typescript-estree': 8.64.0(typescript@6.0.3)
       eslint: 9.39.5(jiti@2.7.0)
-      typescript: 5.6.2
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
@@ -22486,14 +22463,14 @@ snapshots:
     transitivePeerDependencies:
       - utf-8-validate
 
-  '@vitest/eslint-plugin@1.6.23(@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5)))':
+  '@vitest/eslint-plugin@1.6.23(@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5)))':
     dependencies:
       '@typescript-eslint/scope-manager': 8.64.0
-      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
+      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.39.5(jiti@2.7.0)
     optionalDependencies:
-      '@typescript-eslint/eslint-plugin': 8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
-      typescript: 5.6.2
+      '@typescript-eslint/eslint-plugin': 8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      typescript: 6.0.3
       vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(happy-dom@20.14.5(bufferutil@4.1.0))(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1)(yaml@2.4.5))
     transitivePeerDependencies:
       - supports-color
@@ -24772,11 +24749,11 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  lexical@0.50.0(typescript@5.6.2):
+  lexical@0.50.0(typescript@6.0.3):
     dependencies:
-      '@lexical/internal': 0.50.0(typescript@5.6.2)
+      '@lexical/internal': 0.50.0(typescript@6.0.3)
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
   lib0@0.2.117:
     dependencies:
@@ -25922,10 +25899,10 @@ snapshots:
 
   pathe@2.0.3: {}
 
-  payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2):
+  payload@3.90.2(bufferutil@4.1.0)(graphql@16.14.2)(typescript@6.0.3):
     dependencies:
       '@next/env': 15.4.10
-      '@payloadcms/translations': 3.90.1
+      '@payloadcms/translations': 3.90.2
       '@types/busboy': 1.5.4
       ajv: 8.18.0
       bson-objectid: 2.0.4
@@ -25952,7 +25929,7 @@ snapshots:
       range-parser: 1.2.1
       sanitize-filename: 1.6.3
       sax: 1.6.1
-      ts-essentials: 10.0.3(typescript@5.6.2)
+      ts-essentials: 10.0.3(typescript@6.0.3)
       tsx: 4.22.4
       undici: 7.29.0
       uuid: 13.0.2
@@ -27163,13 +27140,13 @@ snapshots:
     dependencies:
       utf8-byte-length: 1.0.5
 
-  ts-api-utils@2.5.0(typescript@5.6.2):
+  ts-api-utils@2.5.0(typescript@6.0.3):
     dependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
-  ts-essentials@10.0.3(typescript@5.6.2):
+  ts-essentials@10.0.3(typescript@6.0.3):
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
   ts-mixer@6.0.4: {}
 
@@ -27237,18 +27214,18 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
-  typescript-eslint@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2):
+  typescript-eslint@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2))(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
-      '@typescript-eslint/parser': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
-      '@typescript-eslint/typescript-estree': 8.64.0(typescript@5.6.2)
-      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.6.2)
+      '@typescript-eslint/eslint-plugin': 8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.64.0(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.39.5(jiti@2.7.0)
-      typescript: 5.6.2
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  typescript@5.6.2: {}
+  typescript@6.0.3: {}
 
   uc.micro@2.1.0: {}
 
@@ -27471,7 +27448,7 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  vue@3.5.43(typescript@5.6.2):
+  vue@3.5.43(typescript@6.0.3):
     dependencies:
       '@vue/compiler-dom': 3.5.43
       '@vue/compiler-sfc': 3.5.43
@@ -27479,7 +27456,7 @@ snapshots:
       '@vue/server-renderer': 3.5.43
       '@vue/shared': 3.5.43
     optionalDependencies:
-      typescript: 5.6.2
+      typescript: 6.0.3
 
   w3c-xmlserializer@5.0.0:
     dependencies:

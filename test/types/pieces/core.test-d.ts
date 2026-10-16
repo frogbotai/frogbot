@@ -238,7 +238,7 @@ const expired = plain.definePollingTrigger({
   input: z.object({}),
   output: z.object({ status: z.literal('expired') }),
   run() {
-    return Promise.resolve({ events: [{ status: 'expired' }] });
+    return Promise.resolve({ events: [{ status: 'expired' as const }] });
   },
 });
 

@@ -1,3 +1,3 @@
 /// <reference lib="es2023.array" />
 /// <reference lib="esnext.array" />
-/// <reference lib="esnext.promise" />
+/// <reference lib="es2024.promise" />

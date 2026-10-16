@@ -100,7 +100,9 @@ beforeEach(async () => {
       const id = new URL(String(input)).pathname.split('/').pop()!;
       const file = files.get(id);
 
-      return Promise.resolve(new Response(file?.data, { status: file ? 200 : 404 }));
+      return Promise.resolve(
+        new Response(file ? new Uint8Array(file.data) : null, { status: file ? 200 : 404 }),
+      );
     }),
   );
 });
