@@ -66,7 +66,12 @@ const createTicket: Tool<typeof createTicketInput> = {
   description: 'Create a ticket.',
   inputSchema: createTicketInput,
   execute: async ({ title }, { frogbot, req }) => {
-    const ticket = await frogbot.create({ collection: ticketsSlug, data: { title }, req });
+    const ticket = await frogbot.create({
+      collection: ticketsSlug,
+      data: { title },
+      req,
+      overrideAccess: true,
+    });
 
     return { id: ticket.id };
   },
@@ -130,6 +135,7 @@ export function buildSystemFieldsConfig({ db }: { db?: FrogBotConfig['db'] }) {
               id: input.ticket,
               data: { title: input.title },
               req,
+              overrideAccess: true,
             });
 
             return { output: {} };

@@ -98,7 +98,11 @@ describe('aiField runs', () => {
     }, waitFor);
 
     for (const collection of [usageLogsSlug, jobsSlug, 'payload-locked-documents']) {
-      await booted.payload.delete({ collection: collection as never, where: {} });
+      await booted.payload.delete({
+        collection: collection as never,
+        where: {},
+        overrideAccess: true,
+      });
     }
 
     model.reset();
@@ -114,6 +118,7 @@ describe('aiField runs', () => {
       collection: usageLogsSlug as never,
       depth: 0,
       pagination: false,
+      overrideAccess: true,
     });
 
     return result.docs;
@@ -125,6 +130,7 @@ describe('aiField runs', () => {
       where: { taskSlug: { equals: aiFieldTaskSlug } },
       depth: 0,
       pagination: false,
+      overrideAccess: true,
     });
 
     return result.docs as unknown as Job[];
@@ -137,7 +143,7 @@ describe('aiField runs', () => {
   }
 
   function runJobs() {
-    return booted.frogbot.jobs.run({ queue: 'default' });
+    return booted.frogbot.jobs.run({ queue: 'default', overrideAccess: true });
   }
 
   async function createUser(role: string, data: Record<string, unknown> = {}): Promise<Doc> {
@@ -163,6 +169,7 @@ describe('aiField runs', () => {
     return booted.frogbot.create({
       collection: tasksSlug,
       data,
+      overrideAccess: true,
       ...(user ? { user, overrideAccess: false } : {}),
     }) as Promise<unknown> as Promise<Doc>;
   }
@@ -172,6 +179,7 @@ describe('aiField runs', () => {
       collection: tasksSlug,
       id,
       data,
+      overrideAccess: true,
       ...(user ? { user, overrideAccess: false } : {}),
     }) as Promise<unknown> as Promise<Doc>;
   }
@@ -189,6 +197,7 @@ describe('aiField runs', () => {
       collection: tasksSlug,
       id,
       depth: 0,
+      overrideAccess: true,
     }) as Promise<unknown> as Promise<Doc>;
   }
 
@@ -219,6 +228,7 @@ describe('aiField runs', () => {
       collection: articlesSlug,
       id,
       depth: 0,
+      overrideAccess: true,
       ...args,
     }) as Promise<unknown> as Promise<Doc>;
   }
@@ -230,6 +240,7 @@ describe('aiField runs', () => {
         document: { relationTo: tasksSlug, value: id },
         user: { relationTo: usersSlug, value: user.id },
       },
+      overrideAccess: true,
     });
   }
 
@@ -322,6 +333,7 @@ describe('aiField runs', () => {
         collection: tasksSlug,
         where: { id: { in: [first.id, second.id] } },
         data: { notes: 'Paint the fence' } as never,
+        overrideAccess: true,
       });
 
       const waiting = await waitingRuns('summary');
@@ -360,7 +372,10 @@ describe('aiField runs', () => {
           createTask({ title: rollbackTitle, notes: 'Paint the fence' }),
         ).rejects.toThrow('Rolled back on purpose.');
 
-        const { totalDocs } = await booted.frogbot.count({ collection: tasksSlug });
+        const { totalDocs } = await booted.frogbot.count({
+          collection: tasksSlug,
+          overrideAccess: true,
+        });
 
         expect(totalDocs).toBe(0);
         expect(await aiJobs()).toHaveLength(0);
@@ -560,11 +575,16 @@ describe('aiField runs', () => {
       const shout = (await booted.frogbot.create({
         collection: shoutsSlug,
         data: { loud: 'quiet' } as never,
+        overrideAccess: true,
       })) as unknown as Doc;
 
       await runJobs();
 
-      const saved = await booted.frogbot.findByID({ collection: shoutsSlug, id: shout.id });
+      const saved = await booted.frogbot.findByID({
+        collection: shoutsSlug,
+        id: shout.id,
+        overrideAccess: true,
+      });
 
       expect(saved).toMatchObject({ _summary_status: 'done' });
     });
@@ -581,7 +601,11 @@ describe('aiField runs', () => {
 
       await runJobs();
 
-      const saved = await booted.frogbot.findByID({ collection: shoutsSlug, id: shout.id });
+      const saved = await booted.frogbot.findByID({
+        collection: shoutsSlug,
+        id: shout.id,
+        overrideAccess: true,
+      });
 
       expect(saved).toMatchObject({ _summary_status: 'done' });
     });
@@ -590,6 +614,7 @@ describe('aiField runs', () => {
       const article = (await booted.frogbot.create({
         collection: articlesSlug,
         data: { title: 'v1', body: 'Hello', _status: 'published' } as never,
+        overrideAccess: true,
       })) as unknown as Doc;
 
       model.respondTitle({ text: 'Generated' });
@@ -600,6 +625,7 @@ describe('aiField runs', () => {
           id: article.id,
           data: { title: 'Editor draft' },
           draft: true,
+          overrideAccess: true,
         }),
       );
 
@@ -732,6 +758,7 @@ describe('aiField runs', () => {
       const article = (await booted.frogbot.create({
         collection: articlesSlug,
         data: { body: 'Hello', _status: 'published' } as never,
+        overrideAccess: true,
       })) as unknown as Doc;
 
       model.respondTitle({ text: 'English summary' }, { text: 'French summary' });
@@ -743,6 +770,7 @@ describe('aiField runs', () => {
         id: article.id,
         data: { body: 'Bonjour' } as never,
         locale: 'fr',
+        overrideAccess: true,
       });
 
       await runJobs();
@@ -755,6 +783,7 @@ describe('aiField runs', () => {
       const article = (await booted.frogbot.create({
         collection: articlesSlug,
         data: { body: 'v1', _status: 'published' } as never,
+        overrideAccess: true,
       })) as unknown as Doc;
 
       model.respondTitle({ text: 'Published summary' }, { text: 'Draft summary' });
@@ -766,6 +795,7 @@ describe('aiField runs', () => {
         id: article.id,
         data: { body: 'v2' } as never,
         draft: true,
+        overrideAccess: true,
       });
 
       await runJobs();
@@ -863,7 +893,7 @@ describe('aiField runs', () => {
       const user = await createUser('editor');
       const task = await createTask({ notes: 'Paint the fence' }, user);
 
-      await booted.frogbot.delete({ collection: usersSlug, id: user.id });
+      await booted.frogbot.delete({ collection: usersSlug, id: user.id, overrideAccess: true });
 
       await runJobs();
 
@@ -878,7 +908,7 @@ describe('aiField runs', () => {
     it('a run for a deleted record completes with no error', async () => {
       const task = await createTask({ notes: 'Paint the fence' });
 
-      await booted.frogbot.delete({ collection: tasksSlug, id: task.id });
+      await booted.frogbot.delete({ collection: tasksSlug, id: task.id, overrideAccess: true });
 
       await runJobs();
 
@@ -892,6 +922,7 @@ describe('aiField runs', () => {
       return await booted.frogbot.create({
         collection: collection as never,
         data: data as never,
+        overrideAccess: true,
       });
     }
 
@@ -900,6 +931,7 @@ describe('aiField runs', () => {
         collection: collection as never,
         id,
         depth: 0,
+        overrideAccess: true,
       }) as Promise<unknown> as Promise<Doc>;
     }
 
@@ -1031,6 +1063,7 @@ describe('aiField runs', () => {
         collection: tasksSlug,
         where: { id: { equals: task.id } },
         depth: 0,
+        overrideAccess: true,
       });
 
       expect(Object.hasOwn(docs[0] ?? {}, '_summary_status')).toBe(true);
@@ -1101,6 +1134,7 @@ describe('aiField runs', () => {
         data: data as never,
         context: { frogbotAIFieldRun: { collection, id, field: 'summary' } },
         depth: 0,
+        overrideAccess: true,
         ...(draft ? { draft } : {}),
         ...(locale ? { locale } : {}),
       }) as Promise<unknown> as Promise<Doc>;
@@ -1125,6 +1159,7 @@ describe('aiField runs', () => {
         collection: articlesSlug,
         data: { _status: status } as never,
         draft,
+        overrideAccess: true,
       })) as unknown as Doc;
 
       return writeSummary({

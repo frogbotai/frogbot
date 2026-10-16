@@ -191,11 +191,13 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     const first = await frogbot.create({
       collection: 'users',
       data: { email: 'first@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     const second = await frogbot.create({
       collection: 'users',
       data: { email: 'second@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     owner = { id: first.id, collection: 'users' };
@@ -204,6 +206,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     await frogbot.create({
       collection: 'customers',
       data: { email: 'customer@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     const login = async (email: string, collection = 'users') => {
@@ -675,6 +678,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
     const created = await frogbot.create({
       collection: 'users',
       data: { email: 'deleted@example.com', password: 'test-password' },
+      overrideAccess: true,
     });
 
     const login = await request('/rest/v1/users/login', {

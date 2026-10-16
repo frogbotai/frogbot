@@ -9,6 +9,7 @@ export function defaultConnectionsCollection({
 }): CollectionConfig {
   return {
     slug,
+    versions: false,
     admin: {
       icon: 'link-square',
       useAsTitle: 'piece',

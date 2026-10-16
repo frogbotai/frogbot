@@ -1696,11 +1696,6 @@
   },
   {
     "page": "upload/storage-adapters",
-    "heading": "Configuration Options#uploadthing-configuration",
-    "type": "Omit<import('@frogbotai/storage-uploadthing').UploadthingStorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'useCompositePrefixes'>"
-  },
-  {
-    "page": "upload/storage-adapters",
     "heading": "Configuration Options#r2-configuration",
     "type": "Omit<import('@frogbotai/storage-r2').R2StorageOptions, 'collections' | 'enabled' | 'alwaysInsertFields' | 'clientUploads' | 'useCompositePrefixes'>"
   },

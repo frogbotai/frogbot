@@ -29,6 +29,7 @@ describe.runIf(adapterName === 'mongodb')('limited claims on MongoDB', () => {
           task: 'record-effect',
           queue: 'limited-claims',
           input: { marker: 'limited-claims' },
+          overrideAccess: true,
         }),
       ),
     );
@@ -48,11 +49,15 @@ describe.runIf(adapterName === 'mongodb')('limited claims on MongoDB', () => {
     });
 
     await Promise.all([
-      fixture.frogbot.jobs.run({ queue: 'limited-claims', limit: 2 }),
-      fixture.payload.jobs.run({ queue: 'limited-claims', limit: 2 }),
+      fixture.frogbot.jobs.run({ queue: 'limited-claims', limit: 2, overrideAccess: true }),
+      fixture.payload.jobs.run({ queue: 'limited-claims', limit: 2, overrideAccess: true }),
     ]);
 
-    const recorded = await fixture.payload.find({ collection: 'effects', limit: 0 });
+    const recorded = await fixture.payload.find({
+      collection: 'effects',
+      limit: 0,
+      overrideAccess: true,
+    });
 
     expect(snapshots).toBe(2);
     expect(recorded.docs).toHaveLength(2);

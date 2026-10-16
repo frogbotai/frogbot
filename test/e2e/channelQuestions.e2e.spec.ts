@@ -636,7 +636,11 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
     await expect
       .poll(
         async () => {
-          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() });
+          await frogbot.jobs.run({
+            allQueues: true,
+            req: await frogbot.createRequest(),
+            overrideAccess: true,
+          });
 
           return (await jobs({ completedAt: { exists: false }, hasError: { not_equals: true } }))
             .length;
@@ -1127,6 +1131,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         task: UPDATE_TASK,
         queue: 'frogbot-channel:support:pages',
         input: queued.input,
+        overrideAccess: true,
       });
 
       await work();
@@ -1185,6 +1190,7 @@ describe.skipIf(!RUN_E2E)('Channel questions e2e — Slack threads over real HTT
         task: UPDATE_TASK,
         queue: 'frogbot-channel:support:pages',
         input: stale.input,
+        overrideAccess: true,
       });
 
       await work();

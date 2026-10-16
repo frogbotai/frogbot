@@ -70,7 +70,7 @@ export async function jobsRun(args: string[]): Promise<void> {
       if (options.handleSchedules) await frogbot.jobs.handleSchedules(selection);
 
       if (!stopping && options.limit > 0) {
-        await frogbot.jobs.run({ ...selection, limit: options.limit });
+        await frogbot.jobs.run({ ...selection, limit: options.limit, overrideAccess: true });
       }
     })()
       .catch(fail)

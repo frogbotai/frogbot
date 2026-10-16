@@ -75,7 +75,7 @@ describe.skipIf(!RUN_E2E)('Teams questions e2e — signed webhooks to a persiste
   }
 
   async function work() {
-    await frogbot.jobs.run({ allQueues: true, limit: 20 });
+    await frogbot.jobs.run({ allQueues: true, limit: 20, overrideAccess: true });
   }
 
   async function mention({ root, text }: { root: string; text: string }) {

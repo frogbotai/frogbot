@@ -78,12 +78,18 @@ async function commitAndRead(req: PayloadRequest, jobId: string) {
 describe(`live jobId enqueue: ${adapterName}`, () => {
   it('an admin hasError edit frees the jobId immediately', async () => {
     const jobId = randomUUID();
-    const first = await fixture.frogbot.jobs.queue({ task: 'record-effect', input: {}, jobId });
+    const first = await fixture.frogbot.jobs.queue({
+      task: 'record-effect',
+      input: {},
+      jobId,
+      overrideAccess: true,
+    });
 
     await fixture.frogbot.update({
       collection: 'payload-jobs',
       id: first.id,
       data: { hasError: true },
+      overrideAccess: true,
     });
 
     const second = await fixture.worker.jobs.queue({ task: 'record-effect', input: {}, jobId });
@@ -107,6 +113,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       const first = await fixture.frogbot.create({
         collection: 'payload-jobs',
         data: { taskSlug: 'record-effect', input: { marker: jobId }, jobId },
+        overrideAccess: true,
       });
 
       const stored = await fixture.payload.db.find<FrogBotJob>({
@@ -149,6 +156,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
         task: 'record-effect',
         input: { marker: jobId },
         jobId,
+        overrideAccess: true,
       });
 
       const req = await beginTransaction();
@@ -159,6 +167,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
         input: {},
         jobId,
         req,
+        overrideAccess: true,
       });
 
       const persisted = await commitAndRead(req, jobId);
@@ -183,6 +192,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
             input: { marker: jobId },
             jobId,
             req,
+            overrideAccess: true,
           }),
         ),
       );
@@ -198,11 +208,22 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
 
   it('cancelByID frees the jobId', async () => {
     const jobId = randomUUID();
-    const first = await fixture.frogbot.jobs.queue({ task: 'record-effect', input: {}, jobId });
+    const first = await fixture.frogbot.jobs.queue({
+      task: 'record-effect',
+      input: {},
+      jobId,
+      overrideAccess: true,
+    });
 
-    await fixture.frogbot.jobs.cancelByID({ id: first.id });
+    await fixture.frogbot.jobs.cancelByID({ id: first.id, overrideAccess: true });
 
-    const second = await fixture.frogbot.jobs.queue({ task: 'record-effect', input: {}, jobId });
+    const second = await fixture.frogbot.jobs.queue({
+      task: 'record-effect',
+      input: {},
+      jobId,
+      overrideAccess: true,
+    });
+
     const rows = await fixture.payload.db.find<FrogBotJob>({
       collection: 'payload-jobs',
       pagination: false,
@@ -220,12 +241,14 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       workflow: 'supersede',
       input: { key: jobId, value: 'first' },
       jobId,
+      overrideAccess: true,
     });
 
     const second = await fixture.frogbot.jobs.queue({
       workflow: 'supersede',
       input: { key: jobId, value: 'second' },
       jobId,
+      overrideAccess: true,
     });
 
     const rows = await fixture.payload.db.find<FrogBotJob>({
@@ -242,11 +265,16 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
   it('concurrency supersedes replaces an older pending job without a jobId', async () => {
     const key = randomUUID();
 
-    await fixture.frogbot.jobs.queue({ workflow: 'supersede', input: { key, value: 'first' } });
+    await fixture.frogbot.jobs.queue({
+      workflow: 'supersede',
+      input: { key, value: 'first' },
+      overrideAccess: true,
+    });
 
     const second = await fixture.frogbot.jobs.queue({
       workflow: 'supersede',
       input: { key, value: 'second' },
+      overrideAccess: true,
     });
 
     const rows = await fixture.payload.db.find<FrogBotJob>({
@@ -264,6 +292,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       workflow: 'supersede',
       input: { key: jobId, value: 'first' },
       jobId,
+      overrideAccess: true,
     });
 
     await fixture.payload.db.updateOne({
@@ -276,6 +305,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
       workflow: 'supersede',
       input: { key: jobId, value: 'ignored' },
       jobId,
+      overrideAccess: true,
     });
 
     const rows = await fixture.payload.db.find<FrogBotJob>({
@@ -290,7 +320,7 @@ describe(`live jobId enqueue: ${adapterName}`, () => {
   it('calls without jobId create independent jobs', async () => {
     const results = await Promise.all(
       Array.from({ length: 4 }, () =>
-        fixture.frogbot.jobs.queue({ task: 'record-effect', input: {} }),
+        fixture.frogbot.jobs.queue({ task: 'record-effect', input: {}, overrideAccess: true }),
       ),
     );
 

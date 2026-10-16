@@ -13,6 +13,7 @@ const denied: Access = () => false;
 export function createAuditLogCollection(options: CollectionOptions): CollectionConfig {
   return {
     slug: options.slug,
+    versions: false,
     admin: {
       views: [
         {

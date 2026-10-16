@@ -83,7 +83,6 @@
     "@frogbotai/storage-gcs": "workspace:*",
     "@frogbotai/storage-r2": "workspace:*",
     "@frogbotai/storage-s3": "workspace:*",
-    "@frogbotai/storage-uploadthing": "workspace:*",
     "@frogbotai/storage-vercel-blob": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "@hono/node-server": "^1.13.7",

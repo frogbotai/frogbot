@@ -117,7 +117,13 @@ const ReqAccess: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ req, data }) => {
-        const result = await req.frogbot.find({ collection: reqAccessSlug, limit: 0, req });
+        const result = await req.frogbot.find({
+          collection: reqAccessSlug,
+          limit: 0,
+          req,
+          overrideAccess: true,
+        });
+
         req.context.countAtHookTime = result.totalDocs;
 
         return data;

@@ -28,6 +28,7 @@ export function defaultChatsCollection({
 }: DefaultChatsCollectionProps): CollectionConfig {
   return {
     slug,
+    versions: false,
     trash: true,
     admin: {
       icon: 'bubble-chat',

@@ -36,6 +36,7 @@ describe('frogbot-instance: Auth + utilities', () => {
       const loginResult = await booted.frogbot.login({
         collection: usersSlug,
         data: { email: testUserEmail, password: testUserPassword },
+        overrideAccess: true,
       });
 
       const headers = new Headers();

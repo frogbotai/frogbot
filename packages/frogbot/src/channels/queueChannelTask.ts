@@ -18,5 +18,6 @@ export async function queueChannelTask({
     task: input.kind === 'update' ? CHANNEL_QUESTION_UPDATE_TASK_SLUG : CHANNEL_TASK_SLUG,
     queue: `frogbot-channel:${binding.agent.slug}:${binding.instance.slug}`,
     input,
+    overrideAccess: true,
   });
 }

@@ -187,6 +187,7 @@ describePostgres(`postgres vector search [${driver}]`, () => {
       collection: articlesSlug,
       data: { title: 'Uncommitted', embedding: query, _status: 'published' },
       req,
+      overrideAccess: true,
     });
 
     const result = await booted.frogbot.search({

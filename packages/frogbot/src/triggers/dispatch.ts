@@ -42,6 +42,7 @@ export async function dispatchTriggerEvents({
             triggerSlug: subscriber.trigger.trigger.slug,
             event,
           },
+          overrideAccess: true,
         });
 
         signal.throwIfAborted();

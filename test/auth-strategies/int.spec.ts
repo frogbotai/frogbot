@@ -53,6 +53,7 @@ describe('auth strategies', () => {
     user = await booted.frogbot.create({
       collection: usersSlug,
       data: { code: testUserCode, email: null },
+      overrideAccess: true,
     });
 
     strategyCalls.length = 0;
@@ -61,7 +62,7 @@ describe('auth strategies', () => {
   afterEach(async () => {
     vi.restoreAllMocks();
 
-    await booted.frogbot.delete({ collection: usersSlug, id: user.id });
+    await booted.frogbot.delete({ collection: usersSlug, id: user.id, overrideAccess: true });
   });
 
   it('GET /api/users/me authenticates a header token with frogbot.find', async () => {

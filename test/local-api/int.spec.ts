@@ -26,6 +26,7 @@ const editorHeaderStrategy: AuthStrategy = {
       collection: 'editors',
       limit: 1,
       where: { email: { equals: email } },
+      overrideAccess: true,
     });
 
     return {
@@ -56,16 +57,23 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       data: {},
       filePath,
       overwriteExistingFiles,
+      overrideAccess: true,
     }) as Promise<{ id: number | string; filename: string }>;
 
   const create = (title: string) =>
-    frogbot.create({ collection: 'notes', data: { title } }) as Promise<{
+    frogbot.create({ collection: 'notes', data: { title }, overrideAccess: true }) as Promise<{
       id: number | string;
       title: string;
     }>;
 
   const count = async (title: string) =>
-    (await frogbot.count({ collection: 'notes', where: { title: { equals: title } } })).totalDocs;
+    (
+      await frogbot.count({
+        collection: 'notes',
+        where: { title: { equals: title } },
+        overrideAccess: true,
+      })
+    ).totalDocs;
 
   const lock = (id: number | string) =>
     payload.create({
@@ -74,6 +82,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         document: { relationTo: 'notes', value: id },
         user: { relationTo: 'editors', value: editorID },
       },
+      overrideAccess: true,
     });
 
   beforeAll(async () => {
@@ -115,6 +124,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       await frogbot.create({
         collection: 'editors',
         data: { email: 'editor@example.com', password: 'editor-password' },
+        overrideAccess: true,
       })
     ).id;
   });
@@ -135,6 +145,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
           id: note.id,
           data: { title: 'blocked' },
           overrideLock: false,
+          overrideAccess: true,
         }),
       ).rejects.toThrow(`Document with ID ${note.id} is currently locked`);
 
@@ -143,6 +154,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         where: { id: { equals: note.id } },
         data: { title: 'blocked' },
         overrideLock: false,
+        overrideAccess: true,
       });
 
       expect(many.docs).toEqual([]);
@@ -152,7 +164,12 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       expect(await count('locked-update')).toBe(1);
 
       await expect(
-        frogbot.update({ collection: 'notes', id: note.id, data: { title: 'unlocked-update' } }),
+        frogbot.update({
+          collection: 'notes',
+          id: note.id,
+          data: { title: 'unlocked-update' },
+          overrideAccess: true,
+        }),
       ).resolves.toMatchObject({ title: 'unlocked-update' });
     });
 
@@ -161,13 +178,19 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       await lock(note.id);
 
       await expect(
-        frogbot.delete({ collection: 'notes', id: note.id, overrideLock: false }),
+        frogbot.delete({
+          collection: 'notes',
+          id: note.id,
+          overrideLock: false,
+          overrideAccess: true,
+        }),
       ).rejects.toThrow(`Document with ID ${note.id} is currently locked`);
 
       const many = await frogbot.delete({
         collection: 'notes',
         where: { id: { equals: note.id } },
         overrideLock: false,
+        overrideAccess: true,
       });
 
       expect(many.errors).toEqual([
@@ -175,7 +198,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       ]);
       expect(await count('locked-delete')).toBe(1);
 
-      await frogbot.delete({ collection: 'notes', id: note.id });
+      await frogbot.delete({ collection: 'notes', id: note.id, overrideAccess: true });
 
       expect(await count('locked-delete')).toBe(0);
     });
@@ -186,7 +209,12 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
       const context = { fail: true };
 
       await expect(
-        frogbot.create({ collection: 'notes', data: { title: 'create-rollback' }, context }),
+        frogbot.create({
+          collection: 'notes',
+          data: { title: 'create-rollback' },
+          context,
+          overrideAccess: true,
+        }),
       ).rejects.toThrow('hook failed after the write');
       expect(await count('create-rollback')).toBe(0);
 
@@ -196,6 +224,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
           data: { title: 'create-kept' },
           context,
           disableTransaction: true,
+          overrideAccess: true,
         }),
       ).rejects.toThrow('hook failed after the write');
       expect(await count('create-kept')).toBe(1);
@@ -203,7 +232,12 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
 
     it('keeps a failed update when disabled', async () => {
       const note = await create('update-before');
-      const args = { collection: 'notes', id: note.id, context: { fail: true } } as const;
+      const args = {
+        collection: 'notes',
+        id: note.id,
+        context: { fail: true },
+        overrideAccess: true,
+      } as const;
 
       await expect(frogbot.update({ ...args, data: { title: 'update-rollback' } })).rejects.toThrow(
         'hook failed after the write',
@@ -218,7 +252,12 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
 
     it('keeps a failed delete when disabled', async () => {
       const note = await create('delete-target');
-      const args = { collection: 'notes', id: note.id, context: { fail: true } } as const;
+      const args = {
+        collection: 'notes',
+        id: note.id,
+        context: { fail: true },
+        overrideAccess: true,
+      } as const;
 
       await expect(frogbot.delete(args)).rejects.toThrow('hook failed after the write');
       expect(await count('delete-target')).toBe(1);
@@ -231,7 +270,12 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
 
     it('keeps a failed duplicate when disabled', async () => {
       const note = await create('duplicate-source');
-      const args = { collection: 'notes', id: note.id, context: { fail: true } } as const;
+      const args = {
+        collection: 'notes',
+        id: note.id,
+        context: { fail: true },
+        overrideAccess: true,
+      } as const;
 
       await expect(frogbot.duplicate(args)).rejects.toThrow('hook failed after the write');
       expect(await count('duplicate-source')).toBe(1);
@@ -251,6 +295,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         collection: 'notes',
         data: {},
         duplicateFromID: source.id,
+        overrideAccess: true,
       });
 
       expect(copy).toMatchObject({ title: 'duplicate-from' });
@@ -264,6 +309,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         collection: 'attachments',
         data: {},
         duplicateFromID: source.id,
+        overrideAccess: true,
       });
 
       expect(copy.filename).not.toBe(source.filename);
@@ -297,6 +343,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         data: {},
         filePath: await writeFixture('after.txt', 'after'),
         id: attachment.id,
+        overrideAccess: true,
       });
 
       expect(updated.filename).toBe('after.txt');
@@ -312,6 +359,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         filePath: await writeFixture('same.txt', 'new'),
         id: attachment.id,
         overwriteExistingFiles: true,
+        overrideAccess: true,
       });
 
       expect(updated.filename).toBe('same.txt');
@@ -323,11 +371,17 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         collection: 'articles',
         data: { title: 'Hello' },
         draft: true,
+        overrideAccess: true,
       })) as { id: number | string };
 
       const status = async () =>
         (
-          (await frogbot.findByID({ collection: 'articles', id: article.id, locale: 'all' })) as {
+          (await frogbot.findByID({
+            collection: 'articles',
+            id: article.id,
+            locale: 'all',
+            overrideAccess: true,
+          })) as {
             _status?: unknown;
           }
         )._status;
@@ -337,6 +391,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         data: { _status: 'published' },
         id: article.id,
         publishAllLocales: true,
+        overrideAccess: true,
       });
 
       const published = await status();
@@ -346,6 +401,7 @@ describe(`local API write options [${process.env.FROGBOT_DATABASE || 'sqlite'}]`
         data: { _status: 'draft' },
         id: article.id,
         unpublishAllLocales: true,
+        overrideAccess: true,
       });
 
       const unpublished = await status();

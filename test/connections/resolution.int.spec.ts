@@ -131,11 +131,13 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     const first = await frogbot.create({
       collection: 'members',
       data: { email: 'first@example.com', password: 'password' },
+      overrideAccess: true,
     });
 
     const second = await frogbot.create({
       collection: 'members',
       data: { email: 'second@example.com', password: 'password' },
+      overrideAccess: true,
     });
 
     owner = { id: first.id, collection: 'members' };

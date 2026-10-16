@@ -59,7 +59,12 @@ type SchemaGroup = {
 type ConfigJSONSchema = {
   properties?: Record<string, SchemaGroup | undefined>;
   definitions?: Record<string, unknown>;
+  $defs?: Record<string, unknown>;
 };
+
+function definitionGroups(schema: ConfigJSONSchema): Record<string, unknown>[] {
+  return [schema.definitions, schema.$defs].filter((group) => group !== undefined);
+}
 
 function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
   if (!schema || typeof schema !== 'object') return;
@@ -71,7 +76,7 @@ function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
 
   const obj = schema as Record<string, unknown>;
   if (typeof obj.$ref === 'string') {
-    const match = /#\/definitions\/(.+)/.exec(obj.$ref);
+    const match = /#\/(?:definitions|\$defs)\/(.+)/.exec(obj.$ref);
     if (match && stripped.has(match[1])) {
       delete obj.$ref;
       obj.type = 'null';
@@ -105,11 +110,12 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
     }
   }
 
-  const internalDefs = new Set(Object.keys(schema.definitions ?? {}).filter(isInternal));
+  const groups = definitionGroups(schema);
+  const internalDefs = new Set(groups.flatMap((group) => Object.keys(group)).filter(isInternal));
   if (internalDefs.size === 0) return;
 
-  for (const name of internalDefs) {
-    delete schema.definitions![name];
+  for (const group of groups) {
+    for (const name of internalDefs) delete group[name];
   }
 
   stripRefs(schema, internalDefs);
@@ -129,7 +135,9 @@ export function internalSelectName(slug: string): string {
 }
 
 export function nameInternalSelects(schema: ConfigJSONSchema): void {
-  for (const [name, definition] of Object.entries(schema.definitions ?? {})) {
+  for (const [name, definition] of definitionGroups(schema).flatMap((group) =>
+    Object.entries(group),
+  )) {
     const slug = INTERNAL_SELECT.exec(name)?.[1];
 
     if (slug && definition && typeof definition === 'object') {

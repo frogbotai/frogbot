@@ -1,7 +1,7 @@
 ---
 title: Storage Adapters
 sidebarTitle: Storage Adapters
-description: FrogBot provides additional storage adapters to handle file uploads. These adapters allow you to store files in different locations, such as Amazon S3, Vercel Blob Storage, Google Cloud Storage, Uploadthing, and more.
+description: FrogBot provides additional storage adapters to handle file uploads. These adapters allow you to store files in different locations, such as Amazon S3, Vercel Blob Storage, Google Cloud Storage, and more.
 keywords: uploads, images, media, storage, adapters, s3, vercel, google cloud, azure
 ---
 
@@ -13,7 +13,6 @@ FrogBot offers additional storage adapters to handle file uploads. These adapter
 | AWS S3               | [`@frogbotai/storage-s3`](https://github.com/frogbot/frogbot/tree/main/packages/storage-s3)                   |
 | Azure                | [`@frogbotai/storage-azure`](https://github.com/frogbot/frogbot/tree/main/packages/storage-azure)             |
 | Google Cloud Storage | [`@frogbotai/storage-gcs`](https://github.com/frogbot/frogbot/tree/main/packages/storage-gcs)                 |
-| Uploadthing          | [`@frogbotai/storage-uploadthing`](https://github.com/frogbot/frogbot/tree/main/packages/storage-uploadthing) |
 | R2                   | [`@frogbotai/storage-r2`](https://github.com/frogbot/frogbot/tree/main/packages/storage-r2)                   |
 
 ## Configuration
@@ -378,57 +377,6 @@ Also accepts the [shared options](#shared-storage-options).
 | `acl` | `'Private' \| 'Public'` | — | Makes each uploaded file private or public. Unset leaves the bucket's default. |
 | `clientCacheKey` | `string` | `gcs:<bucket>` | Key the storage client is cached under. Adapters with the same key share one client. |
 
-## Uploadthing Storage
-
-[`@frogbotai/storage-uploadthing`](https://www.npmjs.com/package/@frogbotai/storage-uploadthing)
-
-### Installation#uploadthing-installation
-
-```sh
-pnpm add @frogbotai/storage-uploadthing
-```
-
-### Usage#uploadthing-usage
-
-- FrogBot's upload collections use the adapter [automatically](#configuration). Add your own upload collections to `collections`; each slug _must_ match an existing upload collection.
-- Get a token from Uploadthing and set it as `token` in the `options` object.
-- `acl` is optional and defaults to `public-read`.
-- When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client.
-
-```ts
-export default buildConfig({
-  collections: [Media],
-  plugins: [
-    uploadthingStorage({
-      collections: {
-        media: true,
-      },
-      options: {
-        token: process.env.UPLOADTHING_TOKEN,
-        acl: 'public-read',
-      },
-    }),
-  ],
-})
-```
-
-### Configuration Options#uploadthing-configuration
-
-Uploadthing accepts `collections`, `enabled`, and `alwaysInsertFields` from the [shared options](#shared-storage-options). It doesn't support prefixes or `useCompositePrefixes`.
-
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `options` | `object` | Required | Uploadthing settings, below. |
-| `options.token` | `string` | `process.env.UPLOADTHING_TOKEN` | Uploadthing token. |
-| `options.acl` | `'public-read' \| 'private'` | `'public-read'` | Access control list for uploaded files. |
-| `options.logLevel` | `'All' \| 'Fatal' \| 'Error' \| 'Warning' \| 'Info' \| 'Debug' \| 'Trace' \| 'None'` | `'Info'` | Uploadthing log level. |
-| `options.logFormat` | `'json' \| 'logFmt' \| 'structured' \| 'pretty'` | `'pretty'` in development, otherwise `'json'` | Uploadthing log format. |
-| `options.defaultKeyType` | `'fileKey' \| 'customId'` | `'fileKey'` | Whether file operations identify files by file key or custom ID. |
-| `options.fetch` | `typeof fetch` | `globalThis.fetch` | Custom `fetch` implementation. |
-| `options.apiUrl` | `string` | — | Overrides the Uploadthing API server URL. |
-| `options.ingestUrl` | `string` | — | Overrides the Uploadthing ingest server URL. |
-| `clientUploads` | `boolean \| { access?: ClientUploadsAccess; routerInputConfig?: FileRouterInputConfig }` | `false` | Client uploads, as in the [shared options](#shared-storage-options). `routerInputConfig` sets the Uploadthing file route's input config, such as allowed file types and maximum sizes. |
-
 ## R2 Storage
 
 <Banner type="warning">
@@ -483,14 +431,14 @@ Every storage adapter accepts these options, except where noted.
 | `collections` | `Record<string, true \| false \| CollectionOptions>` | `{}` | Your own upload collections that use the adapter, keyed by slug. The collection marked `file: true`, if any, and `frogbot-chat-assets` are [included automatically](#configuration) in the first adapter. Use `true` for the defaults, an object of [collection-specific options](#collection-specific-options), or `false` to keep one of FrogBot's collections on local disk. Each slug _must_ match an existing upload collection. |
 | `enabled` | `boolean` | `true` | Set `false` to turn the adapter off. When it's off, the collections keep using local storage. |
 | `alwaysInsertFields` | `boolean` | `false` | Adds the adapter's fields, such as `prefix`, to the collection schema even when the adapter is disabled, so the schema is the same in every environment. Only S3 and Vercel Blob read it; other adapters add no fields when disabled. |
-| `clientUploads` | `boolean \| { access?: ClientUploadsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure and Uploadthing accept extra keys. |
-| `useCompositePrefixes` | `boolean` | `false` | Stores the document prefix relative to the collection prefix. See [Prefix composition](#prefix-composition). Not available on Uploadthing. |
+| `clientUploads` | `boolean \| { access?: ClientUploadsAccess }` | `false` | Uploads files directly from the browser to storage, bypassing server upload limits such as Vercel's 4.5 MB. The user must be signed in and able to create or update documents in the collection. `access` is `({ collectionSlug, req }) => boolean \| Promise<boolean>` and adds a further check. Azure accepts extra keys. |
+| `useCompositePrefixes` | `boolean` | `false` | Stores the document prefix relative to the collection prefix. See [Prefix composition](#prefix-composition). |
 
 ## Collection-specific options
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `prefix` | `string` | — | Folder in the bucket for this collection's files, such as `media/images`. Uploadthing ignores it. |
+| `prefix` | `string` | — | Folder in the bucket for this collection's files, such as `media/images`. |
 | `disableLocalStorage` | `boolean` | `true` | Set `false` to also keep a local copy of each file. |
 | `disablePayloadAccessControl` | `true` | — | Serves files straight from your storage provider instead of through FrogBot's access control. See [FrogBot Access Control](#frogbot-access-control). |
 | `generateFileURL` | `({ collection, filename, prefix, size }) => string \| Promise<string>` | — | Returns the file URL to store, instead of the generated one. `size` is set for image sizes. |

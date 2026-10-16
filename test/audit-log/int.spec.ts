@@ -175,8 +175,13 @@ describe('audit log plugin integration', () => {
       overrideAccess: true,
     });
 
-    const job = await booted.frogbot.jobs.queue({ task: 'frogbot-prune-audit-logs', input: {} });
-    await booted.frogbot.jobs.runByID({ id: job.id });
+    const job = await booted.frogbot.jobs.queue({
+      task: 'frogbot-prune-audit-logs',
+      input: {},
+      overrideAccess: true,
+    });
+
+    await booted.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
 
     await expect(
       booted.frogbot.findByID({

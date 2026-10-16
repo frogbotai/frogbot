@@ -11,6 +11,7 @@ export async function BannerBlock({ path, req }: LexicalBlockServerProps) {
     collection: 'files',
     limit: 1,
     req,
+    overrideAccess: true,
   });
 
   return (

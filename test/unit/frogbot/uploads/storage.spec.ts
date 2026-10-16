@@ -9,7 +9,6 @@ import { azureStorage } from '../../../../packages/storage-azure/src/index.js';
 import { gcsStorage } from '../../../../packages/storage-gcs/src/index.js';
 import { r2Storage } from '../../../../packages/storage-r2/src/index.js';
 import { s3Storage } from '../../../../packages/storage-s3/src/index.js';
-import { uploadthingStorage } from '../../../../packages/storage-uploadthing/src/index.js';
 import { vercelBlobStorage } from '../../../../packages/storage-vercel-blob/src/index.js';
 
 vi.mock('payload', async (importOriginal) => ({
@@ -220,7 +219,6 @@ describe('storage adapters', () => {
         containerName: 'container',
       }),
     ],
-    ['uploadthing', uploadthingStorage({ options: { token: 'token' } })],
     ['vercel-blob', vercelBlobStorage({ token: 'vercel_blob_rw_store_secret' })],
   ])('%s covers the files collection', async (adapter, plugin) => {
     const { upload } = await build({ plugins: [plugin] });

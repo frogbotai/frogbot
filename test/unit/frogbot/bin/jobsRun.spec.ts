@@ -235,7 +235,11 @@ describe('jobs:run lifecycle', () => {
 
     const scheduleArgs = mocks.payload.jobs.handleSchedules.mock.calls[0][0];
 
-    expect(mocks.payload.jobs.run).toHaveBeenCalledWith({ ...(scheduleArgs as object), limit: 6 });
+    expect(mocks.payload.jobs.run).toHaveBeenCalledWith({
+      ...(scheduleArgs as object),
+      limit: 6,
+      overrideAccess: true,
+    });
     expect(scheduleArgs).toMatchObject({ queue: 'mail', allQueues: false });
 
     await signal();

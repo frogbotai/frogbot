@@ -45,7 +45,11 @@ describe('custom GraphQL resolvers with search collections', () => {
   });
 
   it('a custom query overrides a generated search query and receives req.frogbot', async () => {
-    await booted.frogbot.create({ collection: postsSlug, data: { title: 'Searchable post' } });
+    await booted.frogbot.create({
+      collection: postsSlug,
+      data: { title: 'Searchable post' },
+      overrideAccess: true,
+    });
 
     const body = await query('{ searchPosts }');
 
@@ -55,7 +59,11 @@ describe('custom GraphQL resolvers with search collections', () => {
   it('a custom mutation receives req.frogbot when search queries are merged', async () => {
     const body = await query('mutation { addPost }');
 
-    const post = await booted.frogbot.findByID({ collection: postsSlug, id: body.data.addPost });
+    const post = await booted.frogbot.findByID({
+      collection: postsSlug,
+      id: body.data.addPost,
+      overrideAccess: true,
+    });
 
     expect(body.errors).toBeUndefined();
     expect(post.title).toBe('From a search-enabled custom mutation');

@@ -213,6 +213,7 @@ export async function bootJobsFixture({
         marker: `${marker}:${event}:${(job.totalTried ?? 0) + 1}`,
         owner,
       },
+      overrideAccess: true,
     });
   };
 
@@ -329,6 +330,7 @@ export async function bootJobsFixture({
               await req.payload.create({
                 collection: 'effects',
                 data: { jobRecord: String(job.id), marker: input.marker, owner },
+                overrideAccess: true,
               });
 
               return { output: { marker: input.marker } };

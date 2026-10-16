@@ -35,14 +35,13 @@ Use the adapter package's exported option types instead of recreating its config
 
 Register storage adapters in `plugins`. Each adapter stores files for FrogBot's own upload collections automatically: the collection marked `file: true`, if any, and `frogbot-chat-assets` when chat persistence is enabled. List only your own extra upload collections in `collections`.
 
-| Service                              | Package                          | Factory              |
-| ------------------------------------ | -------------------------------- | -------------------- |
-| Amazon S3 and S3-compatible services | `@frogbotai/storage-s3`          | `s3Storage`          |
-| Google Cloud Storage                 | `@frogbotai/storage-gcs`         | `gcsStorage`         |
-| Azure Blob Storage                   | `@frogbotai/storage-azure`       | `azureStorage`       |
-| Vercel Blob                          | `@frogbotai/storage-vercel-blob` | `vercelBlobStorage`  |
-| UploadThing                          | `@frogbotai/storage-uploadthing` | `uploadthingStorage` |
-| Cloudflare Workers R2 binding        | `@frogbotai/storage-r2`          | `r2Storage`          |
+| Service                              | Package                          | Factory             |
+| ------------------------------------ | -------------------------------- | ------------------- |
+| Amazon S3 and S3-compatible services | `@frogbotai/storage-s3`          | `s3Storage`         |
+| Google Cloud Storage                 | `@frogbotai/storage-gcs`         | `gcsStorage`        |
+| Azure Blob Storage                   | `@frogbotai/storage-azure`       | `azureStorage`      |
+| Vercel Blob                          | `@frogbotai/storage-vercel-blob` | `vercelBlobStorage` |
+| Cloudflare Workers R2 binding        | `@frogbotai/storage-r2`          | `r2Storage`         |
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite';

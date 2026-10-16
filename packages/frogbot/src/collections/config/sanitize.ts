@@ -198,6 +198,8 @@ export function sanitizeCollection(
 
   const auth = c.auth !== undefined && c.auth !== false;
 
+  if (auth && c.versions === undefined) out.versions = false;
+
   if (typeof c.auth === 'object') {
     const {
       signIn: _signIn,

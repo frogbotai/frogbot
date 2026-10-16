@@ -83,7 +83,11 @@ describePostgres(`postgres search setup [${driver}]`, () => {
         ),
       });
 
-      await frogbot.create({ collection: 'notes', data: { title: 'Reset a password' } });
+      await frogbot.create({
+        collection: 'notes',
+        data: { title: 'Reset a password' },
+        overrideAccess: true,
+      });
 
       const result = await frogbot.search({
         collection: 'notes',

@@ -5,6 +5,7 @@ export const AUTONUMBERS_SLUG = 'frogbot-autonumbers';
 export function defaultAutonumbersCollection(): CollectionConfig {
   return {
     slug: AUTONUMBERS_SLUG,
+    versions: false,
     typescript: { interface: 'FrogBotAutonumber' },
     admin: { hidden: true },
     graphQL: false,

@@ -120,6 +120,7 @@ export const generateSlug =
 
     const { totalDocs } = await req.frogbot.countVersions({
       collection: collection.slug,
+      overrideAccess: true,
       req,
       where,
     });

@@ -49,6 +49,7 @@ describe('customApiCall binary responses', () => {
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'files@frogbot.local', password: 'files-password' },
+      overrideAccess: true,
     });
 
     req = await booted.frogbot.createRequest({

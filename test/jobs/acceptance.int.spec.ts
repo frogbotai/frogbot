@@ -53,11 +53,18 @@ async function effects(queue: string) {
     where: { marker: { contains: queue } },
     pagination: false,
     limit: 0,
+    overrideAccess: true,
   });
 }
 
 async function queueJob(queue: string, marker = queue, extra = {}) {
-  return fixture.frogbot.jobs.queue({ task: 'record-effect', queue, input: { marker }, ...extra });
+  return fixture.frogbot.jobs.queue({
+    task: 'record-effect',
+    queue,
+    input: { marker },
+    overrideAccess: true,
+    ...extra,
+  });
 }
 
 async function enteredOrFinished(entered: Promise<void>, run: Promise<unknown>) {
@@ -78,9 +85,10 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       input: undefined,
       queue,
       jobId,
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true });
+    await fixture.frogbot.jobs.runByID({ id: first.id, silent: true, overrideAccess: true });
 
     expect(await readJob(first.id)).toMatchObject({ hasError: true });
 
@@ -89,6 +97,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       input: undefined,
       queue,
       jobId,
+      overrideAccess: true,
     });
 
     expect(second.id).not.toBe(first.id);
@@ -100,7 +109,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     const jobId = `completed-${queue}`;
     const first = await queueJob(queue, queue, { jobId });
 
-    await fixture.frogbot.jobs.runByID({ id: first.id });
+    await fixture.frogbot.jobs.runByID({ id: first.id, overrideAccess: true });
 
     expect(await readJob(first.id)).toMatchObject({ completedAt: expect.any(String) });
 
@@ -138,6 +147,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     const rows = await fixture.payload.find({
       collection: 'payload-jobs',
       where: { jobId: { equals: jobId } },
+      overrideAccess: true,
     });
 
     const generated = await Promise.all(Array.from({ length: 4 }, () => queueJob(queue)));
@@ -146,7 +156,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     expect(new Set(generated.map(({ id }) => id)).size).toBe(4);
     expect(generated.every((job) => job.id !== jobId)).toBe(true);
 
-    await fixture.frogbot.jobs.runByID({ id: rows.docs[0].id });
+    await fixture.frogbot.jobs.runByID({ id: rows.docs[0].id, overrideAccess: true });
 
     expect(await readJob(rows.docs[0].id)).toMatchObject({ completedAt: expect.any(String) });
 
@@ -154,7 +164,11 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     expect(completedReuse.id).not.toBe(rows.docs[0].id);
 
-    await fixture.payload.delete({ collection: 'payload-jobs', id: completedReuse.id });
+    await fixture.payload.delete({
+      collection: 'payload-jobs',
+      id: completedReuse.id,
+      overrideAccess: true,
+    });
 
     const reused = await queueJob(queue, queue, { jobId });
 
@@ -199,7 +213,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     );
 
     await Promise.all([
-      fixture.frogbot.jobs.run({ queue, limit: 12 }),
+      fixture.frogbot.jobs.run({ queue, limit: 12, overrideAccess: true }),
       fixture.worker.jobs.run({ queue, limit: 12 }),
     ]);
 
@@ -228,7 +242,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     fixture.gates.set(queue, gate);
 
     const runs = Promise.all([
-      fixture.frogbot.jobs.runByID({ id: job.id }),
+      fixture.frogbot.jobs.runByID({ id: job.id, overrideAccess: true }),
       fixture.worker.jobs.runByID({ id: job.id }),
     ]);
 
@@ -256,7 +270,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     const queue = randomUUID();
     const jobs = await Promise.all(Array.from({ length: 120 }, () => queueJob(queue)));
 
-    await fixture.frogbot.jobs.run({ queue, limit: 0 });
+    await fixture.frogbot.jobs.run({ queue, limit: 0, overrideAccess: true });
 
     const recorded = await effects(queue);
     const persisted = await fixture.payload.find({
@@ -264,6 +278,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       where: { queue: { equals: queue } },
       pagination: false,
       limit: 0,
+      overrideAccess: true,
     });
 
     expect(recorded.docs).toHaveLength(120);
@@ -283,7 +298,13 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     for (const priority of [1, 3, 2]) {
       const job = await queueJob(queue);
 
-      await fixture.payload.update({ collection: 'payload-jobs', id: job.id, data: { priority } });
+      await fixture.payload.update({
+        collection: 'payload-jobs',
+        id: job.id,
+        data: { priority },
+        overrideAccess: true,
+      });
+
       jobs.push(job);
     }
 
@@ -295,6 +316,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       limit: 1,
       processingOrder: '-priority',
       where: { priority: { greater_than: 1 } },
+      overrideAccess: true,
     });
 
     expect((await effects(queue)).docs.map((effect) => effect.jobRecord)).toEqual([
@@ -314,7 +336,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     const job = await queueJob(queue);
 
-    await fixture.frogbot.jobs.runByID({ id: job.id });
+    await fixture.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
 
     const recorded = await effects(queue);
 
@@ -339,6 +361,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
         task: 'retry-effect',
         queue,
         input: { marker: queue, alwaysFail },
+        overrideAccess: true,
       });
 
       let checkpoint: unknown;
@@ -396,7 +419,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
       const before = await readJob(job.id);
 
-      await fixture.frogbot.jobs.run({ queue, silent: true });
+      await fixture.frogbot.jobs.run({ queue, silent: true, overrideAccess: true });
 
       expect(await readJob(job.id)).toEqual(before);
       expect((await effects(queue)).docs).toHaveLength(4);
@@ -411,7 +434,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     fixture.gates.set(queue, gate);
 
-    const run = fixture.frogbot.jobs.run({ queue });
+    const run = fixture.frogbot.jobs.run({ queue, overrideAccess: true });
 
     onTestFinished(async () => {
       gate.release.resolve();
@@ -431,7 +454,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     expect(Date.now()).toBeGreaterThan(timestamp(initial.leaseUntil));
 
     await sweepJobLeases({ req });
-    await fixture.payload.jobs.runByID({ id: job.id });
+    await fixture.payload.jobs.runByID({ id: job.id, overrideAccess: true });
 
     expect(await readJob(job.id)).toMatchObject({
       processing: true,
@@ -465,7 +488,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     fixture.gates.set(queue, gate);
 
-    const run = fixture.frogbot.jobs.runByID({ id: job.id });
+    const run = fixture.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
 
     onTestFinished(async () => {
       gate.release.resolve();
@@ -513,9 +536,10 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       collection: 'payload-jobs',
       id: job.id,
       data: { priority: 42 },
+      overrideAccess: true,
     });
 
-    await fixture.frogbot.jobs.runByID({ id: job.id });
+    await fixture.frogbot.jobs.runByID({ id: job.id, overrideAccess: true });
 
     expect(await readJob(job.id)).toMatchObject({
       priority: 42,
@@ -524,8 +548,8 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
 
     const cancelled = await queueJob(queue);
 
-    await fixture.frogbot.jobs.cancelByID({ id: cancelled.id });
-    await fixture.frogbot.jobs.run({ queue });
+    await fixture.frogbot.jobs.cancelByID({ id: cancelled.id, overrideAccess: true });
+    await fixture.frogbot.jobs.run({ queue, overrideAccess: true });
 
     expect(await readJob(cancelled.id)).toMatchObject({
       processing: false,
@@ -554,6 +578,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
       collection: 'payload-jobs',
       where: { taskSlug: { equals: 'frogbot-sweep-jobs' } },
       limit: 0,
+      overrideAccess: true,
     });
 
     expect(result.errored).toEqual([]);
@@ -570,6 +595,7 @@ describe(`built FrogBot jobs acceptance: ${adapterName}`, () => {
     await fixture.frogbot.jobs.run({
       queue: 'default',
       where: { taskSlug: { equals: 'frogbot-sweep-jobs' } },
+      overrideAccess: true,
     });
 
     vi.useRealTimers();

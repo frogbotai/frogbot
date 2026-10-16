@@ -5,6 +5,7 @@ export const WAITPOINTS_SLUG = 'frogbot-waitpoints';
 export function defaultWaitpointsCollection(): CollectionConfig {
   return {
     slug: WAITPOINTS_SLUG,
+    versions: false,
     typescript: { interface: 'FrogBotWaitpoint' },
     admin: { hidden: true },
     graphQL: false,

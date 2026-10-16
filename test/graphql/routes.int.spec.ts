@@ -307,6 +307,7 @@ describe('GraphQL routes', () => {
     await booted.frogbot.create({
       collection: postsSlug,
       data: { title: 'Orchard', body: 'Apples grow in the orchard' },
+      overrideAccess: true,
     });
 
     const { body } = await query<{

@@ -79,6 +79,7 @@ describe('autonumber', () => {
     return (await booted.frogbot.create({
       collection: ticketsSlug,
       data: { title: 'Printer', ...data },
+      overrideAccess: true,
     })) as unknown as Ticket;
   }
 
@@ -105,6 +106,7 @@ describe('autonumber', () => {
       collection: ticketsSlug,
       depth: 0,
       pagination: false,
+      overrideAccess: true,
       ...query,
     } as never);
 
@@ -162,7 +164,7 @@ describe('autonumber', () => {
     it('deleting a record leaves a gap and the next create is higher', async () => {
       const [first, second, third] = [await create({}), await create({}), await create({})];
 
-      await booted.frogbot.delete({ collection: ticketsSlug, id: second.id });
+      await booted.frogbot.delete({ collection: ticketsSlug, id: second.id, overrideAccess: true });
 
       const next = await create({});
 
@@ -222,6 +224,7 @@ describe('autonumber', () => {
       const user = await booted.frogbot.create({
         collection: usersSlug,
         data: { email: 'ana@system-fields.test', password: 'frogbot-system-fields-password' },
+        overrideAccess: true,
       });
 
       const csv = ['title,number', 'Imported one,500', 'Imported two,500'].join('\n');
@@ -232,9 +235,10 @@ describe('autonumber', () => {
         data: { collectionSlug: ticketsSlug, importMode: 'create' },
         file: { data, mimetype: 'text/csv', name: 'tickets.csv', size: data.length },
         user: { ...user, collection: usersSlug },
+        overrideAccess: true,
       } as never);
 
-      await booted.frogbot.jobs.run();
+      await booted.frogbot.jobs.run({ overrideAccess: true });
 
       const result = (await booted.frogbot.findByID({
         collection: importsSlug,
@@ -281,6 +285,7 @@ describe('autonumber', () => {
         collection: ticketsSlug,
         id: ticket.id,
         data: { number: 999 } as never,
+        overrideAccess: true,
       });
 
       expect((await readTicket(ticket.id)).number).toBe(ticket.number);
@@ -468,6 +473,7 @@ describe('autonumber', () => {
             collection: ticketsSlug,
             id: ticket.id,
             data: { title: `${ticket.title}, edited` },
+            overrideAccess: true,
           }),
         ),
       );
@@ -647,6 +653,7 @@ describe.skipIf(!isSQLite)('autonumber inside one SQLite transaction', () => {
       collection: ticketsSlug,
       data: { title },
       req,
+      overrideAccess: true,
     })) as unknown as Ticket;
   }
 
@@ -696,7 +703,9 @@ describe.skipIf(!isSQLite)('autonumber inside one SQLite transaction', () => {
 
     await expect(create('First')).rejects.toMatchObject(rejectionFor('number', pendingMessage));
 
-    expect((await frogbot.find({ collection: ticketsSlug })).totalDocs).toBe(0);
+    expect((await frogbot.find({ collection: ticketsSlug, overrideAccess: true })).totalDocs).toBe(
+      0,
+    );
     expect(await countCounters(frogbot)).toBe(0);
   });
 });

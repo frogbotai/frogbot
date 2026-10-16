@@ -34,8 +34,8 @@ describe('job lease ownership', () => {
 
     install();
 
-    await payload.jobs.run({ req });
-    await payload.jobs.runByID({ id: 42, req });
+    await payload.jobs.run({ req, overrideAccess: true });
+    await payload.jobs.runByID({ id: 42, req, overrideAccess: true });
 
     expect(owners).toHaveLength(2);
     expect(new Set(owners).size).toBe(2);
@@ -69,8 +69,8 @@ describe('job lease ownership', () => {
       });
 
       const runs = {
-        batch: () => payload.jobs.run({ req, limit: 1, silent: true }),
-        'by-ID': () => payload.jobs.runByID({ id: 7, req, silent: true }),
+        batch: () => payload.jobs.run({ req, limit: 1, silent: true, overrideAccess: true }),
+        'by-ID': () => payload.jobs.runByID({ id: 7, req, silent: true, overrideAccess: true }),
       };
 
       await runs[mode]();
@@ -242,7 +242,7 @@ describe('job lease ownership', () => {
 
     install();
 
-    await expect(payload.jobs.run({ req })).rejects.toBe(failure);
+    await expect(payload.jobs.run({ req, overrideAccess: true })).rejects.toBe(failure);
 
     expect(vi.getTimerCount()).toBe(0);
     expect(getJobLeaseContext()).toBeUndefined();
@@ -275,7 +275,7 @@ describe('job lease ownership', () => {
     install();
 
     let settled = false;
-    const run = payload.jobs.run({ req }).then(() => {
+    const run = payload.jobs.run({ req, overrideAccess: true }).then(() => {
       settled = true;
     });
 

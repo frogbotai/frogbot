@@ -221,6 +221,7 @@ describe('piece-backed transactional email', () => {
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'verify@example.com', password: 'initial-password' },
+      overrideAccess: true,
     });
 
     expect(fetch).toHaveBeenCalledOnce();
@@ -234,16 +235,26 @@ describe('piece-backed transactional email', () => {
 
     expect(token).toMatch(/^[a-f0-9]+$/);
 
-    const before = await booted.frogbot.findByID({ collection: usersSlug, id: user.id });
+    const before = await booted.frogbot.findByID({
+      collection: usersSlug,
+      id: user.id,
+      overrideAccess: true,
+    });
 
     expect(before._verified).toBe(false);
 
     await expect(booted.frogbot.verifyEmail({ collection: usersSlug, token })).resolves.toBe(true);
 
-    const verified = await booted.frogbot.findByID({ collection: usersSlug, id: user.id });
+    const verified = await booted.frogbot.findByID({
+      collection: usersSlug,
+      id: user.id,
+      overrideAccess: true,
+    });
+
     const login = await booted.frogbot.login({
       collection: usersSlug,
       data: { email: user.email, password: 'initial-password' },
+      overrideAccess: true,
     });
 
     expect(verified._verified).toBe(true);
@@ -256,6 +267,7 @@ describe('piece-backed transactional email', () => {
       collection: usersSlug,
       disableVerificationEmail: true,
       data: { email: 'reset@example.com', password: 'old-password', _verified: true },
+      overrideAccess: true,
     });
 
     const req = await booted.frogbot.createRequest({ user: { ...user, collection: usersSlug } });
@@ -277,6 +289,7 @@ describe('piece-backed transactional email', () => {
       collection: usersSlug,
       data: { email: user.email },
       req,
+      overrideAccess: true,
     });
 
     expect(token).toMatch(/^[a-f0-9]+$/);
@@ -293,11 +306,13 @@ describe('piece-backed transactional email', () => {
     await booted.frogbot.resetPassword({
       collection: usersSlug,
       data: { token, password: 'new-password' },
+      overrideAccess: false,
     });
 
     const login = await booted.frogbot.login({
       collection: usersSlug,
       data: { email: user.email, password: 'new-password' },
+      overrideAccess: true,
     });
 
     expect(login.user?.id).toBe(user.id);
@@ -311,6 +326,7 @@ describe('piece-backed transactional email', () => {
       booted.payload.forgotPassword({
         collection: usersSlug,
         data: { email: 'absent@example.com' },
+        overrideAccess: true,
       }),
     ).resolves.toBeNull();
 
@@ -322,12 +338,17 @@ describe('piece-backed transactional email', () => {
       collection: usersSlug,
       disableVerificationEmail: true,
       data: { email: 'retry@example.com', password: 'password' },
+      overrideAccess: true,
     });
 
     fetch.mockResolvedValueOnce(Response.json({ message: 'Rate limit reached' }, { status: 429 }));
 
     await expect(
-      booted.payload.forgotPassword({ collection: usersSlug, data: { email: user.email } }),
+      booted.payload.forgotPassword({
+        collection: usersSlug,
+        data: { email: user.email },
+        overrideAccess: true,
+      }),
     ).rejects.toThrow('Resend request failed (429): Rate limit reached');
 
     expect(fetch).toHaveBeenCalledOnce();
@@ -335,6 +356,7 @@ describe('piece-backed transactional email', () => {
     const token = await booted.payload.forgotPassword({
       collection: usersSlug,
       data: { email: user.email },
+      overrideAccess: true,
     });
 
     expect(requestBody(1).html).toContain(token);
@@ -348,6 +370,7 @@ describe('piece-backed transactional email', () => {
       booted.payload.create({
         collection: usersSlug,
         data: { email: 'rejected@example.com', password: 'password' },
+        overrideAccess: true,
       }),
     ).rejects.toThrow('Resend request failed (422): Invalid sender');
 

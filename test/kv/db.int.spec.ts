@@ -86,10 +86,16 @@ for (const custom of [false, true]) {
       });
 
     async function cleanup() {
-      const job = await second.payload.jobs.queue({ task: 'frogbot-cleanup-kv', input: {} });
+      const job = await second.payload.jobs.queue({
+        task: 'frogbot-cleanup-kv',
+        input: {},
+        overrideAccess: true,
+      });
+
       const result = await second.payload.jobs.run({
         limit: 1,
         where: { id: { equals: job.id } },
+        overrideAccess: true,
       });
 
       expect(result.jobStatus?.[job.id]).toEqual({ status: 'success' });

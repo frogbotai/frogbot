@@ -45,11 +45,13 @@ describe('Local API select', () => {
     owner = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: `owner-${testIndex}@example.com`, password: 'password', name: 'Owner' },
+      overrideAccess: true,
     });
 
     other = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: `other-${testIndex}@example.com`, password: 'password', name: 'Other' },
+      overrideAccess: true,
     });
   });
 
@@ -63,6 +65,7 @@ describe('Local API select', () => {
         owner: ownerID,
         secret: `${title} secret`,
       },
+      overrideAccess: true,
     });
   }
 
@@ -79,6 +82,7 @@ describe('Local API select', () => {
         owner: other.id,
         secret: 'Updated secret',
       },
+      overrideAccess: true,
     });
 
     const versions = await booted.frogbot.findVersions({
@@ -86,6 +90,7 @@ describe('Local API select', () => {
       where: { parent: { equals: post.id } },
       depth: 0,
       pagination: false,
+      overrideAccess: true,
     });
 
     expect(versions.docs).toHaveLength(2);
@@ -111,12 +116,14 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: post.id,
       select: { title: true, details: { summary: true } },
+      overrideAccess: true,
     });
 
     const excluded = await booted.frogbot.findByID({
       collection: postsSlug,
       id: post.id,
       select: { body: false, details: { budget: false } },
+      overrideAccess: true,
     });
 
     expect(included).toMatchObject({
@@ -169,6 +176,7 @@ describe('Local API select', () => {
       depth: 1,
       populate: { [usersSlug]: { name: true } },
       select: { title: true, owner: true },
+      overrideAccess: true,
     });
 
     expect(result.owner).toMatchObject({ id: owner.id, name: 'Owner' });
@@ -185,6 +193,7 @@ describe('Local API select', () => {
         owner: owner.id,
       },
       select: { title: true },
+      overrideAccess: true,
     });
 
     expect(created.body).toBeUndefined();
@@ -194,11 +203,16 @@ describe('Local API select', () => {
       id: created.id,
       data: { title: 'Updated' },
       select: { title: true },
+      overrideAccess: true,
     });
 
     expect(updated.body).toBeUndefined();
 
-    const persisted = await booted.frogbot.findByID({ collection: postsSlug, id: created.id });
+    const persisted = await booted.frogbot.findByID({
+      collection: postsSlug,
+      id: created.id,
+      overrideAccess: true,
+    });
 
     expect(persisted).toMatchObject({
       title: 'Updated',
@@ -225,6 +239,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: source.id,
       select: { title: true, details: { summary: true } },
+      overrideAccess: true,
     });
 
     expect(duplicated.id).not.toBe(source.id);
@@ -238,6 +253,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: duplicated.id,
       depth: 0,
+      overrideAccess: true,
     });
 
     expect(persisted).toMatchObject({
@@ -252,6 +268,7 @@ describe('Local API select', () => {
     const sourceAfter = await booted.frogbot.findByID({
       collection: postsSlug,
       id: source.id,
+      overrideAccess: true,
     });
 
     expect(sourceAfter).toEqual(source);
@@ -267,6 +284,7 @@ describe('Local API select', () => {
       where: { id: { in: [first.id, second.id] } },
       data: { title: 'Updated' },
       select: { title: true, details: { summary: true } },
+      overrideAccess: true,
     });
 
     expect(updated.errors).toEqual([]);
@@ -282,6 +300,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       where: { id: { in: [first.id, second.id] } },
       depth: 0,
+      overrideAccess: true,
     });
 
     expect(persisted.docs).toHaveLength(2);
@@ -309,6 +328,7 @@ describe('Local API select', () => {
     const untouchedAfter = await booted.frogbot.findByID({
       collection: postsSlug,
       id: untouched.id,
+      overrideAccess: true,
     });
 
     expect(untouchedAfter).toEqual(untouched);
@@ -323,6 +343,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       where: { id: { in: [first.id, second.id] } },
       select: { title: true, details: { summary: true } },
+      overrideAccess: true,
     });
 
     expect(deleted.errors).toEqual([]);
@@ -334,7 +355,7 @@ describe('Local API select', () => {
       ]),
     );
 
-    const remaining = await booted.frogbot.find({ collection: postsSlug });
+    const remaining = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
 
     expect(remaining.totalDocs).toBe(1);
     expect(remaining.docs).toEqual([untouched]);
@@ -347,6 +368,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: post.id,
       select: { title: true, details: { summary: true } },
+      overrideAccess: true,
     });
 
     expect(deleted).toEqual({
@@ -358,6 +380,7 @@ describe('Local API select', () => {
     const remaining = await booted.frogbot.count({
       collection: postsSlug,
       where: { id: { equals: post.id } },
+      overrideAccess: true,
     });
 
     expect(remaining.totalDocs).toBe(0);
@@ -370,12 +393,14 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: post.id,
       data: { title: 'Updated', body: 'Updated body' },
+      overrideAccess: true,
     });
 
     const versions = await booted.frogbot.findVersions({
       collection: postsSlug,
       where: { parent: { equals: post.id } },
       select: { version: { title: true } },
+      overrideAccess: true,
     });
 
     const original = versions.docs.find((version) => version.version.title === 'Original');
@@ -387,6 +412,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: original!.id,
       select: { version: { title: true } },
+      overrideAccess: true,
     });
 
     expect(selectedVersion.version.title).toBe('Original');
@@ -396,6 +422,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: original!.id,
       depth: 0,
+      overrideAccess: true,
     });
 
     expect(persisted.version).toMatchObject({
@@ -414,6 +441,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: original.id,
       depth: 0,
+      overrideAccess: true,
     });
 
     expect(restored).toEqual({
@@ -431,6 +459,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: post.id,
       depth: 0,
+      overrideAccess: true,
     });
 
     expect(persisted).toEqual(restored);
@@ -440,6 +469,7 @@ describe('Local API select', () => {
       where: { parent: { equals: post.id } },
       depth: 0,
       pagination: false,
+      overrideAccess: true,
     });
 
     expect(versionsAfter.docs).toHaveLength(3);
@@ -453,6 +483,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: newVersions[0].id,
       depth: 0,
+      overrideAccess: true,
     });
 
     const stored = await sqlite.execute({
@@ -482,6 +513,7 @@ describe('Local API select', () => {
       collection: postsSlug,
       id: original.id,
       depth: 0,
+      overrideAccess: true,
     });
 
     expect(sourceAfter).toEqual(original);
@@ -495,6 +527,7 @@ describe('Local API select', () => {
         collection: postsSlug,
         id: post.id,
         depth: 0,
+        overrideAccess: true,
       });
 
       const storedParentBefore = await sqlite.execute({
@@ -512,6 +545,7 @@ describe('Local API select', () => {
           collection: postsSlug,
           id: original.id,
           select: { title: true },
+          overrideAccess: true,
         }),
       ).rejects.toMatchObject({
         cause: {
@@ -524,6 +558,7 @@ describe('Local API select', () => {
         collection: postsSlug,
         id: post.id,
         depth: 0,
+        overrideAccess: true,
       });
 
       const versionsAfter = await booted.frogbot.findVersions({
@@ -531,6 +566,7 @@ describe('Local API select', () => {
         where: { parent: { equals: post.id } },
         depth: 0,
         pagination: false,
+        overrideAccess: true,
       });
 
       const storedParentAfter = await sqlite.execute({

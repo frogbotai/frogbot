@@ -148,7 +148,11 @@ describe.skipIf(!RUN_E2E)('Discord questions e2e — webhook to continuation ove
     await expect
       .poll(
         async () => {
-          await frogbot.jobs.run({ allQueues: true, req: await frogbot.createRequest() });
+          await frogbot.jobs.run({
+            allQueues: true,
+            req: await frogbot.createRequest(),
+            overrideAccess: true,
+          });
 
           return (
             await channelJobsWhere({

@@ -69,7 +69,7 @@ describe.skipIf(!RUN_E2E)(
 
     async function runJobs() {
       for (let attempt = 0; attempt < 10; attempt++) {
-        const result = await frogbot.jobs.run({ queue, limit: 10 });
+        const result = await frogbot.jobs.run({ queue, limit: 10, overrideAccess: true });
 
         if (result.noJobsRemaining) return;
       }
@@ -360,6 +360,7 @@ describe.skipIf(!RUN_E2E)(
       const owner = await frogbot.create({
         collection: 'users' as never,
         data: credentials as never,
+        overrideAccess: true,
       });
 
       await frogbot.update({

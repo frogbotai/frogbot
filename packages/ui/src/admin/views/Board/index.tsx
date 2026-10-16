@@ -66,6 +66,7 @@ export async function BoardView(props: AdminViewServerProps) {
         collection: 'payload-preferences',
         depth: 0,
         limit: 1,
+        overrideAccess: true,
         pagination: false,
         req: initPageResult.req,
         where: {

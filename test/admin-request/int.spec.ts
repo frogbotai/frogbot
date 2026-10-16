@@ -109,6 +109,7 @@ describe('admin request', () => {
     const user = await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'editor@frogbot.local', password: 'editor-password' },
+      overrideAccess: true,
     });
 
     req = await createLocalReq(

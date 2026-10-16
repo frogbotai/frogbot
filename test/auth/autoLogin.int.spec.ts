@@ -39,6 +39,7 @@ describe(`root admin autoLogin and autoRefresh [${process.env.FROGBOT_DATABASE |
     await frogbot.create({
       collection: 'editors',
       data: { email, password: 'auto-password' },
+      overrideAccess: true,
     });
   });
 

@@ -52,7 +52,13 @@ function hasPostContent(value: unknown): value is NonNullable<Post['content']> {
 
 export default async function Page() {
   const frogbot = await getFrogBot({ config });
-  const posts = await frogbot.find({ collection: 'posts', limit: 1, sort: '-createdAt' });
+  const posts = await frogbot.find({
+    collection: 'posts',
+    limit: 1,
+    sort: '-createdAt',
+    overrideAccess: true,
+  });
+
   const post = posts.docs[0];
 
   if (!post) return <main data-testid="empty-post">No post saved</main>;

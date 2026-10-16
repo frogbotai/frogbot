@@ -219,7 +219,15 @@ export class FrogBot {
     return Object.assign(localReq, { frogbot: this });
   }
 
-  async queue({ input, ...args }: { task: string; queue: string; input: unknown }): Promise<void> {
+  async queue({
+    input,
+    ...args
+  }: {
+    task: string;
+    queue: string;
+    input: unknown;
+    overrideAccess?: boolean;
+  }): Promise<void> {
     if (!isRecord(input)) {
       throw new TypeError(`[frogbot] Task '${args.task}' input must be an object.`);
     }
