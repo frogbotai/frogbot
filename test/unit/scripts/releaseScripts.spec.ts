@@ -99,7 +99,7 @@ describe('release scripts', () => {
     );
   });
 
-  it('the root has 26 commands plus the git hook scripts', () => {
+  it('the root has 27 commands plus the git hook scripts', () => {
     expect(Object.keys(scripts).sort()).toEqual(
       [
         'build',
@@ -128,6 +128,7 @@ describe('release scripts', () => {
         'release',
         'release:status',
         'ticket',
+        'vendored',
         'lint-staged',
         'prepare',
       ].sort(),

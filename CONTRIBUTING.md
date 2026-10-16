@@ -58,6 +58,7 @@ FrogBot is in beta. The goal is the best, most consistent developer experience a
 | Live tests with real credentials    | `pnpm test:live` (see [Live tests](test/README.md#live-tests-real-credentials))                                                                                                     |
 | Regenerate a test suite's types     | `pnpm generate:types <suite>` (needs built packages)                                                                                                                                |
 | Sync the AI model catalog and types | `pnpm sync:catalog`                                                                                                                                                                 |
+| Upstream changes to vendored code   | `pnpm vendored [--to <ref>] [--fetch]`                                                                                                                                              |
 | Tickets                             | `pnpm ticket next`, `new <n>`, `status [--batch <n>]`, `decisions`, `found "<row>"`, `stats`, `land <n>` (see [the feature process](.github/feature-process/README.md))             |
 | Release                             | `pnpm bump <major\|minor\|patch>` (`--from <step>` resumes), `pnpm release` (owner only; `--resume` after a partial publish), `pnpm release:status`                                 |
 

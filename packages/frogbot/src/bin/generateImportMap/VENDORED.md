@@ -2,9 +2,10 @@
 
 Vendored from the Payload monorepo — `packages/payload/src/bin/generateImportMap/`.
 
-- Source: https://github.com/payloadcms/payload
-- Tag: `v3.85.1`
+- Upstream: https://github.com/payloadcms/payload
+- Path: `packages/payload/src/bin/generateImportMap`
 - Commit: `a8c8da8df42f37ffc6a6b647ef9d3c8116a4717a`
+- Tag: `v3.85.1`
 
 Vendored because these internals are not exported from `payload`, and FrogBot owns
 the emitted `importMap.js` (branding rule: no Payload references in generated files).
@@ -39,4 +40,4 @@ Public pieces are NOT vendored — `genImportMapIterateFields` is imported from
   against `Field[]` when compiled from outside the Payload monorepo.
 - Comments stripped; house code style (semicolons, node: import specifiers).
 
-When bumping Payload, diff these files against the new tag before updating.
+Run `pnpm vendored`, port what it lists, then update `Commit:` and `Tag:`.
