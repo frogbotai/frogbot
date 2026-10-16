@@ -46,10 +46,11 @@ The REST adapter reads renamed chat, message, and asset collection slugs from `/
 | `adapter` | `ChatPlatformAdapter` | Required | How the UI reaches your backend. See [Adapter options](#adapter-options). Pass a stable object; a new object reloads the manifest. |
 | `children` | `ReactNode` | Required | The components that use the chat context. |
 | `toolRenderers` | `ToolRenderer[]` | `[]` | Custom renderers for tool calls. See [Register tools and artifacts](/chat/ui-registries). |
+| `dataRenderers` | `DataRenderer[]` | `[]` | Custom renderers for `data-<kind>` message parts. See [Data renderer options](/chat/ui-registries#data-renderer-options). |
 | `artifactKinds` | `ArtifactRegistryItem[]` | `[]` | Artifact kinds the chat can render. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
 | `artifactPersistence` | `ArtifactPersistence` | — | `load` and `save` functions for artifacts. See [Register tools and artifacts](/chat/ui-registries#artifact-options). |
 
-`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers }`.
+`ChatProvider` calls the adapter's `loadManifest` once per adapter and aborts it on unmount. Until it resolves, `<Chat>` renders its `loadingContent`; a failure renders its `errorContent`, and `null` renders its `disabledContent`. `useChatProvider()` returns `{ adapter, manifest, error, loading, toolRenderers, dataRenderers }`.
 
 ## REST adapter options
 

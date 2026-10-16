@@ -12,7 +12,6 @@
   .fb-page-context-button__trigger,
   .fb-page-context-button__close,
   .fb-page-context-button__tab {
-    box-sizing: border-box;
     margin: 0;
     border: 0;
     background: none;

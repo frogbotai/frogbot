@@ -2,7 +2,12 @@
 
 import { useChat } from '@ai-sdk/react';
 import type { AgentManifestEntry, ChatManifest, TurnErrorCode } from '@frogbotai/protocol';
-import { isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from 'ai';
+import {
+  getToolName,
+  isToolUIPart,
+  lastAssistantMessageIsCompleteWithToolCalls,
+  type UIMessage,
+} from 'ai';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state.js';
@@ -28,7 +33,8 @@ import { MessageList, type MessageListProps } from './message-list.js';
 import { MessagePart } from './message-part.js';
 import { useChatProvider } from './provider.js';
 import { type ToolActions, ToolActionsContext } from './tool-actions.js';
-import type { ToolPartValue } from './tool-registry.js';
+import { ToolPart } from './tool-part.js';
+import { resolveToolRenderer, type ToolPartValue, type ToolRenderer } from './tool-registry.js';
 import { toChatError, turnErrorCode } from './turn-error.js';
 import { useChatMessages } from './use-chat.js';
 import { emitChatMutation, useChatDocument, useChats } from './use-chats.js';
@@ -78,6 +84,9 @@ export type ChatProps = {
   headerSlot?: ReactNode;
   composerStartSlot?: ReactNode;
   composerEndSlot?: ReactNode;
+  dockSlot?: ReactNode;
+  dockBlocking?: boolean;
+  onBeforeSubmit?: (prompt: { text: string }) => boolean | Promise<boolean>;
   submitContent?: ReactNode;
   stopContent?: ReactNode;
   fallbackTitle?: string;
@@ -132,6 +141,7 @@ export function Chat(props: ChatProps) {
       chatIdControlled={Object.prototype.hasOwnProperty.call(props, 'chatId')}
       adapter={provider.adapter}
       agents={provider.manifest.agents}
+      toolRenderers={provider.toolRenderers}
     />
   );
 }
@@ -142,6 +152,7 @@ type ChatInnerProps = ChatProps & {
   chatIdControlled: boolean;
   modelInputs?: ComposerModelInput[];
   modelName?: string;
+  toolRenderers: readonly ToolRenderer[];
 };
 
 function ChatInner({
@@ -152,6 +163,8 @@ function ChatInner({
   composerEndSlot,
   composerStartSlot,
   defaultChatId,
+  dockBlocking = false,
+  dockSlot,
   emptyContent,
   errorContent,
   fallbackTitle = 'Untitled',
@@ -164,6 +177,7 @@ function ChatInner({
   model,
   modelInputs,
   modelName,
+  onBeforeSubmit,
   onChatIdChange,
   onError,
   panel,
@@ -175,6 +189,7 @@ function ChatInner({
   chatId: controlledChatId,
   chatIdControlled,
   throttle,
+  toolRenderers,
   userName,
   warningContent,
   userMessageActions: UserMessageActions,
@@ -509,6 +524,16 @@ function ChatInner({
   });
 
   const submit = async (text: string, attachments: ComposerAttachment[]) => {
+    if (onBeforeSubmit) {
+      try {
+        if (await onBeforeSubmit({ text })) return false;
+      } catch (error) {
+        failAction(error, 'Failed to send');
+
+        return false;
+      }
+    }
+
     setAborted(false);
     const parts = [
       ...attachments.map((attachment) =>
@@ -525,6 +550,8 @@ function ChatInner({
     const message: UIMessage = { id: '', role: 'user', parts: parts as UIMessage['parts'] };
     const metadata = await adapter.buildMetadata?.(message);
     await chat.sendMessage({ parts: message.parts, metadata });
+
+    return true;
   };
 
   const stop = () => {
@@ -583,6 +610,25 @@ function ChatInner({
     [lastMessage, pending],
   );
 
+  const dockedParts = useMemo(
+    () =>
+      pendingToolCallIds.size > 0 && lastMessage && !aborted && chat.status !== 'error'
+        ? lastMessage.parts
+            .filter(isToolUIPart)
+            .filter(
+              (part) =>
+                pendingToolCallIds.has(part.toolCallId) &&
+                resolveToolRenderer(toolRenderers, getToolName(part)) !== undefined,
+            )
+        : [],
+    [aborted, chat.status, lastMessage, pendingToolCallIds, toolRenderers],
+  );
+
+  const dockedToolCallIds = useMemo(
+    () => new Set(dockedParts.map(({ toolCallId }) => toolCallId)),
+    [dockedParts],
+  );
+
   const dismissPendingToolCall = async (toolCallId: string) => {
     const chatId = request.current.chatId;
 
@@ -608,13 +654,15 @@ function ChatInner({
     }
   };
 
-  const toolActions: ToolActions = {
+  const dockActions: ToolActions = {
     addToolOutput,
     dismissToolCall: adapter.dismissToolCall ? dismissPendingToolCall : undefined,
     pendingToolCallIds,
     isReadonly,
     channelLabel,
   };
+
+  const toolActions: ToolActions = { ...dockActions, dockedToolCallIds };
 
   const displayedChats = (chats.docs ?? []).map((chatDocument) =>
     String(chatDocument.id) === String(activeChatId) && !chatDocument.title
@@ -765,6 +813,18 @@ function ChatInner({
               ))}
             </div>
           )}
+          {(dockedParts.length > 0 || Boolean(dockSlot)) && (
+            <div className="fb-chat__dock">
+              {dockedParts.length > 0 && (
+                <ToolActionsContext value={dockActions}>
+                  {dockedParts.map((part) => (
+                    <ToolPart key={part.toolCallId} part={part} />
+                  ))}
+                </ToolActionsContext>
+              )}
+              {dockSlot}
+            </div>
+          )}
           {channelLabel ? (
             <ChannelConversationNotice
               channelLabel={channelLabel}
@@ -778,6 +838,7 @@ function ChatInner({
               adapter={adapter}
               modelInputs={modelInputs}
               modelName={modelName}
+              hidden={dockBlocking || dockedParts.length > 0}
               pending={pending}
               onStop={stop}
               onSubmit={submit}

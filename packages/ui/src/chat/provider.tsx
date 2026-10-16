@@ -6,6 +6,7 @@ import { createContext, type ReactNode, use, useEffect, useState } from 'react';
 import type { ChatPlatformAdapter } from './adapter.js';
 import { ArtifactProvider } from './artifact.js';
 import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry.js';
+import type { DataRenderer } from './data-part.js';
 import type { ToolRenderer } from './tool-registry.js';
 
 export type ChatProviderValue = {
@@ -14,6 +15,7 @@ export type ChatProviderValue = {
   error?: Error;
   loading: boolean;
   toolRenderers: readonly ToolRenderer[];
+  dataRenderers: readonly DataRenderer[];
 };
 
 const ChatContext = createContext<ChatProviderValue | undefined>(undefined);
@@ -23,12 +25,14 @@ export function ChatProvider({
   artifactKinds = [],
   artifactPersistence,
   children,
+  dataRenderers = [],
   toolRenderers = [],
 }: {
   adapter: ChatPlatformAdapter;
   artifactKinds?: readonly ArtifactRegistryItem[];
   artifactPersistence?: ArtifactPersistence;
   children: ReactNode;
+  dataRenderers?: readonly DataRenderer[];
   toolRenderers?: readonly ToolRenderer[];
 }) {
   const [state, setState] = useState<Pick<ChatProviderValue, 'manifest' | 'error' | 'loading'>>({
@@ -56,7 +60,7 @@ export function ChatProvider({
   }, [adapter]);
 
   return (
-    <ChatContext value={{ adapter, ...state, toolRenderers }}>
+    <ChatContext value={{ adapter, ...state, toolRenderers, dataRenderers }}>
       <ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>
         {children}
       </ArtifactProvider>

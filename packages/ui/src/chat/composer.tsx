@@ -33,7 +33,10 @@ export type ComposerProps = Omit<
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
-  onSubmit: (value: string, attachments: ComposerAttachment[]) => void | Promise<void>;
+  onSubmit: (
+    value: string,
+    attachments: ComposerAttachment[],
+  ) => boolean | void | Promise<boolean | void>;
   onStop?: () => void;
   pending?: boolean;
   startSlot?: ReactNode;
@@ -51,6 +54,7 @@ export function Composer({
   defaultValue = '',
   disabled,
   endSlot,
+  hidden,
   modelInputs,
   modelName,
   onKeyDown,
@@ -92,7 +96,9 @@ export function Composer({
     submitting.current = true;
 
     void Promise.resolve(onSubmit(next, attachments.toSend))
-      .then(() => attachments.clear(sent))
+      .then((result) => {
+        if (result !== false) attachments.clear(sent);
+      })
       .finally(() => {
         submitting.current = false;
       });
@@ -135,6 +141,7 @@ export function Composer({
       className={['fb-composer', disabled && 'fb-composer--disabled', className]
         .filter(Boolean)
         .join(' ')}
+      hidden={hidden}
       onSubmit={submit}
       onDragEnter={handleDrag}
       onDragOver={handleDrag}

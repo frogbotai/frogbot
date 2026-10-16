@@ -10,6 +10,11 @@ import {
   type ModelSelectorModel,
 } from '../../../../packages/ui/src/chat/model-selector';
 import { providers } from '../../../../packages/ui/src/chat/providers';
+import {
+  compactModelSearch,
+  matchesModelSearch,
+  normalizeModelSearch,
+} from '../../../../packages/ui/src/exports/chat';
 import { sparkleIcon } from '../../../../packages/ui/src/icons/icons/SparkleIcon';
 
 const gpt: ModelSelectorModel = {
@@ -979,23 +984,41 @@ describe('ModelSelector', () => {
     expect(rowNames()).toEqual([name]);
   });
 
-  it.each(['ollama', 'lmstudio'])('renders the %s logo with a visible fill', async (provider) => {
-    const user = userEvent.setup();
-    const logo = providers[provider].logo;
+  it.each(['frogbot', 'ollama', 'lmstudio'])(
+    'renders the %s logo with a visible fill',
+    async (provider) => {
+      const user = userEvent.setup();
+      const logo = providers[provider].logo;
 
-    render(<Harness choices={[gpt, { id: `${provider}/local`, name: 'Local', provider }]} />);
+      render(<Harness choices={[gpt, { id: `${provider}/local`, name: 'Local', provider }]} />);
+
+      await user.click(trigger());
+      await openList(user, 'GPT-5');
+
+      const svg = row('Local').querySelector('svg');
+      const fills = [...(svg?.querySelectorAll('path') ?? [])].map((path) =>
+        path.getAttribute('fill'),
+      );
+
+      expect(svg?.getAttribute('viewBox')).toBe(logo?.viewBox);
+      expect(fills).toHaveLength(logo?.nodes.length ?? -1);
+      expect(fills.every((fill) => fill !== null && fill !== 'none')).toBe(true);
+    },
+  );
+
+  it('renders FrogBot with its own logo, not the fallback', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness choices={[gpt, { id: 'frogbot/auto', name: 'Auto', provider: 'frogbot' }]} />);
 
     await user.click(trigger());
     await openList(user, 'GPT-5');
 
-    const svg = row('Local').querySelector('svg');
-    const fills = [...(svg?.querySelectorAll('path') ?? [])].map((path) =>
-      path.getAttribute('fill'),
-    );
+    const paths = [...(row('Auto').querySelector('svg')?.querySelectorAll('path') ?? [])];
 
-    expect(svg?.getAttribute('viewBox')).toBe(logo?.viewBox);
-    expect(fills).toHaveLength(logo?.nodes.length ?? -1);
-    expect(fills.every((fill) => fill !== null && fill !== 'none')).toBe(true);
+    expect(providers.frogbot.name).toBe('FrogBot');
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths.map((path) => path.getAttribute('d'))).not.toContain(sparkleIcon[0][1].d);
   });
 
   it('lists models without provider groups when one provider is allowed', async () => {
@@ -1329,5 +1352,89 @@ describe('ModelSelector', () => {
     expect(search).toContain('border: 1px solid var(--theme-base-300)');
     expect(input).toContain('background: var(--theme-base-150)');
     expect(input).not.toContain('border:');
+  });
+});
+
+describe('ModelSelector open', () => {
+  function Controlled({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
+    const [open, setOpen] = useState(false);
+
+    return (
+      <>
+        <button type="button" onClick={() => setOpen(true)}>
+          Run /model
+        </button>
+        <ModelSelector
+          models={models}
+          selectedModelId={gpt.id}
+          onModelChange={() => undefined}
+          onReasoningChange={() => undefined}
+          open={open}
+          onOpenChange={(next) => {
+            onOpenChange(next);
+            setOpen(next);
+          }}
+        />
+      </>
+    );
+  }
+
+  it('shows the list, focused, when opened from code and closes through onOpenChange', async () => {
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Controlled onOpenChange={onOpenChange} />);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Run /model' }));
+
+    expect(searchBox().value).toBe('');
+    expect(rowNames()).toEqual(['GPT-5', 'GPT-5 mini', 'GPT-4o', 'Claude Opus']);
+    expect(document.activeElement).toBe(row('GPT-5'));
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    await user.keyboard('{Escape}');
+
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('shows the list when mounted open', () => {
+    render(
+      <ModelSelector
+        models={models}
+        selectedModelId={gpt.id}
+        onModelChange={() => undefined}
+        onReasoningChange={() => undefined}
+        open
+        onOpenChange={() => undefined}
+      />,
+    );
+
+    expect(searchBox().value).toBe('');
+    expect(rowNames()).toEqual(['GPT-5', 'GPT-5 mini', 'GPT-4o', 'Claude Opus']);
+  });
+
+  it('keeps its own state when open is unset', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await user.click(trigger());
+
+    expect(screen.getByRole('button', { name: 'GPT-5, change model' })).toBeTruthy();
+  });
+
+  it('exports the picker search for typed commands', () => {
+    const values = ['Claude Sonnet', 'anthropic/claude-sonnet-4'].map((value) => ({
+      normalized: normalizeModelSearch(value),
+      compact: compactModelSearch(value),
+    }));
+
+    expect(matchesModelSearch('sonnet', values)).toBe(true);
+    expect(matchesModelSearch('opus', values)).toBe(false);
   });
 });

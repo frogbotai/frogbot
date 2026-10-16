@@ -76,10 +76,16 @@ import { Chat, ChatHistory } from '@frogbotai/ui/chat';
 />;
 ```
 
+`dockSlot` puts cards above the composer; wrap them in `ChatDock` (`header`, body, `footer`) and set `dockBlocking` to hide the composer while they wait. A waiting client tool call with a registered renderer, such as `question`, docks there automatically and hides the composer until it is answered. The composer stays mounted, so its draft survives.
+
+`onBeforeSubmit({ text })` runs before each send; return `true` to handle a typed command yourself (text clears, attachments stay). `ModelSelector` takes `open` and `onOpenChange` so a command can open it, and `matchesModelSearch`, `normalizeModelSearch` and `compactModelSearch` from `@frogbotai/ui/chat` match like its search.
+
 `AgentSelector` reads available agents from `ChatProvider`. `ModelSelector` and `ToolSelector` only manage caller-supplied client state; they do not change the server model or server tool access.
 
 ## Lower-level components
 
 Import public primitives from `@frogbotai/ui/chat`, including `ChatShell`, `Composer`, `MessageList`, `Message`, `MessagePart`, `Markdown`, and `ToolPart`. Prefer `Chat` unless the application needs to own message loading, transport, and composition.
+
+Unregistered tools render as a closed row (name, input summary, status) that opens to the input and output, with MCP `{ type: 'image', data, mimeType }` content shown as images. Register `data-<kind>` part renderers with `ChatProvider dataRenderers={[{ kind, render }]}`; `CompactionPart` renders `data-compaction` (`CompactionPartData`) and is not registered by default.
 
 Register custom tool and artifact rendering through the public `@frogbotai/ui/chat/tools` and `@frogbotai/ui/chat/artifacts` entry points. Keep registrations in the client graph that renders the conversation.

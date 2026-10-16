@@ -258,7 +258,7 @@ test('a saved level the model no longer offers shows Default and is not sent', a
   expect(model.requests[0]).not.toHaveProperty('reasoning_effort');
 });
 
-test('a message queued behind a question runs with the choice it was sent with', async ({
+test('a message queued through the API behind a question runs with the model it was sent with', async ({
   page,
 }) => {
   const posts: Array<{ model?: string; reasoning?: string }> = [];
@@ -282,14 +282,20 @@ test('a message queued behind a question runs with the choice it was sent with',
   await chooseLevel(page, 'End');
   await send(page, 'Deploy it');
 
-  const staging = page.getByRole('button', { name: /Staging/ });
+  const staging = page.locator('.fb-chat__dock').getByRole('button', { name: /Staging/ });
 
   await expect(staging).toBeEnabled();
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
+  await expect(page.locator('.fb-composer')).toBeHidden();
 
-  await chooseQuestioner(page);
-  await send(page, 'Also check the logs');
+  const chatId = Number(new URL(page.url()).pathname.split('/').at(-1));
+  const queued = await page.request.post(`/api/agents/${agentSlug}`, {
+    data: { prompt: 'Also check the logs', chatId, model: 'browser/questioner' },
+  });
 
+  expect(queued.status()).toBe(202);
+
+  await page.reload();
   await expect(page.locator('.fb-chat__queued')).toContainText('Also check the logs');
 
   await staging.click();
@@ -303,8 +309,7 @@ test('a message queued behind a question runs with the choice it was sent with',
   ]);
   expect(posts.map(({ model, reasoning }) => [model, reasoning])).toEqual([
     ['browser/thinker', 'high'],
-    ['browser/questioner', undefined],
-    ['browser/questioner', undefined],
+    ['browser/thinker', 'high'],
   ]);
 });
 

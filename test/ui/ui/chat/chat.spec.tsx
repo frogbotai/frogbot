@@ -19,6 +19,7 @@ const state = vi.hoisted(() => ({
   executeClientTool: vi.fn(),
   adapter: undefined as unknown as ChatPlatformAdapter,
   agents: [] as ChatManifest['agents'],
+  toolRenderers: [] as ToolRenderer[],
   history: {
     messages: [] as UIMessage[],
     queued: [] as UIMessage[],
@@ -40,6 +41,8 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
     adapter: state.adapter,
     loading: false,
     manifest: { defaultAgent: 'support', agents: state.agents, transcribe: false },
+    toolRenderers: state.toolRenderers,
+    dataRenderers: [],
   }),
 }));
 
@@ -64,8 +67,13 @@ import type { ChatManifest } from '@frogbotai/protocol';
 
 import type { ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
 import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/chat';
+import { ChatDock } from '../../../../packages/ui/src/chat/chat-dock';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
+import type {
+  ToolRenderer,
+  ToolRendererProps,
+} from '../../../../packages/ui/src/chat/tool-registry';
 import { emitChatMutation } from '../../../../packages/ui/src/chat/use-chats';
 
 const supportAgent: ChatManifest['agents'][number] = {
@@ -151,6 +159,7 @@ describe('Chat', () => {
     state.fetch.mockReset();
     state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
     state.agents = [];
+    state.toolRenderers = [];
     vi.mocked(emitChatMutation).mockClear();
     setAdapter();
   });
@@ -725,6 +734,270 @@ describe('Chat', () => {
     render(<Chat agent="support" errorContent={false} />);
 
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+function composer(container: HTMLElement) {
+  return container.querySelector<HTMLFormElement>('.fb-composer');
+}
+
+function Question({ addToolOutput, part }: ToolRendererProps) {
+  return (
+    <div data-testid={`question-${part.state}`}>
+      {addToolOutput && (
+        <button type="button" onClick={() => void addToolOutput({ answer: 'Staging' })}>
+          Answer
+        </button>
+      )}
+    </div>
+  );
+}
+
+function questionMessage(state: 'input-available' | 'output-available'): UIMessage {
+  return {
+    id: 'assistant-1',
+    role: 'assistant',
+    parts: [
+      {
+        type: 'dynamic-tool',
+        toolName: 'question',
+        toolCallId: 'call-1',
+        state,
+        input: {},
+        ...(state === 'output-available' ? { output: { answer: 'Staging' } } : {}),
+      } as UIMessage['parts'][number],
+    ],
+  };
+}
+
+describe('Chat dock', () => {
+  beforeEach(() => {
+    state.status = 'ready';
+    state.error = undefined;
+    state.messages = [];
+    state.sendMessage.mockReset();
+    state.addToolOutput.mockReset();
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
+    state.agents = [];
+    state.toolRenderers = [];
+    setAdapter();
+  });
+
+  it('changes nothing without a dock slot', () => {
+    const { container } = render(<Chat agent="support" />);
+
+    expect(container.querySelector('.fb-chat__dock')).toBeNull();
+    expect(composer(container)?.hidden).toBe(false);
+  });
+
+  it('renders the dock slot between the queued list and the composer', () => {
+    state.history = {
+      messages: [message],
+      queued: [{ id: 'queued-1', role: 'user', parts: [{ type: 'text', text: 'Later' }] }],
+      loadedChatId: 'one',
+      loading: false,
+    };
+
+    const { container } = render(
+      <Chat agent="support" defaultChatId="one" dockSlot={<div>Plan card</div>} />,
+    );
+
+    const dock = container.querySelector('.fb-chat__dock') as HTMLElement;
+    const queued = container.querySelector('.fb-chat__queued') as HTMLElement;
+    const form = composer(container) as HTMLFormElement;
+
+    expect(dock.parentElement?.className).toBe('fb-chat__composer');
+    expect(dock.textContent).toBe('Plan card');
+    expect(queued.compareDocumentPosition(dock) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(dock.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form.hidden).toBe(false);
+  });
+
+  it('renders a dock card with a header, content and footer', () => {
+    const { container } = render(
+      <ChatDock header="Allow edit?" footer={<button type="button">Allow</button>}>
+        Edit src/index.ts
+      </ChatDock>,
+    );
+
+    const dock = container.querySelector('.fb-chat-dock') as HTMLElement;
+
+    expect([...dock.children].map((child) => [child.className, child.textContent])).toEqual([
+      ['fb-chat-dock__header', 'Allow edit?'],
+      ['fb-chat-dock__content', 'Edit src/index.ts'],
+      ['fb-chat-dock__footer', 'Allow'],
+    ]);
+  });
+
+  it('hides the composer while the dock blocks and keeps its text', () => {
+    const { container, rerender } = render(<Chat agent="support" />);
+    const input = screen.getByRole('textbox');
+
+    fireEvent.change(input, { target: { value: 'Half a thought' } });
+
+    rerender(<Chat agent="support" dockSlot={<div>Allow?</div>} dockBlocking />);
+
+    expect(composer(container)?.hidden).toBe(true);
+
+    rerender(<Chat agent="support" dockSlot={<div>Allow?</div>} />);
+
+    expect(composer(container)?.hidden).toBe(false);
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('Half a thought');
+  });
+
+  it('docks a waiting question above the dock slot and hides the composer', () => {
+    state.toolRenderers = [{ kind: 'question', render: Question }];
+    state.messages = [message, questionMessage('input-available')];
+
+    const { container } = render(<Chat agent="support" dockSlot={<div>Plan card</div>} />);
+
+    const dock = container.querySelector('.fb-chat__dock') as HTMLElement;
+    const question = screen.getByTestId('question-input-available');
+
+    expect(dock.contains(question)).toBe(true);
+    expect(question.compareDocumentPosition(screen.getByText('Plan card'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(container.querySelector('.fb-message-list')?.contains(question)).toBe(false);
+    expect(composer(container)?.hidden).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(state.addToolOutput).toHaveBeenCalledWith({
+      tool: 'question',
+      toolCallId: 'call-1',
+      output: { answer: 'Staging' },
+    });
+  });
+
+  it('shows an answered question inline only and brings the composer back', () => {
+    state.toolRenderers = [{ kind: 'question', render: Question }];
+    state.messages = [message, questionMessage('output-available')];
+
+    const { container } = render(<Chat agent="support" />);
+
+    const question = screen.getByTestId('question-output-available');
+
+    expect(container.querySelector('.fb-chat__dock')).toBeNull();
+    expect(container.querySelector('.fb-message-list')?.contains(question)).toBe(true);
+    expect(composer(container)?.hidden).toBe(false);
+  });
+
+  it('keeps a waiting tool call without a renderer inline', () => {
+    state.messages = [message, questionMessage('input-available')];
+
+    const { container } = render(<Chat agent="support" />);
+
+    expect(container.querySelector('.fb-chat__dock')).toBeNull();
+    expect(container.querySelector('.fb-message-list [data-part="tool"]')).toBeTruthy();
+    expect(composer(container)?.hidden).toBe(false);
+  });
+
+  it('keeps a call left waiting by a stopped turn inline', () => {
+    state.status = 'streaming';
+    state.toolRenderers = [{ kind: 'question', render: Question }];
+    state.messages = [message, questionMessage('input-available')];
+
+    const { container, rerender } = render(<Chat {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    state.status = 'ready';
+    rerender(<Chat {...props} />);
+
+    expect(container.querySelector('.fb-chat__dock')).toBeNull();
+    expect(composer(container)?.hidden).toBe(false);
+  });
+
+  it('keeps a call left waiting by a failed turn inline', () => {
+    state.status = 'error';
+    state.error = new Error('Turn failed');
+    state.toolRenderers = [{ kind: 'question', render: Question }];
+    state.messages = [message, questionMessage('input-available')];
+
+    const { container } = render(<Chat {...props} />);
+
+    expect(container.querySelector('.fb-chat__dock')).toBeNull();
+    expect(composer(container)?.hidden).toBe(false);
+  });
+});
+
+describe('Chat onBeforeSubmit', () => {
+  beforeEach(() => {
+    state.status = 'ready';
+    state.error = undefined;
+    state.messages = [];
+    state.sendMessage.mockReset();
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
+    state.agents = [];
+    state.toolRenderers = [];
+    setAdapter();
+  });
+
+  function type(text: string) {
+    fireEvent.paste(screen.getByRole('textbox'), {
+      clipboardData: { getData: () => 'p'.repeat(651) },
+    });
+
+    const input = screen.getByRole('textbox');
+
+    fireEvent.change(input, { target: { value: text } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+  }
+
+  it.each([
+    ['synchronously', () => true],
+    ['asynchronously', () => Promise.resolve(true)],
+  ])(
+    'sends nothing, clears the text and keeps attachments when handled %s',
+    async (_name, handle) => {
+      const onBeforeSubmit = vi.fn(handle);
+
+      render(<Chat agent="support" onBeforeSubmit={onBeforeSubmit} />);
+
+      type('/model sonnet');
+
+      await waitFor(() => expect(onBeforeSubmit).toHaveBeenCalledWith({ text: '/model sonnet' }));
+      await act(() => Promise.resolve());
+
+      expect(state.sendMessage).not.toHaveBeenCalled();
+      expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('');
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    },
+  );
+
+  it('sends the message when not handled', async () => {
+    render(<Chat agent="support" onBeforeSubmit={() => false} />);
+
+    type('Hello');
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(state.sendMessage.mock.calls[0][0].parts.at(-1)).toEqual({
+      type: 'text',
+      text: 'Hello',
+    });
+
+    await waitFor(() => expect(screen.queryAllByRole('listitem')).toHaveLength(0));
+  });
+
+  it('sends nothing and reports the error when the hook rejects', async () => {
+    const onError = vi.fn();
+
+    render(
+      <Chat
+        agent="support"
+        onError={onError}
+        onBeforeSubmit={() => Promise.reject(new Error('Unknown command'))}
+      />,
+    );
+
+    type('/nope');
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+
+    expect(onError.mock.calls[0][0].message).toBe('Unknown command');
+    expect(state.sendMessage).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
   });
 });
 

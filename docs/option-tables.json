@@ -296,6 +296,11 @@
   },
   {
     "page": "chat/ui-registries",
+    "heading": "Data renderer options",
+    "type": "import('@frogbotai/ui/chat').DataRenderer"
+  },
+  {
+    "page": "chat/ui-registries",
     "heading": "Artifact options",
     "type": "import('@frogbotai/ui/chat/artifacts').ArtifactRegistryItem"
   },

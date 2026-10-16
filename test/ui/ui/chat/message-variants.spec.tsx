@@ -42,7 +42,7 @@ function renderParts(values: MessagePartValue[]) {
         <MessagePart key={index} part={part} />
       ))}
     </>,
-  ).container.innerHTML;
+  ).container.innerHTML.replaceAll(/ id="radix-[^"]*"/g, '');
 }
 
 describe('message variant matrix', () => {

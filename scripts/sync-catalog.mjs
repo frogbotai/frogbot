@@ -32,6 +32,7 @@ const PROVIDERS = {
 };
 
 const LOGO_ONLY_PROVIDERS = {
+  frogbot: { name: 'FrogBot', logo: 'frogbot' },
   lmstudio: { name: 'LM Studio', logo: 'lmstudio' },
   ollama: { name: 'Ollama', logo: 'ollama-cloud' },
 };

@@ -61,6 +61,9 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | `headerSlot` | `ReactNode` | — | Content above the messages. |
 | `composerStartSlot` | `ReactNode` | — | Controls at the start of the composer toolbar, such as selectors. |
 | `composerEndSlot` | `ReactNode` | — | Controls at the end of the composer toolbar, before the microphone and send button. |
+| `dockSlot` | `ReactNode` | — | Cards docked above the composer, such as a permission request. See [Dock](#dock). |
+| `dockBlocking` | `boolean` | `false` | Hides the composer while `dockSlot` needs an answer. The draft is kept. |
+| `onBeforeSubmit` | `(prompt: { text: string }) => boolean \| Promise<boolean>` | — | Called before each message is sent. Return `true` to handle it yourself, such as a typed command. See [Typed commands](#typed-commands). |
 | `submitContent` | `ReactNode` | `'Send'` | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | `'Stop'` | Accessible label for the stop button. |
 | `fallbackTitle` | `string` | `'Untitled'` | Sidebar title for the active chat before it has a title and before its first message has text. |
@@ -73,6 +76,67 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | `userMessageActions` | `ComponentType<MessageActionsSlotProps> \| false` | Copy and Edit | Actions for user messages. See [Message actions](#message-actions). |
 | `assistantMessageActions` | `ComponentType<MessageActionsSlotProps> \| false` | Copy and Branch | Actions for assistant messages. |
 | `panel` | `ReactNode` | — | A side panel rendered next to the conversation. |
+
+## Dock
+
+The dock sits between the queued messages and the composer, for requests that need the user before the chat can go on. A waiting client tool call with a registered renderer, such as a [question](/chat/questions#answer-in-the-chat-ui), docks there on its own and hides the composer until it is answered or dismissed; it then shows in the conversation as usual. Pass your own cards through `dockSlot`, below any docked call, and set `dockBlocking` while they wait for an answer. The composer stays mounted while hidden, so its text and attachments come back with it.
+
+`ChatDock` gives a docked card FrogBot's look: an optional `header`, the body, and an optional `footer` with a top border for actions.
+
+```tsx
+import { Chat, ChatDock } from '@frogbotai/ui/chat'
+
+<Chat
+  agent="support"
+  dockBlocking={request !== undefined}
+  dockSlot={
+    request && (
+      <ChatDock
+        header="Allow edit?"
+        footer={
+          <>
+            <button onClick={() => decide('deny')}>Deny</button>
+            <button onClick={() => decide('allow')}>Allow</button>
+          </>
+        }
+      >
+        {request.path}
+      </ChatDock>
+    )
+  }
+/>
+```
+
+## Typed commands
+
+`onBeforeSubmit` runs before each message is sent. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual. If it throws or rejects, nothing is sent and the error is shown like other chat errors.
+
+```tsx
+const [pickerOpen, setPickerOpen] = useState(false)
+
+<Chat
+  agent="support"
+  onBeforeSubmit={({ text }) => {
+    if (text.trim() !== '/model') return false
+    setPickerOpen(true)
+    return true
+  }}
+  composerStartSlot={<ModelSelector {...selector} open={pickerOpen} onOpenChange={setPickerOpen} />}
+/>
+```
+
+`matchesModelSearch`, `normalizeModelSearch` and `compactModelSearch` are the model list's search, so `/model sonnet` can pick the model the list would show first:
+
+```ts
+import { compactModelSearch, matchesModelSearch, normalizeModelSearch } from '@frogbotai/ui/chat'
+
+const values = [model.name, model.id].map((value) => ({
+  normalized: normalizeModelSearch(value),
+  compact: compactModelSearch(value),
+}))
+
+matchesModelSearch('sonnet', values) // true for "Claude Sonnet"
+```
 
 ## Errors
 
@@ -262,9 +326,9 @@ export function AgentChat() {
 | `selectedAgent` | `string` | Required | Slug of the selected agent. The trigger shows its profile name, or the slug. |
 | `onAgentChange` | `(slug: string) => void` | Required | Called with the slug of the chosen agent. |
 
-`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. A group is labelled with its first model's `providerName`, then FrogBot's name for the provider (`OpenAI` for `openai`), then the provider slug; models without a `provider` go under `Other`. While the selector is open, its trigger reads `Select effort` on the slider and `Select model` on the list. A model without reasoning levels opens straight on the list, which then has no Back button, and choosing such a model closes the selector; choosing a model with levels shows its slider. The reasoning slider shows the active level's name above a track with one dot per level. The selector keeps one width in both views and while searching, and long model names are truncated. It is fully controlled and renders nothing when `models` is empty.
+`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. A group is labelled with its first model's `providerName`, then FrogBot's name for the provider (`OpenAI` for `openai`), then the provider slug; models without a `provider` go under `Other`. While the selector is open, its trigger reads `Select effort` on the slider and `Select model` on the list. A model without reasoning levels opens straight on the list, which then has no Back button, and choosing such a model closes the selector; choosing a model with levels shows its slider. The reasoning slider shows the active level's name above a track with one dot per level. The selector keeps one width in both views and while searching, and long model names are truncated. Its selection is fully controlled, and it renders nothing when `models` is empty.
 
-Each row starts with its provider's logo. Logos ship with FrogBot for every catalog provider plus Ollama (`ollama`) and LM Studio (`lmstudio`), so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
+Each row starts with its provider's logo. Logos ship with FrogBot for every catalog provider plus FrogBot (`frogbot`), Ollama (`ollama`) and LM Studio (`lmstudio`), so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
 
 A search field above the list filters by name, ID, provider slug, and group label, ignoring case, spaces, and punctuation. Typing while a row has focus goes straight to the field, Down moves from the field to the first result, and Enter in the field chooses the first result. Escape clears the search first; with an empty search it closes the selector.
 
@@ -275,6 +339,8 @@ A search field above the list filters by name, ID, provider slug, and group labe
 | `selectedReasoning` | `string` | `Default` level | Active reasoning key, or `undefined` for `Default`. |
 | `onModelChange` | `(id: string) => void` | Required | Called with the chosen model ID. |
 | `onReasoningChange` | `(key: string \| undefined) => void` | Required | Called with the chosen key, or `undefined` when the slider returns to `Default`. |
+| `open` | `boolean` | Its own state | Opens the selector from code, such as a typed `/model`. It opens on the model list with an empty search. |
+| `onOpenChange` | `(open: boolean) => void` | — | Called when the selector opens or closes, including on Escape and outside clicks. |
 
 Pass the same choice to `<Chat>` through `model` and `reasoning`; each message is sent with them. The agent manifest lists allowed models, their display names in `names`, and each model's reasoning options, so a selector fed from it never offers a choice the server rejects. `names` holds catalog names such as `Nova Micro (US)` and the `name` of custom provider models; a model FrogBot has no name for is left out, so fall back to its ID. When the model changes, reset or restore the level yourself: a key from one model does not apply to another.
 
@@ -474,7 +540,7 @@ Chat renders these AI SDK v7 data part types:
 | `data-page-context` | `{ tabId: number, url: string, title: string, content: string, favicon?: string }` |
 | `data-prompt` | `{ id: string, title: string }` |
 
-Use a new `data-<name>` type for application-specific structured content. With the lower-level `MessagePart` component, pass `renderData` to render that type; otherwise `DataPart` displays its JSON payload.
+Use a new `data-<name>` type for application-specific structured content. Register a renderer for it with [`dataRenderers`](/chat/ui-registries#data-renderer-options) on `ChatProvider`, or pass `renderData` to the lower-level `MessagePart` component; otherwise `DataPart` displays its JSON payload.
 
 A `data-paste` part holds pasted text inline. The composer sends one only when it has no upload storage; see [Pasted text](#pasted-text). Chat shows it as a **Pasted text** card that opens the full text, and the agent receives it as `Pasted text:` followed by the text.
 
