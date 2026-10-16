@@ -43,7 +43,6 @@
 
   .fb-model-selector__content {
     display: flex;
-    box-sizing: border-box;
     width: min(22rem, calc(100vw - 2rem));
     flex-direction: column;
     gap: 0.25rem;

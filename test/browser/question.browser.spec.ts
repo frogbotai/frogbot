@@ -155,7 +155,7 @@ test('dismissing a question closes it without another model call', async ({ page
   expect(model.requests).toHaveLength(1);
 });
 
-test('a message sent while a question is pending is queued and runs after the answer', async ({
+test('a waiting question docks over the composer and a message queued through the API runs after the answer', async ({
   page,
 }) => {
   model.respond(
@@ -166,17 +166,26 @@ test('a message sent while a question is pending is queued and runs after the an
 
   await send(page, 'Deploy it');
 
-  const staging = page.getByRole('button', { name: /Staging/ });
+  const staging = page.locator('.fb-chat__dock').getByRole('button', { name: /Staging/ });
 
   await expect(staging).toBeEnabled();
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
+  await expect(page.locator('.fb-composer')).toBeHidden();
 
-  await send(page, 'Also check the logs');
+  const chatId = Number(new URL(page.url()).pathname.split('/').at(-1));
+  const queuedResponse = await page.request.post(`/api/agents/${agentSlug}`, {
+    data: { prompt: 'Also check the logs', chatId },
+  });
+
+  expect(queuedResponse.status()).toBe(202);
+
+  await page.reload();
 
   const queued = page.locator('.fb-chat__queued');
 
   await expect(queued).toContainText('Queued');
   await expect(queued).toContainText('Also check the logs');
+  await expect(page.locator('.fb-composer')).toBeHidden();
 
   await staging.click();
 
@@ -184,6 +193,8 @@ test('a message sent while a question is pending is queued and runs after the an
   await expect(page.getByText('The logs are clean.', { exact: true })).toBeVisible();
   await expect(queued).toHaveCount(0);
   await expect(page.locator('.fb-message').getByText('Also check the logs')).toBeVisible();
+  await expect(page.locator('.fb-chat__dock')).toHaveCount(0);
+  await expect(page.locator('.fb-composer textarea')).toBeVisible();
 
   expect(model.requests).toHaveLength(3);
 });

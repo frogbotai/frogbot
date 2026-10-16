@@ -425,6 +425,42 @@ describe('provider registry sync', () => {
     expect(providers.anthropic).toEqual({ name: 'Anthropic' });
   });
 
+  it('writes the FrogBot logo as currentColor paths', async () => {
+    const { syncCatalog } = await loadSync();
+    const frogbot =
+      '<svg viewBox="0 0 40 40"><path d="M0 27h40Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 0h40v24H0ZM5 16h5v5H5Z" fill="currentColor"/></svg>';
+
+    await syncCatalog({ fetchImpl: logoFetch({ frogbot: new Response(frogbot) }) });
+
+    const providers = (await renderedProviders()) as Record<
+      string,
+      { name: string; logo?: { viewBox: string; nodes: [string, Record<string, string>][] } }
+    >;
+
+    expect(providers.frogbot.name).toBe('FrogBot');
+    expect(providers.frogbot.logo?.viewBox).toBe('0 0 40 40');
+    expect(providers.frogbot.logo?.nodes.map(([name, { fill }]) => [name, fill])).toEqual([
+      ['path', 'currentColor'],
+      ['path', 'currentColor'],
+    ]);
+    expect(providers.frogbot.logo?.nodes[1][1]).toMatchObject({
+      fillRule: 'evenodd',
+      clipRule: 'evenodd',
+    });
+  });
+
+  it("rejects models.dev's styled FrogBot logo before writing outputs", async () => {
+    const { syncCatalog } = await loadSync();
+    const styled =
+      '<svg viewBox="0 0 40 40"><style>.st0{fill:currentColor;}.st1{fill:#FFFFFF;}</style><g transform="matrix(0.44,0,0,0.44,-2.1,-2.1)"><path class="st0" d="M93.9 67.1Z"/><path class="st1" d="M21.8 41.8Z"/></g></svg>';
+
+    await expect(
+      syncCatalog({ fetchImpl: logoFetch({ frogbot: new Response(styled) }) }),
+    ).rejects.toThrow("Invalid models.dev logo for 'frogbot': Unsupported SVG element: style");
+
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it('accepts a probe 404 and keys logos by FrogBot slug', async () => {
     const { syncCatalog } = await loadSync();
     const fetchImpl = logoFetch({ 'amazon-bedrock': new Response(svg) });

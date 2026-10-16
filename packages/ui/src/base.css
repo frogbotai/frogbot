@@ -1,0 +1,7 @@
+@layer frogbot {
+  :where([class^="fb-"], [class*=" fb-"]),
+  :where([class^="fb-"], [class*=" fb-"])::before,
+  :where([class^="fb-"], [class*=" fb-"])::after {
+    box-sizing: border-box;
+  }
+}

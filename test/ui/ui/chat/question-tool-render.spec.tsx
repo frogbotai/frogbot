@@ -499,29 +499,18 @@ describe('QuestionToolRender in Chat', () => {
     ['polls the turn state', true],
     ['reloads without polling when the adapter has no turn state', false],
   ])(
-    'queues a message sent while a question is pending and %s after answering',
+    'hides the composer while a question waits and runs a queued message after answering; %s',
     async (_name, loadTurnState) => {
-      let queuedId = '';
+      const queuedMessage = {
+        id: 'user-2',
+        chat: chatId,
+        role: 'user',
+        parts: [{ type: 'text', text: 'Also check the logs' }],
+      };
+
+      server.documents = [userMessage, pendingMessage, { ...queuedMessage, status: 'queued' }];
 
       server.routes.push(
-        (url, init) => {
-          if (url.pathname !== `/api/agents/${agent}`) return undefined;
-
-          const sent = JSON.parse(String(init?.body)) as { messages: UIMessage[] };
-          const last = sent.messages.at(-1)!;
-
-          if (last.role !== 'user') return undefined;
-
-          queuedId = last.id;
-
-          return stream([
-            {
-              type: 'data-queued',
-              data: { messageId: last.id, delivery: 'queue' },
-              transient: true,
-            },
-          ]);
-        },
         (url) => {
           if (url.pathname !== `/api/agents/${agent}`) return undefined;
 
@@ -539,13 +528,7 @@ describe('QuestionToolRender in Chat', () => {
                 { type: 'text', text: 'Deploying to staging.' },
               ],
             },
-            {
-              id: queuedId,
-              chat: chatId,
-              role: 'user',
-              parts: [{ type: 'text', text: 'Also check the logs' }],
-              status: 'active',
-            },
+            { ...queuedMessage, status: 'active' },
             {
               id: 'assistant-2',
               chat: chatId,
@@ -564,26 +547,23 @@ describe('QuestionToolRender in Chat', () => {
       );
 
       const { container } = renderChat(loadTurnState ? [] : ['loadTurnState']);
-
-      await screen.findByRole('button', { name: /Staging/ });
-
-      const composer = container.querySelector('.fb-composer__textarea') as HTMLTextAreaElement;
-
-      fireEvent.change(composer, { target: { value: 'Also check the logs' } });
-      fireEvent.keyDown(composer, { key: 'Enter' });
-
+      const staging = await screen.findByRole('button', { name: /Staging/ });
       const queued = await queuedIndicator();
 
-      expect(within(queued).getByText('Queued')).toBeTruthy();
       expect(within(queued).getByText('Also check the logs')).toBeTruthy();
       expect(within(screen.getByRole('log')).queryByText('Also check the logs')).toBeNull();
+      expect(container.querySelector('.fb-chat__dock')?.contains(staging)).toBe(true);
+      expect(container.querySelector<HTMLFormElement>('.fb-composer')?.hidden).toBe(true);
 
-      fireEvent.click(screen.getByRole('button', { name: /Staging/ }));
+      fireEvent.click(staging);
 
       expect(await screen.findByText('The logs are clean.')).toBeTruthy();
       expect(screen.queryByText('Queued')).toBeNull();
       expect(within(screen.getByRole('log')).getByText('Also check the logs')).toBeTruthy();
-      expect(requests(`/api/agents/${agent}`)).toHaveLength(2);
+      expect(within(screen.getByRole('log')).getByText('Answered')).toBeTruthy();
+      expect(container.querySelector('.fb-chat__dock')).toBeNull();
+      expect(container.querySelector<HTMLFormElement>('.fb-composer')?.hidden).toBe(false);
+      expect(requests(`/api/agents/${agent}`)).toHaveLength(1);
       expect(requests(`/api/agents/${agent}/chats/${chatId}/pending`, 'GET')).toHaveLength(
         loadTurnState ? 1 : 0,
       );

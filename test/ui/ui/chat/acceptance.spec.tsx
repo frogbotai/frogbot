@@ -39,15 +39,22 @@ const conversation: UIMessage[] = [
   },
 ];
 
+function html(messages: UIMessage[]) {
+  return render(<MessageList messages={messages} />).container.innerHTML.replaceAll(
+    / id="radix-[^"]*"/g,
+    '',
+  );
+}
+
 describe('chat acceptance', () => {
   it('renders a streamed conversation identically after database round-trip', () => {
-    const live = render(<MessageList messages={conversation} />).container.innerHTML;
+    const live = html(conversation);
     const documents = conversation.map((message) => uiMessageToDocument(message, 'chat-1'));
     const reloaded = documents.map((message) =>
       messageDocumentToUIMessage(JSON.parse(JSON.stringify(message))),
     );
 
-    const persisted = render(<MessageList messages={reloaded} />).container.innerHTML;
+    const persisted = html(reloaded);
 
     expect(persisted).toBe(live);
   });

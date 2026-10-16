@@ -1,4 +1,5 @@
 @import "./layers.css";
+@import "./base.css";
 @import "./utilities.css";
 @import "./board/board.css";
 @import "./calendar/calendar.css";
@@ -45,11 +46,13 @@
 @import "./chat/attachments.css";
 @import "./chat/audio-waveform.css";
 @import "./chat/channel-conversation-notice.css";
+@import "./chat/chat-dock.css";
 @import "./chat/chat-history.css";
 @import "./chat/chat-row-actions.css";
 @import "./chat/chat-shell.css";
 @import "./chat/chat.css";
 @import "./chat/code-block.css";
+@import "./chat/compaction-part.css";
 @import "./chat/composer.css";
 @import "./chat/data-part.css";
 @import "./chat/file-part.css";

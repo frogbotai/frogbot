@@ -1,0 +1,40 @@
+@layer frogbot {
+  .fb-compaction {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .fb-compaction__divider {
+    color: var(--theme-base-600);
+  }
+
+  .fb-compaction__running {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--theme-base-600);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .fb-compaction__spinner {
+    width: 0.875rem;
+    height: 0.875rem;
+    animation: fb-compaction-spin 1s linear infinite;
+  }
+
+  .fb-compaction__error {
+    margin: 0;
+    color: var(--color-destructive);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  @keyframes fb-compaction-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

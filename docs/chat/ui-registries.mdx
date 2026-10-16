@@ -5,7 +5,7 @@ description: "Render application-specific tools and artifact kinds through publi
 keywords: ["tools", "artifacts", "registry", "custom renderer"]
 ---
 
-Pass tool renderers and artifact kinds to `ChatProvider`. Registration uses exact, case-sensitive `kind` values.
+Pass tool renderers, data renderers and artifact kinds to `ChatProvider`. Registration uses exact, case-sensitive `kind` values.
 
 ```tsx
 import { ChatProvider } from '@frogbotai/ui/chat'
@@ -36,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-Tool kinds without a registration use the generic tool renderer. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
+Tool kinds without a registration use the generic tool renderer: a closed row with the tool's name, a one-line summary of its input, and a spinner, **Failed** or **Denied**. Opening it shows the input, then the output, error or denial reason, scrolling past 240px. An output in MCP's `CallToolResult` shape, `{ content: [...] }`, shows its `{ type: 'text', text }` items as text and its `{ type: 'image', data, mimeType }` items with an `image/*` type as images, in order; anything else shows as JSON. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
 
 ## Tool renderer options
 
@@ -54,6 +54,37 @@ The component receives:
 | `dismiss` | `() => Promise<void>` | Set only while a client tool call waits for an answer. Declines the call. |
 | `isReadonly` | `boolean` | `true` in a [read-only conversation](#read-only-conversations). |
 | `channelLabel` | `string` | The channel's name in a read-only conversation, such as `Slack`. |
+
+## Data renderer options
+
+A `data-<kind>` message part uses the first `dataRenderers` entry whose `kind` matches. Parts without one show their JSON payload. `data-paste`, `data-page-context` and `data-prompt` keep FrogBot's own rendering.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kind` | `string` | Required | The part type without its `data-` prefix, matched exactly, such as `compaction` for `data-compaction`. |
+| `render` | `ComponentType<{ part: DataPartValue }>` | Required | Component that renders the part. It receives `part` (`{ type, data, id? }`). |
+
+`CompactionPart` is the built-in renderer for a chat compaction. It isn't registered by default:
+
+```tsx
+import { ChatProvider, CompactionPart } from '@frogbotai/ui/chat'
+
+<ChatProvider adapter={adapter} dataRenderers={[{ kind: 'compaction', render: CompactionPart }]}>
+  {children}
+</ChatProvider>
+```
+
+It reads `CompactionPartData`:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | `'running' \| 'completed' \| 'failed'` | Where the compaction is. |
+| `reason` | `'auto' \| 'manual'` | Why it ran. |
+| `summary` | `string` | The summary, shown as Markdown between a "Compaction started" and a "Chat compacted" divider. |
+| `error` | `string` | Shown under "Compaction failed". |
+| `tokens` | `{ input: number, output: number }` | The summary call's usage, shown as `12K in · 1.2K out` on the closing divider. Left out when missing or zero. |
+
+While `status` is `running`, it shows **Compacting…** with a spinner and no closing divider. Data in any other shape shows as JSON.
 
 ## Artifact options
 

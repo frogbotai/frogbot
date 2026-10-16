@@ -19,6 +19,8 @@ export type { ChannelConversationNoticeProps } from '../chat/channel-conversatio
 export { ChannelConversationNotice } from '../chat/channel-conversation-notice.js';
 export type { ChatProps, ChatSidebarContext, MessageActionsSlotProps } from '../chat/chat.js';
 export { Chat } from '../chat/chat.js';
+export type { ChatDockProps } from '../chat/chat-dock.js';
+export { ChatDock } from '../chat/chat-dock.js';
 export type { ChatHistoryProps } from '../chat/chat-history.js';
 export { ChatHistory, deriveChatTitle } from '../chat/chat-history.js';
 export type { ChatHistoryActionsProps } from '../chat/chat-history-actions.js';
@@ -31,10 +33,12 @@ export type { ChatStatusProps } from '../chat/chat-status.js';
 export { ChatStatus } from '../chat/chat-status.js';
 export type { CodeBlockProps } from '../chat/code-block.js';
 export { CodeBlock } from '../chat/code-block.js';
+export type { CompactionPartData } from '../chat/compaction-part.js';
+export { CompactionPart } from '../chat/compaction-part.js';
 export type { ComposerProps } from '../chat/composer.js';
 export { Composer } from '../chat/composer.js';
 export { copyMarkdown } from '../chat/copy-markdown.js';
-export type { DataPartValue } from '../chat/data-part.js';
+export type { DataPartValue, DataRenderer } from '../chat/data-part.js';
 export { DataPart } from '../chat/data-part.js';
 export { FilePart } from '../chat/file-part.js';
 export type { PageContextPartData, PastePartData, PromptPartData } from '../chat/flag-parts.js';
@@ -68,6 +72,12 @@ export { MessagePart } from '../chat/message-part.js';
 export type { MessageDocument } from '../chat/messages.js';
 export { messageDocumentToUIMessage, uiMessageToDocument } from '../chat/messages.js';
 export { MicControl } from '../chat/mic-control.js';
+export type { ModelSearchValue } from '../chat/model-search.js';
+export {
+  compactModelSearch,
+  matchesModelSearch,
+  normalizeModelSearch,
+} from '../chat/model-search.js';
 export type {
   ModelSelectorModel,
   ModelSelectorProps,

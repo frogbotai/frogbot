@@ -254,6 +254,7 @@ const testProjects = [
   project({
     name: 'blank',
     testMatch: [
+      'boxSizing.browser.spec.ts',
       'generalPicker.browser.spec.ts',
       'iconGeometry.browser.spec.ts',
       'navShell.browser.spec.ts',

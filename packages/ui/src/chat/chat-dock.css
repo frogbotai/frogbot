@@ -1,0 +1,33 @@
+@layer frogbot {
+  .fb-chat-dock {
+    display: flex;
+    flex-direction: column;
+    overflow: clip;
+    border: 1px solid var(--theme-base-200);
+    border-radius: 12px;
+    background-color: var(--theme-base-0);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-base-1000) 8%, transparent);
+    font-size: var(--fb-text-sm);
+    line-height: var(--fb-text-sm--line-height);
+  }
+
+  .fb-chat-dock__header {
+    padding: 0.75rem 0.75rem 0;
+    font-weight: 500;
+  }
+
+  .fb-chat-dock__content {
+    min-width: 0;
+    padding: 0.75rem;
+  }
+
+  .fb-chat-dock__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--theme-base-200);
+    background-color: var(--theme-base-50);
+  }
+}

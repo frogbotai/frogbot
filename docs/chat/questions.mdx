@@ -61,7 +61,7 @@ type QuestionOutput = {
 
 ## Answer in the chat UI
 
-The admin chat renders questions as a card. A single single-choice question submits on click. Several questions step through one at a time, and questions that allow it show a text field for a custom answer.
+The admin chat renders questions as a card. While a question waits, the card is docked above the composer, which is hidden until the question is answered or dismissed; the answered card then shows in the conversation. A single single-choice question submits on click. Several questions step through one at a time, and questions that allow it show a text field for a custom answer.
 
 In your own app, register the card with `ChatProvider`.
 

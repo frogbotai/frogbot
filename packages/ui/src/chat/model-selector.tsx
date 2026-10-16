@@ -5,6 +5,7 @@ import { type KeyboardEvent, memo, useCallback, useId, useMemo, useRef, useState
 import { Popover, PopoverContent, PopoverTrigger } from '../components/popover.js';
 import { SearchInput } from '../components/search-input.js';
 import { Slider } from '../components/slider.js';
+import { useControlledState } from '../hooks/use-controlled-state.js';
 import CheckIcon from '../icons/icons/CheckIcon.js';
 import ChevronLeftIcon from '../icons/icons/ChevronLeftIcon.js';
 import ChevronRightIcon from '../icons/icons/ChevronRightIcon.js';
@@ -31,6 +32,8 @@ export type ModelSelectorProps = {
   selectedReasoning?: string;
   onModelChange: (id: string) => void;
   onReasoningChange: (key: string | undefined) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 type ModelSelectorView = 'controls' | 'list';
@@ -55,10 +58,27 @@ export const ModelSelector = memo(function ModelSelector({
   selectedReasoning,
   onModelChange,
   onReasoningChange,
+  open: openProp,
+  onOpenChange,
 }: ModelSelectorProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useControlledState({
+    defaultValue: false,
+    onChange: onOpenChange,
+    value: openProp,
+  });
+
   const [view, setView] = useState<ModelSelectorView>('controls');
   const [query, setQuery] = useState('');
+  const [shownOpen, setShownOpen] = useState(false);
+
+  if (open !== shownOpen) {
+    setShownOpen(open);
+
+    if (open) {
+      setQuery('');
+      setView('list');
+    }
+  }
 
   if (!models?.length) return null;
 
@@ -95,6 +115,7 @@ export const ModelSelector = memo(function ModelSelector({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        setShownOpen(next);
 
         if (next) showView(hasReasoning ? 'controls' : 'list');
       }}
