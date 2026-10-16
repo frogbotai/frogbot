@@ -2,8 +2,10 @@
 
 Ported from the Payload monorepo — `packages/sdk/src/`.
 
-- Source: https://github.com/payloadcms/payload
-- Version: `@payloadcms/sdk` `3.90.1` (the npm tarball, matching the installed `payload`)
+- Upstream: https://github.com/payloadcms/payload
+- Path: `packages/sdk/src`
+- Commit: `93111ff435e2deb81923bc9025310b9c7f61d485`
+- Tag: `v3.90.1`
 - License: MIT, reproduced in [`../THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)
 
 Ported so the SDK ships one FrogBot client whose requests match Payload's REST client byte for byte,
@@ -59,4 +61,4 @@ except for the options upstream drops (see Local modifications).
   `expiration` are Local API options.
 - JSDoc rewritten in FrogBot wording; comments stripped; house code style (semicolons).
 
-When bumping Payload, diff these files against the new `@payloadcms/sdk` release before updating.
+Run `pnpm vendored`, port what it lists, then update `Commit:` and `Tag:`.
