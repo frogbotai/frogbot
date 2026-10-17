@@ -7,13 +7,7 @@ import { ROOT } from './lib/workspace.mjs';
 
 export const LOCKFILE = 'pnpm-lock.yaml';
 
-export const ALLOWED = [
-  {
-    name: 'next',
-    importer: 'packages/frogbot',
-    reason: "frogbot imports only Next's `Metadata` type, so no code loads its copy at runtime",
-  },
-];
+export const ALLOWED = [];
 
 const IMPORTER = /^ {2}(\S.*):$/;
 

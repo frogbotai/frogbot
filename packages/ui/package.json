@@ -145,8 +145,8 @@
     "frogbot": "workspace:*",
     "jsdom": "^24.1.3",
     "payload": "3.90.2",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "typescript": "catalog:"
   },
   "publishConfig": {

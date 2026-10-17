@@ -12,9 +12,9 @@
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
-    "next": "16.4.0",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
