@@ -66,7 +66,7 @@ describe('checkSingleFrogBot', () => {
 
   it('reports framework peers on core frogbot', () => {
     const core = manifest('frogbot', {
-      peerDependencies: { '@ai-sdk/otel': '^1.0.0', next: '^15.4.10', react: '^19.0.0' },
+      peerDependencies: { '@ai-sdk/otel': '^1.0.0', next: '^16.4.0', react: '^19.0.0' },
     });
 
     const problems = check(core);
@@ -81,7 +81,7 @@ describe('checkSingleFrogBot', () => {
     const core = manifest('frogbot', {
       peerDependencies: { '@ai-sdk/otel': '^1.0.0' },
       peerDependenciesMeta: { '@ai-sdk/otel': { optional: true } },
-      devDependencies: { next: '15.4.10' },
+      devDependencies: { next: '16.4.0' },
     });
 
     const problems = check(core);

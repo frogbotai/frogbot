@@ -31,10 +31,10 @@ export default function IconRegistryResolutionPage() {
 );
 
 try {
-  execFileSync('pnpm', ['--filter', 'blank...', 'build'], {
-    env: { ...process.env, NEXT_OUTPUT: 'standalone' },
-    stdio: 'inherit',
-  });
+  const env = { ...process.env, NEXT_OUTPUT: 'standalone' };
+
+  execFileSync('pnpm', ['--filter', 'blank^...', 'build'], { env, stdio: 'inherit' });
+  execFileSync('pnpm', ['--filter', 'blank', 'build', '--webpack'], { env, stdio: 'inherit' });
 
   const rootPage = path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page.js');
   const registryPage = path.join(nextRoot, 'server/app/(frogbot)/icon-registry-resolution/page.js');

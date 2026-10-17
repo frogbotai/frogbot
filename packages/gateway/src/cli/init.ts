@@ -37,7 +37,7 @@ function packageJson(name: string): string {
         '@hono/node-server': '^1.13.7',
       },
       devDependencies: {
-        '@types/node': '^22.10.2',
+        '@types/node': '24.12.3',
         tsx: '^4.19.2',
         typescript: '6.0.3',
       },

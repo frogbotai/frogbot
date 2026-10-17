@@ -304,7 +304,7 @@ const webServer = (name: string) => {
   const fixture: Fixture = fixtures[fixtureName];
   const reset = dev ? [database] : [database, schemaDatabase(fixture)];
   const serve = dev
-    ? [fixture.cli === 'frogbot' ? frogbotBin : nextBin(fixture), 'dev']
+    ? [fixture.cli === 'frogbot' ? frogbotBin : nextBin(fixture), 'dev', '--webpack']
     : [nextBin(fixture), 'start'];
 
   return {

@@ -29,13 +29,13 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.21.0"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "catalog:",
     "frogbot": "workspace:*",
     "typescript": "catalog:",
     "vitest": "4.1.2"

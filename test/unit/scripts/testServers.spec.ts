@@ -87,7 +87,7 @@ describe('orphan sweep', () => {
   it('matches orphaned repo next servers and their descendants only', () => {
     const rows = [
       { pid: 10, ppid: 1, rss: 1, command: next },
-      { pid: 11, ppid: 10, rss: 1, command: 'next-server (v15.4.11)' },
+      { pid: 11, ppid: 10, rss: 1, command: 'next-server (v16.4.0)' },
       { pid: 12, ppid: 11, rss: 1, command: 'node worker.js' },
       { pid: 20, ppid: 1, rss: 1, command: 'node pnpm dev' },
       { pid: 21, ppid: 20, rss: 1, command: next },

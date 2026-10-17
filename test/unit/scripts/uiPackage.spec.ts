@@ -87,12 +87,12 @@ describe('storeProblems', () => {
         '@frogbotai+ui@0.32.0',
         '@payloadcms+ui@3.90.1',
         'frogbot@0.32.0',
-        'next@15.4.11',
+        'next@16.4.0',
         'next-themes@0.4.0',
         'payload@3.90.1',
         'react@19.2.6',
       ]),
-    ).toEqual(['@payloadcms+ui@3.90.1', 'frogbot@0.32.0', 'next@15.4.11', 'payload@3.90.1']);
+    ).toEqual(['@payloadcms+ui@3.90.1', 'frogbot@0.32.0', 'next@16.4.0', 'payload@3.90.1']);
   });
 });
 

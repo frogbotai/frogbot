@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "frogbot dev"
+    "dev": "frogbot dev --webpack"
   },
   "dependencies": {
     "@frogbotai/db-sqlite": "workspace:*",
@@ -12,13 +12,13 @@
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
-    "next": "15.4.11",
+    "next": "16.4.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^22.10.2",
+    "@types/node": "catalog:",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "tailwindcss": "^4.1.18",

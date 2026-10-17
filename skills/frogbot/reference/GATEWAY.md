@@ -10,7 +10,7 @@ Docs: https://docs.frogbot.ai/gateway/overview, https://docs.frogbot.ai/gateway/
 pnpm add @frogbotai/gateway
 ```
 
-The package requires Node.js 22 or newer when using its Node server or CLI.
+The package requires Node.js 24.21 or newer when using its Node server or CLI.
 
 ## Run the CLI
 

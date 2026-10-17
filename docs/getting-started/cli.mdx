@@ -46,7 +46,7 @@ frogbot dev --port 4000
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| Any Next.js argument | Next.js `dev` or `start` arguments | — | Passed to Next.js unchanged, for example `--port 4000` or `--turbopack`. |
+| Any Next.js argument | Next.js `dev` or `start` arguments | — | Passed to Next.js unchanged, for example `--port 4000` or `--webpack`. |
 
 Both commands need a `next.config.{ts,mjs,js,cjs}` file and the `next` package in the current directory. `start` with a `next.config.ts` also needs the `typescript` package installed, because Next.js compiles the file at startup. The command exits with Next.js's exit code and forwards `SIGINT` and `SIGTERM` to it.
 

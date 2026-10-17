@@ -16,6 +16,7 @@ secrets.txt
 dist
 build
 .next/
+next-env.d.ts
 out/
 
 # Testing
@@ -61,6 +62,11 @@ test/browser/fixtures/**/*.db*
 test/browser/fixtures/**/importMap.js
 test/e2e/fixtures/**/importMap.js
 test/e2e/fixtures/plugin-wrappers/tsconfig.tsbuildinfo
+# next dev writes these when it detects a coding agent
+templates/blank/AGENTS.md
+examples/*/AGENTS.md
+test/browser/fixtures/*/AGENTS.md
+test/e2e/fixtures/*/AGENTS.md
 
 # Live test credentials
 .live-credentials/

@@ -23,7 +23,7 @@ import { createRestChatAdapter } from '../../../chat/rest/adapter.js';
 import { cookieFetch } from '../../../chat/rest/auth.js';
 import type { ToolRenderer } from '../../../chat/tool-registry.js';
 import { emitChatMutation, useChatDocument } from '../../../chat/use-chats.js';
-import { useRouterAdapter } from '../../adapters/router.js';
+import { shallowRouteState, useRouterAdapter } from '../../adapters/router.js';
 
 const adapter = createRestChatAdapter({ fetch: cookieFetch() });
 const chatPicksPreference = 'frogbot-chat-picks';
@@ -128,7 +128,7 @@ export function ChatViewClient({
 
     if (routedPath === undefined) {
       setThreadPath(path);
-      window.history.replaceState(null, '', path);
+      window.history.replaceState({ [shallowRouteState]: true }, '', path);
 
       return;
     }

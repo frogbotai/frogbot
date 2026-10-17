@@ -44,7 +44,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/next client build', () => {
         'generate:importmap',
       ]);
 
-      const result = await runInFixture(fixtureDir, [nextBin, 'build']);
+      const result = await runInFixture(fixtureDir, [nextBin, 'build', '--webpack']);
       rmSync(buildDir, { recursive: true, force: true });
 
       expect(generation.code, generation.output).toBe(0);

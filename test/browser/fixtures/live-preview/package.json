@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "frogbot dev",
+    "dev": "frogbot dev --webpack",
     "generate:types": "frogbot generate:types",
     "typecheck": "tsc --noEmit"
   },
@@ -14,12 +14,12 @@
     "@frogbotai/ui": "workspace:*",
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
-    "next": "15.4.11",
+    "next": "16.4.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "catalog:",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "typescript": "catalog:"

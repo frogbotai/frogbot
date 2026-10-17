@@ -50,7 +50,7 @@ describe('release scripts', () => {
       'node scripts/test-ui-next.mjs',
     ]);
     expect(bump.slice(services + 1, -1)).toEqual([
-      'RUN_E2E=1 pnpm test',
+      'RUN_E2E=1 RUN_COMPILER_CHECKS=1 pnpm test',
       'pnpm test:int:pg test/database/int.spec.ts test/search/postgres',
       'pnpm test:int:mongo test/database/int.spec.ts test/search/mongodb test/kv/mongo-native.int.spec.ts',
     ]);

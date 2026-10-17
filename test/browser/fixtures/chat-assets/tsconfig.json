@@ -3,7 +3,7 @@
     "allowJs": true,
     "esModuleInterop": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "lib": ["es2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -16,6 +16,6 @@
     "target": "ES2022",
     "incremental": true
   },
-  "include": ["next-env.d.ts", "../../../../tools/assets.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "../../../../tools/assets.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

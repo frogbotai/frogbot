@@ -7,7 +7,7 @@
   "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.21.0"
   },
   "publishConfig": {
     "access": "public"
@@ -151,7 +151,7 @@
     "@opentelemetry/sdk-metrics": "^2.0.1",
     "@opentelemetry/sdk-trace-base": "^2.0.1",
     "@opentelemetry/sdk-trace-node": "^2.0.1",
-    "@types/node": "^22.10.2",
+    "@types/node": "catalog:",
     "eslint": "^9.16.0",
     "pino": "^9.14.0",
     "typescript": "catalog:"

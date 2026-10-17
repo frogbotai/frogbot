@@ -217,6 +217,6 @@ describe('browser project servers', () => {
       undefined,
       `http://localhost:${testPort(3127)}`,
     ]);
-    expect(webServers(config)[1]?.command).toMatch(/"dev"$/);
+    expect(webServers(config)[1]?.command).toMatch(/"dev" "--webpack"$/);
   });
 });

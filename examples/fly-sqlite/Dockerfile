@@ -9,7 +9,7 @@
 #   the final image contains only the traced server -- no package manager and
 #   no full node_modules -- and starts with plain `node server.js`.
 
-ARG NODE_VERSION=22.17.0
+ARG NODE_VERSION=24.22.0
 ARG PNPM_VERSION=11
 FROM node:${NODE_VERSION}-slim AS base
 WORKDIR /app

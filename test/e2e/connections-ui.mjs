@@ -132,7 +132,7 @@ export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   );
 
   assert.equal((await once(seed, 'exit'))[0], 0, output);
-  const build = run([require.resolve('next/dist/bin/next'), 'build', '--no-lint'], env);
+  const build = run([require.resolve('next/dist/bin/next'), 'build', '--webpack'], env);
   assert.equal((await once(build, 'exit'))[0], 0, output);
 
   process.stdout.write(

@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.21.0"
   },
   "dependencies": {
     "@payloadcms/plugin-stripe": "3.90.2"

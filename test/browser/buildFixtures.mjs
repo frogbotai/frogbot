@@ -178,7 +178,7 @@ const build = async (fixture) => {
 
   await step('frogbot generate:importmap', [frogbotBin, 'generate:importmap']);
 
-  await step('next build', [nextBin, 'build', '--no-lint']);
+  await step('next build', [nextBin, 'build', '--webpack']);
   await mkdir(buildDir(dir), { recursive: true });
 
   await step('schema push', [frogbotBin, 'run', pushSchemaScript], {
