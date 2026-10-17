@@ -19,6 +19,10 @@ function serialize(value: unknown) {
   }
 }
 
+function deniedReason(approval: { reason?: string } | undefined) {
+  return approval?.reason || 'Denied';
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -159,7 +163,7 @@ export function ToolPart({
         ) : part.state === 'output-error' ? (
           <pre className="fb-tool-part__content">{part.errorText}</pre>
         ) : part.state === 'output-denied' ? (
-          <pre className="fb-tool-part__content">{part.approval.reason || 'Denied'}</pre>
+          <pre className="fb-tool-part__content">{deniedReason(part.approval)}</pre>
         ) : null}
       </CollapsibleContent>
     </Collapsible>
