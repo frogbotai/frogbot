@@ -13,4 +13,5 @@ packages:
   - 'examples/tailwind'
 
 catalog:
+  '@types/node': '24.12.3'
   typescript: '6.0.3'

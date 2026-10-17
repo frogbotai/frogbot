@@ -76,7 +76,7 @@ Use an ESM package with declarations and explicit export maps. A plugin without 
   "files": ["dist"],
   "sideEffects": ["*.css"],
   "engines": {
-    "node": ">=22"
+    "node": ">=24.21.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && mkdir -p dist/client && cp src/client/styles.css dist/client/styles.css",

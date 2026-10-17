@@ -43,10 +43,11 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
     port = await getFreePort();
     client = new FrogBotRESTClient(`http://localhost:${port}`);
 
-    server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
+    server = spawnServer(process.execPath, [nextBin, 'dev', '--webpack', '--port', String(port)], {
       cwd: fixtureDir,
       env: {
         ...process.env,
+        NODE_ENV: 'development',
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
         FROGBOT_SECRET: 'e2e-secret',
       },

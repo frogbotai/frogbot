@@ -53,6 +53,7 @@ vi.mock('@payloadcms/ui', () => ({
 }));
 
 vi.mock('../../../../../packages/ui/src/admin/adapters/router.js', () => ({
+  shallowRouteState: 'frogbotShallowRoute',
   useRouterAdapter: () => ({
     pathname: mocks.pathname,
     router: { push: mocks.push, refresh: mocks.refresh },
@@ -245,7 +246,7 @@ describe('ChatViewClient', () => {
     reportChatId('chat/1');
 
     expect(replaceState).toHaveBeenCalledExactlyOnceWith(
-      null,
+      { frogbotShallowRoute: true },
       '',
       '/admin/collections/conversations/chat%2F1',
     );
@@ -735,7 +736,11 @@ describe('ChatViewClient', () => {
 
     await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
 
-    expect(replaceState).toHaveBeenCalledWith(null, '', '/admin/collections/conversations/chat-2');
+    expect(replaceState).toHaveBeenCalledWith(
+      { frogbotShallowRoute: true },
+      '',
+      '/admin/collections/conversations/chat-2',
+    );
     expect(mocks.request).toHaveBeenCalledWith('GET', '/conversations/chat-2?depth=0');
   });
 

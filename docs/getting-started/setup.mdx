@@ -10,7 +10,7 @@ Would you rather have a coding agent such as Codex or Claude Code do this for yo
 
 <Steps>
   <Step title="Install Node.js">
-    FrogBot runs on Node.js 22 or newer. Download the installer from [nodejs.org](https://nodejs.org/en/download) and run it.
+    FrogBot runs on Node.js 24.21 or newer. Download the installer from [nodejs.org](https://nodejs.org/en/download) and run it.
 
     **You should see:** the installer finishes without errors. You check the version in step 2.
   </Step>
@@ -26,7 +26,7 @@ Would you rather have a coding agent such as Codex or Claude Code do this for yo
     node --version
     ```
 
-    **You should see:** a version number that starts with `v22` or higher, such as `v22.12.0`. If the command is not found or the number is lower, install Node.js again and open a new terminal window.
+    **You should see:** a version number of `v24.21.0` or higher, such as `v24.22.0`. If the command is not found or the number is lower, install Node.js again and open a new terminal window.
   </Step>
   <Step title="Create the app">
     In the terminal, run:
@@ -101,7 +101,7 @@ You now have a working FrogBot app. To change what your agent does, edit `src/fr
     A key that is already set in your terminal takes priority over the one in `.env`. Close the terminal, open a new one, and start the app again. If that does not help, the variable is set in your terminal's startup settings. Remove it there, or put the same key in both places.
   </Accordion>
   <Accordion title="node --version is not found, or shows a number below 22">
-    Install Node.js 22 or newer from [nodejs.org](https://nodejs.org/en/download), then close the terminal and open a new one before you try again.
+    Install Node.js 24.21 or newer from [nodejs.org](https://nodejs.org/en/download), then close the terminal and open a new one before you try again.
   </Accordion>
   <Accordion title='Directory "my-frogbot" already exists'>
     A folder with that name is already there, often from an earlier try. Choose another name, such as `npx create-frogbot-app@latest my-frogbot-2`, and use that name in the steps that follow. You can also delete the old folder if you do not need it.

@@ -100,7 +100,7 @@ See [Coding agents](https://docs.frogbot.ai/skills/coding-agents) for other ways
 
 Errors print one line that starts with `[create-frogbot-app] error:`, and the command exits with status 1. A longer report with a stack trace means an unexpected problem; please [open an issue](https://github.com/frogbotai/frogbot/issues).
 
-FrogBot needs Node.js 22 or newer. Once the app runs, a key set in your shell takes priority over the one in `.env`.
+FrogBot needs Node.js 24.21 or newer. Once the app runs, a key set in your shell takes priority over the one in `.env`.
 
 ## Links
 

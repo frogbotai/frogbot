@@ -179,10 +179,10 @@ describe('scaffold', () => {
   });
 
   it('detects the package manager that invoked the scaffolder', () => {
-    expect(detectPackageManager('pnpm/10.26.0 npm/? node/v22.14.0')).toBe('pnpm');
-    expect(detectPackageManager('yarn/4.6.0 npm/? node/v22.14.0')).toBe('yarn');
-    expect(detectPackageManager('bun/1.3.13 npm/? node/v22.14.0')).toBe('bun');
-    expect(detectPackageManager('npm/10.9.0 node/v22.14.0')).toBe('npm');
+    expect(detectPackageManager('pnpm/10.26.0 npm/? node/v24.22.0')).toBe('pnpm');
+    expect(detectPackageManager('yarn/4.6.0 npm/? node/v24.22.0')).toBe('yarn');
+    expect(detectPackageManager('bun/1.3.13 npm/? node/v24.22.0')).toBe('bun');
+    expect(detectPackageManager('npm/10.9.0 node/v24.22.0')).toBe('npm');
     expect(detectPackageManager('')).toBe('npm');
   });
 });

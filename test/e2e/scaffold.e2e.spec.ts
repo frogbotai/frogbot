@@ -63,10 +63,11 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const require = createRequire(join(templateDir, 'package.json'));
     const nextBin = require.resolve('next/dist/bin/next');
 
-    server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
+    server = spawnServer(process.execPath, [nextBin, 'dev', '--webpack', '--port', String(port)], {
       cwd: templateDir,
       env: {
         ...process.env,
+        NODE_ENV: 'development',
         FROGBOT_SECRET: 'e2e-secret',
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
       },

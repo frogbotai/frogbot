@@ -65,7 +65,11 @@ describe.skipIf(!RUN_E2E)('plugin wrapper client build', () => {
       ),
     ].map((match) => match[1]);
 
-    const build = await runFixtureCommand([require.resolve('next/dist/bin/next'), 'build']);
+    const build = await runFixtureCommand([
+      require.resolve('next/dist/bin/next'),
+      'build',
+      '--webpack',
+    ]);
 
     expect(build.code, build.output).toBe(0);
     expect(build.output).not.toContain("Can't resolve");

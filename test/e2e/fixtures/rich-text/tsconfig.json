@@ -3,7 +3,7 @@
   "compilerOptions": {
     "allowJs": true,
     "incremental": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "lib": [
       "es2022",
       "DOM",
@@ -27,7 +27,8 @@
     "next-env.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

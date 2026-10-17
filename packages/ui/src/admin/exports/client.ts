@@ -2,6 +2,7 @@ export {
   type RouterAdapter,
   RouterAdapterProvider,
   type RouterAdapterRouter,
+  shallowRouteState,
   useRouterAdapter,
 } from '../adapters/router.js';
 export {

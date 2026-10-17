@@ -44,7 +44,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p ../../../test/types/plugin-seo/tsconfig.json"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24.21.0"
   },
   "dependencies": {
     "@payloadcms/plugin-seo": "3.90.2"

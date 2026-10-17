@@ -16,7 +16,12 @@ export const STEPS = [
   { name: 'ui-package', run: ['node', 'scripts/test-ui-package.mjs'] },
   { name: 'ui-next', run: ['node', 'scripts/test-ui-next.mjs'] },
   { name: 'services', run: ['pnpm', 'docker:start'], docker: true },
-  { name: 'test', run: ['pnpm', 'test'], env: { RUN_E2E: '1' }, docker: true },
+  {
+    name: 'test',
+    run: ['pnpm', 'test'],
+    env: { RUN_E2E: '1', RUN_COMPILER_CHECKS: '1' },
+    docker: true,
+  },
   {
     name: 'test-postgres',
     run: ['pnpm', 'test:int:pg', 'test/database/int.spec.ts', 'test/search/postgres'],

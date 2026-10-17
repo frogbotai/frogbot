@@ -10,7 +10,16 @@ const { CONFIG_ANCHORS, ENV_ANCHORS, PACKAGE_DEPENDENCY_ANCHORS } =
 
 const { TEMPLATES } = await import('../dist/templates.js');
 
-const skip = new Set(['node_modules', 'dist', '.next', '.env', '.env.local', 'frogbot-types.ts']);
+const skip = new Set([
+  'node_modules',
+  'dist',
+  '.next',
+  '.env',
+  '.env.local',
+  'frogbot-types.ts',
+  'next-env.d.ts',
+  'AGENTS.md',
+]);
 
 const resolveVersion = (name) => {
   const dir = name === 'frogbot' ? 'frogbot' : name.replace('@frogbotai/', '');

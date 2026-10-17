@@ -14,7 +14,7 @@ A comprehensive release-readiness assistant built as the second tier beside the 
 
 ## Prerequisites
 
-- Node.js 22 or newer and pnpm
+- Node.js 24.21 or newer and pnpm
 - An OpenAI API key to invoke either agent
 - Optional, real provider credentials for the integrations you want to test
 

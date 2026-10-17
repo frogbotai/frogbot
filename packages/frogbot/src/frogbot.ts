@@ -480,7 +480,7 @@ async function initialize(
   }
 
   if (process.env.NODE_ENV !== 'production' && !options.disableOnInit) {
-    void generateImportMap(payload.config, { ignoreResolveError: true }).catch((err: unknown) => {
+    await generateImportMap(payload.config, { ignoreResolveError: true }).catch((err: unknown) => {
       frogbot.logger.warn(
         `[frogbot] import map generation failed: ${err instanceof Error ? err.message : String(err)}`,
       );

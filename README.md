@@ -15,7 +15,7 @@
   &nbsp;
   <a href="https://discord.com/invite/JBZF7syAnU"><img alt="Discord" src="https://img.shields.io/badge/Discord-join%20chat-5865F2?logo=discord&logoColor=white&style=flat-square" /></a>
   &nbsp;
-  <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A522-brightgreen?style=flat-square" />
+  <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A524.21-brightgreen?style=flat-square" />
 </p>
 
 <hr/>
@@ -43,7 +43,7 @@ Paste this prompt into Codex, Claude Code, Cursor, or another coding agent, and 
 ```text
 Help me set up FrogBot, an open-source AI agent app, on this computer. I am not a programmer. Do the work yourself, explain each step in one short sentence, and stop to ask me when you need something from me.
 
-1. Check that Node.js 22 or newer is installed by running node --version. If it is missing or older, give me the link https://nodejs.org/en/download, wait until I say it is installed, then check again.
+1. Check that Node.js 24.21 or newer is installed by running node --version. If it is missing or older, give me the link https://nodejs.org/en/download, wait until I say it is installed, then check again.
 2. Ask me which AI key I have: OpenAI, Anthropic, or Google. If I have none, send me to https://platform.openai.com/api-keys to create an OpenAI key, and wait.
 3. Create the app in the current folder, or in a folder I name. If the current folder is already another project (it has a package.json), ask me where to put it instead and suggest my Documents folder. Use this command:
 npx create-frogbot-app@latest my-frogbot --yes --ai YOUR_PROVIDER --agents YOUR_AGENT
@@ -68,7 +68,7 @@ If anything fails, explain the error in plain words and fix it. For FrogBot ques
 
 ## Quickstart
 
-You need Node.js 22 or newer and an [OpenAI API key](https://platform.openai.com/api-keys). Create a project:
+You need Node.js 24.21 or newer and an [OpenAI API key](https://platform.openai.com/api-keys). Create a project:
 
 ```bash
 npx create-frogbot-app@latest my-agent --ai openai

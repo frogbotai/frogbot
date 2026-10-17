@@ -4,7 +4,7 @@
   "version": "0.33.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter '!blank' build && pnpm --filter blank build --webpack",
     "lint": "eslint . --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
     "lint:fix": "eslint . --fix --max-warnings=0 --cache --cache-location .idea/tmp/.eslintcache",
     "lint-staged": "lint-staged",
@@ -57,7 +57,7 @@
     "@playwright/test": "^1.63.0",
     "@stylistic/eslint-plugin": "5.10.0",
     "@swc/core": "1.15.3",
-    "@types/node": "^22.10.2",
+    "@types/node": "catalog:",
     "@vitest/eslint-plugin": "^1.1.0",
     "ai": "7.0.116",
     "eslint": "^9.16.0",
@@ -82,7 +82,7 @@
   },
   "packageManager": "pnpm@9.15.4",
   "engines": {
-    "node": ">=22"
+    "node": ">=24.21.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

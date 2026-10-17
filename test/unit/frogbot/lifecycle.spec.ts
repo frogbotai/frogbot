@@ -67,6 +67,9 @@ vi.mock('../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({
 }));
 
 const { writeGeneratedTypes } = await import('../../../packages/frogbot/src/typegen/index.js');
+const { generateImportMap } =
+  await import('../../../packages/frogbot/src/bin/generateImportMap/index.js');
+
 const { resolveConfigDir } = await import('../../../packages/frogbot/src/config/load.js');
 const { sanitize } = await import('../../../packages/frogbot/src/config/sanitize.js');
 const { getCachedFrogBot, getFrogBot, resetFrogBotCache } =
@@ -191,5 +194,35 @@ describe('FrogBot lifecycle', () => {
 
     expect(resolveConfigDir(process.cwd())).toBeNull();
     expect(vi.mocked(writeGeneratedTypes)).not.toHaveBeenCalled();
+  });
+
+  it('resolves only after the import map is written, so a script that exits cannot truncate it', async () => {
+    resetFrogBotCache();
+    payloadState.payload = { ...payloadState.payload, config: { collections: [] } };
+    payloadState.entryExists = false;
+    payloadState.failNext = false;
+    payloadState.promise = null;
+    const order: string[] = [];
+
+    vi.mocked(generateImportMap).mockImplementationOnce(
+      () =>
+        new Promise((resolve) =>
+          setImmediate(() => {
+            order.push('import map written');
+            resolve(null);
+          }),
+        ),
+    );
+
+    const config = sanitize({
+      secret: 'test-secret',
+      db: {} as never,
+      collections: [{ slug: 'users', fields: [] }],
+      typescript: { autoGenerate: false },
+    });
+
+    await getFrogBot({ config }).then(() => order.push('init resolved'));
+
+    expect(order).toEqual(['import map written', 'init resolved']);
   });
 });
