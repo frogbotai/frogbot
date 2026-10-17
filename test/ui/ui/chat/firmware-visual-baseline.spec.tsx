@@ -1,16 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
-import { Composer } from '../../../../packages/ui/src/chat/composer';
+import { Composer } from '../../../../packages/ui/src/chat/composer/composer';
+import { composerInput, type } from './composerEditor';
 
 const firmwareComposerBaseline = {
   wrapper: 'fb-composer__gradient',
   gradientContainer: 'fb-composer__gradient-container',
   panel: 'fb-composer__panel',
-  textarea: 'fb-composer__textarea',
+  input: 'fb-composer__input',
   submit: 'fb-composer__action fb-composer__submit',
 };
 
@@ -33,7 +34,7 @@ it('matches the canonical Firmware theme foundation', () => {
 
 it('matches the canonical Firmware composer shell', () => {
   const { container } = render(
-    <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
+    <Composer onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
   );
 
   const wrapper = container.querySelector(`.${firmwareComposerBaseline.wrapper}`);
@@ -42,13 +43,14 @@ it('matches the canonical Firmware composer shell', () => {
   );
 
   const panel = gradientContainer?.firstElementChild;
-  const textarea = screen.getByLabelText('Message');
-  fireEvent.change(textarea, { target: { value: 'Hello' } });
+  const input = composerInput();
+
+  type('Hello');
   const submit = screen.getByRole('button', { name: 'Send' });
 
   expect(wrapper?.className).toBe(firmwareComposerBaseline.wrapper);
   expect(gradientContainer?.className).toBe(firmwareComposerBaseline.gradientContainer);
   expect(panel?.className).toBe(firmwareComposerBaseline.panel);
-  expect(textarea.className).toBe(firmwareComposerBaseline.textarea);
+  expect(input.className).toBe(firmwareComposerBaseline.input);
   expect(submit.className).toBe(firmwareComposerBaseline.submit);
 });

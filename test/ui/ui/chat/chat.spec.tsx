@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ChatInit, UIMessage } from 'ai';
 import { APICallError } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,6 +20,7 @@ const state = vi.hoisted(() => ({
   adapter: undefined as unknown as ChatPlatformAdapter,
   agents: [] as ChatManifest['agents'],
   toolRenderers: [] as ToolRenderer[],
+  commands: [] as ComposerCommand[],
   history: {
     messages: [] as UIMessage[],
     queued: [] as UIMessage[],
@@ -43,6 +44,7 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
     manifest: { defaultAgent: 'support', agents: state.agents, transcribe: false },
     toolRenderers: state.toolRenderers,
     dataRenderers: [],
+    commands: state.commands,
   }),
 }));
 
@@ -69,12 +71,14 @@ import type { ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapt
 import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/chat';
 import { ChatDock } from '../../../../packages/ui/src/chat/chat-dock';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
+import type { ComposerCommand } from '../../../../packages/ui/src/chat/composer/context';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 import type {
   ToolRenderer,
   ToolRendererProps,
 } from '../../../../packages/ui/src/chat/tool-registry';
 import { emitChatMutation } from '../../../../packages/ui/src/chat/use-chats';
+import { composerText, insertMention, paste, press, type } from './composerEditor';
 
 const supportAgent: ChatManifest['agents'][number] = {
   slug: 'support',
@@ -251,9 +255,8 @@ describe('Chat', () => {
     expect(onChatIdChange).toHaveBeenCalledWith('two');
     expect(screen.getByText('Untitled').getAttribute('aria-current')).toBe('page');
 
-    const input = screen.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'Hello' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
+    type('Hello');
+    press('Enter');
 
     await waitFor(() =>
       expect(state.sendMessage).toHaveBeenCalledWith({
@@ -831,9 +834,8 @@ describe('Chat dock', () => {
 
   it('hides the composer while the dock blocks and keeps its text', () => {
     const { container, rerender } = render(<Chat agent="support" />);
-    const input = screen.getByRole('textbox');
 
-    fireEvent.change(input, { target: { value: 'Half a thought' } });
+    type('Half a thought');
 
     rerender(<Chat agent="support" dockSlot={<div>Allow?</div>} dockBlocking />);
 
@@ -842,7 +844,7 @@ describe('Chat dock', () => {
     rerender(<Chat agent="support" dockSlot={<div>Allow?</div>} />);
 
     expect(composer(container)?.hidden).toBe(false);
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('Half a thought');
+    expect(composerText()).toBe('Half a thought');
   });
 
   it('docks a waiting question above the dock slot and hides the composer', () => {
@@ -921,6 +923,108 @@ describe('Chat dock', () => {
   });
 });
 
+describe('Chat composer parts', () => {
+  const pricing = { source: 'pages', id: 'pricing', label: 'Pricing page' };
+  const mention = { ...pricing, start: 4, end: 17 };
+
+  const mentioned: UIMessage = {
+    id: 'user-mention',
+    role: 'user',
+    parts: [
+      { type: 'text', text: 'Ask @Pricing page' },
+      { type: 'data-mention', data: mention },
+    ],
+  };
+
+  beforeEach(() => {
+    state.status = 'ready';
+    state.error = undefined;
+    state.messages = [];
+    state.commands = [];
+    state.sendMessage.mockReset();
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
+    state.agents = [];
+    state.toolRenderers = [];
+    setAdapter();
+  });
+
+  it('sends attachments, then the text, then one data-mention part per chip', async () => {
+    render(<Chat agent="support" />);
+
+    paste({ getData: () => 'p'.repeat(651) });
+    type('Ask ');
+    insertMention(pricing);
+    press('Enter');
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(state.sendMessage.mock.calls[0][0].parts).toEqual([
+      { type: 'data-paste', data: { text: 'p'.repeat(651), filename: expect.any(String) } },
+      { type: 'text', text: 'Ask @Pricing page' },
+      { type: 'data-mention', data: mention },
+    ]);
+  });
+
+  it('shows the @label and hides the data-mention part', () => {
+    state.messages = [mentioned];
+
+    const { container } = render(<Chat agent="support" />);
+
+    expect(screen.getByText('Ask @Pricing page')).toBeTruthy();
+    expect(container.querySelector('[data-part="unknown"]')).toBeNull();
+    expect(container.querySelector('.fb-data-part')).toBeNull();
+  });
+
+  it('shows "Command failed" when a command rejects', async () => {
+    const onError = vi.fn();
+
+    state.commands = [
+      {
+        id: 'model',
+        title: 'Pick a model',
+        arguments: true,
+        execute: () => Promise.reject(new Error('No such model')),
+      },
+    ];
+
+    render(<Chat agent="support" onError={onError} />);
+
+    type('/model nope');
+    press('Enter');
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+
+    expect(onError.mock.calls[0][0].message).toBe('Command failed: No such model');
+    expect(screen.getByRole('alert').textContent).toContain('Command failed: No such model');
+    expect(state.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('keeps the chip when a sent message is edited', async () => {
+    state.messages = [mentioned];
+
+    render(<Chat agent="support" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    const input = screen.getByRole('textbox', { name: 'Edit message' });
+
+    expect(input.querySelector('.fb-composer-mention')?.textContent).toBe('@Pricing page');
+
+    type(' now', input);
+    fireEvent.click(within(input.closest('form')!).getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
+
+    expect(state.sendMessage.mock.calls[0][0]).toMatchObject({
+      messageId: 'user-mention',
+      parts: [
+        { type: 'text', text: 'Ask @Pricing page now' },
+        { type: 'data-mention', data: mention },
+      ],
+    });
+  });
+});
+
 describe('Chat onBeforeSubmit', () => {
   beforeEach(() => {
     state.status = 'ready';
@@ -933,15 +1037,10 @@ describe('Chat onBeforeSubmit', () => {
     setAdapter();
   });
 
-  function type(text: string) {
-    fireEvent.paste(screen.getByRole('textbox'), {
-      clipboardData: { getData: () => 'p'.repeat(651) },
-    });
-
-    const input = screen.getByRole('textbox');
-
-    fireEvent.change(input, { target: { value: text } });
-    fireEvent.keyDown(input, { key: 'Enter' });
+  function send(text: string) {
+    paste({ getData: () => 'p'.repeat(651) });
+    type(text);
+    press('Enter');
   }
 
   it.each([
@@ -954,13 +1053,21 @@ describe('Chat onBeforeSubmit', () => {
 
       render(<Chat agent="support" onBeforeSubmit={onBeforeSubmit} />);
 
-      type('/model sonnet');
+      send('/model sonnet');
 
-      await waitFor(() => expect(onBeforeSubmit).toHaveBeenCalledWith({ text: '/model sonnet' }));
-      await act(() => Promise.resolve());
+      await waitFor(() =>
+        expect(onBeforeSubmit).toHaveBeenCalledWith({
+          text: '/model sonnet',
+          mentions: [],
+          attachments: [
+            { type: 'paste', text: 'p'.repeat(651), filename: expect.any(String) as string },
+          ],
+        }),
+      );
+
+      await waitFor(() => expect(composerText()).toBe(''));
 
       expect(state.sendMessage).not.toHaveBeenCalled();
-      expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toBe('');
       expect(screen.getAllByRole('listitem')).toHaveLength(1);
     },
   );
@@ -968,7 +1075,7 @@ describe('Chat onBeforeSubmit', () => {
   it('sends the message when not handled', async () => {
     render(<Chat agent="support" onBeforeSubmit={() => false} />);
 
-    type('Hello');
+    send('Hello');
 
     await waitFor(() => expect(state.sendMessage).toHaveBeenCalledOnce());
 
@@ -991,11 +1098,12 @@ describe('Chat onBeforeSubmit', () => {
       />,
     );
 
-    type('/nope');
+    send('/nope');
 
     await waitFor(() => expect(onError).toHaveBeenCalledOnce());
 
-    expect(onError.mock.calls[0][0].message).toBe('Unknown command');
+    expect(onError.mock.calls[0][0].message).toBe('Command failed: Unknown command');
+    expect(screen.getByRole('alert').textContent).toContain('Command failed: Unknown command');
     expect(state.sendMessage).not.toHaveBeenCalled();
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
   });

@@ -63,7 +63,7 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 | `composerEndSlot` | `ReactNode` | — | Controls at the end of the composer toolbar, before the microphone and send button. |
 | `dockSlot` | `ReactNode` | — | Cards docked above the composer, such as a permission request. See [Dock](#dock). |
 | `dockBlocking` | `boolean` | `false` | Hides the composer while `dockSlot` needs an answer. The draft is kept. |
-| `onBeforeSubmit` | `(prompt: { text: string }) => boolean \| Promise<boolean>` | — | Called before each message is sent. Return `true` to handle it yourself, such as a typed command. See [Typed commands](#typed-commands). |
+| `onBeforeSubmit` | `(prompt: ComposerSubmission) => boolean \| Promise<boolean>` | — | Called before each message is sent, with `{ text, mentions, attachments }`. Return `true` to handle it yourself, such as a typed command. See [Typed commands](#typed-commands). |
 | `submitContent` | `ReactNode` | `'Send'` | Accessible label for the send button. |
 | `stopContent` | `ReactNode` | `'Stop'` | Accessible label for the stop button. |
 | `fallbackTitle` | `string` | `'Untitled'` | Sidebar title for the active chat before it has a title and before its first message has text. |
@@ -109,7 +109,9 @@ import { Chat, ChatDock } from '@frogbotai/ui/chat'
 
 ## Typed commands
 
-`onBeforeSubmit` runs before each message is sent. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual. If it throws or rejects, nothing is sent and the error is shown like other chat errors.
+Register `/` commands with [`commands`](/chat/ui-registries#composer-commands) on `ChatProvider`: typing `/` opens a menu of them, and `/id rest` runs one that takes arguments. For anything else, use `onBeforeSubmit`.
+
+`onBeforeSubmit` runs before each message is sent, also while a reply streams, and receives `{ text, mentions, attachments }`. Return `true` and nothing is sent: the text clears and attachments stay in the composer. Return `false` to send as usual; nothing is sent while a reply streams. If it throws or rejects, nothing is sent and the chat shows `Command failed: <message>`. A registered command that matches runs first, and `onBeforeSubmit` isn't called for it.
 
 ```tsx
 const [pickerOpen, setPickerOpen] = useState(false)
@@ -222,7 +224,7 @@ Pass the [adapter](/chat/ui-provider#adapter-options) to add the same actions to
 
 ## Message actions
 
-Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch; Branch needs the adapter's `branchChat` and is hidden without it. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
+Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch; Branch needs the adapter's `branchChat` and is hidden without it. Editing uses the composer's editor with its mention chips; Enter sends and Escape cancels. It preserves the other non-text parts, replaces the text and `data-mention` parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
 
 Copy writes rendered HTML and original Markdown to the clipboard. Formatting is preserved when pasted into rich-text editors, while plain-text destinations receive the original Markdown.
 
@@ -528,7 +530,7 @@ Several refusals in one drop are announced together, separated by full stops.
 
 ### Pasted text
 
-Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`; a paste of 650 characters or fewer stays in the textarea. With upload storage (an adapter with `uploadAttachment`), the text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. FrogBot sets no size limit on pasted text. A composer without upload storage keeps the text in the browser and sends it as a [`data-paste` part](#message-data-parts) instead. Either way, the agent receives `Pasted text:` followed by the text.
+Pasting more than 650 characters into the composer turns the paste into a **Pasted text** card tagged `PASTED`; a paste of 650 characters or fewer stays in the input. With upload storage (an adapter with `uploadAttachment`), the text is uploaded as a plain-text asset named `pasted-<time>.txt` and sent as a `file-reference` part with `filename: 'Pasted text'` and `origin: 'paste'`. FrogBot sets no size limit on pasted text. A composer without upload storage keeps the text in the browser and sends it as a [`data-paste` part](#message-data-parts) instead. Either way, the agent receives `Pasted text:` followed by the text.
 
 ## Message data parts
 
@@ -539,6 +541,7 @@ Chat renders these AI SDK v7 data part types:
 | `data-paste` | `{ text: string, filename?: string }` |
 | `data-page-context` | `{ tabId: number, url: string, title: string, content: string, favicon?: string }` |
 | `data-prompt` | `{ id: string, title: string }` |
+| `data-mention` | `ComposerMention`: `{ source, id, label, start, end, data? }`. Renders nothing; see [Composer prompt](/chat/ui-custom-shell#composer-prompt). |
 
 Use a new `data-<name>` type for application-specific structured content. Register a renderer for it with [`dataRenderers`](/chat/ui-registries#data-renderer-options) on `ChatProvider`, or pass `renderData` to the lower-level `MessagePart` component; otherwise `DataPart` displays its JSON payload.
 

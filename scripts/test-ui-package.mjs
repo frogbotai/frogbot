@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 
 import { declarationProblems, storeProblems, uiManifestProblems } from './lib/uiPackage.mjs';
 
@@ -26,6 +27,7 @@ const subpaths = [
   './chat/rest',
   './chat/tools',
   './chat/artifacts',
+  './lexical',
   './admin',
   './admin/shared',
   './admin/rsc',
@@ -295,6 +297,10 @@ export const picker = (
     .filter((file) => file.endsWith('.js'))
     .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
     .join('\n');
+
+  console.log(
+    `[test-ui-package] Vite smoke app JS: ${(zlib.gzipSync(bundle).length / 1024).toFixed(1)} KB gzipped`,
+  );
 
   assert.match(bundle, /Navigation/);
   assert.match(bundle, /Bundled chat/);

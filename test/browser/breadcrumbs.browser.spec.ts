@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { composerInput, fillComposer } from './__helpers/composer';
 import { fetchMetadata, metadataValues } from './__helpers/metadata';
 import { test } from './__helpers/questionTest';
 import { signedOut } from './__helpers/signIn';
@@ -183,8 +184,8 @@ async function recordedTitles(page: Page) {
 }
 
 async function send(page: Page, text: string) {
-  await page.locator('.fb-composer textarea').fill(text);
-  await page.locator('.fb-composer textarea').press('Enter');
+  await fillComposer(page, text);
+  await composerInput(page).press('Enter');
 }
 
 function isNavigationTo(url: string, path: string) {
@@ -238,7 +239,7 @@ test('opening a chat from a collection list replaces the collection label with t
   await recents(page).getByRole('link', { name: threadTitle, exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/${chatId}$`));
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
   await expect(stepNav(page)).not.toContainText('Users');
   await expectLabel(page, 'Chats', threadTitle);
 
@@ -277,7 +278,7 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/create$`));
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
   await expectLabel(page);
 
   await expectTabTitle(page, 'Creating - Chat');
@@ -434,7 +435,7 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
   await expectLabel(page);
 
   await expectTabTitle(page, 'Creating - Chat');
@@ -523,7 +524,7 @@ test('a new chat is listed first under Today in Recents while its reply is held'
   await openFirstPage(page, `/collections/${usersSlug}`);
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await send(page, firstMessage);
 
@@ -573,7 +574,7 @@ test('New Chat after a new thread clears the screen and sends the next message t
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await send(page, firstMessage);
 
@@ -643,7 +644,7 @@ test('Back after New Chat from a new thread shows the first conversation again',
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await send(page, firstMessage);
 
@@ -739,7 +740,7 @@ test('the first conversation stays on screen after a new chat moves to its threa
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await markChatView(page);
   await recordLabels(page);
@@ -769,7 +770,7 @@ test('a message sent right after the first reply continues the same chat', async
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await markChatView(page);
   await send(page, firstMessage);
@@ -804,7 +805,7 @@ test('a reply streaming on the new thread page stays on screen until it finishes
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await markChatView(page);
   await send(page, firstMessage);
@@ -843,7 +844,7 @@ test('stopping the first reply keeps the new chat and continues it with the next
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await markChatView(page);
   await send(page, firstMessage);
@@ -885,7 +886,7 @@ test('Back from a new thread returns to the page before the new chat and Forward
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await markChatView(page);
   await send(page, firstMessage);

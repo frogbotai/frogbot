@@ -8,6 +8,7 @@ import { Chat } from '../../../../packages/ui/src/chat/chat';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { createRestChatAdapter } from '../../../../packages/ui/src/chat/rest/adapter';
 import { QuestionToolRender } from '../../../../packages/ui/src/exports/chat-tools';
+import { press, type } from './composerEditor';
 
 const api = 'https://frogbot.example/api';
 const agent = 'support';
@@ -354,10 +355,10 @@ describe('Chat for a channel conversation', () => {
     await screen.findByRole('button', { name: /Staging/ });
     await waitFor(() => expect(lookups).toBe(1));
 
-    const composer = container.querySelector('.fb-composer__textarea') as HTMLTextAreaElement;
+    const composer = container.querySelector<HTMLElement>('.fb-composer__input')!;
 
-    fireEvent.change(composer, { target: { value: 'Ship it anyway' } });
-    fireEvent.keyDown(composer, { key: 'Enter' });
+    type('Ship it anyway', composer);
+    press('Enter', {}, composer);
 
     expect(await screen.findByText('This conversation happens in Slack.')).toBeTruthy();
     expect(container.querySelector('.fb-composer')).toBeNull();

@@ -9,6 +9,7 @@ import {
 } from '@playwright/test';
 
 import { encryptedOfficeFile, reportDocx, reportText, xlsxFile } from '../__helpers/shared/office';
+import { composerInput, expectComposerText, fillComposer } from './__helpers/composer';
 import { signedOut } from './__helpers/signIn';
 import {
   agentSlug,
@@ -124,7 +125,7 @@ async function pickFiles({
 }
 
 async function send({ page, prompt }: { page: Page; prompt: string }): Promise<MessagePart[]> {
-  await page.locator('.fb-composer textarea').fill(prompt);
+  await fillComposer(page, prompt);
 
   const agentResponse = page.waitForResponse(
     (response) =>
@@ -286,7 +287,7 @@ test('composer uploads a private chat asset, sends its bytes, and restores the a
   expect([401, 403, 404]).toContain(anonymousDraft.status());
   expect([401, 403, 404]).toContain(anonymousDownload.status());
 
-  await page.locator('.fb-composer textarea').fill(prompt);
+  await fillComposer(page, prompt);
 
   const agentResponse = page.waitForResponse(
     (response) =>
@@ -720,7 +721,7 @@ test('long pasted text is stored as a text asset and reaches the agent as pasted
 
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.evaluate((text) => navigator.clipboard.writeText(text), pasted);
-  await page.locator('.fb-composer textarea').focus();
+  await composerInput(page).focus();
   await page.keyboard.press('ControlOrMeta+V');
 
   const uploaded = await uploadResponse;
@@ -735,7 +736,7 @@ test('long pasted text is stored as a text asset and reaches the agent as pasted
 
   await expect(card).toHaveAttribute('data-state', 'text');
   await expect(card).toHaveAccessibleName('Pasted text, PASTED, ready');
-  await expect(page.locator('.fb-composer textarea')).toHaveValue('');
+  await expectComposerText(page, '');
 
   const parts = await send({ page, prompt: 'Summarise my notes.' });
 
@@ -838,7 +839,7 @@ test('a text card and its viewer work with the keyboard alone', async ({ page })
 
   await expect(card).toHaveAttribute('data-state', 'text');
 
-  await page.locator('.fb-composer textarea').focus();
+  await composerInput(page).focus();
   await page.keyboard.press('Shift+Tab');
 
   await expect(remove).toBeFocused();

@@ -53,7 +53,9 @@
 @import "./chat/chat.css";
 @import "./chat/code-block.css";
 @import "./chat/compaction-part.css";
-@import "./chat/composer.css";
+@import "./chat/composer/composer.css";
+@import "./chat/composer/mention-node.css";
+@import "./chat/composer/menu.css";
 @import "./chat/data-part.css";
 @import "./chat/file-part.css";
 @import "./chat/file-reference-part.css";

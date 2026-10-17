@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { composerInput, fillComposer } from './__helpers/composer';
 import { test } from './__helpers/questionTest';
 import { chatsSlug } from './fixtures/question/shared';
 
@@ -20,7 +21,7 @@ test.beforeEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
   await page.goto(`/collections/${chatsSlug}/create`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 });
 
 test.afterEach(async ({ page }) => {
@@ -32,8 +33,8 @@ test.afterAll(async () => {
 });
 
 async function send(page: Page, text: string) {
-  await page.locator('.fb-composer textarea').fill(text);
-  await page.locator('.fb-composer textarea').press('Enter');
+  await fillComposer(page, text);
+  await composerInput(page).press('Enter');
 }
 
 test('a rejected provider key shows an actionable toast without the provider message', async ({

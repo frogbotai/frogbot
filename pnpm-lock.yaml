@@ -1809,6 +1809,12 @@ importers:
       '@frogbotai/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@lexical/react':
+        specifier: 0.50.0
+        version: 0.50.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)(yjs@13.6.32)
+      '@lexical/utils':
+        specifier: 0.50.0
+        version: 0.50.0(typescript@6.0.3)
       '@radix-ui/react-accordion':
         specifier: ^1.2.20
         version: 1.2.20(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1869,6 +1875,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      lexical:
+        specifier: 0.50.0
+        version: 0.50.0(typescript@6.0.3)
       markdown-it:
         specifier: ^14.1.0
         version: 14.3.1

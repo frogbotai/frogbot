@@ -149,6 +149,20 @@ const servers: Record<string, Server> = {
     database: 'frogbot.db',
     env: { BROWSER_PROVIDER_URL: `http://localhost:${chatProviderPort}/v1` },
   },
+  'chat-assets-firefox': {
+    fixture: 'chat-assets',
+    port: testPort(3136),
+    database: 'frogbot.firefox.db',
+    devServer: 'chat-assets',
+    env: { BROWSER_PROVIDER_URL: `http://localhost:${chatProviderPort}/v1` },
+  },
+  'chat-assets-webkit': {
+    fixture: 'chat-assets',
+    port: testPort(3137),
+    database: 'frogbot.webkit.db',
+    devServer: 'chat-assets',
+    env: { BROWSER_PROVIDER_URL: `http://localhost:${chatProviderPort}/v1` },
+  },
   'live-preview': { fixture: 'live-preview', port: testPort(3114), database: 'frogbot.browser.db' },
   'plugin-seo': {
     fixture: 'plugin-wrappers',
@@ -205,12 +219,20 @@ const project = ({
   };
 };
 
+const afterProject = (previous: string, options: Parameters<typeof project>[0]) => {
+  const next = project(options);
+
+  return { ...next, dependencies: [...next.dependencies, previous] };
+};
+
 const crossBrowserQuestionSpecs = [
   'reasoningSelector.browser.spec.ts',
   'modelSelector.browser.spec.ts',
   'breadcrumbs.browser.spec.ts',
   'topBarPhone.browser.spec.ts',
 ];
+
+const composerSpecs = ['composer.browser.spec.ts', 'composerEdges.browser.spec.ts'];
 
 const signInOptions: Record<string, SignInOptions> = {
   'rich-text': { adminRoute: '/admin' },
@@ -260,7 +282,20 @@ const testProjects = [
       'navShell.browser.spec.ts',
     ],
   }),
-  project({ name: 'chat-assets', testMatch: 'chatAssets.browser.spec.ts' }),
+  project({
+    name: 'chat-assets',
+    testMatch: ['chatAssets.browser.spec.ts', ...composerSpecs],
+  }),
+  afterProject('chat-assets', {
+    name: 'chat-assets-firefox',
+    browser: 'firefox',
+    testMatch: composerSpecs,
+  }),
+  afterProject('chat-assets-firefox', {
+    name: 'chat-assets-webkit',
+    browser: 'webkit',
+    testMatch: composerSpecs,
+  }),
   project({
     name: 'custom-field-firefox',
     browser: 'firefox',
@@ -278,14 +313,24 @@ const testProjects = [
   project({ name: 'plugin-seo', testMatch: 'seoFields.browser.spec.ts' }),
 ];
 
+const withDependencies = (names: Set<string>): Set<string> => {
+  const next = new Set(names);
+
+  for (const { name, dependencies } of testProjects) {
+    if (names.has(name)) dependencies.forEach((dependency) => next.add(dependency));
+  }
+
+  return next.size === names.size ? next : withDependencies(next);
+};
+
+const runProjects = withDependencies(selectedProjects);
+
 const selectedServers = [
   ...new Set(
     testProjects
       .filter(
         ({ name }) =>
-          startAllServers ||
-          selectedProjects.has(name) ||
-          selectedProjects.has(`${serverFor(name)}-setup`),
+          startAllServers || runProjects.has(name) || runProjects.has(`${serverFor(name)}-setup`),
       )
       .map(({ name }) => serverFor(name)),
   ),
@@ -390,8 +435,9 @@ export default defineConfig<{ signInOptions: SignInOptions; authFile: string }, 
   webServer: [
     slotServer,
     ...(dev || selectedFixtures.length === 0 ? [] : [buildServer]),
-    ...selectedServers.flatMap((name) =>
-      name === 'chat-assets' ? [chatProvider, webServer(name)] : [webServer(name)],
-    ),
+    ...(selectedServers.some((name) => servers[name].fixture === 'chat-assets')
+      ? [chatProvider]
+      : []),
+    ...selectedServers.map(webServer),
   ],
 });

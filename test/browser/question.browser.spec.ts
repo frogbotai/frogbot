@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 import { startStubChatModel, type StubChatModel } from '../__helpers/shared/StubChatModel';
+import { composerInput, fillComposer } from './__helpers/composer';
 import { test } from './__helpers/questionTest';
 import { agentSlug, chatsSlug, messagesSlug } from './fixtures/question/shared';
 
@@ -38,7 +39,7 @@ test.beforeEach(async ({ page }) => {
   expect((await page.request.post('/api/browser/reset')).ok()).toBe(true);
 
   await page.goto(`/collections/${chatsSlug}/create`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 });
 
 test.afterEach(async ({ page }) => {
@@ -50,8 +51,8 @@ test.afterAll(async () => {
 });
 
 async function send(page: Page, text: string) {
-  await page.locator('.fb-composer textarea').fill(text);
-  await page.locator('.fb-composer textarea').press('Enter');
+  await fillComposer(page, text);
+  await composerInput(page).press('Enter');
 }
 
 function agentPosts(page: Page) {
@@ -194,7 +195,7 @@ test('a waiting question docks over the composer and a message queued through th
   await expect(queued).toHaveCount(0);
   await expect(page.locator('.fb-message').getByText('Also check the logs')).toBeVisible();
   await expect(page.locator('.fb-chat__dock')).toHaveCount(0);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   expect(model.requests).toHaveLength(3);
 });

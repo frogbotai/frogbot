@@ -34,6 +34,7 @@ export function MessagePart({ fallback, part, renderData, role }: MessagePartPro
   if (isTextUIPart(known)) return <TextPart part={known} role={role} />;
   if (isReasoningUIPart(known)) return <ReasoningPart part={known} />;
   if (isToolUIPart(known)) return <ToolPart part={known} />;
+  if (part.type === 'data-mention') return null;
   if (isDataUIPart(known)) return <DataPart part={known} render={renderData} />;
   if (isFileUIPart(known) || isReasoningFileUIPart(known)) return <FilePart part={known} />;
 

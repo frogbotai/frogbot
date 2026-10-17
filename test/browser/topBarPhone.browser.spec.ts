@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
+import { composerInput } from './__helpers/composer';
 import { agentSlug, chatsSlug, tasksSlug } from './fixtures/question/shared';
 
 const chatTitle = 'Quarterly enterprise refund requests and customer support follow-up planning';
@@ -95,7 +96,7 @@ test('the phone chat top bar shows only the long thread title clear of the menu 
   const chatId = (await response.json()).doc.id as number | string;
 
   await page.goto(`/collections/${chatsSlug}/${chatId}`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
 
   await expectPhoneTopBar(page, chatTitle);
 });
@@ -121,7 +122,7 @@ test('the phone create-chat top bar keeps the home icon clear of the menu button
   page,
 }) => {
   await page.goto(`/collections/${chatsSlug}/create`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
   await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
     'data-nav-state',
     'mobile-nav-closed',
@@ -153,7 +154,7 @@ test('an unbroken 80-character phone title uses ellipsis without sideways scroll
   const chatId = (await response.json()).doc.id as number | string;
 
   await page.goto(`/collections/${chatsSlug}/${chatId}`);
-  await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  await expect(composerInput(page)).toBeVisible();
   await expectPhoneTopBar(page, title);
 
   const leaf = page.locator('.app-header__step-nav .step-nav__last');
