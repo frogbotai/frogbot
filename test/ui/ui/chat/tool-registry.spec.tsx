@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { isToolUIPart, readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai';
+import { assert, describe, expect, it } from 'vitest';
 
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 import { ToolPart } from '../../../../packages/ui/src/chat/tool-part';
@@ -145,6 +146,41 @@ describe('tool registry', () => {
 
     expect(screen.getByText('Denied')).toBeTruthy();
     expect(screen.getByText('Not now')).toBeTruthy();
+  });
+
+  it('shows Denied for a stream that denies a call without an approval request', async () => {
+    const stream = new ReadableStream<UIMessageChunk>({
+      start(controller) {
+        controller.enqueue({ type: 'start', messageId: 'm' });
+
+        controller.enqueue({
+          type: 'tool-input-available',
+          toolCallId: '1',
+          toolName: 'search',
+          input: { query: 'frog' },
+          dynamic: true,
+        });
+
+        controller.enqueue({ type: 'tool-output-denied', toolCallId: '1' });
+        controller.close();
+      },
+    });
+
+    let message: UIMessage | undefined;
+
+    for await (const next of readUIMessageStream({ stream })) message = next;
+
+    const part = message?.parts.find(isToolUIPart);
+
+    assert(part);
+
+    expect(part.state).toBe('output-denied');
+    expect(part).not.toHaveProperty('approval');
+
+    render(<ToolPart part={part} />);
+    fireEvent.click(screen.getByRole('button', { name: /search/ }));
+
+    expect(screen.getAllByText('Denied')).toHaveLength(2);
   });
 
   it('renders MCP content in order: text, PNG images as data URLs, other items and keys as JSON', () => {
